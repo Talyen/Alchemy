@@ -5,13 +5,40 @@ import {
   constructBuilding,
   plantFarm,
   pruneUnknownCompanions,
+  resetHomestead,
 } from "@/features/alchemy/shared/stores/homestead-actions";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { createInitialPermanentFields } from "@/features/alchemy/shared/stores/run-state-init";
 import * as errorLogger from "@/lib/error-logger";
+import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { companionTierItems } from "@/lib/homestead/companions";
 import type { CompanionId } from "@/lib/game-data";
 
 describe("homestead-actions", () => {
+  it.each([1, 2, 3, 4])("refunds every purchased cost through tier %i exactly once", (tier) => {
+    const profile = createInitialPermanentFields();
+    const stockpile = { wood: 10000, stone: 10000, iron: 10000, food: 10000, herbs: 10000, hide: 10000, gems: 10000 };
+    profile.materialInventory = { ...stockpile };
+    for (let level = 0; level < tier; level++) {
+      for (const item of buildings) expect(constructBuilding(profile, item.id)).toBe(true);
+      for (const item of farmPlots) expect(plantFarm(profile, item.id)).toBe(true);
+      for (const item of researchUpgrades) expect(completeResearch(profile, item.id)).toBe(true);
+      if (level < 3) for (const item of companionTierItems) expect(bondCompanion(profile, item.id)).toBe(true);
+    }
+    const gold = profile.gold;
+    expect(resetHomestead(profile)).toBe(true);
+    expect(profile.materialInventory).toEqual(stockpile);
+    expect(profile.gold).toBe(gold);
+    expect(profile.constructedBuildings).toEqual(createInitialPermanentFields().constructedBuildings);
+    expect(profile.plantedFarms).toEqual(createInitialPermanentFields().plantedFarms);
+    expect(profile.completedResearch).toEqual(createInitialPermanentFields().completedResearch);
+    expect(profile.bondedCompanions).toEqual(createInitialPermanentFields().bondedCompanions);
+    expect(profile.effects).toEqual(createInitialPermanentFields().effects);
+    const after = structuredClone(profile);
+    expect(resetHomestead(profile)).toBe(false);
+    expect(profile).toEqual(after);
+  });
+
   describe("pruneUnknownCompanions", () => {
     it("filters unknown companions and logs error", () => {
       const logSpy = vi.spyOn(errorLogger, "logError").mockImplementation(() => {});
@@ -49,8 +76,8 @@ describe("homestead-actions", () => {
       const success = constructBuilding(profile, "blacksmiths-forge");
       expect(success).toBe(true);
       expect(profile.constructedBuildings["blacksmiths-forge"]).toBe(1);
-      expect(profile.materialInventory.iron).toBe(28);
-      expect(profile.materialInventory.stone).toBe(42);
+      expect(profile.materialInventory.iron).toBe(39);
+      expect(profile.materialInventory.stone).toBe(46);
       expect(profile.effects.flatPhysicalDamage).toBe(1);
       expect(profile.effects.homesteadForgeBurnPercent).toBe(10);
     });
@@ -74,8 +101,8 @@ describe("homestead-actions", () => {
       const success = plantFarm(profile, "wheat-field");
       expect(success).toBe(true);
       expect(profile.plantedFarms["wheat-field"]).toBe(1);
-      expect(profile.effects.endRunFoodPerRoom).toBe(2);
-      expect(profile.effects.cardHealBonus.bread).toBe(2);
+      expect(profile.effects.foodFindBonus).toBe(0.1);
+      expect(profile.effects.healthRestorePerCombat).toBe(1);
     });
 
     it("completes research and updates computed effects", () => {
@@ -98,7 +125,7 @@ describe("homestead-actions", () => {
       expect(success).toBe(true);
       expect(profile.bondedCompanions.wolf).toBe(1);
       expect(profile.effects.companionBondLevels.wolf).toBe(1);
-      expect(profile.materialInventory.food).toBe(30);
+      expect(profile.materialInventory.food).toBe(40);
     });
 
     it("fails when food is insufficient", () => {

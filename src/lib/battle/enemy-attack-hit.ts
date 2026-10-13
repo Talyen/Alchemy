@@ -59,7 +59,6 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
   const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
   if (playTwice) {
     nextState = applyCardEffects(nextState, drawn.card, combatTexts, {
-      attackBonuses: chained.attackBonuses,
       damageEffects: repeatedDamageEffects,
       origin: "triggered-card",
       manaAtStart: nextState.mana,
@@ -134,6 +133,8 @@ function applyDodgeCounterAttacks(
       ),
     );
   }
+  nextState = resolvePendingBattleReactions(nextState, combatTexts);
+  if (isPlayerDefeated(nextState)) return nextState;
   const riposteDamage = nextState.talentEffects.physicalOnDodgeEqualToAttack
     ? dodgedAmount
     : scalePercent(dodgedAmount, nextState.talentEffects.dodgePhysicalDamagePercent);
@@ -144,6 +145,8 @@ function applyDodgeCounterAttacks(
       combatTexts,
     );
   }
+  nextState = resolvePendingBattleReactions(nextState, combatTexts);
+  if (isPlayerDefeated(nextState)) return nextState;
   if (nextState.gearEffects.bleedOnDodge > 0 && nextState.enemyHealth > 0 && eligibility.enemyStatuses.bleed > 0) {
     nextState = resolveSecondaryAction(nextState, "retaliation", (current) =>
       resolveFollowUpHit(
@@ -153,6 +156,8 @@ function applyDodgeCounterAttacks(
       ),
     );
   }
+  nextState = resolvePendingBattleReactions(nextState, combatTexts);
+  if (isPlayerDefeated(nextState)) return nextState;
   if (nextState.talentEffects.goldOnDodge > 0 && rollBattleChance(REACTIVE_REWARD_CHANCES.luckyFoot, nextState)) {
     nextState = addGoldWithCombatText(nextState, nextState.talentEffects.goldOnDodge, combatTexts);
   }
@@ -197,6 +202,15 @@ function applyDodgeOffensiveBuffs(state: BattleState): BattleState {
 }
 
 function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], dodgedAmount: number): BattleState {
+  if (!state.uniqueGear.viperReady && state.gearEffects.dodgeReadiesVenomousHit > 0) {
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "notice",
+      stat: "poison",
+      text: "Viper’s Courtesy Ready",
+      signal: "prepared",
+    });
+  }
   let nextState = {
     ...state,
     uniqueGear: {

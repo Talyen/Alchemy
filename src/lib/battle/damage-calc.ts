@@ -27,8 +27,7 @@ function applyCrit(damage: number, state: BattleState, guaranteed = false) {
     GLOBAL_CRIT_CHANCE_PERCENT + (state.deathsDoorActive ? state.gearEffects.criticalChanceWhileDeathsDoor : 0);
   const critical = guaranteed || readCombatFlag(state, "nextHitCrit") || rollPercent(chance, getBattleRng(state));
   return {
-    damage:
-      critical && damage > 0 ? damage * CRIT_MULTIPLIER + (state.talentEffects.homesteadCriticalDamage ?? 0) : damage,
+    damage: critical && damage > 0 ? damage * CRIT_MULTIPLIER : damage,
     critical: critical && damage > 0,
   };
 }

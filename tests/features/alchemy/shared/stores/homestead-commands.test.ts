@@ -100,7 +100,7 @@ describe("homestead write commands", () => {
     expect(
       dispatchGameplayCommand((draft) => acceptCommand(bondCompanion(draft, "wolf")), undefined, defaultGameSession),
     ).toBe(true);
-    expect(readRunProfile(defaultGameSession).materialInventory.food).toBe(30);
+    expect(readRunProfile(defaultGameSession).materialInventory.food).toBe(40);
     expect(readRunProfile(defaultGameSession).bondedCompanions.wolf).toBe(1);
     expect(readRunProfile(defaultGameSession).effects.companionBondLevels.wolf).toBe(1);
   });
@@ -121,30 +121,36 @@ describe("four-tier Homestead persistence and settlement", () => {
     expect(loaded.completedResearch["leyline-energy"]).toBe(4);
   });
 
-  it("settles Stone and alternating Wish currency through the proper wallets", () => {
-    dispatchGameplayCommand(
-      (draft) => {
-        setHasActiveRun(draft, true);
-        draft.run.activeRun.contentSystemType = CONTENT_SYSTEMS.LABYRINTH;
-        draft.run.activeRun.roomsEncountered = 3;
-        draft.runProfile.effects = {
-          ...defaultHomesteadEffects,
-          endRunStonePerRoom: 4,
-          endRunGemsPerRoom: 8,
-          endRunGoldPerRoom: 4,
-          endRunWishPerRoom: 4,
-        };
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
-    const before = readRunProfile(defaultGameSession).gold;
-    const granted = finalizeRunEndSession(defaultGameSession);
-    expect(granted).toEqual({ ...emptyInventory(), stone: 12, gems: 28 });
-    expect(readRunProfile(defaultGameSession).gold - before).toBe(20);
-    expect(readRunSession(defaultGameSession).runEndMaterials.stone).toBe(12);
-  });
+  it.each([CONTENT_SYSTEMS.CAMPAIGN, CONTENT_SYSTEMS.LABYRINTH, CONTENT_SYSTEMS.WILDWOOD])(
+    "records collected resources in %s without paying a second Homestead bonus",
+    (contentSystemType) => {
+      dispatchGameplayCommand(
+        (draft) => {
+          setHasActiveRun(draft, true);
+          draft.run.activeRun.contentSystemType = contentSystemType;
+          draft.run.activeRun.roomsEncountered = 30;
+          draft.runProfile.effects = {
+            ...defaultHomesteadEffects,
+            stoneFindBonus: 0.4,
+            gemFindBonus: 0.8,
+            goldFindBonus: 0.8,
+          };
+          awardMaterialsDuringRun(draft, { ...emptyInventory(), stone: 14, gems: 18 });
+          return acceptCommand();
+        },
+        undefined,
+        defaultGameSession,
+      );
+      const before = readRunProfile(defaultGameSession);
+      expect(finalizeRunEndSession(defaultGameSession)).toBe(true);
+      expect(readRunSession(defaultGameSession).runEndMaterials).toEqual({ ...emptyInventory(), stone: 14, gems: 18 });
+      expect(readRunProfile(defaultGameSession).materialInventory).toEqual(before.materialInventory);
+      expect(readRunProfile(defaultGameSession).gold).toBe(before.gold);
+      expect(readActiveRun(defaultGameSession).runMaterialsEarned).toEqual(emptyInventory());
+      expect(finalizeRunEndSession(defaultGameSession)).toBe(false);
+      expect(readRunProfile(defaultGameSession).materialInventory).toEqual(before.materialInventory);
+    },
+  );
 });
 
 describe("meta intent commands", () => {
@@ -154,7 +160,7 @@ describe("meta intent commands", () => {
     try {
       dispatchGameplayCommand(
         (draft) => {
-          addMaterialsToStockpile(draft, { ...emptyInventory(), stone: 8, iron: 22, food: 43, gems: 21 });
+          addMaterialsToStockpile(draft, { ...emptyInventory(), stone: 4, iron: 11, food: 21, gems: 10 });
           setDiscoveredCardIds(draft, ["wolf-companion"]);
           return acceptCommand();
         },

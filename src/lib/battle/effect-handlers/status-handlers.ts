@@ -69,7 +69,7 @@ export const STATUS_HANDLERS = {
     if (effect.status === "stun" || effect.status === "freeze") {
       return resolveFollowUpHit(state, { source: "player-follow-up", damageType: effect.status, amount }, combatTexts);
     }
-    const nextState = addEnemyStatus(state, effect.status, amount);
+    const nextState = addEnemyStatus(state, effect.status, amount, { combatTexts });
     const appliedAmount = nextState.enemyStatuses[effect.status] - state.enemyStatuses[effect.status];
     mergeCombatText(combatTexts, {
       target: "enemy",
@@ -96,6 +96,7 @@ export const STATUS_HANDLERS = {
     // attack eligible for the room's attack buildup bonus.
     const nextState = addEnemyStatus(state, effect.status, Math.round(current * (effect.factor - 1)), {
       attackBuildup: false,
+      combatTexts,
     });
     mergeCombatText(combatTexts, {
       target: "enemy",

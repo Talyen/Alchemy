@@ -1,7 +1,7 @@
 import { isDeepStrictEqual } from "node:util";
 import "../helpers/mock-audio";
 import { createRunRngState } from "@/lib/rng";
-import { cardById, computeTalentEffects } from "@/lib/game-data";
+import { cardById } from "@/lib/game-data";
 import {
   initializeAlchemyVisit,
   brewAtCampfire,
@@ -13,7 +13,8 @@ import { claimRunReward } from "@/features/alchemy/run-loop/run/reward-commands"
 import { createAlchemistShopCommands } from "@/features/alchemy/run-loop/shop/alchemist-shop-commands";
 import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { parseActiveRun, createEmptyRewardState } from "@/lib/active-run-session";
+import { createEmptyRewardState } from "@/lib/active-run-session";
+import { parseActiveRun } from "@/lib/validation";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { defaultGameSession } from "@/app/application-session";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../helpers/run-domain-store-test";
@@ -69,10 +70,7 @@ defineSequenceFamily("visits", (seed) => {
         lastVictoryContentSystem: mode,
       },
     });
-  const alchemist = createAlchemistShopCommands(
-    { talentEffects: computeTalentEffects({}), homesteadEffects: { mixPotionDiscount: 0 } },
-    defaultGameSession,
-  );
+  const alchemist = createAlchemistShopCommands(defaultGameSession);
   let claimed: string | null = null;
   const observe = () => ({
     visit,

@@ -98,6 +98,20 @@ export const BOUNDARY_CONFIGS = [
     ),
   ),
   scope(["src/lib/**/*.{ts,tsx}"], libPatterns, LIB_NO_FRAMEWORK_PATHS),
+  scope(
+    ["src/lib/active-run-session/**/*.{ts,tsx}"],
+    [
+      ...libPatterns,
+      [
+        {
+          group: ["@/lib/validation", "@/lib/validation/**", "**/validation", "**/validation/**"],
+          message:
+            "Run domain contracts must not depend on save validation. Parse and recover saves in lib/validation.",
+        },
+      ],
+    ],
+    LIB_NO_FRAMEWORK_PATHS,
+  ),
   scope(["src/lib/balance/**/*.ts"], libPatterns, [
     ...LIB_NO_FRAMEWORK_PATHS,
     {
@@ -110,7 +124,7 @@ export const BOUNDARY_CONFIGS = [
         "processCompanionTurnStart",
       ],
       message:
-        "Balance policies select actions; use resolveBattleStart and resolveBattleTurn for battle lifecycle rules.",
+        "Balance policies select actions; use resolveBattleStart and resolveBattleAction for battle lifecycle rules.",
     },
   ]),
   scope(["src/lib/game-data/**/*.{ts,tsx}"], [...catalogPatterns, NO_DIRECT_ASSET_IMPORT], LIB_NO_FRAMEWORK_PATHS),

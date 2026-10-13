@@ -105,6 +105,7 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
     discoveredUniqueIds,
     autoEndTurn,
     selectedAspectRatio,
+    finishedRunCharacters,
     gold,
     runGold,
     ...activeRunData
@@ -137,7 +138,7 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
       }),
       ...activeRunData,
     },
-    finishedRunCharacters: [...BASE_ROSTER_CHARACTERS],
+    finishedRunCharacters: Array.isArray(finishedRunCharacters) ? finishedRunCharacters : [...BASE_ROSTER_CHARACTERS],
     discoveredCardIds: Array.isArray(discoveredCardIds) ? discoveredCardIds : [...DEFAULT_DISCOVERED_CARD_IDS],
   };
   if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
@@ -240,8 +241,7 @@ export async function injectLabyrinthRun(
   } = {},
 ) {
   const map = options.labyrinthMap ?? gridLabyrinthMapFixture();
-  const desktop = await isDesktopPage(page);
-  await injectSaveState(page, {
+  const loaded = await injectSaveState(page, {
     characterId: "knight",
     runDeck: options.deck ?? [],
     runGold: 0,
@@ -260,7 +260,7 @@ export async function injectLabyrinthRun(
     ...options.runOverrides,
     activity: savedActivityFixture("labyrinth-map"),
   });
-  if (!desktop) await navigateToGame(page);
+  if (!loaded) await navigateToGame(page);
   await expect(page.getByRole("heading", { name: /Labyrinth|Map/i })).toBeVisible({ timeout: 20000 });
 }
 

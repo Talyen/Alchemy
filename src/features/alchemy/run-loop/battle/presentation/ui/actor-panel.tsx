@@ -1,3 +1,4 @@
+import type { EnemyDescriptionContext } from "@/lib/battle";
 import { type CSSProperties, type ReactNode, type Ref, useLayoutEffect, useRef } from "react";
 
 import { COMBAT_IMPACT_NORMAL_HEALTH_RATIO, COMBAT_IMPACT_HEAVY_HEALTH_RATIO } from "@/lib/game-constants";
@@ -47,11 +48,13 @@ interface ArtPanelProps {
   shaking?: boolean;
   cardWidthClass?: string;
   descriptionLines?: string[];
+  enemyDescriptionContext?: EnemyDescriptionContext | undefined;
   currentEnemy?: BestiaryEntry;
   onInspect?: ((trigger: HTMLElement) => void) | undefined;
   inspectionOpen?: boolean;
   activeLabyrinthModifiers?: EncounterCombatTraitId[];
   deathsDoorActive?: boolean;
+  deathsDoorGraceTurnsRemaining?: number | null;
   isBoss?: boolean;
   impactCue?: CombatImpactCue | null;
   turnActive?: boolean;
@@ -79,11 +82,13 @@ export function ArtPanel({
   isDead = false,
   cardWidthClass,
   descriptionLines,
+  enemyDescriptionContext,
   currentEnemy,
   onInspect,
   inspectionOpen = false,
   activeLabyrinthModifiers = [],
   deathsDoorActive = false,
+  deathsDoorGraceTurnsRemaining = null,
   isBoss = false,
   impactCue = null,
   turnActive = false,
@@ -130,6 +135,7 @@ export function ArtPanel({
               title={title}
               descriptionLines={descriptionLines}
               currentEnemy={currentEnemy}
+              enemyDescriptionContext={enemyDescriptionContext}
               activeLabyrinthModifiers={activeLabyrinthModifiers}
               triggerRef={artWrapperRef}
               visible={tooltipVisible}
@@ -175,6 +181,7 @@ export function ArtPanel({
           isDead={isDead}
           cardWidthClass={resolvedCardWidthClass}
           deathsDoorActive={deathsDoorActive}
+          deathsDoorGraceTurnsRemaining={deathsDoorGraceTurnsRemaining}
         />
       </CombatantAttackLunge>
     </div>
@@ -324,7 +331,11 @@ function ActorStatsPanel({
   isDead,
   cardWidthClass = battleCardWidthClass,
   deathsDoorActive,
-}: Pick<ArtPanelProps, "side" | "title" | "health" | "maxHealth" | "statuses" | "isDead" | "cardWidthClass"> & {
+  deathsDoorGraceTurnsRemaining = null,
+}: Pick<
+  ArtPanelProps,
+  "deathsDoorGraceTurnsRemaining" | "side" | "title" | "health" | "maxHealth" | "statuses" | "isDead" | "cardWidthClass"
+> & {
   deathsDoorActive: boolean | undefined;
   healthPercent: number;
   healthToken: number;
@@ -346,7 +357,13 @@ function ActorStatsPanel({
           value={healthPercent}
           className={cn("mt-1.5 h-3 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")}
         />
-        <ActorStatusRow title={title} statuses={statuses} deathsDoorActive={deathsDoorActive} side={side} />
+        <ActorStatusRow
+          title={title}
+          statuses={statuses}
+          deathsDoorActive={deathsDoorActive}
+          deathsDoorGraceTurnsRemaining={deathsDoorGraceTurnsRemaining}
+          side={side}
+        />
       </div>
     </div>
   );
@@ -377,11 +394,14 @@ function ActorStatusRow({
   title,
   statuses,
   deathsDoorActive,
+  deathsDoorGraceTurnsRemaining = null,
   side,
-}: Pick<ArtPanelProps, "title" | "statuses" | "side"> & { deathsDoorActive: boolean | undefined }) {
+}: Pick<ArtPanelProps, "deathsDoorGraceTurnsRemaining" | "title" | "statuses" | "side"> & {
+  deathsDoorActive: boolean | undefined;
+}) {
   return (
     <div className="mt-2.5 flex min-h-9 items-center gap-1" data-testid={`${side}-statuses`}>
-      {deathsDoorActive ? <DeathsDoorStatusIcon /> : null}
+      {deathsDoorActive ? <DeathsDoorStatusIcon remainingTurns={deathsDoorGraceTurnsRemaining} /> : null}
       {statuses.map((status) => (
         <StatusIcon key={`${title}-${status.id}-${status.value}`} chip={status} />
       ))}

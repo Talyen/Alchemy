@@ -50,7 +50,6 @@ describe("Divine Intervention", () => {
   it("Wishes from positive Holy damage", () => {
     const result = play(battle({ talentEffects: intervention, rng: () => 0.05 }), holy);
     expect(result.state.wishOptions).toHaveLength(WISH_CHOICE_COUNT);
-    expect(result.state.flags.nextWishExtraChoice).toBe(false);
   });
 
   it("queues a separate Wish when the same card also contains a Wish", () => {
@@ -58,20 +57,16 @@ describe("Divine Intervention", () => {
     const next = play(battle({ talentEffects: intervention, rng: () => 0.05 }), card).state;
     expect(next.wishOptions).toHaveLength(WISH_CHOICE_COUNT);
     expect(next.wishQueue.map((options) => options.length)).toEqual([WISH_CHOICE_COUNT]);
-    expect(next.flags.nextWishExtraChoice).toBe(false);
   });
 
-  it("leaves prebuilt choices unchanged and retains the spent state on resume", () => {
+  it("preserves prebuilt and queued Wish choices through resume", () => {
     const initial = applyWishEffect(battle({ talentEffects: intervention }), wish, 1, []);
-    const ready = { ...initial, flags: { ...initial.flags, nextWishExtraChoice: true } };
-    const next = applyWishEffect(ready, wish, 2, []);
+    const next = applyWishEffect(initial, wish, 2, []);
     expect(next.wishOptions).toBe(initial.wishOptions);
-    expect(next.wishQueue.map((options) => options.length)).toEqual([WISH_CHOICE_COUNT + 1, WISH_CHOICE_COUNT]);
+    expect(next.wishQueue.map((options) => options.length)).toEqual([WISH_CHOICE_COUNT, WISH_CHOICE_COUNT]);
     const restored = resume(next);
     expect(restored.wishOptions).toEqual(next.wishOptions);
     expect(restored.wishQueue).toEqual(next.wishQueue);
-    expect(restored.flags.nextWishExtraChoice).toBe(false);
-    expect(battle({ talentEffects: intervention }).flags.nextWishExtraChoice).toBe(false);
   });
 });
 
@@ -122,7 +117,7 @@ describe("Cull the Weak", () => {
 });
 
 describe("feedback talent save compatibility", () => {
-  it("defaults additive fields and preserves Holy/Wish while dropping retired Leech/Holy behavior", () => {
+  it("preserves active Holy/Wish rewards and defaults while dropping retired fields", () => {
     const saved = JSON.parse(
       JSON.stringify(
         battle({
@@ -131,13 +126,17 @@ describe("feedback talent save compatibility", () => {
         }),
       ),
     );
-    delete saved.flags.nextWishExtraChoice;
+    saved.flags.nextWishExtraChoice = true;
+    saved.flags.consumeDrawUsedThisTurn = true;
     saved.talentEffects.leechHolyDamageVsLowHealth = 1;
-    delete saved.talentEffects.wishExtraChoiceAfterHolyCard;
+    saved.talentEffects.wishExtraChoiceAfterHolyCard = true;
+    saved.talentEffects.drawOnConsume = 1;
     delete saved.talentEffects.leechCardDamageVsLowHealthPercent;
     const restored = { ...PersistedBattleStateSchema.parse(saved), rng: () => 0.99 };
-    expect(restored.flags.nextWishExtraChoice).toBe(false);
-    expect(restored.talentEffects.wishExtraChoiceAfterHolyCard).toBe(false);
+    expect(restored.flags).not.toHaveProperty("nextWishExtraChoice");
+    expect(restored.flags).not.toHaveProperty("consumeDrawUsedThisTurn");
+    expect(restored.talentEffects).not.toHaveProperty("wishExtraChoiceAfterHolyCard");
+    expect(restored.talentEffects).not.toHaveProperty("drawOnConsume");
     expect(restored.talentEffects.leechCardDamageVsLowHealthPercent).toBe(0);
     expect(play(restored, holy).state.wishOptions).toHaveLength(WISH_CHOICE_COUNT);
     expect(restored.talentEffects).not.toHaveProperty("leechHolyDamageVsLowHealth");

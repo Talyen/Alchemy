@@ -5,10 +5,10 @@ import * as materialRewards from "@/lib/homestead/material-rewards";
 
 describe("materials balance report", () => {
   afterEach(() => vi.restoreAllMocks());
-  it("reports every enemy and difficulty through the live loot policy, averaging every material", () => {
-    const loot = vi.spyOn(materialRewards, "getEnemyMaterialLoot");
+  it("reports every progression band and encounter type through the live loot policy, averaging every material", () => {
+    const loot = vi.spyOn(materialRewards, "getCombatMaterialLoot");
     let sample = 0;
-    loot.mockImplementation((_id, type) => {
+    loot.mockImplementation((type) => {
       const amount = (sample++ % 2) + (type === "boss" ? 3 : 1);
       return {
         wood: amount,
@@ -21,13 +21,15 @@ describe("materials balance report", () => {
       };
     });
     const report = buildMaterialsBalanceReport(2);
-    const expectedPairs = Object.keys(materialRewards.enemyLootTables)
-      .sort()
-      .flatMap((enemyId) => (["normal", "elite", "boss"] as const).map((enemyType) => ({ enemyId, enemyType })));
-    expect(report.rows.map(({ enemyId, enemyType }) => ({ enemyId, enemyType }))).toEqual(expectedPairs);
+    const expectedPairs = [1, 2, 3].flatMap((progressionBand) =>
+      (["normal", "elite", "boss"] as const).map((enemyType) => ({ progressionBand, enemyType })),
+    );
+    expect(report.rows.map(({ progressionBand, enemyType }) => ({ progressionBand, enemyType }))).toEqual(
+      expectedPairs,
+    );
     expect(loot).toHaveBeenCalledTimes(expectedPairs.length * 2);
-    for (const [index, { enemyId, enemyType }] of expectedPairs.entries()) {
-      expect(loot).toHaveBeenNthCalledWith(index * 2 + 1, enemyId, enemyType, expect.any(Function));
+    for (const [index, { progressionBand, enemyType }] of expectedPairs.entries()) {
+      expect(loot).toHaveBeenNthCalledWith(index * 2 + 1, enemyType, progressionBand, expect.any(Function));
       const mean = enemyType === "boss" ? 3.5 : 1.5;
       expect(report.rows[index]!.mean).toEqual({
         wood: mean,

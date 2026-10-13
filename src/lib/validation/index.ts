@@ -13,7 +13,6 @@ export {
   migrateSupportedSaveData,
 } from "./migration/index";
 export { normalizePersistedBattleState } from "./normalize-persisted-battle-state";
-export type { PersistedPendingReward } from "./save-schemas/active-run";
 export {
   ActiveRunDataSchema,
   BattleCardSchema,
@@ -29,6 +28,6 @@ export {
   type ParsedSaveData,
 } from "./save-schemas/index";
 
-export { ACTIVE_RUN_PROGRESS_KEYS, type PersistedRunProgress } from "./save-schemas/run-progress";
+export { parseActiveRun, toActiveRunData } from "./parse-active-run";
 
 export { legacyRunNeedsAbandonment } from "./migration";

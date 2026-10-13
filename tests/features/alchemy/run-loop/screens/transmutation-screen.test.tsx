@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playUISound } from "@/lib/audio";
 import { StrictMode } from "react";
@@ -46,6 +46,10 @@ function Harness({
     />
   );
 }
+function tooltipFor(name: string) {
+  const button = screen.getByRole("button", { name });
+  return within(document.getElementById(button.getAttribute("aria-describedby")!)!);
+}
 function click(name: string) {
   fireEvent.click(screen.getByRole("button", { name }));
 }
@@ -53,6 +57,17 @@ function visit() {
   const activity = readRunSession(defaultGameSession).activity;
   if (activity.kind !== "transmutation") throw new Error("wrong activity");
   return activity.data;
+}
+async function waitFor(assertion: () => void) {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    await act(async () => vi.advanceTimersByTimeAsync(50));
+    try {
+      assertion();
+      return;
+    } catch (error) {
+      if (attempt === 19) throw error;
+    }
+  }
 }
 async function previewReady() {
   await waitFor(() =>
@@ -68,6 +83,7 @@ async function chooseAlteration() {
   return preview;
 }
 beforeEach(() => {
+  vi.useFakeTimers();
   vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(true);
   vi.spyOn(HTMLImageElement.prototype, "naturalWidth", "get").mockReturnValue(100);
   resetAllTestStores();
@@ -78,6 +94,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.restoreAllMocks();
   Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
   localStorage.removeItem("alchemy-disable-animations");
@@ -162,6 +179,10 @@ describe("Transmutation flow", () => {
     expect(screen.getByRole("button", { pressed: true }).textContent).toContain(
       keywordDefinitions[preview.transmuted!].label,
     );
+    act(() => screen.getByRole("button", { name: `Preview: ${preview.title}` }).focus());
+    expect(tooltipFor(`Preview: ${preview.title}`).getAllByText("NEW").length).toBeGreaterThan(0);
+    act(() => screen.getByRole("button", { name: "Original: Slash" }).focus());
+    expect(tooltipFor("Original: Slash").queryByText("NEW")).toBeNull();
     expect(readActiveRun(defaultGameSession).runDeck).toEqual(before);
     expect(onExchange).not.toHaveBeenCalled();
     click("Transmute");
@@ -375,6 +396,8 @@ describe("Transmutation flow", () => {
       expect((screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement).disabled).toBe(false),
     );
     expect(screen.getByRole("button", { name: `Transmuted: ${visit().result!.title}` })).toBeTruthy();
+    act(() => screen.getByRole("button", { name: `Transmuted: ${visit().result!.title}` }).focus());
+    expect(tooltipFor(`Transmuted: ${visit().result!.title}`).getAllByText("NEW").length).toBeGreaterThan(0);
     expect(playUISound).not.toHaveBeenCalled();
     expect(onContinue).not.toHaveBeenCalled();
     click("Continue");

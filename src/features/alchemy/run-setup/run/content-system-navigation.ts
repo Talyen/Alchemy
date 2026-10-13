@@ -29,6 +29,7 @@ import {
   cloneBattleCard,
   isCharacterUnlocked,
   isDifficultyUnlocked,
+  isGameModeUnlocked,
   type BattleCard,
   type CharacterId,
   type DifficultyId,
@@ -76,10 +77,12 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps,
       return;
     }
     const systemType = readRunSession(gameSession).pendingContentSystemType;
+    const finishedRunCharacters = readProfileStore(gameSession).finishedRunCharacters;
     if (
       !isEditionCharacterAvailable(selectedId) ||
       !isEditionModeAvailable(systemType) ||
-      (IS_DEMO && !isCharacterUnlocked(selectedId, readProfileStore(gameSession).finishedRunCharacters))
+      !isCharacterUnlocked(selectedId, finishedRunCharacters) ||
+      !isGameModeUnlocked(systemType, finishedRunCharacters)
     )
       return;
 
@@ -244,6 +247,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps,
     if (
       !isEditionDifficultyAvailable(difficultyId) ||
       !isEditionCharacterAvailable(selectedId) ||
+      !isCharacterUnlocked(selectedId, readProfileStore(gameSession).finishedRunCharacters) ||
       !isDifficultyUnlocked(difficultyId, completed)
     )
       return;
@@ -251,7 +255,17 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps,
   }
 
   function handleBackFromDifficultySelect() {
-    if (readHasActiveRun(gameSession) && readActiveRun(gameSession).characterId === "wildcard") {
+    if (readHasActiveRun(gameSession)) {
+      if (
+        !isDifficultySelectContinuation({
+          characterId: readActiveRun(gameSession).characterId,
+          activityKind: readRunSession(gameSession).activity.kind,
+          hasActiveBattle: readHasActiveBattle(gameSession),
+        })
+      ) {
+        resumeRun();
+        return;
+      }
       dispatchRunSessionCommand(
         (draft) => {
           // The completed draft is still confirmable when returning from difficulty selection.

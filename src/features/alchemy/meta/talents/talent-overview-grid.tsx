@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useId, useMemo } from "react";
 
 import { chunkIntoRows, keywordDefinitions, talentArt, type KeywordId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
   onSelectKeyword,
   onHoverKeyword,
 }: TalentPortraitCardProps) {
+  const unspentDescriptionId = useId();
   const definition = keywordDefinitions[keywordId];
   const art = talentArt[keywordId];
 
@@ -34,6 +35,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
       <button
         type="button"
         aria-label={`Select ${definition.label} Talents`}
+        aria-describedby={hasUnspent ? unspentDescriptionId : undefined}
         onMouseEnter={() => {
           onHoverStart();
           onHoverKeyword?.(keywordId);
@@ -85,7 +87,15 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
             {definition.label}
           </span>
           {hasUnspent ? (
-            <span className="pointer-events-none h-2 w-2 shrink-0 rounded-full bg-red-500/70 select-none" />
+            <>
+              <span
+                aria-hidden="true"
+                className="pointer-events-none h-2 w-2 shrink-0 rounded-full bg-red-500/70 select-none"
+              />
+              <span id={unspentDescriptionId} className="sr-only">
+                Unspent Talent Points
+              </span>
+            </>
           ) : null}
         </div>
       </button>

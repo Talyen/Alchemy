@@ -8,9 +8,9 @@ import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/
 import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
-import { readRunAvailableDestinations } from "@/features/alchemy/shell/run-destination-wiring";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeTestCard } from "../../../fixtures/battle";
@@ -28,7 +28,6 @@ function makeOutcomes(navigateTo: TestNavigate, transition: TestTransition) {
   return createRunOutcomes(
     {
       actions: { navigateTo, transition, clearCardHover: () => {} },
-      getAvailableDestinations: (options) => readRunAvailableDestinations(options, defaultGameSession),
     },
     defaultGameSession,
   );
@@ -78,6 +77,24 @@ describe("createRunFlowEngine", () => {
     engine.beginCampaign();
     expect(useUiStore.getState().hoveredCardId).toBeNull();
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CHARACTER_SELECT, undefined);
+  });
+
+  it("a retained Corruption Leave action cannot replace a newer battle", () => {
+    setRunSession({ activity: { kind: "corruption", data: null } });
+    const navigateTo = vi.fn();
+    const engine = makeEngine({ navigateTo });
+    dispatchRunSessionCommand(
+      (draft) => {
+        setHasActiveBattle(draft, true);
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    const before = readGameplayState(defaultGameSession);
+    engine.handleCorruptionExit();
+    expect(readGameplayState(defaultGameSession)).toBe(before);
+    expect(navigateTo).not.toHaveBeenCalled();
   });
 
   it("resetRunState tears down run stores when navigating to menu", () => {

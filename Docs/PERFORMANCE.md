@@ -53,6 +53,8 @@ PERF_MEASURE_MS=8000 PERF_MIN_FRAMES=50 npm run perf -- --scenario battle-end-tu
 
 The default is the fixed, realistic Campaign opening battle. `--all` runs the fixed realistic suite; `--suite synthetic --all` runs the earlier isolated stress loops. `--suite seeded --seed <uint32>` generates one reachable case from the balance playthrough engine. Every generated case includes a current-format save checkpoint and a coverage inventory. The generator uses a labeled unlocked account when the selected hero or mode requires it. The developed Campaign and account journeys use a second career, after earning talents and other progression.
 
+The trinket journey starts from the labeled `trinket-v1` account fixture, which grants equipped Companion's Collar and owned Oathkeeper alongside the economy fixture's resources. Its battle checkpoint is reached through normal play; these starting items are fixture grants, not earned loot. The coverage inventory records the starting fixture name.
+
 The realistic journeys run normal animations and production cards with authored costs and effects. Each measured run records actions, named segments, and a replay bundle under `replay/`. `--replay <bundle>` loads the same checkpoint and requires the same action sequence; divergence invalidates the run. The setup wall time is reported separately. Screen transitions, draft, combat, reward claims, shop purchases, account navigation, and resume have their own frame segments. Segment rows require completed actions and frames, so a skipped or stalled journey fails rather than reporting an easy FPS value.
 
 Case IDs, defaults, and diagnostics are maintained by the CLI and `performance/catalog.json`; use `npm run perf -- --help` for the current list. Fixed case comparisons require the same checkpoint hash, action path, segment names and action counts, in addition to the environment checks below. Seeded sweeps are exploratory; replay an interesting case for a controlled before/after comparison.
@@ -183,10 +185,12 @@ trace events fail capture. Screenshots are omitted to reduce trace overhead.
 ## Limitations
 
 - rAF sampling detects **main-thread cadence gaps**, not hardware GPU present timing.
+- Smooth rAF sampling can hide uneven updates inside a capped effect loop. Inspect actual draw cadence when an effect visibly jitters despite stable frame metrics.
 - Trace mode adds overhead — do not treat its FPS numbers as authoritative.
 - The nightly Xvfb Electron run validates seeded journeys and retains replay evidence, but its virtual display is not a GPU-enabled desktop baseline. Use a controlled local Electron machine for numeric comparisons.
 - Never compare Chromium and Electron results as if they were the same environment.
 - Local Electron profiling keeps the GPU enabled (`enableGpu`); CI Electron smoke still uses `--disable-gpu`. Never compare the two — same-machine, same-runtime comparisons only.
+- Electron profiling uses a visible window so focus-gated canvas effects run. Keep it focused during measurement; older hidden-window reports omit that work and are not comparable.
 - Runtime deltas are diagnostic signals, not automatic leak verdicts. Allow for garbage collection and confirm suspicious monotonic growth across repeated runs.
 - A 60 Hz panel cannot report sustained 120+ FPS; use a high-refresh display for that class of measurement.
 

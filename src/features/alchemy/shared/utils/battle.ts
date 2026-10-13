@@ -79,7 +79,7 @@ export function getCombatTextAccessibleLabel(event: FloatingCombatText): string 
   if (event.kind === "notice") {
     if (event.signal === "purge" || event.text === "Purged") return `Purged ${label}`;
     if (event.signal === "cleanse") return `Cleansed ${label}`;
-    if (event.signal === "prepared") return `${label} prepared`;
+    if (event.signal === "prepared") return event.text || `${label} prepared`;
     return event.text || (event.stat === "deathsDoor" ? "Death's Door" : label);
   }
   return `${label}: ${event.displayText}`;
@@ -101,8 +101,20 @@ function buildStatusChips(
 
 function buildActiveCcChips(cc: CcState): StatusChip[] {
   const chips: StatusChip[] = [];
-  if (cc.stunSkipTurns > 0) chips.push({ id: "stunned", value: cc.stunSkipTurns, hideValue: true });
-  if (cc.freezeSkipTurns > 0) chips.push({ id: "frozen", value: cc.freezeSkipTurns, hideValue: true });
+  if (cc.stunSkipTurns > 0)
+    chips.push({
+      id: "stunned",
+      value: cc.stunSkipTurns,
+      hideValue: true,
+      ...(cc.stunSkipTurns > 1 ? { description: `Loses their next ${cc.stunSkipTurns} turns.` } : {}),
+    });
+  if (cc.freezeSkipTurns > 0)
+    chips.push({
+      id: "frozen",
+      value: cc.freezeSkipTurns,
+      hideValue: true,
+      ...(cc.freezeSkipTurns > 1 ? { description: `Loses their next ${cc.freezeSkipTurns} turns.` } : {}),
+    });
   return chips;
 }
 
@@ -180,9 +192,8 @@ export function getEnemyStatusChips(state: BattleSnapshot | null | undefined): S
         value,
         ...(key === "forge"
           ? {
-              description: state.currentEnemy.traits.some((trait) => trait.id === "whitehot")
-                ? "Each stack of Forge increases this enemy’s Physical and Stun damage by 1. Whitehot prevents attack spending."
-                : "Each stack of Forge increases this enemy’s Physical and Stun damage by 1. Attacks that use Forge spend 1 stack.",
+              description:
+                "Each stack of Forge increases this enemy’s Physical and Stun damage by 1 for the rest of combat.",
             }
           : {}),
       });

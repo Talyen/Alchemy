@@ -44,28 +44,16 @@ function recordSimulation(config: BattleSimulationConfig, patch: Partial<battle.
     openingCounter = world.counters.world;
     return { ...result, state: opening };
   });
-  const play = battle.resolveBattleCard;
-  vi.spyOn(battle, "resolveBattleCard").mockImplementation((state, cardId, index, context, options) => {
-    const result = play(state, cardId, index, context, options);
-    actions.push({
-      kind: "play",
-      cardId,
-      index,
-      state: battle.battleSnapshot(result.state),
-      counter: world.counters.world,
-    });
-    return result;
-  });
-  const wish = battle.resolveBattleWish;
-  vi.spyOn(battle, "resolveBattleWish").mockImplementation((state, cardId, context) => {
-    const result = wish(state, cardId, context);
-    actions.push({ kind: "wish", cardId, state: result.state, counter: world.counters.world });
-    return result;
-  });
-  const end = battle.resolveBattleTurn;
-  vi.spyOn(battle, "resolveBattleTurn").mockImplementation((state, context, options) => {
-    const result = end(state, context, options);
-    actions.push({ kind: "end", frames: result.frames, state: result.state, counter: world.counters.world });
+  const resolve = battle.resolveBattleAction;
+  vi.spyOn(battle, "resolveBattleAction").mockImplementation((state, action, context) => {
+    const result = resolve(state, action, context);
+    if (result.kind === "rejected") throw new Error(`Simulation action rejected: ${result.reason}`);
+    const committed = { state: result.resolution.state, counter: world.counters.world };
+    if (action.kind === "card")
+      actions.push({ kind: "play", cardId: action.cardId, index: action.index, ...committed });
+    else if (action.kind === "wish") actions.push({ kind: "wish", cardId: action.cardId, ...committed });
+    else if (result.action === "end-turn")
+      actions.push({ kind: "end", frames: result.resolution.frames, ...committed });
     return result;
   });
   const result = simulateBattle(config);

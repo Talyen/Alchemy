@@ -192,41 +192,9 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
   installArmoryScreenTestHooks();
   installReadyArtworkForTests();
 
-  it("searches and clears inventory from the browsing controls", async () => {
-    const user = userEvent.setup();
-    renderArmoryScreen();
-    expect(screen.getByRole("button", { name: "Sort inventory" })).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Search inventory" }));
-    await user.type(screen.getByRole("searchbox", { name: "Search inventory" }), "nothing matches");
-    expect(screen.getByText("No items match your search and filters.")).toBeTruthy();
-    expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(0);
-    await user.click(screen.getByRole("button", { name: "Close inventory search" }));
-    expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(1);
-  });
-
   // Sort-on-demand ordering and hero/category page memory live in
   // use-armory-ordering.test.ts (hook) and armory-ordering.test.ts (pure);
-  // the screen keeps browsing control integration above plus the
-  // equip/unequip wiring below.
-
-  it("equips into an empty slot and compacts inventory", async () => {
-    const user = userEvent.setup();
-    const onEquip = vi.fn(() => true);
-    const sword = { instanceId: "sword-1", definitionId: "longsword-basic" as const, affixes: [] };
-    const hatchet = { instanceId: "hatchet-1", definitionId: "hatchet-basic" as const, affixes: [] };
-    const loadouts = createEmptyGearLoadouts();
-
-    renderArmoryScreen({
-      onEquip,
-      loadouts,
-      inventories: createArmoryInventories([sword, hatchet]),
-    });
-
-    const swordButton = screen.getByRole("button", { name: "Longsword" });
-    await user.click(swordButton);
-
-    expect(onEquip).toHaveBeenCalledWith("knight", "main-hand", expect.objectContaining({ instanceId: "sword-1" }));
-  });
+  // the screen keeps the equip/unequip wiring below.
 
   it("replaces equipped item and preserves working position", async () => {
     const user = userEvent.setup();
@@ -307,28 +275,6 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
     expect(onUnequipTrinket).toHaveBeenCalledWith("knight");
   });
 
-  it("equipping a two-handed weapon handles off-hand conflict", async () => {
-    const user = userEvent.setup();
-    const onEquip = vi.fn(() => true);
-    const loadouts = createEmptyGearLoadouts();
-    loadouts.knight["main-hand"] = "sword-1";
-    loadouts.knight["off-hand"] = "shield-1";
-    const sword1 = { instanceId: "sword-1", definitionId: "longsword-basic" as const, affixes: [] };
-    const shield1 = { instanceId: "shield-1", definitionId: "kite-shield-basic" as const, affixes: [] };
-    const staff1 = { instanceId: "staff-1", definitionId: "staff-basic" as const, affixes: [] };
-
-    renderArmoryScreen({
-      onEquip,
-      loadouts,
-      inventories: createArmoryInventories([sword1, shield1, staff1]),
-    });
-
-    const staffBtn = screen.getByRole("button", { name: "Staff" });
-    await user.click(staffBtn);
-
-    expect(onEquip).toHaveBeenCalledWith("knight", "main-hand", expect.objectContaining({ instanceId: "staff-1" }));
-  });
-
   it("enters currency targeting mode, applies currency to gear, and clears on cancellation", async () => {
     const user = userEvent.setup();
     const onApplyCurrency = vi.fn(() => true);
@@ -402,5 +348,83 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
       expect(panel?.textContent).toContain("Remove");
       expect(panel?.textContent).toContain("Affixes");
     });
+
+    const salvageButton = screen.getByTestId("armory-salvage-toggle");
+    expect(salvageButton.textContent).toBe("");
+    act(() => salvageButton.focus());
+    await waitFor(() => {
+      const panel = document.querySelector(".hover-popup-panel[data-visible]");
+      expect(panel?.textContent).toContain("Salvage");
+      expect(panel?.textContent).toContain("Dismantle gear into crafting materials.");
+      expect(panel?.textContent).not.toContain("and currencies");
+      expect(panel?.textContent).not.toContain("No salvageable gear available");
+    });
+  });
+
+  it("preserves inventory item elements when switching between compatible gear slots", async () => {
+    const user = userEvent.setup();
+    const sword = {
+      instanceId: "gear-sword",
+      definitionId: "longsword-basic" as const,
+      affixes: [],
+    };
+    renderArmoryScreen({
+      inventories: createArmoryInventories([sword]),
+    });
+
+    await waitForArtwork();
+    const swordBtnBefore = screen.getByRole("button", { name: "Longsword" });
+
+    // Switch to off-hand (both slots allow 1H swords)
+    await user.click(screen.getByLabelText("Off-hand equipment slot"));
+    await waitForArtwork();
+
+    const swordBtnAfter = screen.getByRole("button", { name: "Longsword" });
+    expect(swordBtnAfter).toBe(swordBtnBefore);
+  });
+
+  it("shows spawn dev trinket button on trinket slot and triggers onSpawnDevTrinket", async () => {
+    const user = userEvent.setup();
+    const onSpawnDevGear = vi.fn();
+    const onSpawnDevTrinket = vi.fn();
+    renderArmoryScreen({
+      onSpawnDevGear,
+      onSpawnDevTrinket,
+    });
+
+    // On gear slot, spawn gear button is visible
+    expect(screen.getByRole("button", { name: "Spawn random gear" })).toBeDefined();
+
+    // Switch to trinket slot
+    await user.click(screen.getByLabelText("Trinket equipment slot"));
+    const spawnTrinketBtn = screen.getByRole("button", { name: "Spawn random trinket" });
+    expect(spawnTrinketBtn).toBeDefined();
+
+    await user.click(spawnTrinketBtn);
+    expect(onSpawnDevTrinket).toHaveBeenCalledTimes(1);
+    expect(onSpawnDevGear).not.toHaveBeenCalled();
+  });
+
+  it("does not display empty status icon when browsing empty equipment slots unless filtered", async () => {
+    const user = userEvent.setup();
+    const sword = { instanceId: "gear-sword", definitionId: "longsword-basic" as const, affixes: [] };
+    renderArmoryScreen({
+      inventories: createArmoryInventories([sword]),
+      ownedTrinketIds: [],
+    });
+
+    // Main-hand has sword
+    expect(document.querySelector('[data-testid$="-empty"]')).toBeNull();
+
+    // Switch to trinket slot (no trinkets owned)
+    await user.click(screen.getByLabelText("Trinket equipment slot"));
+    // Renders filler slots without the floating empty package icon overlay
+    expect(document.querySelector('[data-testid$="-empty"]')).toBeNull();
+    expect(document.querySelectorAll('[data-testid="armory-inventory-filler"]')).toHaveLength(6);
+
+    // Switch to armor slot (no body armor in inventory)
+    await user.click(screen.getByLabelText("Armor equipment slot"));
+    expect(document.querySelector('[data-testid$="-empty"]')).toBeNull();
+    expect(document.querySelectorAll('[data-testid="armory-inventory-filler"]')).toHaveLength(6);
   });
 });

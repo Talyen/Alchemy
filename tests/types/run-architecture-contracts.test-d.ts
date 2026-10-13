@@ -1,4 +1,4 @@
-import { resolveBattleCard, resolveBattleWish, type BattleSnapshot } from "@/lib/battle";
+import { resolveBattleAction, resolveBattleCard, resolveBattleWish, type BattleSnapshot } from "@/lib/battle";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import {
   createSessionPersistence,
@@ -12,7 +12,7 @@ import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-
 import { describe, expectTypeOf, it } from "vitest";
 import type { BattleCard } from "@/lib/game-data";
 import type { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
-import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
+import type { AlchemyRouteCommands, AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow";
 import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/run-screen-data";
 import {
@@ -59,10 +59,25 @@ describe("run architecture type contracts", () => {
   it("keeps run settlement complete and store-owned", () => {
     expectTypeOf<Extract<keyof WritePort, "awardRunEndMaterials" | "finalizeRunXP">>().toEqualTypeOf<never>();
     expectTypeOf(finalizeRunEndSession).parameters.toEqualTypeOf<[GameSession]>();
+    expectTypeOf<ReturnType<typeof finalizeRunEndSession>>().toEqualTypeOf<boolean>();
     expectTypeOf(applyRunDefeatTeardown).parameters.toEqualTypeOf<[GameSession]>();
     expectTypeOf(abandonRun).parameters.toEqualTypeOf<[GameSession]>();
   });
+
+  it("requires shop exits to identify the activity that offered Continue", () => {
+    type Continue = AlchemyRouteCommands["runLoop"]["shop"]["continue"];
+    expectTypeOf<Continue>().parameters.toEqualTypeOf<["shop" | "alchemist" | "trinket-shop" | "equipment-shop"]>();
+  });
+
   it("requires explicit RNG for player actions and returns data-only snapshots", () => {
+    // @ts-expect-error -- the action boundary also requires an explicit combat stream
+    resolveBattleAction(snapshot, { kind: "end-turn" });
+    type ActionResult = ReturnType<typeof resolveBattleAction>;
+    expectTypeOf<
+      Extract<ActionResult, { kind: "accepted"; action: "end-turn" }>["resolution"]["state"]
+    >().toEqualTypeOf<BattleSnapshot>();
+    // @ts-expect-error -- only turn completion accepts a simulation turn budget
+    resolveBattleAction(snapshot, { kind: "wish", cardId: "card", maxTurns: 1 }, { rng: () => 0 });
     // @ts-expect-error -- snapshots cannot supply execution dependencies implicitly
     resolveBattleCard(snapshot, "card", 0);
     // @ts-expect-error -- Wish selection also needs the host combat stream
@@ -70,7 +85,9 @@ describe("run architecture type contracts", () => {
     expectTypeOf<ReturnType<typeof resolveBattleCard>["state"]>().toEqualTypeOf<BattleSnapshot>();
     expectTypeOf<ReturnType<typeof resolveBattleWish>["state"]>().toEqualTypeOf<BattleSnapshot>();
     type BattleApi = typeof import("@/lib/battle");
-    expectTypeOf<Extract<keyof BattleApi, "playBattleCardResolved" | "chooseWishCard">>().toEqualTypeOf<never>();
+    expectTypeOf<
+      Extract<keyof BattleApi, "playBattleCardResolved" | "chooseWishCard" | "endPlayerTurn" | "resolveTurnSequence">
+    >().toEqualTypeOf<never>();
   });
   it("requires a career for reusable reads, writes, and persistence while bound methods need none", () => {
     // @ts-expect-error -- missing ownership must never select the application career
@@ -231,7 +248,7 @@ describe("run architecture type contracts", () => {
     type BattleProps = Parameters<typeof useBattleController>[0];
 
     expectTypeOf<Extract<keyof BattleProps, "run" | "talents" | "homesteadEffects">>().toEqualTypeOf<never>();
-    expectTypeOf<keyof RunFlowHandlerDeps>().toEqualTypeOf<"actions" | "getAvailableDestinations">();
+    expectTypeOf<keyof RunFlowHandlerDeps>().toEqualTypeOf<"actions">();
   });
 
   it("keeps display data out of the shell command controller", () => {

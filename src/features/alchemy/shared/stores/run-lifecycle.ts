@@ -10,8 +10,6 @@ import type { ActiveRunData, RunRecap } from "@/lib/active-run-session";
 import type { TalentXP, UnlockedTalents } from "@/lib/game-data";
 import { isEditionRunAvailable } from "@/lib/game-edition";
 
-import type { MaterialInventory } from "@/lib/homestead/types";
-
 import { logStorageFailure } from "@/lib/storage-logging";
 import type { GameSession } from "./game-session-types";
 import { dispatchGameplayCommand, type GameplayDraft } from "./gameplay-command";
@@ -36,13 +34,13 @@ export function restoreRun(
   gameSession: GameSession,
   options?: { abandonIncompatibleBattle?: boolean },
 ): void {
-  sessionRuntime(gameSession).progressCompletion.cancel();
   dispatchGameplayCommand(
     (draft) => {
       const abandoned = restoreRunInDraft(draft, activeRun, talentXP, unlockedTalents, options);
       return acceptCommand(abandoned);
     },
     {
+      restore: {},
       afterCommit: (abandoned) => {
         if (abandoned) afterAbandonRun(gameSession);
       },
@@ -71,8 +69,6 @@ export function restoreSessionSave(
   gameSession: GameSession,
   options?: { preserveActiveRunIfInitialized?: boolean; abandonIncompatibleBattle?: boolean },
 ): boolean {
-  const runtime = sessionRuntime(gameSession);
-  runtime.progressCompletion.cancel();
   const result = dispatchGameplayCommand(
     (draft) => {
       const preserve = Boolean(options?.preserveActiveRunIfInitialized && draft.run.initialized);
@@ -82,11 +78,9 @@ export function restoreSessionSave(
         : restoreRunInDraft(draft, save.activeRun, save.talentXP, save.unlockedTalents, options);
       return acceptCommand({ restored: !preserve, abandoned });
     },
-    undefined,
+    { restore: { settings: save } },
     gameSession,
   );
-  // Settings are a separate store. Do not replace them if gameplay decoding fails.
-  runtime.settingsCodec.hydrate(save);
   if (result.abandoned) afterAbandonRun(gameSession);
   return result.restored;
 }
@@ -129,8 +123,7 @@ export function teardownRun(gameSession: GameSession): void {
     undefined,
     gameSession,
   );
-  clearBattleUiState(gameSession);
-  notifyRunTeardown(gameSession);
+  sessionRuntime(gameSession).lifecycle.teardown();
 }
 
 function flushSave(message: string, gameSession: GameSession): void {
@@ -163,35 +156,30 @@ export function flushSaveAfterGearMutation(gameSession: GameSession): void {
   flushSave("Failed to flush save after gear mutation", gameSession);
 }
 
-function commitRunEnd(
-  ending: RunRecap["ending"],
-  afterCommit: () => void,
-  gameSession: GameSession,
-): MaterialInventory | null {
+function commitRunEnd(ending: RunRecap["ending"], afterCommit: () => void, gameSession: GameSession): boolean {
   return dispatchGameplayCommand(
     (draft) => {
       const result = settleRunEnd(draft, ending);
-      return result === null ? rejectCommand("There is no active run to end", null) : acceptCommand(result);
+      return result ? acceptCommand(true) : rejectCommand("There is no active run to end", false);
     },
     { afterCommit },
     gameSession,
   );
 }
 
-export function finalizeRunEndSession(gameSession: GameSession): MaterialInventory | null {
+export function finalizeRunEndSession(gameSession: GameSession): boolean {
   return commitRunEnd("victory", () => flushSaveAfterRunEnd(gameSession), gameSession);
 }
 
 /** Manual termination shares earned progression, but does not simulate a defeat. */
 export function abandonRun(gameSession: GameSession): boolean {
-  return commitRunEnd("abandoned", () => afterAbandonRun(gameSession), gameSession) !== null;
+  return commitRunEnd("abandoned", () => afterAbandonRun(gameSession), gameSession);
 }
 
 function afterAbandonRun(gameSession: GameSession): void {
-  sessionFeedback(gameSession).stopAllSfx();
-  clearBattlePresentationUi(gameSession);
-  notifyRunTeardown(gameSession);
   flushSaveAfterRunEnd(gameSession);
+  sessionRuntime(gameSession).lifecycle.teardown();
+  sessionFeedback(gameSession).stopAllSfx();
 }
 
 export function applyRunDefeatTeardown(gameSession: GameSession): void {
@@ -199,9 +187,9 @@ export function applyRunDefeatTeardown(gameSession: GameSession): void {
     "death",
     () => {
       flushSaveAfterRunEnd(gameSession);
+      sessionRuntime(gameSession).lifecycle.teardown();
       sessionFeedback(gameSession).stopAllSfx();
       sessionFeedback(gameSession).playDefeat();
-      clearBattlePresentationUi(gameSession);
     },
     gameSession,
   );
@@ -209,20 +197,13 @@ export function applyRunDefeatTeardown(gameSession: GameSession): void {
 
 export function onRunTeardown(listener: () => void, gameSession: GameSession): () => void {
   const runtime = sessionRuntime(gameSession);
-  return runtime.track(runtime.teardown.on(listener));
+  return runtime.track(runtime.lifecycle.onTeardown(listener));
 }
 export function onClearBattlePresentation(listener: () => void, gameSession: GameSession): () => void {
   const runtime = sessionRuntime(gameSession);
-  return runtime.track(runtime.clearPresentation.on(listener));
+  return runtime.track(runtime.lifecycle.onClearPresentation(listener));
 }
 
-function clearBattleUiState(gameSession: GameSession): void {
-  sessionRuntime(gameSession).feedback.clearBattleUi();
-}
 export function clearBattlePresentationUi(gameSession: GameSession): void {
-  clearBattleUiState(gameSession);
-  sessionRuntime(gameSession).clearPresentation.emit();
-}
-function notifyRunTeardown(gameSession: GameSession): void {
-  sessionRuntime(gameSession).teardown.emit();
+  sessionRuntime(gameSession).lifecycle.clearPresentation();
 }

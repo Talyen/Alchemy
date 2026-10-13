@@ -18,8 +18,8 @@ import { createAlchemistShopCommands } from "@/features/alchemy/run-loop/shop/al
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readRunSession, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
-import { parseActiveRun } from "@/lib/active-run-session";
-import { cardById, computeTalentEffects, type BattleCard } from "@/lib/game-data";
+import { parseActiveRun } from "@/lib/validation";
+import { cardById, type BattleCard } from "@/lib/game-data";
 import { defaultGameSession } from "@/app/application-session";
 beforeEach(() => {
   resetAllTestStores();
@@ -200,13 +200,7 @@ describe("alchemy visit transactions and resume", () => {
         },
       },
     });
-    const shop = createAlchemistShopCommands(
-      {
-        talentEffects: computeTalentEffects({}),
-        homesteadEffects: { mixPotionDiscount: 0 },
-      },
-      defaultGameSession,
-    );
+    const shop = createAlchemistShopCommands(defaultGameSession);
     setRunProgress({ gold: 39 });
     expect(shop.strengthenPotion(1)).toBeNull();
     expect(readRunProfile(defaultGameSession).gold).toBe(39);
@@ -246,13 +240,7 @@ describe("alchemy visit transactions and resume", () => {
       },
       activeLabyrinthRewardModifiers: ["open-kitchen"],
     });
-    const shop = createAlchemistShopCommands(
-      {
-        talentEffects: computeTalentEffects({}),
-        homesteadEffects: { mixPotionDiscount: 0 },
-      },
-      defaultGameSession,
-    );
+    const shop = createAlchemistShopCommands(defaultGameSession);
     expect(shop.strengthenPotion(1)?.effects).toEqual([{ kind: "heal", amount: 9 }]);
     expect(readRunProfile(defaultGameSession).gold).toBe(0);
   });

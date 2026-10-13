@@ -21,8 +21,10 @@ describe("Talent talent turn rewards", () => {
     });
     const after = advanceToPlayerTurn(state);
     expect(after.hand).toHaveLength(MAX_HAND_SIZE);
-    expect(after.discard).toContainEqual(returning);
-    expect(after.uniqueGear.returningFlightUid).toBeNull();
+    expect(after.discard).not.toContainEqual(returning);
+    const recovered = after.pendingHandCards.find((card) => card.id === returning.id)!;
+    expect(recovered).toBeDefined();
+    expect(after.uniqueGear.returningFlightUid).toBe(recovered.uid);
     expect(after.hand.length + after.pendingHandCards.length + after.deck.length + after.discard.length).toBe(
       count + 5,
     );

@@ -2,13 +2,59 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it } from "vitest";
 
 import { StatusIcon } from "@/features/alchemy/run-loop/battle/presentation/ui/status-icons";
+import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { cardById, computeTalentEffects } from "@/lib/game-data";
-import { getPlayerStatusChips } from "@/features/alchemy/shared/utils/battle";
-import { patchBattleState } from "../../../../../../fixtures/battle";
+import { getEnemyStatusChips, getPlayerStatusChips } from "@/features/alchemy/shared/utils/battle";
+import { dealDamage, makeTestCard, patchBattleState } from "../../../../../../fixtures/battle";
 
 describe("StatusIcon", () => {
   afterEach(cleanup);
+
+  it.each(["stun", "freeze"] as const)("describes the full duration of an extended %s", async (status) => {
+    const state = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyStatuses: { [status]: 50 },
+      talentEffects: { stunDurationExtension: 1 },
+      trinketEffects: { freezeDurationExtension: 1 },
+    });
+    const controlled = status === "stun" ? resolveStunTrigger(state, []) : tryTriggerEnemyFreeze(state, state, []);
+    const chip = getEnemyStatusChips(controlled).find(
+      (entry) => entry.id === (status === "stun" ? "stunned" : "frozen"),
+    )!;
+    expect(chip.value).toBe(2);
+    render(<StatusIcon chip={chip} />);
+    fireEvent.focus(screen.getByRole("button", { name: status === "stun" ? "Stunned" : "Frozen" }));
+    await waitFor(() =>
+      expect(document.querySelector(".hover-popup-panel")?.textContent).toContain("Loses their next 2 turns."),
+    );
+  });
+
+  it("shows Riposte after a Dodge, preserves it through Holy damage, and spends it on Physical damage", async () => {
+    const dodged = applyEnemyAbility(
+      patchBattleState({
+        talentEffects: computeTalentEffects({ physical: ["physical-brute-force"] }),
+        flags: { dodgeNextAttack: true },
+        rng: () => 0.99,
+      }),
+      cardById.slash!,
+      [],
+    );
+    const holy = dealDamage(dodged, makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 1 }] }));
+    const chip = getPlayerStatusChips(holy).find((entry) => entry.id === "nextPhysicalCrit");
+    expect(chip).toEqual({ id: "nextPhysicalCrit", value: 1, hideValue: true });
+    render(<StatusIcon chip={chip!} />);
+    fireEvent.focus(screen.getByRole("button", { name: "Riposte" }));
+    await waitFor(() =>
+      expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain(
+        "Your next Physical attack Critically Hits.",
+      ),
+    );
+    const hit = dealDamage(holy, cardById.slash!);
+    expect(getPlayerStatusChips(hit).some((entry) => entry.id === "nextPhysicalCrit")).toBe(false);
+  });
 
   it("describes the armed Parting Cut as half damage, matching the talent earned on Dodge", async () => {
     const state = patchBattleState({
@@ -22,7 +68,7 @@ describe("StatusIcon", () => {
     fireEvent.focus(screen.getByRole("button", { name: "Parting Cut" }));
     await waitFor(() => {
       expect(document.querySelector(".hover-popup-panel")?.textContent).toContain(
-        "Your next Physical card deals half its damage as Bleed damage.",
+        "Your next Physical hit deals half its damage as additional Bleed damage.",
       );
     });
   });

@@ -97,9 +97,11 @@ export function useInitialLoadReady({
 
     publishLoadEventRef.current = apply;
     rafId = window.requestAnimationFrame(tick);
+    const elapsed = typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : 0;
+    const remainingMinDuration = Math.max(0, minDurationMs - elapsed);
     const timer = window.setTimeout(() => {
       apply({ type: "minimum-elapsed" });
-    }, minDurationMs);
+    }, remainingMinDuration);
 
     preloadEssentialArt(
       (loaded, total) => apply({ type: "image-progress", loaded, total }),

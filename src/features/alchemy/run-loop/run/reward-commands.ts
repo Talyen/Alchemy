@@ -1,3 +1,4 @@
+import { applyAlchemistPotion } from "./alchemist-reward";
 import { canOfferWildwoodRemoval, enterWildwoodRemoval } from "@/lib/content-systems/wildwood/gauntlet";
 import { flushSaveAfterRunEnd } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
@@ -7,7 +8,6 @@ import {
   prepareNextDestinationInDraft,
 } from "./progression-commands";
 import { prepareWildwoodBossInDraft } from "./wildwood-commands";
-import type { RunFlowHandlerDeps } from "./run-flow";
 import {
   appendBoonToRunWithDiscovery,
   appendCardToRunWithDiscovery,
@@ -37,7 +37,7 @@ import {
 import { resolveRewardChoice, type ResolvedRewardChoice } from "@/lib/active-run-session";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { REWARD_ROUTES, ROUTE_SCREENS, type Screen } from "@/lib/routing";
-import { finalizeRewardState, getRandomPotionCard } from "../navigation/reward-flow";
+import { finalizeRewardState } from "../navigation/reward-flow";
 import { getActiveRewardModifiersForContentSystem, shouldGrantAlchemistReward } from "../navigation/reward-math";
 
 export function applyRewardSelection({ reward, draft }: { reward: ResolvedRewardChoice; draft: RunTransaction }) {
@@ -57,17 +57,7 @@ export function applyRewardSelection({ reward, draft }: { reward: ResolvedReward
   }
 }
 
-export function applyAlchemistPotion({ draft, rng }: { draft: RunTransaction; rng: () => number }) {
-  const potion = getRandomPotionCard(rng);
-  if (!potion) return;
-  appendCardToRunWithDiscovery(draft, potion);
-}
-
-export function claimRunReward(
-  choiceId: string | null,
-  gameSession: GameSession,
-  getAvailableDestinations?: RunFlowHandlerDeps["getAvailableDestinations"],
-) {
+export function claimRunReward(choiceId: string | null, gameSession: GameSession) {
   return dispatchRunSessionCommand(
     (draft) => {
       const session = draft.session;
@@ -157,9 +147,7 @@ export function claimRunReward(
             runEnded = true;
             nextScreen = ROUTE_SCREENS.RUN_VICTORY;
           } else {
-            if (!getAvailableDestinations)
-              return rejectCommand("Act advancement requires the bound destination sampler", null);
-            prepareNextDestinationInDraft(draft, getAvailableDestinations, 0);
+            prepareNextDestinationInDraft(draft);
             nextScreen = ROUTE_SCREENS.DESTINATION;
           }
         } else if (result.route === REWARD_ROUTES.LABYRINTH_MAP) {

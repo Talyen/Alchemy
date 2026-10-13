@@ -1,3 +1,4 @@
+import { computeHomesteadEffects, mergeIntoManifest } from "@/lib/homestead/effects";
 import { describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle/battle-setup-defaults";
 import { defaultGearEffects } from "@/lib/gear";
@@ -22,6 +23,27 @@ describe("createBattleState", () => {
 
     const plain = createBattleStartState({ runDeck: battleDeck, currentEnemy: skeleton, rng: seededRng(42) });
     expect(plain.enemyStatuses.thorns).toBe(0);
+  });
+
+  it.each([1, 2, 3, 4])("Orchard tier %i adds Thorns alongside gear and encounter benefits", (tier) => {
+    const result = createBattleStartState({
+      runDeck: battleDeck,
+      currentEnemy: skeleton,
+      rng: seededRng(42),
+      talentEffects: mergeIntoManifest(computeTalentEffects({}), computeHomesteadEffects({}, { orchard: tier }, {})),
+      gearEffects: { ...defaultGearEffects, startThorns: 2 },
+      encounterBenefits: ["bramblecoat"],
+      contentSystemType: "labyrinth",
+    });
+    const plain = createBattleStartState({
+      runDeck: battleDeck,
+      currentEnemy: skeleton,
+      rng: seededRng(42),
+      encounterBenefits: ["bramblecoat"],
+      contentSystemType: "labyrinth",
+    });
+    expect(plain.playerStatuses.thorns).toBeGreaterThan(0);
+    expect(result.playerStatuses.thorns).toBe(plain.playerStatuses.thorns + 2 + tier);
   });
 
   it("stages battle start with an empty hand before resolving the opening draw", () => {

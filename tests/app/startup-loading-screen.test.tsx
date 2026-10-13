@@ -2,6 +2,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { StartupLoadingScreen } from "@/app/startup-loading-screen";
+import { dismissStartupSplash } from "@/app/startup-splash";
 import { applyInitialAnimationPreference } from "@/startup";
 import { INITIAL_LOAD_MIN_DURATION_MS, LOADING_WORD_INTERVAL_MS } from "@/lib/game-constants";
 
@@ -24,6 +25,9 @@ describe("StartupLoadingScreen", () => {
     vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    document.getElementById("startup-splash")?.remove();
+    delete window.__alchemySplashWordIndex;
+    delete window.__alchemySplashWordTimer;
   });
 
   it("fills the gold header left to right and advances the phrase on each tick", () => {
@@ -61,6 +65,92 @@ describe("StartupLoadingScreen", () => {
     expect(heading.textContent).toBe("AlchemyAlchemy");
     expect(heading.querySelector(".alchemy-loading-logo-fill")).toBeTruthy();
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("synchronizes progress and phrase to existing HTML startup-splash element", () => {
+    const splash = document.createElement("div");
+    splash.id = "startup-splash";
+    const phrase = document.createElement("p");
+    phrase.id = "startup-splash-phrase";
+    phrase.textContent = "Adventure awaits...";
+    splash.appendChild(phrase);
+    document.body.appendChild(splash);
+
+    const { unmount } = render(<StartupLoadingScreen progress={0.75} />);
+
+    expect(splash.getAttribute("aria-valuenow")).toBe("75");
+    expect(phrase.textContent).toBe("Adventure awaits...");
+
+    act(() => {
+      vi.advanceTimersByTime(LOADING_WORD_INTERVAL_MS);
+    });
+    expect(phrase.textContent).toBe("Polishing trinkets...");
+
+    unmount();
+    splash.remove();
+  });
+
+  it("seamlessly continues from a phrase rotated pre-React load and clears pre-React timer", () => {
+    const splash = document.createElement("div");
+    splash.id = "startup-splash";
+    const phrase = document.createElement("p");
+    phrase.id = "startup-splash-phrase";
+    phrase.textContent = "Shuffling decks...";
+    splash.appendChild(phrase);
+    document.body.appendChild(splash);
+
+    const dummyTimer = 999;
+    window.__alchemySplashWordTimer = dummyTimer;
+    window.__alchemySplashWordIndex = 2;
+    const clearIntervalSpy = vi.spyOn(window, "clearInterval");
+
+    const { unmount } = render(<StartupLoadingScreen progress={0.5} />);
+
+    expect(clearIntervalSpy).toHaveBeenCalledWith(dummyTimer);
+    expect(window.__alchemySplashWordTimer).toBeUndefined();
+    expect(screen.getAllByText("Shuffling decks...")).toHaveLength(2);
+    expect(phrase.textContent).toBe("Shuffling decks...");
+
+    act(() => {
+      vi.advanceTimersByTime(LOADING_WORD_INTERVAL_MS);
+    });
+
+    expect(screen.getAllByText("Waking monsters...")).toHaveLength(2);
+    expect(phrase.textContent).toBe("Waking monsters...");
+
+    unmount();
+    splash.remove();
+    clearIntervalSpy.mockRestore();
+  });
+});
+
+describe("dismissStartupSplash", () => {
+  it("safely handles missing splash element", () => {
+    expect(() => dismissStartupSplash()).not.toThrow();
+  });
+
+  it("adds the dismissed class and removes the splash element", () => {
+    const splash = document.createElement("div");
+    splash.id = "startup-splash";
+    document.body.appendChild(splash);
+
+    dismissStartupSplash();
+    expect(splash.classList.contains("alchemy-splash-dismissed")).toBe(true);
+
+    splash.dispatchEvent(new Event("transitionend"));
+    expect(document.getElementById("startup-splash")).toBeNull();
+  });
+
+  it("clears active __alchemySplashWordTimer when dismissing splash", () => {
+    const dummyTimer = 888;
+    window.__alchemySplashWordTimer = dummyTimer;
+    const clearIntervalSpy = vi.spyOn(window, "clearInterval");
+
+    dismissStartupSplash();
+
+    expect(clearIntervalSpy).toHaveBeenCalledWith(dummyTimer);
+    expect(window.__alchemySplashWordTimer).toBeUndefined();
+    clearIntervalSpy.mockRestore();
   });
 });
 

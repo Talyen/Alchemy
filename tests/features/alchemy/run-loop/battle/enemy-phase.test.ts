@@ -1,6 +1,7 @@
 import "../../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { battleSnapshot, endPlayerTurn } from "@/lib/battle";
+import { battleSnapshot } from "@/lib/battle";
+import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { playTurnFrames } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 import type { BattlePresentationPort } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { patchBattleState } from "../../../../fixtures/battle";

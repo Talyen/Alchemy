@@ -1,3 +1,4 @@
+import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { setBattleActiveForTest, getBattleForTest } from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
@@ -12,13 +13,13 @@ import { computeVictoryGold } from "@/features/alchemy/run-loop/navigation/rewar
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
-import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
+import { LABYRINTH_REWARD_CONFIG, SHOP_MIN_GOLD } from "@/lib/game-constants";
 import { trinketLibrary } from "@/lib/game-data";
 import { gearDefinitions, uniqueItemList } from "@/lib/gear";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { createRunRngState, createRunStateRng } from "@/lib/rng";
 import type { Destination } from "@/lib/routing";
-import { getAvailableDestinations } from "@/lib/routing/destination-availability";
+import { sampleDestinationChoices } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
@@ -42,10 +43,8 @@ vi.mock("@/lib/homestead/material-rewards", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/homestead/material-rewards")>();
   return {
     ...actual,
-    getEnemyMaterialLoot: vi.fn(() => ({ wood: 1, stone: 0, iron: 0, food: 0, herbs: 0, hide: 0, gems: 0 })),
-    applyMaterialFindBonus: vi.fn((mats: unknown) => mats),
     // Fixed-base stand-in for the real pipeline: isolates these tests from material
-    // tables while preserving scavenger/herbalist semantics from live tuning.
+    // rolls while preserving scavenger/herbalist semantics from live tuning.
     computeCombatMaterialReward: vi.fn((input: { scavenger: boolean; herbalist: boolean }) => ({
       wood: input.scavenger ? Math.round(1 * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier) : 1,
       stone: 0,
@@ -71,6 +70,7 @@ function baseBattleState(overrides: Record<string, unknown> = {}) {
 function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput {
   return {
     lootProgress: { depth: 24, highestCompletedDifficulty: null },
+    materialRewardBand: 1,
     characterId: "knight",
     selectedDifficulty: null,
     unlockedTalents: {},
@@ -81,9 +81,14 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
     battleState: baseBattleState(),
     purseGold: 5,
     runMaxHealth: 30,
-    destinationIndexInAct: 2,
+    destinationEligibility: {
+      currentAct: 1,
+      destinationIndexInAct: 2,
+      completedDestinations: [],
+      hasAnyOwnedGear: true,
+      hasUnownedTrinkets: true,
+    },
     homesteadEffects: { ...defaultHomesteadEffects },
-    getAvailableDestinations: vi.fn(() => ["Normal Combat", "Campfire", "Mystery"] as Destination[]),
     rollBossEnemyId: () => "mimic",
     destinationOfferState: { lastOfferedDestinations: [], roundsSinceOffered: {} },
     ...overrides,
@@ -93,6 +98,24 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
 const testRng = () => 0.25;
 
 describe("Fetch victory rewards", () => {
+  it.each(["campaign", "labyrinth", "wildwood"])(
+    "Wheat Field restores purchased Health after combat in %s and stacks with recovery talents",
+    (contentSystemType) => {
+      for (const tier of [1, 2, 3, 4]) {
+        const input = baseInput({
+          contentSystemType,
+          battleState: baseBattleState({ playerHealth: 10 }),
+          unlockedTalents: { health: ["health-max-per-combat"] },
+          homesteadEffects: computeHomesteadEffects({}, { "wheat-field": tier }, {}),
+        });
+        expect(computeVictoryRewards(input, testRng).playerHealth).toBe(14 + tier);
+        expect(
+          computeVictoryRewards({ ...input, battleState: baseBattleState({ playerHealth: 29 }) }, testRng).playerHealth,
+        ).toBe(30);
+      }
+    },
+  );
+
   it("applies a Labyrinth Hoard to the actual victory choices", () => {
     const result = computeVictoryRewards(
       baseInput({ contentSystemType: "labyrinth", activeLabyrinthRewardModifiers: ["ring-hoard"] }),
@@ -225,7 +248,7 @@ describe("computeVictoryRewards", () => {
     const rngState = createRunRngState(42);
     const result = computeVictoryRewards(
       baseInput({
-        getAvailableDestinations: () => ["Boss Combat"],
+        destinationEligibility: { ...baseInput().destinationEligibility, destinationIndexInAct: 7 },
         rollBossEnemyId: () => rollFreshBossId(createRunStateRng(rngState, "world")),
       }),
       testRng,
@@ -522,21 +545,16 @@ describe("computeVictoryRewards", () => {
       unlockedTalents: { health: ["health-max-per-combat"] },
       runMaxHealth: 30,
       battleState: baseBattleState({ playerHealth: 18 }),
-      getAvailableDestinations: ({
-        currentHealth,
-        currentGold,
-        maxHealth,
-      }: {
-        currentHealth: number;
-        currentGold: number;
-        maxHealth: number;
-      }) => getAvailableDestinations(currentHealth, currentGold, maxHealth).filter((entry) => entry === "Campfire"),
     });
 
     const result = computeVictoryRewards(input, testRng);
 
     expect(result.maxHealthDelta).toBe(0);
-    expect(result.rewardState.destinations).toContain("Campfire");
+    expect(sampleDestinationChoices).toHaveBeenLastCalledWith(
+      expect.arrayContaining(["Campfire"]),
+      expect.anything(),
+      expect.any(Function),
+    );
   });
 
   it("applies Vitality after combat", () => {
@@ -551,28 +569,25 @@ describe("computeVictoryRewards", () => {
     expect(result.playerHealth).toBe(24);
   });
 
-  it("computes destinations via getAvailableDestinations", () => {
-    const getAvailableDestinations = vi.fn(() => ["Normal Combat", "Campfire", "Mystery"] as Destination[]);
-    const result = computeVictoryRewards(baseInput({ getAvailableDestinations }), testRng);
-
-    expect(getAvailableDestinations).toHaveBeenCalledWith({
-      currentHealth: 30,
-      currentGold: 20,
-      destinationIndexInAct: 2,
-      maxHealth: 30,
-    });
-    expect(result.persistedGold).toBe(20);
-    expect(result.rewardState.destinations).toEqual(["Normal Combat", "Campfire", "Mystery"]);
+  it("uses settled Health and Gold for legal destination offers", () => {
+    const purseGold = SHOP_MIN_GOLD - 1;
+    const result = computeVictoryRewards(
+      baseInput({ purseGold, battleState: baseBattleState({ gold: purseGold }) }),
+      testRng,
+    );
+    expect(result.persistedGold).toBeGreaterThanOrEqual(SHOP_MIN_GOLD);
+    const eligible = vi.mocked(sampleDestinationChoices).mock.lastCall?.[0];
+    expect(eligible).toContain("Card Shop");
+    expect(eligible).not.toContain("Campfire");
+    expect(eligible).not.toContain("Trinket Shop");
+    expect(eligible).not.toContain("Boss Combat");
   });
 
   it("skips campaign destination sampling for labyrinth victories", () => {
-    const getAvailableDestinations = vi.fn();
+    vi.mocked(sampleDestinationChoices).mockClear();
     const destinationOfferState = { lastOfferedDestinations: [], roundsSinceOffered: {} };
-    const result = computeVictoryRewards(
-      baseInput({ contentSystemType: "labyrinth", getAvailableDestinations, destinationOfferState }),
-      testRng,
-    );
-    expect(getAvailableDestinations).not.toHaveBeenCalled();
+    const result = computeVictoryRewards(baseInput({ contentSystemType: "labyrinth", destinationOfferState }), testRng);
+    expect(sampleDestinationChoices).not.toHaveBeenCalled();
     expect(result.rewardState.destinations).toEqual([]);
     expect(result.destinationOfferState).toEqual(destinationOfferState);
   });

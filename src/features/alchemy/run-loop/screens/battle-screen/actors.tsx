@@ -67,6 +67,7 @@ export function BattleActors({
             isDead={isPlayerDefeated(battleState)}
             turnUrgentHide={isPlayerDefeated(battleState)}
             deathsDoorActive={battleState.deathsDoorActive}
+            deathsDoorGraceTurnsRemaining={battleState.deathsDoorGraceTurnsRemaining}
             surfaceRef={playerPanelRef}
             turnActive={isPlayerTurn}
             turnShineColors={getCharacterShineColors(characterId)}
@@ -104,6 +105,7 @@ export function BattleActors({
           surfaceRef={enemyPanelRef}
           isDead={battleState.enemyHealth <= 0}
           currentEnemy={battleState.currentEnemy}
+          enemyDescriptionContext={battleState}
           onInspect={onInspectEnemy}
           inspectionOpen={enemyInspectionOpen ?? false}
           activeLabyrinthModifiers={activeLabyrinthModifiers}

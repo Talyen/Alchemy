@@ -86,6 +86,23 @@ describe("evaluateBalanceFindings", () => {
     }
   });
 
+  it.each([
+    ["mimic", 7, true],
+    ["mimic", 8, false],
+    ["mimic", 12, false],
+    ["mimic", 13, true],
+    ["iron-bear", 12, true],
+    ["iron-bear", 13, false],
+    ["iron-bear", 20, false],
+    ["iron-bear", 21, true],
+  ] as const)("checks %s at %i turns across all tiers", (id, averageTurns, outsideBand) => {
+    const model = emptyModel();
+    const sample = cell({ averageTurns });
+    model.enemies = [{ id, rates: rates(sample, sample, sample) }];
+    const durationFindings = collectBalanceFindings(model).filter((finding) => finding.metric === "averageTurns");
+    expect(durationFindings.map((finding) => finding.tier).sort()).toEqual(outsideBand ? ["early", "late", "mid"] : []);
+  });
+
   it("collapses a 100% enemy into one finding instead of per-class matchups", () => {
     const characters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid", "wildcard"] as const;
     const matchups: ClassMatchupRow[] = characters.map((characterId) => ({

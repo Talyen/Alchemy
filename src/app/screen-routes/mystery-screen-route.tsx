@@ -4,6 +4,7 @@ import { cardById, trinketById } from "@/features/alchemy/shared/config/game-dat
 import { MysteryScreen, MysteryScreenShell } from "@/features/alchemy/run-loop/screens";
 import { useMysteryScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import type { RunLoopRouteCtx } from "./route-ctx";
+import { computeGoldReward, computeMysteryMaterialReward } from "@/lib/homestead/material-rewards";
 
 const findCard = (id: string) => cardById[id];
 const findTrinket = (id: string) => trinketById[id];
@@ -76,6 +77,23 @@ export function MysteryScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   return (
     <MysteryScreen
       event={heldVisit.event}
+      previewEffect={(effect) => {
+        if (effect.kind === "gainGold")
+          return {
+            ...effect,
+            amount: computeGoldReward(effect.amount, r.goldMultiplier, r.homesteadEffects.goldFindBonus),
+          };
+        if (effect.kind === "gainMaterial")
+          return {
+            ...effect,
+            amount: computeMysteryMaterialReward({
+              material: effect.material,
+              amount: effect.amount,
+              effects: r.homesteadEffects,
+            })[effect.material],
+          };
+        return effect;
+      }}
       mysteryCardChoices={heldVisit.cardChoices}
       mysteryGrantedTrinketIds={heldVisit.grantedTrinketIds}
       mysteryGrantedGearInstances={heldVisit.grantedGearInstances}

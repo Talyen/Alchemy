@@ -14,6 +14,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       beginWildwood: fn(),
       unlockTalent: fn(),
       resetUnlockedTalents: fn(),
+      resetHomestead: vi.fn(() => false),
       constructBuilding: vi.fn(() => false),
       plantFarm: vi.fn(() => false),
       completeResearch: vi.fn(() => false),
@@ -28,6 +29,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
         onSalvage: vi.fn(() => false),
         onApplyCurrency: vi.fn(() => false),
         onSpawnDevGear: fn(),
+        onSpawnDevTrinket: fn(),
       },
     },
     runSetup: {

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { cardById } from "@/lib/game-data";
+import {
+  cardById,
+  createEffectDescription,
+  getCardDescription,
+  withCardDescription,
+  type BattleCardEffect,
+} from "@/lib/game-data";
 import { createCampfirePotionOffers, strengthenPotion } from "@/lib/alchemist/brewing";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
 import { makeTestCard } from "../../fixtures/cards";
@@ -7,6 +13,49 @@ import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-sche
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { createSeededRng } from "@/lib/rng";
 describe("brewing content", () => {
+  it.each<BattleCardEffect>([
+    { kind: "player-status", status: "block", amount: 0, perManaCrystal: 2 },
+    { kind: "damage", damageType: "holy", amount: 0, equalToBlock: true },
+    { kind: "damage", damageType: "holy", amount: 0, equalToArmor: true },
+    { kind: "damage", damageType: "burn", amount: 0, equalToForge: true },
+  ])("rejects distilling an unused base amount in %j", (effect) => {
+    const card = makeTestCard({ id: "health-potion", effects: [effect] });
+    expect(strengthenPotion(card)).toBeNull();
+    expect(card.effects).toEqual([effect]);
+  });
+
+  it("distills alternate damage and status amounts and marks every improved magnitude", () => {
+    const effects: BattleCardEffect[] = [
+      {
+        kind: "damage",
+        damageType: "physical",
+        amount: 2,
+        damageTypeIfTargetFrozen: "freeze",
+        amountIfTargetFrozen: 8,
+      },
+      { kind: "damage", damageType: "physical", amount: 3, blockCost: 2, blockDamageBonus: 4 },
+      { kind: "player-status", status: "block", statusPool: ["block", "forge", "armor"], amount: 5, forgeAmount: 2 },
+      { kind: "damage", damageType: "freeze", amount: 2, damageTypeIfTargetFrozen: "freeze", amountIfTargetFrozen: 4 },
+    ];
+    const card = withCardDescription(makeTestCard({ id: "health-potion", effects }), createEffectDescription(effects));
+    const strengthened = strengthenPotion(card)!;
+    expect(strengthened.effects).toEqual([
+      { ...effects[0], amount: 3, amountIfTargetFrozen: 9 },
+      { ...effects[1], amount: 4, blockDamageBonus: 5 },
+      { ...effects[2], amount: 6, forgeAmount: 3 },
+      { ...effects[3], amount: 3, amountIfTargetFrozen: 6 },
+    ]);
+    const magnitudes = getCardDescription(strengthened).flatMap((line) =>
+      line.parts.filter((part) => typeof part !== "string"),
+    );
+    expect(
+      magnitudes
+        .filter((part) => part.references.some((reference) => reference.field !== "blockCost"))
+        .every((part) => part.distilled),
+    ).toBe(true);
+    expect(card.effects).toEqual(effects);
+    expect(hydrateCard(BattleCardSchema.parse(strengthened)).effects).toEqual(strengthened.effects);
+  });
   it("creates distinct fixed Potion offers with a recovery or defense option", () => {
     const offers = createCampfirePotionOffers(createSeededRng(23));
     expect(new Set(offers.map((card) => card.id)).size).toBe(3);

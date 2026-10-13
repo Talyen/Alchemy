@@ -16,8 +16,8 @@ export const WISH_CHOICE_COUNT = 3;
 export const MIN_MAX_MANA_FLOOR = 1;
 
 export const ROOM_SCALING_INCREMENT = 0.07;
-export const ELITE_HP_MULTIPLIER = 1.8;
-export const BOSS_HEALTH_MULTIPLIER = 2.8;
+export const ELITE_HP_MULTIPLIER = 1.5;
+export const BOSS_HEALTH_MULTIPLIER = 2.5;
 export const ENEMY_BASE_REGENERATION = 1;
 export const ENEMY_BOSS_REGENERATION = 1;
 
@@ -88,7 +88,6 @@ export const BATTLE_CONFIG = {
   CC_IMMUNITY_DURATION: 3,
   BASE_CC_DURATION: 1,
   ARMOR_DECAY_AMOUNT: 1,
-  FORGE_DECAY_AMOUNT: 1,
 } as const;
 
 export const POISON_DECAY_PERCENT = 20;

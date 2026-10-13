@@ -26,7 +26,6 @@ describe("difficulty Back navigation", () => {
         navigateTo,
         resumeTo: vi.fn(),
         presentBattleStart: vi.fn(),
-        getAvailableDestinations: () => [],
         onResumeWildwood: vi.fn(),
       },
       defaultGameSession,

@@ -4,17 +4,14 @@ import type { RunFlowShellActions, RunOutcomes } from "@/features/alchemy/run-lo
 import { createWildwoodGauntletFlow } from "@/features/alchemy/run-loop/run/wildwood-gauntlet-flow";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { leaveLabyrinthCorruption } from "@/features/alchemy/shared/stores/navigation-commands";
 import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import {
   assertSessionOwnership,
   bindSessionCapabilities,
   sessionFeedback,
 } from "@/features/alchemy/shared/stores/session-capabilities";
-import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { clearRunCardHover } from "./run-destination-wiring";
+import { clearRunCardHover } from "./run-card-hover";
 import type { RunFlowEngineDeps } from "./shell-types";
 export function createRunFlowEngine(
   { navigateTo: rawNavigateTo, resumeTo: rawResumeTo, transition, cancelPending, battle }: RunFlowEngineDeps,
@@ -48,7 +45,6 @@ export function createRunFlowEngine(
       navigateTo,
       resumeTo,
       presentBattleStart: battle.presentBattleStart,
-      getAvailableDestinations: outcomes.getAvailableDestinations,
       onResumeWildwood: wildwood.resumeWildwoodRun,
     },
     gameSession,
@@ -66,16 +62,8 @@ export function createRunFlowEngine(
     clearCardHover,
   };
   const flowHandlers = outcomes.connect(actions);
-  function returnToLabyrinthMap() {
-    navigateTo(ROUTE_SCREENS.LABYRINTH_MAP, () => leaveLabyrinthCorruption(gameSession));
-  }
   const corruption = createCorruptionFlowHandlers(
-    {
-      advanceToNextDestination: flowHandlers.advanceToNextDestination,
-      returnToCurrentDestination: flowHandlers.returnToCurrentDestination,
-      returnToLabyrinthMap,
-      isLabyrinthRun: () => readActiveRun(gameSession).contentSystemType === CONTENT_SYSTEMS.LABYRINTH,
-    },
+    { leaveVisit: () => flowHandlers.advanceToNextDestination("corruption") },
     gameSession,
   );
   function resetRunState() {
@@ -85,7 +73,6 @@ export function createRunFlowEngine(
     navigateTo(ROUTE_SCREENS.MENU, () => teardownRun(gameSession));
   }
   return bindSessionCapabilities(gameSession, {
-    getAvailableDestinations: outcomes.getAvailableDestinations,
     advanceToNextDestination: flowHandlers.advanceToNextDestination,
     beginCampaign: contentNav.beginCampaign,
     beginLabyrinth: contentNav.beginLabyrinth,
@@ -107,7 +94,6 @@ export function createRunFlowEngine(
     returnToBattle: () => contentNav.resumeRun(),
     goToScreen: navigateTo,
     handleDestinationChoice: flowHandlers.handleDestinationChoice,
-    handleActComplete: flowHandlers.handleActComplete,
     skipRewards: flowHandlers.skipRewards,
     claimRewardChoice: flowHandlers.claimRewardChoice,
     handleWildwoodRemoveCard: wildwood.handleWildwoodRemoveCard,
@@ -119,7 +105,7 @@ export function createRunFlowEngine(
     handleMysteryChoice: mystery.handleMysteryChoice,
     handleMysteryChooseCard: mystery.handleMysteryChooseCard,
     // Intentional alias: continuing from a mystery returns to the run flow.
-    handleMysteryContinue: flowHandlers.advanceToNextDestination,
+    handleMysteryContinue: () => flowHandlers.advanceToNextDestination("mystery"),
     resetRunState,
     // Intentional alias: leaving the run-end screen tears down to menu.
     continueFromRunEnd: resetRunState,

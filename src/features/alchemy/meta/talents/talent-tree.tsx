@@ -51,14 +51,15 @@ const TalentCard = memo(function TalentCard({
   const isPlaceholder = isTalentPlaceholder(talent);
   const interactive = isAllocatable && canAfford && !isUnlocking;
   const showShine = interactive;
-  const Element = interactive ? "button" : "div";
+  const Element = isPlaceholder ? "div" : "button";
   const isLockedLook = !isUnlocked && !interactive && !isUnlocking;
 
   const style = accentColor ? ({ "--talent-accent": accentColor } as CSSProperties) : undefined;
 
   return (
     <Element
-      type={interactive ? "button" : undefined}
+      type={isPlaceholder ? undefined : "button"}
+      aria-disabled={isPlaceholder ? undefined : !interactive}
       onClick={interactive ? () => onUnlock?.(talent.id) : undefined}
       onMouseEnter={() => {
         onHoverTalent?.(talent);
@@ -82,6 +83,11 @@ const TalentCard = memo(function TalentCard({
       )}
       style={style}
     >
+      {!isPlaceholder ? (
+        <span className="sr-only">
+          {isUnlocked ? "Unlocked" : isUnlocking ? "Unlocking" : interactive ? "Available to unlock" : "Locked"}
+        </span>
+      ) : null}
       <TalentUnlockBurst active={isUnlocking} colors={shineColors} />
       <div
         className={cn(

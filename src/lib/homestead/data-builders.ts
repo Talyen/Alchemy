@@ -2,7 +2,7 @@ import type { HomesteadEffectManifest, HomesteadUpgradeItem, MaterialInventory }
 import type { MaterialId } from "./types";
 import { emptyInventory } from "./inventory";
 
-const HOMESTEAD_SINGLE_TIER_COSTS = [20, 30, 40] as const;
+const HOMESTEAD_SINGLE_TIER_COSTS = [10, 20, 30] as const;
 
 export function materialCost(partial: Partial<MaterialInventory>): MaterialInventory {
   return { ...emptyInventory(), ...partial };
@@ -21,45 +21,44 @@ export type PerTierEffects =
   | ((tierOneBased: number) => Partial<HomesteadEffectManifest>);
 
 // Shared four-tier cost ladders. Each returns fresh inventories so upgrades
-// never share mutable cost objects; values match the previously inlined
-// materialCost rows exactly.
+// never share mutable cost objects.
 export function woodHideCosts(): MaterialInventory[] {
   return [
+    materialCost({ wood: 4, hide: 5 }),
     materialCost({ wood: 8, hide: 10 }),
     materialCost({ wood: 12, hide: 15 }),
     materialCost({ wood: 16, hide: 20 }),
-    materialCost({ wood: 20, hide: 25 }),
   ];
 }
 
 export function woodFoodCosts(): MaterialInventory[] {
   return [
+    materialCost({ wood: 4, food: 6 }),
     materialCost({ wood: 8, food: 12 }),
-    materialCost({ wood: 12, food: 17 }),
-    materialCost({ wood: 16, food: 23 }),
-    materialCost({ wood: 20, food: 29 }),
+    materialCost({ wood: 12, food: 18 }),
+    materialCost({ wood: 16, food: 24 }),
   ];
 }
 
 export function woodStoneCosts(): MaterialInventory[] {
   return [
+    materialCost({ wood: 4, stone: 4 }),
     materialCost({ wood: 8, stone: 8 }),
     materialCost({ wood: 12, stone: 12 }),
     materialCost({ wood: 16, stone: 16 }),
-    materialCost({ wood: 20, stone: 20 }),
   ];
 }
 
 export function herbsSingleCosts(): MaterialInventory[] {
-  return singleResourceLadder("herbs", [22, 33, 44, 55]);
+  return singleResourceLadder("herbs", [11, 22, 33, 44]);
 }
 
 export function foodSingleCosts(): MaterialInventory[] {
-  return singleResourceLadder("food", [23, 35, 46, 58]);
+  return singleResourceLadder("food", [11, 22, 33, 44]);
 }
 
 export function gemsSingleCosts(): MaterialInventory[] {
-  return singleResourceLadder("gems", [21, 32, 42, 53]);
+  return singleResourceLadder("gems", [10, 20, 30, 40]);
 }
 
 type BenefitFn = (tierOneBased: number) => string;

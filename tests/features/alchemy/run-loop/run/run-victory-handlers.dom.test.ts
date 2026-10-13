@@ -4,9 +4,8 @@ import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createVictoryHandlers } from "@/features/alchemy/run-loop/run/run-flow-victory";
 
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { finalizeRunEndSession, applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { addRunCurrenciesEarned, addRunMaterialsEarned } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import { playGoldGain } from "@/lib/audio";
@@ -60,36 +59,6 @@ describe("createRunFlow victory paths", () => {
     if (skip) handlers.skipRewards();
     else handlers.claimRewardChoice("wolf-companion");
     expect(readActiveRun(defaultGameSession).runDeck.filter((entry) => entry.id.endsWith("-potion"))).toHaveLength(1);
-  });
-
-  it("Wildwood run end includes collected Materials and Homestead bonuses", () => {
-    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.WILDWOOD, roomsEncountered: 12 });
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.runProfile.effects.endRunHerbsPerRoom = 2;
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
-    dispatchGameplayCommand(
-      (draft) => {
-        addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 });
-        addRunCurrenciesEarned(draft, { "discordant-dice": 2 });
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
-
-    const materials = finalizeRunEndSession(defaultGameSession);
-
-    expect(materials).toEqual({ ...emptyInventory(), herbs: 24 });
-    expect(readRunSession(defaultGameSession).runEndMaterials).toEqual({ ...emptyInventory(), herbs: 24, wood: 5 });
-    expect(readRunSession(defaultGameSession).runEndCurrencies["discordant-dice"]).toBe(2);
-    expect(readActiveRun(defaultGameSession).runMaterialsEarned).toEqual(emptyInventory());
   });
 
   it.each([false, true])("defeat commits immediately while presentation can be cancelled: %s", (cancelled) => {

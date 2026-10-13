@@ -16,7 +16,7 @@ import {
 } from "./gear-actions";
 import { deriveGearCombatRestrictions } from "./gear-combat-restrictions";
 import type { GearDraftView } from "./gear-store-types";
-import { discoverUniqueIds } from "./profile-store";
+import { discoverTrinketIds, discoverUniqueIds } from "./profile-store";
 import { createReadonlyView, snapshotReadonlyValue } from "./readonly-view";
 import type { RunTransaction } from "./run-session-command";
 import { acceptCommand, rejectCommand, type SynchronousResult } from "./run-session-command";
@@ -94,7 +94,13 @@ function gearCommandView(state: GameplayDraft, markMutated: () => void): GearDra
       if (restrictions.characters[characterId]) return false;
       return wrote(unequipGearInstance(gear, characterId, slot));
     },
-    addTrinket: (trinketId) => wrote(addPermanentTrinket(gear, trinketId)),
+    addTrinket: (trinketId) => {
+      const ok = wrote(addPermanentTrinket(gear, trinketId));
+      if (ok) {
+        discoverTrinketIds(state, [trinketId]);
+      }
+      return ok;
+    },
     equipTrinket: (characterId, trinketId) => {
       if (restrictions.characters[characterId] || restrictions.trinkets[trinketId]) return false;
       return wrote(equipPermanentTrinket(gear, characterId, trinketId));

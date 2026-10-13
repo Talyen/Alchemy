@@ -4,8 +4,10 @@ import {
   getPlayerStatusChips,
   getEnemyStatusChips,
   getCombatImpactVisual,
+  getCombatTextAccessibleLabel,
 } from "@/features/alchemy/shared/utils/battle";
 import { enemyBestiary, keywordDefinitions } from "@/lib/game-data";
+import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { makeTestCard } from "../../../../fixtures/battle";
 
 const skeleton = enemyBestiary.find((enemy) => enemy.id === "skeleton")!;
@@ -24,7 +26,6 @@ describe("getPlayerStatusChips", () => {
     state.flags.nextPhysicalDealsBleed = true;
     state.flags.nextArcheryCardFree = true;
     state.flags.nextHolyCardFree = true;
-    state.flags.nextWishExtraChoice = true;
     state.flags.hawkEyeReady = true;
     expect(getPlayerStatusChips(state)).toEqual([
       { id: "hawkEyeReady", value: 1, hideValue: true },
@@ -34,7 +35,6 @@ describe("getPlayerStatusChips", () => {
       { id: "nextHitPhysicalBonus", value: 4 },
       { id: "nextPhysicalDealsBleed", value: 1, hideValue: true },
       { id: "nextArcheryCardFree", value: 1, hideValue: true },
-      { id: "nextWishExtraChoice", value: 1, hideValue: true },
       { id: "nextHolyCardFree", value: 1, hideValue: true },
     ]);
     state.flags.nextHitPhysicalBonus = -1;
@@ -102,6 +102,17 @@ describe("getPlayerStatusChips", () => {
 });
 
 describe("getEnemyStatusChips", () => {
+  it("keeps Stoke the Forge visible after an enemy attack with the persistent Forge tooltip", () => {
+    const golem = enemyBestiary.find((enemy) => enemy.id === "forge-golem")!;
+    const initial = createBattleState({ runDeck: [makeTestCard()], currentEnemy: golem, rng: () => 0.99 });
+    const result = endPlayerTurn({ ...initial, turn: 2, lastEnemyAbilityId: "molten-bulwark" });
+    expect(getEnemyStatusChips(result.state)).toContainEqual({
+      id: "forge",
+      value: 1,
+      description: "Each stack of Forge increases this enemy’s Physical and Stun damage by 1 for the rest of combat.",
+    });
+  });
+
   it("orders actual enemy defenses and harmful statuses while hiding internal Leech credit", () => {
     const state = makeProductionBattleState();
     state.enemyMitigation.block = 5;
@@ -173,4 +184,21 @@ describe("getCombatImpactVisual", () => {
   ] as const)("does not create an impact for $kind $stat text", (event) => {
     expect(getCombatImpactVisual(event)).toBeNull();
   });
+});
+
+it("identifies named Gear preparations while preserving generic preparation labels", () => {
+  const event = {
+    id: "ready",
+    displayText: "",
+    target: "player" as const,
+    kind: "notice" as const,
+    stat: "playNextCardTwice" as const,
+    signal: "prepared" as const,
+    text: "Everkeen Ready",
+  };
+  expect(getCombatTextAccessibleLabel(event)).toBe("Everkeen Ready");
+  expect(getCombatTextAccessibleLabel({ ...event, stat: "poison", text: "Viper’s Courtesy Ready" })).toBe(
+    "Viper’s Courtesy Ready",
+  );
+  expect(getCombatTextAccessibleLabel({ ...event, text: "" })).toBe("Shadowstep prepared");
 });

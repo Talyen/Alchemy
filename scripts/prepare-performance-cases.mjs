@@ -30,11 +30,14 @@ const config = {
   combatPolicy: "greedy-effective-damage",
   policy: selected.policy,
 };
-const fixture = ["meta-journey", "trinket-journey"].includes(scenario)
-  ? "economy-v1"
-  : selected.hero !== "knight" || selected.mode !== "campaign"
-    ? "unlocked-v1"
-    : null;
+const fixture =
+  scenario === "trinket-journey"
+    ? "trinket-v1"
+    : scenario === "meta-journey"
+      ? "economy-v1"
+      : selected.hero !== "knight" || selected.mode !== "campaign"
+        ? "unlocked-v1"
+        : null;
 
 async function runWorker(label, checkpointAt) {
   const input = path.join(workDir, `${label}.input.json`);
@@ -75,10 +78,12 @@ const initialSave = JSON.parse(saved.bytes);
 if (!initialSave || typeof initialSave !== "object") throw new Error("Checkpoint has no save");
 const activeRun = initialSave.activeRun;
 if (!activeRun && selected.checkpoint !== "late-run") throw new Error("Checkpoint has no active run");
+const battleState = activeRun?.activity?.kind === "battle" ? activeRun.activity.data.battleState : null;
 const coverage = {
+  fixture,
   cards: [...new Set((activeRun?.runDeck ?? []).map((card) => card.id))].sort(),
-  enemy: activeRun?.activeCombat?.battleState?.currentEnemy?.id ?? null,
-  traits: (activeRun?.activeCombat?.battleState?.currentEnemy?.traits ?? []).map((trait) => trait.id ?? trait),
+  enemy: battleState?.currentEnemy?.id ?? null,
+  traits: (battleState?.currentEnemy?.traits ?? []).map((trait) => trait.id ?? trait),
   companions: Object.keys(initialSave.bondedCompanions ?? {}).filter((id) => initialSave.bondedCompanions[id] > 0),
   trinkets: Object.values(initialSave.equippedTrinkets ?? {}).filter(Boolean),
   boons: activeRun?.runBoons ?? [],
@@ -106,13 +111,15 @@ if (
 ) {
   throw new Error("Developed account checkpoint lacks talents, gear, companion bonds, or boons");
 }
-if (scenario === "trinket-journey" && (coverage.trinkets.length === 0 || coverage.uniques.length === 0)) {
-  throw new Error("Trinket checkpoint lacks an equipped trinket or discovered Unique item");
-}
 if (
   scenario === "trinket-journey" &&
-  (activeRun?.activeCombat?.battleState?.trinketEffects?.companionDamageBonus ?? 0) <= 0
+  (initialSave.equippedTrinkets?.knight !== "companions-collar" ||
+    !coverage.uniques.includes("oathkeeper") ||
+    !initialSave.gearInventories?.knight?.some((item) => item.definitionId === "oathkeeper"))
 ) {
+  throw new Error("Trinket checkpoint lacks equipped Companion's Collar or owned Oathkeeper");
+}
+if (scenario === "trinket-journey" && (battleState?.trinketEffects?.companionDamageBonus ?? 0) <= 0) {
   throw new Error("Trinket checkpoint lacks the active Companion's Collar battle effect");
 }
 const saveHash = createHash("sha256").update(JSON.stringify(initialSave)).digest("hex");

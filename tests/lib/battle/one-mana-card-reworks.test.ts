@@ -58,7 +58,6 @@ describe("one-Mana card tradeoffs", () => {
     expect(played.enemyHealth).toBe(199);
     expect(played.wishOptions).toHaveLength(3);
     expect(played.gold).toBe(0);
-    expect(played.flags.pendingWishMana).toBe(0);
     expect(played.pendingTurnStartEffects).toHaveLength(0);
   });
 

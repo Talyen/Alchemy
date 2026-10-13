@@ -14,7 +14,7 @@ import { addRunMaterialsEarned } from "./run-progress";
 // Dual-write refresher: `runProfile.materialInventory` is the stockpile;
 // `run.activeRun.runMaterialsEarned` tallies what the live run earned.
 // `awardMaterialsDuringRun` writes both; `addMaterialsToStockpile` writes the
-// stockpile only (homestead end-of-run bonuses, meta salvage).
+// stockpile only (refunds, meta salvage).
 
 function grantMaterials(
   draft: GameplayDraft,
@@ -33,7 +33,7 @@ export function setMaterials(draft: GameplayDraft, materials: ProfileMaterialInv
   homestead.setMaterials(draft.runProfile, materials);
 }
 
-// Stockpile-only grant: homestead end-of-run bonuses and meta salvage. Run-earned
+// Stockpile-only grant: refunds and meta salvage. Run-earned
 // materials must use `awardMaterialsDuringRun` so the run tally stays accurate
 // (enforced by `alchemy/no-run-earned-add-materials`).
 export function addMaterialsToStockpile(draft: GameplayDraft, materials: ProfileMaterialInventory): void {
@@ -70,4 +70,8 @@ export function bondCompanion(draft: GameplayDraft, id: CompanionId): boolean {
   const cardId = companionSummonCardIdByCompanion.get(id);
   if (!cardId || !draft.profile.discoveredCardIds.includes(cardId)) return false;
   return rebindOnSuccess(homestead.bondCompanion(draft.runProfile, id), draft);
+}
+
+export function resetHomestead(draft: GameplayDraft): boolean {
+  return rebindOnSuccess(homestead.resetHomestead(draft.runProfile), draft);
 }

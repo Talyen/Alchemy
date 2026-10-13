@@ -12,6 +12,7 @@ export const LABYRINTH_MODIFIER_CONFIG = {
   secondWindHealing: 0.2,
   fortressArmor: 12,
   shieldedArrivalBlock: 6,
+  whitehotForge: 1,
   attackBlockRemoval: 2,
   hiddenPurseGold: 15,
   trinketPriceMultiplier: 0.75,

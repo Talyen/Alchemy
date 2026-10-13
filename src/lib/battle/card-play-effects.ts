@@ -5,12 +5,12 @@ import { prepareTalentCardPlay } from "./talent-card-play";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { drawKeywordCard } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
-import { addPlayerStatusWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
+import { addPlayerStatusWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { isPotionCard, type BattleCard } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
 import { isPlayerDefeated } from "./battle-outcome";
 import { processCompanionTurnStart } from "./companion";
-import { applyArmorReward, applyBlockReward } from "./status-player";
+import { applyArmorReward } from "./status-player";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { cardHasKeyword, isNatureCard } from "./card-classification";
@@ -51,20 +51,18 @@ export function resolveCardEffectChain(
 ): {
   state: BattleState;
   attackAttempted: boolean;
-  attackBonuses: NonNullable<CardEffectResolutionContext["attackBonuses"]>;
 } {
   state = resolvePendingBattleReactions(state, combatTexts);
   if (isPlayerDefeated(state)) {
-    return { state, attackAttempted: false, attackBonuses: { flat: 0, physical: 0, bleed: 0 } };
+    return { state, attackAttempted: false };
   }
   const talentPlay = prepareTalentCardPlay(state, card, combatTexts, {
     countsAsPlayedCard: options.playedCard === true,
     ...(options.eligibility ? { eligibility: options.eligibility } : {}),
   });
-  const reacted = resolvePendingBattleReactions(talentPlay.state, combatTexts);
+  const reacted = resolvePendingBattleReactions(talentPlay, combatTexts);
   const damageEffects = options.damageEffects ?? [];
   let nextState = applyCardEffects(reacted, card, combatTexts, {
-    attackBonuses: talentPlay.attackBonuses,
     origin: options.playedCard ? "played-card" : "triggered-card",
     damageEffects,
     manaAtStart: options.manaAtStart ?? reacted.mana,
@@ -75,7 +73,7 @@ export function resolveCardEffectChain(
   if (!options.skipTalentRewards) {
     nextState = applyCardPlayTalentRewards(nextState, card, combatTexts, state.playerStatuses.thorns === 0);
   }
-  return { state: nextState, attackAttempted: damageEffects.length > 0, attackBonuses: talentPlay.attackBonuses };
+  return { state: nextState, attackAttempted: damageEffects.length > 0 };
 }
 
 export function shouldElementalTalentRepeat(state: BattleState, card: BattleCard, alreadyRepeating = false): boolean {
@@ -136,7 +134,6 @@ export function resolvePaidCardEffects(
   const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
   if (playTwice) {
     nextState = applyCardEffects(nextState, card, combatTexts, {
-      attackBonuses: chained.attackBonuses,
       origin: "played-card",
       damageEffects: repeatedDamageEffects,
       guaranteedCrit,
@@ -197,14 +194,14 @@ export function applyCardPlayTalentRewards(
   hadNoThornsOnPlay = state.playerStatuses.thorns === 0,
 ): BattleState {
   if (isPlayerDefeated(state)) return state;
-  let nextState = applyNatureCardPlayTalents(state, card, combatTexts, hadNoThornsOnPlay);
+  let nextState = applyNatureCardPlayGearRewards(state, card, combatTexts, hadNoThornsOnPlay);
   if (nextState.talentEffects.companionActsOnCard && cardHasKeyword(card, "companion")) {
     nextState = processCompanionTurnStart(nextState, combatTexts);
   }
   return nextState;
 }
 
-function applyNatureCardPlayTalents(
+function applyNatureCardPlayGearRewards(
   state: BattleState,
   card: BattleCard,
   combatTexts: CombatTextEvent[],
@@ -219,12 +216,6 @@ function applyNatureCardPlayTalents(
       state.gearEffects.thornsOnNatureCardWithoutThorns,
       combatTexts,
     );
-  }
-  if (nextState.talentEffects.blockOnNatureCard > 0) {
-    nextState = applyBlockReward(nextState, nextState.talentEffects.blockOnNatureCard, combatTexts);
-  }
-  if (nextState.talentEffects.healOnNatureCard > 0) {
-    nextState = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnNatureCard, combatTexts);
   }
   if (nextState.gearEffects.armorOnNatureCard > 0 && !nextState.flags.ironrootArmorUsedThisTurn) {
     nextState = writeCombatFlag(nextState, "ironrootArmorUsedThisTurn", true);

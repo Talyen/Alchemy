@@ -15,10 +15,12 @@ import {
   equipGear,
   equipTrinket,
   plantFarm,
+  resetHomestead,
   salvageGear,
   selectCollectionTab,
   setCollectionPage,
   spawnDevGear,
+  spawnDevTrinket,
   unequipGear,
   unequipTrinket,
 } from "@/features/alchemy/shared/stores/meta-commands";
@@ -28,13 +30,11 @@ import {
   unlockTalentsForDevelopment,
 } from "@/features/alchemy/shared/stores/navigation-commands";
 import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
-import { clearRunCardHover, readRunAvailableDestinations } from "./run-destination-wiring";
+import { clearRunCardHover } from "./run-card-hover";
 
 export function createRunRouteActions(gameSession: GameSession) {
   return bindSessionCapabilities(gameSession, {
     clearCardHover: () => clearRunCardHover(gameSession),
-    getAvailableDestinations: (options?: Parameters<typeof readRunAvailableDestinations>[0]) =>
-      readRunAvailableDestinations(options, gameSession),
     purchaseTalent: (keyword: Parameters<typeof purchaseTalent>[0], talent: string) =>
       purchaseTalent(keyword, talent, gameSession),
     resetTalentUnlocks: () => resetTalentUnlocks(gameSession),
@@ -48,6 +48,7 @@ export function createRunRouteActions(gameSession: GameSession) {
       // An outgoing route can rerun its effect while it fades after navigation.
       if (readRunSession(gameSession).activity.kind === kind) initializeAlchemyVisit(kind, gameSession);
     },
+    resetHomestead: () => resetHomestead(gameSession),
     constructBuilding: (id: Parameters<typeof constructBuilding>[0]) => constructBuilding(id, gameSession),
     plantFarm: (id: Parameters<typeof plantFarm>[0]) => plantFarm(id, gameSession),
     completeResearch: (id: Parameters<typeof completeResearch>[0]) => completeResearch(id, gameSession),
@@ -73,5 +74,6 @@ export function createRunRouteActions(gameSession: GameSession) {
     ) => applyCurrencyToGear(currencyId, instanceId, options, gameSession),
     spawnDevGear: (characterId: Parameters<typeof spawnDevGear>[0], options?: Parameters<typeof spawnDevGear>[1]) =>
       spawnDevGear(characterId, options, gameSession),
+    spawnDevTrinket: (options?: Parameters<typeof spawnDevTrinket>[0]) => spawnDevTrinket(options, gameSession),
   });
 }

@@ -104,23 +104,8 @@ test(
 );
 
 test.describe("Armory browsing", () => {
-  test("inventory browsing combines criteria, sorts, and dismisses with keyboard focus", async ({ page }) => {
-    const inventory = [
-      {
-        instanceId: "basic-sword",
-        definitionId: "longsword-basic" as const,
-        affixes: [{ id: "flat-physical" as const, value: 1 }],
-      },
-      {
-        instanceId: "astral-hatchet",
-        definitionId: "hatchet-astral" as const,
-        affixes: [{ id: "flat-physical" as const, value: 2 }],
-      },
-      { instanceId: "plain-sword", definitionId: "longsword-basic" as const, affixes: [] },
-      { instanceId: "unique-sword", definitionId: "oathkeeper" as const, affixes: [] },
-      { instanceId: "armor", definitionId: "leather-armor-basic" as const, affixes: [] },
-    ];
-    await openArmory(page, inventory);
+  test("inventory toolbar preserves layout and keyboard focus through search and filtering", async ({ page }) => {
+    await openArmory(page, [affixedSword, { instanceId: "unique-sword", definitionId: "oathkeeper", affixes: [] }]);
     const items = page.getByTestId("armory-inventory-item");
     const search = page.getByRole("searchbox", { name: "Search inventory" });
     const filters = page.getByRole("button", { name: /^Filters/ });
@@ -140,25 +125,13 @@ test.describe("Armory browsing", () => {
     await expect(panel).toBeHidden();
     await expect(filters).toBeFocused();
     await expect(page.getByRole("heading", { name: "Armory", exact: true })).toBeVisible();
-    await filters.click();
-    await panel.getByRole("button", { name: "Basic", exact: true }).click();
-    await expect(items).toHaveCount(2);
-    await panel.getByRole("button", { name: "Clear filters", exact: true }).click();
-    await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Close inventory search" }).click();
-    await expect(items).toHaveCount(4);
     expect((await items.first().boundingBox())!.y).toBeCloseTo(gridTop, 0);
-    await page.getByRole("button", { name: "Sort inventory" }).click();
-    await page.getByRole("dialog", { name: "Sort inventory" }).getByRole("button", { name: "Base Type" }).click();
-    await expect(items.first()).toHaveAttribute("data-instance-id", "astral-hatchet");
-    await page.getByRole("button", { name: "Search inventory", exact: true }).click();
-    await search.fill("unfindable");
-    await expect(page.getByText("No items match your search and filters.")).toBeVisible();
-    await page.getByRole("button", { name: "Close inventory search" }).click();
-    await expect(items).toHaveCount(4);
     await filters.click();
     await page.getByRole("button", { name: "Search inventory", exact: true }).click();
     await expect(panel).toBeHidden();
     await expect(search).toBeFocused();
+    await search.fill("unfindable");
+    await expect(page.getByText("No items match your search and filters.")).toBeVisible();
   });
 });

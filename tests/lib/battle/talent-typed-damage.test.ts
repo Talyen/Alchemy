@@ -215,7 +215,7 @@ describe("Toxic Profit and saved damage rules", () => {
   });
 
   it("legacy manifests retain direct-stack procs and default new rules off", () => {
-    const raw = JSON.parse(JSON.stringify(battle({ talentEffects: { physicalBleedChance: 10, drawOnConsume: 1 } })));
+    const raw = JSON.parse(JSON.stringify(battle({ talentEffects: { physicalBleedChance: 10 } })));
     delete raw.talentEffects.physicalBleedDamageChance;
     delete raw.talentEffects.uncappedDrawOnConsume;
     delete raw.flags.killRewardsPaid;

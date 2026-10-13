@@ -20,6 +20,9 @@ Both games default to `~/Documents/Asset Library`; set `ASSET_LIBRARY_ROOT` for 
 
 Run `npm run assets` after source/selection edits, then `npm run assets:check`. App icons retain their focused `npm run generate:icons` command; source and output checks include its preparation record. Narrow optimizers remain available. Download selected files in Finder when iCloud has offloaded them. Full preparation reads all selected sources before publishing or pruning anything; missing sources preserve existing outputs. Asset-related pushes require a local source check.
 
+`generate:icons` accepts only `--help`/`-h`; unsupported arguments fail before source
+reads or output writes. Use `assets:check` for read-only icon validation.
+
 Selected files may be moved between folders or renamed within the configured library without updating manifests. Preparation, narrow optimizers, local source checks, and icon generation automatically search for missing paths and resolve the original bytes using the existing preparation receipt. Same-name alternatives never substitute for the recorded revision; byte-identical duplicates use a deterministic path. Recovery does not move files, rewrite selections, or change prepared outputs. Searches stay inside `ASSET_LIBRARY_ROOT` and do not follow symlinks. Unreadable or iCloud-offloaded files still need downloading; deleted or changed sources, missing receipts, and changed selections/recipes fail safely. Moving the entire library still requires updating `ASSET_LIBRARY_ROOT`.
 
 Ordinary development and builds use committed outputs. `predev` and hosted CI run `npm run assets:check:outputs`; this deliberately does not establish raw-source freshness. CI neither downloads the library nor regenerates media. Prepared manifests retain independent source/settings hashes, selection fingerprints, and output hashes.
@@ -90,7 +93,7 @@ Create a single game inventory icon. Square composition, genuinely transparent b
    art-only iteration, or `node scripts/assets.mjs --prepare` for optimization
    and generated-output synchronization together.
 4. Import through the curated map in `src/lib/game-data/assets.ts` (e.g. `craftingArt`, `difficultyArt`, `talentArt`) — do not import `@/assets/optimized` directly.
-5. Run `npm run check:generated` (fast barrel-only); review the generated diff.
+5. Run `npm run check:generated` (fast art-barrel and build-version validation); review the generated diff.
 
 `npm run sync:generated` updates both art barrels and version metadata.
 `npm run sync:art` updates both art barrels (`src/lib/game-data/assets.generated.ts`
@@ -184,7 +187,7 @@ Select library-relative sources and stable output filenames in `scripts/assets/m
 `public/Music/`. The optimizer removes files without a corresponding source;
 there is no curated-source exception for music. Filenames are validated for
 duplicates and supported extensions by `scripts/assets/music-assets.mjs`. Output targets must be basenames, and their extensions must match the selected source because this pipeline does not transcode.
-Register playable tracks in `src/lib/audio/music.ts`. Its
+Register playable tracks in `MUSIC_CATALOG` in `src/lib/audio/music-catalog.ts`. Its
 `allRegisteredMusicFiles()` list is cross-checked against `public/Music/` by
 `tests/lib/audio/audio-assets.test.ts`.
 
@@ -219,9 +222,17 @@ Three scopes share the `--check` flag: bare `--check` (and `assets:check`) verif
 everything — all three pipelines plus art barrels plus version metadata.
 `--optimize --check` verifies only pipeline outputs (no barrels), and
 `--sync --check` verifies only generated code (art barrels plus version metadata).
-Slice the generated check with `npm run sync:art -- --check` /
-`sync:gear-art` / `sync:version` (via `sync-generated.mjs`
-`--art-only` / `--gear-only` / `--version-only`).
+For narrower read-only generated checks:
+
+```sh
+npm run sync:art -- --check
+npm run sync:gear-art -- --check
+npm run sync:version -- --check
+```
+
+`sync:art` checks both art barrels; `sync:gear-art` checks the Gear barrel and
+requires a current main art barrel. `sync:version` checks only build metadata.
+These commands do not establish prepared-media or raw-source freshness.
 
 For manual inspection:
 
@@ -266,7 +277,7 @@ changing them. Unreadable selected sources fail before processing; their diagnos
 
 Three authoring shapes coexist by design:
 
-- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Used for cards, talents, boons, destinations, etc. where every target is explicitly registered and validated for duplicate targets and export names. Shared sources may produce distinct targets. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/assets/asset-constants.mjs`.
+- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Core and content manifests use `artGroup()` from `scripts/assets/art-group.mjs` to share a folder relative to `2d Assets/Game Sources`, an `ART_PRESETS` entry, and optional transparency requirements across explicit `[sourceFilename, targetFilename]` pairs. Nested source paths are allowed; targets remain explicit basenames. Adding files to the library never adds selections. Every target is explicitly registered and validated for duplicate targets and export names; shared sources may produce distinct targets. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/assets/asset-constants.mjs`.
 - **Explicit Gear and Music selections** — `scripts/assets/gear-assets.mjs` and `music-assets.mjs` select sources and stable targets. Adding files to Asset Library does not change a game's inventory. Every output directory is fully managed; unregistered outputs are swept only after successful preparation. All current sound masters live in Asset Library; OGG masters are copied unchanged and receive MP3 fallbacks.
 
 - **Sound manifest** — `scripts/assets/sound-assets.mjs` lists `generatedSoundAssets` (WAV→OGG with loudnorm) plus the legacy `curatedSoundFiles` fallback (currently empty; all production masters are external). The optimizer owns `public/sounds/` and tags each hash manifest entry with `owner: generated|curated`.

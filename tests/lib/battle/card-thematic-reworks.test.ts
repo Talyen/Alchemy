@@ -292,6 +292,7 @@ describe("thematic card effects", () => {
     const enemy = applyEnemyAbility(base, cardById["burning-blade"]!, []);
     // The base is room-scaled once; the existing Forge is not scaled again.
     expect(enemy.playerStatuses.burn).toBe(7);
+    expect(enemy.enemyMitigation.forge).toBe(4);
   });
 
   it("Avatar deals Holy damage before its equal-odds resource gain", () => {

@@ -16,6 +16,9 @@ function unpackedDirectoryName(target) {
 }
 
 function assertSupportedTargets(targets) {
+  if (!Array.isArray(targets) || targets.length === 0) {
+    throw new Error("Desktop packaging requires a non-empty target list in steam/platforms.json.");
+  }
   for (const target of targets) unpackedDirectoryName(target);
 }
 

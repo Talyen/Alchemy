@@ -113,14 +113,14 @@ describe("resolveSecondaryAction", () => {
     const result = resolveSecondaryAction(state, "companion", (outer) =>
       resolveSecondaryAction(outer, "reward", (inner) => ({
         ...inner,
-        flags: { ...inner.flags, nextCardCostReduction: 3, pendingWishMana: 1 },
+        flags: { ...inner.flags, nextCardCostReduction: 3, darkRecoveryMana: 1 },
       })),
     );
     expect(result.flags.nextCardCostReduction).toBe(3);
     expect(result.flags.nextHitCrit).toBe(true);
-    expect(result.flags.pendingWishMana).toBe(1);
+    expect(result.flags.darkRecoveryMana).toBe(1);
     expect(state.flags.nextCardCostReduction).toBe(2);
-    expect(state.flags.pendingWishMana).toBe(0);
+    expect(state.flags.darkRecoveryMana).toBe(0);
   });
 
   it("makes card bonuses ineligible without changing the underlying flags", () => {
@@ -151,7 +151,10 @@ describe("resolveSecondaryAction", () => {
 });
 
 it("keeps secondary-action policy out of committed snapshots and restores nested scope", () => {
-  const state = makeTestBattleState({ flags: defaultCombatFlags({ nextHitCrit: true }) });
+  const state = makeTestBattleState({
+    flags: defaultCombatFlags({ nextHitCrit: true }),
+    onEmptyDraw: (current) => current,
+  });
   const result = resolveSecondaryAction(state, "companion", (companion) => {
     expect(companion.flags.nextHitCrit).toBe(true);
     expect(readCombatFlag(companion, "nextHitCrit")).toBe(false);
@@ -164,6 +167,7 @@ it("keeps secondary-action policy out of committed snapshots and restores nested
       const snapshot = battleSnapshot(repeat);
       expect(snapshot).not.toHaveProperty("action");
       expect(snapshot).not.toHaveProperty("rng");
+      expect(snapshot).not.toHaveProperty("onEmptyDraw");
       expect(snapshot.flags.nextHitCrit).toBe(true);
       return repeat;
     });

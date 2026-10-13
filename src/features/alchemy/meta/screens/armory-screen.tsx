@@ -54,6 +54,7 @@ export function ArmoryScreen({
   onSalvage,
   onApplyCurrency = () => false,
   onSpawnDevGear,
+  onSpawnDevTrinket,
   afterProgressSaved = (feedback) => feedback(),
   isProgressSavePending = () => false,
   onBack,
@@ -317,6 +318,7 @@ export function ArmoryScreen({
                   onCombatLockedAttempt: handleCombatLockedAttempt,
                 }}
                 onSpawnDevGear={onSpawnDevGear}
+                onSpawnDevTrinket={onSpawnDevTrinket}
                 onSort={handleSort}
                 filters={ordering.filters}
                 matchCount={ordering.matchCount}

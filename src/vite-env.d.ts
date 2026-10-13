@@ -4,6 +4,8 @@ declare global {
   const __ALCHEMY_EDITION__: "demo" | "full";
   interface Window {
     alchemyDesktop?: AlchemyDesktopApi;
+    __alchemySplashWordTimer?: number;
+    __alchemySplashWordIndex?: number;
   }
 }
 

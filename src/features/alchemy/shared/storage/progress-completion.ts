@@ -1,5 +1,5 @@
 import { logStorageFailure } from "@/lib/storage-logging";
-import type { SaveWriteOutcome } from "./save-write-queue";
+import type { SaveWriteOutcome } from "./save-operation-queue";
 
 export type ProgressSaveState =
   | { readonly kind: "idle" }
@@ -9,9 +9,11 @@ export type ProgressSaveState =
 export class ProgressCompletion {
   private state: ProgressSaveState = { kind: "idle" };
   private epoch = 0;
+  private restoreVersion = 0;
   private acknowledged = -1;
-  private snapshots = new WeakMap<object, { epoch: number; revision: number }>();
+  private snapshots = new WeakMap<object, { epoch: number; revision: number; contents: string }>();
   private listeners = new Set<() => void>();
+  private restoreListeners = new Set<() => void>();
   private completions: Array<() => void> = [];
   private retry: (() => void) | null = null;
 
@@ -19,6 +21,11 @@ export class ProgressCompletion {
   readonly subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  };
+  readonly readRestoreVersion = () => this.restoreVersion;
+  readonly subscribeRestore = (listener: () => void) => {
+    this.restoreListeners.add(listener);
+    return () => this.restoreListeners.delete(listener);
   };
 
   activate(retry: () => void) {
@@ -44,13 +51,20 @@ export class ProgressCompletion {
   }
 
   captureSnapshot<T extends object>(snapshot: T, revision: number): T {
-    this.snapshots.set(snapshot, this.token(revision));
+    this.snapshots.set(snapshot, { ...this.token(revision), contents: JSON.stringify(snapshot) });
     return snapshot;
   }
 
-  completeSnapshot(snapshot: object, outcome: SaveWriteOutcome): SaveWriteOutcome {
-    const token = this.snapshots.get(snapshot);
-    return token ? this.complete(token, outcome) : outcome;
+  /** Validate at submission, before callers can mutate the object during IO. */
+  prepareSnapshotWrite(snapshot: object): (outcome: SaveWriteOutcome) => SaveWriteOutcome {
+    const receipt = this.snapshots.get(snapshot);
+    let token: { epoch: number; revision: number } | undefined;
+    try {
+      if (receipt && receipt.contents === JSON.stringify(snapshot)) token = receipt;
+    } catch {
+      // Invalid external payloads still follow the storage failure path.
+    }
+    return (outcome) => (token ? this.complete(token, outcome) : outcome);
   }
 
   complete(token: { epoch: number; revision: number }, outcome: SaveWriteOutcome) {
@@ -70,7 +84,7 @@ export class ProgressCompletion {
         }
       }
     } else if (token.revision >= this.state.revision) {
-      // A skipped write is never an acknowledgement. Only explicit cancellation
+      // An unwritten snapshot is never an acknowledgement. Only explicit cancellation
       // can release the gate without showing completion.
       this.publish({ kind: "failed", revision: this.state.revision });
     }
@@ -89,19 +103,40 @@ export class ProgressCompletion {
   }
 
   cancel() {
-    this.epoch++;
-    this.acknowledged = -1;
-    this.completions = [];
+    this.invalidateReceipts();
     this.publish({ kind: "idle" });
   }
 
-  private publish(state: ProgressSaveState) {
-    if (
+  /** Replace a career without briefly unlocking unsaved replacement state. */
+  replace(revision?: number) {
+    this.invalidateReceipts();
+    this.restoreVersion++;
+    this.publish(revision === undefined ? { kind: "idle" } : { kind: "saving", revision }, true);
+  }
+
+  private invalidateReceipts() {
+    this.epoch++;
+    this.acknowledged = -1;
+    this.completions = [];
+  }
+
+  private publish(state: ProgressSaveState, restored = false) {
+    const unchanged =
       state.kind === this.state.kind &&
-      (state.kind === "idle" || (this.state.kind !== "idle" && state.revision === this.state.revision))
-    )
-      return;
+      (state.kind === "idle" || (this.state.kind !== "idle" && state.revision === this.state.revision));
     this.state = state;
+    if (restored) {
+      // Invalidate autosave submissions before any status or store observer
+      // can schedule a write in the replacement epoch, even if data is equal.
+      for (const listener of [...this.restoreListeners]) {
+        try {
+          listener();
+        } catch (error) {
+          logStorageFailure("Restore save scheduling update failed", error);
+        }
+      }
+    }
+    if (unchanged) return;
     for (const listener of this.listeners) {
       try {
         listener();

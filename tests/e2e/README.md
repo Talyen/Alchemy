@@ -21,6 +21,11 @@ execution tier, or strengthen/move it when inexpensive high-value protection is
 possible. Nightly placement does not justify weak coverage. Preserve real-timing
 canaries where timing is the behavior under test.
 
+Keep passing-journey screenshots in explicit visual acceptance or layout-review
+workflows. Functional checks assert state and geometry without screenshot encoding
+or attachment I/O. Motion checks observe frames or actual transition events and
+stop when the animation settles; declared CSS properties alone cannot prove motion.
+
 ## Running focused checks
 
 ### Local execution policy
@@ -33,9 +38,27 @@ ports, build edition and concurrency details when local execution is requested.
 
 For current source edits, run `npm run test:e2e:dev -- <spec>`. This uses the shared local test lane and retains compact diagnostics. Preview mode is the default for `test:e2e` and serves the existing build; rebuild before using it to verify source changes. For direct Playwright diagnosis, use `--project=chromium` with an equals sign so a following spec is not consumed as another project name; raw invocations require manual coordination under [the test policy](../../CONTRIBUTING.md#what-to-run-when-you-change).
 
+Named route selections use `npm run test:e2e:route -- <name>` and also default to
+the existing preview build. Set `PLAYWRIGHT_VITE_MODE=dev` for current-source
+iteration, for example `PLAYWRIGHT_VITE_MODE=dev npm run test:e2e:route -- homestead`.
+The [route command](../../scripts/run-e2e-route.mjs) owns available names and aliases.
+
 Run browser batches serially or combine specs in one invocation. Browser tests and browser-hosted performance tests start their own server and reject occupied ports, leaving existing processes running. This prevents a run from silently testing another checkout or reusing preview output when development mode was requested; see [Playwright configuration](../playwright-shared.ts).
 
 An explicitly requested local Electron run collects only the desktop bridge and main-menu smoke. Electron tests load the built desktop renderer through the app protocol without starting a preview server; CI and nightly explicitly select the full suite. These tests launch the checkout's Electron runtime. The [packaged Windows startup check](../../Docs/RELEASE.md#packaged-windows-startup-check) separately validates the distributed application.
+
+Build current source with `npm run build:desktop` before `npm run test:ship:desktop`;
+the test command installs a missing Electron runtime but does not rebuild the
+renderer. To select another Electron spec, set `PLAYWRIGHT_ELECTRON_FULL=1` and
+pass its path, for example
+`PLAYWRIGHT_ELECTRON_FULL=1 npm run test:ship:desktop -- tests/electron/electron-security.spec.ts`.
+That flag removes the smoke-only filter; deeper interaction cases additionally
+require `ALCHEMY_INTERACTION_TIER=nightly`. Check the collected scope before
+claiming that a requested spec passed.
+
+Electron-only CI jobs install system libraries with `playwright install-deps` and
+use the installed Electron runtime; they do not need Playwright Chromium binaries.
+Skip unsupported native fullscreen cases before Electron setup.
 
 Local Electron test launches default to background mode, keeping the isolated window
 hidden and rendering without taking focus. `ALCHEMY_ELECTRON_BACKGROUND=1`
@@ -62,6 +85,10 @@ launch a temporary user-data and browser-session profile before the app captures
 save paths, verifies that isolation, and removes it on close. Never run save tests
 against the normal desktop profile.
 
+Ordinary specs use the fixture-owned page so automatic runtime errors and failure
+diagnostics follow the tested renderer without allocating an unused second page.
+Fresh-page save checks still need a separate unseeded page.
+
 Diagnostics and runtime-error assertions are automatic. Request `fastBattle`
 only for gameplay flows where real timing is not under test; animation canaries
 must never request it or call `enableFastMode`/`useFastBattle`.
@@ -76,7 +103,6 @@ owners directly.
 | ----------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | Open mode selection           | `navigation.ts`: `openGameModeSelect`, `selectGameMode`             | Retries Play if bootstrap unmounts the menu; selecting a mode never resumes a separate slot                       |
 | Select hero                   | `tests/pages/menu-page.ts`: `MenuPage.selectCharacterAndContinue`   | Clicks the portrait; no Back/Continue footer                                                                      |
-| Resume campaign               | `navigation.ts`: `resumeCampaignRun`                                | Waits for the saved destination or uses main-menu Continue                                                        |
 | Start battle or destination   | `battle-setup.ts`: `startBattleWithDeck`, `startAtDestination`      | Bootstraps battle                                                                                                 |
 | Inject mid-battle             | `save-injection.ts`: `injectActiveBattle`                           | Boots directly into battle                                                                                        |
 | Win and claim reward          | `battle-setup.ts`: `winBattleAndClaimReward`                        | Wins through combat and claims the first reward card                                                              |
@@ -90,6 +116,12 @@ navigation does not imply that a debounced write has completed. After injection,
 verify persistence on a fresh page in the same browser context, without page-level
 seeding. If the next enemy turn must deal damage, supply three canonical damaging
 ability IDs rather than assume the default Goblin cannot Block.
+
+Save injection returns whether Electron already reloaded the checkpoint; composed
+helpers navigate only for browser injection. Desktop writes remain doubled to
+protect against a rewards autosave racing injection; each bridge write awaits disk
+acknowledgment. Destination setup requires an explicit destination; Labyrinth setup
+reuses the injection result rather than probing the renderer twice.
 
 The fresh-storage cold-start test retains real loading, a 30-second menu wait and
 a 60-second test budget for parallel suite load. Ordinary menu checks keep their
@@ -157,7 +189,8 @@ critical combat and real-timing canaries in the existing CI tier, and secondary
 viewport/cursor variants in the full suite. Layout checks assert geometry directly;
 use the opt-in [desktop layout review](../layout-review/README.md) for screenshot
 artifacts. Rendered-font measurements are CSS pixel estimates, not physical glyph
-measurements or Valve certification.
+measurements or Valve certification. DPR input checks set an actual device scale
+factor and exercise pointer targeting and keyboard inspection together.
 
 ## Connected interaction and Electron canaries
 
@@ -171,7 +204,7 @@ from the push desktop tier; nightly sets `ALCHEMY_INTERACTION_TIER=nightly`.
 Existing Chromium journeys remain for distinct renderer evidence; WebKit is not
 required for the Electron-only release target.
 
-## Efficiency evidence
+## CI report interpretation
 
 CI JSON reports retain commit/run identity, Playwright wall time, summed test
 execution including retries, retry execution, and pre-Playwright setup time.
@@ -186,30 +219,3 @@ workflow run, attempt and job with
 The comparison rejects incomplete, duplicate or mixed-run inputs and reports the
 slowest-minus-fastest wall-time spread. Older JSON reports still summarize, but
 lack setup timing and cannot establish a shard comparison without identity.
-
-Save injection returns whether Electron already reloaded the checkpoint; composed
-helpers navigate only for browser injection. Desktop writes remain doubled to
-protect against a rewards autosave racing injection; each bridge write awaits disk
-acknowledgment. Fresh-page resume checks still use an unseeded page.
-
-Outcome canaries start from a live boss battle checkpoint and win through actual
-card controls. The draft and run-setup journeys retain their separate entry
-coverage. Wildwood phase/RNG rules, save/resume, Labyrinth exploration and hover
-geometry, native activation, and Armory equip/unequip and rejection behavior have
-focused protection in the corresponding unit, DOM and browser suites.
-
-Ordinary specs use the fixture-owned page so automatic runtime errors and failure
-diagnostics follow the tested renderer without allocating an unused second page.
-Fresh-page save checks still need a separate unseeded page. Keep passing-journey
-screenshots in explicit visual acceptance or layout-review workflows; functional
-checks assert state and geometry without screenshot encoding or attachment I/O.
-
-Repeated-card targeting is covered by the hand-hover journeys, transfer presence
-by the discard landing and hand-color canaries, and confirmation dismissal by the
-critical controller Options journey. Shared fade retention belongs to the DOM
-FadeSlot/useFade tests; a route-fade check that conditionally skips its assertion
-is not additional protection. DPR input coverage sets an actual device scale
-factor and exercises pointer targeting and keyboard inspection together.
-
-Electron-only CI jobs install system libraries with `playwright install-deps` and
-use the installed Electron runtime; they do not need Playwright Chromium binaries.

@@ -114,17 +114,19 @@ Do not hand-edit generated outputs.
 
 Start with the document for your question:
 
-| Question                                     | Start here                                                                                                                                               |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| What does the terminology mean?              | [Glossary](./Docs/GLOSSARY.md)                                                                                                                           |
-| How do combat and progression work?          | [Game rules](./Docs/GAME_RULES.md), [Talents](./Docs/TALENT_RULES.md), [Armory](./Docs/ARMORY.md), [Unique items](./Docs/UNIQUE_ITEMS.md)                |
-| Where does state live, and how is it saved?  | [Architecture](./Docs/ARCHITECTURE.md), [Run state](./Docs/RUN_STATE.md), [Save compatibility](./src/features/alchemy/shared/storage/MIGRATIONS.md)      |
-| How do I add content or change a flow?       | [Workflow index](./Docs/WORKFLOWS.md), [Content authoring](./Docs/CONTENT_AUTHORING.md), [Assets](./Docs/WORKFLOWS-ASSETS.md)                            |
-| Which UI and audio conventions apply?        | [UI guide index](./Docs/UI.md#guide-index), [Audio](./Docs/AUDIO.md)                                                                                     |
-| Which commands and checks should I run?      | [Commands](./Docs/COMMANDS.md), [Contributing](./CONTRIBUTING.md), [Failure triage](./Docs/REFERENCE.md#failure-first-triage)                            |
-| How do I investigate balance or performance? | [Battle simulation](./Docs/REFERENCE.md#balance-simulation), [Full playthroughs](./Docs/PLAYTHROUGH_SIMULATION.md), [Performance](./Docs/PERFORMANCE.md) |
-| How do I ship?                               | [Release](./Docs/RELEASE.md), [Release setup](./Docs/RELEASE_SETUP.md)                                                                                   |
-| How do agents work here?                     | [AGENTS.md](./AGENTS.md), [Optional discovery tools](./Docs/AGENT_DISCOVERY.md), [Local skills](./.agents/skills/README.md)                              |
+| Question                                      | Start here                                                                                                                                                                                             |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| What does the terminology mean?               | [Glossary](./Docs/GLOSSARY.md)                                                                                                                                                                         |
+| How do combat and progression work?           | [Game rules](./Docs/GAME_RULES.md), [Talents](./Docs/TALENT_RULES.md), [Armory](./Docs/ARMORY.md), [Unique items](./Docs/UNIQUE_ITEMS.md)                                                              |
+| Where does state live, and how is it saved?   | [Architecture](./Docs/ARCHITECTURE.md), [Run state](./Docs/RUN_STATE.md), [Run and save workflows](./Docs/RUN_WORKFLOWS.md), [Save compatibility](./src/features/alchemy/shared/storage/MIGRATIONS.md) |
+| How do I add content or change a flow?        | [Workflow index](./Docs/WORKFLOWS.md), [Content authoring](./Docs/CONTENT_AUTHORING.md), [Assets](./Docs/WORKFLOWS-ASSETS.md)                                                                          |
+| Which UI and audio conventions apply?         | [UI guide index](./Docs/UI.md#guide-index), [Audio](./Docs/AUDIO.md)                                                                                                                                   |
+| Which commands and checks should I run?       | [Commands](./Docs/COMMANDS.md), [Contributing](./CONTRIBUTING.md), [Failure triage](./Docs/REFERENCE.md#failure-first-triage)                                                                          |
+| How do I test player interactions and layout? | [E2E guide](./tests/e2e/README.md), [Connected interaction coverage](./tests/interaction/README.md), [Desktop layout review](./tests/layout-review/README.md)                                          |
+| How do I investigate balance or performance?  | [Battle simulation](./Docs/REFERENCE.md#balance-simulation), [Full playthroughs](./Docs/PLAYTHROUGH_SIMULATION.md), [Performance](./Docs/PERFORMANCE.md)                                               |
+| How do I ship?                                | [Release](./Docs/RELEASE.md), [Release setup](./Docs/RELEASE_SETUP.md)                                                                                                                                 |
+| What is included in the Steam demo?           | [Demo edition and transfer](./Docs/STEAM_DEMO.md), [Candidate checklist](./Docs/STEAM_DEMO_CHECKLIST.md), [Pending copy approvals](./Docs/STEAM_DEMO_COPY_REVIEW.md)                                   |
+| How do agents work here?                      | [AGENTS.md](./AGENTS.md), [Optional discovery tools](./Docs/AGENT_DISCOVERY.md), [Local skills](./.agents/skills/README.md)                                                                            |
 
 [Audit guides](./Docs/Audits/README.md) are on-demand review procedures.
 [Plans](./Docs/Plans/README.md) hold active work; [design inputs](./Docs/design/README.md)

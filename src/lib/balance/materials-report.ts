@@ -1,14 +1,14 @@
 import { createRunStreamRng, hashStringToUint32 } from "@/lib/rng";
-import { enemyLootTables, getEnemyMaterialLoot } from "@/lib/homestead/material-rewards";
+import { getCombatMaterialLoot } from "@/lib/homestead/material-rewards";
 import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { escapeHtml, renderReportPage } from "./report-layout";
+import { renderReportPage } from "./report-layout";
 
 const MATERIALS_REPORT_SAMPLES = 20_000;
-const MATERIALS_REPORT_SEED_VERSION = "materials-v1";
+const MATERIALS_REPORT_SEED_VERSION = "materials-v2";
 
 interface MaterialsReportRow {
-  enemyId: string;
+  progressionBand: number;
   enemyType: "normal" | "elite" | "boss";
   mean: MaterialInventory;
 }
@@ -19,14 +19,18 @@ export interface MaterialsBalanceReport {
   rows: MaterialsReportRow[];
 }
 
-function meanLoot(enemyId: string, enemyType: MaterialsReportRow["enemyType"], samples: number): MaterialInventory {
+function meanLoot(
+  progressionBand: number,
+  enemyType: MaterialsReportRow["enemyType"],
+  samples: number,
+): MaterialInventory {
   const totals = emptyInventory();
   const rng = createRunStreamRng(
-    hashStringToUint32(`${MATERIALS_REPORT_SEED_VERSION}:${enemyId}:${enemyType}`),
+    hashStringToUint32(`${MATERIALS_REPORT_SEED_VERSION}:${progressionBand}:${enemyType}`),
     "rewards",
   );
   for (let sample = 0; sample < samples; sample += 1) {
-    const loot = getEnemyMaterialLoot(enemyId, enemyType, rng);
+    const loot = getCombatMaterialLoot(enemyType, progressionBand, rng);
     for (const material of MATERIAL_IDS) totals[material] += loot[material] ?? 0;
   }
   const mean = emptyInventory();
@@ -38,9 +42,9 @@ export function buildMaterialsBalanceReport(samples = MATERIALS_REPORT_SAMPLES):
   if (!Number.isInteger(samples) || samples < 1) throw new Error("Materials report samples must be a positive integer");
   if (samples > 100_000) throw new Error("Materials report samples capped at 100,000 per cell to bound runtime");
   const rows: MaterialsReportRow[] = [];
-  for (const enemyId of Object.keys(enemyLootTables).sort()) {
+  for (const progressionBand of [1, 2, 3]) {
     for (const enemyType of ["normal", "elite", "boss"] as const) {
-      rows.push({ enemyId, enemyType, mean: meanLoot(enemyId, enemyType, samples) });
+      rows.push({ progressionBand, enemyType, mean: meanLoot(progressionBand, enemyType, samples) });
     }
   }
   return { samplesPerCell: samples, seedVersion: MATERIALS_REPORT_SEED_VERSION, rows };
@@ -52,9 +56,9 @@ function materialCells(mean: MaterialInventory): string {
 
 export function renderMaterialsBalanceReport(report: MaterialsBalanceReport): string {
   const rows = report.rows
-    .map((row) => `<tr><td>${escapeHtml(row.enemyId)}</td><td>${row.enemyType}</td>${materialCells(row.mean)}</tr>`)
+    .map((row) => `<tr><td>${row.progressionBand}</td><td>${row.enemyType}</td>${materialCells(row.mean)}</tr>`)
     .join("\n");
   const header = MATERIAL_IDS.map((material) => `<th>${material}</th>`).join("");
-  const body = `<h1>Alchemy materials progression</h1><p>Mean materials paid per victory from ${report.samplesPerCell.toLocaleString()} seeded rolls per enemy and enemy type through the live enemy loot tables, including elite and boss multipliers with battle-standard rounding. These are base payouts before build-dependent modifiers: homestead herb-find, scavenger doubling, herbalist bonus, and end-of-run per-room yields all apply afterwards (see the reward policy table in <code>src/lib/homestead/material-rewards.ts</code>).</p><table><thead><tr><th>Enemy</th><th>Type</th>${header}</tr></thead><tbody>${rows}</tbody></table>`;
+  const body = `<h1>Alchemy materials progression</h1><p>Mean materials paid per victory from ${report.samplesPerCell.toLocaleString()} seeded rolls per progression band and encounter type through the shared combat material policy. Campaign uses act, Labyrinth uses floor, and Wildwood uses boss number, capped at band 3. Each bundle selects one of seven equally likely materials, with replacement. These are base payouts before build-dependent modifiers: homestead herb-find, scavenger doubling, herbalist bonus, and end-of-run per-room yields all apply afterwards (see the reward policy table in <code>src/lib/homestead/material-rewards.ts</code>).</p><table><thead><tr><th>Band</th><th>Type</th>${header}</tr></thead><tbody>${rows}</tbody></table>`;
   return renderReportPage({ title: "Alchemy materials progression", body });
 }

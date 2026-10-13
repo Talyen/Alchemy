@@ -28,6 +28,7 @@ export interface ArmoryRouteCommands {
   onSalvage: (instanceId: string) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
+  onSpawnDevTrinket?: () => void;
 }
 
 export interface AlchemyRouteCommands {
@@ -43,6 +44,7 @@ export interface AlchemyRouteCommands {
     beginWildwood: () => void;
     unlockTalent: (keywordId: KeywordId, talentId: string) => void;
     resetUnlockedTalents: () => void;
+    resetHomestead: () => boolean;
     constructBuilding: (id: BuildingId) => boolean;
     plantFarm: (id: FarmId) => boolean;
     completeResearch: (id: ResearchId) => boolean;
@@ -89,7 +91,7 @@ export interface AlchemyRouteCommands {
       alchemist: Omit<AlchemistShopCommands, "initialize">;
       trinket: Omit<TrinketShopCommands, "initialize">;
       equipment: Omit<EquipmentShopCommands, "initialize">;
-      continue: () => void;
+      continue: (expectedActivity: "shop" | "alchemist" | "trinket-shop" | "equipment-shop") => void;
     };
     mystery: {
       handleChoice: (choice: MysteryChoice) => boolean;

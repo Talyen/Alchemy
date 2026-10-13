@@ -47,6 +47,7 @@ export const TRANSIENT_SESSION_KEYS = [
   "runEndCurrencies",
   "runEndTalentXP",
   "runEndItems",
+  "runEndUnlockedCharacters",
   "runRecap",
 ] as const satisfies ReadonlyArray<keyof RunSessionFields>;
 

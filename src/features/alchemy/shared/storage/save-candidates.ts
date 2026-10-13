@@ -1,4 +1,4 @@
-import { toActiveRunData } from "@/lib/active-run-session";
+import { toActiveRunData } from "@/lib/validation";
 import {
   SaveDataSchema,
   LAUNCH_SAVE_SCHEMA_VERSION,

@@ -27,7 +27,7 @@ import { buildAlchemySaveDataFromStores, subscribeAlchemyPersistence } from "./p
 import { configureAlchemySaveBackend } from "./bootstrap-save-state";
 import type { SaveBackend } from "@/lib/platform-save-backend";
 import type { SaveLoadState, SaveRestoreAction } from "./save-candidates";
-import type { SaveWriteOutcome } from "./save-write-queue";
+import type { SaveWriteOutcome } from "./save-operation-queue";
 import type { UnstampedSaveData } from "./types";
 
 export interface SessionPersistenceRestoreOptions {
@@ -125,7 +125,14 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
       return resetStorageIoForTests(gameSession);
     },
     subscribe: (listener: () => void) => subscribeAlchemyPersistence(listener, gameSession),
-    subscribeCancellation: (listener: () => void) => subscribeSaveCancellation(listener, gameSession),
+    subscribeCancellation: (listener: () => void) => {
+      const cancelStorage = subscribeSaveCancellation(listener, gameSession);
+      const cancelRestore = progress.subscribeRestore(listener);
+      return registerSessionCleanup(gameSession, () => {
+        cancelStorage();
+        cancelRestore();
+      });
+    },
     readFailure: () => getSaveWriteFailure(gameSession),
     subscribeFailure: (listener: () => void) => subscribeSaveWriteFailure(listener, gameSession),
   });

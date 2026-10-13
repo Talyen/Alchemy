@@ -1,5 +1,5 @@
 import * as ending from "./write/run-end";
-import { gameplayDraftRuntime } from "./gameplay-command";
+import { bindDraftCapability, gameplayDraftRuntime } from "./gameplay-command";
 // Canonical gameplay write seam: commands write through these transaction operations.
 //
 // This module is the transaction API for command authors (adapters call commands,
@@ -15,7 +15,7 @@ import { gameplayDraftRuntime } from "./gameplay-command";
 // - Materials: `runProfile.materialInventory` is the stockpile;
 //   `run.activeRun.runMaterialsEarned` tallies what the live run earned.
 //   `awardMaterialsDuringRun` writes both; `addMaterialsToStockpile` writes the
-//   stockpile only (homestead end-of-run bonuses, meta salvage). Salvaged
+//   stockpile only (meta salvage). Salvaged
 //   crafting currencies mirror this via `run.activeRun.runCurrenciesEarned`,
 //   tallied alongside the material grant in `dispatchGearSalvageWithMaterialGrant`.
 // - Talent XP: `run.activeRun.runTalentXP` accrues during the run;
@@ -144,6 +144,7 @@ export const bondCompanion = transactionOperation(homestead.bondCompanion);
 export const completeResearch = transactionOperation(homestead.completeResearch);
 export const constructBuilding = transactionOperation(homestead.constructBuilding);
 export const plantFarm = transactionOperation(homestead.plantFarm);
+export const resetHomestead = transactionOperation(homestead.resetHomestead);
 export const setMaterials = transactionOperation(homestead.setMaterials);
 export const applyTalentState = transactionOperation(profile.applyTalentState);
 export const clearPermanentData = transactionOperation(profile.clearPermanentData);
@@ -167,7 +168,8 @@ export const captureRunRecap = transactionOperation(recap.captureRunRecap);
 export const settlePendingBattleMaterials = transactionOperation(battle.settlePendingBattleMaterials);
 
 export function createDraftInstanceIdSource(transaction: RunTransaction): () => string {
-  return gameplayDraftRuntime(transactionDraft(transaction)).createInstanceId;
+  const draft = transactionDraft(transaction);
+  return bindDraftCapability(draft, gameplayDraftRuntime(draft).createInstanceId);
 }
 
 export function settleRunVictory(transaction: RunTransaction): void {

@@ -103,7 +103,7 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
     wrapperRef,
     visible,
     mounted: holdMs > 0 ? mounted : visible,
-    showPopup: holdMs > 0 ? (interactive === false ? false : visible || mounted) : visible,
+    showPopup: holdMs > 0 ? (interactive === false || suspended ? false : visible || mounted) : visible,
     onMouseEnter: handleHoverStart,
     onMouseMove: handleMouseMove,
     onMouseLeave: handleMouseLeave,

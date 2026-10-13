@@ -53,8 +53,8 @@ function earnedRun() {
       draft.run.activeRun.runDeck = getStartingDeck("knight");
       draft.run.activeRun.runObtainedItems = [{ kind: "trinket", trinketId: "bone-charm" }];
       draft.runProfile.talentXP = { burn: 20 };
-      draft.runProfile.effects = { ...defaultHomesteadEffects, endRunStonePerRoom: 2, endRunGoldPerRoom: 4 };
-      awardMaterialsDuringRun(draft, { ...emptyInventory(), wood: 5 });
+      draft.runProfile.effects = { ...defaultHomesteadEffects, stoneFindBonus: 0.4, goldFindBonus: 0.8 };
+      awardMaterialsDuringRun(draft, { ...emptyInventory(), wood: 5, stone: 6 });
       addRunCurrenciesEarned(draft, { "discordant-dice": 2 });
       draft.session.activity = { kind: "battle", data: { battleState: defaultBattleState() } };
       return acceptCommand();
@@ -81,7 +81,7 @@ it.each([
   expect(commits).toEqual([settled]);
   expect(settled.revision).toBe(before.revision + 1);
   expect(settled.runProfile.talentXP.burn).toBe(33);
-  expect(settled.runProfile.gold).toBeGreaterThan(before.runProfile.gold);
+  expect(settled.runProfile.gold).toBe(before.runProfile.gold);
   expect(settled.runProfile.materialInventory).toMatchObject({ wood: 5, stone: 6 });
   expect(settled.run.activeRun.runTalentXP).toEqual({});
   expect(settled.run.activeRun.runMaterialsEarned).toEqual(emptyInventory());
@@ -89,6 +89,7 @@ it.each([
   expect(settled.session).toMatchObject({
     activity: { kind: "inactive" },
     runEndTalentXP: { burn: 13 },
+    runEndUnlockedCharacters: ["rogue"],
     runEndMaterials: { wood: 5, stone: 6 },
     runEndCurrencies: { "discordant-dice": 2 },
     runEndItems: [{ kind: "trinket", trinketId: "bone-charm" }],
@@ -169,6 +170,7 @@ it("settles the final reward and permanent progression together before victory p
   expect(settled.session).toMatchObject({
     activity: { kind: "inactive" },
     runEndTalentXP: { burn: 13 },
+    runEndUnlockedCharacters: ["rogue"],
     runEndMaterials: { wood: 8, stone: 6 },
     runRecap: { ending: "victory", deck: settled.run.activeRun.runDeck },
   });

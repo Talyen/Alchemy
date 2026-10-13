@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { resolveBattleTurn } from "@/lib/battle/enemy-turn";
+import { resolveBattleTurn } from "@/lib/battle";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { cardById } from "@/lib/game-data";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
@@ -75,7 +75,7 @@ describe("gameplay interaction regressions", () => {
       deathsDoorUsed: !protectedHero,
       enemyStatuses: { burn: 2 },
       currentEnemy: { traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "" }] },
-      talentEffects: { consumeDetonatesBurn: true, healOnConsume: 1 },
+      talentEffects: { consumeDetonatesBurnChance: 100, healOnConsume: 1 },
       rng: () => 0.99,
     });
     const result = playBattleCardResolved(state, card.id, 0).state;

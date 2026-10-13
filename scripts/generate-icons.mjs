@@ -1,4 +1,5 @@
-import { isMainModule } from "./lib/is-main-module.mjs";
+import { defineScript, UsageError } from "./lib/script-run.mjs";
+import { parseKnownFlags } from "./lib/cli-args.mjs";
 import { checkIconAssets, iconSource, iconOutputs } from "./assets/icon-assets.mjs";
 import { resolveAssetSource, requireAssetSources } from "./assets/asset-library.mjs";
 // Generates web, desktop, and Apple platform icon assets from the selected master in Asset Library
@@ -192,8 +193,12 @@ async function generate() {
   console.log("All icons generated successfully!");
 }
 
-if (isMainModule(import.meta.url))
-  generate().catch((err) => {
-    console.error("Error generating icons:", err);
-    process.exit(1);
-  });
+defineScript(import.meta.url, async () => {
+  const { flags, rest } = parseKnownFlags(process.argv.slice(2), { help: { short: "h" } });
+  if (rest.length) throw new UsageError(`Unexpected icon generation arguments: ${rest.join(", ")}`);
+  if (flags.has("help")) {
+    console.log("Usage: npm run generate:icons (regenerate icons); npm run assets:check (read-only validation)");
+    return;
+  }
+  await generate();
+});

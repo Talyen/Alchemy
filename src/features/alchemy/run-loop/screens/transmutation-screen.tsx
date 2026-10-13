@@ -179,6 +179,7 @@ export function TransmutationScreen({
               <div className={cn("reward-choice relative", resultReady && committedHere && "reward-choice-selected")}>
                 <BattleCardButton
                   card={visit.result}
+                  comparisonCard={visit.original ?? undefined}
                   ariaLabel={`Transmuted: ${getCardDisplayTitle(visit.result)}`}
                   className={viewCardWidthClass}
                   shineColor={getCardInspectionShineColors(visit.result)}
@@ -266,6 +267,7 @@ export function TransmutationScreen({
                 >
                   <BattleCardButton
                     card={preview}
+                    comparisonCard={source}
                     ariaLabel={`Preview: ${getCardDisplayTitle(preview)}`}
                     className={viewCardWidthClass}
                     shineColor={getCardInspectionShineColors(preview)}

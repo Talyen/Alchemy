@@ -6,6 +6,7 @@ import {
   AppScreenChromeProvider,
   GameMenuOverlay,
   StartupLoadingScreen,
+  dismissStartupSplash,
   useAlchemyAutosaveFromStores,
   useAppAudioEffects,
   useAppDisplayEffects,
@@ -46,7 +47,7 @@ import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import type { Screen } from "@/lib/routing";
 import { cn } from "@/lib/utils";
-import { useCallback, useLayoutEffect, useMemo, useRef, type SyntheticEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, type SyntheticEvent } from "react";
 
 const OPTIONS_PREVIEW_PLASMA_PAIR = { primary: "#fbbf24", secondary: "#78350f" };
 
@@ -335,6 +336,12 @@ export default function App() {
   const { ready: initialLoadReady, progress: startupProgress } = useInitialLoadReady({
     bootstrapReady: bootstrapResult != null,
   });
+
+  useEffect(() => {
+    if (bootstrapResult && initialLoadReady) {
+      dismissStartupSplash();
+    }
+  }, [bootstrapResult, initialLoadReady]);
 
   if (!bootstrapResult || !initialLoadReady) {
     return <StartupLoadingScreen progress={startupProgress} />;

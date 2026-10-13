@@ -5,14 +5,15 @@ import fs from "node:fs";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const currentFile = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(currentFile), "..");
 const WORKTREE_ROOT = path.join(root, ".worktrees");
+const UNCACHED_GIT_OPTIONS = ["-c", "core.untrackedCache=false", "-c", "core.fsmonitor=false"];
 
-// Kept dependency-free (no scripts/lib imports) so worktree management works
-// from a copied single file in tests and minimal checkouts.
+// Creation and recovery work from a copied single file in minimal checkouts.
+// Integration loads the merged task's command launcher only for verification.
 function isMainEntry() {
   const entry = process.argv[1];
   if (!entry) return false;
@@ -24,7 +25,7 @@ function isMainEntry() {
 }
 
 function runGit(args, opts = {}) {
-  const result = spawnSync("git", args, {
+  const result = spawnSync("git", [...UNCACHED_GIT_OPTIONS, ...args], {
     cwd: root,
     encoding: "utf8",
     stdio: opts.stdio ?? "pipe",
@@ -35,7 +36,8 @@ function runGit(args, opts = {}) {
 // Move the entire checkout before unregistering it: ignored evidence and late writes
 // remain recoverable. Only installed dependencies are discarded; branches stay.
 export function archiveIntegratedWorktree(main, task, branch, head) {
-  const git = (...args) => execFileSync("git", args, { cwd: main, encoding: "utf8" }).trim();
+  const git = (...args) =>
+    execFileSync("git", [...UNCACHED_GIT_OPTIONS, ...args], { cwd: main, encoding: "utf8" }).trim();
   if (task === main || fs.lstatSync(task).isSymbolicLink()) throw new Error("Unexpected task checkout");
   const records = git("worktree", "list", "--porcelain", "-z").split("\0\0");
   const record = records.find((entry) => entry.split("\0").includes("worktree " + task));
@@ -106,6 +108,20 @@ export function slugify(s) {
     .slice(0, 64);
 }
 
+export function linkDependencies(mainRoot, targetWorktree) {
+  const rootNodeModules = path.join(mainRoot, "node_modules");
+  const targetNodeModules = path.join(targetWorktree, "node_modules");
+  if (fs.existsSync(rootNodeModules) && !fs.existsSync(targetNodeModules)) {
+    try {
+      fs.symlinkSync(path.relative(targetWorktree, rootNodeModules), targetNodeModules, "junction");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const [cmd, ...rest] = argv;
 
@@ -172,7 +188,7 @@ export async function main(argv = process.argv.slice(2)) {
     const task = slugify(getArg("--task") ?? "");
     if (!task) throw new Error("missing or invalid --task slug");
     const git = (cwd, args, raw = false) => {
-      const result = spawnSync("git", args, { cwd, encoding: "utf8" });
+      const result = spawnSync("git", [...UNCACHED_GIT_OPTIONS, ...args], { cwd, encoding: "utf8" });
       if (result.status !== 0) throw new Error(result.stderr || `git ${args[0]} failed`);
       return raw ? result.stdout : result.stdout.trim();
     };
@@ -223,10 +239,15 @@ export async function main(argv = process.argv.slice(2)) {
         mainHead,
       ]);
       const taskHead = git(taskPath, ["rev-parse", "HEAD"]);
-      const paths = git(taskPath, ["diff", "--name-only", "-z", mainHead, taskHead], true).split("\0").filter(Boolean);
+      const paths = git(taskPath, ["diff", "--no-renames", "--name-only", "-z", mainHead, taskHead], true)
+        .split("\0")
+        .filter(Boolean);
       if (paths.length) {
+        const { commandInvocation } = await import(
+          pathToFileURL(path.join(taskPath, "scripts/lib/command-invocation.mjs")).href
+        );
         const check = (args) => {
-          const result = spawnSync(process.platform === "win32" ? "npm.cmd" : "npm", args, {
+          const result = spawnSync(...commandInvocation("npm", args), {
             cwd: taskPath,
             stdio: "inherit",
           });
@@ -295,9 +316,14 @@ export async function main(argv = process.argv.slice(2)) {
       console.log(`▸ git ${args.join(" ")}`);
       const r = runGit(args, { stdio: "inherit" });
       if (r.status !== 0) process.exit(r.status ?? 1);
+      const linked = linkDependencies(root, worktreePath);
       console.log(`detached worktree ready: ${worktreePath} at ${base} (verification only)`);
       console.log(`  cd "${worktreePath}"`);
-      console.log("  npm ci  # install dependencies before verification");
+      if (linked) {
+        console.log("  node_modules linked from root checkout");
+      } else {
+        console.log("  npm ci  # install dependencies before verification");
+      }
       console.log(`  cd "${root}"  # return before cleanup`);
       console.log(`  node scripts/agent-worktree.mjs remove --task ${task}  # after verification`);
       process.exit(0);
@@ -313,9 +339,14 @@ export async function main(argv = process.argv.slice(2)) {
     console.log(`▸ git ${args.join(" ")}`);
     const r = runGit(args, { stdio: "inherit" });
     if (r.status !== 0) process.exit(r.status ?? 1);
+    const linked = linkDependencies(root, worktreePath);
     console.log(`worktree ready: ${worktreePath} on ${branch} (base ${base})`);
     console.log(`  cd "${worktreePath}"  # work in isolation`);
-    console.log("  npm ci  # install dependencies before verification");
+    if (linked) {
+      console.log("  node_modules linked from root checkout");
+    } else {
+      console.log("  npm ci  # install dependencies before verification");
+    }
     console.log(`  cd "${root}"  # return before cleanup`);
     console.log(`  node scripts/agent-worktree.mjs remove --task ${task}  # after merging to main`);
     process.exit(0);

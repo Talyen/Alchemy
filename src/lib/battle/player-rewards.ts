@@ -1,3 +1,4 @@
+import { applyRewardFindBonus } from "@/lib/homestead/material-rewards";
 import { resolveSecondaryAction } from "./action-context";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import { drawKeywordCard } from "./draw";
@@ -157,10 +158,11 @@ export function addGoldWithCombatText(
   state: BattleState,
   amount: number,
   combatTexts?: CombatTextEvent[],
+  findBonus = 0,
 ): BattleState {
   if (amount <= 0) return state;
 
-  const scaledGold = scaleGoldReward(amount, state.gearEffects);
+  const scaledGold = applyRewardFindBonus(scaleGoldReward(amount, state.gearEffects), findBonus);
   let nextState = { ...state, gold: state.gold + scaledGold };
   if (state.playerStatuses.block === 0 && state.talentEffects.blockPerGold > 0) {
     nextState = addPlayerStatusWithCombatText(
@@ -303,6 +305,15 @@ export function addForgeToPlayer(state: BattleState, baseAmount: number, combatT
     amount += 1;
   if (amount <= 0) return state;
   let nextState = addPlayerStatus(state, "forge", amount);
+  if (!state.uniqueGear.everkeenReady && nextState.uniqueGear.everkeenReady && combatTexts) {
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "notice",
+      stat: "playNextCardTwice",
+      text: "Everkeen Ready",
+      signal: "prepared",
+    });
+  }
   if (state.gearEffects.blockOnForgeGain > 0)
     nextState = applyBlockReward(nextState, state.gearEffects.blockOnForgeGain, combatTexts ?? []);
   if (combatTexts) {

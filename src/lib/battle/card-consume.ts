@@ -1,13 +1,10 @@
 import { rollBattleChance } from "./chance-roll";
-import { readCombatFlag } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { drawFromState, applyDrawResult } from "./draw";
 import { addGoldWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
-import { mergeCombatText } from "./combat-text-events";
 import type { BattleCard } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
 import { isPlayerDefeated } from "./battle-outcome";
-import { addEnemyStatus } from "./status-state";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { tickEnemyPoison } from "./status-ticks";
 import { rollForgeAffixAwards, addForgeToPlayer, applyArmorReward } from "./status-player";
@@ -43,10 +40,7 @@ function applyConsumeTalentRiders(
   }
   if (lastCardInHand && talents.forgeOnConsume > 0)
     nextState = addForgeToPlayer(nextState, talents.forgeOnConsume, combatTexts);
-  if (
-    talents.consumeDetonatesBurn ||
-    (talents.consumeDetonatesBurnChance > 0 && rollBattleChance(talents.consumeDetonatesBurnChance, nextState))
-  ) {
+  if (talents.consumeDetonatesBurnChance > 0 && rollBattleChance(talents.consumeDetonatesBurnChance, nextState)) {
     nextState = detonateEnemyStatuses(nextState, ["burn"], combatTexts);
   }
   nextState = resolvePendingBattleReactions(nextState, combatTexts);
@@ -56,23 +50,6 @@ function applyConsumeTalentRiders(
   }
   if (talents.goldOnConsume > 0 && rollBattleChance(REACTIVE_REWARD_CHANCES.leftovers, nextState)) {
     nextState = addGoldWithCombatText(nextState, talents.goldOnConsume, combatTexts);
-  }
-  if (talents.drawOnConsume > 0 && !readCombatFlag(nextState, "consumeDrawUsedThisTurn")) {
-    const drawn = drawConsumeReward(nextState, talents.drawOnConsume, combatTexts);
-    nextState = {
-      ...drawn,
-      flags: { ...drawn.flags, consumeDrawUsedThisTurn: true },
-    };
-    if (isPlayerDefeated(nextState)) return nextState;
-  }
-  if (nextState.enemyHealth > 0 && talents.poisonOnConsume > 0) {
-    nextState = addEnemyStatus(nextState, "poison", talents.poisonOnConsume);
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "status",
-      stat: "poison",
-      amount: talents.poisonOnConsume,
-    });
   }
   return nextState;
 }

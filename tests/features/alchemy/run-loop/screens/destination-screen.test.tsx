@@ -27,7 +27,7 @@ describe("DestinationScreen", () => {
       destinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CAMPFIRE],
     };
 
-    render(<DestinationScreen rewardState={rewardState} onChoose={vi.fn()} onPrepare={onPrepare} />);
+    render(<DestinationScreen currentAct={1} rewardState={rewardState} onChoose={vi.fn()} onPrepare={onPrepare} />);
 
     expect(onPrepare).toHaveBeenCalledOnce();
   });
@@ -40,7 +40,7 @@ describe("DestinationScreen", () => {
       destinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CAMPFIRE],
     };
 
-    render(<DestinationScreen rewardState={rewardState} onChoose={onChoose} />);
+    render(<DestinationScreen currentAct={1} rewardState={rewardState} onChoose={onChoose} />);
 
     expect(screen.getByRole("heading", { name: "Choose Destination" })).toBeTruthy();
 
@@ -51,15 +51,21 @@ describe("DestinationScreen", () => {
     expect(onChoose).toHaveBeenCalledWith(DESTINATIONS.NORMAL_COMBAT);
   });
 
-  it("triggers deathsDoor sound and renders boss name for boss-only destination", () => {
+  it.each([
+    [1, "I"],
+    [2, "II"],
+    [3, "III"],
+  ] as const)("shows the boss and act %s before entering combat", (currentAct, actLabel) => {
     const rewardState = {
       ...createEmptyRewardState(),
       destinations: [DESTINATIONS.BOSS_COMBAT],
       selectedBossId: "forge-golem",
     };
 
-    render(<DestinationScreen rewardState={rewardState} onChoose={vi.fn()} />);
+    render(<DestinationScreen currentAct={currentAct} rewardState={rewardState} onChoose={vi.fn()} />);
 
+    expect(screen.getByRole("button", { name: `Boss - Act ${actLabel}` })).toBeTruthy();
+    expect(screen.getByText(`Boss - Act ${actLabel}`)).toBeTruthy();
     expect(playBattleEvent).toHaveBeenCalledWith("deathsDoor");
     expect(screen.getByText("The Forge Golem")).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Choose Destination" })).toBeNull();

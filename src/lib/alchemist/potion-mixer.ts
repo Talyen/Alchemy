@@ -16,6 +16,7 @@ import {
   withCardDescription,
   mapEffectChildren,
   mixedPotion,
+  visitBattleCardEffects,
 } from "../game-data";
 
 const MIXED_POTION_ERROR = "Two Potions are required";
@@ -42,7 +43,21 @@ function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potency
     };
   }
   if ("amount" in effect && typeof effect.amount === "number") {
-    return { ...effect, amount: scaledAmount(effect.amount, multiplier, potencyBonus) };
+    const amount = scaledAmount(effect.amount, multiplier, potencyBonus);
+    if (effect.kind === "damage")
+      return {
+        ...effect,
+        amount,
+        ...(effect.amountIfTargetFrozen !== undefined
+          ? { amountIfTargetFrozen: scaledAmount(effect.amountIfTargetFrozen, multiplier, potencyBonus) }
+          : {}),
+        ...(effect.blockDamageBonus !== undefined
+          ? { blockDamageBonus: scaledAmount(effect.blockDamageBonus, multiplier, potencyBonus) }
+          : {}),
+      };
+    if (effect.kind === "player-status" && effect.forgeAmount !== undefined)
+      return { ...effect, amount, forgeAmount: scaledAmount(effect.forgeAmount, multiplier, potencyBonus) };
+    return { ...effect, amount };
   }
   return mapEffectChildren(effect, (child) => scalePotionEffect(child, multiplier, potencyBonus));
 }
@@ -61,7 +76,11 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
   }
 
   const tags = [...new Set([...(cardA.tags ?? []), ...(cardB.tags ?? [])])];
-  const sameCard = cardA.id === cardB.id && areEffectsEquivalent(cardA.effects, cardB.effects);
+  // Doubling amounts cannot represent a second Armor-halving operation.
+  const sameCard =
+    cardA.id === cardB.id &&
+    areEffectsEquivalent(cardA.effects, cardB.effects) &&
+    !visitBattleCardEffects(cardA.effects, (effect) => effect.kind === "remove-enemy-armor" && effect.halve === true);
 
   // Describe ingredients separately: matching prose from different Potions
   // must not collapse into a single effect description.

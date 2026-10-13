@@ -143,6 +143,21 @@ describe("Armory route commands", () => {
     expect(flushSaveAfterGearMutation).toHaveBeenCalled();
   });
 
+  it("spawns dev trinket through the HP-sync command path", () => {
+    const inventories = createEmptyGearInventories();
+    mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
+
+    const { result } = renderHook(() => useAlchemyRunController().routeCommands.meta.armory);
+    expect(result.current.onSpawnDevTrinket).toEqual(expect.any(Function));
+
+    act(() => {
+      result.current.onSpawnDevTrinket?.();
+    });
+
+    expect(readGearState(defaultGameSession).ownedTrinketIds).toHaveLength(1);
+    expect(flushSaveAfterGearMutation).toHaveBeenCalled();
+  });
+
   it("rejects equipment changes without flushing during an active battle", () => {
     const armor: GearInstance = { instanceId: "armor-locked", definitionId: "plate-armor-basic", affixes: [] };
     const inventories = createEmptyGearInventories();
