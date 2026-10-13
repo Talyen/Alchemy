@@ -2,6 +2,7 @@ import { vi } from "vitest";
 import {
   acceptCommand,
   dispatchGameplayCommand,
+  type GameplayDraft,
   type SynchronousResult,
 } from "@/features/alchemy/shared/stores/gameplay-command";
 import {
@@ -30,11 +31,37 @@ import {
   setCompanionRewardCards,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { defaultBattleState, battleSnapshot, type BattleSnapshot } from "@/lib/battle";
-import type { RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
+import { createRunSessionCommand, type RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
 import { transactionDraft } from "@/features/alchemy/shared/stores/transaction-internal";
-
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { defaultGameSession } from "@/app/application-session";
+
+/** Test setup still commits through the real command boundary. */
+export function mutateGameplayForTest<Result>(
+  mutate: (draft: GameplayDraft) => Result & SynchronousResult<Result>,
+): Result {
+  return dispatchGameplayCommand<Result>(
+    (draft) => acceptCommand<Result>(mutate(draft)),
+    undefined,
+    defaultGameSession,
+  );
+}
+
+export function bindGameplayMutationForTest<Args extends unknown[], Result>(
+  mutate: (draft: GameplayDraft, ...args: Args) => Result & SynchronousResult<Result>,
+): (...args: Args) => Result {
+  return (...args) => mutateGameplayForTest<Result>((draft) => mutate(draft, ...args));
+}
+
+export function bindRunMutationForTest<Args extends unknown[], Result>(
+  mutate: (transaction: RunTransaction, ...args: Args) => Result & SynchronousResult<Result>,
+): (...args: Args) => Result {
+  return createRunSessionCommand<Args, Result>(
+    (transaction, ...args: Args) => acceptCommand<Result>(mutate(transaction, ...args)),
+    undefined,
+    defaultGameSession,
+  );
+}
 
 /** Fixtures establish a complete activity; production callers use validated lifecycle commands. */
 export function initializeBattleForTest(transaction: RunTransaction, snapshot: BattleSnapshot | null): void {
@@ -64,52 +91,37 @@ export function replaceBattleForTest(transaction: RunTransaction, snapshot: Batt
 type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
 
 export function resetRunDomainStore(): void {
-  dispatchGameplayCommand(
-    (draft) => {
-      draft.run = createInitialRunDomainData();
-      draft.session = createInitialSessionFields();
-      draft.runProfile = createInitialPermanentFields();
-      draft.profile = createInitialProfileState();
-      draft.gear = createInitialGearState();
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateGameplayForTest((draft) => {
+    draft.run = createInitialRunDomainData();
+    draft.session = createInitialSessionFields();
+    draft.runProfile = createInitialPermanentFields();
+    draft.profile = createInitialProfileState();
+    draft.gear = createInitialGearState();
+  });
 }
 
 export function resetRunProgressSlice(): void {
-  dispatchGameplayCommand(
-    (draft) => {
-      draft.run.activeRun = createInitialActiveRunFields(null);
-      draft.run.initialized = false;
-      draft.runProfile = createInitialPermanentFields();
-
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateGameplayForTest((draft) => {
+    draft.run.activeRun = createInitialActiveRunFields(null);
+    draft.run.initialized = false;
+    draft.runProfile = createInitialPermanentFields();
+  });
 }
 
 export function resetRunSessionSlice(): void {
-  dispatchGameplayCommand((draft) => acceptCommand(clearTransientSession(draft)), undefined, defaultGameSession);
+  mutateGameplayForTest((draft) => clearTransientSession(draft));
 }
 
 export function resetRunNavigationSlice(): void {
-  dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, "menu")), undefined, defaultGameSession);
+  mutateGameplayForTest((draft) => setScreen(draft, "menu"));
 }
 
 export function resetRunBattleSlice(): void {
-  dispatchGameplayCommand(
-    (draft) => acceptCommand(initializeBattleForTest(draft, null)),
-    undefined,
-    defaultGameSession,
-  );
+  mutateGameplayForTest((draft) => initializeBattleForTest(draft, null));
 }
 
 export function resetProfileForTest(): void {
-  dispatchGameplayCommand((draft) => acceptCommand(resetToDefaults(draft)), undefined, defaultGameSession);
+  mutateGameplayForTest((draft) => resetToDefaults(draft));
 }
 
 export function mutateGearForTest<T>(mutate: (gear: GearDraftView) => T & SynchronousResult<T>): T {
@@ -129,73 +141,32 @@ export function resetAllTestStores(): void {
   resetTransientRunUi(defaultGameSession);
 }
 
-const PERMANENT_PROGRESS_KEYS = [
-  "gold",
-  "talentXP",
-  "unlockedTalents",
-  "materialInventory",
-  "constructedBuildings",
-  "plantedFarms",
-  "completedResearch",
-  "bondedCompanions",
-  "effects",
-] as const satisfies ReadonlyArray<keyof PermanentProgressFields>;
-
-const SESSION_KEYS = [
-  "rewardFlow",
-  "activity",
-  "activeLabyrinthModifiers",
-  "activeLabyrinthRewardModifiers",
-  "activeLabyrinthPendingNode",
-  "selectedLabyrinthNodeId",
-  "runEndLabyrinthFloor",
-  "runEndMaterials",
-  "runEndCurrencies",
-  "runEndTalentXP",
-  "runEndItems",
-  "runEndUnlockedCharacters",
-  "runRecap",
-  "pendingCharacterId",
-  "pendingContentSystemType",
-  "labyrinthMap",
-  "wildwoodDraft",
-  "starterDraftChoices",
-] as const satisfies ReadonlyArray<keyof RunSessionFields>;
+const PERMANENT_PROGRESS_KEYS = Object.keys(createInitialPermanentFields()) as Array<keyof PermanentProgressFields>;
+const SESSION_KEYS = Object.keys(createInitialSessionFields()) as Array<keyof RunSessionFields>;
 
 type AssertKeysCover<T, K extends ReadonlyArray<keyof T>> = [keyof T] extends [K[number]] ? true : never;
-
-const runProgressKeyGuards: Readonly<{
-  activeRun: AssertKeysCover<ActiveRunProgressFields, typeof ACTIVE_RUN_PROGRESS_KEYS>;
-  permanent: AssertKeysCover<PermanentProgressFields, typeof PERMANENT_PROGRESS_KEYS>;
-  session: AssertKeysCover<RunSessionFields, typeof SESSION_KEYS>;
-}> = { activeRun: true, permanent: true, session: true };
-void runProgressKeyGuards;
+const activeRunKeysCover: AssertKeysCover<ActiveRunProgressFields, typeof ACTIVE_RUN_PROGRESS_KEYS> = true;
+void activeRunKeysCover;
 
 export function setRunProgress(partial: Partial<RunStateFields>, replace = false): void {
-  dispatchGameplayCommand(
-    (draft) => {
-      if (replace) {
-        draft.run.activeRun = createInitialActiveRunFields(null);
-        draft.run.initialized = false;
-        draft.runProfile = createInitialPermanentFields();
+  mutateGameplayForTest((draft) => {
+    if (replace) {
+      draft.run.activeRun = createInitialActiveRunFields(null);
+      draft.run.initialized = false;
+      draft.runProfile = createInitialPermanentFields();
+    }
+    for (const key of ACTIVE_RUN_PROGRESS_KEYS) {
+      if (key in partial && partial[key] !== undefined) {
+        (draft.run.activeRun as unknown as Record<string, unknown>)[key] = partial[key];
       }
-      for (const key of ACTIVE_RUN_PROGRESS_KEYS) {
-        if (key in partial && partial[key] !== undefined) {
-          (draft.run.activeRun as unknown as Record<string, unknown>)[key] = partial[key];
-        }
+    }
+    for (const key of PERMANENT_PROGRESS_KEYS) {
+      if (key in partial && partial[key] !== undefined) {
+        (draft.runProfile as unknown as Record<string, unknown>)[key] = partial[key];
       }
-      for (const key of PERMANENT_PROGRESS_KEYS) {
-        if (key in partial && partial[key] !== undefined) {
-          (draft.runProfile as unknown as Record<string, unknown>)[key] = partial[key];
-        }
-      }
-      if (partial.initialized !== undefined) draft.run.initialized = partial.initialized;
-
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+    }
+    if (partial.initialized !== undefined) draft.run.initialized = partial.initialized;
+  });
 }
 
 export function setRunSession(
@@ -208,31 +179,25 @@ export function setRunSession(
   },
   replace = false,
 ): void {
-  dispatchGameplayCommand(
-    (draft) => {
-      if (replace) Object.assign(draft.session, createInitialSessionFields());
-      if (partial.hasActiveRun !== undefined) {
-        setHasActiveRun(draft, partial.hasActiveRun);
-        if (partial.hasActiveRun && draft.session.activity.kind === "idle")
-          draft.session.activity = { kind: "destination" };
+  mutateGameplayForTest((draft) => {
+    if (replace) Object.assign(draft.session, createInitialSessionFields());
+    if (partial.hasActiveRun !== undefined) {
+      setHasActiveRun(draft, partial.hasActiveRun);
+      if (partial.hasActiveRun && draft.session.activity.kind === "idle")
+        draft.session.activity = { kind: "destination" };
+    }
+    if (partial.rewardState !== undefined) setRewardState(draft, partial.rewardState);
+    if (partial.companionRewardCards !== undefined) setCompanionRewardCards(draft, partial.companionRewardCards);
+    if (partial.rewardClaimInFlight !== undefined)
+      draft.session.rewardFlow.claim = { kind: partial.rewardClaimInFlight ? "reward" : "idle" };
+    if (partial.pendingDestinationClaim !== undefined)
+      draft.session.rewardFlow.claim = partial.pendingDestinationClaim
+        ? { kind: "destination", destination: partial.pendingDestinationClaim }
+        : { kind: "idle" };
+    for (const key of SESSION_KEYS) {
+      if (key in partial && partial[key] !== undefined) {
+        (draft.session as unknown as Record<string, unknown>)[key] = partial[key];
       }
-      if (partial.rewardState !== undefined) setRewardState(draft, partial.rewardState);
-      if (partial.companionRewardCards !== undefined) setCompanionRewardCards(draft, partial.companionRewardCards);
-      if (partial.rewardClaimInFlight !== undefined)
-        draft.session.rewardFlow.claim = { kind: partial.rewardClaimInFlight ? "reward" : "idle" };
-      if (partial.pendingDestinationClaim !== undefined)
-        draft.session.rewardFlow.claim = partial.pendingDestinationClaim
-          ? { kind: "destination", destination: partial.pendingDestinationClaim }
-          : { kind: "idle" };
-      for (const key of SESSION_KEYS) {
-        if (key in partial && partial[key] !== undefined) {
-          (draft.session as unknown as Record<string, unknown>)[key] = partial[key];
-        }
-      }
-
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+    }
+  });
 }

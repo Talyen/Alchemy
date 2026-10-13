@@ -1,11 +1,14 @@
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import {
+  bindGameplayMutationForTest,
+  bindRunMutationForTest,
   setBattleActiveForTest as mutateHasActiveBattle,
   replaceBattleForTest as mutateSyncedBattleState,
+  resetRunDomainStore,
+  resetRunSessionSlice,
+  setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
-
-import { createGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { subscribeGameplayCommits } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import {
   abandonRun,
@@ -23,46 +26,20 @@ import {
   useRunSessionBattleContext,
   useRunSessionNavigationSlice,
 } from "@/features/alchemy/shared/stores/use-run-reads";
-import {
-  acceptCommand,
-  createRunSessionCommand,
-  subscribeRunSessionCommits,
-} from "@/features/alchemy/shared/stores/run-session-command";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import { setHasActiveRun as mutateHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
-
 import { createEmptyRewardState, readActivityData } from "@/lib/active-run-session";
 import { defaultBattleState } from "@/lib/battle";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { resetRunDomainStore, resetRunSessionSlice, setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
-const syncBattleToRun = createRunSessionCommand(
-  (...args: Parameters<typeof mutateBattleToRun>) => acceptCommand(mutateBattleToRun(...args)),
-  undefined,
-  defaultGameSession,
-);
-const syncRunToBattleStart = createRunSessionCommand(
-  (...args: Parameters<typeof mutateRunToBattleStart>) => acceptCommand(mutateRunToBattleStart(...args)),
-  undefined,
-  defaultGameSession,
-);
-const setSyncedBattleState = createGameplayCommand(
-  (...args: Parameters<typeof mutateSyncedBattleState>) => acceptCommand(mutateSyncedBattleState(...args)),
-  undefined,
-  defaultGameSession,
-);
-const setHasActiveBattle = createRunSessionCommand(
-  (...args: Parameters<typeof mutateHasActiveBattle>) => acceptCommand(mutateHasActiveBattle(...args)),
-  undefined,
-  defaultGameSession,
-);
-const setHasActiveRun = createRunSessionCommand(
-  (...args: Parameters<typeof mutateHasActiveRun>) => acceptCommand(mutateHasActiveRun(...args)),
-  undefined,
-  defaultGameSession,
-);
+const syncBattleToRun = bindRunMutationForTest(mutateBattleToRun);
+const syncRunToBattleStart = bindRunMutationForTest(mutateRunToBattleStart);
+const setSyncedBattleState = bindGameplayMutationForTest(mutateSyncedBattleState);
+const setHasActiveBattle = bindRunMutationForTest(mutateHasActiveBattle);
+const setHasActiveRun = bindRunMutationForTest(mutateHasActiveRun);
 
 beforeEach(() => {
   resetRunDomainStore();

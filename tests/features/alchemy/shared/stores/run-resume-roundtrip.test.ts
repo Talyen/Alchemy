@@ -1,17 +1,20 @@
 import { makeActiveRunData } from "./active-run-data-fixture";
 import { savedActivityFixture, savedActivityData } from "../../../../fixtures/run-activity";
 import "../../../../helpers/mock-audio";
-
-import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-
+import {
+  mutateGameplayForTest,
+  initializeBattleForTest as initializeActiveBattle,
+  resetRunDomainStore,
+  setRunProgress,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
+import { readBattle, readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultBattleState } from "@/lib/battle";
 import { cardLibrary, getCardKeywords } from "@/lib/game-data";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
-
 import { createEmptyRewardState, emptyEquipmentShopState, emptyShopState } from "@/lib/active-run-session";
 import { canEnterLabyrinthNode, withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
@@ -19,7 +22,7 @@ import { createSeededRng } from "@/lib/rng";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { decodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
 import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run-profile-codec";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
+
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   setCompanionRewardCards,
@@ -27,10 +30,7 @@ import {
   setRewardState,
   setShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
 beforeEach(() => {
   resetRunDomainStore();
@@ -84,11 +84,7 @@ describe("homestead hydrate parity", () => {
       ...defaults,
       bondedCompanions: { "no-such-companion": 1 } as unknown as typeof defaults.bondedCompanions,
     };
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(runProfilePersistenceCodec.hydrate(fields, draft)),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => runProfilePersistenceCodec.hydrate(fields, draft));
     expect(readGameplayState(defaultGameSession).runProfile.bondedCompanions).toEqual({});
   });
 
@@ -96,16 +92,11 @@ describe("homestead hydrate parity", () => {
     setRunSession({ hasActiveRun: true });
     const before = readActiveRun(defaultGameSession).runMetaMaxHealth;
     const defaults = runProfilePersistenceCodec.createDefault();
-    dispatchGameplayCommand(
-      (draft) =>
-        acceptCommand(
-          runProfilePersistenceCodec.hydrate(
-            { ...defaults, plantedFarms: { ...defaults.plantedFarms, "chicken-coop": 1 } },
-            draft,
-          ),
-        ),
-      undefined,
-      defaultGameSession,
+    mutateGameplayForTest((draft) =>
+      runProfilePersistenceCodec.hydrate(
+        { ...defaults, plantedFarms: { ...defaults.plantedFarms, "chicken-coop": 1 } },
+        draft,
+      ),
     );
     expect(readActiveRun(defaultGameSession).runMetaMaxHealth).toBe(before + 5);
   });
@@ -137,16 +128,10 @@ describe("interrupted mid-claim rewards", () => {
       expect(snap.activity.data.gold).toBe(0);
     }
 
-    dispatchGameplayCommand(
-      (draft) => {
-        setRewardState(draft, createEmptyRewardState());
-        setCompanionRewardCards(draft, null);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      setRewardState(draft, createEmptyRewardState());
+      setCompanionRewardCards(draft, null);
+    });
     restoreRun(snap, {}, {}, defaultGameSession);
 
     const restored = readRunSession(defaultGameSession).rewardFlow.state;
@@ -233,16 +218,10 @@ describe("primary reward resume", () => {
 describe("shop persistence", () => {
   it("keeps only the latest shop visit even while an earlier screen is displayed", () => {
     setRunSession({ hasActiveRun: true });
-    dispatchGameplayCommand(
-      (draft) => {
-        setShopState(draft, emptyShopState());
-        setEquipmentShopState(draft, emptyEquipmentShopState());
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      setShopState(draft, emptyShopState());
+      setEquipmentShopState(draft, emptyEquipmentShopState());
+    });
     const snap = snapshotRun(defaultGameSession);
     expect(snap.activity.kind).toBe("equipment-shop");
     expect(savedActivityData(snap, "shop")).toBeNull();
@@ -275,15 +254,9 @@ describe("victory-handoff persistence", () => {
   it("keeps the terminal battle until its outcome is settled", () => {
     setRunProgress({ characterId: "knight", contentSystemType: "campaign" });
     setRunSession({ hasActiveRun: true });
-    dispatchGameplayCommand(
-      (draft) => {
-        initializeActiveBattle(draft, { ...defaultBattleState(), enemyHealth: 0 });
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      initializeActiveBattle(draft, { ...defaultBattleState(), enemyHealth: 0 });
+    });
 
     const snap = snapshotRun(defaultGameSession);
     // Without the combat shell the continuation would be lost with it.
