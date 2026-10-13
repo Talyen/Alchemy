@@ -90,10 +90,10 @@ export const HAND_CARD_HOVER_Z_INDEX = 40;
 export const WISH_OVERLAY_Z_INDEX = 90;
 
 export const HOMESTEAD_FEEDBACK = {
-  contentFadeMs: 120,
+  valueMs: 180,
   resizeMs: 180,
-  starMs: 180,
+  starMs: 360,
   revealMs: 400,
   glowMs: 450,
-  confirmationMs: 1000,
+  feedbackMs: 500,
 } as const;

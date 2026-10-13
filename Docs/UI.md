@@ -210,11 +210,12 @@ synchronous tier guards reject repeated input. Dismissing the tooltip or changin
 tabs cannot cancel or repeat an accepted purchase. Errors appear only on failure
 and remain visible outside the tooltip.
 
-Saved Homestead purchases briefly confirm Built, Upgraded, or Bonded on the
-artwork. First purchases crossfade into color; later purchases pulse the edge
-glow once. The earned star pops while tooltip bonuses/costs fade and their panel
-height eases without changing its anchored side. Motion never gates purchases;
-feedback does not replay on resume. Reduced motion retains static confirmation.
+Saved Homestead purchases emphasize the newly filled star. First purchases
+crossfade into color; later purchases pulse the edge glow once. No success label
+covers the artwork. Tooltip words and icons stay mounted; only changed numbers
+receive a subtle reveal, while panel height eases without changing its anchored
+side. Motion never gates purchases or replays on resume. Reduced motion updates
+progress and values immediately without decorative animation.
 
 Reset Homestead uses the same circular-arrow header action and neutral
 confirmation as Reset Talents, immediately before the menu button. It resets

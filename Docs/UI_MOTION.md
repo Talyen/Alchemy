@@ -71,13 +71,14 @@ live completion and waits for Continue; resumed results skip that reveal effect.
 disabled motion preserves selection emphasis without decorative animation.
 
 Homestead purchases retain the old node while saving. Once acknowledged progress
-is available, changing tooltip content fades out over 120ms, swaps, and fades in
-over 120ms while panel height eases over 180ms. The name stays mounted and the
+is available, tooltip sentences and icons remain steady. Changed values reveal
+over 180ms with a slight 2px rise; there is no whole-body fade or delayed swap.
+New/removed rows ease panel height over 180ms. The name stays mounted and the
 edge nearest the node stays anchored; passive tooltips retain their fixed row side.
-The earned star pops over 180ms. First builds/bonds crossfade opacity layers into
-color over 400ms without animating grayscale filters; later upgrades/bonds pulse
-an independent gold edge glow over 450ms. Built/Upgraded/Bonded appears on the
-artwork for 1000ms with short entrance/exit fades, remaining after pointer exit.
+The earned star pops to 1.65 scale with a soft gold highlight over 360ms. First
+builds/bonds crossfade opacity layers into color over 400ms without animating
+grayscale filters; later upgrades/bonds pulse an independent gold edge glow over
+450ms. There are no Built/Upgraded/Bonded labels over the artwork.
 Tuning lives in `HOMESTEAD_FEEDBACK` in the shared motion constants.
 
 Feedback tokens belong to accepted purchases, never hydrated levels. Repeated
@@ -85,7 +86,7 @@ valid purchases replace visual targets without waiting for motion. Tooltip
 dismissal settles content; tab/page changes, navigation, and reset cancel local
 animation without cancelling committed purchases. Existing unlock/bond sound
 plays once after acknowledged progress is available. Reduced/disabled motion
-settles immediately and retains the static confirmation label. Reset uses the
+updates values and filled stars immediately without decorative animation. Reset uses the
 standard confirmation/save feedback without a purchase celebration.
 
 ## Battle motion

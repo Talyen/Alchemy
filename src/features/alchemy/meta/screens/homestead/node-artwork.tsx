@@ -1,7 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { HOMESTEAD_FEEDBACK } from "@/lib/game-constants/ui-motion";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
-import { useHeldWhile, useSequentialFadeSwap } from "../../../shared/ui/use-fade";
 import { HomesteadTooltipBody } from "./node-tooltip-body";
 import { Check, LockKeyhole, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -43,22 +42,15 @@ export function HomesteadNodeArtwork({
   }
   useEffect(() => {
     if (!feedback) return;
-    const timer = window.setTimeout(() => setFeedback(null), HOMESTEAD_FEEDBACK.confirmationMs);
+    const timer = window.setTimeout(() => setFeedback(null), HOMESTEAD_FEEDBACK.feedbackMs);
     return () => window.clearTimeout(timer);
   }, [feedback]);
-  const { shown: shownLevel, phase } = useSequentialFadeSwap({
-    target: node.level,
-    durationMs: reducedMotion ? 0 : HOMESTEAD_FEEDBACK.contentFadeMs,
-  });
-  const heldNode = useHeldWhile(shownLevel === node.level, node);
   const transition = feedback !== null && animateTooltip && !reducedMotion;
-  const tooltipNode = transition ? heldNode : node;
   const firstPurchase = feedback?.fromLevel === 0;
   const feedbackStyle = {
     "--homestead-reveal-duration": `${HOMESTEAD_FEEDBACK.revealMs}ms`,
     "--homestead-star-duration": `${HOMESTEAD_FEEDBACK.starMs}ms`,
     "--homestead-glow-duration": `${HOMESTEAD_FEEDBACK.glowMs}ms`,
-    "--homestead-confirmation-duration": `${HOMESTEAD_FEEDBACK.confirmationMs}ms`,
   } as CSSProperties;
   const complete = node.level >= node.maxLevel;
   const canPurchase = node.affordable && !saving && !awaitingProgress;
@@ -113,18 +105,6 @@ export function HomesteadNodeArtwork({
                   className="homestead-upgrade-glow pointer-events-none absolute inset-0 rounded-[inherit]"
                 />
               )}
-              <span
-                key={`confirmation-${feedback.sequence}`}
-                role="status"
-                className={cn(
-                  "pointer-events-none absolute inset-x-0 bottom-3 z-20 text-center text-sm text-gold-pale",
-                  !reducedMotion && "homestead-purchase-confirmation",
-                )}
-              >
-                <span className="rounded-full bg-black/80 px-3 py-1">
-                  {node.companion ? "Bonded" : firstPurchase ? "Built" : "Upgraded"}
-                </span>
-              </span>
             </>
           ) : complete || !node.discovered ? (
             <span className="pointer-events-none absolute right-3 bottom-3 z-20 drop-shadow-[0_1px_3px_rgba(0,0,0,1)]">
@@ -168,7 +148,7 @@ export function HomesteadNodeArtwork({
             >
               {Array.from({ length: node.maxLevel }, (_, index) => (
                 <Star
-                  key={`${index}-${feedback?.sequence ?? 0}`}
+                  key={index === node.level - 1 ? `${index}-${feedback?.sequence ?? 0}` : index}
                   aria-hidden="true"
                   style={feedbackStyle}
                   className={cn(
@@ -182,10 +162,10 @@ export function HomesteadNodeArtwork({
           )}
         </TooltipHeader>
         <HomesteadTooltipBody
-          node={tooltipNode}
+          node={node}
           inventory={inventory}
           saving={saving}
-          phase={transition ? phase : "idle"}
+          animate={transition}
           reducedMotion={reducedMotion}
         />
       </PortaledTooltip>

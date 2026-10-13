@@ -17,10 +17,10 @@ async function expectNativeArtwork(art: Locator) {
     .toBeLessThan(0.001);
 }
 
-async function observePurchase(page: Page, title: string, activate: () => Promise<void>) {
+async function observePurchase(page: Page, title: string, activate: () => Promise<void>, grows = true) {
   const [frames] = await Promise.all([
     page.evaluate(async (title) => {
-      const frames: Array<{ height: number; gap: number; opacity: number; phase: string | null }> = [];
+      const frames: Array<{ height: number; gap: number; opacity: number; valueOpacity: number; active: boolean }> = [];
       const start = performance.now();
       let settled = 0;
       while (performance.now() - start < 1800) {
@@ -33,11 +33,11 @@ async function observePurchase(page: Page, title: string, activate: () => Promis
         const panel = Array.from(document.querySelectorAll('[role="tooltip"]')).find(
           (element) => element.querySelector("p > span")?.textContent === title,
         );
-        const body = panel?.querySelector<HTMLElement>("[data-homestead-phase]");
+        const body = panel?.querySelector<HTMLElement>("[data-homestead-transition]");
         if (!art || !panel || !body) continue;
         const bounds = panel.getBoundingClientRect();
         const artwork = art.getBoundingClientRect();
-        const phase = body.getAttribute("data-homestead-phase");
+        const active = body.getAttribute("data-homestead-transition") === "active";
         const opacity = Number(getComputedStyle(body.firstElementChild!).opacity);
         frames.push({
           height: bounds.height,
@@ -46,12 +46,12 @@ async function observePurchase(page: Page, title: string, activate: () => Promis
               ? artwork.top - bounds.bottom
               : bounds.top - artwork.bottom,
           opacity,
-          phase,
+          valueOpacity: Number(getComputedStyle(body.querySelector(".homestead-value-update") ?? body).opacity),
+          active,
         });
         const complete =
           art.closest("button")?.querySelector('[role="status"]')?.textContent !== "Saving…" &&
-          art.closest("button")?.querySelector('[role="status"]') &&
-          phase === "enter" &&
+          active &&
           opacity === 1 &&
           Number(getComputedStyle(art).opacity) === 1;
         settled = complete && frames.at(-2)?.height === bounds.height ? settled + 1 : 0;
@@ -61,12 +61,17 @@ async function observePurchase(page: Page, title: string, activate: () => Promis
     }, title),
     activate(),
   ]);
-  expect(frames.some((frame) => frame.opacity > 0 && frame.opacity < 1)).toBe(true);
+  expect(frames.every((frame) => frame.opacity === 1)).toBe(true);
+  expect(frames.some((frame) => frame.valueOpacity > 0 && frame.valueOpacity < 1)).toBe(true);
   const heights = frames.map((frame) => frame.height);
   const minimum = Math.min(...heights);
   const maximum = Math.max(...heights);
-  expect(frames.some((frame) => frame.height > minimum + 1 && frame.height < maximum - 1)).toBe(true);
-  const moving = frames.filter((frame) => frame.phase === "enter");
+  if (grows) {
+    expect(frames.some((frame) => frame.height > minimum + 1 && frame.height < maximum - 1)).toBe(true);
+  } else {
+    expect(maximum - minimum).toBeLessThan(1.5);
+  }
+  const moving = frames.filter((frame) => frame.active);
   expect(Math.max(...moving.map((frame) => frame.gap)) - Math.min(...moving.map((frame) => frame.gap))).toBeLessThan(
     1.5,
   );
@@ -78,7 +83,7 @@ test(
   critical,
   async ({ page }) => {
     await new HomesteadPage(page).goto({
-      materialInventory: { wood: 4, stone: 8, iron: 11 },
+      materialInventory: { wood: 4, stone: 16, iron: 33 },
       constructedBuildings: {},
     });
     const art = page.getByRole("img", { name: "Blacksmith", exact: true });
@@ -104,7 +109,7 @@ test(
     await expect(tile).toHaveCSS("scale", "1.035");
     await expect(tile).toHaveCSS("filter", affordableFilter);
     await expect.poll(() => tile.evaluate((element) => getComputedStyle(element, "::after").borderWidth)).toBe("3px");
-    expect((await readSavedGame(page)).materialInventory).toMatchObject({ wood: 4, stone: 8, iron: 11 });
+    expect((await readSavedGame(page)).materialInventory).toMatchObject({ wood: 4, stone: 16, iron: 33 });
     await heading.hover();
     await expect(panel).toBeHidden();
     await tile.focus();
@@ -113,12 +118,19 @@ test(
     await expect(page.getByRole("button", { name: /^Build Hunter's Lodge for / })).toBeFocused();
     await page.keyboard.press("Shift+Tab");
     await expect(tile).toBeFocused();
+    await expect(tile).toHaveCSS("scale", "1.035");
     await observePurchase(page, "Blacksmith", () => page.keyboard.press("Enter"));
     await expect(panel.getByRole("img", { name: "Level 1 of 4" })).toBeVisible();
     await expect(panel).toContainText("Physical damage is increased by 1");
     await expect(panel).toContainText("Find 10% more");
     await expect(panel).toHaveAttribute("data-placement", "below");
     await expect(tile).toHaveAttribute("aria-label", "Upgrade Blacksmith for 8 Stone, 22 Iron");
+    await expect(tile).toHaveAttribute("aria-disabled", "false");
+    const physicalKeyword = await panel.getByText("Physical", { exact: true }).elementHandle();
+    await observePurchase(page, "Blacksmith", () => page.keyboard.press("Enter"), false);
+    await expect(panel).toContainText("Physical damage is increased by 2");
+    expect(await physicalKeyword!.evaluate((element) => element.isConnected)).toBe(true);
+    await expect(tile.getByText(/^(Built|Upgraded|Bonded)$/)).toHaveCount(0);
     await expect(tile).toHaveAttribute("aria-disabled", "true");
     await expect(tile).not.toHaveClass(/homestead-node-affordable/);
     await expect(tile).toHaveCSS("filter", "none");
@@ -126,16 +138,19 @@ test(
     await expectNativeArtwork(art);
     expect(await heading.boundingBox()).toEqual(headingBefore);
     await page.keyboard.press("Enter");
-    await expect.poll(async () => (await readSavedGame(page)).constructedBuildings["blacksmiths-forge"]).toBe(1);
+    await expect.poll(async () => (await readSavedGame(page)).constructedBuildings["blacksmiths-forge"]).toBe(2);
     await expect
       .poll(async () => (await readSavedGame(page)).materialInventory)
       .toMatchObject({ wood: 4, stone: 4, iron: 0 });
     await withSavedGame(page, async (resumed) => {
       await new MenuPage(resumed).openHomestead();
-      const resumedTile = resumed.getByRole("button", { name: "Upgrade Blacksmith for 8 Stone, 22 Iron", exact: true });
+      const resumedTile = resumed.getByRole("button", {
+        name: "Upgrade Blacksmith for 12 Stone, 33 Iron",
+        exact: true,
+      });
       await resumedTile.focus();
       const inspection = resumed.getByRole("tooltip").filter({ has: resumed.getByText("Blacksmith", { exact: true }) });
-      await expect(inspection).toContainText("Physical damage is increased by 1");
+      await expect(inspection).toContainText("Physical damage is increased by 2");
       await expect(inspection.getByRole("button")).toHaveCount(0);
       await expect(inspection).not.toContainText("More materials needed");
       await expect(inspection).toHaveAttribute("data-placement", "below");
@@ -143,7 +158,7 @@ test(
       await expect(resumedTile).not.toHaveClass(/homestead-node-affordable/);
       await expect(resumed.getByRole("img", { name: "Blacksmith", exact: true })).not.toHaveClass(/grayscale/);
       const save = await readSavedGame(resumed);
-      expect(save.constructedBuildings["blacksmiths-forge"]).toBe(1);
+      expect(save.constructedBuildings["blacksmiths-forge"]).toBe(2);
       expect(save.materialInventory).toMatchObject({ wood: 4, stone: 4, iron: 0 });
     });
     const bottomTile = page.getByRole("button", { name: /^Build Wishing Well for / });
@@ -172,7 +187,7 @@ test(
     await expect(page.getByRole("button", { name: "Back", exact: true })).toBeFocused();
     await expect
       .poll(async () => (await readSavedGame(page)).materialInventory)
-      .toMatchObject({ wood: 4, stone: 8, iron: 11 });
+      .toMatchObject({ wood: 4, stone: 16, iron: 33 });
     await tile.click();
     await expect(tile).toHaveAttribute("aria-label", "Upgrade Blacksmith for 8 Stone, 22 Iron");
     await withSavedGame(page, async (resumed) => {

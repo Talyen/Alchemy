@@ -1,11 +1,10 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { HOMESTEAD_FEEDBACK } from "@/lib/game-constants/ui-motion";
 import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
 import { HomesteadResourceArtwork } from "../../../shared/ui/material-icons";
 import { TooltipBody, TooltipSeparator } from "../../../shared/ui/tooltips/tooltip-panel";
-import type { FadePhase } from "../../../shared/ui/use-fade";
 import { renderTextWithMaterials } from "./helpers";
 import type { HomesteadNodeModel } from "./node-model";
 
@@ -13,13 +12,13 @@ export function HomesteadTooltipBody({
   node,
   inventory,
   saving,
-  phase,
+  animate,
   reducedMotion,
 }: {
   node: HomesteadNodeModel;
   inventory: MaterialInventory;
   saving: boolean;
-  phase: FadePhase;
+  animate: boolean;
   reducedMotion: boolean;
 }) {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -41,27 +40,34 @@ export function HomesteadTooltipBody({
       initial={false}
       animate={{ height: height ?? "auto" }}
       transition={{
-        duration: reducedMotion || phase === "idle" ? 0 : HOMESTEAD_FEEDBACK.resizeMs / 1000,
+        duration: reducedMotion || !animate ? 0 : HOMESTEAD_FEEDBACK.resizeMs / 1000,
         ease: "easeOut",
       }}
       className="overflow-hidden"
-      data-homestead-phase={phase}
+      data-homestead-transition={animate ? "active" : "idle"}
     >
-      <div
-        ref={contentRef}
-        className="flow-root"
-        style={{
-          opacity: phase === "exit" ? 0 : 1,
-          transition: reducedMotion ? "none" : `opacity ${HOMESTEAD_FEEDBACK.contentFadeMs}ms ease-out`,
-        }}
-      >
+      <div ref={contentRef} className="flow-root">
         {node.discovered ? (
           <>
             {node.level > 0 && (
               <TooltipBody className="mt-2 space-y-1">
                 {[...node.bonuses, ...node.production].map((line, index) => (
                   <p key={index} className="min-h-6 leading-6">
-                    {renderTextWithMaterials(line)}
+                    {renderTextWithMaterials(line, {
+                      renderPlain: (text, key) => (
+                        <Fragment key={key}>
+                          {text
+                            .split(/(\d+(?:\.\d+)?%?)/)
+                            .map((part, index) =>
+                              /^\d/.test(part) ? (
+                                <TooltipValue key={index} value={part} animate={animate} />
+                              ) : (
+                                <Fragment key={index}>{part}</Fragment>
+                              ),
+                            )}
+                        </Fragment>
+                      ),
+                    })}
                   </p>
                 ))}
               </TooltipBody>
@@ -88,7 +94,7 @@ export function HomesteadTooltipBody({
                         )}
                       >
                         <HomesteadResourceArtwork resource={material} alt="" />
-                        <span>{node.cost![material]}</span>
+                        <TooltipValue value={String(node.cost![material])} animate={animate} />
                       </span>
                     ))}
                   </span>
@@ -101,5 +107,24 @@ export function HomesteadTooltipBody({
         )}
       </div>
     </motion.div>
+  );
+}
+
+function TooltipValue({ value, animate }: { value: string; animate: boolean }) {
+  const [previous, setPrevious] = useState(value);
+  const [changed, setChanged] = useState(false);
+  if (previous !== value) {
+    setPrevious(value);
+    setChanged(animate);
+  }
+  if (!animate && changed) setChanged(false);
+  return (
+    <span
+      key={value}
+      className={cn("inline-block tabular-nums", animate && changed && "homestead-value-update")}
+      style={{ "--homestead-value-duration": `${HOMESTEAD_FEEDBACK.valueMs}ms` } as CSSProperties}
+    >
+      {value}
+    </span>
   );
 }

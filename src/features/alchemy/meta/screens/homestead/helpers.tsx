@@ -37,7 +37,7 @@ import {
 } from "@/lib/homestead/types";
 import { MaterialInlineChip, type HomesteadResource } from "../../../shared/ui/material-icons";
 import { TabBar } from "../../../shared/ui/tab-bar";
-import { renderTokenizedDescription } from "../../../shared/ui/cards/card-description-ui";
+import { renderTokenizedDescription, type TokenizedTextOptions } from "../../../shared/ui/cards/card-description-ui";
 import { Hammer, Wheat, FlaskConical, PawPrint } from "lucide-react";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 
@@ -92,14 +92,14 @@ const LABEL_TO_RESOURCE: Record<string, HomesteadResource> = {
 };
 const RESOURCE_REGEX = new RegExp(`\\b(${Object.keys(LABEL_TO_RESOURCE).join("|")})\\b`, "g");
 
-export function renderTextWithMaterials(text: string): ReactNode {
+export function renderTextWithMaterials(text: string, options?: TokenizedTextOptions): ReactNode {
   // Resources include Gold, which the keyword renderer would otherwise consume.
   return text.split(RESOURCE_REGEX).map((part, index) => {
     const resource = LABEL_TO_RESOURCE[part];
     return resource ? (
       <MaterialInlineChip key={index} material={resource} label={part} />
     ) : (
-      <Fragment key={index}>{renderTokenizedDescription(part)}</Fragment>
+      <Fragment key={index}>{renderTokenizedDescription(part, options)}</Fragment>
     );
   });
 }

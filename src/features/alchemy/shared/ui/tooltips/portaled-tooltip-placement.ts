@@ -136,7 +136,12 @@ export function usePortaledTooltipPlacement(
         update();
       });
     };
-    const cleanup = autoUpdate(trigger, tooltipEl, scheduleUpdate, { elementResize: false });
+    // Fixed-side purchase panels must follow the artwork's press/hover scale
+    // while their content resizes; transforms do not trigger ResizeObserver.
+    const cleanup = autoUpdate(trigger, tooltipEl, allowFlip ? scheduleUpdate : update, {
+      elementResize: false,
+      animationFrame: !allowFlip,
+    });
     const stage = getVrStageElement();
     const observer =
       typeof ResizeObserver === "undefined"
