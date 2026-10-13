@@ -70,7 +70,7 @@ retaining existing encounter exceptions. Selection and trait limits are owned by
 - [`tests/lib/game-data/effects-registry.test.ts`](../../../../tests/lib/game-data/effects-registry.test.ts) — schema refinements (conditional fields, bounds).
 - [`tests/types/battle-effect-handlers.test-d.ts`](../../../../tests/types/battle-effect-handlers.test-d.ts) — exhaustive typed registration and rejection of mismatched handlers and direct calls.
 - [`tests/lib/game-data/effect-kind-coverage.test.ts`](../../../../tests/lib/game-data/effect-kind-coverage.test.ts) — the single union ⇔ schema ⇔ handler ⇔ keyword-grouping contract for every kind.
-- [`tests/lib/game-data/descriptions-match-effects.test.ts`](../../../../tests/lib/game-data/descriptions-match-effects.test.ts) — card-specific invariants (1-Mana rule, Gambler's Shot punctuation, summon-companion lines); catalog-wide parity lives in `tests/lib/content-validation/` (`content-validation.test.ts`, `parity-negative.test.ts`).
+- [`tests/lib/game-data/descriptions-match-effects.test.ts`](../../../../tests/lib/game-data/descriptions-match-effects.test.ts) — the catalog-wide 1-Mana rule; catalog-wide parity lives in `tests/lib/content-validation/` (`content-validation.test.ts`, `parity-negative.test.ts`).
 - [`tests/lib/game-data/card-builders.test.ts`](../../../../tests/lib/game-data/card-builders.test.ts) — builder output (lines+effects+tags/consume) and the explicit-lines escape hatch.
 
 ## Gear and trinket effects

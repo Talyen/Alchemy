@@ -41,11 +41,3 @@ ReactDOM.createRoot(rootElement).render(
     <App />
   </React.StrictMode>,
 );
-
-const idle: (cb: () => void) => void =
-  typeof globalThis.requestIdleCallback === "function"
-    ? (cb) => globalThis.requestIdleCallback(cb)
-    : (cb) => globalThis.setTimeout(cb, 0);
-idle(() => {
-  void import("./lib/validate-startup").then((m) => m.runStartupValidation());
-});
