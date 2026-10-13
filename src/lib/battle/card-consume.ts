@@ -2,7 +2,7 @@ import { rollBattleChance } from "./chance-roll";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { drawFromState, applyDrawResult } from "./draw";
 import { addGoldWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
-import type { BattleCard } from "@/lib/game-data";
+import { visitBattleCardEffects, type BattleCard } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
 import { isPlayerDefeated } from "./battle-outcome";
 import { detonateEnemyStatuses } from "./dot-resolve";
@@ -21,7 +21,7 @@ function drawConsumeReward(state: BattleState, amount: number, combatTexts: Comb
 }
 
 function cardIsSummonCompanion(card: BattleCard): boolean {
-  return card.effects.some((effect) => effect.kind === "summon-companion");
+  return visitBattleCardEffects(card.effects, (effect) => effect.kind === "summon-companion");
 }
 
 function applyConsumeTalentRiders(

@@ -104,6 +104,9 @@ describe("applyMysteryEffect", () => {
     expect(readRunProfile(defaultGameSession).gold).toBe(15);
     expect(apply({ kind: "loseGold", amount: 0 }).goldSound).toBeUndefined();
     expect(readRunProfile(defaultGameSession).gold).toBe(15);
+    apply({ kind: "loseGold", amount: 20 });
+    expect(readRunProfile(defaultGameSession).gold).toBe(0);
+    expect(apply({ kind: "loseGold", amount: 5 }).goldSound).toBeUndefined();
   });
 
   it("gainXP awards run talent XP for the keyword", () => {

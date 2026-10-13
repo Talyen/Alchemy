@@ -72,7 +72,8 @@ function strengthenEffect(effect: BattleCardEffect): BattleCardEffect {
     effect.kind === "heal" ||
     effect.kind === "restore-mana" ||
     effect.kind === "gain-gold" ||
-    effect.kind === "wish"
+    effect.kind === "wish" ||
+    effect.kind === "companion-action"
   ) {
     return { ...effect, amount: effect.amount + POTION_DISTILL_BONUS };
   }

@@ -35,6 +35,15 @@ function scaledAmount(amount: number, multiplier: number, potencyBonus: number):
 }
 
 function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potencyBonus: number): BattleCardEffect {
+  // Potency changes rewards, never ingredient costs or status durations.
+  if (
+    effect.kind === "lose-health" ||
+    effect.kind === "self-damage" ||
+    effect.kind === "lose-mana" ||
+    effect.kind === "lose-max-mana" ||
+    (effect.kind === "player-status" && (effect.status === "haste" || effect.status === "phoenixFeather"))
+  )
+    return effect;
   if (effect.kind === "random-draw" || effect.kind === "random-damage") {
     return {
       ...effect,
@@ -80,7 +89,16 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
   const sameCard =
     cardA.id === cardB.id &&
     areEffectsEquivalent(cardA.effects, cardB.effects) &&
-    !visitBattleCardEffects(cardA.effects, (effect) => effect.kind === "remove-enemy-armor" && effect.halve === true);
+    !visitBattleCardEffects(
+      cardA.effects,
+      (effect) =>
+        (effect.kind === "remove-enemy-armor" && effect.halve === true) ||
+        effect.kind === "lose-health" ||
+        effect.kind === "self-damage" ||
+        effect.kind === "lose-mana" ||
+        effect.kind === "lose-max-mana" ||
+        (effect.kind === "player-status" && (effect.status === "haste" || effect.status === "phoenixFeather")),
+    );
 
   // Describe ingredients separately: matching prose from different Potions
   // must not collapse into a single effect description.

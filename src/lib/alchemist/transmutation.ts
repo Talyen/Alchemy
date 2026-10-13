@@ -52,15 +52,25 @@ export function isTransmutableCard(card: BattleCard): boolean {
 function convertibleSource(effect: BattleCardEffect): KeywordId | undefined {
   if (effect.kind === "damage") {
     const fields = ["kind", "damageType", "amount", "lifesteal", "ignoreArmor", "ignoreBlock", "damageTypePool"];
-    if (Object.keys(effect).every((key) => fields.includes(key))) return effect.damageType;
+    if (Object.entries(effect).every(([key, value]) => fields.includes(key) || value === false || value === undefined))
+      return effect.damageType;
   }
   if (effect.kind === "random-damage" && effect.damageTypePool) return effect.damageTypePool[0];
   if (effect.kind === "player-status") {
-    if (Object.keys(effect).every((key) => ["kind", "status", "amount"].includes(key)))
+    if (
+      Object.entries(effect).every(
+        ([key, value]) => ["kind", "status", "amount"].includes(key) || value === false || value === undefined,
+      )
+    )
       return BUFF_KEYWORDS.find((keyword) => keyword === effect.status);
   }
   for (const [keyword, kind] of Object.entries(RESOURCE_KINDS)) {
-    if (effect.kind === kind && Object.keys(effect).every((key) => ["kind", "amount"].includes(key)))
+    if (
+      effect.kind === kind &&
+      Object.entries(effect).every(
+        ([key, value]) => ["kind", "amount"].includes(key) || value === false || value === undefined,
+      )
+    )
       return keyword as KeywordId;
   }
   return undefined;
@@ -68,7 +78,14 @@ function convertibleSource(effect: BattleCardEffect): KeywordId | undefined {
 
 function sourceReferences(effect: BattleCardEffect, source: KeywordId): boolean {
   // Conditions and scaling references must not silently retain a replaced keyword.
-  if (SOURCE_CONDITIONS[source]?.some((field) => Object.hasOwn(effect, field))) return true;
+  if (
+    SOURCE_CONDITIONS[source]?.some(
+      (field) =>
+        (effect as Record<string, unknown>)[field] !== undefined &&
+        (effect as Record<string, unknown>)[field] !== false,
+    )
+  )
+    return true;
   if (
     effect.kind === "self-damage" ||
     ["lose-health", "lose-mana", "lose-max-mana", "gain-max-mana"].includes(effect.kind)
@@ -100,7 +117,14 @@ function sourceReferences(effect: BattleCardEffect, source: KeywordId): boolean 
 function canConvertSource(effects: BattleCardEffect[], source: KeywordId): boolean {
   return !visitBattleCardEffects(effects, (effect) => {
     if (!sourceReferences(effect, source)) return false;
-    if (SOURCE_CONDITIONS[source]?.some((field) => Object.hasOwn(effect, field))) return true;
+    if (
+      SOURCE_CONDITIONS[source]?.some(
+        (field) =>
+          (effect as Record<string, unknown>)[field] !== undefined &&
+          (effect as Record<string, unknown>)[field] !== false,
+      )
+    )
+      return true;
     const convertible = convertibleSource(effect);
     return (
       convertible !== source &&
