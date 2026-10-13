@@ -33,9 +33,23 @@ ports, build edition and concurrency details when local execution is requested.
 
 For current source edits, run `npm run test:e2e:dev -- <spec>`. This uses the shared local test lane and retains compact diagnostics. Preview mode is the default for `test:e2e` and serves the existing build; rebuild before using it to verify source changes. For direct Playwright diagnosis, use `--project=chromium` with an equals sign so a following spec is not consumed as another project name; raw invocations require manual coordination under [the test policy](../../CONTRIBUTING.md#what-to-run-when-you-change).
 
+Named route selections use `npm run test:e2e:route -- <name>` and also default to
+the existing preview build. Set `PLAYWRIGHT_VITE_MODE=dev` for current-source
+iteration, for example `PLAYWRIGHT_VITE_MODE=dev npm run test:e2e:route -- homestead`.
+The [route command](../../scripts/run-e2e-route.mjs) owns available names and aliases.
+
 Run browser batches serially or combine specs in one invocation. Browser tests and browser-hosted performance tests start their own server and reject occupied ports, leaving existing processes running. This prevents a run from silently testing another checkout or reusing preview output when development mode was requested; see [Playwright configuration](../playwright-shared.ts).
 
 An explicitly requested local Electron run collects only the desktop bridge and main-menu smoke. Electron tests load the built desktop renderer through the app protocol without starting a preview server; CI and nightly explicitly select the full suite. These tests launch the checkout's Electron runtime. The [packaged Windows startup check](../../Docs/RELEASE.md#packaged-windows-startup-check) separately validates the distributed application.
+
+Build current source with `npm run build:desktop` before `npm run test:ship:desktop`;
+the test command installs a missing Electron runtime but does not rebuild the
+renderer. To select another Electron spec, set `PLAYWRIGHT_ELECTRON_FULL=1` and
+pass its path, for example
+`PLAYWRIGHT_ELECTRON_FULL=1 npm run test:ship:desktop -- tests/electron/electron-security.spec.ts`.
+That flag removes the smoke-only filter; deeper interaction cases additionally
+require `ALCHEMY_INTERACTION_TIER=nightly`. Check the collected scope before
+claiming that a requested spec passed.
 
 Local Electron test launches default to background mode, keeping the isolated window
 hidden and rendering without taking focus. `ALCHEMY_ELECTRON_BACKGROUND=1`

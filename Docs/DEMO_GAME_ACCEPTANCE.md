@@ -19,10 +19,12 @@ Testing uses isolated profiles; normal player saves and live Steam are not used.
 | Audio behavior                | 149 focused audio/save-notice/report tests passed, including source availability, preload races, music lifecycle, volume bounds and background handling; a demo browser test observes SFX playback. Packaged music-byte validation remains covered. This does not certify subjective loudness on speakers/headphones.                                                                                   |
 | Platform experience           | The user reports having tested Mac and Windows. Local isolated Electron tests additionally cover offline startup, native profile isolation, Options and Quit. This report does not convert browser input into physical Steam Input or Deck certification.                                                                                                                                               |
 
-Raw playthroughs, journals, screenshots and timing attachments are ignored
-artifacts under `reports/demo-acceptance/`. Durable assertions live in the demo
-browser/Electron specs and focused unit tests. Re-run affected checks after
-changing gameplay, persistence or layouts; this record is not permanent certification.
+Raw playthroughs, journals, screenshots and timing attachments were written as ignored
+artifacts under `reports/demo-acceptance/`. They follow [transient-artifact cleanup](../scripts/README.md#cleanup-clean--explicit-reset-prunetransient--expiry)
+and may have expired; this record does not guarantee their continued availability.
+Durable assertions live in the demo browser/Electron specs and focused unit tests.
+Re-run affected checks after changing gameplay, persistence or layouts; this record
+is not permanent certification.
 
 The UI matrix records requested Tooltip Size values, including 75%, which is
 below the current 90% minimum. New candidate checks use the supported extremes
@@ -46,8 +48,8 @@ Performance runs: `2026-09-29T20-03-46Z-electron`,
 After shared animation changes, `2026-09-29T21-07-13Z-electron` recorded one
 366.7 ms draw gap while Windows packaging overlapped the run (no attributed
 long task). The single quiet repeat, `2026-09-29T21-10-34Z-electron`, was all green:
-p95 17.6 ms, 1% low 56.5 FPS and no 50 ms hitches/stalls. Both raw runs are retained;
-the outlier is not evidence of a reproduced script bottleneck.
+p95 17.6 ms, 1% low 56.5 FPS and no 50 ms hitches/stalls. Both raw runs were recorded
+as transient artifacts; the outlier is not evidence of a reproduced script bottleneck.
 
 Use [performance procedures](./PERFORMANCE.md) for reproduction/comparison.
 

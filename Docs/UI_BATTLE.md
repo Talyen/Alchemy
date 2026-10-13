@@ -122,8 +122,13 @@ and Abilities headings without a divider. Abilities reuse `BattleCardButton`,
 `viewCardWidthClass`, the standard keyword border/hover behavior, and adaptive
 card pagination. Cards show portrait art only; effects appear in ordinary card
 tooltips on hover or keyboard focus. Inspection cards cannot be played or flipped
-and do not inherit the hero's description context. Ability tooltip text is universal: edit the canonical card description once for
-all inspection and play surfaces.
+and do not inherit the hero's description context. Bestiary inspection uses
+canonical card values. Live battle inspection passes `EnemyDescriptionContext`
+to `getEncounterEnemyAbility` in `src/lib/battle/enemy-description.ts`, deriving
+displayed amounts from the encounter's room scaling, ability pressure, and
+difficulty modifiers. Trait descriptions use the same encounter context through
+`getEncounterEnemyTrait`. These are presentation copies; never pass scaled cards
+back into ability resolution or mutate the canonical catalog.
 
 Enemy portrait tooltips show traits only, with no repeated-attack text, ability
 cards, or upcoming-action indicator. `EnemyTraits` renders the same named trait
@@ -133,8 +138,8 @@ keywords in description order through `getKeywordTextShineColors`. Descriptions
 use the shared keyword tokenizer for bold/color emphasis. No-keyword titles use
 the normal neutral fallback. Enemy artwork borders use keywords in those visible
 Trait descriptions, including active encounter Traits; ability-only keywords do
-not color the border. Encounter modifiers use the same rendering and are
-shown once in their existing separate group. Enemy trait copy refers to heroes.
+not color the border. Encounter modifiers join native Traits in one deduplicated
+list using the same rendering. Enemy trait copy refers to heroes.
 
 Opening inspection dismisses the portrait tooltip through its standard fade.
 `useHoverVisible` supports `suspended` and `dismiss`: restored focus must not flash

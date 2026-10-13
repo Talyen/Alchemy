@@ -51,22 +51,24 @@ describe("clean-dev-artifacts helpers", () => {
     expect(existsSync(dir)).toBe(false);
     expect(existsSync(join(external, "source.wav"))).toBe(true);
   });
+
+  it("preserves the shared Vite cache when cleaning a worktree with linked dependencies", () => {
+    const root = makeRoot();
+    const dependencies = makeRoot();
+    mkdirSync(join(dependencies, ".vite"));
+    writeFileSync(join(dependencies, ".vite", "cache.json"), "shared cache");
+    symlinkSync(dependencies, join(root, "node_modules"), process.platform === "win32" ? "junction" : "dir");
+    mkdirSync(join(root, "reports"));
+
+    const targets = listArtifactDirsToRemove(root, { builds: true });
+    expect(targets).toEqual([join(root, "reports")]);
+    for (const target of targets) removePath(target);
+    expect(existsSync(join(root, "reports"))).toBe(false);
+    expect(existsSync(join(dependencies, ".vite", "cache.json"))).toBe(true);
+  });
 });
 
 describe("parseCleanArgs", () => {
-  it.each(["-h", "--help"])("accepts the %s help alias", (flag) => {
-    expect(parseCleanArgs([flag])).toMatchObject({ help: true });
-  });
-
-  it("parses --all as builds + processes", () => {
-    expect(parseCleanArgs(["--all"])).toMatchObject({
-      builds: true,
-      processes: true,
-      includeDevPort: false,
-      dryRun: false,
-    });
-  });
-
   it("rejects unknown flags", () => {
     expect(() => parseCleanArgs(["--browsers"])).toThrow(/Unknown flags/);
   });

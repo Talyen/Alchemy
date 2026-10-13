@@ -262,7 +262,7 @@ remain unchanged.
 
 ## Corruption altars
 
-- Pick one card that has neither Corruption nor Transmutation, commit, and reveal the result. The existing intro, picker, and before/after result remain the entire interaction. Leaving before corruption restores the same destination choice; a completed result is saved and cannot be rerolled. A card can be corrupted once, including after transformation. Mana costs never mutate.
+- Pick one card that has neither Corruption nor Transmutation, commit, and reveal the result. The existing intro, picker, and before/after result remain the entire interaction. Leaving before corruption restores the same destination choice; a completed result is saved and cannot be rerolled. A card can be corrupted once; a transformed result is already corrupted and cannot be corrupted again. Mana costs never mutate.
 - Transformation has a 10% chance when another eligible library card exists. It replaces the selected card with a different card and one eligible mutation, preserving its deck-slot UID. Mixed Potions are not transformation destinations. Cards without numeric targets can receive a secondary effect; transformation is forced only if no local mutation exists.
 - Other outcomes use `CORRUPTION_OUTCOME_WEIGHTS` from [Corruption tuning](../src/lib/game-constants/corruption.ts), renormalized after filtering for eligible families. Select the family first and then an equally likely compatible variant so large variant pools cannot crowd out other outcomes.
 - Strengthening adds 50% (nearest integer, minimum one) to plain Physical/Holy/Nature damage, healing, or flat Block; weakening removes 25% with the same rounding. Other editable magnitudes change by one. Lower Health/Mana losses count as improvements. Numbers cannot go below zero or violate the effect schema’s stricter minimum, random-damage bounds cannot cross, and unchanged results are excluded. Repeated copies of an edited effect stay aligned with its description. Companion summon summaries are not numeric card-effect targets; upgrades such as Powerful Wish edit any added effect's own description.
@@ -392,22 +392,38 @@ hit-stage ordering above and must not reorder RNG or feedback.
 
 ## Brewing, Transmutation, and elemental reactions
 
-Campfires offer Rest or Brew, including at full Health. Brew adds one of three fixed standard Potion offers (at least one recovery/defense option), or combines two owned eligible Potions. It replaces Rest without a resource cost. Potions remain in the run deck after Consume. Rest-only room bonuses apply only to Rest.
+Campfires offer Rest or Brew, including at full Health. When the deck contains
+at least two eligible Potions, Brew combines two chosen instances; otherwise, it
+grants one of three fixed standard Potion offers (at least one recovery/defense
+option). The deck determines which brewing action is available. Rest and Brew
+share one use per visit, with no resource cost for Brew. Potions remain in the run
+deck after Consume. Rest-only room bonuses apply only to Rest.
 
-The Alchemist shop sells ordinary Potions and offers one Brew service per visit: Mix or Distill, at the existing 40 Gold mixing price before discounts. Distill adds 1 to supported beneficial numerical magnitudes, including Wishes; cost, Consume, probabilities, draw counts, durations, and percentage effects stay unchanged. Panacea restores 2 Health alongside its full cleanse; each distillation adds 1 Health. Increased values are green in card hover tooltips, including after reload. Potions can be brewed repeatedly, including Mixed Potions; All seven standard Potions can be distilled.
+The Alchemist shop sells ordinary Potions and offers Mix Potion and Distill,
+sharing one service use per visit at the 40 Gold mixing price before discounts.
+All seven standard Potions can be distilled. Mixed and previously strengthened
+Potions remain eligible for brewing at later visits; refreshing or reloading does
+not restore the current visit's service use.
+
+Distill adds 1 to supported beneficial numerical magnitudes, including Wishes;
+cost, Consume, probabilities, draw counts, durations, and percentage effects stay
+unchanged. Panacea restores 2 Health alongside its full cleanse; each distillation
+adds 1 Health. Increased values are green in card hover tooltips, including after
+reload. The Distillation talent's combat potency bonus is separate from the
+Distill service.
 
 Transmutation offers one free alteration to an eligible card. Each visit rolls three class-independent keywords: one Damage, one Buffs/Restoration, and one Resources/Additions. Health and Leech belong to Buffs/Restoration. Only keywords useful somewhere in the eligible deck enter the roll; an unavailable category is filled from the remaining keywords without duplicates. All 21 keywords participate. Offers and randomly selected source keywords are fixed for each card throughout the visit, including Back and reload.
 
 Damage converts to another damage type; Block, Armor, Forge, and Thorns convert among themselves; positive Health restoration, Mana restoration, and Gold gains convert among themselves. Every occurrence of the randomly chosen compatible source keyword changes, including nested branches and repeats. Existing magnitudes, costs, probabilities, durations, and targeting remain unchanged. Conversions with unsupported conditions or scaling are excluded. Other keywords add their native mechanic: Wish 1, Leech on damage, Archery on attacks, Consume, Dodge the next attack, or one Companion action when the deck contains a summon. Added effect lines respect Corruption's four-effect-line limit. Existing destination keywords are excluded.
 
-The keyword buttons sit above the original card and its preview, joined by a right arrow. Transmute commits the exact preview and advances after saving. Cards keep their identity and artwork, gain the keyword's title prefix and shine, and can be altered only once. Transmutation and Corruption are mutually exclusive. Strengthened standard Potions remain eligible; Mixed Potions are excluded.
+The keyword buttons sit above the original card and its preview, joined by a right arrow. Transmute commits the exact preview, reveals the result after saving, and waits for Continue. Resuming a completed visit shows that saved result without altering the card again or replaying completion feedback. Cards keep their identity and artwork, gain the keyword's title prefix and shine, and can be altered only once. Transmutation and Corruption are mutually exclusive. Strengthened standard Potions remain eligible; Mixed Potions are excluded.
 
 Shatter and Wildfire each activate once per player turn through card hits (including automatic plays) or Companion actions. Their saved flags reset before turn-start Companion actions. Secondary Gear/talent damage, retaliation, delayed pulses, and status ticks do not initiate reactions.
 
 - **Shatter:** a positive Physical attack against an actually Frozen enemy destroys all enemy Block and Armor before mitigation and guarantees that hit's Critical. Freeze remains. Later hits resolve normally. Dodge is resolved before removing defenses or spending the opportunity; Frozen enemies currently cannot Dodge under the existing crowd-control rule.
 - **Wildfire:** a positive resolved Nature hit against an already Burning enemy detonates the remaining projected Burn ticks and clears Burn, after the hit and its normal follow-ups/retaliation, only while the hero and enemy survive. It uses remaining-tick detonation modifiers and per-tick rounding; unmodified 8 Burn pays 8 + 4 + 2 + 1 = 15. It adds no multiplier or Nature buildup.
 
-Card inspection previews show current defenses or projected remaining Burn damage and whether the reaction is used this turn. Chance-dependent hits label their reactions conditionally. Gameplay commits independently of the visible confirmation, defense-breaking notices, fire damage feedback, and result screens.
+Resolved reactions use the existing [battle feedback](./UI_BATTLE.md#battle-feedback) for defense removal, Critical Hits, and Burn damage. Card descriptions and keyword explanations follow the [authoring contract](./CONTENT_AUTHORING.md#add-a-new-card); they do not preview these universal reactions. Gameplay commits independently of presentation.
 
 ### Persistent Forge
 

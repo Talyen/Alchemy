@@ -27,7 +27,7 @@ import { buildAlchemySaveDataFromStores, subscribeAlchemyPersistence } from "./p
 import { configureAlchemySaveBackend } from "./bootstrap-save-state";
 import type { SaveBackend } from "@/lib/platform-save-backend";
 import type { SaveLoadState, SaveRestoreAction } from "./save-candidates";
-import type { SaveWriteOutcome } from "./save-write-queue";
+import type { SaveWriteOutcome } from "./save-operation-queue";
 import type { UnstampedSaveData } from "./types";
 
 export interface SessionPersistenceRestoreOptions {

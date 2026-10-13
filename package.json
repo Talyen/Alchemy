@@ -28,7 +28,7 @@
     "predev:desktop": "npm run predev && node scripts/sync-steam-appid.mjs",
     "dev": "vite",
     "dev:checked": "cross-env ALCHEMY_ENABLE_CHECKER=1 vite",
-    "dev:desktop": "concurrently \"vite --mode desktop --host 127.0.0.1\" \"node scripts/wait-dev-server.mjs && electron .\"",
+    "dev:desktop": "concurrently --kill-others --success first \"vite --mode desktop --host 127.0.0.1\" \"node scripts/wait-dev-server.mjs && electron .\"",
     "build": "node scripts/build-verified.mjs",
     "build:desktop": "node scripts/build-verified.mjs --desktop",
     "dist:desktop": "npm run sync:steam-appid && npm run build:desktop && npm run check:bundle && node scripts/dist-desktop.mjs",

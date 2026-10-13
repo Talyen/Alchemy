@@ -76,7 +76,7 @@ then installs the browser-process copies before enabling their fuse. The build w
 Packaged Windows startup: `smoke-desktop.mjs` resolves the artifact and invokes
 `smoke-desktop.ps1` for native accessibility verification (see [RELEASE](../Docs/RELEASE.md#packaged-windows-startup-check)).
 
-`platforms.json` owns the desktop target list; `package.json` build blocks own per-platform packaging configuration. Sentry release and desktop sourcemap mode are owned by `lib/release/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`. Vite uses only Rolldown chunk groups.
+`platforms.json` must declare at least one desktop target; `package.json` build blocks own per-platform packaging configuration. Sentry release and desktop sourcemap mode are owned by `lib/release/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`. Vite uses only Rolldown chunk groups.
 
 ## Audits (periodic sweep, not a push gate)
 
@@ -135,6 +135,8 @@ journal prefix and starting-state evidence for replay.
 `npm run dev:checked` starts Vite with the live TypeScript 7 checker directly;
 run `npm run predev` first when using that command. Desktop development runs
 the same preparation and adds Steam App ID synchronization.
+Vite and Electron share a lifetime: exiting either process stops the other,
+and the first exit determines the command's status.
 
 ## Cleanup (`clean` = explicit reset, `prune:transient` = expiry)
 
@@ -142,6 +144,10 @@ the same preparation and adds Steam App ID synchronization.
 build outputs. `--processes` stops Alchemy-owned test listeners;
 `--include-dev-port` also selects the normal dev port, only with `--processes`.
 `--all` combines builds and processes. Use `--dry-run` to preview deletion.
+Cleanup preserves caches reached through a linked `node_modules` directory so
+an isolated worktree cannot remove the original checkout's shared cache.
+Listener ownership also excludes nested `.worktrees/` checkouts from the
+original checkout's process cleanup.
 
 `npm run prune:transient` expires diagnostic bundles after 24 hours of inactivity;
 `--days=<number>` changes the cutoff. Runs under `reports/runs`, `compact`,
@@ -190,11 +196,13 @@ Integration uses an exclusive loopback port derived from the shared Git director
 so all worktrees share one OS-released lock. A busy lock fails immediately; retry
 later without messaging other chats. A port collision also fails closed. The command
 requires registered task and `main` checkouts with no dirty files or unfinished Git
-operations. While holding the lock, it merges current local `main` into the task,
-runs `npm run check -- <combined changed paths>` and, for Markdown changes,
+operations. Safety reads bypass Git's filesystem monitor and untracked cache
+without changing repository settings. While holding the lock, it merges current local `main` into the task,
+runs `npm run check -- <combined changed paths>` (including both sides of renames) and, for Markdown changes,
 `npm run docs:check`, then fast-forwards `main` only if verification succeeded and
 both checkouts remain clean at the expected commits. It never pushes or switches
-checkout branches. Additional task-required tests remain the task owner's responsibility.
+checkout branches. Verification uses the merged task's shared Node command launcher
+so npm runs without shell interpretation on Windows too. Additional task-required tests remain the task owner's responsibility.
 
 Resolve understood merge conflicts in the task worktree, commit the resolution,
 and retry; ambiguous conflicts or dirty `main` are blockers to report to the user.

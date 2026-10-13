@@ -68,7 +68,7 @@ The recorded matrix below requested Tooltip Size 75/125. The current supported
 range is 90–125%; use 90/125 when repeating candidate checks, following the
 [display sizing contract](./UI.md#display-sizing).
 
-- [x] Inspect battle/hand, enemy/deck inspection and card tooltips at exact browser viewports 1280×720 and 1280×800, Game Size 80/100/120 and Tooltip Size 75/125. Seven-card hands and End Turn remain usable; screenshots are retained locally.
+- [x] Inspect battle/hand, enemy/deck inspection and card tooltips at exact browser viewports 1280×720 and 1280×800, Game Size 80/100/120 and Tooltip Size 75/125. Seven-card hands and End Turn remained usable in the recorded check; screenshots were written as transient local artifacts under the [evidence record's retention limits](./DEMO_GAME_ACCEPTANCE.md#completed-local-checks).
 - [x] Inspect the production demo menu/footer and Options in isolated Electron at minimum-size/size-extreme cases. Native window dimensions are asserted against the available host work area; exact 1280×800 geometry is independently covered in Chromium.
 - [x] Shared hover/focus/press/disabled states, modal focus/dismissal and controls work in browser/native input journeys. Preserve Alchemy's existing surface behavior rather than adding universal squish/scale effects.
 - [x] Real card-transfer and tooltip-motion tests pass; temporary comparison controls are absent from the production candidate.
