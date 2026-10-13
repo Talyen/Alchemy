@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { cardById, computeTalentEffects, type BattleCard } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { applyWishEffect, chooseWishCard } from "@/lib/battle/wish";
+import { applyWishEffect } from "@/lib/battle/wish";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
@@ -50,11 +50,9 @@ describe("Mana from Heaven", () => {
     const wished = applyWishEffect(initial, wish, 3, []);
     expect(wished.mana).toBe(3);
     expect(wished.playerHealth).toBe(10);
-    expect(wished.flags.pendingWishMana).toBe(0);
     const next = advanceToPlayerTurn(resume(wished));
     expect(next.mana).toBe(3);
     expect(next.playerHealth).toBe(10);
-    expect(next.flags.pendingWishMana).toBe(0);
     expect(advanceToPlayerTurn(next).mana).toBe(3);
   });
 
@@ -70,8 +68,6 @@ describe("Mana from Heaven", () => {
     expect(next.mana).toBe(3);
     expect(next.playerHealth).toBe(10);
     expect(next.gold).toBe(7);
-    expect(next.flags.pendingWishMana).toBe(0);
-    expect(chooseWishCard(next, next.wishOptions![0]!.id).flags.pendingWishMana).toBe(0);
   });
 
   it("combines immediate Gear and Talent Mana", () => {
@@ -83,14 +79,12 @@ describe("Mana from Heaven", () => {
     );
     expect(next.mana).toBe(2);
     expect(next.playerHealth).toBe(12);
-    expect(next.flags.pendingWishMana).toBe(0);
   });
 
   it("does not create a delayed reward on a Haste turn", () => {
     const wished = applyWishEffect(battle({ talentEffects: wishTalents, playerStatuses: { haste: 1 } }), wish, 2, []);
     const next = endPlayerTurn(wished).state;
     expect(next.mana).toBe(3);
-    expect(next.flags.pendingWishMana).toBe(0);
   });
 
   it("applies immediate Mana to Wishes created by scheduled effects", () => {
@@ -101,7 +95,6 @@ describe("Mana from Heaven", () => {
     });
     const next = advanceToPlayerTurn(initial);
     expect(next.mana).toBe(3);
-    expect(next.flags.pendingWishMana).toBe(0);
     expect(advanceToPlayerTurn(next).mana).toBe(3);
   });
 });
@@ -207,7 +200,7 @@ describe("Sun-Struck Shield reflection", () => {
   it("keeps Holy-triggered Gear buildup without granting card play rewards", () => {
     const next = applyEnemyAbility(
       battle({
-        talentEffects: { ...shieldTalents, blockOnHolyCard: 2 },
+        talentEffects: shieldTalents,
         gearEffects: { holyStunBuildupGold: 1 },
         playerStatuses: { block: 10 },
       }),

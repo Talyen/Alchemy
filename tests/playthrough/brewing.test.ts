@@ -293,7 +293,7 @@ describe("consumable preservation and paired evidence", () => {
     expect(
       shouldPreserveConsumable(cardById["panacea-potion"]!, {
         ...state,
-        talentEffects: { ...state.talentEffects, poisonOnConsume: 1 },
+        talentEffects: { ...state.talentEffects, uncappedDrawOnConsume: 1 },
       }),
     ).toBe(false);
   });

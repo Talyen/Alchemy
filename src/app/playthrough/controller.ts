@@ -5,13 +5,12 @@ import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-
 import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { showRunScreen } from "@/features/alchemy/shared/stores/navigation-commands";
-import { readActiveRunScreen, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRunScreen } from "@/features/alchemy/shared/stores/run-reads";
 import { createLabyrinthNodeRouting } from "@/features/alchemy/shell/labyrinth-node-routing";
 import { createRunRouteActions } from "@/features/alchemy/shell/run-route-actions";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
-import { computeTalentEffects } from "@/lib/game-data";
 
 export function createPlaythroughController(gameSession: GameSession) {
   const runActions = createRunRouteActions(gameSession);
@@ -43,15 +42,8 @@ export function createPlaythroughController(gameSession: GameSession) {
     if (outcome === "victory") outcomes.victory.handleBattleVictory();
     if (outcome === "defeat") outcomes.defeat.handleBattleDefeat();
   }, gameSession);
-  // Pricing manifests are refreshed for every call, including after between-run spending.
-  const shop = () =>
-    createShopActions(
-      {
-        talentEffects: computeTalentEffects(readRunProfile(gameSession).unlockedTalents),
-        homesteadEffects: readRunProfile(gameSession).effects,
-      },
-      gameSession,
-    );
+  const shopActions = createShopActions(gameSession);
+  const shop = () => shopActions;
   const labyrinth = createLabyrinthController(gameSession);
   const flow = createRunFlowEngine(
     {

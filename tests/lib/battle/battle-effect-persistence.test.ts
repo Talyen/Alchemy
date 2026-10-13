@@ -11,8 +11,6 @@ describe("Talent battle effect persistence", () => {
   it("retains pending bonuses and sequencing through save/load, defaulting absent fields", () => {
     const state = battle({
       flags: {
-        previousCardWasArchery: true,
-        previousCardWasNature: true,
         companionNextAttackBonus: 4,
         darkRecoveryMana: 1,
         nextHitCrit: true,
@@ -23,8 +21,6 @@ describe("Talent battle effect persistence", () => {
     const saved = JSON.parse(JSON.stringify(state));
     expect(PersistedBattleStateSchema.parse(saved).flags).toEqual(state.flags);
     for (const key of [
-      "previousCardWasArchery",
-      "previousCardWasNature",
       "companionNextAttackBonus",
       "darkRecoveryMana",
       "nextHitCrit",

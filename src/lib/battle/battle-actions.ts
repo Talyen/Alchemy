@@ -61,7 +61,7 @@ export function resolveBattleAction(
       // They must settle before the next turn can begin.
       if (!snapshot.wishOptions?.some((card) => card.id === action.cardId)) return reject("Wish choice is unavailable");
       const combatTexts: CombatTextEvent[] = [];
-      const state = chooseWishCard({ ...snapshot, rng: getBattleRng(context) }, action.cardId, combatTexts);
+      const state = chooseWishCard({ ...snapshot, rng: getBattleRng(context) }, action.cardId);
       return { kind: "accepted", action: "wish", resolution: { state: battleSnapshot(state), combatTexts } };
     }
     case "end-turn": {

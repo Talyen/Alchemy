@@ -2,6 +2,7 @@ import { isMixedPotionCard, type BattleCard } from "@/lib/game-data";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { CORRUPTION_TRANSFORM_CHANCE_FRACTION } from "@/lib/game-constants";
 import { pickRandom, pickWeighted } from "@/lib/rng";
+import { isValidDeckIndex } from "@/lib/utils";
 import { getCorruptionMutationGroups, type CorruptionMutationGroup } from "./mutations";
 
 export { getEditableCorruptionTargets, updateCardNumericValue } from "./numeric";
@@ -40,6 +41,7 @@ export function corruptCard(
   const twin = modifiers.includes("twin-offering");
   const singleModifiers = twin ? modifiers.filter((id) => id !== "twin-offering") : modifiers;
   let groups = getCorruptionMutationGroups(selectedCard, singleModifiers);
+  if (pure && groups.length === 0) return null;
   let transformed = false;
   const candidates = library.filter(
     (card) => card.id !== selectedCard.id && !card.corrupted && !card.transmuted && !isSpecialCorruptionCard(card),
@@ -91,8 +93,9 @@ export function corruptDeckCard(
   rng: () => number,
   modifiers: readonly EncounterRewardTraitId[] = [],
 ): { deck: BattleCard[]; result: CorruptionResult | null } {
+  if (!isValidDeckIndex(cardIndex, deck.length)) return { deck, result: null };
   const selectedCard = deck[cardIndex];
-  if (!selectedCard) throw new Error("Cannot corrupt a missing card");
+  if (!selectedCard) return { deck, result: null };
   const result = corruptCard(selectedCard, library, rng, modifiers);
   if (!result) return { deck, result: null };
   return { deck: deck.map((card, index) => (index === cardIndex ? result.corruptedCard : card)), result };
