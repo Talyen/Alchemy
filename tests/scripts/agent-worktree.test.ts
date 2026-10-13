@@ -148,6 +148,11 @@ function integrationFixture() {
   mkdirSync(join(root, "scripts"));
   const script = join(root, "scripts", "agent-worktree.mjs");
   copyFileSync(join(process.cwd(), "scripts", "agent-worktree.mjs"), script);
+  mkdirSync(join(root, "scripts", "lib"));
+  copyFileSync(
+    join(process.cwd(), "scripts", "lib", "command-invocation.mjs"),
+    join(root, "scripts", "lib", "command-invocation.mjs"),
+  );
   git(["init", "-q", "-b", "main"]);
   git(["config", "user.name", "Integration Test"]);
   git(["config", "user.email", "integration@example.test"]);
@@ -167,6 +172,7 @@ if (process.env.INTEGRATION_READY) {
   while (!fs.existsSync(process.env.INTEGRATION_RELEASE)) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20);
 }
 if (process.env.INTEGRATION_PROOF) fs.writeFileSync(process.env.INTEGRATION_PROOF, fs.readFileSync('main.txt', 'utf8') + fs.readFileSync('task.txt', 'utf8'));
+if (process.env.INTEGRATION_PATHS) fs.writeFileSync(process.env.INTEGRATION_PATHS, JSON.stringify(process.argv.slice(2)));
 process.exit(process.env.INTEGRATION_FAIL ? 1 : 0);
 `,
   );
@@ -187,6 +193,50 @@ process.exit(process.env.INTEGRATION_FAIL ? 1 : 0);
 }
 
 describe("serialized local integration", () => {
+  it.skipIf(process.platform === "win32")(
+    "preserves work hidden by a stale Git filesystem monitor",
+    () => {
+      const { root, taskPath, git, integrate } = integrationFixture();
+      try {
+        const monitor = join(root, ".git", "silent-fsmonitor");
+        writeFileSync(monitor, "#!/bin/sh\nprintf 'stale-token\\0'\n", { mode: 0o755 });
+        git(["config", "core.fsmonitor", monitor]);
+        git(["config", "core.untrackedCache", "true"]);
+        const before = git(["rev-parse", "main"]);
+        for (const checkout of [root, taskPath]) {
+          git(["status", "--porcelain"], checkout);
+          writeFileSync(join(checkout, "shared.txt"), "unsaved work\n");
+          expect(git(["status", "--porcelain"], checkout)).toBe("");
+          const result = integrate();
+          expect(result.status, result.stdout).toBe(1);
+          expect(result.stderr).toContain("uncommitted work");
+          expect(git(["rev-parse", "main"])).toBe(before);
+          expect(readFileSync(join(checkout, "shared.txt"), "utf8")).toBe("unsaved work\n");
+          writeFileSync(join(checkout, "shared.txt"), "base\n");
+        }
+        expect(git(["config", "core.fsmonitor"])).toBe(monitor);
+        expect(git(["config", "core.untrackedCache"])).toBe("true");
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    },
+    20000,
+  );
+
+  it("checks both sides of a committed rename before integration", () => {
+    const { root, taskPath, git, integrate } = integrationFixture();
+    const paths = join(root, ".git", "checked-paths.json");
+    try {
+      git(["mv", "shared.txt", "renamed.txt"], taskPath);
+      git(["commit", "-qm", "test: move source"], taskPath);
+      const result = integrate({ INTEGRATION_PATHS: paths });
+      expect(result.status, result.stderr).toBe(0);
+      expect(JSON.parse(readFileSync(paths, "utf8"))).toEqual(["renamed.txt", "shared.txt", "task.txt"]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }, 20000);
+
   it("checks the combined result before advancing main and preserves main on a failed check", () => {
     const { root, taskPath, git, integrate } = integrationFixture();
     const proof = join(tmpdir(), `alchemy-proof-${process.pid}-${Date.now()}`);

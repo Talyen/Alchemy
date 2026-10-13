@@ -190,11 +190,13 @@ Integration uses an exclusive loopback port derived from the shared Git director
 so all worktrees share one OS-released lock. A busy lock fails immediately; retry
 later without messaging other chats. A port collision also fails closed. The command
 requires registered task and `main` checkouts with no dirty files or unfinished Git
-operations. While holding the lock, it merges current local `main` into the task,
-runs `npm run check -- <combined changed paths>` and, for Markdown changes,
+operations. Safety reads bypass Git's filesystem monitor and untracked cache
+without changing repository settings. While holding the lock, it merges current local `main` into the task,
+runs `npm run check -- <combined changed paths>` (including both sides of renames) and, for Markdown changes,
 `npm run docs:check`, then fast-forwards `main` only if verification succeeded and
 both checkouts remain clean at the expected commits. It never pushes or switches
-checkout branches. Additional task-required tests remain the task owner's responsibility.
+checkout branches. Verification uses the merged task's shared Node command launcher
+so npm runs without shell interpretation on Windows too. Additional task-required tests remain the task owner's responsibility.
 
 Resolve understood merge conflicts in the task worktree, commit the resolution,
 and retry; ambiguous conflicts or dirty `main` are blockers to report to the user.
