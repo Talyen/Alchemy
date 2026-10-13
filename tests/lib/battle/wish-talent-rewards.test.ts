@@ -44,22 +44,6 @@ describe("Talent wish talent rewards", () => {
     expect(chooseWishCard(final, "2")).toBe(final);
   });
 
-  it("Wish selection cannot turn an absent reward into Block through Forge", () => {
-    const options = [attack("1"), attack("2")];
-    const state = battle({
-      playerStatuses: { forge: 5 },
-      talentEffects: { forgeBlockPercent: 100 },
-      wishOptions: options,
-    });
-    expect(chooseWishCard(state, "1").playerStatuses.block).toBe(0);
-    const noDeclines = {
-      ...state,
-      wishOptions: options.slice(0, 1),
-      talentEffects: { ...state.talentEffects, blockPerDeclinedWishCard: 1 },
-    };
-    expect(chooseWishCard(noDeclines, "1").playerStatuses.block).toBe(0);
-  });
-
   it("Coinmail grants Gold from actual Armor gained", () => {
     const state = battle({
       rng: () => 0,

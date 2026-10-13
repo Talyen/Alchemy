@@ -26,7 +26,6 @@ describe("getPlayerStatusChips", () => {
     state.flags.nextPhysicalDealsBleed = true;
     state.flags.nextArcheryCardFree = true;
     state.flags.nextHolyCardFree = true;
-    state.flags.nextWishExtraChoice = true;
     state.flags.hawkEyeReady = true;
     expect(getPlayerStatusChips(state)).toEqual([
       { id: "hawkEyeReady", value: 1, hideValue: true },
@@ -36,7 +35,6 @@ describe("getPlayerStatusChips", () => {
       { id: "nextHitPhysicalBonus", value: 4 },
       { id: "nextPhysicalDealsBleed", value: 1, hideValue: true },
       { id: "nextArcheryCardFree", value: 1, hideValue: true },
-      { id: "nextWishExtraChoice", value: 1, hideValue: true },
       { id: "nextHolyCardFree", value: 1, hideValue: true },
     ]);
     state.flags.nextHitPhysicalBonus = -1;

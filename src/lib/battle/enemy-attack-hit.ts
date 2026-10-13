@@ -59,7 +59,6 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
   const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
   if (playTwice) {
     nextState = applyCardEffects(nextState, drawn.card, combatTexts, {
-      attackBonuses: chained.attackBonuses,
       damageEffects: repeatedDamageEffects,
       origin: "triggered-card",
       manaAtStart: nextState.mana,
