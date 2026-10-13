@@ -56,7 +56,6 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
         continueCampfire: fn(),
         rest: fn(),
         brew: fn(),
-        initializeCampfire: fn(),
       },
       wildwood: { removeCard: fn(), skipRemoval: fn() },
       shop: {
@@ -93,7 +92,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       },
       mystery: { handleChoice: fn(), handleChooseCard: fn(), handleContinue: fn() },
       corruption: { handleCorruptCard: fn(), handleExit: fn() },
-      transmutation: { select: fn(), exchange: fn(), continue: fn(), initialize: fn() },
+      transmutation: { select: fn(), exchange: fn(), continue: fn() },
     },
     battle: {
       presentation: battlePresentation,

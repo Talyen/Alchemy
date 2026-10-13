@@ -3,7 +3,7 @@ import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { type MysteryChoice } from "@/lib/mystery";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
-import { beginMysteryVisit, chooseMysteryCard, chooseMysteryOption } from "./mystery-commands";
+import { chooseMysteryCard, chooseMysteryOption } from "./mystery-commands";
 
 export function createMysteryEventNavigation(
   {
@@ -14,8 +14,8 @@ export function createMysteryEventNavigation(
   gameSession: GameSession,
 ) {
   function beginMysteryEvent(prepareNavigation?: () => void) {
-    if (readRunSession(gameSession).activity.kind !== "mystery") return;
-    beginMysteryVisit(gameSession);
+    const activity = readRunSession(gameSession).activity;
+    if (activity.kind !== "mystery" || !activity.data.mysteryEvent) return;
     navigateTo(ROUTE_SCREENS.MYSTERY, prepareNavigation);
     sessionFeedback(gameSession).playUISound("musicBoxMystery");
   }

@@ -252,7 +252,10 @@ commit together. Rejection and initialization errors preserve the previous root
 and revision. The returned screen and detached opening battle feedback contain
 no gameplay mutation callbacks; shell navigation and feedback run after entry.
 A presentation error does not undo accepted room entry. Save wire fields and
-resume decoding remain unchanged.
+resume decoding remain unchanged. `room-visit-initialization.ts` supplies the
+transaction-only visit recipes to that owner. Screen and shop command contracts
+expose player actions without initialization. Rendering, remounting, and presenting
+Mystery never sample visit RNG or replace committed activity.
 
 `session.activity.kind === "inactive"` is the sole stored marker for an inactive run. Active runs may have `idle` while being prepared; meta screens preserve the current activity. Read ports derive `hasActiveRun`; it is not a second stored boolean. `session.rewardFlow` owns the current reward bundle, Companion cards, and one claim union (`idle`, `reward`, or `destination` with its destination). Reward and destination claims cannot both be active. The visible navigation screen remains independent so menus and fades do not redefine the resume location. Save codecs retain the existing wire fields.
 

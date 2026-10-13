@@ -1,5 +1,6 @@
 import { getTransmutationOffers, getTransmutationVariants } from "@/lib/alchemist/transmutation";
 import "../../../../helpers/mock-audio";
+import { initializeAlchemyVisitForTest as initializeAlchemyVisit } from "../../../../helpers/visit-initialization";
 
 import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
@@ -8,7 +9,6 @@ import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/share
 import { patchBattleState } from "../../../../fixtures/battle";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  initializeAlchemyVisit,
   brewAtCampfire,
   transmuteCard,
   selectTransmutation,

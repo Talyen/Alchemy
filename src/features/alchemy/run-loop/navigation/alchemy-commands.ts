@@ -6,24 +6,12 @@ import {
   dispatchRunSessionCommand,
   rejectCommand,
   snapshotTransactionValue,
-  type RunTransaction,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  createDraftRunRandomSource,
-  setAlchemyVisit,
-  setRunDeck,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setAlchemyVisit, setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
-import { readActivityData } from "@/lib/active-run-session";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
+import { getCampfireBrewKind, isBrewablePotion, type BrewOperation } from "@/lib/alchemist/brewing";
 import {
-  createCampfirePotionOffers,
-  getCampfireBrewKind,
-  isBrewablePotion,
-  type BrewOperation,
-} from "@/lib/alchemist/brewing";
-import {
-  createTransmutationOffers,
   getTransmutationOffers,
   getTransmutationVariants,
   canTransmuteCard,
@@ -34,40 +22,6 @@ import type { TransmutationSelectionCommand } from "@/lib/active-run-session/alc
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { cloneBattleCard, computeTalentEffects, type BattleCard } from "@/lib/game-data";
 
-export function initializeAlchemyVisit(kind: "campfire" | "transmutation", gameSession: GameSession): void {
-  dispatchRunSessionCommand(
-    (draft) => acceptCommand(initializeAlchemyVisitInTransaction(draft, kind)),
-    undefined,
-    gameSession,
-  );
-}
-
-export function initializeAlchemyVisitInTransaction(draft: RunTransaction, kind: "campfire" | "transmutation"): void {
-  const visit = readActivityData(snapshotTransactionValue(draft.session.activity), kind);
-  if (
-    draft.session.activity.kind === kind &&
-    (visit.completed || (kind === "campfire" ? visit.offers.length : visit.transmutation))
-  )
-    return;
-  const rng = createDraftRunRandomSource(draft, "events");
-  setAlchemyVisit(draft, kind, {
-    offers: kind === "campfire" ? createCampfirePotionOffers(rng) : [],
-    ...(kind === "transmutation"
-      ? {
-          transmutation: {
-            choices: createTransmutationOffers(snapshotTransactionValue(draft.run.activeRun.runDeck), rng),
-            sourceIndex: null,
-            source: null,
-            keyword: null,
-            offerIndex: null,
-          },
-        }
-      : {}),
-    result: null,
-    original: null,
-    completed: false,
-  });
-}
 export function brewAtCampfire(operation: BrewOperation, gameSession: GameSession): BattleCard | null {
   const brewed = dispatchRunSessionCommand(
     (draft) => {
