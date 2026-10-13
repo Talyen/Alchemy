@@ -75,7 +75,10 @@ is available, tooltip sentences and icons remain steady. Changed values reveal
 over 180ms with a slight 2px rise; there is no whole-body fade or delayed swap.
 New/removed rows ease panel height over 180ms. The name stays mounted and the
 edge nearest the node stays anchored; passive tooltips retain their fixed row side.
-The earned star pops to 1.65 scale with a soft gold highlight over 360ms. First
+The tooltip celebrates acknowledged purchases with a 360ms scale bounce
+(1 → 1.045 → 0.995 → 1), originating at the edge nearest the artwork. It never
+remounts the content or replays on hover; dismissal or a newer purchase cancels
+its animation. The earned star pops to 1.65 scale with a soft gold highlight over 360ms. First
 builds/bonds crossfade opacity layers into color over 400ms without animating
 grayscale filters; later upgrades/bonds pulse an independent gold edge glow over
 450ms. There are no Built/Upgraded/Bonded labels over the artwork.

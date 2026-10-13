@@ -20,7 +20,14 @@ async function expectNativeArtwork(art: Locator) {
 async function observePurchase(page: Page, title: string, activate: () => Promise<void>, grows = true) {
   const [frames] = await Promise.all([
     page.evaluate(async (title) => {
-      const frames: Array<{ height: number; gap: number; opacity: number; valueOpacity: number; active: boolean }> = [];
+      const frames: Array<{
+        height: number;
+        gap: number;
+        opacity: number;
+        valueOpacity: number;
+        scale: number;
+        active: boolean;
+      }> = [];
       const start = performance.now();
       let settled = 0;
       while (performance.now() - start < 1800) {
@@ -34,13 +41,15 @@ async function observePurchase(page: Page, title: string, activate: () => Promis
           (element) => element.querySelector("p > span")?.textContent === title,
         );
         const body = panel?.querySelector<HTMLElement>("[data-homestead-transition]");
-        if (!art || !panel || !body) continue;
+        if (!art || !(panel instanceof HTMLElement) || !body) continue;
         const bounds = panel.getBoundingClientRect();
         const artwork = art.getBoundingClientRect();
         const active = body.getAttribute("data-homestead-transition") === "active";
         const opacity = Number(getComputedStyle(body.firstElementChild!).opacity);
+        const scale = Number.parseFloat(getComputedStyle(panel).scale) || 1;
         frames.push({
-          height: bounds.height,
+          height: panel.offsetHeight,
+          scale,
           gap:
             panel.getAttribute("data-placement") === "above"
               ? artwork.top - bounds.bottom
@@ -53,8 +62,9 @@ async function observePurchase(page: Page, title: string, activate: () => Promis
           art.closest("button")?.querySelector('[role="status"]')?.textContent !== "Saving…" &&
           active &&
           opacity === 1 &&
+          scale === 1 &&
           Number(getComputedStyle(art).opacity) === 1;
-        settled = complete && frames.at(-2)?.height === bounds.height ? settled + 1 : 0;
+        settled = complete && frames.at(-2)?.height === panel.offsetHeight ? settled + 1 : 0;
         if (settled >= 6) break;
       }
       return frames;
@@ -63,6 +73,8 @@ async function observePurchase(page: Page, title: string, activate: () => Promis
   ]);
   expect(frames.every((frame) => frame.opacity === 1)).toBe(true);
   expect(frames.some((frame) => frame.valueOpacity > 0 && frame.valueOpacity < 1)).toBe(true);
+  expect(frames.some((frame) => frame.scale > 1.025)).toBe(true);
+  expect(frames.at(-1)?.scale).toBe(1);
   const heights = frames.map((frame) => frame.height);
   const minimum = Math.min(...heights);
   const maximum = Math.max(...heights);

@@ -62,6 +62,7 @@ describe("HomesteadScreen", () => {
     };
     const { rerender } = render(<HomesteadScreen {...defaultProps} afterProgressSaved={afterProgressSaved} />);
     const panel = await inspect();
+    panel.animate = vi.fn();
     expect(defaultProps.onConstructBuilding).not.toHaveBeenCalled();
     expect(panel.textContent).not.toContain("Physical damage");
     expect(panel.textContent).not.toContain("Find");
@@ -95,6 +96,7 @@ describe("HomesteadScreen", () => {
     });
     expect(screen.queryByRole("status")).toBeNull();
     expect(screen.getByRole("img", { name: "Blacksmith" }).classList.contains("grayscale")).toBe(false);
+    expect(panel.animate).not.toHaveBeenCalled();
     expect(panel.querySelector(".grayscale")).toBeNull();
     expect(within(panel).getByRole("img", { name: "Level 1 of 4" })).toBeTruthy();
     expect(panel.textContent).toContain("Physical damage is increased by 1");
@@ -332,6 +334,8 @@ describe("HomesteadScreen", () => {
     const { rerender } = render(<HomesteadScreen {...defaultProps} />);
     const panel = await inspect();
     const title = within(panel).getByText("Blacksmith");
+    const cancelPop = vi.fn();
+    panel.animate = vi.fn(() => ({ cancel: cancelPop }) as unknown as Animation);
     vi.useFakeTimers();
     fireEvent.click(nodeTile());
     rerender(
@@ -343,6 +347,7 @@ describe("HomesteadScreen", () => {
     expect(screen.queryByRole("status")).toBeNull();
     expect(panel.textContent).toContain("Physical damage is increased by 1");
     expect(panel.querySelector(".homestead-earned-star")).toBeTruthy();
+    expect(panel.animate).toHaveBeenCalledTimes(1);
     const physical = within(panel).getByText("Physical");
     const sentence = physical.closest("p");
     const resource = within(panel).getByText("Find", { exact: false }).querySelector("img");
@@ -355,6 +360,8 @@ describe("HomesteadScreen", () => {
       />,
     );
     expect(defaultProps.onConstructBuilding).toHaveBeenCalledTimes(2);
+    expect(panel.animate).toHaveBeenCalledTimes(2);
+    expect(cancelPop).toHaveBeenCalledTimes(1);
     expect(panel.textContent).toContain("Physical damage is increased by 2");
     expect(panel.textContent).not.toContain("Physical damage is increased by 1");
     expect(within(panel).getByText("Blacksmith")).toBe(title);
@@ -365,10 +372,12 @@ describe("HomesteadScreen", () => {
     expect(panel.querySelector("[data-homestead-transition]")?.firstElementChild?.getAttribute("style")).toBeNull();
     expect(screen.queryByText(/^(Built|Upgraded|Bonded)$/)).toBeNull();
     fireEvent.mouseLeave(nodeTile());
+    expect(cancelPop).toHaveBeenCalledTimes(2);
     act(() => vi.advanceTimersByTime(500));
     fireEvent.mouseEnter(nodeTile());
     expect(screen.getByRole("tooltip").querySelector(".homestead-earned-star")).toBeNull();
     expect(screen.getByRole("tooltip").querySelector(".homestead-value-update")).toBeNull();
+    expect(panel.animate).toHaveBeenCalledTimes(2);
   });
 
   it("shows completed benefits and keeps undiscovered Companions anonymous and unpurchasable", async () => {

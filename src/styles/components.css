@@ -564,6 +564,13 @@
     opacity: 0;
   }
 }
+.homestead-tooltip[data-placement="above"] {
+  transform-origin: bottom center;
+}
+.homestead-tooltip[data-placement="below"] {
+  transform-origin: top center;
+}
+
 @keyframes homestead-earned-star {
   0% {
     transform: scale(0.65);

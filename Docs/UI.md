@@ -210,7 +210,8 @@ synchronous tier guards reject repeated input. Dismissing the tooltip or changin
 tabs cannot cancel or repeat an accepted purchase. Errors appear only on failure
 and remain visible outside the tooltip.
 
-Saved Homestead purchases emphasize the newly filled star. First purchases
+Saved Homestead purchases emphasize the newly filled star and gently pop the
+whole tooltip from its anchored edge. First purchases
 crossfade into color; later purchases pulse the edge glow once. No success label
 covers the artwork. Tooltip words and icons stay mounted; only changed numbers
 receive a subtle reveal, while panel height eases without changing its anchored

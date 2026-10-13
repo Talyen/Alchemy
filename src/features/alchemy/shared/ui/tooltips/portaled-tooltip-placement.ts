@@ -110,11 +110,11 @@ export function usePortaledTooltipPlacement(
       }).then(({ x, y, placement: finalPlacement }) => {
         if (cancelled || currentMeasurement !== measurement) return;
         const left = `${x}px`;
-        // Fixed above panels grow away from their trigger without waiting for
-        // another measured top position on each animation frame.
+        // Anchor fixed above panels directly to the artwork so resizing and
+        // celebratory scale never feed transformed panel dimensions back into placement.
         const tooltipStyle: CSSProperties =
           !allowFlip && finalPlacement === "top"
-            ? { left, bottom: `${window.innerHeight - y - tooltipEl.getBoundingClientRect().height}px` }
+            ? { left, bottom: `${window.innerHeight - trigger.getBoundingClientRect().top + padding}px` }
             : { left, top: `${y}px` };
         setPosition((previous) =>
           previous.placement === finalPlacement &&

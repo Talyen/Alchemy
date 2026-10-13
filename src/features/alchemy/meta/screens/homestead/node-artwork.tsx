@@ -46,6 +46,17 @@ export function HomesteadNodeArtwork({
     return () => window.clearTimeout(timer);
   }, [feedback]);
   const transition = feedback !== null && animateTooltip && !reducedMotion;
+  useEffect(() => {
+    if (!transition) return;
+    const tooltipId = triggerRef.current?.getAttribute("aria-describedby")?.split(/\s+/)[0];
+    const panel = tooltipId ? document.getElementById(tooltipId) : null;
+    if (!panel?.animate) return;
+    const pop = panel.animate(
+      [{ scale: 1 }, { scale: 1.045, offset: 0.35 }, { scale: 0.995, offset: 0.75 }, { scale: 1 }],
+      { duration: HOMESTEAD_FEEDBACK.tooltipPopMs, easing: "ease-in-out" },
+    );
+    return () => pop.cancel();
+  }, [transition, feedback?.sequence, triggerRef]);
   const firstPurchase = feedback?.fromLevel === 0;
   const feedbackStyle = {
     "--homestead-reveal-duration": `${HOMESTEAD_FEEDBACK.revealMs}ms`,
@@ -137,7 +148,13 @@ export function HomesteadNodeArtwork({
           </div>
         )}
       </Surface>
-      <PortaledTooltip triggerRef={triggerRef} visible={visible} placement={tooltipPlacement} allowFlip={false}>
+      <PortaledTooltip
+        triggerRef={triggerRef}
+        visible={visible}
+        placement={tooltipPlacement}
+        allowFlip={false}
+        className="homestead-tooltip"
+      >
         <TooltipHeader className="mb-0 flex items-center justify-between gap-3">
           <span>{node.title}</span>
           {node.discovered && (

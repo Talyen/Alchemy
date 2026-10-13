@@ -93,6 +93,7 @@ export const HOMESTEAD_FEEDBACK = {
   valueMs: 180,
   resizeMs: 180,
   starMs: 360,
+  tooltipPopMs: 360,
   revealMs: 400,
   glowMs: 450,
   feedbackMs: 500,
