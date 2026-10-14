@@ -115,7 +115,7 @@ export function ArtPanel({
   const artWrapClass = cn("relative overflow-visible", isBoss && side === "player" && "origin-bottom scale-[1.3]");
 
   return (
-    <div className="relative flex flex-col items-center gap-3">
+    <div data-scene-region={side === "player" ? "left" : "right"} className="relative flex flex-col items-center gap-3">
       <CombatantAttackLunge
         attackToken={attackToken}
         castToken={castToken}
@@ -348,13 +348,14 @@ function ActorStatsPanel({
     <div
       className={cn(
         "relative rounded-shell-inner px-5 py-3.5 surface-muted",
+        !isDead && "battle-scene-panel",
         cardWidthClass,
         deathsDoorActive && "shadow-deaths-door-glow",
         isDead && "animate-frame-fade !bg-transparent",
       )}
     >
       {deathsDoorActive ? <StatsDeathDoorBorder /> : null}
-      <div className={cn(isDead && "opacity-0 transition-opacity duration-700")}>
+      <div className={cn("relative", isDead && "opacity-0 transition-opacity duration-700")}>
         <ActorHealthHeader side={side} title={title} health={health} maxHealth={maxHealth} healthToken={healthToken} />
         <Progress
           aria-label={`${title} health`}

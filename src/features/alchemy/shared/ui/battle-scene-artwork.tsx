@@ -17,6 +17,7 @@ export function BattleSceneArtwork({
   return (
     <div
       className={cn("battle-scene-artwork relative", className)}
+      data-scene-masked={maskSource ? "" : undefined}
       style={
         maskSource
           ? ({ "--battle-art-mask": `url("${maskSource}")`, "--battle-art-mask-fit": maskFit } as CSSProperties)

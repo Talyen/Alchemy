@@ -15,8 +15,8 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--battle-scene-tint, transparent);
-  opacity: var(--battle-scene-tint-opacity, 0);
+  background: var(--battle-art-tint, transparent);
+  opacity: var(--battle-art-opacity, 0);
   mix-blend-mode: color;
   mask-image: var(--battle-art-mask, none);
   mask-size: var(--battle-art-mask-fit, contain);
@@ -74,6 +74,82 @@
 
 @media (prefers-reduced-motion: reduce) {
   .battle-tabletop .battle-scene-hand-piece::before {
+    transition: none;
+  }
+}
+
+/* The lower zone follows cards through flights; combatant zones follow their assemblies. */
+.battle-tabletop {
+  --battle-art-tint: var(--battle-scene-lower-tint, var(--battle-scene-tint));
+  --battle-art-opacity: var(--battle-scene-lower-opacity, var(--battle-scene-tint-opacity));
+}
+
+.battle-tabletop [data-scene-region="left"] {
+  --battle-art-tint: var(--battle-scene-left-tint, var(--battle-scene-tint));
+  --battle-art-opacity: var(--battle-scene-left-opacity, var(--battle-scene-tint-opacity));
+}
+
+.battle-tabletop [data-scene-region="right"] {
+  --battle-art-tint: var(--battle-scene-right-tint, var(--battle-scene-tint));
+  --battle-art-opacity: var(--battle-scene-right-opacity, var(--battle-scene-tint-opacity));
+}
+
+/* Paint material edges inside the artwork, below semantic borders and focus. */
+.battle-tabletop .battle-scene-artwork:not([data-scene-masked])::before,
+.battle-tabletop .battle-scene-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  box-shadow:
+    inset var(--battle-shadow-unit) var(--battle-shadow-unit) var(--battle-shadow-unit) rgb(255 244 220 / 16%),
+    inset calc(-1 * var(--battle-shadow-unit)) calc(-2 * var(--battle-shadow-unit)) calc(2 * var(--battle-shadow-unit))
+      rgb(8 10 14 / 24%);
+  pointer-events: none;
+}
+
+.battle-tabletop .battle-scene-panel::before {
+  z-index: 0;
+  background: color-mix(in srgb, var(--battle-art-tint) calc(var(--battle-art-opacity) * 100%), transparent);
+  box-shadow:
+    inset var(--battle-shadow-unit) var(--battle-shadow-unit) var(--battle-shadow-unit) rgb(255 244 220 / 12%),
+    inset calc(-1 * var(--battle-shadow-unit)) calc(-2 * var(--battle-shadow-unit)) calc(2 * var(--battle-shadow-unit))
+      rgb(8 10 14 / 24%),
+    calc(1 * var(--battle-shadow-unit)) calc(3 * var(--battle-shadow-unit)) calc(4 * var(--battle-shadow-unit))
+      var(--battle-contact-shadow),
+    calc(4 * var(--battle-shadow-unit)) calc(10 * var(--battle-shadow-unit)) calc(14 * var(--battle-shadow-unit))
+      var(--battle-cast-shadow);
+}
+
+.battle-mana-spill {
+  display: none;
+}
+
+.battle-tabletop .battle-mana-spill {
+  display: block;
+  position: absolute;
+  inset: 0;
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.battle-mana-spill > span {
+  position: absolute;
+  aspect-ratio: 1.6;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse, rgb(65 185 235 / 18%), transparent 70%);
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+}
+
+.battle-mana-spill > span[data-filled="true"] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-mana-spill > span {
     transition: none;
   }
 }

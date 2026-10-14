@@ -88,6 +88,15 @@ export function ManaPanel({
       <BattleSceneArtwork className="mana-dock-frame battle-scene-silhouette" maskSource={manaDockFrame}>
         <img src={manaDockFrame} alt="" draggable={false} className="block h-full w-full" />
       </BattleSceneArtwork>
+      <div className="battle-mana-spill" style={{ maskImage: `url("${manaDockFrame}")` }} aria-hidden="true">
+        {state.gems.map((gem) => (
+          <span
+            key={gem.index}
+            data-filled={gem.filled}
+            style={{ left: `${gem.x}%`, top: `${gem.y}%`, height: `${state.height * 2.4}%` }}
+          />
+        ))}
+      </div>
       <button
         type="button"
         className="mana-dock-inspect"

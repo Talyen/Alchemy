@@ -54,6 +54,7 @@ export function CompanionPanel({
       ref={triggerRef}
       className="companion-enter relative"
       data-testid="active-companion"
+      data-scene-region="left"
       aria-label={`Active companion: ${companion.title}`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}

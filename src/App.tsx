@@ -234,6 +234,12 @@ function AppMainContent({
             "--battle-scene-tint": `rgb(${sceneAppearance.ambientColor.join(" ")})`,
             "--battle-scene-tint-opacity": sceneAppearance.ambientOpacity,
             "--battle-scene-shadow-opacity": sceneAppearance.shadowOpacity,
+            "--battle-scene-left-tint": `rgb(${sceneAppearance.regions.left.ambientColor.join(" ")})`,
+            "--battle-scene-left-opacity": sceneAppearance.regions.left.ambientOpacity,
+            "--battle-scene-right-tint": `rgb(${sceneAppearance.regions.right.ambientColor.join(" ")})`,
+            "--battle-scene-right-opacity": sceneAppearance.regions.right.ambientOpacity,
+            "--battle-scene-lower-tint": `rgb(${sceneAppearance.regions.lower.ambientColor.join(" ")})`,
+            "--battle-scene-lower-opacity": sceneAppearance.regions.lower.ambientOpacity,
           } as React.CSSProperties
         }
       >
