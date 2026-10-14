@@ -24,6 +24,11 @@ const filters = (patch: Partial<ArmoryInventoryFilters>): ArmoryInventoryFilters
 afterEach(() => vi.restoreAllMocks());
 
 describe("Armory inventory matching", () => {
+  it("finds item names when a player types a straight apostrophe for an authored curly apostrophe", () => {
+    const unique: GearInstance = { instanceId: "viper", definitionId: "vipers-courtesy", affixes: [] };
+    expect(matchesGearFilters(unique, filters({ search: "viper's courtesy" }))).toBe(true);
+  });
+
   it("matches English item names regardless of the host's Turkish case rules", () => {
     const lower = String.prototype.toLocaleLowerCase;
     vi.spyOn(String.prototype, "toLocaleLowerCase").mockImplementation(function (this: string, locales) {

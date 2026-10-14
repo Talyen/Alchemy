@@ -10,6 +10,10 @@ import { tickPlayerStatuses } from "@/lib/battle/status-ticks";
 import { companionLibrary } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
+import { advanceToPlayerTurn, reducePlayerSkipTurns } from "@/lib/battle/player-turn-transition";
+import { applyWishEffect } from "@/lib/battle/wish";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import { regressionBattle } from "../../fixtures/battle";
 
 function restore(patch: Record<string, unknown>) {
@@ -31,6 +35,63 @@ function restore(patch: Record<string, unknown>) {
 const rng = () => 0.99;
 
 describe("playing recovered battles", () => {
+  it("repairs broken pending material balances before reward settlement", () => {
+    const missing = restore({ pendingMaterials: null });
+    const wished = applyWishEffect(
+      { ...missing, rng, talentEffects: { ...missing.talentEffects, wishGemsGold: 2 } },
+      undefined,
+      1,
+      [],
+    );
+    expect(wished.pendingMaterials).toEqual({ ...emptyInventory(), gems: 2 });
+    const partial = restore({ pendingMaterials: { gems: 3, herbs: "broken", wood: -2 } });
+    expect(partial.pendingMaterials).toEqual({ ...emptyInventory(), gems: 3 });
+  });
+
+  it("repairs crowd-control counters that cannot decrement", () => {
+    const state = restore({ playerCC: { stunSkipTurns: 1e30, freezeSkipTurns: 0, cooldown: 0 } });
+    expect(reducePlayerSkipTurns({ ...state, rng }).playerCC.stunSkipTurns).toBe(0);
+    expect(canPlayCard(state, state.hand[0]!, 0)).toBe(true);
+  });
+
+  it("repairs a round counter that cannot advance", () => {
+    const state = restore({ turn: 1e30 });
+    expect(advanceToPlayerTurn({ ...state, rng }).turn).toBe(2);
+  });
+
+  it("repairs Health magnitudes that make ordinary attacks unable to change Health", () => {
+    const state = restore({ enemyHealth: 1e30, enemyMaxHealth: 1e30 });
+    const next = playBattleCardResolved({ ...state, rng }, "slash", 0).state;
+    expect(next.enemyHealth).toBeLessThan(state.enemyHealth);
+  });
+
+  it("drops negative difficulty damage while preserving valid difficulty bonuses", () => {
+    const state = restore({
+      difficultyModifiers: [
+        { kind: "enemy-damage-multiplier", amount: -1 },
+        { kind: "increase-enemy-damage", amount: -100 },
+        { kind: "increase-enemy-damage", amount: 2 },
+      ],
+    });
+    expect(state.difficultyModifiers).toEqual([{ kind: "increase-enemy-damage", amount: 2 }]);
+    const attacked = applyEnemyAbility({ ...state, rng }, cardById.slash!, []);
+    expect(attacked.playerHealth).toBeLessThan(state.playerHealth);
+  });
+
+  it("repairs an Archery sequence counter that cannot count further card plays", () => {
+    const state = restore({
+      flags: { archeryCardsPlayedThisTurn: 1e30 },
+      hand: [
+        { ...cardById["fire-arrow"]!, uid: 1, cost: 0 },
+        { ...cardById["fire-arrow"]!, uid: 2, cost: 0 },
+      ],
+    });
+    const first = playBattleCardResolved({ ...state, rng }, "fire-arrow", 0).state;
+    const second = playBattleCardResolved(first, "fire-arrow", 0).state;
+    expect(second.flags.archeryCardsPlayedThisTurn).toBe(2);
+    expect(second.flags.archerySecondCardActive).toBe(true);
+  });
+
   it("skips damaged empty Wish offers and promotes the next surviving choice", () => {
     const state = restore({ wishOptions: [null], wishQueue: [[], [null], [cardById.block!]] });
     expect(state.wishOptions?.map((card) => card.id)).toEqual(["block"]);

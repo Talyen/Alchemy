@@ -29,10 +29,10 @@ export function hasArmoryCriteria(filters: ArmoryInventoryFilters, isTrinket: bo
 function matchesSearch(text: string, query: string): boolean {
   // Authored names and effects are English; host-specific case rules can
   // otherwise make a lowercase query miss a title such as Icy Heart.
-  const normalized = text.toLowerCase().replace(/\s+/g, " ");
-  return query
+  const normalize = (value: string) => value.toLowerCase().replace(/[‘’]/g, "'").replace(/\s+/g, " ");
+  const normalized = normalize(text);
+  return normalize(query)
     .trim()
-    .toLowerCase()
     .split(/\s+/)
     .every((word) => normalized.includes(word));
 }

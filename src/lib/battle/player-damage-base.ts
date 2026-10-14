@@ -76,7 +76,7 @@ function computeBaseRawAmount(
     amount = scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? PERCENT_DENOMINATOR) + forgeBonus;
   } else if (effect.equalToArmor) {
     amount = state.playerStatuses.armor + forgeBonus;
-  } else if (effect.equalToGoldPercent) {
+  } else if (effect.equalToGoldPercent !== undefined) {
     amount = scalePercent(state.gold, effect.equalToGoldPercent, PERCENT_DENOMINATOR) + forgeBonus;
   } else {
     amount = effect.amount + forgeBonus;
