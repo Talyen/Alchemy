@@ -39,16 +39,19 @@ export function useArtworkReady(identity: string | number, { initialRevealOnly =
         if (waits.has(image)) continue;
         const wait = { source: sourceOf(image), lifetime: new AbortController(), pending: true };
         waits.set(image, wait);
-        image.style.removeProperty("visibility");
-        if (initialRevealOnly && revealed) image.style.visibility = "hidden";
-        image.loading = "eager";
+        if (image.style.visibility) image.style.removeProperty("visibility");
+        if (initialRevealOnly && revealed && image.style.visibility !== "hidden") image.style.visibility = "hidden";
+        if (image.loading !== "eager") image.loading = "eager";
         void waitForImage(image, wait.lifetime.signal).then((ready) => {
           if (wait.lifetime.signal.aborted) return;
           // Source changes can precede delivery of the mutation observer.
           if (wait.source !== sourceOf(image)) return reconcile();
           wait.pending = false;
-          if (!ready) image.style.visibility = "hidden";
-          else image.style.removeProperty("visibility");
+          if (!ready) {
+            if (image.style.visibility !== "hidden") image.style.visibility = "hidden";
+          } else if (image.style.visibility) {
+            image.style.removeProperty("visibility");
+          }
           // Decode completions change readiness, not the mounted image set.
           // The observer handles DOM/source changes before the reveal frame.
           scheduleReveal();

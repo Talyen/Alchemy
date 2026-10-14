@@ -29,7 +29,7 @@ const CardGhostOverlay = memo(function CardGhostOverlay({ ghost, onDone }: { gho
       }
     >
       <BattleSceneArtwork className="h-full w-full">
-        <img src={ghost.art} alt="" className="block h-full w-full object-cover" />
+        <img src={ghost.art} alt="" decoding="async" className="block h-full w-full object-cover" />
       </BattleSceneArtwork>
     </div>
   );

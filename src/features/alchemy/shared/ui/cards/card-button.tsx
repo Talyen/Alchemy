@@ -235,6 +235,7 @@ function CardButtonSurface({
       alt={getCardDisplayTitle(card)}
       className={cn("block h-auto w-full", cardArtImageClass)}
       loading="eager"
+      decoding="async"
     />
   );
   return (

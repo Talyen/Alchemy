@@ -102,7 +102,10 @@ export function CombatTextRail({ bursts }: { bursts: CombatTextBurst[] }) {
   useLayoutEffect(() => {
     const newest = newestRef.current;
     if (!newest) return;
-    const measure = () => setNewestHeight(newest.offsetHeight);
+    const measure = () => {
+      const h = newest.offsetHeight;
+      setNewestHeight((prev) => (prev === h ? prev : h));
+    };
     measure();
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
     observer?.observe(newest);
@@ -112,8 +115,8 @@ export function CombatTextRail({ bursts }: { bursts: CombatTextBurst[] }) {
   return (
     <div className="pointer-events-none absolute inset-0 z-30 w-full">
       <div
-        className="absolute inset-x-0 flex -translate-y-full flex-col items-center gap-3"
-        style={{ top: "calc(50% - 3rem)", marginTop: newestHeight }}
+        className="absolute inset-x-0 flex flex-col items-center gap-3 will-change-transform"
+        style={{ top: "calc(50% - 3rem)", transform: `translate3d(0, calc(-100% + ${newestHeight}px), 0)` }}
       >
         <AnimatePresence mode="popLayout">
           {bursts.map((burst) => (

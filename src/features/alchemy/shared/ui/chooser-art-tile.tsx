@@ -88,6 +88,7 @@ export function ChooserArtTile({
         <img
           src={art}
           alt=""
+          decoding="async"
           className="pointer-events-none block h-full w-full object-cover select-none"
           draggable={false}
         />

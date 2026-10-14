@@ -47,6 +47,7 @@ export function HeroUnlockedScreen({
               <img
                 src={characterArt[characterId]}
                 alt={characters[characterId].name}
+                decoding="async"
                 className="aspect-[3/4] w-full rounded-shell-tooltip border border-gold-pale/40 object-cover shadow-xl"
               />
             </div>

@@ -88,6 +88,7 @@ export function CompanionPanel({
               alt={companion.title}
               className="block aspect-[3/4] w-full rounded-shell-hero"
               loading="eager"
+              decoding="async"
             />
           </BattleSceneArtwork>
         </Surface>

@@ -314,6 +314,7 @@ function ActorArtFrame({
                 alt={title}
                 className={cn("block w-full", side === "enemy" ? landscapeArtImageClass : cardArtImageClass)}
                 loading="eager"
+                decoding="async"
               />
             </BattleSceneArtwork>
           )}

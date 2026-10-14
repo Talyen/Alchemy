@@ -78,8 +78,8 @@ function positionLayer(
 
   if (!previous || next.x !== previous.x || next.y !== previous.y)
     layer.style.transform = `translate3d(${next.x}px, ${next.y}px, 0)`;
-  if (!previous || next.width !== previous.width) layer.style.width = `${next.width}px`;
-  if (!previous || next.height !== previous.height) layer.style.height = `${next.height}px`;
+  if (!previous || Math.abs(next.width - previous.width) >= 0.5) layer.style.width = `${next.width}px`;
+  if (!previous || Math.abs(next.height - previous.height) >= 0.5) layer.style.height = `${next.height}px`;
   if (!previous) layer.style.visibility = "visible";
   return next;
 }

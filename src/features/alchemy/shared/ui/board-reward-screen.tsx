@@ -35,6 +35,7 @@ export function BoardRewardScreen({
           <img
             src={boardArt[boardId]?.full}
             alt={board?.title ?? "Game Board"}
+            decoding="async"
             className="max-h-[55vh] w-full rounded-shell-tooltip object-contain"
           />
         </div>
