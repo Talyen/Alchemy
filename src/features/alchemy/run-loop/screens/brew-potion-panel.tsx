@@ -40,12 +40,14 @@ export function BrewPotionPanel({
   const [submitted, setSubmitted] = useState(false);
   const confirmRef = useRef<HTMLButtonElement>(null);
   const [selectionDeck, setSelectionDeck] = useState(deck);
-  if (selectionDeck !== deck) {
+  if (!submitted && selectionDeck !== deck) {
     setSelectionDeck(deck);
     setSelected([]);
     setPage(0);
-    setError(submitted ? "" : "Deck changed. Select again.");
+    setError("Deck changed. Select again.");
   }
+  // An accepted brew changes the live deck before its saved result replaces this panel.
+  const sourceDeck = submitted ? selectionDeck : deck;
   useLayoutEffect(() => {
     if (kind === "strengthen" && selected.length === 1 && document.activeElement === document.body)
       confirmRef.current?.focus();
@@ -54,7 +56,7 @@ export function BrewPotionPanel({
   const items =
     kind === "new"
       ? offers.map((card, index) => ({ card, index }))
-      : deck
+      : sourceDeck
           .map((card, index) => ({ card, index }))
           .filter(({ card }) => isBrewablePotion(card) && (kind !== "strengthen" || strengthenPotion(card) !== null));
   const a = selected[0] ?? -1;
@@ -65,11 +67,11 @@ export function BrewPotionPanel({
     kind === "new"
       ? offers[a]
       : kind === "strengthen"
-        ? deck[a]
-          ? strengthenPotion(deck[a])
+        ? sourceDeck[a]
+          ? strengthenPotion(sourceDeck[a])
           : null
         : a !== b
-          ? tryCreateMixedPotion(deck[a], deck[b], potency)
+          ? tryCreateMixedPotion(sourceDeck[a], sourceDeck[b], potency)
           : null;
   const afford = gold >= price;
   function confirm(operation: BrewOperation) {
@@ -106,8 +108,8 @@ export function BrewPotionPanel({
               ? "No Potion recipes are available."
               : "Two eligible Potions required."}
         </p>
-      ) : kind === "strengthen" && result && deck[a] ? (
-        <PotionComparison original={deck[a]} result={result} />
+      ) : kind === "strengthen" && result && sourceDeck[a] ? (
+        <PotionComparison original={sourceDeck[a]} result={result} />
       ) : (
         <CardSelectionGrid
           items={items}
@@ -138,7 +140,7 @@ export function BrewPotionPanel({
           />
         </div>
       )}
-      {!afford && <p role="status">Not enough Gold. Brewing costs {price} Gold.</p>}
+      {!submitted && !afford && <p role="status">Not enough Gold. Brewing costs {price} Gold.</p>}
       {error && <p role="alert">{error}</p>}
       <div className="flex justify-center gap-3">
         <Button variant="outline" onClick={onBack}>
@@ -147,7 +149,7 @@ export function BrewPotionPanel({
         {kind !== "new" && (
           <>
             {kind === "strengthen" && result && (
-              <Button variant="outline" onClick={() => setSelected([])}>
+              <Button variant="outline" disabled={submitted} onClick={() => setSelected([])}>
                 Choose Another Potion
               </Button>
             )}
