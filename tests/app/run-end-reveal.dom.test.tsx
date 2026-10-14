@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { runEndScreenRoutes } from "@/app/screen-routes/run-end-routes";
 import { mutateGameplayForTest, resetAllTestStores } from "../helpers/run-domain-store-test";
 import { createMockRouteCommands } from "../helpers/run-controller";
@@ -52,12 +52,12 @@ afterEach(() => {
   state.unlocks = [];
 });
 
-function mount() {
+function mount(screen: "game-over" | "run-victory" = "run-victory") {
   const leave = vi.fn();
-  const Route = runEndScreenRoutes["run-victory"];
+  const Route = runEndScreenRoutes[screen];
   const view = render(
     <Route
-      screen="run-victory"
+      screen={screen}
       routeCommands={{ ...createMockRouteCommands(), runEnd: { continueFromRunEnd: leave } }}
       onOpenGameMenu={vi.fn()}
     />,
@@ -65,9 +65,9 @@ function mount() {
   return { ...view, leave };
 }
 
-it("presents every new hero before dispatching the existing menu command", () => {
+it.each(["game-over", "run-victory"] as const)("retains the last hero while %s leaves for the menu", (screen) => {
   state.unlocks = ["rogue", "ranger"];
-  const view = mount();
+  const view = mount(screen);
   fireEvent.click(view.getByRole("button", { name: "Continue" }));
   expect(view.getByRole("heading").textContent).toBe("rogue");
   fireEvent.click(view.getByRole("button", { name: "Continue" }));
@@ -75,6 +75,7 @@ it("presents every new hero before dispatching the existing menu command", () =>
   expect(view.leave).not.toHaveBeenCalled();
   fireEvent.click(view.getByRole("button", { name: "Main Menu" }));
   expect(view.leave).toHaveBeenCalledOnce();
+  expect(view.getByRole("heading").textContent).toBe("ranger");
 });
 
 it("reveals only edition-available heroes before demo completion", () => {
@@ -90,29 +91,43 @@ it("reveals only edition-available heroes before demo completion", () => {
   expect(view.leave).toHaveBeenCalledOnce();
 });
 
-it("retains direct menu navigation when the run unlocked no heroes", () => {
-  const view = mount();
-  fireEvent.click(view.getByRole("button", { name: "Main Menu" }));
-  expect(view.leave).toHaveBeenCalledOnce();
-});
-
-it("reveals a board after heroes and before leaving the run, with explicit equip acknowledgment", () => {
-  mutateGameplayForTest((draft) => {
-    draft.profile.collectedBoardIds.push("alpine-cuckoo");
-    draft.profile.pendingBoardRewardId = "alpine-cuckoo";
-  });
-  state.unlocks = ["rogue"];
-  const commands = createMockRouteCommands();
-  const Route = runEndScreenRoutes["run-victory"];
-  const view = render(<Route screen="run-victory" routeCommands={commands} onOpenGameMenu={vi.fn()} />);
-  fireEvent.click(view.getByRole("button", { name: "Continue" }));
-  fireEvent.click(view.getByRole("button", { name: "Continue" }));
-  expect(view.getByRole("heading", { name: "Board Collected" })).toBeTruthy();
-  expect(commands.runEnd.continueFromRunEnd).not.toHaveBeenCalled();
-  fireEvent.click(view.getByRole("button", { name: "Use Board" }));
-  expect(commands.boards.acknowledgeReward).toHaveBeenCalledExactlyOnceWith("alpine-cuckoo", true);
-  expect(commands.runEnd.continueFromRunEnd).toHaveBeenCalledOnce();
-});
+it.each([
+  { screen: "game-over", action: "Use Board", equip: true, unlocks: ["rogue"] },
+  { screen: "run-victory", action: "Main Menu", equip: false, unlocks: [] },
+] as const)(
+  "retains the board after $action from $screen through saving and menu navigation",
+  ({ screen, action, equip, unlocks }) => {
+    mutateGameplayForTest((draft) => {
+      draft.profile.collectedBoardIds.push("alpine-cuckoo");
+      draft.profile.pendingBoardRewardId = "alpine-cuckoo";
+    });
+    state.unlocks = [...unlocks];
+    const commands = createMockRouteCommands();
+    commands.boards.acknowledgeReward = vi.fn(() => {
+      mutateGameplayForTest((draft) => {
+        draft.profile.pendingBoardRewardId = null;
+      });
+      return true;
+    });
+    let saved = () => {};
+    commands.progress.afterSaved = (feedback) => {
+      saved = feedback;
+    };
+    const Route = runEndScreenRoutes[screen];
+    const view = render(<Route screen={screen} routeCommands={commands} onOpenGameMenu={vi.fn()} />);
+    fireEvent.click(view.getByRole("button", { name: "Continue" }));
+    if (unlocks.length) fireEvent.click(view.getByRole("button", { name: "Continue" }));
+    expect(view.getByRole("heading", { name: "Board Collected" })).toBeTruthy();
+    expect(commands.runEnd.continueFromRunEnd).not.toHaveBeenCalled();
+    fireEvent.click(view.getByRole("button", { name: action }));
+    expect(commands.boards.acknowledgeReward).toHaveBeenCalledExactlyOnceWith("alpine-cuckoo", equip);
+    expect(view.getByRole("heading", { name: "Board Collected" })).toBeTruthy();
+    expect(commands.runEnd.continueFromRunEnd).not.toHaveBeenCalled();
+    act(() => saved());
+    expect(commands.runEnd.continueFromRunEnd).toHaveBeenCalledOnce();
+    expect(view.getByRole("heading", { name: "Board Collected" })).toBeTruthy();
+  },
+);
 
 it("continues from a board reveal to demo completion without reopening the reveal", () => {
   state.demo = true;
