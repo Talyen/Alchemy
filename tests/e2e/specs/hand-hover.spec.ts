@@ -113,7 +113,7 @@ for (const { width, height, gameSizePercent } of [
   { width: 1280, height: 720, gameSizePercent: 120 },
   { width: 2560, height: 1080, gameSizePercent: 80 },
 ]) {
-  test(`hand fits and controls stay fixed at ${width} / ${gameSizePercent}%`, slow, async ({ page }) => {
+  test(`hand remains reachable and controls stay fixed at ${width} / ${gameSizePercent}%`, slow, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.addInitScript(
       (size) =>
@@ -139,7 +139,7 @@ for (const { width, height, gameSizePercent } of [
     expect(scene).toEqual({ x: 0, y: 0, width, height });
     const inset = await page.getByTestId("vr-stage").evaluate((stage) => {
       const scale = stage.getBoundingClientRect().height / (stage as HTMLElement).offsetHeight;
-      return 24 * Number(getComputedStyle(stage).getPropertyValue("--content-scale")) * scale;
+      return 18 * Number(getComputedStyle(stage).getPropertyValue("--content-scale")) * scale;
     });
     const draw = await page.getByTestId("draw-pile").boundingBox();
     const discard = await page.getByTestId("discard-pile").boundingBox();
@@ -170,7 +170,7 @@ for (const { width, height, gameSizePercent } of [
       for (const rect of bounds) {
         expect(rect.left).toBeGreaterThan(left!.x + left!.width);
         expect(rect.right).toBeLessThan(right!.x);
-        expect(rect.bottom).toBeLessThanOrEqual(height + 1);
+        expect((rect.top + rect.bottom) / 2).toBeLessThan(height);
         expect(rect.top).toBeGreaterThanOrEqual(0);
       }
       const current = await positions();

@@ -236,7 +236,7 @@ Draw and Discard artwork use 80% of the resting hand card width, sharing its
 responsive size from the bottom bar. Mana and End Turn sit above the aligned piles,
 with End Turn styled as a compact secondary action centered over the discard pile.
 Draw and Mana occupy the bottom-left viewport corner; Discard and End Turn occupy
-the bottom-right. Both groups use a 1.5 content-rem inset from the side and bottom
+the bottom-right. Both groups use a 1.125 content-rem inset from the side and bottom
 edges, and pile bottoms align. Actors retain their inset, width-limited composition;
 all battle transfer and feedback coordinates use the full viewport scene.
 The battle toolbar places live Gold before the inspection controls, with a brief
@@ -244,7 +244,8 @@ highlight on increases. Dev-only Skip Combat uses a labeled skip-forward icon
 and tooltip immediately before Menu.
 The battle bottom bar reserves content-sized side controls and gives the hand
 the remaining width. Side controls stay stationary as the hand grows to seven
-cards; smaller hands remain centered with capped spacing. Hand hover and pointer
+cards; smaller hands remain centered with capped spacing. Resting card artwork
+may extend past the bottom edge; playable card centers stay visible. Hand hover and pointer
 activation use the nearest stable slot center, with boundaries halfway between
 centers, independent of raised artwork and reflow motion. Hidden transfer cards
 cannot receive pointer selection. Keyboard focus uses the native card buttons.
