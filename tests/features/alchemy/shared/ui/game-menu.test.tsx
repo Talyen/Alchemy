@@ -1,6 +1,6 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GameMenu } from "@/features/alchemy/shared/ui/game-menu";
 import type { ComponentProps } from "react";
 
@@ -31,8 +31,15 @@ function isAnchored(): boolean {
 }
 
 describe("GameMenu", () => {
+  beforeEach(() => {
+    // JSDOM has no layout boxes; dialog focus still requires visible controls.
+    vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([
+      new DOMRect(0, 0, 100, 30),
+    ] as unknown as DOMRectList);
+  });
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
   });
 
   it("keeps the hamburger panel anchored while fading out after close clears the rect", () => {

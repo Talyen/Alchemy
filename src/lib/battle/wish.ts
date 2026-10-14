@@ -86,7 +86,14 @@ export function buildWishOptions(
     undiscovered.length > 0 ? selectRewardCards(fullDeck, undiscovered, 1, [], getBattleRng(state)) : [];
   const selected = [
     ...guaranteed,
-    ...selectRewardCards(fullDeck, candidates, baseCount - guaranteed.length, guaranteed, getBattleRng(state)),
+    // Recovered counts can be large but finite; selection cannot offer more than its pool.
+    ...selectRewardCards(
+      fullDeck,
+      candidates,
+      Math.min(baseCount, candidates.length) - guaranteed.length,
+      guaranteed,
+      getBattleRng(state),
+    ),
   ];
 
   if (state.talentEffects.wishCardsUpgraded) {

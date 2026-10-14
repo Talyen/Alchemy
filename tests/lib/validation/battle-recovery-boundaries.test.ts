@@ -7,6 +7,7 @@ import { checkHealthThresholds } from "@/lib/battle/status-player";
 import { applyAbilityDamage } from "@/lib/battle/enemy-ability-damage";
 import { createEnemyAbilityContext } from "@/lib/battle/enemy-ability-context";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
+import { buildWishOptions } from "@/lib/battle/wish";
 
 const oversized = Number.MAX_VALUE;
 function restore(patch: Record<string, unknown>) {
@@ -42,6 +43,22 @@ describe("saved battle recovery boundaries", () => {
     const state = restore({ talentEffects: { wishExtraChoices: oversized, potionPotency: 1.2 } });
     expect(state.talentEffects.wishExtraChoices).toBe(0);
     expect(state.talentEffects.potionPotency).toBe(1.2);
+  });
+  it("bounds recovered Wish work to the available cards even for large safe counts", () => {
+    const state = restore({ talentEffects: { wishExtraChoices: 1e12 } });
+    let rolls = 0;
+    const options = buildWishOptions(
+      {
+        ...state,
+        rng: () => {
+          if (++rolls > 10000) throw new Error("Wish selection exceeded its card pool");
+          return 0.99;
+        },
+      },
+      undefined,
+    );
+    expect(options.length).toBeGreaterThan(0);
+    expect(new Set(options.map((card) => card.id)).size).toBe(options.length);
   });
   it("repairs malformed Trinket rewards before healing changes status stacks", () => {
     const state = restore({
