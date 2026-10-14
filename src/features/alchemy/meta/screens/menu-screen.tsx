@@ -104,6 +104,7 @@ export function MenuScreen({
           alt="Alchemy logo"
           className={cn("h-full max-h-full w-auto max-w-full object-contain brightness-90", cardHoverScaleClass)}
           loading="eager"
+          decoding="async"
         />
       </Surface>
 

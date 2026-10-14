@@ -81,7 +81,7 @@ function CorruptionIntro({
           alt="Altar of Corruption"
           className="block w-full max-w-[calc(31.5023*var(--content-rem,1rem))] rounded-shell-panel object-contain"
           loading="eager"
-          decoding="sync"
+          decoding="async"
         />
       </div>
       <div className="flex flex-wrap justify-center gap-3">

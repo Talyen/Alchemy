@@ -250,9 +250,21 @@ function ActorArtFrame({
         : ratio < COMBAT_IMPACT_HEAVY_HEALTH_RATIO
           ? "normal"
           : "heavy";
-    node.classList.remove("portrait-recoil-active");
-    void node.offsetWidth;
-    node.classList.add("portrait-recoil-active");
+    const animations = typeof node.getAnimations === "function" ? node.getAnimations() : [];
+    const recoilAnim = animations.find(
+      (anim) =>
+        (typeof CSSAnimation !== "undefined" &&
+          anim instanceof CSSAnimation &&
+          anim.animationName === "portraitRecoil") ||
+        ("animationName" in anim && anim.animationName === "portraitRecoil"),
+    );
+    if (recoilAnim) {
+      recoilAnim.currentTime = 0;
+      recoilAnim.play();
+    } else {
+      node.classList.remove("portrait-recoil-active");
+      node.classList.add("portrait-recoil-active");
+    }
   }, [pulse, isDead, maxHealth]);
 
   return (

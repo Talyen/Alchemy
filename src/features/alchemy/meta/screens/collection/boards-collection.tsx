@@ -55,6 +55,7 @@ function BoardTile({
         <img
           src={boardArt[id]?.thumbnail}
           alt=""
+          decoding="async"
           className={cn("aspect-[43/24] w-full object-contain", !owned && lockedHoverPreviewClass)}
         />
       </Surface>
@@ -171,6 +172,7 @@ export function BoardsCollection({
           <img
             src={boardArt[inspected.id]?.full}
             alt={inspected.title}
+            decoding="async"
             className="max-h-[55vh] w-full rounded-shell-tooltip object-contain"
           />
           <div className="mt-4 flex justify-center">

@@ -20,6 +20,7 @@ export function DemoCompletionScreen({ onWishlist, onMainMenu }: { onWishlist?: 
           height={1536}
           alt="More Bosses; Wildwood Draft; The Labyrinth; More Heroes; 200+ Talents; Trinkets & Uniques; Build a Homestead"
           data-testid="demo-marketing-image"
+          decoding="async"
           className="h-auto max-h-full w-auto max-w-full object-contain"
         />
       </div>

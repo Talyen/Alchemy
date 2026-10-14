@@ -33,6 +33,7 @@ function ManaExit({ exit }: { exit: ManaGemExit }) {
             key={shape}
             src={art}
             alt=""
+            decoding="async"
             className="mana-dock-shard"
             style={
               {
@@ -45,7 +46,7 @@ function ManaExit({ exit }: { exit: ManaGemExit }) {
           />
         ))
       ) : (
-        <img src={art} alt="" className="mana-dock-bonus-exit" />
+        <img src={art} alt="" decoding="async" className="mana-dock-bonus-exit" />
       )}
     </span>
   );
@@ -86,7 +87,7 @@ export function ManaPanel({
       onBlurCapture={onBlurCapture}
     >
       <BattleSceneArtwork className="mana-dock-frame battle-scene-silhouette" maskSource={manaDockFrame}>
-        <img src={manaDockFrame} alt="" draggable={false} className="block h-full w-full" />
+        <img src={manaDockFrame} alt="" draggable={false} decoding="async" className="block h-full w-full" />
       </BattleSceneArtwork>
       <div className="battle-mana-spill" style={{ maskImage: `url("${manaDockFrame}")` }} aria-hidden="true">
         {state.gems.map((gem) => (
@@ -117,10 +118,22 @@ export function ManaPanel({
           <span key={`effect-${gem.token}`} className="mana-dock-gem-motion">
             <span className="mana-dock-socket" />
             <BattleSceneArtwork className="mana-dock-empty" maskSource={manaDockEmpty}>
-              <img src={manaDockEmpty} alt="" draggable={false} className="block h-full w-full object-contain" />
+              <img
+                src={manaDockEmpty}
+                alt=""
+                draggable={false}
+                decoding="async"
+                className="block h-full w-full object-contain"
+              />
             </BattleSceneArtwork>
             <BattleSceneArtwork className="mana-dock-full" maskSource={manaDockFull}>
-              <img src={manaDockFull} alt="" draggable={false} className="block h-full w-full object-contain" />
+              <img
+                src={manaDockFull}
+                alt=""
+                draggable={false}
+                decoding="async"
+                className="block h-full w-full object-contain"
+              />
             </BattleSceneArtwork>
             <span className="mana-dock-glow" />
             <span className="mana-dock-glint" style={{ maskImage: `url(${manaDockFull})` }} />

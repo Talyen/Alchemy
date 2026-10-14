@@ -17,6 +17,7 @@ export function GearSlotArt({
       <img
         src={gearSlotBackgroundArt[slot]}
         alt=""
+        decoding="async"
         data-testid="armory-slot-background"
         className={cn(gearArtFillClass, "rounded-none brightness-[0.65]")}
       />
@@ -24,6 +25,7 @@ export function GearSlotArt({
         <img
           src={definition.art}
           alt=""
+          decoding="async"
           className={cn(gearArtFillClass, "z-10 rounded-none", isHidden && "opacity-0")}
         />
       ) : null}

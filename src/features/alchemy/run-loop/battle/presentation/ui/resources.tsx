@@ -58,7 +58,7 @@ export function PilePanel({
       >
         <div className="relative w-full">
           <BattleSceneArtwork className="battle-scene-silhouette" maskSource={art} maskFit="cover">
-            <img src={art} alt="" className={cn("block w-full", cardArtImageClass)} />
+            <img src={art} alt="" decoding="async" className={cn("block w-full", cardArtImageClass)} />
           </BattleSceneArtwork>
           {type === "discard" ? (
             <span

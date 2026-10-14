@@ -70,6 +70,7 @@ export function ArmoryTransferOverlay({
             <img
               src={item.art}
               alt=""
+              decoding="async"
               className={cn(
                 "pointer-events-none h-full w-full object-cover",
                 item.isTrinket ? "aspect-[3/4]" : "rounded-none",

@@ -96,6 +96,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
           <img
             src={trinket.art}
             alt=""
+            decoding="async"
             className={cn(
               trinketArtFillClass,
               trinketArtImageClass,

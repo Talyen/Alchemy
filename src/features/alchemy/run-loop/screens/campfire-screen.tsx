@@ -96,7 +96,12 @@ export function CampfireScreen({
           </>
         ) : (
           <>
-            <img src={campfire} alt="Campfire" className="w-full max-w-lg rounded-shell-panel object-contain" />
+            <img
+              src={campfire}
+              alt="Campfire"
+              decoding="async"
+              className="w-full max-w-lg rounded-shell-panel object-contain"
+            />
             <div className="flex flex-wrap justify-center gap-4">
               <Button
                 onClick={() => {

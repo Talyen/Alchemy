@@ -640,6 +640,7 @@
   border-style: solid;
   border-width: 1px;
   --surface-frame-border-width: 1px;
+  contain: layout;
 }
 
 .card-interactive-glow,

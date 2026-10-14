@@ -78,7 +78,7 @@ export function CraftingStrip({
               onToggleSalvageMode();
             }}
           >
-            <img src={armorySalvageArt} alt="" className="h-full w-full object-cover" />
+            <img src={armorySalvageArt} alt="" decoding="async" className="h-full w-full object-cover" />
           </button>
         </div>
       </div>

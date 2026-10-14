@@ -97,6 +97,7 @@ const CharacterCard = memo(function CharacterCard({
           <img
             src={art}
             alt={char.name}
+            decoding="async"
             className={cn(
               cardSurfaceClass,
               "aspect-[3/4] w-full rounded-shell-tooltip object-cover transition duration-300",
