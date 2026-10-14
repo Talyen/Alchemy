@@ -1,4 +1,3 @@
-import { createDefaultProfileSaveFields } from "@/features/alchemy/shared/stores/profile-store-types";
 import {
   CURRENT_CONTENT_VERSION,
   CURRENT_GAME_BUILD_VERSION,
@@ -70,7 +69,17 @@ export function saveEnvelopeFixture(overrides: Record<string, unknown> = {}) {
   // `wildcard` below is a real roster member (see GEAR_CHARACTER_IDS and the
   // CompletedDifficultiesSchema test), not dead data.
   return {
-    ...createDefaultProfileSaveFields(),
+    // Node-side Playwright seeds must not import runtime catalogs or artwork.
+    collectedBoardIds: ["acorn"],
+    boardSelection: { kind: "board" as const, boardId: "acorn" },
+    activeBoardId: "acorn",
+    lastRandomBoardId: null,
+    pendingBoardRewardId: null,
+    discoveredCardIds: [] as SaveData["discoveredCardIds"],
+    encounteredEnemyIds: [] as SaveData["encounteredEnemyIds"],
+    discoveredTrinketIds: [] as SaveData["discoveredTrinketIds"],
+    discoveredUniqueIds: [] as SaveData["discoveredUniqueIds"],
+    finishedRunCharacters: [] as SaveData["finishedRunCharacters"],
     steamAccountId: null,
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
