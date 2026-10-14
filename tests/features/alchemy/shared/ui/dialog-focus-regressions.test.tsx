@@ -50,6 +50,51 @@ afterEach(() => {
 });
 
 describe("dialog focus regressions", () => {
+  it("restores an unfocused page without selecting its first control", () => {
+    const view = render(
+      <div data-screen-content>
+        <button>Inspect enemy</button>
+      </div>,
+    );
+    expect(document.activeElement).toBe(document.body);
+    view.rerender(
+      <div data-screen-content>
+        <button>Inspect enemy</button>
+        <Dialog />
+      </div>,
+    );
+    vi.runOnlyPendingTimers();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Preferred" }));
+    view.rerender(
+      <div data-screen-content>
+        <button>Inspect enemy</button>
+      </div>,
+    );
+    vi.runOnlyPendingTimers();
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it("retries the original control after its screen stops being inert", () => {
+    const content = (dialog: boolean, inert: boolean) => (
+      <>
+        <div data-screen-content inert={inert}>
+          <button>Inspect enemy</button>
+          <button>End Turn</button>
+        </div>
+        {dialog && <Dialog />}
+      </>
+    );
+    const view = render(content(false, false));
+    const opener = screen.getByRole("button", { name: "End Turn" });
+    opener.focus();
+    view.rerender(content(true, true));
+    vi.runOnlyPendingTimers();
+    view.rerender(content(false, true));
+    view.rerender(content(false, false));
+    vi.runOnlyPendingTimers();
+    expect(document.activeElement).toBe(opener);
+  });
+
   it("focuses an enabled control when the preferred initial action is disabled", () => {
     render(<Dialog disabled />);
     vi.runOnlyPendingTimers();

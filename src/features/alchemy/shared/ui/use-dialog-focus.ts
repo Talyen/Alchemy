@@ -51,12 +51,19 @@ export function useDialogFocus(returnFocusRef?: RefObject<HTMLElement | null>) {
       observer.disconnect();
       cancelAnimationFrame(frame);
       document.removeEventListener("focusin", keepFocus);
+      // Opening from the page itself is a focus state to restore, not a lost opener.
+      if (!returnTarget || returnTarget === document.body || returnTarget === document.documentElement) {
+        const active = document.activeElement;
+        if (active instanceof HTMLElement && panel.contains(active)) active.blur();
+        return;
+      }
       if (focusControl(returnTarget)) return;
       // A route change may remove the opener while its screen is still inert.
       requestAnimationFrame(() => {
         const active = document.activeElement;
         if (active instanceof HTMLElement && active !== document.body && active.isConnected && !panel?.contains(active))
           return;
+        if (focusControl(returnTarget)) return;
         focusScreenStart();
       });
     };

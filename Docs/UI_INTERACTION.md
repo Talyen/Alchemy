@@ -99,8 +99,11 @@ that behavior. Ready, visible controls are selected through
 [shared focus eligibility](../src/features/alchemy/shared/ui/focus-navigation.ts);
 inert, hidden, and natively disabled controls are excluded. Inspection-only
 aria-disabled controls can still be traversed and inspected. Recovery scrolls
-only as needed. Dialogs restore their opener or fall back to the active screen
-when it disappeared. Existing focus is respected when deferred recovery runs.
+only as needed. Closing inspection does not trigger screen-focus recovery.
+Dialogs restore their opener or fall back to the active screen when a previously
+focused opener disappeared. Opening a dialog with no control focused restores
+that unfocused state on close. Deferred restoration retries an opener that was
+temporarily inert. Existing focus is respected when deferred recovery runs.
 
 Battle hand recovery is local to the hand and uses stable card identities. After a
 keyboard play, focus goes to the next playable card in the prior visual order,

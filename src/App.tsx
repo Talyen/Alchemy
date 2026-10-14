@@ -172,7 +172,8 @@ function AppMainContent({
     [inspection.visible, inspection.count, inspection.canOpen, onOpenDeck],
   );
 
-  useScreenFocus(renderedScreen, screenInteractive && !inspection.open);
+  // Dialogs restore their own focus; closing inspection is not a screen transition.
+  useScreenFocus(renderedScreen, screenInteractive);
 
   function blockOutgoingScreenInteraction(event: SyntheticEvent) {
     event.preventDefault();
