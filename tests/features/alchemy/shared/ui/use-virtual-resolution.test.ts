@@ -26,12 +26,12 @@ describe("useVirtualResolution", () => {
     let renders = 0;
     const { result } = renderHook(() => {
       renders += 1;
-      return useVirtualResolution("16:9");
+      return useVirtualResolution();
     });
 
     setViewport(1600, 900);
     window.dispatchEvent(new Event("resize"));
-    setViewport(1280, 720);
+    setViewport(1280, 800);
     window.dispatchEvent(new Event("resize"));
 
     expect(frames).toHaveLength(1);
@@ -41,18 +41,18 @@ describe("useVirtualResolution", () => {
 
     expect(renders).toBe(2);
     expect(result.current.frameStyle.width).toBe("1280px");
-    expect(result.current.frameStyle.height).toBe("720px");
-    expect(result.current.stageStyle.transform).toBe("scale(0.6666666666666666)");
+    expect(result.current.frameStyle.height).toBe("800px");
+    expect(result.current.stageStyle.transform).toBe("scale(0.7407407407407407)");
   });
 
   it("uses the latest viewport when leaving bypass mode after unsubscribed resizes", () => {
     setViewport(1920, 1080);
-    const { result, rerender } = renderHook((bypass) => useVirtualResolution("16:9", bypass), { initialProps: true });
-    setViewport(1280, 720);
+    const { result, rerender } = renderHook((bypass) => useVirtualResolution(bypass), { initialProps: true });
+    setViewport(1280, 800);
     window.dispatchEvent(new Event("resize"));
     rerender(false);
     expect(result.current.frameStyle.width).toBe("1280px");
-    expect(result.current.frameStyle.height).toBe("720px");
+    expect(result.current.frameStyle.height).toBe("800px");
   });
 
   it("cancels a pending resize frame on unmount and does not subscribe in bypass mode", () => {
@@ -64,14 +64,14 @@ describe("useVirtualResolution", () => {
     const cancelFrame = vi.fn();
     vi.stubGlobal("cancelAnimationFrame", cancelFrame);
     const addListener = vi.spyOn(window, "addEventListener");
-    const { unmount } = renderHook(() => useVirtualResolution("16:9"));
+    const { unmount } = renderHook(() => useVirtualResolution());
 
     window.dispatchEvent(new Event("resize"));
     unmount();
 
     expect(cancelFrame).toHaveBeenCalledWith(17);
     addListener.mockClear();
-    renderHook(() => useVirtualResolution("16:9", true));
+    renderHook(() => useVirtualResolution(true));
     expect(addListener).not.toHaveBeenCalledWith("resize", expect.any(Function));
   });
 });

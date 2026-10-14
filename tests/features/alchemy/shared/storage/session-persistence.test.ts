@@ -1,6 +1,7 @@
 import { createSaveBackend } from "../../../../helpers/save-backend";
 import { describe, expect, it, vi } from "vitest";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
+import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { resetHomestead } from "@/features/alchemy/shared/stores/meta-commands";
@@ -31,6 +32,37 @@ function battleSave() {
 }
 
 describe("session save restoration", () => {
+  it("resumes a battle with a retired fixed ratio without replaying draws or losing progress", async () => {
+    const save = battleSave();
+    if (save.activeRun?.activity.kind !== "battle") throw new Error("Battle was lost");
+    save.activeRun.activity.data.battleState.gold = save.gold;
+    const loaded = evaluateSaveCandidates([JSON.stringify({ ...save, selectedAspectRatio: "21:9" })]);
+    expect(loaded.status.kind).toBe("ok");
+    const session = createGameSession({ initialSave: loaded.data });
+    const persistence = createSessionPersistence(session);
+    try {
+      const before = persistence.snapshot();
+      const { flow } = createPlaythroughController(session);
+      flow.goToScreen("menu");
+      flow.beginCampaign();
+      const resumed = persistence.snapshot();
+      expect(readGameplayState(session).run.navigation.screen).toBe("battle");
+      expect(resumed.activeRun?.activity.kind).toBe("battle");
+      expect(resumed.activeRun?.activity).toEqual(before.activeRun?.activity);
+      expect(resumed.activeRun?.rng).toEqual(save.activeRun.rng);
+      expect(resumed).toMatchObject({
+        gold: 725,
+        talentXP: { armor: 29 },
+        discoveredCardIds: ["slash", "bash"],
+        gearInventories: { knight: [{ instanceId: "restored-gear" }] },
+      });
+      expect(resumed).not.toHaveProperty("selectedAspectRatio");
+      expect(sessionRuntime(session).settings.getState()).not.toHaveProperty("selectedAspectRatio");
+    } finally {
+      await session.dispose();
+    }
+  });
+
   it("recomputes Homestead effects without regranting starting Thorns or multiplying saved loot", async () => {
     const save = battleSave();
     save.constructedBuildings = { ...save.constructedBuildings, "hunters-lodge": 4, "wishing-well": 4 };

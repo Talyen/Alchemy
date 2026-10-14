@@ -135,6 +135,27 @@ for (const { width, height, gameSizePercent } of [
           }),
         );
     const initial = await positions();
+    const scene = await page.getByTestId("battle-scene").boundingBox();
+    expect(scene).toEqual({ x: 0, y: 0, width, height });
+    const inset = await page.getByTestId("vr-stage").evaluate((stage) => {
+      const scale = stage.getBoundingClientRect().height / (stage as HTMLElement).offsetHeight;
+      return 24 * Number(getComputedStyle(stage).getPropertyValue("--content-scale")) * scale;
+    });
+    const draw = await page.getByTestId("draw-pile").boundingBox();
+    const discard = await page.getByTestId("discard-pile").boundingBox();
+    const mana = await page.getByTestId("mana-panel").boundingBox();
+    const endTurn = await page.getByRole("button", { name: "End Turn", exact: true }).boundingBox();
+    expect(draw!.x).toBeCloseTo(inset, 0);
+    expect(width - discard!.x - discard!.width).toBeCloseTo(inset, 0);
+    expect(height - draw!.y - draw!.height).toBeCloseTo(inset, 0);
+    expect(height - discard!.y - discard!.height).toBeCloseTo(inset, 0);
+    expect(mana!.x + mana!.width / 2).toBeCloseTo(draw!.x + draw!.width / 2, 0);
+    expect(endTurn!.x + endTurn!.width / 2).toBeCloseTo(discard!.x + discard!.width / 2, 0);
+    expect(mana!.y + mana!.height).toBeLessThan(draw!.y);
+    expect(endTurn!.y + endTurn!.height).toBeLessThan(discard!.y);
+    const hand = await page.getByTestId("battle-hand").boundingBox();
+    expect(hand!.x + hand!.width / 2).toBeCloseTo(width / 2, 0);
+
     for (let count = 7; count >= 1; count--) {
       await expect(page.locator("[data-hand-slot]")).toHaveCount(count);
       await page.mouse.move(0, 0);
@@ -163,5 +184,9 @@ for (const { width, height, gameSizePercent } of [
         await page.mouse.click(slot.x, slot.y + slot.height / 2);
       }
     }
+    await page.mouse.move(0, 0);
+    await controllerInput(page).activate(page.locator("[data-hand-slot] button").last());
+    await expect(page.locator("[data-hand-slot]")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "End Turn", exact: true })).toBeFocused();
   });
 }

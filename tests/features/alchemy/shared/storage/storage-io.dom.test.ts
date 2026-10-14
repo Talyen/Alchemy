@@ -48,7 +48,7 @@ const futureSaveCases = [
 describe("storage io", () => {
   it("loadAlchemySaveState returns defaults when localStorage empty", async () => {
     const data = (await loadAlchemySaveState(defaultGameSession)).data;
-    expect(data.selectedAspectRatio).toBe("auto");
+    expect(data).toEqual(defaultSaveData);
     expect(data.activeRun).toBeNull();
   });
 
@@ -105,7 +105,7 @@ describe("storage io", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = "not-json";
     const data = (await loadAlchemySaveState(defaultGameSession)).data;
-    expect(data.selectedAspectRatio).toBe("auto");
+    expect(data).toEqual(defaultSaveData);
     expect((await loadAlchemySaveState(defaultGameSession)).status.kind).toBe("corrupt");
     expect(console.error).toHaveBeenCalledWith(
       expect.stringContaining("Save candidate JSON parse failed"),
@@ -137,14 +137,14 @@ describe("storage io", () => {
     expect(data.musicVolume).toBe(50);
   });
 
-  it("loadAlchemySaveState loads campaign fixture from localStorage", async () => {
+  it("loads progress despite a retired fixed aspect ratio and omits it on the next write", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
-    mockStorage[SAVE_KEY] = JSON.stringify(currentSchemaCampaignSave());
+    mockStorage[SAVE_KEY] = JSON.stringify({ ...currentSchemaCampaignSave(), selectedAspectRatio: "16:9" });
     const loaded = await loadAlchemySaveState(defaultGameSession);
 
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.data.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    expect(loaded.data.selectedAspectRatio).toBe("auto");
+    expect(loaded.data).not.toHaveProperty("selectedAspectRatio");
     expect(loaded.data.discoveredCardIds).toEqual(["slash", "block", "bash"]);
     expect(loaded.data.activeRun).toMatchObject({
       characterId: "knight",
@@ -158,6 +158,7 @@ describe("storage io", () => {
     await writeStoragePayload(loaded.data, defaultGameSession);
     const reloaded = JSON.parse(mockStorage[SAVE_KEY]);
     expect(reloaded.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+    expect(reloaded).not.toHaveProperty("selectedAspectRatio");
     expect(reloaded.discoveredCardIds).toEqual(["slash", "block", "bash"]);
     expect(reloaded.activeRun).not.toHaveProperty("runGold");
     expect(reloaded.gold).toBe(42);

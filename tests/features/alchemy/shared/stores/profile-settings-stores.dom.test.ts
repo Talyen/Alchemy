@@ -6,7 +6,6 @@ import { mutateGameplayForTest, resetProfileForTest } from "../../../../helpers/
 import {
   settingsPersistenceCodec,
   useAppSettings,
-  useSelectedAspectRatio,
   useSettingsActions,
   useSettingsStore,
 } from "@/features/alchemy/shared/stores/settings-store";
@@ -116,7 +115,6 @@ describe("settings store", () => {
   it("hydrates only settings fields from save data", () => {
     settingsPersistenceCodec.hydrate(
       makeSave({
-        selectedAspectRatio: "16:9",
         displayMode: "windowed",
         musicVolume: 50,
         sfxVolume: 80,
@@ -132,7 +130,6 @@ describe("settings store", () => {
     expect(encoded).not.toHaveProperty("setBrightness");
     expect(useSettingsStore.getState().setBrightness).toBeTypeOf("function");
     expect(encoded).toMatchObject({
-      selectedAspectRatio: "16:9",
       displayMode: "windowed",
       musicVolume: 50,
       sfxVolume: 80,
@@ -211,8 +208,5 @@ describe("settings store", () => {
     const { result: settings } = renderHook(() => useAppSettings());
     expect(settings.current.brightness).toBe(120);
     expect(settings.current).not.toHaveProperty("showClearSaveConfirm");
-
-    const { result: aspect } = renderHook(() => useSelectedAspectRatio());
-    expect(aspect.current).toBe(defaultSaveData.selectedAspectRatio);
   });
 });

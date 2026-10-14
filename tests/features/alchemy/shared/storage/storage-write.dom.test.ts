@@ -21,10 +21,10 @@ const mockStorage = installBrowserStorageIoTestHooks();
 
 describe("storage io", () => {
   it("writeStoragePayload writes to localStorage", async () => {
-    const data: SaveData = { ...defaultSaveData, selectedAspectRatio: "16:9" };
+    const data: SaveData = { ...defaultSaveData, musicVolume: 25 };
     expect(await writeStoragePayload(data, defaultGameSession)).toBe("saved");
     const written = JSON.parse(mockStorage[SAVE_KEY]) as SaveData;
-    expect(written.selectedAspectRatio).toBe("16:9");
+    expect(written.musicVolume).toBe(25);
     expect(written.lastSavedAt).toBeGreaterThan(0);
   });
 

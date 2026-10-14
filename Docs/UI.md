@@ -199,8 +199,9 @@ On macOS, both desktop fullscreen modes fill the entire display, including the a
 
 Talents on the end-run screen and Mystery rewards keep fixed-width boxes in centered, balanced rows. Use the fewest rows that fit (up to five boxes per row), distribute counts with at most one box of difference, and place larger rows first. Recalculate when available width or Game Size changes.
 
-The virtual stage owns available-space geometry and battle coordinates. Auto
-fills the available viewport; explicit aspect ratios retain their fitted frame.
+The virtual stage owns available-space geometry and battle coordinates. It
+always fills the available viewport without letterboxing. Viewport dimensions
+determine the stage proportions; forced aspect ratios are not supported.
 Content uniformly fits a reference composition based on the MacBook browser's
 1470 × 738 CSS-pixel game area, including the height lost to browser bars and the
 Dock. At 100% Game Size, the reference retains its original content scale of
@@ -234,6 +235,10 @@ reserved center region, and reserves extra bottom space for larger hands.
 Draw and Discard artwork use 80% of the resting hand card width, sharing its
 responsive size from the bottom bar. Mana and End Turn sit above the aligned piles,
 with End Turn styled as a compact secondary action centered over the discard pile.
+Draw and Mana occupy the bottom-left viewport corner; Discard and End Turn occupy
+the bottom-right. Both groups use a 1.5 content-rem inset from the side and bottom
+edges, and pile bottoms align. Actors retain their inset, width-limited composition;
+all battle transfer and feedback coordinates use the full viewport scene.
 The battle toolbar places live Gold before the inspection controls, with a brief
 highlight on increases. Dev-only Skip Combat uses a labeled skip-forward icon
 and tooltip immediately before Menu.
@@ -274,7 +279,7 @@ and the display. Panel technology is not detected.
 
 ## Display options
 
-Display groups Display Mode (desktop only), Aspect Ratio, Brightness, Game Size,
+Display groups Display Mode (desktop only), Brightness, Game Size,
 and Tooltip Size together. The Background section contains Background Glow and
 Background Particles. Screen Effects and Drifting Lights have been removed,
 including their renderers and saved preferences. Reset to Default restores the

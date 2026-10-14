@@ -107,7 +107,6 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
     discoveredTrinketIds,
     discoveredUniqueIds,
     autoEndTurn,
-    selectedAspectRatio,
     finishedRunCharacters,
     gold,
     runGold,
@@ -120,7 +119,6 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
     ...(injectedGold !== undefined ? { gold: injectedGold } : {}),
 
     autoEndTurn: autoEndTurn === true,
-    ...(typeof selectedAspectRatio === "string" ? { selectedAspectRatio } : {}),
     activeRun: {
       characterId: "knight",
       contentSystemType: "campaign",

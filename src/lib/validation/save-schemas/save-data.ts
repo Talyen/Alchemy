@@ -31,7 +31,6 @@ import {
   MATERIAL_ZERO_INVENTORY,
   CRAFTING_CURRENCY_ZERO_INVENTORY,
   createTierRecordSchema,
-  AspectRatioOptionSchema,
   CompletedDifficultiesSchema,
   DisplayModeSchema,
   MaterialInventorySchema,
@@ -120,7 +119,6 @@ export const SaveDataSchema = z
     gameBuildVersion: z.string().catch(CURRENT_GAME_BUILD_VERSION),
     steamAccountId: z.string().regex(/^\d+$/u).nullable().catch(null),
     contentVersion: z.number().int().nonnegative().catch(CURRENT_CONTENT_VERSION),
-    selectedAspectRatio: AspectRatioOptionSchema.catch("auto"),
     displayMode: DisplayModeSchema.catch("borderless-fullscreen"),
     brightness: clampedSettingSchema(DEFAULT_BRIGHTNESS_PCT, SETTINGS_RANGES.brightness),
     backgroundParticlesIntensity: clampedSettingSchema(

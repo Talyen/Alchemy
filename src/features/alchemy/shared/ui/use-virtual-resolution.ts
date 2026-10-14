@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { CONTENT_REFERENCE_VIEWPORT, STAGE_HEIGHT } from "@/lib/game-constants";
 import { DEFAULT_DEVICE_DISPLAY, normalizeDisplayPercent, type DeviceDisplayPreferences } from "@/lib/settings-values";
-import type { AspectRatioOption } from "../types";
-
-const FIXED_ASPECT_RATIOS = {
-  "16:9": 1920 / 1080,
-  "16:10": 1920 / 1200,
-  "21:9": 2560 / 1080,
-} as const;
 
 function useViewportSize(active: boolean) {
   const [viewportSize, setViewportSize] = useState(() => ({
@@ -58,20 +51,17 @@ const CONTENT_REFERENCE_STAGE_WIDTH =
   STAGE_HEIGHT * (CONTENT_REFERENCE_VIEWPORT.width / CONTENT_REFERENCE_VIEWPORT.height);
 
 export function getVirtualResolutionLayout(
-  selectedAspectRatio: AspectRatioOption,
   viewportWidth: number,
   viewportHeight: number,
   preferences: DeviceDisplayPreferences = DEFAULT_DEVICE_DISPLAY,
 ) {
   const width = Number.isFinite(viewportWidth) ? Math.max(0, viewportWidth) : 0;
   const height = Number.isFinite(viewportHeight) ? Math.max(0, viewportHeight) : 0;
-  const viewportAspect = width > 0 && height > 0 ? width / height : 16 / 9;
-  const aspectRatio = selectedAspectRatio === "auto" ? viewportAspect : FIXED_ASPECT_RATIOS[selectedAspectRatio];
-  const stageWidth =
-    selectedAspectRatio === "auto" ? STAGE_HEIGHT * aspectRatio : Math.round(STAGE_HEIGHT * aspectRatio);
+  const aspectRatio = width > 0 && height > 0 ? width / height : 16 / 9;
+  const stageWidth = STAGE_HEIGHT * aspectRatio;
   const stageHeight = STAGE_HEIGHT;
   const stageScale = Math.min(width / stageWidth, height / stageHeight);
-  // Fit the reference composition inside the frame; the stage still fills Auto's viewport.
+  // Fit the reference composition inside the frame; the stage fills the viewport.
   const automaticScale = stageScale * Math.min(stageWidth / CONTENT_REFERENCE_STAGE_WIDTH, 1);
   const contentScale = automaticScale * (normalizeDisplayPercent("gameSizePercent", preferences.gameSizePercent) / 100);
   const stageContentScale = stageScale > 0 ? contentScale / stageScale : 1;
@@ -83,8 +73,8 @@ export function getVirtualResolutionLayout(
 
   return {
     frameStyle: {
-      width: `${stageWidth * stageScale}px`,
-      height: `${stageHeight * stageScale}px`,
+      width: `${width}px`,
+      height: `${height}px`,
       "--content-scale": contentScale,
     },
     stageStyle: {
@@ -108,13 +98,9 @@ export function getVirtualResolutionLayout(
   };
 }
 
-export function useVirtualResolution(
-  selectedAspectRatio: AspectRatioOption,
-  bypassVr = false,
-  preferences: DeviceDisplayPreferences = DEFAULT_DEVICE_DISPLAY,
-) {
+export function useVirtualResolution(bypassVr = false, preferences: DeviceDisplayPreferences = DEFAULT_DEVICE_DISPLAY) {
   const { width, height } = useViewportSize(!bypassVr);
-  const layout = getVirtualResolutionLayout(selectedAspectRatio, width, height, preferences);
+  const layout = getVirtualResolutionLayout(width, height, preferences);
   if (!bypassVr) return layout;
   return {
     ...layout,

@@ -2,7 +2,7 @@ import type { CSSProperties, RefObject } from "react";
 
 import type { BattleCard, EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle";
-export type { AspectRatioOption, DisplayMode } from "@/lib/settings-values";
+export type { DisplayMode } from "@/lib/settings-values";
 import type { ArmedFlagChipId, PendingPulseChipId } from "./augment-definitions";
 
 type CardGhostVariant = "activate" | "play-travel";

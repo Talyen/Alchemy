@@ -133,7 +133,6 @@ describe("save JSON round trips", () => {
 
   it("full save with all fields round-trips through JSON serialize/deserialize", () => {
     const original = parseSave({
-      selectedAspectRatio: "16:9",
       displayMode: "windowed",
       brightness: 130,
       musicVolume: 40,

@@ -26,7 +26,6 @@ export interface HomesteadSaveFixture {
   saveSchemaVersion: number;
   gameBuildVersion: string;
   contentVersion: number;
-  selectedAspectRatio: string;
   displayMode: string;
   brightness: number;
   // Optional: present on real saves, omitted here so the load-tolerant
@@ -76,7 +75,6 @@ export function saveEnvelopeFixture(overrides: Record<string, unknown> = {}) {
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
     contentVersion: CURRENT_CONTENT_VERSION,
-    selectedAspectRatio: "auto",
     displayMode: "borderless-fullscreen",
     brightness: 100,
     musicVolume: 50,

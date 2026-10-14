@@ -1,4 +1,3 @@
-import type { AspectRatioOption } from "@/features/alchemy/shared/types";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { defaultGameSession } from "@/app/application-session";
@@ -20,7 +19,6 @@ export const settingsPersistenceCodec = createSettingsPersistenceCodec(applicati
 
 function selectSettingsActions(state: SettingsStore): SettingsActions {
   return {
-    setSelectedAspectRatio: state.setSelectedAspectRatio,
     setDisplayMode: state.setDisplayMode,
     setBrightness: state.setBrightness,
     setBackgroundParticlesIntensity: state.setBackgroundParticlesIntensity,
@@ -45,8 +43,4 @@ export type AppSettings = SettingsSaveFields;
 
 export function useAppSettings(): AppSettings {
   return useSettingsStore(useShallow(selectSettingsSaveFields));
-}
-
-export function useSelectedAspectRatio(): AspectRatioOption {
-  return useSettingsStore((s) => s.selectedAspectRatio);
 }

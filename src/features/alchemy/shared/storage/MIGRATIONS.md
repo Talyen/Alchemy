@@ -60,6 +60,13 @@ only the run; permanent progress and future-save protection remain intact.
 A damaged Mystery offer retains its tag with null data so restore can exit that
 visit through the existing repair operation.
 
+## Retired display aspect ratio
+
+The game always fills the viewport. `selectedAspectRatio` is no longer a settings
+or save field; current-shape normalization discards saved fixed ratios without
+changing profile progress or active-run state. New writes omit the field. This
+removal needs no supported payload transformation or schema-version increment.
+
 ## Game Board profile fields
 
 Board fields use safe additive defaults without a schema-version increment.

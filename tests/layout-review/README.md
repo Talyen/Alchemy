@@ -12,7 +12,7 @@ the compact runner below participates in the shared local test lane.
 ```sh
 npm run build:desktop
 node scripts/run-compact.mjs playwright test --config playwright.layout-review.config.ts
-LAYOUT_REVIEW_PASS=stress LAYOUT_REVIEW_STRESS=1 node scripts/run-compact.mjs playwright test --config playwright.layout-review.config.ts --grep 'size and aspect ratio stress'
+LAYOUT_REVIEW_PASS=stress LAYOUT_REVIEW_STRESS=1 node scripts/run-compact.mjs playwright test --config playwright.layout-review.config.ts --grep 'size and viewport stress'
 node tests/layout-review/report.mjs
 ```
 
@@ -45,8 +45,8 @@ The baseline covers every route, major meta/Options tabs, reward variants, all
 Talent trees, dense battle and inventory states, card/boon/enemy inspection,
 removal and corruption pickers, Mystery choices and summaries, confirmations,
 loading, and run outcomes. Stress coverage exercises battle hands/tooltips and
-deck inspection at 80/120% Game Size, 125% Tooltip Size, and every supported
-aspect ratio on small, 16:10, and ultrawide viewports. Captures are review evidence,
+deck inspection at 80/120% Game Size and 125% Tooltip Size on small, 16:10,
+and ultrawide viewports, always filling the available viewport. Captures are review evidence,
 not automatic pixel baselines; add focused assertions for confirmed defects.
 
 The seven primary monitor sizes come from [Steam’s August 2026 survey](https://store.steampowered.com/hwsurvey/); four additional logical viewport sizes cover scaled desktops and the MacBook reference. Physical display resolution and logical game viewport are recorded separately.

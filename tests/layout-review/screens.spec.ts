@@ -373,7 +373,7 @@ test("additional pickers tooltips and end states", async () => {
   });
 });
 
-test("size and aspect ratio stress", async () => {
+test("size and viewport stress", async () => {
   // oxlint-disable-next-line playwright/no-skipped-test -- Explicit opt-in keeps the baseline matrix at default settings.
   test.skip(process.env.LAYOUT_REVIEW_STRESS !== "1", "Run separately into the stress report directory");
   const viewports = [
@@ -382,34 +382,31 @@ test("size and aspect ratio stress", async () => {
     [3440, 1440],
   ] as const;
   for (const gameSizePercent of [80, 120]) {
-    for (const selectedAspectRatio of ["auto", "16:9", "16:10", "21:9"]) {
-      await page.evaluate(
-        (gameSizePercent) =>
-          localStorage.setItem(
-            "alchemy-device-display-v1",
-            JSON.stringify({ version: 1, gameSizePercent, tooltipSizePercent: 125 }),
-          ),
-        gameSizePercent,
-      );
-      await injectActiveBattle(page, makeGoblinBattleState({ hand: deck.slice(0, 12), deck: deck.slice(12) }), {
-        runDeck: deck,
-        selectedAspectRatio,
-      });
-      await expect(page.getByTestId("battle-scene")).toBeVisible();
-      const suffix = `${gameSizePercent}-${selectedAspectRatio.replace(":", "-")}`;
-      await shot(`battle-stress-${suffix}`, {
-        viewports,
-        prepare: () =>
-          page
-            .getByRole("button", { name: /^Play / })
-            .last()
-            .hover(),
-      });
-      await page.mouse.move(0, 0);
-      await page.getByRole("button", { name: /^View Deck/ }).click();
-      await shot(`deck-stress-${suffix}`, { viewports });
-      await page.keyboard.press("Escape");
-    }
+    await page.evaluate(
+      (gameSizePercent) =>
+        localStorage.setItem(
+          "alchemy-device-display-v1",
+          JSON.stringify({ version: 1, gameSizePercent, tooltipSizePercent: 125 }),
+        ),
+      gameSizePercent,
+    );
+    await injectActiveBattle(page, makeGoblinBattleState({ hand: deck.slice(0, 12), deck: deck.slice(12) }), {
+      runDeck: deck,
+    });
+    await expect(page.getByTestId("battle-scene")).toBeVisible();
+    const suffix = `${gameSizePercent}`;
+    await shot(`battle-stress-${suffix}`, {
+      viewports,
+      prepare: () =>
+        page
+          .getByRole("button", { name: /^Play / })
+          .last()
+          .hover(),
+    });
+    await page.mouse.move(0, 0);
+    await page.getByRole("button", { name: /^View Deck/ }).click();
+    await shot(`deck-stress-${suffix}`, { viewports });
+    await page.keyboard.press("Escape");
   }
 });
 

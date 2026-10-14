@@ -40,7 +40,7 @@ import {
   useRunSessionNavigationSlice,
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/use-run-reads";
-import { useAppSettings, useSelectedAspectRatio } from "@/features/alchemy/shared/stores/settings-store";
+import { useAppSettings } from "@/features/alchemy/shared/stores/settings-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
 import { BattleBoardBackground } from "@/features/alchemy/shared/ui/battle-board-background";
@@ -339,9 +339,8 @@ function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtu
 }
 
 export default function App() {
-  const selectedAspectRatio = useSelectedAspectRatio();
   const displayPreferences = useDeviceDisplayPreferences();
-  const displayLayout = useVirtualResolution(selectedAspectRatio, false, displayPreferences);
+  const displayLayout = useVirtualResolution(false, displayPreferences);
   const { contentScale } = displayLayout;
   useLayoutEffect(() => {
     document.documentElement.style.setProperty("--content-scale", String(contentScale));

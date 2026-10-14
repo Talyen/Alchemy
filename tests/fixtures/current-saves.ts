@@ -9,7 +9,6 @@ import { gridLabyrinthMapFixture } from "./labyrinth-map";
 // and save-data-schema.test.ts instead of here.
 export function currentSchemaCampaignSave() {
   return saveEnvelopeFixture({
-    selectedAspectRatio: "auto",
     displayMode: "fullscreen",
     discoveredCardIds: ["slash", "block", "bash"],
     encounteredEnemyIds: ["goblin"],

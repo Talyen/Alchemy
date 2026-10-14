@@ -18,7 +18,6 @@ function OptionsScreenRoute({
 }: OptionsRouteCtx) {
   const settings = useSettingsStore(
     useShallow((s) => ({
-      selectedAspectRatio: s.selectedAspectRatio,
       displayMode: s.displayMode,
       brightness: s.brightness,
       backgroundParticlesIntensity: s.backgroundParticlesIntensity,
@@ -49,8 +48,6 @@ function OptionsScreenRoute({
       onMenu={onOpenGameMenu}
       display={{
         onOpenBoards,
-        selectedAspectRatio: settings.selectedAspectRatio,
-        onAspectRatioChange: actions.setSelectedAspectRatio,
         displayMode: settings.displayMode,
         onDisplayModeChange: actions.setDisplayMode,
         // Desktop-only control: displayMode still persists on web (harmless —

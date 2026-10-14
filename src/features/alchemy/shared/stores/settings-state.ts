@@ -1,5 +1,5 @@
 import { createNotificationChannel } from "./notification-channel";
-import type { AspectRatioOption, DisplayMode } from "@/features/alchemy/shared/types";
+import type { DisplayMode } from "@/features/alchemy/shared/types";
 import {
   DEFAULT_BACKGROUND_GLOW_PCT,
   DEFAULT_BACKGROUND_PARTICLES_PCT,
@@ -18,7 +18,6 @@ import { createStore } from "zustand/vanilla";
 import { logError } from "@/lib/error-logger";
 
 export interface SettingsSaveFields {
-  selectedAspectRatio: AspectRatioOption;
   displayMode: DisplayMode;
   brightness: number;
   backgroundParticlesIntensity: number;
@@ -34,7 +33,6 @@ export interface SettingsSaveFields {
 }
 
 export interface SettingsActions {
-  setSelectedAspectRatio: (value: AspectRatioOption) => void;
   setDisplayMode: (value: DisplayMode) => void;
   setBrightness: (value: number) => void;
   setBackgroundParticlesIntensity: (value: number) => void;
@@ -54,7 +52,6 @@ export type SettingsStore = SettingsSaveFields & SettingsActions;
 
 export function createDefaultSettingsSaveFields(): SettingsSaveFields {
   return {
-    selectedAspectRatio: "auto",
     displayMode: "borderless-fullscreen",
     brightness: DEFAULT_BRIGHTNESS_PCT,
     backgroundParticlesIntensity: DEFAULT_BACKGROUND_PARTICLES_PCT,
@@ -84,7 +81,6 @@ export function createSettingsStore() {
   const store = createStore<SettingsStore>()((set) => ({
     ...createDefaultSettingsSaveFields(),
 
-    setSelectedAspectRatio: (selectedAspectRatio) => set({ selectedAspectRatio }),
     setDisplayMode: (displayMode) => set({ displayMode }),
     setBrightness: (brightness) => set({ brightness: clampBrightnessPct(brightness) }),
     setBackgroundParticlesIntensity: (backgroundParticlesIntensity) =>

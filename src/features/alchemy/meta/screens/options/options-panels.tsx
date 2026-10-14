@@ -1,13 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { aspectRatioOptions, displayModeOptions } from "@/features/alchemy/shared/config";
+import { displayModeOptions } from "@/features/alchemy/shared/config";
 import { DEVICE_DISPLAY_RANGES, SETTINGS_RANGES } from "@/lib/settings-values";
 import { SettingsSelect, SettingsSlider, SettingsToggle, SettingsSection, SettingsAction } from "./settings-controls";
-import type { AspectRatioOption, DisplayMode } from "../../../shared/types";
+import type { DisplayMode } from "../../../shared/types";
 
 export interface DisplayOptionsProps {
   onOpenBoards?: (() => void) | undefined;
-  selectedAspectRatio: AspectRatioOption;
-  onAspectRatioChange: (aspectRatio: AspectRatioOption) => void;
   displayMode: DisplayMode;
   onDisplayModeChange: (mode: DisplayMode) => void;
   showDisplayMode: boolean;
@@ -74,13 +72,6 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
             onChange={display.onDisplayModeChange}
           />
         ) : null}
-        <SettingsSelect
-          id="aspect-ratio"
-          label="Aspect Ratio"
-          value={display.selectedAspectRatio}
-          options={aspectRatioOptions}
-          onChange={display.onAspectRatioChange}
-        />
         <SettingsSlider
           label="Brightness"
           value={display.brightness}

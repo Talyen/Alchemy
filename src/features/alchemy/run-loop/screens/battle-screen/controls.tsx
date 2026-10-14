@@ -32,7 +32,7 @@ export function BattleBottomBar({
   return (
     <section className={battleBottomBarClass}>
       {battleState.currentEnemy.enemyType === "boss" ? <BossLyrics bossId={battleState.currentEnemy.id} /> : null}
-      <div className={battleBottomColumnClass}>
+      <div className={cn(battleBottomColumnClass, "justify-self-start")}>
         <ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} />
         <div className="flex justify-center">
           <PilePanel
@@ -94,7 +94,7 @@ function BattleControls({
   }
 
   return (
-    <div className={cn(battleBottomColumnClass, "w-56")}>
+    <div className={cn(battleBottomColumnClass, "justify-self-end")}>
       <div className="relative flex w-full flex-col items-center gap-2">
         <Button
           variant="outline"

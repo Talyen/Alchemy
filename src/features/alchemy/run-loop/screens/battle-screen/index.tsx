@@ -117,46 +117,44 @@ export function BattleScreen(props: BattleScreenProps) {
         ) : null}
       </div>
 
-      <PageLayout>
-        <div className="relative flex w-full max-w-[calc(100*var(--content-rem,1rem))] flex-1 flex-col p-7 pb-1">
-          <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-            <div
-              ref={sceneRef}
-              data-testid="battle-scene"
-              className="[container-type:size] absolute inset-0 overflow-visible"
-            >
-              <BattleActors
-                presentation={presentation}
-                view={view}
-                feedback={feedback}
-                refs={refs}
-                onInspectEnemy={props.onInspectEnemy}
-                enemyInspectionOpen={props.enemyInspectionOpen}
-              />
-
-              <BattleBottomBar
-                presentation={presentation}
-                view={view}
-                refs={refs}
-                actions={actions}
-                playabilityState={battleState}
-              />
-
-              <WishOverlay
-                open={Boolean(battleState.wishOptions) && !cardTransferInProgress}
-                battleState={battleState}
-                actions={actions}
-              />
-
-              <BattleBoonInspectOverlay open={inspectUiOpen} trinketIds={runBoons} onClose={onCloseBoonInspect} />
-
-              <CardGhostLayer presentation={presentation} />
-              <CardTransferLayer presentation={presentation} />
-              <CombatTextLayer presentation={presentation} refs={refs} />
+      <div ref={sceneRef} data-testid="battle-scene" className="[container-type:size] absolute inset-0 z-10">
+        <PageLayout>
+          <div className="relative flex w-full max-w-[calc(100*var(--content-rem,1rem))] flex-1 flex-col p-7 pb-1">
+            <div className="relative flex min-h-0 flex-1 flex-col">
+              <div className="[container-type:size] absolute inset-0 overflow-visible">
+                <BattleActors
+                  presentation={presentation}
+                  view={view}
+                  feedback={feedback}
+                  refs={refs}
+                  onInspectEnemy={props.onInspectEnemy}
+                  enemyInspectionOpen={props.enemyInspectionOpen}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </PageLayout>
+        </PageLayout>
+
+        <BattleBottomBar
+          presentation={presentation}
+          view={view}
+          refs={refs}
+          actions={actions}
+          playabilityState={battleState}
+        />
+
+        <WishOverlay
+          open={Boolean(battleState.wishOptions) && !cardTransferInProgress}
+          battleState={battleState}
+          actions={actions}
+        />
+
+        <BattleBoonInspectOverlay open={inspectUiOpen} trinketIds={runBoons} onClose={onCloseBoonInspect} />
+
+        <CardGhostLayer presentation={presentation} />
+        <CardTransferLayer presentation={presentation} />
+        <CombatTextLayer presentation={presentation} refs={refs} />
+      </div>
     </div>
   );
 }
