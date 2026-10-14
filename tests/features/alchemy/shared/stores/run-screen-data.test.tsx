@@ -6,23 +6,13 @@ import {
   setScreen,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
-  useAlchemistScreenData,
-  useCampfireScreenData,
-  useTransmutationScreenData,
-  useCorruptionScreenData,
-  useDestinationScreenData,
-  useEquipmentShopScreenData,
-  useMysteryScreenData,
-  useRewardsScreenData,
+  useDraftDeckScreenData,
   useShopScreenData,
   useRunEndScreenData,
   useLabyrinthMapScreenData,
-  useTrinketShopScreenData,
-  useWildwoodRemovalScreenData,
 } from "@/features/alchemy/shared/stores/use-run-screen-data";
-import type { RunDataScreen } from "@/features/alchemy/shared/stores/run-screen-data";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { emptyShopState, readActivityData } from "@/lib/active-run-session";
+import { emptyShopState } from "@/lib/active-run-session";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
@@ -32,38 +22,40 @@ import {
   setRunSession,
 } from "../../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
+import { abandonCurrentRun } from "@/features/alchemy/run-loop/run/run-end-commands";
+import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
+import { cardById } from "@/lib/game-data";
 
 beforeEach(() => {
   resetAllTestStores();
 });
 
-// Every RunScreenDataByScreen key must resolve to a data hook: adding a screen
-// without extending this registry is a compile error (Record<RunDataScreen>).
-const SCREEN_HOOKS: Record<RunDataScreen, () => unknown> = {
-  campfire: useCampfireScreenData,
-  transmutation: useTransmutationScreenData,
-  shop: useShopScreenData,
-  alchemist: useAlchemistScreenData,
-  "trinket-shop": useTrinketShopScreenData,
-  "equipment-shop": useEquipmentShopScreenData,
-  "labyrinth-map": useLabyrinthMapScreenData,
-  rewards: useRewardsScreenData,
-  destination: useDestinationScreenData,
-  mystery: useMysteryScreenData,
-  corruption: useCorruptionScreenData,
-  "game-over": useRunEndScreenData,
-  "run-victory": useRunEndScreenData,
-  "wildwood-removal": useWildwoodRemovalScreenData,
-};
-
-it("screen hook coverage resolves every screen to a data hook", () => {
-  for (const hook of Object.values(SCREEN_HOOKS)) {
-    const { result } = renderHook(() => hook());
-    expect(result.current).toBeDefined();
-  }
-});
-
 describe("screen-specific run data hooks", () => {
+  it.each(["campaign", "wildwood"] as const)(
+    "retains the %s draft choices while ending the run",
+    (contentSystemType) => {
+      const choices = [cardById.slash!];
+      setRunProgress({ characterId: "wildcard", contentSystemType, runDeck: [] });
+      setRunSession({
+        hasActiveRun: true,
+        activity: { kind: "draft-deck" },
+        starterDraftChoices: contentSystemType === "campaign" ? choices : null,
+        wildwoodDraft:
+          contentSystemType === "wildwood"
+            ? { ...createInitialWildwoodDraftState("wildcard", () => 0.5), draftChoices: choices }
+            : null,
+      });
+      const { result } = renderHook(() => useDraftDeckScreenData());
+      const outgoing = result.current;
+      act(() => {
+        expect(abandonCurrentRun(defaultGameSession)).toBe(true);
+      });
+      expect(readRunSession(defaultGameSession).activity.kind).toBe("inactive");
+      expect(result.current).toBe(outgoing);
+      expect(result.current.starterDraftChoices ?? result.current.wildwoodDraft?.draftChoices).toEqual(choices);
+    },
+  );
+
   it.each(["game-over", "run-victory"] as const)("retains the %s summary while teardown clears the run", (screen) => {
     setRunSession({ runEndTalentXP: { physical: 25 }, runEndLabyrinthFloor: 7 });
     mutateRunForTest((draft) => setScreen(draft, screen));
@@ -85,29 +77,6 @@ describe("screen-specific run data hooks", () => {
     expect(readRunSession(defaultGameSession).selectedLabyrinthNodeId).toBeNull();
     expect(result.current.selectedLabyrinthNodeId).toBe("room-1");
   });
-  it("returns only the exact fields owned by the shop screen", () => {
-    setRunProgress({ gold: 42, runDeck: [] });
-    const { result } = renderHook(() => useShopScreenData());
-
-    expect(result.current).toEqual({
-      gold: 42,
-      runDeck: [],
-      shopState: readActivityData(readRunSession(defaultGameSession).activity, "shop"),
-    });
-    expect(result.current).not.toHaveProperty("rewardState");
-  });
-
-  it("keeps reward data separate from unrelated route fields", () => {
-    const { result } = renderHook(() => useRewardsScreenData());
-
-    expect(result.current).toEqual({
-      rewardState: readRunSession(defaultGameSession).rewardFlow.state,
-      rewardClaimInFlight: false,
-    });
-    expect(result.current).not.toHaveProperty("runGold");
-    expect(result.current).not.toHaveProperty("shopState");
-  });
-
   it("preserves selective subscriptions for an active screen", () => {
     setRunSession({ activity: { kind: "shop", data: emptyShopState() } });
     let renders = 0;

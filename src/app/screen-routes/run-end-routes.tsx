@@ -18,6 +18,12 @@ const RUN_END_COPY = {
   },
 } as const;
 
+type RunEndStage =
+  | { kind: "recap" }
+  | { kind: "hero"; index: number }
+  | { kind: "board"; boardId: string }
+  | { kind: "demo-completion" };
+
 function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
   const outcome = screen === "run-victory" ? "victory" : "defeat";
   const commands = routeCommands.runEnd;
@@ -33,61 +39,56 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
     runRecap,
   } = useRunEndScreenData();
   const { pendingBoardRewardId } = useBoards();
-  const [showBoard, setShowBoard] = useState<string | null>(null);
-  const [marketing, setMarketing] = useState(false);
-  const [unlockIndex, setUnlockIndex] = useState<number | null>(null);
+  const [stage, setStage] = useState<RunEndStage>({ kind: "recap" });
   const unlockedCharacters = runEndUnlockedCharacters.filter(isEditionCharacterAvailable);
-  const revealedCharacter = unlockIndex === null ? undefined : unlockedCharacters[unlockIndex];
+  const revealedCharacter = stage.kind === "hero" ? unlockedCharacters[stage.index] : undefined;
   const demoVictory = IS_DEMO && outcome === "victory";
   useEffect(() => {
-    if (!marketing) return;
+    if (stage.kind !== "demo-completion") return;
     return pushEscapeHandler({
       id: "demo-completion",
       priority: ESCAPE_PRIORITY.SCREEN_OVERLAY,
       onEscape: () => commands.continueFromRunEnd(),
     });
-  }, [marketing, commands]);
+  }, [stage.kind, commands]);
   function continueAfterBoard() {
-    setShowBoard(null);
-    if (demoVictory) setMarketing(true);
+    // Keep the outgoing stage intact while saving and the menu fade finish.
+    if (demoVictory) setStage({ kind: "demo-completion" });
     else commands.continueFromRunEnd();
   }
   function continueAfterRewards() {
-    if (pendingBoardRewardId) setShowBoard(pendingBoardRewardId);
+    if (pendingBoardRewardId) setStage({ kind: "board", boardId: pendingBoardRewardId });
     else continueAfterBoard();
   }
-  if (showBoard)
+  if (stage.kind === "board")
     return (
       <BoardRewardScreen
-        boardId={showBoard}
+        boardId={stage.boardId}
         continueLabel={demoVictory ? "Continue" : "Main Menu"}
         onUseBoard={() => {
-          if (routeCommands.boards.acknowledgeReward(showBoard, true))
+          if (routeCommands.boards.acknowledgeReward(stage.boardId, true))
             routeCommands.progress.afterSaved(continueAfterBoard);
         }}
         onContinue={() => {
-          if (routeCommands.boards.acknowledgeReward(showBoard, false))
+          if (routeCommands.boards.acknowledgeReward(stage.boardId, false))
             routeCommands.progress.afterSaved(continueAfterBoard);
         }}
       />
     );
-  if (revealedCharacter) {
-    const hasNextHero = unlockIndex !== null && unlockIndex + 1 < unlockedCharacters.length;
+  if (stage.kind === "hero" && revealedCharacter) {
+    const hasNextHero = stage.index + 1 < unlockedCharacters.length;
     return (
       <HeroUnlockedScreen
         characterId={revealedCharacter}
         continueLabel={hasNextHero || demoVictory || pendingBoardRewardId ? "Continue" : "Main Menu"}
         onContinue={() => {
-          if (hasNextHero) setUnlockIndex((index) => (index ?? 0) + 1);
-          else {
-            setUnlockIndex(null);
-            continueAfterRewards();
-          }
+          if (hasNextHero) setStage({ kind: "hero", index: stage.index + 1 });
+          else continueAfterRewards();
         }}
       />
     );
   }
-  if (marketing && demoVictory)
+  if (stage.kind === "demo-completion" && demoVictory)
     return (
       <DemoCompletionScreen
         onMainMenu={commands.continueFromRunEnd}
@@ -112,7 +113,7 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
       runEndMaterials={runEndMaterials}
       runEndCurrencies={runEndCurrencies}
       runEndItems={runEndItems}
-      onContinue={unlockedCharacters.length > 0 ? () => setUnlockIndex(0) : continueAfterRewards}
+      onContinue={unlockedCharacters.length > 0 ? () => setStage({ kind: "hero", index: 0 }) : continueAfterRewards}
     />
   );
 }

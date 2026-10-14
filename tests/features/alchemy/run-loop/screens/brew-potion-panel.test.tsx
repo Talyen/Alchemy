@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrewPotionPanel } from "@/features/alchemy/run-loop/screens/brew-potion-panel";
 import { cardById, type BattleCard } from "@/lib/game-data";
 import { strengthenPotion } from "@/lib/alchemist/brewing";
+import { tryCreateMixedPotion } from "@/lib/alchemist";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 vi.mock("@/features/alchemy/shared/ui/cards/selectable-card", () => ({
@@ -79,17 +80,29 @@ describe("Brew selection safety", () => {
     fireEvent.click(button);
     expect(onConfirm).not.toHaveBeenCalled();
   });
-  it("does not mistake its accepted brew for an external deck change while saving", () => {
-    const deck = [cardById["health-potion"]!];
-    const brewed = strengthenPotion(deck[0]!)!;
+  it.each(["strengthen", "combine"] as const)("retains its accepted %s preview while saving", (kind) => {
+    const deck = [cardById["health-potion"]!, cardById["mana-potion"]!];
+    const brewed = kind === "strengthen" ? strengthenPotion(deck[0]!)! : tryCreateMixedPotion(deck[0], deck[1])!;
     const onConfirm = vi.fn(() => brewed);
-    const p = { kind: "strengthen" as const, deck, onConfirm, onBack: () => {} };
+    const p = { kind, deck, onConfirm, onBack: () => {}, price: 10, gold: 10 };
     const { rerender } = render(<BrewPotionPanel {...p} />);
     fireEvent.click(screen.getByRole("button", { name: "Select Health Potion" }));
-    fireEvent.click(screen.getByRole("button", { name: "Distill" }));
-    rerender(<BrewPotionPanel {...p} deck={[brewed]} isProgressSavePending={() => true} />);
+    if (kind === "combine") fireEvent.click(screen.getByRole("button", { name: "Select Mana Potion" }));
+    const action = `${kind === "strengthen" ? "Distill" : "Mix"} · 10 Gold`;
+    fireEvent.click(screen.getByRole("button", { name: action }));
+    rerender(<BrewPotionPanel {...p} deck={[brewed]} gold={0} isProgressSavePending={() => true} />);
     expect(screen.queryByRole("alert")).toBeNull();
-    expect((screen.getByRole("button", { name: "Distill" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(onConfirm).toHaveBeenCalledExactlyOnceWith({ kind: "strengthen", index: 0 });
+    expect(screen.queryByText(/Not enough Gold/)).toBeNull();
+    expect(screen.getByRole("button", { name: `Inspect brew result: ${brewed.title}` })).toBeTruthy();
+    if (kind === "strengthen") {
+      expect(screen.getByRole("button", { name: "Original: Health Potion" })).toBeTruthy();
+      expect(screen.queryByRole("button", { name: "Select Health Potion" })).toBeNull();
+      const choose = screen.getByRole("button", { name: "Choose Another Potion" }) as HTMLButtonElement;
+      expect(choose.disabled).toBe(true);
+    }
+    expect((screen.getByRole("button", { name: action }) as HTMLButtonElement).disabled).toBe(true);
+    expect(onConfirm).toHaveBeenCalledExactlyOnceWith(
+      kind === "strengthen" ? { kind, index: 0 } : { kind, indices: [0, 1] },
+    );
   });
 });

@@ -25,6 +25,12 @@ function selectRunEndData(state: GameplayState) {
 // Each selector owns its route's exact data contract; types derive from these
 // projections so adding or changing a field cannot drift from the runtime data.
 export const RUN_SCREEN_SELECTORS = {
+  "draft-deck": (state: GameplayState) => ({
+    contentSystemType: state.run.activeRun.contentSystemType,
+    runDeck: selectRunDeck(state),
+    wildwoodDraft: state.session.wildwoodDraft,
+    starterDraftChoices: state.session.starterDraftChoices,
+  }),
   shop: (state: GameplayState) => ({
     gold: state.runProfile.gold,
     runDeck: selectRunDeck(state),

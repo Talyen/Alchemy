@@ -1,6 +1,7 @@
 import { CharacterSelectScreen, DifficultySelectScreen, DraftDeckScreen } from "@/features/alchemy/run-setup/screens";
 import { useCompletedDifficulties, useFinishedRunCharacters } from "@/features/alchemy/shared/stores/use-profile-store";
-import { useDifficultySelectSlice, useDraftDeckSlice } from "@/features/alchemy/shared/stores/use-run-reads";
+import { useDifficultySelectSlice } from "@/features/alchemy/shared/stores/use-run-reads";
+import { useDraftDeckScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import type { RunSetupRouteCtx } from "./route-ctx";
 
 function CharacterSelectScreenRoute({ routeCommands, onBack, onOpenGameMenu }: RunSetupRouteCtx) {
@@ -39,7 +40,7 @@ function DifficultySelectScreenRoute({ routeCommands, onBack, onOpenGameMenu }: 
 
 function DraftDeckScreenRoute({ routeCommands }: RunSetupRouteCtx) {
   const commands = routeCommands.runSetup;
-  const draft = useDraftDeckSlice();
+  const draft = useDraftDeckScreenData();
   const isWildwoodDraft = draft.contentSystemType === "wildwood" && draft.wildwoodDraft?.phase === "draft";
   const draftChoices = isWildwoodDraft ? (draft.wildwoodDraft?.draftChoices ?? []) : (draft.starterDraftChoices ?? []);
   return (
