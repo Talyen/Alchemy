@@ -42,7 +42,7 @@ export const healthTalents = [
   t(
     "health-heal-boost",
     "Mending",
-    "Health restored is increased by 10%",
+    "Health restored in combat is increased by 10%",
     "HeartPulse",
     setEffect("healMultiplier", 1.1),
   ),

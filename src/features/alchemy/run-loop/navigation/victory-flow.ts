@@ -212,7 +212,8 @@ function computeVictorySettlement(
     input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD
       ? 0
       : getWellProvisionedHealing(labyrinthRewardModifiers, effectiveMaxHealth);
-  const victoryHealing = wellProvisionedHealing + Math.max(0, talentEffects.healthRestorePerCombat);
+  const baseVictoryHealing = wellProvisionedHealing + Math.max(0, talentEffects.healthRestorePerCombat);
+  const victoryHealing = baseVictoryHealing + (baseVictoryHealing > 0 ? talentEffects.homesteadHealing : 0);
   const playerHealth =
     input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD || victoryHealing > 0
       ? Math.min(effectiveMaxHealth, input.battleState.playerHealth + victoryHealing)

@@ -111,6 +111,28 @@ describe("Fetch victory rewards", () => {
     },
   );
 
+  it.each(["campaign", "labyrinth", "wildwood"])(
+    "adds Culinary Arts once to positive victory recovery in %s",
+    (contentSystemType) => {
+      const input = baseInput({
+        contentSystemType,
+        battleState: baseBattleState({ playerHealth: 10 }),
+        unlockedTalents: { health: ["health-max-per-combat"] },
+        homesteadEffects: { ...defaultHomesteadEffects, healthRestorePerCombat: 2, homesteadHealing: 3 },
+      });
+      expect(computeVictoryRewards(input, testRng).playerHealth).toBe(19);
+      expect(
+        computeVictoryRewards(
+          { ...input, unlockedTalents: {}, homesteadEffects: { ...defaultHomesteadEffects, homesteadHealing: 3 } },
+          testRng,
+        ).playerHealth,
+      ).toBe(10);
+      expect(
+        computeVictoryRewards({ ...input, battleState: baseBattleState({ playerHealth: 29 }) }, testRng).playerHealth,
+      ).toBe(30);
+    },
+  );
+
   it("applies a Labyrinth Hoard to the actual victory choices", () => {
     const result = computeVictoryRewards(
       baseInput({ contentSystemType: "labyrinth", activeLabyrinthRewardModifiers: ["ring-hoard"] }),

@@ -80,6 +80,7 @@ function computeStandardCost(state: CardCostState, card: BattleCard, discountedC
   }
   if (freeFlag) {
     result.effectiveCost = 0;
+    result.spentArmedDiscount = false;
     result.disarmedFlags.add(freeFlag);
   }
   return result;

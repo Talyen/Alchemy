@@ -158,7 +158,8 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
     case "healHealth": {
       const maxHealth = context.draft.run.activeRun.runMaxHealth;
       if (effect.chance !== undefined && context.rng() >= effect.chance) return { followUp: null };
-      setRunPlayerHealth(context.draft, (health) => Math.min(maxHealth, health + effect.amount));
+      const healingBonus = effect.amount > 0 ? context.draft.runProfile.effects.homesteadHealing : 0;
+      setRunPlayerHealth(context.draft, (health) => Math.min(maxHealth, health + effect.amount + healingBonus));
       return { followUp: null };
     }
     case "damageHealth":

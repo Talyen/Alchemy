@@ -58,6 +58,20 @@ describe("applyMysteryEffect", () => {
     expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(30);
   });
 
+  it("adds Culinary Arts to positive Mystery healing without creating healing from zero", () => {
+    setRunProgress({
+      runPlayerHealth: 10,
+      runMaxHealth: 30,
+      effects: { ...defaultHomesteadEffects, homesteadHealing: 3 },
+    });
+    apply({ kind: "healHealth", amount: 5 });
+    expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(18);
+    apply({ kind: "healHealth", amount: 0 });
+    expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(18);
+    apply({ kind: "healHealth", amount: 20 });
+    expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(30);
+  });
+
   it("draws randomness only for chance healing and respects the probability boundary", () => {
     setRunProgress({ runPlayerHealth: 20, runMaxHealth: 30 });
     const rng = vi.fn(() => 0.5);
