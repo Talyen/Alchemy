@@ -2,22 +2,16 @@ import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
-import { defaultTalentEffects } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { setEnemyStatus } from "@/lib/battle/status-state";
 import { dealDamage, makeCombatTexts, makeTestCard, patchBattleState, seededRng } from "../../fixtures/battle";
-import {
-  defaultPlayerStatusValues,
-  defaultEnemyStatusValues,
-  defaultTrinketManifest,
-} from "../../fixtures/default-battle-state";
 
 describe("card hit resolution", () => {
   it("applies enemy damage and persistent Forge on physical hit", () => {
     const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      playerStatuses: defaultPlayerStatusValues({ forge: 3 }),
+      playerStatuses: { forge: 3 },
     });
     const card = makeTestCard();
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
@@ -32,8 +26,8 @@ describe("card hit resolution", () => {
     const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      playerStatuses: defaultPlayerStatusValues({ forge: 8 }),
-      trinketEffects: defaultTrinketManifest({ forgeStunThreshold: 5, forgeStunAmount: 3 }),
+      playerStatuses: { forge: 8 },
+      trinketEffects: { forgeStunThreshold: 5, forgeStunAmount: 3 },
       rng: seededRng(99),
     });
     const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
@@ -50,8 +44,8 @@ describe("damage riders via applyCardEffects", () => {
     const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      playerStatuses: defaultPlayerStatusValues({ armor: 6 }),
-      talentEffects: { ...defaultTalentEffects, armorPhysicalDamagePercent: 100 },
+      playerStatuses: { armor: 6 },
+      talentEffects: { armorPhysicalDamagePercent: 100 },
       rng: seededRng(99),
       deck: [],
       hand: [],
@@ -66,7 +60,7 @@ describe("damage riders via applyCardEffects", () => {
 
   it("applies the full multiplied status gain", () => {
     const state = patchBattleState({
-      enemyStatuses: defaultEnemyStatusValues({ poison: 4 }),
+      enemyStatuses: { poison: 4 },
     });
     const card = makeTestCard({ effects: [{ kind: "multiply-enemy-status", status: "poison", factor: 2 }] });
     const texts: CombatTextEvent[] = [];
@@ -95,9 +89,8 @@ describe("damage riders via applyCardEffects", () => {
     const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      playerStatuses: defaultPlayerStatusValues({ forge: 0 }),
+      playerStatuses: { forge: 0 },
       talentEffects: {
-        ...defaultTalentEffects,
         archeryPlayTwiceChance: 0,
       },
     });
@@ -117,7 +110,7 @@ describe("damage riders via applyCardEffects", () => {
       enemyMaxHealth: 50,
       playerHealth: 10,
       playerMaxHealth: 30,
-      talentEffects: { ...defaultTalentEffects, natureLeechChance: 100 },
+      talentEffects: { natureLeechChance: 100 },
       rng: () => 0.1,
       deck: [],
       hand: [],
@@ -134,7 +127,7 @@ describe("damage riders via applyCardEffects", () => {
     const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      talentEffects: { ...defaultTalentEffects, holyGoldChance: 100 },
+      talentEffects: { holyGoldChance: 100 },
       gearEffects: { goldGainPercent: 50 },
       rng: () => 0.5,
       deck: [],
@@ -153,7 +146,7 @@ describe("damage riders via applyCardEffects", () => {
     const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      talentEffects: { ...defaultTalentEffects, burnStunChance: 100 },
+      talentEffects: { burnStunChance: 100 },
       rng: () => 0.99,
       deck: [],
       hand: [],
@@ -170,7 +163,7 @@ describe("damage riders via applyCardEffects", () => {
     const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      talentEffects: { ...defaultTalentEffects, natureStunChance: 100 },
+      talentEffects: { natureStunChance: 100 },
       rng: () => 0.99,
       deck: [],
       hand: [],
@@ -182,43 +175,23 @@ describe("damage riders via applyCardEffects", () => {
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyStatuses.stun).toBeGreaterThanOrEqual(5);
   });
-
-  it("armorNatureDamagePercent adds armor to nature damage", () => {
-    const state = patchBattleState({
-      enemyHealth: 50,
-      enemyMaxHealth: 50,
-      playerStatuses: defaultPlayerStatusValues({ armor: 4 }),
-      talentEffects: { ...defaultTalentEffects, armorNatureDamagePercent: 100 },
-      rng: () => 0.99,
-      deck: [],
-      hand: [],
-      discard: [],
-      exhausted: [],
-    });
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 5 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.enemyHealth).toBe(41);
-  });
 });
 
-describe("Emberforged ignition", () => {
-  it("grants Forge when Burn is absent, then waits for Burn to clear", () => {
-    const state = patchBattleState({
-      enemyHealth: 1000,
-      enemyMaxHealth: 1000,
-      playerStatuses: defaultPlayerStatusValues(),
-      gearEffects: { forgeOnBurnVsUnburnedChances: [100, 100] },
-    });
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 1 }] });
-    const first = applyCardEffects(state, card, []);
-    const second = applyCardEffects(first, card, []);
-    expect(first.playerStatuses.forge).toBe(2);
-    expect(second.playerStatuses.forge).toBe(2);
-    const refreshed = setEnemyStatus(second, "burn", 0);
-    const third = applyCardEffects(refreshed, card, []);
-    expect(third.playerStatuses.forge).toBe(refreshed.playerStatuses.forge + 2);
+it("Emberforged ignition grants Forge when Burn is absent, then waits for Burn to clear", () => {
+  const state = patchBattleState({
+    enemyHealth: 1000,
+    enemyMaxHealth: 1000,
+    playerStatuses: {},
+    gearEffects: { forgeOnBurnVsUnburnedChances: [100, 100] },
   });
+  const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 1 }] });
+  const first = applyCardEffects(state, card, []);
+  const second = applyCardEffects(first, card, []);
+  expect(first.playerStatuses.forge).toBe(2);
+  expect(second.playerStatuses.forge).toBe(2);
+  const refreshed = setEnemyStatus(second, "burn", 0);
+  const third = applyCardEffects(refreshed, card, []);
+  expect(third.playerStatuses.forge).toBe(refreshed.playerStatuses.forge + 2);
 });
 
 describe("damage rider regressions", () => {

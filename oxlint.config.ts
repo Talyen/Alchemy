@@ -166,6 +166,10 @@ export default defineConfig({
     ],
   },
   overrides: [
+    {
+      files: ["public/startup-*.js"],
+      globals: { window: "readonly", document: "readonly", localStorage: "readonly" },
+    },
     { files: ["desktop/preload.cjs"], globals: { document: "readonly" } },
     {
       files: ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],

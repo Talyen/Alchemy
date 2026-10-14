@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { SaveOperationQueue, type SaveWriteOutcome } from "@/features/alchemy/shared/storage/save-operation-queue";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
+import type { UnstampedSaveData } from "@/features/alchemy/shared/storage/types";
 import { deferred } from "../../../../helpers/deferred";
 
 function snapshot(gold: number) {
@@ -11,7 +12,7 @@ describe("SaveOperationQueue", () => {
   it("keeps a load between its preceding save and a later save without coalescing across it", async () => {
     const queue = new SaveOperationQueue();
     let gold = 0;
-    const write = async (data: ReturnType<typeof snapshot>) => {
+    const write = async (data: UnstampedSaveData) => {
       gold = data.gold;
       return "saved" as const;
     };

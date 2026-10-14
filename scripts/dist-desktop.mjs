@@ -16,7 +16,7 @@ function main(argv = process.argv.slice(2)) {
   if (rest.length) throw new UsageError(`Unexpected packaging arguments: ${rest.join(", ")}`);
   if (flags.has("help")) {
     console.log(
-      "Usage: node scripts/dist-desktop.mjs [--build] [--dir]\nPackage the prepared desktop renderer; --build first syncs the App ID, builds, and checks its bundle budget. --dir creates only the unpacked application. Publishing stays disabled.",
+      "Usage: node scripts/dist-desktop.mjs [--build] [--dir]\nValidate the prepared desktop renderer and its bundle budget, then package it. --build first syncs the App ID and builds. --dir creates only the unpacked application. Publishing stays disabled.",
     );
     return 0;
   }
@@ -27,7 +27,7 @@ function main(argv = process.argv.slice(2)) {
   assertSupportedTargets(targets);
   const { sentryDsn, sentryUploadEnabled, steamAppId, azureFields } = validateDesktopBuildConfig();
   if (flags.has("build")) {
-    for (const script of ["sync:steam-appid", "build:desktop", "check:bundle"]) {
+    for (const script of ["sync:steam-appid", "build:desktop"]) {
       const result = runStreamCommand("npm", ["run", script], { cwd: root });
       if (result.error) throw result.error;
       if (result.status !== 0) return result.status ?? 1;
@@ -62,6 +62,9 @@ function main(argv = process.argv.slice(2)) {
     rendererIdentity,
   );
   verifyDesktopRenderer(join(root, selected.rendererDirectory));
+  const budget = runStreamCommand("npm", ["run", "check:bundle"], { cwd: root });
+  if (budget.error) throw budget.error;
+  if (budget.status !== 0) return budget.status ?? 1;
   const builderConfig = {
     ...JSON.parse(readFileSync(join(root, "package.json"), "utf8")).build,
     productName: selected.productName,

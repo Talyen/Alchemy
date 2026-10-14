@@ -11,7 +11,6 @@ export { cardHasKeyword } from "@/lib/game-data/keywords";
 interface EffectClassification {
   damageTypes: ReadonlySet<string>;
   playTarget: "player" | "enemy";
-  transmutationRole: "attack" | "defense" | "utility";
 }
 
 // All derived classification belongs to the immutable effect tree. Card
@@ -23,17 +22,10 @@ function classifyEffects(effects: readonly BattleCardEffect[]): EffectClassifica
   if (cached) return cached;
   const damageTypes = new Set<string>();
   let playTarget: "player" | "enemy" | null = null;
-  let hasDefense = false;
   visitBattleCardEffects(effects, (effect) => {
     // Targeting uses the first concrete effect; damage queries include the
     // whole tree, even when later effects target the other side.
     playTarget ??= effectTarget(effect);
-    if (
-      effect.kind === "heal" ||
-      effect.kind === "dodge-next-attack" ||
-      (effect.kind === "player-status" && ["block", "armor", "thorns"].includes(effect.status))
-    )
-      hasDefense = true;
     if (effect.kind === "damage") {
       if (effect.damageTypeIfTargetHasBlock) damageTypes.add(effect.damageTypeIfTargetHasBlock);
       if (effect.damageTypeIfTargetFrozen) damageTypes.add(effect.damageTypeIfTargetFrozen);
@@ -49,7 +41,6 @@ function classifyEffects(effects: readonly BattleCardEffect[]): EffectClassifica
   const classification: EffectClassification = {
     damageTypes,
     playTarget: playTarget ?? "enemy",
-    transmutationRole: damageTypes.size > 0 ? "attack" : hasDefense ? "defense" : "utility",
   };
   EFFECT_CLASSIFICATION_CACHE.set(effects, classification);
   return classification;
@@ -128,8 +119,4 @@ function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
 
 export function getBattleCardPlayTarget(card: BattleCard): "player" | "enemy" {
   return classifyEffects(card.effects).playTarget;
-}
-
-export function getBattleCardTransmutationRole(card: Pick<BattleCard, "effects">): "attack" | "defense" | "utility" {
-  return classifyEffects(card.effects).transmutationRole;
 }

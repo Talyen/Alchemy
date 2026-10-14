@@ -6,7 +6,7 @@ import {
   type DamageType,
   type TalentEffectManifest,
 } from "@/lib/game-data";
-import { BURN_BLOCK_SCALED_DAMAGE_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
+import { PERCENT_DENOMINATOR } from "../game-constants";
 import { scalePercent, scalePerMana } from "./amount-helpers";
 import { flatDamageBonus } from "./damage-modifiers";
 import {
@@ -45,25 +45,18 @@ function forgeDamagePercent(
   }
 }
 
-function forgeAppliesToDamageType(
-  damageType: DamageType,
-  talentEffects: TalentEffectManifest,
-  gearEffects?: BattleState["gearEffects"],
-): boolean {
-  return forgeDamagePercent(damageType, talentEffects, gearEffects) > 0;
-}
-
 function blockScaledDamage(state: BattleState, percent: number): number {
   return scalePercent(state.playerStatuses.block, percent, PERCENT_DENOMINATOR);
 }
 
 function getForgeBonusForDamage(state: BattleState, damageType: DamageType): number {
-  if (!forgeAppliesToDamageType(damageType, state.talentEffects, state.gearEffects)) return 0;
+  const percent = forgeDamagePercent(damageType, state.talentEffects, state.gearEffects);
+  if (!(percent > 0)) return 0;
   const forge = state.playerStatuses.forge;
   if (damageType === "physical" && state.talentEffects.forgeToPhysicalDamageMultiplier > 0) {
     return forge * state.talentEffects.forgeToPhysicalDamageMultiplier;
   }
-  return scalePercent(forge, forgeDamagePercent(damageType, state.talentEffects, state.gearEffects));
+  return scalePercent(forge, percent);
 }
 
 function computeBaseRawAmount(
@@ -105,8 +98,6 @@ function applyDamageTypeModifiers(state: BattleState, damageType: DamageType, ra
       amount += scalePercent(state.playerStatuses.armor, state.talentEffects.armorPhysicalDamagePercent);
       if (state.talentEffects.blockToPhysicalDamageMultiplier > 0)
         amount += Math.round(state.playerStatuses.block * state.talentEffects.blockToPhysicalDamageMultiplier);
-      if (state.enemyStatuses.poison > 0) amount += state.talentEffects.poisonPhysicalBonus;
-      if (state.enemyStatuses.bleed > 0) amount += state.talentEffects.bleedPhysicalBonus;
       return amount;
     case "holy":
       amount += scalePercent(state.gold, state.talentEffects.holyGoldPercent, PERCENT_DENOMINATOR);
@@ -124,20 +115,13 @@ function applyDamageTypeModifiers(state: BattleState, damageType: DamageType, ra
     case "burn":
       if (state.talentEffects.burnDamagePerMana > 0)
         amount += scalePerMana(state.mana, state.talentEffects.burnDamagePerMana, "percent");
-      else if (state.talentEffects.burnDamagePerManaCrystal > 0)
-        amount += scalePerMana(state.maxMana, state.talentEffects.burnDamagePerManaCrystal, "percent");
-      return state.talentEffects.blockToBurnDamage
-        ? amount + blockScaledDamage(state, BURN_BLOCK_SCALED_DAMAGE_PERCENT)
-        : amount;
+      return amount;
     case "freeze":
       if (state.talentEffects.freezeDamagePerMana > 0)
         amount += scalePerMana(state.mana, state.talentEffects.freezeDamagePerMana, "percent");
-      else if (state.talentEffects.freezeDamagePerManaCrystal > 0)
-        amount += scalePerMana(state.maxMana, state.talentEffects.freezeDamagePerManaCrystal, "half");
       return amount;
     case "nature":
-      amount += scalePercent(state.playerStatuses.armor, state.talentEffects.armorNatureDamagePercent);
-      return amount + (state.enemyStatuses.poison > 0 ? state.talentEffects.natureBonusVsPoisoned : 0);
+      return amount;
     case "poison":
       return Math.round(
         (amount + getPoisonBonusAgainstBleeding(state)) * getPoisonDamageMultiplierAgainstBleeding(state),

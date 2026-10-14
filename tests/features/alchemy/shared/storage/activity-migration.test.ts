@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../../../../helpers/save-backend";
 import { afterEach, expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
@@ -8,7 +9,7 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { saveEnvelopeFixture } from "../../../../fixtures/saves";
 import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
 import { version19MysterySave } from "../../../../fixtures/current-saves";
-import * as materials from "@/features/alchemy/shared/stores/run-session-write-port";
+import * as settlement from "@/features/alchemy/shared/stores/write/run-end";
 
 const sessions: Array<ReturnType<typeof createGameSession>> = [];
 afterEach(async () => {
@@ -105,18 +106,18 @@ it("abandons only the selected legacy run with current settlement and an acknowl
   sessions.push(session);
   const persistence = createSessionPersistence(session);
   let written = "";
-  persistence.configure({
-    readCandidates: async () => ({ ok: true, candidates: [] }),
-    write: async (_key, value) => {
-      written = value;
-      return { ok: true };
-    },
-    writeSync: (_key, value) => {
-      written = value;
-      return { ok: true };
-    },
-    clear: async () => ({ ok: true }),
-  });
+  persistence.configure(
+    createSaveBackend({
+      write: async (_key, value) => {
+        written = value;
+        return { ok: true };
+      },
+      writeSync: (_key, value) => {
+        written = value;
+        return { ok: true };
+      },
+    }),
+  );
   expect(persistence.restore(loaded.data, { restoreActions: loaded.restoreActions })).toBe(true);
   await persistence.waitForWrites();
   const root = readGameplayState(session);
@@ -158,7 +159,7 @@ it("does not retire committed terminal battles or partially publish a failed set
   const session = createGameSession();
   sessions.push(session);
   const before = readGameplayState(session);
-  vi.spyOn(materials, "awardRunEndMaterials").mockImplementationOnce(() => {
+  vi.spyOn(settlement, "settleRunEnd").mockImplementationOnce(() => {
     throw new Error("settlement failed");
   });
   expect(() =>

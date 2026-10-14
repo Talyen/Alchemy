@@ -1,9 +1,11 @@
+import type { Immutable } from "immer";
 import type { CharacterId } from "@/lib/game-data";
 import { trinketLibrary } from "@/lib/game-data";
 import { GEAR_CHARACTER_IDS } from "@/lib/gear";
 import type { GameSession } from "./game-session-types";
 import { readGameplayState } from "./gameplay-state-reads";
-import { createDefaultGearSaveFields, initializeGear } from "./gear-actions";
+import { initializeGear } from "./gear-actions";
+import { createDefaultGearSaveFields } from "./gear-state-defaults";
 import type { GearSaveFields, GearStateFields } from "./gear-store-types";
 import { type GameplayPersistenceCodec } from "./persistence-codec";
 export type { GearCombatRestrictions } from "./gear-combat-restrictions";
@@ -54,13 +56,14 @@ export const gearPersistenceCodec: GameplayPersistenceCodec<GearSaveFields> = {
 
 export type GearArmorySlice = GearStateFields;
 
-function hasAnyOwnedGear(inventories: GearStateFields["inventories"], ownedTrinketIds: string[]): boolean {
-  return ownedTrinketIds.length > 0 || GEAR_CHARACTER_IDS.some((id) => inventories[id].length > 0);
+export function selectHasAnyOwnedGear(
+  gear: Immutable<Pick<GearStateFields, "inventories" | "ownedTrinketIds">>,
+): boolean {
+  return gear.ownedTrinketIds.length > 0 || GEAR_CHARACTER_IDS.some((id) => gear.inventories[id].length > 0);
 }
 
-export function readHasAnyOwnedGear(gameSession: GameSession): boolean {
-  const gear = readGameplayState(gameSession).gear;
-  return hasAnyOwnedGear(gear.inventories, gear.ownedTrinketIds);
+export function selectHasUnownedTrinkets(gear: Immutable<Pick<GearStateFields, "ownedTrinketIds">>): boolean {
+  return gear.ownedTrinketIds.length < trinketLibrary.length;
 }
 
 export function readGearState(gameSession: GameSession): GearStateFields {
@@ -74,10 +77,6 @@ export function readGearState(gameSession: GameSession): GearStateFields {
     equippedTrinkets: gear.equippedTrinkets,
     craftingCurrencies: gear.craftingCurrencies,
   };
-}
-
-export function readHasUnownedTrinkets(gameSession: GameSession): boolean {
-  return readGameplayState(gameSession).gear.ownedTrinketIds.length < trinketLibrary.length;
 }
 
 export function readEquippedTrinketId(characterId: CharacterId, gameSession: GameSession): string | null {

@@ -89,7 +89,11 @@ export function resolveBattleCard(
   context: BattleResolutionContext,
   options?: CardPlayOptions,
 ): ResolvedPlayerAction {
-  const result = resolveBattleAction(snapshot, { kind: "card", cardId, index, options }, context);
+  const result = resolveBattleAction(
+    snapshot,
+    { kind: "card", cardId, index, ...(options ? { options } : {}) },
+    context,
+  );
   return result.kind === "accepted" && result.action === "card"
     ? result.resolution
     : { state: snapshot, combatTexts: [] };
@@ -111,7 +115,11 @@ export function resolveBattleTurn(
   context: BattleResolutionContext,
   options?: { maxTurns: number },
 ): ResolvedBattleTurn {
-  const result = resolveBattleAction(snapshot, { kind: "end-turn", maxTurns: options?.maxTurns }, context);
+  const result = resolveBattleAction(
+    snapshot,
+    { kind: "end-turn", ...(options ? { maxTurns: options.maxTurns } : {}) },
+    context,
+  );
   return result.kind === "accepted" && result.action === "end-turn"
     ? result.resolution
     : { state: snapshot, frames: [] };

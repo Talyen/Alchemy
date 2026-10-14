@@ -1,12 +1,11 @@
+import { createSaveBackend } from "../helpers/save-backend";
 import { setRunProgressActivity } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook, act, cleanup } from "@testing-library/react";
 import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setGold, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
-
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
-import { resetAllTestStores } from "../helpers/run-domain-store-test";
+import { mutateRunForTest, resetAllTestStores } from "../helpers/run-domain-store-test";
 import { deferred } from "../helpers/deferred";
 import type { SaveBackend } from "@/lib/platform-save-backend";
 import { defaultGameSession } from "@/app/application-session";
@@ -18,7 +17,7 @@ const persistence = createSessionPersistence(defaultGameSession);
 
 function changeGold(gold: number) {
   act(() => {
-    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, gold)), undefined, defaultGameSession);
+    mutateRunForTest((draft) => setGold(draft, gold));
   });
 }
 
@@ -31,12 +30,7 @@ async function advance(ms: number) {
 function installBackend() {
   const write = vi.fn<SaveBackend["write"]>().mockResolvedValue({ ok: true });
   const writeSync = vi.fn<SaveBackend["writeSync"]>().mockReturnValue({ ok: true });
-  persistence.configure({
-    readCandidates: async () => ({ ok: true, candidates: [] }),
-    write,
-    writeSync,
-    clear: async () => ({ ok: true }),
-  });
+  persistence.configure(createSaveBackend({ write, writeSync }));
   return { write, writeSync };
 }
 
@@ -140,17 +134,11 @@ describe("useAlchemyAutosaveFromStores", () => {
     renderHook(() => useAlchemyAutosaveFromStores(true));
 
     act(() => {
-      dispatchRunSessionCommand(
-        (draft) => {
-          setHasActiveRun(draft, true);
-          setRunProgressActivity(draft, "destination");
-          setGold(draft, 91);
-
-          return acceptCommand();
-        },
-        undefined,
-        defaultGameSession,
-      );
+      mutateRunForTest((draft) => {
+        setHasActiveRun(draft, true);
+        setRunProgressActivity(draft, "destination");
+        setGold(draft, 91);
+      });
       window.dispatchEvent(new PageTransitionEvent("pagehide"));
     });
 

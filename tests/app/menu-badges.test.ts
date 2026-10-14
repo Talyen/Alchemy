@@ -17,17 +17,15 @@ function freshProgress() {
   };
 }
 
-describe("hasUnspentTalents", () => {
-  it("signals spendable points without offering nonexistent Talents after a tree is complete", () => {
-    expect(hasUnspentTalents({}, {})).toBe(false);
-    const talentXP = { physical: 1_000_000 };
-    expect(hasUnspentTalents(talentXP, {})).toBe(true);
-    expect(
-      hasUnspentTalents(talentXP, {
-        physical: Array.from({ length: countImplementedTalents("physical") }, (_, index) => `spent-${index}`),
-      }),
-    ).toBe(false);
-  });
+it("hasUnspentTalents signals spendable points without offering nonexistent Talents after a tree is complete", () => {
+  expect(hasUnspentTalents({}, {})).toBe(false);
+  const talentXP = { physical: 1_000_000 };
+  expect(hasUnspentTalents(talentXP, {})).toBe(true);
+  expect(
+    hasUnspentTalents(talentXP, {
+      physical: Array.from({ length: countImplementedTalents("physical") }, (_, index) => `spent-${index}`),
+    }),
+  ).toBe(false);
 });
 
 describe("hasAffordableHomesteadUpgrade", () => {

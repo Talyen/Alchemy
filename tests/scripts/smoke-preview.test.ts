@@ -10,45 +10,27 @@ vi.mock("vite", async (importOriginal) => {
   const actual = await importOriginal<typeof import("vite")>();
   return { ...actual, preview: vi.fn(actual.preview) };
 });
-import { extractBuildResources, smokePreview, verifyBuildResources } from "../../scripts/smoke-preview.mjs";
-
-describe("extractBuildResources", () => {
-  it("resolves Vite scripts and styles for web builds", () => {
-    const html = `
-      <link rel="stylesheet" href="/assets/index.css">
-      <script type="module" src="/assets/index.js"></script>
-    `;
-
-    expect(extractBuildResources(html, "http://127.0.0.1:4174/")).toEqual([
-      { url: "http://127.0.0.1:4174/assets/index.js", type: "script" },
-      { url: "http://127.0.0.1:4174/assets/index.css", type: "style" },
-    ]);
-  });
-
-  it("resolves relative resources emitted by desktop mode", () => {
-    const html = `<script type="module" src="./assets/index.js"></script>`;
-    expect(extractBuildResources(html, "http://127.0.0.1:4174/")).toEqual([
-      { url: "http://127.0.0.1:4174/assets/index.js", type: "script" },
-    ]);
-  });
-});
+import { smokePreview, verifyBuildResources } from "../../scripts/smoke-preview.mjs";
 
 describe("production build resources", () => {
   const html = '<script src="/assets/index.js"></script><link rel="stylesheet" href="/assets/index.css">';
   const url = "http://127.0.0.1:4174/";
   afterEach(() => vi.unstubAllGlobals());
 
-  it("accepts nonempty JavaScript and CSS with their expected content types", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        async (resource: string) =>
-          new Response("content", {
-            headers: { "content-type": resource.endsWith(".js") ? "text/javascript; charset=utf-8" : "text/css" },
-          }),
-      ),
+  it.each(["/", "./"])("validates JavaScript and CSS from %s build references", async (prefix) => {
+    const fetch = vi.fn(
+      async (resource: string) =>
+        new Response("content", {
+          headers: { "content-type": resource.endsWith(".js") ? "text/javascript; charset=utf-8" : "text/css" },
+        }),
     );
-    await expect(verifyBuildResources(html, url)).resolves.toBeUndefined();
+    vi.stubGlobal("fetch", fetch);
+    const document = `<script src="${prefix}assets/index.js"></script><link rel="stylesheet" href="${prefix}assets/index.css">`;
+    await expect(verifyBuildResources(document, url)).resolves.toBeUndefined();
+    expect(fetch.mock.calls.map(([resource]) => resource).sort()).toEqual([
+      `${url}assets/index.css`,
+      `${url}assets/index.js`,
+    ]);
   });
 
   it.each(["text/html", "text/plain", ""])(

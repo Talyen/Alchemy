@@ -15,7 +15,6 @@ const armoryPickerGridStyle = {
 // Pagination state is owned by useArmoryOrdering (ARMORY_PAGE_SIZE); the page
 // size here must stay ROWS x COLUMNS so filler slots complete the last page.
 export function ArmoryPagedGrid<T>({
-  items,
   testId,
   swapKey,
   fillerTestId,

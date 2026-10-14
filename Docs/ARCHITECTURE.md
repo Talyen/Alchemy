@@ -53,12 +53,15 @@ workflow](./WORKFLOWS.md#content-system-behavior).
 
 The main menu offers Continue when a run is unfinished, otherwise Play. Continue delegates to `content-system-navigation.resumeRun` through route props. A requested mode cannot replace an active run. End Run in the existing red menu action cancels pending battle/navigation work, finalizes earned progression once, clears the current run, and always shows Journey’s End without confirmation; continuation follows the [run recap UI](./UI_BROWSING.md#run-journey-recap), including earned hero unlocks. Ordinary defeat and victory retain their outcome screens. Drafting belongs to the active run; finishing its starter draft is the only supported re-application of a start snapshot. Domain commands own the activity's resume location; display navigation, including Menu/meta visits, never replaces it. Run-start and progression commands establish their next activity before presentation begins. There are no parked slots or recency fields.
 
-Destination offer construction is pure in `shared/run-flow/destination-flow.ts`.
-Callers supply offer history, boss ID, and command-bound RNG; destination
-generation is not exposed through the content-system navigation API.
-`shared/stores/destination-offer-command.ts` samples and applies Campaign
-destination offers for both run start and progression inside the caller's
-existing command, committing offer history, reward state, and RNG counters together.
+Destination eligibility is pure in `shared/run-flow/resolve-available-destinations.ts`;
+weighted offer construction lives in `shared/run-flow/destination-flow.ts`.
+`shared/stores/destination-offer-command.ts` derives act, room history, Health,
+Gold, and collection eligibility from the open transaction. Run start, resume
+repair, and progression use that owner; victory supplies its plain eligibility
+context to reward calculation, which uses settled Health and Gold. Domain
+commands never call a shell reader or accept partial overrides for eligibility.
+Offer history, reward state, and command-bound RNG counters commit together;
+destination generation is not exposed through navigation capabilities.
 
 ## Battle path
 
@@ -201,8 +204,13 @@ or save restoration. Retained capabilities do not need to be recreated.
 Each shop supplies typed shelf selection, item identity, pricing, and acquisition
 rules; the shared purchase owner uses that pricing rule for both displayed quotes
 and commits, validating and acquiring the live shelf item inside the transaction.
-Pure shelf samplers live in `shop-state-init.ts`. `shop-initialization.ts` owns the shared transaction-level initialization used by
-room entry and standalone shop commands. `shop-commands-core.ts` owns
+Pure shelf samplers live in `shop-state-init.ts`. `run-loop/run/room-visit-initialization.ts`
+owns transaction-only initialization for shops, Campfire, Transmutation, and Mystery.
+Only `room-entry-commands.ts` may import that owner (Oxlint and import-boundary gates enforce this).
+Room entry commits complete visits before navigation. Screen mount effects and retained
+shop/route capabilities cannot initialize or replace visits, reset purchases or refresh
+allowances, or reroll saved offers. Resume hydrates existing visit data; damaged
+Transmutation choices use the screen's existing unavailable-visit exit. `shop-commands-core.ts` owns
 purchase validation and the complete refresh recipe; the activity
 selects pricing and the typed `setRunActivityData` write target. Callers supply
 shop-specific sampling and acquisition rules without wiring separate state writers.
@@ -228,7 +236,7 @@ Gameplay progression remains in the [aggregate regions](./RUN_STATE.md#run-state
 
 ## Permanent Gear (`gear-store`)
 
-Owned Gear and per-character loadouts live in `shared/stores/gear-store.ts`. Pure rules live under `src/lib/gear/`; per-command draft views and health-sync wrappers live in `gear-session-command.ts` (`GearDraftView` with deeply readonly collection views and guarded mutation methods, explicit write tracking — no snapshot comparison). `createInitialGearState` lives in `gear-actions.ts` beside the other pure draft mutators. Gear is meta progression, not copied into active-run data; battle snapshots `BattleState.gearEffects` and live meta mutations rebind via `rebindLiveRunMeta`. Feature code reads through `gear-store.ts`. Screen, mutations, and HP-sync: [ARMORY.md](./ARMORY.md). Authoring new items: [WORKFLOWS § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
+Owned Gear and per-character loadouts live in `shared/stores/gear-store.ts`. Pure rules live under `src/lib/gear/`; per-command draft views and health-sync wrappers live in `gear-session-command.ts` (`GearDraftView` with deeply readonly collection views and guarded mutation methods, explicit write tracking — no snapshot comparison). `createInitialGearState` lives in `gear-actions.ts` beside the other pure draft mutators. Player actions live in `gear-commands.ts`; routes and headless playthroughs cannot supply draft callbacks or save-flush adapters. Salvage owns removal and all payouts in `salvageGearInTransaction`, outside the generic draft view. Import boundaries keep Gear mutation internals store-owned. Gear is meta progression, not copied into active-run data; battle snapshots `BattleState.gearEffects` and live meta mutations rebind via `rebindLiveRunMeta`. Feature code reads through `gear-store.ts`. Screen, mutations, and HP-sync: [ARMORY.md](./ARMORY.md). Authoring new items: [WORKFLOWS § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
 
 ## Types
 
@@ -302,6 +310,6 @@ controller factories, reads, commands, and persistence.
 `actor.ts` routes each observation to `meta-offers.ts` or `run-offers.ts` after constructing the production controller. `choice-catalog.ts` owns recorded choice identities and their executable commands for the current observation; duplicate identities fail instead of replacing a command. Offer builders score and register legal choices but do not commit gameplay until the selected choice executes.
 
 Run outcomes and navigation share one construction owner: `createRunOutcomes`
-captures the destination sampler and exposes `connect(actions)`. Both UI and
-headless shells connect navigation to that owner; neither can supply a second
-sampler for progression. Hover-clearing navigation is wrapped once in the shell.
+exposes `connect(actions)`. Both UI and headless shells supply presentation
+capabilities; domain commands own destination eligibility and sampling.
+Hover-clearing navigation is wrapped once in the shell.

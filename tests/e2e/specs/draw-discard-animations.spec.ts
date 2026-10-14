@@ -221,6 +221,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await battle.playFirstCard();
     await expect(battle.endTurnBtn).toBeEnabled();
     await battle.endTurnBtn.click();
+    await page.getByRole("button", { name: "Confirm", exact: true }).click();
 
     await expect
       .poll(

@@ -48,18 +48,16 @@ describe("handHasPlayableCard", () => {
   });
 });
 
-describe("getPlayableHandCardKeys", () => {
-  it("uses live play eligibility and index keys without confusing repeated copies", () => {
-    const cleanse = makeTestCard({ id: "cleanse", effects: [{ kind: "remove-harmful-status", amount: 1 }] });
-    const state = makeTestBattleState({ hand: [affordableCard, expensiveCard, cleanse, cleanse], mana: 2 });
-    expect(getPlayableHandCardKeys(state)).toEqual(new Set(["slash-1"]));
-    const afflicted = { ...state, playerStatuses: { ...state.playerStatuses, burn: 1 } };
-    expect(getPlayableHandCardKeys(afflicted)).toEqual(new Set(["slash-1", "cleanse-no-uid-2", "cleanse-no-uid-3"]));
-    expect(handHasHiddenCard(afflicted, ["cleanse-no-uid-3"])).toBe(true);
-    expect(handHasHiddenCard({ ...afflicted, hand: [affordableCard] }, ["cleanse-no-uid-3"])).toBe(false);
-    expect(getPlayableHandCardKeys({ ...afflicted, wishOptions: [affordableCard] })).toEqual(new Set());
-    expect(getPlayableHandCardKeys({ ...afflicted, playerHealth: 0, deathsDoorActive: false })).toEqual(new Set());
-  });
+it("getPlayableHandCardKeys uses live play eligibility and index keys without confusing repeated copies", () => {
+  const cleanse = makeTestCard({ id: "cleanse", effects: [{ kind: "remove-harmful-status", amount: 1 }] });
+  const state = makeTestBattleState({ hand: [affordableCard, expensiveCard, cleanse, cleanse], mana: 2 });
+  expect(getPlayableHandCardKeys(state)).toEqual(new Set(["slash-1"]));
+  const afflicted = { ...state, playerStatuses: { ...state.playerStatuses, burn: 1 } };
+  expect(getPlayableHandCardKeys(afflicted)).toEqual(new Set(["slash-1", "cleanse-no-uid-2", "cleanse-no-uid-3"]));
+  expect(handHasHiddenCard(afflicted, ["cleanse-no-uid-3"])).toBe(true);
+  expect(handHasHiddenCard({ ...afflicted, hand: [affordableCard] }, ["cleanse-no-uid-3"])).toBe(false);
+  expect(getPlayableHandCardKeys({ ...afflicted, wishOptions: [affordableCard] })).toEqual(new Set());
+  expect(getPlayableHandCardKeys({ ...afflicted, playerHealth: 0, deathsDoorActive: false })).toEqual(new Set());
 });
 
 describe("findBestPlayableHandCard", () => {

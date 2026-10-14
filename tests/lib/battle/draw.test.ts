@@ -15,34 +15,32 @@ import { makeTestBattleState, makeTestCardWithId, patchBattleState, seededRng } 
 
 const makeCard = makeTestCardWithId;
 
-describe("defaultBattleState", () => {
-  it("isolates nested combat state so one battle cannot alter the next battle's defaults", () => {
-    const first = defaultBattleState();
-    const next = defaultBattleState();
-    const before = structuredClone({
-      playerStatuses: next.playerStatuses,
-      enemyStatuses: next.enemyStatuses,
-      flags: next.flags,
-      talents: next.talentEffects,
-      gear: next.gearEffects,
-      deck: next.deck,
-    });
-    first.playerStatuses.block = 5;
-    first.enemyStatuses.burn = 3;
-    first.flags.nextHitCrit = true;
-    first.talentEffects.companionBondLevels.wolf = 4;
-    first.talentEffects.healthThresholdArmor.push({ threshold: 50, amount: 3 });
-    first.gearEffects.flatPhysicalDamage = 10;
-    first.deck.push(makeCard("previous-battle"));
-    expect({
-      playerStatuses: next.playerStatuses,
-      enemyStatuses: next.enemyStatuses,
-      flags: next.flags,
-      talents: next.talentEffects,
-      gear: next.gearEffects,
-      deck: next.deck,
-    }).toEqual(before);
+it("defaultBattleState isolates nested combat state so one battle cannot alter the next battle's defaults", () => {
+  const first = defaultBattleState();
+  const next = defaultBattleState();
+  const before = structuredClone({
+    playerStatuses: next.playerStatuses,
+    enemyStatuses: next.enemyStatuses,
+    flags: next.flags,
+    talents: next.talentEffects,
+    gear: next.gearEffects,
+    deck: next.deck,
   });
+  first.playerStatuses.block = 5;
+  first.enemyStatuses.burn = 3;
+  first.flags.nextHitCrit = true;
+  first.talentEffects.companionBondLevels.wolf = 4;
+  first.talentEffects.healthThresholdArmor.push({ threshold: 50, amount: 3 });
+  first.gearEffects.flatPhysicalDamage = 10;
+  first.deck.push(makeCard("previous-battle"));
+  expect({
+    playerStatuses: next.playerStatuses,
+    enemyStatuses: next.enemyStatuses,
+    flags: next.flags,
+    talents: next.talentEffects,
+    gear: next.gearEffects,
+    deck: next.deck,
+  }).toEqual(before);
 });
 
 describe("drawCards — edge cases", () => {
@@ -168,31 +166,29 @@ describe("drawCards — edge cases", () => {
   });
 });
 
-describe("takeRandomCardFromDeck", () => {
-  it.each(["deck", "discard"] as const)("preserves the %s input and seeded draw order", (pile) => {
-    const cards = [makeCard("a", { uid: 1 }), makeCard("b", { uid: 2 }), makeCard("c", { uid: 3 })];
-    const rng = vi.fn(() => 0);
-    const state = patchBattleState({
-      deck: pile === "deck" ? cards : [],
-      discard: pile === "discard" ? cards : [],
-      nextCardUid: 40,
-      uniqueGear: { returningFlightUid: 1, lastArcheryUid: 2 },
-      rng,
-    });
-    Object.freeze(state.deck);
-    Object.freeze(state.discard);
-
-    const result = takeRandomCardFromDeck(state)!;
-    expect(result.card.id).toBe(pile === "deck" ? "a" : "b");
-    expect(result.card.uid).toBe(40);
-    expect(result.nextCardUid).toBe(41);
-    expect(result.deck.map((card) => card.id)).toEqual(pile === "deck" ? ["b", "c"] : ["c", "a"]);
-    expect(result.discard).toEqual([]);
-    expect(result.uniqueGear.returningFlightUid).toBe(pile === "deck" ? 40 : 1);
-    expect(result.uniqueGear.lastArcheryUid).toBe(pile === "discard" ? 40 : 2);
-    expect(rng).toHaveBeenCalledTimes(pile === "deck" ? 1 : 3);
-    expect(cards.map((card) => card.id)).toEqual(["a", "b", "c"]);
+it.each(["deck", "discard"] as const)("takeRandomCardFromDeck preserves the %s input and seeded draw order", (pile) => {
+  const cards = [makeCard("a", { uid: 1 }), makeCard("b", { uid: 2 }), makeCard("c", { uid: 3 })];
+  const rng = vi.fn(() => 0);
+  const state = patchBattleState({
+    deck: pile === "deck" ? cards : [],
+    discard: pile === "discard" ? cards : [],
+    nextCardUid: 40,
+    uniqueGear: { returningFlightUid: 1, lastArcheryUid: 2 },
+    rng,
   });
+  Object.freeze(state.deck);
+  Object.freeze(state.discard);
+
+  const result = takeRandomCardFromDeck(state)!;
+  expect(result.card.id).toBe(pile === "deck" ? "a" : "b");
+  expect(result.card.uid).toBe(40);
+  expect(result.nextCardUid).toBe(41);
+  expect(result.deck.map((card) => card.id)).toEqual(pile === "deck" ? ["b", "c"] : ["c", "a"]);
+  expect(result.discard).toEqual([]);
+  expect(result.uniqueGear.returningFlightUid).toBe(pile === "deck" ? 40 : 1);
+  expect(result.uniqueGear.lastArcheryUid).toBe(pile === "discard" ? 40 : 2);
+  expect(rng).toHaveBeenCalledTimes(pile === "deck" ? 1 : 3);
+  expect(cards.map((card) => card.id)).toEqual(["a", "b", "c"]);
 });
 
 describe("player turn transition", () => {

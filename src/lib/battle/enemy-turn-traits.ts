@@ -1,7 +1,7 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
-import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
+import type { BestiaryEntry } from "@/lib/game-data";
 import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -68,22 +68,6 @@ const enemyTraitTurnStartHandlers = new Map<string, EnemyTurnStartTrait>([
   ["stone-golem", { handler: makeMitigationHandler("block", 1), everyOtherTurn: false }],
 ]);
 
-// Null means the modifier is handled during setup or damage resolution.
-// Exhaustiveness makes adding a difficulty kind require an explicit classification.
-const difficultyTurnStartHandlers: Record<DifficultyModifier["kind"], EnemyTurnStartHandler | null> = {
-  "enemy-starting-armor": null,
-  "increase-enemy-physical-damage": null,
-  "increase-enemy-damage": null,
-  "increase-enemy-status": null,
-  "enemy-attacks-gain-leech": null,
-  "start-block": null,
-  "start-max-mana": null,
-  "gold-multiplier": null,
-  "start-companion": null,
-  "enemy-health-multiplier": null,
-  "enemy-damage-multiplier": null,
-};
-
 const PASSIVE_ONLY_TRAITS = new Set<string>([
   "brittle-bones",
   "glacial-body",
@@ -118,14 +102,6 @@ export const PASSIVE_ONLY_ENEMY_TRAIT_IDS = [...PASSIVE_ONLY_TRAITS];
 
 export const REACTION_ONLY_ENEMY_TRAIT_IDS = [...REACTION_ONLY_TRAITS];
 
-const ALL_DIFFICULTY_MODIFIER_KINDS = Object.keys(difficultyTurnStartHandlers) as Array<DifficultyModifier["kind"]>;
-export const DIFFICULTY_TURN_START_MODIFIER_KINDS = ALL_DIFFICULTY_MODIFIER_KINDS.filter(
-  (kind) => difficultyTurnStartHandlers[kind] !== null,
-);
-export const PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS = ALL_DIFFICULTY_MODIFIER_KINDS.filter(
-  (kind) => difficultyTurnStartHandlers[kind] === null,
-);
-
 function isEnemyTraitTurnStartCovered(traitId: string): boolean {
   return (
     enemyTraitTurnStartHandlers.has(traitId) || PASSIVE_ONLY_TRAITS.has(traitId) || REACTION_ONLY_TRAITS.has(traitId)
@@ -134,12 +110,6 @@ function isEnemyTraitTurnStartCovered(traitId: string): boolean {
 
 export function collectUncoveredEnemyTraitIds(traitIds: Iterable<string>): string[] {
   return [...new Set(traitIds)].filter((id) => !isEnemyTraitTurnStartCovered(id));
-}
-
-export function collectUncoveredDifficultyModifierKinds(
-  kinds: Iterable<DifficultyModifier["kind"]> = ALL_DIFFICULTY_MODIFIER_KINDS,
-): Array<DifficultyModifier["kind"]> {
-  return [...new Set(kinds)].filter((kind) => !Object.hasOwn(difficultyTurnStartHandlers, kind));
 }
 
 function reportHandlerFailure(source: string, err: unknown, context?: Record<string, unknown>): void {
@@ -168,24 +138,6 @@ function processTraitHandler(
   return state;
 }
 
-function processDifficultyModifier(
-  modifier: DifficultyModifier,
-  state: BattleState,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  if (!Object.hasOwn(difficultyTurnStartHandlers, modifier.kind)) {
-    console.warn(`[Battle] No turn-start handler for difficulty modifier: ${modifier.kind}`);
-    reportHandlerFailure(
-      `No turn-start handler for difficulty modifier ${modifier.kind}`,
-      new Error("uncovered difficulty modifier"),
-    );
-    return state;
-  }
-  const handler = difficultyTurnStartHandlers[modifier.kind];
-  if (!handler) return state;
-  return handler(state, combatTexts);
-}
-
 export function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = state;
   for (const trait of nextState.currentEnemy.traits) {
@@ -194,15 +146,6 @@ export function processEnemyTraits(state: BattleState, combatTexts: CombatTextEv
     } catch (err) {
       if (import.meta.env.DEV) throw err;
       reportHandlerFailure(`Enemy trait handler for ${trait.id}`, err);
-    }
-  }
-
-  for (const modifier of nextState.difficultyModifiers) {
-    try {
-      nextState = processDifficultyModifier(modifier, nextState, combatTexts);
-    } catch (err) {
-      if (import.meta.env.DEV) throw err;
-      reportHandlerFailure(`Difficulty modifier handler for ${modifier.kind}`, err, { kind: modifier.kind });
     }
   }
 

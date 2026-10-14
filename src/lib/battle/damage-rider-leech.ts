@@ -1,7 +1,8 @@
 import { rollBattleChance } from "./chance-roll";
-import { applyBlockReward, applyCardHealing } from "./status-player";
+import { applyBlockReward, applyCardHealing, removeHarmfulPlayerStatuses } from "./status-player";
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
+import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
 import { resolvePlayerHealing } from "./health-state";
 import { isPlayerDefeated } from "./battle-outcome";
@@ -50,7 +51,7 @@ export function applyLeechHealing(
     ? applyCardHealing(state, healing, combatTexts, { skipFightPacing: true, allowOverhealBlock: false })
     : applyHealingWithCombatText(state, healing, combatTexts, { skipFightPacing: true });
   if (actualHealing <= 0) {
-    return healing > 0 && !isPlayerDefeated(restored) ? applyLeechManaRider(restored, combatTexts) : restored;
+    return healing > 0 && !isPlayerDefeated(restored) ? applyLeechGainRiders(restored, combatTexts) : restored;
   }
   if (state.playerStatuses.thorns === 0 && state.gearEffects.thornsOnLeechWithoutThorns > 0) {
     restored = addPlayerStatusWithCombatText(
@@ -77,23 +78,23 @@ export function applyLeechHealing(
   if (rollBattleChance(state.talentEffects.leechGoldChance, state)) {
     restored = addGoldWithCombatText(restored, actualHealing, combatTexts);
   }
-  return healing > 0 && !isPlayerDefeated(restored) ? applyLeechManaRider(restored, combatTexts) : restored;
+  return healing > 0 && !isPlayerDefeated(restored) ? applyLeechGainRiders(restored, combatTexts) : restored;
 }
 
-/** Shared base scaler: desperate → gear → explicit card bonus → blood-feast. */
-function scaleLeechBase(state: BattleState, amount: number, cardLeech = false): number {
+/** Shared base scaler: desperate → gear → Deep Siphon → blood-feast. */
+function scaleLeechBase(state: BattleState, amount: number): number {
   const base = scaledGearLeechHeal(applyDesperateLeechBonus(state, amount), state.gearEffects);
-  return scalePlayerLeechHeal(state, base + (cardLeech ? state.talentEffects.cardLeechHealingBonus : 0));
+  return scalePlayerLeechHeal(state, base + state.talentEffects.leechHealingBonus);
 }
 
 export function applyScaledLeechHealing(
   state: BattleState,
   rawAmount: number,
   combatTexts: CombatTextEvent[],
-  options: { cardHealing?: boolean; afflicted?: boolean; cardLeech?: boolean } = {},
+  options: { cardHealing?: boolean; afflicted?: boolean } = {},
 ): BattleState {
   if (rawAmount <= 0) return state;
-  return applyLeechHealing(state, scaleLeechBase(state, rawAmount, options.cardLeech), combatTexts, options);
+  return applyLeechHealing(state, scaleLeechBase(state, rawAmount), combatTexts, options);
 }
 
 /** Thunderstone is a shallow trinket hit: restore its actual Health damage with ordinary Leech gain riders. */
@@ -101,8 +102,15 @@ export function applyThunderstoneLeech(state: BattleState, damage: number, texts
   return applyScaledLeechHealing(state, computeLeechHeal(damage), texts);
 }
 
-function applyLeechManaRider(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+function applyLeechGainRiders(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
+  if (
+    state.talentEffects.leechCleanseChance > 0 &&
+    harmfulPlayerStatusIds.some((status) => state.playerStatuses[status] > 0) &&
+    rollBattleChance(state.talentEffects.leechCleanseChance, state)
+  ) {
+    nextState = removeHarmfulPlayerStatuses(nextState, 1, combatTexts);
+  }
   for (const chance of [state.talentEffects.manaOnLeechChance, state.gearEffects.manaOnLeechChance]) {
     if (rollBattleChance(chance, state)) {
       nextState = gainManaWithCombatText(nextState, 1, combatTexts);
@@ -116,11 +124,10 @@ export function applyLeechHitHealing(
   damage: number,
   combatTexts: CombatTextEvent[],
   cardHealing = false,
-  cardLeech = cardHealing,
 ) {
   if (damage <= 0) return state;
 
-  const healAmount = scaleLeechBase(state, computeLeechHeal(damage), cardLeech);
+  const healAmount = scaleLeechBase(state, computeLeechHeal(damage));
   return healAmount > 0 ? applyLeechHealing(state, healAmount, combatTexts, { cardHealing }) : state;
 }
 
@@ -139,23 +146,6 @@ export function applyHolyLifesteal(
   const healAmount = scalePercent(damage, state.talentEffects.holyLifestealPercent);
   if (healAmount <= 0) return state;
   return applyScaledLeechHealing(state, healAmount, combatTexts);
-}
-
-export function applyDamageBlock(
-  state: BattleState,
-  damage: number,
-  combatTexts: CombatTextEvent[],
-  eligibility = state,
-) {
-  if (
-    damage <= 0 ||
-    state.talentEffects.holyBlockPercentFromDamage <= 0 ||
-    eligibility.playerHealth !== eligibility.playerMaxHealth
-  )
-    return state;
-  const blockAmount = scalePercent(damage, state.talentEffects.holyBlockPercentFromDamage);
-  if (blockAmount <= 0) return state;
-  return applyBlockReward(state, blockAmount, combatTexts, { skipFightPacing: true });
 }
 
 export function applyHolyBlockChance(state: BattleState, healthDamage: number, combatTexts: CombatTextEvent[]) {
@@ -190,7 +180,6 @@ export function payPendingBleedLeech(
   if (leechPaid > 0) {
     nextState = applyScaledLeechHealing(nextState, computeLeechHeal(leechPaid), combatTexts, {
       afflicted,
-      cardLeech: state.pendingCardBleedLeechHealing > 0,
       cardHealing: state.pendingCardBleedLeechHealing > 0,
     });
   }

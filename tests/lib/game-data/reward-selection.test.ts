@@ -16,15 +16,6 @@ function physicalCard(id: string): BattleCard {
 }
 
 describe("selectRewardCards", () => {
-  it("fills Companion-only offers even when owned-Companion dampening keeps just one candidate", () => {
-    const pool = [companionCard("wolf"), companionCard("fox"), companionCard("bear")];
-    let rolls = 0;
-    const rng = () => (rolls++ === 0 ? 0 : 0.99);
-    const offered = selectRewardCards([companionCard("owned")], pool, 3, [], rng);
-    expect(offered).toHaveLength(3);
-    expect(new Set(offered.map((entry) => entry.id))).toEqual(new Set(pool.map((entry) => entry.id)));
-  });
-
   it.each([
     { count: 1, ids: ["card-36"], nextRandom: 0.384123298805207 },
     { count: 3, ids: ["card-36", "card-1", "card-33"], nextRandom: 0.01149781048297882 },
@@ -150,8 +141,10 @@ it("keeps ordinary rewards when owned Companions are dampened out", () => {
   expect(rewards.map((entry) => entry.id)).toEqual(["strike"]);
 });
 
-it("falls back to the original pool when dampening would leave no rewards", () => {
-  const pool = [companionCard("wolf"), companionCard("fox")];
-  const rewards = selectRewardCards([companionCard("owned-wolf")], pool, 3, [], () => 0.99);
-  expect(rewards.map((entry) => entry.id).sort()).toEqual(["fox", "wolf"]);
+it("constrained Companion rewards fills all available choices even when owned-Companion weighting rejects most candidates", () => {
+  const pool = [companionCard("wolf"), companionCard("fox"), companionCard("bear")];
+  let calls = 0;
+  const rng = () => (calls++ === 0 ? 0 : 0.99);
+  const selected = selectRewardCards([companionCard("owned")], pool, 3, [], rng);
+  expect(new Set(selected.map((entry) => entry.id))).toEqual(new Set(pool.map((entry) => entry.id)));
 });

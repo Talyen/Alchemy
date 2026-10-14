@@ -56,6 +56,13 @@ function applyTalentStatusAndHitTriggers(
   ) {
     nextState = addForgeToPlayer(nextState, talents.forgeOnBurnCard, combatTexts);
   }
+  if (
+    keywords.includes("block") &&
+    talents.armorOnBlockCard > 0 &&
+    rollBattleChance(talents.armorOnBlockCardChance, nextState)
+  ) {
+    nextState = applyArmorReward(nextState, talents.armorOnBlockCard, combatTexts);
+  }
   if (keywords.includes("leech") && talents.armorStealOnLeechCard > 0) {
     const stolen = Math.min(nextState.enemyMitigation.armor, talents.armorStealOnLeechCard);
     if (stolen > 0) {
@@ -92,6 +99,8 @@ export function prepareTalentCardPlay(
     const secondArcheryCard = archery && archeryCardsPlayed === 1;
     nextState = setFlag(nextState, "archeryCardsPlayedThisTurn", archery ? archeryCardsPlayed + 1 : archeryCardsPlayed);
     nextState = setFlag(nextState, "archerySecondCardActive", secondArcheryCard);
+  } else {
+    nextState = setFlag(nextState, "archerySecondCardActive", false);
   }
 
   return {

@@ -2,7 +2,7 @@ import type { EffectHandlers } from "./handler-types";
 import { resolveConditionalCardDamage } from "../conditional-card-damage";
 import { mergeCombatText } from "../combat-text-events";
 import { setPlayerStatus } from "../status-state";
-import { applyBlockDepletionRewards, applyHealthLossTalentRewards, checkHealthThresholds } from "../status-player";
+import { applyBlockDepletionRewards, checkHealthThresholds } from "../status-player";
 import { DAMAGE_TYPES } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rngInt } from "@/lib/rng";
 import { applyPotionMultiplier, halveRounded } from "../amount-helpers";
@@ -60,7 +60,7 @@ export const DAMAGE_HANDLERS = {
       addPlayerStatus(postDamage, effect.damageType, healthLost),
       combatTexts,
     );
-    return applyHealthLossTalentRewards(state, thresholded, healthLost, combatTexts);
+    return thresholded;
   },
   "random-damage": (state, card, effect, potionMult, combatTexts, context) => {
     if (effect.maxAmount < effect.minAmount) {

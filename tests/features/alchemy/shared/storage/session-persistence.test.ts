@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../../../../helpers/save-backend";
 import { describe, expect, it, vi } from "vitest";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
@@ -32,8 +33,8 @@ function battleSave() {
 describe("session save restoration", () => {
   it("recomputes Homestead effects without regranting starting Thorns or multiplying saved loot", async () => {
     const save = battleSave();
-    save.constructedBuildings = { "hunters-lodge": 4, "wishing-well": 4 };
-    save.plantedFarms = { orchard: 4, "wheat-field": 4, "crystal-garden": 4 };
+    save.constructedBuildings = { ...save.constructedBuildings, "hunters-lodge": 4, "wishing-well": 4 };
+    save.plantedFarms = { ...save.plantedFarms, orchard: 4, "wheat-field": 4, "crystal-garden": 4 };
     save.materialInventory.gems = 14;
     save.activeRun!.runMaterialsEarned.gems = 14;
     if (save.activeRun?.activity.kind !== "battle") throw new Error("Battle was lost");
@@ -74,9 +75,9 @@ describe("session save restoration", () => {
   it("resets Homestead atomically and resumes without refunding or replaying combat grants", async () => {
     const save = battleSave();
     save.discoveredCardIds.push("wolf-companion");
-    save.constructedBuildings = { "blacksmiths-forge": 1 };
-    save.plantedFarms = { "chicken-coop": 4, orchard: 2 };
-    save.completedResearch = { "leyline-energy": 1 };
+    save.constructedBuildings = { ...save.constructedBuildings, "blacksmiths-forge": 1 };
+    save.plantedFarms = { ...save.plantedFarms, "chicken-coop": 4, orchard: 2 };
+    save.completedResearch = { ...save.completedResearch, "leyline-energy": 1 };
     save.bondedCompanions.wolf = 1;
     save.materialInventory.iron = 7;
     save.activeRun!.runMaterialsEarned.iron = 5;
@@ -138,7 +139,7 @@ describe("session save restoration", () => {
 
   it("saves actual Mystery payouts for the summary and rejects repeated claims after resume", async () => {
     const save = battleSave();
-    save.constructedBuildings = { "wishing-well": 4 };
+    save.constructedBuildings = { ...save.constructedBuildings, "wishing-well": 4 };
     save.activeRun!.activity = savedActivityFixture("mystery", {
       event: {
         id: "treasure",
@@ -232,12 +233,7 @@ describe("session save restoration", () => {
     async (failure) => {
       let fail = false;
       const session = createGameSession({
-        saveBackend: {
-          readCandidates: async () => ({ ok: true, candidates: [] }),
-          write: async () => ({ ok: true }),
-          writeSync: () => null,
-          clear: async () => ({ ok: true }),
-        },
+        saveBackend: createSaveBackend(),
         runtimeInputs: {
           generateRunSeed: () => {
             if (fail) throw new Error("Seed source failed");

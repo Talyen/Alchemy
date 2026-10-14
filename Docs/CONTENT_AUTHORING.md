@@ -126,6 +126,8 @@ One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both
 
 Companion combat and descriptions share `getModifiedCompanionEffects()` in `src/lib/game-data/companions.ts`, which applies Bond and the supplied damage modifiers together. Follow [Companion Bond rules](./GAME_RULES.md#companion-bond) for progression and displayed effects; Bond levels and costs retain their existing save representation.
 
+Summon cards omit `consume`; their summon effect routes them to the battle-removed pile after play. Companion utility cards retain ordinary discard behavior unless explicitly authored with Consume. Do not add Companion exceptions to Consume tooltips.
+
 `defaultCompanionBondLevels` derives zero values from `companionLibrary`; talent and Homestead defaults both copy that map, so new Companions need no separate default registration. If Bond behavior differs from the shared scaling, update `getModifiedCompanionEffects()` and its descriptions together; change Homestead tiers or costs only when intended.
 
 - **1. Add companion ID to `CompanionId` union** — `src/lib/game-data/types.ts`
@@ -168,7 +170,7 @@ New keywords still follow [Add a new keyword](./CONTENT_AUTHORING.md#add-a-new-k
 3. Add effect keys only when existing keys cannot express the upgrade — `HomesteadEffectManifest` + `HOMESTEAD_BATTLE_*_KEYS` in `types.ts`. Battle numeric defaults derive from that key list; meta and record defaults live in `defaults.ts`
 4. Companion bond tiers (if companion) — `src/lib/homestead/companions.ts` (`COMPANION_BOND_TIERS` + `companionTierItems`) + `src/lib/game-data/companions.ts`
 5. Art & palette — Add `helpers.tsx:itemArt` entry in `src/features/alchemy/meta/screens/homestead/helpers.tsx` + art via the [asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)
-6. Change layout constants only for an intended layout change — `HOMESTEAD_CONFIG` in `helpers.tsx` (page capacities and landscape node width). Artwork retains its native aspect ratio under the [gallery contract](./UI.md#page-sizing-and-spacing).
+6. Change layout constants only for an intended layout change — `HOMESTEAD_CONFIG` in `helpers.tsx` (page capacities and landscape node width). Artwork retains its native aspect ratio under the [gallery contract](./UI_BROWSING.md#homestead-gallery).
 7. Check affected rules or interactions; saved-shape changes follow the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
 Follow the [Homestead gameplay rules](./GAME_RULES.md#hit-resolution-and-pacing)

@@ -2,8 +2,11 @@ import {
   sampleDestinationChoices,
   withSelectedBossForDestinations,
   type DestinationOfferState,
-  type DestinationOptionsInput,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
+import {
+  resolveAvailableDestinations,
+  type DestinationEligibilityContext,
+} from "@/features/alchemy/shared/run-flow/resolve-available-destinations";
 import type { RewardState } from "@/lib/active-run-session";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
@@ -64,9 +67,8 @@ export interface VictoryRewardsInput {
   battleState: BattleSnapshot;
   purseGold: number;
   runMaxHealth: number;
-  destinationIndexInAct: number;
+  destinationEligibility: DestinationEligibilityContext;
   homesteadEffects: HomesteadEffectManifest;
-  getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
   rollBossEnemyId: () => string;
   destinationOfferState: DestinationOfferState;
 }
@@ -229,19 +231,15 @@ function prepareVictoryDestinations(
   effectiveMaxHealth: number,
   destinationRng: () => number,
 ) {
-  const skipDestinationSampling = input.contentSystemType === CONTENT_SYSTEMS.LABYRINTH;
-  const eligibleDestinations = skipDestinationSampling
-    ? []
-    : input.getAvailableDestinations({
-        currentHealth: playerHealth,
-        currentGold: persistedGold,
-        destinationIndexInAct: input.destinationIndexInAct,
-        maxHealth: effectiveMaxHealth,
-      });
-  const sampled = skipDestinationSampling
-    ? { choices: [] as Destination[], offerState: input.destinationOfferState }
-    : sampleDestinationChoices(eligibleDestinations, input.destinationOfferState, destinationRng);
-  return sampled;
+  if (input.contentSystemType === CONTENT_SYSTEMS.LABYRINTH)
+    return { choices: [] as Destination[], offerState: input.destinationOfferState };
+  const eligibleDestinations = resolveAvailableDestinations({
+    ...input.destinationEligibility,
+    runPlayerHealth: playerHealth,
+    gold: persistedGold,
+    runMaxHealth: effectiveMaxHealth,
+  });
+  return sampleDestinationChoices(eligibleDestinations, input.destinationOfferState, destinationRng);
 }
 
 export function computeVictoryRewards(

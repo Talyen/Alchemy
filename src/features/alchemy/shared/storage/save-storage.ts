@@ -169,8 +169,11 @@ export class SaveStorage {
     return false;
   }
 
-  async save(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
-    return await this.queue.enqueue(data, (snapshot) => this.writeSaveSnapshot(snapshot));
+  async save(
+    data: UnstampedSaveData,
+    validate: () => SaveWriteOutcome | undefined = () => undefined,
+  ): Promise<SaveWriteOutcome> {
+    return await this.queue.enqueue(data, async (snapshot) => validate() ?? this.writeSaveSnapshot(snapshot));
   }
 
   /**
@@ -181,11 +184,16 @@ export class SaveStorage {
    * event loop: the trailing enqueue supersedes queued stale snapshots so an
    * in-flight async write cannot land after the exit snapshot.
    */
-  async saveForExit(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
+  async saveForExit(
+    data: UnstampedSaveData,
+    validate: () => SaveWriteOutcome | undefined = () => undefined,
+  ): Promise<SaveWriteOutcome> {
+    const invalid = validate();
+    if (invalid) return invalid;
     if (this.queue.areWritesDisabled() || this.queue.isClearPending) return "skipped";
     // Slot protection is unknown until every preceding load finishes. The
     // synchronous fast path must not bypass that decision, even during exit.
-    if (this.queue.isLoadPending) return this.save(data);
+    if (this.queue.isLoadPending) return this.save(data, validate);
     const serialized = this.trySerializeSaveSnapshot(data, " during page exit");
     if (serialized === null) return "failed";
     let syncResult = this.tryWriteExitSnapshot(
@@ -204,7 +212,7 @@ export class SaveStorage {
       this.writeKey = SAVE_RECOVERY_KEY;
     }
     if (syncResult === true && this.queue.isIdle) return "saved";
-    return this.save(data);
+    return this.save(data, validate);
   }
 
   async clear(mode: "default" | "localWipe" = "default"): Promise<boolean> {

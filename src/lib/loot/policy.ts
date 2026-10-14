@@ -75,13 +75,13 @@ export function resolveLootWeights({
 }): LootWeights {
   const weights: LootWeights = { ...LOOT_SOURCE_WEIGHTS[source] };
   const accountMultiplier = lootAccountMultiplier(progress.highestCompletedDifficulty);
-  for (const kind of Object.keys(LOOT_DEPTH_CURVES) as PremiumLootKind[]) {
-    weights[kind] *= lootDepthMultiplier(kind, progress.depth) * accountMultiplier;
-  }
   if (isLootEligible("astral", progress.depth) && available.astral !== false && available.basic !== false) {
     const transfer = weights.basic * clamp(astralChanceBonus, 0, 1);
     weights.basic -= transfer;
     weights.astral += transfer;
+  }
+  for (const kind of Object.keys(LOOT_DEPTH_CURVES) as PremiumLootKind[]) {
+    weights[kind] *= lootDepthMultiplier(kind, progress.depth) * accountMultiplier;
   }
   return normalizeLootWeights(weights, available);
 }

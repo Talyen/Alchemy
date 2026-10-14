@@ -186,12 +186,10 @@ describe("createMixedPotion", () => {
   });
 });
 
-describe("tryCreateMixedPotion", () => {
-  it("returns null if either input is undefined", () => {
-    expect(tryCreateMixedPotion(undefined, healPotion)).toBeNull();
-    expect(tryCreateMixedPotion(healPotion, undefined)).toBeNull();
-    expect(tryCreateMixedPotion(undefined, undefined)).toBeNull();
-  });
+it("tryCreateMixedPotion returns null if either input is undefined", () => {
+  expect(tryCreateMixedPotion(undefined, healPotion)).toBeNull();
+  expect(tryCreateMixedPotion(healPotion, undefined)).toBeNull();
+  expect(tryCreateMixedPotion(undefined, undefined)).toBeNull();
 });
 
 describe("applyMixToDeck", () => {
@@ -221,8 +219,9 @@ describe("applyMixToDeck", () => {
   });
 });
 
-describe("Potion effect ownership", () => {
-  it.each(["mix", "double"] as const)("%s owns nested mutable pools and metadata", (operation) => {
+it.each(["mix", "double"] as const)(
+  "Potion effect ownership %s owns nested mutable pools and metadata",
+  (operation) => {
     const ingredient = makePotion({
       tags: ["archery"],
       effects: [
@@ -246,8 +245,8 @@ describe("Potion effect ownership", () => {
     status.statusPool!.pop();
     result.tags?.pop();
     expect(ingredient).toEqual(before);
-  });
-});
+  },
+);
 
 describe("mixed potion description parity", () => {
   it("keeps every standard Potion readable after Strong Spirits and mixing", () => {

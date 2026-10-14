@@ -126,6 +126,7 @@ export const BATTLE_NO_FEATURES = [
 export const DOMAIN_STORE_PATTERNS = [
   {
     group: [
+      "**/session-gameplay-store",
       "**/gameplay-state-store",
       "**/gameplay-state-reads",
       "**/gameplay-state",
@@ -134,7 +135,15 @@ export const DOMAIN_STORE_PATTERNS = [
     message: "Import capability reads, writes, commands, or run-lifecycle instead of the low-level gameplay aggregate.",
   },
   {
-    group: ["**/gameplay-command", "**/transaction-internal", "**/readonly-view", "**/session-runtime"],
+    group: [
+      "**/gameplay-command",
+      "**/transaction-internal",
+      "**/readonly-view",
+      "**/boundary-data",
+      "**/session-runtime",
+      "**/gear-session-command",
+      "**/gear-actions",
+    ],
     message:
       "Raw gameplay drafts and read-facade internals are store-owned; use readonly transactions and domain operations.",
   },
@@ -362,22 +371,6 @@ export const AGGREGATE_NO_DIRECT_MUTATION = [
     selector: 'MemberExpression[object.name="useGameplayStateStore"][property.name="setState"]',
     message:
       "Use dispatchRunSessionCommand + draft mutators instead of useGameplayStateStore.setState() — see Docs/RUN_STATE.md#gameplay-command-boundary.",
-  },
-];
-
-/** @type {SyntaxSelector[]} */
-export const GEAR_NO_OUTER_DISPATCH = [
-  {
-    selector:
-      'ImportDeclaration[source.value=/gear-session-command/] ImportSpecifier[imported.name="dispatchGearMutationWithRunHealthSync"]',
-    message:
-      "Use mutateGearWithRunHealthSync(draft, ...) inside a run-session command — outer dispatch nests commands — see Docs/ARMORY.md#write-paths.",
-  },
-  {
-    selector:
-      'ImportDeclaration[source.value=/gear-session-command/] ImportSpecifier[imported.name="dispatchGearSalvageWithMaterialGrant"]',
-    message:
-      "Use mutateGearWithRunHealthSync(draft, ...) + grantMaterials(draft, ...) inside a run-session command — outer salvage dispatch nests commands — see Docs/ARMORY.md#write-paths.",
   },
 ];
 

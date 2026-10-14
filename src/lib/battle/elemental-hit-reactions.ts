@@ -8,7 +8,7 @@ import {
   applyArmorReward,
 } from "./player-rewards";
 import { applyLuckyCloverGold, applyNatureGoldReward, applyNatureManaRefund } from "./bonus-effects";
-import { applyDamageBlock, applyHolyBlockChance, applyHolyLifesteal, applyHolyTithe } from "./damage-rider-leech";
+import { applyHolyBlockChance, applyHolyLifesteal, applyHolyTithe } from "./damage-rider-leech";
 import {
   applyBrassCenser,
   applyNatureLeech,
@@ -49,7 +49,7 @@ export function applyNatureDamageRiders(
     );
   }
   nextState = applyTalentHitConversions(nextState, "nature", modifiedDamage, combatTexts);
-  if (rollBattleChance(state.talentEffects.natureStunChance, state)) {
+  if (nextState.enemyHealth > 0 && rollBattleChance(state.talentEffects.natureStunChance, nextState)) {
     nextState = resolveFollowUpHit(
       nextState,
       { source: "talent-derived", damageType: "stun", amount: modifiedDamage },
@@ -66,10 +66,11 @@ export function applyHolyDamageRiders(
   combatTexts: CombatTextEvent[],
   heroAttack = true,
   forgeTriggers?: Set<string>,
+  alreadyLeeches = false,
 ) {
   const { resolvedDamage: damage, eligibility } = facts;
   if (damage <= 0) return state;
-  let nextState = applyHolyLifesteal(state, damage, combatTexts, eligibility);
+  let nextState = alreadyLeeches ? state : applyHolyLifesteal(state, damage, combatTexts, eligibility);
   if (state.gearEffects.oathkeeperHolyAndBlock > 0 && !forgeTriggers?.has("oathkeeper")) {
     forgeTriggers?.add("oathkeeper");
     nextState = applyBlockReward(nextState, 1, combatTexts);
@@ -84,7 +85,6 @@ export function applyHolyDamageRiders(
     nextState = applyBlockReward(nextState, state.gearEffects.blockOnHolyHitWithoutBlock, combatTexts);
   }
   nextState = applyHolyBlockChance(nextState, facts.healthDamage, combatTexts);
-  nextState = applyDamageBlock(nextState, damage, combatTexts, eligibility);
   nextState = applyHolyTithe(nextState, facts.healthDamage, combatTexts);
 
   nextState = applyTalentHitConversions(nextState, "holy", damage, combatTexts);

@@ -80,10 +80,13 @@ export function createSaveIo(
     data: UnstampedSaveData,
     exit: boolean,
     complete: (outcome: SaveWriteOutcome) => SaveWriteOutcome = (outcome) => outcome,
+    validate: () => SaveWriteOutcome | undefined = () => undefined,
   ): Promise<SaveWriteOutcome> {
     const result = (async () => {
-      const outcome = isStorageAvailable() ? await (exit ? storage.saveForExit(data) : storage.save(data)) : "skipped";
-      return complete(reportSaveWriteOutcome(outcome));
+      const outcome = isStorageAvailable()
+        ? await (exit ? storage.saveForExit(data, validate) : storage.save(data, validate))
+        : "skipped";
+      return complete(reportSaveWriteOutcome(validate() ?? outcome));
     })();
     pendingWriteResults.add(result);
     const release = () => {
@@ -93,15 +96,20 @@ export function createSaveIo(
     return result;
   }
 
-  function saveAlchemySaveData(data: UnstampedSaveData, complete?: (outcome: SaveWriteOutcome) => SaveWriteOutcome) {
-    return writeSnapshot(data, false, complete);
+  function saveAlchemySaveData(
+    data: UnstampedSaveData,
+    complete?: (outcome: SaveWriteOutcome) => SaveWriteOutcome,
+    validate?: () => SaveWriteOutcome | undefined,
+  ) {
+    return writeSnapshot(data, false, complete, validate);
   }
 
   function saveAlchemySaveDataForExit(
     data: UnstampedSaveData,
     complete?: (outcome: SaveWriteOutcome) => SaveWriteOutcome,
+    validate?: () => SaveWriteOutcome | undefined,
   ) {
-    return writeSnapshot(data, true, complete);
+    return writeSnapshot(data, true, complete, validate);
   }
 
   async function clearAlchemySaveData(mode: "default" | "localWipe" = "default"): Promise<boolean> {

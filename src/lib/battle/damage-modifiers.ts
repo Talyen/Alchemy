@@ -48,7 +48,6 @@ const DAMAGE_MODIFIER_SOURCES: Record<DamageType, DamageModifierSources> = {
     talentBonus: "flatNatureDamage",
     gearBonus: "flatNatureDamage",
     gearResistance: "resistNature",
-    talentHalfDamage: "receiveHalfNatureDamage",
   },
   poison: {
     gearBonus: "flatPoisonDamage",

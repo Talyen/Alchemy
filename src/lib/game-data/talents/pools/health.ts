@@ -55,8 +55,8 @@ export const healthTalents = [
   ),
   t(
     "health-max-2",
-    "Cleansing Status",
-    "Cleansing a harmful status effect restores 2 Health",
+    "Renewal",
+    "Cleansing a harmful status restores 2 Health",
     "Sparkles",
     setEffect("healOnStatusCleanse", 2),
   ),

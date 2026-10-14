@@ -3,9 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as config from "@/features/alchemy/shared/config";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createEmptyRewardState } from "@/lib/active-run-session";
-import { getRunAvailableDestinations } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { getPreviousDestination } from "@/features/alchemy/shared/run-flow/resolve-available-destinations";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
   setMysteryCardChoices,
@@ -17,7 +14,12 @@ import {
   setRewardState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
-import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateRunForTest,
+  resetAllTestStores,
+  setRunProgress,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { defaultGameSession } from "@/app/application-session";
@@ -45,11 +47,7 @@ describe("run destination controller actions", () => {
   );
 
   it("claimRewardChoice rejects a choice that is not offered", () => {
-    dispatchRunSessionCommand(
-      (draft) => acceptCommand(setRewardState(draft, createEmptyRewardState())),
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => setRewardState(draft, createEmptyRewardState()));
 
     const handlers = createRunFlow(makeFlowHandlerDeps(), defaultGameSession);
     handlers.claimRewardChoice("slash");
@@ -60,16 +58,11 @@ describe("run destination controller actions", () => {
   it("prepareDestinationScreen sets boss id for boss-only destinations", () => {
     vi.spyOn(config, "rollFreshBossId").mockReturnValue("mimic");
 
-    dispatchRunSessionCommand(
-      (draft) =>
-        acceptCommand(
-          setRewardState(draft, {
-            ...createEmptyRewardState(),
-            destinations: [DESTINATIONS.BOSS_COMBAT],
-          }),
-        ),
-      undefined,
-      defaultGameSession,
+    mutateRunForTest((draft) =>
+      setRewardState(draft, {
+        ...createEmptyRewardState(),
+        destinations: [DESTINATIONS.BOSS_COMBAT],
+      }),
     );
 
     setRunSession({ activity: { kind: "destination" } });
@@ -104,22 +97,11 @@ describe("run destination controller actions", () => {
       completedDestinations: Array.from({ length: 7 }, () => DESTINATIONS.NORMAL_COMBAT),
     });
 
-    const captured: Array<{ destinationIndexInAct?: number }> = [];
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
-    const handlers = createRunFlow(
-      makeFlowHandlerDeps({
-        navigateTo,
-        getAvailableDestinations: (opts) => {
-          captured.push(opts ?? {});
-          return [DESTINATIONS.BOSS_COMBAT];
-        },
-      }),
-      defaultGameSession,
-    );
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession);
 
     handlers.advanceToNextDestination("campfire");
 
-    expect(captured.at(-1)?.destinationIndexInAct).toBe(7);
     expect(readRunSession(defaultGameSession).rewardFlow.state.destinations).toEqual([DESTINATIONS.BOSS_COMBAT]);
   });
 
@@ -131,24 +113,7 @@ describe("run destination controller actions", () => {
     });
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
-    const handlers = createRunFlow(
-      makeFlowHandlerDeps({
-        navigateTo,
-        getAvailableDestinations: (opts) =>
-          getRunAvailableDestinations({
-            destinationIndexInAct: opts?.destinationIndexInAct ?? 0,
-            currentHealth: 30,
-            currentGold: 0,
-            maxHealth: 30,
-            hasAnyOwnedGear: true,
-            previousDestination: getPreviousDestination(
-              opts?.destinationIndexInAct ?? 0,
-              readActiveRun(defaultGameSession).completedDestinations,
-            ),
-          }),
-      }),
-      defaultGameSession,
-    );
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession);
 
     handlers.advanceToNextDestination("campfire");
 
@@ -174,31 +139,25 @@ describe("run destination controller actions", () => {
     "advanceToNextDestination clears leftover mystery visit state ($name)",
     ({ contentSystemType, expectedScreen }) => {
       setRunProgress({ contentSystemType });
-      dispatchRunSessionCommand(
-        (draft) => {
-          setMysteryEvent(draft, {
-            id: "stale-event",
-            title: "Stale Event",
-            art: "",
-            narrative: "Should be cleared on continue.",
-            choices: [{ label: "Leave", effects: [] }],
-          });
-          setMysteryCardChoices(draft, [
-            { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] },
-          ]);
-          setMysteryGrantedTrinketIds(draft, ["bone-charm"]);
-          setMysteryGrantedGearInstances(draft, [
-            { instanceId: "stale-gear", definitionId: "dagger-basic", affixes: [] },
-          ]);
-          setMysteryChosenCardId(draft, "slash");
-          setMysteryCardChoices(draft, null);
-          setMysteryChosenChoice(draft, { label: "Leave", effects: [] });
-
-          return acceptCommand();
-        },
-        undefined,
-        defaultGameSession,
-      );
+      mutateRunForTest((draft) => {
+        setMysteryEvent(draft, {
+          id: "stale-event",
+          title: "Stale Event",
+          art: "",
+          narrative: "Should be cleared on continue.",
+          choices: [{ label: "Leave", effects: [] }],
+        });
+        setMysteryCardChoices(draft, [
+          { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] },
+        ]);
+        setMysteryGrantedTrinketIds(draft, ["bone-charm"]);
+        setMysteryGrantedGearInstances(draft, [
+          { instanceId: "stale-gear", definitionId: "dagger-basic", affixes: [] },
+        ]);
+        setMysteryChosenCardId(draft, "slash");
+        setMysteryCardChoices(draft, null);
+        setMysteryChosenChoice(draft, { label: "Leave", effects: [] });
+      });
 
       const navigateTo = vi.fn((_screen: string, prepare?: () => void) => prepare?.());
       const roomsBeforeExit = readActiveRun(defaultGameSession).roomsEncountered;
@@ -218,11 +177,7 @@ describe("run destination controller actions", () => {
       lastOfferedDestinations: offered,
       destinationRoundsSinceOffered: { [DESTINATIONS.CAMPFIRE]: 0 },
     });
-    dispatchRunSessionCommand(
-      (draft) => acceptCommand(setRewardState(draft, createEmptyRewardState())),
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => setRewardState(draft, createEmptyRewardState()));
 
     setRunSession({ activity: { kind: "corruption", data: null } });
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
@@ -247,11 +202,7 @@ describe("run destination controller actions", () => {
       completedDestinations: [],
       lastOfferedDestinations: [],
     });
-    dispatchRunSessionCommand(
-      (draft) => acceptCommand(setRewardState(draft, { ...createEmptyRewardState(), destinations: offered })),
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => setRewardState(draft, { ...createEmptyRewardState(), destinations: offered }));
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
     createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).handleDestinationChoice(

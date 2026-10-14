@@ -61,23 +61,26 @@ describe("combat reward sources", () => {
     expect(result.enemyStatuses.burn).toBe(0);
   });
 
-  it("Second Wind cannot cancel legacy Companion damage rewards", () => {
+  it("Second Wind cannot cancel Companion attack healing", () => {
     const state = regressionBattle({
       enemyHealth: 51,
       enemyMaxHealth: 100,
       currentEnemy: { traits: [{ id: "second-wind", title: "Second Wind", description: "" }] },
       activeCompanion: companionLibrary.bear,
-      talentEffects: { companionDamage: 2, blockOnCompanionDamage: 2 },
+      talentEffects: { companionDamage: 2 },
+      gearEffects: { healOnCompanionAttack: 2 },
+      playerHealth: 4,
+      playerMaxHealth: 30,
     });
     const result = processCompanionTurnStart(state, []);
     expect(result.flags.secondWindTriggered).toBe(true);
     expect(result.enemyHealth).toBeGreaterThan(state.enemyHealth);
-    expect(result.playerStatuses.block).toBe(2);
+    expect(result.playerHealth).toBe(6);
     const blocked = processCompanionTurnStart(
       { ...state, enemyMitigation: { ...state.enemyMitigation, block: 100 } },
       [],
     );
-    expect(blocked.playerStatuses.block).toBe(0);
+    expect(blocked.playerHealth).toBe(4);
   });
 });
 

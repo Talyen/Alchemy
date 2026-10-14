@@ -164,17 +164,13 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
   });
 });
 
-describe("tombstoned content ids", () => {
-  it("stays absent from the live catalog", () => {
-    expect(TOMBSTONED_CARD_IDS.length).toBeGreaterThan(0);
-    for (const id of TOMBSTONED_CARD_IDS) expect(cardById[id]).toBeUndefined();
-  });
+it("tombstoned content ids stays absent from the live catalog", () => {
+  expect(TOMBSTONED_CARD_IDS.length).toBeGreaterThan(0);
+  for (const id of TOMBSTONED_CARD_IDS) expect(cardById[id]).toBeUndefined();
 });
 
-describe("ActiveRunDataSchema rng fallback", () => {
-  it("hands a corrupt rng back as mutable run state", () => {
-    const result = parseActiveRunData({ rng: "junk" });
-    expect(() => stepRunRng(result.rng, "rewards")).not.toThrow();
-    expect(result.rng.counters.rewards).toBe(1);
-  });
+it("ActiveRunDataSchema rng fallback hands a corrupt rng back as mutable run state", () => {
+  const result = parseActiveRunData({ rng: "junk" });
+  expect(() => stepRunRng(result.rng, "rewards")).not.toThrow();
+  expect(result.rng.counters.rewards).toBe(1);
 });

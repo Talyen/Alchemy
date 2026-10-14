@@ -171,16 +171,6 @@ export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
   };
 }
 
-export function recoverLegacyEnemyPhase(state: BattleState): BattleState {
-  let recovered = state;
-  let attempts = 0;
-  while (recovered.turnPhase === "enemy" && attempts < 10) {
-    recovered = advanceToPlayerTurn(recovered);
-    attempts += 1;
-  }
-  return recovered.turnPhase === "player" ? recovered : { ...recovered, turnPhase: "player" };
-}
-
 export interface BattleTurnFrame {
   before: BattleSnapshot;
   turn: EndPlayerTurnResolution<BattleSnapshot>;

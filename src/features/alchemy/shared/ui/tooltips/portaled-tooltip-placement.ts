@@ -119,8 +119,8 @@ export function usePortaledTooltipPlacement(
         setPosition((previous) =>
           previous.placement === finalPlacement &&
           previous.tooltipStyle?.left === tooltipStyle.left &&
-          previous.tooltipStyle.top === tooltipStyle.top &&
-          previous.tooltipStyle.bottom === tooltipStyle.bottom
+          previous.tooltipStyle?.top === tooltipStyle.top &&
+          previous.tooltipStyle?.bottom === tooltipStyle.bottom
             ? previous
             : { placement: finalPlacement, tooltipStyle },
         );

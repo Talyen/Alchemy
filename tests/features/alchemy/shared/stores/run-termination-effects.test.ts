@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../../../../helpers/save-backend";
 import { afterEach, expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
@@ -25,14 +26,12 @@ function start(feedback: GameSessionOptions["feedback"] = {}) {
   const session = createGameSession({
     runtimeInputs: { generateRunSeed: () => 7 },
     feedback,
-    saveBackend: {
-      readCandidates: async () => ({ ok: true, candidates: [] }),
+    saveBackend: createSaveBackend({
       write: async (key, value) => {
         bytes.set(key, value);
         return { ok: true };
       },
-      clear: async () => ({ ok: true }),
-    },
+    }),
   });
   sessions.push(session);
   const controller = createPlaythroughController(session);
@@ -122,7 +121,7 @@ it("a broken run-start sound cannot prevent opening combat or subsequent accepte
   const { session, controller } = start({ playUISound: fail("sound unavailable") });
   expect(readActiveRunScreen(session)).toBe("battle");
   expect(readRunSession(session).activity.kind).toBe("battle");
-  expect(controller.battle.endTurn()).not.toBeNull();
+  expect(controller.battle.endTurn(controller.battle.read().battleState)).not.toBeNull();
 });
 
 it.each(["abandoned", "death", "victory"] as const)(

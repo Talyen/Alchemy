@@ -32,12 +32,10 @@ describe("shine-gradient", () => {
     );
   });
 
-  describe("buildSmoothShineGradient", () => {
-    it("creates a looped highlight gradient with white accent", () => {
-      const gradient = buildSmoothShineGradient(["#ff0000", "#00ff00"]);
-      expect(gradient).toBe(
-        "linear-gradient(in oklab 90deg, #ff0000, #00ff00, #ffffff, #ff0000, #00ff00, #ffffff, #ff0000)",
-      );
-    });
+  it("buildSmoothShineGradient creates a looped highlight gradient with white accent", () => {
+    const gradient = buildSmoothShineGradient(["#ff0000", "#00ff00"]);
+    expect(gradient).toBe(
+      "linear-gradient(in oklab 90deg, #ff0000, #00ff00, #ffffff, #ff0000, #00ff00, #ffffff, #ff0000)",
+    );
   });
 });

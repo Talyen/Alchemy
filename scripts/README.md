@@ -83,9 +83,10 @@ Packaged Windows startup: `smoke-desktop.mjs` resolves the artifact and invokes
 `npm run audit` runs `audit.mjs`, which dispatches to `audit-all.mjs` when no
 selector is supplied, including with `--verbose`. `npm run audit:all` is the
 same sweep via `audit.mjs --all` (thin forward, not a separate entry).
-Pass a focused selector after
-to dispatch one probe instead. `--all` is the periodic sweep, not literally
-content-audit. `audit-type-escapes.mjs` and `audit-change-amplification.mjs` report
+Pass a focused selector after npm's `--`, for example
+`npm run audit -- --types`, to dispatch one probe instead. `--all` runs the
+measurable sweep; it does not execute every guide in [Docs/Audits](../Docs/Audits/README.md).
+`audit-type-escapes.mjs` and `audit-change-amplification.mjs` report
 advisory trends without thresholds; read or Git failures still fail execution.
 Interpret type-escape counts through the [Type Safety audit](../Docs/Audits/TypeSafetyAudit.md)
 and co-edit trends through the [Simplification audit](../Docs/Audits/SimplificationAudit.md).
@@ -138,6 +139,8 @@ run `npm run predev` first when using that command. Desktop development runs
 the same preparation and adds Steam App ID synchronization.
 Vite and Electron share a lifetime: exiting either process stops the other,
 and the first exit determines the command's status.
+Desktop startup waits for a successful HTTP response and releases the readiness
+response body before launching Electron.
 
 ## Cleanup (`clean` = explicit reset, `prune:transient` = expiry)
 

@@ -1,3 +1,4 @@
+import { createSaveBackend } from "../../../../helpers/save-backend";
 import { makeRunCandidate } from "../../../../fixtures/active-run";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -55,14 +56,13 @@ describe("automatic demo progress import", () => {
   it("acknowledges the local import once even when initialization is requested concurrently", async () => {
     const write = vi.fn().mockResolvedValue({ ok: true });
     const receipt = vi.fn().mockResolvedValue(true);
-    const storage = new SaveStorage({
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write,
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-      readDemoImportSource: async () => source([JSON.stringify({ ...createDefaultSaveData(), gold: 31 })]),
-      completeDemoInitialization: receipt,
-    });
+    const storage = new SaveStorage(
+      createSaveBackend({
+        write,
+        readDemoImportSource: async () => source([JSON.stringify({ ...createDefaultSaveData(), gold: 31 })]),
+        completeDemoInitialization: receipt,
+      }),
+    );
     const [first, second] = await Promise.all([storage.load(), storage.load()]);
     expect(first.importedDemoProgress).toBe(true);
     expect(second.data.gold).toBe(31);
@@ -74,14 +74,13 @@ describe("automatic demo progress import", () => {
   });
   it("does not announce a failed import or consume its source receipt", async () => {
     const receipt = vi.fn().mockResolvedValue(true);
-    const storage = new SaveStorage({
-      readCandidates: async () => ({ ok: true, candidates: [] }),
-      write: async () => ({ ok: false, error: new Error("disk full") }),
-      writeSync: () => null,
-      clear: async () => ({ ok: true }),
-      readDemoImportSource: async () => source([JSON.stringify({ ...createDefaultSaveData(), gold: 31 })]),
-      completeDemoInitialization: receipt,
-    });
+    const storage = new SaveStorage(
+      createSaveBackend({
+        write: async () => ({ ok: false, error: new Error("disk full") }),
+        readDemoImportSource: async () => source([JSON.stringify({ ...createDefaultSaveData(), gold: 31 })]),
+        completeDemoInitialization: receipt,
+      }),
+    );
     expect((await storage.load()).importedDemoProgress).toBeUndefined();
     expect(receipt).not.toHaveBeenCalled();
   });

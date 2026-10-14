@@ -109,7 +109,7 @@ export function createBattleEndTurnUi(
 
     // Commit before starting any animation. Failed resolution leaves both gameplay and presentation untouched.
     const sessionNum = ctx.playback.id;
-    const result = commitEndTurn(ctx.battle);
+    const result = commitEndTurn(ctx.battle, currentState);
     if (!result) return;
     playBattleEvent("endTurn");
     ctx.playback.clearAutoEndTurn();

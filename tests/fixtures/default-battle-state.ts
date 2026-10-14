@@ -1,12 +1,5 @@
-import type {
-  PlayerStatusValues,
-  EnemyStatusValues,
-  EnemyMitigation,
-  TrinketManifest,
-  CcState,
-  CombatFlags,
-} from "@/lib/battle/types";
-import { defaultBattleState, defaultTalentEffects, EMPTY_ENEMY_MITIGATION } from "@/lib/battle";
+import type { PlayerStatusValues, EnemyStatusValues, TrinketManifest, CcState, CombatFlags } from "@/lib/battle/types";
+import { defaultBattleState, defaultTalentEffects } from "@/lib/battle";
 import { defaultTrinketEffects } from "@/lib/trinkets";
 
 export { defaultTalentEffects };
@@ -17,10 +10,6 @@ export function defaultPlayerStatusValues(overrides?: Partial<PlayerStatusValues
 
 export function defaultEnemyStatusValues(overrides?: Partial<EnemyStatusValues>): EnemyStatusValues {
   return { ...defaultBattleState().enemyStatuses, ...overrides };
-}
-
-export function defaultEnemyMitigation(overrides?: Partial<EnemyMitigation>): EnemyMitigation {
-  return { ...EMPTY_ENEMY_MITIGATION, ...overrides };
 }
 
 export function defaultCcState(overrides?: Partial<CcState>): CcState {

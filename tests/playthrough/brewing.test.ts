@@ -9,7 +9,10 @@ import { strengthenPotion } from "@/lib/alchemist/brewing";
 import { brewCandidates, shouldPreserveConsumable, potionPurchaseScore } from "@/app/playthrough/brewing-policy";
 import type { CareerConfig } from "@/app/playthrough/types";
 import { cardSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
-import { initializeAlchemyVisit } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
+import {
+  initializeAlchemyVisitForTest as initializeAlchemyVisit,
+  initializeShopForTest,
+} from "../helpers/visit-initialization";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import {
   applyTalentState,
@@ -69,7 +72,7 @@ function start(deck = cards("health-potion", "acid-potion"), gold = 100) {
 describe("headless brewing through production commands", () => {
   it("previews without RNG mutation, mixes with real pricing, and preserves the shared service limit after resume", () => {
     const controller = start();
-    controller.shop().alchemist.initialize();
+    initializeShopForTest("alchemist", session);
     const actor = createCareerActor(config, undefined, session);
     const before = stateDigest(session);
     const offered = actor.observe();
@@ -103,7 +106,7 @@ describe("headless brewing through production commands", () => {
 
   it("distills, rejects stale targets and unaffordable services, and keeps service Gold reserved when buying", () => {
     const controller = start(cards("acid-potion"), 40);
-    controller.shop().alchemist.initialize();
+    initializeShopForTest("alchemist", session);
     const actor = createCareerActor(config, undefined, session);
     const options = actor.observe();
     expect(options.find((c) => c.kind === "distill")?.score).toBeGreaterThan(0);
@@ -121,7 +124,7 @@ describe("headless brewing through production commands", () => {
     const distilled = actor.execute(options.find((c) => c.kind === "distill")!) as (typeof cardById)[string];
     expect(distilled.descriptionLines).not.toEqual(cardById["acid-potion"]!.descriptionLines);
     expect(readRunProfile(session).gold).toBe(0);
-    controller.shop().alchemist.initialize();
+    initializeShopForTest("alchemist", session);
     expect(actor.observe().some((c) => c.kind === "mix" || c.kind === "distill")).toBe(false);
     const poor = stateDigest(session);
     expect(controller.shop().alchemist.strengthenPotion(0)).toBeNull();
@@ -138,7 +141,7 @@ describe("headless brewing through production commands", () => {
       undefined,
       session,
     );
-    controller.shop().alchemist.initialize();
+    initializeShopForTest("alchemist", session);
     expect(controller.shop().alchemist.getMixPrice()).toBe(30);
     const actor = createCareerActor(config, undefined, session);
     actor.execute(actor.observe().find((c) => c.kind === "distill")!);
@@ -147,7 +150,7 @@ describe("headless brewing through production commands", () => {
 
   it("offers useful refreshes and respects exhausted refreshes", () => {
     const controller = start(cards("slash"), 100);
-    controller.shop().alchemist.initialize();
+    initializeShopForTest("alchemist", session);
     dispatchGameplayCommand(
       (draft) => {
         const activity = readRunSession(session).activity;
@@ -172,7 +175,7 @@ describe("headless brewing through production commands", () => {
 
   it("declines weaker copies and searches inferior stock only with potion room and purchase Gold", () => {
     const controller = start(cards("slash"), 100);
-    controller.shop().alchemist.initialize();
+    initializeShopForTest("alchemist", session);
     const activity = readRunSession(session).activity;
     if (activity.kind !== "alchemist") throw new Error("Expected shop");
     const stronger = activity.data.potions.map((card) => strengthenPotion(card)!);
@@ -293,7 +296,7 @@ describe("consumable preservation and paired evidence", () => {
     expect(
       shouldPreserveConsumable(cardById["panacea-potion"]!, {
         ...state,
-        talentEffects: { ...state.talentEffects, uncappedDrawOnConsume: 1 },
+        talentEffects: { ...state.talentEffects, drawOnConsume: 1, drawOnConsumeChance: 10 },
       }),
     ).toBe(false);
   });

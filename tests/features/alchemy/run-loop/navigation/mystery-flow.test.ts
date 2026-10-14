@@ -5,9 +5,12 @@ import { applyMysteryEffect, type MysteryEffectResult } from "@/features/alchemy
 import { cardLibrary, getCardKeywords, trinketLibrary } from "@/lib/game-data";
 import * as cardPools from "@/lib/game-data/cards/card-pools";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import { resetAllTestStores, resetProfileForTest } from "../../../../helpers/run-domain-store-test";
-import { setRunProgress } from "../../../../helpers/run-domain-store-test";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  mutateRunForTest,
+  resetAllTestStores,
+  resetProfileForTest,
+  setRunProgress,
+} from "../../../../helpers/run-domain-store-test";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
@@ -16,15 +19,9 @@ import { readActivityData } from "@/lib/active-run-session";
 import { defaultGameSession } from "@/app/application-session";
 function apply(effect: MysteryEffect, rng: () => number = () => 0.5): MysteryEffectResult {
   let result!: MysteryEffectResult;
-  dispatchRunSessionCommand(
-    (draft) => {
-      result = applyMysteryEffect(effect, { draft, rng });
-
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateRunForTest((draft) => {
+    result = applyMysteryEffect(effect, { draft, rng });
+  });
   return result;
 }
 
@@ -118,6 +115,9 @@ describe("applyMysteryEffect", () => {
     expect(readRunProfile(defaultGameSession).gold).toBe(15);
     expect(apply({ kind: "loseGold", amount: 0 }).goldSound).toBeUndefined();
     expect(readRunProfile(defaultGameSession).gold).toBe(15);
+    apply({ kind: "loseGold", amount: 20 });
+    expect(readRunProfile(defaultGameSession).gold).toBe(0);
+    expect(apply({ kind: "loseGold", amount: 5 }).goldSound).toBeUndefined();
   });
 
   it("gainXP awards run talent XP for the keyword", () => {
@@ -164,7 +164,7 @@ describe("applyMysteryEffect", () => {
 
   it("gainRandomTrinket falls back to guaranteed-Astral gear when every trinket is owned", () => {
     setRunProgress({ characterId: "knight", runBoons: trinketLibrary.map((entry) => entry.id) });
-    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, true)), undefined, defaultGameSession);
+    mutateRunForTest((draft) => setHasActiveRun(draft, true));
 
     const result = apply({ kind: "gainRandomTrinket", fromIds: ["bone-charm"] }, () => 0.5);
     expect(result.followUp).toBeNull();
@@ -199,7 +199,7 @@ describe("applyMysteryEffect", () => {
 
   it("gainGeneratedGear adds the instance to the armory and records it", () => {
     setRunProgress({ characterId: "knight" });
-    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, true)), undefined, defaultGameSession);
+    mutateRunForTest((draft) => setHasActiveRun(draft, true));
 
     apply({ kind: "gainGeneratedGear", baseItemId: "emerald-ring" });
 
@@ -217,7 +217,7 @@ describe("applyMysteryEffect", () => {
 
   it("gainRandomGear adds a generated non-unique instance to the armory and records it", () => {
     setRunProgress({ characterId: "knight" });
-    dispatchRunSessionCommand((draft) => acceptCommand(setHasActiveRun(draft, true)), undefined, defaultGameSession);
+    mutateRunForTest((draft) => setHasActiveRun(draft, true));
 
     apply({ kind: "gainRandomGear" }, () => 0.5);
 

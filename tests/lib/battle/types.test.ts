@@ -5,7 +5,6 @@ import { addPlayerStatus, setEnemyStatus, setPlayerStatus } from "@/lib/battle/s
 import { gainMana } from "@/lib/battle/resource-state";
 import { resolvePlayerHealing, applyPlayerHealing } from "@/lib/battle/health-state";
 import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
-import { defaultCombatFlags } from "../../fixtures/default-battle-state";
 
 describe("unchanged battle writes", () => {
   it("reuses state for unchanged status, flag, capped Mana and Health writes", () => {
@@ -102,14 +101,14 @@ describe("applyPlayerHealing", () => {
 describe("resolveSecondaryAction", () => {
   it("prevents secondary actions from spending an existing discount", () => {
     const state = makeTestBattleState({
-      flags: defaultCombatFlags({ nextCardCostReduction: 2 }),
+      flags: { nextCardCostReduction: 2 },
     });
     const result = resolveSecondaryAction(state, "companion", (s) => writeCombatFlag(s, "nextCardCostReduction", 0));
     expect(result.flags.nextCardCostReduction).toBe(2);
   });
 
   it("keeps newly earned cost reduction and ordinary reaction flags across nested non-card effects", () => {
-    const state = makeTestBattleState({ flags: defaultCombatFlags({ nextCardCostReduction: 2, nextHitCrit: true }) });
+    const state = makeTestBattleState({ flags: { nextCardCostReduction: 2, nextHitCrit: true } });
     const result = resolveSecondaryAction(state, "companion", (outer) =>
       resolveSecondaryAction(outer, "reward", (inner) => ({
         ...inner,
@@ -125,7 +124,7 @@ describe("resolveSecondaryAction", () => {
 
   it("makes card bonuses ineligible without changing the underlying flags", () => {
     const state = makeTestBattleState({
-      flags: defaultCombatFlags({ nextHitCrit: true, playNextCardTwice: true }),
+      flags: { nextHitCrit: true, playNextCardTwice: true },
     });
     let observedInside: Record<string, unknown> = {};
     const result = resolveSecondaryAction(state, "companion", (s) => {
@@ -142,17 +141,17 @@ describe("resolveSecondaryAction", () => {
     const state = makeTestBattleState();
     let observedInside = false;
     resolveSecondaryAction(state, "companion", (s) => {
-      observedInside = readCombatFlag(s, "firstHolyCardFreeUsed");
+      observedInside = readCombatFlag(s, "firstBurnCardFreeUsed");
       return s;
     });
     expect(observedInside).toBe(true);
-    expect(state.flags.firstHolyCardFreeUsed).toBe(false);
+    expect(state.flags.firstBurnCardFreeUsed).toBe(false);
   });
 });
 
 it("keeps secondary-action policy out of committed snapshots and restores nested scope", () => {
   const state = makeTestBattleState({
-    flags: defaultCombatFlags({ nextHitCrit: true }),
+    flags: { nextHitCrit: true },
     onEmptyDraw: (current) => current,
   });
   const result = resolveSecondaryAction(state, "companion", (companion) => {

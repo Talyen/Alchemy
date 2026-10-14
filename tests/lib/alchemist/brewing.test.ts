@@ -48,11 +48,7 @@ describe("brewing content", () => {
     const magnitudes = getCardDescription(strengthened).flatMap((line) =>
       line.parts.filter((part) => typeof part !== "string"),
     );
-    expect(
-      magnitudes
-        .filter((part) => part.references.some((reference) => reference.field !== "blockCost"))
-        .every((part) => part.distilled),
-    ).toBe(true);
+    expect(magnitudes.every((part) => part.distilled)).toBe(true);
     expect(card.effects).toEqual(effects);
     expect(hydrateCard(BattleCardSchema.parse(strengthened)).effects).toEqual(strengthened.effects);
   });

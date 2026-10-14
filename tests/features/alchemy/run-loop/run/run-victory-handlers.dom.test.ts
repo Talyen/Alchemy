@@ -1,14 +1,15 @@
 import "../../../../helpers/mock-audio";
-import { replaceBattleForTest as setSyncedBattleState } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  replaceBattleForTest as setSyncedBattleState,
+  resetAllTestStores,
+  setRunProgress,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createVictoryHandlers } from "@/features/alchemy/run-loop/run/run-flow-victory";
-import { awardRunEndMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";
-
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { addRunCurrenciesEarned, addRunMaterialsEarned } from "@/features/alchemy/shared/stores/run-session-write-port";
-
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import { playGoldGain } from "@/lib/audio";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
@@ -17,7 +18,6 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 import { defaultGameSession } from "@/app/application-session";
 vi.mock("@/features/alchemy/shared/stores/run-lifecycle", async (importOriginal) => {
@@ -63,123 +63,12 @@ describe("createRunFlow victory paths", () => {
     expect(readActiveRun(defaultGameSession).runDeck.filter((entry) => entry.id.endsWith("-potion"))).toHaveLength(1);
   });
 
-  it("awardRunEndMaterials includes materials collected during the run on the summary", () => {
-    setRunProgress({ roomsEncountered: 2, currentAct: 1 });
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5, herbs: 2 })),
-      undefined,
-      defaultGameSession,
-    );
-
-    dispatchGameplayCommand(
-      (...args: Parameters<typeof awardRunEndMaterials>) => acceptCommand(awardRunEndMaterials(...args)),
-      undefined,
-      defaultGameSession,
-    );
-
-    expect(readRunSession(defaultGameSession).runEndMaterials.wood).toBe(5);
-    expect(readRunSession(defaultGameSession).runEndMaterials.herbs).toBe(2);
-    expect(readActiveRun(defaultGameSession).runMaterialsEarned).toEqual(emptyInventory());
-  });
-
-  it("awardRunEndMaterials snapshots salvaged currencies into the recap and clears the tally", () => {
-    setRunProgress({ roomsEncountered: 2, currentAct: 1 });
-    dispatchGameplayCommand(
-      (draft) => {
-        addRunCurrenciesEarned(draft, { "discordant-dice": 2 });
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
-
-    dispatchGameplayCommand(
-      (...args: Parameters<typeof awardRunEndMaterials>) => acceptCommand(awardRunEndMaterials(...args)),
-      undefined,
-      defaultGameSession,
-    );
-
-    expect(readRunSession(defaultGameSession).runEndCurrencies["discordant-dice"]).toBe(2);
-    expect(readActiveRun(defaultGameSession).runCurrenciesEarned["discordant-dice"]).toBe(0);
-  });
-
-  it("Wildwood run end records collected Materials and currencies without another payout", () => {
-    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.WILDWOOD, roomsEncountered: 12 });
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.runProfile.effects.herbFindBonus = 0.2;
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
-    dispatchGameplayCommand(
-      (draft) => {
-        addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 });
-        addRunCurrenciesEarned(draft, { "discordant-dice": 2 });
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
-
-    const materials = dispatchGameplayCommand(
-      (...args: Parameters<typeof awardRunEndMaterials>) => acceptCommand(awardRunEndMaterials(...args)),
-      undefined,
-      defaultGameSession,
-    );
-
-    expect(materials).toEqual(emptyInventory());
-    expect(readRunSession(defaultGameSession).runEndMaterials).toEqual({ ...emptyInventory(), wood: 5 });
-    expect(readRunSession(defaultGameSession).runEndCurrencies["discordant-dice"]).toBe(2);
-    expect(readActiveRun(defaultGameSession).runMaterialsEarned).toEqual(emptyInventory());
-  });
-
-  it("handleBattleDefeat invokes applyRunDefeatTeardown for campaign", () => {
-    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
-    const transition = vi.fn();
-    const handlers = createRunFlow(makeFlowHandlerDeps({ transition }), defaultGameSession);
-    handlers.handleBattleDefeat();
-    expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
-    transition.mock.calls[0][1].prepare();
-    expect(applyRunDefeatTeardown).toHaveBeenCalledWith(
-      expect.objectContaining({
-        awardRunEndMaterials,
-        finalizeRunXP: expect.any(Function),
-      }),
-      defaultGameSession,
-    );
-  });
-
-  it("handleBattleDefeat ends a labyrinth run like campaign", () => {
-    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH });
-    const transition = vi.fn();
-    const handlers = createRunFlow(makeFlowHandlerDeps({ transition }), defaultGameSession);
-    handlers.handleBattleDefeat();
-    expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
-    expect(transition).toHaveBeenCalledWith(
-      ROUTE_SCREENS.GAME_OVER,
-      expect.objectContaining({ delayMs: BATTLE_END_TRANSITION_DELAY_MS }),
-    );
-    transition.mock.calls[0][1].prepare();
-    expect(applyRunDefeatTeardown).toHaveBeenCalledWith(
-      expect.objectContaining({
-        awardRunEndMaterials,
-        finalizeRunXP: expect.any(Function),
-      }),
-      defaultGameSession,
-    );
-  });
-
   it.each([false, true])("defeat commits immediately while presentation can be cancelled: %s", (cancelled) => {
     vi.useFakeTimers();
     try {
       setRunSession({ hasActiveRun: true });
       const setScreen = vi.fn();
-      const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.BATTLE, setScreen));
+      const { result } = renderHook(() => useScreenTransitions(defaultGameSession, ROUTE_SCREENS.BATTLE, setScreen));
       const handlers = createRunFlow(
         makeFlowHandlerDeps({ transition: result.current.transition }),
         defaultGameSession,
@@ -283,11 +172,8 @@ describe("createRunFlow victory paths", () => {
   });
 
   it("commits Wildwood reward handoff in the victory command draft", () => {
-    dispatchGameplayCommand(
-      (draft) =>
-        acceptCommand(setSyncedBattleState(draft, { ...readBattle(defaultGameSession).battleState, enemyHealth: 0 })),
-      undefined,
-      defaultGameSession,
+    mutateGameplayForTest((draft) =>
+      setSyncedBattleState(draft, { ...readBattle(defaultGameSession).battleState, enemyHealth: 0 }),
     );
     setRunProgress({
       contentSystemType: CONTENT_SYSTEMS.WILDWOOD,
@@ -320,17 +206,12 @@ describe("createRunFlow victory paths", () => {
       runPlayerHealth: 20,
       runMaxHealth: 20,
     });
-    dispatchGameplayCommand(
-      (draft) =>
-        acceptCommand(
-          setSyncedBattleState(draft, {
-            ...readBattle(defaultGameSession).battleState,
-            gold: 15,
-            enemyHealth: 0,
-          }),
-        ),
-      undefined,
-      defaultGameSession,
+    mutateGameplayForTest((draft) =>
+      setSyncedBattleState(draft, {
+        ...readBattle(defaultGameSession).battleState,
+        gold: 15,
+        enemyHealth: 0,
+      }),
     );
     setRunSession({
       wildwoodDraft: {

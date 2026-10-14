@@ -82,17 +82,6 @@ function applyPoisonStatusRider(
 ): BattleState {
   let nextState = addEnemyStatus(state, "poison", actualDamage, { combatTexts });
   nextState = applyPoisonDamageArmorRider(nextState, actualDamage, combatTexts);
-  if (
-    actualDamage > 0 &&
-    nextState.talentEffects.goldOnFirstPoison > 0 &&
-    !nextState.flags.goldOnFirstPoisonThisCombat
-  ) {
-    nextState = setFlag(
-      addGoldWithCombatText(nextState, nextState.talentEffects.goldOnFirstPoison, combatTexts),
-      "goldOnFirstPoisonThisCombat",
-      true,
-    );
-  }
   nextState = applyPoisonTalentRiders(
     nextState,
     Math.min(actualDamage, preHitHealth),
@@ -112,9 +101,7 @@ export function applyPoisonTalentRiders(
   onPoisonBleedConversion?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState,
 ): BattleState {
   let nextState = state;
-  if (nextState.talentEffects.poisonStripArmor) {
-    nextState = removeEnemyArmorWithFeedback(nextState, 1, combatTexts);
-  }
+
   if (damage > 0) {
     const leechChances = [
       state.trinketEffects.parasiticBloomLeechChance,
@@ -160,9 +147,6 @@ function applyBleedStatusRider(
         nextState.pendingCardBleedLeechHealing + (cardLeech && effect.lifesteal ? bleedAmount : 0),
     };
   }
-  if (bleedAmount > 0 && actualDamage > 0 && rollBattleChance(nextState.talentEffects.bleedPoisonChance, nextState)) {
-    nextState = addEnemyStatus(nextState, "poison", actualDamage, { combatTexts });
-  }
   nextState = applyGearBurnBleedMirrorLeech(
     nextState,
     actualDamage,
@@ -183,6 +167,7 @@ function applyStunStatusRider(
   preHitHealth: number,
   fromHolyDamage = false,
 ): BattleState {
+  if (actualDamage <= 0) return state;
   emitEnemyBuildupImmunity(state, "stun", actualDamage, combatTexts);
   return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts, preHitHealth, fromHolyDamage);
 }
@@ -248,6 +233,7 @@ function applyFreezeStatusRider(
   preHitHealth: number,
   eligibility: BattleState,
 ): BattleState {
+  if (actualDamage <= 0) return state;
   emitEnemyBuildupImmunity(state, "freeze", actualDamage, combatTexts);
   let nextState = addEnemyStatus(state, "freeze", actualDamage);
   if (
@@ -297,9 +283,7 @@ function applyPhysicalStatusRider(
     forgeTriggers?.add("sunder");
     nextState = removeEnemyArmorWithFeedback(nextState, Math.round(forgeBeforeHit * 0.5), combatTexts);
   }
-  if (state.talentEffects.physicalStripArmorWhileBlocked && state.playerStatuses.block > 0) {
-    nextState = removeEnemyArmorWithFeedback(nextState, 2, combatTexts);
-  }
+
   return nextState;
 }
 

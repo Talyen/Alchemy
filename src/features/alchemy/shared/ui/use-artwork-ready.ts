@@ -28,7 +28,7 @@ export function useArtworkReady(identity: string | number, { initialRevealOnly =
     const reconcile = () => {
       if (frame !== null) cancelAnimationFrame(frame);
       frame = null;
-      const images = new Set(root.querySelectorAll<HTMLImageElement>("img[src]"));
+      const images = new Set(root.querySelectorAll<HTMLImageElement>("img[src], img[srcset]"));
       for (const [image, wait] of waits) {
         if (!images.has(image) || wait.source !== sourceOf(image)) {
           wait.lifetime.abort();

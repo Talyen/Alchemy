@@ -21,7 +21,20 @@ import {
   WRITE_PORT_PATTERNS,
 } from "./fragments.js";
 
-const SOURCE_IMPORT_PATTERNS = [BARREL_PATTERNS, DOMAIN_STORE_PATTERNS, WRITE_PORT_PATTERNS, NO_DIRECT_ASSET_IMPORT];
+const ROOM_INITIALIZATION_ONLY = [
+  {
+    group: ["**/room-visit-initialization"],
+    message:
+      "Only room-entry-commands may initialize visits. Screens and retained capabilities consume committed visits.",
+  },
+];
+const SOURCE_IMPORT_PATTERNS = [
+  BARREL_PATTERNS,
+  DOMAIN_STORE_PATTERNS,
+  WRITE_PORT_PATTERNS,
+  NO_DIRECT_ASSET_IMPORT,
+  ROOM_INITIALIZATION_ONLY,
+];
 
 // Each effective scope composes its full policy once. Path-scoped rules replace,
 // rather than merge, so no scope relies on an earlier block's restrictions.
@@ -76,7 +89,11 @@ export const BOUNDARY_CONFIGS = [
     [],
     ["src/features/alchemy/shared/stores/**", "src/lib/game-data/assets.generated.ts"],
   ),
-  scope(["src/features/alchemy/shared/stores/**/*.{ts,tsx}"], [BARREL_PATTERNS], GAMEPLAY_NO_UNSAFE_RANDOM_PICK),
+  scope(
+    ["src/features/alchemy/shared/stores/**/*.{ts,tsx}"],
+    [BARREL_PATTERNS, ROOM_INITIALIZATION_ONLY],
+    GAMEPLAY_NO_UNSAFE_RANDOM_PICK,
+  ),
   // Bootstrap hydrates all codecs atomically. Only raw dispatch is exempt;
   // the aggregate, write internals, and other source restrictions still apply.
   scope(
@@ -145,6 +162,10 @@ export const BOUNDARY_CONFIGS = [
     [...SOURCE_IMPORT_PATTERNS, RUN_SETUP_NO_RUN_LOOP, SCREENS_NO_ORCHESTRATION, SCREENS_NO_APP_ORCHESTRATION],
   ),
   scope(["src/features/alchemy/run-loop/**/*.{ts,tsx}"], [...SOURCE_IMPORT_PATTERNS, RUN_LOOP_NO_RUN_SETUP]),
+  scope(
+    ["src/features/alchemy/run-loop/run/room-entry-commands.ts"],
+    [...SOURCE_IMPORT_PATTERNS.filter((patterns) => patterns !== ROOM_INITIALIZATION_ONLY), RUN_LOOP_NO_RUN_SETUP],
+  ),
   scope(
     ["src/features/alchemy/run-loop/screens/**/*.{ts,tsx}"],
     [...SOURCE_IMPORT_PATTERNS, RUN_LOOP_NO_RUN_SETUP, SCREENS_NO_ORCHESTRATION, SCREENS_NO_APP_ORCHESTRATION],

@@ -63,6 +63,10 @@ export async function startBattleWithDeck(page: Page, deck: BattleCard[], overri
 export async function assertEndRunShowsRecap(page: Page) {
   await new BattlePage(page).menuBtn.click();
   await page.getByRole("button", { name: "End Run" }).click();
+  await page
+    .getByRole("dialog", { name: "End this run?" })
+    .getByRole("button", { name: "End Run", exact: true })
+    .click();
   await expect(page.getByRole("heading", { name: "Journey’s End" })).toBeVisible({ timeout: 10000 });
   await expect(page.getByRole("button", { name: "Main Menu" })).toBeVisible();
   await expect(page.getByRole("dialog")).toHaveCount(0);

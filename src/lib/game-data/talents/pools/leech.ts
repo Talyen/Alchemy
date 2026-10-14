@@ -7,9 +7,9 @@ export const leechTalents = [
   t(
     "leech-first-double",
     "Deep Siphon",
-    "Leech from your cards restores 1 additional Health",
+    "Leech restores 1 additional Health",
     "Sword",
-    setEffect("cardLeechHealingBonus", 1),
+    setEffect("leechHealingBonus", 1),
   ),
   t(
     "leech-blood-debt",
@@ -49,9 +49,9 @@ export const leechTalents = [
   t(
     "leech-bleed-chance",
     "Bloodletting",
-    "Losing Health has a 10% chance to cleanse a negative status effect",
+    "Leech has a 10% chance to cleanse a harmful status",
     "Droplets",
-    setEffect("healthLossCleanseChance", 10),
+    setEffect("leechCleanseChance", 10),
   ),
   t(
     "leech-mana-siphon",

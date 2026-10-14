@@ -32,11 +32,9 @@ function getPlayerDodgeChance(
     state.gearEffects.dodgeChance +
     state.talentEffects.dodgeChance +
     state.dodgeChanceFromDamage;
-  if (state.enemyStatuses.burn > 0) chance += state.talentEffects.dodgeChanceWhileEnemyBurning;
   if (hasEncounterBenefit(state, "elusive")) chance += LABYRINTH_MODIFIER_CONFIG.playerDodgeBonusPercent;
   if (state.gearEffects.archeryDodgeAndDraw > 0 && state.uniqueGear.wrenflightActive)
     chance += UNIQUE_GEAR_COMBAT.wrenflightDodgeChancePercent;
-  if (state.playerStatuses.block === 0) chance += state.talentEffects.dodgeChanceWithoutBlock;
   if (state.talentEffects.dodgeChanceBelowHalfHealth > 0 && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
     chance += state.talentEffects.dodgeChanceBelowHalfHealth;
   }

@@ -1,6 +1,11 @@
 import "../../../helpers/mock-audio";
-
-import { setBattleActiveForTest as setHasActiveBattle } from "../../../helpers/run-domain-store-test";
+import {
+  mutateRunForTest,
+  setBattleActiveForTest as setHasActiveBattle,
+  resetAllTestStores,
+  setRunProgress,
+  setRunSession,
+} from "../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS, type Screen, type ScreenTransitionOptions } from "@/lib/routing";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
@@ -8,14 +13,11 @@ import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/
 import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
-import { readRunAvailableDestinations } from "@/features/alchemy/shell/run-destination-wiring";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeTestCard } from "../../../fixtures/battle";
-import { resetAllTestStores, setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
@@ -29,7 +31,6 @@ function makeOutcomes(navigateTo: TestNavigate, transition: TestTransition) {
   return createRunOutcomes(
     {
       actions: { navigateTo, transition, clearCardHover: () => {} },
-      getAvailableDestinations: (options) => readRunAvailableDestinations(options, defaultGameSession),
     },
     defaultGameSession,
   );
@@ -85,14 +86,9 @@ describe("createRunFlowEngine", () => {
     setRunSession({ activity: { kind: "corruption", data: null } });
     const navigateTo = vi.fn();
     const engine = makeEngine({ navigateTo });
-    dispatchRunSessionCommand(
-      (draft) => {
-        setHasActiveBattle(draft, true);
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      setHasActiveBattle(draft, true);
+    });
     const before = readGameplayState(defaultGameSession);
     engine.handleCorruptionExit();
     expect(readGameplayState(defaultGameSession)).toBe(before);
@@ -100,16 +96,10 @@ describe("createRunFlowEngine", () => {
   });
 
   it("resetRunState tears down run stores when navigating to menu", () => {
-    dispatchRunSessionCommand(
-      (draft) => {
-        setHasActiveRun(draft, true);
-        setHasActiveBattle(draft, true);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateRunForTest((draft) => {
+      setHasActiveRun(draft, true);
+      setHasActiveBattle(draft, true);
+    });
     const navigateTo = vi.fn((_screen: string, onCommit?: () => void) => onCommit?.());
     const cancelPending = vi.fn();
 
