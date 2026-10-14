@@ -36,6 +36,10 @@ export interface AlchemyRouteCommands {
     isPending: () => boolean;
     afterSaved: (feedback: () => void) => void;
   };
+  boards: {
+    select: (selection: import("@/lib/boards/catalog").BoardSelection) => boolean;
+    acknowledgeReward: (id: string, equip: boolean) => boolean;
+  };
   meta: {
     resumeRun: () => void;
     goToScreen: (nextScreen: Screen) => void;

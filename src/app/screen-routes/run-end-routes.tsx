@@ -1,3 +1,5 @@
+import { BoardRewardScreen } from "@/features/alchemy/shared/ui/board-reward-screen";
+import { useBoards } from "@/features/alchemy/shared/stores/use-profile-store";
 import { IS_DEMO, isEditionCharacterAvailable } from "@/lib/game-edition";
 import { isDesktop, openFullGameWishlist } from "@/lib/platform";
 import { useEffect, useState } from "react";
@@ -30,6 +32,8 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
     runEndLabyrinthFloor,
     runRecap,
   } = useRunEndScreenData();
+  const { pendingBoardRewardId } = useBoards();
+  const [showBoard, setShowBoard] = useState<string | null>(null);
   const [marketing, setMarketing] = useState(false);
   const [unlockIndex, setUnlockIndex] = useState<number | null>(null);
   const unlockedCharacters = runEndUnlockedCharacters.filter(isEditionCharacterAvailable);
@@ -43,20 +47,40 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
       onEscape: () => commands.continueFromRunEnd(),
     });
   }, [marketing, commands]);
-  function continueAfterRewards() {
+  function continueAfterBoard() {
+    setShowBoard(null);
     if (demoVictory) setMarketing(true);
     else commands.continueFromRunEnd();
   }
+  function continueAfterRewards() {
+    if (pendingBoardRewardId) setShowBoard(pendingBoardRewardId);
+    else continueAfterBoard();
+  }
+  if (showBoard)
+    return (
+      <BoardRewardScreen
+        boardId={showBoard}
+        continueLabel={demoVictory ? "Continue" : "Main Menu"}
+        onUseBoard={() => {
+          if (routeCommands.boards.acknowledgeReward(showBoard, true))
+            routeCommands.progress.afterSaved(continueAfterBoard);
+        }}
+        onContinue={() => {
+          if (routeCommands.boards.acknowledgeReward(showBoard, false))
+            routeCommands.progress.afterSaved(continueAfterBoard);
+        }}
+      />
+    );
   if (revealedCharacter) {
     const hasNextHero = unlockIndex !== null && unlockIndex + 1 < unlockedCharacters.length;
     return (
       <HeroUnlockedScreen
         characterId={revealedCharacter}
-        continueLabel={hasNextHero || demoVictory ? "Continue" : "Main Menu"}
+        continueLabel={hasNextHero || demoVictory || pendingBoardRewardId ? "Continue" : "Main Menu"}
         onContinue={() => {
           if (hasNextHero) setUnlockIndex((index) => (index ?? 0) + 1);
           else {
-            if (demoVictory) setUnlockIndex(null);
+            setUnlockIndex(null);
             continueAfterRewards();
           }
         }}
@@ -80,7 +104,7 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
       title={title}
       runRecap={runRecap}
       subtitle={demoVictory ? "" : subtitle}
-      continueLabel={demoVictory || unlockedCharacters.length > 0 ? "Continue" : "Main Menu"}
+      continueLabel={demoVictory || unlockedCharacters.length > 0 || pendingBoardRewardId ? "Continue" : "Main Menu"}
       outcome={outcome}
       characterId={characterId}
       runEndTalentXP={runEndTalentXP}

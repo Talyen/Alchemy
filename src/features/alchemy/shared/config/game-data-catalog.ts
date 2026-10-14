@@ -1,4 +1,5 @@
 export {
+  boardArt,
   alchemistShopBg,
   battleManaCrystal,
   campfire,

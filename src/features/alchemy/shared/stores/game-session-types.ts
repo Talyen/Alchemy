@@ -32,6 +32,7 @@ export interface GameSessionOptions {
   runtimeInputs?: {
     clock?: SessionClock;
     generateRunSeed?: () => number;
+    cosmeticRandom?: () => number;
     createInstanceId?: () => string;
   };
   feedback?: Partial<SessionFeedback>;

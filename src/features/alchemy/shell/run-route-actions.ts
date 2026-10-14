@@ -1,3 +1,4 @@
+import { selectGameBoard, acknowledgeGameBoardReward } from "@/features/alchemy/shared/stores/board-commands";
 import {
   brewAtCampfire,
   transmuteCard,
@@ -32,6 +33,8 @@ import { clearRunCardHover } from "./run-card-hover";
 
 export function createRunRouteActions(gameSession: GameSession) {
   return bindSessionCapabilities(gameSession, {
+    selectGameBoard: (selection: Parameters<typeof selectGameBoard>[0]) => selectGameBoard(selection, gameSession),
+    acknowledgeGameBoardReward: (id: string, equip: boolean) => acknowledgeGameBoardReward(id, equip, gameSession),
     clearCardHover: () => clearRunCardHover(gameSession),
     purchaseTalent: (keyword: Parameters<typeof purchaseTalent>[0], talent: string) =>
       purchaseTalent(keyword, talent, gameSession),

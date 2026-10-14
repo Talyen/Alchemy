@@ -4,6 +4,30 @@ Shared conventions: [UI](./UI.md).
 
 ## Collection and Armory browsing
 
+### Boards
+
+The Boards tab shows landscape art in two measured rows, capped at three columns
+(six boards); narrower layouts reduce the column count. It shares Collection's
+page memory, resize anchoring, grayscale locked art, full-color hover/focus,
+neutral hover Shine Border, and inspection/focus restoration. Names remain visible
+for locked boards. Inspection shows the native full-color artwork, with Use Board
+for owned boards or the five-room reward requirement for locked boards.
+
+None and Random Collected are selected-state controls above the gallery. Equipped
+art has a visible Selected state. Options → Display → Browse Boards opens this tab;
+Back returns to Options while preserving its original return target.
+
+A collected board is revealed after the run recap and hero reveals, before demo
+completion or Main Menu. Use Board equips it and continues; Continue preserves
+selection. Unacknowledged reveals recover at Main Menu after restart. Ownership
+commits during settlement, independently of the reveal.
+
+Battle boards fill the existing game stage with independent width/height scaling,
+preserving every edge without cropping or internal margins. Stage layering is
+board art, existing background plasma glow, battle particles, then combat UI.
+Existing glow/particle settings remain effective. Board-specific dimming, color
+treatment, animation, and interactions are deferred.
+
 Collection measures available grid width and scaled tile size. Page size is two
 rows times the resolved column count, capped at four columns for Heroes, Cards,
 Trinkets, and Uniques, or three for Bestiary. Resize retains the selected or first visible item; switching artwork

@@ -37,6 +37,8 @@ export const VALIDATION_CONCURRENCY = resolveAssetConcurrency(16);
  * this table so no second accessor can drift from it.
  */
 export const ART_PRESETS = Object.freeze({
+  board: Object.freeze({ width: 2752, quality: 100 }),
+  boardThumbnail: Object.freeze({ width: 640, quality: 90 }),
   card: Object.freeze({ width: 420, quality: 80 }),
   cardHaste: Object.freeze({ width: 420, quality: 88 }),
   cardManaCrystal: Object.freeze({ width: 420, quality: 88 }),

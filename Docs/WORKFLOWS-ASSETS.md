@@ -27,6 +27,21 @@ Selected files may be moved between folders or renamed within the configured lib
 
 Ordinary development and builds use committed outputs. `predev` and hosted CI run `npm run assets:check:outputs`; this deliberately does not establish raw-source freshness. CI neither downloads the library nor regenerates media. Prepared manifests retain independent source/settings hashes, selection fingerprints, and output hashes.
 
+## Game Board artwork
+
+The explicit board catalog selects the JPG masters in
+`2d Assets/Game Sources/Interface/Board Backgrounds`. `scripts/assets/board-assets.mjs`
+registers native 2752×1536 lossless WebP backgrounds and 640px, quality-90 gallery
+thumbnails in the existing art pipeline. Lossless encoding preserves decoded JPG
+pixels; it cannot restore information already lost in the original JPG.
+`lossless` participates in transform and selection fingerprints. Changing its value
+requires regeneration just like width or quality changes.
+
+`boardArt` in `src/lib/game-data/assets.ts` is the curated runtime map. Board URLs
+are eagerly registered, but `onDemandBoardArt` excludes full art and thumbnails
+from both essential and deferred startup decoding. The gallery displays thumbnails;
+inspection, reward reveals, and battle display the full-resolution image.
+
 ## Art style and generation prompts
 
 Alchemy's visual identity is anchored by its **Master Action-Anime Art Style**.

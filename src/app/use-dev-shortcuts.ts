@@ -7,6 +7,7 @@ import {
   setEncounteredEnemyIds,
   setFinishedRunCharacters,
   setMaterials,
+  unlockAllBoards,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
@@ -29,6 +30,7 @@ export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | 
     if (!isAlchemyDevBuild()) return;
     dispatchRunSessionCommand(
       (draft) => {
+        unlockAllBoards(draft);
         discoverCardIds(
           draft,
           cardLibrary.map((card) => card.id),

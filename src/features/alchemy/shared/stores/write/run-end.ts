@@ -1,3 +1,4 @@
+import { awardRunBoard } from "./boards";
 import { characters, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
 import type { RunRecap } from "@/lib/active-run-session";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
@@ -44,6 +45,7 @@ export function settleRunEnd(draft: GameplayDraft, ending: RunRecap["ending"]): 
     isCharacterUnlocked(id, draft.profile.finishedRunCharacters),
   );
 
+  awardRunBoard(draft, ending);
   captureRunEndResources(draft);
   captureRunRecap(draft, ending);
   finalizeRunXP(draft);

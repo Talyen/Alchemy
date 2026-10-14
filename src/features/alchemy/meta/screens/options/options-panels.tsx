@@ -5,6 +5,7 @@ import { SettingsSelect, SettingsSlider, SettingsToggle, SettingsSection, Settin
 import type { AspectRatioOption, DisplayMode } from "../../../shared/types";
 
 export interface DisplayOptionsProps {
+  onOpenBoards?: (() => void) | undefined;
   selectedAspectRatio: AspectRatioOption;
   onAspectRatioChange: (aspectRatio: AspectRatioOption) => void;
   displayMode: DisplayMode;
@@ -59,6 +60,11 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
   return (
     <div className="space-y-4">
       <SettingsSection title="Display">
+        {display.onOpenBoards ? (
+          <SettingsAction label="Game Boards" description="Battle background artwork">
+            <Button onClick={display.onOpenBoards}>Browse Boards</Button>
+          </SettingsAction>
+        ) : null}
         {display.showDisplayMode ? (
           <SettingsSelect
             id="display-mode"

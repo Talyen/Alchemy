@@ -1,3 +1,4 @@
+import { BoardRewardScreen } from "@/features/alchemy/shared/ui/board-reward-screen";
 import { playUISound } from "@/lib/audio";
 import { IS_DEMO } from "@/lib/game-edition";
 import { openFullGameWishlist } from "@/lib/platform";
@@ -13,6 +14,7 @@ import {
   ArmoryScreen,
 } from "@/features/alchemy/meta/screens";
 import {
+  useBoards,
   useFinishedRunCharacters,
   useProfileCollectionSlice,
   useProfileDiscoverySlice,
@@ -30,7 +32,21 @@ function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
   const commands = routeCommands.meta;
   const { hasUnspentTalents, hasAffordableHomestead } = useMenuBadges();
   const hasActiveRun = useHasActiveRun();
+  const { pendingBoardRewardId } = useBoards();
   const finishedRunCharacters = useFinishedRunCharacters();
+  if (pendingBoardRewardId)
+    return (
+      <BoardRewardScreen
+        boardId={pendingBoardRewardId}
+        continueLabel="Main Menu"
+        onUseBoard={() => {
+          routeCommands.boards.acknowledgeReward(pendingBoardRewardId, true);
+        }}
+        onContinue={() => {
+          routeCommands.boards.acknowledgeReward(pendingBoardRewardId, false);
+        }}
+      />
+    );
   return (
     <MenuScreen
       {...(IS_DEMO && isDesktop() ? { onWishlist: openFullGameWishlist } : {})}
@@ -95,12 +111,15 @@ function GameModeSelectScreenRoute({ routeCommands, onBack, onOpenGameMenu }: Me
 function CollectionScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteCtx) {
   const commands = routeCommands.meta;
   const profile = useProfileCollectionSlice();
+  const boards = useBoards();
   const bondedCompanions = useBondedCompanions();
   const finishedRunCharacters = useFinishedRunCharacters();
 
   return (
     <CollectionScreen
       {...profile}
+      {...boards}
+      onSelectBoard={routeCommands.boards.select}
       onSelectTab={commands.selectCollectionTab}
       onPageChange={commands.setCollectionPage}
       bondedCompanions={bondedCompanions}
