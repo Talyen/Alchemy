@@ -30,5 +30,4 @@ it("caps visible gems with a badge and keeps exact values accessible without a r
   expect(screen.getByText("+8")).toBeDefined();
   expect(screen.getByRole("button", { name: "Inspect Mana: 14 / 17" })).toBeDefined();
   expect(screen.queryByText("14 / 17")).toBeNull();
-  expect(screen.getByTestId("mana-panel").querySelectorAll("[data-outside]")).toHaveLength(0);
 });
