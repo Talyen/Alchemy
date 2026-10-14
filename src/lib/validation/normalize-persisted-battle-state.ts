@@ -56,8 +56,9 @@ function normalizeTalentEffects(
   return merged;
 }
 
+// Finite values above the safe range can swallow ordinary gains, hits, or decrements.
 function clampNonNegative(value: number, fallback: number): number {
-  return Number.isFinite(value) && value >= 0 ? value : fallback;
+  return Number.isFinite(value) && value >= 0 && value < Number.MAX_SAFE_INTEGER ? value : fallback;
 }
 
 function normalizeNonNegativeRecord<K extends string>(
@@ -68,6 +69,17 @@ function normalizeNonNegativeRecord<K extends string>(
   for (const key of Object.keys(defaults) as K[]) {
     const value = saved?.[key];
     if (typeof value === "number" && Number.isFinite(value) && value >= 0) merged[key] = value;
+  }
+  return merged;
+}
+
+function normalizeCcState(
+  defaults: BattleSnapshot["playerCC"],
+  saved: Partial<BattleSnapshot["playerCC"]> | undefined,
+) {
+  const merged = normalizeNonNegativeRecord(defaults, saved);
+  for (const key of ["stunSkipTurns", "freezeSkipTurns", "cooldown"] as const) {
+    if (!Number.isSafeInteger(merged[key])) merged[key] = defaults[key];
   }
   return merged;
 }
@@ -126,14 +138,17 @@ function normalizeCombatFlags(
     Object.entries(defaults).map(([key, fallback]) => {
       const value = Object.hasOwn(stored, key) ? stored[key] : undefined;
       if (typeof fallback === "boolean") return [key, typeof value === "boolean" ? value : fallback];
-      return [key, typeof value === "number" ? clampNonNegative(value, fallback) : fallback];
+      return [
+        key,
+        typeof value === "number" && Number.isSafeInteger(value) ? clampNonNegative(value, fallback) : fallback,
+      ];
     }),
   ) as BattleSnapshot["flags"];
 }
 
 function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapshot) {
   const positiveOrDefault = (value: number, fallback: number) =>
-    Number.isFinite(value) && value > 0 ? value : fallback;
+    Number.isFinite(value) && value > 0 && value < Number.MAX_SAFE_INTEGER ? value : fallback;
   const playerMaxHealth = positiveOrDefault(state.playerMaxHealth, defaults.playerMaxHealth);
   const enemyMaxHealth = positiveOrDefault(state.enemyMaxHealth, defaults.enemyMaxHealth);
   return {
@@ -215,7 +230,10 @@ function normalizeWishChoices(state: BattleSnapshot) {
 function normalizeSurvival(state: BattleSnapshot, saved: Partial<BattleSnapshot>, defaults: BattleSnapshot) {
   const savedSurvival: { deathsDoorActive?: unknown; deathsDoorUsed?: unknown } = saved;
   // Load-path truncation (not battle Math.round): turn must stay an integer ≥1.
-  const turn = Number.isFinite(state.turn) && state.turn >= 1 ? Math.trunc(state.turn) : defaults.turn;
+  const turn =
+    Number.isFinite(state.turn) && state.turn >= 1 && state.turn < Number.MAX_SAFE_INTEGER
+      ? Math.trunc(state.turn)
+      : defaults.turn;
   const triggeredTurn = toFiniteNonNegativeInt(state.deathsDoorTriggeredTurn);
   return {
     turn,
@@ -253,8 +271,8 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
     ) as typeof defaults.uniqueGear,
     playerStatuses: normalizeNonNegativeRecord(defaults.playerStatuses, saved.playerStatuses),
     enemyStatuses: normalizeNonNegativeRecord(defaults.enemyStatuses, saved.enemyStatuses),
-    playerCC: normalizeNonNegativeRecord(defaults.playerCC, saved.playerCC),
-    enemyCC: normalizeNonNegativeRecord(defaults.enemyCC, saved.enemyCC),
+    playerCC: normalizeCcState(defaults.playerCC, saved.playerCC),
+    enemyCC: normalizeCcState(defaults.enemyCC, saved.enemyCC),
     enemyMitigation: normalizeNonNegativeRecord(defaults.enemyMitigation, saved.enemyMitigation),
     pendingTurnStartEffects: saved.pendingTurnStartEffects ?? defaults.pendingTurnStartEffects,
     pendingHandCards: saved.pendingHandCards ?? defaults.pendingHandCards,

@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import { ActiveRunDataSchema } from "@/lib/validation";
 import { createMixedPotion } from "@/lib/alchemist";
 import { cardById } from "@/lib/game-data";
+import { applyWishEffect } from "@/lib/battle/wish";
 import { defaultBattleState } from "@/lib/battle";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { createSeededRng } from "@/lib/rng";
@@ -24,6 +25,23 @@ const testMysteryEvent = {
 };
 
 describe("ActiveRunDataSchema normalize", () => {
+  it("uses the run's content system when a saved battle claims a different mode", () => {
+    const result = parseActiveRunData({
+      activity: savedActivityFixture("battle", {
+        battleState: { ...defaultBattleState(), contentSystemType: "wildwood" },
+      }),
+    });
+    const battle = savedActivityData(result, "battle")!.battleState;
+    const next = applyWishEffect(
+      { ...battle, rng: () => 0.99, talentEffects: { ...battle.talentEffects, wishGemsGold: 2 } },
+      undefined,
+      1,
+      [],
+    );
+    expect(next.pendingMaterials.gems).toBe(2);
+    expect(next.gold).toBe(battle.gold);
+  });
+
   it("preserves generated Mixed Potions in the run and every battle pile on resume", () => {
     const mixed = createMixedPotion(cardById["health-potion"]!, cardById["mana-potion"]!);
     const result = parseActiveRunData({

@@ -113,7 +113,16 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
 
   let activity = data.activity;
   if (activity.kind === "battle")
-    activity = { ...activity, data: { battleState: filterLiveBattleState(activity.data.battleState) } };
+    activity = {
+      ...activity,
+      data: {
+        battleState: filterLiveBattleState({
+          ...activity.data.battleState,
+          contentSystemType: data.contentSystemType,
+          encounterBenefits: data.contentSystemType === "labyrinth" ? activity.data.battleState.encounterBenefits : [],
+        }),
+      },
+    };
   if (activity.kind === "shop") {
     const repaired = repairShopOfferings(activity.data.cards, activity.data.purchasedSlotKeys, isRecoverableCard);
     activity = {

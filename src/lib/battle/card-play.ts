@@ -126,8 +126,15 @@ export function playBattleCardResolved(
   const payment = validateCardPlay(state, card, index, options);
   if (!payment) return { state, combatTexts };
 
+  // An Emergency Wish is a nested action; its retaliation precedes the interrupted hit's healing.
   const previousEmptyDraw = state.onEmptyDraw;
-  state = { ...state, onEmptyDraw: previousEmptyDraw ?? applyEmergencyWishForEmptyDraw };
+  state = {
+    ...state,
+    onEmptyDraw:
+      previousEmptyDraw ??
+      ((current, amount, texts) =>
+        resolvePendingBattleReactions(applyEmergencyWishForEmptyDraw(current, amount, texts), texts)),
+  };
 
   const freeMana =
     payment.effectiveCost > 0 &&
