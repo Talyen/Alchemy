@@ -1,3 +1,4 @@
+import * as boards from "./write/boards";
 import * as ending from "./write/run-end";
 import { bindDraftCapability, gameplayDraftRuntime } from "./gameplay-command";
 // Canonical gameplay write seam: commands write through these transaction operations.
@@ -175,3 +176,7 @@ export function createDraftInstanceIdSource(transaction: RunTransaction): () => 
 export function settleRunVictory(transaction: RunTransaction): void {
   ending.settleRunEnd(transactionDraft(transaction), "victory");
 }
+
+export const selectBoard = transactionOperation(boards.selectBoard);
+export const acknowledgeBoardReward = transactionOperation(boards.acknowledgeBoardReward);
+export const unlockAllBoards = transactionOperation(boards.unlockAllBoards);

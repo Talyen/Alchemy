@@ -60,6 +60,22 @@ only the run; permanent progress and future-save protection remain intact.
 A damaged Mystery offer retains its tag with null data so restore can exit that
 visit through the existing repair operation.
 
+## Game Board profile fields
+
+Board fields use safe additive defaults without a schema-version increment.
+Missing fields unlock/equip the configured starter. Loading deduplicates owned IDs,
+drops unknown catalog IDs, and repairs a locked selection to the starter while
+preserving valid ownership. None forces a null background; Random preserves a valid
+saved resolved board without making a new random pick. Last-random and pending
+reward IDs must refer to owned boards.
+
+The profile codec persists ownership, selection, resolved board, previous random
+choice, and the pending reward receipt. These are cosmetic profile fields, separate
+from combat state and its RNG. Run settlement awards ownership and the reveal
+receipt atomically; acknowledgment clears only that receipt and optionally equips
+the board. After restart, Main Menu presents an unacknowledged receipt. Clear Save
+Data resets these fields to starter defaults; Reset Options leaves them intact.
+
 ## Progression gate fields
 
 Choose the intended new-player default. Safe additive fields retain that default and valid saved values; transformations of supported progress require versioned evidence and gameplay assertions. Current authoring validation remains strict and separate from load-tolerant recovery.

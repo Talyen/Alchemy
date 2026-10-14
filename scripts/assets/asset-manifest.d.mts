@@ -3,6 +3,7 @@ export interface StaticAssetEntry {
   readonly target: string;
   readonly width: number;
   readonly quality: number;
+  readonly lossless?: boolean;
   readonly requiresTransparency?: boolean;
 }
 

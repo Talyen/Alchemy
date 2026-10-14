@@ -9,7 +9,13 @@ import type { OptionsRouteCtx } from "./route-ctx";
 
 const noop = (): void => {};
 
-function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpenGameMenu }: OptionsRouteCtx) {
+function OptionsScreenRoute({
+  onClearSaveData,
+  onUnlockAllDevMode,
+  onBack,
+  onOpenGameMenu,
+  onOpenBoards,
+}: OptionsRouteCtx) {
   const settings = useSettingsStore(
     useShallow((s) => ({
       selectedAspectRatio: s.selectedAspectRatio,
@@ -42,6 +48,7 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
       onBack={onBack ?? noop}
       onMenu={onOpenGameMenu}
       display={{
+        onOpenBoards,
         selectedAspectRatio: settings.selectedAspectRatio,
         onAspectRatioChange: actions.setSelectedAspectRatio,
         displayMode: settings.displayMode,

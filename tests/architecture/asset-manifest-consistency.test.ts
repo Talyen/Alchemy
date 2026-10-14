@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { allGameArt, essentialGameArt } from "@/lib/game-data";
+import { allGameArt, essentialGameArt, onDemandBoardArt } from "@/lib/game-data";
 import { gearArtByDefinitionId } from "@/lib/game-data/gear-art.generated";
 import { ART_PRESETS, QUALITY, WIDTH } from "../../scripts/assets/asset-constants.mjs";
 import { GEAR_SLOT_IDS } from "../../scripts/assets/gear-filenames.mjs";
@@ -23,7 +23,7 @@ describe("asset manifest consistency", () => {
     }
   });
 
-  it("keeps essentialGameArt as allGameArt minus non-slot gear assets", () => {
+  it("keeps essentialGameArt as allGameArt minus deferred gear and on-demand boards", () => {
     const gearItemSet = new Set(
       Object.entries(gearArtByDefinitionId)
         .filter(([id]) => !id.startsWith("slot-"))
@@ -35,13 +35,14 @@ describe("asset manifest consistency", () => {
         .map(([, src]) => src),
     );
     for (const src of essentialGameArt) {
+      expect(onDemandBoardArt.has(src), `${src} should decode only when displayed`).toBe(false);
       expect(gearItemSet.has(src), `${src} should not be in essentialGameArt`).toBe(false);
     }
     for (const src of slotSet) {
       expect(essentialGameArt, `${src} slot background should load with startup art`).toContain(src);
     }
     expect(essentialGameArt.length).toBeLessThan(allGameArt.length);
-    expect(essentialGameArt.length + gearItemSet.size).toBe(allGameArt.length);
+    expect(essentialGameArt.length + gearItemSet.size + onDemandBoardArt.size).toBe(allGameArt.length);
   });
 
   it("has no duplicate targets", () => {

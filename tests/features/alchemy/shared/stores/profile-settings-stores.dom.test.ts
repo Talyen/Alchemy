@@ -71,7 +71,7 @@ describe("profile store", () => {
     expect(readProfileStore(defaultGameSession)).toMatchObject({
       discoveredCardIds: ["card-a"],
       collectionTab: "bestiary",
-      collectionPages: { heroes: 0, cards: 0, bestiary: 2, trinkets: 0, uniques: 0 },
+      collectionPages: { heroes: 0, cards: 0, bestiary: 2, trinkets: 0, uniques: 0, boards: 0 },
     });
   });
 
@@ -96,6 +96,11 @@ describe("profile store", () => {
     resetProfileForTest();
     const encoded = profilePersistenceCodec.encode(defaultGameSession);
     expect(encoded).toEqual({
+      collectedBoardIds: ["acorn"],
+      boardSelection: { kind: "board", boardId: "acorn" },
+      activeBoardId: "acorn",
+      lastRandomBoardId: null,
+      pendingBoardRewardId: null,
       discoveredCardIds: [],
       encounteredEnemyIds: [],
       discoveredTrinketIds: [],

@@ -75,7 +75,7 @@ export interface CombatImpactCue {
   recoil: boolean;
 }
 
-export type CollectionTab = "heroes" | "cards" | "bestiary" | "trinkets" | "uniques";
+export type CollectionTab = "heroes" | "cards" | "bestiary" | "trinkets" | "uniques" | "boards";
 
 export interface StatusChip {
   description?: string;

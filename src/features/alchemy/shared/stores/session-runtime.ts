@@ -27,8 +27,12 @@ function bindRuntimeMethods<T extends object>(defaults: T, source?: Partial<T>):
 
 function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolean) {
   const clock = bindRuntimeMethods(nativeClock, options.runtimeInputs?.clock);
-  const { generateRunSeed, createInstanceId: instanceIdSource } = bindRuntimeMethods(
-    { generateRunSeed: generateRandomRunSeed, createInstanceId },
+  const {
+    generateRunSeed,
+    cosmeticRandom,
+    createInstanceId: instanceIdSource,
+  } = bindRuntimeMethods(
+    { generateRunSeed: generateRandomRunSeed, cosmeticRandom: () => Math.random(), createInstanceId },
     options.runtimeInputs,
   );
   const cleanups = new Set<() => void>();
@@ -64,6 +68,7 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     io,
     clock,
     generateRunSeed,
+    cosmeticRandom,
     createInstanceId: instanceIdSource,
     feedback,
     inCommand: false,

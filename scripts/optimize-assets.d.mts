@@ -3,5 +3,6 @@ export function optimizeAssets(options?: { check?: boolean }): Promise<{ ok: boo
 export function artTransformSettings(asset: {
   width: number;
   quality: number;
+  lossless?: boolean;
   requiresTransparency?: boolean;
 }): Record<string, unknown>;

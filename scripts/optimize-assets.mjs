@@ -29,11 +29,12 @@ const { outputDir, manifestPath } = resolvePipelinePaths(import.meta.url, {
 const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 const TRANSFORM_CONCURRENCY = ART_TRANSFORM_CONCURRENCY;
 
-export function artTransformSettings({ width, quality, requiresTransparency = false }) {
+export function artTransformSettings({ width, quality, lossless = false, requiresTransparency = false }) {
   return {
     width,
     quality,
     ...SHARP_DEFAULTS,
+    ...(lossless ? { lossless: true } : {}),
     ...(requiresTransparency ? { requiresTransparency: true } : {}),
   };
 }
@@ -41,7 +42,12 @@ export function artTransformSettings({ width, quality, requiresTransparency = fa
 function applyArtTransform(image, settings) {
   return image
     .resize({ width: settings.width, fit: settings.fit, withoutEnlargement: settings.withoutEnlargement })
-    .webp({ quality: settings.quality, alphaQuality: settings.alphaQuality, effort: settings.effort });
+    .webp({
+      quality: settings.quality,
+      alphaQuality: settings.alphaQuality,
+      effort: settings.effort,
+      lossless: settings.lossless ?? false,
+    });
 }
 
 async function validateTransparency(filename, label) {

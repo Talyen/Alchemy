@@ -43,6 +43,8 @@ import {
 import { useAppSettings, useSelectedAspectRatio } from "@/features/alchemy/shared/stores/settings-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
+import { BattleBoardBackground } from "@/features/alchemy/shared/ui/battle-board-background";
+import { useBoards } from "@/features/alchemy/shared/stores/use-profile-store";
 import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";
 import { setModalRoot } from "@/features/alchemy/shared/ui/modal-root";
 import { setTooltipRoot } from "@/features/alchemy/shared/ui/tooltips/tooltip-root";
@@ -57,6 +59,11 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, type Syntheti
 const OPTIONS_PREVIEW_PLASMA_PAIR = { primary: "#fbbf24", secondary: "#78350f" };
 
 type GameMenuState = ReturnType<typeof useGameMenuState>;
+
+function AppBattleBoard({ renderedScreen }: { renderedScreen: Screen }) {
+  const { activeBoardId } = useBoards();
+  return renderedScreen === "battle" ? <BattleBoardBackground boardId={activeBoardId} /> : null;
+}
 
 function AppKeywordPlasmaBackground({ renderedScreen, intensity }: { renderedScreen: Screen; intensity: number }) {
   const plasmaColorPair = useUiStore(
@@ -196,6 +203,7 @@ function AppMainContent({
             screen: renderedScreen,
             cardInspection: { canOpen: inspection.canOpen, onOpen: openCardInspection },
             routeCommands: run.routeCommands,
+            onOpenBoards: nav.openBoardsFromOptions,
             onClearSaveData: dev.clearSaveData,
             onUnlockAllDevMode: dev.unlockAllDevMode,
             gameMenuOpen: gameMenu.gameMenuOpen,
@@ -220,6 +228,7 @@ function AppMainContent({
         )}
         style={stageStyle}
       >
+        <AppBattleBoard renderedScreen={renderedScreen} />
         <AppBackgroundParticles
           renderedScreen={renderedScreen}
           backgroundParticlesIntensity={backgroundParticlesIntensity}

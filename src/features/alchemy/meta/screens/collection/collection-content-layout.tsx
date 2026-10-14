@@ -1,10 +1,16 @@
 import type { ReactNode } from "react";
 import { COLLECTION_CARD_REFERENCE_WIDTH } from "../../../shared/config";
 
-export function CollectionContentLayout({ children, pagination }: { children: ReactNode; pagination: ReactNode }) {
-  // Two portrait rows are taller than the bestiary's landscape rows. Reserve
-  // their full height on every tab, including partial pages and single-row tabs.
-  const rowsHeight = COLLECTION_CARD_REFERENCE_WIDTH * (4 / 3) * 2 + 32;
+export function CollectionContentLayout({
+  children,
+  pagination,
+  rowsHeight = COLLECTION_CARD_REFERENCE_WIDTH * (4 / 3) * 2 + 32,
+}: {
+  children: ReactNode;
+  pagination: ReactNode;
+  rowsHeight?: number;
+}) {
+  // Reserve two rows on partial pages. Boards supply their landscape row height.
 
   return (
     <div className="mt-6 flex flex-col items-center gap-4 overflow-visible">

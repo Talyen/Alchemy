@@ -12,6 +12,25 @@ Canonical owner for game rules, content-system behavior, and shared domain terms
 - [Modes, saved runs, and Labyrinth exploration](#content-systems).
 - [Terminology](./GLOSSARY.md#domain-glossary).
 
+## Game Boards
+
+Game Boards are cosmetic battle backgrounds. A victory or defeat after at least
+five completed rooms awards one random uncollected board; noncombat rooms count,
+entered but unfinished rooms do not. Voluntary abandonment awards none. Longer
+runs still award one board. A complete collection awards nothing further.
+
+`src/lib/boards/catalog.ts` owns the starter (`STARTER_BOARD_ID`, initially Acorn)
+and room threshold. Every career starts with that board unlocked and equipped.
+The explicit catalog in `src/lib/boards/catalog.json` selects available boards;
+new library files are not automatically adopted. Dev-only Unlock All grants all
+boards without changing the selection.
+
+None restores the existing battle background. Random Collected chooses on each
+new battle, avoiding the previous random board when alternatives exist; resume
+keeps the resolved board. Changing the selection applies to an active battle.
+Cosmetic randomness uses the session's separate `cosmeticRandom` seam and never
+advances gameplay RNG.
+
 ## Battle Implementation Rules
 
 Operational rules for `src/lib/battle/` that deviate from typical CCG assumptions. Term definitions: [Domain Glossary](./GLOSSARY.md#domain-glossary). Tests: `tests/lib/battle/`.

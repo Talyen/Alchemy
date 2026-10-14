@@ -1,7 +1,13 @@
 import { characters, type CharacterId, type DifficultyId } from "@/lib/game-data";
+import { STARTER_BOARD_ID, type BoardSelection } from "@/lib/boards/catalog";
 import type { CollectionTab } from "@/features/alchemy/shared/types";
 
 export interface ProfileSaveFields {
+  collectedBoardIds: string[];
+  boardSelection: BoardSelection;
+  activeBoardId: string | null;
+  lastRandomBoardId: string | null;
+  pendingBoardRewardId: string | null;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
@@ -20,6 +26,11 @@ function createEmptyCompletedDifficulties(): Record<CharacterId, DifficultyId[]>
 
 export function createDefaultProfileSaveFields(): ProfileSaveFields {
   return {
+    collectedBoardIds: [STARTER_BOARD_ID],
+    boardSelection: { kind: "board", boardId: STARTER_BOARD_ID },
+    activeBoardId: STARTER_BOARD_ID,
+    lastRandomBoardId: null,
+    pendingBoardRewardId: null,
     discoveredCardIds: [],
     encounteredEnemyIds: [],
     discoveredTrinketIds: [],
@@ -38,6 +49,6 @@ export function createInitialProfileState(): ProfileStateFields {
   return {
     ...createDefaultProfileSaveFields(),
     collectionTab: "heroes",
-    collectionPages: { heroes: 0, cards: 0, bestiary: 0, trinkets: 0, uniques: 0 },
+    collectionPages: { heroes: 0, cards: 0, bestiary: 0, trinkets: 0, uniques: 0, boards: 0 },
   };
 }

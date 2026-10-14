@@ -1,3 +1,4 @@
+import { createDefaultProfileSaveFields } from "@/features/alchemy/shared/stores/profile-store-types";
 import {
   CURRENT_CONTENT_VERSION,
   CURRENT_GAME_BUILD_VERSION,
@@ -70,6 +71,7 @@ export function saveEnvelopeFixture(overrides: Record<string, unknown> = {}) {
   // `wildcard` below is a real roster member (see GEAR_CHARACTER_IDS and the
   // CompletedDifficultiesSchema test), not dead data.
   return {
+    ...createDefaultProfileSaveFields(),
     steamAccountId: null,
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
