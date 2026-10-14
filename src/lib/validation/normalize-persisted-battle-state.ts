@@ -155,23 +155,31 @@ function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapsho
 
 function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
   const piles = ["hand", "pendingHandCards", "deck", "discard", "exhausted"] as const;
+  // Leave room for every repair and the next draw; oversized saved counters
+  // otherwise stop advancing under floating-point arithmetic.
+  const maxRetainedUid = Number.MAX_SAFE_INTEGER - piles.reduce((total, pile) => total + state[pile].length, 0) - 2;
+  const isUsableUid = (uid: number | undefined): uid is number =>
+    Number.isSafeInteger(uid) && uid! >= 0 && uid! <= maxRetainedUid;
   const counts = new Map<number, number>();
   let highestCardUid = 0;
   for (const pile of piles) {
     for (const card of state[pile]) {
-      if (Number.isSafeInteger(card.uid) && card.uid! >= 0) {
-        counts.set(card.uid!, (counts.get(card.uid!) ?? 0) + 1);
-        highestCardUid = Math.max(highestCardUid, card.uid!);
+      if (isUsableUid(card.uid)) {
+        counts.set(card.uid, (counts.get(card.uid) ?? 0) + 1);
+        highestCardUid = Math.max(highestCardUid, card.uid);
       }
     }
   }
-  let nextCardUid = Math.max(toFiniteNonNegativeInt(state.nextCardUid) ?? defaults.nextCardUid, highestCardUid + 1);
+  let nextCardUid = Math.max(
+    isUsableUid(state.nextCardUid) ? state.nextCardUid : defaults.nextCardUid,
+    highestCardUid + 1,
+  );
   const used = new Set<number>();
   const repaired = { ...state };
   for (const pile of piles) {
     repaired[pile] = state[pile].map((card) => {
-      if (Number.isSafeInteger(card.uid) && card.uid! >= 0 && !used.has(card.uid!)) {
-        used.add(card.uid!);
+      if (isUsableUid(card.uid) && !used.has(card.uid)) {
+        used.add(card.uid);
         return card;
       }
       // Undrawn cards may have no presentation identity yet; visible cards must.

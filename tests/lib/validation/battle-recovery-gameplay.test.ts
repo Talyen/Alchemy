@@ -91,4 +91,20 @@ describe("playing recovered battles", () => {
     const played = playBattleCardResolved({ ...state, rng }, "slash", 0).state;
     expect(played.enemyHealth).toBeLessThan(state.enemyHealth);
   });
+
+  it.each([1e30, Number.MAX_SAFE_INTEGER])(
+    "repairs an exhausted card ID counter %s without collisions",
+    (nextCardUid) => {
+      const state = restore({
+        hand: [cardById.slash!, cardById.block!, { ...cardById.slash!, uid: Number.MAX_SAFE_INTEGER }],
+        discard: [{ ...cardById.block!, uid: 8 }],
+        nextCardUid,
+      });
+      const ids = [...state.hand, ...state.discard].map((card) => card.uid!);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(ids.every(Number.isSafeInteger)).toBe(true);
+      expect(Number.isSafeInteger(state.nextCardUid + 1)).toBe(true);
+      expect(state.nextCardUid).toBeGreaterThan(Math.max(...ids));
+    },
+  );
 });
