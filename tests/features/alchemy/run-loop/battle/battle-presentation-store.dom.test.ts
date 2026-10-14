@@ -23,6 +23,28 @@ import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { defaultGameSession } from "@/app/application-session";
 
 describe("battle-presentation-store", () => {
+  it("settles mana effects immediately when motion is disabled without changing resources", () => {
+    const state = battlePresentation.getState();
+    state.setManaDisplay(5, 5, false);
+    state.setManaDisplay(4, 4, true);
+    expect(battlePresentation.getState().manaPresentation?.exits).toHaveLength(1);
+    state.setManaDisplay(4, 4, false);
+    expect(battlePresentation.getState().manaPresentation?.exits).toHaveLength(0);
+    expect(battlePresentation.getState().manaPresentation?.gems.every((gem) => gem.effect === null)).toBe(true);
+  });
+  it("cancels departing mana crystals on reset without clearing a newer presentation", async () => {
+    vi.useFakeTimers();
+    const state = battlePresentation.getState();
+    state.setManaDisplay(5, 5, false);
+    state.setManaDisplay(4, 4, true);
+    expect(battlePresentation.getState().manaPresentation?.exits).toHaveLength(1);
+    state.resetPresentation();
+    expect(vi.getTimerCount()).toBe(0);
+    state.setManaDisplay(8, 8, false);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(battlePresentation.getState().manaPresentation?.gems).toHaveLength(8);
+    expect(battlePresentation.getState().manaPresentation?.exits).toHaveLength(0);
+  });
   beforeEach(resetBattlePresentationAndRun);
   afterEach(() => {
     battlePresentation.getState().resetPresentation();
@@ -369,8 +391,14 @@ describe("battle-presentation-store", () => {
       { target: "player", kind: "heal", stat: "health", amount: 20 },
     ]);
     const state = battlePresentation.getState();
-    expect(state.enemyImpactCue).toMatchObject({ colors: keywordDefinitions.burn.shineColors, healthLost: true });
-    expect(state.playerImpactCue).toMatchObject({ colors: keywordDefinitions.physical.shineColors, healthLost: true });
+    expect(state.enemyImpactCue).toMatchObject({
+      colors: keywordDefinitions.burn.shineColors,
+      healthLost: true,
+    });
+    expect(state.playerImpactCue).toMatchObject({
+      colors: keywordDefinitions.physical.shineColors,
+      healthLost: true,
+    });
     await vi.advanceTimersByTimeAsync(180);
     show([{ target: "player", kind: "damage", stat: "block", amount: 3 }]);
     expect(battlePresentation.getState().playerImpactCue).toMatchObject({

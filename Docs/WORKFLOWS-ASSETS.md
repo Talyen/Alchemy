@@ -44,6 +44,13 @@ inspection, reward reveals, and battle display the full-resolution image.
 
 ## Art style and generation prompts
 
+The mana dock uses separate frame, full octagonal crystal, and empty crystal
+masters under `Interface/Mana Dock`. The frame has uninterrupted leather rather
+than baked-in sockets; its selected revision is Charcoal and Gold Stitched Leather.
+Dedicated lossless presets preserve the frame's native
+detail (up to 3840px wide, without enlargement) and 512px crystal outputs.
+Source masters remain in the Asset Library; the core manifest owns their selection.
+
 Alchemy's visual identity is anchored by its **Master Action-Anime Art Style**.
 Canonical style reference images in the repository include `Knight` (`src/assets/optimized/knight.webp`), `Wizard` (`src/assets/optimized/wizard.webp`), and `Fireball` (`src/assets/optimized/fireball.webp`), as well as approved crafting currencies `Discordant Dice` and `Ascension Seal`.
 

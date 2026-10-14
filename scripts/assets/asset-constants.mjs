@@ -57,6 +57,8 @@ export const ART_PRESETS = Object.freeze({
   difficulty: Object.freeze({ width: 720, quality: 82 }),
   difficultyPlaceholder: Object.freeze({ width: 720, quality: 60 }),
   resource: Object.freeze({ width: 256, quality: 90 }),
+  manaDock: Object.freeze({ width: 3840, quality: 100, lossless: true }),
+  manaDockCrystal: Object.freeze({ width: 512, quality: 100, lossless: true }),
   logo: Object.freeze({ width: 1200, quality: 84 }),
   crafting: Object.freeze({ width: 420, quality: 82 }),
   cursor: Object.freeze({ width: 26, quality: 90 }),
@@ -73,7 +75,11 @@ export const QUALITY = Object.freeze(
 
 export const LOUDNORM_FILTER = "loudnorm=I=-16:TP=-1.5:LRA=11";
 export const VORBIS_QUALITY = "4";
-export const MP3_FALLBACK_SETTINGS = Object.freeze({ codec: "libmp3lame", quality: "4", stripVideo: true });
+export const MP3_FALLBACK_SETTINGS = Object.freeze({
+  codec: "libmp3lame",
+  quality: "4",
+  stripVideo: true,
+});
 export const SOUND_ENTRY_OWNERS = Object.freeze({ generated: "generated", curated: "curated" });
 // Curated sounds hash a constant on purpose: tuning VORBIS_QUALITY/LOUDNORM_FILTER
 // invalidates generated outputs but never curated commits (they ship as-is).

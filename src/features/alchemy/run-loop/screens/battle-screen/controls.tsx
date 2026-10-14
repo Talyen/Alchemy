@@ -30,10 +30,9 @@ export function BattleBottomBar({
   const { drawPileRef, discardPileRef } = refs;
 
   return (
-    <section className={battleBottomBarClass}>
+    <section className={battleBottomBarClass} data-battle-bottom-bar>
       {battleState.currentEnemy.enemyType === "boss" ? <BossLyrics bossId={battleState.currentEnemy.id} /> : null}
       <div className={cn(battleBottomColumnClass, "justify-self-start")}>
-        <ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} />
         <div className="flex justify-center">
           <PilePanel
             ref={drawPileRef}
@@ -46,13 +45,16 @@ export function BattleBottomBar({
         </div>
       </div>
 
-      <BattleHand
-        presentation={presentation}
-        view={view}
-        refs={refs}
-        actions={actions}
-        playabilityState={playabilityState}
-      />
+      <div className="battle-hand-dock">
+        <BattleHand
+          presentation={presentation}
+          view={view}
+          refs={refs}
+          actions={actions}
+          playabilityState={playabilityState}
+        />
+        <ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} presentation={presentation} />
+      </div>
 
       <BattleControls
         presentation={presentation}

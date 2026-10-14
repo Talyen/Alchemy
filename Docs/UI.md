@@ -130,7 +130,7 @@ Which control to reach for: `Button` owns text/label actions (Play, Back, Confir
 
 Card and collection artwork, including gear and trinket tiles, reserves a 1px frame across available, selected, disabled, purchased, and shine states, so changing interaction state cannot resize its artwork or row or recenter the screen. The thicker hover and selection outline is an absolute overlay, preserving the thin default border. Hover-only shine uses `card-art-shine`; persistent shine uses `has-shine-border`. Armory item borders are hover-only, with keyboard focus matching hover; the active equipment slot keeps its shine as a selection marker. Both hide the frame color while preserving its space. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
 
-Battle pile artwork, the gold counter, and the main menu logo use the standard 103.5% CSS hover scale over 200ms ease-out. Pile transfer anchors remain unscaled. Individual mana crystals stay at their resting size on hover and play a brief glint masked to their artwork, preserving their independent refresh animations and dim spent appearance. Reduced motion replaces the glint sweep with a static highlight. Battle's End Turn button uses standard secondary outline styling, grounded border, and hover illumination without scaling or bloom.
+Battle pile artwork, the gold counter, and the main menu logo use the standard 103.5% CSS hover scale over 200ms ease-out. Pile transfer anchors remain unscaled. Individual mana crystals stay at their resting size on hover and play a brief glint masked to their artwork, preserving their independent refresh animations and dim spent appearance. Reduced motion keeps the crystals static. Battle's End Turn button uses standard secondary outline styling, grounded border, and hover illumination without scaling or bloom.
 
 Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
 
@@ -233,12 +233,20 @@ use raw container-height units as the primary card size. Available-space caps
 are allowed: the battle hand caps card height, compresses its fan into the
 reserved center region, and reserves extra bottom space for larger hands.
 Draw and Discard artwork use 80% of the resting hand card width, sharing its
-responsive size from the bottom bar. Mana and End Turn sit above the aligned piles,
-with End Turn styled as a compact secondary action centered over the discard pile.
-Draw and Mana occupy the bottom-left viewport corner; Discard and End Turn occupy
+responsive size from the bottom bar. Mana sits in the central hand dock, with
+End Turn styled as a compact secondary action centered over the discard pile.
+Draw occupies the bottom-left viewport corner; Discard and End Turn occupy
 the bottom-right. Both groups use a 1.125 content-rem inset from the side and bottom
 edges, and pile bottoms align. Actors retain their inset, width-limited composition;
 all battle transfer and feedback coordinates use the full viewport scene.
+The static mana frame clips a few pixels past the bottom viewport edge and conceals resting and
+raised hand-card bottoms. All crystals stay inside its stitched leather inset,
+in shallow recessed settings, centered and largest at the common three/four-crystal count. Full
+crystals retain subdued Mana blue; spent crystals are dim grayscale. The row follows
+the leather's shallow curve, with the middle gems slightly higher. Increasing counts
+gradually shrink the crystals and their effects; the row caps at nine with clear
+padding inside the stitching. Beyond nine, the final crystal carries a +N badge. Exact current and maximum Mana remain
+in accessible inspection, without a persistent numerical readout.
 The battle toolbar places live Gold before the inspection controls, with a brief
 highlight on increases. Dev-only Skip Combat uses a labeled skip-forward icon
 and tooltip immediately before Menu.

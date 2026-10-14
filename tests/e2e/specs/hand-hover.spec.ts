@@ -1,8 +1,102 @@
 import { controllerInput } from "../controller-input";
 import { expect, test } from "../../fixtures/e2e";
 import type { Page } from "@playwright/test";
-import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
+import { injectActiveBattle, makeCard, makeGoblinBattleState, withSavedGame } from "../../browser-helpers";
 import { critical, slow } from "../../playwright-tags";
+
+test("mana dock stays fixed through capacity, destruction and temporary overflow", critical, async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const cards = [
+    makeCard({
+      id: "mana-crystals",
+      uid: 101,
+      cost: 0,
+      effects: [{ kind: "gain-max-mana", amount: 10 }],
+    }),
+    makeCard({ id: "slash", uid: 102, cost: 2, effects: [{ kind: "lose-max-mana", amount: 7 }] }),
+    makeCard({
+      id: "block",
+      uid: 103,
+      cost: 0,
+      effects: [{ kind: "restore-mana", amount: 3, allowOverflow: true }],
+    }),
+  ];
+  await injectActiveBattle(page, makeGoblinBattleState({ hand: cards, mana: 5, maxMana: 5, playerHealth: 30 }), {
+    autoEndTurn: false,
+  });
+  const dock = page.getByTestId("mana-panel");
+  await expect(dock.locator("[data-mana-index]")).toHaveCount(5);
+  const frame = dock.locator(".mana-dock-frame");
+  const initial = await frame.boundingBox();
+  await dock.evaluate((element) => {
+    element.setAttribute("data-observed-animations", "");
+    element.addEventListener("animationstart", (event) => {
+      const animation = event as AnimationEvent;
+      element.setAttribute(
+        "data-observed-animations",
+        element.getAttribute("data-observed-animations") + " " + animation.animationName,
+      );
+    });
+  });
+  // Frame inspection must not activate the concealed cards beneath it.
+  await dock.locator(".mana-dock-inspect").click({ position: { x: initial!.width * 0.2, y: initial!.height * 0.5 } });
+  await expect(page.locator("[data-hand-slot]")).toHaveCount(3);
+  await page.locator("[data-hand-slot] button").first().click();
+  await expect(dock).toHaveAttribute("data-max-mana", "15");
+  await expect(dock.locator("[data-mana-index]")).toHaveCount(9);
+  await expect(dock.locator(".mana-dock-overflow")).toHaveText("+6");
+  await expect(dock).toHaveAttribute("data-observed-animations", /manaDockGain/);
+  await page.locator("[data-hand-slot] button").first().click();
+  await expect(dock).toHaveAttribute("data-max-mana", "8");
+  await expect(dock.locator("[data-mana-index]")).toHaveCount(8);
+  await expect(dock).toHaveAttribute("data-observed-animations", /manaDockShard/);
+  await page.locator("[data-hand-slot] button").first().click();
+  // Gameplay may pace restoration; the dock must faithfully display the resulting total.
+  await expect.poll(async () => Number(await dock.getAttribute("data-mana"))).toBeGreaterThan(9);
+  const restoredMana = Number(await dock.getAttribute("data-mana"));
+  await expect(dock.locator(".mana-dock-overflow")).toHaveText(`+${restoredMana - 9}`);
+  await expect(page.getByRole("button", { name: `Inspect Mana: ${restoredMana} / 8` })).toBeVisible();
+  const final = await frame.boundingBox();
+  expect(final!.x).toBeCloseTo(initial!.x, 1);
+  expect(final!.y).toBeCloseTo(initial!.y, 1);
+  expect(final!.width).toBeCloseTo(initial!.width, 1);
+  expect(final!.height).toBeCloseTo(initial!.height, 1);
+  const containment = await dock.locator("[data-mana-index]").evaluateAll((elements) => {
+    const frame = elements[0]!.closest(".mana-dock")!.querySelector(".mana-dock-frame")!.getBoundingClientRect();
+    return elements.map((el) => {
+      const r = el.getBoundingClientRect();
+      return (
+        r.left > frame.left + frame.width * 0.18 &&
+        r.right < frame.left + frame.width * 0.82 &&
+        r.top > frame.top + frame.height * 0.32 &&
+        r.bottom < frame.top + frame.height * 0.66
+      );
+    });
+  });
+  expect(containment.every(Boolean)).toBe(true);
+  await expect
+    .poll(() =>
+      dock
+        .locator("[data-mana-index]")
+        .evaluateAll((elements) =>
+          Math.min(
+            ...elements
+              .slice(1)
+              .map(
+                (element, index) =>
+                  element.getBoundingClientRect().left - elements[index]!.getBoundingClientRect().right,
+              ),
+          ),
+        ),
+    )
+    .toBeGreaterThan(5);
+  await withSavedGame(page, async (resumed) => {
+    const resumedDock = resumed.getByTestId("mana-panel");
+    await expect(resumedDock).toHaveAttribute("data-mana", String(restoredMana));
+    await expect(resumedDock.locator("[data-mana-exit]")).toHaveCount(0);
+    await expect(resumedDock.locator("[data-effect]")).toHaveCount(0);
+  });
+});
 
 test.setTimeout(60_000);
 
@@ -149,9 +243,10 @@ for (const { width, height, gameSizePercent } of [
     expect(width - discard!.x - discard!.width).toBeCloseTo(inset, 0);
     expect(height - draw!.y - draw!.height).toBeCloseTo(inset, 0);
     expect(height - discard!.y - discard!.height).toBeCloseTo(inset, 0);
-    expect(mana!.x + mana!.width / 2).toBeCloseTo(draw!.x + draw!.width / 2, 0);
+    expect(mana!.x + mana!.width / 2).toBeCloseTo(width / 2, 0);
     expect(endTurn!.x + endTurn!.width / 2).toBeCloseTo(discard!.x + discard!.width / 2, 0);
-    expect(mana!.y + mana!.height).toBeLessThan(draw!.y);
+    expect(mana!.y + mana!.height).toBeGreaterThan(height);
+    expect(mana!.y + mana!.height - height).toBeLessThanOrEqual(5);
     expect(endTurn!.y + endTurn!.height).toBeLessThan(discard!.y);
     const hand = await page.getByTestId("battle-hand").boundingBox();
     expect(hand!.x + hand!.width / 2).toBeCloseTo(width / 2, 0);
@@ -165,7 +260,7 @@ for (const { width, height, gameSizePercent } of [
           return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
         }),
       );
-      const left = await page.getByTestId("mana-panel").locator("..").boundingBox();
+      const left = await page.getByTestId("draw-pile").locator("../..").boundingBox();
       const right = await page.getByTestId("discard-pile").locator("../..").boundingBox();
       for (const rect of bounds) {
         expect(rect.left).toBeGreaterThan(left!.x + left!.width);

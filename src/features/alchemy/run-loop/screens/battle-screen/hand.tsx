@@ -190,7 +190,10 @@ export function BattleHand({
       event.detail === 0
     ) {
       const keys = battleState.hand.map(getHandCardKey);
-      recovery.current = { played: key, order: [...keys.slice(index + 1), ...keys.slice(0, index).reverse()] };
+      recovery.current = {
+        played: key,
+        order: [...keys.slice(index + 1), ...keys.slice(0, index).reverse()],
+      };
     }
     keyboardActivation.current = false;
     onCardClick(card, index, event);
@@ -226,7 +229,9 @@ export function BattleHand({
     );
     const target = key
       ? handCardRefs.current[key]
-      : pointer.ref.current?.parentElement?.querySelector<HTMLButtonElement>("[data-battle-end-turn]");
+      : pointer.ref.current
+          ?.closest("[data-battle-bottom-bar]")
+          ?.querySelector<HTMLButtonElement>("[data-battle-end-turn]");
     if (focusControl(target)) recovery.current = null;
   }, [
     battleState.hand,
@@ -245,9 +250,9 @@ export function BattleHand({
         keyboardActivation.current = !event.repeat && (event.key === "Enter" || event.key === " ");
       }}
       data-testid="battle-hand"
-      className={battleHandContainerClass}
+      className={cn(battleHandContainerClass, "mana-hand")}
       style={{
-        paddingBottom: `calc(${12 + Math.max(0, battleState.hand.length - 4) * 12}px * var(--content-scale, 1))`,
+        paddingBottom: `calc(6% + ${12 + Math.max(0, battleState.hand.length - 4) * 12}px * var(--content-scale, 1))`,
       }}
     >
       {battleState.hand.map((card, index) => {

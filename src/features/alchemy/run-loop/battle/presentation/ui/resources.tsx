@@ -1,4 +1,4 @@
-import { battleManaCrystal, pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/game-data-catalog";
+import { pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { DISCARD_PILE_TOP_CARD_BOUNDS } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
@@ -9,7 +9,7 @@ import {
   pileCardWidthClass,
 } from "../../../../shared/config/index";
 import { Surface } from "../../../../shared/ui/surface";
-import { useChangeToken } from "../../../../shared/ui/use-change-token";
+export { ManaPanel } from "./mana-dock";
 
 export function PilePanel({
   label,
@@ -72,57 +72,5 @@ export function PilePanel({
         </div>
       </Surface>
     </div>
-  );
-}
-
-export function ManaPanel({ mana, maxMana }: { mana: number; maxMana: number }) {
-  const displayCount = Math.max(mana, maxMana);
-
-  return (
-    <div
-      className={cn("flex h-16 items-center justify-center", cardHoverScaleClass)}
-      data-testid="mana-panel"
-      data-mana={mana}
-    >
-      <div
-        className="mana-row relative flex items-center justify-center gap-1.5"
-        role="img"
-        aria-label={`Mana: ${mana} / ${maxMana}`}
-      >
-        {Array.from({ length: displayCount }).map((_, index) => {
-          const isFilled = index < mana;
-          const isOverflow = index >= maxMana;
-          return (
-            <span key={`mana-${index}`} className="mana-gem relative inline-flex">
-              <ManaCrystal filled={isFilled} overflow={isOverflow} />
-              <span
-                aria-hidden="true"
-                className={cn("mana-gem-glint", !isFilled && "opacity-20")}
-                style={{ maskImage: `url(${battleManaCrystal})` }}
-              />
-            </span>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function ManaCrystal({ filled, overflow }: { filled: boolean; overflow: boolean }) {
-  const token = useChangeToken(Number(filled));
-  return (
-    <img
-      key={token}
-      src={battleManaCrystal}
-      alt=""
-      draggable={false}
-      className={cn(
-        "h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))] object-contain select-none",
-        filled && "mana-gem-active",
-        token > 0 && !filled && "mana-gem-spent",
-        filled && overflow && "brightness-125 drop-shadow-mana-overflow-glow",
-        !filled && "opacity-20",
-      )}
-    />
   );
 }

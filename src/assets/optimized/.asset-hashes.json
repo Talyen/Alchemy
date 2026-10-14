@@ -1709,6 +1709,21 @@
     "outputHash": "bf1fc0a45c91bd8feee3a26ff3190da3",
     "selectionHash": "14e2076232f6418c5b08dfaf827d669b08349859c9b078c8ef6e1f53623fb984"
   },
+  "mana-dock-empty.webp": {
+    "hash": "24529481be0daea2d6eda39afa748805",
+    "outputHash": "8e9882cc59591e55ebbe4c095201e733",
+    "selectionHash": "ccd6d6f0b5bae733c9bc6ca28e42ccadd110584edbd5ab6cc01bc6a6250cddd6"
+  },
+  "mana-dock-frame.webp": {
+    "hash": "1a7b696f050009d97a7547cafe7f44c2",
+    "outputHash": "37d37b627fc74789569f61df0fec30f1",
+    "selectionHash": "ac3d98f8e52d26f70ffad447524745686e193965f24ac928dcee8c3450252391"
+  },
+  "mana-dock-full.webp": {
+    "hash": "f9297d87f4de7423f55cc08be3044866",
+    "outputHash": "b58b5b50814d7404d8b4b8428f02867b",
+    "selectionHash": "91a4c5f96c9b713e89726e5ab9b53a7d1d162d5d1eb5197ee8460efdb9e407cf"
+  },
   "mana-moth-companion.webp": {
     "hash": "e784b64236e0d6fbbc635f068bfd553b",
     "outputHash": "eb248fc13d6e42cfadc4b24819c34b3f",

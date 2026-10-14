@@ -58,9 +58,13 @@ attempts share a 260ms feedback window. Playback locks, hidden transfer
 cards, and stale clicks remain silent. Automatic play does not trigger rejection
 feedback. Existing unavailable appearance and inspection remain available.
 
-Mana spending dims and slightly settles only the affected crystals. Newly filled
-crystals brighten and settle together; unchanged crystals retain their artwork
-and animation state. Resource feedback never gates accepted gameplay.
+Mana spending dims only the affected crystals; restoration brightens them with
+a brief glint. Capacity gain introduces a gem; capacity loss removes
+it with a small shard burst. Temporary bonus Mana disappearing only fades, rather
+than shattering a capacity crystal. Unchanged gems retain their animation identity.
+The frame stays still, and all effects follow displayed battle frames without
+gating accepted gameplay. Initial mount and resume settle without effect replay;
+reduced motion settles immediately, and presentation reset cancels pending exits.
 
 ## Boss lyrics
 
