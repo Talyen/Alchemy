@@ -4,14 +4,15 @@ import { useStore } from "zustand";
 import type { BattlePresentationStore } from "../battle-presentation-store";
 
 import type { CardGhost, GhostStyle } from "../../../shared/types";
+import { BattleSceneArtwork } from "../../../shared/ui/battle-scene-artwork";
 
 const CardGhostOverlay = memo(function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: () => void }) {
   return (
-    <img
-      src={ghost.art}
-      alt=""
+    <div
       data-variant={ghost.variant}
-      className={cn("card-ghost-overlay pointer-events-none absolute z-[80] rounded-shell-hero bg-black object-cover")}
+      className={cn(
+        "card-ghost-overlay battle-scene-piece pointer-events-none absolute z-[80] rounded-shell-hero bg-black",
+      )}
       onAnimationEnd={onDone}
       style={
         {
@@ -26,7 +27,11 @@ const CardGhostOverlay = memo(function CardGhostOverlay({ ghost, onDone }: { gho
           "--ghost-scale": ghost.travel ? `${ghost.travel.scale}` : undefined,
         } as GhostStyle
       }
-    />
+    >
+      <BattleSceneArtwork className="h-full w-full">
+        <img src={ghost.art} alt="" className="block h-full w-full object-cover" />
+      </BattleSceneArtwork>
+    </div>
   );
 });
 

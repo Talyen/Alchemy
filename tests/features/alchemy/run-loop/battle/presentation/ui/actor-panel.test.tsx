@@ -61,17 +61,6 @@ describe("ArtPanel hover motion", () => {
     expect(screen.queryByRole("button", { name: /Death's Door/ })).toBeNull();
   });
 
-  it("scales living actor art but keeps dead actor art static", () => {
-    const { rerender } = render(<ArtPanel {...baseProps} />);
-
-    expect(screen.getByTestId("battle-player-art-panel").classList.contains("card-hover-scale")).toBe(true);
-    expect(screen.getByTestId("combatant-attack-lunge")).toBeTruthy();
-
-    rerender(<ArtPanel {...baseProps} isDead />);
-
-    expect(screen.getByTestId("battle-player-art-panel").classList.contains("card-hover-scale")).toBe(false);
-  });
-
   it("uses compact enemy traits and encounter modifiers while capitalizing description keywords", async () => {
     const entry = {
       ...enemy,

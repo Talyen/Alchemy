@@ -1,0 +1,79 @@
+.battle-scene-artwork {
+  border-radius: inherit;
+}
+
+.battle-scene-artwork > img {
+  border-radius: inherit;
+}
+
+.battle-tabletop .battle-scene-artwork {
+  isolation: isolate;
+}
+
+.battle-tabletop .battle-scene-artwork::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--battle-scene-tint, transparent);
+  opacity: var(--battle-scene-tint-opacity, 0);
+  mix-blend-mode: color;
+  mask-image: var(--battle-art-mask, none);
+  mask-size: var(--battle-art-mask-fit, contain);
+  mask-position: center;
+  mask-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.battle-tabletop {
+  --battle-shadow-unit: calc(1px * var(--content-scale, 1));
+  --battle-contact-shadow: rgb(8 10 14 / var(--battle-scene-shadow-opacity, 0.3));
+  --battle-cast-shadow: rgb(8 10 14 / calc(var(--battle-scene-shadow-opacity, 0.3) * 0.75));
+}
+
+.battle-tabletop .battle-scene-piece {
+  box-shadow:
+    calc(1 * var(--battle-shadow-unit)) calc(3 * var(--battle-shadow-unit)) calc(4 * var(--battle-shadow-unit))
+      var(--battle-contact-shadow),
+    calc(4 * var(--battle-shadow-unit)) calc(10 * var(--battle-shadow-unit)) calc(14 * var(--battle-shadow-unit))
+      var(--battle-cast-shadow);
+}
+
+/* Crossfade a prepared elevated shadow instead of animating blur on every hover frame. */
+.battle-tabletop .battle-scene-hand-piece::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    calc(4 * var(--battle-shadow-unit)) calc(14 * var(--battle-shadow-unit)) calc(18 * var(--battle-shadow-unit))
+      var(--battle-contact-shadow),
+    calc(8 * var(--battle-shadow-unit)) calc(24 * var(--battle-shadow-unit)) calc(28 * var(--battle-shadow-unit))
+      var(--battle-cast-shadow);
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+  pointer-events: none;
+}
+
+.battle-tabletop .battle-scene-hand-raised::before,
+.battle-tabletop .battle-scene-hand-piece:focus-visible::before {
+  opacity: 1;
+}
+
+/* Filter only the artwork assembly, never its labels, glints, or interaction overlays. */
+.battle-tabletop .battle-scene-silhouette {
+  filter: drop-shadow(
+      calc(1 * var(--battle-shadow-unit)) calc(3 * var(--battle-shadow-unit)) calc(2 * var(--battle-shadow-unit))
+        var(--battle-contact-shadow)
+    )
+    drop-shadow(
+      calc(4 * var(--battle-shadow-unit)) calc(9 * var(--battle-shadow-unit)) calc(7 * var(--battle-shadow-unit))
+        var(--battle-cast-shadow)
+    );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-tabletop .battle-scene-hand-piece::before {
+    transition: none;
+  }
+}

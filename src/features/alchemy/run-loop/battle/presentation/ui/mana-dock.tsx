@@ -6,6 +6,7 @@ import type { BattlePresentationStore } from "../../battle-presentation-store";
 import { MANA_DOCK_VISIBLE_COUNT, projectMana, type ManaGemExit } from "../../mana-presentation";
 import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
 import { PortaledTooltip } from "../../../../shared/ui/tooltips/portaled-tooltip";
+import { BattleSceneArtwork } from "../../../../shared/ui/battle-scene-artwork";
 
 const SHARD_SHAPES = [
   "polygon(0 0, 50% 0, 50% 50%)",
@@ -84,7 +85,9 @@ export function ManaPanel({
       onFocusCapture={onFocusCapture}
       onBlurCapture={onBlurCapture}
     >
-      <img src={manaDockFrame} alt="" draggable={false} className="mana-dock-frame" />
+      <BattleSceneArtwork className="mana-dock-frame battle-scene-silhouette" maskSource={manaDockFrame}>
+        <img src={manaDockFrame} alt="" draggable={false} className="block h-full w-full" />
+      </BattleSceneArtwork>
       <button
         type="button"
         className="mana-dock-inspect"
@@ -104,8 +107,12 @@ export function ManaPanel({
         >
           <span key={`effect-${gem.token}`} className="mana-dock-gem-motion">
             <span className="mana-dock-socket" />
-            <img src={manaDockEmpty} alt="" draggable={false} className="mana-dock-empty" />
-            <img src={manaDockFull} alt="" draggable={false} className="mana-dock-full" />
+            <BattleSceneArtwork className="mana-dock-empty" maskSource={manaDockEmpty}>
+              <img src={manaDockEmpty} alt="" draggable={false} className="block h-full w-full object-contain" />
+            </BattleSceneArtwork>
+            <BattleSceneArtwork className="mana-dock-full" maskSource={manaDockFull}>
+              <img src={manaDockFull} alt="" draggable={false} className="block h-full w-full object-contain" />
+            </BattleSceneArtwork>
             <span className="mana-dock-glow" />
             <span className="mana-dock-glint" style={{ maskImage: `url(${manaDockFull})` }} />
           </span>

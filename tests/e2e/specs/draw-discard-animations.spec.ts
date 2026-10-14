@@ -2,6 +2,8 @@ import { expect, test } from "../../fixtures/e2e";
 import { makeCard, startBattleWithDeck } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { slow } from "../../playwright-tags";
+import { injectActiveBattle } from "../save-injection";
+import { makeGoblinBattleState } from "../../fixtures/battle-state";
 
 async function waitForOpeningDeal(page: import("@playwright/test").Page) {
   await expect
@@ -16,6 +18,62 @@ async function waitForOpeningDeal(page: import("@playwright/test").Page) {
 }
 
 test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
+  test("cards retain scene lighting through transfers without tinting inspection", async ({ page }) => {
+    const deck = Array.from({ length: 10 }, (_, index) => makeCard({ uid: index + 1 }));
+    await injectActiveBattle(page, makeGoblinBattleState({ hand: deck.slice(0, 4), deck: deck.slice(4) }), {
+      runDeck: deck,
+      autoEndTurn: false,
+    });
+    const hand = page.locator("[data-hand-slot] button").first();
+    await expect(hand).toBeVisible();
+    await expect
+      .poll(() =>
+        hand.locator(".battle-scene-artwork").evaluate((art) => Number(getComputedStyle(art, "::after").opacity)),
+      )
+      .toBeGreaterThan(0);
+    const resting = await hand.evaluate((card) => ({
+      shadow: getComputedStyle(card).boxShadow,
+      tint: getComputedStyle(card.querySelector(".battle-scene-artwork")!, "::after").backgroundColor,
+      opacity: getComputedStyle(card.querySelector(".battle-scene-artwork")!, "::after").opacity,
+    }));
+    expect(resting.shadow).not.toBe("none");
+    const transfers = page.evaluate(async () => {
+      const seen = new Map<string, Array<{ shadow: string; tint: string; opacity: string }>>();
+      let began = false;
+      await new Promise<void>((resolve) => {
+        const frame = () => {
+          const cards = document.querySelectorAll("[data-flying-card]");
+          for (const card of cards) {
+            began = true;
+            const kind = card.getAttribute("data-transfer-kind")!;
+            seen.set(
+              kind,
+              [...card.children].map((face) => ({
+                shadow: getComputedStyle(face).boxShadow,
+                tint: getComputedStyle(face.querySelector(".battle-scene-artwork")!, "::after").backgroundColor,
+                opacity: getComputedStyle(face.querySelector(".battle-scene-artwork")!, "::after").opacity,
+              })),
+            );
+          }
+          if (began && !cards.length && seen.has("draw")) resolve();
+          else requestAnimationFrame(frame);
+        };
+        requestAnimationFrame(frame);
+      });
+      return Object.fromEntries(seen);
+    });
+    await new BattlePage(page).endTurn();
+    const seen = await transfers;
+    expect(Object.keys(seen).sort()).toEqual(["discard", "draw"]);
+    for (const faces of Object.values(seen)) {
+      expect(faces).toEqual([resting, resting]);
+    }
+    await page.getByTestId("draw-pile").getByRole("button").click();
+    const inspection = page.getByRole("dialog");
+    await expect(inspection).toBeVisible();
+    await expect(inspection.locator(".battle-scene-artwork, .battle-scene-piece")).toHaveCount(0);
+  });
+
   test("battle mounts with an empty hand and deals the opening four", async ({ page }) => {
     test.setTimeout(60_000);
 
@@ -87,22 +145,35 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     const drawStarts = () =>
       page.evaluate(() => performance.getEntriesByName("alchemy:battle:draw-start", "mark").length);
     const before = await drawStarts();
-    await page.evaluate((openingDrawCount) => {
-      const testWindow = window as Window & { consecutivePlayAttempt?: { drawStarts: number; drawEnds: number } };
-      const observer = new MutationObserver(() => {
-        const drawStarts = performance.getEntriesByName("alchemy:battle:draw-start", "mark").length;
-        const drawEnds = performance.getEntriesByName("alchemy:battle:draw-end", "mark").length;
-        if (drawStarts !== openingDrawCount + 1 || drawEnds !== openingDrawCount) return;
-        const card = document.querySelector<HTMLButtonElement>(
-          '[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "][aria-disabled="false"]',
-        );
-        if (!card) return;
-        observer.disconnect();
-        testWindow.consecutivePlayAttempt = { drawStarts, drawEnds };
-        card.click();
-      });
-      observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-    }, before);
+    const playedKey = await visibleCards
+      .first()
+      .evaluate((card) => card.closest("[data-hand-slot]")!.getAttribute("data-hand-slot"));
+    await page.evaluate(
+      ({ openingDrawCount, playedKey }) => {
+        const testWindow = window as Window & { consecutivePlayAttempt?: { drawStarts: number; drawEnds: number } };
+        const observer = new MutationObserver(() => {
+          const drawStarts = performance.getEntriesByName("alchemy:battle:draw-start", "mark").length;
+          const drawEnds = performance.getEntriesByName("alchemy:battle:draw-end", "mark").length;
+          if (drawStarts !== openingDrawCount + 1 || drawEnds !== openingDrawCount) return;
+          // Artwork can mutate before React replaces the played hand; never click its stale button again.
+          if (
+            [...document.querySelectorAll("[data-hand-slot]")].some(
+              (slot) => slot.getAttribute("data-hand-slot") === playedKey,
+            )
+          )
+            return;
+          const card = document.querySelector<HTMLButtonElement>(
+            '[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "][aria-disabled="false"]',
+          );
+          if (!card) return;
+          observer.disconnect();
+          testWindow.consecutivePlayAttempt = { drawStarts, drawEnds };
+          card.click();
+        });
+        observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+      },
+      { openingDrawCount: before, playedKey },
+    );
     const firstSlot = await page.locator("[data-hand-slot]:not([data-hand-hidden])").first().boundingBox();
     if (!firstSlot) throw new Error("Playable card has no hand slot");
     await page.mouse.click(firstSlot.x + firstSlot.width / 2, firstSlot.y + firstSlot.height / 2);

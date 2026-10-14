@@ -1,5 +1,28 @@
 # Battle UI
 
+## Shared tabletop appearance
+
+Battle artwork shares one automatic scene treatment. The stage samples the selected
+board thumbnail's central playing area once and caches the result by artwork URL.
+Extreme pixels are rejected, luminance outliers are trimmed, and the resulting tint
+has limited saturation and at most 6% opacity. Loading, missing boards, and sampling
+failures use neutral grounding; late samples cannot repaint a different board.
+No board, combatant, or card needs authored lighting metadata.
+
+Framed portraits and cards use consistent contact and cast shadows. Transparent
+pile and Mana artwork use silhouette shadows. Raised hand cards crossfade an
+additional elevated shadow; card transfers, backs, play ghosts, Companions, and
+death slices retain the same treatment. Shadow sizes follow content scaling.
+The fixed tabletop clips overflow without becoming a scroll container, so focusing
+partially concealed controls cannot shift the scene.
+
+`BattleSceneArtwork` contains artwork-only tint, isolated from frames, labels,
+Health, status icons, focus, keyword shine, and tooltips. Effects are scoped to
+the Battle tabletop so shared cards and inspection overlays retain their normal
+appearance elsewhere. Keep shadow filters on separate artwork wrappers so existing
+damage, crowd-control, hover, and Mana filters continue to compose. There are no
+continuous lighting updates, inferred light directions, extra glows, or asset variants.
+
 Shared conventions: [UI](./UI.md).
 
 ## Battle feedback

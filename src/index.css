@@ -2,4 +2,5 @@
 @import "./styles/theme.css";
 @import "./styles/base.css";
 @import "./styles/components.css";
+@import "./styles/battle-scene.css";
 @import "./styles/keyframes.css";

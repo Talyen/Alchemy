@@ -44,6 +44,8 @@ import { useAppSettings } from "@/features/alchemy/shared/stores/settings-store"
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
 import { BattleBoardBackground } from "@/features/alchemy/shared/ui/battle-board-background";
+import { useBattleSceneAppearance } from "@/features/alchemy/shared/ui/use-battle-scene-appearance";
+import { boardArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { useBoards } from "@/features/alchemy/shared/stores/use-profile-store";
 import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";
 import { setModalRoot } from "@/features/alchemy/shared/ui/modal-root";
@@ -59,11 +61,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, type Syntheti
 const OPTIONS_PREVIEW_PLASMA_PAIR = { primary: "#fbbf24", secondary: "#78350f" };
 
 type GameMenuState = ReturnType<typeof useGameMenuState>;
-
-function AppBattleBoard({ renderedScreen }: { renderedScreen: Screen }) {
-  const { activeBoardId } = useBoards();
-  return renderedScreen === "battle" ? <BattleBoardBackground boardId={activeBoardId} /> : null;
-}
 
 function AppKeywordPlasmaBackground({ renderedScreen, intensity }: { renderedScreen: Screen; intensity: number }) {
   const plasmaColorPair = useUiStore(
@@ -126,6 +123,10 @@ function AppMainContent({
   );
 
   const showBattleCluster = renderedScreen === "battle";
+  const { activeBoardId } = useBoards();
+  const sceneAppearance = useBattleSceneAppearance(
+    showBattleCluster && activeBoardId ? boardArt[activeBoardId]?.thumbnail : undefined,
+  );
   const { isAutoplayEnabled, toggleAutoplayEnabled, boonInspectOpen, toggleBoonInspect, closeBoonInspect } =
     run.routeCommands.battle;
   const runBoons = useActiveRunBoons();
@@ -227,9 +228,16 @@ function AppMainContent({
           "[container-type:size] absolute top-0 left-0 overflow-hidden bg-background",
           tooltipBlocked && "tooltips-disabled",
         )}
-        style={stageStyle}
+        style={
+          {
+            ...stageStyle,
+            "--battle-scene-tint": `rgb(${sceneAppearance.ambientColor.join(" ")})`,
+            "--battle-scene-tint-opacity": sceneAppearance.ambientOpacity,
+            "--battle-scene-shadow-opacity": sceneAppearance.shadowOpacity,
+          } as React.CSSProperties
+        }
       >
-        <AppBattleBoard renderedScreen={renderedScreen} />
+        {showBattleCluster ? <BattleBoardBackground boardId={activeBoardId} /> : null}
         <AppBackgroundParticles
           renderedScreen={renderedScreen}
           backgroundParticlesIntensity={backgroundParticlesIntensity}

@@ -19,6 +19,7 @@ import {
 import type { CombatImpactCue, StatusChip } from "../../../../shared/types";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 import { Surface } from "../../../../shared/ui/surface";
+import { BattleSceneArtwork } from "../../../../shared/ui/battle-scene-artwork";
 import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
 import { usePlasmaInteraction } from "../../../../shared/ui/use-plasma-source";
 import { PortraitImpactVfx } from "./portrait-hurt-vfx";
@@ -278,6 +279,7 @@ function ActorArtFrame({
           clipContents={false}
           className={cn(
             "combatant-art relative",
+            !isDead && "battle-scene-piece",
             cardSurfaceClass,
             !isDead && cardHoverScaleClass,
             turnActive && !isDead && "combatant-turn-active",
@@ -306,12 +308,14 @@ function ActorArtFrame({
               imageClassName={side === "enemy" ? landscapeArtImageClass : cardArtImageClass}
             />
           ) : (
-            <img
-              src={art}
-              alt={title}
-              className={cn("block w-full", side === "enemy" ? landscapeArtImageClass : cardArtImageClass)}
-              loading="eager"
-            />
+            <BattleSceneArtwork>
+              <img
+                src={art}
+                alt={title}
+                className={cn("block w-full", side === "enemy" ? landscapeArtImageClass : cardArtImageClass)}
+                loading="eager"
+              />
+            </BattleSceneArtwork>
           )}
           <PortraitImpactVfx pulse={pulse} showHealthFlash={!isDead && pulse?.healthLost === true} />
         </Surface>

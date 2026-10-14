@@ -7,6 +7,7 @@ import { computeSliceVisual } from "@/lib/animation/slice-timeline";
 import { playSliceDeath } from "@/lib/audio";
 import { SLICE_DEATH_DURATION_MS } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
+import { BattleSceneArtwork } from "../../../../shared/ui/battle-scene-artwork";
 
 const SLICE_HALF_FRAME_CLASS = "border border-border/80";
 
@@ -17,7 +18,7 @@ interface SliceDeathProps {
 }
 
 function applyHalfTransform(
-  el: HTMLImageElement,
+  el: HTMLElement,
   offsetX: number,
   offsetY: number,
   twistDeg: number,
@@ -29,8 +30,8 @@ function applyHalfTransform(
 
 export function SliceDeath({ imageUrl, alt, imageClassName }: SliceDeathProps) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const leftRef = useRef<HTMLImageElement>(null);
-  const rightRef = useRef<HTMLImageElement>(null);
+  const leftRef = useRef<HTMLDivElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [complete, setComplete] = useState(shouldReduceMotion);
 
@@ -105,22 +106,34 @@ export function SliceDeath({ imageUrl, alt, imageClassName }: SliceDeathProps) {
 
   return (
     <div ref={rootRef} className="relative w-full overflow-visible">
-      <img
-        ref={leftRef}
-        src={imageUrl}
-        alt={alt}
-        className={cn("block w-full", SLICE_HALF_FRAME_CLASS, imageClassName)}
-        style={{ clipPath: SLICE_PRIMARY_CLIP_PATH, transformOrigin: "center center" }}
-        loading="eager"
-      />
-      <img
+      <div ref={leftRef} className="battle-scene-silhouette w-full" style={{ transformOrigin: "center center" }}>
+        <div className="rounded-shell-hero" style={{ clipPath: SLICE_PRIMARY_CLIP_PATH }}>
+          <BattleSceneArtwork>
+            <img
+              src={imageUrl}
+              alt={alt}
+              className={cn("block w-full", SLICE_HALF_FRAME_CLASS, imageClassName)}
+              loading="eager"
+            />
+          </BattleSceneArtwork>
+        </div>
+      </div>
+      <div
         ref={rightRef}
-        src={imageUrl}
-        alt=""
-        className={cn("absolute inset-0 block w-full", SLICE_HALF_FRAME_CLASS, imageClassName)}
-        style={{ clipPath: SLICE_SECONDARY_CLIP_PATH, transformOrigin: "center center" }}
-        loading="eager"
-      />
+        className="battle-scene-silhouette absolute inset-0 w-full"
+        style={{ transformOrigin: "center center" }}
+      >
+        <div className="rounded-shell-hero" style={{ clipPath: SLICE_SECONDARY_CLIP_PATH }}>
+          <BattleSceneArtwork>
+            <img
+              src={imageUrl}
+              alt=""
+              className={cn("block w-full", SLICE_HALF_FRAME_CLASS, imageClassName)}
+              loading="eager"
+            />
+          </BattleSceneArtwork>
+        </div>
+      </div>
       <canvas ref={canvasRef} className="pointer-events-none absolute -top-1/2 -left-1/2 z-10 h-[200%] w-[200%]" />
     </div>
   );

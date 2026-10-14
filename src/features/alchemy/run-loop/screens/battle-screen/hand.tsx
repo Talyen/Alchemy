@@ -113,6 +113,7 @@ const HandCardItem = memo(function HandCardItem({
       <div className="flex shrink-0 justify-center">
         <CombatantStatusEffectPresentation keyword={ccKeyword}>
           <BattleCardButton
+            scenePiece
             card={card}
             hovered={visualHovered}
             suppressTooltip={isPreview && !isHovered}

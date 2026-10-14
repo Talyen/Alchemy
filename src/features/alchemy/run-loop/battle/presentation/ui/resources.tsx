@@ -9,6 +9,7 @@ import {
   pileCardWidthClass,
 } from "../../../../shared/config/index";
 import { Surface } from "../../../../shared/ui/surface";
+import { BattleSceneArtwork } from "../../../../shared/ui/battle-scene-artwork";
 export { ManaPanel } from "./mana-dock";
 
 export function PilePanel({
@@ -55,7 +56,9 @@ export function PilePanel({
         }}
       >
         <div className="relative w-full">
-          <img src={art} alt="" className={cn("block w-full", cardArtImageClass)} />
+          <BattleSceneArtwork className="battle-scene-silhouette" maskSource={art} maskFit="cover">
+            <img src={art} alt="" className={cn("block w-full", cardArtImageClass)} />
+          </BattleSceneArtwork>
           {type === "discard" ? (
             <span
               data-pile-top-card

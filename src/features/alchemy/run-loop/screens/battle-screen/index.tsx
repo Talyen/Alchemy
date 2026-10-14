@@ -105,7 +105,7 @@ export function BattleScreen(props: BattleScreenProps) {
   const inspectUiOpen = boonInspectOpen && hasInspectableBoons(runBoons) && !battleState.wishOptions;
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div className="battle-tabletop relative h-full w-full overflow-clip">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {backgroundParticlesIntensity > 0 ? (
           <BackgroundParticles
