@@ -37,6 +37,49 @@ function normalizeGearEffects(saved: Partial<GearEffectManifest> | undefined): G
   return result;
 }
 
+function normalizeTrinketEffects(
+  defaults: BattleSnapshot["trinketEffects"],
+  saved: Partial<BattleSnapshot["trinketEffects"]> | undefined,
+): BattleSnapshot["trinketEffects"] {
+  return Object.fromEntries(
+    Object.entries(defaults).map(([key, fallback]) => {
+      const value = saved?.[key as keyof typeof defaults];
+      return [
+        key,
+        typeof fallback === "boolean"
+          ? typeof value === "boolean"
+            ? value
+            : fallback
+          : typeof value === "number"
+            ? clampNonNegative(value, fallback)
+            : fallback,
+      ];
+    }),
+  ) as BattleSnapshot["trinketEffects"];
+}
+
+function normalizeMagnitudeDictionary(saved: unknown): Record<string, number> {
+  if (!saved || typeof saved !== "object" || Array.isArray(saved)) return {};
+  return Object.fromEntries(
+    Object.entries(saved).filter(
+      ([, value]) => typeof value === "number" && value >= 0 && value < Number.MAX_SAFE_INTEGER,
+    ),
+  );
+}
+
+function isHealthThresholdReward(value: unknown): value is { threshold: number; amount: number } {
+  if (!value || typeof value !== "object") return false;
+  const reward = value as Record<string, unknown>;
+  return (
+    typeof reward.threshold === "number" &&
+    reward.threshold > 0 &&
+    reward.threshold <= 100 &&
+    typeof reward.amount === "number" &&
+    reward.amount > 0 &&
+    reward.amount < Number.MAX_SAFE_INTEGER
+  );
+}
+
 function normalizeTalentEffects(
   defaults: TalentEffectManifest,
   saved: Partial<TalentEffectManifest> | undefined,
@@ -45,13 +88,22 @@ function normalizeTalentEffects(
     Object.entries(saved ?? {}).filter(([key, value]) => {
       if (!Object.hasOwn(defaults, key)) return false;
       const fallback = defaults[key as keyof TalentEffectManifest];
-      if (typeof fallback === "number") return typeof value === "number" && Number.isFinite(value);
+      if (typeof fallback === "number")
+        return typeof value === "number" && value >= 0 && value < Number.MAX_SAFE_INTEGER;
       if (typeof fallback === "boolean") return typeof value === "boolean";
       return true;
     }),
   ) as Partial<TalentEffectManifest>;
   const merged = { ...defaults, ...knownSaved };
-  if (!Array.isArray(merged.healthThresholdArmor)) merged.healthThresholdArmor = [];
+  merged.cardHealBonus = normalizeMagnitudeDictionary(merged.cardHealBonus);
+  merged.cardHealMultipliers = normalizeMagnitudeDictionary(merged.cardHealMultipliers);
+  merged.companionBondLevels = normalizeNonNegativeRecord(defaults.companionBondLevels, merged.companionBondLevels);
+  merged.healthThresholdArmor = Array.isArray(merged.healthThresholdArmor)
+    ? merged.healthThresholdArmor.filter(isHealthThresholdReward)
+    : [];
+  merged.healthThresholdBlockOnce = isHealthThresholdReward(merged.healthThresholdBlockOnce)
+    ? merged.healthThresholdBlockOnce
+    : null;
   merged.leechCardDamageVsLowHealthPercent = clampNonNegative(merged.leechCardDamageVsLowHealthPercent, 0);
   return merged;
 }
@@ -68,7 +120,7 @@ function normalizeNonNegativeRecord<K extends string>(
   const merged = { ...defaults };
   for (const key of Object.keys(defaults) as K[]) {
     const value = saved?.[key];
-    if (typeof value === "number" && Number.isFinite(value) && value >= 0) merged[key] = value;
+    if (typeof value === "number" && value >= 0 && value < Number.MAX_SAFE_INTEGER) merged[key] = value;
   }
   return merged;
 }
@@ -234,12 +286,16 @@ function normalizeSurvival(state: BattleSnapshot, saved: Partial<BattleSnapshot>
     Number.isFinite(state.turn) && state.turn >= 1 && state.turn < Number.MAX_SAFE_INTEGER
       ? Math.trunc(state.turn)
       : defaults.turn;
-  const triggeredTurn = toFiniteNonNegativeInt(state.deathsDoorTriggeredTurn);
+  const safeCounter = (value: unknown) => {
+    const counter = toFiniteNonNegativeInt(value);
+    return counter !== null && Number.isSafeInteger(counter) ? counter : null;
+  };
+  const triggeredTurn = safeCounter(state.deathsDoorTriggeredTurn);
   return {
     turn,
     deathsDoorActive: savedSurvival.deathsDoorActive === true,
     deathsDoorUsed: savedSurvival.deathsDoorActive === true || savedSurvival.deathsDoorUsed === true,
-    deathsDoorGraceTurnsRemaining: toFiniteNonNegativeInt(state.deathsDoorGraceTurnsRemaining),
+    deathsDoorGraceTurnsRemaining: safeCounter(state.deathsDoorGraceTurnsRemaining),
     deathsDoorTriggeredTurn:
       triggeredTurn !== null && triggeredTurn >= 1 && triggeredTurn <= turn ? triggeredTurn : null,
   };
@@ -259,7 +315,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
       saved.contentSystemType === "labyrinth" && Array.isArray(saved.encounterBenefits)
         ? sanitizeEncounterTraitIds(saved.encounterBenefits, "reward")
         : [],
-    trinketEffects: { ...defaults.trinketEffects, ...saved.trinketEffects },
+    trinketEffects: normalizeTrinketEffects(defaults.trinketEffects, saved.trinketEffects),
     gearEffects: normalizeGearEffects(saved.gearEffects),
     talentEffects: normalizeTalentEffects(defaults.talentEffects, saved.talentEffects),
     flags: normalizeCombatFlags(defaults.flags, saved.flags),
