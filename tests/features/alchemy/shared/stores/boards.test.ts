@@ -14,7 +14,7 @@ import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storag
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 import { boardCatalog, STARTER_BOARD_ID } from "@/lib/boards/catalog";
 import { SaveDataSchema } from "@/lib/validation";
-import { defaultBattleState } from "@/lib/battle";
+import { battleSnapshot, defaultBattleState } from "@/lib/battle";
 import { getStartingDeck } from "@/lib/game-data";
 
 const sessions: GameSession[] = [];
@@ -40,7 +40,7 @@ function career(completed = 5, mode: "campaign" | "labyrinth" | "wildwood" = "ca
         floor: null,
         completed: index < completed,
       }));
-      draft.session.activity = { kind: "battle", data: { battleState: defaultBattleState() } };
+      draft.session.activity = { kind: "battle", data: { battleState: battleSnapshot(defaultBattleState()) } };
       return acceptCommand();
     },
     undefined,

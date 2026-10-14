@@ -81,7 +81,7 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
   return bindSessionCapabilities(gameSession, {
     snapshot,
     readProgress: progress.read,
-    subscribeProgress: progress.subscribe,
+    subscribeProgress: (listener) => registerSessionCleanup(gameSession, progress.subscribe(listener)),
     trackProgress: (retry) => {
       return registerSessionCleanup(gameSession, progress.registerRetryDriver(retry));
     },

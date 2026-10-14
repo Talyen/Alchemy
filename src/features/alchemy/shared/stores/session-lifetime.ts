@@ -1,0 +1,70 @@
+import type { SessionClock } from "./game-session-types";
+
+/** Resource ownership is independent of the consumers that schedule work. */
+export function createSessionLifetime() {
+  let disposed = false;
+  const cleanups = new Set<() => void>();
+  const assertActive = () => {
+    if (disposed) throw new Error("Game session is disposed or invalid");
+  };
+  const track = (cleanup: () => void) => {
+    assertActive();
+    cleanups.add(cleanup);
+    return () => {
+      if (cleanups.delete(cleanup)) cleanup();
+    };
+  };
+  return {
+    track,
+    get disposed() {
+      return disposed;
+    },
+    ownClock(source: SessionClock): SessionClock {
+      const timers = new Map<ReturnType<SessionClock["setTimeout"]>, () => void>();
+      return Object.freeze<SessionClock>({
+        now: () => {
+          assertActive();
+          return source.now();
+        },
+        setTimeout(callback, delay) {
+          assertActive();
+          let active = true;
+          let release: () => void = () => {};
+          const timer = source.setTimeout(() => {
+            if (!active || disposed) return;
+            active = false;
+            release();
+            callback();
+          }, delay);
+          release = track(() => {
+            timers.delete(timer);
+            if (active) {
+              active = false;
+              source.clearTimeout(timer);
+            }
+          });
+          timers.set(timer, release);
+          return timer;
+        },
+        clearTimeout(timer) {
+          // Cleanup remains safe and idempotent after disposal.
+          timers.get(timer)?.();
+        },
+      });
+    },
+    close() {
+      if (disposed) return [];
+      disposed = true;
+      const failures: unknown[] = [];
+      for (const cleanup of [...cleanups]) {
+        cleanups.delete(cleanup);
+        try {
+          cleanup();
+        } catch (error) {
+          failures.push(error);
+        }
+      }
+      return failures;
+    },
+  };
+}

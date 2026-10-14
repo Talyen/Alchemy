@@ -1,3 +1,4 @@
+import { createNotificationChannel } from "../stores/notification-channel";
 import { logStorageFailure } from "@/lib/storage-logging";
 import type { SaveWriteOutcome } from "./save-operation-queue";
 
@@ -7,25 +8,23 @@ export type ProgressSaveState =
 
 /** Runtime acknowledgement only: persisted snapshots retain their existing format. */
 export class ProgressCompletion {
-  private state: ProgressSaveState = { kind: "idle" };
+  private state: ProgressSaveState = Object.freeze({ kind: "idle" });
   private epoch = 0;
   private restoreVersion = 0;
   private acknowledged = -1;
-  private listeners = new Set<() => void>();
-  private restoreListeners = new Set<() => void>();
+  private readonly notifications = createNotificationChannel<[]>((error) => {
+    logStorageFailure("Progress save status update failed", error);
+  });
+  private readonly restores = createNotificationChannel<[]>((error) => {
+    logStorageFailure("Restore save scheduling update failed", error);
+  });
   private completions: Array<() => void> = [];
   private retryOwners = new Set<{ retry: () => void }>();
 
   readonly read = (): ProgressSaveState => this.state;
-  readonly subscribe = (listener: () => void) => {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  };
+  readonly subscribe = this.notifications.subscribe;
   readonly readRestoreVersion = () => this.restoreVersion;
-  readonly subscribeRestore = (listener: () => void) => {
-    this.restoreListeners.add(listener);
-    return () => this.restoreListeners.delete(listener);
-  };
+  readonly subscribeRestore = this.restores.subscribe;
 
   registerRetryDriver(retry: () => void) {
     // Registration identity belongs to the client; pending acknowledgements
@@ -112,25 +111,13 @@ export class ProgressCompletion {
     const unchanged =
       state.kind === this.state.kind &&
       (state.kind === "idle" || (this.state.kind !== "idle" && state.revision === this.state.revision));
-    this.state = state;
+    this.state = Object.freeze(state);
     if (restored) {
       // Invalidate autosave submissions before any status or store observer
       // can schedule a write in the replacement epoch, even if data is equal.
-      for (const listener of [...this.restoreListeners]) {
-        try {
-          listener();
-        } catch (error) {
-          logStorageFailure("Restore save scheduling update failed", error);
-        }
-      }
+      this.restores.publish();
     }
     if (unchanged) return;
-    for (const listener of this.listeners) {
-      try {
-        listener();
-      } catch (error) {
-        logStorageFailure("Progress save status update failed", error);
-      }
-    }
+    this.notifications.publish();
   }
 }

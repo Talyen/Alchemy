@@ -1,3 +1,4 @@
+import { createNotificationChannel } from "../stores/notification-channel";
 import { createPlatformSaveBackend, type SaveBackend } from "@/lib/platform-save-backend";
 import { isClientContext } from "@/lib/storage-environment";
 import { logStorageFailure } from "@/lib/storage-logging";
@@ -16,26 +17,17 @@ export function createSaveIo(
   let backendConfigured = backend !== undefined;
   let saveWriteFailed = false;
   const pendingWriteResults = new Set<Promise<SaveWriteOutcome>>();
-  const saveWriteListeners = new Set<() => void>();
+  const notifications = createNotificationChannel<[]>((error) => {
+    logStorageFailure("Save status update failed", error);
+  });
   function getSaveWriteFailure(): boolean {
     return saveWriteFailed;
   }
-  function subscribeSaveWriteFailure(listener: () => void): () => void {
-    saveWriteListeners.add(listener);
-    return () => {
-      saveWriteListeners.delete(listener);
-    };
-  }
+  const subscribeSaveWriteFailure = notifications.subscribe;
   function reportSaveWriteOutcome(outcome: SaveWriteOutcome): SaveWriteOutcome {
     if ((outcome === "saved" || outcome === "failed") && saveWriteFailed !== (outcome === "failed")) {
       saveWriteFailed = outcome === "failed";
-      for (const listener of saveWriteListeners) {
-        try {
-          listener();
-        } catch (error) {
-          logStorageFailure("Save status update failed", error);
-        }
-      }
+      notifications.publish();
     }
     return outcome;
   }

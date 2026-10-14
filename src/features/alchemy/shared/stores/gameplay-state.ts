@@ -1,3 +1,4 @@
+import { createNotificationChannel } from "./notification-channel";
 import { deepFreeze } from "./store-utils";
 import { logError } from "@/lib/error-logger";
 import { createInitialGearState } from "./gear-state-defaults";
@@ -29,16 +30,13 @@ export function createGameplayStore(generateSeed: () => number) {
   });
   let state = initial;
   type Listener = (state: GameplayState, previous: GameplayState) => void;
-  const listeners = new Set<Listener>();
+  const notifications = createNotificationChannel<Parameters<Listener>>((error) => {
+    logError("Gameplay commit subscriber failed", "other", { revision: state.revision }, undefined, undefined, error);
+  });
   const reads = {
     getState: () => state,
     getInitialState: () => initial,
-    subscribe(listener: Listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
+    subscribe: notifications.subscribe,
   };
   return {
     reads,
@@ -50,21 +48,7 @@ export function createGameplayStore(generateSeed: () => number) {
       // including the fresh state and the root rebuilt after Immer finishes.
       state = deepFreeze(next);
       prepareObservers();
-      // Subscription changes during notification apply to the next commit.
-      for (const listener of [...listeners]) {
-        try {
-          listener(state, previous);
-        } catch (error) {
-          logError(
-            "Gameplay commit subscriber failed",
-            "other",
-            { revision: state.revision },
-            undefined,
-            undefined,
-            error,
-          );
-        }
-      }
+      notifications.publish(state, previous);
     },
   };
 }

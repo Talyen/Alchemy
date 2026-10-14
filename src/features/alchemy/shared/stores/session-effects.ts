@@ -1,3 +1,4 @@
+import { createNotificationChannel } from "./notification-channel";
 import { logError } from "@/lib/error-logger";
 import type { SessionFeedback } from "./game-session-types";
 
@@ -31,20 +32,10 @@ export function isolateSessionFeedback(feedback: SessionFeedback): SessionFeedba
 }
 
 function createLifecycleChannel(name: string) {
-  const listeners = new Set<() => void>();
-  return {
-    on(listener: () => void) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    emit() {
-      // Listener additions/removals take effect on the next notification.
-      for (const listener of [...listeners]) runSessionEffect(name, listener);
-    },
-    clear() {
-      listeners.clear();
-    },
-  };
+  const notifications = createNotificationChannel<[]>((error) => {
+    logError("Session effect failed", "other", { effect: name }, undefined, undefined, error);
+  });
+  return { on: notifications.subscribe, emit: notifications.publish, clear: notifications.clear };
 }
 
 /** One session owns the complete presentation invalidation recipe and its listeners. */

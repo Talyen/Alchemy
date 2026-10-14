@@ -1,3 +1,4 @@
+import { createNotificationChannel } from "../stores/notification-channel";
 import type { UnstampedSaveData } from "./types";
 import { logStorageFailure } from "@/lib/storage-logging";
 
@@ -28,7 +29,9 @@ export class SaveOperationQueue {
   private pendingClears = 0;
   private writesDisabled = false;
   private storageEpoch = 0;
-  private cancellationListeners = new Set<() => void>();
+  private readonly cancellations = createNotificationChannel<[]>((error) => {
+    logStorageFailure("Save cancellation listener threw", error);
+  });
 
   get isIdle(): boolean {
     return this.pendingOperations === 0;
@@ -51,12 +54,7 @@ export class SaveOperationQueue {
     if (disabled) this.cancelPendingWrites();
   }
 
-  subscribeCancellation(listener: () => void): () => void {
-    this.cancellationListeners.add(listener);
-    return () => {
-      this.cancellationListeners.delete(listener);
-    };
-  }
+  readonly subscribeCancellation = this.cancellations.subscribe;
 
   enqueue(
     data: UnstampedSaveData,
@@ -155,7 +153,7 @@ export class SaveOperationQueue {
     this.chain = Promise.resolve();
     this.writesDisabled = false;
     this.storageEpoch++;
-    this.cancellationListeners.clear();
+    this.cancellations.clear();
   }
 
   private enqueueOperation<T>(execute: () => Promise<T>): Promise<T> {
@@ -191,13 +189,6 @@ export class SaveOperationQueue {
       batch.pending = null;
     }
     this.coalesced = null;
-    for (const listener of this.cancellationListeners) {
-      try {
-        listener();
-      } catch (error) {
-        // A subscriber must not strand the clear gate or suppress other cancellations.
-        logStorageFailure("Save cancellation listener threw", error);
-      }
-    }
+    this.cancellations.publish();
   }
 }

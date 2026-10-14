@@ -20,7 +20,7 @@ import * as talentSettlement from "@/features/alchemy/shared/stores/write/run-me
 import { cardById, getStartingDeck } from "@/lib/game-data";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
 import { createEmptyRewardState } from "@/lib/active-run-session";
-import { defaultBattleState } from "@/lib/battle";
+import { battleSnapshot, defaultBattleState } from "@/lib/battle";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { emptyInventory } from "@/lib/homestead/inventory";
 
@@ -52,7 +52,7 @@ function earnedRun() {
       draft.runProfile.effects = { ...defaultHomesteadEffects, stoneFindBonus: 0.4, goldFindBonus: 0.8 };
       awardMaterialsDuringRun(draft, { ...emptyInventory(), wood: 5, stone: 6 });
       addRunCurrenciesEarned(draft, { "discordant-dice": 2 });
-      draft.session.activity = { kind: "battle", data: { battleState: defaultBattleState() } };
+      draft.session.activity = { kind: "battle", data: { battleState: battleSnapshot(defaultBattleState()) } };
       return acceptCommand();
     },
     undefined,

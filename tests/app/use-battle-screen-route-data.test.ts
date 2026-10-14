@@ -1,3 +1,4 @@
+import { battleSnapshot } from "@/lib/battle";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { useBattleScreenRouteData } from "@/app/screen-routes/use-battle-screen-route-data";
@@ -12,7 +13,7 @@ describe("useBattleScreenRouteData", () => {
   });
 
   it("retains the final battle display through settlement, presentation reset, and the outgoing fade", () => {
-    const battleState = makeTestBattleState();
+    const battleState = battleSnapshot(makeTestBattleState());
     mutateGameplayForTest((draft) => {
       draft.session.activity = { kind: "battle", data: { battleState } };
       draft.session.activeLabyrinthModifiers = ["tempered"];

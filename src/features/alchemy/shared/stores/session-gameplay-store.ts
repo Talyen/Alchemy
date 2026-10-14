@@ -1,3 +1,4 @@
+import { deepFreeze } from "./store-utils";
 import type { GameSession } from "./game-session-types";
 import type { GameplayState } from "./gameplay-state";
 import { sessionRuntime } from "./session-runtime";
@@ -18,7 +19,7 @@ function createSessionGameplayStore(gameSession: GameSession) {
       if (cachedLive !== live || cachedBase !== base) {
         cachedLive = live;
         cachedBase = base;
-        cachedPresentation = {
+        cachedPresentation = deepFreeze({
           ...base,
           run: { ...base.run, navigation: live.run.navigation },
           profile: {
@@ -27,7 +28,7 @@ function createSessionGameplayStore(gameSession: GameSession) {
             collectionPages: live.profile.collectionPages,
           },
           session: { ...base.session, selectedLabyrinthNodeId: live.session.selectedLabyrinthNodeId },
-        };
+        });
       }
       return cachedPresentation;
     },
@@ -42,13 +43,27 @@ function createSessionGameplayStore(gameSession: GameSession) {
       };
       const gameplay = committedStore.subscribe(notify);
       const progress = runtime.progressCompletion.subscribe(notify);
-      return runtime.track(() => {
+      return () => {
         gameplay();
         progress();
-      });
+      };
     },
   };
-  return { committed: committedStore, presentation: presentationStore };
+  const guardReads = (store: typeof committedStore) => ({
+    getState: () => {
+      sessionRuntime(gameSession);
+      return store.getState();
+    },
+    getInitialState: () => {
+      sessionRuntime(gameSession);
+      return store.getInitialState();
+    },
+    subscribe: (listener: Parameters<typeof store.subscribe>[0]) => {
+      sessionRuntime(gameSession);
+      return runtime.track(store.subscribe(listener));
+    },
+  });
+  return { committed: guardReads(committedStore), presentation: guardReads(presentationStore) };
 }
 
 const stores = new WeakMap<GameSession, ReturnType<typeof createSessionGameplayStore>>();

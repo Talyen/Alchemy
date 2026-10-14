@@ -6,8 +6,7 @@ export { assertSessionOwnership, bindSessionCapabilities } from "./session-capab
 export function sessionFeedback(gameSession: GameSession) {
   const runtime = sessionRuntime(gameSession);
   const completion = runtime.progressCompletion;
-  if (!completion.hasRetryDriver && completion.read().kind === "idle") return runtime.feedback;
-  return {
+  return bindSessionCapabilities(gameSession, {
     ...runtime.feedback,
     playUISound: (...args: Parameters<typeof runtime.feedback.playUISound>) => {
       if (
@@ -34,7 +33,7 @@ export function sessionFeedback(gameSession: GameSession) {
     playVictory: () => completion.afterSaved(() => runtime.feedback.playVictory()),
     playRunVictory: () => completion.afterSaved(() => runtime.feedback.playRunVictory()),
     playDefeat: () => completion.afterSaved(() => runtime.feedback.playDefeat()),
-  };
+  });
 }
 
 export function sessionClock(gameSession: GameSession) {

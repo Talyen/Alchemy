@@ -11,7 +11,12 @@ copy live state as a side effect. Projection wrappers may be changed locally,
 but their nested gameplay values remain protected. Commands use Immer drafts;
 input ownership and detached command results stay at the transaction boundary.
 Freezing caches fully traversed objects, so later revisions traverse only changed
-branches and retain structural sharing.
+branches and retain structural sharing. Publication validates the changed graph
+before freezing: gameplay accepts plain records and arrays, never functions,
+accessors, or built-ins with mutable internal slots such as Map and Date.
+Detached command results retain their broader supported data types; they do not
+become gameplay state. Settings and progress-status snapshots are also frozen,
+so borrowed reads cannot bypass their notification and persistence paths.
 
 | Aggregate region | Concern                                                                                                                                                                                                                                      | Lifetime                                                                                                           |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -67,7 +72,11 @@ presentation gate, then notifies gameplay subscribers. Save-status subscribers
 therefore see the revision they are being asked to save. Gameplay subscriber
 failures are logged independently and cannot suppress later subscribers, autosave,
 or command completion effects. Subscription changes during gameplay notification
-apply to the next commit. Execution failures still roll back; explicit
+apply to the next publication. `notification-channel.ts` owns synchronous FIFO
+delivery for gameplay, settings, progress, save status, cancellation, and lifecycle
+channels. Each publication captures its listeners; observer-triggered publications
+wait until the current event reaches every observer. Listener failures are isolated
+through the channel owner's diagnostic handler. Execution failures still roll back; explicit
 `afterCommit` failures still propagate after the committed state is retained.
 
 Domain operations receive the transaction explicitly and compose inside one command;
@@ -240,7 +249,12 @@ and the local error buffer remain application services.
 `await session.dispose()` removes subscriptions, cancels autosave/navigation work,
 clears lifecycle channels, drains already-submitted saves, and disables further
 writes. Commands and reads reject disposed handles. Disposing one session cannot
-cancel another session’s timers or writes.
+cancel another session’s timers or writes. `session-lifetime.ts` owns resource
+registration and the clock's timer inventory. Closing the lifetime revokes feedback
+and borrowed store methods, detaches progress subscriptions, and cancels every
+registered timer before draining submitted saves. A timer callback already handed
+to the host checks lifetime again before executing. Timer cancellation and
+subscription release remain safe after disposal; new reads and work reject.
 
 ## Activity and rewards
 

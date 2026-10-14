@@ -26,7 +26,7 @@ function encodeState(screen?: Screen): ActiveRunData {
 function writeBattle(partial: { hasActiveBattle?: boolean; battleState?: BattleState }) {
   mutateGameplayForTest((draft) => {
     if (partial.hasActiveBattle !== undefined) setBattleActiveForTest(draft, partial.hasActiveBattle);
-    if (partial.battleState !== undefined) getBattleForTest(draft).battleState = partial.battleState;
+    if (partial.battleState !== undefined) getBattleForTest(draft).battleState = battleSnapshot(partial.battleState);
   });
 }
 

@@ -210,7 +210,11 @@ export function setRunSession(
         : { kind: "idle" };
     for (const key of SESSION_KEYS) {
       if (key in partial && partial[key] !== undefined) {
-        (draft.session as unknown as Record<string, unknown>)[key] = partial[key];
+        const value = partial[key];
+        (draft.session as unknown as Record<string, unknown>)[key] =
+          key === "activity" && partial.activity?.kind === "battle"
+            ? { kind: "battle", data: { battleState: battleSnapshot(partial.activity.data.battleState) } }
+            : value;
       }
     }
   });

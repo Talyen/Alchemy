@@ -1,3 +1,4 @@
+import { battleSnapshot } from "@/lib/battle";
 import "../../../../helpers/mock-audio";
 import {
   mutateGameplayForTest,
@@ -99,7 +100,7 @@ describe("createContentSystemNavigation", () => {
     setRunProgress({ characterId: "wildcard", runDeck: getStartingDeck("knight") });
     mutateGameplayForTest((draft) => {
       setBattleActiveForTest(draft, true);
-      getBattleForTest(draft).battleState = makeTestBattleState({ turn: 4 });
+      getBattleForTest(draft).battleState = battleSnapshot(makeTestBattleState({ turn: 4 }));
       setScreen(draft, ROUTE_SCREENS.BATTLE);
     });
     const before = snapshotSessionSave(defaultGameSession);
@@ -280,7 +281,7 @@ describe("createContentSystemNavigation", () => {
       setRunSession({ hasActiveRun: true });
       mutateGameplayForTest((draft) => {
         setBattleActiveForTest(draft, true);
-        getBattleForTest(draft).battleState = makeTestBattleState({ turn: 4 });
+        getBattleForTest(draft).battleState = battleSnapshot(makeTestBattleState({ turn: 4 }));
         setScreen(draft, ROUTE_SCREENS.BATTLE);
       });
       mutateGameplayForTest((draft) => setScreen(draft, ROUTE_SCREENS.MENU));

@@ -1,3 +1,4 @@
+import { createNotificationChannel } from "./notification-channel";
 import type { AspectRatioOption, DisplayMode } from "@/features/alchemy/shared/types";
 import {
   DEFAULT_BACKGROUND_GLOW_PCT,
@@ -107,28 +108,19 @@ export function createSettingsStore() {
     resetToDefaults: () => set({ ...createDefaultSettingsSaveFields() }),
   }));
   type Listener = (state: SettingsStore, previous: SettingsStore) => void;
-  const listeners = new Set<Listener>();
+  const notifications = createNotificationChannel<Parameters<Listener>>((error) => {
+    logError("Settings subscriber failed", "other", undefined, undefined, undefined, error);
+  });
   let installing = false;
-  function notify(state: SettingsStore, previous: SettingsStore) {
-    for (const listener of [...listeners]) {
-      try {
-        listener(state, previous);
-      } catch (error) {
-        logError("Settings subscriber failed", "other", undefined, undefined, undefined, error);
-      }
-    }
-  }
+  const notify = notifications.publish;
+  Object.freeze(store.getState());
   store.subscribe((state, previous) => {
+    Object.freeze(state);
     if (!installing) notify(state, previous);
   });
   return {
     ...store,
-    subscribe(listener: Listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
+    subscribe: notifications.subscribe,
     // Restore installs both stores and arms save protection before either
     // store's subscribers can snapshot or render the replacement.
     commitHydration(fields: SettingsSaveFields, prepareObservers: () => void) {
