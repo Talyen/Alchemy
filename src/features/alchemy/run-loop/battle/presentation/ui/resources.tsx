@@ -46,6 +46,7 @@ export function PilePanel({
     <div ref={ref} data-testid={`${type}-pile`} data-count={count} className={cn("relative", pileCardWidthClass)}>
       <Surface
         as="button"
+        clipContents={false}
         className={cn(cardSurfaceClass, cardHoverScaleClass, "block w-full bg-transparent")}
         ariaLabel={`Inspect ${label} · ${count} cards`}
         ariaDisabled={!inspectable}

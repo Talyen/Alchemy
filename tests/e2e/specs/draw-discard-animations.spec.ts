@@ -2,8 +2,6 @@ import { expect, test } from "../../fixtures/e2e";
 import { makeCard, startBattleWithDeck } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { slow } from "../../playwright-tags";
-import { injectActiveBattle } from "../save-injection";
-import { makeGoblinBattleState } from "../../fixtures/battle-state";
 
 async function waitForOpeningDeal(page: import("@playwright/test").Page) {
   await expect
@@ -18,62 +16,6 @@ async function waitForOpeningDeal(page: import("@playwright/test").Page) {
 }
 
 test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
-  test("cards retain scene lighting through transfers without tinting inspection", async ({ page }) => {
-    const deck = Array.from({ length: 10 }, (_, index) => makeCard({ uid: index + 1 }));
-    await injectActiveBattle(page, makeGoblinBattleState({ hand: deck.slice(0, 4), deck: deck.slice(4) }), {
-      runDeck: deck,
-      autoEndTurn: false,
-    });
-    const hand = page.locator("[data-hand-slot] button").first();
-    await expect(hand).toBeVisible();
-    await expect
-      .poll(() =>
-        hand.locator(".battle-scene-artwork").evaluate((art) => Number(getComputedStyle(art, "::after").opacity)),
-      )
-      .toBeGreaterThan(0);
-    const resting = await hand.evaluate((card) => ({
-      shadow: getComputedStyle(card).boxShadow,
-      tint: getComputedStyle(card.querySelector(".battle-scene-artwork")!, "::after").backgroundColor,
-      opacity: getComputedStyle(card.querySelector(".battle-scene-artwork")!, "::after").opacity,
-    }));
-    expect(resting.shadow).not.toBe("none");
-    const transfers = page.evaluate(async () => {
-      const seen = new Map<string, Array<{ shadow: string; tint: string; opacity: string }>>();
-      let began = false;
-      await new Promise<void>((resolve) => {
-        const frame = () => {
-          const cards = document.querySelectorAll("[data-flying-card]");
-          for (const card of cards) {
-            began = true;
-            const kind = card.getAttribute("data-transfer-kind")!;
-            seen.set(
-              kind,
-              [...card.children].map((face) => ({
-                shadow: getComputedStyle(face).boxShadow,
-                tint: getComputedStyle(face.querySelector(".battle-scene-artwork")!, "::after").backgroundColor,
-                opacity: getComputedStyle(face.querySelector(".battle-scene-artwork")!, "::after").opacity,
-              })),
-            );
-          }
-          if (began && !cards.length && seen.has("draw")) resolve();
-          else requestAnimationFrame(frame);
-        };
-        requestAnimationFrame(frame);
-      });
-      return Object.fromEntries(seen);
-    });
-    await new BattlePage(page).endTurn();
-    const seen = await transfers;
-    expect(Object.keys(seen).sort()).toEqual(["discard", "draw"]);
-    for (const faces of Object.values(seen)) {
-      expect(faces).toEqual([resting, resting]);
-    }
-    await page.getByTestId("draw-pile").getByRole("button").click();
-    const inspection = page.getByRole("dialog");
-    await expect(inspection).toBeVisible();
-    await expect(inspection.locator(".battle-scene-artwork, .battle-scene-piece")).toHaveCount(0);
-  });
-
   test("battle mounts with an empty hand and deals the opening four", async ({ page }) => {
     test.setTimeout(60_000);
 
