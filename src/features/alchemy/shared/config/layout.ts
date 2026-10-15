@@ -109,10 +109,16 @@ export const tooltipAnchorClassNames = {
   below: "top-full mt-4 bottom-auto",
 } as const;
 
-export const battleActorSectionClass = "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 items-start px-4";
+export const battleActorSectionClass = {
+  desktop:
+    "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 -translate-x-[2cqw] items-start px-4 gap-[clamp(10cqw,14cqw,18cqw)]",
+  ultrawide:
+    "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 -translate-x-[2cqw] items-start px-4 gap-[clamp(12cqw,16cqw,20cqw)]",
+} as const;
 
-export const battleActorHeroCellClass = "relative flex min-w-0 items-start justify-center";
-export const battleActorEnemyCellClass = "relative flex min-w-0 items-start justify-center";
+export const battleActorHeroCellClass =
+  "relative flex items-start justify-end transition-transform duration-500 ease-out";
+export const battleActorEnemyCellClass = "relative flex items-start justify-start";
 
 // The previous inset scene lost 5.5 content rem to page and battle padding.
 // Retain that height cap so moving the dock does not enlarge hands or piles.

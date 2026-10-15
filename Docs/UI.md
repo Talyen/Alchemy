@@ -255,9 +255,6 @@ may extend past the bottom edge; playable card centers stay visible. Hand hover 
 activation use the nearest stable slot center, with boundaries halfway between
 centers, independent of raised artwork and reflow motion. Hidden transfer cards
 cannot receive pointer selection. Keyboard focus uses the native card buttons.
-The hero and enemy artwork centers are mirrored around the viewport center in
-equal-width columns. An active companion stays attached to the hero without
-shifting either artwork center.
 The player, companion, and enemy groups sit 5% of the full battle viewport height
 lower than their baseline anchor, including health bars and statuses. Enlarged
 actors retain the upward Game Size compensation to keep health and battle controls clear. Backgrounds
