@@ -8,6 +8,7 @@ import { sessionGameplayStore } from "@/features/alchemy/shared/stores/session-g
 import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
 import { createNotificationChannel } from "@/features/alchemy/shared/stores/notification-channel";
 import { createSettingsStore } from "@/features/alchemy/shared/stores/settings-state";
+import { readSessionSettings } from "@/features/alchemy/shared/stores/session-settings";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
 import { makeTestCard } from "../../../../fixtures/cards";
 
@@ -71,6 +72,7 @@ describe("session architecture invariants", () => {
 
   it("keeps settings reads immutable so writes cannot bypass notifications and saving", () => {
     const store = createSettingsStore();
+    expect(store).not.toHaveProperty("setState");
     const notify = vi.fn();
     store.subscribe(notify);
     const before = store.getState();
@@ -84,6 +86,8 @@ describe("session architecture invariants", () => {
     const session = createGameSession({ feedback: { playGoldGain: sound } });
     const feedback = sessionFeedback(session);
     const reads = sessionGameplayStore(session).committed;
+    const settings = sessionRuntime(session).settings;
+    const borrowedSettings = readSessionSettings(session);
     const progress = sessionRuntime(session).progressCompletion;
     const persistence = createSessionPersistence(session);
     const notify = vi.fn();
@@ -92,6 +96,9 @@ describe("session architecture invariants", () => {
     expect(() => feedback.playGoldGain()).toThrow(/disposed/);
     expect(() => reads.getState()).toThrow(/disposed/);
     expect(() => reads.subscribe(() => {})).toThrow(/disposed/);
+    expect(() => borrowedSettings.setMasterVolume(0)).toThrow(/disposed/);
+    expect(() => settings.getState()).toThrow(/disposed/);
+    expect(() => settings.subscribe(() => {})).toThrow(/disposed/);
     notify.mockClear();
     progress.mark(10);
     expect(notify).not.toHaveBeenCalled();

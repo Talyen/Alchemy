@@ -130,6 +130,10 @@ Readiness and saving use [Boot and loading](./ARCHITECTURE.md#boot-and-loading) 
 
 Cancellation and hook unmount invalidate pending presentation, including a
 save-gated continuation, without undoing completed gameplay or its save.
+Navigation subscriptions are created after React commits and released on owner
+replacement or unmount. A retained command from a released owner cannot prepare
+gameplay or schedule another screen. Strict Mode effect replay creates a fresh
+owner without retaining the preceding owner's restore subscription.
 
 ## Playback lifetime and gameplay commands
 
@@ -154,6 +158,10 @@ existing lifetime, owns its visible transfer and pending callbacks, and releases
 them before completion or cancellation. Scheduling after settlement does nothing;
 cleanup returned by a synchronous completion is released immediately. Callback
 failures reject the task after cleanup rather than leaving a draw suspended.
+Lifetime cancellation revokes the generation before releasing timers, transfers,
+draw leases, and autoplay work, then notifies observers. Cleanup and observer
+failures are reported independently so one adapter cannot strand another task
+or prevent a replacement battle from becoming ready.
 Consumers supply cancellation fallbacks and presentation work; they do not
 reimplement completion flags or unregister/timer/frame cleanup ordering.
 `PlaybackLifetime.capture(generation)` supplies revocable scheduling and cancellation

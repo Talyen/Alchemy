@@ -38,7 +38,14 @@ function applyEnemyEffect(
       const effects = rollChance(effect.probability, getBattleRng(state))
         ? effect.successEffects
         : effect.failureEffects;
-      return effects.reduce((next, nested) => applyEnemyEffect(next, nested, context, combatTexts), state);
+      return resolveBattleSequence(
+        state,
+        effects,
+        combatTexts,
+        (next, nested) => applyEnemyEffect(next, nested, context, combatTexts),
+        { kind: "each-step", settle: resolvePendingBattleReactions },
+        "either-defeated",
+      );
     }
     case "damage":
       return applyAbilityDamage(state, effect, context, combatTexts);

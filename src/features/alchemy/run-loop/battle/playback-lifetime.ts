@@ -2,6 +2,16 @@ import { TimerGroup } from "@/lib/animation/game-timer";
 
 import type { BattleSnapshot } from "@/lib/battle";
 import { runPlaybackTask } from "./playback-task";
+import { createNotificationChannel } from "@/features/alchemy/shared/stores/notification-channel";
+import { logError } from "@/lib/error-logger";
+
+function runPlaybackCleanup(cleanup: () => void): void {
+  try {
+    cleanup();
+  } catch (error) {
+    logError("Battle playback cleanup failed", "battle", undefined, undefined, undefined, error);
+  }
+}
 
 export interface BattlePlaybackBind {
   scheduleAutoEndTurn: (state?: BattleSnapshot) => void;
@@ -28,17 +38,17 @@ export class PlaybackLifetime {
   private cardDraws = 0;
   readonly timers = new TimerGroup();
   private binding: BattlePlaybackBind | null = null;
-  private listeners = new Set<() => void>();
+  private cancelling = false;
+  private readonly notifications = createNotificationChannel<[]>((error) => {
+    logError("Battle playback observer failed", "battle", undefined, undefined, undefined, error);
+  });
 
-  readonly subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  };
+  readonly subscribe = this.notifications.subscribe;
   readonly isBound = (): boolean => this.binding !== null;
   readonly bind = (binding: BattlePlaybackBind | null): void => {
-    this.binding?.clearAutoEndTurn();
+    this.clearAutoEndTurn();
     this.binding = binding;
-    for (const listener of this.listeners) listener();
+    this.notifications.publish();
   };
 
   scheduleAutoEndTurn(state?: BattleSnapshot): void {
@@ -46,7 +56,7 @@ export class PlaybackLifetime {
   }
 
   clearAutoEndTurn(): void {
-    this.binding?.clearAutoEndTurn();
+    runPlaybackCleanup(() => this.binding?.clearAutoEndTurn());
   }
 
   get cardPlayInProgress(): boolean {
@@ -64,7 +74,7 @@ export class PlaybackLifetime {
   private setPhase(phase: PlaybackPhase): void {
     if (this.phase === phase) return;
     this.phase = phase;
-    for (const listener of this.listeners) listener();
+    this.notifications.publish();
   }
 
   beginOpening(): void {
@@ -117,7 +127,7 @@ export class PlaybackLifetime {
       isCurrent,
       registerCancel: (callback: () => void) => {
         if (isCurrent()) return this.registerCancel(callback);
-        callback();
+        runPlaybackCleanup(callback);
         return () => {};
       },
       setTimeout: (callback: () => void, ms: number) => schedule(callback, ms, false),
@@ -134,7 +144,7 @@ export class PlaybackLifetime {
 
   registerCancel(callback: () => void): () => void {
     if (this.phase === "cancelled") {
-      callback();
+      runPlaybackCleanup(callback);
       return () => {};
     }
     this.cancellations.add(callback);
@@ -144,17 +154,27 @@ export class PlaybackLifetime {
   cancelTransfers(): void {
     const callbacks = [...this.cancellations];
     this.cancellations.clear();
-    for (const callback of callbacks) callback();
+    for (const callback of callbacks) runPlaybackCleanup(callback);
   }
 
   cancel(): void {
-    this.setPhase("cancelled");
-    this.controller.abort();
-    this.timers.clearAll();
-    this.cancelTransfers();
-    this.clearAutoEndTurn();
-    this.draws = 0;
-    this.cardDraws = 0;
+    if (this.cancelling) return;
+    this.cancelling = true;
+    const changed = this.phase !== "cancelled";
+    // Revoke first, then release everything, then notify. Observers must never
+    // see a half-cancelled generation or prevent another task from settling.
+    this.phase = "cancelled";
+    try {
+      this.draws = 0;
+      this.cardDraws = 0;
+      this.controller.abort();
+      runPlaybackCleanup(() => this.timers.clearAll());
+      this.cancelTransfers();
+      this.clearAutoEndTurn();
+    } finally {
+      this.cancelling = false;
+    }
+    if (changed) this.notifications.publish();
   }
 
   activate(): void {
@@ -162,7 +182,10 @@ export class PlaybackLifetime {
   }
 
   restart(): void {
+    if (this.cancelling) return;
     this.cancel();
+    // A cancellation observer may already have installed the next generation.
+    if (this.phase !== "cancelled") return;
     this.generation += 1;
     this.controller = new AbortController();
     this.setPhase("ready");

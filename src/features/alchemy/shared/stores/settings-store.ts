@@ -11,9 +11,16 @@ import {
 } from "./settings-state";
 export type { SettingsActions, SettingsSaveFields, SettingsStore } from "./settings-state";
 const applicationStore = sessionRuntime(defaultGameSession).settings;
+// React and feature consumers borrow reads and named actions, never hydration
+// or Zustand's raw replacement authority.
+const settingsReads = Object.freeze({
+  getState: applicationStore.getState,
+  getInitialState: applicationStore.getInitialState,
+  subscribe: applicationStore.subscribe,
+});
 export const useSettingsStore = Object.assign(
-  <T>(selector: (state: SettingsStore) => T): T => useStore(applicationStore, selector),
-  applicationStore,
+  <T>(selector: (state: SettingsStore) => T): T => useStore(settingsReads, selector),
+  settingsReads,
 );
 export const settingsPersistenceCodec = createSettingsPersistenceCodec(applicationStore);
 

@@ -1,5 +1,6 @@
 import { getStandardPotionPool, isPotionCard } from "@/lib/game-data/cards/card-pools";
 import {
+  BattleCardEffectSchema,
   areBattleCardEffectsEqual,
   cloneBattleCard,
   createEffectDescription,
@@ -89,6 +90,7 @@ export function strengthenPotion(card: BattleCard): BattleCard | null {
   ) {
     effects.push({ kind: "heal", amount: POTION_DISTILL_BONUS });
   }
+  if (effects.some((effect) => !BattleCardEffectSchema.safeParse(effect).success)) return null;
   if (
     effects.length === card.effects.length &&
     effects.every((effect, index) => areBattleCardEffectsEqual(effect, card.effects[index]!))

@@ -21,6 +21,7 @@ export interface ScreenNavigation {
   resumeTo: (screen: Screen, prepareNavigation?: () => void, immediate?: boolean) => void;
   transition: (screen: Screen, options?: ScreenTransitionOptions) => void;
   cancelPending: () => void;
+  dispose: () => void;
 }
 
 export function createScreenNavigation(
@@ -41,14 +42,20 @@ export function createScreenNavigation(
   // navigateTo and bump revision), then drops the stale outer request.
   // Explicit domain preparation commits synchronously; only presentation waits.
   let revision = 0;
+  let disposed = false;
 
-  function cancelPending() {
+  function invalidatePending() {
     revision += 1;
     timers.clearAll();
     onPendingChange?.(false);
   }
 
+  function cancelPending() {
+    if (!disposed) invalidatePending();
+  }
+
   function transitionTo(screen: Screen, options: ScreenTransitionOptions, resume: boolean, feedback?: UISound) {
+    if (disposed) return;
     // Guard first (approved): a skipped move stays a silent no-op even on an
     // unusual edge; only unskipped moves validate against the policy table.
     if (options.guard && !options.guard()) return;
@@ -58,11 +65,11 @@ export function createScreenNavigation(
     cancelPending();
     const requestedRevision = revision;
     options.prepare?.();
-    if (requestedRevision !== revision) return;
+    if (disposed || requestedRevision !== revision) return;
     if (feedback && previousScreen !== screen) sessionFeedback(gameSession).playUISound(feedback);
     onPendingChange?.(true);
     const show = () => {
-      if (requestedRevision !== revision) return;
+      if (disposed || requestedRevision !== revision) return;
       try {
         showScreen(screen);
       } finally {
@@ -70,7 +77,7 @@ export function createScreenNavigation(
       }
     };
     const present = () => {
-      if (requestedRevision !== revision) return;
+      if (disposed || requestedRevision !== revision) return;
       if (options.immediate) show();
       else timers.setTimeout(show, options.delayMs ?? NAVIGATION_DELAY_MS);
     };
@@ -90,13 +97,25 @@ export function createScreenNavigation(
     transitionTo(screen, options, false);
   }
 
-  registerSessionCleanup(gameSession, cancelPending);
-  onRunRestored(cancelPending, gameSession);
-  return bindSessionCapabilities(gameSession, {
+  function dispose() {
+    if (disposed) return;
+    disposed = true;
+    try {
+      invalidatePending();
+    } finally {
+      releaseRestore();
+      releaseSession();
+    }
+  }
+  const releaseRestore = onRunRestored(cancelPending, gameSession);
+  const releaseSession = registerSessionCleanup(gameSession, dispose);
+  const commands: Omit<ScreenNavigation, "dispose"> = bindSessionCapabilities(gameSession, {
     navigateTo: (screen, prepare) => transitionTo(screen, prepare ? { prepare } : {}, false, "navigate"),
     resumeTo: (screen, prepare, immediate = false) =>
       transitionTo(screen, prepare ? { prepare, immediate } : { immediate }, true, "resumeRun"),
     transition,
     cancelPending,
   });
+  // Cleanup releases ownership even when the session has already closed.
+  return Object.freeze({ ...commands, dispose });
 }

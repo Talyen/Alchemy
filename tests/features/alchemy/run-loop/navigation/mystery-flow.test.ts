@@ -275,3 +275,11 @@ describe("chooseCard tag filtering", () => {
     }
   });
 });
+
+it("does not treat inherited object keys in a saved Mystery reward as cards", () => {
+  const before = readActiveRun(defaultGameSession).runDeck;
+  expect(() => apply({ kind: "addCard", cardId: "constructor" })).not.toThrow();
+  expect(readActiveRun(defaultGameSession).runDeck).toEqual(before);
+  apply({ kind: "addCard", cardId: "slash" });
+  expect(readActiveRun(defaultGameSession).runDeck.at(-1)?.id).toBe("slash");
+});

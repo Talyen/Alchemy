@@ -12,6 +12,7 @@ import { addPlayerStatus } from "../status-state";
 import { reduceEnemyArmor } from "../enemy-mitigation-state";
 import { rangeBoundsError } from "./simple-handlers";
 import { resolvePendingBattleReactions } from "../enemy-attack-damage";
+import { resolvePlayerCrowdControlTriggers } from "../status-cc";
 
 export const DAMAGE_HANDLERS = {
   damage: (state, card, effect, potionMult, combatTexts, context) => {
@@ -60,7 +61,7 @@ export const DAMAGE_HANDLERS = {
       addPlayerStatus(postDamage, effect.damageType, healthLost),
       combatTexts,
     );
-    return thresholded;
+    return resolvePlayerCrowdControlTriggers(thresholded, combatTexts);
   },
   "random-damage": (state, card, effect, potionMult, combatTexts, context) => {
     if (effect.maxAmount < effect.minAmount) {
@@ -84,13 +85,13 @@ export const DAMAGE_HANDLERS = {
       context,
     );
   },
-  "remove-enemy-armor": (state, _card, effect, _potionMult, combatTexts) => {
+  "remove-enemy-armor": (state, _card, effect, potionMult, combatTexts) => {
     const remainingArmor = effect.halve ? halveRounded(state.enemyMitigation.armor) : 0;
     const amount = effect.halve
       ? state.enemyMitigation.armor - remainingArmor
       : effect.removeAll
         ? state.enemyMitigation.armor
-        : (effect.amount ?? 0);
+        : applyPotionMultiplier(effect.amount ?? 0, potionMult);
     const next = reduceEnemyArmor(state, amount);
     const removed = state.enemyMitigation.armor - next.enemyMitigation.armor;
     if (removed > 0)
