@@ -98,6 +98,7 @@ export interface BattlePresentationStore {
 }
 
 export function createBattlePresentationStore(gameSession: GameSession): BattlePresentationStore {
+  let active = true;
   let reset!: () => void;
   const store = createStore<BattlePresentationStateWithActions>()((publish) => {
     // Publish complete, frozen roots so even synchronous observers receive
@@ -202,9 +203,12 @@ export function createBattlePresentationStore(gameSession: GameSession): BattleP
 
   type State = BattlePresentationPort;
   type Listener = PresentationListener;
-  const notifications = createNotificationChannel<Parameters<Listener>>((error) => {
-    logError("Battle presentation subscriber failed", "other", undefined, undefined, undefined, error);
-  });
+  const notifications = createNotificationChannel<Parameters<Listener>>(
+    (error) => {
+      logError("Battle presentation subscriber failed", "other", undefined, undefined, undefined, error);
+    },
+    () => active,
+  );
   store.subscribe(notifications.publish);
   function subscribe(listener: Listener): () => void;
   function subscribe<T>(
@@ -242,7 +246,10 @@ export function createBattlePresentationStore(gameSession: GameSession): BattleP
   }
   onClearBattlePresentation(reset, gameSession);
   onRunTeardown(reset, gameSession);
-  registerSessionCleanup(gameSession, reset);
+  registerSessionCleanup(gameSession, () => {
+    active = false;
+    reset();
+  });
   return bindSessionCapabilities(gameSession, {
     getState: store.getState,
     getInitialState: store.getInitialState,

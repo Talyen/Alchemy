@@ -4,6 +4,10 @@ import { sessionRuntime } from "../stores/session-runtime";
 import type { UnstampedSaveData } from "./types";
 import type { SaveStorageEvent } from "./save-operation-queue";
 
+export function isSaveClearPending(gameSession: GameSession): boolean {
+  return sessionRuntime(gameSession).io.isClearing();
+}
+
 export function getSaveWriteFailure(gameSession: GameSession) {
   return sessionRuntime(gameSession).io.getSaveWriteFailure();
 }

@@ -9,7 +9,7 @@ import {
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { chooseWishCard } from "@/lib/battle/wish";
 import { createSeededRng } from "@/lib/rng";
-import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
+import { makeTestBattleState, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("player action host boundary", () => {
   it("replays random Card and Wish rewards from a cloned snapshot without retaining execution capabilities", () => {
@@ -56,6 +56,29 @@ describe("player action host boundary", () => {
     });
     expect(snapshot).toEqual(before);
     expect(rng).not.toHaveBeenCalled();
+  });
+
+  it("pauses forced skipped turns when delayed Holy damage opens a Wish", () => {
+    const snapshot = battleSnapshot(
+      patchBattleState({
+        deck: [makeTestCard()],
+        playerHealth: 1000,
+        playerMaxHealth: 1000,
+        enemyHealth: 1000,
+        enemyMaxHealth: 1000,
+        currentEnemy: { traits: [] },
+        playerCC: { freezeSkipTurns: 2 },
+        talentEffects: { holyWishChance: 100 },
+        // Transmuting Blizzard to Holy retains its delayed hit.
+        pendingTurnStartEffects: [{ remainingTurns: 1, effects: [{ kind: "damage", damageType: "holy", amount: 2 }] }],
+      }),
+    );
+    const context = { rng: () => 0.05 };
+    const result = resolveBattleTurn(snapshot, context);
+    expect(result.state.wishOptions).not.toBeNull();
+    expect(result.frames).toHaveLength(1);
+    expect(result.state.playerCC.freezeSkipTurns).toBe(1);
+    expect(resolveBattleWish(result.state, result.state.wishOptions![0]!.id, context).state.wishOptions).toBeNull();
   });
 
   it.each([

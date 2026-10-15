@@ -37,37 +37,43 @@ export function createScreenNavigation(
   gameSession: GameSession,
 ): ScreenNavigation {
   const timers = new TimerGroup(sessionClock(gameSession));
-  // Revision protocol: cancelPending bumps revision and clears timers.
-  // transition snapshots it, runs prepare (which may redirect via a nested
-  // navigateTo and bump revision), then drops the stale outer request.
-  // Explicit domain preparation commits synchronously; only presentation waits.
+  // Every external callback can redirect. A request retains its own revision
+  // across guards, cancellation notifications, preparation, and save completion.
   let revision = 0;
   let disposed = false;
 
   function invalidatePending() {
-    revision += 1;
+    const invalidation = ++revision;
     timers.clearAll();
     onPendingChange?.(false);
+    return invalidation;
   }
 
   function cancelPending() {
     if (!disposed) invalidatePending();
   }
 
-  function transitionTo(screen: Screen, options: ScreenTransitionOptions, resume: boolean, feedback?: UISound) {
+  function transitionTo(screen: Screen, input: ScreenTransitionOptions, resume: boolean, feedback?: UISound) {
     if (disposed) return;
+    const entryRevision = revision;
+    const options = bindSessionCapabilities(gameSession, input);
+    const isCurrent = (request: number) => !disposed && revision === request;
     // Guard first (approved): a skipped move stays a silent no-op even on an
     // unusual edge; only unskipped moves validate against the policy table.
     if (options.guard && !options.guard()) return;
+    if (!isCurrent(entryRevision)) return;
     const previousScreen = readScreen();
+    if (!isCurrent(entryRevision)) return;
     if (resume) assertRunResumeTransitionAllowed(previousScreen, screen);
     else assertScreenTransitionAllowed(previousScreen, screen);
-    cancelPending();
-    const requestedRevision = revision;
+    const requestedRevision = invalidatePending();
+    if (!isCurrent(requestedRevision)) return;
     options.prepare?.();
-    if (disposed || requestedRevision !== revision) return;
+    if (!isCurrent(requestedRevision)) return;
     if (feedback && previousScreen !== screen) sessionFeedback(gameSession).playUISound(feedback);
+    if (!isCurrent(requestedRevision)) return;
     onPendingChange?.(true);
+    if (!isCurrent(requestedRevision)) return;
     const show = () => {
       if (disposed || requestedRevision !== revision) return;
       try {

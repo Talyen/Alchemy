@@ -115,7 +115,8 @@ export function createVictoryCommand(gameSession: GameSession) {
       (draft) => {
         if (draft.session.activity.kind !== "battle") return rejectCommand("There is no active battle to finish", null);
         const state = draft.session.activity.data.battleState;
-        if (getBattleOutcome(state) !== "victory") return rejectCommand("Battle has not been won", null);
+        if (getBattleOutcome(state) !== "victory" || state.wishOptions)
+          return rejectCommand("Battle victory is not ready to settle", null);
         const committedResult = computeVictoryResult(draft);
         const battleState = snapshotTransactionValue(draft.session.activity.data.battleState);
         const runState = draft.run.activeRun;

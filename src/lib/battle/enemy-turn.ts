@@ -213,7 +213,7 @@ export function resolveTurnSequence(
       companion = { id, texts, state: battleSnapshot(state) };
     }
     frames.push({ before, turn: snapshotTurn(turn), companion });
-    if (!turn.playerTurnSkipped) break;
+    if (!turn.playerTurnSkipped || state.wishOptions) break;
   }
   return { state: battleSnapshot(state), frames };
 }

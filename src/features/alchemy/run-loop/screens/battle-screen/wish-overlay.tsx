@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { type BattleCard, type CardDescriptionContext } from "@/lib/game-data";
 
@@ -23,12 +23,10 @@ import { getHoverId } from "../../../shared/utils";
 
 function WishCardItem({
   card,
-  disabled,
   onSelect,
   descriptionContext,
 }: {
   card: BattleCard;
-  disabled: boolean;
   onSelect: (card: BattleCard) => void;
   descriptionContext: CardDescriptionContext;
 }) {
@@ -50,7 +48,6 @@ function WishCardItem({
       shimmerToken={shimmerToken}
       className="w-full"
       wrapperClassName={cn("flex min-w-0 shrink justify-center", collectionTileWidthClass)}
-      disabled={disabled}
       shineColor={getCardInspectionShineColors(card)}
     />
   );
@@ -65,15 +62,10 @@ function WishOverlayPanel({
   displayState: BattleScreenState;
   onWishChoice: (card: BattleCard) => void;
 }) {
-  const [isResolving, setIsResolving] = useState(false);
-  const resolvingRef = useRef(false);
   const onWishChoiceRef = useLatestRef(onWishChoice);
   const descriptionContext = useBattleDescriptionContext(displayState);
 
   function resolveWish(card: BattleCard) {
-    if (resolvingRef.current) return;
-    resolvingRef.current = true;
-    setIsResolving(true);
     onWishChoiceRef.current(card);
   }
 
@@ -95,13 +87,7 @@ function WishOverlayPanel({
 
         <div className="mt-6 flex min-h-0 items-start justify-center gap-5 overflow-y-auto p-3">
           {displayState.wishOptions?.map((card) => (
-            <WishCardItem
-              key={card.id}
-              card={card}
-              disabled={isResolving}
-              onSelect={resolveWish}
-              descriptionContext={descriptionContext}
-            />
+            <WishCardItem key={card.id} card={card} onSelect={resolveWish} descriptionContext={descriptionContext} />
           ))}
         </div>
       </WishPanel>

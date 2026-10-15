@@ -53,7 +53,9 @@ are revoked on disposal, which resets effects and releases all subscriptions.
 Display frames, ghosts, and transfers are copied on ingress, and roots and nested
 data are frozen before publication. Functional transfer updates receive immutable
 prior data. Observers receive queued publications in order; a failed observer
-cannot interrupt another observer or the action's resource cleanup.
+cannot interrupt another observer or the action's resource cleanup. Disposal revokes
+remaining captured listeners and queued publications before resetting private state;
+that final cleanup does not notify consumers of the closed session.
 
 At interaction time, those callbacks resolve gameplay before presentation:
 
@@ -117,14 +119,19 @@ Readiness and saving use [Boot and loading](./ARCHITECTURE.md#boot-and-loading) 
 2. Cancel the previous presentation request and run `prepare` synchronously.
    Domain commands commit gameplay and `session.activity` together. Navigation
    never infers an activity from the target screen or initializes a visit. A
-   redirect during preparation supersedes the original request.
+   redirect from a guard, screen reader, pending-state notification, preparation,
+   or feedback supersedes the older request. Each callback checks the revision it
+   entered with; cancellation notifications cannot lend a newer request's revision
+   to an older caller.
 3. For prepared transitions and battle/reward/run-end progression routes, wait
    through the session's `afterProgressSaved` gate before starting the presentation
    delay. A pending or failed save keeps the route pending; Retry saves the
    committed outcome without executing preparation again. With no pending save,
    the gate continues immediately. See [local saving](./RUN_STATE.md#completed-actions-and-local-saving).
 4. Wait for `delayMs` or `NAVIGATION_DELAY_MS`, then write `navigation.screen`.
-   `immediate` skips this delay; it does not bypass the save gate. The rendered
+   Transition options are captured at admission, so caller mutations during the
+   save wait cannot change timing or preparation. `immediate` skips this delay;
+   it does not bypass the save gate. The rendered
    fade and mounted-artwork readiness run separately, retaining outgoing route
    data and never committing gameplay.
 

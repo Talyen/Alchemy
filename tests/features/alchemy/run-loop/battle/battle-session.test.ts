@@ -9,6 +9,7 @@ import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-s
 import { battlePresentation } from "@/app/battle-presentation";
 import { battleStageMarkName, markBattleStage } from "@/lib/performance/marks";
 import { defaultBattleState } from "@/lib/battle";
+import { cardById } from "@/lib/game-data";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { ROUTE_SCREENS } from "@/lib/routing";
@@ -67,6 +68,34 @@ describe("createBattleSession", () => {
       session.checkBattleEnd(state, 1);
       expect(onBattleVictory).toHaveBeenCalledTimes(expected === "victory" ? 1 : 0);
       expect(onBattleDefeat).toHaveBeenCalledTimes(expected === "defeat" ? 1 : 0);
+    },
+  );
+
+  it.each(["player", "enemy"] as const)(
+    "settles every pending Wish before victory during the %s phase",
+    (turnPhase) => {
+      const { session, battle, onBattleVictory } = makeSession();
+      mutateGameplayForTest((draft) =>
+        setSyncedBattleState(draft, {
+          ...defaultBattleState(),
+          enemyHealth: 0,
+          turnPhase,
+          wishOptions: [cardById.slash!],
+          wishQueue: [[cardById.heal!]],
+        }),
+      );
+      let state = battle.read().battleState;
+      expect(session.checkBattleEnd(state, 1)).toBe(false);
+      expect(onBattleVictory).not.toHaveBeenCalled();
+      expect(battle.chooseWish(state, "slash")).not.toBeNull();
+      state = battle.read().battleState;
+      expect(session.checkBattleEnd(state, 1)).toBe(false);
+      expect(battle.chooseWish(state, "heal")).not.toBeNull();
+      state = battle.read().battleState;
+      expect(session.checkBattleEnd(state, 1)).toBe(true);
+      session.checkBattleEnd(state, 1);
+      expect(state.hand.map((card) => card.id)).toEqual(["slash", "heal"]);
+      expect(onBattleVictory).toHaveBeenCalledOnce();
     },
   );
 

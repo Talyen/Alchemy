@@ -41,6 +41,14 @@ describe("PurchasableCardItem", () => {
     cleanup();
   });
 
+  it("announces the price and affordability before a Card purchase", () => {
+    const props = { card, price: 40, gold: 80, purchased: false, onBuy: vi.fn() };
+    const { rerender } = render(<PurchasableCardItem {...props} />);
+    expect(screen.getByRole("button", { name: "Buy Strike for 40 Gold" })).toBeTruthy();
+    rerender(<PurchasableCardItem {...props} gold={20} />);
+    expect(screen.getByRole("button", { name: "Buy Strike for 40 Gold. Not enough Gold" })).toBeTruthy();
+  });
+
   it("lets keyboard users buy once and keep inspecting the purchased card", async () => {
     const user = userEvent.setup();
     const onBuy = vi.fn();
@@ -60,14 +68,14 @@ describe("PurchasableCardItem", () => {
       );
     }
     render(<ShopCardHarness />);
-    const button = screen.getByRole("button", { name: "Buy Strike" });
+    const button = screen.getByRole("button", { name: "Buy Strike for 40 Gold" });
     await user.tab();
     expect(document.activeElement).toBe(button);
     const descriptionSpan = screen.getByText(/Deal/);
     expect(descriptionSpan.closest(".hover-popup-panel")).toBeTruthy();
     await user.keyboard("{Enter}");
     expect(onBuy).toHaveBeenCalledTimes(1);
-    const purchasedButton = screen.getByRole("button", { name: "Strike" });
+    const purchasedButton = screen.getByRole("button", { name: "Strike. Purchased" });
     expect(document.activeElement).toBe(purchasedButton);
     expect(purchasedButton.getAttribute("aria-disabled")).toBe("true");
     expect(purchasedButton.className).not.toMatch(/card-interactive-glow/);

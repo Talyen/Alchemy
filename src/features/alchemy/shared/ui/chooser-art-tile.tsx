@@ -1,4 +1,4 @@
-import { useState, type ReactNode, type RefObject } from "react";
+import { type ReactNode, type RefObject } from "react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -7,6 +7,7 @@ import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 import { cardInteractiveGlowClass } from "../config";
 import { Surface } from "./surface";
 import { useInteractiveCard } from "./use-interactive-card";
+import { useHoverVisible } from "./use-hover-visible";
 import { usePlasmaInteraction } from "./use-plasma-source";
 
 interface ChooserArtTileProps {
@@ -49,18 +50,10 @@ export function ChooserArtTile({
   plasmaColorPair = null,
 }: ChooserArtTileProps) {
   const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(interactionKey, interactionId);
-  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const hover = useHoverVisible({ onHoverStart, onHoverEnd });
+  const tooltipVisible = hover.visible;
   const trackTooltip = renderTooltip !== undefined;
   usePlasmaInteraction(plasmaColorPair, tooltipVisible && !disabled);
-
-  const hoverIn = () => {
-    setTooltipVisible(true);
-    onHoverStart();
-  };
-  const hoverOut = () => {
-    setTooltipVisible(false);
-    onHoverEnd();
-  };
 
   return (
     <div className={cn("group flex flex-col items-center gap-5", paddedTileClass)}>
@@ -70,10 +63,10 @@ export function ChooserArtTile({
         ariaLabel={ariaLabel ?? label}
         {...(disabled ? { ariaDisabled: true } : {})}
         onClick={onClick}
-        onMouseEnter={hoverIn}
-        onMouseLeave={hoverOut}
-        onFocus={hoverIn}
-        onBlur={hoverOut}
+        onMouseEnter={hover.onMouseEnter}
+        onMouseLeave={hover.onMouseLeave}
+        onFocus={hover.onFocusCapture}
+        onBlur={hover.onBlurCapture}
         shimmerActive={disabled ? false : shimmerActive}
         shimmerToken={disabled ? undefined : shimmerToken}
         shimmerRounded="rounded-shell-card"

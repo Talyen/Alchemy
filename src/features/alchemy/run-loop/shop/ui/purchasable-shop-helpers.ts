@@ -6,6 +6,6 @@ export function getShopPurchaseState(price: number, gold: number, purchased: boo
 
 export type ShopPurchaseState = ReturnType<typeof getShopPurchaseState>;
 
-export function getShopItemAriaLabel(title: string, purchased: boolean): string {
-  return purchased ? title : `Buy ${title}`;
+export function getShopItemAriaLabel(title: string, price: number, purchased: boolean, canAfford: boolean): string {
+  return purchased ? `${title}. Purchased` : `Buy ${title} for ${price} Gold${canAfford ? "" : ". Not enough Gold"}`;
 }
