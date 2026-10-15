@@ -19,7 +19,7 @@ export interface GameplayState {
   gear: GearStateFields;
 }
 
-export function createGameplayStore(generateSeed: () => number) {
+export function createGameplayStore(generateSeed: () => number, isActive: () => boolean = () => true) {
   const initial: GameplayState = deepFreeze({
     revision: 0,
     run: createInitialRunDomainData(generateSeed),
@@ -32,7 +32,7 @@ export function createGameplayStore(generateSeed: () => number) {
   type Listener = (state: GameplayState, previous: GameplayState) => void;
   const notifications = createNotificationChannel<Parameters<Listener>>((error) => {
     logError("Gameplay commit subscriber failed", "other", { revision: state.revision }, undefined, undefined, error);
-  });
+  }, isActive);
   const reads = {
     getState: () => state,
     getInitialState: () => initial,

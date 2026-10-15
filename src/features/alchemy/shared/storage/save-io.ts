@@ -12,6 +12,7 @@ export function createSaveIo(
   backend?: SaveBackend,
   now: () => number = () => Date.now(),
   allowPlatformStorage = false,
+  isActive: () => boolean = () => true,
 ) {
   const storage = new SaveStorage(backend ?? createPlatformSaveBackend(), now);
   let backendConfigured = backend !== undefined;
@@ -19,10 +20,10 @@ export function createSaveIo(
   const pendingWriteResults = new Set<Promise<SaveWriteOutcome>>();
   const notifications = createNotificationChannel<[]>((error) => {
     logStorageFailure("Save status update failed", error);
-  });
+  }, isActive);
   const events = createNotificationChannel<[SaveStorageEvent]>((error) => {
     logStorageFailure("Save storage listener threw", error);
-  });
+  }, isActive);
   storage.subscribeEvents(events.publish);
   function getSaveWriteFailure(): boolean {
     return saveWriteFailed;

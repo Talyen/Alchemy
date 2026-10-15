@@ -202,3 +202,21 @@ it.each([false, true])("a replacement autosave driver respects a pending clear t
     await session.dispose();
   }
 });
+
+it("revokes captured storage observers if a clear notification closes their session", async () => {
+  const session = createGameSession({ saveBackend: createSaveBackend() });
+  const persistence = createSessionPersistence(session);
+  let disposal: Promise<void> | undefined;
+  persistence.subscribeInterruption(() => {
+    disposal = session.dispose();
+  });
+  const staleObserver = vi.fn();
+  persistence.subscribeInterruption(staleObserver);
+  try {
+    expect(await persistence.clear()).toBe(true);
+    await disposal;
+    expect(staleObserver).not.toHaveBeenCalled();
+  } finally {
+    await session.dispose();
+  }
+});
