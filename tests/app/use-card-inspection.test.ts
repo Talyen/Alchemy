@@ -101,7 +101,7 @@ describe("run card inspection", () => {
         getBattleForTest(draft).battleState.deathsDoorActive = false;
       }
     });
-    if (reason === "transfer") battlePresentation.setState({ cardTransferInProgress: true });
+    if (reason === "transfer") battlePresentation.getState().setCardTransferInProgress(true);
     const { result } = renderHook(() =>
       useCardInspection({ ...base, isCardPlayInProgress: () => reason === "card-play" }),
     );

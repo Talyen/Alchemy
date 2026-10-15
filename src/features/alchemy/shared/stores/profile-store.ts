@@ -1,4 +1,3 @@
-import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import { appendUniqueMany } from "@/lib/utils";
 import type { GameSession } from "./game-session-types";
 import { readGameplayState } from "./gameplay-state-reads";
@@ -13,25 +12,11 @@ import {
 
 export type { ProfileSaveFields } from "./profile-store-types";
 
+const PROFILE_SAVE_KEYS = Object.keys(createDefaultProfileSaveFields()) as Array<keyof ProfileSaveFields>;
+
 function cloneProfileSaveFields(fields: ProfileSaveFields): ProfileSaveFields {
-  return {
-    collectedBoardIds: [...fields.collectedBoardIds],
-    boardSelection: { ...fields.boardSelection },
-    activeBoardId: fields.activeBoardId,
-    lastRandomBoardId: fields.lastRandomBoardId,
-    pendingBoardRewardId: fields.pendingBoardRewardId,
-    discoveredCardIds: [...fields.discoveredCardIds],
-    encounteredEnemyIds: [...fields.encounteredEnemyIds],
-    discoveredTrinketIds: [...fields.discoveredTrinketIds],
-    discoveredUniqueIds: [...fields.discoveredUniqueIds],
-    completedDifficulties: Object.fromEntries(
-      Object.entries(fields.completedDifficulties).map(([characterId, difficulties]) => [
-        characterId,
-        [...difficulties],
-      ]),
-    ) as Record<CharacterId, DifficultyId[]>,
-    finishedRunCharacters: [...fields.finishedRunCharacters],
-  };
+  // Select before cloning: collection navigation is presentation state.
+  return structuredClone(Object.fromEntries(PROFILE_SAVE_KEYS.map((key) => [key, fields[key]]))) as ProfileSaveFields;
 }
 
 export const profilePersistenceCodec: GameplayPersistenceCodec<ProfileSaveFields> = {
@@ -40,43 +25,10 @@ export const profilePersistenceCodec: GameplayPersistenceCodec<ProfileSaveFields
   hydrate: (fields, draft) => Object.assign(draft.profile, cloneProfileSaveFields(fields)),
 };
 
-export type ProfileReadView = Pick<
-  ProfileStateFields,
-  | "collectedBoardIds"
-  | "boardSelection"
-  | "activeBoardId"
-  | "lastRandomBoardId"
-  | "pendingBoardRewardId"
-  | "collectionTab"
-  | "collectionPages"
-  | "discoveredCardIds"
-  | "encounteredEnemyIds"
-  | "discoveredTrinketIds"
-  | "discoveredUniqueIds"
-  | "completedDifficulties"
-  | "finishedRunCharacters"
->;
+export type ProfileReadView = Readonly<ProfileStateFields>;
 
 export function readProfileStore(gameSession: GameSession): ProfileReadView {
-  // Live references: arrays/objects below alias the committed aggregate (the
-  // codec clones on encode). Never mutate the result outside a
-  // dispatchRunSessionCommand draft.
-  const profile = readGameplayState(gameSession).profile;
-  return {
-    collectedBoardIds: profile.collectedBoardIds,
-    boardSelection: profile.boardSelection,
-    activeBoardId: profile.activeBoardId,
-    lastRandomBoardId: profile.lastRandomBoardId,
-    pendingBoardRewardId: profile.pendingBoardRewardId,
-    collectionTab: profile.collectionTab,
-    collectionPages: profile.collectionPages,
-    discoveredCardIds: profile.discoveredCardIds,
-    encounteredEnemyIds: profile.encounteredEnemyIds,
-    discoveredTrinketIds: profile.discoveredTrinketIds,
-    discoveredUniqueIds: profile.discoveredUniqueIds,
-    completedDifficulties: profile.completedDifficulties,
-    finishedRunCharacters: profile.finishedRunCharacters,
-  };
+  return readGameplayState(gameSession).profile;
 }
 
 export function discoverCardIds(draft: RunTransaction, ids: readonly string[]): void {

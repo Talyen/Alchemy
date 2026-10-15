@@ -22,6 +22,11 @@ the Battle tabletop so shared cards and inspection overlays retain their normal
 appearance elsewhere. Keep shadow filters on separate artwork wrappers so existing
 damage, crowd-control, hover, and Mana filters continue to compose. There are no
 continuous lighting updates, inferred board light directions, or asset variants.
+The same trimmed samples derive an artwork exposure factor of 0.94–1.03:
+factors below one paint up to 6% black, and above one paint up to 3% white.
+These washes preserve crisp ink lines without filtering transformed portraits.
+Directional shade stays at most 8%; regional values soften toward the whole board.
+Neutral fallback leaves exposure unchanged and disables directional shade.
 
 One cached sample also derives broad left, right, and lower ambient zones, each
 softened halfway toward the whole-board tint and bounded by the same color limits.
@@ -29,7 +34,14 @@ Player and Companion assemblies inherit the left zone, enemies the right; cards 
 death slices, and card flights so movement does not change their color. These are
 broad tabletop regions, not precise lighting coordinates or inferred light sources.
 
-Rectangular artwork receives a faint upper edge highlight and lower edge shade.
+Artwork uses a consistent upper-left tabletop light convention with broad, lightly
+softened diagonal shade planes. Rectangular artwork receives a faint upper edge
+highlight and lower edge shade, with tight contact and short cast shadows.
+Raised cards retain their softer elevated shadow. A static monochrome grain at
+2% source opacity finishes artwork and panel backgrounds only; information and
+semantic overlays remain outside it. The existing global noise is behind the game
+stage, rather than doubled over these pieces. Transparent artwork masks the
+finish to its silhouette and receives no rectangular inset edge.
 Health/status panels share the assembly's depth and a restrained background wash;
 the wash sits behind their information. Semantic borders, Death's Door, and focus
 remain independent. Transparent artwork keeps its alpha-following treatment.

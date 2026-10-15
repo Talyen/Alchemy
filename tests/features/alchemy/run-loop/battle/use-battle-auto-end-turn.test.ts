@@ -136,7 +136,7 @@ describe("useBattleAutoEndTurn", () => {
 
   it("schedules end turn after a hand transfer completes", () => {
     const onEndTurn = vi.fn();
-    battlePresentation.setState({ cardTransferInProgress: true });
+    battlePresentation.getState().setCardTransferInProgress(true);
     renderHook(() =>
       useAutoEndTurnUnderTest({
         ...baseOptions,
@@ -151,7 +151,7 @@ describe("useBattleAutoEndTurn", () => {
     expect(onEndTurn).not.toHaveBeenCalled();
 
     act(() => {
-      battlePresentation.setState({ cardTransferInProgress: false });
+      battlePresentation.getState().setCardTransferInProgress(false);
       vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
     });
 
@@ -210,7 +210,7 @@ describe("useBattleAutoEndTurn", () => {
 
   it("schedules end turn despite orphaned hidden-hand keys", () => {
     const onEndTurn = vi.fn();
-    battlePresentation.setState({ hiddenHandCardKeys: ["slash-1"] });
+    battlePresentation.getState().setHiddenHandCardKeys(() => ["slash-1"]);
     renderHook(() =>
       useAutoEndTurnUnderTest({
         ...baseOptions,
@@ -247,7 +247,7 @@ describe("useBattleAutoEndTurn", () => {
   it("ends after mana runs out when the settled battle snapshot arrives after the playback wake", () => {
     const onEndTurn = vi.fn();
     const playable = makeOpenBattle().battleState;
-    battlePresentation.setState({ cardTransferInProgress: true });
+    battlePresentation.getState().setCardTransferInProgress(true);
     const { rerender } = renderHook(
       ({ battleState }: { battleState: BattleSnapshot }) =>
         useAutoEndTurnUnderTest({ ...baseOptions, battleState, onEndTurn }),
@@ -255,7 +255,7 @@ describe("useBattleAutoEndTurn", () => {
     );
 
     // The external presentation store can settle before React receives the spent mana.
-    act(() => battlePresentation.setState({ cardTransferInProgress: false }));
+    act(() => battlePresentation.getState().setCardTransferInProgress(false));
     rerender({ battleState: { ...playable, mana: 0 } });
     act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS));
     expect(onEndTurn).toHaveBeenCalledOnce();

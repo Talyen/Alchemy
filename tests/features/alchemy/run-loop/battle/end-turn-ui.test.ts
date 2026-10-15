@@ -1,5 +1,5 @@
 import "../../../../helpers/mock-audio";
-import { getRunSessionFromState } from "@/features/alchemy/shared/stores/run-reads";
+import { selectBattle } from "@/features/alchemy/shared/stores/run-reads";
 import {
   mutateGameplayForTest,
   initializeBattleForTest as initializeActiveBattle,
@@ -89,13 +89,11 @@ describe("End Turn execution and playback", () => {
     const before = readGameplayState(defaultGameSession);
     ui.handleEndTurn();
     const resolved = readGameplayState(defaultGameSession);
-    expect(getRunSessionFromState(resolved).battle.battleState.turn).toBeGreaterThan(
-      getRunSessionFromState(before).battle.battleState.turn,
-    );
-    expect(getRunSessionFromState(resolved).battle).not.toHaveProperty("pendingBattleTransition");
+    expect(selectBattle(resolved).battleState.turn).toBeGreaterThan(selectBattle(before).battleState.turn);
+    expect(selectBattle(resolved)).not.toHaveProperty("pendingBattleTransition");
     expect(resolved.revision).toBe(before.revision + 1);
     expect(ctx.playback.cardPlayInProgress).toBe(true);
-    expect(battlePresentation.getState().displayedBattle).toBe(getRunSessionFromState(before).battle.battleState);
+    expect(battlePresentation.getState().displayedBattle).toEqual(selectBattle(before).battleState);
     ui.handleEndTurn();
     expect(readGameplayState(defaultGameSession)).toBe(resolved);
     expect(vi.mocked(playBattleEvent).mock.calls.filter(([event]) => event === "endTurn")).toHaveLength(1);
@@ -170,7 +168,7 @@ describe("End Turn execution and playback", () => {
     releaseDiscard();
     await vi.waitFor(() => expect(ctx.playback.cardPlayInProgress).toBe(false));
     expect(readGameplayState(defaultGameSession)).toBe(resolved);
-    expect(getRunSessionFromState(resolved).battle.battleState.turnPhase).toBe("player");
+    expect(selectBattle(resolved).battleState.turnPhase).toBe("player");
   });
 
   it("rejects a stale confirmation snapshot before committing or starting playback", () => {

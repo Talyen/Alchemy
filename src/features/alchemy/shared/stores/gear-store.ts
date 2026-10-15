@@ -12,35 +12,17 @@ export type { GearCombatRestrictions } from "./gear-combat-restrictions";
 
 export type { GearSaveFields } from "./gear-store-types";
 
-function cloneGearInventories(inventories: GearSaveFields["gearInventories"]): GearSaveFields["gearInventories"] {
-  return Object.fromEntries(
-    Object.entries(inventories).map(([characterId, instances]) => [
-      characterId,
-      instances.map((instance) => ({
-        ...instance,
-        affixes: instance.affixes.map((affix) => ({ ...affix })),
-      })),
-    ]),
-  ) as GearSaveFields["gearInventories"];
-}
-
-function cloneGearLoadouts(loadouts: GearSaveFields["gearLoadouts"]): GearSaveFields["gearLoadouts"] {
-  return Object.fromEntries(
-    Object.entries(loadouts).map(([characterId, loadout]) => [characterId, { ...loadout }]),
-  ) as GearSaveFields["gearLoadouts"];
-}
-
 export const gearPersistenceCodec: GameplayPersistenceCodec<GearSaveFields> = {
   createDefault: createDefaultGearSaveFields,
   encode: (gameSession: GameSession) => {
     const state = readGameplayState(gameSession).gear;
-    return {
-      gearInventories: cloneGearInventories(state.inventories),
-      gearLoadouts: cloneGearLoadouts(state.loadouts),
-      ownedTrinketIds: [...state.ownedTrinketIds],
-      equippedTrinkets: { ...state.equippedTrinkets },
-      craftingCurrencies: { ...state.craftingCurrencies },
-    };
+    return structuredClone({
+      gearInventories: state.inventories,
+      gearLoadouts: state.loadouts,
+      ownedTrinketIds: state.ownedTrinketIds,
+      equippedTrinkets: state.equippedTrinkets,
+      craftingCurrencies: state.craftingCurrencies,
+    });
   },
   hydrate: (fields, draft) => {
     initializeGear(
@@ -66,17 +48,8 @@ export function selectHasUnownedTrinkets(gear: Immutable<Pick<GearStateFields, "
   return gear.ownedTrinketIds.length < trinketLibrary.length;
 }
 
-export function readGearState(gameSession: GameSession): GearStateFields {
-  // Live references (see readProfileStore): the codec clones on encode. Never
-  // mutate the result outside a dispatchRunSessionCommand draft.
-  const gear = readGameplayState(gameSession).gear;
-  return {
-    inventories: gear.inventories,
-    loadouts: gear.loadouts,
-    ownedTrinketIds: gear.ownedTrinketIds,
-    equippedTrinkets: gear.equippedTrinkets,
-    craftingCurrencies: gear.craftingCurrencies,
-  };
+export function readGearState(gameSession: GameSession): Readonly<GearStateFields> {
+  return readGameplayState(gameSession).gear;
 }
 
 export function readEquippedTrinketId(characterId: CharacterId, gameSession: GameSession): string | null {

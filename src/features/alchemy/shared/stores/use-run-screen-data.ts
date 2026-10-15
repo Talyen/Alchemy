@@ -5,7 +5,7 @@ import { useGameplayStateStore } from "./gameplay-state-store";
 import { readGameplayState, type GameplayState } from "./gameplay-state-reads";
 import { RUN_SCREEN_SELECTORS, type RunDataScreen, type RunScreenDataByScreen } from "./run-screen-data";
 
-function useRetainedScreenData<S extends RunDataScreen>(screen: S): RunScreenDataByScreen[S] {
+export function useRunScreenData<S extends RunDataScreen>(screen: S): RunScreenDataByScreen[S] {
   // The mapped type derives each result from this same key; TypeScript loses
   // that correlation when calling an indexed union of selector functions.
   const select = RUN_SCREEN_SELECTORS[screen] as (state: GameplayState) => RunScreenDataByScreen[S];
@@ -24,60 +24,4 @@ function useRetainedScreenData<S extends RunDataScreen>(screen: S): RunScreenDat
   // Inactive routes select null, so later gameplay writes cannot update that slice.
   if (data !== null && shown !== data) setShown(data);
   return data ?? shown;
-}
-
-export function useDraftDeckScreenData() {
-  return useRetainedScreenData("draft-deck");
-}
-
-export function useShopScreenData() {
-  return useRetainedScreenData("shop");
-}
-
-export function useAlchemistScreenData() {
-  return useRetainedScreenData("alchemist");
-}
-
-export function useTrinketShopScreenData() {
-  return useRetainedScreenData("trinket-shop");
-}
-
-export function useEquipmentShopScreenData() {
-  return useRetainedScreenData("equipment-shop");
-}
-
-export function useTransmutationScreenData() {
-  return useRetainedScreenData("transmutation");
-}
-
-export function useCampfireScreenData() {
-  return useRetainedScreenData("campfire");
-}
-
-export function useLabyrinthMapScreenData() {
-  return useRetainedScreenData("labyrinth-map");
-}
-
-export function useRewardsScreenData() {
-  return useRetainedScreenData("rewards");
-}
-
-export function useDestinationScreenData() {
-  return useRetainedScreenData("destination");
-}
-
-export function useMysteryScreenData() {
-  return useRetainedScreenData("mystery");
-}
-
-export function useCorruptionScreenData() {
-  return useRetainedScreenData("corruption");
-}
-
-export function useRunEndScreenData() {
-  return useRetainedScreenData("game-over");
-}
-
-export function useWildwoodRemovalScreenData() {
-  return useRetainedScreenData("wildwood-removal");
 }

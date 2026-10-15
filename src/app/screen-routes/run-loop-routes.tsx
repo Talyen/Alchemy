@@ -25,19 +25,7 @@ import {
 import { useBattleScreenRouteData } from "@/app/screen-routes/use-battle-screen-route-data";
 import { useBattlePlayback } from "@/app/screen-routes/use-battle-playback";
 import { MysteryScreenRoute } from "@/app/screen-routes/mystery-screen-route";
-import {
-  useAlchemistScreenData,
-  useCampfireScreenData,
-  useTransmutationScreenData,
-  useCorruptionScreenData,
-  useDestinationScreenData,
-  useEquipmentShopScreenData,
-  useLabyrinthMapScreenData,
-  useRewardsScreenData,
-  useShopScreenData,
-  useTrinketShopScreenData,
-  useWildwoodRemovalScreenData,
-} from "@/features/alchemy/shared/stores/use-run-screen-data";
+import { useRunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { useHomesteadEffects, useTalentEffects } from "@/features/alchemy/shared/stores/use-run-reads";
 import { getCampfireHealFraction } from "@/lib/campfire-heal";
 import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
@@ -122,7 +110,7 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
 
 function LabyrinthMapScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.labyrinth;
-  const r = useLabyrinthMapScreenData();
+  const r = useRunScreenData("labyrinth-map");
   const { heroArt } = useAppScreenChrome();
   return (
     <LabyrinthMapScreen
@@ -139,7 +127,7 @@ function LabyrinthMapScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 
 function RewardsScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.rewards;
-  const r = useRewardsScreenData();
+  const r = useRunScreenData("rewards");
   return (
     <RewardsScreen
       rewardState={r.rewardState}
@@ -152,13 +140,13 @@ function RewardsScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 
 function WildwoodRemovalScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.wildwood;
-  const r = useWildwoodRemovalScreenData();
+  const r = useRunScreenData("wildwood-removal");
   return <WildwoodRemovalScreen runDeck={r.runDeck} onRemove={commands.removeCard} onSkip={commands.skipRemoval} />;
 }
 
 function DestinationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.destinations;
-  const r = useDestinationScreenData();
+  const r = useRunScreenData("destination");
   return (
     <DestinationScreen
       rewardState={r.rewardState}
@@ -171,7 +159,7 @@ function DestinationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 
 function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.destinations;
-  const r = useCampfireScreenData();
+  const r = useRunScreenData("campfire");
   const healingBonus = useHomesteadEffects().homesteadHealing;
   const talentEffects = useTalentEffects();
   const healFraction = labyrinthCampfireHealing(getCampfireHealFraction(talentEffects.campfireHealBonus), r.modifiers);
@@ -197,20 +185,20 @@ function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function CardShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.shop.merchant;
   const onContinue = () => routeCommands.runLoop.shop.continue("shop");
-  const r = useShopScreenData();
+  const r = useRunScreenData("shop");
   return (
     <CardShopScreen
       isProgressSavePending={routeCommands.progress.isPending}
       gold={r.gold}
       runDeck={r.runDeck}
-      shopCards={r.shopState.cards}
+      items={r.shopState.cards}
       refreshesLeft={r.shopState.refreshesLeft}
       removeUsed={r.shopState.removeUsed}
       purchasedSlotKeys={r.shopState.purchasedSlotKeys}
-      getCardPrice={commands.getCardBuyPrice}
+      getPrice={commands.getCardBuyPrice}
       removePrice={commands.getRemoveCardPrice()}
       refreshPrice={commands.getRefreshPrice(r.shopState.refreshesLeft, undefined, r.shopState.freeRefreshUsed)}
-      onBuyCard={commands.buyCard}
+      onBuy={commands.buyCard}
       onRemoveCard={commands.removeCard}
       onRefresh={commands.refresh}
       onContinue={onContinue}
@@ -221,7 +209,7 @@ function CardShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function AlchemistShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.shop.alchemist;
   const onContinue = () => routeCommands.runLoop.shop.continue("alchemist");
-  const r = useAlchemistScreenData();
+  const r = useRunScreenData("alchemist");
   const potency = useTalentEffects().potionMixPotency;
   return (
     <AlchemistShopScreen
@@ -229,18 +217,18 @@ function AlchemistShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
       isProgressSavePending={routeCommands.progress.isPending}
       gold={r.gold}
       runDeck={r.runDeck}
-      potionCards={r.alchemistState.potions}
+      items={r.alchemistState.potions}
       refreshesLeft={r.alchemistState.refreshesLeft}
       mixUsed={r.alchemistState.mixUsed}
       purchasedSlotKeys={r.alchemistState.purchasedSlotKeys}
-      getPotionPrice={commands.getPotionBuyPrice}
+      getPrice={commands.getPotionBuyPrice}
       mixPrice={commands.getMixPrice()}
       refreshPrice={commands.getRefreshPrice(
         r.alchemistState.refreshesLeft,
         undefined,
         r.alchemistState.freeRefreshUsed,
       )}
-      onBuyCard={commands.buyPotion}
+      onBuy={commands.buyPotion}
       onRefresh={commands.refresh}
       onMixPotions={commands.mixPotions}
       onStrengthenPotion={commands.strengthenPotion}
@@ -253,21 +241,21 @@ function AlchemistShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function TrinketShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.shop.trinket;
   const onContinue = () => routeCommands.runLoop.shop.continue("trinket-shop");
-  const r = useTrinketShopScreenData();
+  const r = useRunScreenData("trinket-shop");
   return (
     <TrinketShopScreen
       isProgressSavePending={routeCommands.progress.isPending}
       gold={r.gold}
-      trinkets={r.trinketShopState.trinkets}
+      items={r.trinketShopState.trinkets}
       refreshesLeft={r.trinketShopState.refreshesLeft}
       purchasedSlotKeys={r.trinketShopState.purchasedSlotKeys}
-      getTrinketPrice={commands.getBuyPrice}
+      getPrice={commands.getBuyPrice}
       refreshPrice={commands.getRefreshPrice(
         r.trinketShopState.refreshesLeft,
         undefined,
         r.trinketShopState.freeRefreshUsed,
       )}
-      onBuyTrinket={commands.buy}
+      onBuy={commands.buy}
       onRefresh={commands.refresh}
       onContinue={onContinue}
     />
@@ -277,21 +265,21 @@ function TrinketShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function EquipmentShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.shop.equipment;
   const onContinue = () => routeCommands.runLoop.shop.continue("equipment-shop");
-  const r = useEquipmentShopScreenData();
+  const r = useRunScreenData("equipment-shop");
   return (
     <EquipmentShopScreen
       isProgressSavePending={routeCommands.progress.isPending}
       gold={r.gold}
-      gear={r.equipmentShopState.gear}
+      items={r.equipmentShopState.gear}
       refreshesLeft={r.equipmentShopState.refreshesLeft}
       purchasedSlotKeys={r.equipmentShopState.purchasedSlotKeys}
-      getGearPrice={commands.getBuyPrice}
+      getPrice={commands.getBuyPrice}
       refreshPrice={commands.getRefreshPrice(
         r.equipmentShopState.refreshesLeft,
         undefined,
         r.equipmentShopState.freeRefreshUsed,
       )}
-      onBuyGear={commands.buy}
+      onBuy={commands.buy}
       onRefresh={commands.refresh}
       onContinue={onContinue}
     />
@@ -300,7 +288,7 @@ function EquipmentShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 
 function CorruptionScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.corruption;
-  const r = useCorruptionScreenData();
+  const r = useRunScreenData("corruption");
   return (
     <CorruptionScreen
       runDeck={r.runDeck}
@@ -313,7 +301,7 @@ function CorruptionScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 
 function TransmutationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.transmutation;
-  const r = useTransmutationScreenData();
+  const r = useRunScreenData("transmutation");
   return (
     <TransmutationScreen
       afterProgressSaved={routeCommands.progress.afterSaved}

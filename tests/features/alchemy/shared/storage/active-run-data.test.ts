@@ -14,13 +14,15 @@ import { getStartingDeck, trinketLibrary } from "@/lib/game-data";
 import { emptyHydratedMysteryVisit, readActivityData, type ActiveRunData } from "@/lib/active-run-session";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
 import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/run-state-init";
-import { getRunSession, readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import type { Screen } from "@/lib/routing";
+import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { ANCIENT_ALTAR_MYSTERY_VISIT, makeActiveRunData } from "../stores/active-run-data-fixture";
 import { defaultGameSession } from "@/app/application-session";
-function encodeState(screen?: Screen): ActiveRunData {
-  return encodeRunResumeSnapshot(getRunSession(screen, defaultGameSession));
+function encodeState(): ActiveRunData {
+  return encodeRunResumeSnapshot({
+    run: readActiveRun(defaultGameSession),
+    session: readRunSession(defaultGameSession),
+  });
 }
 
 function writeBattle(partial: { hasActiveBattle?: boolean; battleState?: BattleState }) {
@@ -56,7 +58,7 @@ describe("encodeRunResumeSnapshot", () => {
       runObtainedItems: [],
     });
 
-    const result = encodeState("menu");
+    const result = encodeState();
 
     expect(result).toEqual({
       runHistory: [],
@@ -111,9 +113,9 @@ describe("encodeRunResumeSnapshot", () => {
       },
     });
 
-    expect(savedActivityData(encodeState("shop"), "shop")?.cards).toHaveLength(1);
+    expect(savedActivityData(encodeState(), "shop")?.cards).toHaveLength(1);
     setRunSession({ activity: { kind: "destination" } });
-    expect(savedActivityData(encodeState("destination"), "shop")).toBeNull();
+    expect(savedActivityData(encodeState(), "shop")).toBeNull();
   });
 
   it.each([
@@ -190,9 +192,9 @@ describe("encodeRunResumeSnapshot", () => {
         savedActivityData(encoded, "alchemist") === null &&
         savedActivityData(encoded, "trinket-shop") === null,
     },
-  ])("keeps only $screen offerings", ({ screen, seed, active, idle }) => {
+  ])("keeps only $screen offerings", ({ seed, active, idle }) => {
     seed();
-    const encoded = encodeState(screen);
+    const encoded = encodeState();
     expect(active(encoded)).toBe(true);
     expect(idle(encoded)).toBe(true);
   });
@@ -303,7 +305,7 @@ describe("encodeRunResumeSnapshot", () => {
       setRewardState(draft, (prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] })),
     );
 
-    const result = encodeState("destination");
+    const result = encodeState();
 
     expect(result.activity.kind).toBe("destination");
     expect(result.activity).toEqual(
@@ -340,7 +342,7 @@ describe("encodeRunResumeSnapshot", () => {
     setRunProgress({ contentSystemType: "campaign", characterId: "wildcard" });
     setRunSession({ starterDraftChoices: [slash, block] });
 
-    const result = encodeState("draft-deck");
+    const result = encodeState();
     const decoded = decodeRunResumeSnapshot(result);
 
     expect(result.starterDraftChoices).toEqual([slash, block]);
@@ -373,7 +375,7 @@ describe("encodeRunResumeSnapshot", () => {
     });
 
     const offered = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent;
-    const result = encodeState("mystery");
+    const result = encodeState();
     const decoded = decodeRunResumeSnapshot(result);
 
     expect(savedActivityData(result, "mystery")?.event).toEqual(offered);
@@ -400,7 +402,7 @@ describe("encodeRunResumeSnapshot", () => {
     });
 
     setRunSession({ activity: { kind: "destination" } });
-    const result = encodeState("destination");
+    const result = encodeState();
     const decoded = decodeRunResumeSnapshot(result);
 
     expect(savedActivityData(result, "mystery")).toBeNull();
@@ -419,7 +421,7 @@ describe("encodeRunResumeSnapshot", () => {
     };
     setRunSession({ activity: { kind: "corruption", data: corruptionResult } });
 
-    const result = encodeState("corruption");
+    const result = encodeState();
 
     expect(savedActivityData(result, "corruption")).toEqual(corruptionResult);
     expect(readActivityData(decodeRunResumeSnapshot(result).session.activity, "corruption")).toEqual(corruptionResult);
@@ -437,7 +439,7 @@ describe("encodeRunResumeSnapshot", () => {
     setRunSession({ activity: { kind: "corruption", data: corruptionResult } });
 
     setRunSession({ activity: { kind: "destination" } });
-    const result = encodeState("destination");
+    const result = encodeState();
     const decoded = decodeRunResumeSnapshot(result);
 
     expect(savedActivityData(result, "corruption")).toBeNull();
