@@ -6,12 +6,12 @@ import {
   IS_DEMO,
 } from "@/lib/game-edition";
 import { isCharacterUnlocked } from "@/lib/game-data";
-import { computeTalentEffects, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
+import { type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
 import type { RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
-import { applyRunStartSnapshot, grantStartGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { applyRunStartSnapshot } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createRunStartSnapshot, type RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 
 interface CreateRunStartSnapshotInput {
@@ -38,7 +38,6 @@ export function createDraftRunStartSnapshot(
     throw new Error("This run is unavailable");
   }
   const talentXP = draft.runProfile.talentXP;
-  const talentStartGold = computeTalentEffects(snapshotTransactionValue(draft.runProfile.unlockedTalents)).startGold;
   const gearMaxHealthBonus = computeGearManifest(
     characterId,
     flattenGearInventories(snapshotTransactionValue(draft.gear.inventories)),
@@ -49,17 +48,11 @@ export function createDraftRunStartSnapshot(
     characterId,
     contentSystemType,
     difficultyId,
-    talentStartGold,
     talentXP,
     draftedDeck,
     gearMaxHealthBonus,
     homesteadMaxHealthBonus,
   });
-}
-
-export interface ApplyRunStartResult {
-  isFreshStart: boolean;
-  startGoldGranted: number;
 }
 
 export interface RunReplaceInput {
@@ -106,7 +99,7 @@ export function applyRunStartToDraft(
   draft: RunTransaction,
   snapshot: RunStartSnapshot,
   options: ApplyRunStartOptions = {},
-): ApplyRunStartResult {
+): void {
   if (
     !isEditionCharacterAvailable(snapshot.characterId) ||
     !isEditionModeAvailable(snapshot.contentSystemType) ||
@@ -129,15 +122,10 @@ export function applyRunStartToDraft(
     throw new Error("Cannot replace an unfinished run");
   }
   applyRunStartSnapshot(draft, snapshot);
-  const startGoldGranted = isFreshStart ? snapshot.startGoldGrant : 0;
-  if (startGoldGranted > 0) {
-    grantStartGold(draft, startGoldGranted);
-  }
   if (options.discoverDeck || snapshot.characterId === "wildcard") {
     discoverCardIds(
       draft,
       snapshot.freshDeck.map((card) => card.id),
     );
   }
-  return { isFreshStart, startGoldGranted };
 }

@@ -26,7 +26,7 @@ function props() {
     healFraction: 0.3,
     runDeck: [],
     visit: { ...emptyAlchemyVisit(), offers },
-    potency: 0,
+
     onRest: vi.fn(() => true),
     onBrew: vi.fn(() => null),
     onContinue: vi.fn(),

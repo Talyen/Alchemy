@@ -18,7 +18,6 @@ import {
   enterWildwoodVictory,
   setDestinationOfferState,
   setGold,
-  setRunMaxHealth,
   settleBattleVictory,
   settlePendingBattleMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -47,9 +46,7 @@ export function commitVictoryRewards(
   completeRunRoom(draft);
   addRunGoldEarned(draft, Math.max(0, result.persistedGold - draft.runProfile.gold));
   setGold(draft, result.persistedGold);
-  if (result.maxHealthDelta > 0) {
-    setRunMaxHealth(draft, (prev) => prev + result.maxHealthDelta);
-  }
+
   syncBattleToRun(draft, { playerHealth: result.playerHealth });
 
   setDestinationOfferState(draft, result.destinationOfferState);

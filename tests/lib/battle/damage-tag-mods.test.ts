@@ -10,16 +10,6 @@ describe("Archery damage", () => {
     expect(dealDamage(state, makeTestCard({ effects: arrow.effects })).enemyHealth).toBe(20);
   });
 
-  it("repeats damage once at half strength without recursion", () => {
-    const state = regressionBattle({
-      enemyHealth: 100,
-      enemyMaxHealth: 100,
-      talentEffects: { archeryPlayTwiceChance: 100 },
-    });
-    const card = makeTestCard({ ...arrow, effects: [makeEffect("physical", 20)] });
-    expect(dealDamage(state, card).enemyHealth).toBe(70);
-  });
-
   it.each([
     ["archeryDoubledVsHighHealth", 100, 80],
     ["archeryDoubledVsHighHealth", 99, 89],
@@ -51,6 +41,6 @@ describe("Archery damage", () => {
 });
 
 it("typed damage bonuses adds flat Stun damage", () => {
-  const state = regressionBattle({ talentEffects: { flatStunDamage: 2 } });
+  const state = regressionBattle({ gearEffects: { flatStunDamage: 2 } });
   expect(dealDamage(state, makeTestCard({ effects: [makeEffect("stun", 5)] })).enemyHealth).toBe(23);
 });

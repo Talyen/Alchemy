@@ -43,7 +43,7 @@ before settlement removes combat. Those retained frames are presentation only,
 never gameplay command inputs or resume data. Menu and meta navigation remain
 independent of activity, so an unfinished battle stays resumable there.
 
-Live reads and screen data expose `runProfile.gold` as `gold`; `startGold` grants once on a new run start. `profile` never owns gameplay currency. Homestead and talent mutations rebind live Health and battle manifests through the owning command. Battle VFX live separately in `run-loop/battle/` (state in `battle-presentation-store.ts`, overlays in `presentation/` leaves) and are not persisted.
+Live reads and screen data expose `runProfile.gold` as `gold`. `profile` never owns gameplay currency. Homestead and talent mutations rebind live Health and battle manifests through the owning command. Battle VFX live separately in `run-loop/battle/` (state in `battle-presentation-store.ts`, overlays in `presentation/` leaves) and are not persisted.
 
 ### Command atomicity
 

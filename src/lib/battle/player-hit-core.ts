@@ -45,11 +45,11 @@ export type FollowUpHitRequest =
   | Readonly<{ source: "talent-fixed" | "talent-derived"; damageType: DamageType; amount: number }>;
 
 export type CardHitRequest = Readonly<{
-  source: "card-attack" | "archery-extra";
+  source: "card-attack";
   forgeTriggers?: Set<string>;
   card: BattleCard;
   effect: DamageEffect;
-  /** Already scaled and mitigated. Extra hits copy this amount without recalculating it. */
+  /** Already scaled and mitigated by attack orchestration. */
   resolvedDamage: number;
   critical?: boolean;
   origin?: CardEffectResolutionContext["origin"];

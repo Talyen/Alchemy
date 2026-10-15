@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { getBattleCompanionDamageModifiers } from "@/lib/battle/companion-scaling";
-import { companionLibrary, getCompanionDescriptionLines, type CompanionId } from "@/lib/game-data";
+import { companionLibrary, type CompanionId } from "@/lib/game-data";
 import { makeCombatTexts as makeTexts, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 function wolfBleedRng() {
@@ -76,42 +76,6 @@ describe("processCompanionTurnStart", () => {
     expect(result.enemyHealth).toBe(29);
 
     expect(result.flags.firstBurnTrinketDoubledUsed).toBe(false);
-  });
-
-  it("companionBleedDamageBonus adds to bleed-type companion (Panther) damage", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary.panther,
-      talentEffects: {
-        companionBleedDamageBonus: 3,
-      },
-    });
-    const result = processCompanionTurnStart(state, makeTexts());
-
-    expect(result.enemyStatuses.bleed).toBe(4);
-  });
-
-  it.each([
-    ["wolf", 0, 4],
-    ["wolf", 0.99, 1],
-    ["fox", 0, 1],
-    ["fox", 0.99, 4],
-  ] as const)("applies the Bleed bonus only to the selected %s damage type at roll %s", (id, roll, damage) => {
-    let first = true;
-    const state = patchBattleState({
-      activeCompanion: companionLibrary[id],
-      talentEffects: { companionBleedDamageBonus: 3 },
-      rng: () => {
-        if (!first) return 0.99;
-        first = false;
-        return roll;
-      },
-    });
-    expect(processCompanionTurnStart(state, []).enemyHealth).toBe(state.enemyHealth - damage);
-    expect(getCompanionDescriptionLines(companionLibrary[id], 0, getBattleCompanionDamageModifiers(state))).toEqual([
-      id === "wolf"
-        ? "Deals 4 Bleed damage or Deals 1 Physical damage each turn"
-        : "Deals 1 Stun damage or Deals 4 Bleed damage each turn",
-    ]);
   });
 
   it("companionVsFrozenBonus adds when enemy has freeze skip turns", () => {
@@ -461,7 +425,6 @@ it("Companion scaling integration applies every damage bonus once and preserves 
   });
   expect(getBattleCompanionDamageModifiers(state)).toEqual({
     damageBonus: 12,
-    bleedDamageBonus: 0,
     damageMultiplier: 1,
   });
   const texts = makeTexts();

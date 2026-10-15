@@ -173,7 +173,7 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
   } = initializePlayerHealthAndBlock(options, battleTalents, startBlock, battleGearEffects);
 
   const encounterBenefits = battleContentSystem === "labyrinth" ? (options.encounterBenefits ?? []) : [];
-  const mana = BASE_PLAYER_MANA + manaBonus + battleTalents.startMana + battleTalents.runMaxManaBonus;
+  const mana = BASE_PLAYER_MANA + manaBonus + battleTalents.startMana;
   const baseState = defaultBattleState();
   const openingStatuses = resolveStartingPlayerStatuses(
     baseState.playerStatuses,

@@ -39,8 +39,7 @@ character/difficulty routing. `run-resume-navigation.ts` owns current-run resume
 `new-run-initialization.ts` prepares new runs and drafts in commands before navigation. Run-start snapshots belong to
 `run-start-command.ts`; Wildcard starter-draft sampling belongs to
 `shared/run-flow/starter-draft.ts`.
-`new-run-initialization.ts` owns Campaign launch: run setup, starting Gold,
-discovery, destination offers, pending-character cleanup, and opening combat
+`new-run-initialization.ts` owns Campaign launch: run setup, discovery, destination offers, pending-character cleanup, and opening combat
 commit in one command. Initialization failure rolls all of them back. After
 commit, it schedules Battle before presenting opening feedback, so an immediate
 Companion outcome supersedes that request. Presentation failure retains a
@@ -199,9 +198,10 @@ layers live beside their leaves (`card-ghost-overlay.tsx`,
 binds them once to a `GameSession`. Callers supply no Talent or Homestead
 manifests. `shop-pricing-context.ts` derives effects from current session
 progression for quotes and from the open transaction for mutations. Purchases,
-services, refresh chances, potion potency, and Gear sampling therefore use the
+services, refresh chances, and Gear sampling therefore use the
 same progression as payment and visit state, including after upgrades, resets,
-or save restoration. Retained capabilities do not need to be recreated.
+or save restoration. Refresh quotes read the live visit; callers supply no cached
+refresh allowance or progression overrides. Retained capabilities do not need to be recreated.
 `shop-commands-core.ts` owns shared purchase actions and live price helpers.
 Each shop supplies typed shelf selection, item identity, pricing, and acquisition
 rules; the shared purchase owner uses that pricing rule for both displayed quotes

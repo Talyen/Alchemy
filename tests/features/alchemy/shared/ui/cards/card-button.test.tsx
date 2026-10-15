@@ -121,7 +121,7 @@ describe("BattleCardButton", () => {
         comparisonCard={source}
         descriptionContext={{
           companionBondLevels: { wolf: 2 },
-          companionDamageModifiers: { damageBonus: 4, bleedDamageBonus: 0, damageMultiplier: 1 },
+          companionDamageModifiers: { damageBonus: 4, damageMultiplier: 1 },
         }}
         ariaLabel="Result"
         shimmerActive={false}

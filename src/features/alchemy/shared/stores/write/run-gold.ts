@@ -30,11 +30,6 @@ export function addGold(draft: GameplayDraft, amount: number, findBonus = 0): vo
   setGold(draft, (gold) => gold + earned);
 }
 
-export function grantStartGold(draft: GameplayDraft, amount: number): void {
-  if (amount <= 0) return;
-  setGold(draft, (gold) => gold + amount);
-}
-
 export function deductGold(draft: GameplayDraft, amount: number): void {
   if (amount <= 0) return;
   setGold(draft, (gold) => Math.max(0, gold - amount));

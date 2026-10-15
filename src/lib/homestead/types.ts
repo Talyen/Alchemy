@@ -91,10 +91,7 @@ export const HOMESTEAD_BATTLE_NUMERIC_KEYS = [
   "runMaxHealthBonus",
 ] as const satisfies readonly NumericTalentKey[];
 
-const HOMESTEAD_BATTLE_RECORD_KEYS = [
-  "companionBondLevels",
-  "cardHealBonus",
-] as const satisfies readonly RecordTalentKey[];
+const HOMESTEAD_BATTLE_RECORD_KEYS = ["companionBondLevels"] as const satisfies readonly RecordTalentKey[];
 
 type HomesteadBattleKey =
   | (typeof HOMESTEAD_BATTLE_NUMERIC_KEYS)[number]

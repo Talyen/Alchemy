@@ -22,7 +22,7 @@ const DAMAGE_MODIFIER_SOURCES: Record<DamageType, DamageModifierSources> = {
     gearBonus: "flatPhysicalDamage",
     gearResistance: "resistPhysical",
   },
-  stun: { talentBonus: "flatStunDamage", gearBonus: "flatStunDamage", gearResistance: "resistStun" },
+  stun: { gearBonus: "flatStunDamage", gearResistance: "resistStun" },
   holy: {
     talentBonus: "flatHolyDamage",
     gearBonus: "flatHolyDamage",

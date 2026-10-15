@@ -17,7 +17,6 @@ export function BrewPotionPanel({
   kind,
   price = 0,
   gold = 0,
-  potency = 0,
   selectionSound = "selection",
   onConfirm,
   isProgressSavePending = () => false,
@@ -28,7 +27,6 @@ export function BrewPotionPanel({
   kind: BrewOperation["kind"];
   price?: number;
   gold?: number;
-  potency?: number;
   selectionSound?: "selection" | "shopSelect";
   onConfirm: (operation: BrewOperation) => BattleCard | null;
   isProgressSavePending?: () => boolean;
@@ -71,7 +69,7 @@ export function BrewPotionPanel({
           ? strengthenPotion(sourceDeck[a])
           : null
         : a !== b
-          ? tryCreateMixedPotion(sourceDeck[a], sourceDeck[b], potency)
+          ? tryCreateMixedPotion(sourceDeck[a], sourceDeck[b])
           : null;
   const afford = gold >= price;
   function confirm(operation: BrewOperation) {

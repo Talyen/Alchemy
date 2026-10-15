@@ -1,3 +1,4 @@
+import { readRunSession, type ShopSessionStateKey } from "@/features/alchemy/shared/stores/run-reads";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { snapshotTransactionValue, type RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -16,9 +17,7 @@ import {
   resolveDraftShopEffects,
   resolveDraftShopPricingContext,
   resolveReadShopModifiers,
-  resolveReadShopEffects,
   resolveReadShopPricingContext,
-  type ShopSessionStateKey,
 } from "./shop-pricing-context";
 import { findShopOffering, shopItemSlotKey } from "./shop-slot-keys";
 import { runShopTransaction } from "./shop-transactions";
@@ -37,17 +36,12 @@ const SHOP_STATE_KEY: Record<ShopActivity, ShopSessionStateKey> = {
   "equipment-shop": "equipmentShopState",
 };
 
-export function createGetRefreshPrice(
-  activity: ShopActivity,
-  gameSession: GameSession,
-): (refreshesLeft: number, modifiers?: ShopRefreshModifiers, freeRefreshUsed?: boolean) => number {
-  return (refreshesLeft, modifiers = resolveReadShopModifiers(gameSession), freeRefreshUsed = false) =>
+export function createGetRefreshPrice(activity: ShopActivity, gameSession: GameSession): () => number {
+  return () =>
     getShopRefreshPrice(
       REFRESH_KIND[activity],
-      resolveReadShopEffects(gameSession).talentEffects,
-      refreshesLeft,
-      modifiers,
-      freeRefreshUsed,
+      readActivityData(readRunSession(gameSession).activity, activity).refreshesLeft,
+      resolveReadShopModifiers(gameSession),
     );
 }
 
@@ -75,13 +69,7 @@ export function createShopRefreshAction<K extends ShopActivity>(
         if (guard && !guard(draft, state)) return { committed: false, price: 0, value: null };
         const modifiers = resolveDraftShopModifiers(draft);
         const { talentEffects } = resolveDraftShopEffects(draft);
-        const quotedPrice = getShopRefreshPrice(
-          REFRESH_KIND[activity],
-          talentEffects,
-          state.refreshesLeft,
-          modifiers,
-          state.freeRefreshUsed,
-        );
+        const quotedPrice = getShopRefreshPrice(REFRESH_KIND[activity], state.refreshesLeft, modifiers);
         // Match the displayed affordability guard before consuming persisted RNG.
         if (state.refreshesLeft <= 0 || readDraftGold(draft) < quotedPrice) {
           return { committed: false, price: quotedPrice, value: null };
@@ -97,7 +85,7 @@ export function createShopRefreshAction<K extends ShopActivity>(
         setRunActivityData(draft, activity, {
           ...refreshed,
           refreshesLeft: state.refreshesLeft - 1,
-          freeRefreshUsed: state.freeRefreshUsed || restockRoll || (talentEffects.shopFreeRefresh && quotedPrice === 0),
+          freeRefreshUsed: state.freeRefreshUsed || restockRoll,
           purchasedSlotKeys: [],
         });
         return { committed: true, price, value: null };

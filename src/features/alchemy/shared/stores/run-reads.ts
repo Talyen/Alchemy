@@ -115,7 +115,6 @@ export function selectCardInspectionData(state: GameplayState) {
     discardPile: battle.discard,
     talentEffects: battle.talentEffects,
     companionDamageBonus: companionModifiers.damageBonus,
-    companionBleedDamageBonus: companionModifiers.bleedDamageBonus,
     companionDamageMultiplier: companionModifiers.damageMultiplier,
   };
 }

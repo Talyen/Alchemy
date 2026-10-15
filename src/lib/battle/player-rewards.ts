@@ -1,4 +1,3 @@
-import { applyRewardFindBonus } from "@/lib/homestead/material-rewards";
 import { resolveSecondaryAction } from "./action-context";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import { drawKeywordCard } from "./draw";
@@ -156,21 +155,11 @@ export function addGoldWithCombatText(
   state: BattleState,
   amount: number,
   combatTexts?: CombatTextEvent[],
-  findBonus = 0,
 ): BattleState {
   if (amount <= 0) return state;
 
-  const scaledGold = applyRewardFindBonus(scaleGoldReward(amount, state.gearEffects), findBonus);
-  let nextState = { ...state, gold: state.gold + scaledGold };
-  if (state.playerStatuses.block === 0 && state.talentEffects.blockPerGold > 0) {
-    nextState = addPlayerStatusWithCombatText(
-      nextState,
-      "block",
-      Math.round(scaledGold * state.talentEffects.blockPerGold),
-      combatTexts,
-      { skipFightPacing: true },
-    );
-  }
+  const scaledGold = scaleGoldReward(amount, state.gearEffects);
+  const nextState = { ...state, gold: state.gold + scaledGold };
   if (combatTexts) {
     mergeCombatText(combatTexts, {
       target: "player",

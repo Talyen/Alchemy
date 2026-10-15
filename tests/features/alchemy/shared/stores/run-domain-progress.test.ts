@@ -342,7 +342,6 @@ it("applyRunStartSnapshot clears runTalentXP and run-end snapshots when starting
     contentSystemType: "campaign",
     freshDeck: [],
     selectedDifficulty: "difficulty-1",
-    startGoldGrant: 0,
     runPlayerHealth: 80,
     runMaxHealth: 80,
     roomsEncountered: 0,

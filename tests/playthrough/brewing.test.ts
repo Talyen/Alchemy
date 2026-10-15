@@ -167,7 +167,7 @@ describe("headless brewing through production commands", () => {
     const actor = createCareerActor(config, undefined, session);
     const refresh = actor.observe().find((c) => c.kind === "alchemist-refresh")!;
     expect(refresh.score).toBeGreaterThan(0);
-    const refreshPrice = controller.shop().alchemist.getRefreshPrice(1);
+    const refreshPrice = controller.shop().alchemist.getRefreshPrice();
     actor.execute(refresh);
     expect(readRunProfile(session).gold).toBe(100 - refreshPrice);
     expect(actor.observe().some((c) => c.kind === "alchemist-refresh")).toBe(false);
@@ -201,7 +201,7 @@ describe("headless brewing through production commands", () => {
     const reserve = Math.min(
       ...activity.data.potions.map((card) => controller.shop().alchemist.getPotionBuyPrice(card)),
     );
-    const refreshPrice = controller.shop().alchemist.getRefreshPrice(1);
+    const refreshPrice = controller.shop().alchemist.getRefreshPrice();
     dispatchGameplayCommand((draft) => acceptCommand(setGold(draft, refreshPrice + reserve - 1)), undefined, session);
     choices = actor.observe();
     expect(choices.find((choice) => choice.kind === "alchemist-refresh")?.score).toBeLessThan(0);
@@ -272,7 +272,7 @@ describe("headless brewing through production commands", () => {
       ...cloneBattleCard(cardById["panacea-potion"]!),
       effects: [{ kind: "remove-enemy-armor" as const, halve: true }],
     };
-    expect(brewCandidates([unchanged], 0).some((c) => c.kind === "distill")).toBe(false);
+    expect(brewCandidates([unchanged]).some((c) => c.kind === "distill")).toBe(false);
   });
 });
 

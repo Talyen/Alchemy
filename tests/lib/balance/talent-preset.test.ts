@@ -5,7 +5,6 @@ import {
   isCombatTalent,
   talentsInTreeOrder,
   LATE_AFFINITY_TALENT_CAP,
-  META_ONLY_TALENT_FIELDS,
 } from "@/lib/balance/talent-preset";
 import { talentPool } from "@/lib/game-data";
 
@@ -22,11 +21,10 @@ describe("isCombatTalent", () => {
     expect(isCombatTalent(prosperity!)).toBe(true);
   });
 
-  it("treats startGold as combat-eligible so Seed Money can feed battle gold", () => {
+  it("includes Seed Money combat rewards", () => {
     const seedMoney = talentPool.find((talent) => talent.id === "gold-start");
     expect(seedMoney).toBeDefined();
     expect(isCombatTalent(seedMoney!)).toBe(true);
-    expect(META_ONLY_TALENT_FIELDS.has("startGold")).toBe(false);
   });
 });
 
@@ -57,7 +55,6 @@ it.each(["early", "late"] as const)("keeps %s simulation manifests isolated from
   const expected = structuredClone(first);
   first.flatPhysicalDamage = 999;
   first.companionBondLevels.wolf = 999;
-  first.cardHealBonus.apple = 999;
   first.cardHealMultipliers.apple = 999;
   if (preset === "late") {
     expect(first.healthThresholdBlockOnce).toEqual({ threshold: 50, amount: 6 });

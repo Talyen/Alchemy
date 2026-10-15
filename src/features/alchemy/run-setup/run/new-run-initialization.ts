@@ -50,27 +50,18 @@ function createStartSnapshot(
   });
 }
 
-interface RunStartOutcome {
-  playGoldSound: boolean;
-}
-
-function afterRunStartCommitted(outcome: RunStartOutcome, gameSession: GameSession): void {
-  sessionFeedback(gameSession).playUISound("newRun");
-  if (outcome.playGoldSound) sessionFeedback(gameSession).playGoldGain();
-}
-
 // Card hover clears universally on navigation (see run-flow-engine), so run
 // starts only commit state here and play committed side effects afterwards.
 function commitRunStart(
-  mutate: (draft: RunTransaction) => RunStartOutcome,
+  mutate: (draft: RunTransaction) => void,
   afterCommit: (() => void) | undefined,
   gameSession: GameSession,
 ): void {
   dispatchRunSessionCommand(
     (...args: Parameters<typeof mutate>) => acceptCommand(mutate(...args)),
     {
-      afterCommit: (outcome) => {
-        afterRunStartCommitted(outcome, gameSession);
+      afterCommit: () => {
+        sessionFeedback(gameSession).playUISound("newRun");
         afterCommit?.();
       },
     },
@@ -81,16 +72,15 @@ function commitRunStart(
 export function createNewRunInitialization(deps: ContentSystemNavigationDeps, gameSession: GameSession) {
   function prepareCampaign(draft: RunTransaction, characterId: CharacterId, difficultyId: DifficultyId) {
     const startSnapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.CAMPAIGN, { difficultyId });
-    const { startGoldGranted } = applyRunStartToDraft(draft, startSnapshot, { discoverDeck: true });
+    applyRunStartToDraft(draft, startSnapshot, { discoverDeck: true });
     setStarterDraftChoices(draft, null);
     sampleAndApplyDestinationOffer(draft);
-    return { playGoldSound: startGoldGranted > 0 };
   }
 
   function startCampaignRun(characterId: CharacterId, difficultyId: DifficultyId, novice = false) {
     dispatchRunSessionCommand(
       (draft) => {
-        const outcome = prepareCampaign(draft, characterId, difficultyId);
+        prepareCampaign(draft, characterId, difficultyId);
         if (draft.run.activeRun.runDeck.length === 0) throw new Error("Campaign requires a starting deck");
         setPendingCharacterId(draft, null);
         const battle = initializeBattle(draft, {
@@ -98,14 +88,14 @@ export function createNewRunInitialization(deps: ContentSystemNavigationDeps, ga
           options: novice ? { enemyId: "skeleton" } : {},
         });
         if (!battle) throw new Error("Campaign opening battle could not be initialized");
-        return acceptCommand({ ...outcome, battle });
+        return acceptCommand(battle);
       },
       {
         afterCommit: (outcome) => {
           // Schedule the display first: an opening Companion outcome can supersede it.
           deps.navigateTo(ROUTE_SCREENS.BATTLE);
-          afterRunStartCommitted(outcome, gameSession);
-          deps.presentBattleStart(outcome.battle);
+          sessionFeedback(gameSession).playUISound("newRun");
+          deps.presentBattleStart(outcome);
         },
       },
       gameSession,
@@ -120,11 +110,10 @@ export function createNewRunInitialization(deps: ContentSystemNavigationDeps, ga
     commitRunStart(
       (draft) => {
         const snapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.LABYRINTH);
-        const { startGoldGranted } = applyRunStartToDraft(draft, snapshot, { discoverDeck: true });
+        applyRunStartToDraft(draft, snapshot, { discoverDeck: true });
         setLabyrinthMap(draft, generateLabyrinthMap(createDraftRunRandomSource(draft, "world")));
         setStarterDraftChoices(draft, null);
         setRunProgressActivity(draft, "labyrinth-map");
-        return { playGoldSound: startGoldGranted > 0 };
       },
       () => deps.navigateTo(ROUTE_SCREENS.LABYRINTH_MAP),
       gameSession,
@@ -135,7 +124,7 @@ export function createNewRunInitialization(deps: ContentSystemNavigationDeps, ga
     commitRunStart(
       (draft) => {
         const startSnapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.WILDWOOD, { draftedDeck: [] });
-        const { startGoldGranted } = applyRunStartToDraft(draft, startSnapshot);
+        applyRunStartToDraft(draft, startSnapshot);
         setStarterDraftChoices(draft, null);
         setWildwoodDraft(
           draft,
@@ -143,7 +132,6 @@ export function createNewRunInitialization(deps: ContentSystemNavigationDeps, ga
         );
         setPendingCharacterId(draft, characterId);
         setRunProgressActivity(draft, "draft-deck");
-        return { playGoldSound: startGoldGranted > 0 };
       },
       () => deps.navigateTo(ROUTE_SCREENS.DRAFT_DECK),
       gameSession,
@@ -154,11 +142,10 @@ export function createNewRunInitialization(deps: ContentSystemNavigationDeps, ga
     commitRunStart(
       (draft) => {
         const startSnapshot = createStartSnapshot(draft, "wildcard", contentSystemType, { draftedDeck: [] });
-        const { startGoldGranted } = applyRunStartToDraft(draft, startSnapshot);
+        applyRunStartToDraft(draft, startSnapshot);
         setPendingCharacterId(draft, "wildcard");
         setStarterDraftChoices(draft, createStarterDraftChoices([], createDraftRunRandomSource(draft, "rewards")));
         setRunProgressActivity(draft, "draft-deck");
-        return { playGoldSound: startGoldGranted > 0 };
       },
       () => deps.navigateTo(ROUTE_SCREENS.DRAFT_DECK),
       gameSession,

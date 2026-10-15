@@ -174,7 +174,6 @@ it.each(["phoenix", "fox"] as const)(
       talentEffects: {
         companionBondLevels: { ...defaultCompanionBondLevels, [id]: 1 },
         companionVsFrozenBonus: 2,
-        companionBleedDamageBonus: 3,
         companionDoubledVsLowHealth: true,
       },
     });

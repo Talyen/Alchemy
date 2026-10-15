@@ -63,7 +63,7 @@ describe("combat and card regression fixes", () => {
   it("Potion potency scales range endpoints when mixing or doubling", () => {
     const card = makeTestCard({ id: "health-potion", effects: [{ kind: "random-draw", minAmount: 1, maxAmount: 3 }] });
     expect(doublePotionPotency(card).effects).toEqual([{ kind: "random-draw", minAmount: 2, maxAmount: 6 }]);
-    expect(createMixedPotion(card, card, 1).effects).toEqual([{ kind: "random-draw", minAmount: 3, maxAmount: 7 }]);
+    expect(createMixedPotion(card, card).effects).toEqual([{ kind: "random-draw", minAmount: 2, maxAmount: 6 }]);
   });
 
   it("Stunning gear reports Block spent even when it absorbs the entire hit", () => {
