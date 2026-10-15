@@ -24,7 +24,6 @@ import {
 } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   addGold,
-  grantStartGold,
   deductGold,
   setGold,
   setHasActiveRun,
@@ -63,8 +62,7 @@ describe("run recap", () => {
   it("counts grants and committed battle Gold once, excluding starting purse and spending across resume", () => {
     command(
       (draft) => {
-        setGold(draft, 500);
-        grantStartGold(draft, 30);
+        setGold(draft, 530);
         addGold(draft, 20);
         deductGold(draft, 100);
         initializeActiveBattle(draft, { ...defaultBattleState(), gold: 450 });

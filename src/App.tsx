@@ -113,7 +113,6 @@ function AppMainContent({
     () => ({
       companionDamageModifiers: {
         damageBonus: homesteadEffects.companionDamage + talentEffects.companionDamage,
-        bleedDamageBonus: 0,
         damageMultiplier: 1,
       },
       companionBondLevels: homesteadBondedCompanions,

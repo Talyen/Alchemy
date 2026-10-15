@@ -1,9 +1,10 @@
+import { upgradeWishCard } from "@/lib/battle/wish-upgrade";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { describe, expect, it } from "vitest";
-import { cardById, cardLibrary, computeTalentEffects } from "@/lib/game-data";
+import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { applyWishEffect, buildWishOptions } from "@/lib/battle/wish";
+import { applyWishEffect } from "@/lib/battle/wish";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
@@ -128,24 +129,20 @@ describe("one-Mana card tradeoffs", () => {
   });
 
   it("Powerful Wish upgrades repeated immediate effects and implicit single-card draws", () => {
-    const options = buildWishOptions(
-      battle({ talentEffects: { wishCardsUpgraded: true, wishExtraChoices: cardLibrary.length } }),
-      cardById.wish!,
-    );
-    const ray = options.find((card) => card.id === "ray-of-frost")!;
+    const ray = upgradeWishCard(cardById["ray-of-frost"]!);
     expect(ray.effects).toEqual([
       { kind: "damage", damageType: "freeze", amount: 2 },
       { kind: "damage", damageType: "freeze", amount: 2 },
     ]);
     expect(ray.descriptionLines).toEqual(["Deal 2 Freeze damage twice"]);
-    const bread = options.find((card) => card.id === "bread")!;
+    const bread = upgradeWishCard(cardById["bread"]!);
     expect(bread.effects).toEqual([{ kind: "heal", amount: 7 }]);
-    const stargaze = options.find((card) => card.id === "stargaze")!;
+    const stargaze = upgradeWishCard(cardById["stargaze"]!);
     expect(stargaze.effects).toEqual([
       { kind: "damage", damageType: "freeze", amount: 2 },
       { kind: "wish", amount: 2 },
     ]);
-    const berries = options.find((card) => card.id === "mana-berries")!;
+    const berries = upgradeWishCard(cardById["mana-berries"]!);
     expect(berries.descriptionLines).toContain("Draw 2 cards");
     for (const card of [ray, bread, stargaze, berries]) expect(validateCardDescriptionParity(card)).toEqual([]);
     expect(cardById.bread!.effects[0]).toMatchObject({ amount: 6 });

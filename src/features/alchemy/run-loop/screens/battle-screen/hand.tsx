@@ -206,7 +206,8 @@ export function BattleHand({
       keyboardActivation.current = false;
     };
     const onKey = (event: KeyboardEvent) => {
-      if (["Tab", "Escape", "Alt", "Meta"].includes(event.key)) cancel();
+      if (["Tab", "F7", "Escape", "Alt", "Meta", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key))
+        cancel();
     };
     document.addEventListener("pointerdown", cancel, true);
     window.addEventListener("keydown", onKey, true);

@@ -109,7 +109,7 @@ describe("BattleHand", () => {
     battlePresentation.getState().resetPresentation();
   });
 
-  it.each([false, true])("recovers hand focus only while the window stays active (blur: %s)", (blur) => {
+  it.each(["none", "blur", "ArrowRight", "F7"])("respects input after playing a card (%s)", (interruption) => {
     const endTurnButtonRef = createRef<HTMLButtonElement>();
     const refs = { handCardRefs: { current: {} }, endTurnButtonRef } as unknown as BattleRefsProps;
     const onCardClick = vi.fn();
@@ -142,12 +142,15 @@ describe("BattleHand", () => {
       fireEvent.keyDown(card, { key: "Enter" });
       fireEvent.click(card);
       expect(onCardClick).toHaveBeenCalledOnce();
-      if (blur) {
+      if (interruption === "blur") {
         fireEvent.blur(window);
         fireEvent.focus(window);
       }
+      if (interruption !== "none" && interruption !== "blur") {
+        fireEvent.keyDown(card, { key: interruption });
+      }
       rerender(tree([]));
-      expect(document.activeElement).toBe(blur ? document.body : target);
+      expect(document.activeElement).toBe(interruption !== "none" ? document.body : target);
     } finally {
       geometry.mockRestore();
     }

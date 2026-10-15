@@ -4,6 +4,11 @@ import { createDefaultSaveData } from "@/features/alchemy/shared/storage/default
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
 import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
+import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import {
+  encodePersistenceFields,
+  hydrateAlchemyPersistenceFields,
+} from "@/features/alchemy/shared/storage/persistence";
 import { resetHomestead } from "@/features/alchemy/shared/stores/meta-commands";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
@@ -395,8 +400,42 @@ it("owns the complete snapshot without sharing nested battle or progression stat
     save.activeRun.activity.data.battleState.playerStatuses.burn = 999;
     save.activeRun.activity.data.battleState.hand.length = 0;
     save.gearInventories.knight.length = 0;
+    const run = snapshotRun(session);
+    run.runDeck.length = 0;
+    if (run.activity.kind !== "battle") throw new Error("Battle was lost");
+    run.activity.data.battleState.playerStatuses.burn = 1000;
+    const fields = encodePersistenceFields(session);
+    fields.materialInventory.gems = 1000;
+    fields.talentXP.armor = 1000;
     expect(persistence.snapshot()).toEqual(before);
   } finally {
     await session.dispose();
   }
 });
+
+it.each(["session", "run", "profile"] as const)(
+  "owns %s restoration input without freezing the caller's save",
+  async (kind) => {
+    const save = battleSave();
+    const session = createGameSession();
+    const persistence = createSessionPersistence(session);
+    try {
+      if (kind === "session") persistence.restore(save);
+      else if (kind === "run") restoreRun(save.activeRun, save.talentXP, save.unlockedTalents, session);
+      else hydrateAlchemyPersistenceFields(save, session);
+      const before = persistence.snapshot();
+      expect(Object.isFrozen(save.talentXP)).toBe(false);
+      expect(Object.isFrozen(save.materialInventory)).toBe(false);
+      expect(Object.isFrozen(save.activeRun!.rng)).toBe(false);
+      if (save.activeRun?.activity.kind !== "battle") throw new Error("Battle was lost");
+      expect(Object.isFrozen(save.activeRun.activity.data.battleState.playerStatuses)).toBe(false);
+      save.talentXP.armor = 999;
+      save.materialInventory.gems = 999;
+      save.activeRun.rng.counters.world = 999;
+      save.activeRun.activity.data.battleState.playerStatuses.burn = 999;
+      expect(persistence.snapshot()).toEqual(before);
+    } finally {
+      await session.dispose();
+    }
+  },
+);

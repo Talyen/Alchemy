@@ -5,56 +5,49 @@ import * as cardBuilders from "../card-builders";
 import { cardMagnitude } from "../../card-description-model";
 
 export const coreCards: BattleCard[] = [
-  cardBuilders.damageCard({ id: "slash", art: assetRefs.slash, damageType: "physical", amount: 4 }),
+  cardBuilders.damageCard({ id: "slash", damageType: "physical", amount: 4 }),
   cardBuilders.effectsCard({
     id: "stab",
-    art: assetRefs.stab,
     effects: [{ kind: "damage", damageType: "physical", amount: 3, ignoreArmor: true, ignoreBlock: true }],
   }),
   cardBuilders.effectsCard({
     id: "cleanse",
-    art: assetRefs.cleanse,
     effects: [
       { kind: "remove-harmful-status", amount: 1 },
       { kind: "heal", amount: 2 },
     ],
   }),
-  cardBuilders.effectsCard({ id: "heal", art: assetRefs.heal, effects: [{ kind: "heal", amount: 4 }] }),
+  cardBuilders.effectsCard({ id: "heal", effects: [{ kind: "heal", amount: 4 }] }),
   cardBuilders.effectsCard({
     id: "haste",
-    art: assetRefs.haste,
     effects: [{ kind: "player-status", status: "haste", amount: 1 }],
     consume: true,
   }),
   cardBuilders.effectsCard({
     id: "poison-dagger",
-    art: assetRefs.poisonDagger,
     effects: [{ kind: "damage", damageType: "poison", amount: 1 }, { kind: "next-hit-poison" }],
   }),
-  cardBuilders.damageCard({ id: "fireball", art: assetRefs.fireball, damageType: "burn", amount: 2 }),
+  cardBuilders.damageCard({ id: "fireball", damageType: "burn", amount: 2 }),
   cardBuilders.effectsCard({
     id: "fangs",
-    art: assetRefs.fangs,
     effects: [
       { kind: "damage", damageType: "bleed", damageTypePool: ["bleed", "physical"], amount: 2, lifesteal: true },
     ],
   }),
-  cardBuilders.damageCard({ id: "frostbolt", art: assetRefs.frostbolt, damageType: "freeze", amount: 3 }),
-  cardBuilders.playerStatusCard({ id: "anvil", art: assetRefs.anvil, status: "forge", amount: 2 }),
-  cardBuilders.damageCard({ id: "bash", art: assetRefs.bash, damageType: "stun", amount: 3 }),
-  cardBuilders.playerStatusCard({ id: "block", art: assetRefs.block, status: "block", amount: 5 }),
+  cardBuilders.damageCard({ id: "frostbolt", damageType: "freeze", amount: 3 }),
+  cardBuilders.playerStatusCard({ id: "anvil", status: "forge", amount: 2 }),
+  cardBuilders.damageCard({ id: "bash", damageType: "stun", amount: 3 }),
+  cardBuilders.playerStatusCard({ id: "block", status: "block", amount: 5 }),
   cardBuilders.effectsCard({
     id: "blessed-aegis",
-    art: assetRefs.blessedAegis,
     effects: [
       { kind: "player-status", status: "block", amount: 2 },
       { kind: "damage", damageType: "holy", amount: 0, equalToBlock: true, equalToBlockPercent: 50 },
     ],
   }),
-  cardBuilders.effectsCard({ id: "wish", art: assetRefs.wish, effects: [{ kind: "wish", amount: 1 }] }),
+  cardBuilders.effectsCard({ id: "wish", effects: [{ kind: "wish", amount: 1 }] }),
   cardBuilders.effectsCard({
     id: "meteor",
-    art: assetRefs.meteor,
     consume: true,
     effects: [
       { kind: "damage", damageType: "burn", amount: 7 },
@@ -78,7 +71,6 @@ export const coreCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "ray-of-frost",
     title: "Ray of Frost",
-    art: assetRefs.rayOfFrost,
     effects: [
       { kind: "damage", damageType: "freeze", amount: 1 },
       { kind: "damage", damageType: "freeze", amount: 1 },
@@ -86,7 +78,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "tithe",
-    art: assetRefs.tithe,
     effects: [
       { kind: "damage", damageType: "holy", amount: 2 },
       { kind: "gain-gold", amount: 1 },
@@ -94,7 +85,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "exorcism",
-    art: assetRefs.exorcism,
     effects: [
       { kind: "self-damage", damageType: "burn", amount: 1 },
       { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" },
@@ -102,20 +92,17 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "kindling",
-    art: assetRefs.kindling,
     effects: [{ kind: "damage", damageType: "burn", amount: 1, tripleIfEnemyNotBurning: true }],
   }),
   cardBuilders.effectsCard({
     id: "roll-the-dice",
     title: "Roll the Dice",
-    art: assetRefs.rollTheDice,
     consume: true,
     effects: [{ kind: "random-draw", minAmount: 1, maxAmount: 6 }],
   }),
-  cardBuilders.damageCard({ id: "lightning-bolt", art: assetRefs.lightningBolt, damageType: "nature", amount: 4 }),
+  cardBuilders.damageCard({ id: "lightning-bolt", damageType: "nature", amount: 4 }),
   cardBuilders.effectsCard({
     id: "wishing-well",
-    art: assetRefs.wishingWell,
     effects: [
       {
         kind: "chance",
@@ -127,22 +114,19 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "hemorrhage",
-    art: assetRefs.hemorrhage,
     effects: [{ kind: "damage", damageType: "bleed", amount: 2, detonateAllBleed: true }],
   }),
   cardBuilders.effectsCard({
     id: "phoenix-feather",
-    art: assetRefs.phoenixFeather,
     consume: true,
     effects: [
       { kind: "damage", damageType: "burn", amount: 1 },
       { kind: "player-status", status: "phoenixFeather", amount: 1 },
     ],
   }),
-  cardBuilders.playerStatusCard({ id: "plate-mail", art: assetRefs.plateMail, status: "armor", amount: 2 }),
+  cardBuilders.playerStatusCard({ id: "plate-mail", status: "armor", amount: 2 }),
   cardBuilders.effectsCard({
     id: "sanctified-plate",
-    art: assetRefs.sanctifiedPlate,
     effects: [
       { kind: "player-status", status: "armor", amount: 1 },
       { kind: "damage", damageType: "holy", amount: 0, equalToArmor: true },
@@ -150,7 +134,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "shield-bash",
-    art: assetRefs.shieldBash,
     effects: [
       { kind: "player-status", status: "block", amount: 2 },
       { kind: "damage", damageType: "stun", amount: 0, equalToBlock: true, equalToBlockPercent: 50 },
@@ -158,7 +141,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "steal",
-    art: assetRefs.steal,
     effects: [
       { kind: "damage", damageType: "stun", amount: 1 },
       { kind: "gain-gold", amount: 1 },
@@ -176,12 +158,10 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "burning-blade",
-    art: assetRefs.burningBlade,
     effects: [{ kind: "damage", damageType: "burn", amount: 1, forgeBonusPercent: 50 }],
   }),
   cardBuilders.effectsCard({
     id: "cauterize",
-    art: assetRefs.cauterize,
     effects: [
       { kind: "remove-harmful-status", amount: 1 },
       { kind: "damage", damageType: "burn", amount: 1 },
@@ -190,7 +170,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "blackjack",
-    art: assetRefs.blackjack,
     effects: [
       { kind: "damage", damageType: "stun", amount: 2 },
       { kind: "gain-gold", amount: 2, ifEnemyStunned: true },
@@ -198,7 +177,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "sunburst",
-    art: assetRefs.sunburst,
     effects: [
       { kind: "heal", amount: 2 },
       { kind: "damage", damageType: "burn", amount: 1 },
@@ -206,7 +184,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "holy-radiance",
-    art: assetRefs.holyRadiance,
     effects: [
       { kind: "heal", amount: 2 },
       { kind: "damage", damageType: "holy", amount: 2 },
@@ -214,31 +191,26 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.damageCard({
     id: "venom-fangs",
-    art: assetRefs.venomFangs,
     damageType: "poison",
     amount: 1,
     lifesteal: true,
   }),
   cardBuilders.damageCard({
     id: "bloodthorn",
-    art: assetRefs.bloodthorn,
     damageType: "nature",
     amount: 2,
     lifesteal: true,
   }),
   cardBuilders.effectsCard({
     id: "cinderbloom",
-    art: assetRefs.cinderbloom,
     effects: [{ kind: "damage", damageType: "burn", damageTypePool: ["burn", "nature"], amount: 2 }],
   }),
   cardBuilders.effectsCard({
     id: "grasping-vines",
-    art: assetRefs.graspingVines,
     effects: [{ kind: "damage", damageType: "stun", damageTypePool: ["stun", "nature"], amount: 3 }],
   }),
   cardBuilders.effectsCard({
     id: "briar-shield",
-    art: assetRefs.briarShield,
     effects: [
       { kind: "player-status", status: "block", amount: 1 },
       { kind: "player-status", status: "thorns", amount: 3 },
@@ -246,7 +218,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "thorn-mail",
-    art: assetRefs.thornMail,
     effects: [
       { kind: "player-status", status: "armor", amount: 1 },
       { kind: "player-status", status: "thorns", amount: 2 },
@@ -254,7 +225,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "thorn-whip",
-    art: assetRefs.thornWhip,
     effects: [
       { kind: "damage", damageType: "nature", amount: 2 },
       { kind: "player-status", status: "thorns", amount: 1 },
@@ -262,7 +232,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "porcupine-quill",
-    art: assetRefs.porcupineQuill,
     effects: [
       { kind: "player-status", status: "thorns", amount: 2 },
       { kind: "companion-action", amount: 1 },
@@ -270,7 +239,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "pack-tactics",
-    art: assetRefs.packTactics,
     effects: [
       { kind: "companion-action", amount: 2 },
       { kind: "wish", amount: 1, companionIfAbsent: true },
@@ -279,12 +247,10 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "serrated-edge",
-    art: assetRefs.serratedEdge,
     effects: [{ kind: "damage", damageType: "physical", damageTypePool: ["physical", "bleed"], amount: 2 }],
   }),
   cardBuilders.effectsCard({
     id: "caustic-jab",
-    art: assetRefs.causticJab,
     effects: [
       { kind: "remove-enemy-armor", amount: 2 },
       { kind: "damage", damageType: "poison", amount: 2 },
@@ -292,17 +258,14 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "rend",
-    art: assetRefs.rend,
     effects: [{ kind: "damage", damageType: "bleed", amount: 1, doubleIfEnemyBleeding: true }],
   }),
   cardBuilders.effectsCard({
     id: "pounce",
-    art: assetRefs.pounce,
     effects: [{ kind: "damage", damageType: "physical", damageTypePool: ["physical", "stun"], amount: 2 }],
   }),
   cardBuilders.effectsCard({
     id: "earthquake",
-    art: assetRefs.earthquake,
     effects: [
       { kind: "damage", damageType: "stun", amount: 2 },
       {
@@ -314,7 +277,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "stargaze",
-    art: assetRefs.stargaze,
     effects: [
       { kind: "damage", damageType: "freeze", amount: 1 },
       { kind: "wish", amount: 1 },
@@ -322,7 +284,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "pixie-dust",
-    art: assetRefs.pixieDust,
     effects: [
       { kind: "damage", damageType: "burn", amount: 1 },
       { kind: "restore-mana", amount: 1 },
@@ -330,24 +291,20 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "maul",
-    art: assetRefs.maul,
     effects: [{ kind: "damage", damageType: "bleed", damageTypePool: ["bleed", "stun"], amount: 3 }],
   }),
   cardBuilders.effectsCard({
     id: "sniff-out",
-    art: assetRefs.sniffOut,
     tags: ["archery"],
     effects: [{ kind: "damage", damageType: "bleed", amount: 1 }, { kind: "next-archery-free" }],
   }),
   cardBuilders.effectsCard({
     id: "predators-focus",
     title: "Predator's Focus",
-    art: assetRefs.predatorsFocus,
     effects: [{ kind: "damage", damageType: "bleed", amount: 1 }, { kind: "next-hit-leech" }],
   }),
   cardBuilders.effectsCard({
     id: "blizzard",
-    art: assetRefs.blizzard,
     effects: [
       { kind: "damage", damageType: "freeze", amount: 2 },
       {
@@ -359,7 +316,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "avatar",
-    art: assetRefs.avatar,
     consume: true,
     effects: [
       { kind: "damage", damageType: "holy", amount: 5 },
@@ -368,12 +324,10 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "combustion",
-    art: assetRefs.combustion,
     effects: [{ kind: "damage", damageType: "burn", amount: 1, detonateAllBurn: true }],
   }),
   cardBuilders.effectsCard({
     id: "bellows-blast",
-    art: assetRefs.bellowsBlast,
     effects: [
       { kind: "player-status", status: "forge", amount: 1 },
       { kind: "damage", damageType: "burn", amount: 1 },
@@ -381,7 +335,6 @@ export const coreCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "quench",
-    art: assetRefs.quench,
     effects: [
       { kind: "remove-harmful-status", amount: 1 },
       { kind: "player-status", status: "forge", amount: 1 },

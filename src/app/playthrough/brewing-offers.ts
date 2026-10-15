@@ -2,7 +2,6 @@ import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchem
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { cardSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { getCampfireBrewKind, isBrewablePotion } from "@/lib/alchemist/brewing";
-import { computeTalentEffects } from "@/lib/game-data";
 import { brewCandidates, potionPurchaseScore, potionUtility } from "./brewing-policy";
 import type { OfferChoice } from "./choice-catalog";
 import type { createPlaythroughController } from "./controller";
@@ -32,8 +31,7 @@ export function offerBrewingChoices(
   if (activity.kind !== "alchemist" && activity.kind !== "campfire") return null;
   const run = readActiveRun(gameSession);
   const profile = readRunProfile(gameSession);
-  const potency = computeTalentEffects(profile.unlockedTalents).potionMixPotency;
-  const candidates = brewCandidates(run.runDeck, potency);
+  const candidates = brewCandidates(run.runDeck);
   const enabled = config.brewing === "on";
   const observation: BrewingObservation = { activity: activity.kind, room: run.roomsEncountered, opportunities: [] };
   const opportunities = observation.opportunities;
@@ -144,7 +142,7 @@ export function offerBrewingChoices(
           ? "brewing-reserve"
           : "available",
   });
-  const refreshPrice = actions.getRefreshPrice(activity.data.refreshesLeft, undefined, activity.data.freeRefreshUsed);
+  const refreshPrice = actions.getRefreshPrice();
   const canRefresh = activity.data.refreshesLeft > 0;
   const canAffordRefresh = profile.gold >= refreshPrice + reserve;
   const usefulAvailable =

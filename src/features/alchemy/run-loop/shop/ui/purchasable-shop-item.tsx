@@ -31,7 +31,7 @@ export function PurchasableCardItem({
       card={card}
       onClick={canPurchase ? onBuy : undefined}
       ariaDisabled={!canPurchase}
-      ariaLabel={getShopItemAriaLabel(getCardDisplayTitle(card), purchased)}
+      ariaLabel={getShopItemAriaLabel(getCardDisplayTitle(card), price, purchased, purchaseState.canAfford)}
       shimmerActive={false}
       shimmerToken={undefined}
       shineColor={canPurchase ? getCardInspectionShineColors(card) : undefined}
@@ -60,7 +60,7 @@ export function PurchasableGearItem({
       shine={!purchased}
       ariaDisabled={!canPurchase}
       onClick={canPurchase ? onBuy : undefined}
-      ariaLabel={getShopItemAriaLabel(getGearInstanceTitle(instance), purchased)}
+      ariaLabel={getShopItemAriaLabel(getGearInstanceTitle(instance), price, purchased, purchaseState.canAfford)}
     >
       <ShopPriceChip price={price} purchased={purchased} purchaseState={purchaseState} />
     </GearTile>
@@ -85,7 +85,7 @@ export function PurchasableTrinketItem({
       shine={!purchased}
       ariaDisabled={!canPurchase}
       onClick={canPurchase ? onBuy : undefined}
-      ariaLabel={getShopItemAriaLabel(trinket.title, purchased)}
+      ariaLabel={getShopItemAriaLabel(trinket.title, price, purchased, purchaseState.canAfford)}
     >
       <ShopPriceChip price={price} purchased={purchased} purchaseState={purchaseState} />
     </TrinketTile>

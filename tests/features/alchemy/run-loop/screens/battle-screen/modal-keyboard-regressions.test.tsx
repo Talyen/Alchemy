@@ -114,6 +114,23 @@ describe("keyboard access to battle and navigation modals", () => {
     opener.remove();
   });
 
+  it("lets a pending Wish be retried after a save gate rejects the first click", async () => {
+    const onWishChoice = vi.fn();
+    render(
+      <WishOverlay
+        open
+        battleState={patchBattleState({ wishOptions: [cardById.slash!] })}
+        actions={{ onWishChoice } as unknown as BattleActionsProps}
+      />,
+    );
+    await waitForArtwork();
+    const choice = screen.getByRole("button", { name: "Choose Slash" });
+    fireEvent.click(choice);
+    // A rejected command leaves the offered choices unchanged.
+    fireEvent.click(choice);
+    expect(onWishChoice).toHaveBeenCalledTimes(2);
+  });
+
   it("explains where a Wish choice goes when the hand is full", () => {
     render(
       <WishOverlay

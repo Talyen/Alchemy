@@ -49,6 +49,7 @@ function BoardTile({
       as="button"
       ariaLabel={entry.kind === "board" ? `Inspect ${entry.title}${owned ? "" : " (Locked)"}` : entry.title}
       ariaCurrent={selected ? "true" : undefined}
+      selected={selected}
       shimmerActive={hover.shimmerActive}
       shimmerToken={hover.shimmerToken}
       onMouseEnter={hover.onHoverStart}

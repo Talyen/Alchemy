@@ -5,13 +5,11 @@ import * as cardBuilders from "../card-builders";
 export const consumableCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "health-potion",
-    art: assetRefs.healthPotion,
     consume: true,
     effects: [{ kind: "heal", amount: 8 }],
   }),
   cardBuilders.effectsCard({
     id: "mana-berries",
-    art: assetRefs.manaBerries,
     consume: true,
     effects: [
       { kind: "restore-mana", amount: 1 },
@@ -26,13 +24,11 @@ export const consumableCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "mana-potion",
-    art: assetRefs.manaPotion,
     consume: true,
     effects: [{ kind: "restore-mana", amount: 2 }],
   }),
   cardBuilders.effectsCard({
     id: "panacea-potion",
-    art: assetRefs.panaceaPotion,
     consume: true,
     effects: [
       { kind: "remove-harmful-status", removeAll: true },
@@ -41,13 +37,11 @@ export const consumableCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "stoneskin-potion",
-    art: assetRefs.stoneskinPotion,
     consume: true,
     effects: [{ kind: "player-status", status: "armor", amount: 4 }],
   }),
   cardBuilders.effectsCard({
     id: "acid-potion",
-    art: assetRefs.acidPotion,
     consume: true,
     effects: [
       { kind: "remove-enemy-armor", halve: true },
@@ -56,7 +50,6 @@ export const consumableCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "apple",
-    art: assetRefs.apple,
     consume: true,
     effects: [
       { kind: "heal", amount: 4 },
@@ -65,13 +58,11 @@ export const consumableCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "bread",
-    art: assetRefs.bread,
     consume: true,
     effects: [{ kind: "heal", amount: 6 }],
   }),
   cardBuilders.effectsCard({
     id: "luck-potion",
-    art: assetRefs.luckPotion,
     consume: true,
     effects: [
       {
@@ -91,13 +82,11 @@ export const consumableCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "wishing-potion",
-    art: assetRefs.wishingPotion,
     consume: true,
     effects: [{ kind: "wish", amount: 2 }],
   }),
   cardBuilders.effectsCard({
     id: "blood-offering",
-    art: assetRefs.bloodOffering,
     consume: true,
     effects: [
       { kind: "lose-health", amount: 1 },
@@ -107,7 +96,6 @@ export const consumableCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "faustian-bargain",
-    art: assetRefs.faustianBargain,
     consume: true,
     effects: [
       { kind: "lose-health", amount: 1 },
@@ -116,7 +104,6 @@ export const consumableCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "dark-pact",
-    art: assetRefs.darkPact,
     effects: [
       { kind: "damage", damageType: "burn", amount: 2 },
       { kind: "lose-health", amount: 1 },

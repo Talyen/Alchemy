@@ -95,8 +95,7 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
         markSessionProgress(gameSession, true);
         progress.complete(progress.token(readSessionRevision(gameSession)), "failed");
       }
-      if (progress.hasRetryDriver) progress.retryNow();
-      else if (progress.read().kind === "failed") void checkpoint();
+      progress.retryNow(() => void checkpoint());
     },
     afterProgressSaved: (run) => progress.afterSaved(run),
     restore: (save: UnstampedSaveData, options?: SessionPersistenceRestoreOptions) => {

@@ -62,7 +62,7 @@ export function applyMaterialFindBonus(materials: MaterialInventory, effects: Ma
 }
 
 // Reward policy: combat bundles → location modifiers → find bonuses.
-// Mystery and direct Wish payouts receive find bonuses at their source.
+// Mystery payouts receive find bonuses at their source.
 // Salvage, generated Gold, and run-end accounting never apply them.
 
 export interface ScavengerHerbalistFlags {

@@ -13,19 +13,13 @@ import type { TalentPreset } from "./simulator-types";
 
 export const META_ONLY_TALENT_FIELDS: ReadonlySet<keyof TalentEffectManifest> = new Set([
   "shopCardDiscount",
-  "shopFreeRefresh",
   "shopFreeRefreshChance",
-  "goldPerCombat",
   "companionVictoryGold",
   "potionDiscount",
   "removeCardDiscount",
   "enemyGoldDropBonus",
-  "eliteGoldDropBonus",
   "mixPotionDiscount",
-  "campfireHealBonus",
-  "maxHealthPerCombat",
   "healthRestorePerCombat",
-  "wishGemsGold",
 ]);
 
 export function isCombatTalent(talent: TalentDefinition): boolean {

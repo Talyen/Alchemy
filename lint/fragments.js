@@ -396,7 +396,7 @@ export const NO_DIRECT_ASSET_IMPORT = [
 ];
 
 /** Playwright esbuild cannot parse .webp barrels — flag value imports only.
- * Keep in sync with scripts/sync-art-barrels.mjs ART_BARRELS + metadata.generated.
+ * Keep in sync with the generated barrel and eager catalog URL registry.
  * Architecture tests guard drift (see tests/architecture/asset-loading-contract.test.ts).
  */
 export const ASSET_BARREL_NO_VALUE_IMPORT_REASONS = {
@@ -405,7 +405,7 @@ export const ASSET_BARREL_NO_VALUE_IMPORT_REASONS = {
     "it re-exports crafting.ts which imports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",
   "@/lib/game-data/assets": "it re-exports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",
   "@/lib/game-data/assets.generated": "it contains .webp asset paths esbuild can't parse in test collection.",
-  "@/lib/game-data/gear-art.generated": "it re-exports .webp assets esbuild can't parse. Use `import type` instead.",
+  "@/lib/game-data/catalog-art": "it requires Vite asset transforms. Use `import type` instead.",
   "@/lib/gear/crafting":
     "it imports craftingArt (.webp) esbuild can't parse. Use `@/lib/gear/crafting-ids` for pure currency ids.",
   "@/lib/gear/definitions":

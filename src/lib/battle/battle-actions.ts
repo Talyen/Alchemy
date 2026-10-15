@@ -30,8 +30,10 @@ export function resolveBattleAction(
   context: BattleResolutionContext,
 ): ResolvedBattleAction {
   const reject = (reason: string): ResolvedBattleAction => ({ kind: "rejected", state: snapshot, reason });
-  if (snapshot.turnPhase !== "player") return reject("It is not the player's turn");
-  if (getBattleOutcome(snapshot) === "defeat") return reject("The player is defeated");
+  const outcome = getBattleOutcome(snapshot);
+  if (snapshot.turnPhase !== "player" && !(action.kind === "wish" && outcome === "victory"))
+    return reject("It is not the player's turn");
+  if (outcome === "defeat") return reject("The player is defeated");
 
   switch (action.kind) {
     case "card": {

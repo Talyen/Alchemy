@@ -43,7 +43,6 @@ export const initializeBattle = transactionOperation(battleStart.initializeBattl
 
 export const addGold = transactionOperation(gold.addGold);
 export const deductGold = transactionOperation(gold.deductGold);
-export const grantStartGold = transactionOperation(gold.grantStartGold);
 export const readDraftGold = transactionOperation(gold.readDraftGold);
 export const setGold = transactionOperation(gold.setGold);
 export const deriveCombatMeta = transactionOperation(meta.deriveCombatMeta);

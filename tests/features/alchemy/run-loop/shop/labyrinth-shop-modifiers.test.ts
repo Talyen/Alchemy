@@ -1,3 +1,4 @@
+import { ALCHEMIST_REFRESH_PRICE, SHOP_REFRESH_PRICE } from "@/lib/game-constants";
 import { initializeShopForTest } from "../../../../helpers/visit-initialization";
 import { twoFloorLabyrinthMapFixture } from "../../../../fixtures/labyrinth-map";
 import { describe, expect, it } from "vitest";
@@ -132,15 +133,17 @@ describe("Labyrinth shops", () => {
   it("free Potion and Trinket refreshes keep their existing limits", () => {
     const actions = room("fresh-batch");
     initializeShopForTest("alchemist", defaultGameSession);
-    expect(actions.alchemist.getRefreshPrice(1)).toBe(0);
+    expect(actions.alchemist.getRefreshPrice()).toBe(0);
     expect(actions.alchemist.refresh()).toBe(true);
+    expect(actions.alchemist.getRefreshPrice()).toBe(ALCHEMIST_REFRESH_PRICE);
     expect(actions.alchemist.refresh()).toBe(false);
     expect(readRunProfile(defaultGameSession).gold).toBe(500);
     expect(playUISound).toHaveBeenCalledExactlyOnceWith("shopRefresh");
     setRunSession({ activeLabyrinthRewardModifiers: ["fresh-curios"] });
     initializeShopForTest("trinket", defaultGameSession);
-    expect(actions.trinket.getRefreshPrice(1)).toBe(0);
+    expect(actions.trinket.getRefreshPrice()).toBe(0);
     expect(actions.trinket.refresh()).toBe(true);
+    expect(actions.trinket.getRefreshPrice()).toBe(SHOP_REFRESH_PRICE);
     expect(actions.trinket.refresh()).toBe(false);
     expect(readRunProfile(defaultGameSession).gold).toBe(500);
     expect(playUISound).toHaveBeenCalledTimes(2);

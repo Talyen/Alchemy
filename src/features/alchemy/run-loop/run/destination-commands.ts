@@ -1,9 +1,9 @@
+import { CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
   rejectCommand,
-  snapshotTransactionValue,
   type RunTransaction,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -12,10 +12,9 @@ import {
   setAlchemyVisit,
   setRunPlayerHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { getCampfireHealFraction, getCampfireRestHealth } from "@/lib/campfire-heal";
+import { getCampfireRestHealth } from "@/lib/campfire-heal";
 import { activeLabyrinthBenefits, labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
 import { LABYRINTH_MODIFIER_CONFIG } from "@/lib/game-constants";
-import { computeTalentEffects } from "@/lib/game-data";
 import { applyAlchemistPotion } from "./alchemist-reward";
 
 export function restAtCampfire(gameSession: GameSession) {
@@ -34,12 +33,11 @@ export function restAtCampfire(gameSession: GameSession) {
 /** Rest and automatic Continue share the same transaction-level recipe. */
 export function restAtCampfireInDraft(draft: RunTransaction): void {
   if (draft.session.activity.kind !== "campfire" || draft.session.activity.data.completed) return;
-  const talentEffects = computeTalentEffects(snapshotTransactionValue(draft.runProfile.unlockedTalents));
   const modifiers = activeLabyrinthBenefits(
     draft.run.activeRun.contentSystemType,
     draft.session.activeLabyrinthRewardModifiers,
   );
-  const healFraction = labyrinthCampfireHealing(getCampfireHealFraction(talentEffects.campfireHealBonus), modifiers);
+  const healFraction = labyrinthCampfireHealing(CAMPFIRE_HEAL_FRACTION, modifiers);
   if (modifiers.includes("hidden-purse")) addGold(draft, LABYRINTH_MODIFIER_CONFIG.hiddenPurseGold);
   if (modifiers.includes("herbal-hearth"))
     applyAlchemistPotion({ draft, rng: createDraftRunRandomSource(draft, "rewards") });

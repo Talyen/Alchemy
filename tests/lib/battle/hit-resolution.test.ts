@@ -90,9 +90,6 @@ describe("damage riders via applyCardEffects", () => {
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerStatuses: { forge: 0 },
-      talentEffects: {
-        archeryPlayTwiceChance: 0,
-      },
     });
     const card = makeTestCard({
       tags: ["archery"],
@@ -204,8 +201,8 @@ describe("damage rider regressions", () => {
       enemyHealth: 10000,
       enemyMaxHealth: 10000,
       playerStatuses: { forge: 7 },
-      talentEffects: { physicalStunChance: 100, flatStunDamage: 50 },
-      gearEffects: { flatBleedDamage: 50 },
+      talentEffects: { physicalStunChance: 100 },
+      gearEffects: { flatStunDamage: 50, flatBleedDamage: 50 },
       flags: { nextPhysicalDealsBleed: true, nextHitCrit: true },
     });
     const texts = makeCombatTexts();

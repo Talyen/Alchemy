@@ -32,16 +32,11 @@ describe("shop-pricing", () => {
     { kind: "equipment", basePrice: SHOP_REFRESH_PRICE, freeTrait: null },
     { kind: "trinket", basePrice: SHOP_REFRESH_PRICE, freeTrait: "fresh-curios" },
     { kind: "alchemist", basePrice: ALCHEMIST_REFRESH_PRICE, freeTrait: "fresh-batch" },
-  ] as const)("$kind refresh prices preserve talents, traits, and exhaustion", ({ kind, basePrice, freeTrait }) => {
-    const talents = createEmptyTalentEffectManifest();
-    const restock = { ...talents, shopFreeRefresh: true };
-    expect(getShopRefreshPrice(kind, talents, 1)).toBe(basePrice);
-    expect(getShopRefreshPrice(kind, restock, 1)).toBe(0);
-    expect(getShopRefreshPrice(kind, restock, 0)).toBe(basePrice);
-    expect(getShopRefreshPrice(kind, restock, 1, [], true)).toBe(basePrice);
+  ] as const)("$kind refresh prices preserve traits and exhaustion", ({ kind, basePrice, freeTrait }) => {
+    expect(getShopRefreshPrice(kind, 1)).toBe(basePrice);
     for (const trait of ["fresh-curios", "fresh-batch"] as const) {
-      expect(getShopRefreshPrice(kind, talents, 1, [trait])).toBe(trait === freeTrait ? 0 : basePrice);
-      expect(getShopRefreshPrice(kind, talents, 0, [trait])).toBe(basePrice);
+      expect(getShopRefreshPrice(kind, 1, [trait])).toBe(trait === freeTrait ? 0 : basePrice);
+      expect(getShopRefreshPrice(kind, 0, [trait])).toBe(basePrice);
     }
   });
 

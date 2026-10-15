@@ -52,7 +52,7 @@ describe("AlchemistShopScreen mix Escape", () => {
       onRefresh: () => {},
       onMixPotions,
       onStrengthenPotion,
-      potency: 0,
+
       onContinue: () => {},
     };
     const { rerender } = render(<AlchemistShopScreen {...props} />);
@@ -91,7 +91,6 @@ describe("AlchemistShopScreen mix Escape", () => {
         onRefresh={() => true}
         onMixPotions={onMixPotions}
         onStrengthenPotion={() => null}
-        potency={0}
         onContinue={() => {}}
       />,
     );
@@ -132,7 +131,6 @@ describe("AlchemistShopScreen mix Escape", () => {
         onRefresh={() => {}}
         onMixPotions={() => null}
         onStrengthenPotion={onStrengthenPotion}
-        potency={0}
         onContinue={() => {}}
         afterProgressSaved={(run) => pending.push(run)}
       />,
@@ -176,7 +174,6 @@ describe("AlchemistShopScreen mix Escape", () => {
         onRefresh={() => true}
         onMixPotions={() => null}
         onStrengthenPotion={() => null}
-        potency={0}
         onContinue={() => {}}
       />,
     );
