@@ -321,7 +321,7 @@ describe("run architecture type contracts", () => {
   it("keeps screen data contracts exact and screen-specific", () => {
     expectTypeOf<keyof RunScreenDataByScreen["shop"]>().toEqualTypeOf<"gold" | "runDeck" | "shopState">();
     expectTypeOf<keyof RunScreenDataByScreen["rewards"]>().toEqualTypeOf<
-      "rewardState" | "rewardClaimInFlight" | "clearedAct" | "rewardMaterials"
+      "rewardState" | "rewardClaimInFlight" | "rewardMaterials"
     >();
     expectTypeOf<RunScreenDataByScreen["shop"]["runDeck"]>().toEqualTypeOf<BattleCard[]>();
   });
