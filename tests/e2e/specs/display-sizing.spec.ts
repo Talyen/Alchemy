@@ -12,14 +12,21 @@ import {
 import { openArmory } from "../armory";
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
-import { CONTENT_REFERENCE_VIEWPORT, STAGE_HEIGHT } from "../../../src/lib/game-constants/ui-layout";
+import { getVirtualResolutionLayout } from "../../../src/features/alchemy/shared/ui/use-virtual-resolution";
+import { CONTENT_REFERENCE_VIEWPORT } from "../../../src/lib/game-constants/ui-layout";
 
-// The 1920x1080 baseline is the default Chromium viewport for every other
-// spec, so this loop covers small and ultrawide extremes without re-running it.
+// Representative CSS viewports cover narrow, standard, ultrawide, and 4K layouts.
 const VIEWPORTS = [
+  { width: 1024, height: 768 },
   { width: 1280, height: 720 },
   { width: 1280, height: 800 },
+  { width: 1500, height: 1000 },
+  { width: 1920, height: 1080 },
+  { width: 1920, height: 1200 },
+  { width: 2560, height: 1440 },
   { width: 3440, height: 1440 },
+  { width: 3840, height: 1080 },
+  { width: 3840, height: 2160 },
 ];
 
 async function setSlider(slider: import("@playwright/test").Locator, value: number) {
@@ -46,7 +53,7 @@ async function expectTooltipFitsViewport(tip: Locator, viewport: { width: number
 
 test.describe("Responsive display sizes", slow, () => {
   test("menu, collections, and options fit small and wide viewports", async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(90000);
     const menu = new MenuPage(page);
     await menu.goto();
     for (const viewport of VIEWPORTS) {
@@ -175,13 +182,10 @@ test.describe("Responsive display sizes", slow, () => {
         (preferences) => localStorage.setItem("alchemy-device-display-v1", JSON.stringify(preferences)),
         { version: 1, gameSizePercent, tooltipSizePercent },
       );
-      const scale =
-        Math.min(
-          viewport.width / CONTENT_REFERENCE_VIEWPORT.width,
-          viewport.height / CONTENT_REFERENCE_VIEWPORT.height,
-        ) *
-        (gameSizePercent / 100) *
-        (tooltipSizePercent / 100);
+      const scale = getVirtualResolutionLayout(viewport.width, viewport.height, {
+        gameSizePercent,
+        tooltipSizePercent,
+      }).tooltipScale;
       await new MenuPage(page).gotoCollection({ encounteredEnemyIds: ["bandit"] });
       const tooltip = page.locator("#tooltip-root .hover-popup-panel[data-visible]");
       await page.getByRole("button", { name: "Bestiary", exact: true }).click();
@@ -308,10 +312,7 @@ test("keyboard Options and confirmation fit at 1280×720", async ({ page }) => {
     const scale = rect.height / (element as HTMLElement).offsetHeight;
     return parseFloat(getComputedStyle(element).fontSize) * scale;
   });
-  const expectedScale = Math.min(
-    1280 / (STAGE_HEIGHT * (CONTENT_REFERENCE_VIEWPORT.width / CONTENT_REFERENCE_VIEWPORT.height)),
-    height / STAGE_HEIGHT,
-  );
+  const expectedScale = getVirtualResolutionLayout(1280, height).contentScale;
   expect(renderedText).toBeCloseTo(20 * expectedScale, 1);
   await input.activate(page.getByRole("button", { name: "Other", exact: true }));
   await input.activate(page.getByRole("button", { name: "Clear Save Data", exact: true }));
@@ -382,17 +383,19 @@ test("Start a Run artwork and tooltips share proportional scaling through resize
       .first()
       .evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
   };
-  expect(reference.font).toBeCloseTo(18, 2);
+  const referenceLayout = getVirtualResolutionLayout(
+    CONTENT_REFERENCE_VIEWPORT.width,
+    CONTENT_REFERENCE_VIEWPORT.height,
+  );
+  expect(reference.font).toBeCloseTo(18 * referenceLayout.tooltipScale, 2);
 
   for (const viewport of [
     { width: 1280, height: 720 },
     { width: 1920, height: 1080 },
   ]) {
     await page.setViewportSize(viewport);
-    const factor = Math.min(
-      viewport.width / CONTENT_REFERENCE_VIEWPORT.width,
-      viewport.height / CONTENT_REFERENCE_VIEWPORT.height,
-    );
+    const factor =
+      getVirtualResolutionLayout(viewport.width, viewport.height).contentScale / referenceLayout.contentScale;
     await campaign.hover();
     await expect(campaign).toHaveCSS("scale", "1.035");
     await expect.poll(async () => (await image.boundingBox())!.width / reference.image.width).toBeCloseTo(factor, 2);

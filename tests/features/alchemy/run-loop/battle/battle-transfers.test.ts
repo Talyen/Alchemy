@@ -24,7 +24,7 @@ function makeTransfers(respectGeneration = true) {
     playback,
     getPresentation: () => presentation,
     battleSceneRef: { current: null },
-    discardPileRef: { current: null },
+    handDockRef: { current: null },
     handCardRefs: { current: {} },
     measureElementRect: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     measureVisualCardRect: () => ({ x: 0, y: 0, width: 100, height: 100 }),
@@ -62,6 +62,34 @@ describe("battle transfer lifetime wiring", () => {
       }
     },
   );
+
+  it("overlaps departures at 70 ms and waits for the final flight", async () => {
+    vi.useFakeTimers();
+    try {
+      const transfers = makeTransfers();
+      let finished = false;
+      const pending = transfers
+        .animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })], 0)
+        .then(() => {
+          finished = true;
+        });
+      expect(transfers.readTransfers()).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(69);
+      expect(transfers.readTransfers()).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(transfers.readTransfers()).toHaveLength(2);
+      expect(transfers.readTransfers().map((transfer) => transfer.card.id)).toEqual(["block", "slash"]);
+      await vi.advanceTimersByTimeAsync(410);
+      expect(transfers.readTransfers()).toHaveLength(1);
+      expect(finished).toBe(false);
+      await vi.advanceTimersByTimeAsync(70);
+      await pending;
+      expect(transfers.readTransfers()).toEqual([]);
+      expect(transfers.playback.timers.size).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 
   it("cancels delayed transfer sounds with their originating battle", async () => {
     vi.useFakeTimers();

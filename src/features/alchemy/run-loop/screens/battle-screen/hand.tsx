@@ -249,9 +249,9 @@ export function BattleHand({
         keyboardActivation.current = !event.repeat && (event.key === "Enter" || event.key === " ");
       }}
       data-testid="battle-hand"
-      className={cn(battleHandContainerClass, "mana-hand")}
+      className={cn(battleHandContainerClass, "battle-hand")}
       style={{
-        paddingBottom: `calc(6% + ${12 + Math.max(0, battleState.hand.length - 4) * 12}px * var(--content-scale, 1))`,
+        paddingBottom: `calc(${12 + Math.max(0, battleState.hand.length - 4) * 12}px * var(--content-scale, 1))`,
       }}
     >
       {battleState.hand.map((card, index) => {

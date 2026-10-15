@@ -21,7 +21,10 @@ import { makeDrawSequenceDeps } from "./turn-orchestration-fixture";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
 
-vi.mock("@/lib/animation/animation-prefs", () => ({ isAnimationDisabled: () => false }));
+vi.mock("@/lib/animation/animation-prefs", () => ({
+  isAnimationDisabled: () => false,
+  shouldReduceMotion: () => false,
+}));
 
 beforeEach(() => {
   vi.clearAllMocks();

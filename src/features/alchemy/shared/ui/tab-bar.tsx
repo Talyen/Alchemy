@@ -7,6 +7,7 @@ export interface TabBarProps<T extends string> {
   tabs: Array<{
     id: T;
     label: string;
+    ariaLabel?: string;
     icon: ElementType;
     disabled?: boolean;
     iconClassName?: string;
@@ -42,7 +43,7 @@ export function TabBar<T extends string>({
             }}
             className={tab.id === activeTab ? activeClassName : undefined}
             wrapperClassName="shrink-0"
-            aria-label={isDisabled ? `${tab.label} (Locked)` : tab.label}
+            aria-label={isDisabled ? `${tab.ariaLabel ?? tab.label} (Locked)` : (tab.ariaLabel ?? tab.label)}
             aria-pressed={tab.id === activeTab}
           >
             <Icon className={cn("h-7 w-7", tab.iconClassName)} />

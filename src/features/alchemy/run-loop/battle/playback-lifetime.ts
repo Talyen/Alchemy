@@ -61,19 +61,25 @@ export class PlaybackLifetime {
     );
   }
 
+  private setPhase(phase: PlaybackPhase): void {
+    if (this.phase === phase) return;
+    this.phase = phase;
+    for (const listener of this.listeners) listener();
+  }
+
   beginOpening(): void {
-    if (this.phase === "ready") this.phase = "opening";
+    if (this.phase === "ready") this.setPhase("opening");
   }
 
   beginAction(): void {
     if (this.phase === "ready" || this.phase === "playing") {
       this.clearAutoEndTurn();
-      this.phase = "playing";
+      this.setPhase("playing");
     }
   }
 
   completeAction(id: number): void {
-    if (this.isCurrent(id) && (this.phase === "playing" || this.phase === "opening")) this.phase = "ready";
+    if (this.isCurrent(id) && (this.phase === "playing" || this.phase === "opening")) this.setPhase("ready");
   }
 
   get id() {
@@ -122,7 +128,7 @@ export class PlaybackLifetime {
   finish(): boolean {
     if (this.phase === "finishing" || this.phase === "cancelled") return false;
     this.clearAutoEndTurn();
-    this.phase = "finishing";
+    this.setPhase("finishing");
     return true;
   }
 
@@ -142,7 +148,7 @@ export class PlaybackLifetime {
   }
 
   cancel(): void {
-    this.phase = "cancelled";
+    this.setPhase("cancelled");
     this.controller.abort();
     this.timers.clearAll();
     this.cancelTransfers();
@@ -159,7 +165,7 @@ export class PlaybackLifetime {
     this.cancel();
     this.generation += 1;
     this.controller = new AbortController();
-    this.phase = "ready";
+    this.setPhase("ready");
   }
 
   beginDraw(id: number, kind: "draw" | "card" = "draw"): () => void {

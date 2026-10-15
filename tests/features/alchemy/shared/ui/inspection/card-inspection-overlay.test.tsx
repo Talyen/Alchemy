@@ -1,3 +1,5 @@
+import { useState } from "react";
+import type { CardInspectionView } from "@/features/alchemy/shared/types";
 import { sortInspectionCards } from "@/features/alchemy/shared/ui/inspection/card-inspection-sort";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -41,6 +43,7 @@ const props = {
   collections: [{ id: "deck" as const, cards: [beta, alpha, { ...alpha, uid: 3 }] }],
   descriptionContext: {},
   onClose: vi.fn(),
+  onSelect: vi.fn(),
 };
 
 describe("card inspection", () => {
@@ -89,11 +92,46 @@ describe("card inspection", () => {
         collections={[...props.collections, { id: "draw", cards: [beta] }, { id: "discard", cards: [] }]}
       />,
     );
-    expect(screen.getByRole("heading", { name: "Discard Pile" })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Deck" })).toBeTruthy();
     expect(within(screen.getByRole("dialog")).getByRole("img", { name: "Empty Discard Pile" })).toBeTruthy();
     expect(screen.queryByRole("group", { name: "Card collections" })).toBeNull();
-    expect(screen.getAllByRole("button")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Discard · 0 cards" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.queryByTestId("card-selection-grid")).toBeNull();
+  });
+
+  it("switches collections with the keyboard without closing or exposing visible counts", async () => {
+    function Viewer() {
+      const [selected, onSelect] = useState<CardInspectionView>("deck");
+      return (
+        <CardInspectionOverlay
+          {...props}
+          selected={selected}
+          onSelect={onSelect}
+          collections={[...props.collections, { id: "draw", cards: [beta] }, { id: "discard", cards: [] }]}
+        />
+      );
+    }
+    render(<Viewer />);
+    await waitForArtwork();
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close card inspection" })),
+    );
+    const draw = screen.getByRole("button", { name: "Draw · 1 cards" });
+    draw.focus();
+    await userEvent.setup().keyboard("{Enter}");
+    expect(draw.textContent).toBe("Draw");
+    expect(draw.getAttribute("aria-pressed")).toBe("true");
+    expect(
+      within(screen.getByTestId("card-selection-grid"))
+        .getAllByRole("img")
+        .map((img) => img.getAttribute("alt")),
+    ).toEqual(["Beta"]);
+    await waitForArtwork();
+    fireEvent.click(screen.getByRole("button", { name: "Discard · 0 cards" }));
+    expect(screen.getByRole("img", { name: "Empty Discard Pile" })).toBeTruthy();
+    await waitForArtwork();
+    fireEvent.click(screen.getByRole("button", { name: "Deck · 3 cards" }));
+    expect(within(screen.getByTestId("card-selection-grid")).getAllByRole("img")).toHaveLength(3);
   });
 
   it("contains focus, supports every dismissal route, and restores the opener", async () => {
@@ -148,9 +186,12 @@ describe("card inspection", () => {
     expect(plainButton.querySelector(".shine-border")).toBeNull();
   });
 
-  it("resets pagination on reopen and rejects clicks during the closing fade", async () => {
+  it("resets pagination on collection changes and reopen, and rejects closing-fade clicks", async () => {
     const many = Array.from({ length: 40 }, (_, uid) => ({ ...alpha, uid }));
-    const collections = [{ id: "deck" as const, cards: many }];
+    const collections = [
+      { id: "deck" as const, cards: many },
+      { id: "draw" as const, cards: [beta] },
+    ];
     const onClose = vi.fn();
     const view = render(<CardInspectionOverlay {...props} collections={collections} onClose={onClose} />);
     await waitForArtwork();
@@ -158,6 +199,12 @@ describe("card inspection", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Previous page" })).toHaveProperty("disabled", false),
     );
+    view.rerender(<CardInspectionOverlay {...props} selected="draw" collections={collections} onClose={onClose} />);
+    await waitForArtwork();
+    view.rerender(<CardInspectionOverlay {...props} collections={collections} onClose={onClose} />);
+    await waitForArtwork();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Previous page" })).toHaveProperty("disabled", true));
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
     view.rerender(<CardInspectionOverlay {...props} open={false} collections={collections} onClose={onClose} />);
     fireEvent.click(screen.getByRole("button", { name: "Close card inspection" }));
     expect(onClose).not.toHaveBeenCalled();

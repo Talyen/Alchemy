@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
-import { ManaPanel } from "@/features/alchemy/run-loop/battle/presentation/ui/resources";
+import { ManaPanel } from "@/features/alchemy/run-loop/battle/presentation/ui/mana-dock";
 import { battlePresentation } from "@/app/battle-presentation";
 
 afterEach(() => {

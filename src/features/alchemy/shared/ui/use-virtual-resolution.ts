@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { CONTENT_REFERENCE_VIEWPORT, STAGE_HEIGHT } from "@/lib/game-constants";
+import {
+  CONTENT_REFERENCE_VIEWPORT,
+  CONTENT_DENSITY_VIEWPORT,
+  CONTENT_LARGE_WINDOW_GROWTH,
+  STAGE_HEIGHT,
+} from "@/lib/game-constants";
 import { DEFAULT_DEVICE_DISPLAY, normalizeDisplayPercent, type DeviceDisplayPreferences } from "@/lib/settings-values";
 
 function useViewportSize(active: boolean) {
@@ -47,8 +52,12 @@ function getAspectModeFromRatio(aspectRatio: number): "standard" | "narrow" | "u
   return "standard";
 }
 
-const CONTENT_REFERENCE_STAGE_WIDTH =
-  STAGE_HEIGHT * (CONTENT_REFERENCE_VIEWPORT.width / CONTENT_REFERENCE_VIEWPORT.height);
+const DENSITY_REFERENCE_SCALE =
+  (CONTENT_REFERENCE_VIEWPORT.height / STAGE_HEIGHT) *
+  Math.min(
+    CONTENT_DENSITY_VIEWPORT.width / CONTENT_REFERENCE_VIEWPORT.width,
+    CONTENT_DENSITY_VIEWPORT.height / CONTENT_REFERENCE_VIEWPORT.height,
+  );
 
 export function getVirtualResolutionLayout(
   viewportWidth: number,
@@ -61,8 +70,11 @@ export function getVirtualResolutionLayout(
   const stageWidth = STAGE_HEIGHT * aspectRatio;
   const stageHeight = STAGE_HEIGHT;
   const stageScale = Math.min(width / stageWidth, height / stageHeight);
-  // Fit the reference composition inside the frame; the stage fills the viewport.
-  const automaticScale = stageScale * Math.min(stageWidth / CONTENT_REFERENCE_STAGE_WIDTH, 1);
+  // Match density by height from 16:9 upward; only narrow windows constrain width.
+  // Beyond 720p, grow content more slowly than the frame instead of imposing a cap.
+  const fit = Math.min(width / CONTENT_DENSITY_VIEWPORT.width, height / CONTENT_DENSITY_VIEWPORT.height);
+  const density = fit <= 1 ? fit : 1 + (fit - 1) * CONTENT_LARGE_WINDOW_GROWTH;
+  const automaticScale = DENSITY_REFERENCE_SCALE * density;
   const contentScale = automaticScale * (normalizeDisplayPercent("gameSizePercent", preferences.gameSizePercent) / 100);
   const stageContentScale = stageScale > 0 ? contentScale / stageScale : 1;
   // Reference-browser tooltips were untransformed. Preserve that baseline while

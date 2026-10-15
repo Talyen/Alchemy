@@ -96,8 +96,6 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
         presentation={commands.presentation}
         onInspectEnemy={inspectEnemy}
         enemyInspectionOpen={enemyInspectionOpen}
-        onInspectPile={cardInspection?.onOpen}
-        inspectionAvailable={cardInspection?.canOpen}
         battleScreenData={battleScreenData}
         characterId={characterId}
         heroArt={heroArt}

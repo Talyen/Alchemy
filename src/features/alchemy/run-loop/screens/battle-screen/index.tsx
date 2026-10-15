@@ -22,8 +22,6 @@ interface BattleScreenProps {
   presentation: BattlePresentationStore;
   onInspectEnemy?: ((trigger: HTMLElement) => void) | undefined;
   enemyInspectionOpen?: boolean | undefined;
-  onInspectPile?: BattleActionsProps["onInspectPile"];
-  inspectionAvailable?: boolean | undefined;
   battleScreenData: BattleScreenData;
   characterId: CharacterId;
   heroArt: string;
@@ -40,8 +38,6 @@ interface BattleScreenProps {
 export function BattleScreen(props: BattleScreenProps) {
   const {
     presentation,
-    onInspectPile,
-    inspectionAvailable,
     battleScreenData,
     characterId,
     heroArt,
@@ -89,12 +85,10 @@ export function BattleScreen(props: BattleScreenProps) {
 
   const actions: BattleActionsProps = useMemo(
     () => ({
-      onInspectPile,
-      inspectionAvailable,
       onCardClick,
       onWishChoice,
     }),
-    [onInspectPile, inspectionAvailable, onCardClick, onWishChoice],
+    [onCardClick, onWishChoice],
   );
 
   const { battleSceneRef: sceneRef } = refs;
@@ -149,7 +143,7 @@ export function BattleScreen(props: BattleScreenProps) {
         <BattleBoonInspectOverlay open={inspectUiOpen} trinketIds={runBoons} onClose={onCloseBoonInspect} />
 
         <CardGhostLayer presentation={presentation} />
-        <CardTransferLayer presentation={presentation} />
+        <CardTransferLayer presentation={presentation} refs={refs} />
         <CombatTextLayer presentation={presentation} refs={refs} />
       </div>
     </div>

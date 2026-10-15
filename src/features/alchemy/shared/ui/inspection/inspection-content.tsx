@@ -68,6 +68,7 @@ export function InspectionOverlayShell({
   escapeId,
   testId,
   title,
+  header,
   closeLabel,
   onClose,
   returnFocusRef,
@@ -78,6 +79,7 @@ export function InspectionOverlayShell({
   escapeId: string;
   testId: string;
   title: string;
+  header?: ReactNode;
   closeLabel: string;
   onClose: () => void;
   returnFocusRef?: RefObject<HTMLElement | null> | undefined;
@@ -94,7 +96,13 @@ export function InspectionOverlayShell({
       testId={testId}
       className={overlayClassName ?? "flex items-center justify-center p-6"}
     >
-      <InspectionPanel title={title} closeLabel={closeLabel} onClose={onClose} returnFocusRef={returnFocusRef}>
+      <InspectionPanel
+        header={header}
+        title={title}
+        closeLabel={closeLabel}
+        onClose={onClose}
+        returnFocusRef={returnFocusRef}
+      >
         {children}
       </InspectionPanel>
     </ModalOverlayShell>
@@ -103,12 +111,14 @@ export function InspectionOverlayShell({
 
 function InspectionPanel({
   title,
+  header,
   closeLabel,
   onClose,
   returnFocusRef,
   children,
 }: {
   title: string;
+  header?: ReactNode;
   closeLabel: string;
   onClose: () => void;
   returnFocusRef?: RefObject<HTMLElement | null> | undefined;
@@ -129,9 +139,10 @@ function InspectionPanel({
       className="alchemy-shell game-page-scroll relative flex max-h-full w-fit max-w-[min(100%,72rem)] flex-col overflow-y-auto rounded-shell-screen border border-border/80 p-6"
     >
       <div className="relative mb-3 flex min-h-11 shrink-0 items-center justify-center px-14">
-        <h2 id={titleId} className="text-center font-sans text-3xl">
+        <h2 id={titleId} className={header ? "sr-only" : "text-center font-sans text-3xl"}>
           {title}
         </h2>
+        {header}
         <ChromeIconButton
           className="absolute top-0 right-0"
           aria-label={closeLabel}

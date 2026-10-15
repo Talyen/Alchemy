@@ -130,7 +130,7 @@ Which control to reach for: `Button` owns text/label actions (Play, Back, Confir
 
 Card and collection artwork, including gear and trinket tiles, reserves a 1px frame across available, selected, disabled, purchased, and shine states, so changing interaction state cannot resize its artwork or row or recenter the screen. The thicker hover and selection outline is an absolute overlay, preserving the thin default border. Hover-only shine uses `card-art-shine`; persistent shine uses `has-shine-border`. Armory item borders are hover-only, with keyboard focus matching hover; the active equipment slot keeps its shine as a selection marker. Both hide the frame color while preserving its space. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
 
-Battle pile artwork, the gold counter, and the main menu logo use the standard 103.5% CSS hover scale over 200ms ease-out. Pile transfer anchors remain unscaled. Individual mana crystals stay at their resting size on hover and play a brief glint masked to their artwork, preserving their independent refresh animations and dim spent appearance. Reduced motion keeps the crystals static. Battle's End Turn control uses the standard toolbar icon-button styling, with a Circle Arrow Right icon and an End Turn tooltip on hover or keyboard focus. Every manual activation opens an End turn? confirmation with Cancel focused initially; automatic turn endings and autoplay pause while it is open.
+The gold counter and the main menu logo use the standard 103.5% CSS hover scale over 200ms ease-out. Individual mana crystals stay at their resting size on hover and play a brief glint masked to their artwork, preserving their independent refresh animations and dim spent appearance. Reduced motion keeps the crystals static. Battle's End Turn control uses the standard toolbar icon-button styling, with a Circle Arrow Right icon and an End Turn tooltip on hover or keyboard focus. Every manual activation opens an End turn? confirmation with Cancel focused initially; automatic turn endings and autoplay pause while it is open.
 
 Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
 
@@ -202,25 +202,28 @@ Talents on the end-run screen and Mystery rewards keep fixed-width boxes in cent
 The virtual stage owns available-space geometry and battle coordinates. It
 always fills the available viewport without letterboxing. Viewport dimensions
 determine the stage proportions; forced aspect ratios are not supported.
-Content uniformly fits a reference composition based on the MacBook browser's
-1470 × 738 CSS-pixel game area, including the height lost to browser bars and the
-Dock. At 100% Game Size, the reference retains its original content scale of
-738 / 1080. Fit content against both frame width and height, then multiply by
-Game Size (80–120%, 5% steps). Wider or taller frames gain background space;
-there is no separate large-window growth curve or content-scale cap. Use CSS
-viewport dimensions, never device pixel ratio, for layout. The root font remains
-16px. Small text uses 16px (`text-sm`) and 14px (`text-xs`) before content scaling, including compact controls, select options, tooltip text, keyword tags, resource labels, and feedback. Artwork preserves its aspect ratio and intentional crops.
+Automatic density uses the established 1280 × 720 CSS-pixel layout as its anchor.
+Fit that 16:9 anchor against both available dimensions: 16:9 and wider windows
+therefore share the same content size at the same height, while narrower windows
+fit by width. Below the anchor, shrink proportionally. Above it, content takes
+72% of the additional viewport growth, retaining readable growth without a hard
+cap. The 1470 × 738 MacBook authoring reference still defines the underlying
+content and tooltip units; it no longer dictates the fit aspect ratio.
+Multiply automatic density by Game Size (80–120%, 5% steps). Wider or taller
+frames gain playing space. Use CSS viewport dimensions, never device pixel ratio,
+for layout. The root font remains 16px. Small text uses 16px (`text-sm`) and 14px
+(`text-xs`) before content scaling, including compact controls, select options,
+tooltip text, keyword tags, resource labels, and feedback. Artwork preserves its
+aspect ratio and intentional crops.
 
-Hover tooltips retain their original untransformed size at the reference browser
-viewport. Their scale is visible game content scale divided by the reference
-content scale (738 / 1080), multiplied by Tooltip Size (90–125%, 5% steps).
-At 100%, tooltip text, icons, spacing, and panels grow proportionally with the
-game, including enemy Traits. Tooltip Size is an additional
-relative adjustment, not a fixed pixel size independent of Game Size.
+Hover tooltips follow visible game content scale divided by the retained authored
+baseline (738 / 1080), multiplied by Tooltip Size (90–125%, 5% steps). Tooltip
+Size remains a relative adjustment; it does not change game layout or impose a
+separate growth curve. Text, icons, spacing, and panels inherit that scale once.
 
 Enemy hover Traits use the explicit compact presentation: 14px headings, 12px
 descriptions, 24px icons, 8px row and inter-trait gaps, and 3px between the title
-and description at the reference viewport and 100% settings. This is an exception
+and description at authored tooltip scale 1. This is an exception
 to the general small-text baseline. These dimensions use `--content-rem` and
 inherit the shared tooltip scale once. Enemy inspection and Labyrinth chamber
 details retain the default Trait presentation.
@@ -232,24 +235,21 @@ stage. Authored arbitrary content dimensions must use the content unit; do not
 use raw container-height units as the primary card size. Available-space caps
 are allowed: the battle hand caps card height, compresses its fan into the
 reserved center region, and reserves extra bottom space for larger hands.
-Draw and Discard artwork use 80% of the resting hand card width, sharing its
-responsive size from the bottom bar. Mana sits in the central hand dock.
-Draw occupies the bottom-left viewport corner; Discard occupies the bottom-right. Both groups use a 1.125 content-rem inset from the side and bottom
-edges, and pile bottoms align. Actors retain their inset, width-limited composition;
-all battle transfer and feedback coordinates use the full viewport scene.
-The static mana frame clips a few pixels past the bottom viewport edge and conceals resting and
-raised hand-card bottoms. All crystals stay inside its stitched leather inset,
-in shallow recessed settings, centered and largest at the common three/four-crystal count. Full
-crystals retain subdued Mana blue; spent crystals are dim grayscale. The row follows
-the leather's shallow curve, with the middle gems slightly higher. Increasing counts
-gradually shrink the crystals and their effects; the row caps at nine with clear
-padding inside the stitching. Beyond nine, the final crystal carries a +N badge. Exact current and maximum Mana remain
-in accessible inspection, without a persistent numerical readout.
+The hand rests near the bottom viewport edge, centered with capped spacing and
+responsive card sizing. Draw and Discard are inspected through the toolbar's
+Deck viewer; no pile artwork or decorative Mana bar occupies the bottom corners.
+All battle transfer and feedback coordinates use the full viewport scene.
+Mana crystals sit inside the hero portrait, centered near its bottom edge at half
+the former dock's size. Their shallow curved arrangement, recessed settings,
+spending, refill, capacity, hover glint, glow, and shard effects remain intact.
+Full crystals retain subdued Mana blue; spent crystals are dim grayscale.
+Increasing counts gradually shrink the crystals and effects; the row caps at nine.
+Beyond nine, the final crystal carries a +N badge. Exact current and maximum Mana
+remain in accessible inspection, without a persistent numerical readout.
 The battle toolbar places live Gold before the inspection controls, with a brief
 highlight on increases. End Turn uses an icon and tooltip immediately before the dev-only Skip Combat
 control and Menu. Dev-only Skip Combat uses a labeled skip-forward icon and tooltip.
-The battle bottom bar reserves content-sized side controls and gives the hand
-the remaining width. Side controls stay stationary as the hand grows to seven
+The hand's bottom dock stays centered and stationary as the hand grows to seven
 cards; smaller hands remain centered with capped spacing. Resting card artwork
 may extend past the bottom edge; playable card centers stay visible. Hand hover and pointer
 activation use the nearest stable slot center, with boundaries halfway between

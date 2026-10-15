@@ -258,6 +258,7 @@ function AppMainContent({
               buttonRef: run.routeCommands.battle.refs.endTurnButtonRef,
               onEndTurn: run.routeCommands.battle.handleEndTurn,
               isCardPlayInProgress: run.routeCommands.battle.isCardPlayInProgress,
+              subscribePlayback: run.routeCommands.battle.subscribePlayback,
               isProgressSavePending: run.routeCommands.battle.isProgressSavePending,
               subscribeProgressSave: run.routeCommands.battle.subscribeProgressSave,
             }}
@@ -276,6 +277,7 @@ function AppMainContent({
         <CardInspectionOverlay
           open={inspection.open}
           selected={inspection.selected}
+          onSelect={openCardInspection}
           collections={inspection.collections}
           descriptionContext={inspection.battleDescriptionContext ?? cardDescriptionContext}
           onClose={inspection.close}

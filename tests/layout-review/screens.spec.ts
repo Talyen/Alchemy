@@ -178,14 +178,18 @@ test("battle and inspection overlays", async () => {
   });
   for (const [pattern, name] of [
     [/^View Deck/, "deck-inspection"],
-    [/^Inspect Draw Pile/, "draw-pile-inspection"],
-    [/^Inspect Discard Pile/, "discard-pile-inspection"],
     [/^Inspect Boons/, "boon-inspection"],
   ] as const) {
     await page.getByRole("button", { name: pattern }).click();
     await shot(name);
     await page.keyboard.press("Escape");
   }
+  await page.getByRole("button", { name: /^View Deck/ }).click();
+  await page.getByRole("button", { name: /^Draw ·/ }).click();
+  await shot("draw-pile-inspection");
+  await page.getByRole("button", { name: /^Discard ·/ }).click();
+  await shot("discard-pile-inspection");
+  await page.keyboard.press("Escape");
   await click("Open game menu");
   await shot("game-menu");
   await page.keyboard.press("Escape");

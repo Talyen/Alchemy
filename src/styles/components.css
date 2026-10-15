@@ -240,6 +240,14 @@
     translate: 0 6px;
   }
 
+  .card-inspection-overlay-tabs {
+    align-items: flex-start;
+    padding-top: max(1.5rem, 10vh);
+  }
+  .card-inspection-overlay-tabs > [role="dialog"] {
+    width: min(100%, calc(64 * var(--content-rem, 1rem)));
+  }
+
   .card-inspection-overlay-empty > [role="dialog"] {
     min-width: min(20rem, 100%);
   }
@@ -346,42 +354,41 @@
   }
 }
 
-/* Resource changes resize the crystals inside the fixed frame. */
+/* The hand rests at the viewport edge; Mana follows the hero portrait. */
 .battle-hand-dock {
   position: relative;
+  width: min(100%, calc(68 * var(--content-rem, 1rem)));
   min-width: 0;
 }
-.battle-hand-dock .mana-hand {
+.battle-hand-dock .battle-hand {
   width: 78%;
   margin-inline: auto;
 }
 .mana-dock {
   position: absolute;
-  width: 80%;
+  /* Half the former dock's dimensions keeps every crystal and effect at half size. */
+  width: min(calc(27.2 * var(--content-rem, 1rem)), calc((100vw - 2.25 * var(--content-rem, 1rem)) * 0.4));
   aspect-ratio: 2165 / 333;
-  left: 10%;
-  bottom: calc(-1.125 * var(--content-rem, 1rem) - 4px);
-  z-index: 50;
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, 20%);
+  z-index: 20;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: help;
   pointer-events: none;
 }
-.mana-dock-frame {
-  display: block;
-  width: 100%;
-  height: 100%;
-  user-select: none;
-}
-.mana-dock-inspect {
+.mana-dock::before {
+  content: "";
   position: absolute;
-  inset: 0;
-  background: transparent;
-  border: 0;
-  padding: 0;
-  cursor: help;
-  clip-path: polygon(0 100%, 0 43%, 5% 20%, 12% 15%, 16% 4%, 50% 0, 84% 4%, 88% 15%, 95% 20%, 100% 43%, 100% 100%);
+  inset: 28% 18% 30%;
   pointer-events: auto;
 }
-.mana-dock-inspect:focus-visible {
+.mana-dock:focus-visible {
   outline: none;
+}
+.mana-dock:focus-visible::before {
   background: rgb(255 244 222 / 8%);
 }
 .mana-dock-gem {

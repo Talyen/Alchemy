@@ -14,6 +14,7 @@ import {
   getEnemyKeywordShineColors,
   getPlasmaColorPairForCharacter,
 } from "@/features/alchemy/shared/config";
+import { ManaPanel } from "../../battle/presentation/ui/mana-dock";
 import { ShakingArtPanel, ShakingCompanionPanel } from "../../battle/presentation/actor-vfx";
 import { getActiveCcKeyword } from "@/features/alchemy/shared/utils";
 import type { BattleFeedbackProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
@@ -75,6 +76,7 @@ export function BattleActors({
             turnShineColors={getCharacterShineColors(characterId)}
             ccKeyword={playerCcKeyword}
             plasmaColorPair={getPlasmaColorPairForCharacter(characterId)}
+            artOverlay={<ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} presentation={presentation} />}
             artCorner={
               battleState.activeCompanion ? (
                 <div className={battleCompanionCornerClass}>

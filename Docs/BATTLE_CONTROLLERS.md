@@ -126,7 +126,9 @@ and cancelled phases, plus the generation, abort signal, timers, transfer
 cancellation, draw counts, and autoplay binding. End-turn input is accepted only
 while ready; manual card plays may overlap card-draw presentation and remain
 available during victory grace. Late completions cannot unlock a newer lifetime
-or restart auto-end-turn in a finishing battle. React subscribes to binding
+or restart auto-end-turn in a finishing battle. Lifetime subscriptions publish
+phase changes so End Turn updates when opening or action playback completes,
+even after the final presentation update. React subscribes to binding
 readiness; no callback-ref bundle or binding-version counter is needed.
 
 Hand reveals acquire a draw lease from this lifetime and release it on success,

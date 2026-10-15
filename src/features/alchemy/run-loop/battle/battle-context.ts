@@ -48,8 +48,7 @@ export function useBattleControllerContext(
   assertSessionOwnership(gameSession, props.battle, props.presentation);
   const endTurnButtonRef = useRef<HTMLButtonElement | null>(null);
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const drawPileRef = useRef<HTMLDivElement | null>(null);
-  const discardPileRef = useRef<HTMLDivElement | null>(null);
+  const handDockRef = useRef<HTMLDivElement | null>(null);
   const battleSceneRef = useRef<HTMLDivElement | null>(null);
   const playerPanelRef = useRef<HTMLDivElement | null>(null);
   const enemyPanelRef = useRef<HTMLDivElement | null>(null);
@@ -70,8 +69,7 @@ export function useBattleControllerContext(
       playback,
       endTurnButtonRef,
       handCardRefs,
-      drawPileRef,
-      discardPileRef,
+      handDockRef,
       battleSceneRef,
       playerPanelRef,
       enemyPanelRef,

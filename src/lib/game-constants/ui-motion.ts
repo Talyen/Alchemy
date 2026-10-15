@@ -44,26 +44,18 @@ export const COMBATANT_STATUS_FROST_OPACITY = 0.75;
 export const COMBATANT_STATUS_FLAKE_COUNT = 12;
 
 export const CARD_TRANSFER_CONFIG = {
-  drawDurationSec: 0.5,
-  discardDurationSec: 0.5,
+  drawDurationSec: 0.42,
+  discardDurationSec: 0.36,
+  staggerMs: 70,
+  clockwiseRotationDegrees: 52,
+  dockScale: 0.94,
   completionBufferMs: 120,
   requiredStableSlotFrames: 2,
   maxSlotStabilizeFrames: 12,
   soundVolume: 0.4,
   stableRectTimeoutMs: 2000,
   rectEpsilonPx: 0.5,
-  batchSpeedMultipliers: {
-    small: 1,
-    medium: 1.4,
-    large: 1.6,
-    mediumCardCount: 3,
-    smallMaxCardCount: 2,
-  },
   arcRatio: 0.1,
-  discardFlipKeyframes: [0, 180],
-  drawFlipKeyframes: [180, 0],
-  discardFlipTimes: [0.4, 0.95],
-  drawFlipTimes: [0.28, 0.82],
 } as const;
 
 export const GHOST_TRAVEL_SCALE = 0.74;

@@ -47,8 +47,7 @@ describe("CombatTextLayer geometry", () => {
       enemyPanelRef: { current: enemy },
       endTurnButtonRef: { current: null },
       handCardRefs: { current: {} },
-      drawPileRef: { current: null },
-      discardPileRef: { current: null },
+      handDockRef: { current: null },
     };
     battlePresentation.setState({ floatingCombatBursts: [burst("player"), burst("enemy")] });
   });

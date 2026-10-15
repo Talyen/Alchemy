@@ -1,4 +1,5 @@
 import "../../../../../helpers/mock-audio";
+import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { createRef } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -45,6 +46,7 @@ function setup(overrides: Partial<BattleEndTurnButtonProps> = {}) {
     presentation: battlePresentation,
     buttonRef: createRef<HTMLButtonElement>(),
     isCardPlayInProgress: () => false,
+    subscribePlayback: () => () => {},
     isProgressSavePending: () => false,
     subscribeProgressSave: () => () => {},
     onEndTurn: vi.fn(),
@@ -60,6 +62,22 @@ async function openConfirmation(button: HTMLButtonElement) {
 }
 
 describe("toolbar End Turn", () => {
+  it("enables End Turn when opening playback completes without another presentation update", () => {
+    const playback = new PlaybackLifetime();
+    playback.beginOpening();
+    const { button } = setup({
+      isCardPlayInProgress: () => playback.cardPlayInProgress,
+      subscribePlayback: playback.subscribe,
+    });
+    expect(button.disabled).toBe(true);
+    act(() => playback.completeAction(playback.id));
+    expect(button.disabled).toBe(false);
+    act(() => playback.beginAction());
+    expect(button.disabled).toBe(true);
+    act(() => playback.completeAction(playback.id));
+    expect(button.disabled).toBe(false);
+  });
+
   it.each([true, false])(
     "requires confirmation with playable cards = %s and consumes repeated activation",
     async (playable) => {

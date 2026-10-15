@@ -35,6 +35,7 @@ import type { ActiveCcKeyword } from "../../../../shared/utils/cc-presentation";
 
 interface ArtPanelProps {
   side: "player" | "enemy";
+  artOverlay?: ReactNode;
   title: string;
   art: string;
   health: number;
@@ -96,6 +97,7 @@ export function ArtPanel({
   turnUrgentHide = false,
   turnShineColors,
   artCorner,
+  artOverlay,
   ccKeyword = null,
   attackToken = 0,
   castToken = 0,
@@ -143,6 +145,7 @@ export function ArtPanel({
             />
             <ActorArtFrame
               side={side}
+              artOverlay={artOverlay}
               title={title}
               art={art}
               shimmerId={shimmerId}
@@ -191,6 +194,7 @@ export function ArtPanel({
 
 function ActorArtFrame({
   side,
+  artOverlay,
   title,
   art,
   shimmerId,
@@ -210,6 +214,7 @@ function ActorArtFrame({
   ccKeyword = null,
 }: {
   side: "player" | "enemy";
+  artOverlay?: ReactNode;
   title: string;
   art: string;
   shimmerId: string;
@@ -330,6 +335,7 @@ function ActorArtFrame({
               />
             </BattleSceneArtwork>
           )}
+          {artOverlay}
           <PortraitImpactVfx pulse={pulse} showHealthFlash={!isDead && pulse?.healthLost === true} />
         </Surface>
       </CombatantStatusEffectPresentation>

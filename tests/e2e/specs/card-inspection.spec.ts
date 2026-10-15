@@ -36,36 +36,31 @@ test("inspects the run deck and each battle pile without advancing combat", crit
   await expect(boonsOverlay.getByRole("heading", { name: "Boons", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(boonsOverlay).toHaveCount(0);
-  const draw = page.getByRole("button", { name: "Inspect Draw Pile · 1 cards" });
-  await expect(draw).toHaveAttribute("aria-disabled", "false");
-  await expect(page.getByTestId("draw-pile")).toHaveText("");
-  await expect(page.getByTestId("discard-pile")).toHaveText("");
-  await draw.click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("heading", { name: "Draw Pile", exact: true })).toBeVisible();
-  await expect(dialog.getByRole("img", { name: "Block", exact: true })).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "Close card inspection" })).toBeFocused();
-  await page.keyboard.press("Escape");
-  await expect(dialog).toHaveCount(0);
-  await expect(draw).toBeFocused();
-  await page.getByRole("button", { name: "View Deck · 4 cards" }).click();
-  await expect(dialog.getByRole("heading", { name: "Deck", exact: true })).toBeVisible();
+  const icon = page.getByRole("button", { name: "View Deck · 4 cards" });
+  await expect(page.getByTestId("draw-pile")).toHaveCount(0);
+  await expect(page.getByTestId("discard-pile")).toHaveCount(0);
+  await icon.click();
+  const dialog = page.getByRole("dialog", { name: "Deck", exact: true });
   await expect(dialog.getByRole("img")).toHaveCount(4);
   await expect(dialog.getByRole("img", { name: "Apple", exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "Close card inspection" }).click();
-  await expect(dialog).toHaveCount(0);
-  const discardOpener = page.getByRole("button", { name: "Inspect Discard Pile · 1 cards" });
-  await discardOpener.click();
-  await expect(dialog.getByRole("heading", { name: "Discard Pile", exact: true })).toBeVisible();
+  const draw = dialog.getByRole("button", { name: "Draw · 1 cards", exact: true });
+  const tabTop = (await draw.boundingBox())!.y;
+  await expect(draw).toHaveText("Draw");
+  await draw.focus();
+  await page.keyboard.press("Enter");
+  await expect(draw).toHaveAttribute("aria-pressed", "true");
+  expect((await draw.boundingBox())!.y).toBeCloseTo(tabTop, 0);
+  await expect(dialog.getByRole("img", { name: "Block", exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "Discard · 1 cards" }).click();
   await expect(dialog.getByRole("img", { name: "Anvil", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
-  await expect(discardOpener).toBeFocused();
+  await expect(icon).toBeFocused();
   expect(await battle.enemyHealth()).toBe(health);
   await battle.playCardNamed("Slash");
-  const discard = page.getByRole("button", { name: "Inspect Discard Pile · 2 cards" });
-  await expect(discard).toHaveAttribute("aria-disabled", "false");
-  await discard.click();
+  await icon.click();
+  await expect(dialog.getByRole("button", { name: "Deck · 4 cards" })).toHaveAttribute("aria-pressed", "true");
+  await dialog.getByRole("button", { name: "Discard · 2 cards" }).click();
   await expect(dialog.getByRole("img")).toHaveCount(2);
 });
 
@@ -100,7 +95,7 @@ test("shows an empty draft and updates the viewer after each pick", async ({ pag
   await expect(page.getByRole("dialog").getByRole("img", { name: "Slash", exact: true })).toBeVisible();
 });
 
-test("waits for real card animations and preserves pile transfer anchors", slow, async ({ page }) => {
+test("waits for real card animations and keeps the hand dock fixed", slow, async ({ page }) => {
   test.setTimeout(60_000);
 
   await seedRandom(page, 42);
@@ -124,15 +119,13 @@ test("waits for real card animations and preserves pile transfer anchors", slow,
     )
     .toBe(true);
   await expect(icon).toHaveAttribute("aria-disabled", "false", { timeout: 20_000 });
-  const drawPile = page.getByTestId("draw-pile");
-  const before = await drawPile.boundingBox();
-  const buttonBounds = await drawPile.getByRole("button").boundingBox();
-  expect(buttonBounds).toEqual(before);
-  await drawPile.getByRole("button").click();
+  const dock = page.getByTestId("battle-hand");
+  const before = await dock.boundingBox();
+  await icon.click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  expect(await drawPile.boundingBox()).toEqual(before);
+  expect(await dock.boundingBox()).toEqual(before);
   const battle = new BattlePage(page);
   await battle.playFirstCard();
   await expect(icon).toHaveAttribute("aria-disabled", "true");

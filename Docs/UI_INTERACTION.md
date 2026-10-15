@@ -54,6 +54,9 @@ uses only the fade; reduced motion omits the settle. Cards appear together, and
 populated panels retain content-based sizing without animated dimensions. Empty
 collections show a centered, muted collection icon in a 10rem-high content area with a
 20rem minimum panel width, bounded by the available viewport with overflow scrolling.
+The battle Deck viewer anchors its tab header near the top of the viewport and
+keeps a bounded shared width, so switching to a smaller or empty pile leaves
+Deck, Draw, and Discard in place. Outside battle, Deck retains content-based sizing.
 Deck, Draw Pile, and Discard Pile use the stacked-cards icon; Boons uses the trophy icon.
 Each empty icon is exposed as an image labelled Empty Deck, Empty Draw Pile,
 Empty Discard Pile, or Empty Boons.

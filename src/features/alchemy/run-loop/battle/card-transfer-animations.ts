@@ -10,13 +10,11 @@ import {
 } from "@/lib/game-constants";
 import { getBattleCardPlayTarget } from "@/lib/battle";
 import type { CardGhost, CardRect } from "../../shared/types";
-import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
+import { isAnimationDisabled, shouldReduceMotion } from "@/lib/animation/animation-prefs";
 import { getCardRect } from "../../shared/utils";
 import type { CardTransfer } from "../../shared/types";
 import {
   centeredRectForSize,
-  getCardTransferBatchSpeed,
-  transferCardIntervalSeconds,
   getBattleSceneLocalRect,
   viewportRectToBattleSceneRect,
   type BattleSceneLocalRect,
@@ -81,64 +79,74 @@ type CardTransferRunner = (transfer: Omit<CardTransfer, "id">, onComplete?: () =
 
 export interface CardTransferAnimationDeps {
   isSessionActive: (session: number) => boolean;
-  measureDiscardPile: () => CardRect | null;
-  measureDrawPile: () => CardRect | null;
+  measureHandDock: () => CardRect | null;
   measureHandCard: (cardKey: string) => CardRect | null;
+  measureHandCardRotation: (cardKey: string) => number | null;
+  waitForDeparture: (delayMs: number) => Promise<boolean>;
   runCardTransfer: CardTransferRunner;
-  playTransferSound: (delay?: number) => void;
+  playTransferSound: () => void;
   setHiddenHandCardKeys: (update: (current: HiddenHandCardKeys) => Iterable<string>) => void;
   setTransferInProgress: (active: boolean) => void;
   stableHandCardDeps: StableHandCardRectDeps;
 }
 
-function safeTransferScale(numerator: number, denominator: number): number {
-  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return 1;
-  const scale = numerator / denominator;
-  return Number.isFinite(scale) && scale > 0 ? scale : 1;
+// A card's entire rotated silhouette starts/ends below the dock's bottom edge.
+function dockCardRect(dock: CardRect, card: CardRect): CardRect {
+  return {
+    x: dock.x + dock.width / 2 - card.width / 2,
+    y: dock.y + dock.height + Math.hypot(card.width, card.height) / 2 - card.height / 2,
+    width: card.width,
+    height: card.height,
+  };
+}
+
+async function runTransferCascade(
+  count: number,
+  session: number,
+  deps: CardTransferAnimationDeps,
+  depart: (index: number) => Promise<void>,
+) {
+  const results = await Promise.allSettled(
+    Array.from({ length: count }, async (_, index) => {
+      if (index > 0 && !(await deps.waitForDeparture(index * CARD_TRANSFER_CONFIG.staggerMs))) return;
+      if (deps.isSessionActive(session)) await depart(index);
+    }),
+  );
+  // Keep the batch alive until every owned flight settles, including on failure.
+  const failures: unknown[] = [];
+  for (const result of results) if (result.status === "rejected") failures.push(result.reason);
+  if (failures.length === 1) throw failures[0];
+  if (failures.length > 1) throw new AggregateError(failures, "Card transfer failed");
 }
 
 export async function animateDiscardedHand(cards: BattleCard[], session: number, deps: CardTransferAnimationDeps) {
-  const discardPileRect = deps.measureDiscardPile();
-  if (!discardPileRect || discardPileRect.width <= 0 || cards.length === 0) return;
-  const speedMul = getCardTransferBatchSpeed(cards.length);
-  const cardInterval = transferCardIntervalSeconds(
-    CARD_TRANSFER_CONFIG.discardDurationSec,
-    speedMul,
-    CARD_TRANSFER_CONFIG.completionBufferMs,
-  );
-  for (let i = 0; i < cards.length; i++) {
-    if (!deps.isSessionActive(session)) return;
-    deps.playTransferSound(i * cardInterval);
-  }
-  if (!deps.isSessionActive(session)) return;
+  if (cards.length === 0 || shouldReduceMotion() || !deps.isSessionActive(session)) return;
+  const dock = deps.measureHandDock();
+  if (!dock || dock.width <= 0) return;
   deps.setTransferInProgress(true);
-  for (let index = cards.length - 1; index >= 0; index -= 1) {
-    if (!deps.isSessionActive(session)) {
-      deps.setTransferInProgress(false);
-      return;
-    }
-    const card = cards[index];
-    if (!card) continue;
+  await runTransferCascade(cards.length, session, deps, async (departureIndex) => {
+    const index = cards.length - 1 - departureIndex;
+    const card = cards[index]!;
     const cardKey = getHandCardKey(card, index);
     const sourceRect = deps.measureHandCard(cardKey);
-    if (!sourceRect) continue;
-    const targetRect = centeredRectForSize(discardPileRect, sourceRect.width, sourceRect.height);
+    if (!sourceRect || sourceRect.width <= 0) return;
+    const rotation =
+      deps.measureHandCardRotation(cardKey) ?? (index - (cards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES;
     deps.setHiddenHandCardKeys((current) => (current.includes(cardKey) ? current : [...current, cardKey]));
-    if (sourceRect.width <= 0) continue;
+    deps.playTransferSound();
     await deps.runCardTransfer({
       kind: "discard",
       card,
+      handCardKey: cardKey,
       from: sourceRect,
-      to: targetRect,
+      to: dockCardRect(dock, sourceRect),
       fromScale: 1,
-      toScale: safeTransferScale(discardPileRect.width, sourceRect.width),
-      toScaleY: safeTransferScale(discardPileRect.height, sourceRect.height),
-      fromRotation: (index - (cards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES,
-      toRotation: 0,
-      rotateY: [...CARD_TRANSFER_CONFIG.discardFlipKeyframes],
-      duration: CARD_TRANSFER_CONFIG.discardDurationSec / speedMul,
+      toScale: CARD_TRANSFER_CONFIG.dockScale,
+      fromRotation: rotation,
+      toRotation: rotation + CARD_TRANSFER_CONFIG.clockwiseRotationDegrees,
+      duration: CARD_TRANSFER_CONFIG.discardDurationSec,
     });
-  }
+  });
 }
 
 export async function animateDrawnHand(
@@ -147,48 +155,45 @@ export async function animateDrawnHand(
   session: number,
   deps: CardTransferAnimationDeps,
 ) {
-  const drawPileRect = deps.measureDrawPile();
-  if (!drawPileRect || drawPileRect.width <= 0 || cards.length === 0) return;
-  const speedMul = getCardTransferBatchSpeed(cards.length);
-  const cardInterval = transferCardIntervalSeconds(
-    CARD_TRANSFER_CONFIG.drawDurationSec,
-    speedMul,
-    CARD_TRANSFER_CONFIG.completionBufferMs,
-  );
-  for (let i = 0; i < cards.length; i++) {
-    if (!deps.isSessionActive(session)) return;
-    deps.playTransferSound(i * cardInterval);
-  }
-  for (const card of cards) {
-    if (!deps.isSessionActive(session)) return;
+  if (cards.length === 0 || shouldReduceMotion() || !deps.isSessionActive(session)) return;
+  const dock = deps.measureHandDock();
+  if (!dock || dock.width <= 0) return;
+  await runTransferCascade(cards.length, session, deps, async (index) => {
+    const card = cards[index]!;
     const identityIndex = allHandCards.indexOf(card);
     const fallbackIndex = allHandCards.findIndex((item) => item.uid === card.uid && item.id === card.id);
     const resolvedIndex = identityIndex >= 0 ? identityIndex : fallbackIndex;
-    const safeIndex = resolvedIndex >= 0 ? resolvedIndex : 0;
     const cardKey = getHandCardKey(card, resolvedIndex >= 0 ? resolvedIndex : undefined);
-    const fallbackRect = centeredRectForSize(drawPileRect, drawPileRect.width, drawPileRect.height);
-    const targetRect = await waitForStableHandCardRect(cardKey, fallbackRect, deps.stableHandCardDeps);
+    const reveal = () => deps.setHiddenHandCardKeys((current) => current.filter((key) => key !== cardKey));
+    const fallback = centeredRectForSize(dock, dock.width, dock.height);
+    const targetRect =
+      deps.measureHandCard(cardKey) ?? (await waitForStableHandCardRect(cardKey, fallback, deps.stableHandCardDeps));
     if (!deps.isSessionActive(session)) return;
-    const sourceRect = centeredRectForSize(drawPileRect, targetRect.width, targetRect.height);
-    if (targetRect.width <= 0) continue;
+    // A missing slot must not leave a committed card hidden behind a presentation failure.
+    if (targetRect === fallback || targetRect.width <= 0) {
+      reveal();
+      return;
+    }
+    const rotation =
+      deps.measureHandCardRotation(cardKey) ??
+      (Math.max(0, resolvedIndex) - (allHandCards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES;
+    deps.playTransferSound();
     await deps.runCardTransfer(
       {
         kind: "draw",
         card,
-        from: sourceRect,
+        handCardKey: cardKey,
+        from: dockCardRect(dock, targetRect),
         to: targetRect,
-        fromScale: safeTransferScale(drawPileRect.width, targetRect.width),
+        fromScale: CARD_TRANSFER_CONFIG.dockScale,
         toScale: 1,
-        fromRotation: 0,
-        toRotation: (safeIndex - (allHandCards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES,
-        rotateY: [...CARD_TRANSFER_CONFIG.drawFlipKeyframes],
-        duration: CARD_TRANSFER_CONFIG.drawDurationSec / speedMul,
+        fromRotation: rotation - CARD_TRANSFER_CONFIG.clockwiseRotationDegrees,
+        toRotation: rotation,
+        duration: CARD_TRANSFER_CONFIG.drawDurationSec,
       },
-      () => {
-        deps.setHiddenHandCardKeys((current) => current.filter((key) => key !== cardKey));
-      },
+      reveal,
     );
-  }
+  });
 }
 
 export function animateCardActivation(

@@ -123,6 +123,7 @@ export interface AlchemyRouteCommands {
     refs: BattleRefs;
     bindPlayback: (bind: BattlePlaybackBind | null) => void;
     isCardPlayInProgress: () => boolean;
+    subscribePlayback: (listener: () => void) => () => void;
     isProgressSavePending: () => boolean;
     subscribeProgressSave: (listener: () => void) => () => void;
     screen: Screen;

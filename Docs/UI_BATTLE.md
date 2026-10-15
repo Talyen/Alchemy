@@ -10,8 +10,8 @@ failures use neutral grounding; late samples cannot repaint a different board.
 No board, combatant, or card needs authored lighting metadata.
 
 Framed portraits and cards use consistent contact and cast shadows. Transparent
-pile and Mana artwork use silhouette shadows. Raised hand cards crossfade an
-additional elevated shadow; card transfers, backs, play ghosts, Companions, and
+Mana artwork use silhouette shadows. Raised hand cards crossfade an
+additional elevated shadow; card transfers, play ghosts, Companions, and
 death slices retain the same treatment. Shadow sizes follow content scaling.
 The fixed tabletop clips overflow without becoming a scroll container, so focusing
 partially concealed controls cannot shift the scene.
@@ -25,8 +25,7 @@ continuous lighting updates, inferred board light directions, or asset variants.
 
 One cached sample also derives broad left, right, and lower ambient zones, each
 softened halfway toward the whole-board tint and bounded by the same color limits.
-Player and Companion assemblies inherit the left zone, enemies the right; cards,
-piles, and Mana inherit the lower zone. Zones follow objects through attacks,
+Player and Companion assemblies inherit the left zone, enemies the right; cards inherit the lower zone, while Mana follows the hero portrait. Zones follow objects through attacks,
 death slices, and card flights so movement does not change their color. These are
 broad tabletop regions, not precise lighting coordinates or inferred light sources.
 
@@ -34,8 +33,8 @@ Rectangular artwork receives a faint upper edge highlight and lower edge shade.
 Health/status panels share the assembly's depth and a restrained background wash;
 the wash sits behind their information. Semantic borders, Death's Door, and focus
 remain independent. Transparent artwork keeps its alpha-following treatment.
-Filled Mana gems cast a faint blue spill onto the frame only, clipped to the frame
-alpha; spending removes that spill. Only its opacity transitions, settling
+Filled Mana gems cast a faint blue spill behind the crystals inside the hero
+portrait; spending removes that spill. Only its opacity transitions, settling
 immediately with reduced motion.
 
 Shared conventions: [UI](./UI.md).
@@ -122,38 +121,34 @@ Do not mirror engine field dependencies in a separate UI cache.
 
 ## Deck and pile inspection
 
-The stacked-cards icon opens the run Deck during drafting,
-run screens, and meta detours from that run. Drafting exposes picks so far through
-the icon; it does not add a previous-picks strip. The icon has no tooltip. Draw
-and Discard piles have keyboard-accessible inspection actions without visible
-counters; counts remain in accessible action names.
+The stacked-cards toolbar icon opens the run Deck during drafting, run screens,
+and meta detours from that run. Opening always selects Deck. During battle the
+viewer header contains Deck, Draw, and Discard tabs, with counts only in their
+accessible names. Tabs reuse `TabBar` selection and keyboard focus feedback.
+Outside battle the viewer retains its centered Deck title without tabs.
 Titled screen headers place Deck on the left alongside any Back control and Menu
-on the right, with the title centered between them.
+on the right, with the title centered between them. The icon has no tooltip.
 
 `CardInspectionOverlay` is controlled by props and reuses the modal shell,
 `useDialogFocus`, card presentation, and adaptive pagination. Each copy remains
 visible individually, sorted by displayed title with an instance-content tie
-break independent of draw order. The grid uses [`viewCardWidthClass`](../src/features/alchemy/shared/config/layout.ts),
-matching `CardSelectionGrid`’s reference width; larger Collection tiles do not fit
-that measurement. The viewer shows only a centered collection title, cards,
-and an upper-right close button, plus pagination controls when needed. It has no
-collection tabs, counts, instructional text, or labels below cards. Empty collections
-show the collection icon using the shared [overlay layout](./UI_INTERACTION.md#overlay-lifecycle).
-Open each collection from its own opener. Pagination resets on reopening.
+break independent of draw order. The grid uses
+[`viewCardWidthClass`](../src/features/alchemy/shared/config/layout.ts), matching
+`CardSelectionGrid`'s reference width. The close button remains at the upper right;
+tabs replace the visible collection title during battle. Empty collections retain
+the tabs and show the collection icon. Pagination resets when switching collections
+or reopening. There are no visible counts, instructions, or labels below cards.
 Full Deck is the run deck, including cards Consumed in the current battle;
-battle-only generated cards appear in their current piles instead. Deck, Draw
-Pile, and Discard Pile cards show their keyword Shine Border on hover or
-keyboard focus, with neutral shine when no keywords resolve, matching
-Collection, Wish, and reward choices.
+battle-only generated cards appear in their current piles instead. Inspected
+cards show keyword Shine Border on hover or keyboard focus, with neutral shine
+when no keywords resolve, matching Collection, Wish, and reward choices.
 
 Inspection opens only between actions on a surviving player’s turn, with no
 Wish, pending transition, hidden hand card, card ghost, or card transfer. While
 open it contains focus and blocks underlying input, autoplay, and automatic End
 Turn without changing saved automation preferences. Navigation, run replacement,
 battle teardown, or opening a peer menu closes it. Escape, backdrop, and the close
-button dismiss it and return focus to the opener. Pile measurement wrappers must
-match the artwork bounds: their button is block-level so inline baseline spacing
-does not shift transfer anchors.
+button dismiss it and return focus to the toolbar opener.
 
 ## Enemy inspection
 

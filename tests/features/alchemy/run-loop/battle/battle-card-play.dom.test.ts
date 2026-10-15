@@ -96,8 +96,7 @@ function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
     playback,
     endTurnButtonRef: { current: null },
     handCardRefs: { current: {} },
-    drawPileRef: { current: null },
-    discardPileRef: { current: null },
+    handDockRef: { current: null },
     playerPanelRef: { current: null },
     enemyPanelRef: { current: null },
     battleSceneRef: { current: null },
@@ -317,6 +316,7 @@ describe("createBattleCardPlay", () => {
   });
 
   it("accepts rapid plays by identity and waits for all draws before settling the latest state", async () => {
+    vi.mocked(shouldReduceMotion).mockReturnValue(false);
     const { runBattleDraw } = await import("@/features/alchemy/run-loop/battle/draw-sequence");
     const settled: Array<() => void> = [];
     vi.mocked(runBattleDraw)
@@ -418,6 +418,7 @@ describe("createBattleCardPlay", () => {
   });
 
   it.each([1, 2])("unlocks End Turn, autoplay and inspection after %i card draws settle", async (count) => {
+    vi.mocked(shouldReduceMotion).mockReturnValue(false);
     const { runBattleDraw } = await import("@/features/alchemy/run-loop/battle/draw-sequence");
     const actual = await vi.importActual<typeof import("@/features/alchemy/run-loop/battle/draw-sequence")>(
       "@/features/alchemy/run-loop/battle/draw-sequence",
@@ -490,6 +491,7 @@ describe("createBattleCardPlay", () => {
       expect(endTurn).toHaveBeenCalledOnce();
       expect(ctx.playback.scheduleAutoEndTurn).toHaveBeenCalledWith(battleState);
     } finally {
+      vi.mocked(shouldReduceMotion).mockReturnValue(true);
       vi.mocked(runBattleDraw).mockImplementation(async (request) => {
         request.onReveal();
         request.onSettled?.();
