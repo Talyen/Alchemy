@@ -85,56 +85,72 @@ it("preserves stranded Gold/material rewards and consumes a Companion handoff on
     data: { gold: 0, materials: emptyInventory(), choiceIds: ["wolf-companion"], companionChoiceIds: [] },
   });
 });
-it("abandons only the selected legacy run with current settlement and an acknowledged terminal save", async () => {
-  const state = battleSnapshot({
-    ...defaultBattleState(),
-    gold: 7,
-    playerHealth: 20,
-    enemyHealth: 12,
-    turnPhase: "enemy",
-  });
-  const incompatible = legacySave(
-    legacyRun({ activeCombat: { battleState: state, pendingBattleTransition: { kind: "continue-end-turn" } } }),
-  );
-  const compatible = legacySave(legacyRun({ currentScreen: "destination" }), 200);
-  expect(
-    evaluateSaveCandidates([JSON.stringify(incompatible), JSON.stringify(compatible)]).restoreActions,
-  ).toBeUndefined();
-  const loaded = evaluateSaveCandidates([JSON.stringify(incompatible)]);
-  expect(loaded.restoreActions).toEqual(["abandon-active-run"]);
-  const session = createGameSession();
-  sessions.push(session);
-  const persistence = createSessionPersistence(session);
-  let written = "";
-  persistence.configure(
-    createSaveBackend({
-      write: async (_key, value) => {
-        written = value;
-        return { ok: true };
-      },
-      writeSync: (_key, value) => {
-        written = value;
-        return { ok: true };
-      },
-    }),
-  );
-  expect(persistence.restore(loaded.data, { restoreActions: loaded.restoreActions })).toBe(true);
-  await persistence.waitForWrites();
-  const root = readGameplayState(session);
-  expect(root.session.activity.kind).toBe("inactive");
-  expect(root.run.navigation.screen).toBe("game-over");
-  expect(root.session.runRecap?.ending).toBe("abandoned");
-  expect(root.runProfile.talentXP.block).toBe(13);
-  expect(root.runProfile.materialInventory.wood).toBe(2);
-  expect(root.runProfile.gold).toBe(7);
-  expect(root.run.activeRun.rng).toEqual(loaded.data.activeRun?.rng);
-  expect(JSON.parse(written)).toMatchObject({ saveSchemaVersion: 21, activeRun: null, talentXP: { block: 13 } });
-  const before = readGameplayState(session);
-  expect(
-    persistence.restore(loaded.data, { restoreActions: loaded.restoreActions, preserveActiveRunIfInitialized: true }),
-  ).toBe(false);
-  expect(readGameplayState(session).session).toBe(before.session);
-});
+it.each(["legacy", "current"] as const)(
+  "abandons only the selected %s run with current settlement and an acknowledged terminal save",
+  async (format) => {
+    const state = battleSnapshot({
+      ...defaultBattleState(),
+      gold: 7,
+      playerHealth: 20,
+      enemyHealth: 12,
+      turnPhase: "enemy",
+    });
+    const incompatible =
+      format === "legacy"
+        ? legacySave(
+            legacyRun({ activeCombat: { battleState: state, pendingBattleTransition: { kind: "continue-end-turn" } } }),
+          )
+        : saveEnvelopeFixture({
+            gold: 7,
+            talentXP: { block: 10 },
+            materialInventory: { ...emptyInventory(), wood: 2 },
+            activeRun: makeMinimalActiveRunInput({
+              rng: createRunRngState(42),
+              runTalentXP: { block: 3 },
+              runMaterialsEarned: { ...emptyInventory(), wood: 2 },
+              activity: { kind: "battle", data: { battleState: state } },
+            }),
+          });
+    const compatible = legacySave(legacyRun({ currentScreen: "destination" }), 200);
+    expect(
+      evaluateSaveCandidates([JSON.stringify(incompatible), JSON.stringify(compatible)]).restoreActions,
+    ).toBeUndefined();
+    const loaded = evaluateSaveCandidates([JSON.stringify(incompatible)]);
+    expect(loaded.restoreActions).toEqual(["abandon-active-run"]);
+    const session = createGameSession();
+    sessions.push(session);
+    const persistence = createSessionPersistence(session);
+    let written = "";
+    persistence.configure(
+      createSaveBackend({
+        write: async (_key, value) => {
+          written = value;
+          return { ok: true };
+        },
+        writeSync: (_key, value) => {
+          written = value;
+          return { ok: true };
+        },
+      }),
+    );
+    expect(persistence.restore(loaded.data, { restoreActions: loaded.restoreActions })).toBe(true);
+    await persistence.waitForWrites();
+    const root = readGameplayState(session);
+    expect(root.session.activity.kind).toBe("inactive");
+    expect(root.run.navigation.screen).toBe("game-over");
+    expect(root.session.runRecap?.ending).toBe("abandoned");
+    expect(root.runProfile.talentXP.block).toBe(13);
+    expect(root.runProfile.materialInventory.wood).toBe(2);
+    expect(root.runProfile.gold).toBe(7);
+    expect(root.run.activeRun.rng).toEqual(loaded.data.activeRun?.rng);
+    expect(JSON.parse(written)).toMatchObject({ saveSchemaVersion: 21, activeRun: null, talentXP: { block: 13 } });
+    const before = readGameplayState(session);
+    expect(
+      persistence.restore(loaded.data, { restoreActions: loaded.restoreActions, preserveActiveRunIfInitialized: true }),
+    ).toBe(false);
+    expect(readGameplayState(session).session).toBe(before.session);
+  },
+);
 it("does not retire committed terminal battles or partially publish a failed settlement", () => {
   const terminal = evaluateSaveCandidates([
     JSON.stringify(
@@ -202,7 +218,14 @@ it.each(["campfire", "transmutation", "shop", "alchemist", "trinket-shop", "equi
     const rng = createRunRngState(42);
     const loaded = evaluateSaveCandidates([JSON.stringify(legacySave(legacyRun({ currentScreen: kind, rng })))]);
     expect(loaded.data.activeRun?.activity.kind).toBe(kind);
-    expect(loaded.data.activeRun?.rng).toEqual(rng);
+    if (kind === "campfire") {
+      expect(loaded.data.activeRun?.activity).toHaveProperty("data.offers.length", 3);
+      expect(loaded.data.activeRun?.rng.counters.events).toBeGreaterThan(rng.counters.events);
+      expect(loaded.data.activeRun?.rng).toEqual({
+        ...rng,
+        counters: { ...rng.counters, events: expect.any(Number) },
+      });
+    } else expect(loaded.data.activeRun?.rng).toEqual(rng);
     expect(loaded.data.activeRun?.runTalentXP).toEqual({ block: 3 });
     expect(loaded.restoreActions).toBeUndefined();
   },

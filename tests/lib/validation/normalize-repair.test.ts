@@ -147,8 +147,8 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
         chosenCardId: "slash",
       }),
     });
-    expect(savedActivityData(result, "mystery")?.cardChoices).toBeNull();
-    expect(result.rng.counters.events).toBe(0);
+    expect(savedActivityData(result, "mystery")).toMatchObject({ cardChoices: null, chosenCardId: "slash" });
+    expect(result.rng).toEqual(rng);
   });
 
   it("re-offered cards are drawn from the live offerable pool", () => {

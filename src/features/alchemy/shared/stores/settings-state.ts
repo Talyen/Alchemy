@@ -77,7 +77,7 @@ export function preferredAutoplayEnabled(fields: {
 // Live writes clamp through the shared settings-values helpers (the same
 // ranges the save schema enforces on load), so in-memory state can never hold
 // an out-of-range value that load would silently repair.
-export function createSettingsStore() {
+export function createSettingsStore(isActive: () => boolean = () => true) {
   const store = createStore<SettingsStore>()((set) => ({
     ...createDefaultSettingsSaveFields(),
 
@@ -106,7 +106,7 @@ export function createSettingsStore() {
   type Listener = (state: SettingsStore, previous: SettingsStore) => void;
   const notifications = createNotificationChannel<Parameters<Listener>>((error) => {
     logError("Settings subscriber failed", "other", undefined, undefined, undefined, error);
-  });
+  }, isActive);
   let installing = false;
   const notify = notifications.publish;
   Object.freeze(store.getState());

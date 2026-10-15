@@ -29,8 +29,14 @@ Ordinary development and builds use committed outputs. `predev` and hosted CI ru
 
 ## Game Board artwork
 
-The explicit board catalog selects the JPG masters in
-`2d Assets/Game Sources/Interface/Board Backgrounds`. `scripts/assets/board-assets.mjs`
+To add or replace a board:
+
+1. Put its master under `2d Assets/Game Sources/Interface/Board Backgrounds` in the Asset Library.
+2. Add or update its `id`, `title`, and `sourceFilename` in `src/lib/boards/catalog.json`. Preserve existing IDs: ownership and selection use them in saves. Adding a library file alone does not register a board.
+3. Run `npm run assets:optimize:art` and `npm run sync:art`, then add the full-image and thumbnail exports to `boardArt` in `src/lib/game-data/assets.ts` under the same ID. Generated barrels are outputs; edit the curated map instead.
+4. Run `npm run assets:check` and `npm run check:generated`, review the catalog, map, and generated diff, then follow the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change). For changes to selection, ownership, or rewards, use the existing `tests/features/alchemy/shared/stores/boards.test.ts` suite.
+
+`scripts/assets/board-assets.mjs` derives both outputs from that catalog and
 registers native 2752×1536 lossless WebP backgrounds and 640px, quality-90 gallery
 thumbnails in the existing art pipeline. Lossless encoding preserves decoded JPG
 pixels; it cannot restore information already lost in the original JPG.
@@ -143,15 +149,26 @@ Set `requiresTransparency: true` in the owning art manifest when an image must h
 
 Also inspect approved artwork against light and dark backgrounds. The pixel check rejects opaque checkerboards and empty images but cannot prove that every background pixel is correct. If reference-based image generation repeatedly paints a checkerboard into the image, regenerate without image references using the approved visual description, then repeat pixel and visual checks. Current approved masters remain the authoring sources.
 
+Universal combatant frame masters live under
+`2d Assets/Game Sources/Interface/Combatant Frames/`. Charcoal, Saddle, Walnut,
+and Oak are transparent square nine-slice masters with an empty center. The
+`combatantFrame` preset produces lossless 1024px WebP textures, retaining alpha;
+CSS discards the center and repeats edge slices while preserving corner pieces.
+Portrait, landscape, Companion, and status-panel frames all reuse these masters.
+Keep labels, Health fill, statuses, and semantic highlights in live UI layers.
+
 `2d Assets/Game Sources/Interface/Card Elements/Card Back.png` is the single card used in transfer animations.
 `Draw Pile.png` (active compass stack, leaning left) and `Discard Pile.png`
 (spent/dormant compass stack, leaning right) are distinct compositions, not
 mirrors; both retain transparent margins and a 3:4 canvas. Keep pile artwork
 separate from the single-card master so animations never show a stack.
-`2d Assets/Game Sources/Items/Resources/Mana Crystal - Transparent.png` generates `battle-mana-crystal.webp` for the Mana display;
-it is distinct from the playable Mana Crystals card artwork. Available crystals
-use the full image, spent crystals use 20% opacity, and overflow crystals retain
-their brighter glow.
+The battle Mana display uses the frame and separate full/empty crystal masters
+under `Interface/Mana Dock`, selected in `scripts/assets/core-assets.mjs`.
+Its outputs are `mana-dock-frame.webp`, `mana-dock-full.webp`, and
+`mana-dock-empty.webp`; these are distinct from the playable Mana Crystals card
+artwork. Preserve alpha transparency and lossless preparation for all three.
+[Display sizing](./UI.md#display-sizing) owns the dock layout and spent appearance;
+[battle feedback](./UI_BATTLE.md#battle-feedback) owns resource-change effects.
 
 ## Add or replace Gear art
 

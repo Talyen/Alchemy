@@ -1,3 +1,4 @@
+import { CombatantFrame } from "./combatant-frame";
 import type { EnemyDescriptionContext } from "@/lib/battle";
 import { type CSSProperties, type ReactNode, type Ref, useLayoutEffect, useRef } from "react";
 
@@ -311,6 +312,7 @@ function ActorArtFrame({
           shimmerRounded="rounded-shell-hero"
           onMouseEnter={() => onHoverShimmer(shimmerId)}
         >
+          {!isDead ? <CombatantFrame /> : null}
           <ArtTurnActiveBorder
             side={side}
             active={turnActive && !isDead}
@@ -373,6 +375,7 @@ function ActorStatsPanel({
         isDead && "animate-frame-fade !bg-transparent",
       )}
     >
+      {!isDead ? <CombatantFrame /> : null}
       {deathsDoorActive ? <StatsDeathDoorBorder /> : null}
       <div className={cn("relative", isDead && "opacity-0 transition-opacity duration-700")}>
         <ActorHealthHeader side={side} title={title} health={health} maxHealth={maxHealth} healthToken={healthToken} />

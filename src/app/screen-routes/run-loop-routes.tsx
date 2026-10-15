@@ -33,7 +33,7 @@ import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
 function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: BattleRouteCtx) {
   const commands = routeCommands.battle;
   const { characterId, heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
-  const { battleScreenData, hasActiveBattle } = useBattleScreenRouteData(commands.presentation);
+  const { battleScreenData, inputBattleState, hasActiveBattle } = useBattleScreenRouteData(commands.presentation);
   const enemyInspectionOpen = useUiStore((state) => state.enemyInspectionOpen);
   const setEnemyInspectionOpen = useUiStore((state) => state.setEnemyInspectionOpen);
   const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -65,7 +65,7 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
   useBattlePlayback({
     presentation: commands.presentation,
     screen: commands.screen,
-    battleState: battleScreenData.battleState,
+    battleState: inputBattleState,
     hasActiveBattle,
     gameMenuOpen,
     isAutoplayEnabled: commands.isAutoplayEnabled,
@@ -91,8 +91,8 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
         aspectMode={aspectMode}
         stagePixelRatio={stagePixelRatio}
         refs={commands.refs}
-        onCardClick={commands.handleCardClick}
-        onWishChoice={commands.handleWishChoice}
+        onCardClick={(card, index, event) => commands.handleCardClick(card, index, event, inputBattleState)}
+        onWishChoice={(card) => commands.handleWishChoice(card, inputBattleState)}
         boonInspectOpen={commands.boonInspectOpen}
         onCloseBoonInspect={commands.closeBoonInspect}
       />

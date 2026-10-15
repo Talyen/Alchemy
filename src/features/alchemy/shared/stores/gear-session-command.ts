@@ -1,6 +1,7 @@
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { assertSynchronousResult } from "./command-outcome";
 import { findGearEquippedCharacter, findGearInventoryOwner, gearDefinitions } from "@/lib/gear";
-import { dispatchGameplayCommand, type GameplayDraft } from "./gameplay-command";
+import { abortGameplayCommand, dispatchGameplayCommand, type GameplayDraft } from "./gameplay-command";
 import {
   addGearCurrencies,
   addGearInstance,
@@ -39,9 +40,15 @@ function isInstanceLocked(state: GameplayDraft, instanceId: string): boolean {
   return Boolean(equippedBy && restrictions.characters[equippedBy]);
 }
 
-function gearCommandView(state: GameplayDraft, markMutated: () => void): GearDraftView {
+function gearCommandView(state: GameplayDraft, markMutated: () => void, assertOpen: () => void): GearDraftView {
   const gear = state.gear;
   const read = createReadonlyView(gear);
+  const mutation = <Args extends unknown[], Result>(operation: (...args: Args) => Result) => {
+    return (...args: Args): Result => {
+      assertOpen();
+      return operation(...args);
+    };
+  };
   // Void actions always write; boolean actions report success. Either way the
   // view records actual writes explicitly so commands know whether live battle
   // meta needs rebinding — no snapshot comparison required.
@@ -65,7 +72,7 @@ function gearCommandView(state: GameplayDraft, markMutated: () => void): GearDra
     get craftingCurrencies() {
       return read.craftingCurrencies;
     },
-    initialize: (inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets) => {
+    initialize: mutation((inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets) => {
       if (state.session.activity.kind === "battle") throw new Error("Cannot initialize Gear during combat");
       markMutated();
       initializeGear(
@@ -76,52 +83,52 @@ function gearCommandView(state: GameplayDraft, markMutated: () => void): GearDra
         ownedTrinketIds ? [...ownedTrinketIds] : undefined,
         equippedTrinkets ? snapshotReadonlyValue(equippedTrinkets) : undefined,
       );
-    },
-    addInstance: (instance, characterId) => {
+    }),
+    addInstance: mutation((instance, characterId) => {
       markMutated();
       addGearInstance(gear, instance, characterId);
       if (gearDefinitions[instance.definitionId]?.rarity === "unique") {
         discoverUniqueIds(state, [instance.definitionId]);
       }
-    },
-    equip: (characterId, slot, instance) => {
+    }),
+    equip: mutation((characterId, slot, instance) => {
       const restrictions = deriveGearCombatRestrictions(state);
       if (restrictions.characters[characterId] || restrictions.gear[instance.instanceId]) return false;
       return wrote(equipGearInstance(gear, characterId, slot, instance));
-    },
-    unequip: (characterId, slot) => {
+    }),
+    unequip: mutation((characterId, slot) => {
       if (deriveGearCombatRestrictions(state).characters[characterId]) return false;
       return wrote(unequipGearInstance(gear, characterId, slot));
-    },
-    addTrinket: (trinketId) => {
+    }),
+    addTrinket: mutation((trinketId) => {
       const ok = wrote(addPermanentTrinket(gear, trinketId));
       if (ok) {
         discoverTrinketIds(state, [trinketId]);
       }
       return ok;
-    },
-    equipTrinket: (characterId, trinketId) => {
+    }),
+    equipTrinket: mutation((characterId, trinketId) => {
       const restrictions = deriveGearCombatRestrictions(state);
       if (restrictions.characters[characterId] || restrictions.trinkets[trinketId]) return false;
       return wrote(equipPermanentTrinket(gear, characterId, trinketId));
-    },
-    unequipTrinket: (characterId) => {
+    }),
+    unequipTrinket: mutation((characterId) => {
       if (deriveGearCombatRestrictions(state).characters[characterId]) return false;
       return wrote(unequipPermanentTrinket(gear, characterId));
-    },
-    applyCurrency: (currencyId, instanceId, options) => {
+    }),
+    applyCurrency: mutation((currencyId, instanceId, options) => {
       if (isInstanceLocked(state, instanceId)) return false;
       return wrote(applyGearCurrency(gear, currencyId, instanceId, options));
-    },
-    addCurrencies: (currencies) => {
+    }),
+    addCurrencies: mutation((currencies) => {
       markMutated();
       addGearCurrencies(gear, currencies);
-    },
-    reset: () => {
+    }),
+    reset: mutation(() => {
       if (state.session.activity.kind === "battle") throw new Error("Cannot reset Gear during combat");
       markMutated();
       resetGear(gear);
-    },
+    }),
   };
 }
 
@@ -151,15 +158,34 @@ export function mutateGearWithRunHealthSync<T>(
 ): T & SynchronousResult<T> {
   const draft = transactionDraft(transaction);
   let mutated = false;
-  const result = options.mutate(
-    gearCommandView(draft, () => {
-      mutated = true;
-    }),
-  );
-  if (mutated && draft.session.activity.kind !== "inactive") {
-    rebindLiveRunMeta(draft);
+  let open = true;
+  try {
+    let result: T & SynchronousResult<T>;
+    try {
+      result = options.mutate(
+        gearCommandView(
+          draft,
+          () => {
+            mutated = true;
+          },
+          () => {
+            if (!open) throw new Error("Gear writes require a current Gear mutation");
+          },
+        ),
+      );
+      // The outer command may ignore this result; this boundary must validate it.
+      assertSynchronousResult(result);
+    } finally {
+      // Close before rebinding, even if the callback failed and the caller catches it.
+      open = false;
+    }
+    if (mutated && draft.session.activity.kind !== "inactive") {
+      rebindLiveRunMeta(draft);
+    }
+    return result;
+  } catch (error) {
+    abortGameplayCommand(draft, error);
   }
-  return result;
 }
 
 /** Removal, currencies, Materials, and run earnings share one authoritative recipe. */

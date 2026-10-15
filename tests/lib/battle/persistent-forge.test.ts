@@ -49,15 +49,26 @@ describe("persistent Forge", () => {
   });
 
   it("retains duplicate affix probabilities and rolls copies independently in order", () => {
-    const one = effectsForAffixRolls([{ id: "forge-on-stun", value: 50 }], "astral");
+    const one = effectsForAffixRolls([
+      { id: "forge-on-stun", value: 50 },
+      { id: "forge-on-consume-burn", value: 25 },
+      { id: "flat-physical", value: 3 },
+      { id: "block-on-cleanse", value: 4 },
+    ]);
     const two = mergeGearEffectManifests(one, one);
     expect(one.forgeOnStunChances).toEqual([50]);
     expect(two.forgeOnStunChances).toEqual([50, 50]);
+    expect(two.forgeOnConsumeBurnCardChances).toEqual([25, 25]);
+    expect(two.flatPhysicalDamage).toBe(6);
+    expect(two.blockOnCleanse).toBe(8);
     const draws = [0.49, 0.5];
     const rng = vi.fn(() => draws.shift()!);
     expect(rollForgeAffixAwards(battle({ rng }), two.forgeOnStunChances)).toBe(1);
     expect(rng).toHaveBeenCalledTimes(2);
     expect(rollForgeAffixAwards(battle({ rng: () => 0.1 }), two.forgeOnStunChances)).toBe(2);
+    two.forgeOnStunChances[0] = 0;
+    expect(one.forgeOnStunChances).toEqual([50]);
+    expect(effectsForAffixRolls([]).forgeOnStunChances).toEqual([]);
   });
 
   it("Icebreaker rolls once per attack action while repeated attacks can earn more", () => {

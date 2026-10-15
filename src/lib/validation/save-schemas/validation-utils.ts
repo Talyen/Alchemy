@@ -55,8 +55,13 @@ export function toFiniteNonNegativeInt(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) && value >= 0 ? Math.floor(value) : null;
 }
 
+export function toSafeNonNegativeInt(value: unknown): number | null {
+  const integer = toFiniteNonNegativeInt(value);
+  return integer !== null && Number.isSafeInteger(integer) ? integer : null;
+}
+
 export function isUsableLiveCombatGold(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+  return typeof value === "number" && value >= 0 && Number.isSafeInteger(Math.floor(value));
 }
 
 export function deduplicatedSetArraySchema<T extends string>(

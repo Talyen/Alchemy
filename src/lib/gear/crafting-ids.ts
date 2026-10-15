@@ -15,8 +15,8 @@ export const EMPTY_CRAFTING_CURRENCIES = createNumericManifest(CRAFTING_CURRENCY
 
 function sanitizeCurrencyValue(value: unknown): number {
   if (typeof value !== "number" || value <= 0) return 0;
-  const amount = Math.floor(value);
-  return Number.isSafeInteger(amount) ? amount : 0;
+  const integer = Math.floor(value);
+  return Number.isSafeInteger(integer) ? integer : 0;
 }
 
 export function normalizeCraftingCurrencies(

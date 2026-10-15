@@ -33,9 +33,9 @@ function runGit(args, opts = {}) {
   return result;
 }
 
-// Move the entire checkout before unregistering it: ignored evidence and late writes
-// remain recoverable. Only installed dependencies are discarded; branches stay.
-export function archiveIntegratedWorktree(main, task, branch, head) {
+// Stage the checkout for rollback if unregistration fails. Successful cleanup
+// deletes the complete checkout, including local-only files, and retains its branch.
+export function removeIntegratedWorktree(main, task, branch, head) {
   const git = (...args) =>
     execFileSync("git", [...UNCACHED_GIT_OPTIONS, ...args], { cwd: main, encoding: "utf8" }).trim();
   if (task === main || fs.lstatSync(task).isSymbolicLink()) throw new Error("Unexpected task checkout");
@@ -57,7 +57,6 @@ export function archiveIntegratedWorktree(main, task, branch, head) {
     if (fs.existsSync(git("-C", task, "rev-parse", "--path-format=absolute", "--git-path", state)))
       throw new Error("Unfinished Git operation preserved");
   if (/^160000 /m.test(git("-C", task, "ls-files", "--stage"))) throw new Error("Submodule worktree preserved");
-  const dependenciesTracked = !!git("-C", task, "ls-files", "--", "node_modules");
   const root = path.resolve(
     process.env.CODEX_WORKTREE_ARCHIVE_ROOT ??
       path.join(os.homedir(), ".codex", "worktree-archives", path.basename(main)),
@@ -81,8 +80,8 @@ export function archiveIntegratedWorktree(main, task, branch, head) {
     throw error;
   }
   fs.unlinkSync(path.join(checkout, ".git"));
-  if (!dependenciesTracked) fs.rmSync(path.join(checkout, "node_modules"), { recursive: true, force: true });
-  console.log("Archived completed worktree to " + recovery + "; retained branch " + branch);
+  fs.rmSync(recovery, { recursive: true });
+  console.log("Removed completed worktree " + task + ", including local-only files; retained branch " + branch);
 }
 
 function usage() {
@@ -263,7 +262,7 @@ export async function main(argv = process.argv.slice(2)) {
       }
       git(mainPath, ["merge", "--ff-only", taskHead]);
       console.log(`Integrated ${task} into local main at ${taskHead}; no push performed.`);
-      if (!hasFlag("--keep-worktree")) archiveIntegratedWorktree(mainPath, taskPath, `agent/${task}`, taskHead);
+      if (!hasFlag("--keep-worktree")) removeIntegratedWorktree(mainPath, taskPath, `agent/${task}`, taskHead);
     } finally {
       await new Promise((resolve) => {
         lock.close(resolve);
