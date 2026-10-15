@@ -105,7 +105,7 @@ const HandCardItem = memo(function HandCardItem({
       data-hand-slot={cardKey}
       data-hovered={isHovered || undefined}
       data-hand-hidden={isHidden || undefined}
-      className="relative flex min-w-0 shrink basis-[calc(var(--hand-card-width)-3*var(--content-rem,1rem))] justify-center"
+      className="relative flex min-w-0 shrink basis-[calc(var(--hand-card-width)-2.5*var(--content-rem,1rem))] justify-center"
       style={{
         zIndex: visualHovered ? HAND_CARD_HOVER_Z_INDEX : HAND_CARD_BASE_Z_INDEX + index,
       }}
