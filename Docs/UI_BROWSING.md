@@ -6,15 +6,25 @@ Shared conventions: [UI](./UI.md).
 
 ### Boards
 
-The Boards tab shows landscape art in two measured rows, capped at three columns
-(six boards); narrower layouts reduce the column count. It shares Collection's
-page memory, resize anchoring, grayscale locked art, full-color hover/focus,
-neutral hover Shine Border, and inspection/focus restoration. Names remain visible
-for locked boards. Inspection shows the native full-color artwork, with Use Board
-for owned boards or the five-room reward requirement for locked boards.
+The Boards tab uses a fixed three-column, two-row gallery with six entries per
+page at every window width. Tiles grow to fill the shared Collection shell width,
+shrinking together in narrower windows, and preserve the artwork's aspect ratio.
+It reserves the same two portrait rows and pagination slot as every Collection
+tab, keeping headers, tabs, and pagination stationary. Partial pages center real
+entries without fillers. The Boards tab uses a Wallpaper icon with a warm brown
+accent.
 
-None and Random Collected are selected-state controls above the gallery. Equipped
-art has a visible Selected state. Options → Display → Browse Boards opens this tab;
+None and Random are the first two paginated entries, with their names centered
+inside the artwork area; activating either selects it immediately. Random picks
+only collected boards. Art tiles have no captions or collected count. The active
+choice keeps the shared selection outline. Board names and locked state remain
+in accessible control names; a lock indicator sits inside locked artwork. Locked
+art stays grayscale until hover/focus, with neutral hover Shine Border. Inspection
+shows the board name and native full-color artwork, with Use Board for owned
+boards or the five-room reward requirement for locked boards, and restores focus
+to the originating tile on close.
+
+Options → Display → Browse Boards opens this tab;
 Back returns to Options while preserving its original return target.
 
 A collected board is revealed after the run recap and hero reveals, before demo

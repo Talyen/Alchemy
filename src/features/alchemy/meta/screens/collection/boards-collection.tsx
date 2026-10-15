@@ -8,8 +8,6 @@ import { boardCatalog, BOARD_REWARD_ROOM_THRESHOLD, type BoardSelection } from "
 import { cn } from "@/lib/utils";
 import type { CollectionTab } from "../../../shared/types";
 import { collectionShellWidthClass, lockedHoverPreviewClass } from "../../../shared/config";
-import { useAdaptiveGrid } from "../../../shared/ui/adaptive-grid";
-import { GridMeasurement } from "../../../shared/ui/grid-measurement";
 import { useControlledPagination } from "../../../shared/ui/use-pagination";
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import { Surface } from "../../../shared/ui/surface";
@@ -19,52 +17,67 @@ import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../../shared/ui/lay
 import { CollectionTabs, CollectionPagination } from "./collection-ui";
 import { CollectionContentLayout } from "./collection-content-layout";
 
-const BOARD_TILE_WIDTH = 340;
+const BOARD_PAGE_SIZE = 6;
+type BoardEntry = { kind: "none" | "random"; title: string } | { kind: "board"; id: string; title: string };
+const boardEntries: BoardEntry[] = [
+  { kind: "none", title: "None" },
+  { kind: "random", title: "Random" },
+  ...boardCatalog.map((board) => ({ kind: "board" as const, id: board.id, title: board.title })),
+];
 
 function BoardTile({
-  id,
-  title,
+  entry,
   owned,
   selected,
-  onInspect,
+  onActivate,
 }: {
-  id: string;
-  title: string;
+  entry: BoardEntry;
   owned: boolean;
   selected: boolean;
-  onInspect: (id: string, trigger: HTMLButtonElement) => void;
+  onActivate: (trigger: HTMLButtonElement) => void;
 }) {
-  const hover = useInteractiveCard("collection-board", id);
+  const hover = useInteractiveCard("collection-board", entry.kind === "board" ? entry.id : entry.kind);
   return (
-    <div className="flex flex-col items-center gap-2">
-      <Surface
-        as="button"
-        ariaLabel={`Inspect ${title}${owned ? "" : " (Locked)"}`}
-        ariaCurrent={selected ? "true" : undefined}
-        selected={selected}
-        shimmerActive={hover.shimmerActive}
-        shimmerToken={hover.shimmerToken}
-        onMouseEnter={hover.onHoverStart}
-        onMouseLeave={hover.onHoverEnd}
-        onFocus={hover.onHoverStart}
-        onBlur={hover.onHoverEnd}
-        onClick={(event) => onInspect(id, event.currentTarget)}
-        className="group w-full rounded-shell-tooltip border border-border/80 shadow-md"
-        overlay={hover.isHovered ? <ShineBorder shineColor={[]} borderWidth={2} className="z-20" /> : null}
-      >
-        <img
-          src={boardArt[id]?.thumbnail}
-          alt=""
-          decoding="async"
-          className={cn("aspect-[43/24] w-full object-contain", !owned && lockedHoverPreviewClass)}
-        />
-      </Surface>
-      <div className="flex min-h-7 items-center justify-center gap-2 text-center text-lg text-gold-pale">
-        {!owned ? <Lock aria-label="Locked" className="h-4 w-4 shrink-0" /> : null}
-        <span>{title}</span>
-        {selected ? <span className="text-sm text-muted-foreground">Selected</span> : null}
+    <Surface
+      as="button"
+      ariaLabel={entry.kind === "board" ? `Inspect ${entry.title}${owned ? "" : " (Locked)"}` : entry.title}
+      ariaCurrent={selected ? "true" : undefined}
+      selected={selected}
+      shimmerActive={hover.shimmerActive}
+      shimmerToken={hover.shimmerToken}
+      onMouseEnter={hover.onHoverStart}
+      onMouseLeave={hover.onHoverEnd}
+      onFocus={hover.onHoverStart}
+      onBlur={hover.onHoverEnd}
+      onClick={(event) => onActivate(event.currentTarget)}
+      className="group w-full rounded-shell-tooltip border border-border/80 bg-black/30 shadow-md"
+      overlay={hover.isHovered ? <ShineBorder shineColor={[]} borderWidth={2} className="z-20" /> : null}
+    >
+      <div className="relative aspect-[43/24] w-full">
+        {entry.kind === "board" ? (
+          <>
+            <img
+              src={boardArt[entry.id]?.thumbnail}
+              alt=""
+              decoding="async"
+              className={cn("h-full w-full object-contain", !owned && lockedHoverPreviewClass)}
+            />
+            {!owned ? (
+              <span
+                className="absolute right-2 bottom-2 rounded-full bg-black/70 p-2 text-gold-pale"
+                aria-hidden="true"
+              >
+                <Lock className="h-4 w-4" />
+              </span>
+            ) : null}
+          </>
+        ) : (
+          <span className="absolute inset-0 flex items-center justify-center text-2xl text-gold-pale">
+            {entry.title}
+          </span>
+        )}
       </div>
-    </div>
+    </Surface>
   );
 }
 
@@ -90,12 +103,11 @@ export function BoardsCollection({
   useEffect(() => {
     endBossPreview();
   }, []);
-  const { onContainer, onMeasure, pageSize, gridStyle } = useAdaptiveGrid(BOARD_TILE_WIDTH, 3, 3);
   const changePage = (page: number) => onPageChange("boards", page);
   const { page, totalPages } = useControlledPagination({
     page: collectionPages.boards,
-    pageSize,
-    itemCount: boardCatalog.length,
+    pageSize: BOARD_PAGE_SIZE,
+    itemCount: boardEntries.length,
     onPageChange: changePage,
     context: "boards",
   });
@@ -103,60 +115,44 @@ export function BoardsCollection({
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const inspected = boardCatalog.find((board) => board.id === inspectedId);
   const selectedId = boardSelection.kind === "board" ? boardSelection.boardId : null;
-  const selectedTitle = boardCatalog.find((board) => board.id === selectedId)?.title;
   const owned = inspected ? collectedBoardIds.includes(inspected.id) : false;
   return (
     <PageLayout>
       <ScreenShell maxWidthClass={collectionShellWidthClass}>
         <ScreenHeaderRow title="Collection" onBack={onBack} onMenu={onMenu} />
         <CollectionTabs collectionTab="boards" onSelectTab={onSelectTab} />
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-          <Button
-            aria-pressed={boardSelection.kind === "none"}
-            variant={boardSelection.kind === "none" ? "primary" : "outline"}
-            onClick={() => onSelectBoard({ kind: "none" })}
-          >
-            None
-          </Button>
-          <Button
-            aria-pressed={boardSelection.kind === "random"}
-            variant={boardSelection.kind === "random" ? "primary" : "outline"}
-            onClick={() => onSelectBoard({ kind: "random" })}
-          >
-            Random Collected
-          </Button>
-          <span className="text-muted-foreground">
-            {selectedTitle ? `Selected: ${selectedTitle} · ` : ""}
-            {collectedBoardIds.length}/{boardCatalog.length} collected
-          </span>
-        </div>
         <CollectionContentLayout
-          rowsHeight={BOARD_TILE_WIDTH * (24 / 43) * 2 + 104}
           pagination={
             totalPages > 1 ? (
               <CollectionPagination page={page} totalPages={totalPages} onPageChange={changePage} />
             ) : null
           }
         >
-          <div ref={onContainer} className="relative w-full">
-            <GridMeasurement onMeasure={onMeasure} referenceTileWidth={BOARD_TILE_WIDTH} />
-            <FadeSlot swapKey={page} className="w-full">
-              <div className="grid gap-x-5 gap-y-6" style={gridStyle}>
-                {boardCatalog.slice(page * pageSize, (page + 1) * pageSize).map((board) => (
+          <FadeSlot swapKey={page} className="w-full">
+            <div className="flex w-full flex-wrap justify-center gap-x-5 gap-y-6">
+              {boardEntries.slice(page * BOARD_PAGE_SIZE, (page + 1) * BOARD_PAGE_SIZE).map((entry) => (
+                <div
+                  key={entry.kind === "board" ? entry.id : entry.kind}
+                  className="min-w-0 shrink-0"
+                  style={{ width: "calc((100% - 2.5 * var(--content-rem, 1rem)) / 3)" }}
+                >
                   <BoardTile
-                    key={board.id}
-                    {...board}
-                    owned={collectedBoardIds.includes(board.id)}
-                    selected={selectedId === board.id}
-                    onInspect={(id, trigger) => {
-                      returnFocusRef.current = trigger;
-                      setInspectedId(id);
+                    entry={entry}
+                    owned={entry.kind !== "board" || collectedBoardIds.includes(entry.id)}
+                    selected={entry.kind === "board" ? selectedId === entry.id : boardSelection.kind === entry.kind}
+                    onActivate={(trigger) => {
+                      if (entry.kind === "board") {
+                        returnFocusRef.current = trigger;
+                        setInspectedId(entry.id);
+                      } else {
+                        onSelectBoard({ kind: entry.kind });
+                      }
                     }}
                   />
-                ))}
-              </div>
-            </FadeSlot>
-          </div>
+                </div>
+              ))}
+            </div>
+          </FadeSlot>
         </CollectionContentLayout>
       </ScreenShell>
       {inspected ? (
