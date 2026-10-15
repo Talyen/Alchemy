@@ -9,16 +9,8 @@ import {
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { companionTierItems } from "@/lib/homestead/companions";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
-import {
-  DEFAULT_BACKGROUND_GLOW_PCT,
-  DEFAULT_BACKGROUND_PARTICLES_PCT,
-  DEFAULT_BRIGHTNESS_PCT,
-  DEFAULT_MASTER_VOLUME_PCT,
-  DEFAULT_MUSIC_VOLUME_PCT,
-  DEFAULT_SFX_VOLUME_PCT,
-} from "@/lib/game-constants";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTENT_VERSION } from "../metadata";
-import { SETTINGS_RANGES, resolveAutoplayEnabled } from "@/lib/settings-values";
+import { resolveAutoplayEnabled } from "@/lib/settings-values";
 import {
   deduplicatedSetArraySchema,
   deduplicatedStringArraySchema,
@@ -32,7 +24,6 @@ import {
   CRAFTING_CURRENCY_ZERO_INVENTORY,
   createTierRecordSchema,
   CompletedDifficultiesSchema,
-  DisplayModeSchema,
   MaterialInventorySchema,
   CraftingCurrencyInventorySchema,
   TalentXPSchema,
@@ -52,15 +43,8 @@ import {
   type GearLoadouts,
   type EquippedTrinkets,
 } from "@/lib/gear/types";
-import { clamp } from "@/lib/math";
+import { SettingsSaveFieldsSchema } from "./settings";
 import { pruneOrphanGearLoadouts } from "@/lib/gear/loadout-operations";
-
-function clampedSettingSchema(defaultValue: number, range: { min: number; max: number }) {
-  return z
-    .number()
-    .catch(defaultValue)
-    .transform((v) => clamp(v, range.min, range.max));
-}
 
 function characterShape<T extends z.ZodType>(factory: (id: string) => T): Record<string, T> {
   const shape: Record<string, T> = {};
@@ -120,13 +104,7 @@ const SaveDataObjectSchema = z
     gameBuildVersion: z.string().catch(CURRENT_GAME_BUILD_VERSION),
     steamAccountId: z.string().regex(/^\d+$/u).nullable().catch(null),
     contentVersion: z.number().int().nonnegative().catch(CURRENT_CONTENT_VERSION),
-    displayMode: DisplayModeSchema.catch("borderless-fullscreen"),
-    brightness: clampedSettingSchema(DEFAULT_BRIGHTNESS_PCT, SETTINGS_RANGES.brightness),
-    backgroundParticlesIntensity: clampedSettingSchema(
-      DEFAULT_BACKGROUND_PARTICLES_PCT,
-      SETTINGS_RANGES.specialEffects,
-    ),
-    backgroundGlowIntensity: clampedSettingSchema(DEFAULT_BACKGROUND_GLOW_PCT, SETTINGS_RANGES.specialEffects),
+    ...SettingsSaveFieldsSchema.shape,
     collectedBoardIds: CollectedBoardIdsSchema,
     boardSelection: BoardSelectionSchema,
     activeBoardId: ActiveBoardIdSchema,
@@ -143,14 +121,6 @@ const SaveDataObjectSchema = z
     talentXP: TalentXPSchema,
     unlockedTalents: UnlockedTalentsSchema,
 
-    musicVolume: clampedSettingSchema(DEFAULT_MUSIC_VOLUME_PCT, SETTINGS_RANGES.volume),
-    sfxVolume: clampedSettingSchema(DEFAULT_SFX_VOLUME_PCT, SETTINGS_RANGES.volume),
-    masterVolume: clampedSettingSchema(DEFAULT_MASTER_VOLUME_PCT, SETTINGS_RANGES.volume),
-    muteInBackground: z.boolean().catch(true),
-    bossLyricsEnabled: z.boolean().catch(true),
-    autoEndTurn: z.boolean().catch(true),
-    rememberAutoplayPreference: z.boolean().catch(false),
-    autoplayEnabled: z.boolean().catch(false),
     activeRun: ActiveRunDataSchema.nullable().catch(null),
     gold: z.number().int().nonnegative().catch(0),
     materialInventory: MaterialInventorySchema.catch(() => ({ ...MATERIAL_ZERO_INVENTORY })),

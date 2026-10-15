@@ -106,6 +106,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       handleAutoplayWish: fn(),
       skipCombatDevMode: fn(),
       bindPlayback: fn(),
+      subscribePlayback: vi.fn(() => () => {}),
       isCardPlayInProgress: vi.fn(() => false),
       isProgressSavePending: vi.fn(() => false),
       subscribeProgressSave: vi.fn(() => () => {}),

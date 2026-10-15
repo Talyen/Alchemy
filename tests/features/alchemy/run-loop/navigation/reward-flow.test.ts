@@ -1,3 +1,4 @@
+import { makeTestCard } from "../../../../fixtures/cards";
 import { describe, expect, it, vi } from "vitest";
 import {
   createNextRewardState,
@@ -12,11 +13,6 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 
 describe("reward flow orchestration", () => {
-  it("createEmptyRewardState accepts optional destinations", () => {
-    const result = createEmptyRewardState(["Campfire", "Mystery"]);
-    expect(result.destinations).toEqual(["Campfire", "Mystery"]);
-  });
-
   it("createNextRewardState clears choices, gold, and selection but keeps destinations and selectedBossId", () => {
     const previous = {
       ...createEmptyRewardState(["Normal Combat", "Campfire"]),
@@ -62,22 +58,12 @@ describe("reward flow orchestration", () => {
   });
 
   describe("finalizeRewardState", () => {
-    const cardChoice: BattleCard = {
-      id: "slash",
-      title: "Slash",
-      descriptionLines: ["Deal damage"],
-      art: "",
-      cost: 1,
-      effects: [],
-    };
-    const companionChoice: BattleCard = {
+    const cardChoice: BattleCard = makeTestCard({ id: "slash", title: "Slash", descriptionLines: ["Deal damage"] });
+    const companionChoice: BattleCard = makeTestCard({
       id: "wolf-companion",
       title: "Wolf",
       descriptionLines: ["Summon wolf"],
-      art: "",
-      cost: 1,
-      effects: [],
-    };
+    });
     const boonChoice: TrinketEntry = {
       id: "bone-charm",
       title: "Bone Charm",

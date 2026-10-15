@@ -16,7 +16,9 @@ const PROFILE_SAVE_KEYS = Object.keys(createDefaultProfileSaveFields()) as Array
 
 function cloneProfileSaveFields(fields: ProfileSaveFields): ProfileSaveFields {
   // Select before cloning: collection navigation is presentation state.
-  return structuredClone(Object.fromEntries(PROFILE_SAVE_KEYS.map((key) => [key, fields[key]]))) as ProfileSaveFields;
+  const selected = createDefaultProfileSaveFields();
+  for (const key of PROFILE_SAVE_KEYS) Object.assign(selected, { [key]: fields[key] });
+  return structuredClone(selected);
 }
 
 export const profilePersistenceCodec: GameplayPersistenceCodec<ProfileSaveFields> = {

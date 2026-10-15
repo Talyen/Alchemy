@@ -8,13 +8,12 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { trinketLibrary } from "@/lib/game-data";
 import { isLootEligible } from "@/lib/loot";
-import type { TrinketShopCommands } from "./shop-action-types";
 import { createGetRefreshPrice, createShopPurchaseActions, createShopRefreshAction } from "./shop-commands-core";
 import { getShopBuyPrice } from "./shop-pricing";
 import { shopItemSlotKey } from "./shop-slot-keys";
 import { resampleTrinketShopOfferings } from "./shop-state-init";
 
-export function createTrinketShopCommands(gameSession: GameSession): TrinketShopCommands {
+export function createTrinketShopCommands(gameSession: GameSession) {
   const { buy, getBuyPrice } = createShopPurchaseActions(
     {
       activity: "trinket-shop",

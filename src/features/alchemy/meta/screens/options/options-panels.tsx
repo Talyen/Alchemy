@@ -4,43 +4,20 @@ import { Button } from "@/components/ui/button";
 import { displayModeOptions } from "@/features/alchemy/shared/config";
 import { DEVICE_DISPLAY_RANGES, SETTINGS_RANGES } from "@/lib/settings-values";
 import { SettingsSelect, SettingsSlider, SettingsToggle, SettingsSection, SettingsAction } from "./settings-controls";
-import type { DisplayMode } from "../../../shared/types";
+import type { SettingsActions, SettingsSaveFields } from "../../../shared/stores/settings-store";
 
 export interface DisplayOptionsProps {
   onOpenBoards?: (() => void) | undefined;
-  displayMode: DisplayMode;
-  onDisplayModeChange: (mode: DisplayMode) => void;
   showDisplayMode: boolean;
-  brightness: number;
-  onBrightnessChange: (value: number) => void;
-  backgroundParticlesIntensity: number;
-  onBackgroundParticlesIntensityChange: (value: number) => void;
-  backgroundGlowIntensity: number;
-  onBackgroundGlowIntensityChange: (value: number) => void;
   gameSizePercent: number;
   tooltipSizePercent: number;
   onGameSizeChange: (value: number) => void;
   onTooltipSizeChange: (value: number) => void;
 }
 
-export interface AudioOptionsProps {
-  masterVolume: number;
-  musicVolume: number;
-  sfxVolume: number;
-  onMasterVolumeChange: (value: number) => void;
-  onMusicVolumeChange: (value: number) => void;
-  onSfxVolumeChange: (value: number) => void;
-  bossLyricsEnabled: boolean;
-  onBossLyricsEnabledChange: (checked: boolean) => void;
-  muteInBackground: boolean;
-  onMuteInBackgroundChange: (checked: boolean) => void;
-}
-
-export interface GameplayOptionsProps {
-  autoEndTurn: boolean;
-  onAutoEndTurnChange: (checked: boolean) => void;
-  rememberAutoplayPreference: boolean;
-  onRememberAutoplayPreferenceChange: (checked: boolean) => void;
+export interface OptionsPreferences {
+  values: SettingsSaveFields;
+  actions: SettingsActions;
 }
 
 export interface SaveDataOptionsProps {
@@ -56,7 +33,14 @@ export interface DevOptionsProps {
   onOpenErrorLog?: () => void;
 }
 
-export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps }) {
+export function DisplayOptionsPanel({
+  display,
+  preferences,
+}: {
+  display: DisplayOptionsProps;
+  preferences: OptionsPreferences;
+}) {
+  const { values, actions } = preferences;
   return (
     <div className="space-y-4">
       <SettingsSection title="Display">
@@ -69,15 +53,15 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
           <SettingsSelect
             id="display-mode"
             label="Display Mode"
-            value={display.displayMode}
+            value={values.displayMode}
             options={displayModeOptions}
-            onChange={display.onDisplayModeChange}
+            onChange={actions.setDisplayMode}
           />
         ) : null}
         <SettingsSlider
           label="Brightness"
-          value={display.brightness}
-          onChange={display.onBrightnessChange}
+          value={values.brightness}
+          onChange={actions.setBrightness}
           min={SETTINGS_RANGES.brightness.min}
           max={SETTINGS_RANGES.brightness.max}
         />
@@ -97,14 +81,14 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
       <SettingsSection title="Background">
         <SettingsSlider
           label="Background Glow"
-          value={display.backgroundGlowIntensity}
-          onChange={display.onBackgroundGlowIntensityChange}
+          value={values.backgroundGlowIntensity}
+          onChange={actions.setBackgroundGlowIntensity}
           {...SETTINGS_RANGES.specialEffects}
         />
         <SettingsSlider
           label="Background Particles"
-          value={display.backgroundParticlesIntensity}
-          onChange={display.onBackgroundParticlesIntensityChange}
+          value={values.backgroundParticlesIntensity}
+          onChange={actions.setBackgroundParticlesIntensity}
           {...SETTINGS_RANGES.specialEffects}
         />
       </SettingsSection>
@@ -112,40 +96,38 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
   );
 }
 
-export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
+export function AudioOptionsPanel({ preferences }: { preferences: OptionsPreferences }) {
+  const { values, actions } = preferences;
   return (
     <SettingsSection title="Audio">
       {(
         [
-          ["Overall Volume", audio.masterVolume, audio.onMasterVolumeChange],
-          ["Music Volume", audio.musicVolume, audio.onMusicVolumeChange],
-          ["Sound Effects Volume", audio.sfxVolume, audio.onSfxVolumeChange],
+          ["Overall Volume", values.masterVolume, actions.setMasterVolume],
+          ["Music Volume", values.musicVolume, actions.setMusicVolume],
+          ["Sound Effects Volume", values.sfxVolume, actions.setSfxVolume],
         ] as const
       ).map(([label, value, onChange]) => (
         <SettingsSlider key={label} label={label} value={value} onChange={onChange} {...SETTINGS_RANGES.volume} />
       ))}
-      <SettingsToggle
-        label="Boss Lyrics"
-        checked={audio.bossLyricsEnabled}
-        onChange={audio.onBossLyricsEnabledChange}
-      />
+      <SettingsToggle label="Boss Lyrics" checked={values.bossLyricsEnabled} onChange={actions.setBossLyricsEnabled} />
       <SettingsToggle
         label="Mute in Background"
-        checked={audio.muteInBackground}
-        onChange={audio.onMuteInBackgroundChange}
+        checked={values.muteInBackground}
+        onChange={actions.setMuteInBackground}
       />
     </SettingsSection>
   );
 }
 
-export function GameplayOptionsPanel({ gameplay }: { gameplay: GameplayOptionsProps }) {
+export function GameplayOptionsPanel({ preferences }: { preferences: OptionsPreferences }) {
+  const { values, actions } = preferences;
   return (
     <SettingsSection title="Battle">
-      <SettingsToggle label="Auto-End Turn" checked={gameplay.autoEndTurn} onChange={gameplay.onAutoEndTurnChange} />
+      <SettingsToggle label="Auto-End Turn" checked={values.autoEndTurn} onChange={actions.setAutoEndTurn} />
       <SettingsToggle
         label="Remember Auto-Battle Preference"
-        checked={gameplay.rememberAutoplayPreference}
-        onChange={gameplay.onRememberAutoplayPreferenceChange}
+        checked={values.rememberAutoplayPreference}
+        onChange={actions.setRememberAutoplayPreference}
       />
     </SettingsSection>
   );

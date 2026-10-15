@@ -10,7 +10,6 @@ import {
 import { readActivityData } from "@/lib/active-run-session";
 import { SHOP_CARDS_OFFERED } from "@/lib/game-constants";
 import { isValidDeckIndex } from "@/lib/utils";
-import type { MerchantShopCommands } from "./shop-action-types";
 import {
   cardSlotKeyOf,
   createGetRefreshPrice,
@@ -27,7 +26,7 @@ import {
 import { merchantShopPool, resampleCardShopOfferings } from "./shop-state-init";
 import { commitShopService, runShopTransaction } from "./shop-transactions";
 
-export function createMerchantShopCommands(gameSession: GameSession): MerchantShopCommands {
+export function createMerchantShopCommands(gameSession: GameSession) {
   const { buy: buyCard, getBuyPrice: getCardBuyPrice } = createShopPurchaseActions(
     {
       activity: "shop",

@@ -15,7 +15,6 @@ import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies } from "@/lib/ge
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { filterValidDestinations } from "@/lib/routing";
-import { DISPLAY_MODE_VALUES } from "@/lib/settings-values";
 import { z } from "zod";
 import { clamp } from "@/lib/math";
 import {
@@ -64,7 +63,6 @@ export const LabyrinthNodeTypeSchema = z.enum([
   "equipment-shop",
   "boss",
 ]);
-export const DisplayModeSchema = z.enum(DISPLAY_MODE_VALUES);
 
 export const CRAFTING_CURRENCY_ZERO_INVENTORY = EMPTY_CRAFTING_CURRENCIES;
 

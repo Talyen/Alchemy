@@ -1,3 +1,5 @@
+import { makeTestCard } from "../../../../fixtures/cards";
+import { createEmptyRewardState } from "@/lib/active-run-session";
 import "../../../../helpers/mock-audio";
 import {
   mutateGameplayForTest,
@@ -41,13 +43,8 @@ describe("createRunFlow victory paths", () => {
     setRunSession({
       activeLabyrinthRewardModifiers: ["alchemist", "companion"],
       rewardState: {
+        ...createEmptyRewardState(),
         choices: [card],
-        gold: 0,
-        materials: emptyInventory(),
-        selectedId: null,
-        destinations: [],
-        rewardType: "card",
-        selectedBossId: null,
         lastVictoryEnemyType: "normal",
         lastVictoryContentSystem: "labyrinth",
       },
@@ -127,24 +124,17 @@ describe("createRunFlow victory paths", () => {
 
   it("routes Wildwood Companion rewards before completing the boss reward", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.WILDWOOD });
-    const companion = {
+    const companion = makeTestCard({
       id: "wolf-companion",
       uid: 1,
       title: "Wolf Companion",
       descriptionLines: [],
-      art: "",
       cost: 0,
-      effects: [],
-    };
+    });
     setRunSession({
       rewardState: {
-        choices: [],
-        gold: 0,
+        ...createEmptyRewardState(),
         materials: { ...emptyInventory(), wood: 2 },
-        selectedId: null,
-        destinations: [],
-        rewardType: "card",
-        selectedBossId: null,
         lastVictoryEnemyType: "boss",
         lastVictoryContentSystem: "wildwood",
       },
@@ -246,13 +236,9 @@ describe("createRunFlow victory paths", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN, runDeck: [] });
     setRunSession({
       rewardState: {
+        ...createEmptyRewardState(),
         choices: [card],
-        gold: 0,
-        materials: emptyInventory(),
         selectedId: card.id,
-        destinations: [],
-        rewardType: "card",
-        selectedBossId: null,
         lastVictoryEnemyType: "normal",
         lastVictoryContentSystem: "campaign",
       },
@@ -270,13 +256,9 @@ describe("createRunFlow victory paths", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN, runDeck: [] });
     setRunSession({
       rewardState: {
+        ...createEmptyRewardState(),
         choices: [first, second],
-        gold: 0,
-        materials: emptyInventory(),
         selectedId: first.id,
-        destinations: [],
-        rewardType: "card",
-        selectedBossId: null,
         lastVictoryEnemyType: "normal",
         lastVictoryContentSystem: "campaign",
       },
@@ -287,28 +269,17 @@ describe("createRunFlow victory paths", () => {
   });
 
   it("claimRewardChoice ignores a second call while claim is in flight", () => {
-    const card = {
-      id: "reward-card",
-      uid: 1,
-      title: "Reward Card",
-      descriptionLines: [],
-      art: "",
-      cost: 1,
-      effects: [],
-    };
+    const card = makeTestCard({ id: "reward-card", uid: 1, title: "Reward Card", descriptionLines: [] });
     setRunProgress({
       contentSystemType: CONTENT_SYSTEMS.CAMPAIGN,
       runDeck: [],
     });
     setRunSession({
       rewardState: {
+        ...createEmptyRewardState(),
         choices: [card],
-        gold: 0,
-        materials: emptyInventory(),
         selectedId: card.id,
         destinations: [DESTINATIONS.NORMAL_COMBAT],
-        rewardType: "card",
-        selectedBossId: null,
         lastVictoryEnemyType: "normal",
         lastVictoryContentSystem: "campaign",
       },
@@ -334,37 +305,25 @@ describe("createRunFlow victory paths", () => {
   });
 
   it("claimRewardChoice commits the companion handoff before navigation", () => {
-    const primary = {
-      id: "reward-card",
-      uid: 1,
-      title: "Reward Card",
-      descriptionLines: [],
-      art: "",
-      cost: 1,
-      effects: [],
-    };
-    const companion = {
+    const primary = makeTestCard({ id: "reward-card", uid: 1, title: "Reward Card", descriptionLines: [] });
+    const companion = makeTestCard({
       id: "wolf-companion",
       uid: 2,
       title: "Wolf Companion",
       descriptionLines: [],
-      art: "",
       cost: 0,
-      effects: [],
-    };
+    });
     setRunProgress({
       contentSystemType: CONTENT_SYSTEMS.CAMPAIGN,
       runDeck: [],
     });
     setRunSession({
       rewardState: {
+        ...createEmptyRewardState(),
         choices: [primary],
         gold: 5,
-        materials: emptyInventory(),
         selectedId: primary.id,
         destinations: [DESTINATIONS.NORMAL_COMBAT],
-        rewardType: "card",
-        selectedBossId: null,
         lastVictoryEnemyType: "normal",
         lastVictoryContentSystem: "campaign",
       },

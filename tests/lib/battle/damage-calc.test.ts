@@ -74,15 +74,11 @@ describe("computeCardDamageToEnemy", () => {
       talentEffects: { consumeDamageBonusPercent: 20 },
       rng: () => 0.99,
     });
-    const { modifiedDamage } = computeCardDamageToEnemy(state, holyEffect, {
-      id: "avatar",
-      title: "Avatar",
-      descriptionLines: [],
-      art: "",
-      cost: 1,
-      consume: true,
-      effects: [holyEffect],
-    });
+    const { modifiedDamage } = computeCardDamageToEnemy(
+      state,
+      holyEffect,
+      makeTestCard({ id: "avatar", title: "Avatar", descriptionLines: [], consume: true, effects: [holyEffect] }),
+    );
     expect(modifiedDamage).toBe(12);
   });
 });

@@ -1,3 +1,4 @@
+import { makeTestCard } from "../../../../../fixtures/cards";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -8,14 +9,12 @@ import { strengthenPotion } from "@/lib/alchemist/brewing";
 import { getCardKeywordShineColors } from "@/features/alchemy/shared/config/shine-palettes";
 import { CardTitle } from "@/features/alchemy/shared/ui/cards/card-description-ui";
 
-const card: BattleCard = {
-  id: "test-card",
+const card: BattleCard = makeTestCard({
   title: "Test Card",
   descriptionLines: ["Test description."],
   art: "test-card.png",
-  cost: 1,
   effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
-};
+});
 
 describe("BattleCardButton", () => {
   afterEach(cleanup);
