@@ -23,7 +23,7 @@ import {
   deduplicatedSetArraySchema,
   deduplicatedStringArraySchema,
   isUsableLiveCombatGold,
-  toFiniteNonNegativeInt,
+  toSafeNonNegativeInt,
 } from "./validation-utils";
 import {
   CHARACTER_IDS,
@@ -99,11 +99,12 @@ const EquippedTrinketsSchema = z
   .catch(createEmptyEquippedTrinkets)
   .transform((value) => value as EquippedTrinkets);
 
-function resolvePersistedGold(purseGold: number, liveCombatGold: unknown): number {
-  if (isUsableLiveCombatGold(liveCombatGold)) {
-    return Math.floor(liveCombatGold);
-  }
-  return purseGold;
+function readRawCombatGold(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const save = value as Record<string, unknown>;
+  const run = save.activeRun as { activity?: { kind?: unknown; data?: { battleState?: { gold?: unknown } } } } | null;
+  const activity = run?.activity;
+  return activity?.kind === "battle" ? activity.data?.battleState?.gold : undefined;
 }
 
 // Single owner for the live-combat-gold rule: the mid-fight purse override is
@@ -113,7 +114,7 @@ export function isCombatGoldOverride(liveCombatGold: unknown, persistedGold: num
   return isUsableLiveCombatGold(liveCombatGold) && Math.floor(liveCombatGold) === persistedGold;
 }
 
-export const SaveDataSchema = z
+const SaveDataObjectSchema = z
   .object({
     saveSchemaVersion: z.literal(CURRENT_SAVE_SCHEMA_VERSION).catch(CURRENT_SAVE_SCHEMA_VERSION),
     gameBuildVersion: z.string().catch(CURRENT_GAME_BUILD_VERSION),
@@ -163,26 +164,39 @@ export const SaveDataSchema = z
     // Single normalizer shared with getRawLastSavedAt (migration/index.ts):
     // fractional timestamps floor instead of resetting to 0, so candidate
     // freshness ordering agrees between the raw future check and this schema.
-    lastSavedAt: z.preprocess(
-      (value) => toFiniteNonNegativeInt(value) ?? value,
-      z.number().int().nonnegative().catch(0),
-    ),
+    lastSavedAt: z.preprocess((value) => toSafeNonNegativeInt(value) ?? value, z.number().int().nonnegative().catch(0)),
   })
   .transform((save) => {
     const flatInventory = flattenGearInventories(save.gearInventories);
     return {
       ...normalizeBoardSave(save),
-      // Load-only repairs (encode never applies these): live combat gold
-      // overrides the purse so a reloaded fight keeps its stakes, and orphan
-      // loadout references are pruned against the restored inventory.
-      // save-candidates.ts suppresses warnings for the gold override because
-      // it is intentional, not damage.
-      gold: resolvePersistedGold(
-        save.gold,
-        save.activeRun?.activity.kind === "battle" ? save.activeRun.activity.data.battleState.gold : undefined,
-      ),
       autoplayEnabled: resolveAutoplayEnabled(save),
       gearLoadouts: pruneOrphanGearLoadouts(flatInventory, save.gearLoadouts),
+    };
+  });
+
+// Keep the raw candidate until validation proves the battle itself is usable.
+// A repaired zero must never override a valid purse, and a rejected battle has
+// no authority over permanent Gold even when its raw balance was valid.
+export const SaveDataSchema = z
+  .preprocess(
+    (value) => ({ save: value, combatGold: readRawCombatGold(value) }),
+    z.object({ save: SaveDataObjectSchema, combatGold: z.unknown() }),
+  )
+  .transform(({ save, combatGold }) => {
+    const run = save.activeRun;
+    if (run?.activity.kind !== "battle") return save;
+    const gold = isUsableLiveCombatGold(combatGold) ? Math.floor(combatGold) : save.gold;
+    return {
+      ...save,
+      gold,
+      activeRun: {
+        ...run,
+        activity: {
+          ...run.activity,
+          data: { battleState: { ...run.activity.data.battleState, gold } },
+        },
+      },
     };
   });
 

@@ -46,11 +46,14 @@ export function useBattleAutoplay(options: UseBattleAutoplayOptions) {
         const canCommit = () => !isBlocked(undefined, mode);
         if (mode === "wish") {
           const card = findBestWishChoice(current.battleState);
-          return card ? { canCommit, play: (control) => current.playWish(card, control) } : null;
+          return card ? { canCommit, play: (control) => current.playWish(card, control, current.battleState) } : null;
         }
         const playable = findBestPlayableHandCard(current.battleState);
         return playable
-          ? { canCommit, play: (control) => current.playCard(playable.card, playable.index, control) }
+          ? {
+              canCommit,
+              play: (control) => current.playCard(playable.card, playable.index, control, current.battleState),
+            }
           : null;
       },
     });

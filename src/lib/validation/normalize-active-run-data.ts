@@ -1,4 +1,5 @@
 import { repairShopOfferings } from "@/lib/active-run-session/shop-offering-repair";
+import { createCampfirePotionOffers } from "@/lib/alchemist/brewing";
 import type { BattleSnapshot } from "@/lib/battle";
 import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import {
@@ -11,7 +12,7 @@ import {
   type BattleCard,
   type KeywordId,
 } from "@/lib/game-data";
-import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
+import { getOfferableCardPool, isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
 import { createRunStateRng, type RunRngState, type RunRngStream } from "@/lib/rng";
 import type { ValidatedActiveRunData } from "./save-schemas/active-run";
 import type { PersistedBattleCard } from "./save-schemas/battle-card-schemas";
@@ -115,10 +116,6 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
           })
         : null,
   };
-  const rngCountersChanged = (Object.keys(rngState.counters) as RunRngStream[]).some(
-    (stream) => rngState.counters[stream] !== data.rng.counters[stream],
-  );
-
   let activity = data.activity;
   if (activity.kind === "battle")
     activity = {
@@ -146,6 +143,16 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     };
   }
   if (activity.kind === "mystery" && mysteryVisit) activity = { ...activity, data: mysteryVisit };
+  if (activity.kind === "campfire" && !activity.data.completed) {
+    const offers = filterLiveCards(activity.data.offers).filter(isStandardPotionCard);
+    activity = {
+      ...activity,
+      data: {
+        ...activity.data,
+        offers: offers.length ? offers : createCampfirePotionOffers(createRunStateRng(rngState, "events")),
+      },
+    };
+  }
   if (
     activity.kind === "corruption" &&
     activity.data &&
@@ -153,6 +160,9 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
   )
     activity = { ...activity, data: null };
 
+  const rngCountersChanged = (Object.keys(rngState.counters) as RunRngStream[]).some(
+    (stream) => rngState.counters[stream] !== data.rng.counters[stream],
+  );
   return {
     ...data,
     rng: rngCountersChanged ? rngState : data.rng,
@@ -160,7 +170,8 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     runMetaMaxHealth: data.runMetaMaxHealth > 0 ? data.runMetaMaxHealth : data.runMaxHealth,
     runDeck,
     labyrinthMap: data.contentSystemType === "labyrinth" ? data.labyrinthMap : null,
-    labyrinthPendingNode: data.contentSystemType === "labyrinth" ? data.labyrinthPendingNode : null,
+    labyrinthPendingNode:
+      data.contentSystemType === "labyrinth" && activity.kind !== "labyrinth-map" ? data.labyrinthPendingNode : null,
     activeLabyrinthModifiers: data.contentSystemType === "labyrinth" ? data.activeLabyrinthModifiers : [],
     activeLabyrinthRewardModifiers: data.contentSystemType === "labyrinth" ? data.activeLabyrinthRewardModifiers : [],
     wildwoodDraft,

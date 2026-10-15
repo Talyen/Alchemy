@@ -89,12 +89,12 @@ export function createBattleEndTurnUi(
   session: ReturnType<typeof createBattleSession>,
   transferDeps: ReturnType<typeof createBattleTransferDeps>,
 ) {
-  function handleEndTurn(expected?: BattleSnapshot) {
+  function handleEndTurn(expected: BattleSnapshot) {
     const battle = ctx.battle.read();
     const currentState = battle.battleState;
     const presentation = ctx.getPresentation();
     if (
-      (expected !== undefined && expected !== currentState) ||
+      expected !== currentState ||
       !ctx.playback.canAcceptInput() ||
       isBattlePlaybackBlocked({
         screen: ctx.screen,

@@ -212,6 +212,71 @@ describe("SaveStorage ownership", () => {
   });
 
   it.each(["save", "saveForExit"] as const)(
+    "%s never falls back over a newer-format recovery save and can retry the primary",
+    async (operation) => {
+      const protectedRecovery = futureSaveCandidate(100);
+      const slots = new Map([
+        [SAVE_KEY, playableSaveCandidate(10, { gold: 8 })],
+        [SAVE_RECOVERY_KEY, protectedRecovery],
+      ]);
+      let primaryAvailable = false;
+      const write = vi.fn((key: string, bytes: string) => {
+        if (key === SAVE_KEY && !primaryAvailable) return { ok: false as const, error: "primary unavailable" };
+        slots.set(key, bytes);
+        return { ok: true as const };
+      });
+      const storageBackend = createSaveBackend({
+        readCandidates: async (key) => ({ ok: true, candidates: [slots.get(key)!] }),
+        write: async (key, bytes) => write(key, bytes),
+        writeSync: write,
+      });
+      const storage = new SaveStorage(storageBackend);
+      const loaded = await storage.load();
+
+      expect(await storage[operation]({ ...loaded.data, gold: 9 })).toBe("failed");
+      expect(write.mock.calls.map(([key]) => key)).toEqual([SAVE_KEY]);
+      expect(slots.get(SAVE_RECOVERY_KEY)).toBe(protectedRecovery);
+      primaryAvailable = true;
+      expect(await storage[operation]({ ...loaded.data, gold: 9 })).toBe("saved");
+      expect((await new SaveStorage(storageBackend).load()).data.gold).toBe(9);
+      expect(slots.get(SAVE_RECOVERY_KEY)).toBe(protectedRecovery);
+    },
+  );
+
+  it.each(["save", "saveForExit"] as const)(
+    "%s preserves a protected recovery slot when primary reads fail and recovery is requested again",
+    async (operation) => {
+      const protectedRecovery = futureContentSaveCandidate(100);
+      const storageBackend = backend();
+      storageBackend.readCandidates.mockImplementation(async (key) =>
+        key === SAVE_KEY ? { ok: false, error: "primary unreadable" } : { ok: true, candidates: [protectedRecovery] },
+      );
+      const storage = new SaveStorage(storageBackend);
+      const loaded = await storage.load();
+      storage.routeWritesToRecovery();
+      storage.setWritesDisabled(false);
+
+      expect(await storage[operation](loaded.data)).toBe("failed");
+      expect(storageBackend.write).not.toHaveBeenCalled();
+      expect(storageBackend.writeSync).not.toHaveBeenCalled();
+      await storage.clear();
+      expect(await storage.save(createDefaultSaveData())).toBe("saved");
+      expect(storageBackend.write).toHaveBeenCalledExactlyOnceWith(SAVE_KEY, expect.any(String));
+    },
+  );
+
+  it("still attempts recovery when neither slot can be read", async () => {
+    const storageBackend = backend();
+    storageBackend.readCandidates.mockResolvedValue({ ok: false, error: "storage unreadable" });
+    const storage = new SaveStorage(storageBackend);
+    const loaded = await storage.load();
+
+    expect(loaded.status.kind).toBe("unavailable");
+    expect(await storage.save(loaded.data)).toBe("saved");
+    expect(storageBackend.write).toHaveBeenCalledExactlyOnceWith(SAVE_RECOVERY_KEY, expect.any(String));
+  });
+
+  it.each(["save", "saveForExit"] as const)(
     "keeps newer recovery progress after %s with a repeated or backward clock",
     async (operation) => {
       const slots = new Map<string, string>();

@@ -87,14 +87,14 @@ describe("End Turn execution and playback", () => {
   it("commits before discard playback and blocks a second End Turn", () => {
     const { ui, ctx } = makeUi();
     const before = readGameplayState(defaultGameSession);
-    ui.handleEndTurn();
+    ui.handleEndTurn(readBattle(defaultGameSession).battleState);
     const resolved = readGameplayState(defaultGameSession);
     expect(selectBattle(resolved).battleState.turn).toBeGreaterThan(selectBattle(before).battleState.turn);
     expect(selectBattle(resolved)).not.toHaveProperty("pendingBattleTransition");
     expect(resolved.revision).toBe(before.revision + 1);
     expect(ctx.playback.cardPlayInProgress).toBe(true);
     expect(battlePresentation.getState().displayedBattle).toEqual(selectBattle(before).battleState);
-    ui.handleEndTurn();
+    ui.handleEndTurn(readBattle(defaultGameSession).battleState);
     expect(readGameplayState(defaultGameSession)).toBe(resolved);
     expect(vi.mocked(playBattleEvent).mock.calls.filter(([event]) => event === "endTurn")).toHaveLength(1);
   });
@@ -115,7 +115,7 @@ describe("End Turn execution and playback", () => {
         }),
       ),
     );
-    ui.handleEndTurn();
+    ui.handleEndTurn(readBattle(defaultGameSession).battleState);
     expect(readBattle(defaultGameSession).battleState.playerHealth).toBe(0);
     expect(playCardSound).toHaveBeenCalledExactlyOnceWith("slash");
     expect(vi.mocked(playBattleEvent).mock.calls.some(([event]) => event === "playerHit")).toBe(false);
@@ -127,7 +127,7 @@ describe("End Turn execution and playback", () => {
       vi.useFakeTimers();
       try {
         const { ui, ctx, releaseDiscard } = makeUi(rejectDraw);
-        ui.handleEndTurn();
+        ui.handleEndTurn(readBattle(defaultGameSession).battleState);
         const resolved = readGameplayState(defaultGameSession);
         releaseDiscard();
         await vi.runAllTimersAsync();
@@ -148,7 +148,7 @@ describe("End Turn execution and playback", () => {
         finishCardDraw = context.playback.beginDraw(context.playback.id, "card");
         context.getPresentation().setHiddenHandCardKeys(() => ["drawing-card"]);
       });
-      ui.handleEndTurn();
+      ui.handleEndTurn(readBattle(defaultGameSession).battleState);
       releaseDiscard();
       await vi.runAllTimersAsync();
       expect(ctx.playback.pendingCardDraws).toBe(1);
@@ -162,7 +162,7 @@ describe("End Turn execution and playback", () => {
 
   it("cancelling presentation on another screen leaves a playable result", async () => {
     const { ui, ctx, releaseDiscard } = makeUi();
-    ui.handleEndTurn();
+    ui.handleEndTurn(readBattle(defaultGameSession).battleState);
     const resolved = readGameplayState(defaultGameSession);
     ctx.screen = "collection";
     releaseDiscard();
@@ -186,7 +186,7 @@ describe("End Turn execution and playback", () => {
     const { ui } = makeUi();
     battlePresentation.getState().setEndTurnConfirmationOpen(true);
     const before = readGameplayState(defaultGameSession);
-    ui.handleEndTurn();
+    ui.handleEndTurn(readBattle(defaultGameSession).battleState);
     expect(readGameplayState(defaultGameSession)).toBe(before);
   });
 
@@ -194,7 +194,7 @@ describe("End Turn execution and playback", () => {
     const { ui } = makeUi();
     useUiStore.getState().setCardInspection("discard");
     const before = readGameplayState(defaultGameSession);
-    ui.handleEndTurn();
+    ui.handleEndTurn(readBattle(defaultGameSession).battleState);
     expect(readGameplayState(defaultGameSession)).toBe(before);
   });
 });

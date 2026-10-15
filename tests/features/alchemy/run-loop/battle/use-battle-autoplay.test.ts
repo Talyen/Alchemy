@@ -56,13 +56,15 @@ describe("useBattleAutoplay", () => {
     expect(playCard).toHaveBeenCalledOnce();
 
     const wish = { ...playableCard, uid: 9 };
-    rerender({ ...options, battleState: { ...options.battleState, wishOptions: [wish] } });
+    const wishState = { ...options.battleState, wishOptions: [wish] };
+    rerender({ ...options, battleState: wishState });
     await act(async () => vi.advanceTimersByTimeAsync(AUTOPLAY_POST_PLAY_DELAY_MS - 101));
     expect(playWish).not.toHaveBeenCalled();
     await act(async () => vi.advanceTimersByTimeAsync(1));
     expect(playWish).toHaveBeenCalledExactlyOnceWith(
       wish,
       expect.objectContaining({ canCommit: expect.any(Function) }),
+      wishState,
     );
     expect(playCard).toHaveBeenCalledOnce();
 

@@ -60,14 +60,15 @@ describe("SaveOperationQueue", () => {
 
   it("still clears and cancels autosave when another cancellation listener throws", async () => {
     const queue = new SaveOperationQueue();
-    queue.subscribeCancellation(() => {
+    queue.subscribeEvents(() => {
       throw new Error("subscriber failed");
     });
     const cancelled = vi.fn();
-    queue.subscribeCancellation(cancelled);
+    queue.subscribeEvents(cancelled);
     let present = true;
     let reloaded: Promise<boolean> | undefined;
-    queue.subscribeCancellation(() => {
+    queue.subscribeEvents((event) => {
+      if (event !== "clear-started") return;
       reloaded = queue.enqueueLoad(async () => present);
     });
     const clear = vi.fn(async () => {
@@ -77,7 +78,7 @@ describe("SaveOperationQueue", () => {
     await expect(queue.enqueueClear(clear)).resolves.toBe(true);
     expect(await reloaded).toBe(false);
     expect(clear).toHaveBeenCalledOnce();
-    expect(cancelled).toHaveBeenCalledOnce();
+    expect(cancelled.mock.calls).toEqual([["clear-started"], ["cleared"]]);
     expect(queue.isClearPending).toBe(false);
     await expect(queue.enqueue(snapshot(2), async () => "saved")).resolves.toBe("saved");
   });
@@ -168,12 +169,20 @@ describe("SaveOperationQueue", () => {
     expect(await queue.enqueue(snapshot(2), async () => "saved")).toBe("saved");
   });
 
-  it("blocks writes until all overlapping clears finish", async () => {
+  it.each([
+    [false, false],
+    [true, false],
+    [false, true],
+    [true, true],
+  ])("keeps overlapping clears paused and resumes only if both fail (%s, %s)", async (firstOk, secondOk) => {
     const queue = new SaveOperationQueue();
+    const events = vi.fn();
+    queue.subscribeEvents(events);
     const gate = deferred<{ ok: boolean }>();
-    const first = queue.enqueueClear(async () => ({ ok: true }));
+    const first = queue.enqueueClear(async () => ({ ok: firstOk }));
     const second = queue.enqueueClear(() => gate.promise);
     await first;
+    expect(events.mock.calls).toEqual([["clear-started"]]);
     expect(queue.isIdle).toBe(false);
     let idle = false;
     const settled = queue.waitForIdle().then(() => {
@@ -183,10 +192,11 @@ describe("SaveOperationQueue", () => {
     expect(idle).toBe(false);
     const write = vi.fn().mockResolvedValue("saved");
     expect(await queue.enqueue(snapshot(1), write)).toBe("skipped");
-    gate.resolve({ ok: true });
+    gate.resolve({ ok: secondOk });
     await second;
     await settled;
     expect(queue.isIdle).toBe(true);
+    expect(events.mock.calls).toEqual([["clear-started"], [firstOk || secondOk ? "cleared" : "clear-failed"]]);
     expect(await queue.enqueue(snapshot(2), write)).toBe("saved");
   });
 

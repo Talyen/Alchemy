@@ -6,12 +6,12 @@ import { logStorageFailure } from "@/lib/storage-logging";
 import { createDefaultSaveData } from "./defaults";
 import { prepareDemoProgressImport } from "./demo-progress-import";
 import { selectSaveCandidates, type SaveLoadState } from "./save-candidates";
-import { SaveOperationQueue, type SaveWriteOutcome } from "./save-operation-queue";
+import { SaveOperationQueue, type SaveStorageEvent, type SaveWriteOutcome } from "./save-operation-queue";
 import type { SaveData, UnstampedSaveData } from "./types";
 
 export class SaveStorage {
   private readonly queue = new SaveOperationQueue();
-  private writeKey = SAVE_KEY;
+  private writeKeys: readonly (typeof SAVE_KEY | typeof SAVE_RECOVERY_KEY)[] = [SAVE_KEY, SAVE_RECOVERY_KEY];
   private demoInitialization: Promise<SaveLoadState | null> | null = null;
   private lastSavedAt = 0;
 
@@ -26,7 +26,7 @@ export class SaveStorage {
     }
     this.backend = backend;
     this.demoInitialization = null;
-    this.writeKey = SAVE_KEY;
+    this.writeKeys = [SAVE_KEY, SAVE_RECOVERY_KEY];
   }
 
   setWritesDisabled(disabled: boolean): void {
@@ -34,12 +34,17 @@ export class SaveStorage {
   }
 
   routeWritesToRecovery(): void {
-    this.writeKey = SAVE_RECOVERY_KEY;
+    // Recovery is a route preference, never permission to replace protected data.
+    this.writeKeys = this.writeKeys.filter((key) => key === SAVE_RECOVERY_KEY);
     this.setWritesDisabled(false);
   }
 
-  subscribeCancellation(listener: () => void): () => void {
-    return this.queue.subscribeCancellation(listener);
+  subscribeEvents(listener: (event: SaveStorageEvent) => void): () => void {
+    return this.queue.subscribeEvents(listener);
+  }
+
+  isClearing(): boolean {
+    return this.queue.isClearPending;
   }
 
   waitForPendingWrites(): Promise<void> {
@@ -49,7 +54,7 @@ export class SaveStorage {
   async resetForTests(): Promise<void> {
     await this.queue.reset();
     this.demoInitialization = null;
-    this.writeKey = SAVE_KEY;
+    this.writeKeys = [SAVE_KEY, SAVE_RECOVERY_KEY];
     this.lastSavedAt = 0;
   }
 
@@ -68,14 +73,14 @@ export class SaveStorage {
       const primaryCandidates = primary.ok ? primary.candidates : [];
       const recoveryCandidates = recovery.ok ? recovery.candidates : [];
       const selection = selectSaveCandidates(primaryCandidates, recoveryCandidates);
-      const useRecovery = !primary.ok || primary.localReadFailed === true || selection.useRecovery;
-      this.writeKey = useRecovery ? SAVE_RECOVERY_KEY : SAVE_KEY;
+      this.writeKeys = selection.writeSlots.map((slot) => (slot === "primary" ? SAVE_KEY : SAVE_RECOVERY_KEY));
+      if (!primary.ok || primary.localReadFailed === true) this.routeWritesToRecovery();
       let loaded = selection.state;
 
       if (primaryCandidates.length === 0 && recoveryCandidates.length === 0) {
         const readFailed = !primary.ok && !recovery.ok;
         loaded = { data: createDefaultSaveData(), status: { kind: readFailed ? "unavailable" : "ok" } };
-        if (!IS_DEMO && !useRecovery && !readFailed && this.backend.readDemoImportSource) {
+        if (!IS_DEMO && this.writeKeys[0] === SAVE_KEY && !readFailed && this.backend.readDemoImportSource) {
           this.demoInitialization ??= this.initializeDemoProgress();
           loaded = (await this.demoInitialization) ?? loaded;
         }
@@ -128,6 +133,7 @@ export class SaveStorage {
   }
 
   private async writeSaveSnapshot(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
+    if (this.writeKeys.length === 0) return "failed";
     const serialized = this.trySerializeSaveSnapshot(data, "");
     if (serialized === null) return "failed";
     return this.writeSerializedSnapshot(serialized);
@@ -145,13 +151,12 @@ export class SaveStorage {
   }
 
   private async writeSerializedSnapshot(serialized: string): Promise<SaveWriteOutcome> {
-    if (await this.tryWriteSnapshot(this.writeKey, serialized, "Save data could not be written")) return "saved";
-    if (
-      this.writeKey === SAVE_KEY &&
-      (await this.tryWriteSnapshot(SAVE_RECOVERY_KEY, serialized, "Recovery save could not be written"))
-    ) {
-      this.writeKey = SAVE_RECOVERY_KEY;
-      return "saved";
+    for (const key of this.writeKeys) {
+      const failure = key === SAVE_KEY ? "Save data could not be written" : "Recovery save could not be written";
+      if (await this.tryWriteSnapshot(key, serialized, failure)) {
+        if (key === SAVE_RECOVERY_KEY) this.writeKeys = [SAVE_RECOVERY_KEY];
+        return "saved";
+      }
     }
     return "failed";
   }
@@ -194,25 +199,21 @@ export class SaveStorage {
     // Slot protection is unknown until every preceding load finishes. The
     // synchronous fast path must not bypass that decision, even during exit.
     if (this.queue.isLoadPending) return this.save(data, validate);
+    if (this.writeKeys.length === 0) return "failed";
     const serialized = this.trySerializeSaveSnapshot(data, " during page exit");
     if (serialized === null) return "failed";
-    let syncResult = this.tryWriteExitSnapshot(
-      this.writeKey,
-      serialized,
-      "Save data could not be written during page exit",
-    );
-    if (syncResult === false) {
-      if (this.writeKey !== SAVE_KEY) return "failed";
-      syncResult = this.tryWriteExitSnapshot(
-        SAVE_RECOVERY_KEY,
-        serialized,
-        "Recovery save could not be written during page exit",
-      );
-      if (syncResult === false) return "failed";
-      this.writeKey = SAVE_RECOVERY_KEY;
+    for (const key of this.writeKeys) {
+      const failure =
+        key === SAVE_KEY
+          ? "Save data could not be written during page exit"
+          : "Recovery save could not be written during page exit";
+      const syncResult = this.tryWriteExitSnapshot(key, serialized, failure);
+      if (syncResult === false) continue;
+      if (key === SAVE_RECOVERY_KEY) this.writeKeys = [SAVE_RECOVERY_KEY];
+      if (syncResult === true && this.queue.isIdle) return "saved";
+      return this.save(data, validate);
     }
-    if (syncResult === true && this.queue.isIdle) return "saved";
-    return this.save(data, validate);
+    return "failed";
   }
 
   async clear(mode: "default" | "localWipe" = "default"): Promise<boolean> {
@@ -221,7 +222,7 @@ export class SaveStorage {
       async () => {
         const result = await this.backend.clear(SAVE_KEY, { forceLocalWipe });
         if (result.ok) {
-          this.writeKey = SAVE_KEY;
+          this.writeKeys = [SAVE_KEY, SAVE_RECOVERY_KEY];
           this.demoInitialization = Promise.resolve(null);
         }
         return result;
