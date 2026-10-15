@@ -4,8 +4,6 @@ import { syncVersionMetadata } from "./sync-version-metadata.mjs";
 
 export async function syncGenerated({ check = false, artOnly = false, gearOnly = false, versionOnly = false } = {}) {
   if (artOnly) {
-    // Both art barrels: gear-art.generated.ts imports assets.generated.ts, so syncing
-    // one without the other can only diverge them.
     await syncArtBarrels({ check });
     return;
   }
@@ -26,10 +24,10 @@ export async function syncGenerated({ check = false, artOnly = false, gearOnly =
 
 function printHelp() {
   console.log(`Usage: node scripts/sync-generated.mjs [--check] [--art-only|--gear-only|--version-only]
-  Default syncs art barrels + version metadata.
+  Default syncs the art registry + version metadata.
   Fine-grained syncs (npm run sync:art / sync:gear-art / sync:version forward here):
-    --art-only      Sync both art barrels (assets.generated.ts + gear-art.generated.ts)
-    --gear-only     Sync gear-art.generated.ts only (refuses stale assets.generated.ts)
+    --art-only      Sync assets.generated.ts (Boards and Gear register eagerly from catalogs)
+    --gear-only     Compatibility alias for --art-only
     --version-only  Sync metadata.generated.ts only`);
 }
 

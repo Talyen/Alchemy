@@ -297,7 +297,7 @@ duration and the eased progress reaching 100%. Essential art failures are logged
 and treated as settled. Deferred Gear art begins as soon as essential art settles,
 overlapping the minimum loading window and continuing after reveal if needed.
 
-**Do not add:** `React.lazy()` on route screens, lazy game art outside the board decode exception, or per-screen spinners for assets in `allGameArt`. Board art is statically registered but excluded from both startup decode sets through `onDemandBoardArt` and decoded on demand. Follow the [board asset workflow](./WORKFLOWS-ASSETS.md#game-board-artwork) when changing that explicit exception.
+**Do not add:** `React.lazy()` on route screens, lazy game art outside the board decode exception, or per-screen spinners for assets in `allGameArt`. Board and Gear URLs register eagerly in `game-data/catalog-art.ts`; the board catalog owns board identity and prepared filenames own Gear identity. General art keeps its generated named exports. Card and enemy builders derive conventional art from content IDs, with explicit overrides for shared or differently named art. Board art is excluded from both startup decode sets through `onDemandBoardArt` and decoded on demand. Follow the [board asset workflow](./WORKFLOWS-ASSETS.md#game-board-artwork) when changing that explicit exception.
 
 **E2E bypass:** `localStorage["alchemy-skip-loading-screen"]` — startup gate only (`shouldSkipStartupLoadingGate()`).
 
