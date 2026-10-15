@@ -44,7 +44,13 @@ export function applyEnemyDotDamage(
   const finalDamage = pulses.reduce((sum, pulse) => sum + pulse.finalDamage, 0);
   const hit = damageEnemyHealth(state, finalDamage);
   const previousHealth = hit.previousHealth;
-  let nextState: BattleState = hit.state;
+  const poisonPulse = pulses.find((pulse) => pulse.status === "poison");
+  const shredded = poisonPulse
+    ? applyPoisonDamageArmorRider(hit.state, poisonPulse.finalDamage, combatTexts)
+    : hit.state;
+  let nextState = decayArmorAfterDamage(shredded, finalDamage, "enemy", combatTexts);
+  // Commit the tick's consumed stacks before rewards can apply fresh statuses.
+  for (const pulse of pulses) nextState = setEnemyStatus(nextState, pulse.status, pulse.nextStacks);
 
   const bleedIndex = pulses.findIndex((pulse) => pulse.status === "bleed");
   const bleedHealthDamage = bleedIndex >= 0 ? pulseHealthDamage(pulses, bleedIndex, previousHealth) : 0;
@@ -55,7 +61,6 @@ export function applyEnemyDotDamage(
 
   let earlierDamage = 0;
   for (const pulse of pulses) {
-    nextState = setEnemyStatus(nextState, pulse.status, pulse.nextStacks);
     nextState = applyElementalDamageManaRestore(
       nextState,
       pulse.status,
@@ -65,7 +70,6 @@ export function applyEnemyDotDamage(
     earlierDamage += pulse.finalDamage;
   }
   if (applyRiders) nextState = applyRiders(nextState, hit);
-  nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
   nextState = processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
   return payKillPayouts(
     nextState,
@@ -174,7 +178,6 @@ export function detonateEnemyStatuses(
     }
     const poisonPulse = pulses.find((pulse) => pulse.status === "poison");
     if (poisonPulse) {
-      nextState = applyPoisonDamageArmorRider(nextState, poisonPulse.finalDamage, combatTexts);
       // Attribute overkill in pulse order so Poison cannot Leech Health already lost to Bleed.
       const healthDamage = pulseHealthDamage(pulses, pulses.indexOf(poisonPulse), previousHealth);
       if (applyPoisonRiders)

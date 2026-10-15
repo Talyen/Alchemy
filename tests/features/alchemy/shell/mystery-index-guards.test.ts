@@ -4,12 +4,13 @@ import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/naviga
 import { mutateRunForTest, resetAllTestStores, setRunProgress } from "../../../helpers/run-domain-store-test";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setMysteryCardChoices, setMysteryEvent } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { cardLibrary } from "@/lib/game-data";
+import { cardById, cardLibrary } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 import { readActivityData } from "@/lib/active-run-session";
 import { applyLabyrinthMysteryModifiers } from "@/lib/content-systems/labyrinth/room-rules";
 import { mysteryPool } from "@/lib/mystery/pool";
 import { defaultGameSession } from "@/app/application-session";
+import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
 
 const act = (fn: () => void) => fn();
 function renderMysteryNav() {
@@ -23,6 +24,14 @@ beforeEach(() => {
 });
 
 describe("mystery transactional guards", () => {
+  it("grants the modified card that was actually offered", () => {
+    const card = getCorruptionMutationGroups(cardById.slash!).find((group) => group.kind === "strengthen")!
+      .mutations[0]!.card;
+    mutateRunForTest((draft) => setMysteryCardChoices(draft, [card]));
+    expect(renderMysteryNav().hook.result.current.handleMysteryChooseCard(card.id)).toBe(true);
+    expect(readActiveRun(defaultGameSession).runDeck.at(-1)).toMatchObject({ corrupted: true, effects: card.effects });
+  });
+
   it("reports Restful Discovery's actual healing instead of the uncapped promise", () => {
     setRunProgress({ runPlayerHealth: 29, runMaxHealth: 30 });
     const event = applyLabyrinthMysteryModifiers(

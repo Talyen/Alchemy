@@ -22,16 +22,24 @@ import {
   MaterialIdSchema,
   MaterialInventorySchema,
 } from "./schema-enums";
-import { deduplicatedStringArraySchema } from "./validation-utils";
+import { deduplicatedStringArraySchema, recordNestedValidationWarnings } from "./validation-utils";
+
+const KnownKeywordSchema = z.custom<KeywordId>(
+  (value) => typeof value === "string" && Object.hasOwn(keywordDefinitions, value),
+);
 
 const MysteryEffectSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("addCard"), cardId: z.string() }),
   z.object({ kind: z.literal("chooseCard"), tag: z.string().optional() }),
-  z.object({ kind: z.literal("healHealth"), amount: z.number(), chance: z.number().optional() }),
-  z.object({ kind: z.literal("damageHealth"), amount: z.number() }),
+  z.object({
+    kind: z.literal("healHealth"),
+    amount: z.number().int().nonnegative().catch(0),
+    chance: z.number().optional(),
+  }),
+  z.object({ kind: z.literal("damageHealth"), amount: z.number().int().nonnegative().catch(0) }),
   z.object({ kind: z.literal("gainGold"), amount: z.number() }),
   z.object({ kind: z.literal("loseGold"), amount: z.number() }),
-  z.object({ kind: z.literal("gainXP"), keyword: z.string(), amount: z.number() }),
+  z.object({ kind: z.literal("gainXP"), keyword: KnownKeywordSchema, amount: z.number().int().nonnegative().catch(0) }),
   z.object({ kind: z.literal("removeCard") }),
   z.object({ kind: z.literal("gainTrinket"), trinketId: z.string() }),
   z.object({ kind: z.literal("gainRandomTrinket"), fromIds: z.array(z.string()).optional() }),
@@ -42,7 +50,16 @@ const MysteryEffectSchema = z.discriminatedUnion("kind", [
 
 const MysteryChoicePersistSchema = z.object({
   label: z.string(),
-  effects: z.array(MysteryEffectSchema),
+  effects: z.array(z.unknown()).transform((effects) =>
+    effects.flatMap((effect, index) => {
+      const result = MysteryEffectSchema.safeParse(effect);
+      if (result.success) return [result.data];
+      recordNestedValidationWarnings([
+        { path: `mystery.effects[${index}]`, message: "malformed Mystery effect was dropped" },
+      ]);
+      return [];
+    }),
+  ),
 });
 
 const MysteryEventPersistSchema = z.object({
@@ -50,7 +67,7 @@ const MysteryEventPersistSchema = z.object({
   title: z.string(),
   art: z.string(),
   narrative: z.string(),
-  choices: z.array(MysteryChoicePersistSchema),
+  choices: z.array(MysteryChoicePersistSchema).min(1),
 });
 
 const MysteryVisitObjectSchema = z.object({
@@ -100,20 +117,17 @@ function repairSavedShopCards(cards: unknown[], purchasedSlotKeys: string[], pat
   };
 }
 
-const TransmutationKeywordSchema = z.custom<KeywordId>(
-  (value) => typeof value === "string" && Object.hasOwn(keywordDefinitions, value),
-);
 const AlchemyVisitObjectSchema = z.object({
   transmutation: z
     .object({
       choices: z.array(
         z.object({
-          keyword: TransmutationKeywordSchema,
+          keyword: KnownKeywordSchema,
           alterations: z.array(
             z.object({
               sourceIndex: z.number().int().nonnegative(),
               source: BattleCardSchema,
-              sourceKeyword: TransmutationKeywordSchema.nullable(),
+              sourceKeyword: KnownKeywordSchema.nullable(),
               result: BattleCardSchema,
             }),
           ),
@@ -121,7 +135,7 @@ const AlchemyVisitObjectSchema = z.object({
       ),
       sourceIndex: z.number().int().min(0).nullable(),
       source: BattleCardSchema.nullable(),
-      keyword: TransmutationKeywordSchema.nullable(),
+      keyword: KnownKeywordSchema.nullable(),
       offerIndex: z.number().int().min(0).max(2).nullable(),
     })
     .optional()

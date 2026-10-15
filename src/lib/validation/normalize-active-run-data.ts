@@ -5,6 +5,7 @@ import {
   cardById,
   characters,
   cloneBattleCard,
+  getCardKeywords,
   isMixedPotionCard,
   selectRewardCards,
   type BattleCard,
@@ -61,19 +62,23 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
       seedKeywords = [],
       alreadyOwned = runDeck,
       count = DRAFT_CHOICES,
+      keyword,
     }: {
       canPick: boolean;
       stream: RunRngStream;
       seedKeywords?: KeywordId[];
       alreadyOwned?: BattleCard[];
       count?: number;
+      keyword?: KeywordId;
     },
   ): PersistedBattleCard[] {
     const filtered = filterLiveCards(choices);
     if (filtered.length > 0 || !canPick) return filtered;
+    const pool = getOfferableCardPool();
+    const tagged = keyword ? pool.filter((card) => getCardKeywords(card).includes(keyword)) : [];
     return selectRewardCards(
       runDeck,
-      getOfferableCardPool(),
+      tagged.length > 0 ? tagged : pool,
       count,
       alreadyOwned,
       createRunStateRng(rngState, stream),
@@ -96,16 +101,19 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
       ? repairChoices(data.starterDraftChoices, { canPick: drafting, stream: "rewards" })
       : null;
   const visit = data.activity.kind === "mystery" ? data.activity.data : null;
+  const cardChoice = visit?.chosenChoice?.effects.find((effect) => effect.kind === "chooseCard");
   const mysteryVisit = visit && {
     ...visit,
-    cardChoices: visit.cardChoices
-      ? repairChoices(visit.cardChoices, {
-          canPick: visit.chosenCardId == null,
-          stream: "events",
-          alreadyOwned: [],
-          count: MYSTERY_CARD_CHOICES,
-        })
-      : null,
+    cardChoices:
+      visit.chosenCardId == null && (visit.cardChoices !== null || cardChoice)
+        ? repairChoices(visit.cardChoices ?? [], {
+            canPick: visit.chosenCardId == null,
+            stream: "events",
+            alreadyOwned: [],
+            count: MYSTERY_CARD_CHOICES,
+            ...(cardChoice?.tag ? { keyword: cardChoice.tag as KeywordId } : {}),
+          })
+        : null,
   };
   const rngCountersChanged = (Object.keys(rngState.counters) as RunRngStream[]).some(
     (stream) => rngState.counters[stream] !== data.rng.counters[stream],
