@@ -81,9 +81,6 @@ export const SHOP_REFRESHES = 1;
 export const ALCHEMIST_POTIONS_OFFERED = 3;
 export const ALCHEMIST_REFRESHES = 1;
 
-export const COMPANION_GOLD_FIND_CHANCE_FRACTION = 0.5;
-export const COMPANION_GOLD_MULTIPLIER = 1.2;
-
 // GEAR_AFFIX_COUNT and GEAR_AFFIX_COUNT_MIN_WEIGHT live in ./gear.ts
 // alongside the rest of gear tuning.
 export const MYSTERY_CARD_CHOICES = 3;

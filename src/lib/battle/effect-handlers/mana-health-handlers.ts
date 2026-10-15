@@ -81,8 +81,7 @@ export const MANA_HEALTH_HANDLERS = {
     const consumeBonus = card.consume
       ? state.talentEffects.consumeHealMultiplier + state.gearEffects.consumeHealBonusPercent / PERCENT_DENOMINATOR
       : 0;
-    const cardSpecificBonus = state.talentEffects.cardHealBonus[card.id] ?? 0;
-    const healAmount = Math.round(adjustedHeal * (1 + consumeBonus) + cardSpecificBonus);
+    const healAmount = Math.round(adjustedHeal * (1 + consumeBonus));
     return hasCardHealing(context)
       ? applyCardHealing(state, healAmount, combatTexts)
       : applyHealingWithCombatText(state, healAmount, combatTexts);

@@ -20,7 +20,7 @@ import {
 } from "@/lib/alchemist/transmutation";
 import type { TransmutationSelectionCommand } from "@/lib/active-run-session/alchemy-visits";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
-import { cloneBattleCard, computeTalentEffects, type BattleCard } from "@/lib/game-data";
+import { cloneBattleCard, type BattleCard } from "@/lib/game-data";
 
 export function brewAtCampfire(operation: BrewOperation, gameSession: GameSession): BattleCard | null {
   const brewed = dispatchRunSessionCommand(
@@ -48,11 +48,7 @@ export function brewAtCampfire(operation: BrewOperation, gameSession: GameSessio
           !isBrewablePotion(snapshotTransactionValue(deck[b]))
         )
           return rejectCommand("Alchemy action is unavailable", null);
-        result = tryCreateMixedPotion(
-          snapshotTransactionValue(deck[a]),
-          snapshotTransactionValue(deck[b]),
-          computeTalentEffects(snapshotTransactionValue(draft.runProfile.unlockedTalents)).potionMixPotency,
-        );
+        result = tryCreateMixedPotion(snapshotTransactionValue(deck[a]), snapshotTransactionValue(deck[b]));
         if (!result) return rejectCommand("Alchemy action is unavailable", null);
         setRunDeck(draft, applyMixToDeck(snapshotTransactionValue(deck), a, b, result));
         discoverCardIds(draft, [MIXED_POTION_CARD_ID]);

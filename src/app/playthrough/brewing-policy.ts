@@ -67,7 +67,7 @@ export interface BrewCandidate {
   improvement: number;
 }
 
-export function brewCandidates(deck: readonly BattleCard[], potency: number): BrewCandidate[] {
+export function brewCandidates(deck: readonly BattleCard[]): BrewCandidate[] {
   const potions = deck.flatMap((card, index) => (isBrewablePotion(card) ? [{ card, index }] : []));
   const candidates: BrewCandidate[] = [];
   for (const { card, index } of potions) {
@@ -84,7 +84,7 @@ export function brewCandidates(deck: readonly BattleCard[], potency: number): Br
     for (let b = a + 1; b < potions.length; b++) {
       const left = potions[a]!;
       const right = potions[b]!;
-      const result = tryCreateMixedPotion(left.card, right.card, potency);
+      const result = tryCreateMixedPotion(left.card, right.card);
       if (!result) continue;
       // One draw/Mana resolves both ingredients. Compare against the better input,
       // and give compression one point, without pretending it is a measured win delta.

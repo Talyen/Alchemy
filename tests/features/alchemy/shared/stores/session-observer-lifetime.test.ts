@@ -1,3 +1,4 @@
+import { createBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import {
@@ -31,19 +32,21 @@ it("revokes both the current observer snapshot and queued reentrant publications
   expect(stale).not.toHaveBeenCalled();
 });
 
-it.each(["gameplay", "settings", "progress"] as const)(
+it.each(["gameplay", "settings", "progress", "presentation"] as const)(
   "disposal during %s notification revokes the remaining observer snapshot",
   async (source) => {
     const session = createGameSession();
     const other = createGameSession();
     const runtime = sessionRuntime(session);
     const persistence = createSessionPersistence(session);
+    const presentation = createBattlePresentationStore(session);
     const stale = vi.fn();
     let disposal: Promise<void> | undefined;
     const dispose = () => {
       disposal = session.dispose();
     };
     const subscribe = (listener: () => void) => {
+      if (source === "presentation") return presentation.subscribe(listener);
       if (source === "gameplay") return subscribeRunSessionCommits(listener, session);
       if (source === "settings") return runtime.settings.subscribe(listener);
       return persistence.subscribeProgress(listener);
@@ -53,7 +56,8 @@ it.each(["gameplay", "settings", "progress"] as const)(
     const otherObserver = vi.fn();
     subscribeRunSessionCommits(otherObserver, other);
     try {
-      if (source === "gameplay")
+      if (source === "presentation") presentation.getState().setCardTransferInProgress(true);
+      else if (source === "gameplay")
         dispatchRunSessionCommand((transaction) => acceptCommand(setGold(transaction, 10)), undefined, session);
       else if (source === "settings") runtime.settings.getState().setMusicVolume(7);
       else runtime.progressCompletion.mark(1);
@@ -114,5 +118,29 @@ it("disposal during a save failure stops later status observers while submitted 
   } finally {
     await session.dispose();
     logged.mockRestore();
+  }
+});
+
+it("revokes post-commit effects when a publication observer disposes the session", async () => {
+  const session = createGameSession();
+  const effect = vi.fn();
+  let disposal: Promise<void> | undefined;
+  subscribeRunSessionCommits(() => {
+    disposal = session.dispose();
+  }, session);
+  try {
+    const result = dispatchRunSessionCommand(
+      (tx) => {
+        setGold(tx, 10);
+        return acceptCommand(17);
+      },
+      { afterCommit: effect },
+      session,
+    );
+    expect(result).toBe(17);
+    await disposal;
+    expect(effect).not.toHaveBeenCalled();
+  } finally {
+    await session.dispose();
   }
 });

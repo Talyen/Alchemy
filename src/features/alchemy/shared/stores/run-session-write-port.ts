@@ -24,8 +24,9 @@ import { bindDraftCapability, gameplayDraftRuntime } from "./gameplay-command";
 
 import type { RunActivityData } from "@/lib/active-run-session";
 import type { Immutable } from "immer";
+import { createReadonlyView, ownTransactionInput } from "./readonly-view";
 import type { RunTransaction } from "./run-session-command";
-import { transactionDraft, transactionOperation } from "./transaction-internal";
+import { executeTransactionOperation, transactionOperation } from "./transaction-internal";
 import * as meta from "./write/live-meta";
 import * as battle from "./write/run-battle";
 import * as battleStart from "./write/battle-start";
@@ -42,7 +43,6 @@ export const initializeBattle = transactionOperation(battleStart.initializeBattl
 
 export const addGold = transactionOperation(gold.addGold);
 export const deductGold = transactionOperation(gold.deductGold);
-export const grantStartGold = transactionOperation(gold.grantStartGold);
 export const readDraftGold = transactionOperation(gold.readDraftGold);
 export const setGold = transactionOperation(gold.setGold);
 export const deriveCombatMeta = transactionOperation(meta.deriveCombatMeta);
@@ -94,7 +94,16 @@ export function setRunActivityData<K extends keyof RunActivityData>(
         previous: Immutable<RunActivityData[NoInfer<K>]>,
       ) => RunActivityData[NoInfer<K>] | Immutable<RunActivityData[NoInfer<K>]>),
 ): void {
-  transactionOperation(session.setRunActivityData<K>)(transaction, kind, action);
+  executeTransactionOperation(transaction, (draft) =>
+    session.setRunActivityData(
+      draft,
+      kind,
+      (previous) =>
+        ownTransactionInput(
+          typeof action === "function" ? action(createReadonlyView(previous)) : action,
+        ) as RunActivityData[NoInfer<K>],
+    ),
+  );
 }
 export const setStarterDraftChoices = transactionOperation(session.setStarterDraftChoices);
 export const setTrinketShopState = transactionOperation(session.setTrinketShopState);
@@ -161,12 +170,13 @@ export const captureRunRecap = transactionOperation(recap.captureRunRecap);
 export const settlePendingBattleMaterials = transactionOperation(battle.settlePendingBattleMaterials);
 
 export function createDraftInstanceIdSource(transaction: RunTransaction): () => string {
-  const draft = transactionDraft(transaction);
-  return bindDraftCapability(draft, gameplayDraftRuntime(draft).createInstanceId);
+  return executeTransactionOperation(transaction, (draft) =>
+    bindDraftCapability(draft, gameplayDraftRuntime(draft).createInstanceId),
+  );
 }
 
 export function settleRunVictory(transaction: RunTransaction): void {
-  transactionOperation(ending.settleRunEnd)(transaction, "victory");
+  executeTransactionOperation(transaction, (draft) => ending.settleRunEnd(draft, "victory"));
 }
 
 export const selectBoard = transactionOperation(boards.selectBoard);

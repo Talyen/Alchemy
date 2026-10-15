@@ -10,14 +10,14 @@ import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 const drawingPotion = {
-  ...cardById["acid-potion"]!,
+  ...cardById["health-potion"]!,
   corrupted: true,
   descriptionLines: [
-    ...cardById["acid-potion"]!.descriptionLines.filter((line) => line !== "Consume"),
+    ...cardById["health-potion"]!.descriptionLines.filter((line) => line !== "Consume"),
     "Draw a card",
     "Consume",
   ],
-  effects: [...cardById["acid-potion"]!.effects, { kind: "draw-cards" as const, amount: 1 }],
+  effects: [...cardById["health-potion"]!.effects, { kind: "draw-cards" as const, amount: 1 }],
 };
 
 describe("player-facing card and trinket regressions", () => {
@@ -153,7 +153,7 @@ describe("player-facing card and trinket regressions", () => {
   });
 
   it("mixed and strengthened Potions describe their increased implicit card draw", () => {
-    for (const potion of [createMixedPotion(drawingPotion, drawingPotion, 1), doublePotionPotency(drawingPotion)]) {
+    for (const potion of [createMixedPotion(drawingPotion, drawingPotion), doublePotionPotency(drawingPotion)]) {
       const draw = potion.effects.find((effect) => effect.kind === "draw-cards")!;
       expect(potion.descriptionLines).toContain(`Draw ${draw.amount} cards`);
       expect(validateCardDescriptionParity(potion)).toEqual([]);
@@ -161,8 +161,9 @@ describe("player-facing card and trinket regressions", () => {
     expect(drawingPotion.descriptionLines).toContain("Draw a card");
   });
 
-  it("Distillation increases card draw from a Brewmaster mixed Potion", () => {
-    const potion = createMixedPotion(drawingPotion, drawingPotion, 1);
+  it("Distillation and Brewmaster increase draw after Strong Spirits and mixing", () => {
+    const strong = doublePotionPotency(drawingPotion);
+    const potion = createMixedPotion(strong, strong);
     const state = patchBattleState({
       hand: [potion],
       enemyHealth: 100,
@@ -171,7 +172,7 @@ describe("player-facing card and trinket regressions", () => {
       talentEffects: computeTalentEffects({ consume: ["consume-distillation", "consume-brewmaster"] }),
       rng: () => 0.99,
     });
-    expect(playBattleCardResolved(state, potion.id, 0).state.hand).toHaveLength(4);
+    expect(playBattleCardResolved(state, potion.id, 0).state.hand).toHaveLength(5);
   });
 
   it("reflectBlockedAttackAsHoly triggers enemy threshold reactions before paying kill rewards", () => {

@@ -51,33 +51,33 @@ describe("createMixedPotion", () => {
   });
   it("scales every Luck Potion outcome and its description when mixing", () => {
     const luck = cardLibrary.find((card) => card.id === "luck-potion")!;
-    const mixed = createMixedPotion(luck, luck, 2);
+    const mixed = createMixedPotion(luck, luck);
     expect(mixed.effects).toEqual([
       {
         kind: "chance",
         probability: 0.5,
-        successEffects: [{ kind: "restore-mana", amount: 10 }],
+        successEffects: [{ kind: "restore-mana", amount: 8 }],
         failureEffects: [
           {
             kind: "chance",
             probability: 0.5,
-            successEffects: [{ kind: "gain-gold", amount: 10 }],
-            failureEffects: [{ kind: "player-status", status: "block", amount: 10 }],
+            successEffects: [{ kind: "gain-gold", amount: 8 }],
+            failureEffects: [{ kind: "player-status", status: "block", amount: 8 }],
           },
         ],
       },
     ]);
-    expect(mixed.descriptionLines).toEqual(["Gain 10 Mana, Gold, or Block", "Consume"]);
+    expect(mixed.descriptionLines).toEqual(["Gain 8 Mana, Gold, or Block", "Consume"]);
     expect(luck.descriptionLines[0]).toBe("Gain 4 Mana, Gold, or Block");
   });
-  it("combines different Potions with potency bonuses while preserving both ingredients", () => {
+  it("combines different Potions while preserving both ingredients", () => {
     const before = structuredClone([healPotion, firePotion]);
-    const mixed = createMixedPotion(healPotion, firePotion, 2);
+    const mixed = createMixedPotion(healPotion, firePotion);
     expect(mixed.effects).toEqual([
-      { kind: "heal", amount: 7 },
-      { kind: "damage", damageType: "burn", amount: 10 },
+      { kind: "heal", amount: 5 },
+      { kind: "damage", damageType: "burn", amount: 8 },
     ]);
-    expect(mixed.descriptionLines).toEqual(["Restore 7 Health", "Deal 10 Burn damage", "Consume"]);
+    expect(mixed.descriptionLines).toEqual(["Restore 5 Health", "Deal 8 Burn damage", "Consume"]);
     expect(mixed.consume).toBe(true);
     expect([healPotion, firePotion]).toEqual(before);
   });
@@ -137,14 +137,14 @@ describe("createMixedPotion", () => {
         },
       ],
     });
-    const mixed = createMixedPotion(durationPotion, durationPotion, 3);
+    const mixed = createMixedPotion(durationPotion, durationPotion);
 
     expect(mixed.effects[0]).toEqual({
       kind: "repeat-over-turns",
       remainingTurns: turns,
-      effects: [{ kind: "damage", damageType: "poison", amount: 23 }],
+      effects: [{ kind: "damage", damageType: "poison", amount: 20 }],
     });
-    expect(mixed.descriptionLines).toEqual([`Deal 23 Poison damage for the next ${turns} turns`, "Consume"]);
+    expect(mixed.descriptionLines).toEqual([`Deal 20 Poison damage for the next ${turns} turns`, "Consume"]);
   });
 
   it("does not cascade-replace numbers when a scaled amount matches another base effect amount", () => {
@@ -254,7 +254,7 @@ describe("mixed potion description parity", () => {
     for (const potion of pool) {
       expect(validateCardDescriptionParity(doublePotionPotency(potion)), potion.id).toEqual([]);
       for (const ingredient of pool) {
-        const mixed = createMixedPotion(potion, ingredient, 2);
+        const mixed = createMixedPotion(potion, ingredient);
         expect(validateCardDescriptionParity(mixed), `${potion.id} + ${ingredient.id}`).toEqual([]);
       }
     }
@@ -271,7 +271,7 @@ describe("mixed potion description parity", () => {
           expect(unscaledMix.descriptionLines.slice(0, ingredientLines.length), `${potion.id}: ${group.kind}`).toEqual(
             ingredientLines,
           );
-          const mixed = createMixedPotion(mutation.card, potion, 1);
+          const mixed = createMixedPotion(mutation.card, potion);
           expect(validateCardDescriptionParity(mixed), `${potion.id}: ${group.kind}`).toEqual([]);
           const restored = hydrateCard(JSON.parse(JSON.stringify(mixed)) as BattleCard);
           expect(restored.effects, `${potion.id}: ${group.kind}`).toEqual(mixed.effects);

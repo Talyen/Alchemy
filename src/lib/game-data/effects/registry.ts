@@ -12,15 +12,9 @@ export const TEMPLATE_EFFECT_DEFINITIONS = [
   ...SIMPLE_EFFECT_DEFINITIONS,
 ] as const;
 
-if (
-  new Set(TEMPLATE_EFFECT_DEFINITIONS.map((definition) => definition.kind)).size !== TEMPLATE_EFFECT_DEFINITIONS.length
-) {
-  throw new Error("Duplicate card effect schema kind");
-}
-
 export const RECURSIVE_BATTLE_CARD_EFFECT_KINDS = ["chance", "repeat-over-turns"] as const;
 
-type TemplateKind = (typeof TEMPLATE_EFFECT_DEFINITIONS)[number]["kind"];
+type TemplateKind = z.output<(typeof TEMPLATE_EFFECT_DEFINITIONS)[number]>["kind"];
 type RecursiveKind = (typeof RECURSIVE_BATTLE_CARD_EFFECT_KINDS)[number];
 export type BattleCardEffectKind = TemplateKind | RecursiveKind;
 
@@ -31,15 +25,16 @@ export function isRecursiveBattleCardEffectKind(kind: string): kind is Recursive
 }
 
 export const BATTLE_CARD_EFFECT_KINDS = [
-  ...TEMPLATE_EFFECT_DEFINITIONS.map((def) => def.kind),
+  ...TEMPLATE_EFFECT_DEFINITIONS.map((schema) => schema.shape.kind.value),
   ...RECURSIVE_BATTLE_CARD_EFFECT_KINDS,
 ] as const satisfies readonly BattleCardEffectKind[];
 
+if (new Set(BATTLE_CARD_EFFECT_KINDS).size !== BATTLE_CARD_EFFECT_KINDS.length) {
+  throw new Error("Duplicate card effect schema kind");
+}
+
 const [firstTemplate, ...restTemplates] = TEMPLATE_EFFECT_DEFINITIONS;
-const templateEffectSchema = z.discriminatedUnion("kind", [
-  firstTemplate.schema,
-  ...restTemplates.map((definition) => definition.schema),
-]);
+const templateEffectSchema = z.discriminatedUnion("kind", [firstTemplate, ...restTemplates]);
 
 // Only the child arrays need lazy resolution; build each recursive schema once.
 // Zod permits explicit undefined for optional fields; the authored effect type

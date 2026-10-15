@@ -30,6 +30,7 @@ export class SaveOperationQueue {
   private pendingClears = 0;
   private clearSucceeded = false;
   private writesDisabled = false;
+  private writePermissionVersion = 0;
   private storageEpoch = 0;
   private readonly events = createNotificationChannel<[SaveStorageEvent]>((error) => {
     logStorageFailure("Save storage listener threw", error);
@@ -52,11 +53,20 @@ export class SaveOperationQueue {
   }
 
   setWritesDisabled(disabled: boolean): void {
+    this.writePermissionVersion++;
     this.writesDisabled = disabled;
     if (disabled) {
       this.cancelPendingWrites();
       this.events.publish("writes-disabled");
     }
+  }
+
+  /** An asynchronous load or clear cannot override a newer explicit write policy. */
+  prepareWriteResume(): () => void {
+    const version = this.writePermissionVersion;
+    return () => {
+      if (version === this.writePermissionVersion) this.writesDisabled = false;
+    };
   }
 
   readonly subscribeEvents = this.events.subscribe;
@@ -124,6 +134,7 @@ export class SaveOperationQueue {
     clear: () => Promise<{ ok: boolean; error?: unknown }>,
     options?: { onError?: (error: unknown) => void },
   ): Promise<boolean> {
+    const resumeWrites = this.prepareWriteResume();
     const starting = this.pendingClears === 0;
     if (starting) this.clearSucceeded = false;
     this.pendingClears++;
@@ -132,7 +143,7 @@ export class SaveOperationQueue {
         const result = await clear();
         if (!result.ok) throw result.error;
         this.clearSucceeded = true;
-        this.writesDisabled = false;
+        resumeWrites();
         return true;
       } catch (error) {
         try {

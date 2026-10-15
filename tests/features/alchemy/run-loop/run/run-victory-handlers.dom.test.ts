@@ -12,6 +12,7 @@ import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-lif
 import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import { playGoldGain } from "@/lib/audio";
+import { cardById } from "@/lib/game-data";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { BATTLE_END_TRANSITION_DELAY_MS } from "@/lib/game-constants";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -171,9 +172,13 @@ describe("createRunFlow victory paths", () => {
     expect(readRunProfile(defaultGameSession).materialInventory.wood).toBe(woodBefore + 2);
   });
 
-  it("commits Wildwood reward handoff in the victory command draft", () => {
+  it("waits for pending Wishes before committing the Wildwood reward handoff", () => {
     mutateGameplayForTest((draft) =>
-      setSyncedBattleState(draft, { ...readBattle(defaultGameSession).battleState, enemyHealth: 0 }),
+      setSyncedBattleState(draft, {
+        ...readBattle(defaultGameSession).battleState,
+        enemyHealth: 0,
+        wishOptions: [cardById.slash!],
+      }),
     );
     setRunProgress({
       contentSystemType: CONTENT_SYSTEMS.WILDWOOD,
@@ -193,6 +198,12 @@ describe("createRunFlow victory paths", () => {
       },
     });
     const handlers = createVictoryHandlers(makeFlowHandlerDeps(), defaultGameSession);
+    handlers.commitVictoryResult();
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("battle");
+    expect(readRunSession(defaultGameSession).wildwoodDraft?.phase).toBe("battle");
+    mutateGameplayForTest((draft) =>
+      setSyncedBattleState(draft, { ...readBattle(defaultGameSession).battleState, wishOptions: null }),
+    );
     handlers.commitVictoryResult();
     expect(readRunSession(defaultGameSession).wildwoodDraft?.phase).toBe("reward");
     expect(readRunSession(defaultGameSession).activity.kind).toBe("rewards");

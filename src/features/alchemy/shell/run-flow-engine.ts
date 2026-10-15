@@ -5,20 +5,19 @@ import { createWildwoodGauntletFlow } from "@/features/alchemy/run-loop/run/wild
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import {
-  assertSessionOwnership,
-  bindSessionCapabilities,
-  sessionFeedback,
-} from "@/features/alchemy/shared/stores/session-capabilities";
+import { bindSessionCapabilities, sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { clearRunCardHover } from "./run-card-hover";
 import type { RunFlowEngineDeps } from "./shell-types";
-export function createRunFlowEngine(
-  { navigateTo: rawNavigateTo, resumeTo: rawResumeTo, transition, cancelPending, battle }: RunFlowEngineDeps,
-  outcomes: RunOutcomes,
-  gameSession: GameSession,
-) {
-  assertSessionOwnership(gameSession, outcomes, battle, rawNavigateTo, rawResumeTo, transition, cancelPending);
+export function createRunFlowEngine(input: RunFlowEngineDeps, outcomeInput: RunOutcomes, gameSession: GameSession) {
+  const {
+    navigateTo: rawNavigateTo,
+    resumeTo: rawResumeTo,
+    transition,
+    cancelPending,
+    battle,
+  } = bindSessionCapabilities(gameSession, input);
+  const outcomes = bindSessionCapabilities(gameSession, outcomeInput);
   const clearCardHover = () => clearRunCardHover(gameSession);
   // Universal hover rule (approved): every flow navigation clears card hover
   // unless explicitly opted out. Factories receive the wrapped navigate so

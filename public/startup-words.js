@@ -24,10 +24,8 @@
     const phrase = document.getElementById("startup-splash-phrase");
     if (!phrase) return;
     let index = 0;
-    window.__alchemySplashWordIndex = 0;
     window.__alchemySplashWordTimer = window.setInterval(() => {
       index = (index + 1) % words.length;
-      window.__alchemySplashWordIndex = index;
       phrase.textContent = words[index] + "...";
       phrase.style.animation = "none";
       void phrase.offsetHeight;

@@ -66,8 +66,7 @@ export function getCompanionDescriptionLines(
   bondLevel = 0,
   damageBonus: number | CompanionDamageModifiers = 0,
 ): string[] {
-  const modifiers =
-    typeof damageBonus === "number" ? { damageBonus, bleedDamageBonus: 0, damageMultiplier: 1 } : damageBonus;
+  const modifiers = typeof damageBonus === "number" ? { damageBonus, damageMultiplier: 1 } : damageBonus;
   const effects = getModifiedCompanionEffects(companion, bondLevel, modifiers);
   const lines = effects.map((effect) => {
     const line = companionAction(effect);

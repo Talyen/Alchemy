@@ -1,11 +1,7 @@
 import type { BattleStarted } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-lifecycle";
-import {
-  assertSessionOwnership,
-  bindSessionCapabilities,
-  sessionFeedback,
-} from "@/features/alchemy/shared/stores/session-capabilities";
+import { bindSessionCapabilities, sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import type { Screen, ScreenTransitionOptions } from "@/lib/routing";
 import { createProgressionCommands } from "./progression-commands";
 import { claimRunReward, finishRewardClaim } from "./reward-commands";
@@ -32,16 +28,19 @@ export interface RunOutcomeDeps {
   actions: Pick<RunFlowShellActions, "navigateTo" | "transition" | "clearCardHover">;
 }
 
-export function createRunOutcomes(deps: RunOutcomeDeps, gameSession: GameSession) {
-  assertSessionOwnership(gameSession, deps.actions);
+export function createRunOutcomes(input: RunOutcomeDeps, gameSession: GameSession) {
+  const deps = bindSessionCapabilities(gameSession, input);
   const victory = createVictoryHandlers(deps, gameSession);
   const defeat = createDefeatHandlers(deps, gameSession);
   return bindSessionCapabilities(gameSession, {
     victory,
     defeat,
     connect(actions: RunFlowShellActions) {
-      assertSessionOwnership(gameSession, actions);
-      return composeRunFlow({ actions }, { victory, defeat }, gameSession);
+      return composeRunFlow(
+        { actions: bindSessionCapabilities(gameSession, actions) },
+        { victory, defeat },
+        gameSession,
+      );
     },
   });
 }

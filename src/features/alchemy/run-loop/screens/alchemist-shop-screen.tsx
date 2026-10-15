@@ -21,7 +21,6 @@ export function AlchemistShopScreen({
   mixPrice,
   onMixPotions,
   onStrengthenPotion,
-  potency,
   afterProgressSaved = (feedback) => feedback(),
   isProgressSavePending = () => false,
   ...shelf
@@ -31,7 +30,6 @@ export function AlchemistShopScreen({
   mixPrice: number;
   onMixPotions: (indexA: number, indexB: number) => BattleCard | null;
   onStrengthenPotion: (index: number) => BattleCard | null;
-  potency: number;
   afterProgressSaved?: (feedback: () => void) => void;
 }) {
   const [brewMode, setBrewMode] = useState<"combine" | "strengthen" | null>(null);
@@ -109,7 +107,6 @@ export function AlchemistShopScreen({
             selectionSound="shopSelect"
             price={mixPrice}
             gold={gold}
-            potency={potency}
             isProgressSavePending={isProgressSavePending}
             onConfirm={confirm}
             onBack={() => {

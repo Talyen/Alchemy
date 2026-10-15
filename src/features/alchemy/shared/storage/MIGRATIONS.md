@@ -140,6 +140,13 @@ UIDs, costs, and pile membership together. Summons still leave battle independen
 of Consume; an explicitly added Consume keyword remains a legitimate card edit.
 Reworked Talent manifests rebuild from purchased IDs without replaying any awards.
 
+Unauthored flat Stun, per-card flat healing, Companion Bleed bonuses, extra
+Archery hits, fixed extra Wish choices, Wish Gems/Gold, mixing bonuses, free
+refresh entitlements, starting Gold, victory maximum Health, and unused victory
+Gold bonuses are retired. Current catalogs own the remaining manifest fields;
+normalization drops retired keys and restoration rebuilds current bonuses.
+Modified cards and committed results remain valid; supported versions are unchanged.
+
 ## Run recap tracking
 
 Active runs add `runHistory`, `runHistoryPartial`, and nullable `runGoldEarned` with

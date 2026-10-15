@@ -31,6 +31,26 @@ afterEach(() => {
 });
 
 describe("InteractiveArtTile hover popup", () => {
+  it("announces which Gear reward is selected", () => {
+    const tile = (selected: boolean) => (
+      <InteractiveArtTile
+        id="ruby-ring"
+        interactionKey="reward"
+        title="Ruby Ring"
+        art={undefined}
+        className=""
+        imageClassName=""
+        as="button"
+        selected={selected}
+        onClick={() => {}}
+      />
+    );
+    const { rerender } = render(tile(false));
+    expect(screen.getByRole("button", { name: "Ruby Ring", pressed: false })).toBeTruthy();
+    rerender(tile(true));
+    expect(screen.getByRole("button", { name: "Ruby Ring", pressed: true })).toBeTruthy();
+  });
+
   it("allows keyboard inspection of non-actionable reward and Boon tiles", () => {
     render(
       <InteractiveArtTile

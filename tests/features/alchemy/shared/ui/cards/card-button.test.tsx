@@ -20,6 +20,15 @@ const card: BattleCard = {
 describe("BattleCardButton", () => {
   afterEach(cleanup);
 
+  it("removes a hidden card in transit from keyboard navigation until it is revealed", () => {
+    const props = { card, ariaLabel: "In transit", shimmerActive: false, shimmerToken: undefined };
+    const { rerender } = render(<BattleCardButton {...props} dragging />);
+    const hidden = screen.getByRole("button", { name: "In transit", hidden: true });
+    expect(hidden.matches(":disabled") || hidden.closest("[inert]") !== null).toBe(true);
+    rerender(<BattleCardButton {...props} />);
+    expect(screen.getByRole("button", { name: "In transit" }).matches(":disabled")).toBe(false);
+  });
+
   it("limits title shine to the Transmuted or Corrupted prefix", () => {
     const { container, rerender } = render(<CardTitle card={{ title: "Burning Slash", transmuted: "burn" }} />);
     expect(container.textContent).toBe("Burning Slash");
@@ -121,7 +130,7 @@ describe("BattleCardButton", () => {
         comparisonCard={source}
         descriptionContext={{
           companionBondLevels: { wolf: 2 },
-          companionDamageModifiers: { damageBonus: 4, bleedDamageBonus: 0, damageMultiplier: 1 },
+          companionDamageModifiers: { damageBonus: 4, damageMultiplier: 1 },
         }}
         ariaLabel="Result"
         shimmerActive={false}

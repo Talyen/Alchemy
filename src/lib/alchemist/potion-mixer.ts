@@ -30,13 +30,13 @@ function areEffectsEquivalent(a: readonly BattleCardEffect[], b: readonly Battle
   return a.length === b.length && a.every((effect, index) => areBattleCardEffectsEqual(effect, b[index]!));
 }
 
-function scaledAmount(amount: number, multiplier: number, potencyBonus: number): number {
-  // Single rounding point for combat magnitudes; callers may pass fractional bonuses.
-  return Math.round(amount * multiplier + potencyBonus);
+function scaledAmount(amount: number, multiplier: number): number {
+  // Single rounding point for combat magnitudes.
+  return Math.round(amount * multiplier);
 }
 
-function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potencyBonus: number): BattleCardEffect {
-  // Potency changes rewards, never ingredient costs or status durations.
+function scalePotionEffect(effect: BattleCardEffect, multiplier: number): BattleCardEffect {
+  // Doubling changes rewards, never ingredient costs or status durations.
   if (
     effect.kind === "lose-health" ||
     effect.kind === "self-damage" ||
@@ -48,39 +48,39 @@ function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potency
   if (effect.kind === "random-draw" || effect.kind === "random-damage") {
     return {
       ...effect,
-      minAmount: scaledAmount(effect.minAmount, multiplier, potencyBonus),
-      maxAmount: scaledAmount(effect.maxAmount, multiplier, potencyBonus),
+      minAmount: scaledAmount(effect.minAmount, multiplier),
+      maxAmount: scaledAmount(effect.maxAmount, multiplier),
     };
   }
   if ("amount" in effect && typeof effect.amount === "number") {
-    const amount = scaledAmount(effect.amount, multiplier, potencyBonus);
+    const amount = scaledAmount(effect.amount, multiplier);
     if (effect.kind === "damage")
       return {
         ...effect,
         amount,
         ...(effect.amountIfTargetFrozen !== undefined
-          ? { amountIfTargetFrozen: scaledAmount(effect.amountIfTargetFrozen, multiplier, potencyBonus) }
+          ? { amountIfTargetFrozen: scaledAmount(effect.amountIfTargetFrozen, multiplier) }
           : {}),
         ...(effect.blockDamageBonus !== undefined
-          ? { blockDamageBonus: scaledAmount(effect.blockDamageBonus, multiplier, potencyBonus) }
+          ? { blockDamageBonus: scaledAmount(effect.blockDamageBonus, multiplier) }
           : {}),
       };
     if (effect.kind === "player-status" && effect.forgeAmount !== undefined)
-      return { ...effect, amount, forgeAmount: scaledAmount(effect.forgeAmount, multiplier, potencyBonus) };
+      return { ...effect, amount, forgeAmount: scaledAmount(effect.forgeAmount, multiplier) };
     return { ...effect, amount };
   }
-  return mapEffectChildren(effect, (child) => scalePotionEffect(child, multiplier, potencyBonus));
+  return mapEffectChildren(effect, (child) => scalePotionEffect(child, multiplier));
 }
 
-function scaledPotionParts(card: BattleCard, multiplier: number, potencyBonus: number) {
-  const effects = card.effects.map((effect) => scalePotionEffect(effect, multiplier, potencyBonus));
+function scaledPotionParts(card: BattleCard, multiplier: number) {
+  const effects = card.effects.map((effect) => scalePotionEffect(effect, multiplier));
   return {
     effects,
     description: carryCardDescriptionMarks(getCardDescription(card), createEffectDescription(effects)),
   };
 }
 
-function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number): BattleCard | null {
+function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | null {
   if (!cardA || !cardB) {
     throw new Error(MIXED_POTION_ERROR);
   }
@@ -103,9 +103,7 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: 
 
   // Describe ingredients separately: matching prose from different Potions
   // must not collapse into a single effect description.
-  const parts = (sameCard ? [cardA] : [cardA, cardB]).map((card) =>
-    scaledPotionParts(card, sameCard ? 2 : 1, potencyBonus),
-  );
+  const parts = (sameCard ? [cardA] : [cardA, cardB]).map((card) => scaledPotionParts(card, sameCard ? 2 : 1));
   // Reject before a command can spend Gold or replace either ingredient.
   if (parts.some((part) => part.effects.some((effect) => !BattleCardEffectSchema.safeParse(effect).success)))
     return null;
@@ -142,19 +140,15 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: 
   );
 }
 
-export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number = 0): BattleCard {
-  const potion = prepareMixedPotion(cardA, cardB, potencyBonus);
+export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard {
+  const potion = prepareMixedPotion(cardA, cardB);
   if (!potion) throw new Error("Mixed Potion effects exceed supported values");
   return potion;
 }
 
-export function tryCreateMixedPotion(
-  cardA: BattleCard | undefined,
-  cardB: BattleCard | undefined,
-  potencyBonus: number = 0,
-): BattleCard | null {
+export function tryCreateMixedPotion(cardA: BattleCard | undefined, cardB: BattleCard | undefined): BattleCard | null {
   if (!cardA || !cardB) return null;
-  return prepareMixedPotion(cardA, cardB, potencyBonus);
+  return prepareMixedPotion(cardA, cardB);
 }
 
 export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: number, mixed: BattleCard): BattleCard[] {
@@ -165,7 +159,7 @@ export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: numbe
 }
 
 export function doublePotionPotency(card: BattleCard): BattleCard {
-  const { effects, description } = scaledPotionParts(card, 2, 0);
+  const { effects, description } = scaledPotionParts(card, 2);
   const markedDescription = carryCardDescriptionMarks(getCardDescription(card), description);
   for (const tag of card.tags ?? []) markedDescription.push({ parts: [capitalizeWord(tag)], role: "keyword" });
   if (card.consume) markedDescription.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });

@@ -46,10 +46,7 @@ it("binds visibility, clearing, teardown and timer disposal to the owning sessio
     const changed = vi.fn();
     const unsubscribe = second.subscribe(changed);
     await secondSession.dispose();
-    expect(changed).toHaveBeenLastCalledWith(
-      expect.objectContaining({ enemyShaking: false, hiddenHandCardKeys: [] }),
-      expect.anything(),
-    );
+    expect(changed).not.toHaveBeenCalled();
     expect(() => second.getState()).toThrow(/disposed/);
     changed.mockClear();
     await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS + SHAKE_DURATION_MS);

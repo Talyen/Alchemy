@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { createLabyrinthNodeRouting } from "@/features/alchemy/shell/labyrinth-node-routing";
+import { describe, expect, it, vi } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
+import { dispatchRunSessionCommand, acceptCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
 import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
@@ -122,4 +125,48 @@ describe("session capability composition", () => {
       await session.dispose();
     }
   });
+});
+
+it("captures validated outcome dependencies so later replacement cannot mutate another career", async () => {
+  const a = createGameSession();
+  const b = createGameSession();
+  const navigateTo = () => {};
+  const actions = { ...shellActions, navigateTo };
+  const deps = { actions };
+  const outcomes = createRunOutcomes(deps, a);
+  const foreign = bindSessionCapabilities(b, {
+    navigateTo: () => dispatchRunSessionCommand((tx) => acceptCommand(setGold(tx, 999)), undefined, b),
+  });
+  const before = readGameplayState(b);
+  try {
+    actions.navigateTo = foreign.navigateTo;
+    deps.actions = { ...shellActions, navigateTo: foreign.navigateTo };
+    outcomes.victory.completeRunVictory();
+    expect(readGameplayState(b)).toBe(before);
+  } finally {
+    await Promise.all([a.dispose(), b.dispose()]);
+  }
+});
+
+it("captures nested Labyrinth commands before a caller can replace them with another career's commands", async () => {
+  const a = createGameSession();
+  const b = createGameSession();
+  const enterSelectedNode = vi.fn(() => null);
+  const labyrinth = { enterSelectedNode };
+  const routing = createLabyrinthNodeRouting({ labyrinth, navigateTo: () => {}, presentBattleStart: () => {} }, a);
+  const foreign = bindSessionCapabilities(b, {
+    enterSelectedNode: () => {
+      dispatchRunSessionCommand((tx) => acceptCommand(setGold(tx, 999)), undefined, b);
+      return null;
+    },
+  });
+  const before = readGameplayState(b);
+  try {
+    labyrinth.enterSelectedNode = vi.fn(foreign.enterSelectedNode);
+    expect(routing.handleLabyrinthNodeEnter()).toBe(false);
+    expect(readGameplayState(b)).toBe(before);
+    expect(enterSelectedNode).toHaveBeenCalledOnce();
+  } finally {
+    await Promise.all([a.dispose(), b.dispose()]);
+  }
 });

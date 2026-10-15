@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { dealDamage, makeTestCard, patchBattleState, regressionBattle } from "../../fixtures/battle";
 import { getEnemyDamageMultiplier } from "@/lib/battle/status-helpers";
-import { buildWishOptions } from "@/lib/battle/wish";
+import { upgradeWishCard } from "@/lib/battle/wish-upgrade";
 import { computeCardPayment } from "@/lib/battle/card-cost-rules";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
@@ -60,10 +60,7 @@ describe("player-facing combat regressions", () => {
 
   it("upgrades both immediate hits of Ray of Frost from Powerful Wish without mutating the library", () => {
     const original = libraryCard("ray-of-frost");
-    const state = patchBattleState({ talentEffects: { wishCardsUpgraded: true, wishExtraChoices: library.length } });
-    const upgraded = buildWishOptions(state, makeTestCard({ id: "wish-source" })).find(
-      (card) => card.id === original.id,
-    );
+    const upgraded = upgradeWishCard(original);
     expect(upgraded?.descriptionLines).toEqual(["Deal 2 Freeze damage twice"]);
     expect(upgraded?.effects).toEqual([
       { kind: "damage", damageType: "freeze", amount: 2 },

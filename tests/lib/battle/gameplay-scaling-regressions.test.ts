@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cardById } from "@/lib/game-data";
-import { buildWishOptions } from "@/lib/battle/wish";
+import { upgradeWishCard } from "@/lib/battle/wish-upgrade";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { processArcheryEchoes } from "@/lib/battle/unique-card-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle/status-ticks";
@@ -11,21 +11,14 @@ import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("gameplay scaling regressions", () => {
   it("Powerful Wish improves Blood Offering without increasing its Health cost", () => {
-    const offers = buildWishOptions(
-      patchBattleState({
-        talentEffects: { wishCardsUpgraded: true, wishExtraChoices: 200 },
-        rng: () => 0.99,
-      }),
-      undefined,
-    );
-    const offering = offers.find((card) => card.id === "blood-offering");
+    const offering = upgradeWishCard(cardById["blood-offering"]!);
     expect(offering?.effects).toEqual([
       { kind: "lose-health", amount: 1 },
       { kind: "draw-cards", amount: 3 },
       { kind: "restore-mana", amount: 2 },
     ]);
-    expect(offers.find((card) => card.id === "exorcism")?.effects[0]).toEqual(cardById.exorcism!.effects[0]);
-    expect(offers.find((card) => card.id === "cauterize")?.effects).toEqual(cardById.cauterize!.effects);
+    expect(upgradeWishCard(cardById.exorcism!)?.effects[0]).toEqual(cardById.exorcism!.effects[0]);
+    expect(upgradeWishCard(cardById.cauterize!)?.effects).toEqual(cardById.cauterize!.effects);
   });
 
   it("Aetherward protects typed self-damage while Health costs still apply", () => {

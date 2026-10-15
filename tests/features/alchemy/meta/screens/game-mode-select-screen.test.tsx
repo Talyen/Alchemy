@@ -41,6 +41,15 @@ describe("GameModeSelectScreen", () => {
     expect(onSelectWildwood).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps a mode description visible while keyboard focus remains after the pointer leaves", () => {
+    render(<GameModeSelectScreen {...defaultProps} />);
+    const mode = screen.getByRole("button", { name: "The Campaign" });
+    fireEvent.focus(mode);
+    fireEvent.mouseEnter(mode);
+    fireEvent.mouseLeave(mode);
+    expect(screen.getByRole("tooltip").textContent).toContain("The Campaign");
+  });
+
   it("locks modes when unlock prerequisites are not met", () => {
     render(<GameModeSelectScreen {...defaultProps} finishedRunCharacters={[]} />);
 

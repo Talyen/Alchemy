@@ -32,17 +32,22 @@ function operationInput(arg: unknown): unknown {
     );
 }
 
+/** Operation failures invalidate the enclosing command, even when its caller catches them. */
+export function executeTransactionOperation<Result>(
+  transaction: RunTransaction,
+  execute: (draft: GameplayDraft) => Result,
+): Result {
+  const draft = transactionDraft(transaction);
+  try {
+    return execute(draft);
+  } catch (error) {
+    return abortGameplayCommand(draft, error);
+  }
+}
+
 export function transactionOperation<Args extends unknown[], Result>(
   mutate: (draft: GameplayDraft, ...args: Args) => Result,
 ): (transaction: RunTransaction, ...args: { [K in keyof Args]: OperationInput<Args[K]> }) => Result {
-  return (transaction, ...args) => {
-    const draft = transactionDraft(transaction);
-    try {
-      return mutate(draft, ...(args.map(operationInput) as Args));
-    } catch (error) {
-      // Operations may already have consumed RNG or written coupled fields.
-      // Catching their failure cannot turn that partial draft into a commit.
-      abortGameplayCommand(draft, error);
-    }
-  };
+  return (transaction, ...args) =>
+    executeTransactionOperation(transaction, (draft) => mutate(draft, ...(args.map(operationInput) as Args)));
 }

@@ -146,17 +146,16 @@ describe("selective feedback rewards", () => {
     expect(result.playerStatuses.forge).toBe(roll < 0.25 ? 4 : 0);
   });
 
-  it("Gold conversion rewards keep defensive gates while Forge can reward successive Gold gains", () => {
+  it("The Golden Crucible rewards successive Gold gains", () => {
     const state = battle({
       rng: () => 0,
-      talentEffects: { blockPerGold: 0.25 },
       gearEffects: { goldGrantsForgeAndHoly: 1 },
     });
     const first = addGoldWithCombatText(state, 4, []);
-    expect(first.playerStatuses).toMatchObject({ block: 1, forge: 1 });
+    expect(first.playerStatuses).toMatchObject({ block: 0, forge: 1 });
     const texts: CombatTextEvent[] = [];
     const second = addGoldWithCombatText(first, 4, texts);
-    expect(second.playerStatuses).toMatchObject({ block: 1, forge: 2 });
+    expect(second.playerStatuses).toMatchObject({ block: 0, forge: 2 });
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 1 });
   });
 

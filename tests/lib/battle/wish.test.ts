@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { applyEmergencyWish, buildWishOptions, applyWishEffect, chooseWishCard } from "@/lib/battle/wish";
-import { shouldConvertGemsWishToGold } from "@/lib/content-systems/battle-content";
-import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { seededRng } from "../../fixtures/rng";
 import { patchBattleState } from "../../fixtures/battle";
@@ -371,78 +369,6 @@ describe("new wish talents", () => {
     });
   });
 
-  it("wishGemsGold grants gold on success roll", () => {
-    const card = makeTestCard({ id: "strike", title: "Strike" });
-    const state = patchBattleState({
-      talentEffects: { wishGemsGold: 5 },
-      rng: () => 0.01,
-    });
-    const result = applyWishEffect(state, card, 1, []);
-    expect(result.gold).toBe(5);
-  });
-
-  it("wishGemsGold grants gems on failed roll", () => {
-    const card = makeTestCard({ id: "strike", title: "Strike" });
-    const state = patchBattleState({
-      talentEffects: { wishGemsGold: 5 },
-      rng: () => 0.99,
-    });
-    const result = applyWishEffect(state, card, 1, []);
-    expect(result.pendingMaterials.gems).toBe(5);
-  });
-
-  it("wishGemsGold grants gold instead of gems in wildwood (no silent drop)", () => {
-    const card = makeTestCard({ id: "strike", title: "Strike" });
-    const state = patchBattleState({
-      talentEffects: { wishGemsGold: 5 },
-      rng: () => 0.99,
-      contentSystemType: "wildwood",
-    });
-    const result = applyWishEffect(state, card, 1, []);
-    expect(result.pendingMaterials.gems).toBe(0);
-    expect(result.gold).toBe(5);
-  });
-
-  it("wishGemsGold gold text matches the scaled run-gold delta in wildwood", () => {
-    const card = makeTestCard({ id: "strike", title: "Strike" });
-    const state = patchBattleState({
-      talentEffects: { wishGemsGold: 5 },
-      gearEffects: { goldGainPercent: 50 },
-      rng: () => 0.99,
-      contentSystemType: "wildwood",
-    });
-    const texts: CombatTextEvent[] = [];
-    const result = applyWishEffect(state, card, 1, texts);
-    expect(result.gold).toBe(8);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 8 });
-  });
-
-  it.each([1, 2, 3, 4])("applies tier %i find bonuses once to direct Wish Gems/Gold and their combat text", (tier) => {
-    const card = makeTestCard();
-    const texts: CombatTextEvent[] = [];
-    const gemState = patchBattleState({
-      talentEffects: { wishGemsGold: 10, gemFindBonus: tier * 0.1 },
-      rng: () => 0.99,
-    });
-    const gems = applyWishEffect(gemState, card, 1, texts);
-    expect(gems.pendingMaterials.gems).toBe(10 + tier);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gems", amount: 10 + tier });
-    const goldState = patchBattleState({
-      contentSystemType: "wildwood",
-      gold: 50,
-      rng: () => 0.99,
-      talentEffects: { wishGemsGold: 10, goldFindBonus: tier * 0.1, goldOnWish: 3 },
-    });
-    const goldTexts: CombatTextEvent[] = [];
-    const gold = applyWishEffect(goldState, card, 1, goldTexts);
-    expect(gold.gold).toBe(63 + tier);
-    expect(
-      goldTexts
-        .filter((event) => event.stat === "gold")
-        .reduce((sum, event) => sum + ("amount" in event ? event.amount : 0), 0),
-    ).toBe(13 + tier);
-  });
-
   it("Wish gear grants Mana only from zero and triggers Arcane Mending", () => {
     const state = patchBattleState({
       mana: 0,
@@ -467,10 +393,4 @@ describe("new wish talents", () => {
     const result = applyWishEffect(state, card, 1, []);
     expect(result.enemyHealth).toBe(27);
   });
-});
-
-it("battle content helpers converts gems wish to gold exclusively in Wildwood", () => {
-  expect(shouldConvertGemsWishToGold(CONTENT_SYSTEMS.WILDWOOD)).toBe(true);
-  expect(shouldConvertGemsWishToGold(CONTENT_SYSTEMS.CAMPAIGN)).toBe(false);
-  expect(shouldConvertGemsWishToGold(CONTENT_SYSTEMS.LABYRINTH)).toBe(false);
 });

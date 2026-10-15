@@ -116,7 +116,7 @@ Create a single game inventory icon. Square composition, genuinely transparent b
 
 1. Put the raw master in the local Asset Library and use a library-relative source reference.
 2. Register source, target, width, and quality in the topical manifest under
-   `scripts/assets/` (`core`, `content`, `card`, or `talent`) using presets from `scripts/assets/asset-constants.mjs` (`WIDTH`/`QUALITY`). Talent portraits belong in `talent-assets.mjs`.
+   `scripts/assets/` (`core`, `content`, `card`, or `talent`) using presets from `scripts/assets/asset-constants.mjs` (`ART_PRESETS`). Talent portraits belong in `talent-assets.mjs`.
 3. Run `npm run assets:optimize:art` followed by `npm run sync:art` for
    art-only iteration, or `node scripts/assets.mjs --prepare` for optimization
    and generated-output synchronization together.
@@ -316,8 +316,8 @@ changing them. Unreadable selected sources fail before processing; their diagnos
 
 Three authoring shapes coexist by design:
 
-- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Core and content manifests use `artGroup()` from `scripts/assets/art-group.mjs` to share a folder relative to `2d Assets/Game Sources`, an `ART_PRESETS` entry, and optional transparency requirements across explicit `[sourceFilename, targetFilename]` pairs. Nested source paths are allowed; targets remain explicit basenames. Adding files to the library never adds selections. Every target is explicitly registered and validated for duplicate targets and export names; shared sources may produce distinct targets. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/assets/asset-constants.mjs`.
-- **Explicit Gear and Music selections** — `scripts/assets/gear-assets.mjs` and `music-assets.mjs` select sources and stable targets. Adding files to Asset Library does not change a game's inventory. Every output directory is fully managed; unregistered outputs are swept only after successful preparation. All current sound masters live in Asset Library; OGG masters are copied unchanged and receive MP3 fallbacks.
+- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Art manifests use `artGroup()` from `scripts/assets/art-group.mjs` to share a folder relative to `2d Assets/Game Sources`, an `ART_PRESETS` entry, and optional transparency requirements across explicit `[sourceFilename, targetFilename, optionalPresetOverride]` rows. Nested source paths are allowed; targets remain explicit basenames. Adding files to the library never adds selections. Every target is explicitly registered and validated for duplicate targets and export names; shared sources may produce distinct targets. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/assets/asset-constants.mjs`.
+- **Explicit Gear and Music selections** — `scripts/assets/gear-assets.mjs` expands each selected item into Basic and Astral art using the canonical Gear filename owner. Music and sound manifests use `assetGroup()` from `scripts/assets/asset-group.mjs`: string selections retain source basenames (sounds use `.ogg`), while tuples pin renamed targets. `artGroup()` uses that same expansion with art presets. Selections never scan directories. Adding files to Asset Library does not change a game's inventory. Every output directory is fully managed; unregistered outputs are swept only after successful preparation. All current sound masters live in Asset Library; OGG masters are copied unchanged and receive MP3 fallbacks.
 
 - **Sound manifest** — `scripts/assets/sound-assets.mjs` lists `generatedSoundAssets` (WAV→OGG with loudnorm) plus the legacy `curatedSoundFiles` fallback (currently empty; all production masters are external). The optimizer owns `public/sounds/` and tags each hash manifest entry with `owner: generated|curated`.
 

@@ -1,15 +1,14 @@
 import { expect, it } from "vitest";
 import { companionLibrary, getCompanionDescriptionLines } from "@/lib/game-data";
 
-it("describes pooled damage after applying Bond and typed modifiers once", () => {
+it("describes pooled damage after applying Bond and damage modifiers once", () => {
   const original = structuredClone(companionLibrary.wolf);
   expect(
     getCompanionDescriptionLines(companionLibrary.wolf, 2, {
       damageBonus: 1,
-      bleedDamageBonus: 1,
       damageMultiplier: 2,
     }),
-  ).toEqual(["Deals 10 Bleed damage or Deals 8 Physical damage each turn"]);
+  ).toEqual(["Deals 8 Bleed or Physical damage each turn"]);
   expect(companionLibrary.wolf).toEqual(original);
 });
 

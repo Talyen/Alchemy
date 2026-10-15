@@ -22,7 +22,7 @@ describe("getEffectiveCardDescriptionLines", () => {
     expect(
       getEffectiveCardDescriptionLines(card, {
         companionBondLevels: { wolf: 2 },
-        companionDamageModifiers: { damageBonus: 4, bleedDamageBonus: 0, damageMultiplier: 1 },
+        companionDamageModifiers: { damageBonus: 4, damageMultiplier: 1 },
       }),
     ).toEqual(["Deals 7 Bleed or Physical damage each turn", "Special rule", "Companion"]);
     expect(getEffectiveCardDescriptionLines({ ...card, descriptionLines: [] })).toEqual([
