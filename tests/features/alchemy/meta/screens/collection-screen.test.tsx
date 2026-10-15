@@ -177,6 +177,12 @@ describe("Game Boards", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Close board inspection" }));
     await waitFor(() => expect(document.activeElement).toBe(locked));
 
+    fireEvent.click(locked);
+    await waitForArtwork();
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.activeElement).toBe(locked);
+
     const owned = screen.getByRole("button", { name: "Inspect Acorn" });
     owned.focus();
     fireEvent.click(owned);
@@ -185,6 +191,26 @@ describe("Game Boards", () => {
     expect(props.onSelectBoard).toHaveBeenCalledExactlyOnceWith({ kind: "board", boardId: "acorn" });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(document.activeElement).toBe(owned);
+  });
+
+  it("lets Use Board reapply the equipped board and closes only after accepted selection", async () => {
+    const props = boardProps({ kind: "board", boardId: "acorn" });
+    props.onSelectBoard.mockReturnValueOnce(false);
+    render(<CollectionScreen {...props} />);
+    await waitForArtwork();
+    const tile = screen.getByRole("button", { name: "Inspect Acorn" });
+    tile.focus();
+    fireEvent.click(tile);
+    await waitForArtwork();
+    const useBoard = screen.getByRole("button", { name: "Use Board" });
+    fireEvent.click(useBoard);
+    expect(props.onSelectBoard).toHaveBeenCalledExactlyOnceWith({ kind: "board", boardId: "acorn" });
+    expect(screen.getByRole("dialog", { name: "Acorn" })).toBeTruthy();
+    fireEvent.click(useBoard);
+    expect(props.onSelectBoard).toHaveBeenCalledTimes(2);
+    expect(props.onSelectBoard).toHaveBeenLastCalledWith({ kind: "board", boardId: "acorn" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.activeElement).toBe(tile);
   });
 
   it("paginates the combined choices without skipping boards and preserves tab page memory", async () => {

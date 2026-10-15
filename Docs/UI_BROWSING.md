@@ -17,12 +17,18 @@ accent.
 None and Random are the first two paginated entries, with their names centered
 inside the artwork area; activating either selects it immediately. Random picks
 only collected boards. Art tiles have no captions or collected count. The active
-choice keeps the shared selection outline. Board names and locked state remain
-in accessible control names; a lock indicator sits inside locked artwork. Locked
-art stays grayscale until hover/focus, with neutral hover Shine Border. Inspection
-shows the board name and native full-color artwork, with Use Board for owned
-boards or the five-room reward requirement for locked boards, and restores focus
-to the originating tile on close.
+choice has no persistent selection border; accessible current state remains.
+Tiles use Collection's 103.5% hover/focus scale and standard 3px gold Shine Border,
+reserving the 1px frame so interaction cannot shift the layout. Board names and
+locked state remain in accessible control names; a lock indicator sits inside
+locked artwork. Locked art stays grayscale until hover/focus.
+
+Inspection fills the game area with full-color artwork, using the same independent
+width/height scaling as battle boards. Use Board sits centered in the lower third
+for owned boards, including the currently equipped board. Successful selection
+closes the preview; a rejected selection keeps it open. Locked previews show the
+five-room reward requirement in that position. The top-right close control and
+Escape dismiss the preview and restore focus to the originating tile.
 
 Options → Display → Browse Boards opens this tab;
 Back returns to Options while preserving its original return target.

@@ -1,18 +1,25 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { endBossPreview } from "@/lib/audio";
-import { Lock } from "lucide-react";
+import { Lock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { boardArt } from "../../../shared/config/game-data-catalog";
 import { boardCatalog, BOARD_REWARD_ROOM_THRESHOLD, type BoardSelection } from "@/lib/boards/catalog";
 import { cn } from "@/lib/utils";
 import type { CollectionTab } from "../../../shared/types";
-import { collectionShellWidthClass, lockedHoverPreviewClass } from "../../../shared/config";
+import {
+  cardInteractiveGlowClass,
+  collectionShellWidthClass,
+  lockedHoverPreviewClass,
+  SHINE_PALETTES,
+} from "../../../shared/config";
 import { useControlledPagination } from "../../../shared/ui/use-pagination";
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import { Surface } from "../../../shared/ui/surface";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
-import { InspectionOverlayShell } from "../../../shared/ui/inspection/inspection-content";
+import { ChromeIconButton } from "../../../shared/ui/chrome-icon-button";
+import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
+import { useDialogFocus } from "../../../shared/ui/use-dialog-focus";
 import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../../shared/ui/layout-components";
 import { CollectionTabs, CollectionPagination } from "./collection-ui";
 import { CollectionContentLayout } from "./collection-content-layout";
@@ -42,7 +49,6 @@ function BoardTile({
       as="button"
       ariaLabel={entry.kind === "board" ? `Inspect ${entry.title}${owned ? "" : " (Locked)"}` : entry.title}
       ariaCurrent={selected ? "true" : undefined}
-      selected={selected}
       shimmerActive={hover.shimmerActive}
       shimmerToken={hover.shimmerToken}
       onMouseEnter={hover.onHoverStart}
@@ -50,8 +56,14 @@ function BoardTile({
       onFocus={hover.onHoverStart}
       onBlur={hover.onHoverEnd}
       onClick={(event) => onActivate(event.currentTarget)}
-      className="group w-full rounded-shell-tooltip border border-border/80 bg-black/30 shadow-md"
-      overlay={hover.isHovered ? <ShineBorder shineColor={[]} borderWidth={2} className="z-20" /> : null}
+      className={cn(
+        "group card-art-frame card-interactive-no-glow w-full rounded-shell-tooltip border border-border/80 bg-black/30 shadow-md outline-none",
+        cardInteractiveGlowClass,
+        hover.isHovered && "card-art-shine",
+      )}
+      overlay={
+        hover.isHovered ? <ShineBorder shineColor={SHINE_PALETTES.gold} borderWidth={3} className="z-20" /> : null
+      }
     >
       <div className="relative aspect-[43/24] w-full">
         {entry.kind === "board" ? (
@@ -78,6 +90,69 @@ function BoardTile({
         )}
       </div>
     </Surface>
+  );
+}
+
+function BoardPreview({
+  board,
+  owned,
+  returnFocusRef,
+  onUseBoard,
+  onClose,
+}: {
+  board: { id: string; title: string };
+  owned: boolean;
+  returnFocusRef: RefObject<HTMLElement | null>;
+  onUseBoard: () => void;
+  onClose: () => void;
+}) {
+  const { panelRef, handleKeyDown } = useDialogFocus(returnFocusRef);
+  return (
+    <ModalOverlayShell
+      open
+      escapeId="board-inspection"
+      testId="board-inspection-overlay"
+      zIndex={85}
+      dim={false}
+      onClose={onClose}
+    >
+      {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- dialog owns keyboard focus containment */}
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={board.title}
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+        className="relative h-full w-full overflow-hidden bg-black"
+      >
+        <img
+          src={boardArt[board.id]?.full}
+          alt={board.title}
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-fill"
+        />
+        <ChromeIconButton
+          className="absolute top-4 right-4 bg-black/70 text-gold-pale"
+          aria-label="Close board inspection"
+          data-dialog-initial-focus
+          onClick={onClose}
+        >
+          <X className="h-5 w-5" />
+        </ChromeIconButton>
+        <div className="absolute inset-x-0 top-2/3 bottom-0 flex items-center justify-center p-5">
+          {owned ? (
+            <Button variant="primary" size="lg" className="min-w-56" onClick={onUseBoard}>
+              Use Board
+            </Button>
+          ) : (
+            <p className="max-w-xl rounded-xl bg-black/70 p-4 text-center text-gold-pale">
+              Finish a run after completing {BOARD_REWARD_ROOM_THRESHOLD} rooms to collect a new board.
+            </p>
+          )}
+        </div>
+      </div>
+    </ModalOverlayShell>
   );
 }
 
@@ -156,39 +231,15 @@ export function BoardsCollection({
         </CollectionContentLayout>
       </ScreenShell>
       {inspected ? (
-        <InspectionOverlayShell
-          open
-          escapeId="board-inspection"
-          testId="board-inspection-overlay"
-          title={inspected.title}
-          closeLabel="Close board inspection"
+        <BoardPreview
+          board={inspected}
+          owned={owned}
           returnFocusRef={returnFocusRef}
           onClose={() => setInspectedId(null)}
-        >
-          <img
-            src={boardArt[inspected.id]?.full}
-            alt={inspected.title}
-            decoding="async"
-            className="max-h-[55vh] w-full rounded-shell-tooltip object-contain"
-          />
-          <div className="mt-4 flex justify-center">
-            {owned ? (
-              <Button
-                variant="primary"
-                disabled={selectedId === inspected.id}
-                onClick={() => {
-                  if (onSelectBoard({ kind: "board", boardId: inspected.id })) setInspectedId(null);
-                }}
-              >
-                {selectedId === inspected.id ? "Selected" : "Use Board"}
-              </Button>
-            ) : (
-              <p className="text-muted-foreground">
-                Finish a run after completing {BOARD_REWARD_ROOM_THRESHOLD} rooms to collect a new board.
-              </p>
-            )}
-          </div>
-        </InspectionOverlayShell>
+          onUseBoard={() => {
+            if (onSelectBoard({ kind: "board", boardId: inspected.id })) setInspectedId(null);
+          }}
+        />
       ) : null}
     </PageLayout>
   );
