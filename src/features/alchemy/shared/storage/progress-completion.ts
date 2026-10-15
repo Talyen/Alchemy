@@ -28,6 +28,9 @@ export class ProgressCompletion {
     () => this.isActive(),
   );
   private completions: Array<() => void> = [];
+  private readyCompletions: Array<{ epoch: number; run: () => void }> = [];
+  private deliveringCompletions = false;
+  private preparingCompletions = 0;
   private retryOwners = new Set<{ retry: () => void }>();
 
   readonly read = (): ProgressSaveState => this.state;
@@ -72,15 +75,16 @@ export class ProgressCompletion {
     if (this.acknowledged >= this.state.revision) {
       const callbacks = this.completions;
       this.completions = [];
-      this.publish({ kind: "idle" });
-      for (const callback of callbacks) {
-        if (token.epoch !== this.epoch) break;
-        try {
-          callback();
-        } catch (error) {
-          logStorageFailure("Saved progress feedback failed", error);
-        }
+      // Reserve the acknowledged batch before idle observers can register more
+      // feedback. Nested saves append to this same delivery queue.
+      this.readyCompletions.push(...callbacks.map((run) => ({ epoch: token.epoch, run })));
+      this.preparingCompletions++;
+      try {
+        this.publish({ kind: "idle" });
+      } finally {
+        this.preparingCompletions--;
       }
+      this.deliverCompletions();
     } else if (token.revision >= this.state.revision) {
       // An unwritten snapshot is never an acknowledgement. Only explicit cancellation
       // can release the gate without showing completion.
@@ -90,18 +94,51 @@ export class ProgressCompletion {
   }
 
   afterSaved(run: () => void) {
-    if (this.state.kind === "idle") run();
-    else this.completions.push(run);
+    if (!this.isActive()) return;
+    if (this.state.kind !== "idle") {
+      this.completions.push(run);
+      return;
+    }
+    this.readyCompletions.push({ epoch: this.epoch, run });
+    this.deliverCompletions();
   }
 
-  retryNow() {
+  retryNow(fallback: () => void) {
     if (this.state.kind !== "failed") return;
+    const token = this.token(this.state.revision);
+    const isCurrent = () =>
+      this.isActive() &&
+      token.epoch === this.epoch &&
+      token.checkpointVersion === this.checkpointVersion &&
+      this.state.kind === "saving" &&
+      this.state.revision === token.revision;
     this.publish({ kind: "saving", revision: this.state.revision });
+    // Notification can restore, cancel, dispose, or start a newer checkpoint.
+    // Its replacement must never be retried under this request's authority.
+    if (!isCurrent()) return;
+    const runFallback = () => {
+      if (!isCurrent()) return;
+      try {
+        fallback();
+      } catch (error) {
+        this.complete(token, "failed");
+        logStorageFailure("Progress save retry failed", error);
+      }
+    };
     // Prefer the most recently attached driver, falling back when it detaches.
     // Select after notification, which can itself release a driver.
     let current: { retry: () => void } | undefined;
     for (const owner of this.retryOwners) current = owner;
-    current?.retry();
+    if (!current) {
+      runFallback();
+      return;
+    }
+    try {
+      current.retry();
+    } catch (error) {
+      logStorageFailure("Progress save retry driver failed", error);
+      runFallback();
+    }
   }
 
   cancel() {
@@ -120,6 +157,25 @@ export class ProgressCompletion {
     this.epoch++;
     this.acknowledged = -1;
     this.completions = [];
+    this.readyCompletions = [];
+  }
+
+  private deliverCompletions() {
+    if (this.deliveringCompletions || this.preparingCompletions) return;
+    this.deliveringCompletions = true;
+    try {
+      while (this.readyCompletions.length && this.isActive()) {
+        const completion = this.readyCompletions.shift()!;
+        if (completion.epoch !== this.epoch) continue;
+        try {
+          completion.run();
+        } catch (error) {
+          logStorageFailure("Saved progress feedback failed", error);
+        }
+      }
+    } finally {
+      this.deliveringCompletions = false;
+    }
   }
 
   private publish(state: ProgressSaveState, restored = false) {
