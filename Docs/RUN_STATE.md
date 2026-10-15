@@ -75,7 +75,10 @@ or command completion effects. Subscription changes during gameplay notification
 apply to the next publication. `notification-channel.ts` owns synchronous FIFO
 delivery for gameplay, settings, progress, save status, cancellation, and lifecycle
 channels. Each publication captures its listeners; observer-triggered publications
-wait until the current event reaches every observer. Listener failures are isolated
+wait until the current event reaches every observer. Session-owned channels check
+their lifetime before each callback: disposal stops the remaining captured
+listeners and queued publications immediately. Ordinary unsubscribe retains the
+current publication's listener snapshot. Listener failures are isolated
 through the channel owner's diagnostic handler. Execution failures still roll back; explicit
 `afterCommit` failures still propagate after the committed state is retained.
 
@@ -277,6 +280,11 @@ and borrowed store methods, detaches progress subscriptions, and cancels every
 registered timer before draining submitted saves. A timer callback already handed
 to the host checks lifetime again before executing. Timer cancellation and
 subscription release remain safe after disposal; new reads and work reject.
+Gameplay, settings, progress, save-status, and lifecycle notification channels
+borrow the same lifetime predicate. Disposal during notification revokes later
+callbacks in that publication as well as queued reentrant events. Restore and
+teardown also stop their remaining presentation work once their session closes;
+already-submitted storage work still drains.
 
 ## Activity and rewards
 

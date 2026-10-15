@@ -38,7 +38,7 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     { generateRunSeed: generateRandomRunSeed, cosmeticRandom: () => Math.random(), createInstanceId },
     options.runtimeInputs,
   );
-  const settings = createSettingsStore();
+  const settings = createSettingsStore(lifetime.isActive);
   const feedback = isolateSessionFeedback(
     bindRuntimeMethods<SessionFeedback>(
       {
@@ -57,10 +57,10 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
       options.feedback,
     ),
   );
-  const gameplay = createGameplayStore(generateRunSeed);
-  const progressCompletion = new ProgressCompletion();
-  const lifecycle = createRunLifecycleEffects(feedback);
-  const io = createSaveIo(options.saveBackend, sourceClock.now, allowPlatformStorage);
+  const gameplay = createGameplayStore(generateRunSeed, lifetime.isActive);
+  const progressCompletion = new ProgressCompletion(lifetime.isActive);
+  const lifecycle = createRunLifecycleEffects(feedback, lifetime.isActive);
+  const io = createSaveIo(options.saveBackend, sourceClock.now, allowPlatformStorage, lifetime.isActive);
   // Storage invalidation is a session event, independent of autosave clients.
   lifetime.track(io.subscribeSaveCancellation(() => progressCompletion.cancel()));
   // Restore publication installs both stores before this event, and notifies
