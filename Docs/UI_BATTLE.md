@@ -98,7 +98,11 @@ incoming action's actual events, never accumulated display totals. Resource
 payments and removals do not invent damage impacts.
 
 Critical damage uses ordinary typed damage text, retaining its damage color and
-icon. Critical remains in the accessible label and uses the existing sound cue.
+icon. A pale flash fades over 140 ms and a gold glow fades over 480 ms, without
+changing font size, weight, or angle. Reduced/disabled motion uses a steady gold
+glow for the entry's ordinary lifetime. Critical remains in the accessible label
+and uses the existing sound cue. Merging into an already critical entry does not
+restart the pulse or extend the entry's lifetime.
 
 Each action appears immediately above card flights, anchored to its moving portrait.
 Measured layout moves earlier bursts upward without changing their values or
@@ -112,7 +116,9 @@ Preserve text and icon sizing, portrait-relative placement, and static dark outl
 and shadows for contrast against artwork. Exact geometry, typography, and animation
 curves live in [combat text](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx);
 lifetimes and limits live in [motion constants](../src/lib/game-constants/ui-motion.ts).
-Do not duplicate outline elements or animate shadows. Implementation and playback
+Do not duplicate outline elements; ordinary dark shadows stay static. Only the
+brief critical gold glow fades, through its bounded filter animation in
+[battle styles](../src/styles/battle-scene.css). Implementation and playback
 ordering follow [the battle workflow](./WORKFLOWS.md#change-battle-playback).
 
 Divine Intervention opens or queues an ordinary Wish under the [Talent rules](./TALENT_RULES.md#wishes-and-mana), using the existing [Wish interaction](./UI_BROWSING.md#rewards-and-wishes).

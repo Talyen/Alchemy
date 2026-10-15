@@ -42,7 +42,7 @@ describe("CombatTextRail", () => {
     },
   );
 
-  it("keeps critical and ordinary damage visually consistent with an accessible critical description", () => {
+  it("adds critical glow without changing damage text, typography, or accessible meaning", () => {
     const burst: CombatTextBurst = {
       id: "critical-hit",
       target: "enemy",
@@ -59,7 +59,9 @@ describe("CombatTextRail", () => {
     expect(entries[0]?.getAttribute("aria-label")).toBe("Critical Stun: -22");
     expect(entries[1]?.textContent).toBe("-10");
     expect(entries[1]?.getAttribute("aria-label")).toBe("Stun: -10");
-    expect(entries[0]?.className).toBe(entries[1]?.className);
+    expect(entries[0]?.className).toContain("combat-text-critical");
+    expect(entries[1]?.className).not.toContain("combat-text-critical");
+    expect(entries[0]?.className.replace(" combat-text-critical", "")).toBe(entries[1]?.className);
   });
 
   it("keeps existing action nodes and typed numbers when a new action appears", () => {

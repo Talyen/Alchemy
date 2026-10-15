@@ -238,3 +238,37 @@
   outline: 2px solid var(--color-gold-pale);
   outline-offset: calc(0.65 * var(--content-rem, 1rem) + 3px);
 }
+
+.combat-text-critical {
+  animation:
+    combat-text-critical-flash 140ms ease-out,
+    combat-text-critical-glow 480ms ease-out;
+}
+
+@keyframes combat-text-critical-flash {
+  from {
+    color: var(--color-gold-pale);
+  }
+}
+
+@keyframes combat-text-critical-glow {
+  from {
+    filter: drop-shadow(0 0 8px var(--color-gold-light));
+  }
+  to {
+    filter: drop-shadow(0 0 8px transparent);
+  }
+}
+
+.combat-text-critical-static,
+html.alchemy-disable-animations .combat-text-critical {
+  animation: none;
+  filter: drop-shadow(0 0 8px var(--color-gold-light));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .combat-text-critical {
+    animation: none;
+    filter: drop-shadow(0 0 8px var(--color-gold-light));
+  }
+}

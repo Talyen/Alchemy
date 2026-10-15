@@ -145,7 +145,7 @@ export function CombatTextRail({ bursts }: { bursts: CombatTextBurst[] }) {
                 animate={staticMotion ? { opacity: 1, scale: 1, y: 0 } : FCT_ANIMATION_PROPS.animate}
               >
                 {burst.entries.map((entry) => (
-                  <CombatTextEntry key={entry.id} entry={entry} />
+                  <CombatTextEntry key={entry.id} entry={entry} staticMotion={staticMotion} />
                 ))}
               </motion.div>
             </motion.div>
@@ -156,7 +156,7 @@ export function CombatTextRail({ bursts }: { bursts: CombatTextBurst[] }) {
   );
 }
 
-function CombatTextEntry({ entry }: { entry: FloatingCombatText }) {
+function CombatTextEntry({ entry, staticMotion }: { entry: FloatingCombatText; staticMotion: boolean }) {
   const icon = getCombatTextIcon(entry);
   const leading = getCombatTextLeadingIcon(entry);
   return (
@@ -169,6 +169,9 @@ function CombatTextEntry({ entry }: { entry: FloatingCombatText }) {
         "inline-flex items-center justify-center gap-1.5 whitespace-nowrap",
         entry.kind === "notice" && "col-span-full",
         getCombatTextColorClass(entry),
+        entry.kind === "damage" &&
+          entry.critical &&
+          (staticMotion ? "combat-text-critical-static" : "combat-text-critical"),
       )}
     >
       {leading
