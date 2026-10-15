@@ -171,6 +171,9 @@ function CombatTextEntry({ entry }: { entry: FloatingCombatText }) {
         getCombatTextColorClass(entry),
       )}
     >
+      {entry.kind === "damage" && entry.critical ? (
+        <span className="mr-1 text-[0.5em] font-semibold tracking-normal">Critical</span>
+      ) : null}
       {leading
         ? createElement(leading, {
             "aria-hidden": true,

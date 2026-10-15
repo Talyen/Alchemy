@@ -1,3 +1,4 @@
+import { campaignActLabel } from "@/lib/campaign-act";
 import { useEffect, useMemo } from "react";
 
 import { playBattleEvent, playUISound } from "@/lib/audio";
@@ -51,7 +52,8 @@ export function DestinationScreen({
 
   return (
     <TitledScreenShell title={title} maxWidthClass={bossOnly ? "max-w-3xl" : chooserRowShellWidthClass}>
-      <div className="mt-6 flex flex-col justify-center">
+      <div className="mt-6 flex flex-col justify-center gap-4">
+        {!bossOnly && <p className="text-center text-lg text-muted-foreground">{campaignActLabel(currentAct)}</p>}
         <DestinationChoices
           destinationOptions={destinationOptions}
           currentAct={currentAct}

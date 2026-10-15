@@ -354,3 +354,13 @@ does not grant Leech. Structured description magnitudes retain `distilled` marks
 through hydration and mixing so upgraded values remain green. These compatible
 additions use safe defaults without a schema bump; incompatible changes still
 follow the [supported baseline](#supported-baseline).
+
+## Starter Homestead grant
+
+`starterHomesteadGrantResolved` is an additive permanent run-profile boolean.
+New careers start false. Missing or malformed values recover as true when any
+valid Homestead tier or Companion Bond is purchased, otherwise false. Valid
+saved booleans survive unchanged. Claiming the first Campaign Act I boss reward
+resolves the receipt atomically with any material top-up. A successful Homestead
+purchase also resolves it. Homestead reset preserves it; Clear Save Data resets
+it. No schema-version increment or supported payload transformation is required.

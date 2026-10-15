@@ -14,6 +14,21 @@ describe("SaveDataSchema", () => {
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
   });
 
+  it.each([
+    { fields: {}, resolved: false },
+    { fields: { constructedBuildings: { "wishing-well": 1 } }, resolved: true },
+    { fields: { plantedFarms: { pasture: 1 } }, resolved: true },
+    { fields: { completedResearch: { "leyline-energy": 1 } }, resolved: true },
+    { fields: { bondedCompanions: { wolf: 1 } }, resolved: true },
+    { fields: { starterHomesteadGrantResolved: true }, resolved: true },
+    { fields: { starterHomesteadGrantResolved: false }, resolved: false },
+    { fields: { starterHomesteadGrantResolved: "false", constructedBuildings: { "wishing-well": 1 } }, resolved: true },
+  ])("recovers the starter grant receipt from $fields", ({ fields, resolved }) => {
+    const parsed = SaveDataSchema.parse(fields);
+    expect(parsed.starterHomesteadGrantResolved).toBe(resolved);
+    expect(SaveDataSchema.parse(JSON.parse(JSON.stringify(parsed))).starterHomesteadGrantResolved).toBe(resolved);
+  });
+
   it("recovers the shared purse from a foreground combat snapshot", () => {
     const result = SaveDataSchema.safeParse({
       gold: 0,

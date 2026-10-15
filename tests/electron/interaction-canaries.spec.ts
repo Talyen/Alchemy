@@ -136,8 +136,8 @@ test(
         runMaxHealth: 30,
         activity: savedActivityFixture("campfire"),
       });
-      await page.getByRole("button", { name: "Rest", exact: true }).click({ clickCount: 2 });
-      await expect(page.getByRole("button", { name: "Rest", exact: true })).toHaveCount(0);
+      await page.getByRole("button", { name: /^Rest \(\+\d+ Health\)$/ }).click({ clickCount: 2 });
+      await expect(page.getByRole("button", { name: /^Rest \(\+\d+ Health\)$/ })).toHaveCount(0);
       const profile = await app.evaluate(({ app: host }) => host.getPath("userData"));
       await expect.poll(() => readSave(profile)?.activeRun?.runPlayerHealth).toBeGreaterThan(10);
       const restoredHealth = readSave(profile)?.activeRun?.runPlayerHealth;

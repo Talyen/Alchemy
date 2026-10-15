@@ -42,6 +42,26 @@ describe("CombatTextRail", () => {
     },
   );
 
+  it("distinguishes Critical damage visibly and accessibly without changing typed damage color", () => {
+    const burst: CombatTextBurst = {
+      id: "critical-hit",
+      target: "enemy",
+      lifetimeMs: 1100,
+      firstShownAt: 0,
+      entries: [
+        { id: "crit", target: "enemy", kind: "damage", stat: "stun", amount: 22, critical: true, displayText: "-22" },
+        { id: "ordinary", target: "enemy", kind: "damage", stat: "stun", amount: 10, displayText: "-10" },
+      ],
+    };
+    const { container } = render(<CombatTextRail bursts={[burst]} />);
+    const entries = container.querySelectorAll('[data-testid="combat-text"]');
+    expect(entries[0]?.textContent).toBe("Critical-22");
+    expect(entries[0]?.getAttribute("aria-label")).toBe("Critical Stun: -22");
+    expect(entries[1]?.textContent).toBe("-10");
+    expect(entries[1]?.getAttribute("aria-label")).toBe("Stun: -10");
+    expect(entries[0]?.className).toBe(entries[1]?.className);
+  });
+
   it("keeps existing action nodes and typed numbers when a new action appears", () => {
     const damage: CombatTextBurst = {
       id: "first",

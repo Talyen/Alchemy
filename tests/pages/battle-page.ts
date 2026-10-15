@@ -24,7 +24,7 @@ export class BattlePage {
     this.playerHealthPanel = this.page.getByTestId("player-health");
     this.enemyHealthPanel = this.page.getByTestId("enemy-health");
     this.endTurnBtn = this.page.locator("[data-battle-end-turn]");
-    this.victoryHeading = this.page.getByRole("heading", { name: /^Victory/ });
+    this.victoryHeading = this.page.getByRole("heading", { name: /^(?:Victory|Act (?:I|II|III) Cleared)$/ });
     this.defeatHeading = this.page.getByRole("heading", { name: "Journey’s End" });
     this.blockChip = this.page.getByRole("button", { name: /^Block \d+$/ }).first();
     this.menuBtn = this.page.getByRole("button", { name: "Open game menu", exact: true });

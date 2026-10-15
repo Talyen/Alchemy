@@ -1,3 +1,4 @@
+import { projectCampaignReward } from "@/features/alchemy/shared/stores/campaign-reward";
 import { applyAlchemistPotion } from "./alchemist-reward";
 import { canOfferWildwoodRemoval, enterWildwoodRemoval } from "@/lib/content-systems/wildwood/gauntlet";
 import { flushSaveAfterRunEnd } from "@/features/alchemy/shared/stores/run-lifecycle";
@@ -24,6 +25,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   awardMaterialsDuringRun,
+  resolveStarterHomesteadGrant,
   initializeBattle,
   settleRunVictory,
   setWildwoodDraft,
@@ -85,8 +87,13 @@ export function claimRunReward(choiceId: string | null, gameSession: GameSession
           ),
         ),
       );
+      const campaignReward = projectCampaignReward(draft);
       const result = finalizeRewardState({
-        rewardState: { ...snapshotTransactionValue(session.rewardFlow.state), selectedId: choiceId },
+        rewardState: {
+          ...snapshotTransactionValue(session.rewardFlow.state),
+          materials: campaignReward.materials,
+          selectedId: choiceId,
+        },
         companionRewardCards: session.rewardFlow.companionCards
           ? snapshotTransactionValue(session.rewardFlow.companionCards)
           : null,
@@ -94,6 +101,7 @@ export function claimRunReward(choiceId: string | null, gameSession: GameSession
 
       const isWildwood = contentSystemType === CONTENT_SYSTEMS.WILDWOOD;
       awardMaterialsDuringRun(draft, result.materials);
+      if (campaignReward.resolvesStarterGrant) resolveStarterHomesteadGrant(draft);
 
       if (result.selectedReward) {
         applyRewardSelection({

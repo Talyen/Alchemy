@@ -52,6 +52,7 @@ export function currentSchemaCampaignSave() {
       activity: savedActivityFixture("destination"),
     },
     materialInventory: { wood: 4, iron: 2 },
+    starterHomesteadGrantResolved: true,
     constructedBuildings: { "blacksmiths-forge": 1 },
     plantedFarms: { pasture: 1 },
     completedResearch: { "leyline-energy": 1 },

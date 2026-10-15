@@ -7,6 +7,7 @@ import {
   normalizeBoardSave,
 } from "./board-schemas";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { hasHomesteadPurchases } from "@/lib/homestead/purchases";
 import { companionTierItems } from "@/lib/homestead/companions";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 import {
@@ -154,6 +155,7 @@ const SaveDataObjectSchema = z
     activeRun: ActiveRunDataSchema.nullable().catch(null),
     gold: z.number().int().nonnegative().catch(0),
     materialInventory: MaterialInventorySchema.catch(() => ({ ...MATERIAL_ZERO_INVENTORY })),
+    starterHomesteadGrantResolved: z.boolean().optional().catch(undefined),
     craftingCurrencies: CraftingCurrencyInventorySchema.catch(() => ({ ...CRAFTING_CURRENCY_ZERO_INVENTORY })),
     constructedBuildings: createTierRecordSchema(buildings).catch(() => createEmptyTierRecord(buildings)),
     plantedFarms: createTierRecordSchema(farmPlots).catch(() => createEmptyTierRecord(farmPlots)),
@@ -171,6 +173,7 @@ const SaveDataObjectSchema = z
     return {
       ...normalizeBoardSave(save),
       autoplayEnabled: resolveAutoplayEnabled(save),
+      starterHomesteadGrantResolved: save.starterHomesteadGrantResolved ?? hasHomesteadPurchases(save),
       gearLoadouts: pruneOrphanGearLoadouts(flatInventory, save.gearLoadouts),
     };
   });

@@ -97,6 +97,11 @@ use two columns, with notices spanning both. Impact and audio cues follow each
 incoming action's actual events, never accumulated display totals. Resource
 payments and removals do not invent damage impacts.
 
+Critical damage carries a visible **Critical** marker beside its typed damage
+number and includes Critical in the accessible label. The damage type retains
+its ordinary color and icon; the marker remains readable with muted sound and
+reduced motion.
+
 Each action appears immediately above card flights, anchored to its moving portrait.
 Measured layout moves earlier bursts upward without changing their values or
 restarting their animations. Keep at most three active bursts per target; overflow

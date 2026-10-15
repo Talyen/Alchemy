@@ -55,6 +55,20 @@ describe("DestinationScreen", () => {
     [1, "I"],
     [2, "II"],
     [3, "III"],
+  ] as const)("shows current Act %s beside ordinary destination choices", (currentAct, numeral) => {
+    const rewardState = {
+      ...createEmptyRewardState(),
+      destinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CAMPFIRE],
+    };
+    render(<DestinationScreen currentAct={currentAct} rewardState={rewardState} onChoose={vi.fn()} />);
+    expect(screen.getByText(`Act ${numeral}`)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Choose Destination" })).toBeTruthy();
+  });
+
+  it.each([
+    [1, "I"],
+    [2, "II"],
+    [3, "III"],
   ] as const)("shows the boss and act %s before entering combat", (currentAct, actLabel) => {
     const rewardState = {
       ...createEmptyRewardState(),

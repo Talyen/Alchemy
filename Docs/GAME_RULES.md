@@ -316,6 +316,15 @@ Gold and prior savings. Spending does not subtract from this earned total.
 The recap omits the room progression trail. Existing menu upgrade highlights
 continue to guide between-run progression.
 
+The first claimed Campaign Act I boss reward tops up the resulting stockpile to
+at least 4 Wood and 4 Stone when no Homestead upgrade or Companion Bond has
+been purchased. Ordinary reward Materials count first. This one-time grant and
+its receipt settle together; purchases also resolve eligibility, and Homestead
+reset cannot renew it. The reward row previews the actual payout.
+Campaign boss rewards mark the current act cleared, and ordinary destination
+choices display the current act. Final victory and demo completion keep their
+existing endings.
+
 Wildwood boss victories use the same boss Gold and shared Material payout rules as
 Campaign and Labyrinth while retaining Wildwood's reward choices and next-boss
 flow. The existing Victory screen shows both currencies, and run-end summaries
@@ -412,7 +421,8 @@ hit-stage ordering above and must not reorder RNG or feedback.
 
 ## Brewing, Transmutation, and elemental reactions
 
-Campfires offer Rest or Brew, including at full Health. When the deck contains
+Campfires show current/max Health and Rest’s actual recovery before choosing.
+They offer Rest or Brew, including at full Health (where recovery is zero). When the deck contains
 at least two eligible Potions, Brew combines two chosen instances; otherwise, it
 grants one of three fixed standard Potion offers (at least one recovery/defense
 option). The deck determines which brewing action is available. Rest and Brew

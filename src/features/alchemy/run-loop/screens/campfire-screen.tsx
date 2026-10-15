@@ -99,6 +99,7 @@ export function CampfireScreen({
               decoding="async"
               className="w-full max-w-lg rounded-shell-panel object-contain"
             />
+            <HealthRestoreMeter displayHealth={playerHealth} maxHealth={maxHealth} progressHealth={playerHealth} />
             <div className="flex flex-wrap justify-center gap-4">
               <Button
                 onClick={() => {
@@ -111,7 +112,7 @@ export function CampfireScreen({
                   } else setError("This Campfire has already been used.");
                 }}
               >
-                Rest
+                Rest (+{restore} Health)
               </Button>
               <Button onClick={() => setBrewing(true)}>Brew Potion</Button>
             </div>

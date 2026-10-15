@@ -82,7 +82,7 @@ export function getCombatTextAccessibleLabel(event: FloatingCombatText): string 
     if (event.signal === "prepared") return event.text || `${label} prepared`;
     return event.text || (event.stat === "deathsDoor" ? "Death's Door" : label);
   }
-  return `${label}: ${event.displayText}`;
+  return `${event.kind === "damage" && event.critical ? "Critical " : ""}${label}: ${event.displayText}`;
 }
 
 function buildStatusChips(

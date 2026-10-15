@@ -1,3 +1,4 @@
+import { campaignActLabel } from "@/lib/campaign-act";
 import { useRef } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -50,7 +51,7 @@ export function DestinationChoices({
             destination={destination}
             label={
               destination === DESTINATIONS.BOSS_COMBAT
-                ? `Boss - Act ${["I", "II", "III"][currentAct - 1] ?? currentAct}`
+                ? `Boss - ${campaignActLabel(currentAct)}`
                 : destinationLabel(destination)
             }
             art={art}

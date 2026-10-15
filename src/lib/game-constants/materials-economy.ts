@@ -18,3 +18,5 @@ export const COMBAT_MATERIAL_QUANTITIES = {
 } as const;
 
 export const COMBAT_MATERIAL_BUNDLE_SIZE = 2;
+
+export const STARTER_HOMESTEAD_MATERIAL_TARGET = { wood: 4, stone: 4 } as const;

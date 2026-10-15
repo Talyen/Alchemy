@@ -1,3 +1,4 @@
+import { campaignActLabel } from "@/lib/campaign-act";
 import { type ReactNode, useMemo, useState } from "react";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { getCardKeywords } from "@/lib/game-data";
@@ -163,22 +164,28 @@ export function RewardsScreen({
   onSkip,
   onClaimReward,
   claimInFlight = false,
+  clearedAct = null,
+  rewardMaterials = rewardState.materials,
 }: {
   rewardState: RewardState;
   onSkip: () => void;
   onClaimReward: (id: string) => void;
   claimInFlight?: boolean;
+  clearedAct?: number | null;
+  rewardMaterials?: Partial<Record<MaterialId, number>>;
 }) {
   const rewardChoices = rewardState.choices;
   const rewardGold = rewardState.gold;
-  const rewardMaterials = rewardState.materials;
 
   const claimLocked = claimInFlight || rewardChoices.length === 0;
   const skipDisabled = claimInFlight;
   const showSkip = rewardState.rewardType === "card" || rewardChoices.length === 0;
 
   return (
-    <TitledScreenShell title="Victory" maxWidthClass="max-w-6xl">
+    <TitledScreenShell
+      title={clearedAct === null ? "Victory" : `${campaignActLabel(clearedAct)} Cleared`}
+      maxWidthClass="max-w-6xl"
+    >
       <RewardPlasmaController rewardState={rewardState} />
       <FadeSlot
         swapKey={`${rewardState.rewardType}:${rewardChoices.map((item) => getRewardChoiceId(item)).join("-")}`}

@@ -27,6 +27,7 @@ export interface PermanentProgressFields {
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
   materialInventory: MaterialInventory;
+  starterHomesteadGrantResolved: boolean;
   constructedBuildings: Record<BuildingId, number>;
   plantedFarms: Record<FarmId, number>;
   completedResearch: Record<ResearchId, number>;
@@ -188,6 +189,7 @@ export function createInitialPermanentFields(): PermanentProgressFields {
     talentXP: {},
     unlockedTalents: {},
     materialInventory: emptyInventory(),
+    starterHomesteadGrantResolved: false,
     constructedBuildings,
     plantedFarms,
     completedResearch,

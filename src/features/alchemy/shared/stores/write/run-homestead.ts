@@ -29,6 +29,10 @@ export function awardMaterialsDuringRun(draft: GameplayDraft, materials: Profile
   grantMaterials(draft, materials, { trackRunEarned: true });
 }
 
+export function resolveStarterHomesteadGrant(draft: GameplayDraft): void {
+  draft.runProfile.starterHomesteadGrantResolved = true;
+}
+
 export function setMaterials(draft: GameplayDraft, materials: ProfileMaterialInventory): void {
   homestead.setMaterials(draft.runProfile, materials);
 }

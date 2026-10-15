@@ -1,3 +1,4 @@
+import { projectCampaignReward } from "./campaign-reward";
 import { readActivityData } from "@/lib/active-run-session";
 import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
 import { getGoldMultiplier, type BattleCard } from "@/lib/game-data";
@@ -20,6 +21,18 @@ function selectRunEndData(state: GameplayState) {
     runEndLabyrinthFloor: state.session.runEndLabyrinthFloor,
     talentXP: state.runProfile.talentXP,
   };
+}
+
+// Selectors feed a shallow external-store subscription. Cache the allocated
+// material preview by immutable revision so repeated reads remain stable.
+const campaignRewardCache = new WeakMap<GameplayState, ReturnType<typeof projectCampaignReward>>();
+function selectCampaignReward(state: GameplayState) {
+  let result = campaignRewardCache.get(state);
+  if (!result) {
+    result = projectCampaignReward(state);
+    campaignRewardCache.set(state, result);
+  }
+  return result;
 }
 
 // Each selector owns its route's exact data contract; types derive from these
@@ -67,10 +80,15 @@ export const RUN_SCREEN_SELECTORS = {
     labyrinthMap: state.session.labyrinthMap,
     selectedLabyrinthNodeId: state.session.selectedLabyrinthNodeId,
   }),
-  rewards: (state: GameplayState) => ({
-    rewardState: state.session.rewardFlow.state,
-    rewardClaimInFlight: state.session.rewardFlow.claim.kind === "reward",
-  }),
+  rewards: (state: GameplayState) => {
+    const campaign = selectCampaignReward(state);
+    return {
+      rewardState: state.session.rewardFlow.state,
+      rewardClaimInFlight: state.session.rewardFlow.claim.kind === "reward",
+      clearedAct: campaign.clearedAct,
+      rewardMaterials: campaign.materials,
+    };
+  },
   destination: (state: GameplayState) => ({
     rewardState: state.session.rewardFlow.state,
     currentAct: state.run.activeRun.currentAct,
