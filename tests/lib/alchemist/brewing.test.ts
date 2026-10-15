@@ -156,3 +156,18 @@ describe("brewing content", () => {
     expect(card).toEqual(before);
   });
 });
+
+it("rejects brewing beyond saved-effect bounds before replacing ingredients or charging for Distill", () => {
+  const effects: BattleCardEffect[] = [{ kind: "heal", amount: 999 }];
+  const potion = withCardDescription(
+    makeTestCard({ id: "health-potion", consume: true, effects }),
+    createEffectDescription(effects),
+  );
+  expect(strengthenPotion(potion)).toBeNull();
+  const half = withCardDescription(
+    { ...potion, effects: [{ kind: "heal", amount: 500 }] },
+    createEffectDescription([{ kind: "heal", amount: 500 }]),
+  );
+  expect(tryCreateMixedPotion(half, half)).toBeNull();
+  expect(BattleCardSchema.parse(potion).effects).toEqual(effects);
+});

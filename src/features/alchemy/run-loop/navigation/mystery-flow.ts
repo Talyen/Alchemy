@@ -147,7 +147,7 @@ function assertNever(value: never): never {
 export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffectContext): MysteryEffectResult {
   switch (effect.kind) {
     case "addCard": {
-      const card = cardById[effect.cardId];
+      const card = Object.hasOwn(cardById, effect.cardId) ? cardById[effect.cardId] : undefined;
       if (card) appendCardToRunWithDiscovery(context.draft, card);
       else if (import.meta.env.DEV)
         console.warn(`[Mystery] addCard "${effect.cardId}" matched no card; granting nothing`);

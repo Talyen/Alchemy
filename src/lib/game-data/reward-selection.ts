@@ -118,5 +118,18 @@ export function selectRewardCards(
     }
   }
 
+  // Ownership changes preference, not the number of promised choices.
+  if (selected.length < count) {
+    for (const card of shuffle(
+      pool.filter((candidate) => !selectedIds.has(candidate.id)),
+      rng,
+    )) {
+      if (selectedIds.has(card.id)) continue;
+      selected.push(card);
+      selectedIds.add(card.id);
+      if (selected.length >= count) break;
+    }
+  }
+
   return selected;
 }

@@ -25,7 +25,7 @@ contract and controller seams.
 
 `src/lib/gear/definitions.ts`, `crafting.ts`, and `crafting-ids.ts` are authoritative. Item titles live with definitions (`getGearInstanceTitle`), and canonical affix resolution is centralized in `getGearInstanceAffixes`. Affix pool/roll helpers live in `affix-pool.ts` so generation and crafting depend down. Durable invariants:
 
-- A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and rolled `affixes`; it never embeds definition objects or art URLs.
+- A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and an `affixes` array. Basic and Astral items persist their rolls; Unique items keep that array empty and resolve canonical affixes from the catalog. Instances never embed definition objects or art URLs.
 - Inventories and loadouts are keyed by character. A loadout maps each slot to at most one instance ID.
 - Permanent Trinkets are unique definition IDs in `ownedTrinketIds`, not generated `GearInstance` values; they have no rarity, affixes, crafting, or salvage.
 - `equippedTrinkets` maps each character to one owned Trinket at most. Equipping a shared Trinket moves it from any other character.
@@ -203,11 +203,14 @@ Cleanse, Purge, and Death's Door remain mechanics rather than Alchemy keywords; 
 
 Fateful uses Mana as its secondary affinity so its Wish draw effect can roll on ordinary Mana Gear. The affix catalog test checks that every ordinary affix is reachable on at least one Basic or Astral item.
 
-Effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest.ts`). Each entry in `gearAffixCatalog` declares its `effectKey: keyof GearEffectManifest`. The architecture guards `tests/architecture/affix-catalog-guard.test.ts` and `src/lib/content-validation/validators-gear.ts` assert:
-
-- Every `effectKey` in the catalog is a member of `GEAR_EFFECT_KEYS` (catches silent zero-roll typos).
-- Every key in `GEAR_EFFECT_KEYS` is referenced by at least one affix.
-- The keys are unique.
+`src/lib/gear/affix-rows.ts` owns the ordered affix definitions. Typed builders
+preserve literal IDs and effect keys; `GearEffectManifest`, numeric defaults, and
+`GEAR_EFFECT_KEYS` derive from those rows. Only the independent-roll policy for
+Forge chances is listed separately in `gear-effect-manifest.ts`; all other effects
+sum numerically. `affix-catalog.ts` adds visible tooltip keywords without becoming
+a dependency of manifest construction. Preserve row order when editing: seeded
+Gear generation depends on it. Catalog guards and content validation retain
+unique-ID, display-name, roll-range, and ordinary-affix reachability checks.
 
 ## Persistence
 

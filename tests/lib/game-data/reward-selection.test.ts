@@ -131,14 +131,15 @@ describe("selectRewardCards", () => {
   });
 });
 
-it("keeps ordinary rewards when owned Companions are dampened out", () => {
+it("keeps ordinary rewards first and fills missing choices after Companion dampening", () => {
   const pool = [companionCard("wolf"), physicalCard("strike")];
   const owned = companionCard("owned-wolf");
   owned.effects = [{ kind: "repeat-over-turns", remainingTurns: 2, effects: owned.effects }];
   const nested = companionCard("nested-fox");
   nested.effects = [{ kind: "chance", probability: 0.5, successEffects: [], failureEffects: nested.effects }];
   const rewards = selectRewardCards([owned], [...pool, nested], 3, [], () => 0.99);
-  expect(rewards.map((entry) => entry.id)).toEqual(["strike"]);
+  expect(rewards[0]?.id).toBe("strike");
+  expect(new Set(rewards.map((entry) => entry.id))).toEqual(new Set(["strike", "wolf", "nested-fox"]));
 });
 
 it("constrained Companion rewards fills all available choices even when owned-Companion weighting rejects most candidates", () => {
