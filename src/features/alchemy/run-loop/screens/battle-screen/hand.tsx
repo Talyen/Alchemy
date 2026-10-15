@@ -250,9 +250,6 @@ export function BattleHand({
       }}
       data-testid="battle-hand"
       className={cn(battleHandContainerClass, "battle-hand")}
-      style={{
-        paddingBottom: `calc(${12 + Math.max(0, battleState.hand.length - 4) * 12}px * var(--content-scale, 1))`,
-      }}
     >
       {battleState.hand.map((card, index) => {
         const cardKey = getHandCardKey(card, index);

@@ -1,4 +1,4 @@
-import { memo, useRef } from "react";
+import { memo } from "react";
 import { motion, useAnimationFrame, useMotionValue } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
@@ -20,13 +20,11 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
   refs: TransferRefs;
 }) {
   const reduced = useReducedMotionPreference();
-  const elapsed = useRef(0);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const scale = useMotionValue(transfer.fromScale);
   const rotate = useMotionValue(transfer.fromRotation);
-  useAnimationFrame((_, delta) => {
-    elapsed.current += delta;
+  useAnimationFrame((elapsed) => {
     let current = transfer;
     if (transfer.kind === "draw") {
       const element = refs.handCardRefs.current[transfer.handCardKey] ?? null;
@@ -46,7 +44,8 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
       }
     }
     // Follow the live slot even after arrival, until playback hands visibility over.
-    const pose = getCardTransferPose(current, reduced ? 1 : elapsed.current / (transfer.duration * 1000));
+    // Motion caps frame deltas at 40ms; elapsed time stays aligned with playback timers.
+    const pose = getCardTransferPose(current, reduced ? 1 : elapsed / (transfer.duration * 1000));
     x.set(pose.x);
     y.set(pose.y);
     scale.set(pose.scale);

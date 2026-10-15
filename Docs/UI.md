@@ -233,9 +233,9 @@ Inline Tailwind theme tokens and `--content-rem` size text, controls, cards,
 spacing, and panels once. Percentage anchors and layout regions follow the
 stage. Authored arbitrary content dimensions must use the content unit; do not
 use raw container-height units as the primary card size. Available-space caps
-are allowed: the battle hand caps card height, compresses its fan into the
-reserved center region, and reserves extra bottom space for larger hands.
-The hand rests near the bottom viewport edge, centered with capped spacing and
+are allowed: the battle hand caps card height and compresses its fan into the
+reserved center region.
+The hand rests against the bottom viewport edge, centered with capped spacing and
 responsive card sizing. Draw and Discard are inspected through the toolbar's
 Deck viewer; no pile artwork or decorative Mana bar occupies the bottom corners.
 All battle transfer and feedback coordinates use the full viewport scene.
@@ -250,8 +250,9 @@ The battle toolbar places live Gold before the inspection controls, with a brief
 highlight on increases. End Turn uses an icon and tooltip immediately before the dev-only Skip Combat
 control and Menu. Dev-only Skip Combat uses a labeled skip-forward icon and tooltip.
 The hand's bottom dock stays centered and stationary as the hand grows to seven
-cards; smaller hands remain centered with capped spacing. Resting card artwork
-may extend past the bottom edge; playable card centers stay visible. Hand hover and pointer
+cards; smaller hands remain centered with capped spacing. Every resting card
+touches or overlaps the bottom edge; playable card centers stay visible. Hover
+and keyboard focus lift cards for inspection. Hand hover and pointer
 activation use the nearest stable slot center, with boundaries halfway between
 centers, independent of raised artwork and reflow motion. Hidden transfer cards
 cannot receive pointer selection. Keyboard focus uses the native card buttons.

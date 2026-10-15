@@ -214,6 +214,7 @@ test("hover reconciles through a play, draw, and reflow with the pointer in the 
 });
 
 for (const { width, height, gameSizePercent } of [
+  { width: 1920, height: 1080, gameSizePercent: 100 },
   { width: 1280, height: 720, gameSizePercent: 120 },
   { width: 2560, height: 1080, gameSizePercent: 80 },
 ]) {
@@ -263,6 +264,13 @@ for (const { width, height, gameSizePercent } of [
     for (let count = 7; count >= 1; count--) {
       await expect(page.locator("[data-hand-slot]")).toHaveCount(count);
       await page.mouse.move(0, 0);
+      await expect
+        .poll(() =>
+          page
+            .locator("[data-hand-slot] button")
+            .evaluateAll((cards) => Math.min(...cards.map((card) => card.getBoundingClientRect().bottom))),
+        )
+        .toBeGreaterThanOrEqual(height - 1);
       const bounds = await page.locator("[data-hand-slot] button").evaluateAll((elements) =>
         elements.map((el) => {
           const r = el.getBoundingClientRect();
