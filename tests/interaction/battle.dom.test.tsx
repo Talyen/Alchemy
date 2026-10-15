@@ -63,7 +63,7 @@ defineSequenceFamily("battle", (seed) => {
         measureElementRect: rect,
         measureVisualCardRect: rect,
       });
-      const { battle } = useRunSessionBattleContext(screen);
+      const { battle } = useRunSessionBattleContext();
       useBattlePlayback({ ...controller, battleState: battle.battleState, gameMenuOpen: menu });
       const inspection = useCardInspection({
         screen,

@@ -7,7 +7,7 @@ import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { DemoCompletionScreen } from "@/features/alchemy/run-loop/screens/demo-completion-screen";
 import { HeroUnlockedScreen } from "@/features/alchemy/run-loop/screens/hero-unlocked-screen";
 import { RunEndScreen } from "@/features/alchemy/run-loop/screens/run-end-screen";
-import { useRunEndScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
+import { useRunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import type { RunEndRouteCtx } from "./route-ctx";
 
 const RUN_END_COPY = {
@@ -37,7 +37,7 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
     runEndUnlockedCharacters,
     runEndLabyrinthFloor,
     runRecap,
-  } = useRunEndScreenData();
+  } = useRunScreenData("game-over");
   const { pendingBoardRewardId } = useBoards();
   const [stage, setStage] = useState<RunEndStage>({ kind: "recap" });
   const unlockedCharacters = runEndUnlockedCharacters.filter(isEditionCharacterAvailable);

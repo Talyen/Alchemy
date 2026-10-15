@@ -45,6 +45,19 @@ describe("gear-store", () => {
     resetGearForTest();
   });
 
+  it("encodes detached inventory, affixes, loadouts, and Trinket ownership", () => {
+    resetGearForTest();
+    mutateGearForTest((gear) => gear.addInstance(armor, "knight"));
+    const encoded = gearPersistenceCodec.encode(defaultGameSession);
+    encoded.gearInventories.knight[0]!.affixes.push({ id: "max-health", value: 7 });
+    encoded.gearLoadouts.knight.body = armor.instanceId;
+    encoded.ownedTrinketIds.push("bone-charm");
+    expect(readGearState(defaultGameSession).inventories.knight[0]!.affixes).toEqual([]);
+    expect(readGearState(defaultGameSession).loadouts.knight.body).toBeNull();
+    expect(readGearState(defaultGameSession).ownedTrinketIds).toEqual([]);
+    resetGearForTest();
+  });
+
   it("owns one permanent copy and moves it exclusively between character loadouts", () => {
     resetGearForTest();
     expect(mutateGearForTest((gear) => gear.addTrinket("bone-charm"))).toBe(true);

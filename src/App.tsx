@@ -37,7 +37,7 @@ import {
   useBondedCompanions,
   useHomesteadEffects,
   useHasActiveBattle,
-  useRunSessionNavigationSlice,
+  useRunPhase,
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/use-run-reads";
 import { useAppSettings } from "@/features/alchemy/shared/stores/settings-store";
@@ -100,7 +100,7 @@ function AppMainContent({
   gameMenu: GameMenuState;
 }) {
   const { screen: controllerScreen } = run;
-  const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
+  const runPhase = useRunPhase(controllerScreen);
   const nav = useReturnToRunNavigation({ run, renderedScreen });
 
   useAlchemyAutosaveFromStores();
