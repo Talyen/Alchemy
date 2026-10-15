@@ -2,12 +2,16 @@ export interface BattleSceneAppearance {
   readonly ambientColor: readonly [number, number, number];
   readonly ambientOpacity: number;
   readonly shadowOpacity: number;
+  readonly artworkExposure: number;
+  readonly shadeOpacity: number;
 }
 
 export const NEUTRAL_BATTLE_SCENE_APPEARANCE: BattleSceneAppearance = {
   ambientColor: [128, 128, 128],
   ambientOpacity: 0,
   shadowOpacity: 0.3,
+  artworkExposure: 1,
+  shadeOpacity: 0,
 };
 
 /** Input is the small, central playing-area crop, not the board's decorative frame. */
@@ -40,6 +44,8 @@ export function deriveBattleSceneAppearance(pixels: ArrayLike<number>): BattleSc
     ambientColor,
     ambientOpacity: 0.06 * Math.min(1, chroma / 24),
     shadowOpacity: 0.26 + luminance * 0.12,
+    artworkExposure: Math.max(0.94, Math.min(1.03, 0.94 + luminance * 0.12)),
+    shadeOpacity: Math.max(0.025, Math.min(0.08, 0.08 - luminance * 0.06)),
   };
 }
 
@@ -103,6 +109,8 @@ export function deriveBattleSceneLighting(
       ),
       ambientOpacity: opacity,
       shadowOpacity: global.shadowOpacity,
+      artworkExposure: (global.artworkExposure + local.artworkExposure) / 2,
+      shadeOpacity: (global.shadeOpacity + local.shadeOpacity) / 2,
     };
   }
   return { ...global, regions: { left: region(zones.left), right: region(zones.right), lower: region(zones.lower) } };
