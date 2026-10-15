@@ -70,7 +70,7 @@ it("rejects an owner-stamped save that would exceed the readable payload limit",
 });
 it("shutdown accepts the renderer's unload save, drains writes, and quits exactly once", async () => {
   const f = await fixture(true);
-  const app = new EventEmitter() as EventEmitter & { quit: ReturnType<typeof vi.fn> };
+  const app = new EventEmitter() as EventEmitter & { quit: () => void };
   let exits = 0;
   let windowOpen = true;
   let unloadWrite: Promise<boolean> | undefined;

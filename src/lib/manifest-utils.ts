@@ -10,15 +10,3 @@ export function createNumericManifest<K extends string>(keys: readonly K[]): Rec
   }
   return manifest;
 }
-
-export function mergeNumericManifests<T extends Record<string, number>>(
-  base: T,
-  addition: T,
-  keys: ReadonlyArray<keyof T>,
-): T {
-  const merged = { ...base };
-  for (const key of keys) {
-    merged[key] = ((base[key] as number) + (addition[key] as number)) as T[keyof T];
-  }
-  return merged;
-}

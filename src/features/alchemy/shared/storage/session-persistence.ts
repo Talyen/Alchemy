@@ -31,7 +31,7 @@ import type { SaveLoadState, SaveRestoreAction } from "./save-candidates";
 import type { SaveStorageEvent, SaveWriteOutcome } from "./save-operation-queue";
 import type { UnstampedSaveData } from "./types";
 
-export type PersistenceInterruption = SaveStorageEvent | "restored";
+type PersistenceInterruption = SaveStorageEvent | "restored";
 
 export interface SessionPersistenceRestoreOptions {
   restoreActions?: readonly SaveRestoreAction[] | undefined;

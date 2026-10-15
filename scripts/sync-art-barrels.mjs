@@ -34,7 +34,3 @@ export async function syncArtBarrels({ check = false } = {}) {
     check,
   });
 }
-
-// Retain existing narrow command entry points; one generated registry owns art.
-export const syncAssets = syncArtBarrels;
-export const syncGearArt = syncArtBarrels;

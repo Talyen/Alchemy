@@ -12,13 +12,12 @@ import {
   setRunProgressActivity,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
-import { createSessionPersistence } from "@/features/alchemy/shared/storage";
+import { createSessionPersistence, evaluateSaveCandidates } from "@/features/alchemy/shared/storage";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { cardById, getStartingDeck } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { canUpgradeTierItem } from "@/lib/homestead/upgrades";
 import { buildings } from "@/lib/homestead/data";
-import { SaveDataSchema } from "@/lib/validation";
 import { createSaveBackend } from "../../../../helpers/save-backend";
 
 const sessions: GameSession[] = [];
@@ -171,7 +170,7 @@ describe("Campaign first-boss Homestead grant", () => {
     expect(readGameplayState(first).runProfile.starterHomesteadGrantResolved).toBe(false);
     expect(claimRunReward("slash", first)).not.toBeNull();
     expect(readGameplayState(first).session.activity.kind).toBe("rewards");
-    const saved = SaveDataSchema.parse(JSON.parse(JSON.stringify(createSessionPersistence(first).snapshot())));
+    const saved = evaluateSaveCandidates([JSON.stringify(createSessionPersistence(first).snapshot())]).data;
     const resumed = createGameSession({ initialSave: saved, saveBackend: createSaveBackend() });
     sessions.push(resumed);
     expect(projectCampaignReward(readGameplayState(resumed)).materials).toEqual(emptyInventory());
@@ -185,7 +184,7 @@ describe("Campaign first-boss Homestead grant", () => {
   it("preserves pending and claimed rewards through serialization; later runs cannot repeat the grant, while Clear Save resets it", async () => {
     const first = pendingBossReward();
     const persistence = createSessionPersistence(first);
-    const saved = SaveDataSchema.parse(JSON.parse(JSON.stringify(persistence.snapshot())));
+    const saved = evaluateSaveCandidates([JSON.stringify(persistence.snapshot())]).data;
     const resumed = createGameSession({ initialSave: saved, saveBackend: createSaveBackend() });
     sessions.push(resumed);
     expect(RUN_SCREEN_SELECTORS.rewards(readGameplayState(resumed)).rewardMaterials).toMatchObject({
@@ -193,7 +192,7 @@ describe("Campaign first-boss Homestead grant", () => {
       stone: 4,
     });
     expect(claimRunReward("slash", resumed)).not.toBeNull();
-    const claimedSave = SaveDataSchema.parse(JSON.parse(JSON.stringify(createSessionPersistence(resumed).snapshot())));
+    const claimedSave = evaluateSaveCandidates([JSON.stringify(createSessionPersistence(resumed).snapshot())]).data;
     expect(claimedSave).toMatchObject({
       starterHomesteadGrantResolved: true,
       materialInventory: { wood: 4, stone: 4 },

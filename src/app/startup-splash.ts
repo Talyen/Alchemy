@@ -7,7 +7,7 @@ export function syncStartupSplash(progress: number, ready: boolean): void {
   if (ready) dismissStartupSplash();
 }
 
-export function dismissStartupSplash(): void {
+function dismissStartupSplash(): void {
   if (typeof document === "undefined") return;
   if (typeof window !== "undefined" && window.__alchemySplashWordTimer) {
     window.clearInterval(window.__alchemySplashWordTimer);

@@ -5,7 +5,7 @@ export const SLOT_BACKGROUND_PATTERN = /^(.+?)\sSlot\.(jpe?g|png)$/i;
 
 export const GEAR_SLOT_IDS = Object.freeze(["body", "weapon", "accessory", "trinket"]);
 
-export function isWebpAsset(name) {
+function isWebpAsset(name) {
   return name.endsWith(".webp");
 }
 

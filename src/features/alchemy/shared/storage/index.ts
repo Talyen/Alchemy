@@ -19,5 +19,3 @@ export {
   type SessionPersistence,
   type SessionPersistenceRestoreOptions,
 } from "./session-persistence";
-
-export type { ProgressSaveState } from "./progress-completion";
