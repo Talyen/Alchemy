@@ -49,6 +49,20 @@ Filled Mana gems cast a faint blue spill behind the crystals inside the hero
 portrait; spending removes that spill. Only its opacity transitions, settling
 immediately with reduced motion.
 
+Combatants use a universal stitched material frame around living hero/enemy art,
+Companion art, and the Health/status panel. One alpha-backed nine-slice texture
+preserves corners while each surface resizes independently; no artwork or
+information is baked into the frame. The decorative layer ignores pointer input
+and replaces the original thin rim, inset edge highlights, and turn/Death's Door
+shine borders. Turn scale, damage flashes, Death's Door status information, and
+a keyboard focus outline outside the material frame remain visible. Choosing
+Original restores the original borders and shine. Dead combatants
+remove the frame so it cannot remain around the sliced-away portrait.
+Saddle Leather is the default. In development, Options → Other → Dev Only →
+Combatant Frames offers Charcoal Leather, Saddle Leather, Walnut & Leather,
+Oak & Leather, and Original for comparison. Selection is presentation-only and
+lasts for the app session; it is not saved with a run.
+
 Shared conventions: [UI](./UI.md).
 
 ## Battle feedback
