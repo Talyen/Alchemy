@@ -30,7 +30,6 @@ function play(state: ReturnType<typeof battle>, card: BattleCard) {
 
 const wishTalents = computeTalentEffects({ wish: ["wish-mana"], mana: ["mana-arcane-mending"] });
 const shieldTalents = computeTalentEffects({ block: ["block-reduce-burn", "block-to-holy"] });
-const burnTalents = computeTalentEffects({ burn: ["burn-dmg-2"], forge: ["forge-to-burn"] });
 const leechTalents = computeTalentEffects({ leech: ["leech-first-double"] });
 
 const burn = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 2 }] });

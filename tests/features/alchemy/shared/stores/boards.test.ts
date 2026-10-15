@@ -13,7 +13,7 @@ import {
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/persistence";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 import { boardCatalog, STARTER_BOARD_ID } from "@/lib/boards/catalog";
-import { SaveDataSchema } from "@/lib/validation";
+import { SaveDataSchema, toActiveRunData } from "@/lib/validation";
 import { battleSnapshot, defaultBattleState } from "@/lib/battle";
 import { getStartingDeck } from "@/lib/game-data";
 
@@ -69,7 +69,10 @@ it.each(["campaign", "labyrinth", "wildwood"] as const)(
     await persistence.waitForWrites();
     const saved = SaveDataSchema.parse(buildAlchemySaveDataFromStores(session));
     expect(saved.activeRun).toBeNull();
-    const restored = createGameSession({ initialSave: saved, saveBackend: createSaveBackend() });
+    const restored = createGameSession({
+      initialSave: { ...saved, activeRun: saved.activeRun ? toActiveRunData(saved.activeRun) : null },
+      saveBackend: createSaveBackend(),
+    });
     sessions.push(restored);
     completeRunVictory(restored);
     expect(profile(restored).collectedBoardIds).toEqual(saved.collectedBoardIds);
@@ -131,7 +134,7 @@ it("random selection avoids repeats, remains stable through resume, and changes 
   const saved = SaveDataSchema.parse(buildAlchemySaveDataFromStores(session));
   const restoredRandom = vi.fn(() => 0);
   const restored = createGameSession({
-    initialSave: saved,
+    initialSave: { ...saved, activeRun: saved.activeRun ? toActiveRunData(saved.activeRun) : null },
     saveBackend: createSaveBackend(),
     runtimeInputs: { cosmeticRandom: restoredRandom },
   });

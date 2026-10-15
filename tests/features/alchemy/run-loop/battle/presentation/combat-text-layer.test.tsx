@@ -77,6 +77,15 @@ describe("CombatTextLayer geometry", () => {
     expect(enemyLayer.style.transform).toBe("translate3d(200px, 30px, 0)");
     expect(sceneBounds).toHaveBeenCalledTimes(1);
     expect(frames.size).toBe(1);
+    for (let step = 1; step <= 4; step++) {
+      vi.spyOn(refs.playerPanelRef.current!, "getBoundingClientRect").mockReturnValue(
+        new DOMRect(120, 90, 200 + step * 0.6, 300 + step * 0.6),
+      );
+      nextFrame();
+    }
+    expect(playerLayer.style.width).toBe("101.2px");
+    expect(playerLayer.style.height).toBe("151.2px");
+    sceneBounds.mockClear();
     const playerBurst = playerLayer.querySelector('[data-burst-id="player"]');
 
     vi.spyOn(refs.playerPanelRef.current!, "getBoundingClientRect").mockReturnValue(new DOMRect(160, 110, 240, 400));
@@ -96,7 +105,7 @@ describe("CombatTextLayer geometry", () => {
     expect(playerLayer.style.height).toBe("200px");
     expect(enemyLayer.style.transform).toBe("translate3d(180px, 40px, 0)");
     expect(playerLayer.querySelector('[data-burst-id="player"]')).toBe(playerBurst);
-    expect(sceneBounds).toHaveBeenCalledTimes(2);
+    expect(sceneBounds).toHaveBeenCalledTimes(1);
     expect(frames.size).toBe(1);
 
     act(() => battlePresentation.setState({ floatingCombatBursts: [] }));

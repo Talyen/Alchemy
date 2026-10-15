@@ -1,9 +1,9 @@
 export const MANA_DOCK_VISIBLE_COUNT = 9;
 export const MANA_DOCK_EXIT_MS = 420;
 
-export type ManaGemEffect = "gain" | "fill" | "spend" | null;
+type ManaGemEffect = "gain" | "fill" | "spend" | null;
 
-export interface ManaGemPresentation {
+interface ManaGemPresentation {
   index: number;
   filled: boolean;
   x: number;
@@ -33,14 +33,14 @@ export interface ManaPresentation {
 }
 
 /** Coordinates refer to the frame artwork, not the dock's reserved side space. */
-export function manaGemPosition(index: number, total: number): number {
+function manaGemPosition(index: number, total: number): number {
   const count = Math.min(total, MANA_DOCK_VISIBLE_COUNT);
   const spacing = Math.min(10.5, 56 / Math.max(1, count - 1));
   return 50 + (index - (count - 1) / 2) * spacing;
 }
 
 /** Percentage of frame height; common three/four-crystal rows keep the largest size. */
-export function manaGemHeight(total: number): number {
+function manaGemHeight(total: number): number {
   return 30 - Math.max(0, Math.min(total, MANA_DOCK_VISIBLE_COUNT) - 4) * 1.6;
 }
 

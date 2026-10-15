@@ -1,7 +1,6 @@
 export {
   boardArt,
   alchemistShopBg,
-  battleManaCrystal,
   manaDockFrame,
   manaDockFull,
   manaDockEmpty,

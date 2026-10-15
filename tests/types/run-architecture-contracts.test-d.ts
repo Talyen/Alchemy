@@ -293,7 +293,7 @@ describe("run architecture type contracts", () => {
     expectTypeOf<AlchemyRunCommands>().toHaveProperty("routeCommands");
     expectTypeOf<AlchemyRunCommands>().toHaveProperty("screen");
     expectTypeOf<keyof RouteCommands>().toEqualTypeOf<
-      "progress" | "meta" | "runSetup" | "runLoop" | "battle" | "runEnd"
+      "progress" | "meta" | "boards" | "runSetup" | "runLoop" | "battle" | "runEnd"
     >();
   });
 

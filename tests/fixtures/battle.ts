@@ -73,7 +73,9 @@ export function makeTestBattleState(patch: BattleStatePatch = {}): BattleState {
   return state;
 }
 
-export const patchBattleState = makeTestBattleState;
+export function patchBattleState(patch: BattleStatePatch = {}): BattleState {
+  return makeTestBattleState(patch);
+}
 
 function dodgeThenMissRng() {
   let calls = 0;
