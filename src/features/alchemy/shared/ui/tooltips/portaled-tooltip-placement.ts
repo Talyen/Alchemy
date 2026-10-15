@@ -42,6 +42,7 @@ export function usePortaledTooltipPlacement(
   placement: PortaledTooltipPlacement = "above",
   maxWidthFraction?: number,
   allowFlip = true,
+  horizontalInsetOverride?: number,
 ) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<{
@@ -69,7 +70,7 @@ export function usePortaledTooltipPlacement(
       const currentMeasurement = ++measurement;
       const stage = getVrStageElement();
       const bounds = stage.getBoundingClientRect();
-      const horizontalInset = horizontalInsetForStage(bounds);
+      const horizontalInset = horizontalInsetOverride ?? horizontalInsetForStage(bounds);
       if (needsSizing || bounds.width !== sizedWidth || bounds.height !== sizedHeight) {
         needsSizing = false;
         sizedWidth = bounds.width;
@@ -159,7 +160,7 @@ export function usePortaledTooltipPlacement(
       if (frame !== null) cancelAnimationFrame(frame);
       cleanup();
     };
-  }, [active, triggerRef, padding, placement, maxWidthFraction, allowFlip]);
+  }, [active, triggerRef, padding, placement, maxWidthFraction, allowFlip, horizontalInsetOverride]);
 
   return { tooltipRef, ...floatingPlacementToTooltipState(position.placement), tooltipStyle: position.tooltipStyle };
 }

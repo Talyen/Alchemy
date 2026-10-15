@@ -45,7 +45,13 @@ function BattleSkipCombatButton({ onSkip, disabled }: { onSkip: () => void; disa
       >
         <SkipForward className="h-6 w-6" />
       </ChromeIconButton>
-      <PortaledTooltip triggerRef={triggerRef} visible={!disabled && (hovered || focused)}>
+      <PortaledTooltip
+        triggerRef={triggerRef}
+        visible={!disabled && (hovered || focused)}
+        placement="below"
+        allowFlip={false}
+        horizontalInset={8}
+      >
         Skip Combat
       </PortaledTooltip>
     </>
