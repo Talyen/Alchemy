@@ -108,8 +108,10 @@ export const tooltipAnchorClassNames = {
 } as const;
 
 export const battleActorSectionClass = {
-  desktop: "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 items-start px-4 gap-[clamp(10cqw,14cqw,18cqw)]",
-  ultrawide: "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 items-start px-4 gap-[clamp(12cqw,16cqw,20cqw)]",
+  desktop:
+    "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 -translate-x-[2cqw] items-start px-4 gap-[clamp(10cqw,14cqw,18cqw)]",
+  ultrawide:
+    "absolute inset-x-0 grid grid-cols-2 -translate-y-1/2 -translate-x-[2cqw] items-start px-4 gap-[clamp(12cqw,16cqw,20cqw)]",
 } as const;
 
 export const battleActorHeroCellClass =
