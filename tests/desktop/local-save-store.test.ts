@@ -3,6 +3,7 @@ import { EventEmitter } from "node:events";
 import * as io from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { setImmediate as nextEventLoopTurn } from "node:timers/promises";
 import { afterEach, expect, it, vi } from "vitest";
 const require = createRequire(import.meta.url);
 const { createDesktopSaveStorage, registerSaveShutdown } = require("../../desktop/save-storage.cjs");
@@ -68,14 +69,24 @@ it("rejects an owner-stamped save that would exceed the readable payload limit",
   expect(await store.write(data)).toBe(false);
   expect(await io.readdir(f.directory)).toEqual([]);
 });
-it("shutdown drains accepted writes, rejects late writes, and quits exactly once", async () => {
+it("shutdown accepts the renderer's unload save, drains writes, and quits exactly once", async () => {
   const f = await fixture(true);
-  const app = new EventEmitter() as EventEmitter & { quit: ReturnType<typeof vi.fn> };
+  const app = new EventEmitter() as EventEmitter & { quit: () => void };
   let exits = 0;
+  let windowOpen = true;
+  let unloadWrite: Promise<boolean> | undefined;
   app.quit = vi.fn(() => {
-    const event = { preventDefault: vi.fn() };
-    app.emit("before-quit", event);
-    if (!event.preventDefault.mock.calls.length) exits++;
+    const before = { preventDefault: vi.fn() };
+    app.emit("before-quit", before);
+    if (before.preventDefault.mock.calls.length) return;
+    if (windowOpen) {
+      // Electron closes windows (and runs renderer beforeunload) between these events.
+      windowOpen = false;
+      unloadWrite = f.store.write("unload progress");
+    }
+    const will = { preventDefault: vi.fn() };
+    app.emit("will-quit", will);
+    if (!will.preventDefault.mock.calls.length) exits++;
   });
   registerSaveShutdown(app, f.store);
   const writing = f.store.write("latest");
@@ -88,8 +99,34 @@ it("shutdown drains accepted writes, rejects late writes, and quits exactly once
   await writing;
   await f.store.close();
   await Promise.resolve();
+  await nextEventLoopTurn();
   expect(exitsDuringWrite).toBe(0);
+  expect(await unloadWrite).toBe(true);
   expect(await lateWrite).toBe(false);
   expect(exits).toBe(1);
-  expect(await io.readFile(f.slots.primary.file, "utf8")).toBe("latest");
+  expect(await io.readFile(f.slots.primary.file, "utf8")).toBe("unload progress");
+});
+
+it("resumes an idle shutdown only after Electron has cancelled its first quit", async () => {
+  const app = new EventEmitter() as EventEmitter & { quit: () => void };
+  const store = { close: vi.fn(() => Promise.resolve()) };
+  let quitting = false;
+  let exits = 0;
+  app.quit = vi.fn(() => {
+    if (quitting) return;
+    quitting = true;
+    const event = { preventDefault: vi.fn() };
+    app.emit("will-quit", event);
+    // Native event emission runs promise callbacks before it resets is_quitting_.
+    queueMicrotask(() => {
+      if (event.preventDefault.mock.calls.length) quitting = false;
+      else exits++;
+    });
+  });
+  registerSaveShutdown(app, store);
+  app.quit();
+  await Promise.resolve();
+  await nextEventLoopTurn();
+  expect(store.close).toHaveBeenCalledOnce();
+  expect(exits).toBe(1);
 });

@@ -85,7 +85,6 @@ export const RUN_SCREEN_SELECTORS = {
     return {
       rewardState: state.session.rewardFlow.state,
       rewardClaimInFlight: state.session.rewardFlow.claim.kind === "reward",
-      clearedAct: campaign.clearedAct,
       rewardMaterials: campaign.materials,
     };
   },

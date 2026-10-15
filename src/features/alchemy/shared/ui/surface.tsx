@@ -131,7 +131,7 @@ export function Surface(props: SurfaceProps) {
         aria-label={ariaLabel}
         aria-disabled={ariaDisabled}
         aria-pressed={ariaPressed}
-        disabled={disabled || dragging}
+        disabled={disabled === true || dragging === true}
         onClick={onClick}
         onPointerDown={onPointerDown}
       >

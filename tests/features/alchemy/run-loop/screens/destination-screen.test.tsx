@@ -20,27 +20,16 @@ describe("DestinationScreen", () => {
     vi.clearAllMocks();
   });
 
-  it("calls onPrepare on mount", () => {
+  it("renders multiple destinations and routes selection to onChoose", async () => {
+    const user = userEvent.setup();
+    const onChoose = vi.fn();
     const onPrepare = vi.fn();
     const rewardState = {
       ...createEmptyRewardState(),
       destinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CAMPFIRE],
     };
 
-    render(<DestinationScreen currentAct={1} rewardState={rewardState} onChoose={vi.fn()} onPrepare={onPrepare} />);
-
-    expect(onPrepare).toHaveBeenCalledOnce();
-  });
-
-  it("renders multiple destinations and routes selection to onChoose", async () => {
-    const user = userEvent.setup();
-    const onChoose = vi.fn();
-    const rewardState = {
-      ...createEmptyRewardState(),
-      destinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CAMPFIRE],
-    };
-
-    render(<DestinationScreen currentAct={1} rewardState={rewardState} onChoose={onChoose} />);
+    render(<DestinationScreen currentAct={1} rewardState={rewardState} onChoose={onChoose} onPrepare={onPrepare} />);
 
     expect(screen.getByRole("heading", { name: "Choose Destination" })).toBeTruthy();
 
@@ -49,20 +38,7 @@ describe("DestinationScreen", () => {
     await user.click(combatBtn);
 
     expect(onChoose).toHaveBeenCalledWith(DESTINATIONS.NORMAL_COMBAT);
-  });
-
-  it.each([
-    [1, "I"],
-    [2, "II"],
-    [3, "III"],
-  ] as const)("shows current Act %s beside ordinary destination choices", (currentAct, numeral) => {
-    const rewardState = {
-      ...createEmptyRewardState(),
-      destinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CAMPFIRE],
-    };
-    render(<DestinationScreen currentAct={currentAct} rewardState={rewardState} onChoose={vi.fn()} />);
-    expect(screen.getByText(`Act ${numeral}`)).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Choose Destination" })).toBeTruthy();
+    expect(onPrepare).toHaveBeenCalledOnce();
   });
 
   it.each([

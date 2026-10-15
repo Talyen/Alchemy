@@ -14,8 +14,6 @@ const pointerCursor = assetRefs.pointerCShaded;
 
 export const menuLogo = assetRefs.alchemyLogo;
 export const demoFeatureShowcase = assetRefs.demoFeatureShowcase;
-export const pileDrawArt = assetRefs.drawPile;
-export const pileDiscardArt = assetRefs.discardPile;
 export const armorySalvageArt = assetRefs.armorySalvage;
 
 export const combatantFrameArt = {

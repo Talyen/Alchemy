@@ -24,7 +24,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
 });
 
 fixture.root = mkdtempSync(path.join(tmpdir(), "alchemy-art-barrels-"));
-const { syncArtBarrels, syncAssets, syncGearArt } = await import("../../scripts/sync-art-barrels.mjs");
+const { syncArtBarrels } = await import("../../scripts/sync-art-barrels.mjs");
 const outputDir = path.join(fixture.root, "src/assets/optimized");
 const barrelDir = path.join(fixture.root, "src/lib/game-data");
 const manifestPath = path.join(outputDir, ".asset-hashes.json");
@@ -150,6 +150,7 @@ describe("strict art barrel inputs", () => {
 describe("art barrel synchronization", () => {
   it("reads one snapshot, accepts legacy and object hashes, and generates matching non-catalog exports", async () => {
     await syncArtBarrels();
+    expect(vi.mocked(writeFile).mock.calls.map(([file]) => file)).toEqual([assetBarrel]);
     expect(vi.mocked(readFile).mock.calls.filter(([file]) => file === manifestPath)).toHaveLength(1);
     const assets = await readFile(assetBarrel, "utf8");
     expect(assets.match(/optimized\/([^"\n]+)/g)).toEqual(["optimized/a.webp"]);
@@ -161,25 +162,6 @@ describe("art barrel synchronization", () => {
     await syncArtBarrels({ check: true });
     expect(writeFile).not.toHaveBeenCalled();
     expect(await readFile(assetBarrel, "utf8")).toBe(assets);
-  });
-
-  it("writes only the assets barrel for the assets entry point", async () => {
-    await syncAssets();
-    expect(vi.mocked(writeFile).mock.calls.map(([file]) => file)).toEqual([assetBarrel]);
-  });
-
-  it("keeps the gear entry point on the same authoritative registry", async () => {
-    await syncGearArt();
-    expect(vi.mocked(writeFile).mock.calls.map(([file]) => file)).toEqual([assetBarrel]);
-    const current = await readFile(assetBarrel, "utf8");
-    await syncArtBarrels({ check: true });
-    expect(await readFile(assetBarrel, "utf8")).toBe(current);
-  });
-
-  it.each([syncAssets, syncGearArt, syncArtBarrels])("validates all inputs for every entry point", async (sync) => {
-    await rm(path.join(outputDir, "a.webp"));
-    await expect(sync()).rejects.toMatchObject({ code: "ENOENT" });
-    await expectPreserved();
   });
 
   it("reports stale barrels in check mode without writing", async () => {

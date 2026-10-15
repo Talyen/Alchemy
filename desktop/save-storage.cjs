@@ -1,5 +1,6 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const { setImmediate } = require("node:timers");
 
 /** Native profile storage outlives every renderer and its session queue. */
 function createDesktopSaveStorage({ slots, demoProgress, isSavePayload, stampOwner, filesystem = fs }) {
@@ -114,12 +115,18 @@ function createDesktopSaveStorage({ slots, demoProgress, isSavePayload, stampOwn
 function registerSaveShutdown(app, store) {
   let ready = false;
   let draining;
-  app.on("before-quit", (event) => {
+  // Renderer beforeunload handlers submit their final saves while windows close.
+  // Keep admission open until will-quit, then drain before the process exits.
+  app.on("will-quit", (event) => {
     if (ready) return;
     event.preventDefault();
     draining ??= store.close().then(() => {
-      ready = true;
-      app.quit();
+      // Electron resets its native quitting flag after will-quit returns.
+      // An already-resolved drain must not retry inside that event's microtasks.
+      setImmediate(() => {
+        ready = true;
+        app.quit();
+      });
     });
   });
 }

@@ -25,7 +25,6 @@ function hydrateMysteryChoice(choice: PersistedMysteryChoiceInput): MysteryChoic
   return {
     label: choice.label,
     effects: choice.effects.map((effect): MysteryEffect => {
-      if (effect.kind === "gainXP") return { ...effect, keyword: effect.keyword as KeywordId };
       // Parsed optional fields may be explicitly undefined; live effects omit them.
       if (effect.kind === "healHealth") {
         const { chance, ...rest } = effect;

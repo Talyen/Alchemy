@@ -101,6 +101,9 @@ async function lastManaJourney(info: TestInfo, reducedMotion: boolean) {
     await expect(page.getByRole("button", { name: /^View Deck/ })).toBeFocused();
     const health = await battle.playerHealth();
     await controllerInput(page).activate(battle.endTurnBtn);
+    const confirmation = page.getByRole("dialog", { name: "End turn?", exact: true });
+    await expect(confirmation.getByRole("button", { name: "Cancel", exact: true })).toBeFocused();
+    await controllerInput(page).activate(confirmation.getByRole("button", { name: "End Turn", exact: true }));
     await expect.poll(() => battle.playerHealth()).toBeLessThan(health);
     await expect(battle.hand.first()).toBeVisible();
     await expect(battle.endTurnBtn).toBeEnabled();
@@ -136,8 +139,8 @@ test(
         runMaxHealth: 30,
         activity: savedActivityFixture("campfire"),
       });
-      await page.getByRole("button", { name: /^Rest \(\+\d+ Health\)$/ }).click({ clickCount: 2 });
-      await expect(page.getByRole("button", { name: /^Rest \(\+\d+ Health\)$/ })).toHaveCount(0);
+      await page.getByRole("button", { name: /^Rest$/ }).click({ clickCount: 2 });
+      await expect(page.getByRole("button", { name: /^Rest$/ })).toHaveCount(0);
       const profile = await app.evaluate(({ app: host }) => host.getPath("userData"));
       await expect.poll(() => readSave(profile)?.activeRun?.runPlayerHealth).toBeGreaterThan(10);
       const restoredHealth = readSave(profile)?.activeRun?.runPlayerHealth;

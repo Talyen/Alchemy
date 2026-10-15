@@ -24,7 +24,7 @@ test("buying a card charges its quote once and survives resume", critical, async
   await enterShop(page, 9999, "Card Shop");
   const shop = new ShopPage(page);
   const buy = shop.buyBtn.first();
-  const title = (await buy.getAttribute("aria-label"))!.replace(/^Buy /, "");
+  const title = (await buy.getByRole("img").first().getAttribute("alt"))!;
   const price = Number((await buy.locator("span.tabular-nums").last().innerText()).replaceAll(",", ""));
   expect(price).toBeGreaterThan(0);
   const gold = await shop.gold();
@@ -35,7 +35,7 @@ test("buying a card charges its quote once and survives resume", critical, async
   await expect.poll(async () => (await readSavedGame(page)).activeRun?.runDeck.length).toBe(deckSize + 1);
   await withSavedGame(page, async (resumed) => {
     await expect(resumed.getByRole("heading", { name: "Card Shop", exact: true })).toBeVisible();
-    await expect(resumed.getByRole("button", { name: title, exact: true })).toBeDisabled();
+    await expect(resumed.getByRole("button", { name: `${title}. Purchased`, exact: true })).toBeDisabled();
     expect(await new ShopPage(resumed).gold()).toBe(gold - price);
     await resumed.getByRole("button", { name: `View Deck · ${deckSize + 1} cards` }).click();
     await expect(resumed.getByRole("dialog").getByRole("img", { name: title, exact: true }).first()).toBeVisible();

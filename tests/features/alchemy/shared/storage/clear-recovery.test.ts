@@ -12,6 +12,7 @@ import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/sha
 import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { deferred } from "../../../../helpers/deferred";
 import { createSaveBackend } from "../../../../helpers/save-backend";
+import type { SaveBackend } from "@/lib/platform-save-backend";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -173,7 +174,7 @@ it("retains a terminal settings save when a failed clear interrupts its exit att
 it.each([false, true])("a replacement autosave driver respects a pending clear that succeeds %s", async (ok) => {
   vi.useFakeTimers();
   vi.spyOn(console, "error").mockImplementation(() => {});
-  const deletion = deferred<{ ok: boolean }>();
+  const deletion = deferred<Awaited<ReturnType<SaveBackend["clear"]>>>();
   const writes: string[] = [];
   const session = createGameSession({ saveBackend: createSaveBackend({ writes, clear: () => deletion.promise }) });
   const persistence = createSessionPersistence(session);
@@ -188,7 +189,7 @@ it.each([false, true])("a replacement autosave driver respects a pending clear t
     replacement = createAlchemyAutosaveLifecycle(() => true, undefined, session, true);
     await vi.advanceTimersByTimeAsync(10_000);
     expect(writes).toEqual([]);
-    deletion.resolve({ ok });
+    deletion.resolve(ok ? { ok: true } : { ok: false, error: "clear refused" });
     expect(await clearing).toBe(ok);
     await vi.advanceTimersByTimeAsync(10_000);
     await replacement.drain();
@@ -196,7 +197,7 @@ it.each([false, true])("a replacement autosave driver respects a pending clear t
     expect(completed).toHaveBeenCalledTimes(ok ? 0 : 1);
     expect(persistence.readProgress().kind).toBe("idle");
   } finally {
-    deletion.resolve({ ok });
+    deletion.resolve(ok ? { ok: true } : { ok: false, error: "clear refused" });
     first.dispose(false);
     replacement?.dispose(false);
     await session.dispose();
