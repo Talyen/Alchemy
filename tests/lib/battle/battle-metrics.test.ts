@@ -77,20 +77,6 @@ describe("battle measurements", () => {
     expect(state.battleMetrics).toEqual(metrics());
   });
 
-  it("counts Glacial Surge only while its scheduled gain can increase Freeze Bonus", () => {
-    const state = patchBattleState({
-      turn: 2,
-      battleMetrics: metrics(),
-      currentEnemy: { traits: [{ id: "glacial-shell", title: "Glacial Surge", description: "" }] },
-    });
-    const first = processEnemyTraits(state, []);
-    const second = processEnemyTraits({ ...first, turn: 4 }, []);
-    expect(second.enemyStatuses.freezeBonus).toBe(2);
-    expect(second.battleMetrics?.enemyAbilityActivations).toEqual({ "glacial-shell": 2 });
-    const capped = { ...second, turn: 6 };
-    expect(processEnemyTraits(capped, [])).toBe(capped);
-  });
-
   it("counts healing traits only when they restore Health, without changing combat", () => {
     const resolve = (state: ReturnType<typeof patchBattleState>) =>
       processEnemyRegeneration(processEncounterTraitActionStart(state, []), []);

@@ -19,11 +19,7 @@ export const enemyBestiary = [
     art: assetRefs.theFrostwarden,
     enemyType: "boss",
     traits: [
-      trait(
-        "glacial-shell",
-        "Glacial Surge",
-        "Freeze damage increases by 1 every other turn, up to 2 additional damage",
-      ),
+      trait("glacial-shell", "Glacial Surge", "Increases Freeze damage by 1"),
       trait("glacial-body", "Glacial Body", "Receives half Freeze damage\nReceives 30% more Burn damage"),
     ],
     abilityIds: ["frostbolt", "cold-snap", "glacial-ward"],
@@ -37,7 +33,7 @@ export const enemyBestiary = [
       regeneration("Rotting Regrowth"),
       trait("burn-vulnerability", "Burn Vulnerability", "Receives 30% more Burn damage"),
     ],
-    abilityIds: ["grasping-vines", "bloodthorn", "briar-shield"],
+    abilityIds: ["grasping-vines", "bloodthorn", "thorn-whip"],
   }),
   defineEnemy({
     id: "skeleton",

@@ -68,7 +68,7 @@ export const FIGHT_PACING = {
   damageRampByEnemyType: {
     normal: { startRound: 7, playerSpan: 4, enemySpan: 6 },
     elite: { startRound: 12, playerSpan: 4, enemySpan: 6 },
-    boss: { startRound: 8, playerSpan: 4, enemySpan: 6 },
+    boss: { startRound: 10, playerSpan: 5, enemySpan: 5 },
   },
 } as const;
 

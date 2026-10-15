@@ -1,6 +1,7 @@
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { applyPlayerStatusFromAttack } from "@/lib/battle/status-player";
 import { describe, expect, it } from "vitest";
+import { enemyById } from "@/lib/game-data";
 import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
 import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 
@@ -77,6 +78,28 @@ describe("applyEnemyAbility: status", () => {
     );
     expect(result.playerHealth).toBe(24);
     expect(result.playerStatuses.freeze).toBe(6);
+  });
+
+  it("Glacial Surge adds exactly one Freeze damage from turn one and never increases other damage", () => {
+    const card = (damageType: "freeze" | "burn") =>
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType, amount: 4 }] });
+    for (const turn of [1, 2, 4, 20]) {
+      const state = patchBattleState({
+        currentEnemy: enemyById.frostwarden,
+        turn,
+        playerHealth: 1000,
+        playerMaxHealth: 1000,
+        roomScalingMultiplier: 1,
+        rng: () => 0.99,
+      });
+      const freeze = applyEnemyAbility(state, card("freeze"), []);
+      const burn = applyEnemyAbility(state, card("burn"), []);
+      expect(freeze.playerHealth).toBe(997);
+      expect(freeze.playerStatuses.freeze).toBe(3);
+      expect(freeze.enemyStatuses.freezeBonus).toBe(0);
+      expect(burn.playerHealth).toBe(998);
+      expect(state.playerHealth).toBe(1000);
+    }
   });
 
   it("applies player-status attack effects", () => {
