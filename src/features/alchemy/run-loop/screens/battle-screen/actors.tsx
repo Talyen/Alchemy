@@ -1,6 +1,6 @@
 import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
 import { isPlayerDefeated, getBattleCompanionDamageModifiers } from "@/lib/battle";
-import { BATTLE_ACTOR_TOP } from "@/lib/game-constants";
+import { BATTLE_ACTOR_TOP, BATTLE_ACTOR_VIEWPORT_OFFSET } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
 import {
@@ -46,7 +46,9 @@ export function BattleActors({
   return (
     <section
       className={cn(aspectMode === "ultrawide" ? battleActorSectionClass.ultrawide : battleActorSectionClass.desktop)}
-      style={{ top: `calc(${BATTLE_ACTOR_TOP} - max(0px, calc((var(--content-scale, 1) - 1) * 120px)))` }}
+      style={{
+        top: `calc(${BATTLE_ACTOR_TOP} + ${BATTLE_ACTOR_VIEWPORT_OFFSET}px - max(0px, calc((var(--content-scale, 1) - 1) * 120px)))`,
+      }}
     >
       <div className={battleActorHeroCellClass}>
         <div

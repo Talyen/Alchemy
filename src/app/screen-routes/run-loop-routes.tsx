@@ -107,7 +107,6 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
         refs={commands.refs}
         onCardClick={commands.handleCardClick}
         onWishChoice={commands.handleWishChoice}
-        onEndTurn={commands.handleEndTurn}
         boonInspectOpen={commands.boonInspectOpen}
         onCloseBoonInspect={commands.closeBoonInspect}
       />

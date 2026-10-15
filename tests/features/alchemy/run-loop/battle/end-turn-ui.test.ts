@@ -170,6 +170,25 @@ describe("End Turn execution and playback", () => {
     expect(getRunSessionFromState(resolved).battle.battleState.turnPhase).toBe("player");
   });
 
+  it("rejects a stale confirmation snapshot before committing or starting playback", () => {
+    const { ui, ctx } = makeUi();
+    const expected = readBattle(defaultGameSession).battleState;
+    mutateGameplayForTest((draft) => initializeActiveBattle(draft, { ...expected, mana: 0 }));
+    const before = readGameplayState(defaultGameSession);
+    ui.handleEndTurn(expected);
+    expect(readGameplayState(defaultGameSession)).toBe(before);
+    expect(ctx.playback.cardPlayInProgress).toBe(false);
+    expect(playBattleEvent).not.toHaveBeenCalled();
+  });
+
+  it("blocks unconfirmed turn commits while the dialog owns input", () => {
+    const { ui } = makeUi();
+    battlePresentation.getState().setEndTurnConfirmationOpen(true);
+    const before = readGameplayState(defaultGameSession);
+    ui.handleEndTurn();
+    expect(readGameplayState(defaultGameSession)).toBe(before);
+  });
+
   it("rejects End Turn while inspecting cards without advancing RNG", () => {
     const { ui } = makeUi();
     useUiStore.getState().setCardInspection("discard");

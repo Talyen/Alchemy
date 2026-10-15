@@ -148,6 +148,7 @@ export function useBattleController({
 
   const refs = useMemo(
     () => ({
+      endTurnButtonRef: ctx.endTurnButtonRef,
       handCardRefs: ctx.handCardRefs,
       drawPileRef: ctx.drawPileRef,
       discardPileRef: ctx.discardPileRef,

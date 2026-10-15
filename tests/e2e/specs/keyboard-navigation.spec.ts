@@ -48,6 +48,9 @@ test.describe("Controller-equivalent keyboard navigation", () => {
     }
     await expect(battle.endTurnBtn).toBeFocused();
     await input.press("confirm");
+    const confirmation = page.getByRole("dialog", { name: "End turn?", exact: true });
+    await expect(confirmation.getByRole("button", { name: "Cancel", exact: true })).toBeFocused();
+    await input.activate(confirmation.getByRole("button", { name: "End Turn", exact: true }));
     await expect(battle.endTurnBtn).toBeEnabled();
   });
 });

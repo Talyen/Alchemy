@@ -135,8 +135,10 @@ test.describe("Combat feedback animations", slow, () => {
       if (side === "player") await battle.playFirstCard();
       else {
         await battle.endTurnBtn.click();
-        const confirm = page.getByRole("button", { name: "Confirm", exact: true });
-        if (await confirm.isVisible()) await confirm.click();
+        const confirm = page
+          .getByRole("dialog", { name: "End turn?", exact: true })
+          .getByRole("button", { name: "End Turn", exact: true });
+        await confirm.click();
       }
       await expect(page.getByTestId("combat-text").first()).toBeVisible();
       const elapsed = await page.evaluate(() => (window as Window & { combatElapsed?: number }).combatElapsed);

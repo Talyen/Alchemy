@@ -44,6 +44,7 @@ export interface CardTransfer {
 }
 
 export interface BattleRefs {
+  endTurnButtonRef: RefObject<HTMLButtonElement | null>;
   handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
   drawPileRef: RefObject<HTMLDivElement | null>;
   discardPileRef: RefObject<HTMLDivElement | null>;

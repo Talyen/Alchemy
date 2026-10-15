@@ -583,8 +583,8 @@ test("services crafting and dense recap", async () => {
     ],
   });
   await page.getByRole("button", { name: "End Turn", exact: true }).click();
-  const confirm = page.getByRole("button", { name: "Confirm", exact: true });
-  if (await confirm.isVisible()) await confirm.click();
+  const confirm = page.getByRole("dialog", { name: "End turn?", exact: true });
+  await confirm.getByRole("button", { name: "End Turn", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Journey’s End" })).toBeVisible();
   await shot("defeat-dense-recap");
 });

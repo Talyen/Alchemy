@@ -99,9 +99,11 @@ function useRunSessionBattleSlice(): RunSessionBattleSlice {
   return useShallowRunSelector((state) => pickRunSessionBattleSlice(selectBattle(state)));
 }
 
-export function useBattleClusterState(): { gold: number; hasWishOptions: boolean } {
+export function useBattleClusterState() {
   return useGameplayStateStore(
     useShallow((state) => ({
+      battleState: selectBattle(state).battleState,
+      hasActiveBattle: selectBattle(state).hasActiveBattle,
       gold: selectBattle(state).battleState.gold,
       hasWishOptions: Boolean(selectBattle(state).battleState.wishOptions),
     })),

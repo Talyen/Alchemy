@@ -32,7 +32,10 @@ test.describe("Stunned enemy turn presentation", { tag: [critical.tag, slow.tag]
       })
       .toBeGreaterThan(0);
     await battle.endTurnBtn.click();
-    await page.getByRole("button", { name: "Confirm", exact: true }).click();
+    await page
+      .getByRole("dialog", { name: "End turn?", exact: true })
+      .getByRole("button", { name: "End Turn", exact: true })
+      .click();
     await sawDiscardFly;
 
     await expect(enemyTurn).toHaveAttribute("data-active", "true", { timeout: 15_000 });

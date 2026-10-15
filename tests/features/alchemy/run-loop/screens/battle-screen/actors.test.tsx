@@ -30,6 +30,7 @@ it.each([
       }}
       feedback={{ playerStatusChips: [], enemyStatusChips: [], activeLabyrinthModifiers: [] }}
       refs={{
+        endTurnButtonRef: { current: null },
         handCardRefs: { current: {} },
         drawPileRef: { current: null },
         discardPileRef: { current: null },

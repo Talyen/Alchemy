@@ -39,6 +39,7 @@ export interface BattleControllerContext extends BattleControllerContextProps, B
 }
 
 export function useBattleControllerContext(props: BattleControllerContextProps): BattleControllerContext {
+  const endTurnButtonRef = useRef<HTMLButtonElement | null>(null);
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const drawPileRef = useRef<HTMLDivElement | null>(null);
   const discardPileRef = useRef<HTMLDivElement | null>(null);
@@ -55,6 +56,7 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
     () => ({
       ...props,
       playback,
+      endTurnButtonRef,
       handCardRefs,
       drawPileRef,
       discardPileRef,

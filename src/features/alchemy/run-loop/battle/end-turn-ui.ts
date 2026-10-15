@@ -1,6 +1,6 @@
 import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/ui-store";
 import { enemyAbilityDealsDamage, getEnemyAbilityCard } from "@/lib/game-data";
-import { getBattleOutcome, type BattleTurnFrame } from "@/lib/battle";
+import { getBattleOutcome, type BattleSnapshot, type BattleTurnFrame } from "@/lib/battle";
 import { playBattleEvent, playCardSound } from "@/lib/audio";
 import { COMPANION_ATTACK_DELAY_MS, ENEMY_ATTACK_RECOVERY_DELAY_MS, ENEMY_PHASE_DELAY_MS } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
@@ -89,17 +89,19 @@ export function createBattleEndTurnUi(
   session: ReturnType<typeof createBattleSession>,
   transferDeps: ReturnType<typeof createBattleTransferDeps>,
 ) {
-  function handleEndTurn() {
+  function handleEndTurn(expected?: BattleSnapshot) {
     const battle = ctx.battle.read();
     const currentState = battle.battleState;
     const presentation = ctx.getPresentation();
     if (
+      (expected !== undefined && expected !== currentState) ||
       !ctx.playback.canAcceptInput() ||
       isBattlePlaybackBlocked({
         screen: ctx.screen,
         battleState: currentState,
         hasActiveBattle: battle.hasActiveBattle,
         cardTransferInProgress: presentation.cardTransferInProgress,
+        endTurnConfirmationOpen: presentation.endTurnConfirmationOpen,
         hiddenHandCardKeys: presentation.hiddenHandCardKeys,
         cardPlayInProgress: ctx.playback.cardPlayInProgress,
         inspectionOpen: isBattleInspectionOpen(useUiStore.getState()),

@@ -244,7 +244,9 @@ for (const { width, height, gameSizePercent } of [
     expect(height - draw!.y - draw!.height).toBeCloseTo(inset, 0);
     expect(height - discard!.y - discard!.height).toBeCloseTo(inset, 0);
     expect(mana!.x + mana!.width / 2).toBeCloseTo(width / 2, 0);
-    expect(endTurn!.x + endTurn!.width / 2).toBeCloseTo(discard!.x + discard!.width / 2, 0);
+    const menu = await page.getByRole("button", { name: "Open game menu", exact: true }).boundingBox();
+    expect(endTurn!.y + endTurn!.height / 2).toBeCloseTo(menu!.y + menu!.height / 2, 0);
+    expect(endTurn!.x + endTurn!.width).toBeLessThan(menu!.x);
     expect(mana!.y + mana!.height).toBeGreaterThan(height);
     expect(mana!.y + mana!.height - height).toBeLessThanOrEqual(5);
     expect(endTurn!.y + endTurn!.height).toBeLessThan(discard!.y);

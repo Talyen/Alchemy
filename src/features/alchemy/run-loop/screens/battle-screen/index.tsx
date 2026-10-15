@@ -33,7 +33,6 @@ interface BattleScreenProps {
   refs: BattleRefsProps;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   onWishChoice: (card: BattleCard) => void;
-  onEndTurn: () => void;
   boonInspectOpen: boolean;
   onCloseBoonInspect: () => void;
 }
@@ -52,7 +51,6 @@ export function BattleScreen(props: BattleScreenProps) {
     refs,
     onCardClick,
     onWishChoice,
-    onEndTurn,
     boonInspectOpen,
     onCloseBoonInspect,
   } = props;
@@ -95,9 +93,8 @@ export function BattleScreen(props: BattleScreenProps) {
       inspectionAvailable,
       onCardClick,
       onWishChoice,
-      onEndTurn,
     }),
-    [onInspectPile, inspectionAvailable, onCardClick, onWishChoice, onEndTurn],
+    [onInspectPile, inspectionAvailable, onCardClick, onWishChoice],
   );
 
   const { battleSceneRef: sceneRef } = refs;

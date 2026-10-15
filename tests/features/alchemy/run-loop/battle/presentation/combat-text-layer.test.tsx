@@ -45,6 +45,7 @@ describe("CombatTextLayer geometry", () => {
       battleSceneRef: { current: scene },
       playerPanelRef: { current: player },
       enemyPanelRef: { current: enemy },
+      endTurnButtonRef: { current: null },
       handCardRefs: { current: {} },
       drawPileRef: { current: null },
       discardPileRef: { current: null },

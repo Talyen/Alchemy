@@ -1,6 +1,7 @@
 import type { TransmutationSelectionCommand } from "@/lib/active-run-session/alchemy-visits";
 import type { ProgressSaveState } from "@/features/alchemy/shared/storage";
 import type { BrewOperation } from "@/lib/alchemist/brewing";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleRefs } from "../shared/types";
 import type {
   MerchantShopCommands,
@@ -115,7 +116,7 @@ export interface AlchemyRouteCommands {
     presentation: BattlePresentationStore;
     handleCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
     handleWishChoice: (card: BattleCard) => void;
-    handleEndTurn: () => void;
+    handleEndTurn: (expected?: BattleSnapshot) => void;
     handleAutoplayCard: AutoplayCardHandler;
     handleAutoplayWish: AutoplayWishHandler;
     skipCombatDevMode: () => void;

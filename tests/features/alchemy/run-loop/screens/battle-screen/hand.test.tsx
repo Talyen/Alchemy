@@ -1,4 +1,5 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { createRef, type MouseEventHandler, type RefObject } from "react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { battlePresentation } from "@/app/battle-presentation";
@@ -18,11 +19,24 @@ vi.mock("@/features/alchemy/shared/ui/cards/card-button", () => ({
     ariaLabel,
     className,
     scaleOnHover,
+    buttonRef,
+    onClick,
   }: {
     ariaLabel: string;
     className: string;
     scaleOnHover: boolean;
-  }) => <button type="button" aria-label={ariaLabel} className={className} data-scale-on-hover={scaleOnHover} />,
+    buttonRef: RefObject<HTMLButtonElement | null>;
+    onClick: MouseEventHandler<HTMLButtonElement>;
+  }) => (
+    <button
+      ref={buttonRef}
+      onClick={onClick}
+      type="button"
+      aria-label={ariaLabel}
+      className={className}
+      data-scale-on-hover={scaleOnHover}
+    />
+  ),
 }));
 
 vi.mock("@/features/alchemy/shared/ui/use-interactive-card", () => ({
@@ -91,6 +105,46 @@ describe("BattleHand", () => {
   afterEach(() => {
     cleanup();
     battlePresentation.getState().resetPresentation();
+  });
+
+  it("recovers focus to the toolbar reference outside the bottom bar after the last playable card", () => {
+    const endTurnButtonRef = createRef<HTMLButtonElement>();
+    const refs = { handCardRefs: { current: {} }, endTurnButtonRef } as unknown as BattleRefsProps;
+    const onCardClick = vi.fn();
+    const state = { ...defaultBattleState(), hand: [affordableCard], mana: 2 };
+    const tree = (hand: BattleCard[]) => (
+      <>
+        <button type="button" ref={endTurnButtonRef}>
+          End Turn
+        </button>
+        <section data-battle-bottom-bar>
+          <BattleHand
+            presentation={battlePresentation}
+            view={{ battleState: { ...state, hand }, stagePixelRatio: 1 } as unknown as RequiredBattleViewProps}
+            refs={refs}
+            actions={{ onCardClick } as BattleActionsProps}
+            playabilityState={{ ...state, hand }}
+          />
+        </section>
+      </>
+    );
+    const { rerender } = render(tree(state.hand));
+    const target = endTurnButtonRef.current!;
+    const geometry = vi
+      .spyOn(target, "getClientRects")
+      .mockReturnValue([new DOMRect(0, 0, 44, 44)] as unknown as DOMRectList);
+    target.scrollIntoView = vi.fn();
+    try {
+      const card = screen.getByRole("button", { name: "Play Slash" });
+      card.focus();
+      fireEvent.keyDown(card, { key: "Enter" });
+      fireEvent.click(card);
+      expect(onCardClick).toHaveBeenCalledOnce();
+      rerender(tree([]));
+      expect(document.activeElement).toBe(target);
+    } finally {
+      geometry.mockRestore();
+    }
   });
 
   it("keeps playable cards colored and interactive during transfers", () => {

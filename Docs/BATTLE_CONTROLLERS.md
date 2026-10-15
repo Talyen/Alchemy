@@ -29,6 +29,13 @@ A retained action cannot affect a later turn, Wish queue, replacement battle, or
 restored save even when card IDs and turn numbers repeat. Unrelated navigation
 leaves the battle snapshot intact and does not invalidate input. Autoplay retains
 its snapshot across preview delays; headless offers retain it in their callbacks.
+The toolbar's manual End Turn confirmation passes its captured snapshot to
+`handleEndTurn(expected)`; the controller rejects a changed snapshot before
+playback. Automatic turn endings call the same handler without a captured UI
+confirmation. The session-owned presentation flag `endTurnConfirmationOpen`
+blocks card/turn input and automation while the dialog is open, and clears before
+a confirmed command or on teardown. The controller-owned `endTurnButtonRef`
+connects hand focus recovery to the toolbar without depending on DOM ancestry.
 Playback cancellation remains responsible for presentation work.
 
 At interaction time, those callbacks resolve gameplay before presentation:

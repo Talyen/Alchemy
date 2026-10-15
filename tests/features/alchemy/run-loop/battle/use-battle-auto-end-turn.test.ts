@@ -66,6 +66,19 @@ describe("useBattleAutoEndTurn", () => {
     },
   );
 
+  it("pauses an exhausted hand during manual confirmation and resumes after cancellation", () => {
+    const onEndTurn = vi.fn();
+    renderHook(() =>
+      useAutoEndTurnUnderTest({ ...baseOptions, battleState: makeEmptyHandBattle().battleState, onEndTurn }),
+    );
+    act(() => battlePresentation.getState().setEndTurnConfirmationOpen(true));
+    act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS * 2));
+    expect(onEndTurn).not.toHaveBeenCalled();
+    act(() => battlePresentation.getState().setEndTurnConfirmationOpen(false));
+    act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS));
+    expect(onEndTurn).toHaveBeenCalledOnce();
+  });
+
   it("schedules end turn when no card is playable", () => {
     const onEndTurn = vi.fn();
     renderHook(() =>

@@ -228,11 +228,7 @@ export function BattleHand({
     const key = [...pending.order, ...battleState.hand.map(getHandCardKey)].find((candidate) =>
       interactiveHandCardKeys.has(candidate),
     );
-    const target = key
-      ? handCardRefs.current[key]
-      : pointer.ref.current
-          ?.closest("[data-battle-bottom-bar]")
-          ?.querySelector<HTMLButtonElement>("[data-battle-end-turn]");
+    const target = key ? handCardRefs.current[key] : refs.endTurnButtonRef.current;
     if (focusControl(target)) recovery.current = null;
   }, [
     battleState.hand,
@@ -241,7 +237,7 @@ export function BattleHand({
     animationInProgress,
     interactiveHandCardKeys,
     handCardRefs,
-    pointer.ref,
+    refs.endTurnButtonRef,
   ]);
 
   return (

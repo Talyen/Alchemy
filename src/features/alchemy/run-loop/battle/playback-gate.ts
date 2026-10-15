@@ -17,11 +17,12 @@ interface PlaybackBlockedOptions {
   cardPlayInProgress: boolean;
   gameMenuOpen?: boolean;
   inspectionOpen?: boolean;
+  endTurnConfirmationOpen?: boolean;
 }
 
 function isPlaybackBlocked(options: PlaybackBlockedOptions, mode: PlaybackMode): boolean {
   const { battleState } = options;
-  if (options.gameMenuOpen || options.inspectionOpen) return true;
+  if (options.gameMenuOpen || options.inspectionOpen || options.endTurnConfirmationOpen) return true;
   return (
     !options.hasActiveBattle ||
     options.screen !== "battle" ||

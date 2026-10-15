@@ -94,6 +94,7 @@ function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
     screen: "battle" as const,
     battle: createBattleCapabilities(defaultGameSession),
     playback,
+    endTurnButtonRef: { current: null },
     handCardRefs: { current: {} },
     drawPileRef: { current: null },
     discardPileRef: { current: null },
@@ -611,7 +612,7 @@ describe("createBattleCardPlay", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it.each(["disabled", "menu", "unmount"] as const)(
+  it.each(["disabled", "menu", "confirmation", "unmount"] as const)(
     "does not commit a previewed card after autoplay is interrupted: %s",
     async (interruption) => {
       vi.mocked(shouldReduceMotion).mockReturnValue(false);
@@ -620,7 +621,9 @@ describe("createBattleCardPlay", () => {
       const initialState = makeTestBattleState({ hand: [slash], mana: 3, enemyHealth: 30 });
       givenBattle(initialState);
       const { ctx, handleAutoplayCard, handleAutoplayWish } = makeDeps();
-      const gate = { current: { hiddenHandCardKeys: [], cardTransferInProgress: false } };
+      const gate = {
+        current: { hiddenHandCardKeys: [], cardTransferInProgress: false, endTurnConfirmationOpen: false },
+      };
       const { rerender, unmount } = renderHook(
         ({ enabled, gameMenuOpen }) =>
           useBattleAutoplay({
@@ -639,7 +642,10 @@ describe("createBattleCardPlay", () => {
       try {
         expect(useUiStore.getState().autoplayPreviewCardId).toBe("hand-slash-7");
         if (interruption === "unmount") unmount();
-        else rerender({ enabled: interruption !== "disabled", gameMenuOpen: interruption === "menu" });
+        else if (interruption === "confirmation") {
+          gate.current.endTurnConfirmationOpen = true;
+          battlePresentation.getState().setEndTurnConfirmationOpen(true);
+        } else rerender({ enabled: interruption !== "disabled", gameMenuOpen: interruption === "menu" });
         await act(async () => {
           await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
         });
@@ -647,6 +653,8 @@ describe("createBattleCardPlay", () => {
         expect(awardCardXP).not.toHaveBeenCalled();
         expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
         if (interruption !== "unmount") {
+          gate.current.endTurnConfirmationOpen = false;
+          battlePresentation.getState().setEndTurnConfirmationOpen(false);
           rerender({ enabled: true, gameMenuOpen: false });
           await act(async () => {
             await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS + 50);

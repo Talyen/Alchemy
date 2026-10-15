@@ -68,6 +68,7 @@ export function createBattleCardPlay(
     const presentation = getPresentation();
     return (
       !isBattleInspectionOpen(useUiStore.getState()) &&
+      !presentation.endTurnConfirmationOpen &&
       ctx.screen === "battle" &&
       ctx.playback.canAcceptInput(true) &&
       state.turnPhase === "player" &&

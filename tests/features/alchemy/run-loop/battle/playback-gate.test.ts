@@ -12,6 +12,7 @@ it.each(["card", "wish"] as const)("blocks %s playback while another interaction
     ["inspection", { inspectionOpen: true }],
     ["card transfer", { cardTransferInProgress: true }],
     ["game menu", { gameMenuOpen: true }],
+    ["end turn confirmation", { endTurnConfirmationOpen: true }],
   ] as const) {
     expect(blocked({ ...options, ...pending }), reason).toBe(true);
   }

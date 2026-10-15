@@ -252,6 +252,15 @@ function AppMainContent({
         {content}
         {showBattleCluster ? (
           <BattleCluster
+            endTurn={{
+              presentation: run.routeCommands.battle.presentation,
+              screen: controllerScreen,
+              buttonRef: run.routeCommands.battle.refs.endTurnButtonRef,
+              onEndTurn: run.routeCommands.battle.handleEndTurn,
+              isCardPlayInProgress: run.routeCommands.battle.isCardPlayInProgress,
+              isProgressSavePending: run.routeCommands.battle.isProgressSavePending,
+              subscribeProgressSave: run.routeCommands.battle.subscribeProgressSave,
+            }}
             inert={inspection.open || !screenInteractive}
             deckInspection={deckInspection}
             isAutoplayEnabled={isAutoplayEnabled}
