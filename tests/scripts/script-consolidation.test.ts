@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -51,42 +52,38 @@ describe("script consolidation", () => {
 
   it("captures one-shot task output and exposes only a compact result", async () => {
     const root = mkdtempSync(join(tmpdir(), "task-command-"));
-    try {
-      const logPath = join(root, "task.log");
-      const result = await runTaskCommand(
-        process.execPath,
-        ["-e", 'console.log("noise".repeat(5000)); process.exit(0)'],
-        { cwd: root, label: "bounded task", logPath },
-      );
-      expect(result.status).toBe(0);
-      expect(statSync(logPath).size).toBeGreaterThan(20_000);
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
+    using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
+
+    const logPath = join(root, "task.log");
+    const result = await runTaskCommand(
+      process.execPath,
+      ["-e", 'console.log("noise".repeat(5000)); process.exit(0)'],
+      { cwd: root, label: "bounded task", logPath },
+    );
+    expect(result.status).toBe(0);
+    expect(statSync(logPath).size).toBeGreaterThan(20_000);
   });
 
   it("compacts the aggregate CI static gate while retaining step logs", async () => {
     const root = mkdtempSync(join(tmpdir(), "lint-ci-"));
-    try {
-      const log = vi.spyOn(console, "log").mockImplementation(() => {});
-      const runner = vi.fn(async (_command: string, _args: string[], options: Record<string, unknown>) => ({
-        status: 0,
-        elapsedMs: 1,
-        output: "Tests  3 passed (3)",
-        logPath: String(options.logPath),
-      }));
-      expect(await runCiLint({ rootDir: root, runner })).toBe(0);
-      expect(runner.mock.calls.map(([command, args]) => [command, args])).toEqual([
-        ["npm", ["run", "check:static"]],
-        ["npm", ["run", "docs:check"]],
-        ["npm", ["run", "deadcode"]],
-        ["npm", ["run", "lint:boundaries"]],
-        ["npm", ["run", "lint:architecture-smoke"]],
-        ["npx", ["playwright", "test", "--list", "--project=chromium"]],
-      ]);
-      expect(log.mock.calls.flat().join("\n")).toContain("CI static checks: 6/6 passed");
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
+    using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
+
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const runner = vi.fn(async (_command: string, _args: string[], options: Record<string, unknown>) => ({
+      status: 0,
+      elapsedMs: 1,
+      output: "Tests  3 passed (3)",
+      logPath: String(options.logPath),
+    }));
+    expect(await runCiLint({ rootDir: root, runner })).toBe(0);
+    expect(runner.mock.calls.map(([command, args]) => [command, args])).toEqual([
+      ["npm", ["run", "check:static"]],
+      ["npm", ["run", "docs:check"]],
+      ["npm", ["run", "deadcode"]],
+      ["npm", ["run", "lint:boundaries"]],
+      ["npm", ["run", "lint:architecture-smoke"]],
+      ["npx", ["playwright", "test", "--list", "--project=chromium"]],
+    ]);
+    expect(log.mock.calls.flat().join("\n")).toContain("CI static checks: 6/6 passed");
   });
 });

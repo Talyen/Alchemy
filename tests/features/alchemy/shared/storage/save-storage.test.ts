@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { createSaveBackend } from "../../../../helpers/save-backend";
 import { describe, expect, it, vi } from "vitest";
 import type { SaveBackend } from "@/lib/platform-save-backend";
@@ -268,23 +269,20 @@ describe("SaveStorage ownership", () => {
   it.each(["save", "saveForExit"] as const)(
     "%s preserves unreadable recovery data when the known primary is protected or its write fails",
     async (operation) => {
-      const log = vi.spyOn(console, "error").mockImplementation(() => {});
-      try {
-        for (const primary of [futureSaveCandidate(100), playableSaveCandidate(10)]) {
-          const storageBackend = backend();
-          storageBackend.readCandidates.mockImplementation(async (key) =>
-            key === SAVE_KEY ? { ok: true, candidates: [primary] } : { ok: false, error: "recovery unreadable" },
-          );
-          storageBackend.write.mockResolvedValue({ ok: false, error: "primary unavailable" });
-          storageBackend.writeSync.mockReturnValue({ ok: false, error: "primary unavailable" });
-          const storage = new SaveStorage(storageBackend);
-          const loaded = await storage.load();
-          expect(await storage[operation](loaded.data)).toBe("failed");
-          expect(storageBackend.write.mock.calls.every(([key]) => key === SAVE_KEY)).toBe(true);
-          expect(storageBackend.writeSync.mock.calls.every(([key]) => key === SAVE_KEY)).toBe(true);
-        }
-      } finally {
-        log.mockRestore();
+      using _log = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      for (const primary of [futureSaveCandidate(100), playableSaveCandidate(10)]) {
+        const storageBackend = backend();
+        storageBackend.readCandidates.mockImplementation(async (key) =>
+          key === SAVE_KEY ? { ok: true, candidates: [primary] } : { ok: false, error: "recovery unreadable" },
+        );
+        storageBackend.write.mockResolvedValue({ ok: false, error: "primary unavailable" });
+        storageBackend.writeSync.mockReturnValue({ ok: false, error: "primary unavailable" });
+        const storage = new SaveStorage(storageBackend);
+        const loaded = await storage.load();
+        expect(await storage[operation](loaded.data)).toBe("failed");
+        expect(storageBackend.write.mock.calls.every(([key]) => key === SAVE_KEY)).toBe(true);
+        expect(storageBackend.writeSync.mock.calls.every(([key]) => key === SAVE_KEY)).toBe(true);
       }
     },
   );
@@ -441,19 +439,19 @@ it.each(["load", "clear"] as const)("%s completion cannot revoke newer write pro
     }),
   );
   const logged = vi.spyOn(console, "error").mockImplementation(() => {});
-  try {
-    const running = storage[operation]();
-    await started.promise;
-    storage.setWritesDisabled(true);
-    pending.resolve();
-    await running;
-    expect(await storage.save(createDefaultSaveData())).toBe("skipped");
-    expect(await storage.saveForExit(createDefaultSaveData())).toBe("skipped");
-    expect(write).not.toHaveBeenCalled();
-    storage.setWritesDisabled(false);
-    expect(await storage.save(createDefaultSaveData())).toBe("saved");
-  } finally {
+  using _scopeCleanup = createCleanup(() => {
     pending.resolve();
     logged.mockRestore();
-  }
+  });
+
+  const running = storage[operation]();
+  await started.promise;
+  storage.setWritesDisabled(true);
+  pending.resolve();
+  await running;
+  expect(await storage.save(createDefaultSaveData())).toBe("skipped");
+  expect(await storage.saveForExit(createDefaultSaveData())).toBe("skipped");
+  expect(write).not.toHaveBeenCalled();
+  storage.setWritesDisabled(false);
+  expect(await storage.save(createDefaultSaveData())).toBe("saved");
 });

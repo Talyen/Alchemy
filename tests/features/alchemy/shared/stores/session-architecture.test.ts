@@ -11,30 +11,42 @@ import { createSettingsStore } from "@/features/alchemy/shared/stores/settings-s
 import { readSessionSettings } from "@/features/alchemy/shared/stores/session-settings";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
 import { makeTestCard } from "../../../../fixtures/cards";
+import { createCleanup } from "@/lib/cleanup";
+
+it.each([false, true])("releases scoped resources after failure, including early release = %s", async (early) => {
+  const session = createGameSession();
+  const release = vi.fn();
+  const failure = new Error("scope failed");
+  await expect(async () => {
+    await using _ownedSession = session;
+    using cleanup = createCleanup(release);
+    if (early) cleanup();
+    throw failure;
+  }).rejects.toBe(failure);
+  expect(release).toHaveBeenCalledOnce();
+  expect(() => readGameplayState(session)).toThrow(/disposed/);
+});
 
 describe("session architecture invariants", () => {
   it.each([() => () => 1, () => new Date(), () => new Map([["gold", 1]])])(
     "rejects non-data gameplay before publishing any revision",
     async (metadata) => {
-      const session = createGameSession();
+      await using session = createGameSession();
       const before = readGameplayState(session);
       const card = Object.assign(makeTestCard(), { metadata: metadata() });
-      try {
-        expect(() =>
-          dispatchRunSessionCommand(
-            (transaction) => {
-              setRunDeck(transaction, [card]);
-              return acceptCommand();
-            },
-            undefined,
-            session,
-          ),
-        ).toThrow(/plain|data/);
-        expect(readGameplayState(session)).toBe(before);
-        expect(Object.isFrozen(card)).toBe(false);
-      } finally {
-        await session.dispose();
-      }
+
+      expect(() =>
+        dispatchRunSessionCommand(
+          (transaction) => {
+            setRunDeck(transaction, [card]);
+            return acceptCommand();
+          },
+          undefined,
+          session,
+        ),
+      ).toThrow(/plain|data/);
+      expect(readGameplayState(session)).toBe(before);
+      expect(Object.isFrozen(card)).toBe(false);
     },
   );
 
@@ -107,18 +119,15 @@ describe("session architecture invariants", () => {
 
   it("checks the current save gate when previously borrowed feedback executes", async () => {
     const sound = vi.fn();
-    const session = createGameSession({ feedback: { playGoldGain: sound } });
-    try {
-      const feedback = sessionFeedback(session);
-      const progress = sessionRuntime(session).progressCompletion;
-      progress.mark(10);
-      feedback.playGoldGain();
-      expect(sound).not.toHaveBeenCalled();
-      progress.complete(progress.token(10), "saved");
-      expect(sound).toHaveBeenCalledOnce();
-    } finally {
-      await session.dispose();
-    }
+    await using session = createGameSession({ feedback: { playGoldGain: sound } });
+
+    const feedback = sessionFeedback(session);
+    const progress = sessionRuntime(session).progressCompletion;
+    progress.mark(10);
+    feedback.playGoldGain();
+    expect(sound).not.toHaveBeenCalled();
+    progress.complete(progress.token(10), "saved");
+    expect(sound).toHaveBeenCalledOnce();
   });
 
   it("owns every timer and suppresses callbacks that race with session disposal", async () => {
@@ -159,19 +168,16 @@ describe("session architecture invariants", () => {
         callbacks.delete(Number(timer));
       },
     };
-    const a = createGameSession({ runtimeInputs: { clock } });
-    const b = createGameSession({ runtimeInputs: { clock } });
+    await using a = createGameSession({ runtimeInputs: { clock } });
+    await using b = createGameSession({ runtimeInputs: { clock } });
     const called = vi.fn();
-    try {
-      const timer = sessionClock(b).setTimeout(called, 10);
-      const racingCallback = callbacks.get(Number(timer))!;
-      sessionClock(a).clearTimeout(timer);
-      expect(callbacks.has(Number(timer))).toBe(true);
-      sessionClock(b).clearTimeout(timer);
-      racingCallback();
-      expect(called).not.toHaveBeenCalled();
-    } finally {
-      await Promise.all([a.dispose(), b.dispose()]);
-    }
+
+    const timer = sessionClock(b).setTimeout(called, 10);
+    const racingCallback = callbacks.get(Number(timer))!;
+    sessionClock(a).clearTimeout(timer);
+    expect(callbacks.has(Number(timer))).toBe(true);
+    sessionClock(b).clearTimeout(timer);
+    racingCallback();
+    expect(called).not.toHaveBeenCalled();
   });
 });

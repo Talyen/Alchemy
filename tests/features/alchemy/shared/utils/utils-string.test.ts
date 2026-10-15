@@ -5,20 +5,17 @@ import { tokenizeDescription } from "@/features/alchemy/shared/utils/string";
 describe("tokenizeDescription", () => {
   it("reuses keyword parsing while keeping callers' parts independent", () => {
     const line = "Cache regression: Gain 37 Block.";
-    const matchAll = vi.spyOn(keywordPattern, Symbol.matchAll);
-    try {
-      const first = tokenizeDescription(line);
-      const expected = [{ text: "Cache regression: Gain 37 " }, { text: "Block", keywordId: "block" }, { text: "." }];
-      expect(first).toEqual(expected);
-      first[0]!.text = "changed";
-      first.find((part) => part.keywordId)!.keywordId = "burn";
-      first.pop();
+    using matchAll = vi.spyOn(keywordPattern, Symbol.matchAll);
 
-      expect(tokenizeDescription(line)).toEqual(expected);
-      expect(matchAll).toHaveBeenCalledOnce();
-    } finally {
-      matchAll.mockRestore();
-    }
+    const first = tokenizeDescription(line);
+    const expected = [{ text: "Cache regression: Gain 37 " }, { text: "Block", keywordId: "block" }, { text: "." }];
+    expect(first).toEqual(expected);
+    first[0]!.text = "changed";
+    first.find((part) => part.keywordId)!.keywordId = "burn";
+    first.pop();
+
+    expect(tokenizeDescription(line)).toEqual(expected);
+    expect(matchAll).toHaveBeenCalledOnce();
   });
 
   it("uses canonical casing for lowercase, inflected, and multi-word aliases", () => {

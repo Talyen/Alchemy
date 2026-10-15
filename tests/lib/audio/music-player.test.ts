@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { expect, it, beforeEach, vi, afterEach } from "vitest";
 import { createMusicPlayer } from "@/lib/audio/music-player";
 import { computeMusicVolume, getBossMusicKey } from "@/lib/audio/music-catalog";
@@ -330,24 +331,22 @@ it("ignores inherited catalog keys without interrupting playback or creating pre
 
 it("owns tracks, settings, preview state, and cleanup independently for each player", () => {
   const other = createHarness();
-  try {
-    player.previewBossMusic(MUSIC_KEYS.BOSS_FORGE_GOLEM);
-    other.settings.musicVolume = 0.2;
-    other.player.playMusic(MUSIC_KEYS.MENU);
-    const otherMenu = other.elements[0]!;
-    player.reset();
-    vi.advanceTimersByTime(3000);
-    expect(elements[0]?.paused).toBe(true);
-    expect(otherMenu).toMatchObject({ paused: false, volume: 0.2 * MUSIC_MASTER_GAIN });
-    other.settings.muted = true;
-    other.player.syncMusicSettings();
-    expect(otherMenu.muted).toBe(true);
-    other.player.endBossPreview();
-    expect(other.elements).toEqual([otherMenu]);
-    expect(vi.getTimerCount()).toBe(0);
-  } finally {
-    other.player.reset();
-  }
+  using _scopeCleanup = createCleanup(() => other.player.reset());
+
+  player.previewBossMusic(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+  other.settings.musicVolume = 0.2;
+  other.player.playMusic(MUSIC_KEYS.MENU);
+  const otherMenu = other.elements[0]!;
+  player.reset();
+  vi.advanceTimersByTime(3000);
+  expect(elements[0]?.paused).toBe(true);
+  expect(otherMenu).toMatchObject({ paused: false, volume: 0.2 * MUSIC_MASTER_GAIN });
+  other.settings.muted = true;
+  other.player.syncMusicSettings();
+  expect(otherMenu.muted).toBe(true);
+  other.player.endBossPreview();
+  expect(other.elements).toEqual([otherMenu]);
+  expect(vi.getTimerCount()).toBe(0);
 });
 
 it("ignores an already queued fade callback after reset and replacement playback", () => {

@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { cleanup, fireEvent, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ESCAPE_PRIORITY, pushEscapeHandler, resetEscapeStackForTests } from "@/app/escape-stack";
@@ -50,12 +51,10 @@ describe("app Escape shortcuts", () => {
     listbox.setAttribute("role", "listbox");
     listbox.setAttribute("data-state", "open");
     document.body.append(listbox);
-    try {
-      fireEvent.keyDown(listbox, { key: "F7" });
-      expect(previous).not.toHaveBeenCalled();
-    } finally {
-      listbox.remove();
-    }
+    using _scopeCleanup = createCleanup(() => listbox.remove());
+
+    fireEvent.keyDown(listbox, { key: "F7" });
+    expect(previous).not.toHaveBeenCalled();
   });
 
   it("activates Options switches and inventory checkboxes with the Steam Input confirm key", () => {

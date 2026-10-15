@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import {
   mutateGameplayForTest,
   getBattleForTest,
@@ -56,44 +57,41 @@ describe("run-session transaction coordinator", () => {
     const before = readGameplayState(defaultGameSession);
     const onCommit = vi.fn();
     const effect = vi.fn();
-    const unsubscribe = subscribeRunSessionCommits(onCommit, defaultGameSession);
-    try {
-      const command = createGameplayCommand(
-        (draft, gold: number) => {
-          setGold(draft, gold);
-          setHasActiveRun(draft, true);
-          setDiscoveredCardIds(draft, ["slash"]);
-          addGearCurrencies(draft.gear, { voidstone: 1 });
-          createDraftRunRandomSource(draft, "shops")();
-          return rejectCommand("A later validation rejected the action", fallback);
-        },
-        { afterCommit: effect },
-        defaultGameSession,
-      );
+    using _unsubscribe = createCleanup(subscribeRunSessionCommits(onCommit, defaultGameSession));
 
-      expect(command(99)).toBe(fallback);
-      expect(readGameplayState(defaultGameSession)).toBe(before);
-      expect(onCommit).not.toHaveBeenCalled();
-      expect(effect).not.toHaveBeenCalled();
+    const command = createGameplayCommand(
+      (draft, gold: number) => {
+        setGold(draft, gold);
+        setHasActiveRun(draft, true);
+        setDiscoveredCardIds(draft, ["slash"]);
+        addGearCurrencies(draft.gear, { voidstone: 1 });
+        createDraftRunRandomSource(draft, "shops")();
+        return rejectCommand("A later validation rejected the action", fallback);
+      },
+      { afterCommit: effect },
+      defaultGameSession,
+    );
 
-      // Rejection must release the guard and leave the next seeded draw untouched.
-      dispatchGameplayCommand(
-        (draft) => {
-          createDraftRunRandomSource(draft, "shops")();
-          setGold(draft, 7);
-          return acceptCommand(false);
-        },
-        { afterCommit: effect },
-        defaultGameSession,
-      );
-      expect(readRunProfile(defaultGameSession).gold).toBe(7);
-      expect(readActiveRun(defaultGameSession).rng.counters.shops).toBe(before.run.activeRun.rng.counters.shops + 1);
-      expect(readGameplayState(defaultGameSession).revision).toBe(before.revision + 1);
-      expect(onCommit).toHaveBeenCalledExactlyOnceWith(before.revision + 1);
-      expect(effect).toHaveBeenCalledExactlyOnceWith(false);
-    } finally {
-      unsubscribe();
-    }
+    expect(command(99)).toBe(fallback);
+    expect(readGameplayState(defaultGameSession)).toBe(before);
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(effect).not.toHaveBeenCalled();
+
+    // Rejection must release the guard and leave the next seeded draw untouched.
+    dispatchGameplayCommand(
+      (draft) => {
+        createDraftRunRandomSource(draft, "shops")();
+        setGold(draft, 7);
+        return acceptCommand(false);
+      },
+      { afterCommit: effect },
+      defaultGameSession,
+    );
+    expect(readRunProfile(defaultGameSession).gold).toBe(7);
+    expect(readActiveRun(defaultGameSession).rng.counters.shops).toBe(before.run.activeRun.rng.counters.shops + 1);
+    expect(readGameplayState(defaultGameSession).revision).toBe(before.revision + 1);
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(before.revision + 1);
+    expect(effect).toHaveBeenCalledExactlyOnceWith(false);
   });
 
   it("discards writes from an untyped callback that omits an explicit outcome", () => {
@@ -130,40 +128,37 @@ describe("run-session transaction coordinator", () => {
     const before = readGameplayState(defaultGameSession);
     const onCommit = vi.fn();
     const effect = vi.fn();
-    const unsubscribe = subscribeRunSessionCommits(onCommit, defaultGameSession);
-    try {
-      const execute = (draft: GameplayDraft): unknown => {
-        setGold(draft, 99);
-        createDraftRunRandomSource(draft, "world")();
-        return result(draft);
-      };
+    using _unsubscribe = createCleanup(subscribeRunSessionCommits(onCommit, defaultGameSession));
 
-      expect(() =>
-        dispatchGameplayCommand(
-          (...args: Parameters<typeof execute>) => acceptCommand(execute(...args)),
-          {
-            afterCommit: effect,
-          },
-          defaultGameSession,
-        ),
-      ).toThrow(/must be synchronous/);
-      expect(readGameplayState(defaultGameSession)).toBe(before);
-      expect(onCommit).not.toHaveBeenCalled();
-      expect(effect).not.toHaveBeenCalled();
+    const execute = (draft: GameplayDraft): unknown => {
+      setGold(draft, 99);
+      createDraftRunRandomSource(draft, "world")();
+      return result(draft);
+    };
 
-      mutateGameplayForTest((draft) => setGold(draft, 7));
-      await new Promise((resolve) => {
-        setTimeout(resolve, 0);
-      });
+    expect(() =>
+      dispatchGameplayCommand(
+        (...args: Parameters<typeof execute>) => acceptCommand(execute(...args)),
+        {
+          afterCommit: effect,
+        },
+        defaultGameSession,
+      ),
+    ).toThrow(/must be synchronous/);
+    expect(readGameplayState(defaultGameSession)).toBe(before);
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(effect).not.toHaveBeenCalled();
 
-      expect(readGameplayState(defaultGameSession).runProfile.gold).toBe(7);
-      expect(readGameplayState(defaultGameSession).revision).toBe(before.revision + 1);
-      expect(readActiveRun(defaultGameSession).rng.counters.world).toBe(before.run.activeRun.rng.counters.world);
-      expect(onCommit).toHaveBeenCalledExactlyOnceWith(before.revision + 1);
-      expect(effect).not.toHaveBeenCalled();
-    } finally {
-      unsubscribe();
-    }
+    mutateGameplayForTest((draft) => setGold(draft, 7));
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+
+    expect(readGameplayState(defaultGameSession).runProfile.gold).toBe(7);
+    expect(readGameplayState(defaultGameSession).revision).toBe(before.revision + 1);
+    expect(readActiveRun(defaultGameSession).rng.counters.world).toBe(before.run.activeRun.rng.counters.world);
+    expect(onCommit).toHaveBeenCalledExactlyOnceWith(before.revision + 1);
+    expect(effect).not.toHaveBeenCalled();
   });
 
   it("enforces synchronous results through command factories and gear wrappers", async () => {

@@ -14,22 +14,19 @@ describe("balance simulator", () => {
     "reports $expected for a terminal opening at hero $playerHealth / enemy $enemyHealth, Death's Door $deathsDoorActive",
     ({ expected, ...health }) => {
       // Inject the resolved boundary snapshot, leaving simulator classification and metrics real.
-      const opening = vi.spyOn(battle, "resolveBattleStart").mockReturnValue({
+      using _opening = vi.spyOn(battle, "resolveBattleStart").mockReturnValue({
         state: { ...battle.defaultBattleState(), ...health },
         companion: null,
         outcome: battle.getBattleOutcome(health),
       });
-      try {
-        const result = simulateBattle({ characterId: "knight", enemyId: "skeleton", loadoutMode: "bare", deck: [] });
-        expect(result).toMatchObject({
-          outcome: expected,
-          turns: 0,
-          totalCardsPlayed: 0,
-          wonBeforeEnemyAttack: expected === "win",
-        });
-      } finally {
-        opening.mockRestore();
-      }
+
+      const result = simulateBattle({ characterId: "knight", enemyId: "skeleton", loadoutMode: "bare", deck: [] });
+      expect(result).toMatchObject({
+        outcome: expected,
+        turns: 0,
+        totalCardsPlayed: 0,
+        wonBeforeEnemyAttack: expected === "win",
+      });
     },
   );
 

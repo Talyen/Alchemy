@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { makeTestCard } from "../../../../fixtures/cards";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import "../../../../helpers/mock-audio";
@@ -63,27 +64,22 @@ describe("createRunFlow victory paths", () => {
 
   it.each([false, true])("defeat commits immediately while presentation can be cancelled: %s", (cancelled) => {
     vi.useFakeTimers();
-    try {
-      setRunSession({ hasActiveRun: true });
-      const setScreen = vi.fn();
-      const { result } = renderHook(() => useScreenTransitions(defaultGameSession, ROUTE_SCREENS.BATTLE, setScreen));
-      const handlers = createRunFlow(
-        makeFlowHandlerDeps({ transition: result.current.transition }),
-        defaultGameSession,
-      );
-      act(() => handlers.handleBattleDefeat());
-      act(() => vi.advanceTimersByTime(BATTLE_END_TRANSITION_DELAY_MS - 1));
-      expect(setScreen).not.toHaveBeenCalled();
-      expect(applyRunDefeatTeardown).toHaveBeenCalledOnce();
-      if (cancelled) result.current.cancelPending();
-      act(() => vi.advanceTimersByTime(1));
-      expect(setScreen).toHaveBeenCalledTimes(cancelled ? 0 : 1);
-      expect(applyRunDefeatTeardown).toHaveBeenCalledOnce();
-      act(() => vi.advanceTimersByTime(BATTLE_END_TRANSITION_DELAY_MS));
-      expect(applyRunDefeatTeardown).toHaveBeenCalledOnce();
-    } finally {
-      vi.useRealTimers();
-    }
+    using _scopeCleanup = createCleanup(() => vi.useRealTimers());
+
+    setRunSession({ hasActiveRun: true });
+    const setScreen = vi.fn();
+    const { result } = renderHook(() => useScreenTransitions(defaultGameSession, ROUTE_SCREENS.BATTLE, setScreen));
+    const handlers = createRunFlow(makeFlowHandlerDeps({ transition: result.current.transition }), defaultGameSession);
+    act(() => handlers.handleBattleDefeat());
+    act(() => vi.advanceTimersByTime(BATTLE_END_TRANSITION_DELAY_MS - 1));
+    expect(setScreen).not.toHaveBeenCalled();
+    expect(applyRunDefeatTeardown).toHaveBeenCalledOnce();
+    if (cancelled) result.current.cancelPending();
+    act(() => vi.advanceTimersByTime(1));
+    expect(setScreen).toHaveBeenCalledTimes(cancelled ? 0 : 1);
+    expect(applyRunDefeatTeardown).toHaveBeenCalledOnce();
+    act(() => vi.advanceTimersByTime(BATTLE_END_TRANSITION_DELAY_MS));
+    expect(applyRunDefeatTeardown).toHaveBeenCalledOnce();
   });
 
   it.each(["campaign", "labyrinth", "wildwood"] as const)(

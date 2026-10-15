@@ -40,7 +40,7 @@ export function sessionClock(gameSession: GameSession) {
   return sessionRuntime(gameSession).clock;
 }
 
-export function registerSessionCleanup(gameSession: GameSession, cleanup: () => void): () => void {
+export function registerSessionCleanup(gameSession: GameSession, cleanup: () => void) {
   return sessionRuntime(gameSession).track(cleanup);
 }
 

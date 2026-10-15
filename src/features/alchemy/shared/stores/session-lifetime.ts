@@ -1,4 +1,5 @@
 import type { SessionClock } from "./game-session-types";
+import { createCleanup } from "@/lib/cleanup";
 
 /** Resource ownership is independent of the consumers that schedule work. */
 export function createSessionLifetime() {
@@ -10,9 +11,9 @@ export function createSessionLifetime() {
   const track = (cleanup: () => void) => {
     assertActive();
     cleanups.add(cleanup);
-    return () => {
+    return createCleanup(() => {
       if (cleanups.delete(cleanup)) cleanup();
-    };
+    });
   };
   return {
     track,

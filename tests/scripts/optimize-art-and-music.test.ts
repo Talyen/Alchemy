@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { mkdtempSync, rmSync } from "node:fs";
 import { copyFile, mkdir, readFile, readdir, rename, rm, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -260,16 +261,14 @@ describe("explicit library selection", () => {
   it("rejects music selections that escape the output directory or disguise a copied format before any write", async () => {
     const asset = musicAssets[0]!;
     const original = { ...asset };
-    try {
-      for (const target of ["../outside.ogg", "nested/track.ogg", "/tmp/track.ogg", "track.mp3"]) {
-        asset.target = target;
-        await expect(optimizeMusic()).rejects.toThrow(/Invalid target|copied without conversion/);
-        expect(copyFile).not.toHaveBeenCalled();
-        expect(writeFile).not.toHaveBeenCalled();
-        await expect(readdir(musicOutput)).rejects.toMatchObject({ code: "ENOENT" });
-      }
-    } finally {
-      Object.assign(asset, original);
+    using _scopeCleanup = createCleanup(() => Object.assign(asset, original));
+
+    for (const target of ["../outside.ogg", "nested/track.ogg", "/tmp/track.ogg", "track.mp3"]) {
+      asset.target = target;
+      await expect(optimizeMusic()).rejects.toThrow(/Invalid target|copied without conversion/);
+      expect(copyFile).not.toHaveBeenCalled();
+      expect(writeFile).not.toHaveBeenCalled();
+      await expect(readdir(musicOutput)).rejects.toMatchObject({ code: "ENOENT" });
     }
   });
 

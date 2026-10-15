@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import "../../../helpers/mock-audio";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
@@ -108,25 +109,25 @@ it.each(["restore", "wipe"] as const)("replaces mounted battle playback before %
     displayed: owner.presentation.getState().displayedBattle,
   }));
   const unsubscribe = sessionRuntime(owner.gameSession).settings.subscribe(observer);
-  try {
-    await act(async () => {
-      if (operation === "restore") persistence.restore(savedBattle);
-      else expect(await clearAllPersistentGameData(owner.gameSession)).toBe(true);
-    });
-    expect(observer).toHaveBeenCalledOnce();
-    expect(observer).toHaveReturnedWith({ aborted: true, current: false, displayed: null });
-    expect(transferCancelled).toHaveBeenCalledOnce();
-    expect(playback.canAcceptInput()).toBe(true);
-    scope.setTimeout(lateOutcome, 0);
-    vi.runAllTimers();
-    expect(lateOutcome).not.toHaveBeenCalled();
-    playback.capture(playback.id).setTimeout(lateOutcome, 0);
-    vi.runAllTimers();
-    expect(lateOutcome).toHaveBeenCalledOnce();
-  } finally {
+  using _scopeCleanup = createCleanup(() => {
     unsubscribe();
     context.unmount();
-  }
+  });
+
+  await act(async () => {
+    if (operation === "restore") persistence.restore(savedBattle);
+    else expect(await clearAllPersistentGameData(owner.gameSession)).toBe(true);
+  });
+  expect(observer).toHaveBeenCalledOnce();
+  expect(observer).toHaveReturnedWith({ aborted: true, current: false, displayed: null });
+  expect(transferCancelled).toHaveBeenCalledOnce();
+  expect(playback.canAcceptInput()).toBe(true);
+  scope.setTimeout(lateOutcome, 0);
+  vi.runAllTimers();
+  expect(lateOutcome).not.toHaveBeenCalled();
+  playback.capture(playback.id).setTimeout(lateOutcome, 0);
+  vi.runAllTimers();
+  expect(lateOutcome).toHaveBeenCalledOnce();
 });
 
 it("cancels mounted playback on session disposal without touching another career", async () => {
@@ -154,14 +155,14 @@ it("cancels mounted playback on session disposal without touching another career
   const old = a.result.current.playback.capture(a.result.current.playback.id);
   old.setTimeout(late, 100);
   b.result.current.playback.capture(b.result.current.playback.id).setTimeout(unaffected, 100);
-  try {
-    await act(() => first.gameSession.dispose());
-    expect(old.isCurrent()).toBe(false);
-    vi.runAllTimers();
-    expect(late).not.toHaveBeenCalled();
-    expect(unaffected).toHaveBeenCalledOnce();
-  } finally {
+  using _scopeCleanup = createCleanup(() => {
     a.unmount();
     b.unmount();
-  }
+  });
+
+  await act(() => first.gameSession.dispose());
+  expect(old.isCurrent()).toBe(false);
+  vi.runAllTimers();
+  expect(late).not.toHaveBeenCalled();
+  expect(unaffected).toHaveBeenCalledOnce();
 });

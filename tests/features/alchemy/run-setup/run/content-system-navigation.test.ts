@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { battleSnapshot } from "@/lib/battle";
 import "../../../../helpers/mock-audio";
 import {
@@ -138,56 +139,48 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps, defaultGameSession);
     const before = snapshotSessionSave(defaultGameSession);
     const commits = vi.fn();
-    const unsubscribe = subscribeRunSessionCommits(commits, defaultGameSession);
+    using _unsubscribe = createCleanup(subscribeRunSessionCommits(commits, defaultGameSession));
     const resolve = battleEngine.resolveBattleStart;
-    const failure = vi.spyOn(battleEngine, "resolveBattleStart").mockImplementationOnce((...args) => {
+    using _failure = vi.spyOn(battleEngine, "resolveBattleStart").mockImplementationOnce((...args) => {
       resolve(...args);
       throw new Error("opening combat failed");
     });
-    try {
-      expect(() =>
-        entry === "novice"
-          ? nav.handleCharacterSelect("knight")
-          : nav.handleDifficultySelect(DEFAULT_CAMPAIGN_DIFFICULTY_ID),
-      ).toThrow("opening combat failed");
-      expect(snapshotSessionSave(defaultGameSession)).toEqual(before);
-      expect(commits).not.toHaveBeenCalled();
-      expect(deps.navigateTo).not.toHaveBeenCalled();
-      expect(deps.presentBattleStart).not.toHaveBeenCalled();
-    } finally {
-      failure.mockRestore();
-      unsubscribe();
-    }
+
+    expect(() =>
+      entry === "novice"
+        ? nav.handleCharacterSelect("knight")
+        : nav.handleDifficultySelect(DEFAULT_CAMPAIGN_DIFFICULTY_ID),
+    ).toThrow("opening combat failed");
+    expect(snapshotSessionSave(defaultGameSession)).toEqual(before);
+    expect(commits).not.toHaveBeenCalled();
+    expect(deps.navigateTo).not.toHaveBeenCalled();
+    expect(deps.presentBattleStart).not.toHaveBeenCalled();
   });
 
   it("publishes one complete start before feedback and lets opening outcomes supersede Battle", () => {
     setRunSession({ pendingCharacterId: "knight" });
     const deps = makeDeps();
     const observed: Array<ReturnType<typeof snapshotSessionSave>> = [];
-    const unsubscribe = subscribeRunSessionCommits(
-      () => observed.push(snapshotSessionSave(defaultGameSession)),
-      defaultGameSession,
+    using _unsubscribe = createCleanup(
+      subscribeRunSessionCommits(() => observed.push(snapshotSessionSave(defaultGameSession)), defaultGameSession),
     );
     vi.mocked(deps.presentBattleStart).mockImplementation(() => {
       expect(readRunSession(defaultGameSession).pendingCharacterId).toBeNull();
       deps.navigateTo(ROUTE_SCREENS.REWARDS);
       throw new Error("presentation failed");
     });
-    try {
-      expect(() => createContentSystemNavigation(deps, defaultGameSession).handleCharacterSelect("knight")).toThrow(
-        "presentation failed",
-      );
-      expect(observed).toHaveLength(1);
-      expect(observed[0]?.activeRun?.activity.kind).toBe("battle");
-      expect(observed[0]?.activeRun?.roomsEncountered).toBe(1);
-      expect(snapshotSessionSave(defaultGameSession)).toEqual(observed[0]);
-      expect(vi.mocked(deps.navigateTo).mock.calls.map(([screen]) => screen)).toEqual([
-        ROUTE_SCREENS.BATTLE,
-        ROUTE_SCREENS.REWARDS,
-      ]);
-    } finally {
-      unsubscribe();
-    }
+
+    expect(() => createContentSystemNavigation(deps, defaultGameSession).handleCharacterSelect("knight")).toThrow(
+      "presentation failed",
+    );
+    expect(observed).toHaveLength(1);
+    expect(observed[0]?.activeRun?.activity.kind).toBe("battle");
+    expect(observed[0]?.activeRun?.roomsEncountered).toBe(1);
+    expect(snapshotSessionSave(defaultGameSession)).toEqual(observed[0]);
+    expect(vi.mocked(deps.navigateTo).mock.calls.map(([screen]) => screen)).toEqual([
+      ROUTE_SCREENS.BATTLE,
+      ROUTE_SCREENS.REWARDS,
+    ]);
   });
 
   it("keeps an opening Companion victory on Rewards through the production shell", () => {
@@ -195,26 +188,23 @@ describe("createContentSystemNavigation", () => {
       draft.runProfile.effects.companionDamage = 1000;
     });
     const resolve = battleEngine.resolveBattleStart;
-    const opening = vi.spyOn(battleEngine, "resolveBattleStart").mockImplementationOnce((options, context) =>
+    using _opening = vi.spyOn(battleEngine, "resolveBattleStart").mockImplementationOnce((options, context) =>
       resolve(
         { ...options, difficultyModifiers: [{ kind: "start-companion", companionId: "bear" }] },
         // Fix the opening roll so the Companion lands the lethal hit.
         { ...context, rng: () => 0.99 },
       ),
     );
-    try {
-      const { flow } = createPlaythroughController(defaultGameSession);
-      flow.goToScreen(ROUTE_SCREENS.GAME_MODE_SELECT);
-      flow.beginCampaign();
-      flow.handleCharacterSelect("knight");
-      expect(readRunSession(defaultGameSession).activity.kind).toBe("rewards");
-      expect(readActiveRunScreen(defaultGameSession)).toBe("rewards");
-      expect(snapshotSessionSave(defaultGameSession).activeRun?.runHistory).toEqual([
-        expect.objectContaining({ destination: DESTINATIONS.NORMAL_COMBAT, completed: true }),
-      ]);
-    } finally {
-      opening.mockRestore();
-    }
+
+    const { flow } = createPlaythroughController(defaultGameSession);
+    flow.goToScreen(ROUTE_SCREENS.GAME_MODE_SELECT);
+    flow.beginCampaign();
+    flow.handleCharacterSelect("knight");
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("rewards");
+    expect(readActiveRunScreen(defaultGameSession)).toBe("rewards");
+    expect(snapshotSessionSave(defaultGameSession).activeRun?.runHistory).toEqual([
+      expect.objectContaining({ destination: DESTINATIONS.NORMAL_COMBAT, completed: true }),
+    ]);
   });
 
   it("sends a veteran hero to difficulty select", () => {

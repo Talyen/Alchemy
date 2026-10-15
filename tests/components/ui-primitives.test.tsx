@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -105,14 +106,14 @@ describe("TextAnimate", () => {
       configurable: true,
       value: vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }),
     });
-    try {
-      render(<TextAnimate>Quiet words</TextAnimate>);
-      const paragraph = screen.getByLabelText("Quiet words");
-      // Static path: a single text node, no animated word spans.
-      expect(paragraph.childElementCount).toBe(0);
-      expect(paragraph.textContent).toBe("Quiet words");
-    } finally {
-      Object.defineProperty(window, "matchMedia", { configurable: true, value: original });
-    }
+    using _scopeCleanup = createCleanup(() =>
+      Object.defineProperty(window, "matchMedia", { configurable: true, value: original }),
+    );
+
+    render(<TextAnimate>Quiet words</TextAnimate>);
+    const paragraph = screen.getByLabelText("Quiet words");
+    // Static path: a single text node, no animated word spans.
+    expect(paragraph.childElementCount).toBe(0);
+    expect(paragraph.textContent).toBe("Quiet words");
   });
 });

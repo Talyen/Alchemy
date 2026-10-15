@@ -155,7 +155,7 @@ export function computeCardAttackPower(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   card?: BattleCard,
-  context?: CardEffectResolutionContext,
+  context?: Pick<CardEffectResolutionContext, "origin" | "baseDamageBonus" | "damageMultiplier">,
   includeEnemyTraits = true,
 ) {
   const encounter = resolveEncounterFirstHit(state, effect, context?.origin === "played-card");
