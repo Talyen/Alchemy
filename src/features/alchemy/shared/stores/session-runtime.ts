@@ -61,8 +61,21 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
   const progressCompletion = new ProgressCompletion();
   const lifecycle = createRunLifecycleEffects(feedback);
   const io = createSaveIo(options.saveBackend, sourceClock.now, allowPlatformStorage);
+  const saveSnapshots = new SessionSaveSnapshots(progressCompletion);
   // Storage invalidation is a session event, independent of autosave clients.
-  lifetime.track(io.subscribeSaveCancellation(() => progressCompletion.cancel()));
+  lifetime.track(
+    io.subscribeSaveEvents((event) => {
+      if (event === "clear-failed") {
+        // Retain the original completion callbacks and pre-action display. A fresh
+        // snapshot can retry this action; invalidated writes cannot acknowledge it.
+        if (progressCompletion.read().kind !== "idle")
+          progressCompletion.complete(progressCompletion.token(gameplay.reads.getState().revision), "failed");
+        return;
+      }
+      saveSnapshots.invalidate();
+      if (event !== "clear-started") progressCompletion.cancel();
+    }),
+  );
   // Restore publication installs both stores before this event, and notifies
   // their observers only after old navigation and playback have been revoked.
   lifetime.track(progressCompletion.subscribeRestore(() => lifecycle.restore()));
@@ -79,7 +92,7 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     feedback,
     inCommand: false,
     progressCompletion,
-    saveSnapshots: new SessionSaveSnapshots(progressCompletion),
+    saveSnapshots,
     persistentClearInFlight: false,
     lifecycle,
     track: lifetime.track,

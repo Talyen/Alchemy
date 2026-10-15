@@ -345,13 +345,21 @@ A failed primary write tries the recovery slot. If both fail, show “Couldn’t
 and Retry; keep the original action pending and retry its snapshot without repeating
 costs, rewards, or RNG. The existing autosave timer handles automatic retries.
 Explicit Retry bypasses backoff once; repeated activation during saving does nothing.
-Clear, successful restore, write protection, and disposal invalidate pending completion callbacks.
+Successful clear, successful restore, write protection, and disposal invalidate pending completion callbacks.
+Requesting deletion pauses autosave and revokes submitted snapshots immediately,
+while retaining the pending action, pre-action display, and completion callbacks.
+If deletion fails, that action remains protected and retryable; autosave resumes
+with a fresh snapshot of the current career, including settings-only changes.
+Only successful deletion discards the paused work. Overlapping clears keep writes
+paused until all finish; any successful deletion discards the old work.
 Restore replaces the acknowledgment epoch only at commit and keeps save protection
 armed continuously until the replacement snapshot is saved. A failed restore retains
 the previous epoch, pending action, and deferred feedback. Successful restore also
 invalidates autosave scheduling before observers schedule replacement work, so a
 late pre-restore write cannot cancel replacement retries. The session persistence
-cancellation subscription covers storage cancellation and committed restores.
+interruption subscription distinguishes storage pause, failure, deletion, write
+protection, and committed restores. A newly attached autosave client reads the
+current deletion gate before scheduling work.
 Completed actions survive process termination after local acknowledgement. This
 promise does not cover power loss, subsequent filesystem failure, or browser eviction.
 

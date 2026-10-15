@@ -5,7 +5,7 @@ import { logStorageFailure } from "@/lib/storage-logging";
 import { createDefaultSaveData } from "./defaults";
 import type { SaveLoadState } from "./save-candidates";
 import { SaveStorage } from "./save-storage";
-import type { SaveWriteOutcome } from "./save-operation-queue";
+import type { SaveStorageEvent, SaveWriteOutcome } from "./save-operation-queue";
 import type { UnstampedSaveData } from "./types";
 
 export function createSaveIo(
@@ -20,6 +20,10 @@ export function createSaveIo(
   const notifications = createNotificationChannel<[]>((error) => {
     logStorageFailure("Save status update failed", error);
   });
+  const events = createNotificationChannel<[SaveStorageEvent]>((error) => {
+    logStorageFailure("Save storage listener threw", error);
+  });
+  storage.subscribeEvents(events.publish);
   function getSaveWriteFailure(): boolean {
     return saveWriteFailed;
   }
@@ -49,9 +53,7 @@ export function createSaveIo(
     storage.routeWritesToRecovery();
   }
 
-  function subscribeSaveCancellation(listener: () => void): () => void {
-    return storage.subscribeCancellation(listener);
-  }
+  const subscribeSaveEvents = events.subscribe;
 
   async function waitForPendingSaveWrites(): Promise<void> {
     // Drain the published outcomes as well as backend work. Transport completion
@@ -105,7 +107,13 @@ export function createSaveIo(
   }
 
   async function clearAlchemySaveData(mode: "default" | "localWipe" = "default"): Promise<boolean> {
-    const cleared = isStorageAvailable() ? await storage.clear(mode) : true;
+    let cleared: boolean;
+    if (isStorageAvailable()) cleared = await storage.clear(mode);
+    else {
+      events.publish("clear-started");
+      events.publish("cleared");
+      cleared = true;
+    }
     if (cleared) reportSaveWriteOutcome("saved");
     return cleared;
   }
@@ -123,7 +131,8 @@ export function createSaveIo(
     configureSaveBackend,
     setWritesDisabled,
     routeWritesToRecovery,
-    subscribeSaveCancellation,
+    subscribeSaveEvents,
+    isClearing: () => storage.isClearing(),
     waitForPendingSaveWrites,
     loadAlchemySaveState,
     saveAlchemySaveData,
