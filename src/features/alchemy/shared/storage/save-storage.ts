@@ -6,7 +6,7 @@ import { logStorageFailure } from "@/lib/storage-logging";
 import { createDefaultSaveData } from "./defaults";
 import { prepareDemoProgressImport } from "./demo-progress-import";
 import { selectSaveCandidates, type SaveLoadState } from "./save-candidates";
-import { SaveOperationQueue, type SaveWriteOutcome } from "./save-operation-queue";
+import { SaveOperationQueue, type SaveStorageEvent, type SaveWriteOutcome } from "./save-operation-queue";
 import type { SaveData, UnstampedSaveData } from "./types";
 
 export class SaveStorage {
@@ -38,8 +38,12 @@ export class SaveStorage {
     this.setWritesDisabled(false);
   }
 
-  subscribeCancellation(listener: () => void): () => void {
-    return this.queue.subscribeCancellation(listener);
+  subscribeEvents(listener: (event: SaveStorageEvent) => void): () => void {
+    return this.queue.subscribeEvents(listener);
+  }
+
+  isClearing(): boolean {
+    return this.queue.isClearPending;
   }
 
   waitForPendingWrites(): Promise<void> {

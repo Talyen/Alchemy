@@ -73,9 +73,12 @@ therefore see the revision they are being asked to save. Gameplay subscriber
 failures are logged independently and cannot suppress later subscribers, autosave,
 or command completion effects. Subscription changes during gameplay notification
 apply to the next publication. `notification-channel.ts` owns synchronous FIFO
-delivery for gameplay, settings, progress, save status, cancellation, and lifecycle
+delivery for gameplay, settings, progress, save status, storage interruptions, and lifecycle
 channels. Each publication captures its listeners; observer-triggered publications
-wait until the current event reaches every observer. Listener failures are isolated
+wait until the current event reaches every observer. Session-owned channels check
+their lifetime before each callback: disposal stops the remaining captured
+listeners and queued publications immediately. Ordinary unsubscribe retains the
+current publication's listener snapshot. Listener failures are isolated
 through the channel owner's diagnostic handler. Execution failures still roll back; explicit
 `afterCommit` failures still propagate after the committed state is retained.
 
@@ -158,6 +161,10 @@ only, while the command guard remains held. This applies even to equal-data rest
 and bootstrap hydration that preserves an initialized run: their old presentation
 work still refers to the previous inputs. Failed restores emit no invalidation.
 Session disposal also cancels mounted playback without waiting for React unmount.
+Successful Clear Save Data uses this same replacement publication after disk
+deletion, including save-receipt and presentation invalidation. Settings and
+gameplay reset together before any observer can snapshot the new career; failed
+deletion leaves the current state and pending presentation intact.
 
 Teardown always clears battle UI, notifies presentation cancellation, then notifies
 run teardown, even if an adapter or listener fails. Listener changes apply on the
@@ -276,6 +283,11 @@ and borrowed store methods, detaches progress subscriptions, and cancels every
 registered timer before draining submitted saves. A timer callback already handed
 to the host checks lifetime again before executing. Timer cancellation and
 subscription release remain safe after disposal; new reads and work reject.
+Gameplay, settings, progress, save-status, and lifecycle notification channels
+borrow the same lifetime predicate. Disposal during notification revokes later
+callbacks in that publication as well as queued reentrant events. Restore and
+teardown also stop their remaining presentation work once their session closes;
+already-submitted storage work still drains.
 
 ## Activity and rewards
 
@@ -344,13 +356,21 @@ A failed primary write tries the recovery slot. If both fail, show “Couldn’t
 and Retry; keep the original action pending and retry its snapshot without repeating
 costs, rewards, or RNG. The existing autosave timer handles automatic retries.
 Explicit Retry bypasses backoff once; repeated activation during saving does nothing.
-Clear, successful restore, write protection, and disposal invalidate pending completion callbacks.
+Successful clear, successful restore, write protection, and disposal invalidate pending completion callbacks.
+Requesting deletion pauses autosave and revokes submitted snapshots immediately,
+while retaining the pending action, pre-action display, and completion callbacks.
+If deletion fails, that action remains protected and retryable; autosave resumes
+with a fresh snapshot of the current career, including settings-only changes.
+Only successful deletion discards the paused work. Overlapping clears keep writes
+paused until all finish; any successful deletion discards the old work.
 Restore replaces the acknowledgment epoch only at commit and keeps save protection
 armed continuously until the replacement snapshot is saved. A failed restore retains
 the previous epoch, pending action, and deferred feedback. Successful restore also
 invalidates autosave scheduling before observers schedule replacement work, so a
 late pre-restore write cannot cancel replacement retries. The session persistence
-cancellation subscription covers storage cancellation and committed restores.
+interruption subscription distinguishes storage pause, failure, deletion, write
+protection, and committed restores. A newly attached autosave client reads the
+current deletion gate before scheduling work.
 Completed actions survive process termination after local acknowledgement. This
 promise does not cover power loss, subsequent filesystem failure, or browser eviction.
 
