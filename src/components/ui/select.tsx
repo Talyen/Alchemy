@@ -32,6 +32,8 @@ function SelectContent({ className, children, position = "popper", ref, ...props
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
+        data-radix-select-content
+        data-state="open"
         ref={ref}
         className={cn(
           "relative z-50 max-h-96 min-w-[calc(8*var(--content-rem,1rem))] overflow-hidden rounded-2xl border border-border/80 bg-background text-popover-foreground shadow-md",

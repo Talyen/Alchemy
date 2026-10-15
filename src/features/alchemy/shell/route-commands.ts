@@ -23,9 +23,9 @@ import type { CollectionTab } from "../shared/types";
 
 export interface ArmoryRouteCommands {
   onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => boolean;
-  onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
-  onEquipTrinket: (characterId: CharacterId, trinketId: string) => void;
-  onUnequipTrinket: (characterId: CharacterId) => void;
+  onUnequip: (characterId: CharacterId, slot: GearSlot) => boolean;
+  onEquipTrinket: (characterId: CharacterId, trinketId: string) => boolean;
+  onUnequipTrinket: (characterId: CharacterId) => boolean;
   onSalvage: (instanceId: string) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;

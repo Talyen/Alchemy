@@ -64,19 +64,19 @@ defineSequenceFamily("armory", (seed) => {
           defaultGameSession,
         ),
       onUnequip: (character, slot) => {
-        dispatchGearMutationWithRunHealthSync(
+        return dispatchGearMutationWithRunHealthSync(
           { mutate: (draft) => draft.unequip(character, slot) },
           defaultGameSession,
         );
       },
       onEquipTrinket: (character, id) => {
-        dispatchGearMutationWithRunHealthSync(
+        return dispatchGearMutationWithRunHealthSync(
           { mutate: (draft) => draft.equipTrinket(character, id) },
           defaultGameSession,
         );
       },
       onUnequipTrinket: (character) => {
-        dispatchGearMutationWithRunHealthSync(
+        return dispatchGearMutationWithRunHealthSync(
           { mutate: (draft) => draft.unequipTrinket(character) },
           defaultGameSession,
         );

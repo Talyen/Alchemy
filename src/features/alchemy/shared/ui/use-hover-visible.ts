@@ -24,8 +24,25 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
   const [uncontrolledVisible, setUncontrolledVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [previousInteractive, setPreviousInteractive] = useState(interactive);
   const pointerInside = useRef(false);
   const focusInside = useRef(false);
+
+  useEffect(() => {
+    if (interactive !== false) return;
+    pointerInside.current = false;
+    focusInside.current = false;
+  }, [interactive]);
+
+  // Disabled triggers can lose their leave/blur handlers before those events arrive.
+  if (previousInteractive !== interactive) {
+    setPreviousInteractive(interactive);
+    if (interactive === false) {
+      setUncontrolledVisible(false);
+      setMounted(false);
+      setDismissed(false);
+    }
+  }
 
   const visible = interactive !== false && !suspended && !dismissed && (isHovered ?? uncontrolledVisible);
 

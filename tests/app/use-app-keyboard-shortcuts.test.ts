@@ -36,6 +36,28 @@ describe("app Escape shortcuts", () => {
     },
   );
 
+  it("keeps Steam Input backward focus inside an open Options selector", () => {
+    const previous = vi.spyOn(focusNav, "focusPreviousControl").mockImplementation(() => {});
+    renderHook(() =>
+      useAppKeyboardShortcuts({
+        renderedScreen: "options",
+        screenInteractive: true,
+        gameMenuOpen: false,
+        toggleGameMenu: vi.fn(),
+      }),
+    );
+    const listbox = document.createElement("div");
+    listbox.setAttribute("role", "listbox");
+    listbox.setAttribute("data-state", "open");
+    document.body.append(listbox);
+    try {
+      fireEvent.keyDown(listbox, { key: "F7" });
+      expect(previous).not.toHaveBeenCalled();
+    } finally {
+      listbox.remove();
+    }
+  });
+
   it("activates Options switches and inventory checkboxes with the Steam Input confirm key", () => {
     renderHook(() =>
       useAppKeyboardShortcuts({

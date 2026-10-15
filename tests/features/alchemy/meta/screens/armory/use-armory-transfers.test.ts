@@ -33,9 +33,15 @@ function setup({
   }
   const onEquip = vi.fn(() => success);
   const placement = vi.fn();
+  const removal = vi.fn();
+  const setNotice = vi.fn();
+  const equippedTrinkets = createEmptyEquippedTrinkets();
+  equippedTrinkets.knight = "bone-charm";
   return {
     onEquip,
     placement,
+    removal,
+    setNotice,
     ...renderHook(() => {
       const ordering = useArmoryOrdering({
         characterId: "knight",
@@ -45,24 +51,28 @@ function setup({
       });
       const transfers = useArmoryTransfers({
         loadouts,
-        equippedTrinkets: createEmptyEquippedTrinkets(),
+        equippedTrinkets,
         onEquip,
-        onUnequip: vi.fn(),
-        onEquipTrinket: vi.fn(),
-        onUnequipTrinket: vi.fn(),
+        onUnequip: vi.fn(() => success),
+        onEquipTrinket: vi.fn(() => success),
+        onUnequipTrinket: vi.fn(() => success),
         characterId: "knight",
         selectedSlot: "main-hand",
         inventoryById: new Map(inventory.map((item) => [item.instanceId, item])),
         sharedInventory: inventory,
         ordering: {
           ...ordering,
+          commitUnequip: (...args) => {
+            removal(...args);
+            ordering.commitUnequip(...args);
+          },
           commitEquip: (...args) => {
             placement(...args);
             ordering.commitEquip(...args);
           },
         },
         requireEditable: (action) => action(),
-        setNotice: vi.fn(),
+        setNotice,
         afterProgressSaved,
       });
       return { ordering, transfers };
@@ -75,6 +85,24 @@ describe("Armory transfer orchestration", () => {
     motion.reduced = false;
     document.body.innerHTML = "";
   });
+
+  it.each(["equip-trinket", "unequip-gear", "unequip-trinket"] as const)(
+    "does not present a rejected %s action as a completed transfer",
+    (action) => {
+      const saved = vi.fn();
+      const { result, placement, removal, setNotice } = setup({ success: false, afterProgressSaved: saved });
+      act(() => {
+        if (action === "equip-trinket") result.current.transfers.handleEquipTrinket("bone-charm");
+        else if (action === "unequip-gear") result.current.transfers.handleSlotUnequip("main-hand");
+        else result.current.transfers.handleUnequipTrinket();
+      });
+      expect(placement).not.toHaveBeenCalled();
+      expect(removal).not.toHaveBeenCalled();
+      expect(saved).not.toHaveBeenCalled();
+      expect(setNotice).toHaveBeenCalledWith(expect.any(String));
+      expect(result.current.transfers.flyingItems).toEqual([]);
+    },
+  );
 
   it("waits for saving before moving artwork and discards a transfer after the view changes", () => {
     const pending: Array<() => void> = [];

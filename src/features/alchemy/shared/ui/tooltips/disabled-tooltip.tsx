@@ -25,6 +25,7 @@ export function DisabledTooltip({
     onBlurCapture,
   } = useHoverVisible({
     focusWithinGuard: true,
+    interactive: show,
   });
 
   return (

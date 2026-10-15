@@ -30,8 +30,8 @@ describe("ArmoryScreen core", () => {
 
   it("hides the equipped item from inventory and unequips from the selected slot", async () => {
     const user = userEvent.setup();
-    const onEquip = vi.fn();
-    const onUnequip = vi.fn();
+    const onEquip = vi.fn(() => true);
+    const onUnequip = vi.fn(() => true);
     const loadouts = createEmptyGearLoadouts();
     loadouts.knight["main-hand"] = "gear-sword";
     renderArmoryScreen({ onEquip, onUnequip, loadouts });
@@ -51,8 +51,8 @@ describe("ArmoryScreen core", () => {
 
   it("stays silent while browsing a hero in Combat and errors on a locked change", async () => {
     const user = userEvent.setup();
-    const onUnequip = vi.fn();
-    const onEquipTrinket = vi.fn();
+    const onUnequip = vi.fn(() => true);
+    const onEquipTrinket = vi.fn(() => true);
     const loadouts = createEmptyGearLoadouts();
     loadouts.knight["main-hand"] = "gear-sword";
     renderArmoryScreen({
@@ -77,7 +77,7 @@ describe("ArmoryScreen core", () => {
 
   it("errors when trying to unequip gear for a hero in Combat", async () => {
     const user = userEvent.setup();
-    const onUnequip = vi.fn();
+    const onUnequip = vi.fn(() => true);
     const loadouts = createEmptyGearLoadouts();
     loadouts.knight["main-hand"] = "gear-sword";
     renderArmoryScreen({
@@ -96,7 +96,7 @@ describe("ArmoryScreen core", () => {
 
   it("reserves another hero’s equipment while leaving unused gear editable", async () => {
     const user = userEvent.setup();
-    const onEquip = vi.fn();
+    const onEquip = vi.fn(() => true);
     const loadouts = createEmptyGearLoadouts();
     loadouts.rogue["main-hand"] = "gear-sword";
     renderArmoryScreen({
@@ -122,7 +122,7 @@ describe("ArmoryScreen core", () => {
     const onEquip = vi.fn(() => false);
     const onApplyCurrency = vi.fn(() => true);
     const onSalvage = vi.fn(() => true);
-    const onUnequip = vi.fn();
+    const onUnequip = vi.fn(() => true);
     const { props, rerender } = renderArmoryScreen({
       inventories,
       onEquip,
@@ -238,8 +238,8 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
 
   it("equips and unequips trinkets following inventory ordering rules", async () => {
     const user = userEvent.setup();
-    const onEquipTrinket = vi.fn();
-    const onUnequipTrinket = vi.fn();
+    const onEquipTrinket = vi.fn(() => true);
+    const onUnequipTrinket = vi.fn(() => true);
 
     const { rerender, props } = renderArmoryScreen({
       onEquipTrinket,
