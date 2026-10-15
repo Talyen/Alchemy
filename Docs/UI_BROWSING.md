@@ -22,11 +22,13 @@ completion or Main Menu. Use Board equips it and continues; Continue preserves
 selection. Unacknowledged reveals recover at Main Menu after restart. Ownership
 commits during settlement, independently of the reveal.
 
-Battle boards fill the existing game stage with independent width/height scaling,
-preserving every edge without cropping or internal margins. Stage layering is
+Battle boards use a centered 16:9 surface that covers the game stage. Artwork
+keeps its proportions; excess edges crop to fit wider or taller viewports without
+stretching or internal margins. Stage layering is
 board art, existing background plasma glow, battle particles, then combat UI.
-Existing glow/particle settings remain effective. Board-specific dimming, color
-treatment, animation, and interactions are deferred.
+Existing glow/particle settings remain effective. The shared
+[tabletop treatment](./UI_BATTLE.md#shared-tabletop-appearance) derives ambient
+tint from the board thumbnail; boards require no authored lighting metadata.
 
 Collection measures available grid width and scaled tile size. Page size is two
 rows times the resolved column count, capped at four columns for Heroes, Cards,
