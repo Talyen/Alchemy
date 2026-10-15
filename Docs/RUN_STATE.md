@@ -31,7 +31,10 @@ committed `battleState`. Opening and turn playback frames stay with presentation
 stored active-battle flag or inactive gameplay snapshot. Read ports derive
 `hasActiveBattle` from that variant and provide a stable empty display fallback.
 `enterBattle` validates a live non-combat starting activity; `settleBattleVictory`
-replaces combat with rewards in one operation. Run termination makes activity
+replaces combat with rewards in one operation. Victory waits for pending Wishes
+to settle, even when the enemy falls during its own turn. The battle remains
+resumable during those choices. Hero defeat still ends combat immediately.
+Run termination makes activity
 inactive and removes command access to combat in the same transaction. Card,
 Wish, and end-turn commands reject absent combat; end turn also checks the player
 input phase and pending Wishes. Duplicate starts and victory settlements reject

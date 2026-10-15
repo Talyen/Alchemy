@@ -47,6 +47,21 @@ describe("isBattlePlaybackBlocked", () => {
 describe("isWishPlaybackBlocked", () => {
   const openBattle = makeOpenBattle();
 
+  it.each(["player", "enemy"] as const)("allows a final Wish after victory during the %s phase", (turnPhase) => {
+    const options = {
+      ...openBattle,
+      battleState: { ...openBattle.battleState, enemyHealth: 0, turnPhase, wishOptions: [playableCard] },
+    };
+    expect(isWishPlaybackBlocked(options)).toBe(false);
+    expect(isBattlePlaybackBlocked(options)).toBe(true);
+    expect(
+      isWishPlaybackBlocked({
+        ...options,
+        battleState: { ...options.battleState, playerHealth: 0, deathsDoorUsed: true },
+      }),
+    ).toBe(true);
+  });
+
   it("blocks without wish options", () => {
     expect(isWishPlaybackBlocked(openBattle)).toBe(true);
   });

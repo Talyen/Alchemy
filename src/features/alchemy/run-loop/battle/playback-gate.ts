@@ -22,6 +22,8 @@ interface PlaybackBlockedOptions {
 
 function isPlaybackBlocked(options: PlaybackBlockedOptions, mode: PlaybackMode): boolean {
   const { battleState } = options;
+  const outcome = getBattleOutcome(battleState);
+  const finishingWish = mode === "wish" && outcome === "victory";
   if (options.gameMenuOpen || options.inspectionOpen || options.endTurnConfirmationOpen) return true;
   return (
     !options.hasActiveBattle ||
@@ -29,9 +31,9 @@ function isPlaybackBlocked(options: PlaybackBlockedOptions, mode: PlaybackMode):
     options.cardPlayInProgress ||
     options.cardTransferInProgress ||
     handHasHiddenCard(battleState, options.hiddenHandCardKeys) ||
-    battleState.turnPhase !== "player" ||
+    (battleState.turnPhase !== "player" && !finishingWish) ||
     Boolean(battleState.wishOptions) !== (mode === "wish") ||
-    getBattleOutcome(battleState) !== null
+    (outcome !== null && !finishingWish)
   );
 }
 
