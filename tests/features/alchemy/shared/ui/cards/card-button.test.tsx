@@ -1,3 +1,6 @@
+import { patchBattleState } from "../../../../../fixtures/battle";
+import { useBattleDescriptionContext } from "@/features/alchemy/run-loop/screens/battle-screen/use-battle-description-context";
+import type { BattleSnapshot } from "@/lib/battle";
 import { makeTestCard } from "../../../../../fixtures/cards";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -16,8 +19,40 @@ const card: BattleCard = makeTestCard({
   effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
 });
 
+function LiveInspection({ state }: { state: BattleSnapshot }) {
+  const descriptionContext = useBattleDescriptionContext(state);
+  return (
+    <BattleCardButton
+      card={cardById.slash!}
+      descriptionContext={descriptionContext}
+      ariaLabel="Inspect Slash"
+      shimmerActive={false}
+      shimmerToken={undefined}
+    />
+  );
+}
+
 describe("BattleCardButton", () => {
   afterEach(cleanup);
+
+  it("updates focused battle damage as resources change and keeps Collection values authored", () => {
+    const { rerender } = render(<LiveInspection state={patchBattleState({ playerStatuses: { forge: 3 } })} />);
+    act(() => screen.getByRole("button", { name: "Inspect Slash" }).focus());
+    expect(screen.getByRole("tooltip").textContent).toContain("Deal 7 Physical damage");
+    rerender(<LiveInspection state={patchBattleState({ playerStatuses: { forge: 6 } })} />);
+    expect(screen.getByRole("tooltip").textContent).toContain("Deal 10 Physical damage");
+    rerender(
+      <BattleCardButton
+        card={cardById.slash!}
+        hovered
+        ariaLabel="Collection Slash"
+        shimmerActive={false}
+        shimmerToken={undefined}
+      />,
+    );
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Collection Slash" }).parentElement!);
+    expect(screen.getByRole("tooltip").textContent).toContain("Deal 4 Physical damage");
+  });
 
   it("removes a hidden card in transit from keyboard navigation until it is revealed", () => {
     const props = { card, ariaLabel: "In transit", shimmerActive: false, shimmerToken: undefined };

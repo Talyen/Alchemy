@@ -7,37 +7,7 @@ import type { BattleCard } from "@/lib/game-data";
 import type { StatusChip } from "../../../shared/types";
 import type { BattleRefs } from "../../../shared/types";
 
-export type BattleScreenState = Pick<
-  BattleSnapshot,
-  | "playerHealth"
-  | "playerMaxHealth"
-  | "deathsDoorActive"
-  | "deathsDoorGraceTurnsRemaining"
-  | "enemyHealth"
-  | "enemyMaxHealth"
-  | "mana"
-  | "maxMana"
-  | "gold"
-  | "deck"
-  | "discard"
-  | "hand"
-  | "wishOptions"
-  | "activeCompanion"
-  | "companionDamageBuff"
-  | "currentEnemy"
-  | "roomScalingMultiplier"
-  | "difficultyModifiers"
-  | "turnPhase"
-  | "playerCC"
-  | "enemyCC"
-  | "enemyStatuses"
-  | "enemyMitigation"
-  | "talentEffects"
-  | "trinketEffects"
-  | "gearEffects"
-  | "flags"
-  | "encounterBenefits"
->;
+export type BattleScreenState = BattleSnapshot;
 
 interface BattleScreenViewProps {
   battleState: BattleScreenState;

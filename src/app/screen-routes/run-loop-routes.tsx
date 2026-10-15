@@ -99,6 +99,7 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
       <EnemyInspectionOverlay
         open={enemyInspectionOpen && canInspectEnemy}
         entry={battleScreenData.battleState.currentEnemy}
+        battleState={battleScreenData.battleState}
         enemyDescriptionContext={battleScreenData.battleState}
         modifiers={battleScreenData.activeLabyrinthModifiers}
         onClose={() => setEnemyInspectionOpen(false)}

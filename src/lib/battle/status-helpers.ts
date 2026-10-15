@@ -78,8 +78,9 @@ export function getEnemyTraitDamageMultiplier(state: Pick<BattleState, "currentE
 export function getEnemyDamageMultiplier(
   state: Pick<BattleState, "currentEnemy" | "enemyCC" | "talentEffects">,
   damageType: string,
+  includeEnemyTraits = true,
 ): number {
-  let multiplier = getEnemyTraitDamageMultiplier(state, damageType);
+  let multiplier = includeEnemyTraits ? getEnemyTraitDamageMultiplier(state, damageType) : 1;
   if (state.enemyCC.stunSkipTurns > 0 && state.talentEffects.stunDoubleDamage)
     multiplier *= TRAIT_DAMAGE_WEAKNESS_MULTIPLIER;
   return multiplier;

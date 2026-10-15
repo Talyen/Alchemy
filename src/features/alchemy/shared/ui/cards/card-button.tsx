@@ -169,14 +169,21 @@ function CardHoverPopup({
   descriptionContext: CardDescriptionContext;
   padding?: number | undefined;
 }) {
-  const descriptionLines = useMemo(
-    () => (visible ? getEffectiveCardDescriptionLines(card, descriptionContext) : []),
+  const inspectedCard = useMemo(
+    () => (visible ? (descriptionContext.inspectBattleCard?.(card) ?? card) : card),
     [visible, card, descriptionContext],
+  );
+  const descriptionLines = useMemo(
+    () => (visible ? getEffectiveCardDescriptionLines(inspectedCard, descriptionContext) : []),
+    [visible, inspectedCard, descriptionContext],
   );
   const newLineIndices = useMemo(() => {
     if (!visible || !comparisonCard) return undefined;
     const remaining = new Map<string, number>();
-    for (const line of getEffectiveCardDescriptionLines(comparisonCard, descriptionContext)) {
+    for (const line of getEffectiveCardDescriptionLines(
+      descriptionContext.inspectBattleCard?.(comparisonCard) ?? comparisonCard,
+      descriptionContext,
+    )) {
       remaining.set(line, (remaining.get(line) ?? 0) + 1);
     }
     const changed = new Set<number>();
@@ -199,7 +206,7 @@ function CardHoverPopup({
       triggerRef={triggerRef}
       plasmaColorPair={plasmaColorPair}
       {...(padding !== undefined ? { padding } : {})}
-      card={card}
+      card={inspectedCard}
     />
   );
 }

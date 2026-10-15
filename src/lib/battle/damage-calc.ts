@@ -151,11 +151,12 @@ function resolveDamageAfterMitigation(
   };
 }
 
-export function computeCardDamageToEnemy(
+export function computeCardAttackPower(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   card?: BattleCard,
   context?: CardEffectResolutionContext,
+  includeEnemyTraits = true,
 ) {
   const encounter = resolveEncounterFirstHit(state, effect, context?.origin === "played-card");
   state = encounter.state;
@@ -170,10 +171,22 @@ export function computeCardDamageToEnemy(
     card,
     firstBonus,
     companionAttack,
+    includeEnemyTraits,
   });
   const scaledDamage = Math.round(baseDamage * totalMultiplier * encounter.multiplier);
   const pacedDamage = paceCombatDamage(stateAfterFirst, scaledDamage, "player");
   const repeatedDamage = Math.round(pacedDamage * (context?.damageMultiplier ?? 1));
+  return { state: stateAfterFirst, damage: repeatedDamage };
+}
+
+export function computeCardDamageToEnemy(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  card?: BattleCard,
+  context?: CardEffectResolutionContext,
+) {
+  const power = computeCardAttackPower(state, effect, card, context);
+  const stateAfterFirst = power.state;
   const physicalCritReady = effect.damageType === "physical" && readCombatFlag(stateAfterFirst, "nextPhysicalCrit");
   const hawkEyeCritReady =
     card !== undefined &&
@@ -182,7 +195,7 @@ export function computeCardDamageToEnemy(
     state.talentEffects.archeryCritOnCrowdControl &&
     state.flags.hawkEyeReady;
   const criticalResult = applyCrit(
-    repeatedDamage,
+    power.damage,
     stateAfterFirst,
     context?.guaranteedCrit === true || physicalCritReady || hawkEyeCritReady,
   );

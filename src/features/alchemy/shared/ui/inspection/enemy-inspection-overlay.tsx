@@ -1,4 +1,9 @@
-import { getEncounterEnemyAbility, type EnemyDescriptionContext } from "@/lib/battle";
+import {
+  getBattleDamageInspectionCard,
+  getEncounterEnemyAbility,
+  type BattleSnapshot,
+  type EnemyDescriptionContext,
+} from "@/lib/battle";
 import { useMemo, type RefObject } from "react";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { getEnemyAbilities, type BestiaryEntry } from "../../config/game-data-catalog";
@@ -9,6 +14,7 @@ import { useHeldWhile } from "../use-fade";
 interface EnemyInspectionProps {
   open: boolean;
   enemyDescriptionContext?: EnemyDescriptionContext | undefined;
+  battleState?: BattleSnapshot | undefined;
   entry: BestiaryEntry;
   modifiers?: readonly EncounterCombatTraitId[];
   onClose: () => void;
@@ -18,10 +24,12 @@ interface EnemyInspectionProps {
 function EnemyInspectionContent({
   entry,
   enemyDescriptionContext,
+  battleState,
   modifiers,
   open,
 }: {
   enemyDescriptionContext?: EnemyDescriptionContext | undefined;
+  battleState?: BattleSnapshot | undefined;
   entry: BestiaryEntry;
   modifiers?: readonly EncounterCombatTraitId[];
   open: boolean;
@@ -29,9 +37,13 @@ function EnemyInspectionContent({
   const cards = useMemo(
     () =>
       getEnemyAbilities(entry).map((card) =>
-        enemyDescriptionContext ? getEncounterEnemyAbility(card, enemyDescriptionContext) : card,
+        battleState
+          ? getBattleDamageInspectionCard(card, battleState, "enemy")
+          : enemyDescriptionContext
+            ? getEncounterEnemyAbility(card, enemyDescriptionContext)
+            : card,
       ),
-    [entry, enemyDescriptionContext],
+    [entry, enemyDescriptionContext, battleState],
   );
   return (
     <div className="flex flex-col gap-5">
@@ -67,6 +79,7 @@ export function EnemyInspectionOverlay(props: EnemyInspectionProps) {
       <EnemyInspectionContent
         key={heldEntry.id}
         entry={heldEntry}
+        battleState={props.battleState}
         enemyDescriptionContext={props.enemyDescriptionContext}
         open={props.open}
         {...(props.modifiers ? { modifiers: props.modifiers } : {})}
