@@ -143,8 +143,10 @@ exceptions abort the complete command. This failure state belongs to that comman
 
 Audio, navigation timers, presentation updates, and other non-rollbackable work
 use `afterCommit` or run after the command returns. Every normally returning command
-runs `afterCommit` exactly once only when accepted, including no-op assignments and
-accepted `false` results; rejection and thrown execution errors skip it. Rejection
+runs `afterCommit` exactly once when accepted and its session remains active,
+including no-op assignments and accepted `false` results. Rejection, thrown execution
+errors, and disposal during publication skip it. Disposal retains the committed
+result but revokes follow-up effects before they start. Rejection
 feedback belongs outside the transaction and can use the returned fallback value.
 
 The command guard is released before `afterCommit`, so an effect may dispatch a
@@ -243,7 +245,10 @@ Accessors and opaque class/container instances are rejected rather than executed
 or silently skipped. Bound groups cannot be altered after validation, and every
 newly bound method checks session lifetime before execution. Flow and Labyrinth routing
 reject mixed-session outcomes, navigation, battle commands, and node callbacks
-before they can mutate gameplay. Pure presentation callbacks need no session.
+before they can mutate gameplay. Composition binds and captures incoming groups,
+including nested dependencies, rather than retaining caller-owned objects after
+validation. Later replacement of a caller's methods or groups cannot change the
+assembled controller. Pure presentation callbacks need no session.
 Outcome handlers remain constructed before battle controllers; their separate
 composition is checked rather than replaced with late callback binding.
 
