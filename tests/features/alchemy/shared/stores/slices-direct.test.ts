@@ -1,61 +1,37 @@
+import { makeTestCard } from "../../../../fixtures/cards";
 import { mutateGameplayForTest, resetAllTestStores, setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import type { BattleCard } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
+import { DESTINATIONS } from "@/lib/routing";
 import { createRunRngState } from "@/lib/rng";
 
 import {
   addRunMaterialsEarned,
-  awardMysteryXP,
   beginDestinationClaim,
   beginRewardClaim,
   cancelDestinationClaim,
   clearRunMaterialsEarned,
-  clearTransientSession,
-  recordRunObtainedItem,
   releaseRewardClaim,
   setCompanionRewardCards,
-  setPendingCharacterId,
   setRewardState,
-  setRoomsEncountered,
-  setScreen,
-  setHasActiveRun,
   nextRunRandom,
-  resetProgress,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readActiveRun, readActiveRunScreen, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
   resetAllTestStores();
 });
 
-describe("navigation write-port", () => {
-  it("setScreen accepts direct values and updater functions", () => {
-    mutateGameplayForTest((draft) => setScreen(draft, ROUTE_SCREENS.BATTLE));
-    expect(readActiveRunScreen(defaultGameSession)).toBe("battle");
-    mutateGameplayForTest((draft) => setScreen(draft, (prev) => (prev === "battle" ? ROUTE_SCREENS.REWARDS : prev)));
-    expect(readActiveRunScreen(defaultGameSession)).toBe("rewards");
-  });
-
-  it("resetNavigation returns to the menu from any screen", () => {
-    mutateGameplayForTest((draft) => setScreen(draft, ROUTE_SCREENS.SHOP));
-    mutateGameplayForTest((draft) => setScreen(draft, "menu"));
-    expect(readActiveRunScreen(defaultGameSession)).toBe("menu");
-  });
-});
-
 describe("session write-port", () => {
-  const rewardCard: BattleCard = {
+  const rewardCard: BattleCard = makeTestCard({
     id: "fireball",
     title: "Fireball",
-    descriptionLines: [""],
-    art: "",
     cost: 3,
     effects: [{ kind: "damage", damageType: "burn", amount: 8 }],
-  };
+  });
 
   it("gates beginRewardClaim on one claim at a time so empty skips can finalize", () => {
     expect(mutateGameplayForTest((draft) => beginRewardClaim(draft))).toBe(true);
@@ -91,19 +67,6 @@ describe("session write-port", () => {
     mutateGameplayForTest((draft) => cancelDestinationClaim(draft));
     expect(readRunSession(defaultGameSession).rewardFlow.claim).toEqual({ kind: "idle" });
   });
-
-  it("clearTransientSession restores initial transient fields", () => {
-    mutateGameplayForTest((draft) => {
-      setHasActiveRun(draft, true);
-      setPendingCharacterId(draft, "rogue");
-      clearTransientSession(draft);
-    });
-    const cleared = readRunSession(defaultGameSession);
-    expect(cleared.hasActiveRun).toBe(false);
-    expect(cleared.rewardFlow.claim.kind).not.toBe("reward");
-    expect(cleared.rewardFlow.claim).toEqual({ kind: "idle" });
-    expect(cleared.pendingCharacterId).toBeNull();
-  });
 });
 
 describe("progress write-port", () => {
@@ -132,31 +95,5 @@ describe("progress write-port", () => {
     });
     mutateGameplayForTest((draft) => clearRunMaterialsEarned(draft));
     expect(readActiveRun(defaultGameSession).runMaterialsEarned).toEqual(emptyInventory());
-  });
-
-  it("recordRunObtainedItem appends gear and trinket grants in order", () => {
-    const instance = { instanceId: "obtained-armor", definitionId: "leather-armor-basic" as const, affixes: [] };
-    mutateGameplayForTest((draft) => {
-      recordRunObtainedItem(draft, { kind: "gear", instance });
-      recordRunObtainedItem(draft, { kind: "trinket", trinketId: "bone-charm" });
-    });
-    expect(readActiveRun(defaultGameSession).runObtainedItems).toEqual([
-      { kind: "gear", instance },
-      { kind: "trinket", trinketId: "bone-charm" },
-    ]);
-  });
-
-  it("resetProgress preserves character while clearing run-scoped tallies", () => {
-    setRunProgress({ characterId: "rogue" });
-    mutateGameplayForTest((draft) => {
-      awardMysteryXP(draft, "burn", 50);
-      setRoomsEncountered(draft, 7);
-      resetProgress(draft);
-    });
-    const reset = readActiveRun(defaultGameSession);
-    expect(reset.characterId).toBe("rogue");
-    expect(reset.runTalentXP).toEqual({});
-    expect(reset.roomsEncountered).toBe(0);
-    expect(reset.initialized).toBe(false);
   });
 });

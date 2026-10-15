@@ -1,3 +1,4 @@
+import { makeTestCard } from "../../../../../fixtures/cards";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -5,7 +6,7 @@ import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { WishOverlay } from "@/features/alchemy/run-loop/screens/battle-screen/wish-overlay";
 import type { BattleActionsProps } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 import { waitForArtwork } from "../../../../../helpers/artwork-test";
-import type { BattleCard, CardDescriptionContext } from "@/lib/game-data";
+import type { CardDescriptionContext } from "@/lib/game-data";
 import { patchBattleState } from "../../../../../fixtures/battle";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
 
@@ -39,14 +40,12 @@ vi.mock("@/features/alchemy/shared/ui/use-interactive-card", () => ({
   }),
 }));
 
-const wishCard = {
+const wishCard = makeTestCard({
   id: "wish-card",
   title: "Wish Card",
   descriptionLines: ["A wish."],
   art: "wish",
-  cost: 1,
-  effects: [],
-} as BattleCard;
+});
 
 function renderWish(onWishChoice = vi.fn()) {
   const battleState = patchBattleState({ wishOptions: [wishCard] });

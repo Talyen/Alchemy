@@ -13,15 +13,12 @@ import { makeTestCard } from "../../../../fixtures/cards";
 import { cardById, type BattleCard } from "@/lib/game-data";
 import * as battle from "@/lib/battle";
 
-const affordableCard: BattleCard = {
+const affordableCard: BattleCard = makeTestCard({
   id: "slash",
   title: "Slash",
-  descriptionLines: [""],
-  art: "",
-  cost: 1,
   effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
   uid: 1,
-};
+});
 
 const expensiveCard: BattleCard = {
   ...affordableCard,

@@ -53,14 +53,13 @@ describe("Combat feedback and reward regressions", () => {
       playerCC: { cooldown: 2, stunSkipTurns: 0, freezeSkipTurns: 0 },
       currentEnemy: { abilityIds: ["chill-spike"] },
     });
-    const abilityCard: BattleCard = {
+    const abilityCard: BattleCard = makeTestCard({
       id: "chill-spike",
       title: "Chill Spike",
       descriptionLines: [],
-      art: "",
       cost: 0,
       effects: [{ kind: "multiply-enemy-status", status: "freeze", factor: 2 }],
-    };
+    });
     const combatTexts: CombatTextEvent[] = [];
     const next = applyEnemyAbility(state, abilityCard, combatTexts);
 

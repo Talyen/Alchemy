@@ -308,6 +308,12 @@ describe("run architecture type contracts", () => {
       "handleCardClick" | "handleCharacterSelect" | "continueFromRunEnd"
     >;
 
+    expectTypeOf<
+      Extract<
+        keyof ReturnType<typeof useAlchemyRunController>["routeCommands"]["battle"],
+        "startBattle" | "startBossBattle" | "startBossById" | "presentBattleStart" | "cancelBattle"
+      >
+    >().toEqualTypeOf<never>();
     expectTypeOf<RunLoopCrossPhaseKeys>().toEqualTypeOf<never>();
     expectTypeOf<MetaCrossPhaseKeys>().toEqualTypeOf<never>();
   });

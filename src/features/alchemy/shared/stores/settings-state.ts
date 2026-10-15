@@ -1,13 +1,6 @@
 import { createNotificationChannel } from "./notification-channel";
-import type { DisplayMode } from "@/features/alchemy/shared/types";
-import {
-  DEFAULT_BACKGROUND_GLOW_PCT,
-  DEFAULT_BACKGROUND_PARTICLES_PCT,
-  DEFAULT_BRIGHTNESS_PCT,
-  DEFAULT_MASTER_VOLUME_PCT,
-  DEFAULT_MUSIC_VOLUME_PCT,
-  DEFAULT_SFX_VOLUME_PCT,
-} from "@/lib/game-constants";
+import { createDefaultSettingsSaveFields, type SettingsSaveFields } from "@/lib/validation";
+export { createDefaultSettingsSaveFields, type SettingsSaveFields } from "@/lib/validation";
 import {
   clampBrightnessPct,
   clampSpecialEffectsPct,
@@ -17,55 +10,11 @@ import {
 import { createStore } from "zustand/vanilla";
 import { logError } from "@/lib/error-logger";
 
-export interface SettingsSaveFields {
-  displayMode: DisplayMode;
-  brightness: number;
-  backgroundParticlesIntensity: number;
-  backgroundGlowIntensity: number;
-  musicVolume: number;
-  sfxVolume: number;
-  masterVolume: number;
-  muteInBackground: boolean;
-  bossLyricsEnabled: boolean;
-  autoEndTurn: boolean;
-  rememberAutoplayPreference: boolean;
-  autoplayEnabled: boolean;
-}
-
-export interface SettingsActions {
-  setDisplayMode: (value: DisplayMode) => void;
-  setBrightness: (value: number) => void;
-  setBackgroundParticlesIntensity: (value: number) => void;
-  setBackgroundGlowIntensity: (value: number) => void;
-  setMusicVolume: (value: number) => void;
-  setSfxVolume: (value: number) => void;
-  setMasterVolume: (value: number) => void;
-  setMuteInBackground: (value: boolean) => void;
-  setBossLyricsEnabled: (value: boolean) => void;
-  setAutoEndTurn: (value: boolean) => void;
-  setRememberAutoplayPreference: (value: boolean) => void;
-  setAutoplayEnabled: (value: boolean) => void;
-  resetToDefaults: () => void;
-}
+export type SettingsActions = {
+  [K in keyof SettingsSaveFields as `set${Capitalize<K>}`]: (value: SettingsSaveFields[K]) => void;
+} & { resetToDefaults: () => void };
 
 export type SettingsStore = SettingsSaveFields & SettingsActions;
-
-export function createDefaultSettingsSaveFields(): SettingsSaveFields {
-  return {
-    displayMode: "borderless-fullscreen",
-    brightness: DEFAULT_BRIGHTNESS_PCT,
-    backgroundParticlesIntensity: DEFAULT_BACKGROUND_PARTICLES_PCT,
-    backgroundGlowIntensity: DEFAULT_BACKGROUND_GLOW_PCT,
-    musicVolume: DEFAULT_MUSIC_VOLUME_PCT,
-    sfxVolume: DEFAULT_SFX_VOLUME_PCT,
-    masterVolume: DEFAULT_MASTER_VOLUME_PCT,
-    muteInBackground: true,
-    bossLyricsEnabled: true,
-    autoEndTurn: true,
-    rememberAutoplayPreference: false,
-    autoplayEnabled: false,
-  };
-}
 
 export function preferredAutoplayEnabled(fields: {
   rememberAutoplayPreference: boolean;

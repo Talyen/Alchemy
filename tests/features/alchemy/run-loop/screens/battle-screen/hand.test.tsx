@@ -1,3 +1,4 @@
+import { makeTestCard } from "../../../../../fixtures/cards";
 import { createRef, type MouseEventHandler, type RefObject } from "react";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -55,15 +56,13 @@ vi.mock("@/features/alchemy/run-loop/screens/battle-screen/use-battle-descriptio
   useBattleDescriptionContext: () => ({}),
 }));
 
-const affordableCard: BattleCard = {
+const affordableCard: BattleCard = makeTestCard({
   id: "slash",
   title: "Slash",
   descriptionLines: ["Deal damage."],
-  art: "",
-  cost: 1,
   effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
   uid: 1,
-};
+});
 
 const expensiveCard: BattleCard = {
   ...affordableCard,

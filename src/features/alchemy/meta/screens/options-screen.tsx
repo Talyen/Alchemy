@@ -13,10 +13,9 @@ import {
   DisplayOptionsPanel,
   GameplayOptionsPanel,
   OtherOptionsPanel,
-  type AudioOptionsProps,
   type DevOptionsProps,
   type DisplayOptionsProps,
-  type GameplayOptionsProps,
+  type OptionsPreferences,
   type SaveDataOptionsProps,
 } from "./options/options-panels";
 
@@ -35,16 +34,14 @@ export function OptionsScreen({
   onBack,
   onMenu,
   display,
-  audio,
-  gameplay,
+  preferences,
   saveData,
   dev,
 }: {
   onBack: () => void;
   onMenu?: ((rect: DOMRect) => void) | undefined;
   display: DisplayOptionsProps;
-  audio: AudioOptionsProps;
-  gameplay: GameplayOptionsProps;
+  preferences: OptionsPreferences;
   saveData: SaveDataOptionsProps;
   dev: DevOptionsProps;
 }) {
@@ -66,9 +63,9 @@ export function OptionsScreen({
 
             <FadeSlot swapKey={tab} className="grid pt-4 text-left">
               {[
-                { id: "display", panel: <DisplayOptionsPanel display={display} /> },
-                { id: "sound", panel: <AudioOptionsPanel audio={audio} /> },
-                { id: "gameplay", panel: <GameplayOptionsPanel gameplay={gameplay} /> },
+                { id: "display", panel: <DisplayOptionsPanel display={display} preferences={preferences} /> },
+                { id: "sound", panel: <AudioOptionsPanel preferences={preferences} /> },
+                { id: "gameplay", panel: <GameplayOptionsPanel preferences={preferences} /> },
                 {
                   id: "other",
                   panel: (
