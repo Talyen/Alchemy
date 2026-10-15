@@ -1,4 +1,5 @@
 import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
+import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -15,6 +16,8 @@ import {
   deductGold,
   createDraftRunRandomSource,
   setGold,
+  initializeBattle,
+  setHasActiveRun,
   setRunDeck,
   setRunActivityData,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -467,4 +470,44 @@ describe("feature transaction capabilities", () => {
       }
     },
   );
+});
+
+it("rolls back a caught battle initialization failure instead of publishing partial progression", async () => {
+  const session = createGameSession();
+  try {
+    dispatchRunSessionCommand((transaction) => acceptCommand(setHasActiveRun(transaction, true)), undefined, session);
+    const before = readGameplayState(session);
+    const committed = vi.fn();
+    const effect = vi.fn();
+    subscribeRunSessionCommits(committed, session);
+    const caught = vi.fn();
+    // An invalid execution-time modifier fails after room admission. The command
+    // boundary must still reject every earlier write if its caller catches it.
+    const request = { kind: "battle", options: { enemyId: "skeleton", modifiers: [null] } } as unknown as Parameters<
+      typeof initializeBattle
+    >[1];
+    expect(() =>
+      dispatchRunSessionCommand(
+        (transaction) => {
+          setGold(transaction, 17);
+          createDraftRunRandomSource(transaction, "world")();
+          try {
+            initializeBattle(transaction, request);
+          } catch (error) {
+            caught(error);
+            expect(transaction.run.activeRun.roomsEncountered).toBe(before.run.activeRun.roomsEncountered + 1);
+          }
+          return acceptCommand();
+        },
+        { afterCommit: effect },
+        session,
+      ),
+    ).toThrow();
+    expect(caught).toHaveBeenCalledOnce();
+    expect(readGameplayState(session)).toBe(before);
+    expect(committed).not.toHaveBeenCalled();
+    expect(effect).not.toHaveBeenCalled();
+  } finally {
+    await session.dispose();
+  }
 });

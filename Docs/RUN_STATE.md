@@ -54,6 +54,11 @@ changes. Every command returns an explicit `CommandOutcome` using `acceptCommand
 or `rejectCommand(reason, fallback)`. Rejection discards all draft changes, including RNG
 counters, preserves the root and revision, and emits no commit signal. Unchanged accepted
 commands also preserve the root and revision; thrown execution errors discard the draft.
+A write-port operation that throws also marks the command failed, even if its caller
+catches the error and returns acceptance. This includes input-copy and updater
+failures, so partially initialized battles, payments, and RNG cannot publish as
+successful commands. Ordinary false/null rejections remain available for expected
+validation failures.
 The dispatcher returns the outcome's value so route-facing result shapes stay unchanged.
 React selectors and autosave subscribe to
 that same root. Settings and presentation-only state remain separate.
@@ -64,6 +69,11 @@ save acknowledgment epoch, and arms any pending save protection before notifying
 observers. Decoding, settings preparation, rejection, or result-validation failure
 leaves both stores, the pending save gate, and completion callbacks unchanged.
 Ordinary feature commands cannot request this restore publication mode.
+Run-profile codecs detach persisted collections on both encode and hydration;
+run restoration owns the entire active-run graph before decoding or rebinding.
+Restoring never freezes or mutates a caller's save, including nested battle and
+visit data. `snapshotRun()` returns detached data just like the complete session
+save builder; internal resume projections may still borrow immutable branches.
 
 The aggregate exposes read/subscription capabilities separately from its internal
 commit capability; React adapters and test fixtures cannot bypass commands through
@@ -466,6 +476,12 @@ directly and detaches the complete save once; it does not construct screen or
 battle display data to persist a run.
 
 `shared/storage/save-candidates.ts` owns save parsing, validation, and future-version protection (deterministic `evaluateSaveCandidates`, for testability); `shared/storage/save-storage.ts` owns each storage instance’s backend, queue, write protection, and load/write/exit/clear operations. `shared/storage/io.ts` preserves the app function API over the selected session’s IO instance and owns the unconfigured storage guard. The application adapter preserves the SSR guard. Backend configuration is allowed only while loads, writes, and clears are idle, so submitted work cannot move to a different transport. Bootstrap configures the application instance; each headless career configures its own instance; isolated tests can construct `SaveStorage` directly. The queue is private to its storage owner. `src/lib/platform-save-backend.ts` owns browser/desktop transport, backup/cloud candidate order, and recoverable write/clear ordering. `initializeSteam()` returns an explicit `cloudSyncEnabled` capability; it does not mutate shared platform state. Candidate order, Steam Cloud as a one-way mirror, and wipe/protect behavior: [MIGRATIONS.md § Public save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract).
+
+`desktop/save-storage.cjs` owns a second, process-wide lane for native profile
+files. IPC ring reads, writes, deletion, and demo-initialization receipt work
+serialize there across renderer replacement and independent session queues.
+Deletion waits for earlier writes, subsequent reads see complete ring rotation,
+and an operation failure does not poison later storage work.
 
 `SaveOperationQueue` serializes loads, writes, and clears; a load seals pending save coalescing, observes preceding writes, and establishes slot protection before following writes. Demo initialization writes inside its load operation, so a later clear cannot be overtaken by import. Exit writes use the synchronous path only when no load or clear is pending; otherwise they follow the queue's protection and cancellation rules. Draining storage includes pending loads and their initialization writes. `save-io.ts` also drains published write outcomes, including failure status and session progress receipts, so transport completion cannot outrun acknowledgement.
 

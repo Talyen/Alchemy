@@ -1,5 +1,5 @@
 import { isDraft, type Immutable } from "immer";
-import type { GameplayDraft } from "./gameplay-command";
+import { abortGameplayCommand, type GameplayDraft } from "./gameplay-command";
 import type { RunTransaction } from "./run-transaction";
 import { createReadonlyView, ownTransactionInput } from "./readonly-view";
 
@@ -35,5 +35,14 @@ function operationInput(arg: unknown): unknown {
 export function transactionOperation<Args extends unknown[], Result>(
   mutate: (draft: GameplayDraft, ...args: Args) => Result,
 ): (transaction: RunTransaction, ...args: { [K in keyof Args]: OperationInput<Args[K]> }) => Result {
-  return (transaction, ...args) => mutate(transactionDraft(transaction), ...(args.map(operationInput) as Args));
+  return (transaction, ...args) => {
+    const draft = transactionDraft(transaction);
+    try {
+      return mutate(draft, ...(args.map(operationInput) as Args));
+    } catch (error) {
+      // Operations may already have consumed RNG or written coupled fields.
+      // Catching their failure cannot turn that partial draft into a commit.
+      abortGameplayCommand(draft, error);
+    }
+  };
 }

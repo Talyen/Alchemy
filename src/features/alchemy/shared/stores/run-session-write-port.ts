@@ -24,7 +24,6 @@ import { bindDraftCapability, gameplayDraftRuntime } from "./gameplay-command";
 
 import type { RunActivityData } from "@/lib/active-run-session";
 import type { Immutable } from "immer";
-import { createReadonlyView, ownTransactionInput } from "./readonly-view";
 import type { RunTransaction } from "./run-session-command";
 import { transactionDraft, transactionOperation } from "./transaction-internal";
 import * as meta from "./write/live-meta";
@@ -95,14 +94,7 @@ export function setRunActivityData<K extends keyof RunActivityData>(
         previous: Immutable<RunActivityData[NoInfer<K>]>,
       ) => RunActivityData[NoInfer<K>] | Immutable<RunActivityData[NoInfer<K>]>),
 ): void {
-  session.setRunActivityData(
-    transactionDraft(transaction),
-    kind,
-    (previous) =>
-      ownTransactionInput(
-        typeof action === "function" ? action(createReadonlyView(previous)) : action,
-      ) as RunActivityData[NoInfer<K>],
-  );
+  transactionOperation(session.setRunActivityData<K>)(transaction, kind, action);
 }
 export const setStarterDraftChoices = transactionOperation(session.setStarterDraftChoices);
 export const setTrinketShopState = transactionOperation(session.setTrinketShopState);
@@ -174,7 +166,7 @@ export function createDraftInstanceIdSource(transaction: RunTransaction): () => 
 }
 
 export function settleRunVictory(transaction: RunTransaction): void {
-  ending.settleRunEnd(transactionDraft(transaction), "victory");
+  transactionOperation(ending.settleRunEnd)(transaction, "victory");
 }
 
 export const selectBoard = transactionOperation(boards.selectBoard);
