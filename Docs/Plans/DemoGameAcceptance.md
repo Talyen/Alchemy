@@ -1,20 +1,23 @@
 ---
 status: blocked
-reason: Local game checks are implemented; awaiting actual audio mix and unfamiliar-player feedback for subjective acceptance.
-updated: 2026-09-29
+reason: Unfamiliar-player comprehension and audio listening feedback are still required for subjective acceptance.
+updated: 2026-10-14
 ---
 
-# Game-only demo acceptance
+# Demo human acceptance
 
-Complete the locally verifiable items in the [demo checklist](../STEAM_DEMO_CHECKLIST.md),
-fix demonstrated failures, and record durable evidence. Keep existing checkout
-changes. Steamworks setup, live Cloud, publishing and unsupported hardware are
-separate from game-side acceptance. Listening and unfamiliar-player comprehension
-must not be inferred from automated checks.
+Use the [human playtest procedure](../STEAM_DEMO_CHECKLIST.md#human-playtest)
+for the current candidate. Automated journeys cannot establish comprehension,
+perceived difficulty, or audio comfort.
 
-- [x] Correct edition-aware headless playthrough evidence and exercise earned Knight/Rogue/Ranger progression.
-- [x] Show a visible local-save failure/recovery notice. In-game feedback/support links and Controls instructions in Options are intentionally omitted by player-experience decision.
-- [x] Exercise included destinations, save checkpoints, interruption, Options, inputs and audio behavior in the demo edition.
-- [x] Inspect screenshots at 1280×720/800 and sizing extremes; profile local startup, long effects and repeated runs.
-- [x] Run native isolated Electron checks, targeted regressions and the task-owned handoff gate.
-- [x] Update checklist with completed local evidence and explicitly outstanding human/hardware/external requirements.
+- [ ] Observe an unfamiliar player's first run and retry without coaching. Record
+      confusing mechanics, missed controls, time to meaningful play, difficulty, and
+      whether earned progression feels useful.
+- [ ] Listen to menu, combat, boss, and reward audio at defaults on speakers or
+      headphones. Record device/settings, intelligibility, comfort, and distracting overlap.
+- [ ] Address demonstrated acceptance issues and repeat affected candidate checks.
+      Retain feedback and results with the [candidate evidence](../STEAM_DEMO_CHECKLIST.md#9-candidate-evidence-and-release-sign-off).
+
+Keep this plan blocked until human feedback is available; remove it once that
+feedback is reviewed and required fixes are verified. Steam services and hardware
+acceptance remain governed by the [physical Steam checks](../STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence).
