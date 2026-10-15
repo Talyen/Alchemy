@@ -366,13 +366,6 @@ A replacement durable autosave driver schedules the session's pending revision
 without requiring another gameplay action. With no driver, pending state and
 pre-action display remain protected; explicit Retry can checkpoint directly.
 
-Completion feedback uses one session-owned FIFO. New feedback registered during
-a callback joins its tail. Before each callback the owner rechecks save protection:
-if an earlier callback or save-status observer starts another checkpoint, the
-remaining feedback waits for that checkpoint. Restore, deletion, write protection,
-and disposal can still discard the queued work. Feedback exceptions are logged
-without suppressing later callbacks, including when no save is pending.
-
 Player-facing store hooks retain the immutable pre-action progress until saving
 succeeds. Transient navigation, Collection browsing, and inspection remain usable.
 Domain reads continue to see the committed state. Player command entrypoints reject
@@ -412,8 +405,8 @@ Local acknowledgement does not wait for Cloud. Desktop adapters sharing the same
 IPC endpoint also share a physical operation lane in `platform-save-backend.ts`.
 Reads, local writes, deletes, and demo initialization receipt operations follow
 submission order across adapters; failure cannot poison the lane. A later save
-cannot acknowledge files while an earlier delete can still erase them. Deletion discards queued uploads and
-drains an in-flight upload before removing mirrors so it cannot resurrect a save.
+cannot acknowledge files while an earlier delete can still erase them.
+Deletion discards queued uploads and drains an in-flight upload before removing mirrors so it cannot resurrect a save.
 `desktop/steam-cloud-storage.cjs` owns the process-wide Cloud operation lane across
 both slots. Reads, uploads, and deletion share that lane even when their originating
 renderer has been replaced; renderer-local mirror scheduling cannot provide this
@@ -453,7 +446,10 @@ Low-level transport tests use the storage runtime directly to exercise arbitrary
 
 Acknowledged feedback has one session-owned FIFO delivery queue. A covering save
 reserves its batch before publishing idle, so idle observers and nested saves
-cannot deliver newer navigation or feedback ahead of older callbacks. Restore,
+cannot deliver newer navigation or feedback ahead of older callbacks. Delivery
+rechecks the save gate before each callback; a new checkpoint started by feedback
+or an idle observer pauses the remaining queue until that checkpoint is saved.
+Restore,
 clear, protection, and disposal revoke undelivered callbacks, including callbacks
 registered reentrantly while the queue is draining. Feedback failures are isolated.
 
