@@ -103,9 +103,9 @@ describe("useBattleAutoplay", () => {
     expect(previewControl?.canCommit()).toBe(false);
     rerender(options);
     expect(previewControl?.canCommit()).toBe(true);
-    act(() => battlePresentation.setState({ cardTransferInProgress: true }));
+    act(() => battlePresentation.getState().setCardTransferInProgress(true));
     expect(previewControl?.canCommit()).toBe(false);
-    act(() => battlePresentation.setState({ cardTransferInProgress: false }));
+    act(() => battlePresentation.getState().setCardTransferInProgress(false));
     rerender({ ...options, battleState: { ...options.battleState, wishOptions: mode === "wish" ? null : [wish] } });
     expect(previewControl?.canCommit()).toBe(false);
     rerender(options);
@@ -174,7 +174,7 @@ describe("useBattleAutoplay", () => {
 
   it("does not play while blocked by hidden cards", () => {
     const playCard = vi.fn(() => true);
-    battlePresentation.setState({ hiddenHandCardKeys: ["slash-1"] });
+    battlePresentation.getState().setHiddenHandCardKeys(() => ["slash-1"]);
     renderHook(() =>
       useAutoplayUnderTest({
         enabled: true,
@@ -196,7 +196,7 @@ describe("useBattleAutoplay", () => {
 
   it("plays immediately when a blocking transfer completes", async () => {
     const playCard = vi.fn(() => true);
-    battlePresentation.setState({ cardTransferInProgress: true });
+    battlePresentation.getState().setCardTransferInProgress(true);
     renderHook(() =>
       useAutoplayUnderTest({
         enabled: true,
@@ -215,7 +215,7 @@ describe("useBattleAutoplay", () => {
     expect(playCard).not.toHaveBeenCalled();
 
     await act(async () => {
-      battlePresentation.setState({ cardTransferInProgress: false });
+      battlePresentation.getState().setCardTransferInProgress(false);
       await Promise.resolve();
     });
 

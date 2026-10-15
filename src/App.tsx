@@ -37,7 +37,7 @@ import {
   useBondedCompanions,
   useHomesteadEffects,
   useHasActiveBattle,
-  useRunSessionNavigationSlice,
+  useRunPhase,
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/use-run-reads";
 import { useAppSettings } from "@/features/alchemy/shared/stores/settings-store";
@@ -100,7 +100,7 @@ function AppMainContent({
   gameMenu: GameMenuState;
 }) {
   const { screen: controllerScreen } = run;
-  const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
+  const runPhase = useRunPhase(controllerScreen);
   const nav = useReturnToRunNavigation({ run, renderedScreen });
 
   useAlchemyAutosaveFromStores();
@@ -233,13 +233,21 @@ function AppMainContent({
             ...stageStyle,
             "--battle-scene-tint": `rgb(${sceneAppearance.ambientColor.join(" ")})`,
             "--battle-scene-tint-opacity": sceneAppearance.ambientOpacity,
+            "--battle-scene-exposure": sceneAppearance.artworkExposure,
+            "--battle-scene-shade": sceneAppearance.shadeOpacity,
             "--battle-scene-shadow-opacity": sceneAppearance.shadowOpacity,
             "--battle-scene-left-tint": `rgb(${sceneAppearance.regions.left.ambientColor.join(" ")})`,
             "--battle-scene-left-opacity": sceneAppearance.regions.left.ambientOpacity,
+            "--battle-scene-left-exposure": sceneAppearance.regions.left.artworkExposure,
+            "--battle-scene-left-shade": sceneAppearance.regions.left.shadeOpacity,
             "--battle-scene-right-tint": `rgb(${sceneAppearance.regions.right.ambientColor.join(" ")})`,
             "--battle-scene-right-opacity": sceneAppearance.regions.right.ambientOpacity,
+            "--battle-scene-right-exposure": sceneAppearance.regions.right.artworkExposure,
+            "--battle-scene-right-shade": sceneAppearance.regions.right.shadeOpacity,
             "--battle-scene-lower-tint": `rgb(${sceneAppearance.regions.lower.ambientColor.join(" ")})`,
             "--battle-scene-lower-opacity": sceneAppearance.regions.lower.ambientOpacity,
+            "--battle-scene-lower-exposure": sceneAppearance.regions.lower.artworkExposure,
+            "--battle-scene-lower-shade": sceneAppearance.regions.lower.shadeOpacity,
           } as React.CSSProperties
         }
       >

@@ -26,13 +26,5 @@ export function useGearCombatRestrictions() {
 }
 
 export function useGearArmorySlice(): GearArmorySlice {
-  return useGameplayStateStore(
-    useShallow((state) => ({
-      inventories: state.gear.inventories,
-      loadouts: state.gear.loadouts,
-      ownedTrinketIds: state.gear.ownedTrinketIds,
-      equippedTrinkets: state.gear.equippedTrinkets,
-      craftingCurrencies: state.gear.craftingCurrencies,
-    })),
-  );
+  return useGameplayStateStore((state) => state.gear);
 }

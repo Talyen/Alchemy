@@ -3,44 +3,25 @@ import { Trash2 } from "lucide-react";
 
 import type { BattleCard } from "@/lib/game-data";
 
-import { PurchasableCardItem } from "../shop/ui/purchasable-shop-item";
 import { RemoveCardPanel } from "../../shared/ui/remove-card-panel";
 import { ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
 import { ServiceButton } from "../shop/ui/service-button";
-import { shopItemSlotKey } from "../shop/shop-slot-keys";
-import { GenericShopScreen } from "./generic-shop-screen";
+import { ShopShelf, type ShopShelfProps } from "./shop-shelf";
 import { FadeSlot } from "../../shared/ui/use-fade";
 
 export function CardShopScreen({
   gold,
   runDeck,
-  shopCards,
-  refreshesLeft,
   removeUsed,
-  purchasedSlotKeys,
-  getCardPrice,
   removePrice,
-  refreshPrice,
-  onBuyCard,
   onRemoveCard,
-  onRefresh,
-  onContinue,
   isProgressSavePending = () => false,
-}: {
-  gold: number;
+  ...shelf
+}: ShopShelfProps<"card"> & {
   runDeck: BattleCard[];
-  shopCards: BattleCard[];
-  refreshesLeft: number;
   removeUsed: boolean;
-  purchasedSlotKeys: string[];
-  getCardPrice: (card: BattleCard) => number;
   removePrice: number;
-  refreshPrice: number;
-  onBuyCard: (card: BattleCard, slotKey: string) => boolean;
   onRemoveCard: (cardIndex: number) => boolean;
-  onRefresh: () => void;
-  onContinue: () => void;
-  isProgressSavePending?: () => boolean;
 }) {
   const [removeMode, setRemoveMode] = useState(false);
   const [removeError, setRemoveError] = useState("");
@@ -73,18 +54,11 @@ export function CardShopScreen({
           </ScreenShell>
         </div>
       ) : (
-        <GenericShopScreen
+        <ShopShelf
+          {...shelf}
+          kind="card"
           title="Card Shop"
           gold={gold}
-          items={shopCards}
-          refreshesLeft={refreshesLeft}
-          refreshPrice={refreshPrice}
-          purchasedSlotKeys={purchasedSlotKeys}
-          getSlotKey={(card, i) => shopItemSlotKey(card.id, i)}
-          getPrice={getCardPrice}
-          onBuy={onBuyCard}
-          onRefresh={onRefresh}
-          onContinue={onContinue}
           isProgressSavePending={isProgressSavePending}
           extraServices={
             <ServiceButton
@@ -100,9 +74,6 @@ export function CardShopScreen({
               }}
             />
           }
-          renderItem={(card, price, purchased, onBuy) => (
-            <PurchasableCardItem card={card} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />
-          )}
         />
       )}
     </FadeSlot>

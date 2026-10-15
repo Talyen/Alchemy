@@ -2,7 +2,7 @@ import { Fragment, useState, type ReactNode } from "react";
 import { shopOfferingsSwapKey } from "../shop/shop-slot-keys";
 import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
 
-interface GenericShopScreenProps<T> {
+export interface GenericShopScreenProps<T> {
   title: string;
   gold: number;
   items: T[];

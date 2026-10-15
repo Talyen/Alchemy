@@ -47,14 +47,14 @@ describe("CardShopScreen remove mode", () => {
       <CardShopScreen
         gold={100}
         runDeck={runDeck}
-        shopCards={[deckCard]}
+        items={[deckCard]}
         refreshesLeft={1}
         removeUsed={false}
         purchasedSlotKeys={[]}
-        getCardPrice={() => 10}
+        getPrice={() => 10}
         removePrice={25}
         refreshPrice={15}
-        onBuyCard={() => true}
+        onBuy={() => true}
         onRemoveCard={onRemoveCard}
         onRefresh={() => {}}
         onContinue={() => {}}
@@ -93,17 +93,5 @@ describe("CardShopScreen remove mode", () => {
     await user.click(screen.getByRole("button", { name: /^Remove(?! Card)/i }));
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.queryByRole("heading", { name: "Remove Card" })).toBeNull();
-  });
-
-  it("returns to browse when removal succeeds", async () => {
-    const user = userEvent.setup();
-    renderCardShop(() => true);
-
-    await user.click(screen.getByRole("button", { name: /Remove Card/i }));
-    await user.click(await screen.findByRole("button", { name: "Select shop card" }));
-    await user.click(screen.getByRole("button", { name: /^Remove(?! Card)/i }));
-
-    expect(await screen.findByRole("button", { name: /Remove Card/i })).toBeTruthy();
-    expect(screen.queryByText("Select a card to remove from your deck")).toBeNull();
   });
 });

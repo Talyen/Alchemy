@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
-import { useCampfireScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
+import { useRunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
@@ -53,7 +53,7 @@ describe("Labyrinth destination modifiers", () => {
       activity: { kind: "campfire", data: emptyAlchemyVisit() },
       activeLabyrinthRewardModifiers: ["deep-rest"],
     });
-    const { result, rerender } = renderHook(() => useCampfireScreenData());
+    const { result, rerender } = renderHook(() => useRunScreenData("campfire"));
     const modifiers = result.current.modifiers;
     rerender();
     expect(result.current.modifiers).toBe(modifiers);

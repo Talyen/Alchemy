@@ -14,7 +14,7 @@ vi.mock("@/lib/game-edition", () => ({
 }));
 vi.mock("@/lib/platform", () => ({ isDesktop: () => false }));
 vi.mock("@/features/alchemy/shared/stores/use-run-screen-data", () => ({
-  useRunEndScreenData: () => ({ runEndUnlockedCharacters: state.unlocks }),
+  useRunScreenData: () => ({ runEndUnlockedCharacters: state.unlocks }),
 }));
 vi.mock("@/features/alchemy/run-loop/screens/run-end-screen", () => ({
   RunEndScreen: ({ onContinue, continueLabel }: { onContinue: () => void; continueLabel: string }) => (
