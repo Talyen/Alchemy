@@ -93,7 +93,7 @@ describe("End Turn execution and playback", () => {
     expect(selectBattle(resolved)).not.toHaveProperty("pendingBattleTransition");
     expect(resolved.revision).toBe(before.revision + 1);
     expect(ctx.playback.cardPlayInProgress).toBe(true);
-    expect(battlePresentation.getState().displayedBattle).toBe(selectBattle(before).battleState);
+    expect(battlePresentation.getState().displayedBattle).toEqual(selectBattle(before).battleState);
     ui.handleEndTurn();
     expect(readGameplayState(defaultGameSession)).toBe(resolved);
     expect(vi.mocked(playBattleEvent).mock.calls.filter(([event]) => event === "endTurn")).toHaveLength(1);

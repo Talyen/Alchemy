@@ -58,7 +58,7 @@ function setup(overrides: Partial<BattleEndTurnButtonProps> = {}) {
 async function openConfirmation(button: HTMLButtonElement) {
   fireEvent.click(button);
   await waitForArtwork();
-  return within(screen.getByRole("dialog", { name: "End turn?", exact: true }));
+  return within(screen.getByRole("dialog", { name: "End turn?" }));
 }
 
 describe("toolbar End Turn", () => {
@@ -85,7 +85,7 @@ describe("toolbar End Turn", () => {
       const dialog = await openConfirmation(button);
       expect(props.onEndTurn).not.toHaveBeenCalled();
       expect(battlePresentation.getState().endTurnConfirmationOpen).toBe(true);
-      const confirm = dialog.getByRole("button", { name: "End Turn", exact: true });
+      const confirm = dialog.getByRole("button", { name: "End Turn" });
       fireEvent.click(confirm);
       fireEvent.click(confirm);
       expect(props.onEndTurn).toHaveBeenCalledTimes(1);
@@ -98,7 +98,7 @@ describe("toolbar End Turn", () => {
     const { props, button } = setup();
     button.focus();
     const dialog = await openConfirmation(button);
-    const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
+    const cancel = dialog.getByRole("button", { name: "Cancel" });
     await waitFor(() => expect(document.activeElement).toBe(cancel));
     if (method === "Cancel") fireEvent.click(cancel);
     else if (method === "Escape") fireEvent.keyDown(document.activeElement!, { key: "Escape" });
@@ -123,7 +123,7 @@ describe("toolbar End Turn", () => {
         },
       });
       const dialog = await openConfirmation(button);
-      const confirm = dialog.getByRole("button", { name: "End Turn", exact: true });
+      const confirm = dialog.getByRole("button", { name: "End Turn" });
       if (change === "snapshot")
         rerender(<BattleEndTurnButton {...props} battleState={{ ...props.battleState, mana: 0 }} />);
       if (change === "navigation") rerender(<BattleEndTurnButton {...props} screen="menu" />);
@@ -149,7 +149,7 @@ describe("toolbar End Turn", () => {
       const state = makeTestBattleState();
       if (reason === "hidden") {
         state.hand = [makeTestCard({ uid: 1, id: "slash" })];
-        battlePresentation.setState({ hiddenHandCardKeys: ["slash-1"] });
+        battlePresentation.getState().setHiddenHandCardKeys(() => ["slash-1"]);
       }
       const { button, props } = setup({
         battleState:

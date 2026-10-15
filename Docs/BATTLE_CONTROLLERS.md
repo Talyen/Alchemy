@@ -43,6 +43,15 @@ frames before store observers see the restored battle. A battle-to-battle restor
 therefore needs no screen change or React remount to revoke old outcomes. Session
 disposal cancels that playback as well.
 
+`battle-presentation-store.ts` keeps its mutable Zustand store private. The public
+port exposes React-compatible reads and selector subscriptions; every action in
+read and subscription snapshots is bound to the owning session. Borrowed actions
+are revoked on disposal, which resets effects and releases all subscriptions.
+Display frames, ghosts, and transfers are copied on ingress, and roots and nested
+data are frozen before publication. Functional transfer updates receive immutable
+prior data. Observers receive queued publications in order; a failed observer
+cannot interrupt another observer or the action's resource cleanup.
+
 At interaction time, those callbacks resolve gameplay before presentation:
 
 ```text

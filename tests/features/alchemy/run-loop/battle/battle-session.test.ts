@@ -125,10 +125,12 @@ describe("createBattleSession", () => {
   });
 
   it("resetBattleSession clears portrait impact cues", () => {
-    battlePresentation.setState({
-      playerImpactCue: { sequence: 1, colors: ["#fff"], healthLost: true, amount: 5, periodic: false, recoil: true },
-      enemyImpactCue: { sequence: 2, colors: ["#fff"], healthLost: true, amount: 5, periodic: false, recoil: true },
-    });
+    battlePresentation.getState().showCombatTexts([
+      { target: "player", kind: "damage", stat: "physical", amount: 5 },
+      { target: "enemy", kind: "damage", stat: "physical", amount: 5 },
+    ]);
+    expect(battlePresentation.getState().playerImpactCue).not.toBeNull();
+    expect(battlePresentation.getState().enemyImpactCue).not.toBeNull();
     const { session } = makeSession();
     session.resetBattleSession();
     expect(battlePresentation.getState().playerImpactCue).toBeNull();
