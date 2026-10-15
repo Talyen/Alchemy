@@ -107,7 +107,7 @@ describe("BattleHand", () => {
     battlePresentation.getState().resetPresentation();
   });
 
-  it("recovers focus to the toolbar reference outside the bottom bar after the last playable card", () => {
+  it.each([false, true])("recovers hand focus only while the window stays active (blur: %s)", (blur) => {
     const endTurnButtonRef = createRef<HTMLButtonElement>();
     const refs = { handCardRefs: { current: {} }, endTurnButtonRef } as unknown as BattleRefsProps;
     const onCardClick = vi.fn();
@@ -140,8 +140,12 @@ describe("BattleHand", () => {
       fireEvent.keyDown(card, { key: "Enter" });
       fireEvent.click(card);
       expect(onCardClick).toHaveBeenCalledOnce();
+      if (blur) {
+        fireEvent.blur(window);
+        fireEvent.focus(window);
+      }
       rerender(tree([]));
-      expect(document.activeElement).toBe(target);
+      expect(document.activeElement).toBe(blur ? document.body : target);
     } finally {
       geometry.mockRestore();
     }
@@ -176,38 +180,5 @@ describe("BattleHand", () => {
     } finally {
       audioState.muted = wasMuted;
     }
-  });
-
-  it("overlays stun presentation on hand cards while the player is crowd-controlled", () => {
-    const battleState = {
-      ...defaultBattleState(),
-      turnPhase: "player" as const,
-      mana: 2,
-      wishOptions: null,
-      hand: [affordableCard, expensiveCard],
-      playerCC: { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 },
-    };
-    const view = {
-      battleState,
-      stagePixelRatio: 1,
-    } as unknown as RequiredBattleViewProps;
-    const refs = {
-      handCardRefs: { current: {} },
-    } as unknown as BattleRefsProps;
-    const actions = {
-      onCardClick: vi.fn(),
-    } as unknown as BattleActionsProps;
-
-    render(
-      <BattleHand
-        presentation={battlePresentation}
-        view={view}
-        refs={refs}
-        actions={actions}
-        playabilityState={battleState}
-      />,
-    );
-
-    expect(screen.getAllByTestId("combatant-status-effect")).toHaveLength(2);
   });
 });

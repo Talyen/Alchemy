@@ -97,6 +97,10 @@ up/down leave them. Text editing and dropdowns keep their own arrow behavior.
 Tab/Shift+Tab remain keyboard traversal; Steam Input uses F7/Tab for bumpers
 to avoid the Steam overlay chord. Directional focus stops at layout edges.
 F7 counts as keyboard input for deferred screen-focus recovery while artwork is preparing.
+Window switching (Alt+Tab or Command+Tab) does not traverse controls or arm deferred
+focus recovery. Window blur cancels pending screen and hand focus recovery without
+opening the game menu; existing focus stays in place on return. Steam overlay
+activation still opens the battle pause menu.
 The controlled select state registers above dialogs in the Escape stack so it
 cannot accidentally navigate out of Options or Armory.
 

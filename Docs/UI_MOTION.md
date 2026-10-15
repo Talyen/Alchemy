@@ -138,7 +138,8 @@ without the description popup; reduced motion plays instantly with no preview.
 Cancelling or restarting the battle clears its pending autoplay preview immediately
 and prevents that preview from committing a card or Wish choice.
 
-Draw and discard use a continuous eased arc with a height of 10% of the card,
+Draw and discard artwork stays behind the mana dock throughout the flight and landing.
+Both use a continuous eased arc with a height of 10% of the card,
 straightening and scaling to the measured destination while flipping between
 front and back. A single Motion progress value drives the pose at the display
 frame rate. A squared-sine arc envelope adds no vertical velocity at departure

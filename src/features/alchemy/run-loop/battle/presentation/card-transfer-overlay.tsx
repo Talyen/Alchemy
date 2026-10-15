@@ -37,7 +37,7 @@ const CardTransferOverlay = memo(function CardTransferOverlay({ transfer }: { tr
     <motion.div
       data-flying-card
       data-transfer-kind={transfer.kind}
-      className="pointer-events-none absolute z-[90] transform-gpu will-change-transform [backface-visibility:visible]"
+      className="pointer-events-none absolute z-[45] transform-gpu will-change-transform [backface-visibility:visible]"
       initial={false}
       style={{
         left: transfer.from.x,

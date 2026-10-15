@@ -206,13 +206,15 @@ export function BattleHand({
       keyboardActivation.current = false;
     };
     const onKey = (event: KeyboardEvent) => {
-      if (["Tab", "Escape"].includes(event.key)) cancel();
+      if (["Tab", "Escape", "Alt", "Meta"].includes(event.key)) cancel();
     };
     document.addEventListener("pointerdown", cancel, true);
     window.addEventListener("keydown", onKey, true);
+    window.addEventListener("blur", cancel);
     return () => {
       document.removeEventListener("pointerdown", cancel, true);
       window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("blur", cancel);
     };
   }, []);
 

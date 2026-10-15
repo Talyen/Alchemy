@@ -428,11 +428,10 @@ function createMainWindow() {
     if (!BACKGROUND_AUTOMATION) mainWindow?.show();
   });
   mainWindow.webContents.on("before-input-event", (_event, input) => {
-    if (input.type === "keyDown" && input.key === "Tab" && input.shift) {
+    if (input.type === "keyDown" && input.key === "Tab" && input.shift && !input.alt && !input.control && !input.meta) {
       mainWindow?.webContents.send("alchemy:external-focus-lost");
     }
   });
-  mainWindow.on("blur", () => mainWindow?.webContents.send("alchemy:external-focus-lost"));
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
