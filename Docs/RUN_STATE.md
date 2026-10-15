@@ -131,10 +131,13 @@ asynchronous continuations are observed to avoid an additional unhandled
 rejection; the boundary cannot cancel external work already started by an
 invalid callback.
 
-Gear's coupled mutation and Health rebinding scope can invalidate its owning
-command through `abortGameplayCommand`. The coordinator retains that failure
-until the draft closes: catching it inside an enclosing recipe cannot publish
-the partial operation. This failure state belongs to that command only.
+Every write-port operation invalidates its owning command through
+`abortGameplayCommand` if input preparation, an updater, or mutation throws.
+The same rule covers Gear's coupled mutation and Health rebinding scope.
+The coordinator retains the first failure until the draft closes: catching it
+inside an enclosing recipe cannot publish partial activity, payments, or RNG
+changes. Rejection values remain available for expected validation failures;
+exceptions abort the complete command. This failure state belongs to that command only.
 
 ### Post-commit behavior
 
@@ -362,6 +365,10 @@ and Retry; keep the original action pending and retry its snapshot without repea
 costs, rewards, or RNG. The existing autosave timer handles automatic retries.
 Explicit Retry bypasses backoff once; repeated activation during saving does nothing.
 Successful clear, successful restore, write protection, and disposal invalidate pending completion callbacks.
+Explicit checkpoints establish a new acknowledgement requirement even when the
+gameplay revision is unchanged, including settings-only changes. Snapshot tokens
+carry that checkpoint version as well as the gameplay revision; an older write
+can finish successfully without releasing a newer checkpoint's gate or feedback.
 Requesting deletion pauses autosave and revokes submitted snapshots immediately,
 while retaining the pending action, pre-action display, and completion callbacks.
 If deletion fails, that action remains protected and retryable; autosave resumes
@@ -467,7 +474,7 @@ battle display data to persist a run.
 
 `shared/storage/save-candidates.ts` owns save parsing, validation, and future-version protection (deterministic `evaluateSaveCandidates`, for testability); `shared/storage/save-storage.ts` owns each storage instance’s backend, queue, write protection, and load/write/exit/clear operations. `shared/storage/io.ts` preserves the app function API over the selected session’s IO instance and owns the unconfigured storage guard. The application adapter preserves the SSR guard. Backend configuration is allowed only while loads, writes, and clears are idle, so submitted work cannot move to a different transport. Bootstrap configures the application instance; each headless career configures its own instance; isolated tests can construct `SaveStorage` directly. The queue is private to its storage owner. `src/lib/platform-save-backend.ts` owns browser/desktop transport, backup/cloud candidate order, and recoverable write/clear ordering. `initializeSteam()` returns an explicit `cloudSyncEnabled` capability; it does not mutate shared platform state. Candidate order, Steam Cloud as a one-way mirror, and wipe/protect behavior: [MIGRATIONS.md § Public save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract).
 
-`SaveOperationQueue` serializes loads, writes, and clears; a load seals pending save coalescing, observes preceding writes, and establishes slot protection before following writes. Demo initialization writes inside its load operation, so a later clear cannot be overtaken by import. Exit writes use the synchronous path only when no load or clear is pending; otherwise they follow the queue's protection and cancellation rules. Draining storage includes pending loads and their initialization writes. `save-io.ts` also drains published write outcomes, including failure status and session progress receipts, so transport completion cannot outrun acknowledgement.
+`SaveOperationQueue` serializes loads, writes, and clears; a load seals pending save coalescing, observes preceding writes, and establishes slot protection before following writes. Demo initialization writes inside its load operation, so a later clear cannot be overtaken by import. Exit writes use the synchronous path only when no load or clear is pending; otherwise they follow the queue's protection and cancellation rules. Loads and successful clears may resume writes only if no newer explicit write-permission decision has occurred since submission; recovery-slot selection does not itself grant permission. Draining storage includes pending loads and their initialization writes. `save-io.ts` also drains published write outcomes, including failure status and session progress receipts, so transport completion cannot outrun acknowledgement.
 
 The storage owner reads primary and recovery slots before selecting the freshest playable save. Selection also determines the permitted write attempts; a failed primary write only tries recovery when compatibility allows it. Unreadable or newer-format data stays in its slot under the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract), which owns the exact fallback and wipe rules. Load status is diagnostic only, so the app continues into play without a save-problem screen.
 

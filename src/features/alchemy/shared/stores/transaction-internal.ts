@@ -1,5 +1,5 @@
 import { isDraft, type Immutable } from "immer";
-import type { GameplayDraft } from "./gameplay-command";
+import { abortGameplayCommand, type GameplayDraft } from "./gameplay-command";
 import type { RunTransaction } from "./run-transaction";
 import { createReadonlyView, ownTransactionInput } from "./readonly-view";
 
@@ -32,8 +32,22 @@ function operationInput(arg: unknown): unknown {
     );
 }
 
+/** Operation failures invalidate the enclosing command, even when its caller catches them. */
+export function executeTransactionOperation<Result>(
+  transaction: RunTransaction,
+  execute: (draft: GameplayDraft) => Result,
+): Result {
+  const draft = transactionDraft(transaction);
+  try {
+    return execute(draft);
+  } catch (error) {
+    return abortGameplayCommand(draft, error);
+  }
+}
+
 export function transactionOperation<Args extends unknown[], Result>(
   mutate: (draft: GameplayDraft, ...args: Args) => Result,
 ): (transaction: RunTransaction, ...args: { [K in keyof Args]: OperationInput<Args[K]> }) => Result {
-  return (transaction, ...args) => mutate(transactionDraft(transaction), ...(args.map(operationInput) as Args));
+  return (transaction, ...args) =>
+    executeTransactionOperation(transaction, (draft) => mutate(draft, ...(args.map(operationInput) as Args)));
 }

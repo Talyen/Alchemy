@@ -59,6 +59,7 @@ export class SaveStorage {
   }
 
   load(): Promise<SaveLoadState> {
+    const resumeWrites = this.queue.prepareWriteResume();
     return this.queue.enqueueLoad(async () => {
       const read = async (key: string) => {
         try {
@@ -74,7 +75,8 @@ export class SaveStorage {
       const recoveryCandidates = recovery.ok ? recovery.candidates : [];
       const selection = selectSaveCandidates(primaryCandidates, recoveryCandidates);
       this.writeKeys = selection.writeSlots.map((slot) => (slot === "primary" ? SAVE_KEY : SAVE_RECOVERY_KEY));
-      if (!primary.ok || primary.localReadFailed === true) this.routeWritesToRecovery();
+      if (!primary.ok || primary.localReadFailed === true)
+        this.writeKeys = this.writeKeys.filter((key) => key === SAVE_RECOVERY_KEY);
       let loaded = selection.state;
 
       if (primaryCandidates.length === 0 && recoveryCandidates.length === 0) {
@@ -87,7 +89,7 @@ export class SaveStorage {
       }
       if (loaded.data.activeRun && !isEditionRunAvailable(loaded.data.activeRun)) loaded.data.activeRun = null;
       this.lastSavedAt = Math.max(this.lastSavedAt, loaded.data.lastSavedAt);
-      this.setWritesDisabled(false);
+      resumeWrites();
       return loaded;
     });
   }
