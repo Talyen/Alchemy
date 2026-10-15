@@ -8,16 +8,24 @@ export type ProgressSaveState =
 
 /** Runtime acknowledgement only: persisted snapshots retain their existing format. */
 export class ProgressCompletion {
+  constructor(private readonly isActive: () => boolean = () => true) {}
+
   private state: ProgressSaveState = Object.freeze({ kind: "idle" });
   private epoch = 0;
   private restoreVersion = 0;
   private acknowledged = -1;
-  private readonly notifications = createNotificationChannel<[]>((error) => {
-    logStorageFailure("Progress save status update failed", error);
-  });
-  private readonly restores = createNotificationChannel<[]>((error) => {
-    logStorageFailure("Restore save scheduling update failed", error);
-  });
+  private readonly notifications = createNotificationChannel<[]>(
+    (error) => {
+      logStorageFailure("Progress save status update failed", error);
+    },
+    () => this.isActive(),
+  );
+  private readonly restores = createNotificationChannel<[]>(
+    (error) => {
+      logStorageFailure("Restore save scheduling update failed", error);
+    },
+    () => this.isActive(),
+  );
   private completions: Array<() => void> = [];
   private retryOwners = new Set<{ retry: () => void }>();
 

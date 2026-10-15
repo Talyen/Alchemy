@@ -16,6 +16,7 @@ export function createSessionLifetime() {
   };
   return {
     track,
+    isActive: () => !disposed,
     get disposed() {
       return disposed;
     },
