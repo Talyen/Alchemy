@@ -68,14 +68,24 @@ it("rejects an owner-stamped save that would exceed the readable payload limit",
   expect(await store.write(data)).toBe(false);
   expect(await io.readdir(f.directory)).toEqual([]);
 });
-it("shutdown drains accepted writes, rejects late writes, and quits exactly once", async () => {
+it("shutdown accepts the renderer's unload save, drains writes, and quits exactly once", async () => {
   const f = await fixture(true);
   const app = new EventEmitter() as EventEmitter & { quit: ReturnType<typeof vi.fn> };
   let exits = 0;
+  let windowOpen = true;
+  let unloadWrite: Promise<boolean> | undefined;
   app.quit = vi.fn(() => {
-    const event = { preventDefault: vi.fn() };
-    app.emit("before-quit", event);
-    if (!event.preventDefault.mock.calls.length) exits++;
+    const before = { preventDefault: vi.fn() };
+    app.emit("before-quit", before);
+    if (before.preventDefault.mock.calls.length) return;
+    if (windowOpen) {
+      // Electron closes windows (and runs renderer beforeunload) between these events.
+      windowOpen = false;
+      unloadWrite = f.store.write("unload progress");
+    }
+    const will = { preventDefault: vi.fn() };
+    app.emit("will-quit", will);
+    if (!will.preventDefault.mock.calls.length) exits++;
   });
   registerSaveShutdown(app, f.store);
   const writing = f.store.write("latest");
@@ -89,7 +99,8 @@ it("shutdown drains accepted writes, rejects late writes, and quits exactly once
   await f.store.close();
   await Promise.resolve();
   expect(exitsDuringWrite).toBe(0);
+  expect(await unloadWrite).toBe(true);
   expect(await lateWrite).toBe(false);
   expect(exits).toBe(1);
-  expect(await io.readFile(f.slots.primary.file, "utf8")).toBe("latest");
+  expect(await io.readFile(f.slots.primary.file, "utf8")).toBe("unload progress");
 });

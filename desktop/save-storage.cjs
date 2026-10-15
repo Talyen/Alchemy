@@ -114,7 +114,9 @@ function createDesktopSaveStorage({ slots, demoProgress, isSavePayload, stampOwn
 function registerSaveShutdown(app, store) {
   let ready = false;
   let draining;
-  app.on("before-quit", (event) => {
+  // Renderer beforeunload handlers submit their final saves while windows close.
+  // Keep admission open until will-quit, then drain before the process exits.
+  app.on("will-quit", (event) => {
     if (ready) return;
     event.preventDefault();
     draining ??= store.close().then(() => {

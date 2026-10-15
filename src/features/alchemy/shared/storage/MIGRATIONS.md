@@ -232,6 +232,8 @@ The native `desktop/save-storage.cjs` owner also serializes file operations and
 demo-initialization receipt work in a process-wide lane, shared by both slots.
 IPC reads and deletion wait for earlier ring writes even across renderer reloads;
 following writes cannot overtake deletion. A failed operation releases the lane.
+Native shutdown closes save admission at `will-quit`, after window unload handlers
+can submit their final snapshots, and drains accepted writes before process exit.
 Loads observe preceding completed writes and establish the safe write slot before
 later saves run. Pending saves coalesce only between load barriers. Demo import,
 its local write, and its initialization receipt belong to the load operation;
