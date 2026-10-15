@@ -307,51 +307,6 @@
       shine 8s linear infinite,
       talentAllocatableShineIn 500ms var(--ease-out-expo) both;
   }
-
-  .alchemy-startup-bar {
-    background: var(--color-primary);
-    transform-origin: left;
-    will-change: transform;
-  }
-
-  .alchemy-loading-fade {
-    animation: startupBlurFadeIn 320ms var(--ease-out-expo) both;
-  }
-
-  .alchemy-loading-word {
-    animation: loadingWordFade 200ms ease-out both;
-    will-change: opacity, transform;
-  }
-
-  .alchemy-loading-logo-fill {
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 100%;
-    overflow: hidden;
-    transform: translate3d(-100%, 0, 0);
-    animation: loadingLogoReveal 5000ms ease-out forwards;
-    will-change: transform;
-  }
-
-  .alchemy-loading-logo-fill-text {
-    display: block;
-    width: 100%;
-    transform: translate3d(100%, 0, 0);
-    animation: loadingLogoCounter 5000ms ease-out forwards;
-    will-change: transform;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .alchemy-loading-logo-fill {
-      animation: none;
-      transform: translate3d(0%, 0, 0);
-    }
-
-    .alchemy-loading-logo-fill-text {
-      animation: none;
-      transform: translate3d(0%, 0, 0);
-    }
-  }
 }
 
 /* The hand rests at the viewport edge; Mana follows the hero portrait. */

@@ -13,6 +13,7 @@ import {
   clearAlchemySaveData,
   configureSaveBackend,
   getSaveWriteFailure,
+  isSaveClearPending,
   loadAlchemySaveState,
   resetStorageIoForTests,
   routeWritesToRecovery,
@@ -29,7 +30,6 @@ import type { SaveBackend } from "@/lib/platform-save-backend";
 import type { SaveLoadState, SaveRestoreAction } from "./save-candidates";
 import type { SaveStorageEvent, SaveWriteOutcome } from "./save-operation-queue";
 import type { UnstampedSaveData } from "./types";
-import { sessionRuntime } from "../stores/session-runtime";
 
 export type PersistenceInterruption = SaveStorageEvent | "restored";
 
@@ -74,7 +74,7 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
   const write = (save: UnstampedSaveData, exit = false) =>
     exit ? saveAlchemySaveDataForExit(save, gameSession) : saveAlchemySaveData(save, gameSession);
   const checkpoint = () => {
-    markSessionProgress(gameSession);
+    markSessionProgress(gameSession, true);
     try {
       return write(snapshot());
     } catch (error) {
@@ -124,7 +124,7 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
       return resetStorageIoForTests(gameSession);
     },
     subscribe: (listener: () => void) => subscribeAlchemyPersistence(listener, gameSession),
-    isClearing: () => sessionRuntime(gameSession).io.isClearing(),
+    isClearing: () => isSaveClearPending(gameSession),
     subscribeInterruption: (listener: (event: PersistenceInterruption) => void) => {
       const cancelStorage = subscribeSaveEvents(listener, gameSession);
       const cancelRestore = progress.subscribeRestore(() => listener("restored"));

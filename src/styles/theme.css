@@ -1,6 +1,6 @@
 @theme {
   /* Motion tokens: TS constants in src/lib/game-constants/ui-motion.ts own the
-     millisecond values (MOTION_FADE_MS, TOOLTIP_FADE_MS, LOADING_WORD_FADE_MS);
+     millisecond values (MOTION_FADE_MS, TOOLTIP_FADE_MS);
      these CSS vars mirror them for stylesheets. Parity is enforced by
      scripts/lint-architecture-smoke.mjs — update both sides together. */
   --color-background: hsl(30 10% 3%);

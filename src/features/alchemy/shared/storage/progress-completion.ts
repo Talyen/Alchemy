@@ -14,6 +14,7 @@ export class ProgressCompletion {
   private epoch = 0;
   private restoreVersion = 0;
   private acknowledged = -1;
+  private checkpointVersion = 0;
   private readonly notifications = createNotificationChannel<[]>(
     (error) => {
       logStorageFailure("Progress save status update failed", error);
@@ -49,17 +50,23 @@ export class ProgressCompletion {
   }
 
   mark(revision: number, force = false) {
-    if (force) this.acknowledged = Math.min(this.acknowledged, revision - 1);
+    if (force) {
+      // Settings and explicit checkpoints can change without a gameplay revision.
+      // Earlier snapshots cannot cover this newly requested durability boundary.
+      this.checkpointVersion++;
+      this.acknowledged = Math.min(this.acknowledged, revision - 1);
+    }
     if (revision <= this.acknowledged) return;
     this.publish({ kind: "saving", revision });
   }
 
   token(revision: number) {
-    return { epoch: this.epoch, revision };
+    return { epoch: this.epoch, revision, checkpointVersion: this.checkpointVersion };
   }
 
-  complete(token: { epoch: number; revision: number }, outcome: SaveWriteOutcome) {
+  complete(token: ReturnType<ProgressCompletion["token"]>, outcome: SaveWriteOutcome) {
     if (token.epoch !== this.epoch) return "skipped" as const;
+    if (token.checkpointVersion !== this.checkpointVersion) return outcome;
     if (outcome === "saved") this.acknowledged = Math.max(this.acknowledged, token.revision);
     if (this.state.kind === "idle") return outcome;
     if (this.acknowledged >= this.state.revision) {

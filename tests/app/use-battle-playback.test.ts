@@ -32,7 +32,7 @@ function renderPlayback(overrides: Partial<Parameters<typeof useBattlePlayback>[
 
 describe("useBattlePlayback", () => {
   beforeEach(() => {
-    useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+    useSettingsStore.getState().resetToDefaults();
     resetBattlePresentationAndRun();
   });
 
@@ -71,7 +71,7 @@ describe("useBattlePlayback", () => {
 
   it("ends an autoplay turn containing only lethal cards, preserving manual choice when autoplay stops", () => {
     vi.useFakeTimers();
-    useSettingsStore.setState({ autoEndTurn: true });
+    useSettingsStore.getState().setAutoEndTurn(true);
     const handleEndTurn = vi.fn();
     const handleAutoplayCard = vi.fn(() => false);
     const { rerender, unmount } = renderPlayback({
@@ -98,7 +98,7 @@ describe("useBattlePlayback", () => {
 
   it("schedules auto-end when the settings toggle turns on mid-turn", () => {
     vi.useFakeTimers();
-    useSettingsStore.setState({ autoEndTurn: false });
+    useSettingsStore.getState().setAutoEndTurn(false);
     const handleEndTurn = vi.fn();
     renderPlayback({
       handleEndTurn,
@@ -111,7 +111,7 @@ describe("useBattlePlayback", () => {
     expect(handleEndTurn).not.toHaveBeenCalled();
 
     act(() => {
-      useSettingsStore.setState({ autoEndTurn: true });
+      useSettingsStore.getState().setAutoEndTurn(true);
     });
     act(() => {
       vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);

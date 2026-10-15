@@ -1,8 +1,47 @@
 import { describe, expect, it } from "vitest";
 import { staticAssets, validateAssetRegistry } from "../../scripts/assets/asset-manifest.mjs";
 import { ART_PRESETS } from "../../scripts/assets/asset-constants.mjs";
+import { assetGroup } from "../../scripts/assets/asset-group.mjs";
+import { artGroup } from "../../scripts/assets/art-group.mjs";
+import { gearAssets } from "../../scripts/assets/gear-assets.mjs";
 
 describe("asset manifest", () => {
+  it("preserves selected source paths, output identities and per-image transform overrides", async () => {
+    const art = artGroup({ folder: "Actions", preset: ART_PRESETS.card, requiresTransparency: true }, [
+      ["Haste.png", "haste.webp", ART_PRESETS.cardHaste],
+      ["nested/Block.png", "block.webp"],
+    ]);
+    expect(art).toEqual([
+      {
+        source: "2d Assets/Game Sources/Actions/Haste.png",
+        target: "haste.webp",
+        ...ART_PRESETS.cardHaste,
+        requiresTransparency: true,
+      },
+      {
+        source: "2d Assets/Game Sources/Actions/nested/Block.png",
+        target: "block.webp",
+        ...ART_PRESETS.card,
+        requiresTransparency: true,
+      },
+    ]);
+    expect(
+      assetGroup({ folder: "Sounds/", settings: {}, targetExtension: ".ogg" }, [
+        "nested/impact.wav",
+        ["hit.wav", "strike.ogg"],
+      ]),
+    ).toEqual([
+      { source: "Sounds/nested/impact.wav", target: "impact.ogg" },
+      { source: "Sounds/hit.wav", target: "strike.ogg" },
+    ]);
+    // Expansion must leave explicit output paths intact so the registry can reject escapes.
+    await expect(
+      validateAssetRegistry(
+        artGroup({ folder: "Actions", preset: ART_PRESETS.card }, [["Block.png", "../escape.webp"]]),
+      ),
+    ).rejects.toThrow("Invalid target");
+  });
+
   it.each(["123.webp", "fooBar.webp", "../escape.webp", "image.png"])(
     "rejects invalid export target %s",
     async (target) => {
@@ -20,7 +59,8 @@ describe("asset manifest", () => {
   });
 
   it("keeps registered sources, targets, and generated export names valid", async () => {
-    await expect(validateAssetRegistry(staticAssets)).resolves.toEqual(staticAssets);
+    const entries = [...staticAssets, ...gearAssets];
+    await expect(validateAssetRegistry(entries)).resolves.toEqual(entries);
   });
 
   it("keeps resource and card-pile transparency requirements with their transform presets", () => {

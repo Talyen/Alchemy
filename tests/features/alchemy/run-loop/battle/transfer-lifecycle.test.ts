@@ -3,6 +3,76 @@ import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-li
 import { runPlaybackTask } from "@/features/alchemy/run-loop/battle/playback-task";
 
 describe("PlaybackLifetime", () => {
+  it("releases the old generation before an observer starts its replacement", () => {
+    vi.useFakeTimers();
+    try {
+      const lifetime = new PlaybackLifetime();
+      const signal = lifetime.signal;
+      const old = lifetime.id;
+      lifetime.beginDraw(old);
+      const oldTimer = vi.fn();
+      const newTimer = vi.fn();
+      lifetime.capture(old).setTimeout(oldTimer, 10);
+      let restarted = false;
+      lifetime.subscribe(() => {
+        if (restarted || lifetime.isCurrent(old)) return;
+        restarted = true;
+        expect(signal.aborted).toBe(true);
+        expect(lifetime.pendingDraws).toBe(0);
+        expect(lifetime.timers.size).toBe(0);
+        lifetime.restart();
+        lifetime.capture(lifetime.id).setTimeout(newTimer, 10);
+      });
+      lifetime.restart();
+      expect(restarted).toBe(true);
+      expect(lifetime.id).toBe(old + 1);
+      vi.runAllTimers();
+      expect(oldTimer).not.toHaveBeenCalled();
+      expect(newTimer).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it("finishes cancellation despite failed observers, transfer cleanup, and autoplay adapters", async () => {
+    vi.useFakeTimers();
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const lifetime = new PlaybackLifetime();
+      const old = lifetime.id;
+      const signal = lifetime.signal;
+      lifetime.beginDraw(old);
+      lifetime.bind({
+        scheduleAutoEndTurn: () => {},
+        clearAutoEndTurn: () => {
+          throw new Error("autoplay");
+        },
+      });
+      lifetime.subscribe(() => {
+        throw new Error("observer");
+      });
+      lifetime.registerCancel(() => {
+        throw new Error("transfer");
+      });
+      const waiting = runPlaybackTask(
+        lifetime.capture(old).registerCancel,
+        () => false,
+        () => {},
+      );
+      const timer = vi.fn();
+      lifetime.capture(old).setTimeout(timer, 10);
+      expect(() => lifetime.restart()).not.toThrow();
+      await expect(waiting).resolves.toBe(false);
+      expect(signal.aborted).toBe(true);
+      expect(lifetime.pendingDraws).toBe(0);
+      expect(lifetime.isCurrent(old)).toBe(false);
+      expect(lifetime.canAcceptInput()).toBe(true);
+      vi.runAllTimers();
+      expect(timer).not.toHaveBeenCalled();
+    } finally {
+      errors.mockRestore();
+      vi.useRealTimers();
+    }
+  });
   it("settles a suspended frame on cancellation without leaking into a restarted battle", async () => {
     const frame = vi.fn(() => 42);
     const cancelFrame = vi.fn();

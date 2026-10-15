@@ -38,7 +38,7 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     { generateRunSeed: generateRandomRunSeed, cosmeticRandom: () => Math.random(), createInstanceId },
     options.runtimeInputs,
   );
-  const settings = createSettingsStore(lifetime.isActive);
+  const settings = createSettingsStore(lifetime.isActive, lifetime.track);
   const feedback = isolateSessionFeedback(
     bindRuntimeMethods<SessionFeedback>(
       {
