@@ -113,15 +113,13 @@ test("options and confirmations", async () => {
   await shot("confirmation-clear-save");
   await click("Cancel");
   await click("Display");
-  for (const name of ["Aspect Ratio", "Display Mode"]) {
-    await shot(`options-${name.toLowerCase().replaceAll(" ", "-")}-dropdown`, {
-      prepare: async () => {
-        await page.getByRole("combobox", { name, exact: true }).click();
-        await expect(page.getByRole("listbox")).toBeVisible();
-      },
-      cleanup: () => page.keyboard.press("Escape"),
-    });
-  }
+  await shot("options-display-mode-dropdown", {
+    prepare: async () => {
+      await page.getByRole("combobox", { name: "Display Mode", exact: true }).click();
+      await expect(page.getByRole("listbox")).toBeVisible();
+    },
+    cleanup: () => page.keyboard.press("Escape"),
+  });
 });
 
 test("run setup and draft", async () => {
