@@ -10,16 +10,11 @@ import { purchaseTalent } from "@/features/alchemy/shared/stores/navigation-comm
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import {
-  acceptCommand,
-  createRunSessionCommand,
-  rejectCommand,
-} from "@/features/alchemy/shared/stores/run-session-command";
-import {
   bondCompanion,
   completeResearch,
   constructBuilding,
   plantFarm,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/meta-commands";
 import {
   canUnlockTalent,
   cardLibrary,
@@ -71,40 +66,13 @@ export function offerMetaChoices(
     const discoveredCardIds = new Set(readProfileStore(gameSession).discoveredCardIds);
     for (const item of buildings)
       if (canUpgradeTierItem(item, profile.constructedBuildings[item.id], profile.materialInventory))
-        offer("building", item.id, 4, () =>
-          createRunSessionCommand(
-            (...args: Parameters<typeof constructBuilding>) => {
-              const ok = constructBuilding(...args);
-              return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
-            },
-            undefined,
-            gameSession,
-          )(item.id),
-        );
+        offer("building", item.id, 4, () => constructBuilding(item.id, gameSession));
     for (const item of farmPlots)
       if (canUpgradeTierItem(item, profile.plantedFarms[item.id], profile.materialInventory))
-        offer("farm", item.id, 3, () =>
-          createRunSessionCommand(
-            (...args: Parameters<typeof plantFarm>) => {
-              const ok = plantFarm(...args);
-              return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
-            },
-            undefined,
-            gameSession,
-          )(item.id),
-        );
+        offer("farm", item.id, 3, () => plantFarm(item.id, gameSession));
     for (const item of researchUpgrades)
       if (canUpgradeTierItem(item, profile.completedResearch[item.id], profile.materialInventory))
-        offer("research", item.id, 3, () =>
-          createRunSessionCommand(
-            (...args: Parameters<typeof completeResearch>) => {
-              const ok = completeResearch(...args);
-              return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
-            },
-            undefined,
-            gameSession,
-          )(item.id),
-        );
+        offer("research", item.id, 3, () => completeResearch(item.id, gameSession));
     for (const item of companionTierItems)
       if (
         canUpgradeTierItem(item, profile.bondedCompanions[item.id], profile.materialInventory) &&
@@ -114,16 +82,7 @@ export function offerMetaChoices(
             card.effects.some((effect) => effect.kind === "summon-companion" && effect.companionId === item.id),
         )
       )
-        offer("bond", item.id, 3, () =>
-          createRunSessionCommand(
-            (...args: Parameters<typeof bondCompanion>) => {
-              const ok = bondCompanion(...args);
-              return ok ? acceptCommand(ok) : rejectCommand("Homestead upgrade is unavailable", ok);
-            },
-            undefined,
-            gameSession,
-          )(item.id),
-        );
+        offer("bond", item.id, 3, () => bondCompanion(item.id, gameSession));
   }
   if (isProgressionFeatureUnlocked("talents", finished)) {
     for (const talent of talentPool)
