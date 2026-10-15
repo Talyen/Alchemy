@@ -1,6 +1,6 @@
 import { createWebGLProgram } from "./webgl-program";
 import { parsePlasmaHexColor, type RgbTuple } from "@/lib/animation/plasma-colors";
-import { createCanvasLifecycle } from "./canvas-lifecycle";
+import { createCanvasLifecycle, type CanvasLifecycle } from "./canvas-lifecycle";
 import { PLASMA_BACKING_OPTIONS, type PlasmaRendererOptions } from "./keyword-plasma-types";
 
 const VERTEX_SHADER = `
@@ -80,93 +80,119 @@ export function startWebGLKeywordPlasma(options: PlasmaRendererOptions): (() => 
   const gl = tryGetWebGLContext(canvas);
   if (!gl) return null;
 
-  const program = createWebGLProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
-  if (!program) return null;
+  let program: WebGLProgram | null = null;
+  let buffer: WebGLBuffer | null = null;
+  let lifecycle: CanvasLifecycle | null = null;
+  let released = false;
+  const stop = () => {
+    if (released) return;
+    released = true;
+    const failures: unknown[] = [];
+    for (const cleanup of [
+      () => onWakeReady?.(() => {}),
+      () => lifecycle?.dispose(),
+      () => {
+        if (buffer) gl.deleteBuffer(buffer);
+      },
+      () => {
+        if (program) gl.deleteProgram(program);
+      },
+    ]) {
+      try {
+        cleanup();
+      } catch (error) {
+        failures.push(error);
+      }
+    }
+    if (failures.length) throw new AggregateError(failures, "Plasma renderer cleanup failed");
+  };
+  let ready = false;
+  try {
+    program = createWebGLProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
+    if (!program) return null;
 
-  const positionLoc = gl.getAttribLocation(program, "aPosition");
-  const sizeLoc = gl.getUniformLocation(program, "uSize");
-  const timeLoc = gl.getUniformLocation(program, "uTime");
-  const primaryLoc = gl.getUniformLocation(program, "uPrimary");
-  const secondaryLoc = gl.getUniformLocation(program, "uSecondary");
-  const focalLoc = gl.getUniformLocation(program, "uFocalCenter");
+    const positionLoc = gl.getAttribLocation(program, "aPosition");
+    const sizeLoc = gl.getUniformLocation(program, "uSize");
+    const timeLoc = gl.getUniformLocation(program, "uTime");
+    const primaryLoc = gl.getUniformLocation(program, "uPrimary");
+    const secondaryLoc = gl.getUniformLocation(program, "uSecondary");
+    const focalLoc = gl.getUniformLocation(program, "uFocalCenter");
 
-  const buffer = gl.createBuffer();
-  if (!buffer || positionLoc < 0 || !sizeLoc || !timeLoc || !primaryLoc || !secondaryLoc || !focalLoc) {
-    if (buffer) gl.deleteBuffer(buffer);
-    gl.deleteProgram(program);
-    return null;
+    buffer = gl.createBuffer();
+    if (!buffer || positionLoc < 0 || !sizeLoc || !timeLoc || !primaryLoc || !secondaryLoc || !focalLoc) {
+      return null;
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+
+    gl.enableVertexAttribArray(positionLoc);
+    gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
+    gl.useProgram(program);
+    // One fullscreen quad writes every pixel, including transparent ones. It
+    // replaces the previous frame without a clear or destination blending.
+    gl.disable(gl.BLEND);
+    let cachedPrimarySource: string | RgbTuple | null = null;
+    let cachedSecondarySource: string | RgbTuple | null = null;
+    let cachedPrimary: RgbTuple = [0, 0, 0];
+    let cachedSecondary: RgbTuple = [0, 0, 0];
+    const uploadedPrimary: [number, number, number] = [NaN, NaN, NaN];
+    const uploadedSecondary: [number, number, number] = [NaN, NaN, NaN];
+
+    const uploadColor = (location: WebGLUniformLocation, color: RgbTuple, uploaded: [number, number, number]): void => {
+      if (color[0] === uploaded[0] && color[1] === uploaded[1] && color[2] === uploaded[2]) return;
+      gl.uniform3f(location, color[0], color[1], color[2]);
+      uploaded[0] = color[0];
+      uploaded[1] = color[1];
+      uploaded[2] = color[2];
+    };
+
+    const startTime = performance.now();
+    lifecycle = createCanvasLifecycle({
+      canvas,
+      active,
+      fpsLimit: 30,
+      backingScale: PLASMA_BACKING_OPTIONS,
+      onResize: (_width, height) => {
+        // These inputs depend only on the canvas size; WebGL retains them
+        // between draws. Context restoration creates a fresh renderer.
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        const backingScale = height > 0 ? canvas.height / height : 1;
+        gl.uniform2f(sizeLoc, canvas.width, canvas.height);
+        gl.uniform2f(focalLoc, canvas.width / 2, canvas.height / 2 - focalYOffset * backingScale);
+      },
+      onFrame: (now, _dt, width, height) => {
+        if (width <= 0 || height <= 0) return;
+
+        if (cachedPrimarySource !== colorsRef.current.primary) {
+          cachedPrimarySource = colorsRef.current.primary;
+          cachedPrimary =
+            typeof cachedPrimarySource === "string" ? parsePlasmaHexColor(cachedPrimarySource) : cachedPrimarySource;
+        }
+        if (cachedSecondarySource !== colorsRef.current.secondary) {
+          cachedSecondarySource = colorsRef.current.secondary;
+          cachedSecondary =
+            typeof cachedSecondarySource === "string"
+              ? parsePlasmaHexColor(cachedSecondarySource)
+              : cachedSecondarySource;
+        }
+        const primary = cachedPrimary;
+        const secondary = cachedSecondary;
+
+        gl.uniform1f(timeLoc, (now - startTime) / 1000);
+        // Uniforms survive draws and backing resizes. Compare channels so an
+        // interpolated or in-place updated tuple still uploads its exact values.
+        uploadColor(primaryLoc, primary, uploadedPrimary);
+        uploadColor(secondaryLoc, secondary, uploadedSecondary);
+
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      },
+    });
+    onWakeReady?.(lifecycle.scheduleFrame);
+
+    ready = true;
+    return stop;
+  } finally {
+    // Until startup hands back its disposer, this function owns rollback.
+    if (!ready) stop();
   }
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-
-  gl.enableVertexAttribArray(positionLoc);
-  gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
-  gl.useProgram(program);
-  // One fullscreen quad writes every pixel, including transparent ones. It
-  // replaces the previous frame without a clear or destination blending.
-  gl.disable(gl.BLEND);
-  let cachedPrimarySource: string | RgbTuple | null = null;
-  let cachedSecondarySource: string | RgbTuple | null = null;
-  let cachedPrimary: RgbTuple = [0, 0, 0];
-  let cachedSecondary: RgbTuple = [0, 0, 0];
-  const uploadedPrimary: [number, number, number] = [NaN, NaN, NaN];
-  const uploadedSecondary: [number, number, number] = [NaN, NaN, NaN];
-
-  const uploadColor = (location: WebGLUniformLocation, color: RgbTuple, uploaded: [number, number, number]): void => {
-    if (color[0] === uploaded[0] && color[1] === uploaded[1] && color[2] === uploaded[2]) return;
-    gl.uniform3f(location, color[0], color[1], color[2]);
-    uploaded[0] = color[0];
-    uploaded[1] = color[1];
-    uploaded[2] = color[2];
-  };
-
-  const startTime = performance.now();
-  const lifecycle = createCanvasLifecycle({
-    canvas,
-    active,
-    fpsLimit: 30,
-    backingScale: PLASMA_BACKING_OPTIONS,
-    onResize: (_width, height) => {
-      // These inputs depend only on the canvas size; WebGL retains them
-      // between draws. Context restoration creates a fresh renderer.
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      const backingScale = height > 0 ? canvas.height / height : 1;
-      gl.uniform2f(sizeLoc, canvas.width, canvas.height);
-      gl.uniform2f(focalLoc, canvas.width / 2, canvas.height / 2 - focalYOffset * backingScale);
-    },
-    onFrame: (now, _dt, width, height) => {
-      if (width <= 0 || height <= 0) return;
-
-      if (cachedPrimarySource !== colorsRef.current.primary) {
-        cachedPrimarySource = colorsRef.current.primary;
-        cachedPrimary =
-          typeof cachedPrimarySource === "string" ? parsePlasmaHexColor(cachedPrimarySource) : cachedPrimarySource;
-      }
-      if (cachedSecondarySource !== colorsRef.current.secondary) {
-        cachedSecondarySource = colorsRef.current.secondary;
-        cachedSecondary =
-          typeof cachedSecondarySource === "string"
-            ? parsePlasmaHexColor(cachedSecondarySource)
-            : cachedSecondarySource;
-      }
-      const primary = cachedPrimary;
-      const secondary = cachedSecondary;
-
-      gl.uniform1f(timeLoc, (now - startTime) / 1000);
-      // Uniforms survive draws and backing resizes. Compare channels so an
-      // interpolated or in-place updated tuple still uploads its exact values.
-      uploadColor(primaryLoc, primary, uploadedPrimary);
-      uploadColor(secondaryLoc, secondary, uploadedSecondary);
-
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    },
-  });
-  onWakeReady?.(lifecycle.scheduleFrame);
-
-  return () => {
-    onWakeReady?.(() => {});
-    lifecycle.dispose();
-    gl.deleteBuffer(buffer);
-    gl.deleteProgram(program);
-  };
 }
