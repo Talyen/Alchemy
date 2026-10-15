@@ -25,7 +25,7 @@ contract and controller seams.
 
 `src/lib/gear/definitions.ts`, `crafting.ts`, and `crafting-ids.ts` are authoritative. Item titles live with definitions (`getGearInstanceTitle`), and canonical affix resolution is centralized in `getGearInstanceAffixes`. Affix pool/roll helpers live in `affix-pool.ts` so generation and crafting depend down. Durable invariants:
 
-- A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and rolled `affixes`; it never embeds definition objects or art URLs.
+- A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and an `affixes` array. Basic and Astral items persist their rolls; Unique items keep that array empty and resolve canonical affixes from the catalog. Instances never embed definition objects or art URLs.
 - Inventories and loadouts are keyed by character. A loadout maps each slot to at most one instance ID.
 - Permanent Trinkets are unique definition IDs in `ownedTrinketIds`, not generated `GearInstance` values; they have no rarity, affixes, crafting, or salvage.
 - `equippedTrinkets` maps each character to one owned Trinket at most. Equipping a shared Trinket moves it from any other character.

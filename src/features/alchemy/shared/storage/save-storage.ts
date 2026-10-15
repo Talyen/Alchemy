@@ -11,7 +11,7 @@ import type { SaveData, UnstampedSaveData } from "./types";
 
 export class SaveStorage {
   private readonly queue = new SaveOperationQueue();
-  private writeKeys: readonly (typeof SAVE_KEY | typeof SAVE_RECOVERY_KEY)[] = [SAVE_KEY, SAVE_RECOVERY_KEY];
+  private writeKeys: ReadonlyArray<typeof SAVE_KEY | typeof SAVE_RECOVERY_KEY> = [SAVE_KEY, SAVE_RECOVERY_KEY];
   private demoInitialization: Promise<SaveLoadState | null> | null = null;
   private lastSavedAt = 0;
 
