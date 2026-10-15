@@ -131,7 +131,7 @@ function recordActivity(run: Record<string, unknown> | undefined): Record<string
 export interface SaveCandidateSelection {
   state: SaveLoadState;
   /** Ordered write attempts, including only compatibility-permitted fallback slots. */
-  writeSlots: readonly ("primary" | "recovery")[];
+  writeSlots: ReadonlyArray<"primary" | "recovery">;
 }
 
 /** Select progress and its safe write slot from the same compatibility pass. */
