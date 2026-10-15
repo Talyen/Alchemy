@@ -57,11 +57,6 @@ changes. Every command returns an explicit `CommandOutcome` using `acceptCommand
 or `rejectCommand(reason, fallback)`. Rejection discards all draft changes, including RNG
 counters, preserves the root and revision, and emits no commit signal. Unchanged accepted
 commands also preserve the root and revision; thrown execution errors discard the draft.
-A write-port operation that throws also marks the command failed, even if its caller
-catches the error and returns acceptance. This includes input-copy and updater
-failures, so partially initialized battles, payments, and RNG cannot publish as
-successful commands. Ordinary false/null rejections remain available for expected
-validation failures.
 The dispatcher returns the outcome's value so route-facing result shapes stay unchanged.
 React selectors and autosave subscribe to
 that same root. Settings and presentation-only state remain separate.
@@ -72,6 +67,7 @@ save acknowledgment epoch, and arms any pending save protection before notifying
 observers. Decoding, settings preparation, rejection, or result-validation failure
 leaves both stores, the pending save gate, and completion callbacks unchanged.
 Ordinary feature commands cannot request this restore publication mode.
+
 Run-profile codecs detach persisted collections on both encode and hydration;
 run restoration owns the entire active-run graph before decoding or rebinding.
 Restoring never freezes or mutates a caller's save, including nested battle and
