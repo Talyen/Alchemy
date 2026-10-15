@@ -76,7 +76,7 @@ function getEncounterCostDiscount(
   return { discount, quickdrawUsed: quickdraw };
 }
 
-type UniqueCostDiscounts = Partial<Pick<BattleSnapshot["uniqueGear"], "knightsAnswerReady" | "returningFlightUid">>;
+type UniqueCostDiscounts = Partial<Pick<BattleSnapshot["uniqueGear"], "knightsAnswerReady" | "returningFlightUids">>;
 
 function resolveGearCostTriggers(
   gear: CardCostState["gearEffects"],
@@ -86,13 +86,15 @@ function resolveGearCostTriggers(
   const natureFree = gear.dodgeReadiesNatureCrit > 0 && unique.wildheartReady && isNatureCard(card);
   const physicalFree =
     gear.blockReadiesFreePhysical > 0 && unique.knightsAnswerReady && cardHasDamageType(card, "physical");
-  const returned = card.uid !== undefined && gear.recoverLastArcheryCard > 0 && card.uid === unique.returningFlightUid;
+  const returned =
+    card.uid !== undefined && gear.recoverLastArcheryCard > 0 && unique.returningFlightUids.includes(card.uid);
 
   const uniqueDiscounts: UniqueCostDiscounts = {};
   if (card.cost > 0) {
     if (physicalFree) uniqueDiscounts.knightsAnswerReady = false;
   }
-  if (card.uid === unique.returningFlightUid) uniqueDiscounts.returningFlightUid = null;
+  if (card.uid !== undefined && unique.returningFlightUids.includes(card.uid))
+    uniqueDiscounts.returningFlightUids = unique.returningFlightUids.filter((uid) => uid !== card.uid);
 
   return {
     isFree: natureFree || physicalFree,

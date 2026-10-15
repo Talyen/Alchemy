@@ -17,7 +17,7 @@ function fixture() {
   const files = new Map<string, string>();
   const cloud = {
     fileExists: (name: string) => files.has(name),
-    readFile: vi.fn(async (name: string) => Buffer.from(files.get(name)!)),
+    readFile: vi.fn(async (name: string): Promise<Buffer | null> => Buffer.from(files.get(name)!)),
     writeFile: vi.fn(async (name: string, value: string) => {
       files.set(name, value);
       return true;
@@ -76,4 +76,12 @@ it("reads complete uploads and continues after asynchronous Cloud failures", asy
   expect(await failed).toBe(false);
   expect(await saved).toBe(true);
   expect(await read).toBe("new");
+});
+
+it.each([null, Buffer.alloc(1001)])("protects an existing unreadable Cloud save (%s)", async (data) => {
+  const { storage, cloud, files } = fixture();
+  files.set("primary", "existing");
+  cloud.readFile.mockImplementationOnce(async () => data);
+  await expect(storage.read()).rejects.toThrow();
+  expect(await storage.read()).toBe("existing");
 });

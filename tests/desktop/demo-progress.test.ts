@@ -89,3 +89,9 @@ describe("desktop demo transfer isolation", () => {
     expect(JSON.parse(stampSaveOwner('{"gold":9}', f.client))).toEqual({ gold: 9, steamAccountId: "123" });
   });
 });
+
+it("concurrent initialization requests both preserve their receipt", async () => {
+  const f = await fixture();
+  expect(await Promise.all([f.bridge.complete(), f.bridge.complete({ localOnly: true })])).toEqual([true, true]);
+  expect(await readFile(path.join(f.directory, "demo-initialization.json"), "utf8")).toBe("initialized");
+});

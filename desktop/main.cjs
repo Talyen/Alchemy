@@ -21,7 +21,7 @@ const {
 } = require("./security.cjs");
 const { initializeMainSentry } = require("./sentry.cjs");
 const { resolveEdition, editionPolicy } = require("../game-edition.mjs");
-const { createDesktopSaveStorage } = require("./save-storage.cjs");
+const { createDesktopSaveStorage, registerSaveShutdown } = require("./save-storage.cjs");
 const { createSteamCloudStorage } = require("./steam-cloud-storage.cjs");
 const { createDemoProgressBridge, stampSaveOwner } = require("./demo-progress.cjs");
 const TEST_PROFILE_ISOLATED =
@@ -86,6 +86,8 @@ const saveStorage = createDesktopSaveStorage({
   isSavePayload,
   stampOwner: (data) => stampSaveOwner(data, steamClient),
 });
+
+registerSaveShutdown(app, saveStorage);
 
 const steamCloudStorage = createSteamCloudStorage({
   resolveSlot: resolveSaveSlot,

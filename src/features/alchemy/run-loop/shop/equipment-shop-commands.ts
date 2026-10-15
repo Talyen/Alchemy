@@ -8,7 +8,6 @@ import {
   createDraftRunRandomSource,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
-import type { EquipmentShopCommands } from "./shop-action-types";
 import {
   createGetRefreshPrice,
   createShopPurchaseActions,
@@ -18,7 +17,7 @@ import {
 import { getShopBuyPrice } from "./shop-pricing";
 import { resampleEquipmentShopOfferings } from "./shop-state-init";
 
-export function createEquipmentShopCommands(gameSession: GameSession): EquipmentShopCommands {
+export function createEquipmentShopCommands(gameSession: GameSession) {
   const { buy, getBuyPrice } = createShopPurchaseActions(
     {
       activity: "equipment-shop",

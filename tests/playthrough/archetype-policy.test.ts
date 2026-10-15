@@ -1,17 +1,10 @@
+import { makeTestCard } from "../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import type { BattleCard } from "@/lib/game-data";
 import { scoreArchetypeCard, scoreStrategyCard, scoreStrategyKeyword } from "@/app/playthrough/archetype-policy";
 
 function card(id: string, tags: BattleCard["tags"]): BattleCard {
-  return {
-    id,
-    title: id,
-    descriptionLines: [],
-    art: "",
-    cost: 1,
-    tags,
-    effects: [],
-  };
+  return makeTestCard({ id, title: id, descriptionLines: [], tags });
 }
 
 describe("adaptive archetype policy", () => {

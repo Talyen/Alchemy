@@ -1,3 +1,4 @@
+import { makeTestCard } from "../../../../fixtures/cards";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -86,14 +87,12 @@ describe("MysteryRewardSummary", () => {
   });
 
   it("shows the chosen card tile and hover popup for chooseCard", () => {
-    const slash = {
+    const slash = makeTestCard({
       id: "slash",
       title: "Slash",
       descriptionLines: ["Deal 6 damage."],
       art: "slash-art",
-      cost: 1,
-      effects: [],
-    };
+    });
     render(
       <MysteryRewardSummary
         choice={{ label: "Browse", effects: [{ kind: "chooseCard" }] }}

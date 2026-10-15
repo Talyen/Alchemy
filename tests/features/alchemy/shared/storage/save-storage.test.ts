@@ -265,6 +265,43 @@ describe("SaveStorage ownership", () => {
     },
   );
 
+  it.each(["save", "saveForExit"] as const)(
+    "%s preserves unreadable recovery data when the known primary is protected or its write fails",
+    async (operation) => {
+      const log = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        for (const primary of [futureSaveCandidate(100), playableSaveCandidate(10)]) {
+          const storageBackend = backend();
+          storageBackend.readCandidates.mockImplementation(async (key) =>
+            key === SAVE_KEY ? { ok: true, candidates: [primary] } : { ok: false, error: "recovery unreadable" },
+          );
+          storageBackend.write.mockResolvedValue({ ok: false, error: "primary unavailable" });
+          storageBackend.writeSync.mockReturnValue({ ok: false, error: "primary unavailable" });
+          const storage = new SaveStorage(storageBackend);
+          const loaded = await storage.load();
+          expect(await storage[operation](loaded.data)).toBe("failed");
+          expect(storageBackend.write.mock.calls.every(([key]) => key === SAVE_KEY)).toBe(true);
+          expect(storageBackend.writeSync.mock.calls.every(([key]) => key === SAVE_KEY)).toBe(true);
+        }
+      } finally {
+        log.mockRestore();
+      }
+    },
+  );
+
+  it("routes writes away from an unreadable primary Cloud mirror", async () => {
+    const storageBackend = backend();
+    storageBackend.readCandidates.mockImplementation(async (key) => ({
+      ok: true,
+      candidates: [],
+      ...(key === SAVE_KEY ? { cloudReadFailed: true } : {}),
+    }));
+    const storage = new SaveStorage(storageBackend);
+    await storage.load();
+    expect(await storage.save(createDefaultSaveData())).toBe("saved");
+    expect(storageBackend.write).toHaveBeenCalledExactlyOnceWith(SAVE_RECOVERY_KEY, expect.any(String));
+  });
+
   it("still attempts recovery when neither slot can be read", async () => {
     const storageBackend = backend();
     storageBackend.readCandidates.mockResolvedValue({ ok: false, error: "storage unreadable" });

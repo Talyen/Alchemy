@@ -232,7 +232,10 @@ shelf assignment, and modifier ordering, follow
 - `settings-store` owns synchronized display, audio, and gameplay preferences. It does not contain gameplay progression.
 - `device-display-store` owns Game Size and Tooltip Size. Its storage seam writes a versioned device-local record, outside the settings save codec and Steam Cloud. Defaults load synchronously before layout; unavailable storage falls back to in-memory preferences. Options receives values and actions through its route props.
 - `lib/settings-values.ts` owns the shared value sets and numeric bounds consumed by save validation, Options, audio,
-  and the desktop bridge; the settings codec still owns defaults, encoding, and hydration.
+  and the desktop bridge. `lib/validation/save-schemas/settings.ts` owns synchronized
+  preference fields, their saved defaults, and load repair; the settings codec
+  derives fresh defaults and field types from it and owns encoding and hydration.
+  Options receives these values and named actions directly through route props.
 
 Gameplay progression remains in the [aggregate regions](./RUN_STATE.md#run-state); persistence follows the [codec contract](./RUN_STATE.md#persistence-api). Run reward finalization uses the write module and `run-lifecycle.ts` (`finalizeRunXP`, `awardMaterialsDuringRun` — see [grant materials](./RUN_WORKFLOWS.md#grant-materials-during-a-run)), never the discovery-only profile region. `error-log-store.ts` is a standalone local-only error buffer (own storage key, debounced persist); `shared/stores/reset.ts` owns the Options wipe (distinct from the audio test reset in `src/lib/audio/reset.ts`). Both sit outside the gameplay aggregate and its save codecs.
 
@@ -326,3 +329,8 @@ Run outcomes and navigation share one construction owner: `createRunOutcomes`
 exposes `connect(actions)`. Both UI and headless shells supply presentation
 capabilities; domain commands own destination eligibility and sampling.
 Hover-clearing navigation is wrapped once in the shell.
+
+Route and shop command types derive from their composition factories. The route
+surface excludes battle initialization and cancellation; screens borrow only their
+phase's commands. Changes to command signatures update consumers without a second
+handwritten capability inventory.

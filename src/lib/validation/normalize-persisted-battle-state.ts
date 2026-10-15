@@ -262,7 +262,9 @@ function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
     uniqueGear: {
       ...state.uniqueGear,
       lastArcheryUid: unambiguousUid(state.uniqueGear.lastArcheryUid),
-      returningFlightUid: unambiguousUid(state.uniqueGear.returningFlightUid),
+      returningFlightUids: [...new Set(state.uniqueGear.returningFlightUids)].filter(
+        (uid) => unambiguousUid(uid) !== null,
+      ),
     },
     cardsPlayedThisTurn: toFiniteNonNegativeInt(state.cardsPlayedThisTurn) ?? 0,
     nextCardUid,

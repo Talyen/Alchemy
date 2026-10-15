@@ -14,26 +14,21 @@ function createSteamCloudStorage({ resolveSlot, getSteam, isSavePayload, stampOw
     const { name } = resolveSlot(slot);
     const client = getSteam();
     if (!client) return null;
-    try {
-      if (!client.cloud.fileExists(name)) return null;
-      const buffer = await client.cloud.readFile(name);
-      if (buffer && buffer.length > maxPayloadBytes) {
-        console.error(`[save] Steam Cloud save exceeds ${maxPayloadBytes} bytes; ignoring.`);
-        return null;
-      }
-      return buffer ? buffer.toString("utf8") : null;
-    } catch (error) {
-      console.error("[save] Error reading Steam Cloud save:", error);
-      return null;
-    }
+    if (!client.cloud.fileExists(name)) return null;
+    const buffer = await client.cloud.readFile(name);
+    if (!buffer) throw new Error("Steam Cloud save could not be read");
+    if (buffer.length > maxPayloadBytes) throw new Error(`Steam Cloud save exceeds ${maxPayloadBytes} bytes`);
+    return buffer.toString("utf8");
   }
 
   async function write(data, slot) {
     const { name } = resolveSlot(slot);
     const client = getSteam();
     if (!client || !isSavePayload(data)) return false;
+    const stamped = stampOwner(data, client);
+    if (!isSavePayload(stamped)) return false;
     try {
-      return await client.cloud.writeFile(name, stampOwner(data, client));
+      return await client.cloud.writeFile(name, stamped);
     } catch (error) {
       console.error("[save] Error writing Steam Cloud save:", error);
       return false;

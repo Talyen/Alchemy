@@ -1,9 +1,8 @@
 import { playUISound } from "@/lib/audio";
 import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/device-display-store";
-import { useShallow } from "zustand/react/shallow";
 import { isDesktop } from "@/lib/platform";
 import { OptionsScreen } from "@/features/alchemy/meta/screens";
-import { useSettingsActions, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { useAppSettings, useSettingsActions } from "@/features/alchemy/shared/stores/settings-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { OptionsRouteCtx } from "./route-ctx";
 
@@ -16,21 +15,7 @@ function OptionsScreenRoute({
   onOpenGameMenu,
   onOpenBoards,
 }: OptionsRouteCtx) {
-  const settings = useSettingsStore(
-    useShallow((s) => ({
-      displayMode: s.displayMode,
-      brightness: s.brightness,
-      backgroundParticlesIntensity: s.backgroundParticlesIntensity,
-      backgroundGlowIntensity: s.backgroundGlowIntensity,
-      masterVolume: s.masterVolume,
-      musicVolume: s.musicVolume,
-      sfxVolume: s.sfxVolume,
-      muteInBackground: s.muteInBackground,
-      bossLyricsEnabled: s.bossLyricsEnabled,
-      autoEndTurn: s.autoEndTurn,
-      rememberAutoplayPreference: s.rememberAutoplayPreference,
-    })),
-  );
+  const settings = useAppSettings();
   const actions = useSettingsActions();
   const showClearSaveConfirm = useUiStore((s) => s.showClearSaveConfirm);
   const setShowClearSaveConfirm = useUiStore((s) => s.setShowClearSaveConfirm);
@@ -48,40 +33,13 @@ function OptionsScreenRoute({
       onMenu={onOpenGameMenu}
       display={{
         onOpenBoards,
-        displayMode: settings.displayMode,
-        onDisplayModeChange: actions.setDisplayMode,
-        // Desktop-only control: displayMode still persists on web (harmless —
-        // it applies if the save ever loads on desktop) but has no editor here.
         showDisplayMode: isDesktop(),
-        brightness: settings.brightness,
-        onBrightnessChange: actions.setBrightness,
-        backgroundParticlesIntensity: settings.backgroundParticlesIntensity,
-        onBackgroundParticlesIntensityChange: actions.setBackgroundParticlesIntensity,
-        backgroundGlowIntensity: settings.backgroundGlowIntensity,
-        onBackgroundGlowIntensityChange: actions.setBackgroundGlowIntensity,
         gameSizePercent,
         tooltipSizePercent,
         onGameSizeChange: setGameSizePercent,
         onTooltipSizeChange: setTooltipSizePercent,
       }}
-      audio={{
-        masterVolume: settings.masterVolume,
-        musicVolume: settings.musicVolume,
-        sfxVolume: settings.sfxVolume,
-        onMasterVolumeChange: actions.setMasterVolume,
-        onMusicVolumeChange: actions.setMusicVolume,
-        onSfxVolumeChange: actions.setSfxVolume,
-        bossLyricsEnabled: settings.bossLyricsEnabled,
-        onBossLyricsEnabledChange: actions.setBossLyricsEnabled,
-        muteInBackground: settings.muteInBackground,
-        onMuteInBackgroundChange: actions.setMuteInBackground,
-      }}
-      gameplay={{
-        autoEndTurn: settings.autoEndTurn,
-        onAutoEndTurnChange: actions.setAutoEndTurn,
-        rememberAutoplayPreference: settings.rememberAutoplayPreference,
-        onRememberAutoplayPreferenceChange: actions.setRememberAutoplayPreference,
-      }}
+      preferences={{ values: settings, actions }}
       saveData={{
         showClearSaveConfirm,
         onOpenClearSaveConfirm: () => setShowClearSaveConfirm(true),

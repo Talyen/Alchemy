@@ -1,3 +1,4 @@
+import { makeTestCard } from "../../../../fixtures/cards";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -6,23 +7,21 @@ import type { BattleCard } from "@/lib/game-data";
 import type { CorruptionResult } from "@/lib/corruption";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 
-const testSlash: BattleCard = {
+const testSlash: BattleCard = makeTestCard({
   id: "slash",
   title: "Slash",
   descriptionLines: ["Deal 6 Physical damage"],
   art: "slash",
-  cost: 1,
   effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-};
+});
 
-const testStab: BattleCard = {
+const testStab: BattleCard = makeTestCard({
   id: "stab",
   title: "Stab",
   descriptionLines: ["Deal 4 Physical damage"],
   art: "stab",
-  cost: 1,
   effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
-};
+});
 
 const testCorruptedCard: BattleCard = {
   ...testSlash,
