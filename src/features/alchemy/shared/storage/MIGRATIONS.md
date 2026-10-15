@@ -44,6 +44,12 @@ Battle difficulty modifiers are validated individually during load. Keep valid
 entries and drop malformed ones so the next enemy turn can resolve safely.
 Profile and run XP retain only current keyword IDs; unknown entries cannot
 contribute Talent points or starting Health.
+Unsafe numeric XP entries are dropped independently so valid sibling progress
+survives. Save timestamps use the same safe-integer policy for raw candidate
+ordering and parsed freshness. Crafting currencies must remain safely spendable.
+Damaged card UIDs, titles, and artwork do not remove otherwise usable cards;
+identity repair and catalog hydration restore them. Scheduled battle pulses
+retain the card effect schema's one-to-ten-turn duration limit.
 Saved enemies regain their current native Traits from the catalog and retain
 only current combat encounter Traits. Reward benefits stay in their separate
 field; unsupported saved Traits cannot enter combat.
@@ -53,12 +59,18 @@ Run activity and resume codecs preserve a single `activeRun` with one tagged
 pending-turn, display-screen, interrupted-flow, or separate optional visit fields.
 Migration converts valid older runs without executing gameplay. Only the selected
 candidate may request abandonment of a nonterminal unfinished legacy battle.
+Nonterminal current snapshots marked as enemy turns use that same settlement;
+the current engine cannot commit a resumable intermediate enemy phase.
 Restore uses current abandonment settlement atomically, then queues the terminal
 snapshot; stale bootstrap results cannot abandon an initialized run. Terminal
 committed battles remain resumable. Unusable selected activity structure drops
 only the run; permanent progress and future-save protection remain intact.
 A damaged Mystery offer retains its tag with null data so restore can exit that
 visit through the existing repair operation.
+An unfinished Campfire with no usable Potion offer rebuilds its standard offers
+once using the saved events stream. A resumed Labyrinth map clears stale pending
+room locks. Invalid or missing battle Gold falls back to valid purse Gold in both
+the battle and profile; a valid zero balance remains authoritative.
 
 ## Retired display aspect ratio
 

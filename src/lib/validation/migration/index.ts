@@ -1,7 +1,7 @@
 import { migrateVersion20 } from "./run-activity";
 export { legacyRunNeedsAbandonment } from "./run-activity";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "../metadata";
-import { toFiniteNonNegativeInt } from "../save-schemas/validation-utils";
+import { toSafeNonNegativeInt } from "../save-schemas/validation-utils";
 import { applyLabyrinthMysteryModifiers } from "@/lib/content-systems/labyrinth/room-rules";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { findMysteryEvent } from "@/lib/mystery";
@@ -86,14 +86,14 @@ export function getRawContentVersion(parsed: unknown): number {
   return getRawVersion(parsed, "contentVersion");
 }
 function getRawLastSavedAt(parsed: unknown): number | null {
-  // Timestamps have their own reader: like versions they must be finite and
-  // non-negative, but fractional values floor instead of rejecting so a
+  // Timestamps have their own reader: they must fit a non-negative safe integer,
+  // but fractional values floor instead of rejecting so a
   // hand-written float still orders sanely. SaveDataSchema.lastSavedAt shares
   // this normalizer via preprocess, so raw future-protection ordering and
   // parsed playable ordering agree. Never reuse the combat-gold
   // predicate here; the domains only coincide by accident.
   const value = readRawField(parsed, "lastSavedAt");
-  return toFiniteNonNegativeInt(value);
+  return toSafeNonNegativeInt(value);
 }
 
 // Single missing-timestamp policy for candidate ordering: absent or

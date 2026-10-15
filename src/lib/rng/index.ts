@@ -83,7 +83,9 @@ export function createRunRngState(seedOrRng: number | Rng): RunRngState {
 
 export function nextRunRngValue(state: RunRngState, stream: RunRngStream): { value: number; nextCounter: number } {
   const salt = getRunStreamSalt(stream);
-  const nextCounter = (state.counters[stream] ?? 0) + 1;
+  // The hash uses only 32 bits. Wrap the stored counter too, before floating-point
+  // increments can stall, without changing any draw in the existing sequence.
+  const nextCounter = toUint32((state.counters[stream] ?? 0) + 1);
   return { value: runValueAtCounter(state.seed, salt, nextCounter), nextCounter };
 }
 
@@ -103,13 +105,13 @@ export function rngInt(rng: Rng, n: number): number {
 }
 
 export function createRunStreamRng(seed: number, stream: RunRngStream = "world", startCounter = 0): Rng {
-  if (!Number.isInteger(startCounter) || startCounter < 0)
+  if (!Number.isSafeInteger(startCounter) || startCounter < 0)
     throw new Error("createRunStreamRng requires a non-negative integer startCounter");
   const salt = getRunStreamSalt(stream);
   const seed32 = toUint32(seed);
   let counter = startCounter;
   return () => {
-    counter += 1;
+    counter = toUint32(counter + 1);
     return runValueAtCounter(seed32, salt, counter);
   };
 }

@@ -192,6 +192,9 @@ saves contain one committed battle snapshot in `activeRun.activity`. Versions
 battles produce a load-only abandonment instruction for the selected candidate;
 restore settles earned progress with today's abandonment command before showing
 End Run. No obsolete turn, Companion action, Gold delta, or RNG draw is replayed.
+The same recovery applies to a nonterminal current snapshot marked as an enemy
+turn: current turn resolution commits atomically, so no resumable enemy phase
+exists. Terminal snapshots retain their normal outcome settlement.
 `playerDodgeCount` and `dodgeChanceFromDamage` remain battle-owned and persist.
 The Health-damage boundary requires explicit `hostile` or `self` provenance for
 Finding Rhythm; Health costs do not award it.
@@ -307,7 +310,7 @@ Destination offers use the `destinations` stream for sampling. They draw a boss 
 
 `Math.random()` may create a fresh run seed or presentation-only values that cannot affect gameplay or persisted state. [Armory crafting and dev spawning](./ARMORY.md#write-paths) are the intentional gameplay exception: they use injected profile-lifetime randomness, defaulting to `Math.random`, without consuming a run stream. Salvage instead derives its fixed reward seed from the item instance ID. Other run outcomes use the persisted streams above.
 
-Run-luck helpers live in `@/lib/rng` (the single door), small math in `@/lib/math`, and class-name/string/id helpers in `@/lib/utils`. Every draw stays in `[0, 1)`; unknown streams, out-of-range draws, empty ranges, and negative sample counts throw in every build. Counters hash as `counter + 1`, so resume continues at the exact next draw. Snapshot-only placeholders always draw zero and must never reach live combat. Full battle RNG + arithmetic rules: [GAME_RULES](./GAME_RULES.md).
+Run-luck helpers live in `@/lib/rng` (the single door), small math in `@/lib/math`, and class-name/string/id helpers in `@/lib/utils`. Every draw stays in `[0, 1)`; unknown streams, out-of-range draws, empty ranges, and negative sample counts throw in every build. Counters hash as `counter + 1` and wrap to the hash's 32-bit range, so increments cannot stall and resume continues at the exact next draw. Snapshot-only placeholders always draw zero and must never reach live combat. Full battle RNG + arithmetic rules: [GAME_RULES](./GAME_RULES.md).
 
 `pickWeighted(items, weightOf, rng)` owns weighted selection for destinations, loot, and Corruption. It evaluates finite non-negative weights once, uses half-open buckets in item order, and consumes one draw for a positive pool, including a single eligible item. Empty or all-zero pools return `undefined` without drawing; each caller owns its unavailable-pool behavior. Floating-point fallback selects the last positive weight. Integer magnitude and map-position rolls use `rngInt`, retaining one draw even for a fixed value.
 

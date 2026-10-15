@@ -1,4 +1,5 @@
 import { toActiveRunData } from "@/lib/validation";
+import { getBattleOutcome } from "@/lib/battle";
 import {
   SaveDataSchema,
   LAUNCH_SAVE_SCHEMA_VERSION,
@@ -70,8 +71,8 @@ function collectSaveRepairWarnings(raw: Record<string, unknown>, normalized: Par
     warnings.push("battle could not be restored");
   }
   const rawGold = raw.gold;
-  // Live combat gold intentionally overrides the purse (see SaveDataSchema
-  // resolvePersistedGold); that override is not a repair.
+  // Live combat gold intentionally overrides the purse in SaveDataSchema;
+  // that override is not a repair.
   const rawCombatCandidate =
     recordActivity(rawActiveRun).kind === "battle" ? recordActivity(rawActiveRun).data : rawActiveRun?.activeCombat;
   const rawCombat = isPlainObject(rawCombatCandidate) ? rawCombatCandidate : undefined;
@@ -185,8 +186,13 @@ export function selectSaveCandidates(
     for (const note of playable.errors) {
       warnings.push(`Card content "${note.path}" was repaired: ${note.message}`);
     }
+    const activity = playable.data.activeRun?.activity;
+    const unfinishedTurn =
+      activity?.kind === "battle" &&
+      activity.data.battleState.turnPhase === "enemy" &&
+      getBattleOutcome(activity.data.battleState) === null;
     state = {
-      ...(playable.data.activeRun && legacyRunNeedsAbandonment(playable.raw)
+      ...(playable.data.activeRun && (unfinishedTurn || legacyRunNeedsAbandonment(playable.raw))
         ? { restoreActions: ["abandon-active-run" as const] }
         : {}),
       data: {

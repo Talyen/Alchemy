@@ -54,7 +54,7 @@ const difficultyModifierSchema = z
   });
 
 const pendingTurnStartEffectSchema = z.object({
-  remainingTurns: z.number().int().positive(),
+  remainingTurns: z.number().int().min(1).max(10),
   effects: z.array(BattleCardEffectSchema),
   sourceCard: z
     .object({
