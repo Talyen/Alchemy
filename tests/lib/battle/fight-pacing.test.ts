@@ -46,7 +46,7 @@ describe("fight pacing multipliers", () => {
   it.each([
     { enemyType: "normal" as const, target: 7, late: 11 },
     { enemyType: "elite" as const, target: 12, late: 16 },
-    { enemyType: "boss" as const, target: 20, late: 23 },
+    { enemyType: "boss" as const, target: 8, late: 12 },
   ])("preserves player/resource pacing while limiting $enemyType enemy escalation", ({ enemyType, target, late }) => {
     const atTarget = pacedState({ turn: target, currentEnemy: { enemyType } });
     const overrun = { ...atTarget, turn: late };
@@ -57,11 +57,38 @@ describe("fight pacing multipliers", () => {
       expect(paceCombatDamage(overrun, 10, side, false)).toBe(10);
     }
     expect(paceCombatDamage(overrun, 10, "player")).toBe(24);
-    expect(paceCombatDamage(overrun, 10, "enemy")).toBe(enemyType === "boss" ? 24 : 17);
+    expect(paceCombatDamage(overrun, 10, "enemy")).toBe(17);
     for (const side of ["player", "enemy"] as const) {
       const stalled = { ...atTarget, turn: 100 };
       expect(paceCombatDamage(stalled, 10, side)).toBe(36);
       expect(paceCombatMagnitude(stalled, 10, side)).toBe(12);
+    }
+  });
+  it("preserves the boss opening, then ramps player damage faster than enemy damage while resources hold", () => {
+    const state = pacedState({
+      currentEnemy: { enemyType: "boss" },
+      playerHealth: 30,
+      playerMaxHealth: 100,
+      enemyHealth: 30,
+      enemyMaxHealth: 100,
+    });
+    for (const turn of [1, 7, 8]) {
+      for (const side of ["player", "enemy"] as const) {
+        expect(paceCombatDamage({ ...state, turn }, 100, side)).toBe(100);
+      }
+    }
+    for (const { turn, player, enemy } of [
+      { turn: 9, player: 106, enemy: 103 },
+      { turn: 12, player: 200, enemy: 144 },
+      { turn: 14, player: 300, enemy: 200 },
+      { turn: 17, player: 300, enemy: 300 },
+    ]) {
+      const next = { ...state, turn };
+      expect(paceCombatDamage(next, 100, "player")).toBe(player);
+      expect(paceCombatDamage(next, 100, "enemy")).toBe(enemy);
+      for (const side of ["player", "enemy"] as const) {
+        expect(paceCombatMagnitude(next, 100, side)).toBe(100);
+      }
     }
   });
   it("grants no comeback when HP fractions are even", () => {
