@@ -3,6 +3,7 @@ import { EventEmitter } from "node:events";
 import * as io from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { setImmediate as nextEventLoopTurn } from "node:timers/promises";
 import { afterEach, expect, it, vi } from "vitest";
 const require = createRequire(import.meta.url);
 const { createDesktopSaveStorage, registerSaveShutdown } = require("../../desktop/save-storage.cjs");
@@ -98,7 +99,7 @@ it("shutdown accepts the renderer's unload save, drains writes, and quits exactl
   await writing;
   await f.store.close();
   await Promise.resolve();
-  await new Promise<void>((resolve) => setImmediate(resolve));
+  await nextEventLoopTurn();
   expect(exitsDuringWrite).toBe(0);
   expect(await unloadWrite).toBe(true);
   expect(await lateWrite).toBe(false);
@@ -125,7 +126,7 @@ it("resumes an idle shutdown only after Electron has cancelled its first quit", 
   registerSaveShutdown(app, store);
   app.quit();
   await Promise.resolve();
-  await new Promise<void>((resolve) => setImmediate(resolve));
+  await nextEventLoopTurn();
   expect(store.close).toHaveBeenCalledOnce();
   expect(exits).toBe(1);
 });

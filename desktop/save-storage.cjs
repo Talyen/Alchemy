@@ -1,5 +1,6 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const { setImmediate } = require("node:timers");
 
 /** Native profile storage outlives every renderer and its session queue. */
 function createDesktopSaveStorage({ slots, demoProgress, isSavePayload, stampOwner, filesystem = fs }) {
