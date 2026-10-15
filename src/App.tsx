@@ -46,7 +46,7 @@ import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/c
 import { BattleBoardBackground } from "@/features/alchemy/shared/ui/battle-board-background";
 import { useBattleSceneAppearance } from "@/features/alchemy/shared/ui/use-battle-scene-appearance";
 import { boardArt } from "@/features/alchemy/shared/config/game-data-catalog";
-import { useBoards } from "@/features/alchemy/shared/stores/use-profile-store";
+import { useActiveBoardId } from "@/features/alchemy/shared/stores/use-profile-store";
 import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";
 import { setModalRoot } from "@/features/alchemy/shared/ui/modal-root";
 import { setTooltipRoot } from "@/features/alchemy/shared/ui/tooltips/tooltip-root";
@@ -123,7 +123,7 @@ function AppMainContent({
   );
 
   const showBattleCluster = renderedScreen === "battle";
-  const { activeBoardId } = useBoards();
+  const activeBoardId = useActiveBoardId();
   const sceneAppearance = useBattleSceneAppearance(
     showBattleCluster && activeBoardId ? boardArt[activeBoardId]?.thumbnail : undefined,
   );

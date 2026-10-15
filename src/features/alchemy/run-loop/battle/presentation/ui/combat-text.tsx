@@ -137,7 +137,7 @@ export function CombatTextRail({ bursts }: { bursts: CombatTextBurst[] }) {
                 className={cn(
                   "grid justify-items-center gap-x-4 gap-y-1 font-bold tracking-wide",
                   "transform-gpu will-change-transform [backface-visibility:hidden]",
-                  "[filter:drop-shadow(0_0_1px_rgb(0,0,0))_drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]",
+                  "[filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]",
                   burst.entries.filter((entry) => entry.kind !== "notice").length > 3 && "grid-cols-2",
                 )}
                 style={{ fontSize: `calc(${FCT_BASE_SIZE_CQH * 10.8}px * var(--content-scale, 1))` }}

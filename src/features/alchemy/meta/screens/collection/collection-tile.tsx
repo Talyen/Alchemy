@@ -220,7 +220,7 @@ function TileImage({ item, className }: { item: CollectionTileItem; className: s
       alt={item.title}
       decoding="async"
       className={cn(
-        "block w-full transition duration-300",
+        "block w-full transition-opacity duration-300",
         className,
         item.discovered ? "opacity-100" : lockedHoverPreviewClass,
       )}

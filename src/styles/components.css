@@ -534,16 +534,24 @@
 @utility page-exit {
   opacity: 0;
   transition: opacity var(--motion-fade-duration) var(--motion-fade-ease);
+  will-change: opacity;
   pointer-events: none;
 }
 
 @utility page-enter {
   opacity: 1;
   transition: opacity var(--motion-fade-duration) var(--motion-fade-ease);
+  will-change: opacity;
 
   @starting-style {
     opacity: 0;
   }
+}
+
+.game-page-scroll {
+  will-change: scroll-position;
+  isolation: isolate;
+  overscroll-behavior: contain;
 }
 
 @utility image-rendering-pixelated {

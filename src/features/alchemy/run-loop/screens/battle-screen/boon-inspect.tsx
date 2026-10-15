@@ -112,7 +112,7 @@ function BoonInspectPanel({ children }: { children: ReactNode }) {
       aria-label="Boons"
       tabIndex={-1}
       onKeyDown={handleKeyDown}
-      className="alchemy-shell relative max-h-full w-fit max-w-full overflow-y-auto rounded-shell-screen border border-border/80 px-8 py-8"
+      className="alchemy-shell game-page-scroll relative max-h-full w-fit max-w-full overflow-y-auto rounded-shell-screen border border-border/80 px-8 py-8"
       onClick={(event) => event.stopPropagation()}
     >
       {children}
