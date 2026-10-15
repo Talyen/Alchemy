@@ -147,6 +147,9 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await waitForOpeningDeal(page);
     const battle = new BattlePage(page);
     const flight = page.evaluate(async () => {
+      const source = [...document.querySelectorAll("[data-hand-slot] button")].at(-1)!;
+      const sourceMatrix = new DOMMatrixReadOnly(getComputedStyle(source).transform);
+      const sourceRotation = (Math.atan2(sourceMatrix.b, sourceMatrix.a) * 180) / Math.PI;
       const card = await new Promise<HTMLElement>((resolve) => {
         const observer = new MutationObserver(() => {
           const element = document.querySelector<HTMLElement>('[data-flying-card][data-transfer-kind="discard"]');
@@ -169,14 +172,15 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
         backs ||= Boolean(card.querySelector(".card-face-back, [data-discard-card-back]"));
         await new Promise(requestAnimationFrame);
       }
-      return { angles, overlapping, lastTop, viewportBottom: innerHeight, backs };
+      return { sourceRotation, angles, overlapping, lastTop, viewportBottom: innerHeight, backs };
     });
     const ending = battle.endTurn();
     const result = await flight;
     expect(result.overlapping).toBe(true);
     expect(result.backs).toBe(false);
     expect(result.angles.length).toBeGreaterThan(3);
-    expect(result.angles.at(-1)! - result.angles[0]!).toBeGreaterThan(48);
+    expect(result.angles.at(-1)! - result.sourceRotation).toBeCloseTo(52, 0);
+    expect(result.angles.at(-1)! - result.angles[0]!).toBeGreaterThan(5);
     for (let index = 1; index < result.angles.length; index++)
       expect(result.angles[index]!).toBeGreaterThanOrEqual(result.angles[index - 1]! - 0.1);
     expect(result.lastTop).toBeGreaterThanOrEqual(result.viewportBottom);
