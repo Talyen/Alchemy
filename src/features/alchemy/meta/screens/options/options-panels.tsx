@@ -1,3 +1,8 @@
+import type { LanguagePreference } from "@/lib/localization/runtime";
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
+
+import { LANGUAGE_OPTIONS } from "@/lib/localization/language";
 import { COMBATANT_FRAME_OPTIONS } from "../../../shared/config/combatant-frames";
 import { useUiStore } from "../../../shared/stores/ui-store";
 import { Button } from "@/components/ui/button";
@@ -8,6 +13,8 @@ import type { SettingsActions, SettingsSaveFields } from "../../../shared/stores
 
 export interface DisplayOptionsProps {
   onOpenBoards?: (() => void) | undefined;
+  languagePreference: LanguagePreference;
+  onLanguageChange: (value: LanguagePreference) => void;
   showDisplayMode: boolean;
   gameSizePercent: number;
   tooltipSizePercent: number;
@@ -40,53 +47,69 @@ export function DisplayOptionsPanel({
   display: DisplayOptionsProps;
   preferences: OptionsPreferences;
 }) {
+  useGameTranslation();
   const { values, actions } = preferences;
   return (
     <div className="space-y-4">
-      <SettingsSection title="Display">
+      <SettingsSection title={gameText("ui.options-panels.1", "Display")}>
+        {import.meta.env.DEV && display.languagePreference === "zh-Hans" ? (
+          <p lang="zh-Hans" data-chinese-font-sample>
+            {"简体中文字体测试：造成 12 点伤害，获得 5 点格挡。"}
+          </p>
+        ) : null}
+        <SettingsSelect
+          id="language"
+          label={gameText("options.language-choice", "Language")}
+          value={display.languagePreference}
+          options={LANGUAGE_OPTIONS}
+          onChange={display.onLanguageChange}
+        />
         {display.onOpenBoards ? (
-          <SettingsAction label="Game Boards" description="Battle background artwork">
-            <Button onClick={display.onOpenBoards}>Browse Boards</Button>
+          <SettingsAction
+            label={gameText("ui.options-panels.2", "Game Boards")}
+            description={gameText("ui.options-panels.3", "Battle background artwork")}
+          >
+            <Button onClick={display.onOpenBoards}>{gameText("ui.options-panels.4", "Browse Boards")}</Button>
           </SettingsAction>
         ) : null}
         {display.showDisplayMode ? (
           <SettingsSelect
             id="display-mode"
-            label="Display Mode"
+            label={gameText("ui.options-panels.5", "Display Mode")}
             value={values.displayMode}
             options={displayModeOptions}
             onChange={actions.setDisplayMode}
           />
         ) : null}
         <SettingsSlider
-          label="Brightness"
+          label={gameText("ui.options-panels.6", "Brightness")}
           value={values.brightness}
           onChange={actions.setBrightness}
           min={SETTINGS_RANGES.brightness.min}
           max={SETTINGS_RANGES.brightness.max}
         />
         <SettingsSlider
-          label="Game Size"
+          label={gameText("ui.options-panels.7", "Game Size")}
           value={display.gameSizePercent}
           onChange={display.onGameSizeChange}
           {...DEVICE_DISPLAY_RANGES.gameSizePercent}
         />
         <SettingsSlider
-          label="Tooltip Size"
+          label={gameText("ui.options-panels.8", "Tooltip Size")}
           value={display.tooltipSizePercent}
           onChange={display.onTooltipSizeChange}
           {...DEVICE_DISPLAY_RANGES.tooltipSizePercent}
         />
       </SettingsSection>
-      <SettingsSection title="Background">
+      <SettingsSection title={gameText("ui.options-panels.9", "Background")}>
         <SettingsSlider
-          label="Background Glow"
+          label={gameText("ui.options-panels.10", "Background Glow")}
           value={values.backgroundGlowIntensity}
           onChange={actions.setBackgroundGlowIntensity}
           {...SETTINGS_RANGES.specialEffects}
         />
         <SettingsSlider
-          label="Background Particles"
+          label={gameText("ui.options-panels.11", "Background Particles")}
           value={values.backgroundParticlesIntensity}
           onChange={actions.setBackgroundParticlesIntensity}
           {...SETTINGS_RANGES.specialEffects}
@@ -97,9 +120,10 @@ export function DisplayOptionsPanel({
 }
 
 export function AudioOptionsPanel({ preferences }: { preferences: OptionsPreferences }) {
+  useGameTranslation();
   const { values, actions } = preferences;
   return (
-    <SettingsSection title="Audio">
+    <SettingsSection title={gameText("ui.options-panels.12", "Audio")}>
       {(
         [
           ["Overall Volume", values.masterVolume, actions.setMasterVolume],
@@ -107,11 +131,21 @@ export function AudioOptionsPanel({ preferences }: { preferences: OptionsPrefere
           ["Sound Effects Volume", values.sfxVolume, actions.setSfxVolume],
         ] as const
       ).map(([label, value, onChange]) => (
-        <SettingsSlider key={label} label={label} value={value} onChange={onChange} {...SETTINGS_RANGES.volume} />
+        <SettingsSlider
+          key={label}
+          label={displayText(label)}
+          value={value}
+          onChange={onChange}
+          {...SETTINGS_RANGES.volume}
+        />
       ))}
-      <SettingsToggle label="Boss Lyrics" checked={values.bossLyricsEnabled} onChange={actions.setBossLyricsEnabled} />
       <SettingsToggle
-        label="Mute in Background"
+        label={gameText("ui.options-panels.13", "Boss Lyrics")}
+        checked={values.bossLyricsEnabled}
+        onChange={actions.setBossLyricsEnabled}
+      />
+      <SettingsToggle
+        label={gameText("ui.options-panels.14", "Mute in Background")}
         checked={values.muteInBackground}
         onChange={actions.setMuteInBackground}
       />
@@ -120,12 +154,17 @@ export function AudioOptionsPanel({ preferences }: { preferences: OptionsPrefere
 }
 
 export function GameplayOptionsPanel({ preferences }: { preferences: OptionsPreferences }) {
+  useGameTranslation();
   const { values, actions } = preferences;
   return (
-    <SettingsSection title="Battle">
-      <SettingsToggle label="Auto-End Turn" checked={values.autoEndTurn} onChange={actions.setAutoEndTurn} />
+    <SettingsSection title={gameText("ui.options-panels.15", "Battle")}>
       <SettingsToggle
-        label="Remember Auto-Battle Preference"
+        label={gameText("ui.options-panels.16", "Auto-End Turn")}
+        checked={values.autoEndTurn}
+        onChange={actions.setAutoEndTurn}
+      />
+      <SettingsToggle
+        label={gameText("ui.options-panels.17", "Remember Auto-Battle Preference")}
         checked={values.rememberAutoplayPreference}
         onChange={actions.setRememberAutoplayPreference}
       />
@@ -134,16 +173,23 @@ export function GameplayOptionsPanel({ preferences }: { preferences: OptionsPref
 }
 
 function SaveDataOptionsPanel({ saveData }: { saveData: SaveDataOptionsProps }) {
+  useGameTranslation();
   return (
-    <SettingsSection title="Reset & Save Data">
-      <SettingsAction label="Options" description="Reset all options to default values">
+    <SettingsSection title={gameText("ui.options-panels.18", "Reset & Save Data")}>
+      <SettingsAction
+        label={gameText("ui.options-panels.19", "Options")}
+        description={gameText("ui.options-panels.20", "Reset all options to default values")}
+      >
         <Button variant="outline" onClick={saveData.onResetOptions}>
-          Reset to Default
+          {gameText("ui.options-panels.21", "Reset to Default")}
         </Button>
       </SettingsAction>
-      <SettingsAction label="Save Data" description="Clear all existing save data and start fresh">
+      <SettingsAction
+        label={gameText("ui.options-panels.22", "Save Data")}
+        description={gameText("ui.options-panels.23", "Clear all existing save data and start fresh")}
+      >
         <Button variant="destructive" onClick={saveData.onOpenClearSaveConfirm}>
-          Clear Save Data
+          {gameText("ui.options-panels.24", "Clear Save Data")}
         </Button>
       </SettingsAction>
     </SettingsSection>
@@ -151,28 +197,35 @@ function SaveDataOptionsPanel({ saveData }: { saveData: SaveDataOptionsProps }) 
 }
 
 function DevOptionsPanel({ dev }: { dev: DevOptionsProps }) {
+  useGameTranslation();
   const frameStyle = useUiStore((state) => state.combatantFrameStyle);
   const setFrameStyle = useUiStore((state) => state.setCombatantFrameStyle);
   if (!import.meta.env.DEV) return null;
   return (
-    <SettingsSection title="Dev Only">
+    <SettingsSection title={gameText("ui.options-panels.25", "Dev Only")}>
       <SettingsSelect
         id="combatant-frame-style"
-        label="Combatant Frames"
+        label={gameText("ui.options-panels.26", "Combatant Frames")}
         value={frameStyle}
         options={COMBATANT_FRAME_OPTIONS}
         onChange={setFrameStyle}
       />
       <SettingsAction
-        label="Dev / QA Unlocks"
-        description="Unlock every collection entry and grant every talent node for testing"
+        label={gameText("ui.options-panels.27", "Dev / QA Unlocks")}
+        description={gameText(
+          "ui.options-panels.28",
+          "Unlock every collection entry and grant every talent node for testing",
+        )}
       >
-        <Button onClick={dev.onUnlockAll}>Unlock All</Button>
+        <Button onClick={dev.onUnlockAll}>{gameText("ui.options-panels.29", "Unlock All")}</Button>
       </SettingsAction>
       {dev.onOpenErrorLog ? (
-        <SettingsAction label="Error Log" description="Inspect errors logged during this session for bug reports">
+        <SettingsAction
+          label={gameText("ui.options-panels.30", "Error Log")}
+          description={gameText("ui.options-panels.31", "Inspect errors logged during this session for bug reports")}
+        >
           <Button variant="outline" onClick={dev.onOpenErrorLog}>
-            View Log
+            {gameText("ui.options-panels.32", "View Log")}
           </Button>
         </SettingsAction>
       ) : null}
@@ -181,6 +234,7 @@ function DevOptionsPanel({ dev }: { dev: DevOptionsProps }) {
 }
 
 export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; dev: DevOptionsProps }) {
+  useGameTranslation();
   return (
     <div className="space-y-4">
       <SaveDataOptionsPanel saveData={saveData} />

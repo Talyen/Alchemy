@@ -1,3 +1,4 @@
+import { displayText, localization } from "@/lib/localization/runtime";
 import { boardCatalog } from "@/lib/boards/catalog";
 import { getPagination } from "../../../shared/ui/pagination";
 import { COLLECTION_PAGE_SIZE, BESTIARY_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
@@ -34,7 +35,7 @@ type CatalogItem = {
 export type CollectionTileItem = CatalogItem & { discovered: boolean };
 
 function sortByTitle<T extends { title: string }>(entries: readonly T[]): T[] {
-  return [...entries].sort((a, b) => a.title.localeCompare(b.title));
+  return [...entries].sort((a, b) => displayText(a.title).localeCompare(displayText(b.title), localization.language));
 }
 
 // Each tab owns its ordered content, default capacity, and hidden copy together.
@@ -147,7 +148,8 @@ export function getCollectionPageItems({
   const discoveredIds = new Set(discoveries[collectionTab]);
   const { page: safePage, pageSize: size } = getPagination(catalog.items.length, page, pageSize);
   const start = safePage * size;
-  return catalog.items.slice(start, start + size).map((item) => {
+  const orderedItems = collectionTab === "heroes" ? catalog.items : sortByTitle(catalog.items);
+  return orderedItems.slice(start, start + size).map((item) => {
     if (item.frameType === "hero") {
       const discovered = isCharacterUnlocked(item.character.id, finishedRunCharacters);
       return {

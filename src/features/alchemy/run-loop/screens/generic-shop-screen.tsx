@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { Fragment, useState, type ReactNode } from "react";
 import { shopOfferingsSwapKey } from "../shop/shop-slot-keys";
 import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
@@ -35,6 +37,7 @@ export function GenericShopScreen<T>({
   extraServices,
   renderItem,
 }: GenericShopScreenProps<T>) {
+  useGameTranslation();
   const shelfKey = shopOfferingsSwapKey(
     items.map((it, i) => getSlotKey(it, i)),
     refreshesLeft,
@@ -44,7 +47,10 @@ export function GenericShopScreen<T>({
     <ShopBrowseShell title={title} gold={gold}>
       {failedShelf === shelfKey && (
         <p role="alert" className="text-center">
-          Could not complete this purchase. Check the current stock, price, and your Gold, then try again.
+          {gameText(
+            "ui.generic-shop-screen.1",
+            "Could not complete this purchase. Check the current stock, price, and your Gold, then try again.",
+          )}
         </p>
       )}
       <ShopBrowseOfferings
@@ -68,9 +74,11 @@ export function GenericShopScreen<T>({
           const price = getPrice(item);
           return (
             <Fragment key={slotKey}>
-              {renderItem(item, price, purchased, () => {
-                if (!isProgressSavePending()) setFailedShelf(onBuy(item, slotKey) ? null : shelfKey);
-              })}
+              {displayText(
+                renderItem(item, price, purchased, () => {
+                  if (!isProgressSavePending()) setFailedShelf(onBuy(item, slotKey) ? null : shelfKey);
+                }),
+              )}
             </Fragment>
           );
         })}

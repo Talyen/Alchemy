@@ -30,6 +30,9 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
     const isDesktop = await window.evaluate(() => window.alchemyDesktop?.isDesktop === true);
     expect(isDesktop).toBe(true);
     expect(window.url()).toMatch(/^alchemy:/);
+    const language = await window.evaluate(() => window.alchemyDesktop?.steamGetGameLanguage?.());
+    // Isolated Electron profiles deliberately do not initialize a real account.
+    expect(language).toBeNull();
 
     await new MenuPage(window).expectMainMenuAfterColdStart();
     if (ELECTRON_TEST_BACKGROUND) {

@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { displayText } from "@/lib/localization/runtime";
 import { createElement } from "react";
 import { extractKeywordIds } from "@/lib/keyword-text";
 import { getKeywordTextShineColors } from "@/lib/keyword-text-shine";
@@ -11,6 +13,7 @@ import { ShineText } from "./shine-text";
 export type TraitBoxVariant = "default" | "compact";
 
 export function TraitBox({ trait, variant = "default" }: { trait: EnemyTrait; variant?: TraitBoxVariant }) {
+  useGameTranslation();
   const compact = variant === "compact";
   const keywords = extractKeywordIds(trait.description);
   const encounter = getEncounterTraitPresentation(trait.id);
@@ -24,10 +27,12 @@ export function TraitBox({ trait, variant = "default" }: { trait: EnemyTrait; va
       data-trait-variant={variant}
       className={cn("flex min-w-0 items-center", compact ? "gap-[calc(0.5*var(--content-rem,1rem))]" : "gap-3")}
     >
-      {createElement(Icon, {
-        "aria-hidden": true,
-        className: cn("shrink-0", compact ? "size-[calc(1.5*var(--content-rem,1rem))]" : "size-9", colorClass),
-      })}
+      {displayText(
+        createElement(Icon, {
+          "aria-hidden": true,
+          className: cn("shrink-0", compact ? "size-[calc(1.5*var(--content-rem,1rem))]" : "size-9", colorClass),
+        }),
+      )}
       <div className="min-w-0">
         <h3
           className={cn(
@@ -41,7 +46,7 @@ export function TraitBox({ trait, variant = "default" }: { trait: EnemyTrait; va
             colors={encounter?.textShineColors ?? getKeywordTextShineColors(keywords.length > 0 ? keywords : thematic)}
             fallbackClassName="text-stone-200"
           >
-            {trait.title}
+            {displayText(trait.title)}
           </ShineText>
         </h3>
         <p
@@ -52,7 +57,7 @@ export function TraitBox({ trait, variant = "default" }: { trait: EnemyTrait; va
               : "mt-1 text-base",
           )}
         >
-          {renderColoredKeywords(trait.description)}
+          {displayText(renderColoredKeywords(trait.description))}
         </p>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { fileURLToPath, URL } from "node:url";
 import { resolve } from "node:path";
 
@@ -58,7 +59,20 @@ export default defineConfig(({ mode, command }) => {
             throw new Error("Production crash reporting requires hidden source maps; remove the source-map override.");
           }
         },
-        generateBundle() {
+        generateBundle(_options, bundle) {
+          const catalogs = Object.values(bundle).find(
+            (entry) => entry.type === "asset" && /(?:^|\/)runtime-[^/]+\.json$/.test(entry.fileName),
+          );
+          if (!catalogs || catalogs.type !== "asset") throw new Error("Bundled localization asset is missing");
+          this.emitFile({
+            type: "asset",
+            fileName: "localization.json",
+            source: JSON.stringify({
+              version: 1,
+              catalog: catalogs.fileName,
+              sha256: createHash("sha256").update(catalogs.source).digest("hex"),
+            }),
+          });
           this.emitFile({ type: "asset", fileName: "edition.json", source: JSON.stringify({ edition }) });
         },
       } satisfies Plugin,

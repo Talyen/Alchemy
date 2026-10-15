@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { keywordDefinitions, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { playUISound } from "@/lib/audio";
 import {
@@ -76,6 +78,7 @@ export function ItemPickerGrid({
   placeholderIndex?: number | null | undefined;
   hiddenArtworkIds?: ReadonlySet<string> | undefined;
 }) {
+  useGameTranslation();
   const reducedMotion = useReducedMotion();
   const equippedBy = useMemo(() => {
     const byInstance = new Map<string, CharacterId>();
@@ -137,16 +140,25 @@ export function ItemPickerGrid({
               data-instance-id={item.instanceId}
               data-salvageable={salvageable ? "true" : undefined}
               className={cn("relative", targetingRingClass(mode), disabled && "opacity-50")}
-              title={disabled ? "Incompatible with the current loadout" : undefined}
+              title={displayText(
+                disabled ? gameText("ui.item-picker-grid.d1", "Incompatible with the current loadout") : undefined,
+              )}
             >
               <InteractiveArtTile
                 id={item.instanceId}
                 interactionKey="armory"
-                title={title}
+                title={displayText(title)}
                 art={definition?.art}
                 as="button"
                 interactive
-                ariaLabel={reservationReason ? `${title}. ${reservationReason}` : ariaLabel}
+                ariaLabel={displayText(
+                  reservationReason
+                    ? gameText("ui.item-picker-grid.d2", "{{value0}}. {{value1}}", {
+                        value0: displayText(title),
+                        value1: displayText(reservationReason),
+                      })
+                    : ariaLabel,
+                )}
                 ariaDisabled={target.ariaDisabled}
                 className={cn(cardSurfaceClass, collectionGridTileWidthClass, gearArtAspectClass)}
                 imageClassName={cn(gearArtFillClass, isArtHidden && "opacity-0")}

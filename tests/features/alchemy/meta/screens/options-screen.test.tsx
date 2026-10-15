@@ -7,6 +7,8 @@ import { installDisabledAnimationsForTests } from "../../../../helpers/animation
 const defaultProps = {
   onBack: vi.fn(),
   display: {
+    languagePreference: "auto" as const,
+    onLanguageChange: vi.fn(),
     showDisplayMode: false,
     gameSizePercent: 100,
     tooltipSizePercent: 100,

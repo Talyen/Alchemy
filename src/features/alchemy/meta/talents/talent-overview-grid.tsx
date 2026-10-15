@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { memo, useId, useMemo } from "react";
 
 import { chunkIntoRows, keywordDefinitions, talentArt, type KeywordId } from "@/lib/game-data";
@@ -22,6 +24,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
   onSelectKeyword,
   onHoverKeyword,
 }: TalentPortraitCardProps) {
+  useGameTranslation();
   const unspentDescriptionId = useId();
   const definition = keywordDefinitions[keywordId];
   const art = talentArt[keywordId];
@@ -34,7 +37,9 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
     <div className="relative flex flex-col items-center">
       <button
         type="button"
-        aria-label={`Select ${definition.label} Talents`}
+        aria-label={gameText("ui.talent-overview-grid.1", "Select {{value0}} Talents", {
+          value0: displayText(definition.label),
+        })}
         aria-describedby={hasUnspent ? unspentDescriptionId : undefined}
         onMouseEnter={() => {
           onHoverStart();
@@ -71,7 +76,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
           {art ? (
             <img
               src={art}
-              alt={definition.label}
+              alt={displayText(definition.label)}
               decoding="async"
               className="pointer-events-none h-full w-full rounded-shell-hero object-cover select-none"
               draggable={false}
@@ -85,7 +90,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
 
         <div className="mt-1.5 flex max-w-full items-center justify-center gap-2.5">
           <span className="truncate text-center font-sans text-base font-bold tracking-wide text-foreground/90 transition-colors group-hover:text-gold-light sm:text-lg">
-            {definition.label}
+            {displayText(definition.label)}
           </span>
           {hasUnspent ? (
             <>
@@ -94,7 +99,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
                 className="pointer-events-none h-2 w-2 shrink-0 rounded-full bg-red-500/70 select-none"
               />
               <span id={unspentDescriptionId} className="sr-only">
-                Unspent Talent Points
+                {gameText("ui.talent-overview-grid.2", "Unspent Talent Points")}
               </span>
             </>
           ) : null}
@@ -117,6 +122,7 @@ export function TalentOverviewGrid({
   onSelectKeyword,
   onHoverKeyword,
 }: TalentOverviewGridProps) {
+  useGameTranslation();
   const rows = useMemo(() => chunkIntoRows(keywordIds, OVERVIEW_ROW_SIZE), [keywordIds]);
 
   return (

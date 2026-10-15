@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import type { CharacterId, TrinketEntry } from "@/lib/game-data";
@@ -40,6 +42,7 @@ export function TrinketPickerGrid({
   placeholderIndex?: number | null | undefined;
   hiddenArtworkIds?: ReadonlySet<string> | undefined;
 }) {
+  useGameTranslation();
   const reducedMotion = useReducedMotion();
   const equippedBy = useMemo(() => {
     const byTrinket = new Map<string, CharacterId>();
@@ -85,11 +88,14 @@ export function TrinketPickerGrid({
                 chip={reservationReason ?? undefined}
                 interactiveChrome={editable && !reservedBy}
                 onClick={reservedBy ? undefined : editable ? () => onEquip(trinket.id) : () => onCombatLockedAttempt()}
-                ariaLabel={
+                ariaLabel={displayText(
                   reservationReason
-                    ? `${trinket.title}. ${reservationReason}`
-                    : formatTrinketEquipAriaLabel(trinket.title, equippedCharacterId)
-                }
+                    ? gameText("ui.trinket-picker-grid.d1", "{{value0}}. {{value1}}", {
+                        value0: displayText(trinket.title),
+                        value1: displayText(reservationReason),
+                      })
+                    : formatTrinketEquipAriaLabel(trinket.title, equippedCharacterId),
+                )}
               >
                 {reservedBy ? <ReservedLock /> : null}
               </TrinketTile>

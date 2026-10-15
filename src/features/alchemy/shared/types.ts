@@ -1,6 +1,6 @@
 import type { CSSProperties, RefObject } from "react";
 
-import type { BattleCard, EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
+import type { BattleCard, EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle";
 export type { DisplayMode } from "@/lib/settings-values";
 import type { ArmedFlagChipId, PendingPulseChipId } from "./augment-definitions";
@@ -90,11 +90,6 @@ export interface StatusChip {
   value: number;
 
   hideValue?: boolean;
-}
-
-export interface DescriptionPart {
-  text: string;
-  keywordId?: KeywordId;
 }
 
 export type GhostStyle = CSSProperties & {

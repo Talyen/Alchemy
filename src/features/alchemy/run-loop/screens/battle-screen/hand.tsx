@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText } from "@/lib/localization/runtime";
 import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
 import { type MouseEvent, type RefObject, memo, useEffect, useLayoutEffect, useRef } from "react";
 
@@ -65,6 +67,7 @@ const HandCardItem = memo(function HandCardItem({
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   descriptionContext: CardDescriptionContext;
 }) {
+  useGameTranslation();
   const cardKey = getHandCardKey(card, index);
   const { isHovered, shimmerActive, shimmerToken } = useInteractiveCard("hand", cardKey);
   // Autoplay previews reuse the hover lift + shine without the description popup.
@@ -122,7 +125,7 @@ const HandCardItem = memo(function HandCardItem({
             onClick={(event) => onCardClick(card, index, event)}
             buttonRef={elementRef}
             ariaDisabled={!isInteractionEnabled}
-            ariaLabel={`Play ${getCardDisplayTitle(card)}`}
+            ariaLabel={gameText("ui.hand.1", "Play {{value0}}", { value0: getCardDisplayTitle(card) })}
             descriptionContext={descriptionContext}
             shimmerActive={shimmerActive}
             shimmerToken={shimmerToken}
@@ -165,6 +168,7 @@ export function BattleHand({
   actions: BattleActionsProps;
   playabilityState: BattleSnapshot;
 }) {
+  useGameTranslation();
   const { battleState, stagePixelRatio } = view;
   const { handCardRefs } = refs;
   const { onCardClick } = actions;

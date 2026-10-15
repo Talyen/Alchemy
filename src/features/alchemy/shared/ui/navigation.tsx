@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { ChevronLeft, ChevronRight, Menu } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -19,11 +21,14 @@ function PageArrow({
   className,
   hidden = false,
 }: PaginationProps & { direction: -1 | 1; hidden?: boolean }) {
+  useGameTranslation();
   const previous = direction === -1;
   const Icon = previous ? ChevronLeft : ChevronRight;
   return (
     <Button
-      aria-label={previous ? "Previous page" : "Next page"}
+      aria-label={displayText(
+        previous ? gameText("ui.navigation.d1", "Previous page") : gameText("ui.navigation.d2", "Next page"),
+      )}
       aria-hidden={hidden || undefined}
       tabIndex={hidden ? -1 : undefined}
       className={cn(className, hidden && "pointer-events-none invisible")}
@@ -48,6 +53,7 @@ export function PaginationControls({
   size?: "sm" | "default";
   reserveSpace?: boolean;
 }) {
+  useGameTranslation();
   const showControls = totalPages > 1;
   const buttonClass = size === "sm" ? "h-11 w-11" : "h-14 w-14";
   const widthClass = size === "sm" ? "max-w-28" : "max-w-36";
@@ -86,6 +92,7 @@ export function FlankingPagination({
   children,
   className,
 }: PaginationProps & { children: ReactNode }) {
+  useGameTranslation();
   const showControls = totalPages > 1;
   const arrowProps = { page, totalPages, onPageChange, hidden: !showControls, className: "h-11 w-11" };
 
@@ -100,7 +107,7 @@ export function FlankingPagination({
 
 export function HamburgerTrigger({
   onClick,
-  label = "Open menu",
+  label = gameText("ui.navigation.default-label", "Open menu"),
   className,
   active = false,
 }: {
@@ -109,6 +116,7 @@ export function HamburgerTrigger({
   className?: string;
   active?: boolean | undefined;
 }) {
+  useGameTranslation();
   return (
     <ChromeIconButton
       className={cn(className)}

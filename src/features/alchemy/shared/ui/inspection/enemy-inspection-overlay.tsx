@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { getEncounterEnemyAbility, type EnemyDescriptionContext } from "@/lib/battle";
 import { useMemo, type RefObject } from "react";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
@@ -26,6 +28,7 @@ function EnemyInspectionContent({
   modifiers?: readonly EncounterCombatTraitId[];
   open: boolean;
 }) {
+  useGameTranslation();
   const cards = useMemo(
     () =>
       getEnemyAbilities(entry).map((card) =>
@@ -36,7 +39,7 @@ function EnemyInspectionContent({
   return (
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-3">
-        <h3 className="font-sans text-xl font-semibold">Traits</h3>
+        <h3 className="font-sans text-xl font-semibold">{gameText("ui.enemy-inspection-overlay.1", "Traits")}</h3>
         <EnemyTraits
           enemyDescriptionContext={enemyDescriptionContext}
           layout="inspection"
@@ -45,7 +48,7 @@ function EnemyInspectionContent({
         />
       </section>
       <section className="flex flex-col gap-3">
-        <h3 className="font-sans text-xl font-semibold">Abilities</h3>
+        <h3 className="font-sans text-xl font-semibold">{gameText("ui.enemy-inspection-overlay.2", "Abilities")}</h3>
         <InspectionCardGrid cards={cards} descriptionContext={{}} resetKey={`${entry.id}:${open}`} sort={false} />
       </section>
     </div>
@@ -53,14 +56,15 @@ function EnemyInspectionContent({
 }
 
 export function EnemyInspectionOverlay(props: EnemyInspectionProps) {
+  useGameTranslation();
   const heldEntry = useHeldWhile(props.open, props.entry);
   return (
     <InspectionOverlayShell
       open={props.open}
       escapeId="enemy-inspection"
       testId="enemy-inspection-overlay"
-      title={heldEntry.title}
-      closeLabel="Close enemy inspection"
+      title={displayText(heldEntry.title)}
+      closeLabel={gameText("ui.enemy-inspection-overlay.attr1", "Close enemy inspection")}
       onClose={props.onClose}
       returnFocusRef={props.returnFocusRef}
     >

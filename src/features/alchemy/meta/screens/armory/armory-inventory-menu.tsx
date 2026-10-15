@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { useEffect, useId, useLayoutEffect, useRef, type ReactNode, type RefObject } from "react";
 import { autoUpdate, computePosition, offset, shift, size } from "@floating-ui/dom";
 import { X } from "lucide-react";
@@ -21,6 +23,7 @@ export function ArmoryInventoryMenu({
   trigger: (panelId: string) => ReactNode;
   children: ReactNode;
 }) {
+  useGameTranslation();
   const panelId = useId();
   const regionRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -92,7 +95,7 @@ export function ArmoryInventoryMenu({
         if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget)) onDismiss(false);
       }}
     >
-      {renderTrigger(panelId)}
+      {displayText(renderTrigger(panelId))}
       {open ? (
         <div ref={panelRef} id={panelId} role="dialog" aria-label={label} className="armory-inventory-menu">
           <div className="mb-3 flex items-center justify-between gap-3 border-b border-border/50 pb-2">
@@ -100,7 +103,9 @@ export function ArmoryInventoryMenu({
             <Button
               variant="ghost"
               size="icon"
-              aria-label={`Close ${label.toLowerCase()}`}
+              aria-label={gameText("ui.armory-inventory-menu.1", "Close {{value0}}", {
+                value0: displayText(label.toLowerCase()),
+              })}
               className="h-8 w-8 shrink-0"
               onClick={() => onDismiss(true)}
             >

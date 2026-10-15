@@ -60,6 +60,9 @@ jobs:
               - "index.html"
               - "public/startup-*.js"
               - "src/main.tsx"
+              - "src/lib/localization/**"
+              - "scripts/localization*"
+              - "scripts/localization/**"
               - "src/lib/platform.ts"
               - "src/lib/desktop-api.ts"
               - "src/lib/settings-values.ts"
@@ -100,6 +103,9 @@ jobs:
               - "src/main.tsx"
               - "src/App.tsx"
               - "src/app/**"
+              - "src/lib/localization/**"
+              - "scripts/localization*"
+              - "scripts/localization/**"
               - "src/lib/platform.ts"
               - "src/lib/desktop-api.ts"
               - "src/lib/settings-values.ts"
@@ -296,6 +302,9 @@ jobs:
         uses: ./.github/actions/setup-playwright
 
       - run: mkdir -p reports
+
+      - name: Localization layout and font acceptance
+        run: npm run test:e2e:dev -- tests/e2e/specs/localization.spec.ts
 
       - name: Run critical e2e tests
         run: npm run test:e2e:critical

@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { displayText } from "@/lib/localization/runtime";
 import {
   type CSSProperties,
   type AriaAttributes,
@@ -49,6 +51,7 @@ interface SurfaceProps {
 const CLIP_CONTENTS_CLASS = "surface-clip relative w-full overflow-hidden";
 
 export function Surface(props: SurfaceProps) {
+  useGameTranslation();
   const {
     as: Component = "div",
     baseTransform,
@@ -117,8 +120,8 @@ export function Surface(props: SurfaceProps) {
       {shimmerActive !== undefined ? (
         <ShimmerOverlay active={shimmerActive} token={shimmerToken} rounded={shimmerRounded ?? "rounded-shell-hero"} />
       ) : null}
-      {clipContents ? <div className={CLIP_CONTENTS_CLASS}>{children}</div> : children}
-      {overlay}
+      {clipContents ? <div className={CLIP_CONTENTS_CLASS}>{displayText(children)}</div> : children}
+      {displayText(overlay)}
     </>
   );
 
@@ -128,14 +131,14 @@ export function Surface(props: SurfaceProps) {
         {...sharedProps}
         ref={buttonRef}
         type="button"
-        aria-label={ariaLabel}
+        aria-label={displayText(ariaLabel)}
         aria-disabled={ariaDisabled}
         aria-pressed={ariaPressed}
         disabled={disabled === true || dragging === true}
         onClick={onClick}
         onPointerDown={onPointerDown}
       >
-        {body}
+        {displayText(body)}
       </button>
     );
   }
@@ -150,9 +153,9 @@ export function Surface(props: SurfaceProps) {
       onKeyDown={handleDivClick ? handleDivKeyDown : undefined}
       tabIndex={(handleDivClick || onFocus) && !disabled ? 0 : undefined}
       role={handleDivClick ? "button" : onFocus ? "group" : undefined}
-      aria-label={handleDivClick || onFocus ? ariaLabel : undefined}
+      aria-label={displayText(handleDivClick || onFocus ? ariaLabel : undefined)}
     >
-      {body}
+      {displayText(body)}
     </div>
   );
 }

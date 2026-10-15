@@ -1,3 +1,6 @@
+import { text as gameText, displayText } from "@/lib/localization/runtime";
+import { GameMessage } from "@/components/localization";
+import { useGameTranslation } from "@/components/use-game-translation";
 import { EnemyTraits } from "@/features/alchemy/shared/ui/enemy-traits";
 import { TraitBox } from "@/features/alchemy/shared/ui/trait-box";
 import { Button } from "@/components/ui/button";
@@ -16,6 +19,7 @@ interface Props {
 }
 
 export function LabyrinthNodeInspector({ node, map, onEnter, onDescend }: Props) {
+  useGameTranslation();
   const meta = LABYRINTH_NODE_META[node.type];
   const enemy = node.enemyId && isEnemyId(node.enemyId) ? enemyById[node.enemyId] : null;
   const category = NODE_TYPE_LABELS[node.type];
@@ -26,7 +30,7 @@ export function LabyrinthNodeInspector({ node, map, onEnter, onDescend }: Props)
 
   return (
     <aside
-      aria-label="Chamber details"
+      aria-label={gameText("ui.labyrinth-node-inspector.1", "Chamber details")}
       className="labyrinth-inspector-in flex max-h-full min-h-0 w-full flex-col overflow-hidden rounded-shell-panel border border-stone-500/50 bg-stone-950 shadow-xl motion-reduce:animate-none"
     >
       <div className="min-h-0 overflow-y-auto overscroll-contain p-4">
@@ -35,10 +39,16 @@ export function LabyrinthNodeInspector({ node, map, onEnter, onDescend }: Props)
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-4 pt-12">
             {node.type === "entrance" || category !== title ? (
               <p className="text-base font-semibold tracking-widest text-stone-200 uppercase">
-                {node.type === "entrance" ? `Floor ${node.floor}` : category}
+                {displayText(
+                  node.type === "entrance"
+                    ? gameText("ui.labyrinth-node-inspector.d1", "Floor {{value0}}", {
+                        value0: displayText(node.floor),
+                      })
+                    : category,
+                )}
               </p>
             ) : null}
-            <h2 className="text-3xl font-semibold text-stone-100">{title}</h2>
+            <h2 className="text-3xl font-semibold text-stone-100">{displayText(title)}</h2>
           </div>
         </div>
         {enemy || node.modifiers.length > 0 ? (
@@ -60,16 +70,27 @@ export function LabyrinthNodeInspector({ node, map, onEnter, onDescend }: Props)
             <>
               {remaining > 0 ? (
                 <p className="mb-3 text-sm text-stone-400">
-                  Leave {remaining} unexplored {remaining === 1 ? "chamber" : "chambers"} behind.
+                  <GameMessage
+                    id="ui.labyrinth-node-inspector.s1"
+                    defaultValue="Leave <part0/> unexplored <part1/> behind."
+                    parts={{
+                      part0: displayText(remaining),
+                      part1: displayText(
+                        remaining === 1
+                          ? gameText("ui.labyrinth-node-inspector.d2", "chamber")
+                          : gameText("ui.labyrinth-node-inspector.d3", "chambers"),
+                      ),
+                    }}
+                  />
                 </p>
               ) : null}
               <Button size="lg" variant="primary" className="w-full" onClick={onDescend}>
-                Descend
+                {gameText("ui.labyrinth-node-inspector.5", "Descend")}
               </Button>
             </>
           ) : (
             <Button size="lg" variant="primary" className="w-full" onClick={onEnter}>
-              {meta.actionLabel}
+              {displayText(meta.actionLabel)}
             </Button>
           )}
         </div>

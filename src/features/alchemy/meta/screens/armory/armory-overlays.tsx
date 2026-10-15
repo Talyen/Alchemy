@@ -1,3 +1,6 @@
+import { text as gameText, displayText } from "@/lib/localization/runtime";
+import { GameMessage } from "@/components/localization";
+import { useGameTranslation } from "@/components/use-game-translation";
 import type { RefObject } from "react";
 import { Sparkles } from "lucide-react";
 import { gearDefinitions, type CraftingCurrencyId } from "@/lib/gear";
@@ -30,21 +33,26 @@ export function ArmoryOverlays({
   afterProgressSaved = (feedback) => feedback(),
   onClearSalvageTarget,
 }: Props) {
+  useGameTranslation();
   const heldCharacterName = useHeldWhile(salvagePending !== null, equippedCharacterName);
   const heldPending = useHeldWhile(salvagePending !== null, salvagePending);
   return (
     <>
       <ConfirmationDialog
         open={salvagePending !== null}
-        title="Salvage"
+        title={gameText("ui.armory-overlays.1", "Salvage")}
         returnFocusRef={returnFocusRef}
-        description={
+        description={displayText(
           heldPending ? (
             <>
-              Salvaging <GearItemTitle instance={heldPending.instance} className="whitespace-normal" /> will yield:
+              <GameMessage
+                id="armory.salvage-yield"
+                defaultValue="Salvaging <item/> will yield:"
+                parts={{ item: <GearItemTitle instance={heldPending.instance} className="whitespace-normal" /> }}
+              />
             </>
-          ) : undefined
-        }
+          ) : undefined,
+        )}
         body={
           heldPending ? (
             <div className="space-y-4">
@@ -56,14 +64,18 @@ export function ArmoryOverlays({
               />
               {heldCharacterName ? (
                 <p className="text-sm text-warning">
-                  Equipped by {heldCharacterName}. Salvaging will unequip this item.
+                  <GameMessage
+                    id="ui.armory-overlays.s1"
+                    defaultValue="Equipped by <part0/>. Salvaging will unequip this item."
+                    parts={{ part0: displayText(heldCharacterName) }}
+                  />
                 </p>
               ) : null}
               <SalvageYieldPreview salvageYield={heldPending.yield} />
             </div>
           ) : null
         }
-        confirmLabel="Salvage"
+        confirmLabel={gameText("ui.armory-overlays.4", "Salvage")}
         icon={Sparkles}
         dismissOnBackdrop={false}
         onCancel={onClearSalvageTarget}

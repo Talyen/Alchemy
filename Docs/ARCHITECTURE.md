@@ -229,6 +229,8 @@ shelf assignment, and modifier ordering, follow
 
 ## Settings and meta profile
 
+[Localization](./LOCALIZATION.md) owns bundled message catalogs, presentation-only text resolution, language selection and the device-local language preference. It adds no gameplay provider or run state.
+
 - `settings-store` owns synchronized display, audio, and gameplay preferences. It does not contain gameplay progression.
 - `device-display-store` owns Game Size and Tooltip Size. Its storage seam writes a versioned device-local record, outside the settings save codec and Steam Cloud. Defaults load synchronously before layout; unavailable storage falls back to in-memory preferences. Options receives values and actions through its route props.
 - `lib/settings-values.ts` owns the shared value sets and numeric bounds consumed by save validation, Options, audio,

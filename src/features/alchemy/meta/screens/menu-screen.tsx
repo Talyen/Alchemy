@@ -1,3 +1,6 @@
+import { text as gameText, displayText } from "@/lib/localization/runtime";
+import { GameMessage } from "@/components/localization";
+import { useGameTranslation } from "@/components/use-game-translation";
 import { UI_GOLD } from "@/lib/game-constants/ui-colors";
 import { useState, type ReactNode } from "react";
 import { BookOpen, Cog, Power, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
@@ -26,6 +29,7 @@ const TALENTS_PLASMA_PAIR: PlasmaColorPair = { primary: "#a78bfa", secondary: "#
 const OPTIONS_PLASMA_PAIR: PlasmaColorPair = { primary: "#a1a1aa", secondary: "#27272a" };
 
 function MenuPlasmaHover({ colorPair, children }: { colorPair: PlasmaColorPair; children: ReactNode }) {
+  useGameTranslation();
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   usePlasmaInteraction(colorPair, hovered || focused);
@@ -74,6 +78,7 @@ export function MenuScreen({
   hasAffordableHomestead?: boolean;
   finishedRunCharacters: CharacterId[];
 }) {
+  useGameTranslation();
   const isTalentsLocked = !isProgressionFeatureUnlocked("talents", finishedRunCharacters);
   const isHomesteadLocked = !isProgressionFeatureUnlocked("homestead", finishedRunCharacters);
   const optionsButton = (
@@ -85,8 +90,11 @@ export function MenuScreen({
         className={MENU_NAV_BUTTON_CLASS}
         onClick={onOptions}
       >
-        <Cog className="h-7 w-7 text-zinc-400" />
-        Options
+        <GameMessage
+          id="ui.menu-screen.s1"
+          defaultValue="<part0/>Options"
+          parts={{ part0: <Cog className="h-7 w-7 text-zinc-400" /> }}
+        />
       </Button>
     </MenuPlasmaHover>
   );
@@ -101,7 +109,7 @@ export function MenuScreen({
           width={1200}
           height={1046}
           src={logoSrc}
-          alt="Alchemy logo"
+          alt={gameText("ui.menu-screen.2", "Alchemy logo")}
           className={cn("h-full max-h-full w-auto max-w-full object-contain brightness-90", cardHoverScaleClass)}
           loading="eager"
           decoding="async"
@@ -112,7 +120,7 @@ export function MenuScreen({
         {onWishlist ? (
           <div className="flex flex-wrap justify-center gap-3">
             <Button variant="outline" onClick={onWishlist}>
-              Wishlist on Steam
+              {gameText("ui.menu-screen.3", "Wishlist on Steam")}
             </Button>
           </div>
         ) : null}
@@ -126,7 +134,9 @@ export function MenuScreen({
             onClick={onPlay}
           >
             <Swords className="h-7 w-7" />
-            {hasActiveRun ? "Continue" : "Play"}
+            {displayText(
+              hasActiveRun ? gameText("ui.menu-screen.d1", "Continue") : gameText("ui.menu-screen.d2", "Play"),
+            )}
           </Button>
         </MenuPlasmaHover>
         <div className="grid grid-cols-2 gap-3">
@@ -138,14 +148,17 @@ export function MenuScreen({
               className={MENU_NAV_BUTTON_CLASS}
               onClick={onCollection}
             >
-              <BookOpen className="h-7 w-7 text-gold-light" />
-              Collection
+              <GameMessage
+                id="ui.menu-screen.s2"
+                defaultValue="<part0/>Collection"
+                parts={{ part0: <BookOpen className="h-7 w-7 text-gold-light" /> }}
+              />
             </Button>
           </MenuPlasmaHover>
           <MenuPlasmaHover colorPair={HOMESTEAD_PLASMA_PAIR}>
             <LockedMenuItem
-              title="Homestead"
-              message={getProgressionFeatureUnlockMessage("homestead")}
+              title={gameText("ui.menu-screen.5", "Homestead")}
+              message={displayText(getProgressionFeatureUnlockMessage("homestead"))}
               locked={isHomesteadLocked}
               onSelect={onHomestead}
               icon={<TreePine className="h-7 w-7 text-emerald-400" />}
@@ -155,7 +168,7 @@ export function MenuScreen({
               variant="outline"
               tooltipPlacement="side-end"
             >
-              Homestead
+              {gameText("ui.menu-screen.6", "Homestead")}
             </LockedMenuItem>
             {hasAffordableHomestead && !isHomesteadLocked && (
               <ShineBorder shineColor={SHINE_PALETTES.gold} borderWidth={2} duration={8} className="rounded-xl" />
@@ -165,8 +178,8 @@ export function MenuScreen({
         <div className="grid grid-cols-2 gap-3">
           <MenuPlasmaHover colorPair={TALENTS_PLASMA_PAIR}>
             <LockedMenuItem
-              title="Talents"
-              message={getProgressionFeatureUnlockMessage("talents")}
+              title={gameText("ui.menu-screen.7", "Talents")}
+              message={displayText(getProgressionFeatureUnlockMessage("talents"))}
               locked={isTalentsLocked}
               onSelect={onTalents}
               icon={<WandSparkles className="h-7 w-7 text-violet-400" />}
@@ -176,7 +189,7 @@ export function MenuScreen({
               variant="outline"
               tooltipPlacement="side-start"
             >
-              Talents
+              {gameText("ui.menu-screen.8", "Talents")}
             </LockedMenuItem>
             {hasUnspentTalents && !isTalentsLocked && (
               <ShineBorder shineColor={SHINE_PALETTES.gold} borderWidth={2} duration={8} className="rounded-xl" />
@@ -190,8 +203,11 @@ export function MenuScreen({
               className={MENU_NAV_BUTTON_CLASS}
               onClick={onArmory}
             >
-              <Shield className="h-7 w-7 text-sky-300" />
-              Armory
+              <GameMessage
+                id="ui.menu-screen.s3"
+                defaultValue="<part0/>Armory"
+                parts={{ part0: <Shield className="h-7 w-7 text-sky-300" /> }}
+              />
             </Button>
           </MenuPlasmaHover>
         </div>
@@ -205,11 +221,14 @@ export function MenuScreen({
                 className={MENU_NAV_BUTTON_CLASS}
                 onClick={onQuit}
               >
-                <Power className="h-7 w-7 text-rose-400" />
-                Quit
+                <GameMessage
+                  id="ui.menu-screen.s4"
+                  defaultValue="<part0/>Quit"
+                  parts={{ part0: <Power className="h-7 w-7 text-rose-400" /> }}
+                />
               </Button>
             </div>
-            {optionsButton}
+            {displayText(optionsButton)}
           </div>
         ) : (
           optionsButton

@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { useState } from "react";
 import { RotateCcw } from "lucide-react";
 
@@ -43,6 +45,7 @@ export function TalentsScreen({
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
+  useGameTranslation();
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordId | null>(null);
   const [hoveredOverviewKeyword, setHoveredOverviewKeyword] = useState<KeywordId | null>(null);
   const [hoveredTalent, setHoveredTalent] = useState<TalentDefinition | null>(null);
@@ -112,7 +115,7 @@ export function TalentsScreen({
 
   return (
     <TitledScreenShell
-      title={title}
+      title={displayText(title)}
       maxWidthClass="max-w-[calc(90*var(--content-rem,1rem))]"
       onBack={selectedKeyword ? handleBack : onBack}
       onMenu={onMenu}
@@ -120,7 +123,7 @@ export function TalentsScreen({
         <ChromeIconButton
           disabled={!hasAllocatedTalents}
           onClick={() => setShowResetConfirm(true)}
-          aria-label="Reset talents"
+          aria-label={gameText("ui.talents-screen.1", "Reset talents")}
         >
           <RotateCcw className="h-6 w-6" />
         </ChromeIconButton>
@@ -163,7 +166,9 @@ export function TalentsScreen({
                 aria-live="polite"
                 className="text-center font-sans text-xl font-normal tracking-normal text-balance text-muted-foreground/60"
               >
-                {unspentPoints} {unspentPoints === 1 ? "Talent Point" : "Talent Points"} Remaining
+                {gameText("talents.remaining", "{{count}} Talent Points Remaining", {
+                  count: displayText(unspentPoints),
+                })}
               </p>
             ) : null}
           </div>
@@ -172,9 +177,9 @@ export function TalentsScreen({
 
       <ConfirmationDialog
         open={showResetConfirm}
-        title="Reset Talents"
-        description="This will refund all your talent points."
-        confirmLabel="Reset"
+        title={gameText("ui.talents-screen.3", "Reset Talents")}
+        description={gameText("ui.talents-screen.4", "This will refund all your talent points.")}
+        confirmLabel={gameText("ui.talents-screen.5", "Reset")}
         tone="default"
         dimBackground={false}
         onConfirm={handleReset}

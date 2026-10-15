@@ -1,0 +1,19 @@
+{
+  "Language": "语言",
+  "Automatic": "自动",
+  "Options": "选项",
+  "Display": "显示",
+  "Back": "返回",
+  "Play": "开始",
+  "Continue": "继续",
+  "Collection": "收藏",
+  "Armory": "军械库",
+  "Health": "生命",
+  "Mana": "魔力",
+  "Block": "格挡",
+  "Armor": "护甲",
+  "<part0/>Quit": "<part0/>退出",
+  "<part0/>Options": "<part0/>选项",
+  "<part0/>Collection": "<part0/>收藏",
+  "<part0/>Armory": "<part0/>军械库"
+}

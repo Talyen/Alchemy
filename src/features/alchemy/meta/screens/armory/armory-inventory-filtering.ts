@@ -1,3 +1,4 @@
+import { displayText } from "@/lib/localization/runtime";
 import { keywordDefinitions, type KeywordId, type TrinketEntry } from "@/lib/game-data";
 import {
   gearDefinitions,
@@ -50,21 +51,25 @@ export function matchesGearFilters(item: GearInstance, filters: ArmoryInventoryF
   if (filters.keywords.length > 0 && !matchesKeywords(getGearInstanceKeywordIds(item), filters)) return false;
   if (!filters.search.trim()) return true;
 
-  const searchText = [
+  const searchParts = [
     getGearInstanceTitle(item),
     definition ? gearBaseItems[definition.baseItemId]?.displayName : undefined,
     ...getGearInstanceTooltipEntries(item).flatMap((entry) => [entry.name, entry.text]),
-  ]
-    .filter(Boolean)
-    .join(" ");
-  return matchesSearch(searchText, filters.search);
+  ].filter((part): part is string => typeof part === "string");
+  return matchesSearch([...searchParts, ...searchParts.map(displayText)].join(" "), filters.search);
 }
 
 export function matchesTrinketFilters(item: TrinketEntry, filters: ArmoryInventoryFilters): boolean {
   if (!filters.search.trim() && filters.keywords.length === 0) return true;
   const text = item.descriptionLines.join(" ");
   if (filters.keywords.length > 0 && !matchesKeywords(extractKeywordIds(text), filters)) return false;
-  return !filters.search.trim() || matchesSearch(`${item.title} ${text}`, filters.search);
+  return (
+    !filters.search.trim() ||
+    matchesSearch(
+      [item.title, text, displayText(item.title), ...item.descriptionLines.map(displayText)].join(" "),
+      filters.search,
+    )
+  );
 }
 
 export const ARMORY_FILTER_KEYWORDS = Object.values(keywordDefinitions)

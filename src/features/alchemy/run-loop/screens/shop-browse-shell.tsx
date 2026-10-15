@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText } from "@/lib/localization/runtime";
 import type { ReactNode } from "react";
 
 import { RefreshCw } from "lucide-react";
@@ -21,6 +23,7 @@ export function ShopBrowseShell({
   showGold?: boolean;
   children: ReactNode;
 }) {
+  useGameTranslation();
   return (
     <TitledScreenShell title={title} headerActions={showGold ? <GoldDisplay gold={gold} /> : null}>
       <div className={cn("flex flex-col items-center gap-6 text-center", showGold && "mt-6")}>{children}</div>
@@ -41,6 +44,7 @@ export function ShopBrowseOfferings({
   onLeave: () => void;
   serviceClassName?: string;
 }) {
+  useGameTranslation();
   return (
     <div className="flex flex-col items-center gap-6">
       <FadeSlot swapKey={swapKey} className="grid grid-cols-1 gap-8 sm:grid-cols-3">
@@ -48,7 +52,7 @@ export function ShopBrowseOfferings({
       </FadeSlot>
       {services ? <div className={cn("flex flex-wrap justify-center gap-3", serviceClassName)}>{services}</div> : null}
       <Button size="lg" variant="primary" wrapperClassName="mt-2" className="min-w-56" onClick={onLeave}>
-        Leave
+        {gameText("ui.shop-browse-shell.1", "Leave")}
       </Button>
     </div>
   );
@@ -59,7 +63,7 @@ export function RefreshShopServiceButton({
   refreshesLeft,
   refreshPrice,
   onRefresh,
-  label = "Refresh",
+  label = gameText("ui.shop-browse-shell.default-label", "Refresh"),
 }: {
   gold: number;
   refreshesLeft: number;
@@ -67,15 +71,16 @@ export function RefreshShopServiceButton({
   onRefresh: () => void;
   label?: string;
 }) {
+  useGameTranslation();
   return (
     <ServiceButton
       icon={RefreshCw}
       label={label}
       cost={refreshPrice}
       disabled={refreshesLeft <= 0 || gold < refreshPrice}
-      disabledMessage="Not Enough Gold"
+      disabledMessage={gameText("ui.shop-browse-shell.attr1", "Not Enough Gold")}
       used={refreshesLeft <= 0}
-      soldOutText={`${label} - Sold Out`}
+      soldOutText={gameText("shop.service-sold-out", "{{label}} - Sold Out", { label: label })}
       onClick={onRefresh}
     />
   );

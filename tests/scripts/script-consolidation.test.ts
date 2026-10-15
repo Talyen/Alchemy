@@ -77,6 +77,7 @@ describe("script consolidation", () => {
       }));
       expect(await runCiLint({ rootDir: root, runner })).toBe(0);
       expect(runner.mock.calls.map(([command, args]) => [command, args])).toEqual([
+        ["npm", ["run", "i18n:check"]],
         ["npm", ["run", "check:static"]],
         ["npm", ["run", "docs:check"]],
         ["npm", ["run", "deadcode"]],
@@ -84,7 +85,7 @@ describe("script consolidation", () => {
         ["npm", ["run", "lint:architecture-smoke"]],
         ["npx", ["playwright", "test", "--list", "--project=chromium"]],
       ]);
-      expect(log.mock.calls.flat().join("\n")).toContain("CI static checks: 6/6 passed");
+      expect(log.mock.calls.flat().join("\n")).toContain("CI static checks: 7/7 passed");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

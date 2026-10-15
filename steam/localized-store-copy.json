@@ -1,0 +1,22 @@
+{
+  "en": {
+    "demo": {
+      "about": "Build a deck, face the first Campaign boss, and develop your Homestead. Replay the demo and carry your earned permanent progress into the full game.",
+      "shortDescription": "Explore Act I of Alchemy, a fantasy roguelite deckbuilder with lasting progression."
+    },
+    "full": {
+      "about": "Fight one-on-one card battles across the Campaign, the Labyrinth, and Wildwood Draft. Earn Talents, build a Homestead, and collect Gear and Trinkets for future runs.",
+      "shortDescription": "Choose a hero, build a deck, and grow stronger between runs in a fantasy roguelite deckbuilder."
+    }
+  },
+  "de": {
+    "demo": {
+      "about": "Baue ein Deck, stelle dich dem ersten Kampagnenboss und entwickle deine Heimstatt. Spiele die Demo erneut und übernimm deinen erspielten dauerhaften Fortschritt in das vollständige Spiel.",
+      "shortDescription": "Erkunde Akt I von Alchemy, einem Fantasy-Roguelite-Deckbuilder mit dauerhaftem Fortschritt."
+    },
+    "full": {
+      "about": "Kämpfe in der Kampagne, im Labyrinth und im Wildwald-Draft in Kartenkämpfen eins gegen eins. Verdiene Talente, baue eine Heimstatt und sammle Ausrüstung und Schmuckstücke für künftige Läufe.",
+      "shortDescription": "Wähle einen Helden, baue ein Deck und werde zwischen den Läufen stärker in einem Fantasy-Roguelite-Deckbuilder."
+    }
+  }
+}

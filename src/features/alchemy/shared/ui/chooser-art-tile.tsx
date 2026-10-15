@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { displayText } from "@/lib/localization/runtime";
 import { type ReactNode, type RefObject } from "react";
 import type { LucideIcon } from "lucide-react";
 
@@ -49,6 +51,7 @@ export function ChooserArtTile({
   renderTooltip,
   plasmaColorPair = null,
 }: ChooserArtTileProps) {
+  useGameTranslation();
   const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(interactionKey, interactionId);
   const hover = useHoverVisible({ onHoverStart, onHoverEnd });
   const tooltipVisible = hover.visible;
@@ -60,7 +63,7 @@ export function ChooserArtTile({
       <Surface
         as="button"
         buttonRef={tooltipTriggerRef}
-        ariaLabel={ariaLabel ?? label}
+        ariaLabel={displayText(ariaLabel ?? label)}
         {...(disabled ? { ariaDisabled: true } : {})}
         onClick={onClick}
         onMouseEnter={hover.onMouseEnter}
@@ -86,7 +89,7 @@ export function ChooserArtTile({
           draggable={false}
         />
       </Surface>
-      {trackTooltip ? renderTooltip(tooltipVisible) : null}
+      {displayText(trackTooltip ? renderTooltip(tooltipVisible) : null)}
       <div className="pointer-events-none flex items-center justify-center gap-2.5 pt-1 text-center select-none">
         <Icon className={cn("h-5 w-5 shrink-0", accentClassName)} />
         <span className={cn("font-sans text-lg font-bold tracking-wide sm:text-xl", accentClassName)}>{label}</span>

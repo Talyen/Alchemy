@@ -1,3 +1,16 @@
+@font-face {
+  font-family: "Alchemy Chinese Sample";
+  src: url("/fonts/noto-sans-sc-sample.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+html:lang(zh-Hans) {
+  --font-sans: "Inter", "Alchemy Chinese Sample", sans-serif;
+  line-break: strict;
+  overflow-wrap: anywhere;
+}
+
 @layer base {
   * {
     --content-rem: calc(1rem * var(--content-scale, 1));

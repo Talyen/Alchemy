@@ -233,6 +233,14 @@ function registerIpcHandlers() {
   handleAuthorized("alchemy:steam-cloud-write", steamCloudStorage.write);
   handleAuthorized("alchemy:steam-cloud-delete", steamCloudStorage.remove);
 
+  handleAuthorized("alchemy:steam-get-game-language", () => {
+    try {
+      return steamClient?.apps.currentGameLanguage() ?? null;
+    } catch {
+      return null;
+    }
+  });
+
   handleAuthorized("alchemy:steam-get-name", () => {
     try {
       return steamClient?.localplayer.getName() ?? null;

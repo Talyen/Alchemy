@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { CombatantFrame } from "./combatant-frame";
 import { getCompanionDescriptionLines, type CompanionDefinition, type CompanionDamageModifiers } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
@@ -38,6 +40,7 @@ export function CompanionPanel({
   turnActive?: boolean;
   turnShineColors?: readonly string[];
 }) {
+  useGameTranslation();
   const {
     wrapperRef: triggerRef,
     visible,
@@ -56,7 +59,9 @@ export function CompanionPanel({
       className="companion-enter relative"
       data-testid="active-companion"
       data-scene-region="left"
-      aria-label={`Active companion: ${companion.title}`}
+      aria-label={gameText("ui.companion-panel.1", "Active companion: {{value0}}", {
+        value0: displayText(companion.title),
+      })}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onFocusCapture={onFocusCapture}
@@ -65,7 +70,7 @@ export function CompanionPanel({
       <CombatantStatusEffectPresentation keyword={ccKeyword}>
         <Surface
           as="button"
-          ariaLabel={`Inspect ${companion.title}`}
+          ariaLabel={gameText("ui.companion-panel.2", "Inspect {{value0}}", { value0: displayText(companion.title) })}
           clipContents={false}
           className={cn(
             "combatant-art battle-scene-piece relative",
@@ -87,7 +92,7 @@ export function CompanionPanel({
           <BattleSceneArtwork>
             <img
               src={companion.art}
-              alt={companion.title}
+              alt={displayText(companion.title)}
               className="block aspect-[3/4] w-full rounded-shell-hero"
               loading="eager"
               decoding="async"
@@ -100,7 +105,7 @@ export function CompanionPanel({
         visible={visible}
         plasmaColorPair={getPlasmaColorPairForCompanion(companion)}
       >
-        <TooltipHeader>{companion.title}</TooltipHeader>
+        <TooltipHeader>{displayText(companion.title)}</TooltipHeader>
         <DescriptionLines
           lines={getCompanionDescriptionLines(companion, bondLevel, damageBonus)}
           idPrefix={`companion-${companion.id}`}

@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { displayText } from "@/lib/localization/runtime";
 import { useArtworkReady } from "./use-artwork-ready";
 import { useLatestRef } from "./use-latest-ref";
 import { Fragment, useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
@@ -101,6 +103,7 @@ export function FadeSlot({
   // Lets actions outside the slot wait for the displayed identity and its artwork.
   onReady?: (shownKey: string | number) => void;
 } & HTMLAttributes<HTMLDivElement>) {
+  useGameTranslation();
   const { shown: shownKey, phase } = useSequentialFadeSwap({
     target: swapKey,
     durationMs: MOTION_FADE_MS,
@@ -127,7 +130,7 @@ export function FadeSlot({
       {...restProps}
       inert={!isLive || (artworkPending ?? restProps.inert)}
     >
-      <Fragment key={shownKey}>{heldChildren}</Fragment>
+      <Fragment key={shownKey}>{displayText(heldChildren)}</Fragment>
     </div>
   );
 }

@@ -1,9 +1,8 @@
-import type { CharacterId } from "@/lib/game-data";
 import type { Screen } from "./screens";
 import { ROUTE_SCREENS } from "./screens";
 import type { RunPhase } from "./run-screen-router";
 
-const SCREEN_LABELS: Partial<Record<Screen, string>> = {
+export const STEAM_SCREEN_LABELS: Partial<Record<Screen, string>> = {
   [ROUTE_SCREENS.HOMESTEAD]: "Upgrading Homestead",
   [ROUTE_SCREENS.TALENTS]: "Selecting Talents",
   [ROUTE_SCREENS.CAMPFIRE]: "Resting at Campfire",
@@ -28,12 +27,8 @@ const SCREEN_LABELS: Partial<Record<Screen, string>> = {
   [ROUTE_SCREENS.DIFFICULTY_SELECT]: "Starting a Run",
 };
 
-export function getSteamRichPresenceLabel(
-  screen: Screen,
-  phase: RunPhase,
-  characterId: CharacterId | null = null,
-): string {
-  if (phase === "runEnd") return screen === ROUTE_SCREENS.RUN_VICTORY ? "Run Victory" : "Run Ended";
-  if (phase === "battle") return `Fighting as ${characterId ?? "knight"}`;
-  return SCREEN_LABELS[screen] ?? "In Menu";
+export function getSteamRichPresenceToken(screen: Screen, phase: RunPhase): string {
+  if (phase === "runEnd") return screen === ROUTE_SCREENS.RUN_VICTORY ? "#alchemy_victory" : "#alchemy_run_ended";
+  if (phase === "battle") return "#alchemy_battle";
+  return STEAM_SCREEN_LABELS[screen] ? `#alchemy_screen_${screen.replaceAll("-", "_")}` : "#alchemy_menu";
 }

@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { PackageOpen } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -40,6 +42,7 @@ export function ArmoryPagedGrid<T>({
   noMatches?: boolean | undefined;
   placeholderIndex?: number | null | undefined;
 }) {
+  useGameTranslation();
   const hasPlaceholder = placeholderIndex !== null && placeholderIndex !== undefined;
   const effectiveFillerCount = hasPlaceholder ? Math.max(0, fillerCount - 1) : fillerCount;
 
@@ -76,14 +79,14 @@ export function ArmoryPagedGrid<T>({
               className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-4 text-center text-muted-foreground"
             >
               <PackageOpen aria-hidden="true" className="h-12 w-12" />
-              <p className="text-sm">No items match your search and filters.</p>
+              <p className="text-sm">{gameText("ui.paged-picker-grid.1", "No items match your search and filters.")}</p>
             </div>
           ) : null}
           <div
             style={armoryPickerGridStyle}
             className={cn("grid w-full grid-rows-2", collectionGridGapXClass, "gap-y-6")}
           >
-            {renderedElements}
+            {displayText(renderedElements)}
             {Array.from({ length: effectiveFillerCount }, (_, index) => index).map((index) => (
               <div
                 key={`${testId}-filler-${index}`}

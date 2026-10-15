@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { screenShellPaddingClass } from "@/features/alchemy/shared/config";
 import {
   characters,
@@ -60,6 +62,7 @@ export function ArmoryScreen({
   onBack,
   onMenu,
 }: ArmoryScreenProps) {
+  useGameTranslation();
   const feedbackSequence = useRef(0);
   useEffect(
     () => () => {
@@ -71,7 +74,7 @@ export function ArmoryScreen({
   const [characterId, setCharacterId] = useState<CharacterId>("knight");
   const [selectedSlot, setSelectedSlot] = useState<ArmorySlot>("main-hand");
   const [craftingResult, setCraftingResult] = useState<CraftingResult | null>(null);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState<string | { item: string }>("");
   const sharedInventory = useMemo(() => flattenGearInventories(inventories), [inventories]);
   const inventoryById = useMemo(
     () => new Map(sharedInventory.map((item) => [item.instanceId, item])),
@@ -260,7 +263,12 @@ export function ArmoryScreen({
           salvageMode && "armory-salvage-cursor",
         )}
       >
-        <ScreenHeaderRow className="min-h-10 px-12" title="Armory" onBack={onBack} onMenu={onMenu} />
+        <ScreenHeaderRow
+          className="min-h-10 px-12"
+          title={gameText("ui.armory-screen.1", "Armory")}
+          onBack={onBack}
+          onMenu={onMenu}
+        />
         <ArmoryCharacterTabs
           activeTab={characterId}
           finishedRunCharacters={finishedRunCharacters}
@@ -338,7 +346,13 @@ export function ArmoryScreen({
           </FadeSlot>
         </div>
         <ArmoryFeedback
-          notice={notice}
+          notice={
+            typeof notice === "string"
+              ? displayText(notice)
+              : gameText("armory.salvage-complete", "{{item}} salvaged. Rewards added.", {
+                  item: displayText(notice.item),
+                })
+          }
           result={craftingResult}
           after={craftedItem}
           error={notice === COMBAT_LOCKED_MESSAGE}
@@ -360,9 +374,7 @@ export function ArmoryScreen({
               const sequence = ++feedbackSequence.current;
               afterProgressSaved(() => {
                 if (feedbackSequence.current === sequence)
-                  setNotice(
-                    `${salvagePending ? getGearInstanceTitle(salvagePending.instance) : "Item"} salvaged. Rewards added.`,
-                  );
+                  setNotice({ item: salvagePending ? getGearInstanceTitle(salvagePending.instance) : "Item" });
               });
             }
             return success;

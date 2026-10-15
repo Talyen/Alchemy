@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { displayText } from "@/lib/localization/runtime";
 import {
   type CSSProperties,
   type MouseEvent,
@@ -69,6 +71,7 @@ export type BattleCardButtonProps = BattleCardButtonBaseProps &
   );
 
 export function BattleCardButton(props: BattleCardButtonProps) {
+  useGameTranslation();
   const {
     wrapperClassName,
     wrapperStyle,
@@ -169,6 +172,7 @@ function CardHoverPopup({
   descriptionContext: CardDescriptionContext;
   padding?: number | undefined;
 }) {
+  useGameTranslation();
   const descriptionLines = useMemo(
     () => (visible ? getEffectiveCardDescriptionLines(card, descriptionContext) : []),
     [visible, card, descriptionContext],
@@ -191,7 +195,7 @@ function CardHoverPopup({
   return (
     <DetailPopup
       idPrefix={card.id}
-      title={<CardTitle card={card} />}
+      title={displayText(<CardTitle card={card} />)}
       subtitle={undefined}
       descriptionLines={descriptionLines}
       newLineIndices={newLineIndices}
@@ -227,6 +231,7 @@ function CardButtonSurface({
   shineColor,
   scenePiece = false,
 }: BattleCardButtonProps) {
+  useGameTranslation();
   const colors = shineColor ?? (card.transmuted ? getCardKeywordShineColors(card) : undefined);
   const showShine = Boolean(hovered && !dragging && !disabled && colors?.length);
   const artwork = (
@@ -267,7 +272,7 @@ function CardButtonSurface({
       ariaLabel={ariaLabel}
       overlay={showShine && colors ? <ShineBorder shineColor={colors} borderWidth={2} className="z-20" /> : undefined}
     >
-      {scenePiece ? <BattleSceneArtwork>{artwork}</BattleSceneArtwork> : artwork}
+      {scenePiece ? <BattleSceneArtwork>{displayText(artwork)}</BattleSceneArtwork> : artwork}
       {children}
     </Surface>
   );

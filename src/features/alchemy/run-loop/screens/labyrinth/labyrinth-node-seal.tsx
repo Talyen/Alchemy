@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { memo } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { SHINE_PALETTES } from "@/features/alchemy/shared/config/shine-palettes";
@@ -41,6 +43,7 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
   onHover,
   onFocus,
 }: Props) {
+  useGameTranslation();
   const visual = labyrinthNodeVisualState(map, node.id);
   const discovered = visual !== "undiscovered";
   const current = node.id === map.currentNodeId;
@@ -55,15 +58,21 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
         labyrinthShroudedArt[hashStringToUint32(node.id) % labyrinthShroudedArt.length]!;
   const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("labyrinth", node.id);
   const status = current
-    ? "you are here"
+    ? gameText("labyrinth.node-status-0", "you are here")
     : visual === "cleared"
-      ? "completed"
+      ? gameText("labyrinth.node-status-1", "completed")
       : visual === "reachable"
-        ? "reachable, enterable"
-        : "discovered, out of reach";
+        ? gameText("labyrinth.node-status-2", "reachable, enterable")
+        : gameText("labyrinth.node-status-3", "discovered, out of reach");
   const label = discovered
-    ? `${NODE_TYPE_LABELS[node.type]} chamber, ${status}`
-    : `Undiscovered chamber, row ${node.gridPosition.row + 1}, column ${node.gridPosition.col + LABYRINTH_GRID.sideColumns + 1}`;
+    ? gameText("ui.labyrinth-node-seal.msg1", "{{value0}} chamber, {{value1}}", {
+        value0: displayText(NODE_TYPE_LABELS[node.type]),
+        value1: displayText(status),
+      })
+    : gameText("ui.labyrinth-node-seal.msg2", "Undiscovered chamber, row {{value0}}, column {{value1}}", {
+        value0: displayText(node.gridPosition.row + 1),
+        value1: displayText(node.gridPosition.col + LABYRINTH_GRID.sideColumns + 1),
+      });
 
   return (
     <div
@@ -76,7 +85,7 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
     >
       <Surface
         as="button"
-        ariaLabel={label}
+        ariaLabel={displayText(label)}
         ariaCurrent={current ? "location" : undefined}
         ariaPressed={selected}
         ariaDisabled={!discovered}

@@ -1,0 +1,42 @@
+{
+  "language.auto": {
+    "text": "Automatic",
+    "context": "Language preference: follow Steam or system language"
+  },
+  "battle.deaths-door-status": {
+    "text": "Death's Door: {{count}} protected turns remaining",
+    "context": "Accessible status label; count is protected turns left",
+    "plural": true,
+    "forms": {
+      "one": "Death's Door: {{count}} protected turn remaining",
+      "other": "Death's Door: {{count}} protected turns remaining"
+    }
+  },
+  "battle.deaths-door-remaining": {
+    "text": "{{count}} protected turns remaining.",
+    "context": "Status tooltip; count is protected turns left",
+    "plural": true,
+    "forms": {
+      "one": "{{count}} protected turn remaining.",
+      "other": "{{count}} protected turns remaining."
+    }
+  },
+  "talents.remaining": {
+    "text": "{{count}} Talent Points Remaining",
+    "context": "Unallocated Talent Points; count is available points",
+    "plural": true,
+    "forms": {
+      "one": "{{count}} Talent Point Remaining",
+      "other": "{{count}} Talent Points Remaining"
+    }
+  },
+  "deck.inspect": {
+    "text": "View Deck \u00b7 {{count}} cards",
+    "context": "Deck inspection button accessible name; count is deck size",
+    "plural": true,
+    "forms": {
+      "one": "View Deck \u00b7 {{count}} card",
+      "other": "View Deck \u00b7 {{count}} cards"
+    }
+  }
+}

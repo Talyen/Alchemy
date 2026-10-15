@@ -1,3 +1,4 @@
+import { displayText, localization } from "@/lib/localization/runtime";
 import type { TrinketEntry } from "@/lib/game-data";
 import {
   GEAR_SLOTS,
@@ -51,10 +52,10 @@ export function compareOrderRows(a: ArmoryOrderRow, b: ArmoryOrderRow, sort: Arm
   const rankCompare = a.rank - b.rank;
   if (sort === "rarity" && rankCompare !== 0) return rankCompare;
   if (sort === "base-type") {
-    const baseCompare = a.baseType.localeCompare(b.baseType);
+    const baseCompare = displayText(a.baseType).localeCompare(displayText(b.baseType), localization.language);
     if (baseCompare !== 0) return baseCompare;
   }
-  const titleCompare = a.title.localeCompare(b.title);
+  const titleCompare = displayText(a.title).localeCompare(displayText(b.title), localization.language);
   if (titleCompare !== 0) return titleCompare;
   if (rankCompare !== 0) return rankCompare;
   return a.id.localeCompare(b.id);

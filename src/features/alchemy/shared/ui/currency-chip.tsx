@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { Fragment, type ReactNode } from "react";
 import { useChangeToken } from "./use-change-token";
 import { cn } from "@/lib/utils";
@@ -11,10 +13,10 @@ function renderBoldSegments(text: string): ReactNode {
   return text.split(/\*\*(.+?)\*\*/g).map((part, index) =>
     index % 2 === 1 ? (
       <strong key={index} className="font-semibold text-foreground">
-        {part}
+        {displayText(part)}
       </strong>
     ) : (
-      <Fragment key={index}>{part}</Fragment>
+      <Fragment key={index}>{displayText(part)}</Fragment>
     ),
   );
 }
@@ -38,6 +40,7 @@ export function CurrencyChip({
   ariaLabel?: string;
   onSelect?: () => void;
 }) {
+  useGameTranslation();
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible();
   const countToken = useChangeToken(count);
   const label = `${ariaLabel ?? currency.displayName}, ${count}${onSelect ? " available" : ""}`;
@@ -69,11 +72,13 @@ export function CurrencyChip({
       onBlurCapture={onBlurCapture}
     >
       <PortaledTooltip triggerRef={triggerRef} visible={visible} className="armory-inventory-tooltip !shadow-none">
-        <TooltipHeader>{currency.displayName}</TooltipHeader>
+        <TooltipHeader>{displayText(currency.displayName)}</TooltipHeader>
         <TooltipBody>
-          <p>{renderBoldSegments(currency.tooltipEffect)}</p>
-          {showDescription ? <p className="mt-2">{currency.description}</p> : null}
-          {disabled && count > 0 ? <p className="mt-2">Crafting is unavailable.</p> : null}
+          <p>{displayText(renderBoldSegments(currency.tooltipEffect))}</p>
+          {showDescription ? <p className="mt-2">{displayText(currency.description)}</p> : null}
+          {disabled && count > 0 ? (
+            <p className="mt-2">{gameText("ui.currency-chip.1", "Crafting is unavailable.")}</p>
+          ) : null}
         </TooltipBody>
       </PortaledTooltip>
       {onSelect ? (
@@ -81,7 +86,7 @@ export function CurrencyChip({
           type="button"
           data-testid={testId}
           data-currency-id={currency.id}
-          aria-label={label}
+          aria-label={displayText(label)}
           aria-pressed={armed}
           aria-disabled={disabled}
           className={className}
@@ -90,7 +95,7 @@ export function CurrencyChip({
             if (!disabled) onSelect();
           }}
         >
-          {content}
+          {displayText(content)}
         </button>
       ) : (
         <div
@@ -99,10 +104,10 @@ export function CurrencyChip({
           role="group"
           data-testid={testId}
           data-currency-id={currency.id}
-          aria-label={label}
+          aria-label={displayText(label)}
           className={className}
         >
-          {content}
+          {displayText(content)}
         </div>
       )}
     </div>

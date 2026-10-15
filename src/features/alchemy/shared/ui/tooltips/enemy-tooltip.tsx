@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import type { EnemyDescriptionContext } from "@/lib/battle";
 import type { RefObject } from "react";
 import type { BestiaryEntry } from "@/lib/game-data";
@@ -22,6 +24,7 @@ export function EnemyTooltip({
   triggerRef: RefObject<HTMLElement | null>;
   visible: boolean;
 }) {
+  useGameTranslation();
   return (
     <PortaledTooltip
       triggerRef={triggerRef}
@@ -30,7 +33,9 @@ export function EnemyTooltip({
       className="rounded-shell-tooltip"
       plasmaColorPair={discovered ? getPlasmaColorPairForEnemy(entry) : null}
     >
-      <TooltipHeader>{discovered ? entry.title : "Undiscovered"}</TooltipHeader>
+      <TooltipHeader>
+        {displayText(discovered ? entry.title : gameText("ui.enemy-tooltip.d1", "Undiscovered"))}
+      </TooltipHeader>
       {discovered ? (
         <EnemyTraits
           enemyDescriptionContext={enemyDescriptionContext}
@@ -40,7 +45,7 @@ export function EnemyTooltip({
         />
       ) : (
         <TooltipBody>
-          <p>Undiscovered</p>
+          <p>{gameText("ui.enemy-tooltip.1", "Undiscovered")}</p>
         </TooltipBody>
       )}
     </PortaledTooltip>

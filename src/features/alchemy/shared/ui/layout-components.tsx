@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { DeckInspectButton } from "./deck-inspect-button";
 import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
@@ -8,6 +10,7 @@ import { HamburgerTrigger } from "./navigation";
 import { useOptionalAppScreenChrome } from "@/app/app-screen-chrome-context";
 
 export function ScreenHeader({ title, className }: { title: ReactNode; className?: string }) {
+  useGameTranslation();
   return (
     <div className={cn("flex flex-col items-center text-center", className)}>
       <h1 className={cn("font-sans", screenTitleClass)}>{title}</h1>
@@ -31,6 +34,7 @@ export function ScreenHeaderRow({
   onMenu?: ((rect: DOMRect) => void) | undefined;
   className?: string;
 }) {
+  useGameTranslation();
   const chrome = useOptionalAppScreenChrome();
   const effectiveBack = onBack ?? chrome?.onBack;
   const effectiveMenu = onMenu ?? chrome?.openGameMenu;
@@ -38,19 +42,23 @@ export function ScreenHeaderRow({
   const leadingContent =
     leading ??
     (effectiveBack ? (
-      <ChromeIconButton onClick={effectiveBack} aria-label="Back">
+      <ChromeIconButton onClick={effectiveBack} aria-label={gameText("ui.layout-components.1", "Back")}>
         <ArrowLeft className="h-7 w-7" />
       </ChromeIconButton>
     ) : null);
 
   const menuButton = effectiveMenu ? (
-    <HamburgerTrigger onClick={effectiveMenu} label="Open game menu" active={chrome?.isMenuOpen} />
+    <HamburgerTrigger
+      onClick={effectiveMenu}
+      label={gameText("ui.layout-components.2", "Open game menu")}
+      active={chrome?.isMenuOpen}
+    />
   ) : null;
   const trailingContent =
     trailing || menuButton ? (
       <div className="flex items-center gap-2">
         {trailing}
-        {menuButton}
+        {displayText(menuButton)}
       </div>
     ) : null;
 
@@ -59,13 +67,13 @@ export function ScreenHeaderRow({
       <div className="flex w-full max-w-2xl flex-col items-center">
         <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center px-3">
           <div className="flex items-center gap-2">
-            {leadingContent}
+            {displayText(leadingContent)}
             {chrome?.deckInspection ? <DeckInspectButton {...chrome.deckInspection} /> : null}
           </div>
           <div className="flex min-w-0 flex-col items-center px-3 text-center">
             <h1 className={cn("text-center font-sans", screenTitleClass)}>{title}</h1>
           </div>
-          <div className="flex items-center justify-end gap-2">{trailingContent}</div>
+          <div className="flex items-center justify-end gap-2">{displayText(trailingContent)}</div>
         </div>
         <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-gold-pale/75 to-transparent" />
       </div>
@@ -74,6 +82,7 @@ export function ScreenHeaderRow({
 }
 
 export function PageLayout({ children }: { children: ReactNode }) {
+  useGameTranslation();
   return (
     <div className="game-page-scroll h-full w-full overflow-x-hidden overflow-y-auto px-5 py-7">
       <div className="flex min-h-full w-full flex-col items-center justify-center">{children}</div>
@@ -90,6 +99,7 @@ export function ScreenShell({
   className?: string;
   maxWidthClass?: string;
 }) {
+  useGameTranslation();
   return (
     <div className={cn("mx-auto flex w-full flex-col", screenShellPaddingClass, "min-h-0", maxWidthClass, className)}>
       {children}
@@ -116,6 +126,7 @@ export function TitledScreenShell({
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
+  useGameTranslation();
   return (
     <div className="relative h-full w-full overflow-hidden">
       <PageLayout>
@@ -137,6 +148,7 @@ export function ScreenDescription({
   className?: string;
   tone?: "default" | "danger";
 }) {
+  useGameTranslation();
   return (
     <p
       className={cn(

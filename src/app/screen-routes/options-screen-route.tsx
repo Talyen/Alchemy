@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from "react";
+import { languagePreference, subscribeLanguage, setLanguagePreference } from "@/lib/localization/language";
 import { playUISound } from "@/lib/audio";
 import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/device-display-store";
 import { isDesktop } from "@/lib/platform";
@@ -15,6 +17,7 @@ function OptionsScreenRoute({
   onOpenGameMenu,
   onOpenBoards,
 }: OptionsRouteCtx) {
+  const selectedLanguage = useSyncExternalStore(subscribeLanguage, languagePreference, languagePreference);
   const settings = useAppSettings();
   const actions = useSettingsActions();
   const showClearSaveConfirm = useUiStore((s) => s.showClearSaveConfirm);
@@ -33,6 +36,8 @@ function OptionsScreenRoute({
       onMenu={onOpenGameMenu}
       display={{
         onOpenBoards,
+        languagePreference: selectedLanguage,
+        onLanguageChange: setLanguagePreference,
         showDisplayMode: isDesktop(),
         gameSizePercent,
         tooltipSizePercent,
@@ -51,6 +56,7 @@ function OptionsScreenRoute({
           // device sizes alone (see clearAllPersistentGameData).
           actions.resetToDefaults();
           resetSizes();
+          setLanguagePreference("auto");
           playUISound("destructiveConfirm");
         },
       }}

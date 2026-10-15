@@ -38,6 +38,10 @@ export const TEST_SUITES = Object.freeze({
 // directory membership; unrelated gameplay does not affect these fixed suites.
 export const LOCAL_CHECK_INPUTS = Object.freeze([
   "scripts",
+  "src/lib/localization",
+  "steam/store-copy.source.json",
+  "steam/localized-store-copy.json",
+  "steam/rich-presence.vdf",
   ...TEST_SUITES.local,
   "src/lib/rng",
   "src/lib/math.ts",

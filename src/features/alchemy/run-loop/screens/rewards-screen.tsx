@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { type ReactNode, useMemo, useState } from "react";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { getCardKeywords } from "@/lib/game-data";
@@ -35,6 +37,7 @@ function RewardChoiceItems({
   disabled: boolean;
   onClaimReward: (id: string) => void;
 }) {
+  useGameTranslation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   function claim(id: string) {
     if (disabled) return;
@@ -52,7 +55,7 @@ function RewardChoiceItems({
         )}
         data-reward-selected={selectedId === id || undefined}
       >
-        {child}
+        {displayText(child)}
       </div>
     );
   }
@@ -72,7 +75,9 @@ function RewardChoiceItems({
             selected={selectedId === choiceId}
             hoverKeywordShine
             onClick={() => claim(choiceId)}
-            ariaLabel={`Select ${getGearInstanceTitle(instance)}`}
+            ariaLabel={gameText("ui.rewards-screen.1", "Select {{value0}}", {
+              value0: displayText(getGearInstanceTitle(instance)),
+            })}
           />,
         );
       });
@@ -91,7 +96,7 @@ function RewardChoiceItems({
             hoverKeywordShine
             temporary={rewardState.rewardType === "boon"}
             onClick={() => claim(choiceId)}
-            ariaLabel={`Select ${trinket.title}`}
+            ariaLabel={gameText("ui.rewards-screen.2", "Select {{value0}}", { value0: displayText(trinket.title) })}
           />,
         );
       });
@@ -133,6 +138,7 @@ function RewardsFound({
   rewardGold: number;
   rewardMaterials: Partial<Record<MaterialId, number>>;
 }) {
+  useGameTranslation();
   const hasRewards = rewardGold > 0 || MATERIAL_IDS.some((mat) => (rewardMaterials[mat] ?? 0) > 0);
   // Reserve one pill-row height in both branches so gold/materials vs none
   // cannot move the choices or Skip footer. Matches ResourcePill md min-h.
@@ -171,6 +177,7 @@ export function RewardsScreen({
   claimInFlight?: boolean;
   rewardMaterials?: Partial<Record<MaterialId, number>>;
 }) {
+  useGameTranslation();
   const rewardChoices = rewardState.choices;
   const rewardGold = rewardState.gold;
 
@@ -179,13 +186,15 @@ export function RewardsScreen({
   const showSkip = rewardState.rewardType === "card" || rewardChoices.length === 0;
 
   return (
-    <TitledScreenShell title="Victory" maxWidthClass="max-w-6xl">
+    <TitledScreenShell title={gameText("ui.rewards-screen.3", "Victory")} maxWidthClass="max-w-6xl">
       <RewardPlasmaController rewardState={rewardState} />
       <FadeSlot
         swapKey={`${rewardState.rewardType}:${rewardChoices.map((item) => getRewardChoiceId(item)).join("-")}`}
         className="flex flex-col"
       >
-        <h2 className={cn("mt-3 text-center font-sans", sectionTitleClass)}>Choose a Reward</h2>
+        <h2 className={cn("mt-3 text-center font-sans", sectionTitleClass)}>
+          {gameText("ui.rewards-screen.4", "Choose a Reward")}
+        </h2>
         <div className="mt-4 flex flex-col items-center gap-8">
           {/* Reserve one tile row (collection width 17.2868rem at 3/4 aspect) so
               1-2 choice, empty, and 3-choice states share the same height. */}
@@ -199,7 +208,7 @@ export function RewardsScreen({
         <div className="mt-5 flex min-h-16 justify-center">
           {showSkip ? (
             <Button variant="outline" size="lg" className="min-w-56" disabled={skipDisabled} onClick={onSkip}>
-              Skip
+              {gameText("ui.rewards-screen.5", "Skip")}
             </Button>
           ) : (
             <div aria-hidden="true" className="h-16" />

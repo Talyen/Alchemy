@@ -385,3 +385,7 @@ saved booleans survive unchanged. Claiming the first Campaign Act I boss reward
 resolves the receipt atomically with any material top-up. A successful Homestead
 purchase also resolves it. Homestead reset preserves it; Clear Save Data resets
 it. No schema-version increment or supported payload transformation is required.
+
+## Localized description cache
+
+Structured card description lines may carry an additive data-only `message` cache with an English template ID and named keyword/magnitude slots. Hydration regenerates this cache from saved literal parts, effects and magnitude bindings; invalid cache metadata cannot replace valid mechanics. Current-format cards, custom wording, Mixed Potion grouping and upgrades remain intact. Unknown legacy templates remain playable in English. The device-local language preference is outside the progress envelope and Steam Cloud; no save-version change is required. See [Localization](../../../../../Docs/LOCALIZATION.md).

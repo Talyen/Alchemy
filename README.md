@@ -22,6 +22,8 @@ Collection entries unlock as you finish runs.
 A run's map mixes combat with shops, Mystery events, Corruption altars, and
 Campfires.
 
+[Localization](./Docs/LOCALIZATION.md) describes the AI translation workflow, language settings, and Steam exports.
+
 ## Prerequisites
 
 - Node.js `^20.19.0 || >=22.12.0` (see `engines` in `package.json`; `.node-version` pins 24 for local dev)

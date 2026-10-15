@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { displayText } from "@/lib/localization/runtime";
 import { ShineBorder } from "@/components/ui/shine-border";
 import {
   GEAR_ASTRAL_SHINE_BORDER_WIDTH,
@@ -53,6 +55,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   onCombatLockedAttempt: () => void;
   isArtHidden?: boolean;
 }) {
+  useGameTranslation();
   const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
   const shineColors = instance ? getAstralShineColors(instance) : undefined;
   const target = getArmoryItemInteraction({
@@ -96,12 +99,12 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
           plasmaColorPair={getPlasmaColorPairForGear(instance)}
         >
           <GearTooltipContent definition={definition} instance={instance} />
-          {blockedReason ? <p className="mt-3 text-sm text-warning">{blockedReason}</p> : null}
+          {blockedReason ? <p className="mt-3 text-sm text-warning">{displayText(blockedReason)}</p> : null}
         </PortaledTooltip>
       ) : null}
       <Surface
         as="button"
-        ariaLabel={ariaLabel}
+        ariaLabel={displayText(ariaLabel)}
         {...(reservedBy ? { ariaDisabled: true } : {})}
         ariaPressed={selected}
         overlay={

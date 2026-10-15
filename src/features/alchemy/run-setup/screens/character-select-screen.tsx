@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { isEditionCharacterAvailable, FULL_GAME_LOCK_MESSAGE } from "@/lib/game-edition";
 import { memo } from "react";
 import { cn } from "@/lib/utils";
@@ -49,6 +51,7 @@ const CharacterCard = memo(function CharacterCard({
   unlockRequirementText: string;
   tooltipPlacement: "above" | "below";
 }) {
+  useGameTranslation();
   const {
     triggerRef,
     visible,
@@ -75,7 +78,11 @@ const CharacterCard = memo(function CharacterCard({
       >
         <Surface
           as="button"
-          ariaLabel={isLocked ? `${char.name} (Locked)` : `Select ${char.name}`}
+          ariaLabel={displayText(
+            isLocked
+              ? gameText("ui.character-select-screen.d1", "{{value0}} (Locked)", { value0: displayText(char.name) })
+              : gameText("ui.character-select-screen.d2", "Select {{value0}}", { value0: displayText(char.name) }),
+          )}
           ariaDisabled={isLocked}
           className={cn(
             "group relative w-full rounded-shell-tooltip border border-border/80 shadow-md",
@@ -96,7 +103,7 @@ const CharacterCard = memo(function CharacterCard({
         >
           <img
             src={art}
-            alt={char.name}
+            alt={displayText(char.name)}
             decoding="async"
             className={cn(
               cardSurfaceClass,
@@ -118,7 +125,7 @@ const CharacterCard = memo(function CharacterCard({
         ) : null}
       </div>
       <p className={cn("font-sans text-2xl font-bold text-gold-pale/90", isLocked && "text-muted-foreground/60")}>
-        {char.name}
+        {displayText(char.name)}
       </p>
     </div>
   );
@@ -135,9 +142,10 @@ export function CharacterSelectScreen({
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
+  useGameTranslation();
   return (
     <TitledScreenShell
-      title="Choose Your Hero"
+      title={gameText("ui.character-select-screen.1", "Choose Your Hero")}
       maxWidthClass={chooserHeroRowShellWidthClass}
       onBack={onBack}
       onMenu={onMenu}

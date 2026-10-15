@@ -25,3 +25,5 @@ export {
   getCardDescription,
 } from "./effect-metadata";
 export * from "./card-description-model";
+
+export { buildDescriptionMessage, type DescriptionMessage, type DescriptionMessageValue } from "./description-message";

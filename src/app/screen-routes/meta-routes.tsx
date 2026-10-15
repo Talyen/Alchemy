@@ -1,3 +1,5 @@
+import { text as gameText } from "@/lib/localization/runtime";
+import { useGameTranslation } from "@/components/use-game-translation";
 import { BoardRewardScreen } from "@/features/alchemy/shared/ui/board-reward-screen";
 import { playUISound } from "@/lib/audio";
 import { IS_DEMO } from "@/lib/game-edition";
@@ -29,6 +31,7 @@ import { useGearArmorySlice, useGearCombatRestrictions } from "@/features/alchem
 import type { MetaRouteCtx } from "./route-ctx";
 
 function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
+  useGameTranslation();
   const commands = routeCommands.meta;
   const { hasUnspentTalents, hasAffordableHomestead } = useMenuBadges();
   const hasActiveRun = useHasActiveRun();
@@ -38,7 +41,7 @@ function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
     return (
       <BoardRewardScreen
         boardId={pendingBoardRewardId}
-        continueLabel="Main Menu"
+        continueLabel={gameText("ui.meta-routes.attr1", "Main Menu")}
         onUseBoard={() => {
           routeCommands.boards.acknowledgeReward(pendingBoardRewardId, true);
         }}
@@ -74,6 +77,7 @@ function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
 }
 
 function ArmoryScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteCtx) {
+  useGameTranslation();
   const commands = routeCommands.meta.armory;
   const gear = useGearArmorySlice();
   const combatRestrictions = useGearCombatRestrictions();
@@ -94,6 +98,7 @@ function ArmoryScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteC
 }
 
 function GameModeSelectScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteCtx) {
+  useGameTranslation();
   const commands = routeCommands.meta;
   const finishedRunCharacters = useFinishedRunCharacters();
   return (
@@ -109,6 +114,7 @@ function GameModeSelectScreenRoute({ routeCommands, onBack, onOpenGameMenu }: Me
 }
 
 function CollectionScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteCtx) {
+  useGameTranslation();
   const commands = routeCommands.meta;
   const profile = useProfileCollectionSlice();
   const boards = useBoards();
@@ -131,6 +137,7 @@ function CollectionScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRo
 }
 
 function HomesteadScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteCtx) {
+  useGameTranslation();
   const commands = routeCommands.meta;
   const homesteadValues = useHomesteadProgressSlice();
   const { discoveredCardIds } = useProfileDiscoverySlice();
@@ -153,6 +160,7 @@ function HomesteadScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRou
 }
 
 function TalentsScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRouteCtx) {
+  useGameTranslation();
   const commands = routeCommands.meta;
   const talentProgress = useTalentProgressSlice();
 

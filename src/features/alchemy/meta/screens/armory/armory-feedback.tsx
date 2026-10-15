@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { useMemo } from "react";
 import { createPortal } from "react-dom";
 import { type GearInstance } from "@/lib/gear";
@@ -18,6 +20,7 @@ export function ArmoryFeedback({
   onDismiss: () => void;
   error?: boolean;
 }) {
+  useGameTranslation();
   const open = Boolean(notice || (result && after));
   const { mounted, phase } = useFadePresence(open);
   const content = useMemo(() => ({ notice, result, after, error }), [notice, result, after, error]);
@@ -38,14 +41,14 @@ export function ArmoryFeedback({
             role={held.error ? "alert" : "status"}
             className={cn("text-sm", held.error ? "text-red-100" : "text-gold-pale")}
           >
-            {held.notice}
+            {displayText(held.notice)}
           </p>
           <button
             type="button"
             className="mt-2 rounded px-2 py-1 text-sm underline underline-offset-4"
             onClick={onDismiss}
           >
-            Dismiss message
+            {gameText("ui.armory-feedback.1", "Dismiss message")}
           </button>
         </>
       ) : held.result && held.after ? (

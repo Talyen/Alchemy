@@ -1,6 +1,8 @@
+import { readFileSync } from "node:fs";
+import { characters } from "@/lib/game-data";
 import { describe, expect, it } from "vitest";
 import { getRunPhase, isRunLoopScreen, ROUTE_SCREENS } from "@/lib/routing";
-import { getSteamRichPresenceLabel } from "@/lib/routing/run-phase-presence";
+import { getSteamRichPresenceToken } from "@/lib/routing/run-phase-presence";
 
 describe("run-screen-router", () => {
   it("classifies run loop screens", () => {
@@ -18,22 +20,18 @@ describe("run-screen-router", () => {
   });
 });
 
-describe("getSteamRichPresenceLabel", () => {
-  it("uses battle phase for active combat", () => {
-    expect(getSteamRichPresenceLabel(ROUTE_SCREENS.BATTLE, "battle", "wizard")).toBe("Fighting as wizard");
-  });
-
-  it("labels run-end screens", () => {
-    expect(getSteamRichPresenceLabel(ROUTE_SCREENS.GAME_OVER, "runEnd")).toBe("Run Ended");
-    expect(getSteamRichPresenceLabel(ROUTE_SCREENS.RUN_VICTORY, "runEnd")).toBe("Run Victory");
-  });
-
-  it("labels meta and run-loop screens by screen when not in battle phase", () => {
-    expect(getSteamRichPresenceLabel(ROUTE_SCREENS.HOMESTEAD, "meta")).toBe("Upgrading Homestead");
-    expect(getSteamRichPresenceLabel(ROUTE_SCREENS.SHOP, "runLoop")).toBe("Trading in Shop");
-    expect(getSteamRichPresenceLabel(ROUTE_SCREENS.BATTLE, "runLoop")).toBe("In Combat");
-    expect(getSteamRichPresenceLabel(ROUTE_SCREENS.MENU, "meta")).toBe("In Menu");
-    expect(getSteamRichPresenceLabel(ROUTE_SCREENS.TRANSMUTATION, "runLoop")).toBe("Transmuting a Card");
-    expect(getSteamRichPresenceLabel(ROUTE_SCREENS.WILDWOOD_REMOVAL, "runLoop")).toBe("Refining the Deck");
-  });
+it("exports valid localized Steam tokens for every route, outcome and hero", () => {
+  const vdf = readFileSync(new URL("../../../steam/rich-presence.vdf", import.meta.url), "utf8");
+  expect(vdf.match(/"lang"/g)).toHaveLength(1);
+  for (const language of ["english", "german"])
+    expect(vdf).toMatch(new RegExp(`"${language}"\\s*\\{\\s*"tokens"\\s*\\{`));
+  const tokens = [...vdf.matchAll(/^\s*"(#[^"]+)" "(.+)"$/gm)].map((match) => match[1]);
+  for (const token of tokens) expect(token).toMatch(/^#[a-zA-Z0-9_]+$/);
+  for (const screen of Object.values(ROUTE_SCREENS)) {
+    const token = getSteamRichPresenceToken(screen, getRunPhase(screen, screen === ROUTE_SCREENS.BATTLE));
+    expect(tokens.filter((entry) => entry === token)).toHaveLength(2);
+  }
+  for (const hero of Object.keys(characters))
+    expect(tokens.filter((entry) => entry === `#hero_${hero}`)).toHaveLength(2);
+  expect(vdf.match(/\{#hero_%hero%\}/g)).toHaveLength(2);
 });

@@ -1,3 +1,5 @@
+import { loadBundledCatalogs } from "@/app/load-localization";
+import { initializeLanguage } from "@/lib/localization/language";
 import React from "react";
 import ReactDOM from "react-dom/client";
 
@@ -10,6 +12,7 @@ import { initDeviceDisplayPreferences } from "@/features/alchemy/shared/stores/d
 
 initErrorLogStore();
 initDeviceDisplayPreferences();
+
 initializeRendererCrashReporting();
 
 const cursorStyle = document.createElement("style");
@@ -36,8 +39,17 @@ if (!rootElement) {
   throw new Error("Root element #root not found");
 }
 
-ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+async function boot(): Promise<void> {
+  try {
+    await loadBundledCatalogs();
+  } catch (error) {
+    console.error("Localization startup failed; using English", error);
+  }
+  await initializeLanguage();
+  ReactDOM.createRoot(rootElement!).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
+}
+void boot();

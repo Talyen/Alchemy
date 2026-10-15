@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import "./options/options-layout.css";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -45,6 +47,7 @@ export function OptionsScreen({
   saveData: SaveDataOptionsProps;
   dev: DevOptionsProps;
 }) {
+  useGameTranslation();
   const [tab, setTab] = useState<OptionsTab>("display");
   const [showErrorLog, setShowErrorLog] = useState(false);
 
@@ -55,7 +58,7 @@ export function OptionsScreen({
           <ErrorLogViewer onClose={() => setShowErrorLog(false)} />
         ) : (
           <ScreenShell maxWidthClass="max-w-4xl" className="p-4">
-            <ScreenHeaderRow title="Options" onBack={onBack} onMenu={onMenu} />
+            <ScreenHeaderRow title={gameText("ui.options-screen.1", "Options")} onBack={onBack} onMenu={onMenu} />
 
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               <TabBar tabs={optionsTabs} activeTab={tab} onSelectTab={setTab} />
@@ -82,7 +85,7 @@ export function OptionsScreen({
                   inert={tab !== id}
                   aria-hidden={tab !== id}
                 >
-                  {panel}
+                  {displayText(panel)}
                 </div>
               ))}
             </FadeSlot>
@@ -92,15 +95,13 @@ export function OptionsScreen({
 
       <ConfirmationDialog
         open={saveData.showClearSaveConfirm}
-        title="Clear Save Data"
-        description={
+        title={gameText("ui.options-screen.2", "Clear Save Data")}
+        description={displayText(
           <>
-            Are you sure you wish to clear all Save Data?
-            <br />
-            This cannot be undone
-          </>
-        }
-        confirmLabel="Clear Save Data"
+            {gameText("options.clear-confirm", "Are you sure you wish to clear all Save Data? This cannot be undone")}
+          </>,
+        )}
+        confirmLabel={gameText("ui.options-screen.3", "Clear Save Data")}
         dimBackground={false}
         onConfirm={saveData.onConfirmClearSave}
         onCancel={saveData.onCloseClearSaveConfirm}

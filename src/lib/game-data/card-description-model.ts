@@ -1,3 +1,4 @@
+import { buildDescriptionMessage, type DescriptionMessage } from "./description-message";
 import { effectChildren } from "./effect-tree";
 import type { BattleCard, BattleCardEffect } from "./types";
 
@@ -45,6 +46,7 @@ export interface CardMagnitude {
 
 export type CardDescriptionPart = string | CardMagnitude;
 interface CardDescriptionLine {
+  message?: DescriptionMessage;
   parts: CardDescriptionPart[];
   role: "effect" | "keyword" | "consume";
 }
@@ -132,6 +134,14 @@ export function carryCardDescriptionMarks(previous: CardDescription, description
   }
   return description.map((line) => ({
     ...line,
+    ...(line.message
+      ? {
+          message: {
+            ...line.message,
+            slots: Object.fromEntries(Object.entries(line.message.slots).map(([name, slot]) => [name, { ...slot }])),
+          },
+        }
+      : {}),
     parts: line.parts.map((part) => {
       if (typeof part === "string") return part;
       const prior = identities.get(magnitudeSignature(part));
@@ -149,10 +159,13 @@ export function renderCardDescription(effects: readonly BattleCardEffect[], desc
   const magnitudes: RenderedCardMagnitude[] = [];
   const identities = new Map<string, string>();
   const corruptedValuePositions: NonNullable<BattleCard["corruptedValuePositions"]> = [];
+  const localizedLines: Array<ReturnType<typeof buildDescriptionMessage>> = [];
   const descriptionLines = description.map(({ parts }, lineIndex) => {
+    const messageParts: Array<{ text: string; magnitudeId?: string }> = [];
     let line = "";
     for (const part of parts) {
       if (typeof part === "string") {
+        messageParts.push({ text: part });
         line += part;
         continue;
       }
@@ -165,13 +178,15 @@ export function renderCardDescription(effects: readonly BattleCardEffect[], desc
       identities.set(part.id, signature);
       const matchIndex = line.length;
       const text = formatMagnitude(value, part.format);
+      messageParts.push({ text, magnitudeId: part.id });
       magnitudes.push({ id: part.id, magnitude: part, value, lineIndex, matchIndex });
       if (part.corrupted && /^\d/.test(text)) corruptedValuePositions.push({ lineIndex, matchIndex });
       line += text;
     }
+    localizedLines.push(buildDescriptionMessage(messageParts));
     return line;
   });
-  return { descriptionLines, magnitudes, corruptedValuePositions };
+  return { descriptionLines, magnitudes, corruptedValuePositions, localizedLines };
 }
 
 export function withCardDescription(card: BattleCard, description: CardDescription): BattleCard {
@@ -179,7 +194,10 @@ export function withCardDescription(card: BattleCard, description: CardDescripti
   const { corruptedValuePositions: _previous, ...rest } = card;
   return {
     ...rest,
-    description,
+    description: description.map((line, index) => {
+      const message = rendered.localizedLines[index]!;
+      return { ...line, message: { id: message.id, template: message.template, slots: message.slots } };
+    }),
     descriptionLines: rendered.descriptionLines,
     ...(rendered.corruptedValuePositions.length ? { corruptedValuePositions: rendered.corruptedValuePositions } : {}),
   };
@@ -192,6 +210,14 @@ export function mapCardDescriptionReferences(
 ): CardDescription {
   return description.map((line) => ({
     ...line,
+    ...(line.message
+      ? {
+          message: {
+            ...line.message,
+            slots: Object.fromEntries(Object.entries(line.message.slots).map(([name, slot]) => [name, { ...slot }])),
+          },
+        }
+      : {}),
     parts: line.parts.map((part) =>
       typeof part === "string"
         ? part

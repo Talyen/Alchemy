@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { useState, type ReactNode } from "react";
 
 import { type BattleCard, type CardDescriptionContext } from "@/lib/game-data";
@@ -30,6 +32,7 @@ function WishCardItem({
   onSelect: (card: BattleCard) => void;
   descriptionContext: CardDescriptionContext;
 }) {
+  useGameTranslation();
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("wish", card.id);
   // Autoplay previews reuse the hover lift without the description popup.
   const isPreview = useUiStore((s) => s.autoplayPreviewCardId === getHoverId("wish", card.id));
@@ -42,7 +45,7 @@ function WishCardItem({
       onHoverStart={onHoverStart}
       onHoverEnd={onHoverEnd}
       onClick={() => onSelect(card)}
-      ariaLabel={`Choose ${getCardDisplayTitle(card)}`}
+      ariaLabel={gameText("ui.wish-overlay.1", "Choose {{value0}}", { value0: getCardDisplayTitle(card) })}
       descriptionContext={descriptionContext}
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
@@ -62,6 +65,7 @@ function WishOverlayPanel({
   displayState: BattleScreenState;
   onWishChoice: (card: BattleCard) => void;
 }) {
+  useGameTranslation();
   const onWishChoiceRef = useLatestRef(onWishChoice);
   const descriptionContext = useBattleDescriptionContext(displayState);
 
@@ -78,11 +82,13 @@ function WishOverlayPanel({
       className="wish-overlay-backdrop flex items-center justify-center p-6"
     >
       <WishPanel>
-        <ScreenHeader title="Wish" />
+        <ScreenHeader title={gameText("ui.wish-overlay.2", "Wish")} />
         <p className={cn("mt-2 text-center", bodyTextClass)}>
-          {displayState.hand.length >= MAX_HAND_SIZE
-            ? "Your hand is full. Choose one card to wait until space opens."
-            : "Choose one card to add to your hand."}
+          {displayText(
+            displayState.hand.length >= MAX_HAND_SIZE
+              ? gameText("ui.wish-overlay.d1", "Your hand is full. Choose one card to wait until space opens.")
+              : gameText("ui.wish-overlay.d2", "Choose one card to add to your hand."),
+          )}
         </p>
 
         <div className="mt-6 flex min-h-0 items-start justify-center gap-5 overflow-y-auto p-3">
@@ -96,6 +102,7 @@ function WishOverlayPanel({
 }
 
 function WishPanel({ children }: { children: ReactNode }) {
+  useGameTranslation();
   const { panelRef, handleKeyDown } = useDialogFocus();
   return (
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Mandatory choice modal contains keyboard focus
@@ -103,7 +110,7 @@ function WishPanel({ children }: { children: ReactNode }) {
       ref={panelRef}
       role="dialog"
       aria-modal="true"
-      aria-label="Wish"
+      aria-label={gameText("ui.wish-overlay.3", "Wish")}
       tabIndex={-1}
       onKeyDown={handleKeyDown}
       className="wish-overlay-panel alchemy-shell flex max-h-full w-fit max-w-5xl flex-col rounded-shell-screen border border-border/80 px-6 py-6"
@@ -122,6 +129,7 @@ export function WishOverlay({
   battleState: BattleScreenState;
   actions: BattleActionsProps;
 }) {
+  useGameTranslation();
   // ModalOverlayShell holds the rendered choices and descriptions through exit;
   // a second snapshot here would also retain unrelated battle piles and events.
   const [openSession, setOpenSession] = useState({ open, options: battleState.wishOptions, id: 0 });

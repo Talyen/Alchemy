@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { useId, useMemo, useState, type ReactNode, type RefObject } from "react";
 import { X, type LucideIcon } from "lucide-react";
 import { ChromeIconButton } from "../chrome-icon-button";
@@ -23,6 +25,7 @@ export function InspectionCardGrid({
   resetKey: string;
   sort?: boolean;
 }) {
+  useGameTranslation();
   const [pagination, setPagination] = useState({ key: resetKey, page: 0 });
   if (pagination.key !== resetKey) setPagination({ key: resetKey, page: 0 });
   const items = useMemo(
@@ -52,6 +55,7 @@ export function InspectionCardGrid({
 }
 
 export function InspectionEmptyState({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+  useGameTranslation();
   return (
     <div
       role="img"
@@ -86,6 +90,7 @@ export function InspectionOverlayShell({
   overlayClassName?: string;
   children: ReactNode;
 }) {
+  useGameTranslation();
   return (
     <ModalOverlayShell
       open={open}
@@ -124,6 +129,7 @@ function InspectionPanel({
   returnFocusRef?: RefObject<HTMLElement | null> | undefined;
   children: ReactNode;
 }) {
+  useGameTranslation();
   const titleId = useId();
   const { panelRef, handleKeyDown } = useDialogFocus(returnFocusRef);
   return (

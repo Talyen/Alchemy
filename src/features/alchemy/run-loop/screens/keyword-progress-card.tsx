@@ -1,3 +1,6 @@
+import { text as gameText, displayText } from "@/lib/localization/runtime";
+import { GameMessage } from "@/components/localization";
+import { useGameTranslation } from "@/components/use-game-translation";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
@@ -18,6 +21,7 @@ export function KeywordProgressCard({
   animate: boolean;
   size?: "md" | "lg";
 }) {
+  useGameTranslation();
   const { displayLevel, progressPercent } = getTalentKeywordProgress(totalXP, 0);
   const Icon = keywordIcons[kw];
   const def = keywordDefinitions[kw];
@@ -29,13 +33,22 @@ export function KeywordProgressCard({
         <div className={cn("flex items-center", large ? "gap-2" : "gap-1.5")}>
           {Icon ? <Icon className={cn(large ? "h-6 w-6" : "h-5 w-5", def?.colorClass)} /> : null}
           <span className={cn(large ? "text-lg" : "text-base", "font-semibold", def?.colorClass)}>
-            {def?.label ?? kw}
+            {displayText(def?.label ?? kw)}
           </span>
         </div>
-        <span className={cn(large ? "text-lg" : "text-base", "font-semibold", def?.colorClass)}>Lv{displayLevel}</span>
+        <span className={cn(large ? "text-lg" : "text-base", "font-semibold", def?.colorClass)}>
+          <GameMessage
+            id="ui.keyword-progress-card.s1"
+            defaultValue="Lv<part0/>"
+            parts={{ part0: displayText(displayLevel) }}
+          />
+        </span>
       </div>
       <Progress
-        aria-label={`${def?.label ?? kw} level ${displayLevel} progress`}
+        aria-label={gameText("ui.keyword-progress-card.2", "{{value0}} level {{value1}} progress", {
+          value0: displayText(def?.label ?? kw),
+          value1: displayText(displayLevel),
+        })}
         size="sm"
         value={animate ? progressPercent : 0}
         className={cn("h-1.5", large ? "mt-2.5" : "mt-2")}

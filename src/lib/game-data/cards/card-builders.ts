@@ -91,16 +91,18 @@ export function summonCompanionCard({ id, title, art, companionId, cost = 1 }: S
   const companionTitle = companion.title.endsWith(" Companion")
     ? companion.title.slice(0, -" Companion".length)
     : undefined;
-  return {
-    id,
-    title: title ?? companionTitle ?? deriveTitle(id),
-    descriptionLines,
-    description: descriptionLines.map((line, index) => ({
+  return withCardDescription(
+    {
+      id,
+      title: title ?? companionTitle ?? deriveTitle(id),
+      descriptionLines,
+      art: art ?? companion.art,
+      cost,
+      effects: [{ kind: "summon-companion", companionId }],
+    },
+    descriptionLines.map((line, index) => ({
       parts: [line],
       role: index === descriptionLines.length - 1 ? "keyword" : "effect",
     })),
-    art: art ?? companion.art,
-    cost,
-    effects: [{ kind: "summon-companion", companionId }],
-  };
+  );
 }

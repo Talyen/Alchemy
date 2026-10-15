@@ -173,6 +173,13 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       enabled: argv.includes("--pre-push"),
     },
     {
+      key: "localization",
+      label: "localization freshness and contracts",
+      command: "npm",
+      args: ["run", "i18n:check"],
+      enabled: true,
+    },
+    {
       key: "verification",
       label: full ? "changed-path verification" : "fixed Node smoke selection",
       command: "node",

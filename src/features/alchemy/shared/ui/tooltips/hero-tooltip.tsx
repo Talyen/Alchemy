@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { FULL_GAME_LOCK_MESSAGE } from "@/lib/game-edition";
 import type { RefObject } from "react";
 import type { CharacterDefinition } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -26,6 +28,7 @@ export function HeroTooltip({
   visible: boolean;
   placement?: PortaledTooltipPlacement;
 }) {
+  useGameTranslation();
   return (
     <PortaledTooltip
       triggerRef={triggerRef}
@@ -33,13 +36,13 @@ export function HeroTooltip({
       placement={placement}
       plasmaColorPair={isLocked || requiresFullGame ? null : getPlasmaColorPairForCharacter(character.id)}
     >
-      <TooltipHeader>{character.name}</TooltipHeader>
+      <TooltipHeader>{displayText(character.name)}</TooltipHeader>
 
       {isLocked || requiresFullGame ? (
         <TooltipBody>
           <p>
             {requiresFullGame ? (
-              <strong className="font-bold text-destructive">{FULL_GAME_LOCK_MESSAGE}</strong>
+              <strong className="font-bold text-destructive">{displayText(FULL_GAME_LOCK_MESSAGE)}</strong>
             ) : (
               renderUnlockMessage(unlockRequirementText)
             )}
@@ -49,16 +52,16 @@ export function HeroTooltip({
         <>
           {character.startingDeck.length > 0 ? (
             <>
-              <TooltipSubheader>Starting Deck</TooltipSubheader>
+              <TooltipSubheader>{gameText("ui.hero-tooltip.1", "Starting Deck")}</TooltipSubheader>
               <TooltipBody>
-                <p>{character.startingDeck.map((card) => card.title).join(", ")}</p>
+                <p>{displayText(character.startingDeck.map((card) => card.title).join(", "))}</p>
               </TooltipBody>
             </>
           ) : (
             <>
-              <TooltipSubheader>Draft a Deck</TooltipSubheader>
+              <TooltipSubheader>{gameText("ui.hero-tooltip.2", "Draft a Deck")}</TooltipSubheader>
               <TooltipBody>
-                <p>Choose your own fate</p>
+                <p>{gameText("ui.hero-tooltip.3", "Choose your own fate")}</p>
               </TooltipBody>
             </>
           )}
@@ -72,7 +75,7 @@ export function HeroTooltip({
           ) : (
             <div className="mt-2 flex">
               <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs leading-none font-semibold text-gold-pale/90">
-                All Keywords
+                {gameText("ui.hero-tooltip.4", "All Keywords")}
               </span>
             </div>
           )}

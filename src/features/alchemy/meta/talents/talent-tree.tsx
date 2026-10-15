@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { createElement, memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { Lock } from "lucide-react";
@@ -45,6 +47,7 @@ const TalentCard = memo(function TalentCard({
   onUnlock: ((talentId: string) => void) | undefined;
   onHoverTalent?: ((talent: TalentDefinition | null) => void) | undefined;
 }) {
+  useGameTranslation();
   const def = keywordDefinitions[talent.keywordId];
   const shineColors = getKeywordShineColors(talent.keywordId);
   const accentColor = shineColors[0];
@@ -85,7 +88,15 @@ const TalentCard = memo(function TalentCard({
     >
       {!isPlaceholder ? (
         <span className="sr-only">
-          {isUnlocked ? "Unlocked" : isUnlocking ? "Unlocking" : interactive ? "Available to unlock" : "Locked"}
+          {displayText(
+            isUnlocked
+              ? gameText("ui.talent-tree.d1", "Unlocked")
+              : isUnlocking
+                ? gameText("ui.talent-tree.d2", "Unlocking")
+                : interactive
+                  ? gameText("ui.talent-tree.d3", "Available to unlock")
+                  : gameText("ui.talent-tree.d4", "Locked"),
+          )}
         </span>
       ) : null}
       <TalentUnlockBurst active={isUnlocking} colors={shineColors} />
@@ -109,9 +120,11 @@ const TalentCard = memo(function TalentCard({
         >
           <div className="flex items-center justify-center gap-2">
             <span className={cn(isPlaceholder ? "text-muted-foreground" : def?.colorClass)}>
-              {isPlaceholder
-                ? createElement(Lock, { className: "h-7 w-7 sm:h-8 sm:w-8" })
-                : createElement(getTalentIcon(talent), { className: "h-7 w-7 sm:h-8 sm:w-8" })}
+              {displayText(
+                isPlaceholder
+                  ? createElement(Lock, { className: "h-7 w-7 sm:h-8 sm:w-8" })
+                  : createElement(getTalentIcon(talent), { className: "h-7 w-7 sm:h-8 sm:w-8" }),
+              )}
             </span>
             <span
               className={cn(
@@ -119,12 +132,12 @@ const TalentCard = memo(function TalentCard({
                 isPlaceholder ? "text-muted-foreground" : def?.colorClass,
               )}
             >
-              {isPlaceholder ? "Coming Soon" : (talent.name ?? "Talent")}
+              {displayText(isPlaceholder ? gameText("ui.talent-tree.d5", "Coming Soon") : (talent.name ?? "Talent"))}
             </span>
           </div>
           {isPlaceholder ? null : (
             <p className="mt-1 text-base leading-snug text-balance text-foreground/90 sm:text-lg">
-              {renderColoredKeywords(talent.description)}
+              {displayText(renderColoredKeywords(talent.description))}
             </p>
           )}
         </div>
@@ -146,6 +159,7 @@ export function TalentTree({
   onHoverTalent,
   className,
 }: TalentTreeProps) {
+  useGameTranslation();
   const [unlockingTalentId, setUnlockingTalentId] = useState<string | null>(null);
   const unlockTimerRef = useRef<number | null>(null);
   const unlockingTalentIdRef = useRef<string | null>(null);
@@ -186,7 +200,11 @@ export function TalentTree({
   );
 
   if (allTalents.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">No talents available.</p>;
+    return (
+      <p className="py-6 text-center text-sm text-muted-foreground">
+        {gameText("ui.talent-tree.1", "No talents available.")}
+      </p>
+    );
   }
 
   return (

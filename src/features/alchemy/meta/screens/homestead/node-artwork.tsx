@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { useEffect, useState, type CSSProperties } from "react";
 import { HOMESTEAD_FEEDBACK } from "@/lib/game-constants/ui-motion";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
@@ -29,6 +31,7 @@ export function HomesteadNodeArtwork({
   awaitingProgress: boolean;
   onPurchase: () => void;
 }) {
+  useGameTranslation();
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLButtonElement>();
   const reducedMotion = useReducedMotionPreference();
@@ -66,7 +69,9 @@ export function HomesteadNodeArtwork({
   const complete = node.level >= node.maxLevel;
   const canPurchase = node.affordable && !saving && !awaitingProgress;
   const materials = MATERIAL_IDS.filter((material) => (node.cost?.[material] ?? 0) > 0);
-  const costLabel = materials.map((material) => `${node.cost![material]} ${materialLabels[material]}`).join(", ");
+  const costLabel = materials
+    .map((material) => `${node.cost![material]} ${displayText(materialLabels[material])}`)
+    .join(", ");
   return (
     <>
       <Surface
@@ -85,13 +90,17 @@ export function HomesteadNodeArtwork({
         onClick={() => {
           if (canPurchase) onPurchase();
         }}
-        ariaLabel={
+        ariaLabel={displayText(
           saving
-            ? `Saving ${node.title}`
+            ? gameText("ui.node-artwork.d1", "Saving {{value0}}", { value0: displayText(node.title) })
             : node.cost
-              ? `${node.action} ${node.title} for ${costLabel}`
-              : `View ${node.title}`
-        }
+              ? gameText("ui.node-artwork.d2", "{{value0}} {{value1}} for {{value2}}", {
+                  value0: displayText(node.action),
+                  value1: displayText(node.title),
+                  value2: displayText(costLabel),
+                })
+              : gameText("ui.node-artwork.d3", "View {{value0}}", { value0: displayText(node.title) }),
+        )}
         ariaDisabled={!canPurchase}
         style={feedbackStyle}
         className={cn(
@@ -105,7 +114,7 @@ export function HomesteadNodeArtwork({
               role="status"
               className="pointer-events-none absolute inset-x-0 bottom-3 z-20 text-center text-sm text-foreground"
             >
-              <span className="rounded-full bg-black/80 px-3 py-1">Saving…</span>
+              <span className="rounded-full bg-black/80 px-3 py-1">{gameText("ui.node-artwork.1", "Saving…")}</span>
             </span>
           ) : feedback ? (
             <>
@@ -120,9 +129,19 @@ export function HomesteadNodeArtwork({
           ) : complete || !node.discovered ? (
             <span className="pointer-events-none absolute right-3 bottom-3 z-20 drop-shadow-[0_1px_3px_rgba(0,0,0,1)]">
               {complete ? (
-                <Check className="h-5 w-5 text-foreground/80" aria-label={node.companion ? "Max bond" : "Complete"} />
+                <Check
+                  className="h-5 w-5 text-foreground/80"
+                  aria-label={displayText(
+                    node.companion
+                      ? gameText("ui.node-artwork.d4", "Max bond")
+                      : gameText("ui.node-artwork.d5", "Complete"),
+                  )}
+                />
               ) : (
-                <LockKeyhole className="h-5 w-5 text-foreground/80" aria-label="Undiscovered" />
+                <LockKeyhole
+                  className="h-5 w-5 text-foreground/80"
+                  aria-label={gameText("ui.node-artwork.2", "Undiscovered")}
+                />
               )}
             </span>
           ) : null
@@ -130,7 +149,7 @@ export function HomesteadNodeArtwork({
       >
         <img
           src={node.art}
-          alt={node.title}
+          alt={displayText(node.title)}
           draggable={false}
           decoding="async"
           className={cn(
@@ -163,11 +182,15 @@ export function HomesteadNodeArtwork({
         className="homestead-tooltip"
       >
         <TooltipHeader className="mb-0 flex items-center justify-between gap-3">
-          <span>{node.title}</span>
+          <span>{displayText(node.title)}</span>
           {node.discovered && (
             <span
               role="img"
-              aria-label={`${node.companion ? "Bond" : "Level"} ${node.level} of ${node.maxLevel}`}
+              aria-label={gameText("ui.node-artwork.3", "{{value0}} {{value1}} of {{value2}}", {
+                value0: displayText(node.companion ? "Bond" : "Level"),
+                value1: displayText(node.level),
+                value2: displayText(node.maxLevel),
+              })}
               className="inline-flex shrink-0 items-center gap-0.5"
             >
               {Array.from({ length: node.maxLevel }, (_, index) => (

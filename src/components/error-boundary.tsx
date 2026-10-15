@@ -1,3 +1,4 @@
+import { text as gameText } from "@/lib/localization/runtime";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { logError } from "@/lib/error-logger";
 
@@ -62,9 +63,11 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="flex h-screen items-center justify-center bg-background text-foreground">
           <div className="text-center">
-            <h1 className="mb-4 text-2xl font-bold text-balance">Something went wrong</h1>
+            <h1 className="mb-4 text-2xl font-bold text-balance">
+              {gameText("ui.error-boundary.1", "Something went wrong")}
+            </h1>
             <p className="mb-6 text-balance text-muted-foreground">
-              An unexpected error occurred. Please reload the page.
+              {gameText("ui.error-boundary.2", "An unexpected error occurred. Please reload the page.")}
             </p>
             {/* Intentionally a native button: the default fallback must render
                 even when the shared Button primitive (or its imports) is the
@@ -77,7 +80,7 @@ export class ErrorBoundary extends Component<Props, State> {
               }}
               className="inline-flex h-16 items-center justify-center gap-2 rounded-xl bg-primary px-7 text-xl font-semibold whitespace-nowrap text-primary-foreground disabled:pointer-events-none disabled:opacity-50"
             >
-              Reload
+              {gameText("ui.error-boundary.3", "Reload")}
             </button>
           </div>
         </div>
