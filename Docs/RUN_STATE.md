@@ -403,6 +403,10 @@ promise does not cover power loss, subsequent filesystem failure, or browser evi
 Steam Cloud mirrors serialize independently and coalesce queued payloads per slot.
 Local acknowledgement does not wait for Cloud. Deletion discards queued uploads and
 drains an in-flight upload before removing mirrors so it cannot resurrect a save.
+`desktop/steam-cloud-storage.cjs` owns the process-wide Cloud operation lane across
+both slots. Reads, uploads, and deletion share that lane even when their originating
+renderer has been replaced; renderer-local mirror scheduling cannot provide this
+ordering on its own. Cloud request failures release the lane for subsequent work.
 
 ## Persistence API
 
@@ -435,6 +439,18 @@ and retry registration; pending session feedback survives until a covering save
 or explicit invalidation. Disposing the session cancels feedback acknowledgement
 but still drains authorized exit writes. Save receipts never enter the wire format.
 Low-level transport tests use the storage runtime directly to exercise arbitrary payloads below this session boundary.
+
+Acknowledged feedback has one session-owned FIFO delivery queue. A covering save
+reserves its batch before publishing idle, so idle observers and nested saves
+cannot deliver newer navigation or feedback ahead of older callbacks. Restore,
+clear, protection, and disposal revoke undelivered callbacks, including callbacks
+registered reentrantly while the queue is draining. Feedback failures are isolated.
+
+Explicit retry captures the pending career and checkpoint before notifying status
+observers, then selects the latest attached retry driver. Replacement or cancellation
+during notification revokes that request. If its driver detaches or throws before
+starting a save, the session persistence port performs a fresh checkpoint instead;
+retry never repeats the gameplay action or leaves saving dependent on a departed owner.
 
 `run-resume-codec.ts` translates the active-run progress and session fields to and from `ActiveRunData`. The encoder selects
 progress, mode geography, and one tagged `activity`; the decoder hydrates that

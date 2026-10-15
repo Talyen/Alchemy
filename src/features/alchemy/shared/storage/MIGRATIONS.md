@@ -243,6 +243,10 @@ skipped or superseded writes never acknowledge it. If both slots fail, progressi
 Couldn’t save and Retry. Retrying saves the committed snapshot without executing
 the action again. Automatic retry remains with the existing scheduler and cooldown;
 explicit Retry resets its submission latch without changing normal exit deduplication.
+The retry request belongs to the pending career and checkpoint. Restore or
+cancellation during status notification revokes it before a driver can run. A
+missing or throwing driver falls back to a fresh session checkpoint so its failure
+cannot strand the pending action in Saving….
 
 Checkpoint revisions, epochs, pending presentation references, and failure status
 are runtime-only. Restoring another run, successful clear, write protection, and disposal
@@ -255,6 +259,10 @@ slots with the newest queued payload per slot. A mirror failure cannot delay loc
 completion. Clear cancels queued mirrors and waits for an active upload before
 Cloud deletion. Candidate selection, account ownership, and recovery policy retain
 the existing contracts.
+The process-wide `desktop/steam-cloud-storage.cjs` lane also serializes Cloud reads,
+uploads, and deletion across renderer replacement. Deletion waits for uploads
+already admitted by a departed renderer, and following reads observe its result.
+This transport ordering does not delay local write acknowledgement on Cloud.
 
 ## Deletion
 

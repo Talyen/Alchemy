@@ -22,6 +22,7 @@ const {
 const { initializeMainSentry } = require("./sentry.cjs");
 const { resolveEdition, editionPolicy } = require("../game-edition.mjs");
 const { createDesktopSaveStorage } = require("./save-storage.cjs");
+const { createSteamCloudStorage } = require("./steam-cloud-storage.cjs");
 const { createDemoProgressBridge, stampSaveOwner } = require("./demo-progress.cjs");
 const TEST_PROFILE_ISOLATED =
   app.commandLine.hasSwitch("user-data-dir") || (!app.isPackaged && Boolean(process.env.ALCHEMY_ELECTRON_TEST_PROFILE));
@@ -84,6 +85,14 @@ const saveStorage = createDesktopSaveStorage({
   demoProgress,
   isSavePayload,
   stampOwner: (data) => stampSaveOwner(data, steamClient),
+});
+
+const steamCloudStorage = createSteamCloudStorage({
+  resolveSlot: resolveSaveSlot,
+  getSteam: () => steamClient,
+  isSavePayload,
+  stampOwner: stampSaveOwner,
+  maxPayloadBytes: MAX_SAVE_PAYLOAD_BYTES,
 });
 
 if (!USE_PACKAGED_RENDERER) parseDevServerUrl(DEV_SERVER_URL);
@@ -218,44 +227,9 @@ function registerIpcHandlers() {
   handleAuthorized("alchemy:write-save", saveStorage.write);
   handleAuthorized("alchemy:clear-save", saveStorage.clear);
 
-  handleAuthorized("alchemy:steam-cloud-read", async (slot) => {
-    const { name } = resolveSaveSlot(slot);
-    if (!steamClient) return null;
-    try {
-      if (!steamClient.cloud.fileExists(name)) return null;
-      const buffer = await steamClient.cloud.readFile(name);
-      if (buffer && buffer.length > MAX_SAVE_PAYLOAD_BYTES) {
-        console.error(`[save] Steam Cloud save exceeds ${MAX_SAVE_PAYLOAD_BYTES} bytes; ignoring.`);
-        return null;
-      }
-      return buffer ? buffer.toString("utf8") : null;
-    } catch (error) {
-      console.error("[save] Error reading Steam Cloud save:", error);
-      return null;
-    }
-  });
-
-  handleAuthorized("alchemy:steam-cloud-write", async (data, slot) => {
-    const { name } = resolveSaveSlot(slot);
-    if (!steamClient || !isSavePayload(data)) return false;
-    try {
-      return steamClient.cloud.writeFile(name, stampSaveOwner(data, steamClient));
-    } catch (error) {
-      console.error("[save] Error writing Steam Cloud save:", error);
-      return false;
-    }
-  });
-
-  handleAuthorized("alchemy:steam-cloud-delete", async (slot) => {
-    const { name } = resolveSaveSlot(slot);
-    if (!steamClient) return false;
-    try {
-      return steamClient.cloud.fileExists(name) ? steamClient.cloud.deleteFile(name) : true;
-    } catch (error) {
-      console.error("[save] Error deleting Steam Cloud save:", error);
-      return false;
-    }
-  });
+  handleAuthorized("alchemy:steam-cloud-read", steamCloudStorage.read);
+  handleAuthorized("alchemy:steam-cloud-write", steamCloudStorage.write);
+  handleAuthorized("alchemy:steam-cloud-delete", steamCloudStorage.remove);
 
   handleAuthorized("alchemy:steam-get-name", () => {
     try {
