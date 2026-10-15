@@ -10,6 +10,18 @@ afterEach(() => {
 });
 
 describe("useHoverVisible", () => {
+  it("does not resurrect a disabled tooltip when availability changes after the pointer leaves", () => {
+    const { result, rerender } = renderHook((interactive) => useHoverVisible({ interactive }), { initialProps: true });
+    act(() => result.current.onMouseEnter());
+    expect(result.current.visible).toBe(true);
+    rerender(false);
+    act(() => result.current.onMouseLeave());
+    rerender(true);
+    expect(result.current.visible).toBe(false);
+    act(() => result.current.onFocusCapture());
+    expect(result.current.visible).toBe(true);
+  });
+
   it("keeps inspection visible until both pointer and keyboard focus leave", () => {
     function InspectionHover() {
       const { wrapperRef, handleHoverStart, handleMouseLeave, handleBlur, visible } = useHoverVisible();

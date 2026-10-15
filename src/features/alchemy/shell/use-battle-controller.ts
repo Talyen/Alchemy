@@ -101,17 +101,20 @@ export function useBattleController({
   }, [updateAutoplayEnabled, gameSession]);
 
   const battle = useMemo(() => createBattleCapabilities(gameSession), [gameSession]);
-  const ctx = useBattleControllerContext({
-    battle,
-    presentation,
-    screen,
-    setHoveredCardId,
-    onBattleVictory,
-    onBattleDefeat,
-    measureElementRect,
-    measureVisualCardRect,
-    onSessionPrepared: applyPreferredAutoplay,
-  });
+  const ctx = useBattleControllerContext(
+    {
+      battle,
+      presentation,
+      screen,
+      setHoveredCardId,
+      onBattleVictory,
+      onBattleDefeat,
+      measureElementRect,
+      measureVisualCardRect,
+      onSessionPrepared: applyPreferredAutoplay,
+    },
+    gameSession,
+  );
 
   const playbackBound = useSyncExternalStore(ctx.playback.subscribe, ctx.playback.isBound);
   const bindPlayback = ctx.playback.bind;
@@ -150,8 +153,7 @@ export function useBattleController({
     () => ({
       endTurnButtonRef: ctx.endTurnButtonRef,
       handCardRefs: ctx.handCardRefs,
-      drawPileRef: ctx.drawPileRef,
-      discardPileRef: ctx.discardPileRef,
+      handDockRef: ctx.handDockRef,
       battleSceneRef: ctx.battleSceneRef,
       playerPanelRef: ctx.playerPanelRef,
       enemyPanelRef: ctx.enemyPanelRef,
@@ -173,6 +175,7 @@ export function useBattleController({
       toggleBoonInspect,
       closeBoonInspect,
       isCardPlayInProgress: () => ctx.playback.cardPlayInProgress,
+      subscribePlayback: ctx.playback.subscribe,
       isProgressSavePending: () => persistence.readProgress().kind !== "idle",
       subscribeProgressSave: persistence.subscribeProgress,
       presentBattleStart: actions.init.presentBattleStart,

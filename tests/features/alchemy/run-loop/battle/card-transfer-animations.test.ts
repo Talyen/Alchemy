@@ -5,14 +5,15 @@ import { makeTestCardWithId } from "../../../../fixtures/battle";
 import { installImmediateRafForTests } from "./battle-test-reset";
 import { deferred } from "../../../../helpers/deferred";
 
-const pileRect = { x: 0, y: 0, width: 40, height: 60 };
+const dockRect = { x: 0, y: 0, width: 40, height: 60 };
 const handRect = { x: 100, y: 200, width: 80, height: 120 };
 
 function makeDeps(overrides: Partial<CardTransferAnimationDeps> = {}): CardTransferAnimationDeps {
   return {
     isSessionActive: () => true,
-    measureDiscardPile: () => pileRect,
-    measureDrawPile: () => pileRect,
+    measureHandDock: () => dockRect,
+    measureHandCardRotation: () => null,
+    waitForDeparture: vi.fn(async () => true),
     measureHandCard: () => handRect,
     runCardTransfer: vi.fn(async () => {}),
     playTransferSound: vi.fn(),
@@ -30,8 +31,8 @@ function makeDeps(overrides: Partial<CardTransferAnimationDeps> = {}): CardTrans
 describe("animateDiscardedHand", () => {
   installImmediateRafForTests();
 
-  it("returns early when discard pile is missing", async () => {
-    const deps = makeDeps({ measureDiscardPile: () => null });
+  it("returns early when the hand dock is missing", async () => {
+    const deps = makeDeps({ measureHandDock: () => null });
     await animateDiscardedHand(
       [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("slash", { uid: 2 })],
       1,
@@ -40,30 +41,15 @@ describe("animateDiscardedHand", () => {
     expect(deps.runCardTransfer).not.toHaveBeenCalled();
   });
 
-  it("discards from the end of the hand first", async () => {
+  it("conceals the full discarded card below the dock without distorting it", async () => {
     const deps = makeDeps();
-    const cards = [
-      makeTestCardWithId("a", { uid: 1 }),
-      makeTestCardWithId("b", { uid: 2 }),
-      makeTestCardWithId("c", { uid: 3 }),
-    ];
-    await animateDiscardedHand(cards, 1, deps);
-
-    const transferred = vi.mocked(deps.runCardTransfer).mock.calls.map((call) => call[0].card.id);
-    expect(transferred).toEqual(["c", "b", "a"]);
-  });
-
-  it("fits both dimensions of the discard top-card anchor", async () => {
-    const anchor = { x: 10, y: 20, width: 32, height: 44 };
-    const deps = makeDeps({ measureDiscardPile: () => anchor });
     await animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 })], 1, deps);
     const transfer = vi.mocked(deps.runCardTransfer).mock.calls[0]![0];
-    const landedWidth = handRect.width * transfer.toScale;
-    const landedHeight = handRect.height * transfer.toScaleY!;
-    expect(landedWidth).toBeCloseTo(anchor.width);
-    expect(landedHeight).toBeCloseTo(anchor.height);
-    expect(transfer.to.x + (handRect.width - landedWidth) / 2).toBeCloseTo(anchor.x);
-    expect(transfer.to.y + (handRect.height - landedHeight) / 2).toBeCloseTo(anchor.y);
+    const centerY = transfer.to.y + handRect.height / 2;
+    expect(centerY - (Math.hypot(handRect.width, handRect.height) * transfer.toScale) / 2).toBeGreaterThan(
+      dockRect.y + dockRect.height,
+    );
+    expect(transfer.toRotation - transfer.fromRotation).toBe(52);
   });
 
   it("stops transferring when the session becomes inactive", async () => {

@@ -105,7 +105,7 @@ const HandCardItem = memo(function HandCardItem({
       data-hand-slot={cardKey}
       data-hovered={isHovered || undefined}
       data-hand-hidden={isHidden || undefined}
-      className="relative flex min-w-0 shrink basis-[calc(var(--hand-card-width)-3*var(--content-rem,1rem))] justify-center"
+      className="relative flex min-w-0 shrink basis-[calc(var(--hand-card-width)-2.5*var(--content-rem,1rem))] justify-center"
       style={{
         zIndex: visualHovered ? HAND_CARD_HOVER_Z_INDEX : HAND_CARD_BASE_Z_INDEX + index,
       }}
@@ -206,13 +206,15 @@ export function BattleHand({
       keyboardActivation.current = false;
     };
     const onKey = (event: KeyboardEvent) => {
-      if (["Tab", "Escape"].includes(event.key)) cancel();
+      if (["Tab", "Escape", "Alt", "Meta"].includes(event.key)) cancel();
     };
     document.addEventListener("pointerdown", cancel, true);
     window.addEventListener("keydown", onKey, true);
+    window.addEventListener("blur", cancel);
     return () => {
       document.removeEventListener("pointerdown", cancel, true);
       window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("blur", cancel);
     };
   }, []);
 
@@ -247,10 +249,7 @@ export function BattleHand({
         keyboardActivation.current = !event.repeat && (event.key === "Enter" || event.key === " ");
       }}
       data-testid="battle-hand"
-      className={cn(battleHandContainerClass, "mana-hand")}
-      style={{
-        paddingBottom: `calc(6% + ${12 + Math.max(0, battleState.hand.length - 4) * 12}px * var(--content-scale, 1))`,
-      }}
+      className={cn(battleHandContainerClass, "battle-hand")}
     >
       {battleState.hand.map((card, index) => {
         const cardKey = getHandCardKey(card, index);

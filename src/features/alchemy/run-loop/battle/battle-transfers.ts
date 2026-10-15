@@ -4,6 +4,7 @@ import { playBattleEvent } from "@/lib/audio";
 import type { CardRect, CardTransfer } from "../../shared/types";
 import type { BattleControllerContext } from "./battle-context";
 import type { HandDrawSequenceDeps } from "./draw-sequence";
+import { getCardRotation } from "./presentation/scene-geometry";
 import { runPlaybackTask } from "./playback-task";
 import {
   animateDiscardedHand,
@@ -21,68 +22,105 @@ export function createBattleTransferDeps(
   const measureHandCard = (cardKey: string): CardRect | null =>
     ctx.measureVisualCardRect(ctx.handCardRefs.current[cardKey] ?? null, scene());
 
-  function playTransferSound(delaySeconds = 0) {
-    const hasActiveBattle = ctx.battle.read().hasActiveBattle;
-    if (!hasActiveBattle) return;
-    playBattleEvent("drawTransfer", { volume: CARD_TRANSFER_CONFIG.soundVolume, delay: delaySeconds });
-  }
+  function createSequenceDeps(session: number) {
+    const scope = ctx.playback.capture(session);
+    const isActive = () => scope.isCurrent() && isCurrentBattleSession(session);
+    const setHiddenHandCardKeys: CardTransferAnimationDeps["setHiddenHandCardKeys"] = (update) => {
+      if (isActive()) getPresentation().setHiddenHandCardKeys(update);
+    };
+    const setTransferInProgress = (active: boolean) => {
+      if (isActive()) getPresentation().setCardTransferInProgress(active);
+    };
 
-  function runCardTransfer(transfer: Omit<CardTransfer, "id">, onComplete?: () => void): Promise<void> {
-    return runPlaybackTask<void>(
-      (callback) => ctx.playback.registerCancel(callback),
-      () => undefined,
-      (task) => {
-        const id = ctx.playback.nextTransferId();
-        task.own(() => {
-          getPresentation().setCardTransfers((current) => current.filter((item) => item.id !== id));
-        });
-        getPresentation().setCardTransfers((current) => [...current, { ...transfer, id }]);
-        task.schedule(
-          (callback) =>
-            ctx.playback.timers.setGameTimeout(
-              callback,
-              Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs,
-            ),
-          () => task.complete(undefined, onComplete),
-        );
+    function playTransferSound() {
+      if (isActive() && ctx.battle.read().hasActiveBattle)
+        playBattleEvent("drawTransfer", { volume: CARD_TRANSFER_CONFIG.soundVolume });
+    }
+
+    function waitForDeparture(delayMs: number): Promise<boolean> {
+      return runPlaybackTask(
+        scope.registerCancel,
+        () => false,
+        (task) => {
+          task.schedule(
+            (callback) => scope.setGameTimeout(callback, delayMs),
+            () => task.complete(isActive()),
+          );
+        },
+      );
+    }
+
+    function runCardTransfer(transfer: Omit<CardTransfer, "id">, onComplete?: () => void): Promise<void> {
+      if (!isActive()) return Promise.resolve();
+      return runPlaybackTask<void>(
+        scope.registerCancel,
+        () => undefined,
+        (task) => {
+          const id = ctx.playback.nextTransferId();
+          // Cancellation must remove this owned overlay even after revocation.
+          // IDs are unique across generations, so this cannot clear a newer transfer.
+          task.own(() => {
+            getPresentation().setCardTransfers((current) => current.filter((item) => item.id !== id));
+          });
+          getPresentation().setCardTransfers((current) => [...current, { ...transfer, id }]);
+          task.schedule(
+            (callback) =>
+              scope.setGameTimeout(
+                callback,
+                Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs,
+              ),
+            () =>
+              task.complete(undefined, () => {
+                if (isActive()) onComplete?.();
+              }),
+          );
+        },
+      );
+    }
+
+    const stableHandCardDeps: StableHandCardRectDeps = {
+      measureHandCard: (key) => (isActive() ? measureHandCard(key) : null),
+      registerCancel: scope.registerCancel,
+      scheduleTimeout: scope.setTimeout,
+    };
+
+    const cardTransferDeps: CardTransferAnimationDeps = {
+      isSessionActive: (id) => id === session && isActive(),
+      measureHandDock: () => {
+        if (!isActive()) return null;
+        const dock = ctx.measureElementRect(ctx.handDockRef.current, scene());
+        const viewport = ctx.measureElementRect(scene(), scene());
+        return dock && viewport ? { ...dock, y: viewport.height - dock.height } : null;
       },
-    );
+      measureHandCardRotation: (key) => (isActive() ? getCardRotation(ctx.handCardRefs.current[key] ?? null) : null),
+      waitForDeparture,
+      measureHandCard: stableHandCardDeps.measureHandCard,
+      runCardTransfer,
+      playTransferSound,
+      setHiddenHandCardKeys,
+      setTransferInProgress,
+      stableHandCardDeps,
+    };
+
+    const drawDeps: HandDrawSequenceDeps = {
+      playback: {
+        beginDraw: (id, kind) => (id === session && isActive() ? ctx.playback.beginDraw(id, kind) : () => {}),
+        waitForFrame: (id) => (id === session && isActive() ? ctx.playback.waitForFrame(id) : Promise.resolve(false)),
+        get pendingDraws() {
+          return isActive() ? ctx.playback.pendingDraws : 0;
+        },
+      },
+      isSessionActive: cardTransferDeps.isSessionActive,
+      animateDrawnHand: (cards, allHandCards, id) => animateDrawnHand(cards, allHandCards, id, cardTransferDeps),
+      setTransferInProgress,
+      setHiddenHandCardKeys,
+    };
+    return { cardTransferDeps, drawDeps };
   }
-
-  const stableHandCardDeps: StableHandCardRectDeps = {
-    measureHandCard,
-    registerCancel: (callback) => ctx.playback.registerCancel(callback),
-    scheduleTimeout: (fn, ms) => ctx.playback.timers.setTimeout(fn, ms),
-  };
-
-  const cardTransferDeps: CardTransferAnimationDeps = {
-    isSessionActive: isCurrentBattleSession,
-    measureDiscardPile: () =>
-      ctx.measureElementRect(
-        ctx.discardPileRef.current?.querySelector<HTMLElement>("[data-pile-top-card]") ?? ctx.discardPileRef.current,
-        scene(),
-      ),
-    measureDrawPile: () => ctx.measureElementRect(ctx.drawPileRef.current, scene()),
-    measureHandCard,
-    runCardTransfer,
-    playTransferSound,
-    setHiddenHandCardKeys: (update) => getPresentation().setHiddenHandCardKeys(update),
-    setTransferInProgress: (active) => getPresentation().setCardTransferInProgress(active),
-    stableHandCardDeps,
-  };
-
-  const drawDeps: HandDrawSequenceDeps = {
-    playback: ctx.playback,
-    isSessionActive: isCurrentBattleSession,
-    animateDrawnHand: (cards, allHandCards, session) =>
-      animateDrawnHand(cards, allHandCards, session, cardTransferDeps),
-    setTransferInProgress: (active) => getPresentation().setCardTransferInProgress(active),
-    setHiddenHandCardKeys: (update) => getPresentation().setHiddenHandCardKeys(update),
-  };
 
   return {
-    getDrawSequenceDeps: () => drawDeps,
+    getDrawSequenceDeps: (session: number) => createSequenceDeps(session).drawDeps,
     animateDiscardedHand: (hand: BattleCard[], session: number) =>
-      animateDiscardedHand(hand, session, cardTransferDeps),
+      animateDiscardedHand(hand, session, createSequenceDeps(session).cardTransferDeps),
   };
 }

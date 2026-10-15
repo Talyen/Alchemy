@@ -138,24 +138,24 @@ without the description popup; reduced motion plays instantly with no preview.
 Cancelling or restarting the battle clears its pending autoplay preview immediately
 and prevents that preview from committing a card or Wish choice.
 
-Draw and discard use a continuous eased arc with a height of 10% of the card,
-straightening and scaling to the measured destination while flipping between
-front and back. A single Motion progress value drives the pose at the display
-frame rate. A squared-sine arc envelope adds no vertical velocity at departure
-or landing, softening the transition into and out of the curve. There are no
-sampled straight segments or stops at the edge-on flip
-midpoint. Draw reveals the face later in the flight; discard delays its
-turn face-down. There is no added gold border, glow, or particle overlay; artwork
-retains its standard thin frame. Discard uses the muted-gem top-card artwork
-from the actual pile, with a shared crop and measured landing anchor. Width and
-height settle independently to match that anchor precisely. Tuning lives in
-`CARD_TRANSFER_CONFIG`, with artwork bounds in `DISCARD_PILE_TOP_CARD_BOUNDS`.
+Draws emerge face-up from below the viewport's bottom center and ease into the
+measured hand slot; discards return below the same edge. Both rotate 52 degrees
+clockwise along a shallow continuous curve, with uniform scaling between 94% and
+100%. There are no transfer backs or flips. Draws take 420ms and discards 360ms;
+departures overlap every 70ms, left-to-right for draws and right-to-left for
+discards. Sounds start with each departure. Tuning lives in `CARD_TRANSFER_CONFIG`.
 
-Transfer durations, batch speeds, sounds, input locks, hidden-card handoff, and
-cancellation remain owned by existing playback. Reduced motion settles artwork
-at its destination immediately without delaying completion. The temporary
-animation selector and alternate styles have been removed. Played cards retain
-their existing travel, pop, and fade animation.
+A single frame clock derives each flight's pose at the display frame rate.
+Draw landings follow the live card identity through hand reflow, including when
+another card is played during a draw. The bottom hand dock supplies the horizontal
+anchor and the full scene supplies the bottom edge. Gameplay remains committed
+independently of this presentation.
+
+Existing playback owns batch completion, input gates, hidden-card handoff,
+cancellation, and timers. A batch waits for its last flight rather than pausing
+between cards. Reduced or disabled motion settles immediately. Cancellation
+revokes pending departures, flights, and sounds; absent geometry cannot leave a
+committed card hidden. Played cards retain their travel, pop, and fade animation.
 
 ### Equipment movement animations
 

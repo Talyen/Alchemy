@@ -9,49 +9,30 @@ import { isBrewablePotion, strengthenPotion, type BrewOperation } from "@/lib/al
 import { collectionTileWidthClass, getCardInspectionShineColors } from "@/features/alchemy/shared/config";
 
 import { BattleCardButton } from "../../shared/ui/cards/card-button";
-import { PurchasableCardItem } from "../shop/ui/purchasable-shop-item";
 import { ServiceButton } from "../shop/ui/service-button";
-import { GenericShopScreen } from "./generic-shop-screen";
+import { ShopShelf, type ShopShelfProps } from "./shop-shelf";
 import { ShopBrowseShell } from "./shop-browse-shell";
 import { FadeSlot } from "../../shared/ui/use-fade";
-import { shopItemSlotKey } from "../shop/shop-slot-keys";
 
 export function AlchemistShopScreen({
   gold,
   runDeck,
-  potionCards,
-  refreshesLeft,
   mixUsed,
-  purchasedSlotKeys,
-  getPotionPrice,
   mixPrice,
-  refreshPrice,
-  onBuyCard,
-  onRefresh,
   onMixPotions,
   onStrengthenPotion,
   potency,
-  onContinue,
   afterProgressSaved = (feedback) => feedback(),
   isProgressSavePending = () => false,
-}: {
-  gold: number;
+  ...shelf
+}: ShopShelfProps<"card"> & {
   runDeck: BattleCard[];
-  potionCards: BattleCard[];
-  refreshesLeft: number;
   mixUsed: boolean;
-  purchasedSlotKeys: string[];
-  getPotionPrice: (card: BattleCard) => number;
   mixPrice: number;
-  refreshPrice: number;
-  onBuyCard: (card: BattleCard, slotKey: string) => boolean;
-  onRefresh: () => void;
   onMixPotions: (indexA: number, indexB: number) => BattleCard | null;
   onStrengthenPotion: (index: number) => BattleCard | null;
   potency: number;
-  onContinue: () => void;
   afterProgressSaved?: (feedback: () => void) => void;
-  isProgressSavePending?: () => boolean;
 }) {
   const [brewMode, setBrewMode] = useState<"combine" | "strengthen" | null>(null);
   const [mixedCard, setMixedCard] = useState<BattleCard | null>(null);
@@ -138,18 +119,11 @@ export function AlchemistShopScreen({
           />
         </ShopBrowseShell>
       ) : (
-        <GenericShopScreen
+        <ShopShelf
+          {...shelf}
+          kind="card"
           title="Alchemist's Shop"
           gold={gold}
-          items={potionCards}
-          refreshesLeft={refreshesLeft}
-          refreshPrice={refreshPrice}
-          purchasedSlotKeys={purchasedSlotKeys}
-          getSlotKey={(card, i) => shopItemSlotKey(card.id, i)}
-          getPrice={getPotionPrice}
-          onBuy={onBuyCard}
-          onRefresh={onRefresh}
-          onContinue={onContinue}
           isProgressSavePending={isProgressSavePending}
           extraServices={
             <>
@@ -175,9 +149,6 @@ export function AlchemistShopScreen({
               />
             </>
           }
-          renderItem={(card, price, purchased, onBuy) => (
-            <PurchasableCardItem card={card} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />
-          )}
         />
       )}
     </FadeSlot>

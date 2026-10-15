@@ -23,9 +23,9 @@ import type { CollectionTab } from "../shared/types";
 
 export interface ArmoryRouteCommands {
   onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => boolean;
-  onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
-  onEquipTrinket: (characterId: CharacterId, trinketId: string) => void;
-  onUnequipTrinket: (characterId: CharacterId) => void;
+  onUnequip: (characterId: CharacterId, slot: GearSlot) => boolean;
+  onEquipTrinket: (characterId: CharacterId, trinketId: string) => boolean;
+  onUnequipTrinket: (characterId: CharacterId) => boolean;
   onSalvage: (instanceId: string) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
@@ -114,15 +114,21 @@ export interface AlchemyRouteCommands {
   };
   battle: {
     presentation: BattlePresentationStore;
-    handleCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
-    handleWishChoice: (card: BattleCard) => void;
-    handleEndTurn: (expected?: BattleSnapshot) => void;
+    handleCardClick: (
+      card: BattleCard,
+      index: number,
+      event: MouseEvent<HTMLButtonElement>,
+      expected: BattleSnapshot,
+    ) => void;
+    handleWishChoice: (card: BattleCard, expected: BattleSnapshot) => void;
+    handleEndTurn: (expected: BattleSnapshot) => void;
     handleAutoplayCard: AutoplayCardHandler;
     handleAutoplayWish: AutoplayWishHandler;
     skipCombatDevMode: () => void;
     refs: BattleRefs;
     bindPlayback: (bind: BattlePlaybackBind | null) => void;
     isCardPlayInProgress: () => boolean;
+    subscribePlayback: (listener: () => void) => () => void;
     isProgressSavePending: () => boolean;
     subscribeProgressSave: (listener: () => void) => () => void;
     screen: Screen;

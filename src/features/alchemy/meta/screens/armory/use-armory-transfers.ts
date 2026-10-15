@@ -154,15 +154,23 @@ export function useArmoryTransfers({
         displaced: [],
         panelRect: undefined,
       });
-      onEquipTrinket(characterId, trinketId);
+      if (!onEquipTrinket(characterId, trinketId)) {
+        setNotice("That Trinket cannot be equipped.");
+        playUISound("error");
+        return;
+      }
       completeTransfer(() => commitEquip(trinketId, replacedId), flights, true);
     });
   }
 
-  function unequip(slot: ArmorySlot, artwork: TransferArtwork, commit: () => void) {
+  function unequip(slot: ArmorySlot, artwork: TransferArtwork, commit: () => boolean) {
     beginTransfer();
     const flights = buildUnequipFlights(artwork, measureArmorySlot(slot), measureArmoryItem(slot === "trinket"));
-    commit();
+    if (!commit()) {
+      setNotice("That item cannot be unequipped.");
+      playUISound("error");
+      return;
+    }
     completeTransfer(() => commitUnequip(artwork.id), flights);
   }
 

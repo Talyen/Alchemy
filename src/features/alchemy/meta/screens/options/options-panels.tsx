@@ -1,3 +1,5 @@
+import { COMBATANT_FRAME_OPTIONS } from "../../../shared/config/combatant-frames";
+import { useUiStore } from "../../../shared/stores/ui-store";
 import { Button } from "@/components/ui/button";
 import { displayModeOptions } from "@/features/alchemy/shared/config";
 import { DEVICE_DISPLAY_RANGES, SETTINGS_RANGES } from "@/lib/settings-values";
@@ -167,9 +169,18 @@ function SaveDataOptionsPanel({ saveData }: { saveData: SaveDataOptionsProps }) 
 }
 
 function DevOptionsPanel({ dev }: { dev: DevOptionsProps }) {
+  const frameStyle = useUiStore((state) => state.combatantFrameStyle);
+  const setFrameStyle = useUiStore((state) => state.setCombatantFrameStyle);
   if (!import.meta.env.DEV) return null;
   return (
     <SettingsSection title="Dev Only">
+      <SettingsSelect
+        id="combatant-frame-style"
+        label="Combatant Frames"
+        value={frameStyle}
+        options={COMBATANT_FRAME_OPTIONS}
+        onChange={setFrameStyle}
+      />
       <SettingsAction
         label="Dev / QA Unlocks"
         description="Unlock every collection entry and grant every talent node for testing"

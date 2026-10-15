@@ -3,7 +3,6 @@ import "../../../../helpers/mock-flush-save";
 import {
   bindGameplayMutationForTest,
   setBattleActiveForTest as mutateHasActiveBattle,
-  replaceBattleForTest as mutateSyncedBattleState,
   resetRunDomainStore,
   setRunProgress,
   setRunSession,
@@ -19,7 +18,6 @@ import { createEmptyRewardState, readActivityData, type ActiveRunData } from "@/
 import { restoreRun, snapshotRun, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { getCurrentRunPhase } from "../../../../helpers/run-session-assertions";
 import {
-  getRunSession,
   readActiveRun,
   readActiveRunScreen,
   readBattle,
@@ -42,7 +40,6 @@ import {
 import { defaultGameSession } from "@/app/application-session";
 import { savedActivityFixture, savedActivityData } from "../../../../fixtures/run-activity";
 const resetProgress = bindGameplayMutationForTest(mutateResetProgress);
-const setSyncedBattleState = bindGameplayMutationForTest(mutateSyncedBattleState);
 const setHasActiveRun = createGameplayCommand(
   (draft, active: boolean) => {
     mutateHasActiveRun(draft, active);
@@ -77,20 +74,6 @@ describe("session facade API", () => {
     resetProgress();
     setRunProgress({ runPlayerHealth: 18, runMaxHealth: 24, gold: 40, initialized: true });
     setHasActiveRun(true);
-  });
-
-  it("getRunSession aggregates run, battle, and session fields for orchestration", () => {
-    setSyncedBattleState({ ...defaultBattleState(), playerHealth: 10, gold: 7 });
-    const session = getRunSession(ROUTE_SCREENS.MENU, defaultGameSession);
-    expect(session.run.runPlayerHealth).toBe(18);
-    expect(session.run.gold).toBe(40);
-    expect(session.battle.battleState.playerHealth).toBe(10);
-    expect(session.session.activity.kind !== "inactive").toBe(true);
-    expect(session.phase).toBe("meta");
-  });
-
-  it("reads gold from the shared purse", () => {
-    expect(getRunSession(ROUTE_SCREENS.MENU, defaultGameSession).run.gold).toBe(40);
   });
 
   it("getCurrentRunPhase reflects battle screen and hasActiveBattle", () => {

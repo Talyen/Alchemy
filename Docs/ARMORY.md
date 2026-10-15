@@ -153,7 +153,14 @@ actions consume no RNG, publish no revision, and request no save.
 import boundaries. Store-owned acquisition helpers use
 `mutateGearWithRunHealthSync(transaction, { mutate })` inside their existing
 transaction; its readonly `GearDraftView` exposes guarded mutations and tracks
-writes. It has no salvage operation. Bootstrap hydration uses the Gear codec;
+writes. Mutation capabilities close when the `mutate` callback returns or throws,
+before live Health and manifests are rebound. A retained method cannot change
+equipment later in the enclosing command and leave those derived values stale.
+The inner callback must return synchronously; its result is validated even when
+the enclosing command ignores it, so an asynchronous callback cannot commit its
+partial changes. A callback or rebinding failure invalidates the enclosing command;
+catching the error cannot publish incomplete equipment, Health, or discovery changes.
+It has no salvage operation. Bootstrap hydration uses the Gear codec;
 feature code cannot initialize or reset Gear through an Armory action.
 
 Salvage has one transaction-level recipe: `salvageGearInTransaction(transaction,

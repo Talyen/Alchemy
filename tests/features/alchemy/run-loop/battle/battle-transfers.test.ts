@@ -7,10 +7,9 @@ import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle
 import type { CardTransfer } from "@/features/alchemy/shared/types";
 import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
-import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
-import { defaultGameSession } from "@/app/application-session";
+import { playBattleEvent } from "@/lib/audio";
 
-function makeTransfers() {
+function makeTransfers(respectGeneration = true) {
   const playback = new PlaybackLifetime();
   let transfers: CardTransfer[] = [];
   const presentation = {
@@ -21,19 +20,116 @@ function makeTransfers() {
     setCardTransferInProgress: vi.fn(),
   };
   const ctx = {
-    battle: createBattleCapabilities(defaultGameSession),
+    battle: { read: () => ({ hasActiveBattle: true }) },
     playback,
     getPresentation: () => presentation,
     battleSceneRef: { current: null },
-    discardPileRef: { current: null },
+    handDockRef: { current: null },
     handCardRefs: { current: {} },
     measureElementRect: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     measureVisualCardRect: () => ({ x: 0, y: 0, width: 100, height: 100 }),
   } as unknown as BattleControllerContext;
-  return { playback, readTransfers: () => transfers, ...createBattleTransferDeps(ctx, () => true) };
+  return {
+    playback,
+    presentation,
+    readTransfers: () => transfers,
+    ...createBattleTransferDeps(ctx, (id) => !respectGeneration || playback.isCurrent(id)),
+  };
 }
 
 describe("battle transfer lifetime wiring", () => {
+  it.each([true, false])(
+    "revokes abandoned discard UI and scheduling authority (caller checks generation: %s)",
+    async (respectGeneration) => {
+      vi.useFakeTimers();
+      try {
+        const transfers = makeTransfers(respectGeneration);
+        const cards = [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })];
+        const abandoned = transfers.animateDiscardedHand(cards, transfers.playback.id);
+        expect(transfers.readTransfers()).toHaveLength(1);
+        transfers.playback.restart();
+        const replacement = transfers.animateDiscardedHand([cards[0]!], transfers.playback.id);
+        transfers.presentation.setCardTransferInProgress.mockClear();
+        await Promise.resolve();
+        expect(transfers.readTransfers()).toHaveLength(1);
+        expect(transfers.playback.timers.size).toBe(1);
+        expect(transfers.presentation.setCardTransferInProgress).not.toHaveBeenCalled();
+        transfers.playback.cancel();
+        await Promise.all([abandoned, replacement]);
+        expect(transfers.readTransfers()).toEqual([]);
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
+
+  it("overlaps departures at 70 ms and waits for the final flight", async () => {
+    vi.useFakeTimers();
+    try {
+      const transfers = makeTransfers();
+      let finished = false;
+      const pending = transfers
+        .animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })], 0)
+        .then(() => {
+          finished = true;
+        });
+      expect(transfers.readTransfers()).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(69);
+      expect(transfers.readTransfers()).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(transfers.readTransfers()).toHaveLength(2);
+      expect(transfers.readTransfers().map((transfer) => transfer.card.id)).toEqual(["block", "slash"]);
+      await vi.advanceTimersByTimeAsync(410);
+      expect(transfers.readTransfers()).toHaveLength(1);
+      expect(finished).toBe(false);
+      await vi.advanceTimersByTimeAsync(70);
+      await pending;
+      expect(transfers.readTransfers()).toEqual([]);
+      expect(transfers.playback.timers.size).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("cancels delayed transfer sounds with their originating battle", async () => {
+    vi.useFakeTimers();
+    vi.mocked(playBattleEvent).mockClear();
+    try {
+      const transfers = makeTransfers();
+      const abandoned = transfers.animateDiscardedHand(
+        [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })],
+        transfers.playback.id,
+      );
+      expect(playBattleEvent).toHaveBeenCalledTimes(1);
+      transfers.playback.restart();
+      await abandoned;
+      await vi.runAllTimersAsync();
+      expect(playBattleEvent).toHaveBeenCalledTimes(1);
+      expect(transfers.playback.timers.size).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("revokes retained draw dependencies without exposing the replacement draw lease", async () => {
+    const transfers = makeTransfers();
+    const oldDeps = transfers.getDrawSequenceDeps(transfers.playback.id);
+    transfers.playback.restart();
+    const replacementId = transfers.playback.id;
+    const release = transfers.playback.beginDraw(replacementId);
+    oldDeps.setTransferInProgress(false);
+    oldDeps.setHiddenHandCardKeys(() => []);
+    const releaseStale = oldDeps.playback.beginDraw(replacementId);
+    await expect(oldDeps.playback.waitForFrame(replacementId)).resolves.toBe(false);
+    expect(transfers.playback.pendingDraws).toBe(1);
+    expect(oldDeps.playback.pendingDraws).toBe(0);
+    expect(transfers.presentation.setCardTransferInProgress).not.toHaveBeenCalled();
+    expect(transfers.presentation.setHiddenHandCardKeys).not.toHaveBeenCalled();
+    releaseStale();
+    expect(transfers.playback.pendingDraws).toBe(1);
+    release();
+  });
+
   it("cancels a transfer and removes its timer without requiring a full battle reset", async () => {
     vi.useFakeTimers();
     try {

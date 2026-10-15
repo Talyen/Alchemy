@@ -30,11 +30,11 @@ export type PersistedBattleCard = z.output<typeof BattleCardSchema>;
 export const BattleCardSchema = z
   .object({
     id: z.string(),
-    uid: z.number().int().optional(),
-    title: z.string().default(""),
+    uid: z.number().int().optional().catch(undefined),
+    title: z.string().catch(""),
     descriptionLines: z.array(z.unknown()).catch([]),
     description: z.unknown().optional(),
-    art: z.string().default(""),
+    art: z.string().catch(""),
     // -1 marks a corrupt/unparseable cost that survived load repair; runtime
     // treats it as broken data, never as a playable cost.
     cost: z.number().catch(-1),

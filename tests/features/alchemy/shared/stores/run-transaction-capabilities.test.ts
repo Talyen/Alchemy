@@ -24,6 +24,7 @@ import {
   mutateGearWithRunHealthSync,
 } from "@/features/alchemy/shared/stores/gear-session-command";
 import type { GearInstance } from "@/lib/gear";
+import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-types";
 import { getGoldMultiplier } from "@/lib/game-data";
 import { makeTestBattleState, makeTestCard } from "../../../../fixtures/battle";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
@@ -344,4 +345,126 @@ describe("feature transaction capabilities", () => {
     expect(readGameplayState(defaultGameSession)).toBe(before);
     expect(readBattle(defaultGameSession).battleState.playerMaxHealth).toBe(37);
   });
+
+  it.each(["return", "throw"] as const)(
+    "revokes Gear writes after its callback %s so late equipment cannot bypass Health synchronization",
+    (ending) => {
+      const armor: GearInstance = {
+        instanceId: "scoped-armor",
+        definitionId: "leather-armor-basic",
+        affixes: [{ id: "max-health", value: 7 }],
+      };
+      setRunProgress({ runMaxHealth: 30, runMetaMaxHealth: 30, runPlayerHealth: 30 });
+      setRunSession({ hasActiveRun: true });
+      dispatchGearMutationWithRunHealthSync(
+        {
+          mutate: (gear) => {
+            gear.addInstance(armor, "knight");
+            gear.equip("knight", "body", armor);
+          },
+        },
+        defaultGameSession,
+      );
+      const before = readGameplayState(defaultGameSession);
+      const committed = vi.fn();
+      const unsubscribe = subscribeRunSessionCommits(committed, defaultGameSession);
+      const effect = vi.fn();
+      try {
+        expect(() =>
+          dispatchRunSessionCommand(
+            (transaction) => {
+              setGold(transaction, 17);
+              createDraftRunRandomSource(transaction, "world")();
+              let retained!: GearDraftView["unequip"];
+              try {
+                mutateGearWithRunHealthSync(transaction, {
+                  mutate: (gear) => {
+                    retained = gear.unequip;
+                    if (ending === "throw") throw new Error("abort gear callback");
+                  },
+                });
+              } catch (error) {
+                if (!(error instanceof Error) || error.message !== "abort gear callback") throw error;
+              }
+              retained("knight", "body");
+              return acceptCommand();
+            },
+            { afterCommit: effect },
+            defaultGameSession,
+          ),
+        ).toThrow(/current Gear mutation/);
+        expect(readGameplayState(defaultGameSession)).toBe(before);
+        expect(before.gear.loadouts.knight.body).toBe(armor.instanceId);
+        expect(before.run.activeRun.runMaxHealth).toBe(37);
+        expect(committed).not.toHaveBeenCalled();
+        expect(effect).not.toHaveBeenCalled();
+      } finally {
+        unsubscribe();
+      }
+    },
+  );
+
+  it.each(["throw", "async"] as const)(
+    "rolls back a %s Gear callback even when the enclosing command catches its failure and accepts",
+    async (failure) => {
+      const armor: GearInstance = {
+        instanceId: "failed-gear-armor",
+        definitionId: "leather-armor-basic",
+        affixes: [{ id: "max-health", value: 7 }],
+      };
+      setRunProgress({ runMaxHealth: 30, runMetaMaxHealth: 30, runPlayerHealth: 30 });
+      setRunSession({ hasActiveRun: true });
+      dispatchGearMutationWithRunHealthSync(
+        {
+          mutate: (gear) => {
+            gear.addInstance(armor, "knight");
+            gear.equip("knight", "body", armor);
+          },
+        },
+        defaultGameSession,
+      );
+      const before = readGameplayState(defaultGameSession);
+      const committed = vi.fn();
+      const effect = vi.fn();
+      const caught = vi.fn();
+      const unsubscribe = subscribeRunSessionCommits(committed, defaultGameSession);
+      try {
+        expect(() =>
+          dispatchRunSessionCommand(
+            (transaction) => {
+              setGold(transaction, 17);
+              createDraftRunRandomSource(transaction, "world")();
+              try {
+                mutateGearWithRunHealthSync(transaction, {
+                  mutate: (gear): unknown => {
+                    gear.unequip("knight", "body");
+                    if (failure === "throw") throw new Error("Gear callback failed");
+                    return (async () => {
+                      await Promise.resolve();
+                      gear.addCurrencies({ voidstone: 1 });
+                    })();
+                  },
+                });
+              } catch (error) {
+                caught(error);
+              }
+              return acceptCommand();
+            },
+            { afterCommit: effect },
+            defaultGameSession,
+          ),
+        ).toThrow(failure === "throw" ? /Gear callback failed/ : /must be synchronous/);
+        // Invalid asynchronous continuations are observed after their methods revoke.
+        await Promise.resolve();
+        expect(caught).toHaveBeenCalledOnce();
+        expect(readGameplayState(defaultGameSession)).toBe(before);
+        expect(before.gear.loadouts.knight.body).toBe(armor.instanceId);
+        expect(before.run.activeRun.runMaxHealth).toBe(37);
+        expect(committed).not.toHaveBeenCalled();
+        expect(effect).not.toHaveBeenCalled();
+      } finally {
+        unsubscribe();
+      }
+    },
+  );
 });

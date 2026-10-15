@@ -89,12 +89,12 @@ export function createBattleEndTurnUi(
   session: ReturnType<typeof createBattleSession>,
   transferDeps: ReturnType<typeof createBattleTransferDeps>,
 ) {
-  function handleEndTurn(expected?: BattleSnapshot) {
+  function handleEndTurn(expected: BattleSnapshot) {
     const battle = ctx.battle.read();
     const currentState = battle.battleState;
     const presentation = ctx.getPresentation();
     if (
-      (expected !== undefined && expected !== currentState) ||
+      expected !== currentState ||
       !ctx.playback.canAcceptInput() ||
       isBattlePlaybackBlocked({
         screen: ctx.screen,
@@ -159,7 +159,7 @@ export function createBattleEndTurnUi(
           result.frames,
           sessionNum,
           {
-            ...transferDeps.getDrawSequenceDeps(),
+            ...transferDeps.getDrawSequenceDeps(sessionNum),
             // Stronger than the base session guard on purpose: abandoning the
             // battle screen mid-playback (e.g. menu navigation) must freeze
             // playback even while the session itself is still current.

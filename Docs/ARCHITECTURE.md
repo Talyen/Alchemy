@@ -193,6 +193,8 @@ layers live beside their leaves (`card-ghost-overlay.tsx`,
 
 ## Shop commands
 
+`shop-shelf.tsx` owns the shared shelf props, item identity, and Card, Gear, and Trinket tile selection. Shop screens add their own services; routes use the same `items`, `getPrice`, and `onBuy` props for every shelf.
+
 `create-shop-actions.ts` composes the matching `*-shop-commands.ts` modules and
 binds them once to a `GameSession`. Callers supply no Talent or Homestead
 manifests. `shop-pricing-context.ts` derives effects from current session

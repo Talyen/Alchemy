@@ -149,6 +149,14 @@ Set `requiresTransparency: true` in the owning art manifest when an image must h
 
 Also inspect approved artwork against light and dark backgrounds. The pixel check rejects opaque checkerboards and empty images but cannot prove that every background pixel is correct. If reference-based image generation repeatedly paints a checkerboard into the image, regenerate without image references using the approved visual description, then repeat pixel and visual checks. Current approved masters remain the authoring sources.
 
+Universal combatant frame masters live under
+`2d Assets/Game Sources/Interface/Combatant Frames/`. Charcoal, Saddle, Walnut,
+and Oak are transparent square nine-slice masters with an empty center. The
+`combatantFrame` preset produces lossless 1024px WebP textures, retaining alpha;
+CSS discards the center and repeats edge slices while preserving corner pieces.
+Portrait, landscape, Companion, and status-panel frames all reuse these masters.
+Keep labels, Health fill, statuses, and semantic highlights in live UI layers.
+
 `2d Assets/Game Sources/Interface/Card Elements/Card Back.png` is the single card used in transfer animations.
 `Draw Pile.png` (active compass stack, leaning left) and `Discard Pile.png`
 (spent/dormant compass stack, leaning right) are distinct compositions, not

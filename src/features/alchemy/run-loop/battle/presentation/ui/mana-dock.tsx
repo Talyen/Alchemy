@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, type CSSProperties } from "react";
 import { useStore } from "zustand";
-import { manaDockFrame, manaDockFull, manaDockEmpty } from "@/features/alchemy/shared/config/game-data-catalog";
+import { manaDockFull, manaDockEmpty } from "@/features/alchemy/shared/config/game-data-catalog";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import type { BattlePresentationStore } from "../../battle-presentation-store";
 import { MANA_DOCK_VISIBLE_COUNT, projectMana, type ManaGemExit } from "../../mana-presentation";
@@ -64,9 +64,11 @@ export function ManaPanel({
   const reduced = useReducedMotionPreference();
   const mounted = useRef(false);
   const stored = useStore(presentation, (state) => state.manaPresentation);
-  const state = stored?.mana === mana && stored.maxMana === maxMana ? stored : projectMana(null, mana, maxMana, false);
+  // Keep unchanged animation keys while the layout effect commits the new display.
+  const state =
+    stored?.mana === mana && stored.maxMana === maxMana ? stored : projectMana(stored, mana, maxMana, !reduced);
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture, handleHoverStart } =
-    useHoverVisible();
+    useHoverVisible<HTMLButtonElement>();
 
   useLayoutEffect(() => {
     presentation.getState().setManaDisplay(mana, maxMana, mounted.current && !reduced);
@@ -74,7 +76,10 @@ export function ManaPanel({
   }, [mana, maxMana, presentation, reduced]);
 
   return (
-    <div
+    <button
+      type="button"
+      aria-label={`Inspect Mana: ${mana} / ${maxMana}`}
+      onClick={handleHoverStart}
       ref={triggerRef}
       className="mana-dock"
       data-testid="mana-panel"
@@ -86,10 +91,7 @@ export function ManaPanel({
       onFocusCapture={onFocusCapture}
       onBlurCapture={onBlurCapture}
     >
-      <BattleSceneArtwork className="mana-dock-frame battle-scene-silhouette" maskSource={manaDockFrame}>
-        <img src={manaDockFrame} alt="" draggable={false} decoding="async" className="block h-full w-full" />
-      </BattleSceneArtwork>
-      <div className="battle-mana-spill" style={{ maskImage: `url("${manaDockFrame}")` }} aria-hidden="true">
+      <div className="battle-mana-spill" aria-hidden="true">
         {state.gems.map((gem) => (
           <span
             key={gem.index}
@@ -98,12 +100,6 @@ export function ManaPanel({
           />
         ))}
       </div>
-      <button
-        type="button"
-        className="mana-dock-inspect"
-        aria-label={`Inspect Mana: ${mana} / ${maxMana}`}
-        onClick={handleHoverStart}
-      />
       {state.gems.map((gem) => (
         <span
           key={gem.index}
@@ -157,6 +153,6 @@ export function ManaPanel({
           </span>
         ) : null}
       </PortaledTooltip>
-    </div>
+    </button>
   );
 }

@@ -31,24 +31,36 @@ export function isolateSessionFeedback(feedback: SessionFeedback): SessionFeedba
   };
 }
 
-function createLifecycleChannel(name: string) {
+function createLifecycleChannel(name: string, isActive: () => boolean) {
   const notifications = createNotificationChannel<[]>((error) => {
     logError("Session effect failed", "other", { effect: name }, undefined, undefined, error);
-  });
+  }, isActive);
   return { on: notifications.subscribe, emit: notifications.publish, clear: notifications.clear };
 }
 
 /** One session owns the complete presentation invalidation recipe and its listeners. */
-export function createRunLifecycleEffects(feedback: Pick<SessionFeedback, "clearBattleUi">) {
-  const presentation = createLifecycleChannel("clear battle presentation listener");
-  const teardown = createLifecycleChannel("run teardown listener");
+export function createRunLifecycleEffects(
+  feedback: Pick<SessionFeedback, "clearBattleUi">,
+  isActive: () => boolean = () => true,
+) {
+  const presentation = createLifecycleChannel("clear battle presentation listener", isActive);
+  const teardown = createLifecycleChannel("run teardown listener", isActive);
+  const restore = createLifecycleChannel("run restore listener", isActive);
   function clearPresentation() {
+    if (!isActive()) return;
     feedback.clearBattleUi();
     presentation.emit();
   }
   return {
     onClearPresentation: (listener: () => void) => presentation.on(listener),
     onTeardown: (listener: () => void) => teardown.on(listener),
+    onRestore: (listener: () => void) => restore.on(listener),
+    restore() {
+      // Revoke deferred work before clearing its visible state. Cancellation
+      // handlers may themselves finish transfers or remove outgoing frames.
+      restore.emit();
+      clearPresentation();
+    },
     clearPresentation,
     teardown() {
       clearPresentation();
@@ -57,6 +69,7 @@ export function createRunLifecycleEffects(feedback: Pick<SessionFeedback, "clear
     dispose() {
       presentation.clear();
       teardown.clear();
+      restore.clear();
     },
   };
 }

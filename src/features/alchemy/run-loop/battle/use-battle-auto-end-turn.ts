@@ -20,7 +20,7 @@ interface AutoEndTurnOptions {
   gameMenuOpen?: boolean;
   isCardPlayInProgress?: () => boolean;
   isProgressSavePending?: (() => boolean) | undefined;
-  onEndTurn: () => void;
+  onEndTurn: (expected: BattleSnapshot) => void;
   presentationGateRef: RefObject<BattlePlaybackPresentationGate>;
   scheduleAutoEndTurnRef: RefObject<(state?: BattleSnapshot) => void>;
 }
@@ -68,17 +68,18 @@ export function useBattleAutoEndTurn({
   );
 
   // React-lifecycle timer by design, not a battle-session timer: it is cleared
-  // on unmount, on every reschedule, and explicitly on end-turn commit via
-  // clearAutoEndTurn, and the fire-time gate above re-checks live battle state,
-  // so a stale fire after a battle transition is a no-op.
+  // on unmount, on every reschedule, and explicitly on end-turn commit. The
+  // offered snapshot also reaches the command, so a timer cannot consume a
+  // replacement turn before React has published its latest battle state.
 
   const scheduleAutoEndTurnRaw = useCallback(
     (state?: BattleSnapshot) => {
       clearAutoEndTurn();
-      if (!canAutoEndTurn(state ?? battleStateRef.current)) return;
+      const expected = state ?? battleStateRef.current;
+      if (!canAutoEndTurn(expected)) return;
       autoEndTimerRef.current = setTimeout(() => {
         autoEndTimerRef.current = null;
-        if (canAutoEndTurn(battleStateRef.current)) onEndTurnRef.current();
+        if (canAutoEndTurn(expected)) onEndTurnRef.current(expected);
       }, resolveGameDelay(AUTO_END_TURN_DELAY_MS));
     },
     [battleStateRef, canAutoEndTurn, clearAutoEndTurn, onEndTurnRef],

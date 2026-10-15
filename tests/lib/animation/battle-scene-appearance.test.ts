@@ -26,6 +26,10 @@ describe("universal board appearance", () => {
       expect(Math.max(...appearance.ambientColor) - Math.min(...appearance.ambientColor)).toBeLessThanOrEqual(36);
       expect(appearance.shadowOpacity).toBeGreaterThanOrEqual(0.26);
       expect(appearance.shadowOpacity).toBeLessThanOrEqual(0.38);
+      expect(appearance.artworkExposure).toBeGreaterThanOrEqual(0.94);
+      expect(appearance.artworkExposure).toBeLessThanOrEqual(1.03);
+      expect(appearance.shadeOpacity).toBeGreaterThanOrEqual(0);
+      expect(appearance.shadeOpacity).toBeLessThanOrEqual(0.08);
     }
   });
 
@@ -35,6 +39,10 @@ describe("universal board appearance", () => {
     expect(warm.ambientColor[0]).toBeGreaterThan(warm.ambientColor[2]);
     expect(cool.ambientColor[2]).toBeGreaterThan(cool.ambientColor[0]);
     expect(deriveBattleSceneAppearance(pixels([180, 180, 180])).ambientOpacity).toBe(0);
+    const dark = deriveBattleSceneAppearance(pixels([40, 40, 40]));
+    const bright = deriveBattleSceneAppearance(pixels([220, 220, 220]));
+    expect(dark.artworkExposure).toBeLessThan(bright.artworkExposure);
+    expect(dark.shadeOpacity).toBeGreaterThan(bright.shadeOpacity);
     expect(deriveBattleSceneAppearance(pixels([200, 200, 200])).shadowOpacity).toBeGreaterThan(
       deriveBattleSceneAppearance(pixels([40, 40, 40])).shadowOpacity,
     );
@@ -54,6 +62,8 @@ describe("universal board appearance", () => {
     expect(actual.ambientColor).toEqual(expected.ambientColor);
     expect(actual.ambientOpacity).toBe(expected.ambientOpacity);
     expect(actual.shadowOpacity).toBeCloseTo(expected.shadowOpacity, 12);
+    expect(actual.artworkExposure).toBeCloseTo(expected.artworkExposure, 12);
+    expect(actual.shadeOpacity).toBeCloseTo(expected.shadeOpacity, 12);
   });
 });
 
@@ -68,10 +78,15 @@ describe("regional board lighting", () => {
     expect(result.regions.left.ambientColor[0]).toBeGreaterThan(result.regions.right.ambientColor[0]);
     expect(result.regions.right.ambientColor[2]).toBeGreaterThan(result.regions.left.ambientColor[2]);
     expect(result.regions.lower.ambientColor[1]).toBeGreaterThan(result.regions.lower.ambientColor[0]);
+    expect(result.regions.left.artworkExposure).toBeGreaterThan(result.regions.right.artworkExposure);
+    expect(result.regions.left.shadeOpacity).toBeLessThan(result.regions.right.shadeOpacity);
     for (const region of Object.values(result.regions)) {
       expect(region.ambientOpacity).toBeLessThanOrEqual(0.06);
       expect(Math.max(...region.ambientColor) - Math.min(...region.ambientColor)).toBeLessThanOrEqual(36);
       expect(region.shadowOpacity).toBe(result.shadowOpacity);
+      expect(region.artworkExposure).toBeGreaterThanOrEqual(0.94);
+      expect(region.artworkExposure).toBeLessThanOrEqual(1.03);
+      expect(region.shadeOpacity).toBeLessThanOrEqual(0.08);
     }
   });
 

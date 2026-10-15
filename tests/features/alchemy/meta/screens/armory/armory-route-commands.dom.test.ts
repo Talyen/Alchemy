@@ -173,6 +173,9 @@ describe("Armory route commands", () => {
 
     act(() => {
       expect(result.current.onEquip("knight", "body", armor)).toBe(false);
+      expect(result.current.onUnequip("knight", "body")).toBe(false);
+      expect(result.current.onEquipTrinket("knight", "bone-charm")).toBe(false);
+      expect(result.current.onUnequipTrinket("knight")).toBe(false);
     });
 
     expect(readGearState(defaultGameSession).loadouts.knight.body).toBeNull();
@@ -206,17 +209,17 @@ describe("Armory route commands", () => {
     expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(1);
 
     act(() => {
-      result.current.onUnequip("knight", "body");
+      expect(result.current.onUnequip("knight", "body")).toBe(true);
     });
     expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(2);
 
     act(() => {
-      result.current.onEquipTrinket("knight", "bone-charm");
+      expect(result.current.onEquipTrinket("knight", "bone-charm")).toBe(true);
     });
     expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(3);
 
     act(() => {
-      result.current.onUnequipTrinket("knight");
+      expect(result.current.onUnequipTrinket("knight")).toBe(true);
     });
     expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(4);
 

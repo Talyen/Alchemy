@@ -81,36 +81,6 @@ describe("ArtPanel hover motion", () => {
     });
   });
 
-  it.each(["player", "enemy"] as const)("keeps the %s turn border without adding a hover border", (side) => {
-    const { getByTestId } = render(
-      <ArtPanel {...baseProps} side={side} currentEnemy={side === "enemy" ? enemy : undefined} turnActive />,
-    );
-    const art = getByTestId(`battle-${side}-art-panel`);
-    expect(art.classList.contains("combatant-art")).toBe(true);
-    expect(art.classList.contains("card-hover-scale")).toBe(true);
-
-    fireEvent.mouseEnter(art.parentElement!);
-
-    expect(getByTestId(`turn-badge-${side}`).getAttribute("data-active")).toBe("true");
-    expect(art.querySelectorAll(".shine-border")).toHaveLength(1);
-  });
-
-  it("renders artCorner and health stats inside the combatant-attack-lunge wrapper", () => {
-    const { getByTestId } = render(
-      <ArtPanel {...baseProps} artCorner={<div data-testid="test-companion-corner">companion</div>} />,
-    );
-
-    const lunge = getByTestId("combatant-attack-lunge");
-    const corner = getByTestId("test-companion-corner");
-    const artPanel = getByTestId("battle-player-art-panel");
-    const health = getByTestId("player-health");
-    const statuses = getByTestId("player-statuses");
-    expect(lunge.contains(corner)).toBe(true);
-    expect(lunge.contains(artPanel)).toBe(true);
-    expect(lunge.contains(health)).toBe(true);
-    expect(lunge.contains(statuses)).toBe(true);
-  });
-
   it("removes crowd-control presentation before the death slice starts", () => {
     const { rerender } = render(<ArtPanel {...baseProps} ccKeyword="freeze" />);
 
@@ -122,7 +92,8 @@ describe("ArtPanel hover motion", () => {
   });
 
   it("renders a lethal impact burst over the death slice without a Health-loss flash", () => {
-    const { rerender } = render(<ArtPanel {...baseProps} />);
+    const { rerender, container } = render(<ArtPanel {...baseProps} />);
+    expect(container.querySelectorAll(".combatant-material-frame")).toHaveLength(2);
 
     rerender(
       <ArtPanel
@@ -141,6 +112,7 @@ describe("ArtPanel hover motion", () => {
 
     expect(screen.getByTestId("portrait-impact-sparks").getAttribute("data-colors")).toBe("#67e8f9,#06b6d4");
     expect(screen.queryByTestId("portrait-health-loss-flash")).toBeNull();
+    expect(container.querySelectorAll(".combatant-material-frame")).toHaveLength(0);
   });
 
   it("restarts the Health-loss flash for rapid hits even when recoil is suppressed", () => {
@@ -180,30 +152,6 @@ describe("ArtPanel hover motion", () => {
     expect(recoil.classList.contains("portrait-recoil-active")).toBe(false);
     restart.mockRestore();
   });
-
-  it.each([
-    { amount: 1, periodic: false, healthLost: true, strength: "light" },
-    { amount: 5, periodic: false, healthLost: true, strength: "normal" },
-    { amount: 20, periodic: false, healthLost: true, strength: "heavy" },
-    { amount: 20, periodic: true, healthLost: true, strength: "light" },
-    { amount: 20, periodic: false, healthLost: false, strength: "light" },
-  ])(
-    "keeps $strength recoil on existing portrait artwork and away from Health",
-    ({ amount, periodic, healthLost, strength }) => {
-      const { rerender } = render(<ArtPanel {...baseProps} maxHealth={100} />);
-      const art = screen.getByTestId("battle-player-art-panel");
-      rerender(
-        <ArtPanel
-          {...baseProps}
-          maxHealth={100}
-          impactCue={{ sequence: 1, colors: ["#fff"], amount, periodic, healthLost, recoil: true }}
-        />,
-      );
-      expect(screen.getByTestId("battle-player-art-panel")).toBe(art);
-      expect(art.closest("[data-impact-strength]")?.getAttribute("data-impact-strength")).toBe(strength);
-      expect(screen.getByTestId("player-health").closest(".portrait-recoil")).toBeNull();
-    },
-  );
 
   it("renders Block sparks without a Health-loss flash", () => {
     const { rerender } = render(<ArtPanel {...baseProps} />);

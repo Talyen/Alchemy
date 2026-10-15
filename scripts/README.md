@@ -214,19 +214,23 @@ Failures preserve task work and leave `main` unchanged. Never bypass serializati
 with a manual update to `main`. Keep unintegrated work committed and recoverable;
 cleanup must not discard work.
 
-Successful integration automatically archives and unregisters only the named task
+Successful integration automatically deletes and unregisters only the named task
 worktree while holding the integration lock. Cleanup rechecks its branch, commit,
 clean status, unfinished Git operations, registration and lock state; submodules
 block automatic cleanup. Failed verification never removes a worktree. A cleanup
 failure leaves the completed integration in place and reports the blocker.
 
-The full checkout moves atomically to `~/.codex/worktree-archives/Alchemy/` before
-unregistration. Ignored evidence and late writes remain recoverable. Installed
-`node_modules` is discarded unless tracked; all other files and the task branch
-are retained. `recovery.json` records its original path, branch and commit. Restore
-with `git worktree add <original-path> <branch>`, then copy needed archived files.
-Archives never expire automatically. `CODEX_WORKTREE_ARCHIVE_ROOT` can select an
-external directory; moving across filesystems fails without deleting the source.
+The checkout first moves atomically to a temporary directory under
+`~/.codex/worktree-archives/Alchemy/` so failed unregistration can restore it.
+After unregistration, the temporary directory is deleted immediately, including
+ignored files and build outputs. Successful integration retains no archived
+checkout. The task branch remains available through
+`git worktree add <original-path> <branch>`; ignored and other local-only files are
+permanently deleted. Use `--keep-worktree` when those files are still needed.
+`CODEX_WORKTREE_ARCHIVE_ROOT` can select an external staging directory; moving
+across filesystems fails without deleting the source. If cleanup fails after
+integration, inspect the reported checkout or staging directory; `recovery.json`
+records the original path, branch and commit.
 
 Use `node scripts/agent-worktree.mjs integrate --task <slug> --keep-worktree` for
 intermediate integration when requested work, a preview or an experiment still

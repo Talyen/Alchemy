@@ -20,6 +20,7 @@ export interface BattleEndTurnButtonProps {
   presentation: BattlePresentationStore;
   buttonRef: RefObject<HTMLButtonElement | null>;
   isCardPlayInProgress: () => boolean;
+  subscribePlayback: (listener: () => void) => () => void;
   isProgressSavePending: () => boolean;
   subscribeProgressSave: (listener: () => void) => () => void;
   onEndTurn: (expected: BattleSnapshot) => void;
@@ -33,6 +34,7 @@ export function BattleEndTurnButton({
   presentation,
   buttonRef,
   isCardPlayInProgress,
+  subscribePlayback,
   isProgressSavePending,
   subscribeProgressSave,
   onEndTurn,
@@ -42,6 +44,7 @@ export function BattleEndTurnButton({
   const [confirmationState, setConfirmationState] = useState<BattleSnapshot | null>(null);
   const pendingConfirmation = useRef<BattleSnapshot | null>(null);
   const inspectionOpen = useUiStore(isBattleInspectionOpen);
+  const cardPlayInProgress = useSyncExternalStore(subscribePlayback, isCardPlayInProgress);
   const savePending = useSyncExternalStore(subscribeProgressSave, isProgressSavePending);
   const gate = useStore(
     presentation,
@@ -73,7 +76,7 @@ export function BattleEndTurnButton({
     );
   }
 
-  const unavailable = savePending || inspectionOpen || gate.openingDrawPending || !canEndTurn();
+  const unavailable = cardPlayInProgress || savePending || inspectionOpen || gate.openingDrawPending || !canEndTurn();
   const open =
     gate.endTurnConfirmationOpen && confirmationState !== null && confirmationState === battleState && !unavailable;
   const closeConfirmation = useCallback(() => {
@@ -121,6 +124,9 @@ export function BattleEndTurnButton({
       <PortaledTooltip
         triggerRef={buttonRef}
         visible={!unavailable && !gate.endTurnConfirmationOpen && (hovered || focused)}
+        placement="below"
+        allowFlip={false}
+        horizontalInset={8}
       >
         End Turn
       </PortaledTooltip>

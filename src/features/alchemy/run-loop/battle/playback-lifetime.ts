@@ -8,6 +8,13 @@ export interface BattlePlaybackBind {
   clearAutoEndTurn: () => void;
 }
 
+export interface PlaybackScope {
+  readonly isCurrent: () => boolean;
+  readonly registerCancel: (callback: () => void) => () => void;
+  readonly setTimeout: (callback: () => void, ms: number) => () => void;
+  readonly setGameTimeout: (callback: () => void, ms: number) => () => void;
+}
+
 type PlaybackPhase = "opening" | "ready" | "playing" | "finishing" | "cancelled";
 
 /** One cancellation scope for a battle's timers, transfers, and asynchronous continuations. */
@@ -54,19 +61,25 @@ export class PlaybackLifetime {
     );
   }
 
+  private setPhase(phase: PlaybackPhase): void {
+    if (this.phase === phase) return;
+    this.phase = phase;
+    for (const listener of this.listeners) listener();
+  }
+
   beginOpening(): void {
-    if (this.phase === "ready") this.phase = "opening";
+    if (this.phase === "ready") this.setPhase("opening");
   }
 
   beginAction(): void {
     if (this.phase === "ready" || this.phase === "playing") {
       this.clearAutoEndTurn();
-      this.phase = "playing";
+      this.setPhase("playing");
     }
   }
 
   completeAction(id: number): void {
-    if (this.isCurrent(id) && (this.phase === "playing" || this.phase === "opening")) this.phase = "ready";
+    if (this.isCurrent(id) && (this.phase === "playing" || this.phase === "opening")) this.setPhase("ready");
   }
 
   get id() {
@@ -89,10 +102,33 @@ export class PlaybackLifetime {
     return id === this.generation && this.phase !== "cancelled" && !this.signal.aborted;
   }
 
+  /** Retained operations keep authority over their originating generation only. */
+  capture(id: number): PlaybackScope {
+    const admitted = this.isCurrent(id);
+    const isCurrent = () => admitted && this.isCurrent(id);
+    const schedule = (callback: () => void, ms: number, gameDelay: boolean) => {
+      if (!isCurrent()) return () => {};
+      const run = () => {
+        if (isCurrent()) callback();
+      };
+      return gameDelay ? this.timers.setGameTimeout(run, ms) : this.timers.setTimeout(run, ms);
+    };
+    return Object.freeze({
+      isCurrent,
+      registerCancel: (callback: () => void) => {
+        if (isCurrent()) return this.registerCancel(callback);
+        callback();
+        return () => {};
+      },
+      setTimeout: (callback: () => void, ms: number) => schedule(callback, ms, false),
+      setGameTimeout: (callback: () => void, ms: number) => schedule(callback, ms, true),
+    });
+  }
+
   finish(): boolean {
     if (this.phase === "finishing" || this.phase === "cancelled") return false;
     this.clearAutoEndTurn();
-    this.phase = "finishing";
+    this.setPhase("finishing");
     return true;
   }
 
@@ -112,7 +148,7 @@ export class PlaybackLifetime {
   }
 
   cancel(): void {
-    this.phase = "cancelled";
+    this.setPhase("cancelled");
     this.controller.abort();
     this.timers.clearAll();
     this.cancelTransfers();
@@ -129,7 +165,7 @@ export class PlaybackLifetime {
     this.cancel();
     this.generation += 1;
     this.controller = new AbortController();
-    this.phase = "ready";
+    this.setPhase("ready");
   }
 
   beginDraw(id: number, kind: "draw" | "card" = "draw"): () => void {
@@ -152,7 +188,7 @@ export class PlaybackLifetime {
   waitForFrame(id: number): Promise<boolean> {
     if (!this.isCurrent(id)) return Promise.resolve(false);
     return runPlaybackTask(
-      (callback) => this.registerCancel(callback),
+      this.capture(id).registerCancel,
       () => false,
       (task) => task.frame(() => task.complete(this.isCurrent(id))),
     );

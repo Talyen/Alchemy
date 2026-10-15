@@ -9,7 +9,7 @@ import type { Screen } from "@/lib/routing";
 import { useEffect } from "react";
 
 const RADIX_OPEN_SELECTOR =
-  '[data-radix-select-content][data-state="open"], [data-radix-dropdown-menu-content][data-state="open"], [data-radix-popover-content][data-state="open"], [data-radix-combobox-content][data-state="open"]';
+  '[role="listbox"][data-state="open"], [data-radix-select-content][data-state="open"], [data-radix-dropdown-menu-content][data-state="open"], [data-radix-popover-content][data-state="open"], [data-radix-combobox-content][data-state="open"]';
 
 const ARROW_DIRECTIONS: Readonly<Record<string, FocusDirection>> = Object.freeze({
   ArrowLeft: "left",
@@ -67,7 +67,7 @@ export function useAppKeyboardShortcuts({
       }
       if (event.key === "F7" && !event.repeat) {
         event.preventDefault();
-        focusPreviousControl();
+        if (!isRadixEscapeTargetOpen()) focusPreviousControl();
         return;
       }
       const direction = ARROW_DIRECTIONS[event.key];

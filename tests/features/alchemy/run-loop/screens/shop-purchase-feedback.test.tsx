@@ -8,8 +8,8 @@ vi.mock(
 );
 afterEach(cleanup);
 
-it("clears an old purchase error when a refresh replaces the shelf", () => {
-  const onBuy = vi.fn().mockReturnValueOnce(false).mockReturnValueOnce(true);
+it("clears purchase failures after a retry or shelf replacement", () => {
+  const onBuy = vi.fn(() => true).mockReturnValueOnce(false);
   const props = {
     title: "Card Shop",
     gold: 100,
@@ -31,34 +31,13 @@ it("clears an old purchase error when a refresh replaces the shelf", () => {
   fireEvent.click(buy);
   expect(onBuy).toHaveBeenCalledWith("Health Potion", "Health Potion:0");
   expect(screen.getByRole("alert").textContent).toMatch(/could not.*purchase/i);
+  fireEvent.click(buy);
+  expect(screen.queryByRole("alert")).toBeNull();
+  onBuy.mockReturnValueOnce(false);
+  fireEvent.click(buy);
+  expect(screen.getByRole("alert")).toBeTruthy();
   rerender(<GenericShopScreen {...props} items={["Mana Potion"]} refreshesLeft={0} />);
   expect(screen.queryByRole("alert")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Buy Mana Potion" }));
-  expect(screen.queryByRole("alert")).toBeNull();
-});
-
-it("clears a rejected purchase after a successful retry on the same shelf", () => {
-  const onBuy = vi.fn().mockReturnValueOnce(false).mockReturnValueOnce(true);
-  render(
-    <GenericShopScreen
-      title="Card Shop"
-      gold={100}
-      items={["Health Potion"]}
-      refreshesLeft={1}
-      refreshPrice={10}
-      purchasedSlotKeys={[]}
-      getSlotKey={() => "potion:0"}
-      getPrice={() => 20}
-      onBuy={onBuy}
-      onRefresh={() => {}}
-      onContinue={() => {}}
-      renderItem={(item, _price, _purchased, buy) => <button onClick={buy}>Buy {item}</button>}
-    />,
-  );
-  const buy = screen.getByRole("button", { name: "Buy Health Potion" });
-  fireEvent.click(buy);
-  expect(onBuy).toHaveBeenCalledWith("Health Potion", "potion:0");
-  expect(screen.getByRole("alert").textContent).toMatch(/could not.*purchase/i);
-  fireEvent.click(buy);
   expect(screen.queryByRole("alert")).toBeNull();
 });

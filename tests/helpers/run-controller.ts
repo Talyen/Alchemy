@@ -24,9 +24,9 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       setCollectionPage: fn(),
       armory: {
         onEquip: vi.fn(() => false),
-        onUnequip: fn(),
-        onEquipTrinket: fn(),
-        onUnequipTrinket: fn(),
+        onUnequip: vi.fn(() => false),
+        onEquipTrinket: vi.fn(() => false),
+        onUnequipTrinket: vi.fn(() => false),
         onSalvage: vi.fn(() => false),
         onApplyCurrency: vi.fn(() => false),
         onSpawnDevGear: fn(),

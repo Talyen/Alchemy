@@ -1,5 +1,6 @@
 import { afterProgressSaved, bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { onRunRestored } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   registerSessionCleanup,
   sessionClock,
@@ -90,6 +91,7 @@ export function createScreenNavigation(
   }
 
   registerSessionCleanup(gameSession, cancelPending);
+  onRunRestored(cancelPending, gameSession);
   return bindSessionCapabilities(gameSession, {
     navigateTo: (screen, prepare) => transitionTo(screen, prepare ? { prepare } : {}, false, "navigate"),
     resumeTo: (screen, prepare, immediate = false) =>

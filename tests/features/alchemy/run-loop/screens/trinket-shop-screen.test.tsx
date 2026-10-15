@@ -20,12 +20,12 @@ it("explains the completed collection and disables a refresh of the empty shelf"
   render(
     <TrinketShopScreen
       gold={100}
-      trinkets={[]}
+      items={[]}
       refreshesLeft={1}
       purchasedSlotKeys={[]}
-      getTrinketPrice={() => 50}
+      getPrice={() => 50}
       refreshPrice={15}
-      onBuyTrinket={() => false}
+      onBuy={() => false}
       onRefresh={onRefresh}
       onContinue={() => {}}
     />,
@@ -42,12 +42,12 @@ it("buys the offered identity and prevents a repeat purchase of its slot", async
   const view = (purchasedSlotKeys: string[]) => (
     <TrinketShopScreen
       gold={100}
-      trinkets={[testTrinket]}
+      items={[testTrinket]}
       refreshesLeft={1}
       purchasedSlotKeys={purchasedSlotKeys}
-      getTrinketPrice={() => 50}
+      getPrice={() => 50}
       refreshPrice={15}
-      onBuyTrinket={onBuyTrinket}
+      onBuy={onBuyTrinket}
       onRefresh={vi.fn()}
       onContinue={vi.fn()}
     />

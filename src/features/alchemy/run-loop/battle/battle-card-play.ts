@@ -55,7 +55,7 @@ export function createBattleCardPlay(
       newState,
       onReveal: onReveal,
       session: sessionNum,
-      deps: transferDeps.getDrawSequenceDeps(),
+      deps: transferDeps.getDrawSequenceDeps(sessionNum),
       errorContext: `handle ${errorContext} draw sequence`,
       onSettled: () => {
         finishDraw();
@@ -105,11 +105,17 @@ export function createBattleCardPlay(
   async function runAutoplayWithPreview(
     control: AutoplayCardControl,
     previewId: string,
+    expected: BattleSnapshot,
     commit: (expected: BattleSnapshot) => boolean | Promise<boolean>,
   ): Promise<boolean> {
     const sessionNum = ctx.playback.id;
-    const expected = getBattle().battleState;
-    if (!ctx.playback.isCurrent(sessionNum) || control.signal.aborted || !control.canCommit()) return false;
+    if (
+      expected !== getBattle().battleState ||
+      !ctx.playback.isCurrent(sessionNum) ||
+      control.signal.aborted ||
+      !control.canCommit()
+    )
+      return false;
     const clearPreview = await previewAutoplayChoice(control, previewId);
     try {
       if (!ctx.playback.isCurrent(sessionNum) || control.signal.aborted || !control.canCommit()) return false;
@@ -126,9 +132,9 @@ export function createBattleCardPlay(
     expected: BattleSnapshot,
     options?: { silentReject?: boolean },
   ): boolean {
-    clearStaleAutoplayPreview();
     const currentState = getBattle().battleState;
     if (currentState !== expected) return false;
+    clearStaleAutoplayPreview();
     if (card.uid !== undefined) {
       index = currentState.hand.findIndex((candidate) => candidate.uid === card.uid && candidate.id === card.id);
     }
@@ -178,8 +184,13 @@ export function createBattleCardPlay(
     return true;
   }
 
-  function handleCardClick(card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) {
-    handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()), getBattle().battleState);
+  function handleCardClick(
+    card: BattleCard,
+    index: number,
+    event: MouseEvent<HTMLButtonElement>,
+    expected: BattleSnapshot,
+  ) {
+    handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()), expected);
   }
 
   // Flash the hover treatment before committing so autoplay reads like a manual
@@ -215,13 +226,18 @@ export function createBattleCardPlay(
     return clearPreview;
   }
 
-  async function handleAutoplayCard(card: BattleCard, index: number, control: AutoplayCardControl): Promise<boolean> {
+  async function handleAutoplayCard(
+    card: BattleCard,
+    index: number,
+    control: AutoplayCardControl,
+    expected: BattleSnapshot,
+  ): Promise<boolean> {
     const previewId = getHoverId("hand", getHandCardKey(card, index));
-    return runAutoplayWithPreview(control, previewId, (expected) => {
+    return runAutoplayWithPreview(control, previewId, expected, (offered) => {
       // Measure after the preview so the ghost starts from the lifted position, like a manual play.
       const element = ctx.handCardRefs.current[getHandCardKey(card, index)];
       const sourceRect = element ? getCardRect(element.getBoundingClientRect()) : { x: 0, y: 0, width: 0, height: 0 };
-      return handlePlayCard(card, index, sourceRect, expected, { silentReject: true });
+      return handlePlayCard(card, index, sourceRect, offered, { silentReject: true });
     });
   }
 
@@ -238,15 +254,20 @@ export function createBattleCardPlay(
     return true;
   }
 
-  async function handleAutoplayWish(card: BattleCard, control: AutoplayCardControl): Promise<boolean> {
-    return runAutoplayWithPreview(control, getHoverId("wish", card.id), (expected) =>
-      commitWishChoice(card, "autoplay wish choice", expected),
+  async function handleAutoplayWish(
+    card: BattleCard,
+    control: AutoplayCardControl,
+    expected: BattleSnapshot,
+  ): Promise<boolean> {
+    return runAutoplayWithPreview(control, getHoverId("wish", card.id), expected, (offered) =>
+      commitWishChoice(card, "autoplay wish choice", offered),
     );
   }
 
-  function handleWishChoice(card: BattleCard) {
+  function handleWishChoice(card: BattleCard, expected: BattleSnapshot) {
+    if (getBattle().battleState !== expected) return;
     clearStaleAutoplayPreview();
-    commitWishChoice(card, "wish choice", getBattle().battleState);
+    commitWishChoice(card, "wish choice", expected);
   }
 
   return { handleCardClick, handleWishChoice, handleAutoplayCard, handleAutoplayWish };

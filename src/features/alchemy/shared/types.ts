@@ -32,22 +32,20 @@ export interface CardTransfer {
   kind: "draw" | "discard";
   id: string;
   card: BattleCard;
+  handCardKey: string;
   from: CardRect;
   to: CardRect;
   fromScale: number;
   toScale: number;
-  toScaleY?: number;
   fromRotation: number;
   toRotation: number;
-  rotateY: number[];
   duration: number;
 }
 
 export interface BattleRefs {
   endTurnButtonRef: RefObject<HTMLButtonElement | null>;
   handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
-  drawPileRef: RefObject<HTMLDivElement | null>;
-  discardPileRef: RefObject<HTMLDivElement | null>;
+  handDockRef: RefObject<HTMLDivElement | null>;
   battleSceneRef: RefObject<HTMLDivElement | null>;
   playerPanelRef: RefObject<HTMLDivElement | null>;
   enemyPanelRef: RefObject<HTMLDivElement | null>;

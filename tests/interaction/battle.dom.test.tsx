@@ -63,7 +63,7 @@ defineSequenceFamily("battle", (seed) => {
         measureElementRect: rect,
         measureVisualCardRect: rect,
       });
-      const { battle } = useRunSessionBattleContext(screen);
+      const { battle } = useRunSessionBattleContext();
       useBattlePlayback({ ...controller, battleState: battle.battleState, gameMenuOpen: menu });
       const inspection = useCardInspection({
         screen,
@@ -154,13 +154,18 @@ defineSequenceFamily("battle", (seed) => {
           const card = state.hand[index];
           if (card) {
             const button = document.createElement("button");
-            controller.handleCardClick(card, index, {
-              currentTarget: button,
-            } as unknown as MouseEvent<HTMLButtonElement>);
+            controller.handleCardClick(
+              card,
+              index,
+              {
+                currentTarget: button,
+              } as unknown as MouseEvent<HTMLButtonElement>,
+              state,
+            );
           }
         }
-        if (action === "end") controller.handleEndTurn();
-        if (action === "wish" && state.wishOptions?.[0]) controller.handleWishChoice(state.wishOptions[0]);
+        if (action === "end") controller.handleEndTurn(state);
+        if (action === "wish" && state.wishOptions?.[0]) controller.handleWishChoice(state.wishOptions[0], state);
         if (action === "autoplay") controller.toggleAutoplayEnabled();
         if (action === "inspect") inspection.onOpen("deck");
         if (action === "close") inspection.close();

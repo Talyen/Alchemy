@@ -2,21 +2,20 @@ import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import { CombatTextLayer } from "@/features/alchemy/run-loop/battle/presentation/combat-text-layer";
 import { battlePresentation } from "@/app/battle-presentation";
+import { resetBattlePresentationAndRun } from "../battle-test-reset";
+import { mutateRunForTest, setBattleActiveForTest } from "../../../../../helpers/run-domain-store-test";
+import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { BattleRefs, CombatTextBurst } from "@/features/alchemy/shared/types";
 
 vi.mock("@/features/alchemy/run-loop/battle/presentation/ui/combat-text", () => ({
   CombatTextRail: ({ bursts }: { bursts: CombatTextBurst[] }) => (
     <div>
       {bursts.map((burst) => (
-        <span key={burst.id} data-burst-id={burst.id} />
+        <span key={burst.id} data-burst-id={burst.target} />
       ))}
     </div>
   ),
 }));
-
-function burst(target: "player" | "enemy"): CombatTextBurst {
-  return { target, id: target, entries: [], lifetimeMs: 1100, firstShownAt: 0 };
-}
 
 describe("CombatTextLayer geometry", () => {
   const frames = new Map<number, FrameRequestCallback>();
@@ -47,10 +46,17 @@ describe("CombatTextLayer geometry", () => {
       enemyPanelRef: { current: enemy },
       endTurnButtonRef: { current: null },
       handCardRefs: { current: {} },
-      drawPileRef: { current: null },
-      discardPileRef: { current: null },
+      handDockRef: { current: null },
     };
-    battlePresentation.setState({ floatingCombatBursts: [burst("player"), burst("enemy")] });
+    resetBattlePresentationAndRun();
+    mutateRunForTest((draft) => {
+      setBattleActiveForTest(draft, true);
+      setScreen(draft, "battle");
+    });
+    battlePresentation.getState().showCombatTexts([
+      { target: "player", kind: "damage", stat: "physical", amount: 1 },
+      { target: "enemy", kind: "damage", stat: "physical", amount: 1 },
+    ]);
   });
 
   afterEach(() => {
@@ -109,14 +115,15 @@ describe("CombatTextLayer geometry", () => {
     expect(sceneBounds).toHaveBeenCalledTimes(1);
     expect(frames.size).toBe(1);
 
-    act(() => battlePresentation.setState({ floatingCombatBursts: [] }));
+    act(() => battlePresentation.getState().clearFloatingCombatTexts());
     expect(container.querySelector('[data-testid="combat-text-layer"]')).toBeNull();
     expect(frames.size).toBe(0);
   });
 
   it("keeps an unmeasurable portrait hidden and begins tracking when its ref becomes available", () => {
     refs.playerPanelRef.current = null;
-    battlePresentation.setState({ floatingCombatBursts: [burst("player")] });
+    battlePresentation.getState().clearFloatingCombatTexts();
+    battlePresentation.getState().showCombatTexts([{ target: "player", kind: "damage", stat: "physical", amount: 1 }]);
     const { container, unmount } = render(<CombatTextLayer presentation={battlePresentation} refs={refs} />);
     const layer = container.querySelector<HTMLDivElement>('[data-testid="combat-text-layer"]')!;
     expect(layer.style.visibility).toBe("hidden");

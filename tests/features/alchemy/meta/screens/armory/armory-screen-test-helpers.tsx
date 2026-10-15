@@ -36,9 +36,9 @@ function createArmoryScreenProps(overrides: Partial<ArmoryScreenProps> = {}): Ar
     finishedRunCharacters: ["knight"],
     combatRestrictions: { characters: {}, gear: {}, trinkets: {} },
     onEquip: vi.fn(),
-    onUnequip: vi.fn(),
-    onEquipTrinket: vi.fn(),
-    onUnequipTrinket: vi.fn(),
+    onUnequip: vi.fn(() => true),
+    onEquipTrinket: vi.fn(() => true),
+    onUnequipTrinket: vi.fn(() => true),
     onSalvage: vi.fn(() => true),
     ...overrides,
   };

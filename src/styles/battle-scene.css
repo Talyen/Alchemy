@@ -26,6 +26,8 @@
 }
 
 .battle-tabletop {
+  /* Static material grain lives on pieces, not a viewport overlay over information. */
+  --battle-surface-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='.02' filter='url(%23n)'/%3E%3C/svg%3E");
   --battle-shadow-unit: calc(1px * var(--content-scale, 1));
   --battle-contact-shadow: rgb(8 10 14 / var(--battle-scene-shadow-opacity, 0.3));
   --battle-cast-shadow: rgb(8 10 14 / calc(var(--battle-scene-shadow-opacity, 0.3) * 0.75));
@@ -33,9 +35,9 @@
 
 .battle-tabletop .battle-scene-piece {
   box-shadow:
-    calc(1 * var(--battle-shadow-unit)) calc(3 * var(--battle-shadow-unit)) calc(4 * var(--battle-shadow-unit))
+    calc(1 * var(--battle-shadow-unit)) calc(2 * var(--battle-shadow-unit)) calc(2 * var(--battle-shadow-unit))
       var(--battle-contact-shadow),
-    calc(4 * var(--battle-shadow-unit)) calc(10 * var(--battle-shadow-unit)) calc(14 * var(--battle-shadow-unit))
+    calc(3 * var(--battle-shadow-unit)) calc(6 * var(--battle-shadow-unit)) calc(5 * var(--battle-shadow-unit))
       var(--battle-cast-shadow);
 }
 
@@ -67,7 +69,7 @@
         var(--battle-contact-shadow)
     )
     drop-shadow(
-      calc(4 * var(--battle-shadow-unit)) calc(9 * var(--battle-shadow-unit)) calc(7 * var(--battle-shadow-unit))
+      calc(3 * var(--battle-shadow-unit)) calc(6 * var(--battle-shadow-unit)) calc(4 * var(--battle-shadow-unit))
         var(--battle-cast-shadow)
     );
 }
@@ -82,43 +84,85 @@
 .battle-tabletop {
   --battle-art-tint: var(--battle-scene-lower-tint, var(--battle-scene-tint));
   --battle-art-opacity: var(--battle-scene-lower-opacity, var(--battle-scene-tint-opacity));
+  --battle-art-exposure: var(--battle-scene-lower-exposure, var(--battle-scene-exposure, 1));
+  --battle-art-shade: var(--battle-scene-lower-shade, var(--battle-scene-shade, 0));
 }
 
 .battle-tabletop [data-scene-region="left"] {
   --battle-art-tint: var(--battle-scene-left-tint, var(--battle-scene-tint));
   --battle-art-opacity: var(--battle-scene-left-opacity, var(--battle-scene-tint-opacity));
+  --battle-art-exposure: var(--battle-scene-left-exposure, var(--battle-scene-exposure, 1));
+  --battle-art-shade: var(--battle-scene-left-shade, var(--battle-scene-shade, 0));
 }
 
 .battle-tabletop [data-scene-region="right"] {
   --battle-art-tint: var(--battle-scene-right-tint, var(--battle-scene-tint));
   --battle-art-opacity: var(--battle-scene-right-opacity, var(--battle-scene-tint-opacity));
+  --battle-art-exposure: var(--battle-scene-right-exposure, var(--battle-scene-exposure, 1));
+  --battle-art-shade: var(--battle-scene-right-shade, var(--battle-scene-shade, 0));
 }
 
 /* Paint material edges inside the artwork, below semantic borders and focus. */
-.battle-tabletop .battle-scene-artwork:not([data-scene-masked])::before,
+.battle-tabletop .battle-scene-artwork::before,
 .battle-tabletop .battle-scene-panel::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 1;
   border-radius: inherit;
+  background-image:
+    var(--battle-surface-grain),
+    linear-gradient(
+      135deg,
+      transparent 0% 44%,
+      rgb(8 10 14 / calc(var(--battle-art-shade, 0) * 0.35)) 49% 70%,
+      rgb(8 10 14 / var(--battle-art-shade, 0)) 75%
+    );
+  mask-image: var(--battle-art-mask, none);
+  mask-size: var(--battle-art-mask-fit, contain);
+  mask-position: center;
+  mask-repeat: no-repeat;
   box-shadow:
-    inset var(--battle-shadow-unit) var(--battle-shadow-unit) var(--battle-shadow-unit) rgb(255 244 220 / 16%),
-    inset calc(-1 * var(--battle-shadow-unit)) calc(-2 * var(--battle-shadow-unit)) calc(2 * var(--battle-shadow-unit))
-      rgb(8 10 14 / 24%);
+    inset var(--battle-shadow-unit) var(--battle-shadow-unit) var(--battle-shadow-unit) rgb(255 244 220 / 12%),
+    inset calc(-1 * var(--battle-shadow-unit)) calc(-2 * var(--battle-shadow-unit)) var(--battle-shadow-unit)
+      rgb(8 10 14 / 26%);
   pointer-events: none;
+}
+
+/* Exposure is a paint wash: filtering a transformed portrait softens its ink lines. */
+.battle-tabletop .battle-scene-artwork::before {
+  background-image:
+    var(--battle-surface-grain),
+    linear-gradient(
+      135deg,
+      transparent 0% 44%,
+      rgb(8 10 14 / calc(var(--battle-art-shade, 0) * 0.35)) 49% 70%,
+      rgb(8 10 14 / var(--battle-art-shade, 0)) 75%
+    ),
+    linear-gradient(
+      rgb(255 255 255 / max(0, calc(var(--battle-art-exposure, 1) - 1))),
+      rgb(255 255 255 / max(0, calc(var(--battle-art-exposure, 1) - 1)))
+    ),
+    linear-gradient(
+      rgb(0 0 0 / max(0, calc(1 - var(--battle-art-exposure, 1)))),
+      rgb(0 0 0 / max(0, calc(1 - var(--battle-art-exposure, 1))))
+    );
+}
+
+.battle-tabletop .battle-scene-artwork[data-scene-masked]::before {
+  box-shadow: none;
 }
 
 .battle-tabletop .battle-scene-panel::before {
   z-index: 0;
-  background: color-mix(in srgb, var(--battle-art-tint) calc(var(--battle-art-opacity) * 100%), transparent);
+  background-color: color-mix(in srgb, var(--battle-art-tint) calc(var(--battle-art-opacity) * 100%), transparent);
   box-shadow:
     inset var(--battle-shadow-unit) var(--battle-shadow-unit) var(--battle-shadow-unit) rgb(255 244 220 / 12%),
-    inset calc(-1 * var(--battle-shadow-unit)) calc(-2 * var(--battle-shadow-unit)) calc(2 * var(--battle-shadow-unit))
-      rgb(8 10 14 / 24%),
-    calc(1 * var(--battle-shadow-unit)) calc(3 * var(--battle-shadow-unit)) calc(4 * var(--battle-shadow-unit))
+    inset calc(-1 * var(--battle-shadow-unit)) calc(-2 * var(--battle-shadow-unit)) var(--battle-shadow-unit)
+      rgb(8 10 14 / 26%),
+    calc(1 * var(--battle-shadow-unit)) calc(2 * var(--battle-shadow-unit)) calc(2 * var(--battle-shadow-unit))
       var(--battle-contact-shadow),
-    calc(4 * var(--battle-shadow-unit)) calc(10 * var(--battle-shadow-unit)) calc(14 * var(--battle-shadow-unit))
+    calc(3 * var(--battle-shadow-unit)) calc(6 * var(--battle-shadow-unit)) calc(5 * var(--battle-shadow-unit))
       var(--battle-cast-shadow);
 }
 
@@ -152,4 +196,45 @@
   .battle-mana-spill > span {
     transition: none;
   }
+}
+
+/* Decorative only: outside the art aperture, below turn, focus, and Death's Door cues. */
+.battle-tabletop .combatant-material-frame {
+  position: absolute;
+  inset: calc(-0.65 * var(--content-rem, 1rem));
+  z-index: 2;
+  border: calc(1.75 * var(--content-rem, 1rem)) solid transparent;
+  border-image-slice: 16%;
+  border-image-repeat: round;
+  pointer-events: none;
+}
+
+/* Material frames replace the old rim; keep its reserved width and live turn-state hooks. */
+.battle-tabletop .combatant-art:has(> .combatant-material-frame) {
+  border-color: transparent;
+}
+
+.battle-tabletop :is(.combatant-art, .battle-scene-panel):has(> .combatant-material-frame) > .shine-border {
+  display: none;
+}
+
+.battle-tabletop .combatant-art:has(> .combatant-material-frame) > .battle-scene-artwork::before {
+  box-shadow: none;
+}
+
+.battle-tabletop .battle-scene-panel:has(> .combatant-material-frame) {
+  box-shadow: none;
+}
+
+.battle-tabletop .battle-scene-panel:has(> .combatant-material-frame)::before {
+  box-shadow:
+    calc(1 * var(--battle-shadow-unit)) calc(2 * var(--battle-shadow-unit)) calc(2 * var(--battle-shadow-unit))
+      var(--battle-contact-shadow),
+    calc(3 * var(--battle-shadow-unit)) calc(6 * var(--battle-shadow-unit)) calc(5 * var(--battle-shadow-unit))
+      var(--battle-cast-shadow);
+}
+
+.battle-tabletop .combatant-art:has(> .combatant-material-frame):focus-visible {
+  outline: 2px solid var(--color-gold-pale);
+  outline-offset: calc(0.65 * var(--content-rem, 1rem) + 3px);
 }

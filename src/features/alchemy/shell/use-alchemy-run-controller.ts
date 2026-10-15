@@ -125,9 +125,9 @@ export function useAlchemyRunController(
         setCollectionPage: protectVoid(runActions.setCollectionPage),
         armory: {
           onEquip: guardProgressAction(gameSession, runActions.equipGear, false),
-          onUnequip: protectVoid(runActions.unequipGear),
-          onEquipTrinket: protectVoid(runActions.equipTrinket),
-          onUnequipTrinket: protectVoid(runActions.unequipTrinket),
+          onUnequip: guardProgressAction(gameSession, runActions.unequipGear, false),
+          onEquipTrinket: guardProgressAction(gameSession, runActions.equipTrinket, false),
+          onUnequipTrinket: guardProgressAction(gameSession, runActions.unequipTrinket, false),
           onSalvage: guardProgressAction(gameSession, runActions.salvageGear, false),
           onApplyCurrency: guardProgressAction(
             gameSession,

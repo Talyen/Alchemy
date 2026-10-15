@@ -29,14 +29,31 @@ A retained action cannot affect a later turn, Wish queue, replacement battle, or
 restored save even when card IDs and turn numbers repeat. Unrelated navigation
 leaves the battle snapshot intact and does not invalidate input. Autoplay retains
 its snapshot across preview delays; headless offers retain it in their callbacks.
-The toolbar's manual End Turn confirmation passes its captured snapshot to
-`handleEndTurn(expected)`; the controller rejects a changed snapshot before
-playback. Automatic turn endings call the same handler without a captured UI
-confirmation. The session-owned presentation flag `endTurnConfirmationOpen`
+The battle route binds manual Card and Wish callbacks to the committed input
+snapshot captured for that render, separately from copied playback frames.
+Autoplay retains the snapshot used to select
+its card, and automatic turn endings retain the snapshot that scheduled their
+timer. The toolbar's manual End Turn confirmation passes its captured snapshot
+to `handleEndTurn(expected)`; all input handlers require that identity and reject
+a changed snapshot before playback. The session-owned presentation flag `endTurnConfirmationOpen`
 blocks card/turn input and automation while the dialog is open, and clears before
 a confirmed command or on teardown. The controller-owned `endTurnButtonRef`
 connects hand focus recovery to the toolbar without depending on DOM ancestry.
 Playback cancellation remains responsible for presentation work.
+Mounted playback subscribes to its session's restore lifecycle: replacement
+invalidates the old generation, aborts transfers and timers, and resets displayed
+frames before store observers see the restored battle. A battle-to-battle restore
+therefore needs no screen change or React remount to revoke old outcomes. Session
+disposal cancels that playback as well.
+
+`battle-presentation-store.ts` keeps its mutable Zustand store private. The public
+port exposes React-compatible reads and selector subscriptions; every action in
+read and subscription snapshots is bound to the owning session. Borrowed actions
+are revoked on disposal, which resets effects and releases all subscriptions.
+Display frames, ghosts, and transfers are copied on ingress, and roots and nested
+data are frozen before publication. Functional transfer updates receive immutable
+prior data. Observers receive queued publications in order; a failed observer
+cannot interrupt another observer or the action's resource cleanup.
 
 At interaction time, those callbacks resolve gameplay before presentation:
 
@@ -121,7 +138,9 @@ and cancelled phases, plus the generation, abort signal, timers, transfer
 cancellation, draw counts, and autoplay binding. End-turn input is accepted only
 while ready; manual card plays may overlap card-draw presentation and remain
 available during victory grace. Late completions cannot unlock a newer lifetime
-or restart auto-end-turn in a finishing battle. React subscribes to binding
+or restart auto-end-turn in a finishing battle. Lifetime subscriptions publish
+phase changes so End Turn updates when opening or action playback completes,
+even after the final presentation update. React subscribes to binding
 readiness; no callback-ref bundle or binding-version counter is needed.
 
 Hand reveals acquire a draw lease from this lifetime and release it on success,
@@ -137,6 +156,13 @@ cleanup returned by a synchronous completion is released immediately. Callback
 failures reject the task after cleanup rather than leaving a draw suspended.
 Consumers supply cancellation fallbacks and presentation work; they do not
 reimplement completion flags or unregister/timer/frame cleanup ordering.
+`PlaybackLifetime.capture(generation)` supplies revocable scheduling and cancellation
+capabilities. Transfer and draw dependencies are created for the generation that
+started the sequence; retained dependencies cannot acquire the replacement battle's
+resources. Their UI writes, measurements, completion callbacks, and delayed sounds
+also check that scope. Cancellation releases owned overlays before the replacement
+presentation starts; abandoned continuations cannot clear the new transfer gate.
+
 `draw-sequence.ts` owns sequencing; `battle-transfers.ts` adapts DOM measurements,
 sounds, and transfer timers. End-turn cleanup resets hand transfer UI only after
 all animated draws have settled.

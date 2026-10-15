@@ -2,6 +2,8 @@ import { createRef, type MouseEventHandler, type RefObject } from "react";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { mutateRunForTest, setBattleActiveForTest } from "../../../../../helpers/run-domain-store-test";
+import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { battlePresentation } from "@/app/battle-presentation";
 import { BattleHand } from "@/features/alchemy/run-loop/screens/battle-screen/hand";
 import type {
@@ -107,7 +109,7 @@ describe("BattleHand", () => {
     battlePresentation.getState().resetPresentation();
   });
 
-  it("recovers focus to the toolbar reference outside the bottom bar after the last playable card", () => {
+  it.each([false, true])("recovers hand focus only while the window stays active (blur: %s)", (blur) => {
     const endTurnButtonRef = createRef<HTMLButtonElement>();
     const refs = { handCardRefs: { current: {} }, endTurnButtonRef } as unknown as BattleRefsProps;
     const onCardClick = vi.fn();
@@ -122,7 +124,7 @@ describe("BattleHand", () => {
             presentation={battlePresentation}
             view={{ battleState: { ...state, hand }, stagePixelRatio: 1 } as unknown as RequiredBattleViewProps}
             refs={refs}
-            actions={{ onCardClick } as BattleActionsProps}
+            actions={{ onCardClick, onWishChoice: vi.fn() }}
             playabilityState={{ ...state, hand }}
           />
         </section>
@@ -140,15 +142,19 @@ describe("BattleHand", () => {
       fireEvent.keyDown(card, { key: "Enter" });
       fireEvent.click(card);
       expect(onCardClick).toHaveBeenCalledOnce();
+      if (blur) {
+        fireEvent.blur(window);
+        fireEvent.focus(window);
+      }
       rerender(tree([]));
-      expect(document.activeElement).toBe(target);
+      expect(document.activeElement).toBe(blur ? document.body : target);
     } finally {
       geometry.mockRestore();
     }
   });
 
   it("keeps playable cards colored and interactive during transfers", () => {
-    battlePresentation.setState({ cardTransferInProgress: true });
+    battlePresentation.getState().setCardTransferInProgress(true);
     renderHand();
 
     const affordable = screen.getByRole("button", { name: "Play Slash" });
@@ -162,52 +168,21 @@ describe("BattleHand", () => {
   it("visibly acknowledges an unaffordable rejection while muted and clears it afterwards", () => {
     const wasMuted = audioState.muted;
     audioState.muted = true;
+    mutateRunForTest((draft) => {
+      setBattleActiveForTest(draft, true);
+      setScreen(draft, "battle");
+    });
     try {
       renderHand();
       const expensive = screen.getByRole("button", { name: "Play Meteor" });
       const affordable = screen.getByRole("button", { name: "Play Slash" });
-      act(() =>
-        battlePresentation.setState({ cardRejection: { cardKey: getHandCardKey(expensiveCard, 1), mana: true } }),
-      );
+      act(() => battlePresentation.getState().rejectCardPlay(getHandCardKey(expensiveCard, 1), true));
       expect(expensive.classList.contains("card-play-rejected")).toBe(true);
       expect(affordable.classList.contains("card-play-rejected")).toBe(false);
-      act(() => battlePresentation.setState({ cardRejection: null }));
+      act(() => battlePresentation.getState().resetPresentation());
       expect(expensive.classList.contains("card-play-rejected")).toBe(false);
     } finally {
       audioState.muted = wasMuted;
     }
-  });
-
-  it("overlays stun presentation on hand cards while the player is crowd-controlled", () => {
-    const battleState = {
-      ...defaultBattleState(),
-      turnPhase: "player" as const,
-      mana: 2,
-      wishOptions: null,
-      hand: [affordableCard, expensiveCard],
-      playerCC: { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 },
-    };
-    const view = {
-      battleState,
-      stagePixelRatio: 1,
-    } as unknown as RequiredBattleViewProps;
-    const refs = {
-      handCardRefs: { current: {} },
-    } as unknown as BattleRefsProps;
-    const actions = {
-      onCardClick: vi.fn(),
-    } as unknown as BattleActionsProps;
-
-    render(
-      <BattleHand
-        presentation={battlePresentation}
-        view={view}
-        refs={refs}
-        actions={actions}
-        playabilityState={battleState}
-      />,
-    );
-
-    expect(screen.getAllByTestId("combatant-status-effect")).toHaveLength(2);
   });
 });

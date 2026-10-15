@@ -73,9 +73,12 @@ therefore see the revision they are being asked to save. Gameplay subscriber
 failures are logged independently and cannot suppress later subscribers, autosave,
 or command completion effects. Subscription changes during gameplay notification
 apply to the next publication. `notification-channel.ts` owns synchronous FIFO
-delivery for gameplay, settings, progress, save status, cancellation, and lifecycle
+delivery for gameplay, settings, progress, save status, storage interruptions, and lifecycle
 channels. Each publication captures its listeners; observer-triggered publications
-wait until the current event reaches every observer. Listener failures are isolated
+wait until the current event reaches every observer. Session-owned channels check
+their lifetime before each callback: disposal stops the remaining captured
+listeners and queued publications immediately. Ordinary unsubscribe retains the
+current publication's listener snapshot. Listener failures are isolated
 through the channel owner's diagnostic handler. Execution failures still roll back; explicit
 `afterCommit` failures still propagate after the committed state is retained.
 
@@ -128,6 +131,11 @@ asynchronous continuations are observed to avoid an additional unhandled
 rejection; the boundary cannot cancel external work already started by an
 invalid callback.
 
+Gear's coupled mutation and Health rebinding scope can invalidate its owning
+command through `abortGameplayCommand`. The coordinator retains that failure
+until the draft closes: catching it inside an enclosing recipe cannot publish
+the partial operation. This failure state belongs to that command only.
+
 ### Post-commit behavior
 
 Audio, navigation timers, presentation updates, and other non-rollbackable work
@@ -150,7 +158,19 @@ listener, logging its failure without aborting the caller's remaining work.
 Execution and persistence errors retain their own failure contracts; the command
 dispatcher does not suppress arbitrary `afterCommit` errors.
 
-The same owner provides each session's presentation-clear and teardown channels.
+The same owner provides each session's restore, presentation-clear, and teardown channels.
+Accepted restore publication invalidates deferred navigation and restarts mounted
+battle playback before clearing outgoing battle presentation, then notifies settings,
+progress, and gameplay observers. `onRunRestored` listeners perform cancellation
+only, while the command guard remains held. This applies even to equal-data restores
+and bootstrap hydration that preserves an initialized run: their old presentation
+work still refers to the previous inputs. Failed restores emit no invalidation.
+Session disposal also cancels mounted playback without waiting for React unmount.
+Successful Clear Save Data uses this same replacement publication after disk
+deletion, including save-receipt and presentation invalidation. Settings and
+gameplay reset together before any observer can snapshot the new career; failed
+deletion leaves the current state and pending presentation intact.
+
 Teardown always clears battle UI, notifies presentation cancellation, then notifies
 run teardown, even if an adapter or listener fails. Listener changes apply on the
 next notification. Run abandonment and defeat submit their settled save before
@@ -184,6 +204,9 @@ saves contain one committed battle snapshot in `activeRun.activity`. Versions
 battles produce a load-only abandonment instruction for the selected candidate;
 restore settles earned progress with today's abandonment command before showing
 End Run. No obsolete turn, Companion action, Gold delta, or RNG draw is replayed.
+The same recovery applies to a nonterminal current snapshot marked as an enemy
+turn: current turn resolution commits atomically, so no resumable enemy phase
+exists. Terminal snapshots retain their normal outcome settlement.
 `playerDodgeCount` and `dodgeChanceFromDamage` remain battle-owned and persist.
 The Health-damage boundary requires explicit `hostile` or `self` provenance for
 Finding Rhythm; Health costs do not award it.
@@ -265,6 +288,11 @@ and borrowed store methods, detaches progress subscriptions, and cancels every
 registered timer before draining submitted saves. A timer callback already handed
 to the host checks lifetime again before executing. Timer cancellation and
 subscription release remain safe after disposal; new reads and work reject.
+Gameplay, settings, progress, save-status, and lifecycle notification channels
+borrow the same lifetime predicate. Disposal during notification revokes later
+callbacks in that publication as well as queued reentrant events. Restore and
+teardown also stop their remaining presentation work once their session closes;
+already-submitted storage work still drains.
 
 ## Activity and rewards
 
@@ -299,7 +327,7 @@ Destination offers use the `destinations` stream for sampling. They draw a boss 
 
 `Math.random()` may create a fresh run seed or presentation-only values that cannot affect gameplay or persisted state. [Armory crafting and dev spawning](./ARMORY.md#write-paths) are the intentional gameplay exception: they use injected profile-lifetime randomness, defaulting to `Math.random`, without consuming a run stream. Salvage instead derives its fixed reward seed from the item instance ID. Other run outcomes use the persisted streams above.
 
-Run-luck helpers live in `@/lib/rng` (the single door), small math in `@/lib/math`, and class-name/string/id helpers in `@/lib/utils`. Every draw stays in `[0, 1)`; unknown streams, out-of-range draws, empty ranges, and negative sample counts throw in every build. Counters hash as `counter + 1`, so resume continues at the exact next draw. Snapshot-only placeholders always draw zero and must never reach live combat. Full battle RNG + arithmetic rules: [GAME_RULES](./GAME_RULES.md).
+Run-luck helpers live in `@/lib/rng` (the single door), small math in `@/lib/math`, and class-name/string/id helpers in `@/lib/utils`. Every draw stays in `[0, 1)`; unknown streams, out-of-range draws, empty ranges, and negative sample counts throw in every build. Counters hash as `counter + 1` and wrap to the hash's 32-bit range, so increments cannot stall and resume continues at the exact next draw. Snapshot-only placeholders always draw zero and must never reach live combat. Full battle RNG + arithmetic rules: [GAME_RULES](./GAME_RULES.md).
 
 `pickWeighted(items, weightOf, rng)` owns weighted selection for destinations, loot, and Corruption. It evaluates finite non-negative weights once, uses half-open buckets in item order, and consumes one draw for a positive pool, including a single eligible item. Empty or all-zero pools return `undefined` without drawing; each caller owns its unavailable-pool behavior. Floating-point fallback selects the last positive weight. Integer magnitude and map-position rolls use `rngInt`, retaining one draw even for a fixed value.
 
@@ -333,13 +361,21 @@ A failed primary write tries the recovery slot. If both fail, show “Couldn’t
 and Retry; keep the original action pending and retry its snapshot without repeating
 costs, rewards, or RNG. The existing autosave timer handles automatic retries.
 Explicit Retry bypasses backoff once; repeated activation during saving does nothing.
-Clear, successful restore, write protection, and disposal invalidate pending completion callbacks.
+Successful clear, successful restore, write protection, and disposal invalidate pending completion callbacks.
+Requesting deletion pauses autosave and revokes submitted snapshots immediately,
+while retaining the pending action, pre-action display, and completion callbacks.
+If deletion fails, that action remains protected and retryable; autosave resumes
+with a fresh snapshot of the current career, including settings-only changes.
+Only successful deletion discards the paused work. Overlapping clears keep writes
+paused until all finish; any successful deletion discards the old work.
 Restore replaces the acknowledgment epoch only at commit and keeps save protection
 armed continuously until the replacement snapshot is saved. A failed restore retains
 the previous epoch, pending action, and deferred feedback. Successful restore also
 invalidates autosave scheduling before observers schedule replacement work, so a
 late pre-restore write cannot cancel replacement retries. The session persistence
-cancellation subscription covers storage cancellation and committed restores.
+interruption subscription distinguishes storage pause, failure, deletion, write
+protection, and committed restores. A newly attached autosave client reads the
+current deletion gate before scheduling work.
 Completed actions survive process termination after local acknowledgement. This
 promise does not cover power loss, subsequent filesystem failure, or browser eviction.
 
@@ -379,7 +415,7 @@ or explicit invalidation. Disposing the session cancels feedback acknowledgement
 but still drains authorized exit writes. Save receipts never enter the wire format.
 Low-level transport tests use the storage runtime directly to exercise arbitrary payloads below this session boundary.
 
-`run-resume-codec.ts` translates `RunSession` and `ActiveRunData`. The encoder selects
+`run-resume-codec.ts` translates the active-run progress and session fields to and from `ActiveRunData`. The encoder selects
 progress, mode geography, and one tagged `activity`; the decoder hydrates that
 branch and derives its route directly. Historical screen/visit/reward precedence
 exists only in the version 20-to-21 migration. `run-restore.ts` applies the decoded
@@ -433,7 +469,7 @@ battle display data to persist a run.
 
 `SaveOperationQueue` serializes loads, writes, and clears; a load seals pending save coalescing, observes preceding writes, and establishes slot protection before following writes. Demo initialization writes inside its load operation, so a later clear cannot be overtaken by import. Exit writes use the synchronous path only when no load or clear is pending; otherwise they follow the queue's protection and cancellation rules. Draining storage includes pending loads and their initialization writes. `save-io.ts` also drains published write outcomes, including failure status and session progress receipts, so transport completion cannot outrun acknowledgement.
 
-The storage owner reads primary and recovery slots before selecting the freshest playable save. Unreadable or newer-format data stays in its slot while new progress saves to the other slot; a failed primary write also tries recovery. Load status is diagnostic only, so the app continues into play without a save-problem screen. The [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract) owns the exact routing and wipe rules.
+The storage owner reads primary and recovery slots before selecting the freshest playable save. Selection also determines the permitted write attempts; a failed primary write only tries recovery when compatibility allows it. Unreadable or newer-format data stays in its slot under the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract), which owns the exact fallback and wipe rules. Load status is diagnostic only, so the app continues into play without a save-problem screen.
 
 Save snapshots are detached from live state; read ports borrow immutable committed
 values as described under [Run state](#run-state). Restoring active combat returns
@@ -476,8 +512,8 @@ The recap is transient, survives voluntary teardown, and clears on a fresh run.
 
 Use this reference for access and orchestration; unprefixed store filenames are under `shared/stores/`.
 
-- **Committed reads** — `run-reads.ts`: data-only `readActiveRun`, `readRunProfile`, `readRunSession`, `readBattle`, and shop reads. React hooks in `use-run-reads.ts` provide narrow navigation, Homestead, talent, draft, and content-navigation slices; `useActiveRunScreenValue` reads the presentation screen.
-- **Screen display** — `run-screen-data.ts` owns the exact selectors and derives `RunScreenDataByScreen` from their return types; `use-run-screen-data.ts` subscribes once per route and retains its last active data during fades. Visit hooks follow activity; run recaps follow the visible ending screen because settlement makes activity inactive. Battle uses `app/screen-routes/use-battle-screen-route-data.ts`, composing `useRunSessionBattleContext` for display, never shell command inputs.
+- **Committed reads** — `run-reads.ts`: data-only `readActiveRun`, `readRunProfile`, `readRunSession`, `readBattle`, and shop reads. React hooks in `use-run-reads.ts` provide the derived run phase and narrow Homestead, talent, and battle reads; `useActiveRunScreenValue` reads the presentation screen.
+- **Screen display** — `run-screen-data.ts` owns the exact selectors and derives `RunScreenDataByScreen` from their return types; `useRunScreenData(screen)` in `use-run-screen-data.ts` subscribes once per route and retains its last active data during fades. Visit hooks follow activity; run recaps follow the visible ending screen because settlement makes activity inactive. Battle uses `app/screen-routes/use-battle-screen-route-data.ts`, composing `useRunSessionBattleContext` for display, never shell command inputs.
 - **Commands and writes** — `run-session-command.ts` owns dispatch and `createRunSessionCommand` bindings. `run-session-write-port.ts` exposes domain operations with `RunTransaction` as their first argument; `set*` accepts a value or readonly updater. The internal `gameplay-command.ts` retains the single draft/commit coordinator. There is one import path for writes; implementations are split by domain under `shared/stores/write/` behind that barrel.
 - **Battle commands** — `battle-commands.ts` owns card play, Wish selection, and turn completion; `battle-start-commands.ts` owns standalone validated starts; room entry composes the same `initializeBattle` transaction operation. Its `presentBattleStart` callback receives committed opening feedback. Each input supplies the borrowed battle snapshot that offered it; commands reject stale snapshot identity inside the transaction before RNG or progress changes. Rejected inputs return null, so callers start presentation only after a committed result. Raw snapshot replacement and RNG binding stay private under `write/run-battle.ts`. Live resolutions commit an explicit Gold delta against the authoritative purse and tally earnings atomically. Snapshot Gold remains an engine/save input; historical unfinished battles are abandoned through the load instruction.
 - **Gear reads and writes** — `gear-state-defaults.ts` owns pure initial-state and save-field factories so startup storage never imports the live session runtime. `gear-store.ts` provides data-only reads and its codec; `use-gear-store.ts` owns React slices and combat restrictions; `gear-session-command.ts` composes Gear, discovery, materials, and live-run rebinding within one command. Choose its outer or draft wrapper using [Armory write paths](./ARMORY.md#write-paths).

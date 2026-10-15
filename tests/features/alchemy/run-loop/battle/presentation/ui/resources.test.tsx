@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
-import { ManaPanel } from "@/features/alchemy/run-loop/battle/presentation/ui/resources";
+import { ManaPanel } from "@/features/alchemy/run-loop/battle/presentation/ui/mana-dock";
 import { battlePresentation } from "@/app/battle-presentation";
 
 afterEach(() => {
@@ -17,10 +17,22 @@ it("keeps unchanged crystals mounted through spending, refill, and capacity gain
   expect(gem(0).querySelector(".mana-dock-full")).toBe(firstArt);
   expect(gem(0).getAttribute("data-effect-token")).toBe(unchangedToken);
   expect(gem(2).getAttribute("data-effect")).toBe("spend");
+  const spentArt = gem(2).querySelector(".mana-dock-empty");
+  const spentToken = gem(2).getAttribute("data-effect-token");
+  const nextSpentArt = gem(1).querySelector(".mana-dock-full");
+  rerender(<ManaPanel mana={1} maxMana={4} presentation={battlePresentation} />);
+  expect(gem(2).getAttribute("data-filled")).toBe("false");
+  expect(gem(2).querySelector(".mana-dock-empty")).toBe(spentArt);
+  expect(gem(2).getAttribute("data-effect-token")).toBe(spentToken);
+  expect(gem(1).getAttribute("data-effect")).toBe("spend");
+  expect(gem(1).querySelector(".mana-dock-full")).not.toBe(nextSpentArt);
+  expect(gem(0).querySelector(".mana-dock-full")).toBe(firstArt);
   rerender(<ManaPanel mana={3} maxMana={4} presentation={battlePresentation} />);
   expect(gem(2).getAttribute("data-effect")).toBe("fill");
+  const refilledArt = gem(2).querySelector(".mana-dock-full");
   rerender(<ManaPanel mana={4} maxMana={5} presentation={battlePresentation} />);
   expect(gem(4).getAttribute("data-effect")).toBe("gain");
+  expect(gem(2).querySelector(".mana-dock-full")).toBe(refilledArt);
   expect(gem(0).querySelector(".mana-dock-full")).toBe(firstArt);
 });
 

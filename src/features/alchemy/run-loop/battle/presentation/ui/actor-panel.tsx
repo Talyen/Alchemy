@@ -1,3 +1,4 @@
+import { CombatantFrame } from "./combatant-frame";
 import type { EnemyDescriptionContext } from "@/lib/battle";
 import { type CSSProperties, type ReactNode, type Ref, useLayoutEffect, useRef } from "react";
 
@@ -35,6 +36,7 @@ import type { ActiveCcKeyword } from "../../../../shared/utils/cc-presentation";
 
 interface ArtPanelProps {
   side: "player" | "enemy";
+  artOverlay?: ReactNode;
   title: string;
   art: string;
   health: number;
@@ -96,6 +98,7 @@ export function ArtPanel({
   turnUrgentHide = false,
   turnShineColors,
   artCorner,
+  artOverlay,
   ccKeyword = null,
   attackToken = 0,
   castToken = 0,
@@ -143,6 +146,7 @@ export function ArtPanel({
             />
             <ActorArtFrame
               side={side}
+              artOverlay={artOverlay}
               title={title}
               art={art}
               shimmerId={shimmerId}
@@ -191,6 +195,7 @@ export function ArtPanel({
 
 function ActorArtFrame({
   side,
+  artOverlay,
   title,
   art,
   shimmerId,
@@ -210,6 +215,7 @@ function ActorArtFrame({
   ccKeyword = null,
 }: {
   side: "player" | "enemy";
+  artOverlay?: ReactNode;
   title: string;
   art: string;
   shimmerId: string;
@@ -306,6 +312,7 @@ function ActorArtFrame({
           shimmerRounded="rounded-shell-hero"
           onMouseEnter={() => onHoverShimmer(shimmerId)}
         >
+          {!isDead ? <CombatantFrame /> : null}
           <ArtTurnActiveBorder
             side={side}
             active={turnActive && !isDead}
@@ -330,6 +337,7 @@ function ActorArtFrame({
               />
             </BattleSceneArtwork>
           )}
+          {artOverlay}
           <PortraitImpactVfx pulse={pulse} showHealthFlash={!isDead && pulse?.healthLost === true} />
         </Surface>
       </CombatantStatusEffectPresentation>
@@ -367,6 +375,7 @@ function ActorStatsPanel({
         isDead && "animate-frame-fade !bg-transparent",
       )}
     >
+      {!isDead ? <CombatantFrame /> : null}
       {deathsDoorActive ? <StatsDeathDoorBorder /> : null}
       <div className={cn("relative", isDead && "opacity-0 transition-opacity duration-700")}>
         <ActorHealthHeader side={side} title={title} health={health} maxHealth={maxHealth} healthToken={healthToken} />

@@ -4,6 +4,19 @@ import { artGroup } from "./art-group.mjs";
 export const coreAssets = [
   ...artGroup(
     {
+      folder: "Interface/Combatant Frames",
+      preset: ART_PRESETS.combatantFrame,
+      requiresTransparency: true,
+    },
+    [
+      ["Charcoal - Stitched Frame.png", "combatant-frame-charcoal.webp"],
+      ["Saddle - Stitched Frame.png", "combatant-frame-saddle.webp"],
+      ["Walnut - Stitched Frame.png", "combatant-frame-walnut.webp"],
+      ["Oak - Stitched Frame.png", "combatant-frame-oak.webp"],
+    ],
+  ),
+  ...artGroup(
+    {
       folder: "Interface/Mana Dock",
       preset: ART_PRESETS.manaDockCrystal,
       requiresTransparency: true,

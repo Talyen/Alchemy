@@ -4,7 +4,7 @@ import type { Page } from "@playwright/test";
 import { injectActiveBattle, makeCard, makeGoblinBattleState, withSavedGame } from "../../browser-helpers";
 import { critical, slow } from "../../playwright-tags";
 
-test("mana dock stays fixed through capacity, destruction and temporary overflow", critical, async ({ page }) => {
+test("portrait crystals retain capacity, destruction and temporary overflow effects", critical, async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   const cards = [
     makeCard({
@@ -26,8 +26,18 @@ test("mana dock stays fixed through capacity, destruction and temporary overflow
   });
   const dock = page.getByTestId("mana-panel");
   await expect(dock.locator("[data-mana-index]")).toHaveCount(5);
-  const frame = dock.locator(".mana-dock-frame");
-  const initial = await frame.boundingBox();
+  const relativePlacement = () =>
+    dock.evaluate((element) => {
+      const row = element.getBoundingClientRect();
+      const portrait = element.closest('[data-testid="battle-player-art-panel"]')!.getBoundingClientRect();
+      return {
+        x: (row.x - portrait.x) / portrait.width,
+        y: (row.y - portrait.y) / portrait.height,
+        width: row.width / portrait.width,
+        height: row.height / portrait.height,
+      };
+    });
+  const initial = await relativePlacement();
   await dock.evaluate((element) => {
     element.setAttribute("data-observed-animations", "");
     element.addEventListener("animationstart", (event) => {
@@ -38,8 +48,7 @@ test("mana dock stays fixed through capacity, destruction and temporary overflow
       );
     });
   });
-  // Frame inspection must not activate the concealed cards beneath it.
-  await dock.locator(".mana-dock-inspect").click({ position: { x: initial!.width * 0.2, y: initial!.height * 0.5 } });
+  await page.getByRole("button", { name: "Inspect Mana: 5 / 5" }).click();
   await expect(page.locator("[data-hand-slot]")).toHaveCount(3);
   await page.locator("[data-hand-slot] button").first().click();
   await expect(dock).toHaveAttribute("data-max-mana", "15");
@@ -56,20 +65,21 @@ test("mana dock stays fixed through capacity, destruction and temporary overflow
   const restoredMana = Number(await dock.getAttribute("data-mana"));
   await expect(dock.locator(".mana-dock-overflow")).toHaveText(`+${restoredMana - 9}`);
   await expect(page.getByRole("button", { name: `Inspect Mana: ${restoredMana} / 8` })).toBeVisible();
-  const final = await frame.boundingBox();
-  expect(final!.x).toBeCloseTo(initial!.x, 1);
-  expect(final!.y).toBeCloseTo(initial!.y, 1);
-  expect(final!.width).toBeCloseTo(initial!.width, 1);
-  expect(final!.height).toBeCloseTo(initial!.height, 1);
+  const final = await relativePlacement();
+  // The row follows portrait hover/lunge scaling; its placement inside the artwork stays fixed.
+  expect(final.x).toBeCloseTo(initial.x, 3);
+  expect(final.y).toBeCloseTo(initial.y, 3);
+  expect(final.width).toBeCloseTo(initial.width, 3);
+  expect(final.height).toBeCloseTo(initial.height, 3);
   const containment = await dock.locator("[data-mana-index]").evaluateAll((elements) => {
-    const frame = elements[0]!.closest(".mana-dock")!.querySelector(".mana-dock-frame")!.getBoundingClientRect();
+    const frame = elements[0]!.closest('[data-testid="battle-player-art-panel"]')!.getBoundingClientRect();
     return elements.map((el) => {
       const r = el.getBoundingClientRect();
       return (
-        r.left > frame.left + frame.width * 0.18 &&
-        r.right < frame.left + frame.width * 0.82 &&
-        r.top > frame.top + frame.height * 0.32 &&
-        r.bottom < frame.top + frame.height * 0.66
+        r.left > frame.left &&
+        r.right < frame.right &&
+        r.top > frame.top + frame.height * 0.75 &&
+        r.bottom < frame.bottom
       );
     });
   });
@@ -204,6 +214,7 @@ test("hover reconciles through a play, draw, and reflow with the pointer in the 
 });
 
 for (const { width, height, gameSizePercent } of [
+  { width: 1920, height: 1080, gameSizePercent: 100 },
   { width: 1280, height: 720, gameSizePercent: 120 },
   { width: 2560, height: 1080, gameSizePercent: 80 },
 ]) {
@@ -219,54 +230,56 @@ for (const { width, height, gameSizePercent } of [
     );
     await openHand(page);
     const positions = () =>
-      page
-        .locator('[data-testid="draw-pile"], [data-testid="discard-pile"], [data-testid="mana-panel"]')
-        .or(page.getByRole("button", { name: "End Turn", exact: true }))
-        .evaluateAll((elements) =>
-          elements.map((el) => {
-            const r = el.getBoundingClientRect();
-            return { x: r.x, y: r.y };
-          }),
-        );
+      page.getByRole("button", { name: "End Turn", exact: true }).evaluateAll((elements) =>
+        elements.map((el) => {
+          const r = el.getBoundingClientRect();
+          return { x: r.x, y: r.y };
+        }),
+      );
     const initial = await positions();
     const scene = await page.getByTestId("battle-scene").boundingBox();
     expect(scene).toEqual({ x: 0, y: 0, width, height });
-    const inset = await page.getByTestId("vr-stage").evaluate((stage) => {
-      const scale = stage.getBoundingClientRect().height / (stage as HTMLElement).offsetHeight;
-      return 18 * Number(getComputedStyle(stage).getPropertyValue("--content-scale")) * scale;
-    });
-    const draw = await page.getByTestId("draw-pile").boundingBox();
-    const discard = await page.getByTestId("discard-pile").boundingBox();
     const mana = await page.getByTestId("mana-panel").boundingBox();
     const endTurn = await page.getByRole("button", { name: "End Turn", exact: true }).boundingBox();
-    expect(draw!.x).toBeCloseTo(inset, 0);
-    expect(width - discard!.x - discard!.width).toBeCloseTo(inset, 0);
-    expect(height - draw!.y - draw!.height).toBeCloseTo(inset, 0);
-    expect(height - discard!.y - discard!.height).toBeCloseTo(inset, 0);
-    expect(mana!.x + mana!.width / 2).toBeCloseTo(width / 2, 0);
+    const portrait = await page.getByTestId("battle-player-art-panel").boundingBox();
+    expect(mana!.x + mana!.width / 2).toBeCloseTo(portrait!.x + portrait!.width / 2, 0);
+    const gems = await page.locator("[data-mana-index]").evaluateAll((elements) =>
+      elements.map((element) => {
+        const r = element.getBoundingClientRect();
+        return { x: r.x, y: r.y, width: r.width, height: r.height };
+      }),
+    );
+    for (const gem of gems) {
+      expect(gem.x).toBeGreaterThan(portrait!.x);
+      expect(gem.x + gem.width).toBeLessThan(portrait!.x + portrait!.width);
+      expect(gem.y + gem.height).toBeLessThan(portrait!.y + portrait!.height);
+      expect(gem.y).toBeGreaterThan(portrait!.y + portrait!.height * 0.75);
+    }
     const menu = await page.getByRole("button", { name: "Open game menu", exact: true }).boundingBox();
     expect(endTurn!.y + endTurn!.height / 2).toBeCloseTo(menu!.y + menu!.height / 2, 0);
     expect(endTurn!.x + endTurn!.width).toBeLessThan(menu!.x);
-    expect(mana!.y + mana!.height).toBeGreaterThan(height);
-    expect(mana!.y + mana!.height - height).toBeLessThanOrEqual(5);
-    expect(endTurn!.y + endTurn!.height).toBeLessThan(discard!.y);
     const hand = await page.getByTestId("battle-hand").boundingBox();
     expect(hand!.x + hand!.width / 2).toBeCloseTo(width / 2, 0);
 
     for (let count = 7; count >= 1; count--) {
       await expect(page.locator("[data-hand-slot]")).toHaveCount(count);
       await page.mouse.move(0, 0);
+      await expect
+        .poll(() =>
+          page
+            .locator("[data-hand-slot] button")
+            .evaluateAll((cards) => Math.min(...cards.map((card) => card.getBoundingClientRect().bottom))),
+        )
+        .toBeGreaterThanOrEqual(height - 1);
       const bounds = await page.locator("[data-hand-slot] button").evaluateAll((elements) =>
         elements.map((el) => {
           const r = el.getBoundingClientRect();
           return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
         }),
       );
-      const left = await page.getByTestId("draw-pile").locator("../..").boundingBox();
-      const right = await page.getByTestId("discard-pile").locator("../..").boundingBox();
       for (const rect of bounds) {
-        expect(rect.left).toBeGreaterThan(left!.x + left!.width);
-        expect(rect.right).toBeLessThan(right!.x);
+        expect(rect.left).toBeGreaterThanOrEqual(0);
+        expect(rect.right).toBeLessThanOrEqual(width);
         expect((rect.top + rect.bottom) / 2).toBeLessThan(height);
         expect(rect.top).toBeGreaterThanOrEqual(0);
       }

@@ -9,7 +9,6 @@ import { getBattleOutcome } from "./battle-outcome";
 import { scaleReceivedPlayerDamage } from "./damage-modifiers";
 import { setPlayerStatus } from "./status-state";
 import {
-  applyPoisonDamageArmorRider,
   armorMitigatesElementalDamage,
   decayArmorAfterDamage,
   decayHalvedStatus,
@@ -80,9 +79,13 @@ export function tickEnemyPoison(state: BattleState, combatTexts: CombatTextEvent
     );
   }
   return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState, hit) => {
-    let afterRiders = applyPoisonDamageArmorRider(nextState, finalDamage, combatTexts);
-    afterRiders = applyPoisonTalentRiders(afterRiders, hit.healthDamage, combatTexts, true, (current, damage, texts) =>
-      resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
+    const afterRiders = applyPoisonTalentRiders(
+      nextState,
+      hit.healthDamage,
+      combatTexts,
+      true,
+      (current, damage, texts) =>
+        resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
     );
     return tryPoisonStunProc(afterRiders, finalDamage, combatTexts);
   });

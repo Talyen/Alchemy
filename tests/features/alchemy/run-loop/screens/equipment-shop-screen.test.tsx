@@ -18,12 +18,12 @@ it("buys the offered identity and prevents a repeat purchase of its slot", async
   const view = (purchasedSlotKeys: string[]) => (
     <EquipmentShopScreen
       gold={100}
-      gear={[testGear]}
+      items={[testGear]}
       refreshesLeft={1}
       purchasedSlotKeys={purchasedSlotKeys}
-      getGearPrice={() => 60}
+      getPrice={() => 60}
       refreshPrice={15}
-      onBuyGear={onBuyGear}
+      onBuy={onBuyGear}
       onRefresh={vi.fn()}
       onContinue={vi.fn()}
     />

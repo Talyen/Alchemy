@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CollectionScreen } from "@/features/alchemy/meta/screens/collection-screen";
 import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
+import { boardCatalog, type BoardSelection } from "@/lib/boards/catalog";
 import { enemyBestiary } from "@/lib/game-data";
 import { getBossMusicKey } from "@/lib/audio";
 
@@ -117,34 +118,130 @@ describe("CollectionScreen", () => {
   });
 });
 
-it("shows six board previews with locked inspection and only permits equipping collected art", async () => {
-  const onSelectBoard = vi.fn(() => true);
-  const props = {
-    collectionTab: "boards" as const,
-    collectedBoardIds: ["acorn"],
-    boardSelection: { kind: "none" as const },
-    onSelectBoard,
-    onSelectTab: vi.fn(),
-    discoveredCardIds: [],
-    encounteredEnemyIds: [],
-    discoveredTrinketIds: [],
-    discoveredUniqueIds: [],
-    finishedRunCharacters: [],
-    collectionPages: { heroes: 0, cards: 0, bestiary: 0, trinkets: 0, uniques: 0, boards: 0 },
-    onPageChange: vi.fn(),
-    bondedCompanions: {},
-  };
-  const view = render(<CollectionScreen {...props} />);
-  expect(view.getAllByRole("button", { name: /^Inspect / })).toHaveLength(6);
-  fireEvent.click(view.getByRole("button", { name: "Inspect Alpine Cuckoo (Locked)" }));
-  const dialog = view.getByRole("dialog", { name: "Alpine Cuckoo" });
-  expect(within(dialog).getByRole("img", { name: "Alpine Cuckoo" })).toBeTruthy();
-  expect(within(dialog).queryByRole("button", { name: "Use Board" })).toBeNull();
-  await waitForArtwork();
-  fireEvent.click(within(dialog).getByRole("button", { name: "Close board inspection" }));
-  fireEvent.click(view.getByRole("button", { name: "Inspect Acorn" }));
-  await waitForArtwork();
-  fireEvent.click(view.getByRole("button", { name: "Use Board" }));
-  expect(onSelectBoard).toHaveBeenCalledExactlyOnceWith({ kind: "board", boardId: "acorn" });
-  cleanup();
+describe("Game Boards", () => {
+  installDisabledAnimationsForTests();
+  afterEach(cleanup);
+
+  function boardProps(boardSelection: BoardSelection = { kind: "none" }) {
+    return {
+      collectionTab: "boards" as const,
+      collectedBoardIds: ["acorn"],
+      boardSelection,
+      onSelectBoard: vi.fn(() => true),
+      onSelectTab: vi.fn(),
+      discoveredCardIds: [],
+      encounteredEnemyIds: [],
+      discoveredTrinketIds: [],
+      discoveredUniqueIds: [],
+      finishedRunCharacters: [],
+      collectionPages: { heroes: 0, cards: 0, bestiary: 0, trinkets: 0, uniques: 0, boards: 0 },
+      onPageChange: vi.fn(),
+      bondedCompanions: {},
+    };
+  }
+
+  it("selects None and Random immediately through the existing board commands", async () => {
+    const props = boardProps();
+    const { rerender } = render(<CollectionScreen {...props} />);
+    await waitForArtwork();
+    expect(screen.getByRole("button", { name: "None" }).getAttribute("aria-current")).toBe("true");
+    expect(screen.getAllByRole("button", { name: /^Inspect / })).toHaveLength(4);
+    expect(screen.queryByText(/collected/i)).toBeNull();
+    expect(screen.queryByText("Acorn")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Random" }));
+    expect(props.onSelectBoard).toHaveBeenCalledExactlyOnceWith({ kind: "random" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    rerender(<CollectionScreen {...props} boardSelection={{ kind: "random" }} />);
+    expect(screen.getByRole("button", { name: "Random" }).getAttribute("aria-current")).toBe("true");
+    expect(screen.getByRole("button", { name: "None" }).hasAttribute("aria-current")).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: "None" }));
+    expect(props.onSelectBoard).toHaveBeenLastCalledWith({ kind: "none" });
+    rerender(<CollectionScreen {...props} boardSelection={{ kind: "board", boardId: "acorn" }} />);
+    expect(screen.getByRole("button", { name: "Inspect Acorn" }).getAttribute("aria-current")).toBe("true");
+    expect(screen.getByRole("button", { name: "Random" }).hasAttribute("aria-current")).toBe(false);
+  });
+
+  it("keeps locked inspection, collected-board equipping, and return focus", async () => {
+    const props = boardProps();
+    render(<CollectionScreen {...props} />);
+    await waitForArtwork();
+    const locked = screen.getByRole("button", { name: "Inspect Alpine Cuckoo (Locked)" });
+    locked.focus();
+    fireEvent.click(locked);
+    const dialog = screen.getByRole("dialog", { name: "Alpine Cuckoo" });
+    expect(within(dialog).getByRole("img", { name: "Alpine Cuckoo" })).toBeTruthy();
+    expect(within(dialog).queryByRole("button", { name: "Use Board" })).toBeNull();
+    await waitForArtwork();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close board inspection" }));
+    await waitFor(() => expect(document.activeElement).toBe(locked));
+
+    fireEvent.click(locked);
+    await waitForArtwork();
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.activeElement).toBe(locked);
+
+    const owned = screen.getByRole("button", { name: "Inspect Acorn" });
+    owned.focus();
+    fireEvent.click(owned);
+    await waitForArtwork();
+    fireEvent.click(screen.getByRole("button", { name: "Use Board" }));
+    expect(props.onSelectBoard).toHaveBeenCalledExactlyOnceWith({ kind: "board", boardId: "acorn" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.activeElement).toBe(owned);
+  });
+
+  it("lets Use Board reapply the equipped board and closes only after accepted selection", async () => {
+    const props = boardProps({ kind: "board", boardId: "acorn" });
+    props.onSelectBoard.mockReturnValueOnce(false);
+    render(<CollectionScreen {...props} />);
+    await waitForArtwork();
+    const tile = screen.getByRole("button", { name: "Inspect Acorn" });
+    tile.focus();
+    fireEvent.click(tile);
+    await waitForArtwork();
+    const useBoard = screen.getByRole("button", { name: "Use Board" });
+    fireEvent.click(useBoard);
+    expect(props.onSelectBoard).toHaveBeenCalledExactlyOnceWith({ kind: "board", boardId: "acorn" });
+    expect(screen.getByRole("dialog", { name: "Acorn" })).toBeTruthy();
+    fireEvent.click(useBoard);
+    expect(props.onSelectBoard).toHaveBeenCalledTimes(2);
+    expect(props.onSelectBoard).toHaveBeenLastCalledWith({ kind: "board", boardId: "acorn" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.activeElement).toBe(tile);
+  });
+
+  it("paginates the combined choices without skipping boards and preserves tab page memory", async () => {
+    const props = boardProps();
+    const { rerender } = render(<CollectionScreen {...props} />);
+    await waitForArtwork();
+    expect(screen.getAllByRole("button", { name: /^Inspect / }).map((tile) => tile.getAttribute("aria-label"))).toEqual(
+      boardCatalog.slice(0, 4).map((board) => `Inspect ${board.title}${board.id === "acorn" ? "" : " (Locked)"}`),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(props.onPageChange).toHaveBeenCalledExactlyOnceWith("boards", 1);
+    rerender(<CollectionScreen {...props} collectionPages={{ ...props.collectionPages, boards: 1 }} />);
+    await waitFor(() => expect(screen.queryByRole("button", { name: "None" })).toBeNull());
+    expect(screen.getAllByRole("button", { name: /^Inspect / }).map((tile) => tile.getAttribute("aria-label"))).toEqual(
+      boardCatalog.slice(4, 10).map((board) => `Inspect ${board.title} (Locked)`),
+    );
+    rerender(
+      <CollectionScreen {...props} collectionTab="cards" collectionPages={{ ...props.collectionPages, boards: 1 }} />,
+    );
+    rerender(<CollectionScreen {...props} collectionPages={{ ...props.collectionPages, boards: 1 }} />);
+    await waitForArtwork();
+    expect(screen.getAllByRole("button", { name: /^Inspect / })).toHaveLength(6);
+    expect(screen.queryByRole("button", { name: "Random" })).toBeNull();
+
+    const lastPage = Math.floor((boardCatalog.length + 1) / 6);
+    rerender(<CollectionScreen {...props} collectionPages={{ ...props.collectionPages, boards: lastPage }} />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Next page" }).hasAttribute("disabled")).toBe(true));
+    await waitFor(() =>
+      expect(
+        screen.getAllByRole("button", { name: /^Inspect / }).map((tile) => tile.getAttribute("aria-label")),
+      ).toEqual(boardCatalog.slice(lastPage * 6 - 2).map((board) => `Inspect ${board.title} (Locked)`)),
+    );
+  });
 });
