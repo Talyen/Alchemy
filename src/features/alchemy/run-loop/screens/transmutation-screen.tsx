@@ -157,6 +157,7 @@ export function TransmutationScreen({
   }
 
   if (!available && !completed) return null;
+  const resultCard = visit.result;
 
   return (
     <TitledScreenShell title={i18n.text("ui.transmutation-screen.1", "Transmutation")}>
@@ -171,7 +172,7 @@ export function TransmutationScreen({
           restoreFocus.current = false;
         }}
       >
-        {showResult && visit.result ? (
+        {showResult && resultCard ? (
           <>
             <FadeSlot
               swapKey="result"
@@ -181,20 +182,20 @@ export function TransmutationScreen({
             >
               <div className={cn("reward-choice relative", resultReady && committedHere && "reward-choice-selected")}>
                 <BattleCardButton
-                  card={visit.result}
+                  card={resultCard}
                   comparisonCard={visit.original ?? undefined}
                   ariaLabel={i18n.text("ui.transmutation-screen.3", "Transmuted: {{value0}}", {
-                    value0: i18n.read(() => getCardDisplayTitle(visit.result)),
+                    value0: i18n.read(() => getCardDisplayTitle(resultCard)),
                   })}
                   className={viewCardWidthClass}
-                  shineColor={getCardInspectionShineColors(visit.result)}
+                  shineColor={getCardInspectionShineColors(resultCard)}
                   selected
                   shimmerActive={false}
                   shimmerToken={undefined}
                 />
               </div>
               <div className={controlLabelClass}>
-                <CardTitle card={visit.result} />
+                <CardTitle card={resultCard} />
               </div>
             </FadeSlot>
             <Button

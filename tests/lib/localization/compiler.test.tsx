@@ -50,7 +50,12 @@ it("refreshes compiler-cached messages, helpers and explicit memo results withou
     "localizedHelper",
     executable + "; return CompiledTranslation;",
   ) as (...values: unknown[]) => React.ComponentType;
-  const Component = create(React, compilerRuntime.c, useGameTranslation, () => displayText("Staff"));
+  const Component = create(
+    React,
+    (compilerRuntime as unknown as { c: (size: number) => unknown[] }).c,
+    useGameTranslation,
+    () => displayText("Staff"),
+  );
   render(<Component />);
   const button = screen.getByRole("button", { name: "Staff Language" });
   button.focus();

@@ -19303,6 +19303,16 @@
     },
     "terms": ["Gold"]
   },
+  "description.4efbfa4bad2b08c1": {
+    "text": "Training <keyword0>Companions</keyword0>...",
+    "context": "Catalog description",
+    "slotTypes": {
+      "keyword0": {
+        "keywordId": "companion"
+      }
+    },
+    "terms": ["Companion"]
+  },
   "description.4efd159edea4574": {
     "text": "Cleanse <keyword0>Stun</keyword0> and <keyword1>Freeze</keyword1> build-up",
     "context": "Card effect description",
@@ -31722,6 +31732,88 @@
     },
     "terms": []
   },
+  "startup.adventure": {
+    "text": "Adventure awaits...",
+    "context": "app/startup-splash.ts",
+    "terms": []
+  },
+  "startup.baubles": {
+    "text": "Enchanting baubles...",
+    "context": "app/startup-splash.ts",
+    "terms": []
+  },
+  "startup.blades": {
+    "text": "Sharpening blades...",
+    "context": "app/startup-splash.ts",
+    "terms": []
+  },
+  "startup.companions": {
+    "text": "Training companions...",
+    "context": "app/startup-splash.ts",
+    "aliasOf": "description.4efbfa4bad2b08c1",
+    "values": {},
+    "terms": ["Companion"]
+  },
+  "startup.crystals": {
+    "text": "Gathering crystals...",
+    "context": "app/startup-splash.ts",
+    "terms": []
+  },
+  "startup.decks": {
+    "text": "Shuffling decks...",
+    "context": "app/startup-splash.ts",
+    "terms": []
+  },
+  "startup.homestead": {
+    "text": "Building homestead...",
+    "context": "app/startup-splash.ts",
+    "terms": ["Homestead"]
+  },
+  "startup.labyrinth": {
+    "text": "Mapping labyrinth...",
+    "context": "app/startup-splash.ts",
+    "terms": []
+  },
+  "startup.loading": {
+    "text": "Loading Alchemy",
+    "context": "app/startup-splash.ts",
+    "terms": []
+  },
+  "startup.loot": {
+    "text": "Counting loot...",
+    "context": "app/startup-splash.ts",
+    "terms": []
+  },
+  "startup.monsters": {
+    "text": "Waking monsters...",
+    "context": "app/startup-splash.ts",
+    "terms": []
+  },
+  "startup.oracle": {
+    "text": "Consulting oracle...",
+    "context": "app/startup-splash.ts",
+    "terms": []
+  },
+  "startup.potions": {
+    "text": "Brewing potions...",
+    "context": "app/startup-splash.ts",
+    "terms": []
+  },
+  "startup.relics": {
+    "text": "Attuning relics...",
+    "context": "app/startup-splash.ts",
+    "terms": []
+  },
+  "startup.shops": {
+    "text": "Restocking shops...",
+    "context": "app/startup-splash.ts",
+    "terms": []
+  },
+  "startup.trinkets": {
+    "text": "Polishing trinkets...",
+    "context": "app/startup-splash.ts",
+    "terms": ["Trinket"]
+  },
   "steam.presence.alchemy_battle": {
     "text": "Fighting as {#hero_%hero%}",
     "context": "Steam friend presence; keep the nested hero token unchanged",
@@ -34007,7 +34099,7 @@
     "text": "Transmuted: {{value0}}",
     "context": "features/alchemy/run-loop/screens/transmutation-screen.tsx",
     "parameters": {
-      "value0": "i18n.read(() => getCardDisplayTitle(visit.result))"
+      "value0": "i18n.read(() => getCardDisplayTitle(resultCard))"
     },
     "terms": []
   },

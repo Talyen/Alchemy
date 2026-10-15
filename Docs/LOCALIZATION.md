@@ -43,7 +43,8 @@ to English without replacing modified effects or discarding the run.
 
 Catalog metadata stays in the repository. A generated runtime JSON asset contains
 only display strings and is packaged beside the renderer. Both editions load it
-locally before mounting React. English defaults remain usable if that asset fails
+locally before mounting React. The packaged CSP permits same-origin `alchemy://app`
+requests for these assets and continues to block external connections. English defaults remain usable if that asset fails
 to load. No translation server is contacted.
 
 ## Agent workflow

@@ -35,6 +35,14 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
     expect(language).toBeNull();
 
     await new MenuPage(window).expectMainMenuAfterColdStart();
+    // Prove the app protocol loads bundled catalogs and retains the local override.
+    await window.getByRole("button", { name: "Options", exact: true }).click();
+    await window.locator("#language").click();
+    await window.getByRole("option", { name: "Deutsch", exact: true }).click();
+    await expect(window.getByRole("heading", { name: "Optionen", exact: true })).toBeVisible();
+    await window.reload();
+    await expect(window.locator("html")).toHaveAttribute("lang", "de");
+    await expect(window.getByRole("button", { name: "Optionen", exact: true })).toBeVisible({ timeout: 15_000 });
     if (ELECTRON_TEST_BACKGROUND) {
       expect(
         await electronApp!.evaluate(({ BrowserWindow }) => {

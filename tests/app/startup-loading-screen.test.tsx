@@ -2,7 +2,9 @@ import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { syncStartupSplash } from "@/app/startup-splash";
+import { installCatalogs, localization } from "@/lib/localization/runtime";
+import catalogs from "@/lib/localization/locales/runtime.json";
+import { localizeStartupSplash, syncStartupSplash } from "@/app/startup-splash";
 import { applyInitialAnimationPreference } from "@/startup";
 
 function mountStartupSplash() {
@@ -22,7 +24,8 @@ describe("startup splash ownership", () => {
     );
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await localization.changeLanguage("en");
     vi.clearAllTimers();
     vi.useRealTimers();
     vi.restoreAllMocks();
@@ -60,6 +63,23 @@ describe("startup splash ownership", () => {
     vi.advanceTimersByTime(1000);
     expect(vi.getTimerCount()).toBe(0);
     expect(phrase.textContent).toBe("Waking monsters...");
+  });
+
+  it("hands the early splash clock to localized text and cancels it on dismissal", async () => {
+    installCatalogs(catalogs);
+    await localization.changeLanguage("de");
+    const splash = mountStartupSplash();
+    const earlyTimer = window.__alchemySplashWordTimer;
+    localizeStartupSplash();
+    expect(splash.getAttribute("aria-label")).toBe("Alchemy wird geladen");
+    expect(splash.querySelector("#startup-splash-phrase")!.textContent).toBe("Das Abenteuer wartet...");
+    expect(window.__alchemySplashWordTimer).not.toBe(earlyTimer);
+    expect(vi.getTimerCount()).toBe(1);
+    vi.advanceTimersByTime(1500);
+    expect(splash.querySelector("#startup-splash-phrase")!.textContent).toBe("Decks werden gemischt...");
+    syncStartupSplash(1, true);
+    vi.advanceTimersByTime(1000);
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it.each(["reduced-motion", "disabled-animations"])("dismisses without a transition event under %s", (mode) => {

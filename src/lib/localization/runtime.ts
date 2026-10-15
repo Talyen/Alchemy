@@ -1,3 +1,5 @@
+import { pseudolocalize } from "./pseudolocalize";
+export { pseudolocalize } from "./pseudolocalize";
 import { buildDescriptionMessage } from "@/lib/game-data";
 import i18next from "i18next";
 import extraMessages from "./extra-messages.json";
@@ -31,31 +33,6 @@ export function installCatalogs(catalogs: Record<string, Record<string, string>>
 
 export type GameLocale = "en" | "de" | "en-XA" | "zh-Hans";
 export type LanguagePreference = "auto" | GameLocale;
-
-/** Leave named parameters and semantic markup intact while expanding text. */
-export function pseudolocalize(value: string): string {
-  if (!/[a-zA-Z]/.test(value.replace(/{{.*?}}|<[^>]+>/g, ""))) return value;
-  const accents: Record<string, string> = {
-    a: "á",
-    e: "ë",
-    i: "ï",
-    o: "ô",
-    u: "ü",
-    A: "Á",
-    E: "Ë",
-    I: "Ï",
-    O: "Ô",
-    U: "Ü",
-  };
-  return `[${value
-    .split(/({{.*?}}|<[^>]+>)/g)
-    .map((part) =>
-      part.startsWith("{{") || part.startsWith("<")
-        ? part
-        : part.replace(/[aeiouAEIOU]/g, (letter) => `${accents[letter]}${accents[letter]}`),
-    )
-    .join("")}]`;
-}
 
 function translateMessage(
   id: string,

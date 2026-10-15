@@ -45,6 +45,8 @@ describe("BattleCardButton", () => {
       <BattleCardButton
         card={cardById.slash!}
         hovered
+        onHoverStart={() => undefined}
+        onHoverEnd={() => undefined}
         ariaLabel="Collection Slash"
         shimmerActive={false}
         shimmerToken={undefined}

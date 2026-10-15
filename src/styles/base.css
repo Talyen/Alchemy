@@ -11,6 +11,10 @@ html:lang(zh-Hans) {
   overflow-wrap: anywhere;
 }
 
+html:lang(zh-Hans) body {
+  font-family: var(--font-sans);
+}
+
 @layer base {
   * {
     --content-rem: calc(1rem * var(--content-scale, 1));

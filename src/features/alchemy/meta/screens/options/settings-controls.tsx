@@ -108,7 +108,7 @@ export function SettingsSlider({
           aria-label={label}
           className="h-8 min-w-0 flex-1 cursor-pointer accent-primary"
         />
-        <p className="w-14 shrink-0 text-right text-lg font-semibold text-primary tabular-nums">
+        <p className="w-16 shrink-0 text-right text-lg font-semibold whitespace-nowrap text-primary tabular-nums">
           <GameMessage id="ui.settings-controls.s1" defaultValue="<part0/>%" parts={{ part0: value }} />
         </p>
       </div>

@@ -13691,6 +13691,11 @@
     "sourceHash": "46d80114bfdade74d7b4f245f206eaf08b8bbd30b1765c9d987aaf665b64c08f",
     "reviewed": true
   },
+  "description.4efbfa4bad2b08c1": {
+    "text": "<keyword0>Begleiter</keyword0> werden trainiert...",
+    "sourceHash": "f6fd153210bd838409d01b0597016e9d05702ba4ef2a0ae6d64bf5d758962c8d",
+    "reviewed": true
+  },
   "description.4efd159edea4574": {
     "text": "Entferne den Aufbau von <keyword0>Betäubung</keyword0> und <keyword1>Frost</keyword1>",
     "sourceHash": "d7e31f218603f83300046a8dbf050f36c8259b2638fedc0024c5d45248595ec4",
@@ -21011,6 +21016,86 @@
     "sourceHash": "c7a514c3e2c4b4d73f020f8451407450c5cbd023eae7f26246a6742b37d19fb4",
     "reviewed": true
   },
+  "startup.adventure": {
+    "text": "Das Abenteuer wartet...",
+    "sourceHash": "d82ea4d3f44b6f5432e2ac30975f021ef874debd1fa47bea48d1b443c36e3c0c",
+    "reviewed": true
+  },
+  "startup.baubles": {
+    "text": "Kleinode werden verzaubert...",
+    "sourceHash": "e7003a47308b73945c7ddedf630f16b79c20b84cd6862f1297418377a92c10d4",
+    "reviewed": true
+  },
+  "startup.blades": {
+    "text": "Klingen werden geschärft...",
+    "sourceHash": "07f3d325bf5755187e9405aaecf751bc239e90d7dbf5f19a17ffd8e78a633231",
+    "reviewed": true
+  },
+  "startup.companions": {
+    "text": "Begleiter werden trainiert...",
+    "sourceHash": "1cedbc4144d6f4995eb16a86848a954fd2b3fd753dfc8b4f2676bc07f020fc64",
+    "reviewed": true
+  },
+  "startup.crystals": {
+    "text": "Kristalle werden gesammelt...",
+    "sourceHash": "3c9970588b001a703241841fdeead21c99ea78f78f326de4da16fd70aad27f5f",
+    "reviewed": true
+  },
+  "startup.decks": {
+    "text": "Decks werden gemischt...",
+    "sourceHash": "ed50e936a764c998a3d5e94defe4f920fec9e513c588a4147e909a7cabdbda78",
+    "reviewed": true
+  },
+  "startup.homestead": {
+    "text": "Die Heimstatt wird aufgebaut...",
+    "sourceHash": "2b27914651f31c4bad243f1b87cea899cb46b09b8b533d23db4d7096f592c38d",
+    "reviewed": true
+  },
+  "startup.labyrinth": {
+    "text": "Das Labyrinth wird kartiert...",
+    "sourceHash": "4320a05e240aaeaef3b7bf577603085fab3f4e3fb375f9fa9ef5b37dadf78742",
+    "reviewed": true
+  },
+  "startup.loading": {
+    "text": "Alchemy wird geladen",
+    "sourceHash": "6bf41fb05d21f6300353c1e551f94b7641d1305db31b00ed70794c044d43aa6d",
+    "reviewed": true
+  },
+  "startup.loot": {
+    "text": "Beute wird gezählt...",
+    "sourceHash": "3ab8c7b9c1b70d519a9e77ae9fa71ab7d5d0bb28718099e2d1745395c6b318d7",
+    "reviewed": true
+  },
+  "startup.monsters": {
+    "text": "Monster werden geweckt...",
+    "sourceHash": "257094933b353bb0d0da50a6c79acd5cf6bc2d48f5a4db8b37e7a59f1ac5c75a",
+    "reviewed": true
+  },
+  "startup.oracle": {
+    "text": "Das Orakel wird befragt...",
+    "sourceHash": "5f6adb001a3d7610c06bf25f5b41341eb3941db800e711478e4d228e7e828675",
+    "reviewed": true
+  },
+  "startup.potions": {
+    "text": "Tränke werden gebraut...",
+    "sourceHash": "153b85ebecc7e7bb3f18e05ba5441c5e9ae4aaeaf2b741ae5845b380407e01a0",
+    "reviewed": true
+  },
+  "startup.relics": {
+    "text": "Relikte werden eingestimmt...",
+    "sourceHash": "4be6aaf1b6c84130a7c2614723626ead39cfe2377d6b33af3f629467c39cffe6",
+    "reviewed": true
+  },
+  "startup.shops": {
+    "text": "Läden werden aufgefüllt...",
+    "sourceHash": "ad88401cd7a111d91b4bd740f1ed0ff32bde662a28b584ae299c9652cbaea455",
+    "reviewed": true
+  },
+  "startup.trinkets": {
+    "text": "Schmuckstücke werden poliert...",
+    "sourceHash": "21709f9d4da2922813d780ed006c9a80fb05b0d8ffc8f2138da1c3321f76acf4",
+    "reviewed": true
+  },
   "steam.presence.alchemy_battle": {
     "text": "Kämpft als {#hero_%hero%}",
     "sourceHash": "2d85738e7ca58fdb95a144414d70625b641330760aee2c6f2fae7a8b45a0308e",
@@ -22907,7 +22992,7 @@
   },
   "ui.transmutation-screen.3": {
     "text": "Transmutiert: {{value0}}",
-    "sourceHash": "1ece011d798153bcb0b06dfa834a5ae83bb197961aeba14949d63707a235ff84",
+    "sourceHash": "3b125a9cec4b0b24c1b44b7fa480dad4131c391eda38eee8b3b03417666788ad",
     "reviewed": true
   },
   "ui.transmutation-screen.4": {

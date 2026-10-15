@@ -1,3 +1,4 @@
+import { localizeStartupSplash } from "@/app/startup-splash";
 import { loadBundledCatalogs } from "@/app/load-localization";
 import { initializeLanguage } from "@/lib/localization/language";
 import React from "react";
@@ -46,6 +47,7 @@ async function boot(): Promise<void> {
     console.error("Localization startup failed; using English", error);
   }
   await initializeLanguage();
+  localizeStartupSplash();
   ReactDOM.createRoot(rootElement!).render(
     <React.StrictMode>
       <App />

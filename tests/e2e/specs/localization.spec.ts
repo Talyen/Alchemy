@@ -1,3 +1,4 @@
+import type { Page, Locator } from "@playwright/test";
 import { expect, test } from "../../fixtures/e2e";
 import {
   injectActiveBattle,
@@ -9,13 +10,21 @@ import {
 } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { assertNoOverflow } from "../layout-assertions";
-import catalogs from "../../../src/lib/localization/locales/runtime.json";
-import { pseudolocalize } from "../../../src/lib/localization/runtime";
+import catalogs from "../../../src/lib/localization/locales/runtime.json" with { type: "json" };
+import { pseudolocalize } from "../../../src/lib/localization/pseudolocalize";
 import { critical } from "../../playwright-tags";
 
 // Browser-specific coverage: real font loading, translated accessible names,
 // live route switching, and a separately booted localized saved battle.
 test.use({ viewport: { width: 1920, height: 1080 } });
+
+async function openOptions(page: Page, name: string | RegExp, ready: Locator) {
+  // Development bootstrap can replace the first menu during an early click.
+  await expect(async () => {
+    if (!(await ready.isVisible())) await page.getByRole("button", { name, exact: true }).click({ timeout: 2000 });
+    await expect(ready).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15_000 });
+}
 
 function mechanics(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(mechanics);
@@ -42,6 +51,8 @@ for (const locale of ["de", "en-XA"] as const) {
   test(`${locale} switching preserves a live battle and its fresh-page resume`, critical, async ({ page }) => {
     // oxlint-disable-next-line playwright/no-skipped-test -- QA locales are deliberately absent from production builds.
     test.skip(locale === "en-XA" && process.env.PLAYWRIGHT_VITE_MODE !== "dev", "Expanded English is a QA locale");
+    // This journey includes a cold module load and an independently booted resume.
+    test.setTimeout(60_000);
     const label = (english: string, german: string) => (locale === "de" ? german : pseudolocalize(english));
     const deck = Array.from({ length: 6 }, () =>
       makeCard({
@@ -67,6 +78,7 @@ for (const locale of ["de", "en-XA"] as const) {
     await expect(page.locator("html")).toHaveAttribute("lang", locale === "de" ? "de" : "en");
     await expect(page.getByRole("heading", { name: label("Options", "Optionen"), exact: true })).toBeVisible();
     await page.getByRole("button", { name: label("Back", "Zurück"), exact: true }).click();
+    await page.getByRole("button", { name: label("Continue", "Weiter"), exact: true }).click();
     await expect(page.getByRole("button", { name: label("End Turn", "Zug beenden"), exact: true })).toBeVisible();
     expect(mechanics((await readSavedGame(page)).activeRun)).toEqual(before);
     await withSavedGame(page, async (resumed) => {
@@ -86,8 +98,7 @@ test("expanded English fits Options and keeps the selected control focusable", a
   test.skip(process.env.PLAYWRIGHT_VITE_MODE !== "dev", "Expanded English is a developer-only QA locale");
   await page.addInitScript(() => localStorage.setItem("alchemy-language-v1", "en-XA"));
   await page.goto("/");
-  await page.getByRole("button", { name: /pt.*ns/ }).click();
-  await expect(page.getByRole("heading", { name: /pt.*ns/ })).toBeVisible();
+  await openOptions(page, /pt.*ns/, page.getByRole("heading", { name: /pt.*ns/ }));
   await page.locator("#language").focus();
   await expect(page.locator("#language")).toBeFocused();
   await assertNoOverflow(page, "Expanded Options");
@@ -105,9 +116,8 @@ test("Chinese sample uses its bundled glyph font and wraps without clipping", as
   );
   await page.addInitScript(() => localStorage.setItem("alchemy-language-v1", "zh-Hans"));
   await page.goto("/");
-  await page.getByRole("button", { name: "选项", exact: true }).click();
   const sample = page.locator("[data-chinese-font-sample]");
-  await expect(sample).toBeVisible();
+  await openOptions(page, "选项", sample);
   const loaded = await sample.evaluate(async (element) => {
     const faces = await document.fonts.load('16px "Alchemy Chinese Sample"', element.textContent ?? "");
     return {
@@ -119,6 +129,16 @@ test("Chinese sample uses its bundled glyph font and wraps without clipping", as
   expect(loaded.loaded).toBe(true);
   expect(loaded.family).toContain("Alchemy Chinese Sample");
   expect(loaded.clipped).toBe(false);
+  const wrappedValues = await page
+    .locator(".options-settings-control > p")
+    .evaluateAll((values) =>
+      values.some(
+        (value) =>
+          value.getBoundingClientRect().height > Number.parseFloat(getComputedStyle(value).lineHeight) + 1 ||
+          value.scrollWidth > value.clientWidth + 1,
+      ),
+    );
+  expect(wrappedValues).toBe(false);
   await assertNoOverflow(page, "Chinese sample");
 });
 
@@ -140,10 +160,13 @@ for (const locale of ["de", "en-XA"] as const) {
     await withSavedGame(page, async (localized) => {
       await expect(localized.getByRole("heading", { name: label("Card Shop"), exact: true })).toBeVisible();
       expect(mechanics((await readSavedGame(localized)).activeRun)).toEqual(before);
-      const prefix = label("Buy {{title}} for {{price}} Gold").split("{{title}}")[0]!;
-      const buy = localized
-        .getByRole("button", { name: new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`) })
-        .first();
+      const purchasePattern = label("Buy {{title}} for {{price}} Gold")
+        .split(/({{(?:title|price)}})/)
+        .map((part) =>
+          part === "{{title}}" ? ".+" : part === "{{price}}" ? "\\d+" : part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        )
+        .join("");
+      const buy = localized.getByRole("button", { name: new RegExp(`^${purchasePattern}$`) }).first();
       await expect(buy).toBeEnabled();
       await buy.focus();
       await expect(buy).toBeFocused();
