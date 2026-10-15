@@ -8,6 +8,13 @@ export interface BattlePlaybackBind {
   clearAutoEndTurn: () => void;
 }
 
+export interface PlaybackScope {
+  readonly isCurrent: () => boolean;
+  readonly registerCancel: (callback: () => void) => () => void;
+  readonly setTimeout: (callback: () => void, ms: number) => () => void;
+  readonly setGameTimeout: (callback: () => void, ms: number) => () => void;
+}
+
 type PlaybackPhase = "opening" | "ready" | "playing" | "finishing" | "cancelled";
 
 /** One cancellation scope for a battle's timers, transfers, and asynchronous continuations. */
@@ -89,6 +96,29 @@ export class PlaybackLifetime {
     return id === this.generation && this.phase !== "cancelled" && !this.signal.aborted;
   }
 
+  /** Retained operations keep authority over their originating generation only. */
+  capture(id: number): PlaybackScope {
+    const admitted = this.isCurrent(id);
+    const isCurrent = () => admitted && this.isCurrent(id);
+    const schedule = (callback: () => void, ms: number, gameDelay: boolean) => {
+      if (!isCurrent()) return () => {};
+      const run = () => {
+        if (isCurrent()) callback();
+      };
+      return gameDelay ? this.timers.setGameTimeout(run, ms) : this.timers.setTimeout(run, ms);
+    };
+    return Object.freeze({
+      isCurrent,
+      registerCancel: (callback: () => void) => {
+        if (isCurrent()) return this.registerCancel(callback);
+        callback();
+        return () => {};
+      },
+      setTimeout: (callback: () => void, ms: number) => schedule(callback, ms, false),
+      setGameTimeout: (callback: () => void, ms: number) => schedule(callback, ms, true),
+    });
+  }
+
   finish(): boolean {
     if (this.phase === "finishing" || this.phase === "cancelled") return false;
     this.clearAutoEndTurn();
@@ -152,7 +182,7 @@ export class PlaybackLifetime {
   waitForFrame(id: number): Promise<boolean> {
     if (!this.isCurrent(id)) return Promise.resolve(false);
     return runPlaybackTask(
-      (callback) => this.registerCancel(callback),
+      this.capture(id).registerCancel,
       () => false,
       (task) => task.frame(() => task.complete(this.isCurrent(id))),
     );

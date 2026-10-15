@@ -55,7 +55,7 @@ export function createBattleCardPlay(
       newState,
       onReveal: onReveal,
       session: sessionNum,
-      deps: transferDeps.getDrawSequenceDeps(),
+      deps: transferDeps.getDrawSequenceDeps(sessionNum),
       errorContext: `handle ${errorContext} draw sequence`,
       onSettled: () => {
         finishDraw();

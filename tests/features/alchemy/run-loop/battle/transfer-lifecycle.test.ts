@@ -39,28 +39,33 @@ describe("PlaybackLifetime", () => {
     }
   });
 
-  it("unregisters callbacks so cancelAll skips them", () => {
-    const registry = new PlaybackLifetime();
-    const callback = vi.fn();
-    const unregister = registry.registerCancel(callback);
-    unregister();
-    registry.cancelTransfers();
-    expect(callback).not.toHaveBeenCalled();
-  });
-
-  it("invokes all registered callbacks on cancelAll", () => {
-    const registry = new PlaybackLifetime();
-    const first = vi.fn();
-    const second = vi.fn();
-    registry.registerCancel(first);
-    registry.registerCancel(second);
-    registry.cancelTransfers();
-    expect(first).toHaveBeenCalledOnce();
-    expect(second).toHaveBeenCalledOnce();
-    const third = vi.fn();
-    registry.registerCancel(third);
-    registry.cancelTransfers();
-    expect(third).toHaveBeenCalledOnce();
+  it("revokes retained scheduling and cancellation hooks when a battle is replaced", async () => {
+    vi.useFakeTimers();
+    try {
+      const lifetime = new PlaybackLifetime();
+      const oldScope = lifetime.capture(lifetime.id);
+      const unadmittedScope = lifetime.capture(lifetime.id + 1);
+      const staleEffect = vi.fn();
+      oldScope.setTimeout(staleEffect, 10);
+      lifetime.restart();
+      const currentScope = lifetime.capture(lifetime.id);
+      const currentEffect = vi.fn();
+      currentScope.setTimeout(currentEffect, 10);
+      unadmittedScope.setTimeout(staleEffect, 10);
+      oldScope.setGameTimeout(staleEffect, 10);
+      oldScope.setTimeout(staleEffect, 10);
+      const cancelled = vi.fn();
+      oldScope.registerCancel(cancelled);
+      expect(cancelled).toHaveBeenCalledOnce();
+      expect(lifetime.timers.size).toBe(1);
+      await vi.runAllTimersAsync();
+      expect(staleEffect).not.toHaveBeenCalled();
+      expect(currentEffect).toHaveBeenCalledOnce();
+      lifetime.cancel();
+      expect(cancelled).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

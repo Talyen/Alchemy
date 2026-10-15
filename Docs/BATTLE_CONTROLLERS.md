@@ -112,6 +112,13 @@ cleanup returned by a synchronous completion is released immediately. Callback
 failures reject the task after cleanup rather than leaving a draw suspended.
 Consumers supply cancellation fallbacks and presentation work; they do not
 reimplement completion flags or unregister/timer/frame cleanup ordering.
+`PlaybackLifetime.capture(generation)` supplies revocable scheduling and cancellation
+capabilities. Transfer and draw dependencies are created for the generation that
+started the sequence; retained dependencies cannot acquire the replacement battle's
+resources. Their UI writes, measurements, completion callbacks, and delayed sounds
+also check that scope. Cancellation releases owned overlays before the replacement
+presentation starts; abandoned continuations cannot clear the new transfer gate.
+
 `draw-sequence.ts` owns sequencing; `battle-transfers.ts` adapts DOM measurements,
 sounds, and transfer timers. End-turn cleanup resets hand transfer UI only after
 all animated draws have settled.

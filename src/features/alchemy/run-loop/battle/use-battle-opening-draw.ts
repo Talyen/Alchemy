@@ -27,7 +27,7 @@ export async function playBattleOpeningDraw(
     newState: current.battleState,
     onReveal: () => {},
     session: sessionNum,
-    deps: transferDeps.getDrawSequenceDeps(),
+    deps: transferDeps.getDrawSequenceDeps(sessionNum),
     errorContext: "draw opening hand",
   });
   if (sessionNum === ctx.playback.id) {

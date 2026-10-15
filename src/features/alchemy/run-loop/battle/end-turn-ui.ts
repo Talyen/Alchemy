@@ -159,7 +159,7 @@ export function createBattleEndTurnUi(
           result.frames,
           sessionNum,
           {
-            ...transferDeps.getDrawSequenceDeps(),
+            ...transferDeps.getDrawSequenceDeps(sessionNum),
             // Stronger than the base session guard on purpose: abandoning the
             // battle screen mid-playback (e.g. menu navigation) must freeze
             // playback even while the session itself is still current.
