@@ -64,7 +64,9 @@ export function ManaPanel({
   const reduced = useReducedMotionPreference();
   const mounted = useRef(false);
   const stored = useStore(presentation, (state) => state.manaPresentation);
-  const state = stored?.mana === mana && stored.maxMana === maxMana ? stored : projectMana(null, mana, maxMana, false);
+  // Keep unchanged animation keys while the layout effect commits the new display.
+  const state =
+    stored?.mana === mana && stored.maxMana === maxMana ? stored : projectMana(stored, mana, maxMana, !reduced);
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture, handleHoverStart } =
     useHoverVisible();
 
