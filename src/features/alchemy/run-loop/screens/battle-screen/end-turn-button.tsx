@@ -124,6 +124,9 @@ export function BattleEndTurnButton({
       <PortaledTooltip
         triggerRef={buttonRef}
         visible={!unavailable && !gate.endTurnConfirmationOpen && (hovered || focused)}
+        placement="below"
+        allowFlip={false}
+        horizontalInset={8}
       >
         End Turn
       </PortaledTooltip>
