@@ -74,6 +74,7 @@ export function createCanvasLifecycle({
   };
 
   let ro: ResizeObserver | null = null;
+  let motionQuery: MediaQueryList | undefined;
   let lastDpr = typeof devicePixelRatio !== "undefined" ? devicePixelRatio : 1;
   let lastBackingScale: number | undefined;
 
@@ -186,29 +187,34 @@ export function createCanvasLifecycle({
     motionQuery?.removeEventListener("change", resume);
   }
 
-  resize();
+  try {
+    resize();
 
-  if (typeof ResizeObserver !== "undefined") {
-    ro = new ResizeObserver(resize);
-    ro.observe(parent);
-  }
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(resize);
+      ro.observe(parent);
+    }
 
-  const motionQuery = window?.matchMedia?.("(prefers-reduced-motion: reduce)");
-  motionQuery?.addEventListener("change", resume);
+    motionQuery = window?.matchMedia?.("(prefers-reduced-motion: reduce)");
+    motionQuery?.addEventListener("change", resume);
 
-  const listenerOptions = { signal: lifetime.signal };
-  document?.addEventListener("visibilitychange", resume, listenerOptions);
-  window?.addEventListener("focus", resume, listenerOptions);
-  window?.addEventListener("storage", resume, listenerOptions);
-  if (pauseOnBlur) window?.addEventListener("blur", cancelFrame, listenerOptions);
+    const listenerOptions = { signal: lifetime.signal };
+    document?.addEventListener("visibilitychange", resume, listenerOptions);
+    window?.addEventListener("focus", resume, listenerOptions);
+    window?.addEventListener("storage", resume, listenerOptions);
+    if (pauseOnBlur) window?.addEventListener("blur", cancelFrame, listenerOptions);
 
-  if (immediate && !isPaused()) {
-    // resize() above may have already queued a frame; drop it before running
-    // the synchronous first frame so dispose() tracks the only pending id.
-    cancelFrame();
-    frame(lastTime);
-  } else {
-    scheduleFrame();
+    if (immediate && !isPaused()) {
+      // resize() above may have already queued a frame; drop it before running
+      // the synchronous first frame so dispose() tracks the only pending id.
+      cancelFrame();
+      frame(lastTime);
+    } else {
+      scheduleFrame();
+    }
+  } catch (error) {
+    dispose();
+    throw error;
   }
 
   return lifecycle;

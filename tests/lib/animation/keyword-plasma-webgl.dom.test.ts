@@ -36,8 +36,8 @@ it.each(["shader", "program"])("releases allocated shaders after %s allocation f
   expect(gl.deleteShader).toHaveBeenCalledTimes(failure === "shader" ? 1 : 2);
 });
 
-it("uses bounded backing dimensions, elapsed seconds, and 30fps pacing through the canvas lifecycle", () => {
-  const gl = {
+function createGl() {
+  return {
     createShader: () => ({}),
     getShaderParameter: () => true,
     createProgram: () => ({}),
@@ -73,6 +73,10 @@ it("uses bounded backing dimensions, elapsed seconds, and 30fps pacing through t
     viewport: vi.fn(),
     drawArrays: vi.fn(),
   };
+}
+
+it("uses bounded backing dimensions, elapsed seconds, and 30fps pacing through the canvas lifecycle", () => {
+  const gl = createGl();
   const parent = document.createElement("div");
   Object.defineProperty(parent, "clientWidth", { value: 3840, configurable: true });
   Object.defineProperty(parent, "clientHeight", { value: 2160, configurable: true });
@@ -172,4 +176,41 @@ it("uses bounded backing dimensions, elapsed seconds, and 30fps pacing through t
   expect(cancel).toHaveBeenCalledOnce();
   frame(1300);
   expect(gl.drawArrays).toHaveBeenCalledTimes(5);
+});
+
+it("releases GPU objects and scheduled frames even when the wake adapter fails during setup and cleanup", () => {
+  const gl = createGl();
+  const parent = document.createElement("div");
+  Object.defineProperty(parent, "clientWidth", { value: 640 });
+  Object.defineProperty(parent, "clientHeight", { value: 480 });
+  const canvas = document.createElement("canvas");
+  parent.append(canvas);
+  document.body.append(parent);
+  vi.spyOn(canvas, "getContext").mockReturnValue(gl as unknown as WebGLRenderingContext);
+  vi.spyOn(document, "hasFocus").mockReturnValue(true);
+  let lateFrame: FrameRequestCallback = () => {};
+  const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+    lateFrame = callback;
+    return 91;
+  });
+  const cancel = vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
+  const wake = vi.fn(() => {
+    throw new Error("wake adapter failed");
+  });
+  expect(() =>
+    startWebGLKeywordPlasma({
+      canvas,
+      colorsRef: { current: { primary: "#ffffff", secondary: "#000000" } },
+      focalYOffset: 0,
+      active: () => true,
+      onWakeReady: wake,
+    }),
+  ).toThrow();
+  expect(gl.deleteBuffer).toHaveBeenCalledOnce();
+  expect(gl.deleteProgram).toHaveBeenCalledOnce();
+  expect(cancel).toHaveBeenCalledWith(91);
+  lateFrame(100);
+  window.dispatchEvent(new Event("focus"));
+  expect(gl.drawArrays).not.toHaveBeenCalled();
+  expect(raf).toHaveBeenCalledOnce();
 });

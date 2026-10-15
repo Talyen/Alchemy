@@ -53,4 +53,17 @@ describe("createWebGLProgram", () => {
     expect(deleted).toEqual(new Set([vertex, fragment]));
     expect(gl.deleteProgram).toHaveBeenCalledExactlyOnceWith(program);
   });
+  it.each(["compile", "link"])("rolls back allocated GPU resources when %s throws", (stage) => {
+    const { gl, vertex, fragment, program, deleted } = setup(true);
+    const fail = () => {
+      throw new Error("GPU setup failed");
+    };
+    if (stage === "compile") gl.compileShader.mockImplementation(fail);
+    else gl.linkProgram.mockImplementation(fail);
+    expect(() => createWebGLProgram(gl as unknown as WebGLRenderingContext, "vertex", "fragment")).toThrow(
+      "GPU setup failed",
+    );
+    expect(deleted).toEqual(new Set(stage === "compile" ? [vertex] : [vertex, fragment]));
+    if (stage === "link") expect(gl.deleteProgram).toHaveBeenCalledWith(program);
+  });
 });

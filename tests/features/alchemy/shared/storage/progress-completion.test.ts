@@ -515,3 +515,32 @@ it("an older checkpoint cannot acknowledge a newer checkpoint with the same game
     await session.dispose();
   }
 });
+
+it("holds remaining completion feedback when an earlier callback starts another checkpoint", async () => {
+  const secondWrite = deferred<{ ok: true }>();
+  let writes = 0;
+  const session = createGameSession({
+    saveBackend: createSaveBackend({ write: async () => (++writes === 1 ? { ok: true } : secondWrite.promise) }),
+  });
+  const persistence = createSessionPersistence(session);
+  const events: string[] = [];
+  let next: Promise<unknown> = Promise.resolve();
+  try {
+    const first = persistence.checkpoint();
+    persistence.afterProgressSaved(() => {
+      events.push("first");
+      next = persistence.checkpoint();
+      persistence.afterProgressSaved(() => events.push("nested"));
+    });
+    persistence.afterProgressSaved(() => events.push("second"));
+    expect(await first).toBe("saved");
+    expect(persistence.readProgress().kind).toBe("saving");
+    expect(events).toEqual(["first"]);
+    secondWrite.resolve({ ok: true });
+    await next;
+    expect(events).toEqual(["first", "second", "nested"]);
+  } finally {
+    secondWrite.resolve({ ok: true });
+    await session.dispose();
+  }
+});

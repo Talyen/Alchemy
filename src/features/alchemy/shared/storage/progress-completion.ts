@@ -28,6 +28,7 @@ export class ProgressCompletion {
     () => this.isActive(),
   );
   private completions: Array<() => void> = [];
+  private drainingCompletions = false;
   private retryOwners = new Set<{ retry: () => void }>();
 
   readonly read = (): ProgressSaveState => this.state;
@@ -70,17 +71,8 @@ export class ProgressCompletion {
     if (outcome === "saved") this.acknowledged = Math.max(this.acknowledged, token.revision);
     if (this.state.kind === "idle") return outcome;
     if (this.acknowledged >= this.state.revision) {
-      const callbacks = this.completions;
-      this.completions = [];
       this.publish({ kind: "idle" });
-      for (const callback of callbacks) {
-        if (token.epoch !== this.epoch) break;
-        try {
-          callback();
-        } catch (error) {
-          logStorageFailure("Saved progress feedback failed", error);
-        }
-      }
+      this.drainCompletions();
     } else if (token.revision >= this.state.revision) {
       // An unwritten snapshot is never an acknowledgement. Only explicit cancellation
       // can release the gate without showing completion.
@@ -90,8 +82,27 @@ export class ProgressCompletion {
   }
 
   afterSaved(run: () => void) {
-    if (this.state.kind === "idle") run();
-    else this.completions.push(run);
+    this.completions.push(run);
+    this.drainCompletions();
+  }
+
+  private drainCompletions() {
+    if (this.drainingCompletions) return;
+    this.drainingCompletions = true;
+    try {
+      // Feedback can start a new checkpoint or replace the career. Keep the
+      // remaining FIFO owned here so a new save pauses it and cancellation drops it.
+      while (this.state.kind === "idle" && this.isActive() && this.completions.length) {
+        const callback = this.completions.shift()!;
+        try {
+          callback();
+        } catch (error) {
+          logStorageFailure("Saved progress feedback failed", error);
+        }
+      }
+    } finally {
+      this.drainingCompletions = false;
+    }
   }
 
   retryNow() {
