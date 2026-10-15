@@ -166,6 +166,13 @@ card size readable and the header and actions stationary across pages. Only the
 card area scrolls if even one row cannot fit. The removal header replaces the shop
 header, gold counter, and instruction text; the Remove action retains its gold cost.
 
+## Campaign destinations and Campfire
+
+Before choosing at Campfire, Rest shows a red heart and the actual recovery
+amount, including zero at full Health. Campaign destination headers show the
+upcoming choice as Act 1-1, Act 1-2, and so on; each act restarts its room count.
+The named boss entrance keeps its existing title.
+
 ## Rewards and Wishes
 
 Wish uses the shared collection-choice card size, independent of battle-hand sizing.

@@ -44,7 +44,7 @@ describe("Campfire Rest or Brew", () => {
       const p = props();
       render(<CampfireScreen {...p} playerHealth={health} maxHealth={max} healingBonus={bonus} />);
       expect(screen.getByText(`${health} / ${max}`)).toBeTruthy();
-      const rest = screen.getByRole("button", { name: `Rest (+${restore} Health)` });
+      const rest = screen.getByRole("button", { name: `Rest, restore ${restore} Health` });
       expect(rest).toHaveProperty("disabled", false);
       expect(p.onRest).not.toHaveBeenCalled();
       fireEvent.click(rest);
@@ -70,7 +70,7 @@ describe("Campfire Rest or Brew", () => {
     fireEvent.click(screen.getByRole("button", { name: "Brew Potion" }));
     if (action === "Back") fireEvent.click(screen.getByRole("button", { name: "Back" }));
     else fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.getByRole("button", { name: /^Rest \(/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Rest, restore / })).toBeTruthy();
     expect(p.onBrew).not.toHaveBeenCalled();
     expect(p.onRest).not.toHaveBeenCalled();
   });
@@ -89,14 +89,14 @@ describe("Campfire Rest or Brew", () => {
     fireEvent.click(mix);
     expect(p.onBrew).toHaveBeenCalledExactlyOnceWith({ kind: "combine", indices: [0, 1] });
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
-    expect(screen.getByRole("button", { name: /^Rest \(/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Rest, restore / })).toBeTruthy();
   });
   it("shows the restored result and Loot without allowing another action", () => {
     const p = props();
     render(<CampfireScreen {...p} visit={{ ...p.visit, completed: true, result: offers[0]! }} />);
     expect(screen.getByRole("button", { name: "Health Potion" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Brew Potion" })).toBeNull();
-    expect(screen.queryByRole("button", { name: /^Rest \(/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Rest, restore / })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Loot" }));
     expect(p.onContinue).toHaveBeenCalledOnce();
   });
@@ -107,7 +107,7 @@ describe("Campfire Rest or Brew", () => {
       saved = feedback;
     };
     const { rerender } = render(<CampfireScreen {...p} afterProgressSaved={afterProgressSaved} />);
-    fireEvent.click(screen.getByRole("button", { name: /^Rest \(/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Rest, restore / }));
     rerender(
       <CampfireScreen
         {...p}

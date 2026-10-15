@@ -1,4 +1,3 @@
-import { campaignActLabel } from "@/lib/campaign-act";
 import { useEffect, useMemo } from "react";
 
 import { playBattleEvent, playUISound } from "@/lib/audio";
@@ -17,11 +16,13 @@ import type { RewardState } from "@/lib/active-run-session";
 export function DestinationScreen({
   rewardState,
   currentAct,
+  destinationIndexInAct,
   onChoose,
   onPrepare,
 }: {
   rewardState: RewardState;
   currentAct: number;
+  destinationIndexInAct: number;
   onChoose: (destination: Destination) => void;
   onPrepare?: () => void;
 }) {
@@ -47,13 +48,12 @@ export function DestinationScreen({
   const title = bossOnly ? (
     <ShineText colors={bossTextShineColors}>{bossForShine?.title ?? getBossEnemy().title}</ShineText>
   ) : (
-    "Choose Destination"
+    `Act ${currentAct}-${destinationIndexInAct + 1}`
   );
 
   return (
     <TitledScreenShell title={title} maxWidthClass={bossOnly ? "max-w-3xl" : chooserRowShellWidthClass}>
       <div className="mt-6 flex flex-col justify-center gap-4">
-        {!bossOnly && <p className="text-center text-lg text-muted-foreground">{campaignActLabel(currentAct)}</p>}
         <DestinationChoices
           destinationOptions={destinationOptions}
           currentAct={currentAct}

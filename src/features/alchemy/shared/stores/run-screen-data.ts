@@ -92,6 +92,7 @@ export const RUN_SCREEN_SELECTORS = {
   destination: (state: GameplayState) => ({
     rewardState: state.session.rewardFlow.state,
     currentAct: state.run.activeRun.currentAct,
+    destinationIndexInAct: state.run.activeRun.destinationIndexInAct,
   }),
   mystery: (state: GameplayState) => {
     const visit = readActivityData(state.session.activity, "mystery");

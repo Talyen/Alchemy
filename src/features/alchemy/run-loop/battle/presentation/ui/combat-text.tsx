@@ -159,6 +159,7 @@ export function CombatTextRail({ bursts }: { bursts: CombatTextBurst[] }) {
 function CombatTextEntry({ entry }: { entry: FloatingCombatText }) {
   const icon = getCombatTextIcon(entry);
   const leading = getCombatTextLeadingIcon(entry);
+  const critical = entry.kind === "damage" && entry.critical === true;
   return (
     <div
       data-testid="combat-text"
@@ -169,11 +170,9 @@ function CombatTextEntry({ entry }: { entry: FloatingCombatText }) {
         "inline-flex items-center justify-center gap-1.5 whitespace-nowrap",
         entry.kind === "notice" && "col-span-full",
         getCombatTextColorClass(entry),
+        critical && "-rotate-6 text-[1.35em] font-black tracking-tight italic",
       )}
     >
-      {entry.kind === "damage" && entry.critical ? (
-        <span className="mr-1 text-[0.5em] font-semibold tracking-normal">Critical</span>
-      ) : null}
       {leading
         ? createElement(leading, {
             "aria-hidden": true,
@@ -184,8 +183,8 @@ function CombatTextEntry({ entry }: { entry: FloatingCombatText }) {
       {icon
         ? createElement(icon, {
             style: {
-              width: `calc(${FCT_BASE_SIZE_CQH * 0.94 * 10.8}px * var(--content-scale, 1))`,
-              height: `calc(${FCT_BASE_SIZE_CQH * 0.94 * 10.8}px * var(--content-scale, 1))`,
+              width: "0.94em",
+              height: "0.94em",
             },
             strokeWidth: 3,
           })
@@ -193,7 +192,7 @@ function CombatTextEntry({ entry }: { entry: FloatingCombatText }) {
       {entry.displayText ? (
         <span
           style={{
-            WebkitTextStroke: "1.5px rgba(0, 0, 0, 0.95)",
+            WebkitTextStroke: `${critical ? 2 : 1.5}px rgba(0, 0, 0, 0.95)`,
             paintOrder: "stroke fill",
             fontVariantNumeric: "tabular-nums",
             textAlign: "center",

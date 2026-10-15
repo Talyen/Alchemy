@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { campfire } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -102,6 +103,7 @@ export function CampfireScreen({
             <HealthRestoreMeter displayHealth={playerHealth} maxHealth={maxHealth} progressHealth={playerHealth} />
             <div className="flex flex-wrap justify-center gap-4">
               <Button
+                aria-label={`Rest, restore ${restore} Health`}
                 onClick={() => {
                   if (isProgressSavePending()) return;
                   const from = playerHealth;
@@ -112,7 +114,8 @@ export function CampfireScreen({
                   } else setError("This Campfire has already been used.");
                 }}
               >
-                Rest (+{restore} Health)
+                Rest <Heart aria-hidden="true" className="size-5 fill-red-500 text-red-500" />
+                <span className="tabular-nums">{restore}</span>
               </Button>
               <Button onClick={() => setBrewing(true)}>Brew Potion</Button>
             </div>

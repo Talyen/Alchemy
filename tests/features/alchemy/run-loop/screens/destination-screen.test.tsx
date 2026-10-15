@@ -20,49 +20,56 @@ describe("DestinationScreen", () => {
     vi.clearAllMocks();
   });
 
-  it("calls onPrepare on mount", () => {
+  it("renders multiple destinations and routes selection to onChoose", async () => {
+    const user = userEvent.setup();
+    const onChoose = vi.fn();
     const onPrepare = vi.fn();
     const rewardState = {
       ...createEmptyRewardState(),
       destinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CAMPFIRE],
     };
 
-    render(<DestinationScreen currentAct={1} rewardState={rewardState} onChoose={vi.fn()} onPrepare={onPrepare} />);
+    render(
+      <DestinationScreen
+        destinationIndexInAct={0}
+        currentAct={1}
+        rewardState={rewardState}
+        onChoose={onChoose}
+        onPrepare={onPrepare}
+      />,
+    );
 
-    expect(onPrepare).toHaveBeenCalledOnce();
-  });
-
-  it("renders multiple destinations and routes selection to onChoose", async () => {
-    const user = userEvent.setup();
-    const onChoose = vi.fn();
-    const rewardState = {
-      ...createEmptyRewardState(),
-      destinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CAMPFIRE],
-    };
-
-    render(<DestinationScreen currentAct={1} rewardState={rewardState} onChoose={onChoose} />);
-
-    expect(screen.getByRole("heading", { name: "Choose Destination" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Act 1-1" })).toBeTruthy();
 
     await waitForArtwork();
     const combatBtn = screen.getByRole("button", { name: /combat/i });
     await user.click(combatBtn);
 
     expect(onChoose).toHaveBeenCalledWith(DESTINATIONS.NORMAL_COMBAT);
+    expect(onPrepare).toHaveBeenCalledOnce();
   });
 
   it.each([
-    [1, "I"],
-    [2, "II"],
-    [3, "III"],
-  ] as const)("shows current Act %s beside ordinary destination choices", (currentAct, numeral) => {
+    [1, 0, "Act 1-1"],
+    [1, 1, "Act 1-2"],
+    [1, 7, "Act 1-8"],
+    [2, 0, "Act 2-1"],
+    [3, 4, "Act 3-5"],
+  ] as const)("shows Act %s destination index %s as %s", (currentAct, destinationIndexInAct, title) => {
     const rewardState = {
       ...createEmptyRewardState(),
       destinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CAMPFIRE],
     };
-    render(<DestinationScreen currentAct={currentAct} rewardState={rewardState} onChoose={vi.fn()} />);
-    expect(screen.getByText(`Act ${numeral}`)).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Choose Destination" })).toBeTruthy();
+    render(
+      <DestinationScreen
+        currentAct={currentAct}
+        destinationIndexInAct={destinationIndexInAct}
+        rewardState={rewardState}
+        onChoose={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: title })).toBeTruthy();
+    expect(screen.queryByText(/^Act (?:I|II|III)$/)).toBeNull();
   });
 
   it.each([
@@ -76,12 +83,19 @@ describe("DestinationScreen", () => {
       selectedBossId: "forge-golem",
     };
 
-    render(<DestinationScreen currentAct={currentAct} rewardState={rewardState} onChoose={vi.fn()} />);
+    render(
+      <DestinationScreen
+        destinationIndexInAct={0}
+        currentAct={currentAct}
+        rewardState={rewardState}
+        onChoose={vi.fn()}
+      />,
+    );
 
     expect(screen.getByRole("button", { name: `Boss - Act ${actLabel}` })).toBeTruthy();
     expect(screen.getByText(`Boss - Act ${actLabel}`)).toBeTruthy();
     expect(playBattleEvent).toHaveBeenCalledWith("deathsDoor");
     expect(screen.getByText("The Forge Golem")).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: "Choose Destination" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Act 1-1" })).toBeNull();
   });
 });

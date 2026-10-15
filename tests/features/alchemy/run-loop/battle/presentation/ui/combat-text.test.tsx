@@ -55,11 +55,15 @@ describe("CombatTextRail", () => {
     };
     const { container } = render(<CombatTextRail bursts={[burst]} />);
     const entries = container.querySelectorAll('[data-testid="combat-text"]');
-    expect(entries[0]?.textContent).toBe("Critical-22");
+    expect(entries[0]?.textContent).toBe("-22");
     expect(entries[0]?.getAttribute("aria-label")).toBe("Critical Stun: -22");
     expect(entries[1]?.textContent).toBe("-10");
     expect(entries[1]?.getAttribute("aria-label")).toBe("Stun: -10");
-    expect(entries[0]?.className).toBe(entries[1]?.className);
+    expect(entries[0]?.classList.contains("font-black")).toBe(true);
+    expect(entries[0]?.classList.contains("text-amber-300")).toBe(true);
+    expect(entries[1]?.classList.contains("text-amber-300")).toBe(true);
+    expect(entries[1]?.className).not.toContain("font-black");
+    expect(entries[0]?.getAttribute("data-stat")).toBe(entries[1]?.getAttribute("data-stat"));
   });
 
   it("keeps existing action nodes and typed numbers when a new action appears", () => {

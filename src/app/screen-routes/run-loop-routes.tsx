@@ -153,6 +153,7 @@ function DestinationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
     <DestinationScreen
       rewardState={r.rewardState}
       currentAct={r.currentAct}
+      destinationIndexInAct={r.destinationIndexInAct}
       onChoose={commands.choose}
       onPrepare={commands.prepare}
     />
