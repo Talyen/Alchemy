@@ -17,9 +17,6 @@ export const STARTUP_BAR_TAU_MS = 220;
 export const STARTUP_BAR_TRICKLE_PER_SEC = 0.04;
 export const STARTUP_BAR_REVEAL_THRESHOLD = 0.995;
 
-export const LOADING_WORD_INTERVAL_MS = 750;
-export const LOADING_WORD_FADE_MS = 200;
-
 export const SHIMMER_COOLDOWN_MS = 350;
 export const COMBAT_TEXT_MERGE_WINDOW_MS = 250;
 export const COMBAT_RECOIL_COOLDOWN_MS = 180;

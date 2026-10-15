@@ -19,7 +19,7 @@ import { defaultGameSession } from "@/app/application-session";
 beforeEach(() => {
   resetAllTestStores();
   setRunSession({ hasActiveRun: true });
-  useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+  useSettingsStore.getState().resetToDefaults();
 });
 
 function renderBattleController(screen: Screen = ROUTE_SCREENS.BATTLE) {

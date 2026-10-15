@@ -57,7 +57,7 @@ const routeContext: OptionsRouteCtx = {
 
 describe("options screen route", () => {
   beforeEach(() => {
-    useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+    useSettingsStore.getState().resetToDefaults();
     useUiStore.getState().setShowClearSaveConfirm(false);
     localStorage.removeItem(DEVICE_DISPLAY_STORAGE_KEY);
     initDeviceDisplayPreferences();

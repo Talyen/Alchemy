@@ -23,7 +23,7 @@ function makeSave(overrides: Partial<SaveData> = {}): SaveData {
 
 beforeEach(() => {
   resetProfileForTest();
-  useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+  useSettingsStore.getState().resetToDefaults();
 });
 
 describe("profile store", () => {
@@ -92,6 +92,12 @@ describe("profile store", () => {
 });
 
 describe("settings store", () => {
+  it("exposes only reads and named actions to feature consumers", () => {
+    expect(useSettingsStore).not.toHaveProperty("setState");
+    expect(useSettingsStore).not.toHaveProperty("commitHydration");
+    useSettingsStore.getState().setMasterVolume(999);
+    expect(settingsPersistenceCodec.encode().masterVolume).toBe(100);
+  });
   it("hydrates only settings fields from save data", () => {
     settingsPersistenceCodec.hydrate(
       makeSave({

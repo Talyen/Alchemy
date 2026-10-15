@@ -284,7 +284,18 @@ One loading experience at cold start, then navigation through the shared fade �
 | Screen JS | `src/app/screen-routes/`                                                       | Static imports — **no** `React.lazy()`                                                                                                  |
 | SFX       | `use-app-effects.ts`                                                           | Critical sounds eager; rest on idle                                                                                                     |
 
-`StartupLoadingScreen` shows the wordmark filling left to right with the CTA gold (`text-primary`) over the 3s minimum display, rotating loading phrases below (`startup-loading-screen.tsx`) — no progress bar. The determinate readout lives on as the screen's `progressbar` ARIA value, still a smoothed meter of art decode, fonts, and save bootstrap (`startup-load-state.ts`) — not a timed CSS fill. `startup-load-state.ts` owns the reveal decision; `use-initial-load-ready.ts` supplies browser preload, font, timer, and animation-frame events. Reveal waits until that work has settled, the 3s minimum display has elapsed, **and** the eased display has caught 100%. A rejected essential art preload is logged and treated as settled so startup can continue. Deferred per-item gear art starts decoding as soon as essential art settles so it overlaps the minimum window, continuing in the background after reveal if unfinished. The pre-React `index.html` shell displays the unified startup loading screen (slime animation and filling wordmark) immediately upon first paint, keeping visual continuity while React and essential game assets load before smoothly fading out into the menu.
+`index.html` owns the single startup splash, including its artwork, filling
+wordmark, styles and reduced-motion behavior. `public/startup-words.js` rotates
+phrases on one timer from first paint until dismissal. React renders no second
+loader: `App` calls `syncStartupSplash` to publish smoothed progress to the
+splash's `progressbar` ARIA value and dismiss it once bootstrap and initial
+loading are ready. The fill animation matches `INITIAL_LOAD_MIN_DURATION_MS`;
+the architecture smoke check guards that shared timing. `startup-load-state.ts`
+owns the reveal decision; `use-initial-load-ready.ts` supplies image, font,
+bootstrap, timer and frame events. Reveal waits for settled work, the minimum
+duration and the eased progress reaching 100%. Essential art failures are logged
+and treated as settled. Deferred Gear art begins as soon as essential art settles,
+overlapping the minimum loading window and continuing after reveal if needed.
 
 **Do not add:** `React.lazy()` on route screens, lazy game art outside the board decode exception, or per-screen spinners for assets in `allGameArt`. Board art is statically registered but excluded from both startup decode sets through `onDemandBoardArt` and decoded on demand. Follow the [board asset workflow](./WORKFLOWS-ASSETS.md#game-board-artwork) when changing that explicit exception.
 

@@ -52,7 +52,7 @@ beforeEach(() => {
   mockedClearSave.mockReset();
   mockedClearSave.mockResolvedValue(true);
   resetProfileForTest();
-  useSettingsStore.setState(useSettingsStore.getInitialState());
+  useSettingsStore.getState().resetToDefaults();
   resetRunDomainStore();
   resetTransientRunUi(defaultGameSession);
   localStorage.removeItem(DEVICE_DISPLAY_STORAGE_KEY);
