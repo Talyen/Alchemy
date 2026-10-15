@@ -94,6 +94,28 @@ Use the browser acceptance scenarios to check live switching, focus, clipping,
 keyword interactions, and saved combat. Browser/Electron and builds follow the
 execution policy in [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change).
 
+The opt-in German layout review runs the existing acceptance journeys at 1280×720
+with the current maximum Game Size and Tooltip Size settings. It checks popup and
+control bounds and captures Options tabs, combat, shops and confirmations under
+`reports/localization-layout/` for visual review:
+
+```sh
+ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:e2e:dev -- tests/e2e/specs/localization.spec.ts --grep 'de (switching|Options|shop)' --workers=1
+```
+
+Review the packaged Electron Options tabs, including desktop display controls,
+at the same settings with:
+
+```sh
+npm run build:desktop
+ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:ship:desktop
+```
+
+Real Steam install/update and per-game language qualification require an approved
+Steamworks partner account and registered full/demo App IDs. Development App ID
+480 and isolated Electron profiles cannot qualify those behaviors. Complete that
+gate on Windows after account verification and app registration.
+
 `steam/store-copy.source.json` owns draft full-game/demo listing text. Extraction
 produces `steam/localized-store-copy.json` and `steam/rich-presence.vdf`. Presence
 uses Steam localization tokens, including a localized hero token, so friends see
@@ -106,3 +128,37 @@ App IDs. Upload presence localization in Steamworks. Text catalogs remain in the
 existing depots. [Valve's localization guide](https://partner.steamgames.com/doc/store/localization)
 and [Rich Presence guide](https://partner.steamgames.com/doc/api/ISteamFriends#richpresencelocalization)
 own the external setup; release authorization remains unchanged.
+
+## Language rollout
+
+Until Alchemy has its own audience data, use Steam-wide language usage as a
+provisional prioritization signal. The combined-platform
+[September 2026 Steam survey](https://store.steampowered.com/hwsurvey/Steam-Hardware-Software-Survey-Welcome-to-Steam)
+reports the following interface-language shares:
+
+| Recommended launch target | Survey share | Work remaining                                                  |
+| ------------------------- | -----------: | --------------------------------------------------------------- |
+| English                   |       34.20% | Baseline and release qualification                              |
+| Simplified Chinese        |       31.39% | Full catalog, production font coverage and layout qualification |
+| Russian                   |        9.05% | Catalog, Cyrillic glyph coverage and layout qualification       |
+| Spanish–Spain             |        4.08% | Catalog and layout qualification                                |
+| Brazilian Portuguese      |        3.70% | Catalog and layout qualification                                |
+| German                    |        2.48% | Existing pilot; release qualification                           |
+
+These shares sum to 84.90% of survey respondents' selected interface languages;
+they do not estimate Alchemy sales, incremental reach or player language fluency.
+Participation is optional and anonymous, and monthly shares fluctuate. Recheck the
+survey before committing the launch scope.
+
+Recommended implementation order after German: Simplified Chinese, Russian,
+Spanish–Spain, Brazilian Portuguese. Japanese (2.41%) and French (2.08%) are the
+next candidates, bringing the selected shares to 89.39%. This ordering is our
+inference from the survey, not a claim about deckbuilder purchasing behavior.
+Spanish–Latin America and European Portuguese are separate locales; do not count
+them as qualified by the Spanish–Spain and Brazilian catalogs.
+
+Keep candidate languages disabled until their complete catalogs, AI semantic
+review, fonts, save/resume and rendered layouts pass. The current Chinese sample
+does not qualify Chinese support. Once a store page exists, use regional wishlists,
+traffic and community feedback to revise this order, as recommended by
+[Valve's localization guidance](https://partner.steamgames.com/doc/store/localization).

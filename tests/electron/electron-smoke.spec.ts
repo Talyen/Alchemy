@@ -9,7 +9,11 @@ import type { ElectronApplication, Page } from "@playwright/test";
 import { ELECTRON_TEST_BACKGROUND, getElectronMainWindow, launchElectronApp } from "./electron-helpers";
 import { failOnRuntimeErrors } from "../browser-helpers";
 import { MenuPage } from "../pages/menu-page";
+import { assertNoOverflow, assertReachableControlsInViewport, waitForLayoutSettled } from "../e2e/layout-assertions";
+import { DEVICE_DISPLAY_RANGES } from "../../src/lib/settings-values";
 import { desktop } from "../playwright-tags";
+
+const layoutReview = process.env.ALCHEMY_LOCALIZATION_LAYOUT_REVIEW === "1";
 
 test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
   let electronApp: ElectronApplication | undefined;
@@ -18,6 +22,22 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
   test.beforeEach(async () => {
     electronApp = await launchElectronApp({ packagedRenderer: true });
     window = await getElectronMainWindow(electronApp);
+    if (layoutReview) {
+      await electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
+      await window.evaluate(
+        (ranges) =>
+          localStorage.setItem(
+            "alchemy-device-display-v1",
+            JSON.stringify({
+              version: 1,
+              gameSizePercent: ranges.gameSizePercent.max,
+              tooltipSizePercent: ranges.tooltipSizePercent.max,
+            }),
+          ),
+        DEVICE_DISPLAY_RANGES,
+      );
+      await window.reload({ waitUntil: "domcontentloaded" });
+    }
   });
 
   test.afterEach(async () => {
@@ -40,6 +60,27 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
     await window.locator("#language").click();
     await window.getByRole("option", { name: "Deutsch", exact: true }).click();
     await expect(window.getByRole("heading", { name: "Optionen", exact: true })).toBeVisible();
+    if (layoutReview) {
+      const directory = path.resolve("reports/localization-layout");
+      fs.mkdirSync(directory, { recursive: true });
+      for (const tab of ["Anzeige", "Ton", "Spielablauf", "Sonstiges"]) {
+        await window.getByRole("button", { name: tab, exact: true }).click();
+        await waitForLayoutSettled(window);
+        await assertNoOverflow(window, `Desktop ${tab}`);
+        await assertReachableControlsInViewport(window, `Desktop ${tab}`);
+        const png = await electronApp!.evaluate(async ({ BrowserWindow }) =>
+          (
+            await BrowserWindow.getAllWindows()[0].webContents.capturePage(
+              { x: 0, y: 0, width: 1280, height: 720 },
+              { stayHidden: true, stayAwake: true },
+            )
+          )
+            .toPNG()
+            .toString("base64"),
+        );
+        fs.writeFileSync(path.join(directory, `de-desktop-${tab}.png`), Buffer.from(png, "base64"));
+      }
+    }
     await window.reload();
     await expect(window.locator("html")).toHaveAttribute("lang", "de");
     await expect(window.getByRole("button", { name: "Optionen", exact: true })).toBeVisible({ timeout: 15_000 });
