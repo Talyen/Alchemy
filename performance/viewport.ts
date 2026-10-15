@@ -4,6 +4,3 @@
  * this same size when comparing.
  */
 export const PERF_VIEWPORT = { width: 1440, height: 900 } as const;
-
-/** Matches MBA 13" aspect; injected into save so VR stage fills the viewport. */
-export const PERF_ASPECT_RATIO = "16:10" as const;

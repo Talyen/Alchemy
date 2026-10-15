@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CollectionScreen } from "@/features/alchemy/meta/screens/collection-screen";
+import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 import { enemyBestiary } from "@/lib/game-data";
 import { getBossMusicKey } from "@/lib/audio";
@@ -15,6 +16,8 @@ const audio = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/audio", async (importOriginal) => ({ ...(await importOriginal<Record<string, unknown>>()), ...audio }));
 
+installReadyArtworkForTests();
+
 describe("CollectionScreen", () => {
   installDisabledAnimationsForTests();
 
@@ -24,6 +27,9 @@ describe("CollectionScreen", () => {
   });
 
   const defaultProps = {
+    collectedBoardIds: ["acorn"],
+    boardSelection: { kind: "board" as const, boardId: "acorn" },
+    onSelectBoard: vi.fn(() => true),
     collectionTab: "cards" as const,
     onSelectTab: vi.fn(),
     discoveredCardIds: ["strike-basic", "defend-basic"],
@@ -37,6 +43,7 @@ describe("CollectionScreen", () => {
       bestiary: 0,
       trinkets: 0,
       uniques: 0,
+      boards: 0,
     },
     onPageChange: vi.fn(),
     bondedCompanions: {},
@@ -108,4 +115,36 @@ describe("CollectionScreen", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Inspect Undiscovered Entry" })[0]!);
     expect(audio.playCardSound).not.toHaveBeenCalled();
   });
+});
+
+it("shows six board previews with locked inspection and only permits equipping collected art", async () => {
+  const onSelectBoard = vi.fn(() => true);
+  const props = {
+    collectionTab: "boards" as const,
+    collectedBoardIds: ["acorn"],
+    boardSelection: { kind: "none" as const },
+    onSelectBoard,
+    onSelectTab: vi.fn(),
+    discoveredCardIds: [],
+    encounteredEnemyIds: [],
+    discoveredTrinketIds: [],
+    discoveredUniqueIds: [],
+    finishedRunCharacters: [],
+    collectionPages: { heroes: 0, cards: 0, bestiary: 0, trinkets: 0, uniques: 0, boards: 0 },
+    onPageChange: vi.fn(),
+    bondedCompanions: {},
+  };
+  const view = render(<CollectionScreen {...props} />);
+  expect(view.getAllByRole("button", { name: /^Inspect / })).toHaveLength(6);
+  fireEvent.click(view.getByRole("button", { name: "Inspect Alpine Cuckoo (Locked)" }));
+  const dialog = view.getByRole("dialog", { name: "Alpine Cuckoo" });
+  expect(within(dialog).getByRole("img", { name: "Alpine Cuckoo" })).toBeTruthy();
+  expect(within(dialog).queryByRole("button", { name: "Use Board" })).toBeNull();
+  await waitForArtwork();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Close board inspection" }));
+  fireEvent.click(view.getByRole("button", { name: "Inspect Acorn" }));
+  await waitForArtwork();
+  fireEvent.click(view.getByRole("button", { name: "Use Board" }));
+  expect(onSelectBoard).toHaveBeenCalledExactlyOnceWith({ kind: "board", boardId: "acorn" });
+  cleanup();
 });

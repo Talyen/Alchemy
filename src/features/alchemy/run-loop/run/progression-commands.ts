@@ -127,8 +127,6 @@ export function createProgressionCommands(gameSession: GameSession) {
             case "labyrinth-map":
             case "rewards":
             case "wildwood-removal":
-            case "inactive":
-            case "idle":
               return rejectCommand("Activity is not a visit", null);
           }
           completeRunRoom(draft);

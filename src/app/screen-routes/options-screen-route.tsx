@@ -9,10 +9,15 @@ import type { OptionsRouteCtx } from "./route-ctx";
 
 const noop = (): void => {};
 
-function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpenGameMenu }: OptionsRouteCtx) {
+function OptionsScreenRoute({
+  onClearSaveData,
+  onUnlockAllDevMode,
+  onBack,
+  onOpenGameMenu,
+  onOpenBoards,
+}: OptionsRouteCtx) {
   const settings = useSettingsStore(
     useShallow((s) => ({
-      selectedAspectRatio: s.selectedAspectRatio,
       displayMode: s.displayMode,
       brightness: s.brightness,
       backgroundParticlesIntensity: s.backgroundParticlesIntensity,
@@ -42,8 +47,7 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
       onBack={onBack ?? noop}
       onMenu={onOpenGameMenu}
       display={{
-        selectedAspectRatio: settings.selectedAspectRatio,
-        onAspectRatioChange: actions.setSelectedAspectRatio,
+        onOpenBoards,
         displayMode: settings.displayMode,
         onDisplayModeChange: actions.setDisplayMode,
         // Desktop-only control: displayMode still persists on web (harmless —

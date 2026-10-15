@@ -4,10 +4,13 @@ import type { Screen } from "@/lib/routing";
 import { stopAllSfx } from "@/lib/audio";
 import type { BattleControllerContext } from "./battle-context";
 
-export function commitEndTurn(battle: BattleControllerContext["battle"]): ResolvedBattleTurn | null {
+export function commitEndTurn(
+  battle: BattleControllerContext["battle"],
+  expected: BattleSnapshot,
+): ResolvedBattleTurn | null {
   markBattleStage("resolve-start");
   try {
-    return battle.endTurn();
+    return battle.endTurn(expected);
   } finally {
     markBattleStage("resolve-end");
   }

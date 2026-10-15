@@ -15,6 +15,11 @@ export type { ProfileSaveFields } from "./profile-store-types";
 
 function cloneProfileSaveFields(fields: ProfileSaveFields): ProfileSaveFields {
   return {
+    collectedBoardIds: [...fields.collectedBoardIds],
+    boardSelection: { ...fields.boardSelection },
+    activeBoardId: fields.activeBoardId,
+    lastRandomBoardId: fields.lastRandomBoardId,
+    pendingBoardRewardId: fields.pendingBoardRewardId,
     discoveredCardIds: [...fields.discoveredCardIds],
     encounteredEnemyIds: [...fields.encounteredEnemyIds],
     discoveredTrinketIds: [...fields.discoveredTrinketIds],
@@ -37,6 +42,11 @@ export const profilePersistenceCodec: GameplayPersistenceCodec<ProfileSaveFields
 
 export type ProfileReadView = Pick<
   ProfileStateFields,
+  | "collectedBoardIds"
+  | "boardSelection"
+  | "activeBoardId"
+  | "lastRandomBoardId"
+  | "pendingBoardRewardId"
   | "collectionTab"
   | "collectionPages"
   | "discoveredCardIds"
@@ -53,6 +63,11 @@ export function readProfileStore(gameSession: GameSession): ProfileReadView {
   // dispatchRunSessionCommand draft.
   const profile = readGameplayState(gameSession).profile;
   return {
+    collectedBoardIds: profile.collectedBoardIds,
+    boardSelection: profile.boardSelection,
+    activeBoardId: profile.activeBoardId,
+    lastRandomBoardId: profile.lastRandomBoardId,
+    pendingBoardRewardId: profile.pendingBoardRewardId,
     collectionTab: profile.collectionTab,
     collectionPages: profile.collectionPages,
     discoveredCardIds: profile.discoveredCardIds,

@@ -43,6 +43,29 @@ describe("artwork reveal", () => {
     vi.restoreAllMocks();
   });
 
+  it("waits for srcset-only artwork before revealing the screen", async () => {
+    function ResponsiveArtwork() {
+      const { ref, pending } = useArtworkReady("responsive");
+      return (
+        <div ref={ref} data-testid="responsive" data-pending={pending}>
+          <img
+            srcSet="large.webp 2x"
+            alt="Responsive"
+            ref={(image) => {
+              if (image) Object.defineProperty(image, "complete", { value: false });
+            }}
+          />
+        </div>
+      );
+    }
+    render(<ResponsiveArtwork />);
+    await paint();
+    expect(screen.getByTestId("responsive").dataset.pending).toBe("true");
+    fireEvent.error(screen.getByAltText("Responsive"));
+    await paint();
+    expect(screen.getByTestId("responsive").dataset.pending).toBeUndefined();
+  });
+
   it("keeps the whole screen hidden and its fade paused until mounted artwork decodes", async () => {
     render(<View />);
     const view = screen.getByTestId("view");

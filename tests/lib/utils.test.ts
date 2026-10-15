@@ -9,21 +9,17 @@ import {
   isValidDeckIndex,
 } from "@/lib/utils";
 
-describe("numeric bounds", () => {
-  it("keeps invalid volume/opacity inputs bounded and rejects reversed ranges", () => {
-    expect(clamp01(Number.NaN)).toBe(0);
-    expect(clamp01(Number.NEGATIVE_INFINITY)).toBe(0);
-    expect(clamp01(Number.POSITIVE_INFINITY)).toBe(1);
-    expect(clamp01(0.5)).toBe(0.5);
-    expect(() => clamp(5, 10, 0)).toThrow();
-  });
+it("numeric bounds keeps invalid volume/opacity inputs bounded and rejects reversed ranges", () => {
+  expect(clamp01(Number.NaN)).toBe(0);
+  expect(clamp01(Number.NEGATIVE_INFINITY)).toBe(0);
+  expect(clamp01(Number.POSITIVE_INFINITY)).toBe(1);
+  expect(clamp01(0.5)).toBe(0.5);
+  expect(() => clamp(5, 10, 0)).toThrow();
 });
 
-describe("formatLargeAmount", () => {
-  it("maps non-finite amounts to zero", () => {
-    expect(formatLargeAmount(Number.NaN)).toBe("0");
-    expect(formatLargeAmount(Number.POSITIVE_INFINITY)).toBe("0");
-  });
+it("formatLargeAmount maps non-finite amounts to zero", () => {
+  expect(formatLargeAmount(Number.NaN)).toBe("0");
+  expect(formatLargeAmount(Number.POSITIVE_INFINITY)).toBe("0");
 });
 
 describe("createInstanceId", () => {

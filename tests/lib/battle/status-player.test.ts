@@ -21,13 +21,14 @@ describe("Armor gain rewards", () => {
       talentEffects: {
         armorBreakBlock: 3,
         overhealToBlockRatio: 1,
-        armorOnBlockChance: 100,
+        armorOnBlockCardChance: 100,
+        armorOnBlockCard: 6,
         drawHolyOnBlockChance: 100,
       },
     });
     const next = source === "armor break" ? removePlayerArmor(state, 1, []) : applyCardHealing(state, 3, []);
     expect(next.playerStatuses.block).toBe(3);
-    expect(next.playerStatuses.armor).toBe(source === "armor break" ? 3 : 4);
+    expect(next.playerStatuses.armor).toBe(source === "armor break" ? 0 : 1);
     expect(next.hand.map((card) => card.id)).toEqual([holy.id]);
   });
 
@@ -120,26 +121,22 @@ it("Tempered Guard reads Forge after Overheat and Intensify modify its gain", ()
   expect(state.playerStatuses.forge).toBe(5);
 });
 
-describe("addForgeToPlayer", () => {
-  it("does nothing when amount is zero after modifiers", () => {
-    const rng = vi.fn(() => 0.5);
-    const state = patchBattleState({ rng, talentEffects: { forgeBonusChance: 10 } });
-    const result = addForgeToPlayer(state, 0);
-    expect(result).toBe(state);
-    expect(rng).not.toHaveBeenCalled();
-  });
+it("addForgeToPlayer does nothing when amount is zero after modifiers", () => {
+  const rng = vi.fn(() => 0.5);
+  const state = patchBattleState({ rng, talentEffects: { forgeBonusChance: 10 } });
+  const result = addForgeToPlayer(state, 0);
+  expect(result).toBe(state);
+  expect(rng).not.toHaveBeenCalled();
 });
 
-describe("low-health resource bonuses", () => {
-  it.each([14, 15, 16])("requires strictly below half Health at %s/30", (playerHealth) => {
-    const state = patchBattleState({
-      playerHealth,
-      playerMaxHealth: 30,
-      talentEffects: { armorLowHealthBonusPercent: 100, forgeLowHealthBonusChance: 100 },
-    });
-    const armor = applyPlayerStatusEffect(state, { kind: "player-status", status: "armor", amount: 4 }, []);
-    const forge = addForgeToPlayer(state, 4);
-    expect(armor.playerStatuses.armor).toBe(playerHealth < 15 ? 8 : 4);
-    expect(forge.playerStatuses.forge).toBe(playerHealth < 15 ? 5 : 4);
+it.each([14, 15, 16])("low-health resource bonuses requires strictly below half Health at %s/30", (playerHealth) => {
+  const state = patchBattleState({
+    playerHealth,
+    playerMaxHealth: 30,
+    talentEffects: { armorLowHealthBonusPercent: 100, forgeLowHealthBonusChance: 100 },
   });
+  const armor = applyPlayerStatusEffect(state, { kind: "player-status", status: "armor", amount: 4 }, []);
+  const forge = addForgeToPlayer(state, 4);
+  expect(armor.playerStatuses.armor).toBe(playerHealth < 15 ? 8 : 4);
+  expect(forge.playerStatuses.forge).toBe(playerHealth < 15 ? 5 : 4);
 });

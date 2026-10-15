@@ -30,7 +30,6 @@ describe("SaveDataSchema", () => {
       musicVolume: "loud",
       bossLyricsEnabled: "invalid",
       sfxVolume: 80,
-      selectedAspectRatio: "99:99",
       brightness: 999,
       displayMode: "immersive",
     });
@@ -39,7 +38,6 @@ describe("SaveDataSchema", () => {
       expect(result.data.musicVolume).toBe(50);
       expect(result.data.bossLyricsEnabled).toBe(true);
       expect(result.data.sfxVolume).toBe(80);
-      expect(result.data.selectedAspectRatio).toBe("auto");
       expect(result.data.brightness).toBe(SETTINGS_RANGES.brightness.max);
       expect(result.data.displayMode).toBe("borderless-fullscreen");
     }
@@ -85,7 +83,6 @@ describe("SaveDataSchema", () => {
       bossLyricsEnabled: false,
       autoEndTurn: false,
       brightness: 120,
-      selectedAspectRatio: "16:10",
       backgroundParticlesIntensity: 40,
       backgroundGlowIntensity: 60,
     });
@@ -98,7 +95,6 @@ describe("SaveDataSchema", () => {
       expect(result.data.bossLyricsEnabled).toBe(false);
       expect(result.data.autoEndTurn).toBe(false);
       expect(result.data.brightness).toBe(120);
-      expect(result.data.selectedAspectRatio).toBe("16:10");
       expect(result.data.backgroundParticlesIntensity).toBe(40);
       expect(result.data.backgroundGlowIntensity).toBe(60);
     }

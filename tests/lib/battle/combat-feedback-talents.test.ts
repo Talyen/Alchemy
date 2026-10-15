@@ -116,31 +116,29 @@ describe("Cull the Weak", () => {
   });
 });
 
-describe("feedback talent save compatibility", () => {
-  it("preserves active Holy/Wish rewards and defaults while dropping retired fields", () => {
-    const saved = JSON.parse(
-      JSON.stringify(
-        battle({
-          enemyHealth: 40,
-          talentEffects: { holyWishChance: 100 },
-        }),
-      ),
-    );
-    saved.flags.nextWishExtraChoice = true;
-    saved.flags.consumeDrawUsedThisTurn = true;
-    saved.talentEffects.leechHolyDamageVsLowHealth = 1;
-    saved.talentEffects.wishExtraChoiceAfterHolyCard = true;
-    saved.talentEffects.drawOnConsume = 1;
-    delete saved.talentEffects.leechCardDamageVsLowHealthPercent;
-    const restored = { ...PersistedBattleStateSchema.parse(saved), rng: () => 0.99 };
-    expect(restored.flags).not.toHaveProperty("nextWishExtraChoice");
-    expect(restored.flags).not.toHaveProperty("consumeDrawUsedThisTurn");
-    expect(restored.talentEffects).not.toHaveProperty("wishExtraChoiceAfterHolyCard");
-    expect(restored.talentEffects).not.toHaveProperty("drawOnConsume");
-    expect(restored.talentEffects.leechCardDamageVsLowHealthPercent).toBe(0);
-    expect(play(restored, holy).state.wishOptions).toHaveLength(WISH_CHOICE_COUNT);
-    expect(restored.talentEffects).not.toHaveProperty("leechHolyDamageVsLowHealth");
-    expect(applyLifestealAndPlayerHitTriggers(restored, 8, []).enemyHealth).toBe(restored.enemyHealth);
-    expect(intervention.holyWishChance).toBe(10);
-  });
+it("feedback talent save compatibility preserves active Holy/Wish rewards and defaults while dropping retired fields", () => {
+  const saved = JSON.parse(
+    JSON.stringify(
+      battle({
+        enemyHealth: 40,
+        talentEffects: { holyWishChance: 100 },
+      }),
+    ),
+  );
+  saved.flags.nextWishExtraChoice = true;
+  saved.flags.consumeDrawUsedThisTurn = true;
+  saved.talentEffects.leechHolyDamageVsLowHealth = 1;
+  saved.talentEffects.wishExtraChoiceAfterHolyCard = true;
+  saved.talentEffects.uncappedDrawOnConsume = 1;
+  delete saved.talentEffects.leechCardDamageVsLowHealthPercent;
+  const restored = { ...PersistedBattleStateSchema.parse(saved), rng: () => 0.99 };
+  expect(restored.flags).not.toHaveProperty("nextWishExtraChoice");
+  expect(restored.flags).not.toHaveProperty("consumeDrawUsedThisTurn");
+  expect(restored.talentEffects).not.toHaveProperty("wishExtraChoiceAfterHolyCard");
+  expect(restored.talentEffects).not.toHaveProperty("uncappedDrawOnConsume");
+  expect(restored.talentEffects.leechCardDamageVsLowHealthPercent).toBe(0);
+  expect(play(restored, holy).state.wishOptions).toHaveLength(WISH_CHOICE_COUNT);
+  expect(restored.talentEffects).not.toHaveProperty("leechHolyDamageVsLowHealth");
+  expect(applyLifestealAndPlayerHitTriggers(restored, 8, []).enemyHealth).toBe(restored.enemyHealth);
+  expect(intervention.holyWishChance).toBe(10);
 });

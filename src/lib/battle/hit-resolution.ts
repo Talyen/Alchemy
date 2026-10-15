@@ -97,7 +97,12 @@ function applyCardArcheryReactions(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const { resolvedDamage } = facts;
-  if (request.source !== "card-attack" || !request.card.tags?.includes("archery") || resolvedDamage <= 0) {
+  if (
+    request.source !== "card-attack" ||
+    !request.card.tags?.includes("archery") ||
+    resolvedDamage <= 0 ||
+    nextState.enemyHealth <= 0
+  ) {
     return nextState;
   }
   if (rollBattleChance(nextState.talentEffects.archeryPlayTwiceChance, nextState)) {
@@ -151,7 +156,15 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
     nextState = drawKeywordCard(nextState, "companion", { combatTexts });
   }
   if (effect.damageType === "holy") {
-    nextState = applyHolyDamageRiders(nextState, card, facts, combatTexts, !companionAttack, request.forgeTriggers);
+    nextState = applyHolyDamageRiders(
+      nextState,
+      card,
+      facts,
+      combatTexts,
+      !companionAttack,
+      request.forgeTriggers,
+      effect.lifesteal === true,
+    );
   } else if (effect.damageType === "nature") {
     nextState = applyNatureDamageRiders(nextState, facts, combatTexts, effect.lifesteal === true);
   }

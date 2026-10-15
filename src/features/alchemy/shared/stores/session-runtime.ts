@@ -1,3 +1,5 @@
+import { createSessionLifetime } from "./session-lifetime";
+import { SessionSaveSnapshots } from "../storage/session-save-snapshots";
 import { ProgressCompletion } from "../storage/progress-completion";
 import { createInstanceId } from "@/lib/utils";
 import { createSaveIo } from "../storage/save-io";
@@ -25,12 +27,17 @@ function bindRuntimeMethods<T extends object>(defaults: T, source?: Partial<T>):
 }
 
 function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolean) {
-  const clock = bindRuntimeMethods(nativeClock, options.runtimeInputs?.clock);
-  const { generateRunSeed, createInstanceId: instanceIdSource } = bindRuntimeMethods(
-    { generateRunSeed: generateRandomRunSeed, createInstanceId },
+  const lifetime = createSessionLifetime();
+  const sourceClock = bindRuntimeMethods(nativeClock, options.runtimeInputs?.clock);
+  const clock = lifetime.ownClock(sourceClock);
+  const {
+    generateRunSeed,
+    cosmeticRandom,
+    createInstanceId: instanceIdSource,
+  } = bindRuntimeMethods(
+    { generateRunSeed: generateRandomRunSeed, cosmeticRandom: () => Math.random(), createInstanceId },
     options.runtimeInputs,
   );
-  const cleanups = new Set<() => void>();
   const settings = createSettingsStore();
   const feedback = isolateSessionFeedback(
     bindRuntimeMethods<SessionFeedback>(
@@ -51,39 +58,28 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     ),
   );
   const gameplay = createGameplayStore(generateRunSeed);
+  const progressCompletion = new ProgressCompletion();
+  const io = createSaveIo(options.saveBackend, sourceClock.now, allowPlatformStorage);
+  // Storage invalidation is a session event, independent of autosave clients.
+  lifetime.track(io.subscribeSaveCancellation(() => progressCompletion.cancel()));
   return {
     gameplay,
     presentationBase: gameplay.reads.getState(),
     settings,
     settingsCodec: createSettingsPersistenceCodec(settings),
-    io: createSaveIo(options.saveBackend, clock.now, allowPlatformStorage),
+    io,
     clock,
     generateRunSeed,
+    cosmeticRandom,
     createInstanceId: instanceIdSource,
     feedback,
     inCommand: false,
-    progressCompletion: new ProgressCompletion(),
+    progressCompletion,
+    saveSnapshots: new SessionSaveSnapshots(progressCompletion),
     persistentClearInFlight: false,
-    disposed: false,
     lifecycle: createRunLifecycleEffects(feedback),
-    track(cleanup: () => void): () => void {
-      cleanups.add(cleanup);
-      return () => {
-        if (cleanups.delete(cleanup)) cleanup();
-      };
-    },
-    cleanup() {
-      const failures: unknown[] = [];
-      for (const cleanup of [...cleanups]) {
-        cleanups.delete(cleanup);
-        try {
-          cleanup();
-        } catch (error) {
-          failures.push(error);
-        }
-      }
-      return failures;
-    },
+    track: lifetime.track,
+    lifetime,
   };
 }
 
@@ -96,9 +92,8 @@ export function createSessionRuntime(options: GameSessionOptions = {}, allowPlat
   const session = {
     dispose() {
       disposal ??= (async () => {
+        const failures = runtime.lifetime.close();
         runtime.progressCompletion.cancel();
-        runtime.disposed = true;
-        const failures = runtime.cleanup();
         runtime.lifecycle.dispose();
         try {
           await runtime.io.waitForPendingSaveWrites();
@@ -116,6 +111,6 @@ export function createSessionRuntime(options: GameSessionOptions = {}, allowPlat
 
 export function sessionRuntime(session: GameSession): SessionRuntime {
   const runtime = runtimes.get(session);
-  if (!runtime || runtime.disposed) throw new Error("Game session is disposed or invalid");
+  if (!runtime || runtime.lifetime.disposed) throw new Error("Game session is disposed or invalid");
   return runtime;
 }

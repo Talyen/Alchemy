@@ -3,22 +3,20 @@ import { placeTransfer, reconcileOrder } from "@/features/alchemy/meta/screens/a
 import type { GearInstance } from "@/lib/gear";
 
 describe("armory-ordering", () => {
-  describe("reconcileOrder", () => {
-    it("preserves surviving order, removes missing IDs, and appends newly available rows deterministically", () => {
-      const currentIds = ["item-2", "item-1", "item-2", "item-removed"];
-      const rows = [
-        { id: "item-1", title: "Zebra", rank: 0, baseType: "" },
-        { id: "item-2", title: "Alpha", rank: 0, baseType: "" },
-        { id: "item-3", title: "Beta", rank: 0, baseType: "" },
-        { id: "item-4", title: "Apple", rank: 0, baseType: "" },
-        { id: "item-3", title: "Beta", rank: 0, baseType: "" },
-      ];
+  it("reconcileOrder preserves surviving order, removes missing IDs, and appends newly available rows deterministically", () => {
+    const currentIds = ["item-2", "item-1", "item-2", "item-removed"];
+    const rows = [
+      { id: "item-1", title: "Zebra", rank: 0, baseType: "" },
+      { id: "item-2", title: "Alpha", rank: 0, baseType: "" },
+      { id: "item-3", title: "Beta", rank: 0, baseType: "" },
+      { id: "item-4", title: "Apple", rank: 0, baseType: "" },
+      { id: "item-3", title: "Beta", rank: 0, baseType: "" },
+    ];
 
-      const reconciled = reconcileOrder(currentIds, rows);
-      // Surviving: item-2, item-1 (item-removed is dropped)
-      // New: item-3, item-4 sorted by title -> item-4 (Apple), item-3 (Beta)
-      expect(reconciled).toEqual(["item-2", "item-1", "item-4", "item-3"]);
-    });
+    const reconciled = reconcileOrder(currentIds, rows);
+    // Surviving: item-2, item-1 (item-removed is dropped)
+    // New: item-3, item-4 sorted by title -> item-4 (Apple), item-3 (Beta)
+    expect(reconciled).toEqual(["item-2", "item-1", "item-4", "item-3"]);
   });
 
   describe("placeTransfer", () => {

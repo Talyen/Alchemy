@@ -185,19 +185,23 @@ it.each(["--dr", "unexpected", "--dir=false"])(
   },
 );
 
-it.each(["build:desktop", "check:bundle"])("stops packaging when %s fails", (script) => {
+it.each([
+  ["build:desktop", true],
+  ["check:bundle", true],
+  ["check:bundle", false],
+] as const)("stops packaging when %s fails (build: %s)", (script, build) => {
   const root = packagingFixture("full");
-  const result = packageRenderer(root, "full", false, ["--build", "--dir"], script);
+  const result = packageRenderer(root, "full", false, [...(build ? ["--build"] : []), "--dir"], script);
   expect(result.status, result.stderr).toBe(3);
   const commands = result.stdout
     .trim()
     .split("\n")
     .map((line) => JSON.parse(line).slice(1));
   expect(commands).toEqual(
-    ["sync:steam-appid", "build:desktop", ...(script === "check:bundle" ? ["check:bundle"] : [])].map((name) => [
-      "run",
-      name,
-    ]),
+    [
+      ...(build ? ["sync:steam-appid", "build:desktop"] : []),
+      ...(script === "check:bundle" ? ["check:bundle"] : []),
+    ].map((name) => ["run", name]),
   );
   expect(existsSync(join(root, "steam/build"))).toBe(false);
 });
@@ -209,7 +213,12 @@ it.each([
   const root = packagingFixture(edition);
   const result = packageRenderer(root, edition, viaEnvironment);
   expect(result.status, result.stderr).toBe(0);
-  const args = JSON.parse(result.stdout.split("\n")[0]);
+  const commands = result.stdout
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line));
+  expect(commands[0].slice(1)).toEqual(["run", "check:bundle"]);
+  const args = commands.find((command) => command.includes("--win"));
   expect(args).toEqual(expect.arrayContaining(["--win", "--dir", "--x64"]));
   const config = JSON.parse(readFileSync(join(root, "steam/build", `electron-${edition}.json`), "utf8"));
   expect(config.win.target).toEqual([{ target: "nsis", arch: ["x64"] }]);

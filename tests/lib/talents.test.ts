@@ -57,15 +57,13 @@ describe("talent progression", () => {
   });
 });
 
-describe("talent save compatibility", () => {
-  it("preserves purchased talents while dropping unknown and keyword-mismatched ids", () => {
-    expect(
-      normalizeUnlockedTalents({
-        burn: ["bleed-execute", "unknown-talent"],
-        bleed: ["bleed-execute"],
-      }),
-    ).toEqual({ bleed: ["bleed-execute"] });
-  });
+it("talent save compatibility preserves purchased talents while dropping unknown and keyword-mismatched ids", () => {
+  expect(
+    normalizeUnlockedTalents({
+      burn: ["bleed-execute", "unknown-talent"],
+      bleed: ["bleed-execute"],
+    }),
+  ).toEqual({ bleed: ["bleed-execute"] });
 });
 
 describe("run-end talent XP", () => {

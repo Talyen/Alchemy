@@ -5,7 +5,6 @@ import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { cardById, companionLibrary } from "@/lib/game-data";
 import { makeState as makeSharedState, makeTestCard, slashDeck } from "../../fixtures/battle";
-import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
 function makeState(overrides: Parameters<typeof makeSharedState>[0] = {}) {
   return makeSharedState({ mana: 5, maxMana: 5, ...overrides });
@@ -146,7 +145,7 @@ describe("playBattleCardResolved", () => {
     const card = makeTestCard({ effects: [{ kind: "player-status", status: "block", amount: 5 }] });
     const state = makeState({
       hand: [card],
-      trinketEffects: defaultTrinketManifest({ ironwoodBucklerThornsOnBlock: 1 }),
+      trinketEffects: { ironwoodBucklerThornsOnBlock: 1 },
     });
 
     const result = playBattleCardResolved(state, card.id, 0);
@@ -187,7 +186,7 @@ describe("playBattleCardResolved", () => {
     expect(result.state.enemyHealth).toBe(24);
   });
 
-  it("applies consume talent riders but ignores summon-companion cards", () => {
+  it("applies Consume rewards while summons leave battle without Consume", () => {
     const potion = makeTestCard({
       id: "apple",
       cost: 1,
@@ -197,14 +196,15 @@ describe("playBattleCardResolved", () => {
     const summon = makeTestCard({
       id: "wolf-companion",
       cost: 1,
-      consume: true,
       effects: [{ kind: "summon-companion", companionId: "wolf" }],
     });
     const talents = {
       ...makeState().talentEffects,
       healOnConsume: 1,
       goldOnConsume: 1,
-      uncappedDrawOnConsume: 1,
+      goldOnConsumeChance: 100,
+      drawOnConsume: 1,
+      drawOnConsumeChance: 100,
     };
     const potionState = makeState({
       hand: [potion],
@@ -239,10 +239,9 @@ describe("playBattleCardResolved", () => {
     expect(summonResult.state.enemyStatuses.poison).toBe(0);
   });
 
-  it("summons and consumes a companion card", () => {
+  it("summons a Companion and removes its card for the battle", () => {
     const card = makeTestCard({
       id: "wolf-companion",
-      consume: true,
       effects: [{ kind: "summon-companion", companionId: "wolf" }],
     });
     const state = makeState({ hand: [card] });
@@ -269,11 +268,7 @@ describe("playBattleCardResolved", () => {
       maxMana: 6,
       hand: [card1, card2],
       cardsPlayedThisTurn: 2,
-      trinketEffects: {
-        ...makeState().trinketEffects,
-        resonantChimeCardsRequired: 3,
-        resonantChimeMana: 1,
-      },
+      trinketEffects: { resonantChimeCardsRequired: 3, resonantChimeMana: 1 },
     });
     const first = playBattleCardResolved(state, card1.id, 0);
     expect(first.state.mana).toBe(4);
@@ -289,11 +284,7 @@ describe("playBattleCardResolved", () => {
       maxMana: 3,
       hand: [card],
       cardsPlayedThisTurn: 2,
-      trinketEffects: {
-        ...makeState().trinketEffects,
-        resonantChimeCardsRequired: 3,
-        resonantChimeMana: 1,
-      },
+      trinketEffects: { resonantChimeCardsRequired: 3, resonantChimeMana: 1 },
     });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.mana).toBe(3);
@@ -454,7 +445,10 @@ describe("reworked cards", () => {
       deck: [{ ...cardById.slash }],
       rng: () => 0.99,
     });
-    let state = { ...initial, talentEffects: { ...initial.talentEffects, forgeOnConsume: 3 } };
+    let state = {
+      ...initial,
+      talentEffects: { ...initial.talentEffects, forgeOnConsume: 3, forgeOnConsumeChance: 100 },
+    };
     for (let play = 0; play < 2; play += 1) {
       const index = state.hand.findIndex((entry) => entry.id === card.id);
       const before = state;

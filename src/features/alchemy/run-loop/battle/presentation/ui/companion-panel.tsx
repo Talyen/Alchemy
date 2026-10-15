@@ -13,6 +13,7 @@ import { PortaledTooltip } from "../../../../shared/ui/tooltips/portaled-tooltip
 import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
 import { DescriptionLines } from "../../../../shared/ui/cards/card-description-ui";
 import { Surface } from "../../../../shared/ui/surface";
+import { BattleSceneArtwork } from "../../../../shared/ui/battle-scene-artwork";
 import { ArtTurnActiveBorder } from "./actor-panel-helpers";
 import { CombatantStatusEffectPresentation } from "./combatant-status-effect-presentation";
 import type { ActiveCcKeyword } from "../../../../shared/utils/cc-presentation";
@@ -53,6 +54,7 @@ export function CompanionPanel({
       ref={triggerRef}
       className="companion-enter relative"
       data-testid="active-companion"
+      data-scene-region="left"
       aria-label={`Active companion: ${companion.title}`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -65,7 +67,7 @@ export function CompanionPanel({
           ariaLabel={`Inspect ${companion.title}`}
           clipContents={false}
           className={cn(
-            "combatant-art relative",
+            "combatant-art battle-scene-piece relative",
             cardSurfaceClass,
             cardHoverScaleClass,
             turnActive && "combatant-turn-active",
@@ -80,12 +82,15 @@ export function CompanionPanel({
             active={turnActive}
             shineColor={resolvedShineColors}
           />
-          <img
-            src={companion.art}
-            alt={companion.title}
-            className="block aspect-[3/4] w-full rounded-shell-hero"
-            loading="eager"
-          />
+          <BattleSceneArtwork>
+            <img
+              src={companion.art}
+              alt={companion.title}
+              className="block aspect-[3/4] w-full rounded-shell-hero"
+              loading="eager"
+              decoding="async"
+            />
+          </BattleSceneArtwork>
         </Surface>
       </CombatantStatusEffectPresentation>
       <PortaledTooltip

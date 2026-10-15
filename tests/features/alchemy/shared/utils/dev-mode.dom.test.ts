@@ -47,8 +47,6 @@ describe("shouldSkipStartupLoadingGate", () => {
   });
 });
 
-describe("isAlchemyDevBuild", () => {
-  it("matches import.meta.env.DEV", () => {
-    expect(isAlchemyDevBuild()).toBe(import.meta.env.DEV);
-  });
+it("isAlchemyDevBuild matches import.meta.env.DEV", () => {
+  expect(isAlchemyDevBuild()).toBe(import.meta.env.DEV);
 });

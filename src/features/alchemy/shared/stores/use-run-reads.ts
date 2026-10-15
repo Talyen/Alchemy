@@ -3,7 +3,6 @@ import { useShallow } from "zustand/react/shallow";
 import { isActiveRunActivity, runActivityScreen } from "@/lib/active-run-session";
 import {
   computeTalentEffects,
-  type BattleCard,
   type CharacterId,
   type DifficultyId,
   type TalentEffectManifest,
@@ -11,8 +10,6 @@ import {
   type UnlockedTalents,
 } from "@/lib/game-data";
 import { getRunPhase, type Screen } from "@/lib/routing";
-import type { ContentSystemId } from "@/lib/content-systems/types";
-import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
 import {
   selectBattle,
@@ -90,20 +87,6 @@ export function useDifficultySelectSlice(): { characterId: CharacterId; selected
   }));
 }
 
-export function useDraftDeckSlice(): {
-  contentSystemType: ContentSystemId;
-  runDeck: BattleCard[];
-  wildwoodDraft: WildwoodDraftState | null;
-  starterDraftChoices: BattleCard[] | null;
-} {
-  return useShallowRunSelector((state) => ({
-    contentSystemType: state.run.activeRun.contentSystemType,
-    runDeck: state.run.activeRun.runDeck,
-    wildwoodDraft: state.session.wildwoodDraft,
-    starterDraftChoices: state.session.starterDraftChoices,
-  }));
-}
-
 export function useActiveRunCharacterId(): CharacterId {
   return useGameplayStateStore((state) => state.run.activeRun.characterId);
 }
@@ -116,9 +99,11 @@ function useRunSessionBattleSlice(): RunSessionBattleSlice {
   return useShallowRunSelector((state) => pickRunSessionBattleSlice(selectBattle(state)));
 }
 
-export function useBattleClusterState(): { gold: number; hasWishOptions: boolean } {
+export function useBattleClusterState() {
   return useGameplayStateStore(
     useShallow((state) => ({
+      battleState: selectBattle(state).battleState,
+      hasActiveBattle: selectBattle(state).hasActiveBattle,
       gold: selectBattle(state).battleState.gold,
       hasWishOptions: Boolean(selectBattle(state).battleState.wishOptions),
     })),

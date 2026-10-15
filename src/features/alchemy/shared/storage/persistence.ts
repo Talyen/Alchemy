@@ -6,7 +6,6 @@ import { profilePersistenceCodec } from "@/features/alchemy/shared/stores/profil
 import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run-profile-codec";
 import { hydrateGameplayPersistenceFields } from "../stores/persistence-hydration";
 import { isActiveRunActivity } from "@/lib/active-run-session";
-import { getRunSessionFromState } from "../stores/run-reads";
 import { encodeRunResumeSnapshot } from "../stores/run-resume-codec";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import type { GameSession } from "../stores/game-session-types";
@@ -45,7 +44,7 @@ export function buildAlchemySaveDataFromStores(gameSession: GameSession): Unstam
   const token = runtime.progressCompletion.token(state.revision);
   try {
     const activeRun = isActiveRunActivity(state.session.activity)
-      ? encodeRunResumeSnapshot(getRunSessionFromState(state))
+      ? encodeRunResumeSnapshot({ run: state.run.activeRun, session: state.session })
       : null;
     // Own every nested value: a save must not retain live state or draft views.
     const save = structuredClone({
@@ -56,7 +55,7 @@ export function buildAlchemySaveDataFromStores(gameSession: GameSession): Unstam
       ...encodePersistenceFields(gameSession),
       activeRun,
     });
-    return runtime.progressCompletion.captureSnapshot(save, state.revision);
+    return runtime.saveSnapshots.capture(save, state.revision);
   } catch (error) {
     runtime.progressCompletion.complete(token, "failed");
     throw error;

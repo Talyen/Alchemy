@@ -1,9 +1,9 @@
 import { isDeepStrictEqual } from "node:util";
 import "../helpers/mock-audio";
+import { initializeAlchemyVisitForTest as initializeAlchemyVisit } from "../helpers/visit-initialization";
 import { createRunRngState } from "@/lib/rng";
 import { cardById } from "@/lib/game-data";
 import {
-  initializeAlchemyVisit,
   brewAtCampfire,
   transmuteCard,
   selectTransmutation,
@@ -83,13 +83,7 @@ defineSequenceFamily("visits", (seed) => {
   });
   return {
     fixture: { visit, mode, seed, health: 10, gold: 80, deck: ["slash", "health-potion"] },
-    actions: () => [
-      "claim",
-      "invalid-choice",
-      "reload",
-      ...(visit === "campfire" ? ["rest"] : []),
-      ...(visit === "campfire" || visit === "transmutation" ? ["initialize"] : []),
-    ],
+    actions: () => ["claim", "invalid-choice", "reload", ...(visit === "campfire" ? ["rest"] : [])],
     run(action) {
       const before = snapshotRun(defaultGameSession);
       const viewBefore = observe();
@@ -99,9 +93,7 @@ defineSequenceFamily("visits", (seed) => {
         const profile = readRunProfile(defaultGameSession);
         restoreRun(parsed, profile.talentXP, profile.unlockedTalents, defaultGameSession);
         requireProgress(isDeepStrictEqual(observe(), viewBefore), "visit-resume-parity", observe());
-      } else if (action === "initialize" && (visit === "campfire" || visit === "transmutation"))
-        initializeAlchemyVisit(visit, defaultGameSession);
-      else {
+      } else {
         const invalid = action === "invalid-choice";
         let result: unknown;
         if (visit === "campfire")

@@ -116,6 +116,7 @@ export function MysteryEventIntro({
             height={CONFIG.EVENT_IMAGE_HEIGHT}
             className={cn("h-full w-full", landscapeArtImageClass)}
             loading="eager"
+            decoding="async"
             data-testid="mystery-event-art"
           />
         </Surface>

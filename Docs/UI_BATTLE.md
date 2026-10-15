@@ -1,5 +1,43 @@
 # Battle UI
 
+## Shared tabletop appearance
+
+Battle artwork shares one automatic scene treatment. The stage samples the selected
+board thumbnail's central playing area once and caches the result by artwork URL.
+Extreme pixels are rejected, luminance outliers are trimmed, and the resulting tint
+has limited saturation and at most 6% opacity. Loading, missing boards, and sampling
+failures use neutral grounding; late samples cannot repaint a different board.
+No board, combatant, or card needs authored lighting metadata.
+
+Framed portraits and cards use consistent contact and cast shadows. Transparent
+pile and Mana artwork use silhouette shadows. Raised hand cards crossfade an
+additional elevated shadow; card transfers, backs, play ghosts, Companions, and
+death slices retain the same treatment. Shadow sizes follow content scaling.
+The fixed tabletop clips overflow without becoming a scroll container, so focusing
+partially concealed controls cannot shift the scene.
+
+`BattleSceneArtwork` contains artwork-only tint, isolated from frames, labels,
+Health, status icons, focus, keyword shine, and tooltips. Effects are scoped to
+the Battle tabletop so shared cards and inspection overlays retain their normal
+appearance elsewhere. Keep shadow filters on separate artwork wrappers so existing
+damage, crowd-control, hover, and Mana filters continue to compose. There are no
+continuous lighting updates, inferred board light directions, or asset variants.
+
+One cached sample also derives broad left, right, and lower ambient zones, each
+softened halfway toward the whole-board tint and bounded by the same color limits.
+Player and Companion assemblies inherit the left zone, enemies the right; cards,
+piles, and Mana inherit the lower zone. Zones follow objects through attacks,
+death slices, and card flights so movement does not change their color. These are
+broad tabletop regions, not precise lighting coordinates or inferred light sources.
+
+Rectangular artwork receives a faint upper edge highlight and lower edge shade.
+Health/status panels share the assembly's depth and a restrained background wash;
+the wash sits behind their information. Semantic borders, Death's Door, and focus
+remain independent. Transparent artwork keeps its alpha-following treatment.
+Filled Mana gems cast a faint blue spill onto the frame only, clipped to the frame
+alpha; spending removes that spill. Only its opacity transitions, settling
+immediately with reduced motion.
+
 Shared conventions: [UI](./UI.md).
 
 ## Battle feedback
@@ -58,9 +96,13 @@ attempts share a 260ms feedback window. Playback locks, hidden transfer
 cards, and stale clicks remain silent. Automatic play does not trigger rejection
 feedback. Existing unavailable appearance and inspection remain available.
 
-Mana spending dims and slightly settles only the affected crystals. Newly filled
-crystals brighten and settle together; unchanged crystals retain their artwork
-and animation state. Resource feedback never gates accepted gameplay.
+Mana spending dims only the affected crystals; restoration brightens them with
+a brief glint. Capacity gain introduces a gem; capacity loss removes
+it with a small shard burst. Temporary bonus Mana disappearing only fades, rather
+than shattering a capacity crystal. Unchanged gems retain their animation identity.
+The frame stays still, and all effects follow displayed battle frames without
+gating accepted gameplay. Initial mount and resume settle without effect replay;
+reduced motion settles immediately, and presentation reset cancels pending exits.
 
 ## Boss lyrics
 

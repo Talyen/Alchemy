@@ -113,15 +113,13 @@ test("options and confirmations", async () => {
   await shot("confirmation-clear-save");
   await click("Cancel");
   await click("Display");
-  for (const name of ["Aspect Ratio", "Display Mode"]) {
-    await shot(`options-${name.toLowerCase().replaceAll(" ", "-")}-dropdown`, {
-      prepare: async () => {
-        await page.getByRole("combobox", { name, exact: true }).click();
-        await expect(page.getByRole("listbox")).toBeVisible();
-      },
-      cleanup: () => page.keyboard.press("Escape"),
-    });
-  }
+  await shot("options-display-mode-dropdown", {
+    prepare: async () => {
+      await page.getByRole("combobox", { name: "Display Mode", exact: true }).click();
+      await expect(page.getByRole("listbox")).toBeVisible();
+    },
+    cleanup: () => page.keyboard.press("Escape"),
+  });
 });
 
 test("run setup and draft", async () => {
@@ -373,7 +371,7 @@ test("additional pickers tooltips and end states", async () => {
   });
 });
 
-test("size and aspect ratio stress", async () => {
+test("size and viewport stress", async () => {
   // oxlint-disable-next-line playwright/no-skipped-test -- Explicit opt-in keeps the baseline matrix at default settings.
   test.skip(process.env.LAYOUT_REVIEW_STRESS !== "1", "Run separately into the stress report directory");
   const viewports = [
@@ -382,34 +380,31 @@ test("size and aspect ratio stress", async () => {
     [3440, 1440],
   ] as const;
   for (const gameSizePercent of [80, 120]) {
-    for (const selectedAspectRatio of ["auto", "16:9", "16:10", "21:9"]) {
-      await page.evaluate(
-        (gameSizePercent) =>
-          localStorage.setItem(
-            "alchemy-device-display-v1",
-            JSON.stringify({ version: 1, gameSizePercent, tooltipSizePercent: 125 }),
-          ),
-        gameSizePercent,
-      );
-      await injectActiveBattle(page, makeGoblinBattleState({ hand: deck.slice(0, 12), deck: deck.slice(12) }), {
-        runDeck: deck,
-        selectedAspectRatio,
-      });
-      await expect(page.getByTestId("battle-scene")).toBeVisible();
-      const suffix = `${gameSizePercent}-${selectedAspectRatio.replace(":", "-")}`;
-      await shot(`battle-stress-${suffix}`, {
-        viewports,
-        prepare: () =>
-          page
-            .getByRole("button", { name: /^Play / })
-            .last()
-            .hover(),
-      });
-      await page.mouse.move(0, 0);
-      await page.getByRole("button", { name: /^View Deck/ }).click();
-      await shot(`deck-stress-${suffix}`, { viewports });
-      await page.keyboard.press("Escape");
-    }
+    await page.evaluate(
+      (gameSizePercent) =>
+        localStorage.setItem(
+          "alchemy-device-display-v1",
+          JSON.stringify({ version: 1, gameSizePercent, tooltipSizePercent: 125 }),
+        ),
+      gameSizePercent,
+    );
+    await injectActiveBattle(page, makeGoblinBattleState({ hand: deck.slice(0, 12), deck: deck.slice(12) }), {
+      runDeck: deck,
+    });
+    await expect(page.getByTestId("battle-scene")).toBeVisible();
+    const suffix = `${gameSizePercent}`;
+    await shot(`battle-stress-${suffix}`, {
+      viewports,
+      prepare: () =>
+        page
+          .getByRole("button", { name: /^Play / })
+          .last()
+          .hover(),
+    });
+    await page.mouse.move(0, 0);
+    await page.getByRole("button", { name: /^View Deck/ }).click();
+    await shot(`deck-stress-${suffix}`, { viewports });
+    await page.keyboard.press("Escape");
   }
 });
 
@@ -588,6 +583,8 @@ test("services crafting and dense recap", async () => {
     ],
   });
   await page.getByRole("button", { name: "End Turn", exact: true }).click();
+  const confirm = page.getByRole("dialog", { name: "End turn?", exact: true });
+  await confirm.getByRole("button", { name: "End Turn", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Journey’s End" })).toBeVisible();
   await shot("defeat-dense-recap");
 });

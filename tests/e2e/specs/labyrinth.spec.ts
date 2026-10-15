@@ -162,7 +162,7 @@ for (const { width, height, gameSizePercent } of [
     const target = map.nodes["labyrinth-floor-2-n0"]!;
     target.modifiers = ["jealous", "tempered", "rooted"];
     target.rewardModifiers = ["alchemist", "companion", "scavenger"];
-    await injectLabyrinthRun(page, { labyrinthMap: map, runOverrides: { selectedAspectRatio: "auto" } });
+    await injectLabyrinthRun(page, { labyrinthMap: map });
     const viewport = page.getByTestId("labyrinth-viewport");
     const nodes = page.locator("[data-labyrinth-node]");
     const room = page.locator(`[data-labyrinth-node="${target.id}"] button`);
@@ -222,7 +222,6 @@ test.describe("Labyrinth touch", () => {
     await page.setViewportSize({ width: 600, height: 900 });
     await injectLabyrinthRun(page, {
       labyrinthMap: gridLabyrinthMapFixture(),
-      runOverrides: { selectedAspectRatio: "auto" },
     });
     const room = page.getByRole("button", { name: /Combat chamber, reachable/ }).first();
     await room.tap();

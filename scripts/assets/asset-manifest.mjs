@@ -1,13 +1,17 @@
+import { boardAssets } from "./board-assets.mjs";
 import { cardAssets } from "./card-assets.mjs";
 import { contentAssets } from "./content-assets.mjs";
 import { coreAssets } from "./core-assets.mjs";
 import { talentAssets } from "./talent-assets.mjs";
 import { validateRegistryEntries } from "./registry-validation.mjs";
 
-export const staticAssets = [...coreAssets, ...cardAssets, ...contentAssets, ...talentAssets];
+export const staticAssets = [...coreAssets, ...boardAssets, ...cardAssets, ...contentAssets, ...talentAssets];
 
 export async function validateAssetRegistry(entries, { sourceDir } = {}) {
   for (const entry of entries) {
+    if (entry.lossless !== undefined && typeof entry.lossless !== "boolean") {
+      throw new Error(`Asset registry: lossless must be boolean for ${entry.source}.`);
+    }
     if (entry.requiresTransparency !== undefined && typeof entry.requiresTransparency !== "boolean") {
       throw new Error(`Asset registry: requiresTransparency must be boolean for ${entry.source}.`);
     }

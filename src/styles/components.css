@@ -346,6 +346,187 @@
   }
 }
 
+/* Resource changes resize the crystals inside the fixed frame. */
+.battle-hand-dock {
+  position: relative;
+  min-width: 0;
+}
+.battle-hand-dock .mana-hand {
+  width: 78%;
+  margin-inline: auto;
+}
+.mana-dock {
+  position: absolute;
+  width: 80%;
+  aspect-ratio: 2165 / 333;
+  left: 10%;
+  bottom: calc(-1.125 * var(--content-rem, 1rem) - 4px);
+  z-index: 50;
+  pointer-events: none;
+}
+.mana-dock-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+.mana-dock-inspect {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: help;
+  clip-path: polygon(0 100%, 0 43%, 5% 20%, 12% 15%, 16% 4%, 50% 0, 84% 4%, 88% 15%, 95% 20%, 100% 43%, 100% 100%);
+  pointer-events: auto;
+}
+.mana-dock-inspect:focus-visible {
+  outline: none;
+  background: rgb(255 244 222 / 8%);
+}
+.mana-dock-gem {
+  position: absolute;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  transition:
+    left 180ms ease-out,
+    top 180ms ease-out,
+    height 180ms ease-out;
+  container-type: size;
+  pointer-events: auto;
+}
+.mana-dock-gem-motion {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.mana-dock-socket {
+  position: absolute;
+  inset: -7%;
+  background: hsl(30 10% 5%);
+  clip-path: polygon(26% 0, 74% 0, 100% 26%, 100% 74%, 74% 100%, 26% 100%, 0 74%, 0 26%);
+}
+.mana-dock-socket::after {
+  content: "";
+  position: absolute;
+  inset: 4%;
+  background: linear-gradient(hsl(30 8% 5%), hsl(30 8% 19%));
+  clip-path: inherit;
+}
+.mana-dock-full,
+.mana-dock-empty,
+.mana-dock-glint,
+.mana-dock-shard,
+.mana-dock-bonus-exit {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  object-fit: contain;
+  user-select: none;
+}
+.mana-dock-full {
+  opacity: 1;
+  filter: brightness(0.78) saturate(0.8);
+}
+.mana-dock-empty {
+  opacity: 0;
+  filter: grayscale(1) brightness(0.48);
+}
+.mana-dock-gem[data-filled="false"] .mana-dock-full {
+  opacity: 0;
+}
+.mana-dock-gem[data-filled="false"] .mana-dock-empty {
+  opacity: 1;
+}
+.mana-dock-glow {
+  position: absolute;
+  inset: 5%;
+  border-radius: 50%;
+  box-shadow: 0 0 45cqw rgb(0 188 255 / 60%);
+  opacity: 0;
+  pointer-events: none;
+}
+.mana-dock-glint {
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  background: linear-gradient(115deg, transparent 42%, rgb(230 250 255 / 80%) 50%, transparent 58%);
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  pointer-events: none;
+  opacity: 0;
+}
+.mana-dock-gem:hover .mana-dock-glint,
+.mana-dock:focus-within .mana-dock-glint {
+  animation: manaDockGlint 650ms ease-out both;
+}
+.mana-dock-gem[data-effect="gain"] .mana-dock-gem-motion {
+  animation: manaDockGain 320ms ease-out both;
+}
+.mana-dock-gem[data-effect="gain"] .mana-dock-glow {
+  animation: manaDockGlow 320ms ease-out both;
+}
+.mana-dock-gem[data-effect="fill"] .mana-dock-full {
+  animation: manaDockFill 260ms ease-out both;
+}
+.mana-dock-gem[data-effect="fill"] .mana-dock-empty {
+  animation: manaDockSpend 260ms ease-out both;
+}
+.mana-dock-gem[data-effect="spend"] .mana-dock-full {
+  animation: manaDockSpend 180ms ease-out both;
+}
+.mana-dock-gem[data-effect="spend"] .mana-dock-empty {
+  animation: manaDockFill 180ms ease-out both;
+}
+.mana-dock-gem[data-effect="gain"] .mana-dock-glint,
+.mana-dock-gem[data-effect="fill"] .mana-dock-glint {
+  animation: manaDockGlint 320ms ease-out both;
+}
+.mana-dock-exit {
+  pointer-events: none;
+}
+.mana-dock-shard {
+  animation: manaDockShard 420ms ease-out both;
+  filter: brightness(0.78) saturate(0.8);
+}
+.mana-dock-bonus-exit {
+  animation: manaDockSpend 180ms ease-out both;
+  filter: brightness(0.78) saturate(0.8);
+}
+.mana-dock-exit[data-filled="false"] img {
+  filter: grayscale(1) brightness(0.48);
+}
+.mana-dock-overflow {
+  position: absolute;
+  bottom: 0;
+  left: 70%;
+  transform: translateX(-50%);
+  padding: 0.1em 0.25em;
+  border-radius: 0.3em;
+  background: hsl(30 8% 6%);
+  color: #f3e4ca;
+  font-size: clamp(calc(0.6 * var(--content-rem, 1rem)), 42cqw, calc(0.8 * var(--content-rem, 1rem)));
+  font-weight: 600;
+  white-space: nowrap;
+  animation: manaDockGain 180ms ease-out;
+}
+.mana-dock[data-reduced-motion] .mana-dock-gem {
+  transition: none;
+}
+.mana-dock[data-reduced-motion] .mana-dock-gem-motion,
+.mana-dock[data-reduced-motion] img,
+.mana-dock[data-reduced-motion] .mana-dock-glint,
+.mana-dock[data-reduced-motion] .mana-dock-glow,
+.mana-dock[data-reduced-motion] .mana-dock-overflow {
+  animation: none;
+}
+.mana-dock[data-reduced-motion] .mana-dock-glint,
+.mana-dock[data-reduced-motion] .mana-dock-glow {
+  opacity: 0;
+}
+
 @utility surface-muted {
   background: var(--color-surface-muted);
 }
@@ -353,16 +534,24 @@
 @utility page-exit {
   opacity: 0;
   transition: opacity var(--motion-fade-duration) var(--motion-fade-ease);
+  will-change: opacity;
   pointer-events: none;
 }
 
 @utility page-enter {
   opacity: 1;
   transition: opacity var(--motion-fade-duration) var(--motion-fade-ease);
+  will-change: opacity;
 
   @starting-style {
     opacity: 0;
   }
+}
+
+.game-page-scroll {
+  will-change: scroll-position;
+  isolation: isolate;
+  overscroll-behavior: contain;
 }
 
 @utility image-rendering-pixelated {
@@ -459,6 +648,7 @@
   border-style: solid;
   border-width: 1px;
   --surface-frame-border-width: 1px;
+  contain: layout;
 }
 
 .card-interactive-glow,

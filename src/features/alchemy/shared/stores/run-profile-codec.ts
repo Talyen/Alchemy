@@ -14,8 +14,6 @@ export type RunProfileSaveFields = Omit<PermanentProgressFields, "effects">;
 
 type RunProfileSnapshot = PermanentProgressFields;
 
-export { RUN_PROFILE_SAVE_KEYS } from "./run-profile-save-fields";
-
 function encodeRunProfileSnapshot(snapshot: RunProfileSaveFields): RunProfileSaveFields {
   return Object.fromEntries(RUN_PROFILE_SAVE_KEYS.map((key) => [key, snapshot[key]])) as RunProfileSaveFields;
 }

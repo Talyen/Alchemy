@@ -9,7 +9,6 @@ import {
   formatArtDiagnosticFailure,
   MIN_PAINT_PX,
 } from "./battle-art-diagnostics";
-import { PERF_ASPECT_RATIO } from "./viewport";
 
 interface PerfDeckCard {
   id: string;
@@ -31,7 +30,6 @@ export async function startPerfBattle(
     await injectSaveState(page, {
       runDeck: deck,
       autoEndTurn: false,
-      selectedAspectRatio: PERF_ASPECT_RATIO,
       currentScreen: "destination",
       activity: savedActivityFixture("destination", { destinations: ["Normal Combat"] }),
       runPlayerHealth: 80,
@@ -80,7 +78,6 @@ export async function startPerfBattle(
           await injectSaveState(page, {
             runDeck: deck,
             autoEndTurn: false,
-            selectedAspectRatio: PERF_ASPECT_RATIO,
             currentScreen: "destination",
             activity: savedActivityFixture("destination", { destinations: ["Normal Combat"] }),
             runPlayerHealth: 80,

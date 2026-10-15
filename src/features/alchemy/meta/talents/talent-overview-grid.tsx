@@ -72,6 +72,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
             <img
               src={art}
               alt={definition.label}
+              decoding="async"
               className="pointer-events-none h-full w-full rounded-shell-hero object-cover select-none"
               draggable={false}
             />

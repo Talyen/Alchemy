@@ -1,6 +1,9 @@
 export {
+  boardArt,
   alchemistShopBg,
-  battleManaCrystal,
+  manaDockFrame,
+  manaDockFull,
+  manaDockEmpty,
   campfire,
   transmutationCrucible,
   cardById,

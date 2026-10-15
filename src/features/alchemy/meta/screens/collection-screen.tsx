@@ -18,7 +18,25 @@ import { enemyById, type CharacterId, type BestiaryEntry } from "../../shared/co
 import { EnemyInspectionOverlay } from "../../shared/ui/inspection/enemy-inspection-overlay";
 import type { CollectionTab } from "../../shared/types";
 
-export function CollectionScreen({
+import type { BoardSelection } from "@/lib/boards/catalog";
+import { BoardsCollection } from "./collection/boards-collection";
+
+export function CollectionScreen(
+  props: Omit<Parameters<typeof StandardCollectionScreen>[0], "collectionTab"> & {
+    collectionTab: CollectionTab;
+    collectedBoardIds: string[];
+    boardSelection: BoardSelection;
+    onSelectBoard: (selection: BoardSelection) => boolean;
+  },
+) {
+  return props.collectionTab === "boards" ? (
+    <BoardsCollection {...props} />
+  ) : (
+    <StandardCollectionScreen {...props} collectionTab={props.collectionTab} />
+  );
+}
+
+function StandardCollectionScreen({
   collectionTab,
   onSelectTab,
   discoveredCardIds,
@@ -32,7 +50,7 @@ export function CollectionScreen({
   onBack,
   onMenu,
 }: {
-  collectionTab: CollectionTab;
+  collectionTab: Exclude<CollectionTab, "boards">;
   onSelectTab: (tab: CollectionTab) => void;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];

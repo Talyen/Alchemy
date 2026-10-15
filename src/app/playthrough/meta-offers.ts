@@ -1,9 +1,13 @@
-import { mutateGearWithFlush, salvageGearWithFlush } from "@/features/alchemy/shared/stores/meta-commands";
+import {
+  equipGear as equipOwnedGear,
+  equipTrinket,
+  applyCurrencyToGear,
+  salvageGear,
+} from "@/features/alchemy/shared/stores/gear-commands";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import { purchaseTalent } from "@/features/alchemy/shared/stores/navigation-commands";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import {
   acceptCommand,
@@ -150,13 +154,7 @@ export function offerMetaChoices(
         isGearCompatibleWithLoadoutSlot(definition, slot, loadout, inventory) &&
         loadoutScore(equipGear(gear.loadouts, config.hero, slot, item, inventory)[config.hero]) > loadoutScore(loadout)
       )
-        offer("equip", `${slot}:${item.instanceId}`, 2, () =>
-          mutateGearWithFlush(
-            () => flushSaveAfterGearMutation(gameSession),
-            (state) => state.equip(config.hero, slot, item),
-            gameSession,
-          ),
-        );
+        offer("equip", `${slot}:${item.instanceId}`, 2, () => equipOwnedGear(config.hero, slot, item, gameSession));
     }
     for (const currency of CRAFTING_CURRENCY_LIST)
       if (
@@ -166,11 +164,7 @@ export function offerMetaChoices(
       )
         offer("craft", `${currency.id}:${item.instanceId}`, 1, () => {
           crafted.add(item.instanceId);
-          return mutateGearWithFlush(
-            () => flushSaveAfterGearMutation(gameSession),
-            (state) => state.applyCurrency(currency.id, item.instanceId, { rng: craftingRandom }),
-            gameSession,
-          );
+          return applyCurrencyToGear(currency.id, item.instanceId, { rng: craftingRandom }, gameSession);
         });
   }
   for (const item of gear.inventories[config.hero]) {
@@ -178,19 +172,11 @@ export function offerMetaChoices(
       !Object.values(gear.loadouts).some((slots) => Object.values(slots).includes(item.instanceId)) &&
       inventory.some((other) => other.definitionId === item.definitionId && gearScore(other) > gearScore(item))
     )
-      offer("salvage", item.instanceId, 1, () =>
-        salvageGearWithFlush(() => flushSaveAfterGearMutation(gameSession), item.instanceId, gameSession),
-      );
+      offer("salvage", item.instanceId, 1, () => salvageGear(item.instanceId, gameSession));
   }
   if (!gear.equippedTrinkets[config.hero])
     for (const id of gear.ownedTrinketIds)
-      offer("equip-trinket", id, 2, () =>
-        mutateGearWithFlush(
-          () => flushSaveAfterGearMutation(gameSession),
-          (state) => state.equipTrinket(config.hero, id),
-          gameSession,
-        ),
-      );
+      offer("equip-trinket", id, 2, () => equipTrinket(config.hero, id, gameSession));
   offer("start", config.mode, 0, () => {
     crafted.clear();
     flow.goToScreen("game-mode-select");

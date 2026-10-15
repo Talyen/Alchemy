@@ -1,3 +1,4 @@
+import { createNotificationChannel } from "../stores/notification-channel";
 import { logStorageFailure } from "@/lib/storage-logging";
 import type { SaveWriteOutcome } from "./save-operation-queue";
 
@@ -7,37 +8,36 @@ export type ProgressSaveState =
 
 /** Runtime acknowledgement only: persisted snapshots retain their existing format. */
 export class ProgressCompletion {
-  private state: ProgressSaveState = { kind: "idle" };
+  private state: ProgressSaveState = Object.freeze({ kind: "idle" });
   private epoch = 0;
   private restoreVersion = 0;
   private acknowledged = -1;
-  private snapshots = new WeakMap<object, { epoch: number; revision: number; contents: string }>();
-  private listeners = new Set<() => void>();
-  private restoreListeners = new Set<() => void>();
+  private readonly notifications = createNotificationChannel<[]>((error) => {
+    logStorageFailure("Progress save status update failed", error);
+  });
+  private readonly restores = createNotificationChannel<[]>((error) => {
+    logStorageFailure("Restore save scheduling update failed", error);
+  });
   private completions: Array<() => void> = [];
-  private retry: (() => void) | null = null;
+  private retryOwners = new Set<{ retry: () => void }>();
 
   readonly read = (): ProgressSaveState => this.state;
-  readonly subscribe = (listener: () => void) => {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  };
+  readonly subscribe = this.notifications.subscribe;
   readonly readRestoreVersion = () => this.restoreVersion;
-  readonly subscribeRestore = (listener: () => void) => {
-    this.restoreListeners.add(listener);
-    return () => this.restoreListeners.delete(listener);
-  };
+  readonly subscribeRestore = this.restores.subscribe;
 
-  activate(retry: () => void) {
-    this.retry = retry;
+  registerRetryDriver(retry: () => void) {
+    // Registration identity belongs to the client; pending acknowledgements
+    // belong to the session and survive every client's scheduling lifetime.
+    const owner = { retry };
+    this.retryOwners.add(owner);
     return () => {
-      this.retry = null;
-      this.cancel();
+      this.retryOwners.delete(owner);
     };
   }
 
-  get active() {
-    return this.retry !== null;
+  get hasRetryDriver() {
+    return this.retryOwners.size > 0;
   }
 
   mark(revision: number, force = false) {
@@ -48,23 +48,6 @@ export class ProgressCompletion {
 
   token(revision: number) {
     return { epoch: this.epoch, revision };
-  }
-
-  captureSnapshot<T extends object>(snapshot: T, revision: number): T {
-    this.snapshots.set(snapshot, { ...this.token(revision), contents: JSON.stringify(snapshot) });
-    return snapshot;
-  }
-
-  /** Validate at submission, before callers can mutate the object during IO. */
-  prepareSnapshotWrite(snapshot: object): (outcome: SaveWriteOutcome) => SaveWriteOutcome {
-    const receipt = this.snapshots.get(snapshot);
-    let token: { epoch: number; revision: number } | undefined;
-    try {
-      if (receipt && receipt.contents === JSON.stringify(snapshot)) token = receipt;
-    } catch {
-      // Invalid external payloads still follow the storage failure path.
-    }
-    return (outcome) => (token ? this.complete(token, outcome) : outcome);
   }
 
   complete(token: { epoch: number; revision: number }, outcome: SaveWriteOutcome) {
@@ -99,7 +82,11 @@ export class ProgressCompletion {
   retryNow() {
     if (this.state.kind !== "failed") return;
     this.publish({ kind: "saving", revision: this.state.revision });
-    this.retry?.();
+    // Prefer the most recently attached driver, falling back when it detaches.
+    // Select after notification, which can itself release a driver.
+    let current: { retry: () => void } | undefined;
+    for (const owner of this.retryOwners) current = owner;
+    current?.retry();
   }
 
   cancel() {
@@ -124,25 +111,13 @@ export class ProgressCompletion {
     const unchanged =
       state.kind === this.state.kind &&
       (state.kind === "idle" || (this.state.kind !== "idle" && state.revision === this.state.revision));
-    this.state = state;
+    this.state = Object.freeze(state);
     if (restored) {
       // Invalidate autosave submissions before any status or store observer
       // can schedule a write in the replacement epoch, even if data is equal.
-      for (const listener of [...this.restoreListeners]) {
-        try {
-          listener();
-        } catch (error) {
-          logStorageFailure("Restore save scheduling update failed", error);
-        }
-      }
+      this.restores.publish();
     }
     if (unchanged) return;
-    for (const listener of this.listeners) {
-      try {
-        listener();
-      } catch (error) {
-        logStorageFailure("Progress save status update failed", error);
-      }
-    }
+    this.notifications.publish();
   }
 }

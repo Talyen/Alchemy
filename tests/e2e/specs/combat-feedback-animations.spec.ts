@@ -133,7 +133,13 @@ test.describe("Combat feedback animations", slow, () => {
         observer.observe(document, { childList: true, subtree: true });
       });
       if (side === "player") await battle.playFirstCard();
-      else await battle.endTurnBtn.click();
+      else {
+        await battle.endTurnBtn.click();
+        const confirm = page
+          .getByRole("dialog", { name: "End turn?", exact: true })
+          .getByRole("button", { name: "End Turn", exact: true });
+        await confirm.click();
+      }
       await expect(page.getByTestId("combat-text").first()).toBeVisible();
       const elapsed = await page.evaluate(() => (window as Window & { combatElapsed?: number }).combatElapsed);
       await testInfo.attach(`${side}-feedback-timing`, {

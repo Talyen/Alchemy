@@ -126,7 +126,7 @@ function InspectionPanel({
       tabIndex={-1}
       onKeyDown={handleKeyDown}
       onClick={(event) => event.stopPropagation()}
-      className="alchemy-shell relative flex max-h-full w-fit max-w-[min(100%,72rem)] flex-col overflow-y-auto rounded-shell-screen border border-border/80 p-6"
+      className="alchemy-shell game-page-scroll relative flex max-h-full w-fit max-w-[min(100%,72rem)] flex-col overflow-y-auto rounded-shell-screen border border-border/80 p-6"
     >
       <div className="relative mb-3 flex min-h-11 shrink-0 items-center justify-center px-14">
         <h2 id={titleId} className="text-center font-sans text-3xl">

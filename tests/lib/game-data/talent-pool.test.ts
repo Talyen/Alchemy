@@ -79,47 +79,19 @@ describe("computeTalentEffects", () => {
     const effects = computeTalentEffects({ burn: ["physical-brute-force"] });
     expect(effects.flatPhysicalDamage).toBe(0);
   });
-
-  it("keeps the low-Health cleanse distinct from Armor thresholds", () => {
-    const effects = computeTalentEffects({
-      physical: ["physical-shield-bash"],
-      block: ["block-to-physical"],
-      nature: ["nature-verdant-cycle"],
-      leech: ["leech-nature-chance"],
-      gold: ["gold-on-wish"],
-      wish: ["wish-gold"],
-      health: ["health-threshold-armor"],
-      armor: ["armor-mitigate-stun"],
-    });
-
-    expect(effects.blockToPhysicalDamageMultiplier).toBeCloseTo(0.6);
-    expect(effects.physicalStripArmorWhileBlocked).toBe(false);
-    expect(effects.natureLeechChance).toBe(10);
-    expect(effects.afflictionLeechBonusPercent).toBe(10);
-    expect(effects.goldOnWish).toBe(7);
-    expect(effects.goldOnWishChance).toBe(10);
-    expect(effects.declinedWishCardChance).toBe(10);
-    expect(effects.cleanseBelowHealthPercent).toBe(25);
-    expect(effects.healthThresholdArmor).toHaveLength(1);
-    expect(effects.healthThresholdArmor).toEqual(expect.arrayContaining([{ threshold: 50, amount: 3 }]));
-  });
 });
 
-describe("combat feedback talent progression", () => {
-  it("preserves an already-purchased connector without granting its new prerequisites", () => {
-    const purchased = { holy: ["holy-tithe"] };
-    expect(normalizeUnlockedTalents(purchased)).toEqual(purchased);
-    expect(computeTalentEffects(purchased).holyGoldChance).toBe(10);
-    expect(getAllocatableTalentChoices("holy", purchased.holy).map((talent) => talent.name)).toEqual(["Faith Barrier"]);
-  });
+it("combat feedback talent progression preserves an already-purchased connector without granting its new prerequisites", () => {
+  const purchased = { holy: ["holy-tithe"] };
+  expect(normalizeUnlockedTalents(purchased)).toEqual(purchased);
+  expect(computeTalentEffects(purchased).holyGoldChance).toBe(10);
+  expect(getAllocatableTalentChoices("holy", purchased.holy).map((talent) => talent.name)).toEqual(["Faith Barrier"]);
 });
 
-describe("talent icon registry", () => {
-  it("resolves every authored talent icon id", () => {
-    const missing = talentPool
-      .filter((talent) => talent.icon)
-      .filter((talent) => !(talent.icon && talent.icon in TALENT_ICONS))
-      .map((talent) => `${talent.id}:${talent.icon}`);
-    expect(missing).toEqual([]);
-  });
+it("talent icon registry resolves every authored talent icon id", () => {
+  const missing = talentPool
+    .filter((talent) => talent.icon)
+    .filter((talent) => !(talent.icon && talent.icon in TALENT_ICONS))
+    .map((talent) => `${talent.id}:${talent.icon}`);
+  expect(missing).toEqual([]);
 });

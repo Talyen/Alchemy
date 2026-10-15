@@ -92,6 +92,7 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
     // Static skips avoid launching an application on unsupported hosts.
     // oxlint-disable-next-line playwright/no-skipped-test -- Native macOS fullscreen requires an authorized foreground run.
     test.skip(process.platform !== "darwin" || ELECTRON_TEST_BACKGROUND, "Requires foreground macOS");
+
     test("fills the display and restores window controls", async () => {
       const errors = failOnRuntimeErrors(window);
       await new MenuPage(window).expectMainMenuAfterColdStart();

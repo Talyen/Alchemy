@@ -6,8 +6,6 @@ import { installDisabledAnimationsForTests } from "../../../../helpers/animation
 const defaultProps = {
   onBack: vi.fn(),
   display: {
-    selectedAspectRatio: "auto" as const,
-    onAspectRatioChange: vi.fn(),
     displayMode: "windowed" as const,
     onDisplayModeChange: vi.fn(),
     showDisplayMode: false,

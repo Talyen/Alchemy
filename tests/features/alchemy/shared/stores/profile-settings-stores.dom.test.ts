@@ -2,16 +2,14 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { characters } from "@/lib/game-data";
 import { profilePersistenceCodec, readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { resetProfileForTest } from "../../../../helpers/run-domain-store-test";
+import { mutateGameplayForTest, resetProfileForTest } from "../../../../helpers/run-domain-store-test";
 import {
   settingsPersistenceCodec,
   useAppSettings,
-  useSelectedAspectRatio,
   useSettingsActions,
   useSettingsStore,
 } from "@/features/alchemy/shared/stores/settings-store";
 import { defaultSaveData, type SaveData } from "@/features/alchemy/shared/storage";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import {
   handleCollectionTabChange,
   resetToDefaults,
@@ -41,23 +39,18 @@ describe("profile store", () => {
   });
 
   it("hydrates only profile fields from save data", () => {
-    dispatchGameplayCommand(
-      (draft) =>
-        acceptCommand(
-          profilePersistenceCodec.hydrate(
-            makeSave({
-              discoveredCardIds: ["card-a"],
-              encounteredEnemyIds: ["goblin"],
-              completedDifficulties: {
-                ...defaultSaveData.completedDifficulties,
-                knight: ["difficulty-1"],
-              },
-            }),
-            draft,
-          ),
-        ),
-      undefined,
-      defaultGameSession,
+    mutateGameplayForTest((draft) =>
+      profilePersistenceCodec.hydrate(
+        makeSave({
+          discoveredCardIds: ["card-a"],
+          encounteredEnemyIds: ["goblin"],
+          completedDifficulties: {
+            ...defaultSaveData.completedDifficulties,
+            knight: ["difficulty-1"],
+          },
+        }),
+        draft,
+      ),
     );
 
     const profile = readProfileStore(defaultGameSession);
@@ -67,38 +60,26 @@ describe("profile store", () => {
   });
 
   it("supports functional discovery updates and collection navigation", () => {
-    dispatchGameplayCommand(
-      (draft) => {
-        setDiscoveredCardIds(draft, (previous: readonly string[]) => [...previous, "card-a"]);
-        setCollectionPage(draft, "bestiary", 2);
-        setCollectionPage(draft, "cards", -1);
-        handleCollectionTabChange(draft, "bestiary");
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      setDiscoveredCardIds(draft, (previous: readonly string[]) => [...previous, "card-a"]);
+      setCollectionPage(draft, "bestiary", 2);
+      setCollectionPage(draft, "cards", -1);
+      handleCollectionTabChange(draft, "bestiary");
+    });
 
     expect(readProfileStore(defaultGameSession)).toMatchObject({
       discoveredCardIds: ["card-a"],
       collectionTab: "bestiary",
-      collectionPages: { heroes: 0, cards: 0, bestiary: 2, trinkets: 0, uniques: 0 },
+      collectionPages: { heroes: 0, cards: 0, bestiary: 2, trinkets: 0, uniques: 0, boards: 0 },
     });
   });
 
   it("resets persisted and transient profile state", () => {
-    dispatchGameplayCommand(
-      (draft) => {
-        setDiscoveredCardIds(draft, ["card-a"]);
-        handleCollectionTabChange(draft, "trinkets");
-        resetToDefaults(draft);
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      setDiscoveredCardIds(draft, ["card-a"]);
+      handleCollectionTabChange(draft, "trinkets");
+      resetToDefaults(draft);
+    });
 
     expect(readProfileStore(defaultGameSession).discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
     expect(readProfileStore(defaultGameSession).collectionTab).toBe("heroes");
@@ -114,6 +95,11 @@ describe("profile store", () => {
     resetProfileForTest();
     const encoded = profilePersistenceCodec.encode(defaultGameSession);
     expect(encoded).toEqual({
+      collectedBoardIds: ["acorn"],
+      boardSelection: { kind: "board", boardId: "acorn" },
+      activeBoardId: "acorn",
+      lastRandomBoardId: null,
+      pendingBoardRewardId: null,
       discoveredCardIds: [],
       encounteredEnemyIds: [],
       discoveredTrinketIds: [],
@@ -129,7 +115,6 @@ describe("settings store", () => {
   it("hydrates only settings fields from save data", () => {
     settingsPersistenceCodec.hydrate(
       makeSave({
-        selectedAspectRatio: "16:9",
         displayMode: "windowed",
         musicVolume: 50,
         sfxVolume: 80,
@@ -145,7 +130,6 @@ describe("settings store", () => {
     expect(encoded).not.toHaveProperty("setBrightness");
     expect(useSettingsStore.getState().setBrightness).toBeTypeOf("function");
     expect(encoded).toMatchObject({
-      selectedAspectRatio: "16:9",
       displayMode: "windowed",
       musicVolume: 50,
       sfxVolume: 80,
@@ -156,11 +140,7 @@ describe("settings store", () => {
   });
 
   it("updates and resets preferences independently from profile state", () => {
-    dispatchGameplayCommand(
-      (draft) => acceptCommand(setDiscoveredCardIds(draft, ["card-a"])),
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => setDiscoveredCardIds(draft, ["card-a"]));
     const settings = useSettingsStore.getState();
     settings.setBrightness(120);
     settings.setMasterVolume(75);
@@ -228,8 +208,5 @@ describe("settings store", () => {
     const { result: settings } = renderHook(() => useAppSettings());
     expect(settings.current.brightness).toBe(120);
     expect(settings.current).not.toHaveProperty("showClearSaveConfirm");
-
-    const { result: aspect } = renderHook(() => useSelectedAspectRatio());
-    expect(aspect.current).toBe(defaultSaveData.selectedAspectRatio);
   });
 });

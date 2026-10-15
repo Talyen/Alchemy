@@ -1,3 +1,4 @@
+import { createDefaultProfileSaveFields } from "@/features/alchemy/shared/stores/profile-store-types";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 
 // Canonical minimal candidate builders for save load-path tests. Production
@@ -6,6 +7,7 @@ import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/vali
 // duplicating envelope shapes.
 export function playableSaveCandidate(lastSavedAt: number, overrides: Record<string, unknown> = {}): string {
   return JSON.stringify({
+    ...createDefaultProfileSaveFields(),
     steamAccountId: null,
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     contentVersion: CURRENT_CONTENT_VERSION,
@@ -32,6 +34,7 @@ export function futureContentSaveCandidate(
   overrides: Record<string, unknown> = {},
 ): string {
   return JSON.stringify({
+    ...createDefaultProfileSaveFields(),
     steamAccountId: null,
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     contentVersion: CURRENT_CONTENT_VERSION + 1,

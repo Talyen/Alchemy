@@ -27,6 +27,7 @@ import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "@
 import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
 import { DetailPopup } from "../tooltips/card-popup";
 import { Surface } from "../surface";
+import { BattleSceneArtwork } from "../battle-scene-artwork";
 
 interface BattleCardButtonBaseProps {
   card: BattleCard;
@@ -58,6 +59,7 @@ interface BattleCardButtonBaseProps {
 
   tooltipPadding?: number | undefined;
   children?: ReactNode | undefined;
+  scenePiece?: boolean;
 }
 
 export type BattleCardButtonProps = BattleCardButtonBaseProps &
@@ -223,15 +225,27 @@ function CardButtonSurface({
   dragging = false,
   scaleOnHover = true,
   shineColor,
+  scenePiece = false,
 }: BattleCardButtonProps) {
   const colors = shineColor ?? (card.transmuted ? getCardKeywordShineColors(card) : undefined);
   const showShine = Boolean(hovered && !dragging && !disabled && colors?.length);
+  const artwork = (
+    <img
+      src={card.art || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"}
+      alt={getCardDisplayTitle(card)}
+      className={cn("block h-auto w-full", cardArtImageClass)}
+      loading="eager"
+      decoding="async"
+    />
+  );
   return (
     <Surface
       as="button"
       className={cn(
         cardSurfaceClass,
         "group card-art-frame border border-border/80",
+        scenePiece && "battle-scene-piece battle-scene-hand-piece",
+        scenePiece && hovered && "battle-scene-hand-raised",
         scaleOnHover && cardHoverScaleClass,
         showShine && "card-art-shine",
         className,
@@ -253,12 +267,7 @@ function CardButtonSurface({
       ariaLabel={ariaLabel}
       overlay={showShine && colors ? <ShineBorder shineColor={colors} borderWidth={2} className="z-20" /> : undefined}
     >
-      <img
-        src={card.art || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"}
-        alt={getCardDisplayTitle(card)}
-        className={cn("block h-auto w-full", cardArtImageClass)}
-        loading="eager"
-      />
+      {scenePiece ? <BattleSceneArtwork>{artwork}</BattleSceneArtwork> : artwork}
       {children}
     </Surface>
   );

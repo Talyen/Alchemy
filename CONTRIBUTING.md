@@ -43,7 +43,12 @@ Implementation: [local test lane](./scripts/lib/verification/local-test-lane.mjs
 For an authorized interactive browser review on macOS/Linux, use
 `npm run agent:browser -- <action and arguments>` in place of the raw CLI.
 It selects the Codex task's session automatically; use the same actions for
-navigation, reloads and captures. Launch records persist in Git's common directory.
+navigation, reloads and captures. New managed sessions automatically use a
+1920 × 1080 (16:9) viewport, so ordinary game screenshots need no resize step.
+Use `npm run agent:browser -- set viewport <width> <height>` for a deliberate
+responsive check; later navigation and screenshots preserve that choice.
+An explicit viewport or device on the first command also takes precedence.
+User-attached/native sessions are not resized. Launch records persist in Git's common directory.
 The guardian cleans recorded browser groups if their daemon exits, verifying
 surviving members even after a group leader exits; a later command recovers
 abandoned records. Managed launches use the same socket directory for the CLI

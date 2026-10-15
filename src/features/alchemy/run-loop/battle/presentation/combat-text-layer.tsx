@@ -78,10 +78,13 @@ function positionLayer(
 
   if (!previous || next.x !== previous.x || next.y !== previous.y)
     layer.style.transform = `translate3d(${next.x}px, ${next.y}px, 0)`;
-  if (!previous || next.width !== previous.width) layer.style.width = `${next.width}px`;
-  if (!previous || next.height !== previous.height) layer.style.height = `${next.height}px`;
+  const width = previous && Math.abs(next.width - previous.width) < 1 ? previous.width : next.width;
+  const height = previous && Math.abs(next.height - previous.height) < 1 ? previous.height : next.height;
+  if (!previous || width !== previous.width) layer.style.width = `${width}px`;
+  if (!previous || height !== previous.height) layer.style.height = `${height}px`;
   if (!previous) layer.style.visibility = "visible";
-  return next;
+  // Compare later measurements with the applied size so subpixel changes accumulate.
+  return { ...next, width, height };
 }
 
 function CombatTextTarget({

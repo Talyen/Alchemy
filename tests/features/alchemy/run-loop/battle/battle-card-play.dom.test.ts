@@ -1,6 +1,6 @@
 import "../../../../helpers/mock-audio";
-
 import {
+  mutateGameplayForTest,
   setBattleActiveForTest,
   replaceBattleForTest as setSyncedBattleState,
 } from "../../../../helpers/run-domain-store-test";
@@ -9,16 +9,14 @@ import { act, renderHook } from "@testing-library/react";
 import { useBattleAutoplay } from "@/features/alchemy/run-loop/battle/use-battle-autoplay";
 import { battleSnapshot, type BattleSnapshot } from "@/lib/battle";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach, type Mock } from "vitest";
 import type { MouseEvent } from "react";
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfers";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/battle";
@@ -69,26 +67,23 @@ vi.mock("@/lib/animation/animation-prefs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/animation/animation-prefs")>()),
   shouldReduceMotion: vi.fn(() => true),
 }));
-
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
-
 import { awardCardXP } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
 
+function slashCard() {
+  return makeTestCard({ id: "slash", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] });
+}
+
 const autoplayControl = { signal: new AbortController().signal, canCommit: () => true };
 
 function givenBattle(state: BattleSnapshot): void {
-  dispatchGameplayCommand(
-    (draft) => {
-      setSyncedBattleState(draft, state);
-      setBattleActiveForTest(draft, true);
-      setScreen(draft, "battle");
-      return acceptCommand();
-    },
-    undefined,
-    defaultGameSession,
-  );
+  mutateGameplayForTest((draft) => {
+    setSyncedBattleState(draft, state);
+    setBattleActiveForTest(draft, true);
+    setScreen(draft, "battle");
+  });
 }
 
 function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
@@ -99,6 +94,7 @@ function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
     screen: "battle" as const,
     battle: createBattleCapabilities(defaultGameSession),
     playback,
+    endTurnButtonRef: { current: null },
     handCardRefs: { current: {} },
     drawPileRef: { current: null },
     discardPileRef: { current: null },
@@ -127,7 +123,13 @@ function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
     })),
   } as unknown as ReturnType<typeof createBattleTransferDeps>;
 
-  return { ctx, session, transferDeps, awardCardXP: vi.mocked(awardCardXP) };
+  return {
+    ctx,
+    session,
+    transferDeps,
+    ...createBattleCardPlay(ctx, session, transferDeps),
+    awardCardXP: vi.mocked(awardCardXP),
+  };
 }
 
 function expectAwardedCard(awardCardXP: Mock, cardId: string) {
@@ -142,17 +144,7 @@ function clickCard(
 ) {
   const button = document.createElement("button");
   Object.defineProperty(button, "getBoundingClientRect", {
-    value: () => ({
-      x: 0,
-      y: 0,
-      width: 10,
-      height: 10,
-      top: 0,
-      left: 0,
-      right: 10,
-      bottom: 10,
-      toJSON: () => ({}),
-    }),
+    value: () => new DOMRect(0, 0, 10, 10),
   });
   handleCardClick(card, index, { currentTarget: button } as unknown as MouseEvent<HTMLButtonElement>);
 }
@@ -164,6 +156,11 @@ beforeEach(() => {
   useUiStore.getState().setCardInspection(null);
 });
 
+afterEach(() => {
+  vi.useRealTimers();
+  vi.mocked(shouldReduceMotion).mockReturnValue(true);
+});
+
 describe("createBattleCardPlay", () => {
   it("a rejected stale click preserves the snapshot currently being presented", () => {
     const card = { ...makeTestCard({ cost: 1 }), uid: 1 };
@@ -171,35 +168,30 @@ describe("createBattleCardPlay", () => {
     givenBattle(state);
     const shown = battleSnapshot({ ...state, mana: 2 });
     battlePresentation.getState().setDisplayedBattle(shown);
-    const { ctx, session, transferDeps } = makeDeps();
-    clickCard(createBattleCardPlay(ctx, session, transferDeps).handleCardClick, card, 0);
+    const { handleCardClick } = makeDeps();
+    clickCard(handleCardClick, card, 0);
     expect(battlePresentation.getState().displayedBattle).toBe(shown);
     expect(readBattle(defaultGameSession).battleState.mana).toBe(0);
     expect(battlePresentation.getState().cardRejection).toEqual({ cardKey: getHandCardKey(card, 0), mana: true });
-    clickCard(createBattleCardPlay(ctx, session, transferDeps).handleCardClick, card, 0);
+    clickCard(handleCardClick, card, 0);
     expect(playUISound).toHaveBeenCalledTimes(1);
   });
 
   it("a stale autoplay preview cannot choose the same catalog card from the next queued Wish", async () => {
     vi.useFakeTimers();
     vi.mocked(shouldReduceMotion).mockReturnValue(false);
-    try {
-      const first = makeTestCard({ id: "slash" });
-      const state = makeTestBattleState({ wishOptions: [first], wishQueue: [[first]] });
-      givenBattle(state);
-      const { ctx, session, transferDeps } = makeDeps();
-      const actions = createBattleCardPlay(ctx, session, transferDeps);
-      const offered = readBattle(defaultGameSession).battleState.wishOptions![0]!;
-      const pending = actions.handleAutoplayWish(offered, autoplayControl);
-      actions.handleWishChoice(offered);
-      await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
-      await expect(pending).resolves.toBe(false);
-      expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(1);
-      expect(readBattle(defaultGameSession).battleState.wishOptions).toEqual([first]);
-    } finally {
-      vi.mocked(shouldReduceMotion).mockReturnValue(true);
-      vi.useRealTimers();
-    }
+
+    const first = makeTestCard({ id: "slash" });
+    const state = makeTestBattleState({ wishOptions: [first], wishQueue: [[first]] });
+    givenBattle(state);
+    const { handleAutoplayWish, handleWishChoice } = makeDeps();
+    const offered = readBattle(defaultGameSession).battleState.wishOptions![0]!;
+    const pending = handleAutoplayWish(offered, autoplayControl);
+    handleWishChoice(offered);
+    await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
+    await expect(pending).resolves.toBe(false);
+    expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(1);
+    expect(readBattle(defaultGameSession).battleState.wishOptions).toEqual([first]);
   });
   it.each([{ burn: 0 }, { burn: 3 }])(
     "acknowledges accepted Cleanse even without a removable status (Burn $burn)",
@@ -221,19 +213,15 @@ describe("createBattleCardPlay", () => {
       });
       givenBattle(state);
 
-      const { ctx, session, transferDeps } = makeDeps();
-      clickCard(createBattleCardPlay(ctx, session, transferDeps).handleCardClick, { ...cleanse, uid: 1 }, 0);
+      const { handleCardClick } = makeDeps();
+      clickCard(handleCardClick, { ...cleanse, uid: 1 }, 0);
 
       expect(playCardSound).toHaveBeenCalledExactlyOnceWith("cleanse");
     },
   );
 
-  it("plays a legal card and syncs battle state", async () => {
-    const slash = makeTestCard({
-      id: "slash",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-    });
+  it.each(["manual", "autoplay"] as const)("plays a legal card through %s and syncs battle state", async (mode) => {
+    const slash = slashCard();
     const state = makeTestBattleState({
       hand: [{ ...slash, uid: 1 }],
       mana: 3,
@@ -241,9 +229,9 @@ describe("createBattleCardPlay", () => {
     });
     givenBattle(state);
 
-    const { ctx, session, transferDeps, awardCardXP } = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
-    clickCard(handleCardClick, { ...slash, uid: 1 }, 0);
+    const { ctx, awardCardXP, handleCardClick, handleAutoplayCard } = makeDeps();
+    if (mode === "manual") clickCard(handleCardClick, { ...slash, uid: 1 }, 0);
+    else await expect(handleAutoplayCard({ ...slash, uid: 1 }, 0, autoplayControl)).resolves.toBe(true);
 
     expect(readBattle(defaultGameSession).battleState.hand.length).toBe(0);
     expect(readBattle(defaultGameSession).battleState.enemyHealth).toBeLessThan(30);
@@ -262,8 +250,7 @@ describe("createBattleCardPlay", () => {
     const slash = { ...makeTestCard({ id: "slash", cost: 1 }), uid: 1 };
     const state = makeTestBattleState({ hand: [slash], mana: 3, enemyHealth: 30 });
     givenBattle(state);
-    const { ctx, session, transferDeps, awardCardXP } = makeDeps();
-    const { handleCardClick, handleAutoplayCard } = createBattleCardPlay(ctx, session, transferDeps);
+    const { awardCardXP, handleCardClick, handleAutoplayCard } = makeDeps();
     useUiStore.getState().setCardInspection("deck");
     clickCard(handleCardClick, slash, 0);
     await expect(handleAutoplayCard(slash, 0, autoplayControl)).resolves.toBe(false);
@@ -283,8 +270,7 @@ describe("createBattleCardPlay", () => {
     });
     givenBattle(state);
 
-    const { ctx, session, transferDeps, awardCardXP } = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
+    const { ctx, awardCardXP, handleCardClick } = makeDeps();
     clickCard(handleCardClick, { ...expensive, uid: 2 }, 0);
 
     expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(state));
@@ -295,11 +281,7 @@ describe("createBattleCardPlay", () => {
   });
 
   it("rejects plays when the player is defeated", () => {
-    const slash = makeTestCard({
-      id: "slash",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-    });
+    const slash = slashCard();
     const state = makeTestBattleState({
       hand: [{ ...slash, uid: 3 }],
       mana: 3,
@@ -308,8 +290,7 @@ describe("createBattleCardPlay", () => {
     });
     givenBattle(state);
 
-    const { ctx, session, transferDeps } = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
+    const { handleCardClick } = makeDeps();
     clickCard(handleCardClick, { ...slash, uid: 3 }, 0);
 
     expect(readBattle(defaultGameSession).battleState.enemyHealth).toBe(state.enemyHealth);
@@ -317,11 +298,7 @@ describe("createBattleCardPlay", () => {
   });
 
   it("plays visible cards while a card transfer is in progress", () => {
-    const slash = makeTestCard({
-      id: "slash",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-    });
+    const slash = slashCard();
     const state = makeTestBattleState({
       hand: [{ ...slash, uid: 5 }],
       mana: 3,
@@ -330,8 +307,7 @@ describe("createBattleCardPlay", () => {
     givenBattle(state);
     battlePresentation.getState().setCardTransferInProgress(true);
 
-    const { ctx, session, transferDeps, awardCardXP } = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
+    const { awardCardXP, handleCardClick } = makeDeps();
     clickCard(handleCardClick, { ...slash, uid: 5 }, 0);
 
     expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
@@ -363,8 +339,7 @@ describe("createBattleCardPlay", () => {
         enemyHealth: 100,
       }),
     );
-    const { ctx, session, transferDeps } = makeDeps();
-    const { handleAutoplayCard } = createBattleCardPlay(ctx, session, transferDeps);
+    const { ctx, session, handleAutoplayCard } = makeDeps();
     await expect(handleAutoplayCard(first, 0, autoplayControl)).resolves.toBe(true);
     await expect(handleAutoplayCard(second, 1, autoplayControl)).resolves.toBe(true);
     expect(readBattle(defaultGameSession).battleState.mana).toBe(1);
@@ -383,27 +358,22 @@ describe("createBattleCardPlay", () => {
   it("keeps the hand closed once End Turn has started", async () => {
     const card = { ...makeTestCard({ id: "slash", cost: 0 }), uid: 1 };
     givenBattle(makeTestBattleState({ hand: [card] }));
-    const { ctx, session, transferDeps } = makeDeps({
+    const { handleAutoplayCard, handleCardClick } = makeDeps({
       playback: (() => {
         const lifetime = new PlaybackLifetime();
         lifetime.beginAction();
         return lifetime;
       })(),
     });
-    const actions = createBattleCardPlay(ctx, session, transferDeps);
-    await expect(actions.handleAutoplayCard(card, 0, autoplayControl)).resolves.toBe(false);
-    clickCard(actions.handleCardClick, card, 0);
+    await expect(handleAutoplayCard(card, 0, autoplayControl)).resolves.toBe(false);
+    clickCard(handleCardClick, card, 0);
     expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(1);
     expect(playUISound).not.toHaveBeenCalled();
     expect(battlePresentation.getState().cardRejection).toBeNull();
   });
 
   it("rejects plays for cards still animating into the hand", () => {
-    const slash = makeTestCard({
-      id: "slash",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-    });
+    const slash = slashCard();
     const state = makeTestBattleState({
       hand: [{ ...slash, uid: 6 }],
       mana: 3,
@@ -413,8 +383,7 @@ describe("createBattleCardPlay", () => {
     battlePresentation.getState().setCardTransferInProgress(true);
     battlePresentation.getState().setHiddenHandCardKeys(() => ["slash-6"]);
 
-    const { ctx, session, transferDeps, awardCardXP } = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
+    const { awardCardXP, handleCardClick } = makeDeps();
     clickCard(handleCardClick, { ...slash, uid: 6 }, 0);
 
     expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(state));
@@ -424,11 +393,7 @@ describe("createBattleCardPlay", () => {
   });
 
   it("plays cards after enemy is defeated during victory grace", () => {
-    const slash = makeTestCard({
-      id: "slash",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-    });
+    const slash = slashCard();
     const state = makeTestBattleState({
       hand: [{ ...slash, uid: 4 }],
       mana: 3,
@@ -452,29 +417,6 @@ describe("createBattleCardPlay", () => {
     expect(logError).not.toHaveBeenCalled();
   });
 
-  it("autoplays a legal card when the hand DOM ref is missing", async () => {
-    const slash = makeTestCard({
-      id: "slash",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-    });
-    const state = makeTestBattleState({
-      hand: [{ ...slash, uid: 7 }],
-      mana: 3,
-      enemyHealth: 30,
-    });
-    givenBattle(state);
-
-    const { ctx, session, transferDeps, awardCardXP } = makeDeps();
-    const { handleAutoplayCard } = createBattleCardPlay(ctx, session, transferDeps);
-    const played = await handleAutoplayCard({ ...slash, uid: 7 }, 0, autoplayControl);
-
-    expect(played).toBe(true);
-    expect(readBattle(defaultGameSession).battleState.hand.length).toBe(0);
-    expectAwardedCard(awardCardXP, "slash");
-    expect(playUISound).not.toHaveBeenCalled();
-  });
-
   it.each([1, 2])("unlocks End Turn, autoplay and inspection after %i card draws settle", async (count) => {
     const { runBattleDraw } = await import("@/features/alchemy/run-loop/battle/draw-sequence");
     const actual = await vi.importActual<typeof import("@/features/alchemy/run-loop/battle/draw-sequence")>(
@@ -493,7 +435,7 @@ describe("createBattleCardPlay", () => {
           enemyHealth: 30,
         }),
       );
-      const { ctx, session, transferDeps } = makeDeps();
+      const { ctx, session, transferDeps, handleCardClick } = makeDeps();
       vi.spyOn(ctx.playback, "waitForFrame").mockResolvedValue(true);
       const finish: Array<() => void> = [];
       const deps = makeDrawSequenceDeps({
@@ -506,7 +448,7 @@ describe("createBattleCardPlay", () => {
         setHiddenHandCardKeys: (update) => battlePresentation.getState().setHiddenHandCardKeys(update),
       });
       vi.mocked(transferDeps.getDrawSequenceDeps).mockReturnValue(deps);
-      const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
+
       for (const card of cards) clickCard(handleCardClick, { ...card, uid: card.uid! }, 0);
       await vi.waitFor(() => expect(finish).toHaveLength(count));
       expect(readBattle(defaultGameSession).battleState.mana).toBe(0);
@@ -542,8 +484,9 @@ describe("createBattleCardPlay", () => {
           hiddenHandCardKeys: presentation.hiddenHandCardKeys,
         }),
       ).toBe(false);
-      const endTurn = vi.spyOn(ctx.battle, "endTurn").mockReturnValue(null);
-      createBattleEndTurnUi(ctx, session, transferDeps).handleEndTurn();
+      const endTurn = vi.fn(() => null);
+      const endTurnContext = { ...ctx, battle: { ...ctx.battle, endTurn } };
+      createBattleEndTurnUi(endTurnContext, session, transferDeps).handleEndTurn();
       expect(endTurn).toHaveBeenCalledOnce();
       expect(ctx.playback.scheduleAutoEndTurn).toHaveBeenCalledWith(battleState);
     } finally {
@@ -555,48 +498,38 @@ describe("createBattleCardPlay", () => {
     }
   });
 
-  it("flashes a hover preview before autoplaying", async () => {
+  it("rejects a previewed card when combat is replaced without restarting playback", async () => {
     vi.mocked(shouldReduceMotion).mockReturnValue(false);
     vi.useFakeTimers();
-    try {
-      const slash = makeTestCard({
-        id: "slash",
-        cost: 1,
-        effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-      });
-      givenBattle(makeTestBattleState({ hand: [{ ...slash, uid: 7 }], mana: 3, enemyHealth: 30 }));
 
-      const { ctx, session, transferDeps } = makeDeps();
-      const { handleAutoplayCard } = createBattleCardPlay(ctx, session, transferDeps);
-      const pending = handleAutoplayCard({ ...slash, uid: 7 }, 0, autoplayControl);
+    const slash = slashCard();
+    givenBattle(makeTestBattleState({ hand: [{ ...slash, uid: 7 }], mana: 3, enemyHealth: 30 }));
 
-      expect(useUiStore.getState().autoplayPreviewCardId).toBe("hand-slash-7");
-      expect(useUiStore.getState().shimmerState?.cardId).toBe("hand-slash-7");
-      await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
-      await expect(pending).resolves.toBe(true);
-      expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
-      expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
-    } finally {
-      vi.useRealTimers();
-      vi.mocked(shouldReduceMotion).mockReturnValue(true);
-    }
+    const { ctx, handleAutoplayCard } = makeDeps();
+    const pending = handleAutoplayCard({ ...slash, uid: 7 }, 0, autoplayControl);
+    const generation = ctx.playback.id;
+    givenBattle(makeTestBattleState({ hand: [{ ...slash, uid: 7 }], mana: 3, enemyHealth: 30 }));
+    const replacement = readBattle(defaultGameSession).battleState;
+
+    expect(useUiStore.getState().autoplayPreviewCardId).toBe("hand-slash-7");
+    expect(useUiStore.getState().shimmerState?.cardId).toBe("hand-slash-7");
+    await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
+    await expect(pending).resolves.toBe(false);
+    expect(ctx.playback.id).toBe(generation);
+    expect(readBattle(defaultGameSession).battleState).toBe(replacement);
+    expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
+    const retry = handleAutoplayCard(replacement.hand[0]!, 0, autoplayControl);
+    await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
+    await expect(retry).resolves.toBe(true);
+    expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
   });
 
   it("autoplay wish commits the chosen wish option to hand", async () => {
-    const weak = makeTestCard({
-      id: "weak-wish",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 2 }],
-    });
-    const strong = makeTestCard({
-      id: "strong-wish",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 9 }],
-    });
+    const weak = makeTestCard({ id: "weak-wish" });
+    const strong = makeTestCard({ id: "strong-wish" });
     givenBattle(makeTestBattleState({ hand: [], mana: 3, enemyHealth: 30, wishOptions: [weak, strong] }));
 
-    const { ctx, session, transferDeps } = makeDeps();
-    const { handleAutoplayWish } = createBattleCardPlay(ctx, session, transferDeps);
+    const { handleAutoplayWish } = makeDeps();
 
     await expect(handleAutoplayWish(strong, autoplayControl)).resolves.toBe(true);
     const next = readBattle(defaultGameSession).battleState;
@@ -607,21 +540,12 @@ describe("createBattleCardPlay", () => {
   });
 
   it("autoplay wish rejects an option that is no longer offered", async () => {
-    const offered = makeTestCard({
-      id: "offered-wish",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 9 }],
-    });
-    const stale = makeTestCard({
-      id: "stale-wish",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 9 }],
-    });
+    const offered = makeTestCard({ id: "offered-wish" });
+    const stale = makeTestCard({ id: "stale-wish" });
     const initialState = makeTestBattleState({ hand: [], mana: 3, enemyHealth: 30, wishOptions: [offered] });
     givenBattle(initialState);
 
-    const { ctx, session, transferDeps } = makeDeps();
-    const { handleAutoplayWish } = createBattleCardPlay(ctx, session, transferDeps);
+    const { handleAutoplayWish } = makeDeps();
 
     await expect(handleAutoplayWish(stale, autoplayControl)).resolves.toBe(false);
     expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(initialState));
@@ -631,27 +555,18 @@ describe("createBattleCardPlay", () => {
   it("flashes a hover preview before autoplaying a wish", async () => {
     vi.mocked(shouldReduceMotion).mockReturnValue(false);
     vi.useFakeTimers();
-    try {
-      const wish = makeTestCard({
-        id: "strong-wish",
-        cost: 1,
-        effects: [{ kind: "damage", damageType: "physical", amount: 9 }],
-      });
-      givenBattle(makeTestBattleState({ hand: [], mana: 3, enemyHealth: 30, wishOptions: [wish] }));
 
-      const { ctx, session, transferDeps } = makeDeps();
-      const { handleAutoplayWish } = createBattleCardPlay(ctx, session, transferDeps);
-      const pending = handleAutoplayWish(wish, autoplayControl);
+    const wish = makeTestCard({ id: "strong-wish" });
+    givenBattle(makeTestBattleState({ hand: [], mana: 3, enemyHealth: 30, wishOptions: [wish] }));
 
-      expect(useUiStore.getState().autoplayPreviewCardId).toBe("wish-strong-wish");
-      await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
-      await expect(pending).resolves.toBe(true);
-      expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
-      expect(readBattle(defaultGameSession).battleState.wishOptions).toBeNull();
-    } finally {
-      vi.useRealTimers();
-      vi.mocked(shouldReduceMotion).mockReturnValue(true);
-    }
+    const { handleAutoplayWish } = makeDeps();
+    const pending = handleAutoplayWish(wish, autoplayControl);
+
+    expect(useUiStore.getState().autoplayPreviewCardId).toBe("wish-strong-wish");
+    await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
+    await expect(pending).resolves.toBe(true);
+    expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
+    expect(readBattle(defaultGameSession).battleState.wishOptions).toBeNull();
   });
 
   it.each(["restart", "cancel"] as const)(
@@ -659,58 +574,45 @@ describe("createBattleCardPlay", () => {
     async (transition) => {
       vi.mocked(shouldReduceMotion).mockReturnValue(false);
       vi.useFakeTimers();
-      try {
-        const slash = makeTestCard({
-          id: "slash",
-          cost: 1,
-          effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-        });
-        givenBattle(makeTestBattleState({ hand: [{ ...slash, uid: 7 }], mana: 3, enemyHealth: 30 }));
 
-        const { ctx, session, transferDeps, awardCardXP } = makeDeps();
-        const { handleAutoplayCard } = createBattleCardPlay(ctx, session, transferDeps);
-        const pending = handleAutoplayCard({ ...slash, uid: 7 }, 0, autoplayControl);
-        expect(useUiStore.getState().autoplayPreviewCardId).toBe("hand-slash-7");
+      const slash = slashCard();
+      givenBattle(makeTestBattleState({ hand: [{ ...slash, uid: 7 }], mana: 3, enemyHealth: 30 }));
 
-        ctx.playback[transition]();
-        expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
-        expect(vi.getTimerCount()).toBe(0);
-        await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
-        await expect(pending).resolves.toBe(false);
-        expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
-        expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(1);
-        expect(awardCardXP).not.toHaveBeenCalled();
-      } finally {
-        vi.useRealTimers();
-        vi.mocked(shouldReduceMotion).mockReturnValue(true);
-      }
+      const { ctx, awardCardXP, handleAutoplayCard } = makeDeps();
+
+      const pending = handleAutoplayCard({ ...slash, uid: 7 }, 0, autoplayControl);
+      expect(useUiStore.getState().autoplayPreviewCardId).toBe("hand-slash-7");
+
+      ctx.playback[transition]();
+      expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
+      expect(vi.getTimerCount()).toBe(0);
+      await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
+      await expect(pending).resolves.toBe(false);
+      expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
+      expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(1);
+      expect(awardCardXP).not.toHaveBeenCalled();
     },
   );
 
   it("does not grant a previewed Wish after cancellation without a generation change", async () => {
     vi.mocked(shouldReduceMotion).mockReturnValue(false);
     vi.useFakeTimers();
-    try {
-      const offered = makeTestCard({ id: "slash" });
-      givenBattle(makeTestBattleState({ wishOptions: [offered] }));
-      const before = readBattle(defaultGameSession).battleState;
-      const { ctx, session, transferDeps } = makeDeps();
-      const actions = createBattleCardPlay(ctx, session, transferDeps);
-      const pending = actions.handleAutoplayWish(before.wishOptions![0]!, autoplayControl);
-      const generation = ctx.playback.id;
-      ctx.playback.cancel();
-      expect(ctx.playback.id).toBe(generation);
-      await expect(pending).resolves.toBe(false);
-      expect(readBattle(defaultGameSession).battleState).toBe(before);
-      expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
-      expect(vi.getTimerCount()).toBe(0);
-    } finally {
-      vi.useRealTimers();
-      vi.mocked(shouldReduceMotion).mockReturnValue(true);
-    }
+
+    const offered = makeTestCard({ id: "slash" });
+    givenBattle(makeTestBattleState({ wishOptions: [offered] }));
+    const before = readBattle(defaultGameSession).battleState;
+    const { ctx, handleAutoplayWish } = makeDeps();
+    const pending = handleAutoplayWish(before.wishOptions![0]!, autoplayControl);
+    const generation = ctx.playback.id;
+    ctx.playback.cancel();
+    expect(ctx.playback.id).toBe(generation);
+    await expect(pending).resolves.toBe(false);
+    expect(readBattle(defaultGameSession).battleState).toBe(before);
+    expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
   });
 
-  it.each(["disabled", "menu", "unmount"] as const)(
+  it.each(["disabled", "menu", "confirmation", "unmount"] as const)(
     "does not commit a previewed card after autoplay is interrupted: %s",
     async (interruption) => {
       vi.mocked(shouldReduceMotion).mockReturnValue(false);
@@ -718,9 +620,10 @@ describe("createBattleCardPlay", () => {
       const slash = makeTestCard({ id: "slash", uid: 7, cost: 1 });
       const initialState = makeTestBattleState({ hand: [slash], mana: 3, enemyHealth: 30 });
       givenBattle(initialState);
-      const { ctx, session, transferDeps } = makeDeps();
-      const actions = createBattleCardPlay(ctx, session, transferDeps);
-      const gate = { current: { hiddenHandCardKeys: [], cardTransferInProgress: false } };
+      const { ctx, handleAutoplayCard, handleAutoplayWish } = makeDeps();
+      const gate = {
+        current: { hiddenHandCardKeys: [], cardTransferInProgress: false, endTurnConfirmationOpen: false },
+      };
       const { rerender, unmount } = renderHook(
         ({ enabled, gameMenuOpen }) =>
           useBattleAutoplay({
@@ -730,8 +633,8 @@ describe("createBattleCardPlay", () => {
             hasActiveBattle: true,
             battleState: readBattle(defaultGameSession).battleState,
             isCardPlayInProgress: () => ctx.playback.cardPlayInProgress,
-            playCard: actions.handleAutoplayCard,
-            playWish: actions.handleAutoplayWish,
+            playCard: handleAutoplayCard,
+            playWish: handleAutoplayWish,
             presentationGateRef: gate,
           }),
         { initialProps: { enabled: true, gameMenuOpen: false } },
@@ -739,7 +642,10 @@ describe("createBattleCardPlay", () => {
       try {
         expect(useUiStore.getState().autoplayPreviewCardId).toBe("hand-slash-7");
         if (interruption === "unmount") unmount();
-        else rerender({ enabled: interruption !== "disabled", gameMenuOpen: interruption === "menu" });
+        else if (interruption === "confirmation") {
+          gate.current.endTurnConfirmationOpen = true;
+          battlePresentation.getState().setEndTurnConfirmationOpen(true);
+        } else rerender({ enabled: interruption !== "disabled", gameMenuOpen: interruption === "menu" });
         await act(async () => {
           await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
         });
@@ -747,6 +653,8 @@ describe("createBattleCardPlay", () => {
         expect(awardCardXP).not.toHaveBeenCalled();
         expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
         if (interruption !== "unmount") {
+          gate.current.endTurnConfirmationOpen = false;
+          battlePresentation.getState().setEndTurnConfirmationOpen(false);
           rerender({ enabled: true, gameMenuOpen: false });
           await act(async () => {
             await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS + 50);
@@ -762,16 +670,11 @@ describe("createBattleCardPlay", () => {
   );
 
   it("clears a stale autoplay preview on manual play", () => {
-    const slash = makeTestCard({
-      id: "slash",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-    });
+    const slash = slashCard();
     givenBattle(makeTestBattleState({ hand: [{ ...slash, uid: 9 }], mana: 3, enemyHealth: 30 }));
     useUiStore.getState().setAutoplayPreviewCardId("hand-slash-9");
 
-    const { ctx, session, transferDeps } = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
+    const { handleCardClick } = makeDeps();
     clickCard(handleCardClick, { ...slash, uid: 9 }, 0);
 
     expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
@@ -791,8 +694,7 @@ describe("createBattleCardPlay", () => {
     });
     givenBattle(state);
 
-    const { ctx, session, transferDeps } = makeDeps();
-    const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
+    const { handleCardClick } = makeDeps();
     clickCard(handleCardClick, { ...guard, uid: 8 }, 0);
 
     expect(battlePresentation.getState().playerAttackToken).toBe(0);

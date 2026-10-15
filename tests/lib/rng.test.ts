@@ -202,25 +202,19 @@ describe("takeRandomItem", () => {
   });
 });
 
-describe("createSeededRng", () => {
-  it("preserves the seeded sequence used by saved runs", () => {
-    const rng = createSeededRng(12345);
-    expect(Array.from({ length: 4 }, () => rng())).toEqual([
-      0.9797282677609473, 0.3067522644996643, 0.484205421525985, 0.817934412509203,
-    ]);
-  });
+it("createSeededRng preserves the seeded sequence used by saved runs", () => {
+  const rng = createSeededRng(12345);
+  expect(Array.from({ length: 4 }, () => rng())).toEqual([
+    0.9797282677609473, 0.3067522644996643, 0.484205421525985, 0.817934412509203,
+  ]);
 });
 
-describe("hashStringToUint32", () => {
-  it("preserves the hash that seeds salvage previews", () => {
-    expect(hashStringToUint32("salvage:item-123")).toBe(834049458);
-  });
+it("hashStringToUint32 preserves the hash that seeds salvage previews", () => {
+  expect(hashStringToUint32("salvage:item-123")).toBe(834049458);
 });
 
-describe("getBattleRng", () => {
-  it("getBattleRng throws when rng is missing", () => {
-    expect(() => getBattleRng({})).toThrow(/BattleState.rng is required/);
-  });
+it("getBattleRng getBattleRng throws when rng is missing", () => {
+  expect(() => getBattleRng({})).toThrow(/BattleState.rng is required/);
 });
 
 describe("rolls", () => {

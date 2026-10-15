@@ -1,8 +1,9 @@
+import { createNotificationChannel } from "./notification-channel";
 import { logError } from "@/lib/error-logger";
 import type { SessionFeedback } from "./game-session-types";
 
 /** A committed lifecycle change must finish even when one presentation adapter fails. */
-export function runSessionEffect(name: string, effect: () => void): void {
+function runSessionEffect(name: string, effect: () => void): void {
   try {
     effect();
   } catch (error) {
@@ -31,20 +32,10 @@ export function isolateSessionFeedback(feedback: SessionFeedback): SessionFeedba
 }
 
 function createLifecycleChannel(name: string) {
-  const listeners = new Set<() => void>();
-  return {
-    on(listener: () => void) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    emit() {
-      // Listener additions/removals take effect on the next notification.
-      for (const listener of [...listeners]) runSessionEffect(name, listener);
-    },
-    clear() {
-      listeners.clear();
-    },
-  };
+  const notifications = createNotificationChannel<[]>((error) => {
+    logError("Session effect failed", "other", { effect: name }, undefined, undefined, error);
+  });
+  return { on: notifications.subscribe, emit: notifications.publish, clear: notifications.clear };
 }
 
 /** One session owns the complete presentation invalidation recipe and its listeners. */
@@ -56,8 +47,8 @@ export function createRunLifecycleEffects(feedback: Pick<SessionFeedback, "clear
     presentation.emit();
   }
   return {
-    onClearPresentation: presentation.on,
-    onTeardown: teardown.on,
+    onClearPresentation: (listener: () => void) => presentation.on(listener),
+    onTeardown: (listener: () => void) => teardown.on(listener),
     clearPresentation,
     teardown() {
       clearPresentation();

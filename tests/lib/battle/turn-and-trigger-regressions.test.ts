@@ -29,16 +29,16 @@ describe("turn and trigger regressions", () => {
     expect(next.enemyCC.stunSkipTurns).toBe(1);
   });
 
-  it("Lastlight checks Mana before Runic Quill can grant an Emergency Wish refund", () => {
+  it("Lastlight checks Mana before Runic Quill grants an Emergency Wish", () => {
     const card = makeTestCard({ consume: true });
     const state = regressionBattle({
       mana: 0,
       gearEffects: { holyOnConsumeWithoutMana: 2 },
       trinketEffects: { runicQuillDrawOnConsume: 1 },
-      talentEffects: { manaOnWish: 1 },
+      talentEffects: { wishCardRefundsMana: true },
     });
     const next = handlePostPlayCardDestination(state, card);
-    expect(next.mana).toBe(1);
+    expect(next.mana).toBe(0);
     expect(next.wishOptions).not.toBeNull();
     expect(next.enemyHealth).toBe(state.enemyHealth - 2);
   });

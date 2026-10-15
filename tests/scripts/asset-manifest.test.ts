@@ -28,18 +28,19 @@ describe("asset manifest", () => {
       (name) => `resource-${name}.webp`,
     );
     const piles = ["draw-pile.webp", "discard-pile.webp", "card-back.webp"];
-    const targets = [...resources, ...piles, "battle-mana-crystal.webp"];
-    expect(
-      staticAssets
-        .filter((entry) => entry.requiresTransparency)
-        .map((entry) => entry.target)
-        .sort(),
-    ).toEqual(targets.sort());
-    for (const target of targets) {
-      expect(staticAssets.find((entry) => entry.target === target)).toMatchObject({
-        width: piles.includes(target) ? ART_PRESETS.card.width : ART_PRESETS.resource.width,
-        quality: piles.includes(target) ? ART_PRESETS.boon.quality : ART_PRESETS.resource.quality,
-      });
+    const families = [
+      { targets: [...resources, "battle-mana-crystal.webp"], preset: ART_PRESETS.resource },
+      { targets: piles, preset: { ...ART_PRESETS.card, quality: ART_PRESETS.boon.quality } },
+      { targets: ["mana-dock-full.webp", "mana-dock-empty.webp"], preset: ART_PRESETS.manaDockCrystal },
+      { targets: ["mana-dock-frame.webp"], preset: ART_PRESETS.manaDock },
+    ];
+    for (const { targets, preset } of families) {
+      for (const target of targets) {
+        expect(staticAssets.find((entry) => entry.target === target)).toMatchObject({
+          ...preset,
+          requiresTransparency: true,
+        });
+      }
     }
   });
 });

@@ -30,7 +30,7 @@ defineSequenceFamily("navigation", (seed) => {
       committed = next;
       setScreen(next);
     }, []);
-    const navigation = useScreenTransitions(screen, show);
+    const navigation = useScreenTransitions(defaultGameSession, screen, show);
     return { navigation, ...useRenderedScreenTransition(screen) };
   });
   const starts = createBattleStartCommands(() => {}, defaultGameSession);

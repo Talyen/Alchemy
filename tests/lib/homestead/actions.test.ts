@@ -39,25 +39,23 @@ describe("homestead-actions", () => {
     expect(profile).toEqual(after);
   });
 
-  describe("pruneUnknownCompanions", () => {
-    it("filters unknown companions and logs error", () => {
-      const logSpy = vi.spyOn(errorLogger, "logError").mockImplementation(() => {});
-      const corrupted = JSON.parse('{"wolf":2,"unknownCompanion":3,"toString":4,"__proto__":5}') as Record<
-        CompanionId,
-        number
-      >;
-      const before = structuredClone(corrupted);
+  it("pruneUnknownCompanions filters unknown companions and logs error", () => {
+    const logSpy = vi.spyOn(errorLogger, "logError").mockImplementation(() => {});
+    const corrupted = JSON.parse('{"wolf":2,"unknownCompanion":3,"toString":4,"__proto__":5}') as Record<
+      CompanionId,
+      number
+    >;
+    const before = structuredClone(corrupted);
 
-      const result = pruneUnknownCompanions(corrupted);
-      expect(result).toEqual({ wolf: 2 });
-      expect(logSpy).toHaveBeenCalledWith(
-        "Removed companions missing from catalog",
-        "other",
-        expect.objectContaining({ removed: ["unknownCompanion", "toString", "__proto__"] }),
-      );
-      expect(corrupted).toEqual(before);
-      logSpy.mockRestore();
-    });
+    const result = pruneUnknownCompanions(corrupted);
+    expect(result).toEqual({ wolf: 2 });
+    expect(logSpy).toHaveBeenCalledWith(
+      "Removed companions missing from catalog",
+      "other",
+      expect.objectContaining({ removed: ["unknownCompanion", "toString", "__proto__"] }),
+    );
+    expect(corrupted).toEqual(before);
+    logSpy.mockRestore();
   });
 
   describe("constructBuilding", () => {

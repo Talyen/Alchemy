@@ -12,6 +12,7 @@ import {
   type KeywordId,
 } from "@/lib/game-data";
 import { parseSavedCardArray, savedCardArraySchema } from "./battle-card-schemas";
+import { MaterialInventorySchema } from "./schema-enums";
 import { UniqueGearBattleStateSchema } from "./unique-gear-state";
 import { recordNestedValidationWarnings } from "./validation-utils";
 
@@ -23,21 +24,27 @@ const battleFallbacks = defaultBattleState();
 
 const difficultyModifierSchema = z
   .discriminatedUnion("kind", [
-    z.object({ kind: z.literal("enemy-starting-armor"), amount: z.number() }),
-    z.object({ kind: z.literal("increase-enemy-physical-damage"), amount: z.number() }),
-    z.object({ kind: z.literal("increase-enemy-damage"), amount: z.number() }),
+    z.object({ kind: z.literal("enemy-starting-armor"), amount: z.number().nonnegative().lt(Number.MAX_SAFE_INTEGER) }),
+    z.object({
+      kind: z.literal("increase-enemy-physical-damage"),
+      amount: z.number().nonnegative().lt(Number.MAX_SAFE_INTEGER),
+    }),
+    z.object({
+      kind: z.literal("increase-enemy-damage"),
+      amount: z.number().nonnegative().lt(Number.MAX_SAFE_INTEGER),
+    }),
     z.object({
       kind: z.literal("increase-enemy-status"),
       status: EnemyStatusIdSchema.exclude(["stun"]),
-      amount: z.number(),
+      amount: z.number().nonnegative().lt(Number.MAX_SAFE_INTEGER),
     }),
     z.object({ kind: z.literal("enemy-attacks-gain-leech") }),
-    z.object({ kind: z.literal("start-block"), amount: z.number() }),
-    z.object({ kind: z.literal("start-max-mana"), amount: z.number() }),
-    z.object({ kind: z.literal("gold-multiplier"), amount: z.number() }),
+    z.object({ kind: z.literal("start-block"), amount: z.number().nonnegative().lt(Number.MAX_SAFE_INTEGER) }),
+    z.object({ kind: z.literal("start-max-mana"), amount: z.number().nonnegative().lt(Number.MAX_SAFE_INTEGER) }),
+    z.object({ kind: z.literal("gold-multiplier"), amount: z.number().nonnegative().lt(Number.MAX_SAFE_INTEGER) }),
     z.object({ kind: z.literal("start-companion"), companionId: CompanionIdSchema.optional() }),
-    z.object({ kind: z.literal("enemy-health-multiplier"), amount: z.number() }),
-    z.object({ kind: z.literal("enemy-damage-multiplier"), amount: z.number() }),
+    z.object({ kind: z.literal("enemy-health-multiplier"), amount: z.number().positive().lt(Number.MAX_SAFE_INTEGER) }),
+    z.object({ kind: z.literal("enemy-damage-multiplier"), amount: z.number().positive().lt(Number.MAX_SAFE_INTEGER) }),
   ])
   .transform((modifier): DifficultyModifier => {
     if (modifier.kind !== "start-companion") return modifier;
@@ -59,6 +66,7 @@ const pendingTurnStartEffectSchema = z.object({
 });
 
 const PersistedBattleStateWireSchema = z.looseObject({
+  pendingMaterials: MaterialInventorySchema,
   pendingCardBleedLeechHealing: z.number().int().nonnegative().catch(0),
   deck: savedCardArraySchema("deck").catch([]),
   hand: savedCardArraySchema("hand").catch([]),
@@ -95,7 +103,7 @@ const PersistedBattleStateWireSchema = z.looseObject({
   playerHealth: z.number().catch(battleFallbacks.playerHealth),
   playerMaxHealth: z.number().catch(battleFallbacks.playerMaxHealth),
   playerDodgeCount: z.number().int().nonnegative().catch(0),
-  dodgeChanceFromDamage: z.number().nonnegative().catch(0),
+  dodgeChanceFromDamage: z.number().nonnegative().lt(Number.MAX_SAFE_INTEGER).catch(0),
   enemyHealth: z.number().catch(battleFallbacks.enemyHealth),
   enemyMaxHealth: z.number().catch(battleFallbacks.enemyMaxHealth),
   currentEnemy: z.record(z.string(), z.unknown()).catch({}),

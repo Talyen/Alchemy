@@ -112,7 +112,12 @@ const DifficultyCard = memo(function DifficultyCard({
             shimmerToken={shimmerToken}
             shimmerRounded="rounded-shell-panel"
           >
-            <img src={diffArt} alt="" className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover")} />
+            <img
+              src={diffArt}
+              alt=""
+              decoding="async"
+              className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover")}
+            />
             {completed && (
               <div className="absolute top-2 right-2 rounded-md bg-emerald-600/90 px-2 py-0.5 text-xs font-bold tracking-wide text-emerald-100 uppercase">
                 Completed
@@ -124,6 +129,7 @@ const DifficultyCard = memo(function DifficultyCard({
             <img
               src={diffArt}
               alt=""
+              decoding="async"
               className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover", "grayscale")}
             />
             <div className="absolute inset-0 flex items-center justify-center rounded-shell-panel bg-black/60">
@@ -212,6 +218,7 @@ export function DifficultySelectScreen({
             <img
               src={art}
               alt={char.name}
+              decoding="async"
               className={cn(cardSurfaceClass, "h-full w-full rounded-shell-panel object-cover")}
             />
           </Surface>

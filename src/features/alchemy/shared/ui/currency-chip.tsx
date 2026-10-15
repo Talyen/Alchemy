@@ -48,7 +48,7 @@ export function CurrencyChip({
   );
   const content = (
     <>
-      <img src={currency.art} alt="" className="h-full w-full object-cover" />
+      <img src={currency.art} alt="" decoding="async" className="h-full w-full object-cover" />
       <span
         key={countToken}
         className={cn(

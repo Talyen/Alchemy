@@ -16,11 +16,9 @@ import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { createSeededRng } from "@/lib/rng";
 import { tryUpgradeTierItem } from "@/lib/homestead/upgrades";
 
-describe("homestead upgrade IDs cross-category uniqueness", () => {
-  it("all IDs across buildings, farmPlots, and researchUpgrades are mutually unique", () => {
-    const allIds = [...buildings.map((b) => b.id), ...farmPlots.map((f) => f.id), ...researchUpgrades.map((r) => r.id)];
-    expect(new Set(allIds).size).toBe(allIds.length);
-  });
+it("homestead upgrade IDs cross-category uniqueness all IDs across buildings, farmPlots, and researchUpgrades are mutually unique", () => {
+  const allIds = [...buildings.map((b) => b.id), ...farmPlots.map((f) => f.id), ...researchUpgrades.map((r) => r.id)];
+  expect(new Set(allIds).size).toBe(allIds.length);
 });
 
 describe("computeHomesteadEffects", () => {
@@ -55,55 +53,53 @@ describe("computeHomesteadEffects", () => {
   });
 });
 
-describe("mergeIntoManifest", () => {
-  it("adds card healing and takes the higher companion bond without mutating either manifest", () => {
-    const talent = {
-      ...createEmptyTalentEffectManifest(),
-      flatPhysicalDamage: 3,
-      startGold: 10,
-      startBlock: 2,
-      campfireHealBonus: 0.1,
-    };
-    talent.firstBleedCardFree = true;
-    talent.armorPhysicalDamagePercent = 100;
-    talent.cardHealBonus = { bread: 3, apple: 1 };
-    talent.companionBondLevels.wolf = 3;
-    const homestead = {
-      ...defaultHomesteadEffects,
-      flatPhysicalDamage: 1,
-      companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels, wolf: 2 },
-      homesteadPotionBonus: 1,
-      cardHealBonus: { bread: 2, potion: 4 },
-    };
-    const talentBefore = structuredClone(talent);
-    const homesteadBefore = structuredClone(homestead);
-    const merged = mergeIntoManifest(talent, homestead);
-    expect(merged).toMatchObject({
-      flatPhysicalDamage: 4,
-      startGold: 10,
-      startBlock: 2,
-      campfireHealBonus: 0.1,
-      firstBleedCardFree: true,
-      armorPhysicalDamagePercent: 100,
-      homesteadPotionBonus: 1,
-    });
-    expect(merged).not.toHaveProperty("endRunFoodPerRoom");
-    expect(merged.cardHealBonus).toEqual({
-      bread: 5,
-      apple: 1,
-      potion: 4,
-    });
-    expect(merged.companionBondLevels.wolf).toBe(3);
-    expect(talent).toEqual(talentBefore);
-    expect(homestead).toEqual(homesteadBefore);
-    merged.cardHealBonus.bread = 99;
-    merged.companionBondLevels.wolf = 99;
-    const withoutBonuses = mergeIntoManifest(talent, defaultHomesteadEffects);
-    withoutBonuses.cardHealBonus.bread = 99;
-    withoutBonuses.companionBondLevels.wolf = 99;
-    expect(talent).toEqual(talentBefore);
-    expect(homestead).toEqual(homesteadBefore);
+it("mergeIntoManifest adds card healing and takes the higher companion bond without mutating either manifest", () => {
+  const talent = {
+    ...createEmptyTalentEffectManifest(),
+    flatPhysicalDamage: 3,
+    startGold: 10,
+    startBlock: 2,
+    campfireHealBonus: 0.1,
+  };
+  talent.firstBurnCardFree = true;
+  talent.armorPhysicalDamagePercent = 100;
+  talent.cardHealBonus = { bread: 3, apple: 1 };
+  talent.companionBondLevels.wolf = 3;
+  const homestead = {
+    ...defaultHomesteadEffects,
+    flatPhysicalDamage: 1,
+    companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels, wolf: 2 },
+    homesteadPotionBonus: 1,
+    cardHealBonus: { bread: 2, potion: 4 },
+  };
+  const talentBefore = structuredClone(talent);
+  const homesteadBefore = structuredClone(homestead);
+  const merged = mergeIntoManifest(talent, homestead);
+  expect(merged).toMatchObject({
+    flatPhysicalDamage: 4,
+    startGold: 10,
+    startBlock: 2,
+    campfireHealBonus: 0.1,
+    firstBurnCardFree: true,
+    armorPhysicalDamagePercent: 100,
+    homesteadPotionBonus: 1,
   });
+  expect(merged).not.toHaveProperty("endRunFoodPerRoom");
+  expect(merged.cardHealBonus).toEqual({
+    bread: 5,
+    apple: 1,
+    potion: 4,
+  });
+  expect(merged.companionBondLevels.wolf).toBe(3);
+  expect(talent).toEqual(talentBefore);
+  expect(homestead).toEqual(homesteadBefore);
+  merged.cardHealBonus.bread = 99;
+  merged.companionBondLevels.wolf = 99;
+  const withoutBonuses = mergeIntoManifest(talent, defaultHomesteadEffects);
+  withoutBonuses.cardHealBonus.bread = 99;
+  withoutBonuses.companionBondLevels.wolf = 99;
+  expect(talent).toEqual(talentBefore);
+  expect(homestead).toEqual(homesteadBefore);
 });
 
 describe("shared combat material loot", () => {
@@ -171,34 +167,30 @@ describe("computeCombatMaterialReward", () => {
   });
 });
 
-describe("computeMysteryMaterialReward", () => {
-  it("applies only the herb-find bonus to a fixed grant", () => {
-    expect(
-      computeMysteryMaterialReward({
-        material: "herbs",
-        amount: 2,
-        effects: { ...defaultHomesteadEffects, herbFindBonus: 0.5 },
-      }).herbs,
-    ).toBe(3);
-    const iron = computeMysteryMaterialReward({
-      material: "iron",
+it("computeMysteryMaterialReward applies only the herb-find bonus to a fixed grant", () => {
+  expect(
+    computeMysteryMaterialReward({
+      material: "herbs",
       amount: 2,
       effects: { ...defaultHomesteadEffects, herbFindBonus: 0.5 },
-    });
-    expect(iron.iron).toBe(2);
-    expect(iron.herbs).toBe(0);
+    }).herbs,
+  ).toBe(3);
+  const iron = computeMysteryMaterialReward({
+    material: "iron",
+    amount: 2,
+    effects: { ...defaultHomesteadEffects, herbFindBonus: 0.5 },
   });
+  expect(iron.iron).toBe(2);
+  expect(iron.herbs).toBe(0);
 });
 
-describe("applyMaterialFindBonus", () => {
-  it("rounds fractional herb bonuses without changing other rewards or its input", () => {
-    const base = { ...emptyInventory(), wood: 2, herbs: 1 };
-    expect(applyMaterialFindBonus(base, { ...defaultHomesteadEffects, herbFindBonus: 0.5 })).toEqual({
-      ...base,
-      herbs: 2,
-    });
-    expect(base).toEqual({ ...emptyInventory(), wood: 2, herbs: 1 });
+it("applyMaterialFindBonus rounds fractional herb bonuses without changing other rewards or its input", () => {
+  const base = { ...emptyInventory(), wood: 2, herbs: 1 };
+  expect(applyMaterialFindBonus(base, { ...defaultHomesteadEffects, herbFindBonus: 0.5 })).toEqual({
+    ...base,
+    herbs: 2,
   });
+  expect(base).toEqual({ ...emptyInventory(), wood: 2, herbs: 1 });
 });
 
 describe("reward quantity bonuses", () => {
@@ -253,20 +245,18 @@ describe("reward quantity bonuses", () => {
   });
 });
 
-describe("Homestead upgrade payment", () => {
-  it("spends exactly the next tier cost once and rejects unaffordable or completed upgrades", () => {
-    const building = buildings[0]!;
-    const inventory = { ...building.tiers[0]!.cost };
-    const before = { ...inventory };
-    const result = tryUpgradeTierItem(building, 0, inventory);
-    expect(result).toEqual({ ok: true, inventory: emptyInventory(), nextLevel: 1 });
-    expect(inventory).toEqual(before);
-    expect(tryUpgradeTierItem(building, 1, result.inventory)).toEqual({ ...result, ok: false });
-    expect(tryUpgradeTierItem(building, building.tiers.length, inventory)).toEqual({
-      ok: false,
-      inventory,
-      nextLevel: building.tiers.length,
-    });
-    expect(tryUpgradeTierItem(undefined, 0, inventory)).toEqual({ ok: false, inventory, nextLevel: 0 });
+it("Homestead upgrade payment spends exactly the next tier cost once and rejects unaffordable or completed upgrades", () => {
+  const building = buildings[0]!;
+  const inventory = { ...building.tiers[0]!.cost };
+  const before = { ...inventory };
+  const result = tryUpgradeTierItem(building, 0, inventory);
+  expect(result).toEqual({ ok: true, inventory: emptyInventory(), nextLevel: 1 });
+  expect(inventory).toEqual(before);
+  expect(tryUpgradeTierItem(building, 1, result.inventory)).toEqual({ ...result, ok: false });
+  expect(tryUpgradeTierItem(building, building.tiers.length, inventory)).toEqual({
+    ok: false,
+    inventory,
+    nextLevel: building.tiers.length,
   });
+  expect(tryUpgradeTierItem(undefined, 0, inventory)).toEqual({ ok: false, inventory, nextLevel: 0 });
 });

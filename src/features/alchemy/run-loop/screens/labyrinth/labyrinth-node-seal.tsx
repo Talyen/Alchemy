@@ -120,6 +120,7 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
           src={art}
           alt=""
           draggable={false}
+          decoding="async"
           className={cn(
             "labyrinth-discovery",
             current && "labyrinth-hero-art",

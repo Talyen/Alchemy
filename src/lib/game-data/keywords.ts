@@ -168,7 +168,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   companion: {
     id: "companion",
     label: "Companion",
-    description: "Companion cards call allied creatures to aid the Ranger",
+    description: "Summon an allied creature; summon cards leave the battle after playing",
     colorClass: "text-amber-900",
     borderClass: "border-amber-900",
     shineColors: ["#78350f", "#451a03", "#78350f"],

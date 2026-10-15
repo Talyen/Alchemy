@@ -30,5 +30,11 @@ export function readRecord(file: string): Promise<BrowserRecord | null>;
 export function stopSession(file: string): Promise<void>;
 export function closeTaskBrowsers(root?: string, key?: string | null): Promise<void>;
 export function recoverBrowsers(root?: string): Promise<void>;
-export function captureBrowser(session: string, root?: string, key?: string | null, required?: boolean): Promise<void>;
+/** True only for the first registration of this daemon identity; absent when no browser is running. */
+export function captureBrowser(
+  session: string,
+  root?: string,
+  key?: string | null,
+  required?: boolean,
+): Promise<boolean | undefined>;
 export function watchBrowser(file: string): Promise<void>;

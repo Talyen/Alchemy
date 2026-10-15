@@ -1,8 +1,10 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GameMenu } from "@/features/alchemy/shared/ui/game-menu";
-import type { ComponentProps } from "react";
+import { useState, type ComponentProps } from "react";
+import { useAppKeyboardShortcuts } from "@/app/use-app-keyboard-shortcuts";
+import { resetEscapeStackForTests } from "@/app/escape-stack";
 
 const noop = () => {};
 const menuProps = {
@@ -31,8 +33,50 @@ function isAnchored(): boolean {
 }
 
 describe("GameMenu", () => {
+  beforeEach(() => {
+    // JSDOM has no layout boxes; dialog focus still requires visible controls.
+    vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([
+      new DOMRect(0, 0, 100, 30),
+    ] as unknown as DOMRectList);
+  });
   afterEach(() => {
     cleanup();
+    resetEscapeStackForTests();
+    vi.restoreAllMocks();
+  });
+
+  it.each([false, true])("preserves focus through repeated Escape menu cycles with an opener: %s", async (focused) => {
+    const user = userEvent.setup();
+    function BattleWithMenu() {
+      const [open, setOpen] = useState(false);
+      useAppKeyboardShortcuts({
+        renderedScreen: "battle",
+        screenInteractive: true,
+        gameMenuOpen: open,
+        toggleGameMenu: () => setOpen((value) => !value),
+      });
+      return (
+        <>
+          <div data-screen-content="battle">
+            <button>Inspect enemy</button>
+            <button>End Turn</button>
+          </div>
+          <GameMenu {...menuProps} currentScreen="battle" isOpen={open} onClose={() => setOpen(false)} />
+        </>
+      );
+    }
+    render(<BattleWithMenu />);
+    const opener = screen.getByRole("button", { name: "End Turn" });
+    opener.scrollIntoView = vi.fn();
+    if (focused) opener.focus();
+    for (let cycle = 0; cycle < 2; cycle++) {
+      await user.keyboard("{Escape}");
+      const menu = screen.getByRole("dialog", { name: "Game menu" });
+      await waitFor(() => expect(menu.contains(document.activeElement)).toBe(true));
+      await user.keyboard("{Escape}");
+      await waitFor(() => expect(screen.queryByRole("dialog", { name: "Game menu" })).toBeNull());
+      await waitFor(() => expect(document.activeElement).toBe(focused ? opener : document.body));
+    }
   });
 
   it("keeps the hamburger panel anchored while fading out after close clears the rect", () => {

@@ -87,22 +87,35 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     const drawStarts = () =>
       page.evaluate(() => performance.getEntriesByName("alchemy:battle:draw-start", "mark").length);
     const before = await drawStarts();
-    await page.evaluate((openingDrawCount) => {
-      const testWindow = window as Window & { consecutivePlayAttempt?: { drawStarts: number; drawEnds: number } };
-      const observer = new MutationObserver(() => {
-        const drawStarts = performance.getEntriesByName("alchemy:battle:draw-start", "mark").length;
-        const drawEnds = performance.getEntriesByName("alchemy:battle:draw-end", "mark").length;
-        if (drawStarts !== openingDrawCount + 1 || drawEnds !== openingDrawCount) return;
-        const card = document.querySelector<HTMLButtonElement>(
-          '[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "][aria-disabled="false"]',
-        );
-        if (!card) return;
-        observer.disconnect();
-        testWindow.consecutivePlayAttempt = { drawStarts, drawEnds };
-        card.click();
-      });
-      observer.observe(document.body, { attributes: true, childList: true, subtree: true });
-    }, before);
+    const playedKey = await visibleCards
+      .first()
+      .evaluate((card) => card.closest("[data-hand-slot]")!.getAttribute("data-hand-slot"));
+    await page.evaluate(
+      ({ openingDrawCount, playedKey }) => {
+        const testWindow = window as Window & { consecutivePlayAttempt?: { drawStarts: number; drawEnds: number } };
+        const observer = new MutationObserver(() => {
+          const drawStarts = performance.getEntriesByName("alchemy:battle:draw-start", "mark").length;
+          const drawEnds = performance.getEntriesByName("alchemy:battle:draw-end", "mark").length;
+          if (drawStarts !== openingDrawCount + 1 || drawEnds !== openingDrawCount) return;
+          // Artwork can mutate before React replaces the played hand; never click its stale button again.
+          if (
+            [...document.querySelectorAll("[data-hand-slot]")].some(
+              (slot) => slot.getAttribute("data-hand-slot") === playedKey,
+            )
+          )
+            return;
+          const card = document.querySelector<HTMLButtonElement>(
+            '[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "][aria-disabled="false"]',
+          );
+          if (!card) return;
+          observer.disconnect();
+          testWindow.consecutivePlayAttempt = { drawStarts, drawEnds };
+          card.click();
+        });
+        observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+      },
+      { openingDrawCount: before, playedKey },
+    );
     const firstSlot = await page.locator("[data-hand-slot]:not([data-hand-hidden])").first().boundingBox();
     if (!firstSlot) throw new Error("Playable card has no hand slot");
     await page.mouse.click(firstSlot.x + firstSlot.width / 2, firstSlot.y + firstSlot.height / 2);
@@ -221,6 +234,10 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await battle.playFirstCard();
     await expect(battle.endTurnBtn).toBeEnabled();
     await battle.endTurnBtn.click();
+    await page
+      .getByRole("dialog", { name: "End turn?", exact: true })
+      .getByRole("button", { name: "End Turn", exact: true })
+      .click();
 
     await expect
       .poll(

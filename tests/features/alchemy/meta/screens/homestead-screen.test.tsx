@@ -36,11 +36,11 @@ const defaultProps = {
 };
 
 function nodeTile(title = "Blacksmith") {
-  return screen.getByRole("img", { name: title, exact: true }).closest("button")!;
+  return screen.getByRole("img", { name: title }).closest("button")!;
 }
 
 async function inspect(title = "Blacksmith") {
-  await screen.findByRole("img", { name: title, exact: true });
+  await screen.findByRole("img", { name: title });
   await waitForArtwork();
   const tile = nodeTile(title);
   fireEvent.mouseEnter(tile);
@@ -177,7 +177,7 @@ describe("HomesteadScreen", () => {
     fireEvent.click(nodeTile());
     fireEvent.mouseLeave(nodeTile());
     fireEvent.click(screen.getByRole("button", { name: "Farm" }));
-    await screen.findByRole("img", { name: "Wheat Field", exact: true });
+    await screen.findByRole("img", { name: "Wheat Field" });
     fireEvent.click(nodeTile("Wheat Field"));
     expect(defaultProps.onPlantFarm).not.toHaveBeenCalled();
     rerender(
@@ -238,14 +238,14 @@ describe("HomesteadScreen", () => {
   it("shows only unbonded costs and bonds a Companion on the second page without leaving it", async () => {
     render(<HomesteadScreen {...defaultProps} discoveredCardIds={cardLibrary.map((card) => card.id)} />);
     fireEvent.click(screen.getByRole("button", { name: "Companions" }));
-    await screen.findByRole("img", { name: "Wolf", exact: true });
+    await screen.findByRole("img", { name: "Wolf" });
     fireEvent.click(screen.getByRole("button", { name: "Next page" }));
     const panel = await inspect("Mana Moth");
     expect(within(panel).getByRole("img", { name: "Bond 0 of 3" })).toBeTruthy();
     expect(within(panel).getByRole("group", { name: /^Bond cost:/ })).toBeTruthy();
     fireEvent.click(nodeTile("Mana Moth"));
     expect(defaultProps.onBondCompanion).toHaveBeenCalledExactlyOnceWith("mana-moth");
-    expect(screen.queryByRole("img", { name: "Wolf", exact: true })).toBeNull();
+    expect(screen.queryByRole("img", { name: "Wolf" })).toBeNull();
   });
 
   it("shows Hide alone for Hunter's Lodge and renders Wishing Well Gold in a resource chip", async () => {
@@ -291,10 +291,8 @@ describe("HomesteadScreen", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(defaultProps.onResetHomestead).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Reset Homestead" }));
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Reset", exact: true }).closest("[inert]")).toBeNull(),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Reset", exact: true }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Reset" }).closest("[inert]")).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
     expect(defaultProps.onResetHomestead).toHaveBeenCalledTimes(1);
     rerender(<HomesteadScreen {...defaultProps} afterProgressSaved={afterProgressSaved} />);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -323,10 +321,8 @@ describe("HomesteadScreen", () => {
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: "Reset Homestead" }));
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Reset", exact: true }).closest("[inert]")).toBeNull(),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Reset", exact: true }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Reset" }).closest("[inert]")).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
     expect(screen.getByRole("alert").textContent).toBe("Could not reset Homestead. Nothing was changed.");
     expect(afterProgressSaved).not.toHaveBeenCalled();
     expect(screen.queryByRole("status")).toBeNull();

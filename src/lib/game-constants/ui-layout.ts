@@ -2,6 +2,7 @@ export const STAGE_HEIGHT = 1080;
 // Usable MacBook browser area, including the space taken by browser bars and Dock.
 export const CONTENT_REFERENCE_VIEWPORT = { width: 1470, height: 738 } as const;
 export const BATTLE_ACTOR_TOP = "34%";
+export const BATTLE_ACTOR_VIEWPORT_OFFSET = STAGE_HEIGHT * 0.05;
 
 export const COLLECTION_PAGE_SIZE = 8;
 export const BESTIARY_PAGE_SIZE = 6;

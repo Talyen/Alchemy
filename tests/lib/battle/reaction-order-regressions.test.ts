@@ -97,7 +97,7 @@ describe("card and turn reaction ordering", () => {
       playerMaxHealth: 40,
       playerStatuses: { block: 1 },
       gearEffects: { blockDepletedHeal: 2 },
-      talentEffects: { healthThresholdBlock: { threshold: 50, amount: 6 } },
+      talentEffects: { healthThresholdBlockOnce: { threshold: 50, amount: 6 } },
     });
     const guarded = processEnemyDamageEffect(initial, { kind: "damage", damageType: "physical", amount: 3 }, []);
     expect(guarded.playerStatuses.block).toBe(6);
@@ -159,8 +159,9 @@ describe("card and turn reaction ordering", () => {
   });
 });
 
-describe("Companion descriptions match their own damage scaling", () => {
-  it.each(["phoenix", "fox"] as const)("shows Gear, Bond, Mana, and conditional bonuses for %s", (id) => {
+it.each(["phoenix", "fox"] as const)(
+  "Companion descriptions match their own damage scaling shows Gear, Bond, and conditional bonuses for %s",
+  (id) => {
     const companion = companionLibrary[id];
     const state = battle({
       activeCompanion: companion,
@@ -172,7 +173,6 @@ describe("Companion descriptions match their own damage scaling", () => {
       gearEffects: { companionDamageBonus: 4 },
       talentEffects: {
         companionBondLevels: { ...defaultCompanionBondLevels, [id]: 1 },
-        companionDamagePerManaCrystal: 1,
         companionVsFrozenBonus: 2,
         companionBleedDamageBonus: 3,
         companionDoubledVsLowHealth: true,
@@ -180,7 +180,7 @@ describe("Companion descriptions match their own damage scaling", () => {
     });
     const modifiers = getBattleCompanionDamageModifiers(state);
     const description = getCompanionDescriptionLines(companion, 1, modifiers);
-    const expected = 20;
+    const expected = 16;
     expect(description[0]).toContain(`Deals ${expected} `);
     const texts: Parameters<typeof processCompanionTurnStart>[1] = [];
     processCompanionTurnStart(state, texts);
@@ -201,5 +201,5 @@ describe("Companion descriptions match their own damage scaling", () => {
       })[0],
     ).toBe(description[0]);
     expect(getCompanionDescriptionLines(companion)[0]).toContain("Deals 1 ");
-  });
-});
+  },
+);

@@ -37,7 +37,6 @@ export const MANABURN_DAMAGE_PERCENT = 20;
 export const BLACKFLETCH_EXECUTE_HEALTH_PERCENT = 30;
 
 export const MIN_DAMAGE_MULTIPLIER = 0.1;
-export const BURN_BLOCK_SCALED_DAMAGE_PERCENT = 10;
 export const GOLD_TROVE_REWARD_MULTIPLIER = 2;
 
 export const CARDS_PER_TURN = 4;
@@ -48,7 +47,6 @@ export const MAX_PLAYER_HEALTH = 30;
 export const MAX_HEALTH_PER_TALENT_POINT = 1;
 export const BASE_ENEMY_HEALTH = 30;
 export const BASE_PLAYER_MANA = 4;
-export const DEFAULT_BATTLE_ENEMY_TYPE = "normal";
 
 export const FIGHT_PACING = {
   evenThreshold: 0.1,
@@ -107,7 +105,6 @@ export const STATUS_CONFIG = {
 export const REACTIVE_REWARD_CHANCES = {
   luckyFoot: 25,
   feint: 25,
-  leftovers: 25,
   packWeave: 50,
   wishfulTrinket: 50,
   wishfulAffix: 50,

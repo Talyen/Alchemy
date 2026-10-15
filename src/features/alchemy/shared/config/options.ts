@@ -1,11 +1,4 @@
-import type { AspectRatioOption, DisplayMode } from "../types";
-
-export const aspectRatioOptions = [
-  { value: "auto", label: "Auto" },
-  { value: "16:9", label: "Standard (16:9)" },
-  { value: "16:10", label: "Narrow (16:10)" },
-  { value: "21:9", label: "Ultrawide (21:9)" },
-] as const satisfies ReadonlyArray<{ value: AspectRatioOption; label: string }>;
+import type { DisplayMode } from "../types";
 
 export const displayModeOptions = [
   { value: "windowed", label: "Windowed" },

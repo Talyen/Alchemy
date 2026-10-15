@@ -1,5 +1,5 @@
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
+import { bindSessionCapabilities, registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
 import {
   createCombatFeedback,
   createCombatFeedbackState,
@@ -7,6 +7,8 @@ import {
   type CombatFeedbackActions,
 } from "./combat-feedback";
 import { createStore } from "zustand/vanilla";
+import { TimerGroup } from "@/lib/animation/game-timer";
+import { projectMana, MANA_DOCK_EXIT_MS, type ManaPresentation } from "./mana-presentation";
 import { subscribeWithSelector } from "zustand/middleware";
 import { readBattle, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
 import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
@@ -20,6 +22,8 @@ import {
 } from "./playable-hand";
 
 interface BattlePresentationStateWithActions extends CombatFeedbackState, CombatFeedbackActions {
+  manaPresentation: ManaPresentation | null;
+  setManaDisplay: (mana: number, maxMana: number, animate: boolean) => void;
   openingDrawPending: boolean;
   setOpeningDrawPending: (pending: boolean) => void;
   displayedBattle: BattleSnapshot | null;
@@ -28,6 +32,8 @@ interface BattlePresentationStateWithActions extends CombatFeedbackState, Combat
   cardTransfers: CardTransfer[];
   hiddenHandCardKeys: HiddenHandCardKeys;
   cardTransferInProgress: boolean;
+  endTurnConfirmationOpen: boolean;
+  setEndTurnConfirmationOpen: (open: boolean) => void;
 
   spawnCardGhost: (ghost: Omit<CardGhost, "id">) => void;
   removeCardGhost: (id: string) => void;
@@ -45,22 +51,26 @@ const MAX_CARD_GHOSTS = 6;
 type BattlePresentationState = Pick<
   BattlePresentationStateWithActions,
   | "openingDrawPending"
+  | "manaPresentation"
   | "displayedBattle"
   | "cardGhosts"
   | "cardTransfers"
   | "hiddenHandCardKeys"
   | "cardTransferInProgress"
+  | "endTurnConfirmationOpen"
 >;
 
 function createInitialState(): BattlePresentationState & CombatFeedbackState {
   return {
     ...createCombatFeedbackState(),
     openingDrawPending: false,
+    manaPresentation: null,
     displayedBattle: null,
     cardGhosts: [],
     cardTransfers: [],
     hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS,
     cardTransferInProgress: false,
+    endTurnConfirmationOpen: false,
   };
 }
 
@@ -68,6 +78,7 @@ export function createBattlePresentationStore(gameSession: GameSession) {
   const store = createStore<BattlePresentationStateWithActions>()(
     subscribeWithSelector((set) => {
       let ghostIdCounter = 0;
+      const manaTimers = new TimerGroup();
       const feedback = createCombatFeedback({
         update: (reduce) => set(reduce),
         isVisible: () => readBattle(gameSession).hasActiveBattle && readRunPhase(gameSession) === "battle",
@@ -76,6 +87,33 @@ export function createBattlePresentationStore(gameSession: GameSession) {
       return {
         ...createInitialState(),
         ...feedback.actions,
+        setEndTurnConfirmationOpen: (endTurnConfirmationOpen) => set({ endTurnConfirmationOpen }),
+        setManaDisplay: (mana, maxMana, animate) => {
+          let changed = false;
+          set((state) => {
+            const previous = state.manaPresentation;
+            if (
+              previous?.mana === mana &&
+              previous.maxMana === maxMana &&
+              (animate || (previous.exits.length === 0 && previous.gems.every((gem) => gem.effect === null)))
+            )
+              return {};
+            changed = true;
+            return { manaPresentation: projectMana(previous, mana, maxMana, animate) };
+          });
+          if (!changed) return;
+          manaTimers.clearAll();
+          const revision = store.getState().manaPresentation?.revision;
+          if (store.getState().manaPresentation?.exits.length) {
+            manaTimers.setGameTimeout(() => {
+              set((state) => {
+                const current = state.manaPresentation;
+                if (!current || current.revision !== revision) return {};
+                return { manaPresentation: { ...current, exits: [] } };
+              });
+            }, MANA_DOCK_EXIT_MS);
+          }
+        },
         setOpeningDrawPending: (openingDrawPending) => set({ openingDrawPending }),
         setDisplayedBattle: (displayedBattle) => set({ displayedBattle }),
 
@@ -83,7 +121,9 @@ export function createBattlePresentationStore(gameSession: GameSession) {
           const id = `ghost-${++ghostIdCounter}`;
           // Departing cards finish independently; cap overlapping ghosts so rapid
           // plays shed the oldest instead of stacking canvases (Trinket parity: 6).
-          set((s) => ({ cardGhosts: [...s.cardGhosts.slice(-(MAX_CARD_GHOSTS - 1)), { ...ghost, id }] }));
+          set((s) => ({
+            cardGhosts: [...s.cardGhosts.slice(-(MAX_CARD_GHOSTS - 1)), { ...ghost, id }],
+          }));
         },
 
         removeCardGhost: (id) => set((s) => ({ cardGhosts: s.cardGhosts.filter((g) => g.id !== id) })),
@@ -113,6 +153,7 @@ export function createBattlePresentationStore(gameSession: GameSession) {
         resetCardTransfers: () => set({ cardTransfers: [] }),
 
         resetPresentation: () => {
+          manaTimers.clearAll();
           feedback.cancel();
           set(createInitialState());
         },
@@ -124,7 +165,7 @@ export function createBattlePresentationStore(gameSession: GameSession) {
   onClearBattlePresentation(reset, gameSession);
   onRunTeardown(reset, gameSession);
   registerSessionCleanup(gameSession, reset);
-  return store;
+  return bindSessionCapabilities(gameSession, store);
 }
 
 export type BattlePresentationStore = ReturnType<typeof createBattlePresentationStore>;

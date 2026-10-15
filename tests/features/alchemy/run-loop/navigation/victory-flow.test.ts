@@ -1,7 +1,13 @@
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
-import { setBattleActiveForTest, getBattleForTest } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  mutateRunForTest,
+  setBattleActiveForTest,
+  getBattleForTest,
+  resetRunDomainStore,
+  setRunProgress,
+} from "../../../../helpers/run-domain-store-test";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   computeVictoryRewardState,
@@ -20,10 +26,7 @@ import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { createRunRngState, createRunStateRng } from "@/lib/rng";
 import type { Destination } from "@/lib/routing";
 import { sampleDestinationChoices } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
-import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
-import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { commitVictoryRewards, type CommitVictoryRewardsDeps } from "@/features/alchemy/run-loop/run/victory-commands";
 import { defaultGameSession } from "@/app/application-session";
 beforeEach(() => resetRunDomainStore());
@@ -113,6 +116,28 @@ describe("Fetch victory rewards", () => {
           computeVictoryRewards({ ...input, battleState: baseBattleState({ playerHealth: 29 }) }, testRng).playerHealth,
         ).toBe(30);
       }
+    },
+  );
+
+  it.each(["campaign", "labyrinth", "wildwood"])(
+    "adds Culinary Arts once to positive victory recovery in %s",
+    (contentSystemType) => {
+      const input = baseInput({
+        contentSystemType,
+        battleState: baseBattleState({ playerHealth: 10 }),
+        unlockedTalents: { health: ["health-max-per-combat"] },
+        homesteadEffects: { ...defaultHomesteadEffects, healthRestorePerCombat: 2, homesteadHealing: 3 },
+      });
+      expect(computeVictoryRewards(input, testRng).playerHealth).toBe(19);
+      expect(
+        computeVictoryRewards(
+          { ...input, unlockedTalents: {}, homesteadEffects: { ...defaultHomesteadEffects, homesteadHealing: 3 } },
+          testRng,
+        ).playerHealth,
+      ).toBe(10);
+      expect(
+        computeVictoryRewards({ ...input, battleState: baseBattleState({ playerHealth: 29 }) }, testRng).playerHealth,
+      ).toBe(30);
     },
   );
 
@@ -277,15 +302,28 @@ describe("computeVictoryRewards", () => {
     }
   });
 
-  it("awards the normal victory Gold and Materials with Wildwood reward choices", () => {
-    const result = computeVictoryRewards(baseInput({ contentSystemType: "wildwood", purseGold: 7 }), () => 0.25);
-
-    expect(result.goldEarned).toBe(15);
-    expect(result.persistedGold).toBe(22);
-    expect(result.rewardState.materials.wood).toBe(1);
-    expect(result.rewardState.gold).toBe(15);
-    expect(result.rewardState.choices).toHaveLength(3);
-  });
+  it.each([
+    { purseGold: 7, battleGold: 5, earned: 15, persisted: 22 },
+    { purseGold: 10, battleGold: 15, earned: 20, persisted: 30 },
+    { purseGold: 10, battleGold: 4, earned: 15, persisted: 25 },
+  ])(
+    "settles Wildwood Gold without losing the purse ($purseGold, $battleGold)",
+    ({ purseGold, battleGold, earned, persisted }) => {
+      const result = computeVictoryRewards(
+        baseInput({
+          contentSystemType: "wildwood",
+          purseGold,
+          battleState: baseBattleState({ gold: battleGold }),
+        }),
+        testRng,
+      );
+      expect(result.goldEarned).toBe(earned);
+      expect(result.persistedGold).toBe(persisted);
+      expect(result.rewardState.gold).toBe(earned);
+      expect(result.rewardState.materials.wood).toBe(1);
+      expect(result.rewardState.choices).toHaveLength(3);
+    },
+  );
 
   it("uses the same boss Gold and Material payout in Wildwood and Campaign", () => {
     const battleState = baseBattleState({ currentEnemy: { id: "mimic", enemyType: "boss" }, gold: 12 });
@@ -295,44 +333,6 @@ describe("computeVictoryRewards", () => {
     expect(wildwood.persistedGold).toBe(campaign.persistedGold);
     expect(wildwood.rewardState.gold).toBe(campaign.rewardState.gold);
     expect(wildwood.rewardState.materials).toEqual(campaign.rewardState.materials);
-  });
-
-  it("adds in-combat Gold to Wildwood victory Gold", () => {
-    const result = computeVictoryRewards(
-      baseInput({
-        contentSystemType: "wildwood",
-        purseGold: 10,
-        battleState: baseBattleState({ gold: 15 }),
-      }),
-      () => 0.25,
-    );
-
-    expect(result.goldEarned).toBe(20);
-    expect(result.persistedGold).toBe(30);
-    expect(result.rewardState.materials.wood).toBe(1);
-  });
-
-  it("does not shrink the purse when Wildwood combat gold is below the purse", () => {
-    const result = computeVictoryRewards(
-      baseInput({
-        contentSystemType: "wildwood",
-        purseGold: 10,
-        battleState: baseBattleState({ gold: 4 }),
-      }),
-      () => 0.25,
-    );
-
-    expect(result.goldEarned).toBe(15);
-    expect(result.persistedGold).toBe(25);
-  });
-
-  it("computes combat victory rewards for normal enemy", () => {
-    const result = computeVictoryRewards(baseInput(), testRng);
-    expect(result.goldEarned).toBe(15);
-    expect(result.persistedGold).toBe(20);
-    expect(result.rewardState.rewardType).toBe("card");
-    expect(result.playerHealth).toBe(30);
-    expect(result.maxHealthDelta).toBe(0);
   });
 
   it("synchronizes rewardState.gold with net purse gold when in-combat gold is earned", () => {
@@ -402,50 +402,19 @@ describe("computeVictoryRewards", () => {
     expect(result.rewardState.rewardType).toBe("trinket");
   });
 
-  it("applies generous labyrinth modifier gold bonus", () => {
+  it.each([
+    { modifier: "generous", expected: 23 },
+    { modifier: "wealthy", expected: 15 + LABYRINTH_REWARD_CONFIG.wealthyGoldBonus },
+  ] as const)("applies $modifier Gold to both settlement and rewards", ({ modifier, expected }) => {
     const result = computeVictoryRewards(
       baseInput({
         contentSystemType: "labyrinth",
-        activeLabyrinthRewardModifiers: ["generous"],
+        activeLabyrinthRewardModifiers: [modifier],
       }),
       testRng,
     );
-
-    expect(result.goldEarned).toBe(23);
-  });
-
-  it("applies wealthy labyrinth modifier gold bonus", () => {
-    const result = computeVictoryRewards(
-      baseInput({
-        contentSystemType: "labyrinth",
-        activeLabyrinthRewardModifiers: ["wealthy"],
-      }),
-      testRng,
-    );
-    expect(result.goldEarned).toBe(15 + LABYRINTH_REWARD_CONFIG.wealthyGoldBonus);
-    expect(result.rewardState.gold).toBe(15 + LABYRINTH_REWARD_CONFIG.wealthyGoldBonus);
-  });
-
-  it("applies labyrinth scavenger reward modifier to materials", () => {
-    const result = computeVictoryRewards(
-      baseInput({
-        contentSystemType: "labyrinth",
-        activeLabyrinthRewardModifiers: ["scavenger"],
-      }),
-      testRng,
-    );
-    expect(result.rewardState.materials.wood).toBeGreaterThanOrEqual(1);
-  });
-
-  it("applies herbalist labyrinth modifier herb bonus", () => {
-    const result = computeVictoryRewards(
-      baseInput({
-        contentSystemType: "labyrinth",
-        activeLabyrinthRewardModifiers: ["herbalist"],
-      }),
-      testRng,
-    );
-    expect(result.rewardState.materials.herbs).toBe(LABYRINTH_REWARD_CONFIG.herbalistHerbBonus);
+    expect(result.goldEarned).toBe(expected);
+    expect(result.rewardState.gold).toBe(expected);
   });
 
   it("adds herbalist herbs after scavenger doubling in victory rewards", () => {
@@ -499,47 +468,6 @@ describe("computeVictoryRewards", () => {
     expect(result.rewardState.rewardType).toBe("boon");
   });
 
-  it("applies companion gold find when talent is active and companion present", () => {
-    const withoutTalent = computeVictoryRewards(
-      baseInput({
-        battleState: baseBattleState({
-          activeCompanion: {
-            id: "wolf",
-            title: "Wolf",
-            health: 5,
-            maxHealth: 5,
-            shield: 0,
-            statuses: [],
-            damage: 3,
-            damageType: "physical",
-            abilities: [],
-          },
-        }),
-      }),
-      () => 0.01,
-    );
-    const withTalent = computeVictoryRewards(
-      baseInput({
-        unlockedTalents: { companion: ["companion-gold-find"] },
-        battleState: baseBattleState({
-          activeCompanion: {
-            id: "wolf",
-            title: "Wolf",
-            health: 5,
-            maxHealth: 5,
-            shield: 0,
-            statuses: [],
-            damage: 3,
-            damageType: "physical",
-            abilities: [],
-          },
-        }),
-      }),
-      () => 0.01,
-    );
-    expect(withTalent.goldEarned).toBeGreaterThan(withoutTalent.goldEarned);
-  });
-
   it("offers a Campfire using the post-combat Vitality Health", () => {
     const input = baseInput({
       unlockedTalents: { health: ["health-max-per-combat"] },
@@ -557,18 +485,6 @@ describe("computeVictoryRewards", () => {
     );
   });
 
-  it("applies Vitality after combat", () => {
-    const result = computeVictoryRewards(
-      baseInput({
-        unlockedTalents: { health: ["health-max-per-combat"] },
-        battleState: baseBattleState({ playerHealth: 20 }),
-      }),
-      testRng,
-    );
-    expect(result.maxHealthDelta).toBe(0);
-    expect(result.playerHealth).toBe(24);
-  });
-
   it("uses settled Health and Gold for legal destination offers", () => {
     const purseGold = SHOP_MIN_GOLD - 1;
     const result = computeVictoryRewards(
@@ -578,7 +494,7 @@ describe("computeVictoryRewards", () => {
     expect(result.persistedGold).toBeGreaterThanOrEqual(SHOP_MIN_GOLD);
     const eligible = vi.mocked(sampleDestinationChoices).mock.lastCall?.[0];
     expect(eligible).toContain("Card Shop");
-    expect(eligible).not.toContain("Campfire");
+    expect(eligible).toContain("Campfire");
     expect(eligible).not.toContain("Trinket Shop");
     expect(eligible).not.toContain("Boss Combat");
   });
@@ -594,9 +510,7 @@ describe("computeVictoryRewards", () => {
 });
 
 describe("commitVictoryRewards", () => {
-  beforeEach(() =>
-    dispatchGameplayCommand((draft) => acceptCommand(getBattleForTest(draft)), undefined, defaultGameSession),
-  );
+  beforeEach(() => mutateGameplayForTest((draft) => getBattleForTest(draft)));
   function victoryResult(overrides: Partial<VictoryRewardsResult> = {}): VictoryRewardsResult {
     return {
       goldEarned: 20,
@@ -619,11 +533,7 @@ describe("commitVictoryRewards", () => {
   }
 
   function commit(result: VictoryRewardsResult = victoryResult(), deps = commitDeps()) {
-    return dispatchRunSessionCommand(
-      (draft) => acceptCommand(commitVictoryRewards(draft, result, deps, testRng)),
-      undefined,
-      defaultGameSession,
-    );
+    return mutateRunForTest((draft) => commitVictoryRewards(draft, result, deps, testRng));
   }
 
   it("applies max health before writing healed player health", () => {
@@ -634,36 +544,19 @@ describe("commitVictoryRewards", () => {
     expect(run.runPlayerHealth).toBe(31);
   });
 
-  it("reports gold gain when gold was earned", () => {
-    expect(commit()).toBe(true);
-  });
-
-  it("reports no gold gain when gold did not increase", () => {
-    expect(commit(victoryResult({ goldEarned: 0 }))).toBe(false);
-  });
-
-  it("reports gold gain when earned gold matches battle gold", () => {
-    expect(
-      commit(
-        victoryResult({ goldEarned: 5 }),
-        commitDeps({ battleState: baseBattleState({ gold: 15, pendingMaterials: emptyInventory() }) }),
-      ),
-    ).toBe(true);
+  it.each([0, 20])("reports whether %i Gold was earned while committing the payout", (goldEarned) => {
+    expect(commit(victoryResult({ goldEarned }))).toBe(goldEarned > 0);
+    expect(readGameplayState(defaultGameSession).runProfile.gold).toBe(20);
   });
 
   it.each(["campaign", "wildwood"] as const)("settles committed pending Gems once for %s", (contentSystemType) => {
     const materials = { ...emptyInventory(), gems: 2 };
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.session.activity = { kind: "idle" };
-        draft.run.activeRun.contentSystemType = contentSystemType;
-        setBattleActiveForTest(draft, true);
-        getBattleForTest(draft).battleState.pendingMaterials = materials;
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.session.activity = { kind: "idle" };
+      draft.run.activeRun.contentSystemType = contentSystemType;
+      setBattleActiveForTest(draft, true);
+      getBattleForTest(draft).battleState.pendingMaterials = materials;
+    });
     const deps = commitDeps({ contentSystemType });
     commit(victoryResult(), deps);
     expect(readGameplayState(defaultGameSession).runProfile.materialInventory.gems).toBe(2);

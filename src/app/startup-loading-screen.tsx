@@ -37,9 +37,9 @@ function useSyncedLoadingWord() {
     if (typeof window === "undefined") return;
     if (window.__alchemySplashWordTimer) {
       window.clearInterval(window.__alchemySplashWordTimer);
-      window.__alchemySplashWordTimer = undefined;
+      delete window.__alchemySplashWordTimer;
     }
-    window.__alchemySplashWordIndex = undefined;
+    delete window.__alchemySplashWordIndex;
     if (shouldReduceMotion()) return;
     const id = window.setInterval(() => {
       setWordIndex((prev) => (prev + 1) % LOADING_WORDS.length);

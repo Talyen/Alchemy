@@ -1,8 +1,102 @@
 import { controllerInput } from "../controller-input";
 import { expect, test } from "../../fixtures/e2e";
 import type { Page } from "@playwright/test";
-import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
+import { injectActiveBattle, makeCard, makeGoblinBattleState, withSavedGame } from "../../browser-helpers";
 import { critical, slow } from "../../playwright-tags";
+
+test("mana dock stays fixed through capacity, destruction and temporary overflow", critical, async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const cards = [
+    makeCard({
+      id: "mana-crystals",
+      uid: 101,
+      cost: 0,
+      effects: [{ kind: "gain-max-mana", amount: 10 }],
+    }),
+    makeCard({ id: "slash", uid: 102, cost: 2, effects: [{ kind: "lose-max-mana", amount: 7 }] }),
+    makeCard({
+      id: "block",
+      uid: 103,
+      cost: 0,
+      effects: [{ kind: "restore-mana", amount: 3, allowOverflow: true }],
+    }),
+  ];
+  await injectActiveBattle(page, makeGoblinBattleState({ hand: cards, mana: 5, maxMana: 5, playerHealth: 30 }), {
+    autoEndTurn: false,
+  });
+  const dock = page.getByTestId("mana-panel");
+  await expect(dock.locator("[data-mana-index]")).toHaveCount(5);
+  const frame = dock.locator(".mana-dock-frame");
+  const initial = await frame.boundingBox();
+  await dock.evaluate((element) => {
+    element.setAttribute("data-observed-animations", "");
+    element.addEventListener("animationstart", (event) => {
+      const animation = event as AnimationEvent;
+      element.setAttribute(
+        "data-observed-animations",
+        element.getAttribute("data-observed-animations") + " " + animation.animationName,
+      );
+    });
+  });
+  // Frame inspection must not activate the concealed cards beneath it.
+  await dock.locator(".mana-dock-inspect").click({ position: { x: initial!.width * 0.2, y: initial!.height * 0.5 } });
+  await expect(page.locator("[data-hand-slot]")).toHaveCount(3);
+  await page.locator("[data-hand-slot] button").first().click();
+  await expect(dock).toHaveAttribute("data-max-mana", "15");
+  await expect(dock.locator("[data-mana-index]")).toHaveCount(9);
+  await expect(dock.locator(".mana-dock-overflow")).toHaveText("+6");
+  await expect(dock).toHaveAttribute("data-observed-animations", /manaDockGain/);
+  await page.locator("[data-hand-slot] button").first().click();
+  await expect(dock).toHaveAttribute("data-max-mana", "8");
+  await expect(dock.locator("[data-mana-index]")).toHaveCount(8);
+  await expect(dock).toHaveAttribute("data-observed-animations", /manaDockShard/);
+  await page.locator("[data-hand-slot] button").first().click();
+  // Gameplay may pace restoration; the dock must faithfully display the resulting total.
+  await expect.poll(async () => Number(await dock.getAttribute("data-mana"))).toBeGreaterThan(9);
+  const restoredMana = Number(await dock.getAttribute("data-mana"));
+  await expect(dock.locator(".mana-dock-overflow")).toHaveText(`+${restoredMana - 9}`);
+  await expect(page.getByRole("button", { name: `Inspect Mana: ${restoredMana} / 8` })).toBeVisible();
+  const final = await frame.boundingBox();
+  expect(final!.x).toBeCloseTo(initial!.x, 1);
+  expect(final!.y).toBeCloseTo(initial!.y, 1);
+  expect(final!.width).toBeCloseTo(initial!.width, 1);
+  expect(final!.height).toBeCloseTo(initial!.height, 1);
+  const containment = await dock.locator("[data-mana-index]").evaluateAll((elements) => {
+    const frame = elements[0]!.closest(".mana-dock")!.querySelector(".mana-dock-frame")!.getBoundingClientRect();
+    return elements.map((el) => {
+      const r = el.getBoundingClientRect();
+      return (
+        r.left > frame.left + frame.width * 0.18 &&
+        r.right < frame.left + frame.width * 0.82 &&
+        r.top > frame.top + frame.height * 0.32 &&
+        r.bottom < frame.top + frame.height * 0.66
+      );
+    });
+  });
+  expect(containment.every(Boolean)).toBe(true);
+  await expect
+    .poll(() =>
+      dock
+        .locator("[data-mana-index]")
+        .evaluateAll((elements) =>
+          Math.min(
+            ...elements
+              .slice(1)
+              .map(
+                (element, index) =>
+                  element.getBoundingClientRect().left - elements[index]!.getBoundingClientRect().right,
+              ),
+          ),
+        ),
+    )
+    .toBeGreaterThan(5);
+  await withSavedGame(page, async (resumed) => {
+    const resumedDock = resumed.getByTestId("mana-panel");
+    await expect(resumedDock).toHaveAttribute("data-mana", String(restoredMana));
+    await expect(resumedDock.locator("[data-mana-exit]")).toHaveCount(0);
+    await expect(resumedDock.locator("[data-effect]")).toHaveCount(0);
+  });
+});
 
 test.setTimeout(60_000);
 
@@ -113,7 +207,7 @@ for (const { width, height, gameSizePercent } of [
   { width: 1280, height: 720, gameSizePercent: 120 },
   { width: 2560, height: 1080, gameSizePercent: 80 },
 ]) {
-  test(`hand fits and controls stay fixed at ${width} / ${gameSizePercent}%`, slow, async ({ page }) => {
+  test(`hand remains reachable and controls stay fixed at ${width} / ${gameSizePercent}%`, slow, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.addInitScript(
       (size) =>
@@ -135,6 +229,30 @@ for (const { width, height, gameSizePercent } of [
           }),
         );
     const initial = await positions();
+    const scene = await page.getByTestId("battle-scene").boundingBox();
+    expect(scene).toEqual({ x: 0, y: 0, width, height });
+    const inset = await page.getByTestId("vr-stage").evaluate((stage) => {
+      const scale = stage.getBoundingClientRect().height / (stage as HTMLElement).offsetHeight;
+      return 18 * Number(getComputedStyle(stage).getPropertyValue("--content-scale")) * scale;
+    });
+    const draw = await page.getByTestId("draw-pile").boundingBox();
+    const discard = await page.getByTestId("discard-pile").boundingBox();
+    const mana = await page.getByTestId("mana-panel").boundingBox();
+    const endTurn = await page.getByRole("button", { name: "End Turn", exact: true }).boundingBox();
+    expect(draw!.x).toBeCloseTo(inset, 0);
+    expect(width - discard!.x - discard!.width).toBeCloseTo(inset, 0);
+    expect(height - draw!.y - draw!.height).toBeCloseTo(inset, 0);
+    expect(height - discard!.y - discard!.height).toBeCloseTo(inset, 0);
+    expect(mana!.x + mana!.width / 2).toBeCloseTo(width / 2, 0);
+    const menu = await page.getByRole("button", { name: "Open game menu", exact: true }).boundingBox();
+    expect(endTurn!.y + endTurn!.height / 2).toBeCloseTo(menu!.y + menu!.height / 2, 0);
+    expect(endTurn!.x + endTurn!.width).toBeLessThan(menu!.x);
+    expect(mana!.y + mana!.height).toBeGreaterThan(height);
+    expect(mana!.y + mana!.height - height).toBeLessThanOrEqual(5);
+    expect(endTurn!.y + endTurn!.height).toBeLessThan(discard!.y);
+    const hand = await page.getByTestId("battle-hand").boundingBox();
+    expect(hand!.x + hand!.width / 2).toBeCloseTo(width / 2, 0);
+
     for (let count = 7; count >= 1; count--) {
       await expect(page.locator("[data-hand-slot]")).toHaveCount(count);
       await page.mouse.move(0, 0);
@@ -144,12 +262,12 @@ for (const { width, height, gameSizePercent } of [
           return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
         }),
       );
-      const left = await page.getByTestId("mana-panel").locator("..").boundingBox();
+      const left = await page.getByTestId("draw-pile").locator("../..").boundingBox();
       const right = await page.getByTestId("discard-pile").locator("../..").boundingBox();
       for (const rect of bounds) {
         expect(rect.left).toBeGreaterThan(left!.x + left!.width);
         expect(rect.right).toBeLessThan(right!.x);
-        expect(rect.bottom).toBeLessThanOrEqual(height + 1);
+        expect((rect.top + rect.bottom) / 2).toBeLessThan(height);
         expect(rect.top).toBeGreaterThanOrEqual(0);
       }
       const current = await positions();
@@ -163,5 +281,9 @@ for (const { width, height, gameSizePercent } of [
         await page.mouse.click(slot.x, slot.y + slot.height / 2);
       }
     }
+    await page.mouse.move(0, 0);
+    await controllerInput(page).activate(page.locator("[data-hand-slot] button").last());
+    await expect(page.locator("[data-hand-slot]")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "End Turn", exact: true })).toBeFocused();
   });
 }

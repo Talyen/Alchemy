@@ -5,7 +5,6 @@ import { createMixedPotion } from "@/lib/alchemist";
 import { cardById, computeTalentEffects, isMixedPotionCard, isPotionCard, isStandardPotionCard } from "@/lib/game-data";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { makeCombatTexts, makeState } from "../../fixtures/battle";
-import { defaultTalentEffects, defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
 describe("Mixed potion classification and combat mechanics", () => {
   const healthPotion = cardById["health-potion"]!;
@@ -29,10 +28,7 @@ describe("Mixed potion classification and combat mechanics", () => {
     const state = makeState({
       playerHealth: 10,
       playerMaxHealth: 30,
-      talentEffects: {
-        ...defaultTalentEffects,
-        potionPotency: 2,
-      },
+      talentEffects: { potionPotency: 2 },
     });
 
     const texts = makeCombatTexts();
@@ -57,7 +53,7 @@ describe("Mixed potion classification and combat mechanics", () => {
       hand: [healthPotion],
       playerHealth: 10,
       playerMaxHealth: 30,
-      trinketEffects: defaultTrinketManifest({ mortarPestlePoisonOnPotionUse: 1 }),
+      trinketEffects: { mortarPestlePoisonOnPotionUse: 1 },
     });
 
     const result = playBattleCardResolved(state, healthPotion.id, 0);
@@ -71,7 +67,7 @@ describe("Mixed potion classification and combat mechanics", () => {
       hand: [mixed],
       playerHealth: 10,
       playerMaxHealth: 30,
-      trinketEffects: defaultTrinketManifest({ mortarPestlePoisonOnPotionUse: 1 }),
+      trinketEffects: { mortarPestlePoisonOnPotionUse: 1 },
     });
 
     const result = playBattleCardResolved(state, mixed.id, 0);
@@ -88,7 +84,7 @@ describe("Mixed potion classification and combat mechanics", () => {
       hand: [card],
       playerHealth: 10,
       playerMaxHealth: 30,
-      trinketEffects: defaultTrinketManifest({ mortarPestlePoisonOnPotionUse: 1 }),
+      trinketEffects: { mortarPestlePoisonOnPotionUse: 1 },
     });
 
     const result = playBattleCardResolved(state, card.id, 0);
@@ -101,8 +97,8 @@ describe("Mixed potion classification and combat mechanics", () => {
       hand: [healthPotion],
       playerHealth: 10,
       playerMaxHealth: 30,
-      flags: { ...makeState().flags, playNextCardTwice: true },
-      trinketEffects: defaultTrinketManifest({ mortarPestlePoisonOnPotionUse: 1 }),
+      flags: { playNextCardTwice: true },
+      trinketEffects: { mortarPestlePoisonOnPotionUse: 1 },
     });
 
     const result = playBattleCardResolved(state, healthPotion.id, 0);

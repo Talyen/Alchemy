@@ -1,4 +1,11 @@
 import { z } from "zod";
+import {
+  BoardSelectionSchema,
+  CollectedBoardIdsSchema,
+  NullableBoardIdSchema,
+  ActiveBoardIdSchema,
+  normalizeBoardSave,
+} from "./board-schemas";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { companionTierItems } from "@/lib/homestead/companions";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
@@ -24,7 +31,6 @@ import {
   MATERIAL_ZERO_INVENTORY,
   CRAFTING_CURRENCY_ZERO_INVENTORY,
   createTierRecordSchema,
-  AspectRatioOptionSchema,
   CompletedDifficultiesSchema,
   DisplayModeSchema,
   MaterialInventorySchema,
@@ -113,7 +119,6 @@ export const SaveDataSchema = z
     gameBuildVersion: z.string().catch(CURRENT_GAME_BUILD_VERSION),
     steamAccountId: z.string().regex(/^\d+$/u).nullable().catch(null),
     contentVersion: z.number().int().nonnegative().catch(CURRENT_CONTENT_VERSION),
-    selectedAspectRatio: AspectRatioOptionSchema.catch("auto"),
     displayMode: DisplayModeSchema.catch("borderless-fullscreen"),
     brightness: clampedSettingSchema(DEFAULT_BRIGHTNESS_PCT, SETTINGS_RANGES.brightness),
     backgroundParticlesIntensity: clampedSettingSchema(
@@ -121,6 +126,11 @@ export const SaveDataSchema = z
       SETTINGS_RANGES.specialEffects,
     ),
     backgroundGlowIntensity: clampedSettingSchema(DEFAULT_BACKGROUND_GLOW_PCT, SETTINGS_RANGES.specialEffects),
+    collectedBoardIds: CollectedBoardIdsSchema,
+    boardSelection: BoardSelectionSchema,
+    activeBoardId: ActiveBoardIdSchema,
+    lastRandomBoardId: NullableBoardIdSchema,
+    pendingBoardRewardId: NullableBoardIdSchema,
     discoveredCardIds: deduplicatedStringArraySchema(),
     encounteredEnemyIds: deduplicatedStringArraySchema(),
     discoveredTrinketIds: deduplicatedStringArraySchema(),
@@ -161,7 +171,7 @@ export const SaveDataSchema = z
   .transform((save) => {
     const flatInventory = flattenGearInventories(save.gearInventories);
     return {
-      ...save,
+      ...normalizeBoardSave(save),
       // Load-only repairs (encode never applies these): live combat gold
       // overrides the purse so a reloaded fight keeps its stakes, and orphan
       // loadout references are pruned against the restored inventory.

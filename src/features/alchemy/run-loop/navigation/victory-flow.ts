@@ -214,7 +214,8 @@ function computeVictorySettlement(
     input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD
       ? 0
       : getWellProvisionedHealing(labyrinthRewardModifiers, effectiveMaxHealth);
-  const victoryHealing = wellProvisionedHealing + Math.max(0, talentEffects.healthRestorePerCombat);
+  const baseVictoryHealing = wellProvisionedHealing + Math.max(0, talentEffects.healthRestorePerCombat);
+  const victoryHealing = baseVictoryHealing + (baseVictoryHealing > 0 ? talentEffects.homesteadHealing : 0);
   const playerHealth =
     input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD || victoryHealing > 0
       ? Math.min(effectiveMaxHealth, input.battleState.playerHealth + victoryHealing)
@@ -230,19 +231,15 @@ function prepareVictoryDestinations(
   effectiveMaxHealth: number,
   destinationRng: () => number,
 ) {
-  const skipDestinationSampling = input.contentSystemType === CONTENT_SYSTEMS.LABYRINTH;
-  const eligibleDestinations = skipDestinationSampling
-    ? []
-    : resolveAvailableDestinations({
-        ...input.destinationEligibility,
-        runPlayerHealth: playerHealth,
-        gold: persistedGold,
-        runMaxHealth: effectiveMaxHealth,
-      });
-  const sampled = skipDestinationSampling
-    ? { choices: [] as Destination[], offerState: input.destinationOfferState }
-    : sampleDestinationChoices(eligibleDestinations, input.destinationOfferState, destinationRng);
-  return sampled;
+  if (input.contentSystemType === CONTENT_SYSTEMS.LABYRINTH)
+    return { choices: [] as Destination[], offerState: input.destinationOfferState };
+  const eligibleDestinations = resolveAvailableDestinations({
+    ...input.destinationEligibility,
+    runPlayerHealth: playerHealth,
+    gold: persistedGold,
+    runMaxHealth: effectiveMaxHealth,
+  });
+  return sampleDestinationChoices(eligibleDestinations, input.destinationOfferState, destinationRng);
 }
 
 export function computeVictoryRewards(

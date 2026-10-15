@@ -1,8 +1,9 @@
+import {
+  DEFAULT_BRIGHTNESS_PCT,
+  DEFAULT_MASTER_VOLUME_PCT,
+  DEFAULT_BACKGROUND_PARTICLES_PCT,
+} from "./game-constants/settings";
 import { clamp } from "./math";
-
-export const ASPECT_RATIO_VALUES = ["auto", "16:9", "16:10", "21:9"] as const;
-
-export type AspectRatioOption = (typeof ASPECT_RATIO_VALUES)[number];
 
 export const DISPLAY_MODE_VALUES = ["windowed", "borderless-fullscreen", "fullscreen"] as const;
 
@@ -19,15 +20,27 @@ export const SETTINGS_RANGES = {
 // Load-time repair stays with SaveDataSchema (clampedSettingSchema), which is
 // the boundary layer for untrusted payloads.
 export function clampBrightnessPct(value: number): number {
-  return clamp(value, SETTINGS_RANGES.brightness.min, SETTINGS_RANGES.brightness.max);
+  return clamp(
+    Number.isNaN(value) ? DEFAULT_BRIGHTNESS_PCT : value,
+    SETTINGS_RANGES.brightness.min,
+    SETTINGS_RANGES.brightness.max,
+  );
 }
 
 export function clampVolumePct(value: number): number {
-  return clamp(value, SETTINGS_RANGES.volume.min, SETTINGS_RANGES.volume.max);
+  return clamp(
+    Number.isNaN(value) ? DEFAULT_MASTER_VOLUME_PCT : value,
+    SETTINGS_RANGES.volume.min,
+    SETTINGS_RANGES.volume.max,
+  );
 }
 
 export function clampSpecialEffectsPct(value: number): number {
-  return clamp(value, SETTINGS_RANGES.specialEffects.min, SETTINGS_RANGES.specialEffects.max);
+  return clamp(
+    Number.isNaN(value) ? DEFAULT_BACKGROUND_PARTICLES_PCT : value,
+    SETTINGS_RANGES.specialEffects.min,
+    SETTINGS_RANGES.specialEffects.max,
+  );
 }
 
 export function resolveAutoplayEnabled(fields: {

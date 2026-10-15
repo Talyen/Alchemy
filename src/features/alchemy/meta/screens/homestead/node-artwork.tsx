@@ -132,6 +132,7 @@ export function HomesteadNodeArtwork({
           src={node.art}
           alt={node.title}
           draggable={false}
+          decoding="async"
           className={cn(
             "block h-auto w-full",
             firstPurchase && !reducedMotion && "homestead-art-reveal",
@@ -144,7 +145,13 @@ export function HomesteadNodeArtwork({
             aria-hidden="true"
             className="homestead-art-before pointer-events-none absolute inset-0"
           >
-            <img src={node.art} alt="" draggable={false} className="block h-auto w-full opacity-60 grayscale" />
+            <img
+              src={node.art}
+              alt=""
+              draggable={false}
+              decoding="async"
+              className="block h-auto w-full opacity-60 grayscale"
+            />
           </div>
         )}
       </Surface>

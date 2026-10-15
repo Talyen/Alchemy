@@ -1,3 +1,5 @@
+import { battlePresentation } from "@/app/battle-presentation";
+import { defaultGameSession } from "@/app/application-session";
 import { SaveWriteNotice } from "@/app/save-write-notice";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -29,23 +31,30 @@ import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-
 import { useVirtualResolution } from "@/features/alchemy/shared/ui/use-virtual-resolution";
 import { useDeviceDisplayPreferences } from "@/features/alchemy/shared/stores/device-display-store";
 import {
+  useActiveRunCharacterId,
   useActiveRunBoons,
   useActiveRunScreenValue,
   useBondedCompanions,
   useHomesteadEffects,
+  useHasActiveBattle,
   useRunSessionNavigationSlice,
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/use-run-reads";
-import { useAppSettings, useSelectedAspectRatio } from "@/features/alchemy/shared/stores/settings-store";
+import { useAppSettings } from "@/features/alchemy/shared/stores/settings-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
+import { BattleBoardBackground } from "@/features/alchemy/shared/ui/battle-board-background";
+import { useBattleSceneAppearance } from "@/features/alchemy/shared/ui/use-battle-scene-appearance";
+import { boardArt } from "@/features/alchemy/shared/config/game-data-catalog";
+import { useActiveBoardId } from "@/features/alchemy/shared/stores/use-profile-store";
 import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";
 import { setModalRoot } from "@/features/alchemy/shared/ui/modal-root";
 import { setTooltipRoot } from "@/features/alchemy/shared/ui/tooltips/tooltip-root";
 import { useArtworkReady } from "@/features/alchemy/shared/ui/use-artwork-ready";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import type { Screen } from "@/lib/routing";
+import { getRunPhase, type Screen } from "@/lib/routing";
+import { useSteamRichPresence } from "@/features/alchemy/shell/use-steam-rich-presence";
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, type SyntheticEvent } from "react";
 
@@ -114,6 +123,10 @@ function AppMainContent({
   );
 
   const showBattleCluster = renderedScreen === "battle";
+  const activeBoardId = useActiveBoardId();
+  const sceneAppearance = useBattleSceneAppearance(
+    showBattleCluster && activeBoardId ? boardArt[activeBoardId]?.thumbnail : undefined,
+  );
   const { isAutoplayEnabled, toggleAutoplayEnabled, boonInspectOpen, toggleBoonInspect, closeBoonInspect } =
     run.routeCommands.battle;
   const runBoons = useActiveRunBoons();
@@ -160,7 +173,8 @@ function AppMainContent({
     [inspection.visible, inspection.count, inspection.canOpen, onOpenDeck],
   );
 
-  useScreenFocus(renderedScreen, screenInteractive && !inspection.open);
+  // Dialogs restore their own focus; closing inspection is not a screen transition.
+  useScreenFocus(renderedScreen, screenInteractive);
 
   function blockOutgoingScreenInteraction(event: SyntheticEvent) {
     event.preventDefault();
@@ -191,6 +205,7 @@ function AppMainContent({
             screen: renderedScreen,
             cardInspection: { canOpen: inspection.canOpen, onOpen: openCardInspection },
             routeCommands: run.routeCommands,
+            onOpenBoards: nav.openBoardsFromOptions,
             onClearSaveData: dev.clearSaveData,
             onUnlockAllDevMode: dev.unlockAllDevMode,
             gameMenuOpen: gameMenu.gameMenuOpen,
@@ -213,8 +228,22 @@ function AppMainContent({
           "[container-type:size] absolute top-0 left-0 overflow-hidden bg-background",
           tooltipBlocked && "tooltips-disabled",
         )}
-        style={stageStyle}
+        style={
+          {
+            ...stageStyle,
+            "--battle-scene-tint": `rgb(${sceneAppearance.ambientColor.join(" ")})`,
+            "--battle-scene-tint-opacity": sceneAppearance.ambientOpacity,
+            "--battle-scene-shadow-opacity": sceneAppearance.shadowOpacity,
+            "--battle-scene-left-tint": `rgb(${sceneAppearance.regions.left.ambientColor.join(" ")})`,
+            "--battle-scene-left-opacity": sceneAppearance.regions.left.ambientOpacity,
+            "--battle-scene-right-tint": `rgb(${sceneAppearance.regions.right.ambientColor.join(" ")})`,
+            "--battle-scene-right-opacity": sceneAppearance.regions.right.ambientOpacity,
+            "--battle-scene-lower-tint": `rgb(${sceneAppearance.regions.lower.ambientColor.join(" ")})`,
+            "--battle-scene-lower-opacity": sceneAppearance.regions.lower.ambientOpacity,
+          } as React.CSSProperties
+        }
       >
+        {showBattleCluster ? <BattleBoardBackground boardId={activeBoardId} /> : null}
         <AppBackgroundParticles
           renderedScreen={renderedScreen}
           backgroundParticlesIntensity={backgroundParticlesIntensity}
@@ -223,6 +252,15 @@ function AppMainContent({
         {content}
         {showBattleCluster ? (
           <BattleCluster
+            endTurn={{
+              presentation: run.routeCommands.battle.presentation,
+              screen: controllerScreen,
+              buttonRef: run.routeCommands.battle.refs.endTurnButtonRef,
+              onEndTurn: run.routeCommands.battle.handleEndTurn,
+              isCardPlayInProgress: run.routeCommands.battle.isCardPlayInProgress,
+              isProgressSavePending: run.routeCommands.battle.isProgressSavePending,
+              subscribeProgressSave: run.routeCommands.battle.subscribeProgressSave,
+            }}
             inert={inspection.open || !screenInteractive}
             deckInspection={deckInspection}
             isAutoplayEnabled={isAutoplayEnabled}
@@ -281,7 +319,10 @@ function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtu
   });
 
   const gameMenu = useGameMenuState();
-  const run = useAlchemyRunController();
+  const run = useAlchemyRunController(defaultGameSession, battlePresentation);
+  const characterId = useActiveRunCharacterId();
+  const hasActiveBattle = useHasActiveBattle();
+  useSteamRichPresence(run.screen, getRunPhase(run.screen, hasActiveBattle), characterId);
 
   const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(run.screen);
 
@@ -321,9 +362,8 @@ function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtu
 }
 
 export default function App() {
-  const selectedAspectRatio = useSelectedAspectRatio();
   const displayPreferences = useDeviceDisplayPreferences();
-  const displayLayout = useVirtualResolution(selectedAspectRatio, false, displayPreferences);
+  const displayLayout = useVirtualResolution(false, displayPreferences);
   const { contentScale } = displayLayout;
   useLayoutEffect(() => {
     document.documentElement.style.setProperty("--content-scale", String(contentScale));

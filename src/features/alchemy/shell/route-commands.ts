@@ -1,6 +1,7 @@
 import type { TransmutationSelectionCommand } from "@/lib/active-run-session/alchemy-visits";
 import type { ProgressSaveState } from "@/features/alchemy/shared/storage";
 import type { BrewOperation } from "@/lib/alchemist/brewing";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleRefs } from "../shared/types";
 import type {
   MerchantShopCommands,
@@ -35,6 +36,10 @@ export interface AlchemyRouteCommands {
   progress: {
     isPending: () => boolean;
     afterSaved: (feedback: () => void) => void;
+  };
+  boards: {
+    select: (selection: import("@/lib/boards/catalog").BoardSelection) => boolean;
+    acknowledgeReward: (id: string, equip: boolean) => boolean;
   };
   meta: {
     resumeRun: () => void;
@@ -80,17 +85,16 @@ export interface AlchemyRouteCommands {
       continueCampfire: () => void;
       rest: () => boolean;
       brew: (operation: BrewOperation) => BattleCard | null;
-      initializeCampfire: () => void;
     };
     wildwood: {
       removeCard: (index: number) => void;
       skipRemoval: () => void;
     };
     shop: {
-      merchant: Omit<MerchantShopCommands, "initialize">;
-      alchemist: Omit<AlchemistShopCommands, "initialize">;
-      trinket: Omit<TrinketShopCommands, "initialize">;
-      equipment: Omit<EquipmentShopCommands, "initialize">;
+      merchant: MerchantShopCommands;
+      alchemist: AlchemistShopCommands;
+      trinket: TrinketShopCommands;
+      equipment: EquipmentShopCommands;
       continue: (expectedActivity: "shop" | "alchemist" | "trinket-shop" | "equipment-shop") => void;
     };
     mystery: {
@@ -102,7 +106,6 @@ export interface AlchemyRouteCommands {
       select: (selection: TransmutationSelectionCommand) => boolean;
       exchange: (sourceIndex: number, offerIndex: number) => BattleCard | null;
       continue: () => void;
-      initialize: () => void;
     };
     corruption: {
       handleCorruptCard: (cardIndex: number) => void;
@@ -113,7 +116,7 @@ export interface AlchemyRouteCommands {
     presentation: BattlePresentationStore;
     handleCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
     handleWishChoice: (card: BattleCard) => void;
-    handleEndTurn: () => void;
+    handleEndTurn: (expected?: BattleSnapshot) => void;
     handleAutoplayCard: AutoplayCardHandler;
     handleAutoplayWish: AutoplayWishHandler;
     skipCombatDevMode: () => void;

@@ -2,6 +2,23 @@ import { ART_PRESETS } from "./asset-constants.mjs";
 import { artGroup } from "./art-group.mjs";
 
 export const coreAssets = [
+  ...artGroup(
+    {
+      folder: "Interface/Mana Dock",
+      preset: ART_PRESETS.manaDockCrystal,
+      requiresTransparency: true,
+    },
+    [
+      ["Crystal - Octagonal Full.png", "mana-dock-full.webp"],
+      ["Crystal - Octagonal Empty.png", "mana-dock-empty.webp"],
+    ],
+  ),
+  {
+    source: "2d Assets/Game Sources/Interface/Mana Dock/Frame - Charcoal and Gold Stitched Leather.png",
+    target: "mana-dock-frame.webp",
+    ...ART_PRESETS.manaDock,
+    requiresTransparency: true,
+  },
   // Logo and marketing
   {
     source: "2d Assets/Game Sources/Branding/Logos/Alchemy Logo/Alchemy Logo - 2400x1792.png",

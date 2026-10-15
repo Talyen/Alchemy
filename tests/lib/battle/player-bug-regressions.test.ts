@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cardById } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
@@ -54,15 +53,6 @@ describe("player combat regressions", () => {
       expect(result.deck).toHaveLength(1);
     },
   );
-
-  it("Whistle makes Pack Tactics free and spends the discount on that play", () => {
-    const card = { ...cardById["pack-tactics"]!, uid: 1 };
-    const state = patchBattleState({ hand: [card], mana: 0, talentEffects: { firstCompanionCardFree: true } });
-    expect(computeEffectiveCost(state, card).effectiveCost).toBe(0);
-    const result = playBattleCardResolved(state, card.id, 0).state;
-    expect(result.flags.firstCompanionCardFreeUsed).toBe(true);
-    expect(result.hand).toHaveLength(0);
-  });
 
   it("Thunderstone cannot reward damage after Stun gear kills the enemy", () => {
     const state = patchBattleState({

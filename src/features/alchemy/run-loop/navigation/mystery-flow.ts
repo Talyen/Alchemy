@@ -158,7 +158,8 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
     case "healHealth": {
       const maxHealth = context.draft.run.activeRun.runMaxHealth;
       if (effect.chance !== undefined && context.rng() >= effect.chance) return { followUp: null };
-      setRunPlayerHealth(context.draft, (health) => Math.min(maxHealth, health + effect.amount));
+      const healingBonus = effect.amount > 0 ? context.draft.runProfile.effects.homesteadHealing : 0;
+      setRunPlayerHealth(context.draft, (health) => Math.min(maxHealth, health + effect.amount + healingBonus));
       return { followUp: null };
     }
     case "damageHealth":
@@ -170,9 +171,11 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
       const goldAward = context.draft.runProfile.gold - before;
       return { followUp: null, goldAward, ...(goldAward > 0 ? { goldSound: "gain" } : {}) };
     }
-    case "loseGold":
+    case "loseGold": {
+      const before = context.draft.runProfile.gold;
       deductGold(context.draft, effect.amount);
-      return { followUp: null, ...(effect.amount > 0 ? { goldSound: "spend" } : {}) };
+      return { followUp: null, ...(context.draft.runProfile.gold < before ? { goldSound: "spend" } : {}) };
+    }
     case "gainXP":
       awardMysteryXP(context.draft, effect.keyword, effect.amount);
       return { followUp: null };

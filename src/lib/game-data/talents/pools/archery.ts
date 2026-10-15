@@ -34,8 +34,8 @@ export const archeryTalents = [
   ),
   t(
     "archery-longshot",
-    "Longshot",
-    "Archery cards deal double damage against enemies at full Health",
+    "Opening Shot",
+    "Archery deals double damage against enemies at full Health",
     "ArrowRight",
     setEffect("archeryDoubledVsHighHealth", true),
   ),
@@ -48,8 +48,8 @@ export const archeryTalents = [
   ),
   t(
     "archery-quickdraw",
-    "Quickdraw",
-    "Archery cards deal 1 additional damage if you have no Block",
+    "Skirmisher",
+    "Archery deals 1 additional damage while you have no Block",
     "Zap",
     setEffect("archeryDamageWithoutBlock", 1),
   ),

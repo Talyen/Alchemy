@@ -9,7 +9,7 @@ import { Surface } from "./surface";
 import { useInteractiveCard } from "./use-interactive-card";
 import { useHoverVisible } from "./use-hover-visible";
 
-export interface PopupContext {
+interface PopupContext {
   visible: boolean;
   triggerRef: RefObject<HTMLElement | null>;
 }
@@ -129,7 +129,7 @@ export function InteractiveArtTile({
         ariaLabel={ariaLabel ?? title}
         {...(ariaDisabled !== undefined ? { ariaDisabled } : {})}
       >
-        {art ? <img src={art} alt={title} className={imageClassName} /> : null}
+        {art ? <img src={art} alt={title} className={imageClassName} decoding="async" /> : null}
         {children}
       </Surface>
     </div>

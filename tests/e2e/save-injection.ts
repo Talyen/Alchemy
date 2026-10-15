@@ -81,6 +81,9 @@ async function writeDesktopSaveAndReload(page: Page, save: unknown): Promise<voi
   await write();
   await write();
   await page.reload({ waitUntil: "domcontentloaded" });
+  // A loaded desktop checkpoint includes the cold-start reveal, which may
+  // outlast the default assertion timeout before controls become interactive.
+  await expect(page.locator("#startup-splash")).toHaveCount(0, { timeout: 30_000 });
 }
 
 async function injectLocalStorage(page: Page, save: Record<string, unknown>, merge: boolean) {
@@ -104,7 +107,6 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
     discoveredTrinketIds,
     discoveredUniqueIds,
     autoEndTurn,
-    selectedAspectRatio,
     finishedRunCharacters,
     gold,
     runGold,
@@ -117,7 +119,6 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
     ...(injectedGold !== undefined ? { gold: injectedGold } : {}),
 
     autoEndTurn: autoEndTurn === true,
-    ...(typeof selectedAspectRatio === "string" ? { selectedAspectRatio } : {}),
     activeRun: {
       characterId: "knight",
       contentSystemType: "campaign",
@@ -262,10 +263,4 @@ export async function injectLabyrinthRun(
   });
   if (!loaded) await navigateToGame(page);
   await expect(page.getByRole("heading", { name: /Labyrinth|Map/i })).toBeVisible({ timeout: 20000 });
-}
-
-export async function enableLoadingScreen(page: Page) {
-  await page.addInitScript(() => {
-    localStorage.removeItem("alchemy-skip-loading-screen");
-  });
 }

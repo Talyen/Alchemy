@@ -2,7 +2,7 @@ import type { CSSProperties, RefObject } from "react";
 
 import type { BattleCard, EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle";
-export type { AspectRatioOption, DisplayMode } from "@/lib/settings-values";
+export type { DisplayMode } from "@/lib/settings-values";
 import type { ArmedFlagChipId, PendingPulseChipId } from "./augment-definitions";
 
 type CardGhostVariant = "activate" | "play-travel";
@@ -44,6 +44,7 @@ export interface CardTransfer {
 }
 
 export interface BattleRefs {
+  endTurnButtonRef: RefObject<HTMLButtonElement | null>;
   handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
   drawPileRef: RefObject<HTMLDivElement | null>;
   discardPileRef: RefObject<HTMLDivElement | null>;
@@ -75,7 +76,7 @@ export interface CombatImpactCue {
   recoil: boolean;
 }
 
-export type CollectionTab = "heroes" | "cards" | "bestiary" | "trinkets" | "uniques";
+export type CollectionTab = "heroes" | "cards" | "bestiary" | "trinkets" | "uniques" | "boards";
 
 export interface StatusChip {
   description?: string;

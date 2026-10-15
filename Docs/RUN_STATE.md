@@ -2,7 +2,7 @@
 
 ## Run state
 
-Each game session owns one authoritative nested gameplay aggregate constructed in `shared/stores/gameplay-state.ts`. `gameplay-state-reads.ts` owns explicit-session aggregate reads and subscriptions; `gameplay-state-store.ts` keeps presentation hooks bound to the application’s default session. Reusable reads, commands, and persistence codecs do not import React or initialize the application. Its `run`, `session`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state, and the aggregate is data-only: draft mutators in `run-session-write-port.ts` (plus `homestead-actions.ts` / `gear-actions.ts`) compose atomic changes. Feature commands receive a deeply readonly `RunTransaction`, with live reads of the same draft. Only store-owned mutation implementations and bootstrap hydration receive the raw `GameplayDraft`; feature commands cannot assign fields or mutate nested collections directly. Feature orchestration should call intent-level commands rather than assemble field updates. `profile-store.ts` and `gear-store.ts` are thin aggregate-backed read/persistence modules; React profile slices live in `use-profile-store.ts`; they do not own shadow state. The write module, reads, commands, and `run-lifecycle.ts` are the feature-facing seams. Independent runtimes follow [Session ownership](#session-ownership).
+Each game session owns one authoritative nested gameplay aggregate constructed in `shared/stores/gameplay-state.ts`. `gameplay-state-reads.ts` owns explicit-session aggregate reads and subscriptions; `session-gameplay-store.ts` owns a cached presentation read store per session; `gameplay-state-store.ts` is the default-application adapter. Reusable reads, commands, and persistence codecs do not import React or initialize the application. Its `run`, `session`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state, and the aggregate is data-only: draft mutators in `run-session-write-port.ts` (plus `homestead-actions.ts` / `gear-actions.ts`) compose atomic changes. Feature commands receive a deeply readonly `RunTransaction`, with live reads of the same draft. Only store-owned mutation implementations and bootstrap hydration receive the raw `GameplayDraft`; feature commands cannot assign fields or mutate nested collections directly. Feature orchestration should call intent-level commands rather than assemble field updates. `profile-store.ts` and `gear-store.ts` are thin aggregate-backed read/persistence modules; React profile slices live in `use-profile-store.ts`; they do not own shadow state. The write module, reads, commands, and `run-lifecycle.ts` are the feature-facing seams. Independent runtimes follow [Session ownership](#session-ownership).
 
 Committed gameplay is immutable in every build. `createGameplayStore` freezes the
 complete initial aggregate and each new revision before save-status or gameplay
@@ -11,22 +11,20 @@ copy live state as a side effect. Projection wrappers may be changed locally,
 but their nested gameplay values remain protected. Commands use Immer drafts;
 input ownership and detached command results stay at the transaction boundary.
 Freezing caches fully traversed objects, so later revisions traverse only changed
-branches and retain structural sharing.
+branches and retain structural sharing. Publication validates the changed graph
+before freezing: gameplay accepts plain records and arrays, never functions,
+accessors, or built-ins with mutable internal slots such as Map and Date.
+Detached command results retain their broader supported data types; they do not
+become gameplay state. Settings and progress-status snapshots are also frozen,
+so borrowed reads cannot bypass their notification and persistence paths.
 
-Keep committed values as plain records, arrays, and primitives. Functions,
-accessors, class instances, and mutable built-ins such as `Map`, `Set`, and `Date`
-do not belong in gameplay snapshots. Freezing an object does not make a mutable
-built-in's internal contents immutable. Execution capabilities belong in the
-command context; detached command results have a separate, broader contract
-under [command atomicity](#command-atomicity).
-
-| Aggregate region | Concern                                                                                                                                                                                    | Lifetime                                                                                                           |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| `run`            | Deck, HP, acts, run Boons on `run.activeRun`; presentation screen on `run.navigation`; one resumable active run                                                                            | Resets on run termination                                                                                          |
-| `session`        | One active activity/visit, rewards, labyrinth progress, pending selections, and run-flow claims                                                                                            | Per live run; active visits persist via the resume codec; the run’s reward bundles persist in `activeRun.activity` |
-| `runProfile`     | Homestead (buildings/farms/research/companions), talent XP / unlocks, derived `effects`, and the shared gold purse — persisted as flat top-level save fields via `run-profile-codec` codec | Profile lifetime                                                                                                   |
-| `profile`        | Collection discoveries, completed difficulties, and finished-run character unlocks; collection tab/page UI is transient in-memory, outside `ProfileSaveFields`                             | Profile lifetime                                                                                                   |
-| `gear`           | Permanent inventories, loadouts, and crafting currencies                                                                                                                                   | Profile lifetime                                                                                                   |
+| Aggregate region | Concern                                                                                                                                                                                                                                      | Lifetime                                                                                                           |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `run`            | Deck, HP, acts, run Boons on `run.activeRun`; presentation screen on `run.navigation`; one resumable active run                                                                                                                              | Resets on run termination                                                                                          |
+| `session`        | One active activity/visit, rewards, labyrinth progress, pending selections, and run-flow claims                                                                                                                                              | Per live run; active visits persist via the resume codec; the run’s reward bundles persist in `activeRun.activity` |
+| `runProfile`     | Homestead (buildings/farms/research/companions), talent XP / unlocks, derived `effects`, and the shared gold purse — persisted as flat top-level save fields via `run-profile-codec` codec                                                   | Profile lifetime                                                                                                   |
+| `profile`        | Collection discoveries, collected boards / cosmetic selection / resolved background / pending reveal, completed difficulties, and finished-run character unlocks; collection tab/page UI is transient in-memory, outside `ProfileSaveFields` | Profile lifetime                                                                                                   |
+| `gear`           | Permanent inventories, loadouts, and crafting currencies                                                                                                                                                                                     | Profile lifetime                                                                                                   |
 
 Active combat belongs to `session.activity`: its `"battle"` variant carries the
 committed `battleState`. Opening and turn playback frames stay with presentation. There is no independently
@@ -74,7 +72,11 @@ presentation gate, then notifies gameplay subscribers. Save-status subscribers
 therefore see the revision they are being asked to save. Gameplay subscriber
 failures are logged independently and cannot suppress later subscribers, autosave,
 or command completion effects. Subscription changes during gameplay notification
-apply to the next commit. Execution failures still roll back; explicit
+apply to the next publication. `notification-channel.ts` owns synchronous FIFO
+delivery for gameplay, settings, progress, save status, cancellation, and lifecycle
+channels. Each publication captures its listeners; observer-triggered publications
+wait until the current event reaches every observer. Listener failures are isolated
+through the channel owner's diagnostic handler. Execution failures still roll back; explicit
 `afterCommit` failures still propagate after the committed state is retained.
 
 Gameplay and save-status observers run during command publication while the
@@ -96,6 +98,16 @@ Persistence adapters may subscribe to the aggregate
 commit signal directly; gameplay callers must not.
 
 `run-session-write-port.ts` adapts the existing domain mutators to transactions; it does not own a second store. Raw dispatch (`gameplay-command.ts`), draft lookup (`transaction-internal.ts`), and read-facade internals are restricted by import boundaries. A transaction can write only during its callback; retained handles cannot write in `afterCommit` or another command. `snapshotTransactionValue(value)` returns a detached value for engine APIs that require mutable types. The aggregate dispatcher detaches result data before Immer closes the draft, for both store-owned and feature commands. Accepted results and rejected fallbacks may contain nested draft reads or read facades; neither escapes into deferred playback. Result objects are independent of committed state, preserve aliases and cycles, and the same detached result reaches `afterCommit` and the caller. Wrappers do not perform their own result conversion.
+
+`boundary-data.ts` owns one graph traversal for setter inputs, explicit transaction
+snapshots, and command results. Supported objects are plain records (including
+null-prototype records), arrays, Maps, Sets, Dates, and RegExps. Aliases and cycles
+are preserved across container entries and all own data properties, including
+non-enumerable and symbol-keyed metadata. Dates retain their timestamp; RegExps
+retain their pattern, flags, and `lastIndex`. Other prototypes and accessor
+properties reject before publication rather than being silently flattened by a
+fallback clone. Caller-owned setter inputs are detached; existing transaction
+reads retain their owned source. Explicit snapshots and results always detach.
 
 Command results are detached data, including nested arrays, Maps, and Sets.
 Functions and Promise-like values cannot cross this boundary, even inside a
@@ -197,15 +209,34 @@ reads and route actions; `createShopActions` binds shop operations; and
 Deferred playback consumes `BattleControllerContext.battle`, so it cannot choose a
 career implicitly. Bound methods retain ownership when passed individually and
 reject use after disposal. `bindSessionCapabilities` and `assertSessionOwnership`
-keep ownership private in `session-capabilities.ts`. Flow and Labyrinth routing
+delegate to `session-capability-graph.ts`, which validates the complete nested
+capability graph before binding. Groups are detached, immutable plain records or
+arrays; methods retain ownership when extracted or spread into another group.
+Aliases, cycles, symbol keys, and non-enumerable groups are preserved and checked.
+Accessors and opaque class/container instances are rejected rather than executed
+or silently skipped. Bound groups cannot be altered after validation, and every
+newly bound method checks session lifetime before execution. Flow and Labyrinth routing
 reject mixed-session outcomes, navigation, battle commands, and node callbacks
 before they can mutate gameplay. Pure presentation callbacks need no session.
 Outcome handlers remain constructed before battle controllers; their separate
 composition is checked rather than replaced with late callback binding.
 
-The singleton is constructed only in `app/application-session.ts`. React hooks
-subscribe to that application's session without an additional provider. The
-explicit shipping adapter list in `lint/session-ownership.js` covers application hooks,
+The singleton is constructed only in `app/application-session.ts`. `App.tsx`
+passes its session and battle presentation store to `useAlchemyRunController`;
+that controller passes the same dependencies to battle and navigation hooks.
+Steam rich presence is composed in `App`, and autoplay toggle sounds use the
+session feedback capability.
+`use-session-run-reads.ts` supplies narrow explicit-session subscriptions, and
+`session-settings.ts` supplies imperative settings for battle autoplay. Battle
+presentation stores carry session ownership, so mixed-career composition fails
+before gameplay. A mounted battle controller owns one session/presentation pair;
+changing careers requires remounting that controller.
+
+`session-gameplay-store.ts` caches each session's presentation projection separately.
+Pending saves retain that session's pre-action gameplay while navigation, Collection
+browsing, and Labyrinth inspection remain live. Its subscriptions detach on unmount
+or session disposal. Application screen hooks retain their default-session adapter
+without adding a provider. The explicit shipping adapter list in `lint/session-ownership.js` covers application hooks,
 routes, and presentation adapters, including those under feature directories. The Oxlint
 session-ownership rule and dependency boundary prevent reusable domain modules
 and headless playthroughs from importing the singleton; Oxlint also rejects
@@ -228,7 +259,12 @@ and the local error buffer remain application services.
 `await session.dispose()` removes subscriptions, cancels autosave/navigation work,
 clears lifecycle channels, drains already-submitted saves, and disables further
 writes. Commands and reads reject disposed handles. Disposing one session cannot
-cancel another session’s timers or writes.
+cancel another session’s timers or writes. `session-lifetime.ts` owns resource
+registration and the clock's timer inventory. Closing the lifetime revokes feedback
+and borrowed store methods, detaches progress subscriptions, and cancels every
+registered timer before draining submitted saves. A timer callback already handed
+to the host checks lifetime again before executing. Timer cancellation and
+subscription release remain safe after disposal; new reads and work reject.
 
 ## Activity and rewards
 
@@ -240,7 +276,10 @@ commit together. Rejection and initialization errors preserve the previous root
 and revision. The returned screen and detached opening battle feedback contain
 no gameplay mutation callbacks; shell navigation and feedback run after entry.
 A presentation error does not undo accepted room entry. Save wire fields and
-resume decoding remain unchanged.
+resume decoding remain unchanged. `room-visit-initialization.ts` supplies the
+transaction-only visit recipes to that owner. Screen and shop command contracts
+expose player actions without initialization. Rendering, remounting, and presenting
+Mystery never sample visit RNG or replace committed activity.
 
 `session.activity.kind === "inactive"` is the sole stored marker for an inactive run. Active runs may have `idle` while being prepared; meta screens preserve the current activity. Read ports derive `hasActiveRun`; it is not a second stored boolean. `session.rewardFlow` owns the current reward bundle, Companion cards, and one claim union (`idle`, `reward`, or `destination` with its destination). Reward and destination claims cannot both be active. The visible navigation screen remains independent so menus and fades do not redefine the resume location. Save codecs retain the existing wire fields.
 
@@ -273,6 +312,14 @@ The renderer marks persisted gameplay commits as pending before publishing them.
 `trackProgress`, `retryProgress`, and `afterProgressSaved`. A checkpoint carries
 the gameplay revision and a runtime epoch; only a covering local write in that
 epoch acknowledges completion. The save envelope does not gain scheduling data.
+Pending acknowledgements, deferred feedback, and storage cancellation belong to
+the session, independently of autosave subscription lifetimes. `trackProgress`
+registers a retry driver with its own idempotent release; the newest live driver
+handles Retry, falling back to the preceding driver when released. Releasing a
+driver cannot cancel another driver's registration or acknowledge unsaved work.
+A replacement durable autosave driver schedules the session's pending revision
+without requiring another gameplay action. With no driver, pending state and
+pre-action display remain protected; explicit Retry can checkpoint directly.
 
 Player-facing store hooks retain the immutable pre-action progress until saving
 succeeds. Transient navigation, Collection browsing, and inspection remain usable.
@@ -305,20 +352,32 @@ drains an in-flight upload before removing mirrors so it cannot resurrect a save
 `buildAlchemySaveDataFromStores(session)` owns complete snapshot construction.
 It derives the active activity and permanent fields from the current session,
 then detaches the whole payload; callers cannot supply a stale run or omit a
-live one. `ProgressCompletion` retains snapshot revision/epoch receipts for the
-session, and the shared `io.ts` write seam acknowledges them for ordinary and
-exit writes. Autosave, Gear flushes, and run-end flushes use that same seam.
-A snapshot can be written through another adapter for the same session without
-losing its receipt. Receipts bind the captured contents to their revision and epoch;
-the IO seam validates those contents at submission, before asynchronous writing.
-Editing a captured snapshot makes that submission an external write: it may save,
-but cannot acknowledge live gameplay. Each queued submission owns its completion.
-A coalesced-away submission returns `superseded`, never the replacement payload's
-outcome. Autosave retains that unsaved work for retry; replacement neither clears
-an existing storage failure nor reports a new one. `skipped` remains reserved for
-storage cancellation or unavailability. Only a snapshot actually written can
-acknowledge its captured revision. Imported or externally constructed payloads
-have no receipt. Save receipts never enter the wire format.
+live one. `SessionSaveSnapshots` owns session-local snapshot provenance and submission
+ordering; `ProgressCompletion` owns player-action acknowledgement. The shared
+`io.ts` seam admits only unchanged snapshots captured by that session. Imported
+or externally constructed payloads must go through restore, then snapshot; they
+cannot write over a live career directly. Autosave, Gear flushes, run-end flushes,
+and exit saves use that same boundary.
+
+A snapshot can be written through another adapter for the same session. Each
+receipt binds its contents, career generation, gameplay revision, and capture
+sequence. Capture sequence orders settings-only snapshots as well as gameplay.
+A submission older than the newest admitted snapshot returns `superseded` without
+writing; a snapshot retained across restore, clear, backend replacement, or write
+protection returns `skipped`. Foreign or edited payloads return `failed` before
+storage. Validation runs both at admission and inside the storage lane, so queued
+snapshots cannot revive a replaced career. An already executing backend write
+cannot be recalled; replacement saves follow it through the serialized lane.
+
+Each queued submission owns its completion. A coalesced-away submission returns
+`superseded`, never the replacement payload's outcome. Autosave retains unsaved
+work for retry; supersession neither clears an existing storage failure nor
+reports a new one. Only an actually written, current snapshot can acknowledge
+its captured revision. Detaching an autosave owner releases only its scheduling
+and retry registration; pending session feedback survives until a covering save
+or explicit invalidation. Disposing the session cancels feedback acknowledgement
+but still drains authorized exit writes. Save receipts never enter the wire format.
+Low-level transport tests use the storage runtime directly to exercise arbitrary payloads below this session boundary.
 
 `run-resume-codec.ts` translates `RunSession` and `ActiveRunData`. The encoder selects
 progress, mode geography, and one tagged `activity`; the decoder hydrates that
@@ -353,7 +412,22 @@ same publication boundary while retaining the current activity. Restore publishe
 its new persistence generation even if the saved values are equal; the gameplay
 root and revision remain unchanged when no gameplay field changes.
 
-`shared/stores/persistence-commit-filter.ts` decides whether a committed state change can alter the save. It compares the saved run, activity (including active combat), profile, and Gear inputs directly; permanent progress uses the save keys from `run-profile-codec.ts`, excluding derived Homestead effects. Session comparisons follow the transient and mode-gated fields declared by `run-resume-codec.ts`. Reward state and Companion cards count, while the claim lock does not. Every run and session field must be classified at typecheck time so a newly added field cannot silently bypass autosave.
+`shared/stores/run-resume-codec.ts` owns `projectRunResumeSnapshot`, the single
+projection used by both run encoding and persistence change detection. The
+projection selects the current activity's wire fields and mode-specific data;
+inactive runs project to null. `persistence-commit-filter.ts` compares those
+projections structurally, skipping shared immutable branches by identity. Claim
+locks, presentation navigation, destination-only reward leftovers, and battle
+metrics cannot trigger autosave or arm the progress gate. Adding a field to the
+wire projection automatically includes it in change detection. Permanent progress
+uses the save keys from `run-profile-save-fields.ts`, excluding derived Homestead
+effects; profile, settings, and Gear retain their own save fields.
+
+Projection can describe an incomplete `idle` or Mystery activity during command
+construction without throwing. Strict run encoding still rejects either until
+its resumable activity is complete. The save builder reads the gameplay aggregate
+directly and detaches the complete save once; it does not construct screen or
+battle display data to persist a run.
 
 `shared/storage/save-candidates.ts` owns save parsing, validation, and future-version protection (deterministic `evaluateSaveCandidates`, for testability); `shared/storage/save-storage.ts` owns each storage instance’s backend, queue, write protection, and load/write/exit/clear operations. `shared/storage/io.ts` preserves the app function API over the selected session’s IO instance and owns the unconfigured storage guard. The application adapter preserves the SSR guard. Backend configuration is allowed only while loads, writes, and clears are idle, so submitted work cannot move to a different transport. Bootstrap configures the application instance; each headless career configures its own instance; isolated tests can construct `SaveStorage` directly. The queue is private to its storage owner. `src/lib/platform-save-backend.ts` owns browser/desktop transport, backup/cloud candidate order, and recoverable write/clear ordering. `initializeSteam()` returns an explicit `cloudSyncEnabled` capability; it does not mutate shared platform state. Candidate order, Steam Cloud as a one-way mirror, and wipe/protect behavior: [MIGRATIONS.md § Public save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract).
 
@@ -405,8 +479,8 @@ Use this reference for access and orchestration; unprefixed store filenames are 
 - **Committed reads** — `run-reads.ts`: data-only `readActiveRun`, `readRunProfile`, `readRunSession`, `readBattle`, and shop reads. React hooks in `use-run-reads.ts` provide narrow navigation, Homestead, talent, draft, and content-navigation slices; `useActiveRunScreenValue` reads the presentation screen.
 - **Screen display** — `run-screen-data.ts` owns the exact selectors and derives `RunScreenDataByScreen` from their return types; `use-run-screen-data.ts` subscribes once per route and retains its last active data during fades. Visit hooks follow activity; run recaps follow the visible ending screen because settlement makes activity inactive. Battle uses `app/screen-routes/use-battle-screen-route-data.ts`, composing `useRunSessionBattleContext` for display, never shell command inputs.
 - **Commands and writes** — `run-session-command.ts` owns dispatch and `createRunSessionCommand` bindings. `run-session-write-port.ts` exposes domain operations with `RunTransaction` as their first argument; `set*` accepts a value or readonly updater. The internal `gameplay-command.ts` retains the single draft/commit coordinator. There is one import path for writes; implementations are split by domain under `shared/stores/write/` behind that barrel.
-- **Battle commands** — `battle-commands.ts` owns card play, Wish selection, and turn completion; `battle-start-commands.ts` owns standalone validated starts; room entry composes the same `initializeBattle` transaction operation. Its `presentBattleStart` callback receives committed opening feedback. Rejected end turns return null, so callers start presentation only after a committed result. Raw snapshot replacement and RNG binding stay private under `write/run-battle.ts`. Live resolutions commit an explicit Gold delta against the authoritative purse and tally earnings atomically. Snapshot Gold remains an engine/save input; historical unfinished battles are abandoned through the load instruction.
-- **Gear reads and writes** — `gear-store.ts` provides data-only reads and its codec; `use-gear-store.ts` owns React slices and combat restrictions; `gear-session-command.ts` composes Gear, discovery, materials, and live-run rebinding within one command. Choose its outer or draft wrapper using [Armory write paths](./ARMORY.md#write-paths).
+- **Battle commands** — `battle-commands.ts` owns card play, Wish selection, and turn completion; `battle-start-commands.ts` owns standalone validated starts; room entry composes the same `initializeBattle` transaction operation. Its `presentBattleStart` callback receives committed opening feedback. Each input supplies the borrowed battle snapshot that offered it; commands reject stale snapshot identity inside the transaction before RNG or progress changes. Rejected inputs return null, so callers start presentation only after a committed result. Raw snapshot replacement and RNG binding stay private under `write/run-battle.ts`. Live resolutions commit an explicit Gold delta against the authoritative purse and tally earnings atomically. Snapshot Gold remains an engine/save input; historical unfinished battles are abandoned through the load instruction.
+- **Gear reads and writes** — `gear-state-defaults.ts` owns pure initial-state and save-field factories so startup storage never imports the live session runtime. `gear-store.ts` provides data-only reads and its codec; `use-gear-store.ts` owns React slices and combat restrictions; `gear-session-command.ts` composes Gear, discovery, materials, and live-run rebinding within one command. Choose its outer or draft wrapper using [Armory write paths](./ARMORY.md#write-paths).
 - **Session persistence** — `shared/storage/session-persistence.ts`: `createSessionPersistence(gameSession)` is the session capability port for snapshots, writes, exit writes, loading, platform configuration, recovery routing, clearing, and failure subscriptions. Feature code uses this port. Store-owned immediate lifecycle flushes use the same snapshot builder and acknowledgement-aware IO seam.
 - **Lifecycle** — `run-lifecycle.ts` owns restore, snapshot, battle sync, and teardown including presentation listeners and battle UI clearing (import it directly). `finalizeRunEndSession` retains recap progress; `teardownRun` fully resets the live run.
 - **Settings actions** — `settings-store.ts`: `useSettingsActions` / `useAppSettings` for App chrome. Homestead and Collection commands are first-class intent commands in `meta-commands.ts` exposed via `AlchemyRouteCommands.meta` and bound to the session controller.
@@ -417,6 +491,14 @@ Use this reference for access and orchestration; unprefixed store filenames are 
 - **Battle control** — `shell/use-battle-controller.ts` provides commands; `app/screen-routes/use-battle-playback.ts` owns route playback. See [Battle path](./ARCHITECTURE.md#battle-path).
 - **Shops** — `run-loop/shop/create-shop-actions.ts` composes the [shop command owners](./ARCHITECTURE.md#shop-commands).
 - **Screen transitions** — `lib/routing/screen-transition-policy.ts` owns ordinary interactive edges and the separate meta-to-saved-run resume rule; `run-setup/run/run-resume-navigation.ts` selects the active run's saved screen before calling `resumeTo`. `shell/use-screen-transitions.ts` applies the same preparation, cancellation, and presentation timing to both paths.
+
+Run-ending gameplay belongs to `shared/stores/write/run-end.ts`: one `settleRunEnd`
+operation captures earned resources, merges talent XP, unlocks the hero, captures
+the recap, and ends activity atomically. Lifecycle commands take only the owning
+session; feature code cannot supply or separately invoke material/XP settlement.
+Reward claims compose the same operation through `settleRunVictory(transaction)`;
+restore composes abandonment before publishing hydration. An inactive activity
+returns rejection so repeated lifecycle requests cannot replay completion effects.
 
 Controllers implement the explicit **command contracts** in `shell/route-commands.ts`; `use-alchemy-run-controller.ts` composes them. Shop and battle commands pass through directly, with shop continuation owned by run navigation. Screen contracts never derive from the composition root’s inferred return type. Screen routes own **display data** via their specific hooks. App chrome / autosave / particles read via capability hooks, not controller display re-exports. Imperative handlers read lifetime-specific ports at call time. Reward route commands expose `claimChoice(id)` and `skip()`: the reward command validates the offered ID and finalizes it atomically behind the claim guard. Card-only skipping explicitly finalizes with no choice, ignoring legacy persisted selection; `selectedId` remains save-compatible but no longer drives reward interaction. Battle refs and handlers travel through `routeCommands.battle`; battle display is read locally by the battle route. Battle-start commands derive gameplay and meta inputs from their open command draft instead of React controller props. Run-flow handlers take `RunFlowShellActions` and read gameplay fields from the command draft / read ports at call time. Room-entry presentation takes only navigation and opening-feedback callbacks (`RoomPresentation` in `run-destination-handlers.ts`); post-reward presentation is composed in `run-flow.ts`; reward commands commit the destination, act, node, or Wildwood transition atomically. Active-run core fields shared by committed session reads come from `pickActiveRunView` in `run-state-init.ts`.
 

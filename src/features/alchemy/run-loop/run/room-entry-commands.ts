@@ -21,9 +21,11 @@ import {
 import { LABYRINTH_TYPE_TO_DESTINATION } from "@/lib/content-systems/labyrinth/data";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-generation";
 import { DESTINATIONS, ROUTE_SCREENS, type Destination, type Screen } from "@/lib/routing";
-import { initializeAlchemyVisitInTransaction } from "../navigation/alchemy-commands";
-import { beginMysteryVisitInTransaction } from "../navigation/mystery-commands";
-import { initializeShopVisit } from "../shop/shop-initialization";
+import {
+  initializeAlchemyVisitInTransaction,
+  beginMysteryVisitInTransaction,
+  initializeShopVisit,
+} from "./room-visit-initialization";
 
 export type RunRoomRequest = { kind: "campaign"; destination: Destination } | { kind: "labyrinth" };
 

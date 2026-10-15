@@ -204,8 +204,13 @@ or save restoration. Retained capabilities do not need to be recreated.
 Each shop supplies typed shelf selection, item identity, pricing, and acquisition
 rules; the shared purchase owner uses that pricing rule for both displayed quotes
 and commits, validating and acquiring the live shelf item inside the transaction.
-Pure shelf samplers live in `shop-state-init.ts`. `shop-initialization.ts` owns the shared transaction-level initialization used by
-room entry and standalone shop commands. `shop-commands-core.ts` owns
+Pure shelf samplers live in `shop-state-init.ts`. `run-loop/run/room-visit-initialization.ts`
+owns transaction-only initialization for shops, Campfire, Transmutation, and Mystery.
+Only `room-entry-commands.ts` may import that owner (Oxlint and import-boundary gates enforce this).
+Room entry commits complete visits before navigation. Screen mount effects and retained
+shop/route capabilities cannot initialize or replace visits, reset purchases or refresh
+allowances, or reroll saved offers. Resume hydrates existing visit data; damaged
+Transmutation choices use the screen's existing unavailable-visit exit. `shop-commands-core.ts` owns
 purchase validation and the complete refresh recipe; the activity
 selects pricing and the typed `setRunActivityData` write target. Callers supply
 shop-specific sampling and acquisition rules without wiring separate state writers.
@@ -231,7 +236,7 @@ Gameplay progression remains in the [aggregate regions](./RUN_STATE.md#run-state
 
 ## Permanent Gear (`gear-store`)
 
-Owned Gear and per-character loadouts live in `shared/stores/gear-store.ts`. Pure rules live under `src/lib/gear/`; per-command draft views and health-sync wrappers live in `gear-session-command.ts` (`GearDraftView` with deeply readonly collection views and guarded mutation methods, explicit write tracking — no snapshot comparison). `createInitialGearState` lives in `gear-actions.ts` beside the other pure draft mutators. Gear is meta progression, not copied into active-run data; battle snapshots `BattleState.gearEffects` and live meta mutations rebind via `rebindLiveRunMeta`. Feature code reads through `gear-store.ts`. Screen, mutations, and HP-sync: [ARMORY.md](./ARMORY.md). Authoring new items: [WORKFLOWS § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
+Owned Gear and per-character loadouts live in `shared/stores/gear-store.ts`. Pure rules live under `src/lib/gear/`; per-command draft views and health-sync wrappers live in `gear-session-command.ts` (`GearDraftView` with deeply readonly collection views and guarded mutation methods, explicit write tracking — no snapshot comparison). `createInitialGearState` lives in `gear-actions.ts` beside the other pure draft mutators. Player actions live in `gear-commands.ts`; routes and headless playthroughs cannot supply draft callbacks or save-flush adapters. Salvage owns removal and all payouts in `salvageGearInTransaction`, outside the generic draft view. Import boundaries keep Gear mutation internals store-owned. Gear is meta progression, not copied into active-run data; battle snapshots `BattleState.gearEffects` and live meta mutations rebind via `rebindLiveRunMeta`. Feature code reads through `gear-store.ts`. Screen, mutations, and HP-sync: [ARMORY.md](./ARMORY.md). Authoring new items: [WORKFLOWS § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
 
 ## Types
 

@@ -1,37 +1,13 @@
 import { loadAlchemySaveState } from "@/features/alchemy/shared/storage";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  setupMockWindowBrowser,
-  setupMockWindowDesktop,
-  teardownMockWindow,
-} from "../../../../helpers/desktop-save-mock-helper";
+import { describe, expect, it, vi } from "vitest";
+import { setupMockWindowDesktop } from "../../../../helpers/desktop-save-mock-helper";
 import { playableSaveCandidate } from "../../../../helpers/save-candidate-fixtures";
-import { installStorageIoTestHooks } from "../../../../helpers/storage-io-test-setup";
+import { installBrowserStorageIoTestHooks } from "../../../../helpers/storage-io-test-setup";
 import { defaultGameSession } from "@/app/application-session";
 
-const mockStorage: Record<string, string> = {};
-const mockLocalStorage = {
-  getItem: (key: string) => mockStorage[key] ?? null,
-  setItem: (key: string, value: string) => {
-    mockStorage[key] = value;
-  },
-  removeItem: (key: string) => {
-    delete mockStorage[key];
-  },
-} as Storage;
-
-installStorageIoTestHooks();
+installBrowserStorageIoTestHooks();
 
 describe("storage io", () => {
-  beforeEach(() => {
-    Object.keys(mockStorage).forEach((k) => delete mockStorage[k]);
-    setupMockWindowBrowser(mockLocalStorage);
-  });
-
-  afterEach(() => {
-    teardownMockWindow();
-  });
-
   describe("desktop cloud merge", () => {
     it("falls back to cloud when local save is missing", async () => {
       const cloudSave = playableSaveCandidate(0, { discoveredCardIds: ["slash", "block"] });

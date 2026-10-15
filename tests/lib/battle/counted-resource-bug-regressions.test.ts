@@ -44,15 +44,13 @@ describe("resource interaction regressions", () => {
     expect(computeBaseDamage(bleeding, { kind: "damage", damageType: "poison", amount: 1 })).toBe(3);
   });
 
-  it("Last Resort uses the hit's Health crossing even if Armor-break rewards heal first", () => {
+  it("Last Resort cleanses and heals after a hit crosses its Health threshold", () => {
     const state = patchBattleState({
       playerHealth: 16,
       playerMaxHealth: 30,
       playerStatuses: { armor: 1, burn: 1, poison: 1 },
       talentEffects: {
         armorBreakBlock: 3,
-        armorOnBlockChance: 10,
-        armorCleanseChance: 10,
         healOnStatusCleanse: 2,
         cleanseBelowHealthPercent: 25,
       },

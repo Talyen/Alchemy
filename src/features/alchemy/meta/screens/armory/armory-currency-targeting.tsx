@@ -94,7 +94,7 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
         CURRENCY_CURSOR_STYLES[activeCurrencyId].className,
       )}
     >
-      <img src={activeCurrency.art} alt="" className="h-full w-full object-cover" />
+      <img src={activeCurrency.art} alt="" decoding="async" className="h-full w-full object-cover" />
     </div>,
     document.body,
   );

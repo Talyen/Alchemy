@@ -9,7 +9,7 @@ The Armory is available from the first launch, before finding any Gear. It is th
 The screen implementation lives under `src/features/alchemy/meta/screens/`.
 Start from these owners:
 
-- `shared/stores/meta-commands.ts` — intent commands for gear mutation, crafting, salvage, and save flushes.
+- `shared/stores/gear-commands.ts` — intent commands for equipment, crafting, salvage, and their save checkpoints. `meta-commands.ts` re-exports these for route composition.
 - `armory/armory-screen-types.ts` — screen props composed from the gear read slice and route commands.
 - `armory-screen.tsx` (sibling of `armory/`) — screen composition and interaction wiring.
 - `armory/armory-equipment-panel.tsx` and `armory/armory-picker-panel.tsx` — equipment and inventory presentation, receiving targeting state and callbacks from the screen.
@@ -113,7 +113,7 @@ slots show the inventory owner's reservation before an attempt reaches the store
 Disarming the tool restores normal browsing and unequipping for that other hero. Unused items owned by other heroes remain
 editable through other heroes’ tabs. Acquisition adds inventory normally.
 
-The gear command boundary (`gear-session-command.ts` via `dispatchGearMutationWithRunHealthSync` / `dispatchGearSalvageWithMaterialGrant`) enforces the same reservations before running the mutator;
+The Gear intent commands enforce the same reservations through store-owned mutations;
 blocked actions spend no currencies, roll no RNG, award no salvage, and trigger
 neither combat rebinding nor an explicit save flush. The UI shows a lock and a
 reason naming the reserved hero while preserving inspection. Talent and
@@ -141,20 +141,36 @@ Homestead mutation timing remains unchanged.
 
 ### Write paths
 
-`GearDraftView` exposes deeply readonly inventories, instances, loadouts, and currencies. Call its methods to mutate Gear so combat locks, discovery, and live Health rebinding stay together. Synchronization cannot be disabled by feature callers. Initialization and reset are bootstrap operations and reject execution during combat.
+Commands require the owning `gameSession` as their final argument; inside a store-owned command, use its transaction instead. Follow [session ownership](./RUN_STATE.md#session-ownership). Outside store internals, callers use the intent commands in
+`shared/stores/gear-commands.ts`: `equipGear`, `unequipGear`, `equipTrinket`,
+`unequipTrinket`, `applyCurrencyToGear`, and `salvageGear`. Both the Armory routes
+and headless player use these commands. Each command owns dispatch, rejection,
+live Health/manifest rebinding, and the successful action's save checkpoint.
+Adapters cannot supply a mutation callback or replace the checkpoint. Rejected
+actions consume no RNG, publish no revision, and request no save.
 
-There is no external `useGearStore` hook. Gear mutations run against a `GearDraftView` of the aggregate state and commit through session commands. Outer dispatchers require the owning `gameSession` as their final argument; inside a command, use its transaction instead. Follow [session ownership](./RUN_STATE.md#session-ownership). Which wrapper to use:
+`gear-session-command.ts` and `gear-actions.ts` are store internals, enforced by
+import boundaries. Store-owned acquisition helpers use
+`mutateGearWithRunHealthSync(transaction, { mutate })` inside their existing
+transaction; its readonly `GearDraftView` exposes guarded mutations and tracks
+writes. It has no salvage operation. Bootstrap hydration uses the Gear codec;
+feature code cannot initialize or reset Gear through an Armory action.
 
-- **Outside a run command (Armory screen, dev spawn)** — `dispatchGearMutationWithRunHealthSync({ mutate }, gameSession)`
-- **Inside an existing command (shop buy, rewards, mystery)** — `mutateGearWithRunHealthSync(transaction, { mutate })`
+Salvage has one transaction-level recipe: `salvageGearInTransaction(transaction,
+instanceId)`. It validates live combat reservations, finds the owned item,
+recomputes its deterministic yield, removes it and its loadout references, grants
+currencies and Materials, records active-run earnings, and rebinds Health in the
+same transaction. No caller-supplied payout can reach settlement. Materials go
+through `awardMaterialsDuringRun` for an active run or `addMaterialsToStockpile`
+otherwise. Preview still uses `computeSalvageYield`; confirm pays exactly that
+yield. Repeating the request cannot pay twice.
 
-After a Gear change, `rebindLiveRunMeta` synchronizes health when a run is active. Unchanged or rejected mutations do not rebind. `mutate` receives a `GearDraftView` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
-
-1. **Equip / Unequip** — `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.equip(characterId, slot, instance) }, gameSession)` and `(state) => state.unequip(characterId, slot)`.
-2. **Salvage** — preview with `computeSalvageYield` (definition `salvageValue` homestead materials + crafting currencies drawn from the existing rarity table using a seed derived from the stable instance ID). Reopening, reloading, and changing affixes do not reroll rewards; upgrading rarity uses the new rarity table. Confirm calls `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId), gameSession)`, which recomputes the same deterministic yield in the store rather than trusting the preview value, then HP-syncs and grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterialsToStockpile` (meta). Confirm always pays exactly the preview.
-3. **Crafting-currency apply** — `(state) => state.applyCurrency(currencyId, instanceId, { rng })` mutates the item's affixes via `applyCraftingCurrency`. The controller injects profile-lifetime randomness, defaulting to `Math.random`, for crafting and dev spawning; neither consumes a run RNG stream. Salvage uses its stable instance-derived seed instead.
-4. **Add new instance (rewards / shop / dev spawn)** — Armory/dev spawn: `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.addInstance(instance, characterId) }, gameSession)`. Shop and in-run reward commands already own a transaction: `mutateGearWithRunHealthSync(transaction, { mutate: (gear) => gear.addInstance(instance, characterId) })`.
-5. **Permanent Trinkets** — use `addTrinket`, `equipTrinket`, and `unequipTrinket` on the Gear aggregate. Rewards and the Trinket Shop add ownership inside their existing run-session command; acquisition never auto-equips or creates a Boon.
+Crafting and dev spawning accept profile-lifetime randomness, defaulting to
+`Math.random`; neither consumes a run RNG stream. The headless player injects
+its career crafting source through the same `applyCurrencyToGear` command.
+Rewards and shops grant instances and permanent Trinkets through
+`deck-mutations.ts` within their existing commands, retaining discovery and run
+recap accounting. Acquisition never auto-equips or creates a Boon.
 
 ### Salvage materials
 
@@ -162,7 +178,7 @@ Base item construction owns homestead salvage materials; rarity increases quanti
 
 ### Route commands
 
-The route wrapper (`src/app/screen-routes/meta-routes.tsx`) wires `routeCommands.meta.armory` for the [read paths](#read-paths) and [write paths](#write-paths) above. The commands route mutations through the appropriate Gear wrapper and call `flushSaveAfterGearMutation` only after success. Rejected taps remain feedback-only. Dev spawning uses `generateDevRandomGearInstance` through the same mutation and flush boundary.
+The route wrapper (`src/app/screen-routes/meta-routes.tsx`) wires `routeCommands.meta.armory` for the [read paths](#read-paths) and [write paths](#write-paths) above. The commands route mutations through the appropriate Gear wrapper and delegate the successful save checkpoint to the Gear command. Rejected taps remain feedback-only. Dev spawning uses `generateDevRandomGearInstance` through the same mutation and flush boundary.
 
 ## Battle integration
 
@@ -172,7 +188,7 @@ Trinket effects snapshot the same way via `computeTrinketManifest` (`src/lib/tri
 
 Lifegiving grants 1 Health per turn at every rarity and remains eligible for ordinary gear. Fixed roll values do not imply unique-only eligibility; `uniqueOnly` owns that restriction. Emberforged rolls for 1 Forge when positive Burn damage hits an enemy that was not already Burning (Basic: 10%; Astral: 20%). Equipped copies roll independently; probabilities are not summed or capped. Subsequent Burn hits require the enemy's Burn to clear before Emberforged can trigger again. Saved inventory rolls for these two affixes are bounded to their current rarity ranges during normalization, tooltip generation, and battle-manifest construction. Existing combat snapshots retain their captured magnitudes until normal live meta rebinding or the next battle.
 
-The ordinary reactive affixes use the event named in their tooltip. Consume Gear reactions exclude Companion summons; their tooltips state this exception. Runic Quill retains its separate draw on any Consume. Rotbloom gives one normal Poison tick per equipped copy when a card is Consumed: it deals damage, applies Poison riders, and advances decay without removing the whole stack. Distilled requires Mana actually paid for that card, while Afterglow checks whether it was the last card in hand when played. Bloodward rolls once per Leech restoration and bases its Block on Health actually restored. Smithguard grants Block once per combined Forge award (Basic: 1; Astral: 2); matching copies add their Block. Layered adds its flat bonus only to the first positive Armor grant each player turn, including starting Armor; it does not create Armor by itself. Its saved allowance and Ironroot's separate per-turn limit follow the [Armor gain rules](./GAME_RULES.md#hit-resolution-and-pacing).
+The ordinary reactive affixes use the event named in their tooltip. Consume Gear and Runic Quill react only to actual Consume. Companion summons leave the battle without Consume and grant none of these rewards. Rotbloom gives one normal Poison tick per equipped copy when a card is Consumed: it deals damage, applies Poison riders, and advances decay without removing the whole stack. Distilled requires Mana actually paid for that card, while Afterglow checks whether it was the last card in hand when played. Bloodward rolls once per Leech restoration and bases its Block on Health actually restored. Smithguard grants Block once per combined Forge award (Basic: 1; Astral: 2); matching copies add their Block. Layered adds its flat bonus only to the first positive Armor grant each player turn, including starting Armor; it does not create Armor by itself. Its saved allowance and Ironroot's separate per-turn limit follow the [Armor gain rules](./GAME_RULES.md#hit-resolution-and-pacing).
 
 The keyword affixes use the same battle events as cards and talents. Bramblecall checks Thorns before the Nature card resolves; Spitebloom follows successful Thorns retaliation. Gildmend reacts to combat Gold awards, including kill rewards, while Tithebound requires at least 5 Forge at the kill. Bloodroot and Heartshock require actual Leech restoration and check their conditions before that healing. Starcatcher uses the existing next-card cost reduction after a Wish from an empty hand; Starfall resolves a normal Freeze follow-up. Ashkeeper and Lastlight trigger when the card is Consumed, with Lastlight checking Mana before Consume refunds. Counterplate reacts only to Armor lost from an enemy attack. Rootmender grants one Leech restoration on Nature damage to a Poisoned enemy, including triggered damage, and does not stack another restoration with Sylvan's chance. Venomtrail adds flat damage to direct Poison hits and Poison ticks against Bleeding enemies, including detonations. Scarfeast applies to the hero's Physical card attacks below half Health. Hallowguard requires a Holy card attack that damages enemy Health while the hero has no Block. Hallowbreak increases Holy damage against Stunned enemies.
 
@@ -198,7 +214,7 @@ Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alche
 
 Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md) and `src/lib/validation/metadata.ts` own the supported floor and current version. Gear shape changes follow that migration contract: safe additive fields may use schema defaults, while transforms require a versioned migration.
 
-`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes through `subscribeAlchemyPersistence`, which combines settings changes with the committed gameplay-session revision signal. The renderer groups synchronous commits into an immediate save checkpoint; action completion waits for local acknowledgement under [completed actions and local saving](./RUN_STATE.md#completed-actions-and-local-saving). The scheduler also owns debounce, maximum wait, and retry timing. `buildAlchemySaveDataFromStores(session)` derives the active run and permanent fields together, detaches the payload, and records its session receipt. Immediate writes and autosave acknowledge through the same IO seam. Armory route actions delegate to the intent commands in `shared/stores/meta-commands.ts`, which call `flushSaveAfterGearMutation` (`run-lifecycle.ts`) after successful mutations.
+`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes through `subscribeAlchemyPersistence`, which combines settings changes with the committed gameplay-session revision signal. The renderer groups synchronous commits into an immediate save checkpoint; action completion waits for local acknowledgement under [completed actions and local saving](./RUN_STATE.md#completed-actions-and-local-saving). The scheduler also owns debounce, maximum wait, and retry timing. `buildAlchemySaveDataFromStores(session)` derives the active run and permanent fields together, detaches the payload, and records its session receipt. Immediate writes and autosave acknowledge through the same IO seam. Armory route actions delegate to the intent commands in `shared/stores/gear-commands.ts`, which call `flushSaveAfterGearMutation` (`run-lifecycle.ts`) after successful mutations.
 
 ## Unique combat effects
 

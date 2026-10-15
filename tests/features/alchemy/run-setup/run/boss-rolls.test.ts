@@ -1,5 +1,4 @@
 import "../../../../helpers/mock-audio";
-
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createNewRunInitialization } from "@/features/alchemy/run-setup/run/new-run-initialization";
 import { createRunResumeNavigation } from "@/features/alchemy/run-setup/run/run-resume-navigation";
@@ -7,17 +6,16 @@ import { createProgressionCommands } from "@/features/alchemy/run-loop/run/progr
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
 import { DESTINATIONS, type Screen } from "@/lib/routing";
-import {
-  acceptCommand,
-  dispatchGameplayCommand,
-  subscribeRunSessionCommits,
-} from "@/features/alchemy/shared/stores/gameplay-command";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/gameplay-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setRewardState, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setRunProgress } from "../../../../helpers/run-domain-store-test";
-import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGameplayForTest,
+  setRunProgress,
+  resetAllTestStores,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
 import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
-import { setRunSession } from "../../../../helpers/run-domain-store-test";
 import { createRunRngState } from "@/lib/rng";
 import { defaultGameSession } from "@/app/application-session";
 
@@ -65,21 +63,15 @@ describe("boss rolls in run commands", () => {
 
   it("commits a seeded destination offer and its pity history together", () => {
     startCampaign();
-    dispatchGameplayCommand(
-      (draft) => {
-        draft.run.activeRun.rng = createRunRngState(1234);
-        draft.run.activeRun.lastOfferedDestinations = [DESTINATIONS.NORMAL_COMBAT];
-        draft.run.activeRun.destinationRoundsSinceOffered = {
-          [DESTINATIONS.NORMAL_COMBAT]: 0,
-          [DESTINATIONS.MYSTERY]: 3,
-          [DESTINATIONS.CAMPFIRE]: 1,
-        };
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      draft.run.activeRun.rng = createRunRngState(1234);
+      draft.run.activeRun.lastOfferedDestinations = [DESTINATIONS.NORMAL_COMBAT];
+      draft.run.activeRun.destinationRoundsSinceOffered = {
+        [DESTINATIONS.NORMAL_COMBAT]: 0,
+        [DESTINATIONS.MYSTERY]: 3,
+        [DESTINATIONS.CAMPFIRE]: 1,
+      };
+    });
     setRunSession({ activity: { kind: "transmutation", data: emptyAlchemyVisit() } });
     const commits: number[] = [];
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession);
@@ -92,13 +84,13 @@ describe("boss rolls in run commands", () => {
     const run = readActiveRun(defaultGameSession);
     const offered = readRunSession(defaultGameSession).rewardFlow.state.destinations;
     expect(run.lastOfferedDestinations).toEqual(offered);
-    expect(offered).toEqual([DESTINATIONS.TRANSMUTATION, DESTINATIONS.CORRUPTION, DESTINATIONS.ELITE_COMBAT]);
+    expect(offered).toEqual([DESTINATIONS.CAMPFIRE, DESTINATIONS.TRANSMUTATION, DESTINATIONS.MYSTERY]);
     expect(run.destinationRoundsSinceOffered).toEqual({
-      [DESTINATIONS.CAMPFIRE]: 1,
-      [DESTINATIONS.ELITE_COMBAT]: 0,
-      [DESTINATIONS.MYSTERY]: 4,
+      [DESTINATIONS.CAMPFIRE]: 0,
+      [DESTINATIONS.ELITE_COMBAT]: 1,
+      [DESTINATIONS.MYSTERY]: 0,
       [DESTINATIONS.TRANSMUTATION]: 0,
-      [DESTINATIONS.CORRUPTION]: 0,
+      [DESTINATIONS.CORRUPTION]: 1,
       [DESTINATIONS.NORMAL_COMBAT]: 1,
     });
     expect(run.rng.counters).toEqual({ destinations: 3, world: 0, events: 0, rewards: 0, shops: 0 });
@@ -110,17 +102,11 @@ describe("boss rolls in run commands", () => {
     { offer: DESTINATIONS.BOSS_COMBAT, savedBossId: null, worldDraws: 1 },
   ])("resuming $offer with boss $savedBossId uses $worldDraws world draw", ({ offer, savedBossId, worldDraws }) => {
     const deps = startCampaign();
-    dispatchGameplayCommand(
-      (draft) => {
-        setRewardState(draft, { ...createEmptyRewardState([offer]), selectedBossId: savedBossId });
-        setScreen(draft, "destination");
-        setScreen(draft, "menu");
-
-        return acceptCommand();
-      },
-      undefined,
-      defaultGameSession,
-    );
+    mutateGameplayForTest((draft) => {
+      setRewardState(draft, { ...createEmptyRewardState([offer]), selectedBossId: savedBossId });
+      setScreen(draft, "destination");
+      setScreen(draft, "menu");
+    });
     const before = readActiveRun(defaultGameSession).rng.counters.world;
     createRunResumeNavigation(deps, defaultGameSession).resumeRun();
     expect(readActiveRun(defaultGameSession).rng.counters.world - before).toBe(worldDraws);

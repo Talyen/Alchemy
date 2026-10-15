@@ -167,7 +167,7 @@ describe("enemy attack damage", () => {
       playerHealth: 30,
       playerMaxHealth: 30,
       playerStatuses: { ...base.playerStatuses, block: 0, armor: 0 },
-      talentEffects: { ...base.talentEffects, healthThresholdBlock: { threshold: 50, amount: 4 } },
+      talentEffects: { ...base.talentEffects, healthThresholdBlockOnce: { threshold: 50, amount: 4 } },
     });
     const damaged = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 20 }, []);
     expect(damaged.playerHealth).toBe(10);
@@ -284,7 +284,7 @@ describe("Talent enemy attack damage", () => {
       playerHealth: 40,
       playerMaxHealth: 40,
       playerStatuses: { block: 2 },
-      talentEffects: { ...talents("block", "block-reduce-burn"), holyBlockPercentFromDamage: 100 },
+      talentEffects: { ...talents("block", "block-reduce-burn"), holyBlockChance: 100 },
     });
     const after = applyEnemyAbility(
       state,

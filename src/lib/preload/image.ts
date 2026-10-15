@@ -8,13 +8,21 @@ interface PendingImageLoad {
   lifetime: AbortController;
 }
 
+interface CompletedImageLoad {
+  promise: Promise<void>;
+  image: HTMLImageElement;
+}
+
 const imageLoads = new Map<string, PendingImageLoad>();
-const loadedImages = new Map<string, Promise<void>>();
+const loadedImages = new Map<string, CompletedImageLoad>();
 const MAX_IMAGE_CACHE_SIZE = 500;
 
 export function resetImagePreloadCache(): void {
   for (const { image, lifetime } of imageLoads.values()) {
     lifetime.abort();
+    image.removeAttribute("src");
+  }
+  for (const { image } of loadedImages.values()) {
     image.removeAttribute("src");
   }
   imageLoads.clear();
@@ -29,7 +37,7 @@ export function preloadImage(src: string): Promise<void> {
   if (existing) {
     loadedImages.delete(src);
     loadedImages.set(src, existing);
-    return existing;
+    return existing.promise;
   }
 
   const image = new Image();
@@ -46,9 +54,12 @@ export function preloadImage(src: string): Promise<void> {
     if (!ready) return;
     if (loadedImages.size >= MAX_IMAGE_CACHE_SIZE) {
       const firstKey = loadedImages.keys().next().value;
-      if (firstKey !== undefined) loadedImages.delete(firstKey);
+      if (firstKey !== undefined) {
+        loadedImages.get(firstKey)?.image.removeAttribute("src");
+        loadedImages.delete(firstKey);
+      }
     }
-    loadedImages.set(src, promise);
+    loadedImages.set(src, { promise, image });
   });
   imageLoads.set(src, { promise, image, lifetime });
   return promise;

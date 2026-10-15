@@ -86,7 +86,14 @@ export function buildWishOptions(
     undiscovered.length > 0 ? selectRewardCards(fullDeck, undiscovered, 1, [], getBattleRng(state)) : [];
   const selected = [
     ...guaranteed,
-    ...selectRewardCards(fullDeck, candidates, baseCount - guaranteed.length, guaranteed, getBattleRng(state)),
+    // Recovered counts can be large but finite; selection cannot offer more than its pool.
+    ...selectRewardCards(
+      fullDeck,
+      candidates,
+      Math.min(baseCount, candidates.length) - guaranteed.length,
+      guaranteed,
+      getBattleRng(state),
+    ),
   ];
 
   if (state.talentEffects.wishCardsUpgraded) {
@@ -313,7 +320,7 @@ function applyWishManaTrigger(
   combatTexts: CombatTextEvent[],
   eligibility: BattleState,
 ): BattleState {
-  const manaGain = state.talentEffects.manaOnWish + (eligibility.mana === 0 ? state.gearEffects.manaOnWish : 0);
+  const manaGain = eligibility.mana === 0 ? state.gearEffects.manaOnWish : 0;
   if (manaGain <= 0) return state;
   return gainManaWithCombatText(state, manaGain, combatTexts, { skipFightPacing: true });
 }

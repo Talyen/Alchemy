@@ -5,7 +5,6 @@ import {
   assertNoOverflow,
   assertStageFitsViewport,
   makeCard,
-  SAVE_KEY,
   startAtDestination,
   startBattleWithDeck,
   waitForLayoutSettled,
@@ -76,9 +75,6 @@ test.describe("Responsive display sizes", slow, () => {
           .poll(() => scroll.evaluate((element) => element.scrollHeight - element.clientHeight))
           .toBeLessThanOrEqual(1);
       }
-      await page.getByRole("combobox", { name: "Aspect Ratio" }).click();
-      await expectTooltipFitsViewport(page.getByRole("listbox"), viewport);
-      await page.keyboard.press("Escape");
       await page.getByRole("button", { name: "Back", exact: true }).click();
     }
   });
@@ -329,9 +325,7 @@ test("keyboard Options and confirmation fit at 1280×720", async ({ page }) => {
   await expect(dialog).toHaveCount(0);
 });
 
-test("compact Options controls remain reachable without overlapping at large size in a narrow window", async ({
-  page,
-}) => {
+test("compact Options controls remain reachable at large size in a narrow window", async ({ page }) => {
   await page.setViewportSize({ width: 480, height: 720 });
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -342,19 +336,6 @@ test("compact Options controls remain reachable without overlapping at large siz
   const menu = new MenuPage(page);
   await menu.goto();
   await menu.openOptions();
-  const aspect = page.getByRole("combobox", { name: "Aspect Ratio" });
-  const label = page.getByText("Aspect Ratio", { exact: true });
-  await expect
-    .poll(async () => {
-      const controlBox = await aspect.boundingBox();
-      const labelBox = await label.boundingBox();
-      return Boolean(
-        controlBox &&
-        labelBox &&
-        (controlBox.y >= labelBox.y + labelBox.height - 1 || controlBox.x >= labelBox.x + labelBox.width - 1),
-      );
-    })
-    .toBe(true);
   for (const tab of ["Display", "Sound", "Gameplay", "Other"]) {
     const button = page.getByRole("button", { name: tab, exact: true });
     await expectTooltipFitsViewport(button, { width: 480, height: 720 });

@@ -60,32 +60,13 @@ describe("processCompanionTurnStart", () => {
     expect(result.playerStatuses.block).toBe(0);
   });
 
-  it("retains the goldOnFirstPoisonThisCombat flag when Lizard Scout companion applies poison", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary["lizard-scout"],
-      talentEffects: {
-        goldOnFirstPoison: 5,
-      },
-      flags: {
-        goldOnFirstPoisonThisCombat: false,
-      },
-    });
-    const result = processCompanionTurnStart(state, makeTexts());
-    expect(result.gold).toBe(state.gold + 5);
-    expect(result.flags.goldOnFirstPoisonThisCombat).toBe(true);
-  });
-
-  it("does not consume or benefit from firstBurnCardDoubled/firstBurnBoonDoubled when Phoenix companion deals burn damage", () => {
+  it("does not spend or benefit from the first-Burn Boon when Phoenix attacks", () => {
     const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
-      talentEffects: {
-        firstBurnCardBonusMultiplier: 1.5,
-      },
       trinketEffects: {
         firstBurnDoubled: true,
       },
       flags: {
-        firstBurnCardDoubledUsed: false,
         firstBurnTrinketDoubledUsed: false,
       },
       enemyHealth: 30,
@@ -94,7 +75,6 @@ describe("processCompanionTurnStart", () => {
 
     expect(result.enemyHealth).toBe(29);
 
-    expect(result.flags.firstBurnCardDoubledUsed).toBe(false);
     expect(result.flags.firstBurnTrinketDoubledUsed).toBe(false);
   });
 
@@ -159,19 +139,6 @@ describe("processCompanionTurnStart", () => {
     const result = processCompanionTurnStart(state, makeTexts());
 
     expect(result.enemyHealth).toBe(6);
-  });
-
-  it("companionDamagePerManaCrystal scales damage with max mana", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary.phoenix,
-      maxMana: 6,
-      talentEffects: {
-        companionDamagePerManaCrystal: 200,
-      },
-    });
-    const result = processCompanionTurnStart(state, makeTexts());
-
-    expect(result.enemyStatuses.burn).toBe(601);
   });
 
   it("healOnCompanionAttack heals player when companion deals damage", () => {
@@ -393,13 +360,11 @@ describe("processCompanionTurnStart", () => {
   });
 });
 
-describe("Mana Moth extra Mana", () => {
-  it.each([4, 5])("grants extra Mana after refill or Wellspring at %i Mana", (mana) => {
-    const state = patchBattleState({ mana, maxMana: 4, activeCompanion: companionLibrary["mana-moth"] });
-    const result = processCompanionTurnStart(state, []);
-    expect(result.mana).toBe(mana + 1);
-    expect(result.maxMana).toBe(4);
-  });
+it.each([4, 5])("Mana Moth extra Mana grants extra Mana after refill or Wellspring at %i Mana", (mana) => {
+  const state = patchBattleState({ mana, maxMana: 4, activeCompanion: companionLibrary["mana-moth"] });
+  const result = processCompanionTurnStart(state, []);
+  expect(result.mana).toBe(mana + 1);
+  expect(result.maxMana).toBe(4);
 });
 
 describe("Companion Bond progression", () => {
@@ -464,12 +429,13 @@ describe("Companion Bond progression", () => {
   });
 });
 
-describe("Predator's Instinct threshold", () => {
-  it.each([
-    [30, 100, 1],
-    [10, 32, 1],
-    [9, 32, 2],
-  ])("deals %i / %i Health enemies the correctly scaled damage", (enemyHealth, enemyMaxHealth, damage) => {
+it.each([
+  [30, 100, 1],
+  [10, 32, 1],
+  [9, 32, 2],
+])(
+  "Predator's Instinct threshold deals %i / %i Health enemies the correctly scaled damage",
+  (enemyHealth, enemyMaxHealth, damage) => {
     const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       enemyHealth,
@@ -477,36 +443,32 @@ describe("Predator's Instinct threshold", () => {
       talentEffects: { companionDoubledVsLowHealth: true },
     });
     expect(processCompanionTurnStart(state, []).enemyHealth).toBe(enemyHealth - damage);
-  });
-});
+  },
+);
 
-describe("Companion scaling integration", () => {
-  it("applies every damage bonus once and preserves the prepared next attack", () => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary.phoenix,
-      enemyHealth: 100,
-      enemyMaxHealth: 100,
-      maxMana: 4,
-      companionDamageBuff: 1,
-      enemyCC: { freezeSkipTurns: 1 },
-      flags: { nextHitCrit: true },
-      talentEffects: { companionDamage: 2, companionVsFrozenBonus: 4, companionDamagePerManaCrystal: 1 },
-      gearEffects: { companionDamageBonus: 3 },
-      trinketEffects: { companionDamageBonus: 2 },
-    });
-    expect(getBattleCompanionDamageModifiers(state)).toEqual({
-      damageBonus: 14,
-      bleedDamageBonus: 0,
-      damageMultiplier: 1,
-    });
-    const texts = makeTexts();
-    const result = processCompanionTurnStart(state, texts);
-    expect(result.enemyHealth).toBe(85);
-    expect(result.enemyStatuses.burn).toBe(15);
-    expect(result.flags.nextHitCrit).toBe(true);
-    expect(texts).toContainEqual(
-      expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 15 }),
-    );
-    expect(state.enemyStatuses.burn).toBe(0);
+it("Companion scaling integration applies every damage bonus once and preserves the prepared next attack", () => {
+  const state = patchBattleState({
+    activeCompanion: companionLibrary.phoenix,
+    enemyHealth: 100,
+    enemyMaxHealth: 100,
+    maxMana: 4,
+    companionDamageBuff: 1,
+    enemyCC: { freezeSkipTurns: 1 },
+    flags: { nextHitCrit: true },
+    talentEffects: { companionDamage: 2, companionVsFrozenBonus: 4 },
+    gearEffects: { companionDamageBonus: 3 },
+    trinketEffects: { companionDamageBonus: 2 },
   });
+  expect(getBattleCompanionDamageModifiers(state)).toEqual({
+    damageBonus: 12,
+    bleedDamageBonus: 0,
+    damageMultiplier: 1,
+  });
+  const texts = makeTexts();
+  const result = processCompanionTurnStart(state, texts);
+  expect(result.enemyHealth).toBe(87);
+  expect(result.enemyStatuses.burn).toBe(13);
+  expect(result.flags.nextHitCrit).toBe(true);
+  expect(texts).toContainEqual(expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 13 }));
+  expect(state.enemyStatuses.burn).toBe(0);
 });

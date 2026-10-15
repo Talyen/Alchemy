@@ -1,5 +1,6 @@
 import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 import "../../../../helpers/mock-audio";
+import { initializeMysteryForTest } from "../../../../helpers/visit-initialization";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
@@ -65,6 +66,7 @@ describe("Labyrinth destination modifiers", () => {
       activeLabyrinthRewardModifiers: ["golden-omen"],
     });
     const { result } = renderHook(() => createMysteryEventNavigation({ navigateTo: vi.fn() }, defaultGameSession));
+    act(() => initializeMysteryForTest(defaultGameSession));
     act(() => result.current.beginMysteryEvent());
     const choice = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent!.choices.find(
       (entry) => entry.effects.some((effect) => effect.kind === "gainGold"),
@@ -84,6 +86,7 @@ describe("Labyrinth destination modifiers", () => {
       activeLabyrinthRewardModifiers: ["restful-discovery"],
     });
     const { result } = renderHook(() => createMysteryEventNavigation({ navigateTo: vi.fn() }, defaultGameSession));
+    act(() => initializeMysteryForTest(defaultGameSession));
     act(() => result.current.beginMysteryEvent());
     const choice = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent!.choices[0]!;
     expect(choice.effects.at(-1)).toEqual({ kind: "healHealth", amount: 15 });

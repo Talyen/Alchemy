@@ -1,7 +1,7 @@
 import { createRef } from "react";
 import { EnemyTooltip } from "@/features/alchemy/shared/ui/tooltips/enemy-tooltip";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { enemyById, keywordDefinitions } from "@/lib/game-data";
 import { getKeywordTextShineColors } from "@/lib/keyword-text-shine";
 import { extractKeywordIds } from "@/lib/keyword-text";
@@ -14,8 +14,15 @@ import { installReadyArtworkForTests, waitForArtwork } from "../../../../../help
 
 installDisabledAnimationsForTests();
 installReadyArtworkForTests();
+beforeEach(() => {
+  // JSDOM has no layout boxes; dialog focus still requires visible controls.
+  vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([
+    new DOMRect(0, 0, 100, 30),
+  ] as unknown as DOMRectList);
+});
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   resetEscapeStackForTests();
 });
 

@@ -22,7 +22,10 @@ test("Slash starts its SFX and rapid End Turn advances once and restores the han
   await expect(battle.hand).toHaveCount(3);
   await expect.poll(() => readSfxPlays(page)).toBeGreaterThan(0);
   const health = await battle.playerHealth();
-  await battle.endTurnBtn.click({ clickCount: 3, delay: 20 });
+  await battle.endTurnBtn.click();
+  const confirm = page.getByRole("dialog", { name: "End turn?", exact: true });
+  await expect(confirm.getByRole("button", { name: "Cancel", exact: true })).toBeFocused();
+  await confirm.getByRole("button", { name: "End Turn", exact: true }).click({ clickCount: 3, delay: 20 });
   await expect.poll(() => battle.playerHealth()).toBeLessThan(health);
   await expect(battle.hand).toHaveCount(4);
   await expect(battle.endTurnBtn).toBeEnabled({ timeout: 15_000 });

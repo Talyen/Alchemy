@@ -1,3 +1,7 @@
+import {
+  BattleEndTurnButton,
+  type BattleEndTurnButtonProps,
+} from "@/features/alchemy/run-loop/screens/battle-screen/end-turn-button";
 import { useRef, useState } from "react";
 import { Repeat, SkipForward } from "lucide-react";
 import { ChromeIconButton } from "@/features/alchemy/shared/ui/chrome-icon-button";
@@ -49,6 +53,7 @@ function BattleSkipCombatButton({ onSkip, disabled }: { onSkip: () => void; disa
 }
 
 export interface BattleClusterProps {
+  endTurn: Omit<BattleEndTurnButtonProps, "battleState" | "hasActiveBattle" | "blocked">;
   inert: boolean;
   deckInspection?: DeckInspectButtonProps | undefined;
   isAutoplayEnabled: boolean;
@@ -62,6 +67,7 @@ export interface BattleClusterProps {
 }
 
 export function BattleCluster({
+  endTurn,
   inert,
   deckInspection,
   isAutoplayEnabled,
@@ -73,13 +79,19 @@ export function BattleCluster({
   onOpenGameMenu,
   onSkipCombat,
 }: BattleClusterProps) {
-  const { gold, hasWishOptions } = useBattleClusterState();
+  const { gold, hasWishOptions, battleState, hasActiveBattle } = useBattleClusterState();
   return (
     <div inert={inert} className="absolute top-4 right-4 z-[80] flex items-center gap-2">
       <GoldDisplay gold={gold} testId="battle-gold" />
       {deckInspection ? <DeckInspectButton {...deckInspection} /> : null}
       <BattleAutoplayToggle enabled={isAutoplayEnabled} onToggle={toggleAutoplayEnabled} />
       {hasInspectBoons ? <BattleBoonInspectButton open={boonInspectOpen} onToggle={toggleBoonInspect} /> : null}
+      <BattleEndTurnButton
+        {...endTurn}
+        battleState={battleState}
+        hasActiveBattle={hasActiveBattle}
+        blocked={inert || gameMenuOpen || boonInspectOpen}
+      />
       {isAlchemyDevBuild() ? (
         <BattleSkipCombatButton onSkip={onSkipCombat} disabled={gameMenuOpen || boonInspectOpen || hasWishOptions} />
       ) : null}

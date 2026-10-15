@@ -10,6 +10,7 @@ import { useStore } from "zustand";
 import type { BattlePresentationStore } from "../battle-presentation-store";
 import type { CardTransfer } from "../../../shared/types";
 import { getCardTransferPose } from "./card-transfer-motion";
+import { BattleSceneArtwork } from "../../../shared/ui/battle-scene-artwork";
 
 const TRANSFER_CARD_IMAGE_CLASS = "h-full w-full border border-border/80 object-cover";
 
@@ -52,27 +53,31 @@ const CardTransferOverlay = memo(function CardTransferOverlay({ transfer }: { tr
         rotateY,
       }}
     >
-      <div className="card-face absolute inset-0">
-        <img
-          src={transfer.card.art}
-          alt=""
-          draggable={false}
-          decoding="async"
-          className={cn(TRANSFER_CARD_IMAGE_CLASS, cardSurfaceClass)}
-        />
-      </div>
-      <div className="card-face-back absolute inset-0">
-        {transfer.kind === "discard" ? (
-          <DiscardCardBack />
-        ) : (
+      <div className="card-face battle-scene-piece absolute inset-0 rounded-shell-hero">
+        <BattleSceneArtwork className="h-full w-full">
           <img
-            src={cardBack}
+            src={transfer.card.art}
             alt=""
             draggable={false}
             decoding="async"
             className={cn(TRANSFER_CARD_IMAGE_CLASS, cardSurfaceClass)}
           />
-        )}
+        </BattleSceneArtwork>
+      </div>
+      <div className="card-face-back battle-scene-piece absolute inset-0 rounded-shell-hero">
+        <BattleSceneArtwork className="h-full w-full">
+          {transfer.kind === "discard" ? (
+            <DiscardCardBack />
+          ) : (
+            <img
+              src={cardBack}
+              alt=""
+              draggable={false}
+              decoding="async"
+              className={cn(TRANSFER_CARD_IMAGE_CLASS, cardSurfaceClass)}
+            />
+          )}
+        </BattleSceneArtwork>
       </div>
     </motion.div>
   );

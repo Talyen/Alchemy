@@ -14,10 +14,6 @@ import type { OptionsRouteCtx } from "@/app/screen-routes/route-ctx";
 const OptionsRoute = optionsScreenRoutes.options;
 
 interface OptionsScreenStubProps {
-  display: {
-    selectedAspectRatio: string;
-    onAspectRatioChange: (value: "16:9") => void;
-  };
   audio: {
     musicVolume: number;
     onMusicVolumeChange: (value: number) => void;
@@ -31,14 +27,10 @@ interface OptionsScreenStubProps {
 }
 
 vi.mock("@/features/alchemy/meta/screens", () => ({
-  OptionsScreen: ({ display, audio, saveData }: OptionsScreenStubProps) => (
+  OptionsScreen: ({ audio, saveData }: OptionsScreenStubProps) => (
     <div>
-      <output data-testid="aspect-ratio">{display.selectedAspectRatio}</output>
       <output data-testid="music-volume">{audio.musicVolume}</output>
       <output data-testid="clear-save-confirm">{String(saveData.showClearSaveConfirm)}</output>
-      <button type="button" onClick={() => display.onAspectRatioChange("16:9")}>
-        Change Aspect Ratio
-      </button>
       <button type="button" onClick={() => audio.onMusicVolumeChange(25)}>
         Change Music Volume
       </button>
@@ -56,6 +48,7 @@ vi.mock("@/features/alchemy/meta/screens", () => ({
 }));
 
 const routeContext: OptionsRouteCtx = {
+  onOpenBoards: vi.fn(),
   onClearSaveData: vi.fn(),
   onUnlockAllDevMode: vi.fn(),
   onBack: vi.fn(),
@@ -79,16 +72,14 @@ describe("options screen route", () => {
   it("binds saved settings and screen actions to the owning store", () => {
     render(<OptionsRoute {...routeContext} />);
 
-    expect(screen.getByTestId("aspect-ratio").textContent).toBe("auto");
     expect(screen.getByTestId("music-volume").textContent).toBe("50");
 
-    fireEvent.click(screen.getByRole("button", { name: "Change Aspect Ratio" }));
     fireEvent.click(screen.getByRole("button", { name: "Change Music Volume" }));
 
-    expect(useSettingsStore.getState()).toMatchObject({ selectedAspectRatio: "16:9", musicVolume: 25 });
+    expect(useSettingsStore.getState()).toMatchObject({ musicVolume: 25 });
 
     fireEvent.click(screen.getByRole("button", { name: "Reset Options" }));
-    expect(useSettingsStore.getState()).toMatchObject({ selectedAspectRatio: "auto", musicVolume: 50 });
+    expect(useSettingsStore.getState()).toMatchObject({ musicVolume: 50 });
   });
 
   it("resets device sizes alongside settings on Reset Options", () => {

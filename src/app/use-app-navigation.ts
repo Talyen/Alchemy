@@ -97,15 +97,26 @@ export function useReturnToRunNavigation({
     hasActiveBattle || resumeKind === "battle",
     resumeKind != null,
   );
-  const [navState, setNavState] = useState<{ prevScreen: Screen; optionsReturnScreen: Screen }>({
+  const [navState, setNavState] = useState<{
+    prevScreen: Screen;
+    optionsReturnScreen: Screen;
+    boardsFromOptions: boolean;
+  }>({
     prevScreen: renderedScreen,
     optionsReturnScreen: "menu",
+    boardsFromOptions: false,
   });
   let optionsReturnScreen = navState.optionsReturnScreen;
+  let boardsFromOptions = navState.boardsFromOptions;
   if (renderedScreen !== navState.prevScreen) {
-    const next = rememberNonOptionsScreen(renderedScreen, navState.optionsReturnScreen);
+    boardsFromOptions = renderedScreen === "collection" && navState.boardsFromOptions;
+    const returningFromBoards = renderedScreen === "options" && navState.boardsFromOptions;
+    const next =
+      boardsFromOptions || returningFromBoards
+        ? navState.optionsReturnScreen
+        : rememberNonOptionsScreen(renderedScreen, navState.optionsReturnScreen);
     optionsReturnScreen = next;
-    setNavState({ prevScreen: renderedScreen, optionsReturnScreen: next });
+    setNavState({ prevScreen: renderedScreen, optionsReturnScreen: next, boardsFromOptions });
   }
 
   const navigateToMeta = useCallback(
@@ -114,6 +125,12 @@ export function useReturnToRunNavigation({
     },
     [run],
   );
+
+  const openBoardsFromOptions = useCallback(() => {
+    setNavState((current) => ({ ...current, boardsFromOptions: true }));
+    run.routeCommands.meta.selectCollectionTab("boards");
+    run.goToScreen("collection");
+  }, [run]);
 
   const backFromOptions = useCallback(() => {
     const target = resolveOptionsBackTarget(optionsReturnScreen, hasActiveBattle, resumeKind != null);
@@ -130,7 +147,7 @@ export function useReturnToRunNavigation({
     run.goToScreen("menu");
   }, [run]);
 
-  const screenBackHandler = resolveScreenBackHandler({
+  const defaultScreenBackHandler = resolveScreenBackHandler({
     renderedScreen,
     returnToRunTarget,
     returnToRun,
@@ -140,10 +157,13 @@ export function useReturnToRunNavigation({
     goToScreen: run.goToScreen,
   });
 
+  const screenBackHandler =
+    renderedScreen === "collection" && boardsFromOptions ? () => run.goToScreen("options") : defaultScreenBackHandler;
   return {
     returnToRunScreen,
     optionsReturnScreen,
     navigateToMeta,
+    openBoardsFromOptions,
     backFromOptions,
     returnToRun,
     handleMainMenu,

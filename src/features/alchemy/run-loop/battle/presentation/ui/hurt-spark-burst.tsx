@@ -29,8 +29,8 @@ export function HurtSparkBurst({ flashToken, colors }: { flashToken: number; col
 
     const cw = w * HURT_SPARK_BURST_CONFIG.canvasScale;
     const ch = h * HURT_SPARK_BURST_CONFIG.canvasScale;
-    canvas.width = cw;
-    canvas.height = ch;
+    if (canvas.width !== cw) canvas.width = cw;
+    if (canvas.height !== ch) canvas.height = ch;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;

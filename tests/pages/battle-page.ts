@@ -23,7 +23,7 @@ export class BattlePage {
     this.manaPanel = this.page.getByTestId("mana-panel");
     this.playerHealthPanel = this.page.getByTestId("player-health");
     this.enemyHealthPanel = this.page.getByTestId("enemy-health");
-    this.endTurnBtn = this.page.getByRole("button", { name: "End Turn" });
+    this.endTurnBtn = this.page.locator("[data-battle-end-turn]");
     this.victoryHeading = this.page.getByRole("heading", { name: /^Victory/ });
     this.defeatHeading = this.page.getByRole("heading", { name: "Journey’s End" });
     this.blockChip = this.page.getByRole("button", { name: /^Block \d+$/ }).first();
@@ -85,12 +85,12 @@ export class BattlePage {
       // The last card can finish combat while the turn control is settling.
       if (!(await this.isBattleOver())) throw error;
     });
-    const confirm = this.page.getByRole("button", { name: "Confirm", exact: true });
-    if (await confirm.isVisible()) await confirm.click();
+    const confirm = this.page.getByRole("dialog", { name: "End turn?", exact: true });
+    if (!(await this.isBattleOver())) await confirm.getByRole("button", { name: "End Turn", exact: true }).click();
 
     await expect(async () => {
       if (await this.isBattleOver()) return;
-      const endTurn = this.page.getByRole("button", { name: "End Turn" });
+      const endTurn = this.endTurnBtn;
       await expect(endTurn).toBeEnabled({ timeout: 3_000 });
     }).toPass({ timeout: settleTimeout });
   }

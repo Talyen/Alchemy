@@ -26,6 +26,10 @@ function useRetainedScreenData<S extends RunDataScreen>(screen: S): RunScreenDat
   return data ?? shown;
 }
 
+export function useDraftDeckScreenData() {
+  return useRetainedScreenData("draft-deck");
+}
+
 export function useShopScreenData() {
   return useRetainedScreenData("shop");
 }

@@ -40,6 +40,11 @@ it("resolves TSX aliases and rejects layer violations and cycles using SWC", () 
     write("src/lib/view.tsx", 'import { value } from "@/lib/value"; export const view = <div>{value}</div>;');
     write("src/lib/type-a.ts", 'import type { B } from "@/lib/type-b"; export interface A {next?: B}');
     write("src/lib/type-b.ts", 'import type { A } from "@/lib/type-a"; export interface B {next?: A}');
+    write("src/features/alchemy/run-loop/run/room-visit-initialization.ts", "export const initialize = () => {};");
+    write(
+      "src/features/alchemy/run-loop/run/room-entry-commands.ts",
+      'import { initialize } from "./room-visit-initialization"; export const enter = initialize;',
+    );
     const valid = cruise();
     expect(valid.summary.violations).toEqual([]);
     expect(
@@ -62,7 +67,17 @@ it("resolves TSX aliases and rejects layer violations and cycles using SWC", () 
       "src/lib/mixed-b.ts",
       'import type { A } from "@/lib/mixed-a"; import { a } from "@/lib/mixed-a"; export interface B {next?: A} export const b=()=>a;',
     );
+    write(
+      "src/features/alchemy/shell/visit-bypass.ts",
+      'import { initialize } from "@/features/alchemy/run-loop/run/room-visit-initialization"; export const bypass = initialize;',
+    );
     const invalid = cruise();
+    expect(invalid.summary.violations).toContainEqual(
+      expect.objectContaining({
+        from: "src/features/alchemy/shell/visit-bypass.ts",
+        rule: expect.objectContaining({ name: "visits-initialize-only-at-room-entry" }),
+      }),
+    );
     expect(
       invalid.summary.violations.some(
         (violation: { from: string; rule: { name: string } }) =>

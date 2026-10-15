@@ -45,64 +45,56 @@ describe("LabyrinthMapSchema", () => {
   });
 });
 
-describe("MaterialInventorySchema", () => {
-  it("repairs corrupt materials without discarding usable inventory", () => {
-    expect(MaterialInventorySchema.parse({ wood: 5, iron: -1, herbs: "bad", gems: Number.NaN })).toEqual({
-      ...emptyInventory(),
-      wood: 5,
-    });
+it("MaterialInventorySchema repairs corrupt materials without discarding usable inventory", () => {
+  expect(MaterialInventorySchema.parse({ wood: 5, iron: -1, herbs: "bad", gems: Number.NaN })).toEqual({
+    ...emptyInventory(),
+    wood: 5,
   });
 });
 
-describe("UnlockedTalentsSchema", () => {
-  it("drops mismatched, unknown, and placeholder talent ids", () => {
-    const result = UnlockedTalentsSchema.safeParse({
-      physical: ["physical-brute-force", "burn-dmg-1", "unknown-talent"],
-      consume: ["consume-6"],
+it("UnlockedTalentsSchema drops mismatched, unknown, and placeholder talent ids", () => {
+  const result = UnlockedTalentsSchema.safeParse({
+    physical: ["physical-brute-force", "burn-dmg-1", "unknown-talent"],
+    consume: ["consume-6"],
+    burn: ["burn-dmg-1"],
+    armor: "bad",
+  });
+
+  expect(result.success).toBe(true);
+  if (result.success) {
+    expect(result.data).toEqual({
+      physical: ["physical-brute-force"],
       burn: ["burn-dmg-1"],
-      armor: "bad",
     });
-
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data).toEqual({
-        physical: ["physical-brute-force"],
-        burn: ["burn-dmg-1"],
-      });
-    }
-  });
+  }
 });
 
-describe("CompletedDifficultiesSchema", () => {
-  it("preserves earned unlocks while repairing individual heroes and excluding inherited progress", () => {
-    const saved = Object.assign(Object.create({ ranger: ["difficulty-2"] }), {
-      knight: ["difficulty-2", 42, "unknown", "difficulty-1", "difficulty-2"],
-      rogue: "bad",
-      wizard: ["difficulty-3"],
-      stranger: ["difficulty-1"],
-    });
-    const defaults = Object.fromEntries(CHARACTER_IDS.map((id) => [id, []]));
-    expect(CompletedDifficultiesSchema.parse(saved)).toEqual({
-      ...defaults,
-      knight: ["difficulty-2", "difficulty-1"],
-      wizard: ["difficulty-3"],
-    });
-    const first = CompletedDifficultiesSchema.parse(null);
-    first.knight.push("difficulty-1");
-    expect(CompletedDifficultiesSchema.parse(null)).toEqual(defaults);
+it("CompletedDifficultiesSchema preserves earned unlocks while repairing individual heroes and excluding inherited progress", () => {
+  const saved = Object.assign(Object.create({ ranger: ["difficulty-2"] }), {
+    knight: ["difficulty-2", 42, "unknown", "difficulty-1", "difficulty-2"],
+    rogue: "bad",
+    wizard: ["difficulty-3"],
+    stranger: ["difficulty-1"],
   });
+  const defaults = Object.fromEntries(CHARACTER_IDS.map((id) => [id, []]));
+  expect(CompletedDifficultiesSchema.parse(saved)).toEqual({
+    ...defaults,
+    knight: ["difficulty-2", "difficulty-1"],
+    wizard: ["difficulty-3"],
+  });
+  const first = CompletedDifficultiesSchema.parse(null);
+  first.knight.push("difficulty-1");
+  expect(CompletedDifficultiesSchema.parse(null)).toEqual(defaults);
 });
 
-describe("deduplicateFromSet and deduplicatedSetArraySchema", () => {
-  it("repairs malformed discovery IDs in first-seen order for both catalog forms", () => {
-    const ids = ["knight", "rogue"] as const;
-    const saved = ["rogue", null, "knight", "rogue", 42, "unknown", "toString"];
-    for (const valid of [ids, new Set(ids)]) {
-      expect(deduplicateFromSet(saved, valid)).toEqual(["rogue", "knight"]);
-      const schema = deduplicatedSetArraySchema(valid);
-      expect(schema.parse(saved)).toEqual(["rogue", "knight"]);
-      expect(schema.parse(null)).toEqual([]);
-    }
-    expect(saved).toEqual(["rogue", null, "knight", "rogue", 42, "unknown", "toString"]);
-  });
+it("deduplicateFromSet and deduplicatedSetArraySchema repairs malformed discovery IDs in first-seen order for both catalog forms", () => {
+  const ids = ["knight", "rogue"] as const;
+  const saved = ["rogue", null, "knight", "rogue", 42, "unknown", "toString"];
+  for (const valid of [ids, new Set(ids)]) {
+    expect(deduplicateFromSet(saved, valid)).toEqual(["rogue", "knight"]);
+    const schema = deduplicatedSetArraySchema(valid);
+    expect(schema.parse(saved)).toEqual(["rogue", "knight"]);
+    expect(schema.parse(null)).toEqual([]);
+  }
+  expect(saved).toEqual(["rogue", null, "knight", "rogue", 42, "unknown", "toString"]);
 });

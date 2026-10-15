@@ -41,7 +41,7 @@ export function ShineBorder({
       {...props}
     >
       <div
-        className="shine-border-paint absolute inset-0 overflow-hidden rounded-[inherit]"
+        className="shine-border-paint absolute inset-0 overflow-hidden rounded-[inherit] will-change-transform"
         style={{
           backgroundColor: firstColor,
           backgroundImage: `radial-gradient(${gradientStops})`,

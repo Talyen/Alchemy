@@ -25,7 +25,6 @@ export interface HomesteadSaveFixture {
   saveSchemaVersion: number;
   gameBuildVersion: string;
   contentVersion: number;
-  selectedAspectRatio: string;
   displayMode: string;
   brightness: number;
   // Optional: present on real saves, omitted here so the load-tolerant
@@ -70,11 +69,21 @@ export function saveEnvelopeFixture(overrides: Record<string, unknown> = {}) {
   // `wildcard` below is a real roster member (see GEAR_CHARACTER_IDS and the
   // CompletedDifficultiesSchema test), not dead data.
   return {
+    // Node-side Playwright seeds must not import runtime catalogs or artwork.
+    collectedBoardIds: ["acorn"],
+    boardSelection: { kind: "board" as const, boardId: "acorn" },
+    activeBoardId: "acorn",
+    lastRandomBoardId: null,
+    pendingBoardRewardId: null,
+    discoveredCardIds: [] as SaveData["discoveredCardIds"],
+    encounteredEnemyIds: [] as SaveData["encounteredEnemyIds"],
+    discoveredTrinketIds: [] as SaveData["discoveredTrinketIds"],
+    discoveredUniqueIds: [] as SaveData["discoveredUniqueIds"],
+    finishedRunCharacters: [] as SaveData["finishedRunCharacters"],
     steamAccountId: null,
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
     contentVersion: CURRENT_CONTENT_VERSION,
-    selectedAspectRatio: "auto",
     displayMode: "borderless-fullscreen",
     brightness: 100,
     musicVolume: 50,

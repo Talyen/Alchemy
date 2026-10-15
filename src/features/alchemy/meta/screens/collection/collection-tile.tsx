@@ -194,7 +194,7 @@ function CollectionTileMedia({ item, flipped }: { item: CollectionTileItem; flip
         flipped={flipped}
         className="aspect-[3/4] w-full"
         front={<TileImage item={item} className={cn("h-full", cardArtImageClass)} />}
-        back={<img src={cardBack} alt="" className={cn("block h-full w-full", cardArtImageClass)} />}
+        back={<img src={cardBack} alt="" decoding="async" className={cn("block h-full w-full", cardArtImageClass)} />}
       />
     );
   }
@@ -218,8 +218,9 @@ function TileImage({ item, className }: { item: CollectionTileItem; className: s
     <img
       src={item.art || undefined}
       alt={item.title}
+      decoding="async"
       className={cn(
-        "block w-full transition duration-300",
+        "block w-full transition-opacity duration-300",
         className,
         item.discovered ? "opacity-100" : lockedHoverPreviewClass,
       )}

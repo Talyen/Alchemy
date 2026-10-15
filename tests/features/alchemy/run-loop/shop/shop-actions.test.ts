@@ -1,4 +1,5 @@
 import "../../../../helpers/mock-audio";
+import { initializeShopForTest } from "../../../../helpers/visit-initialization";
 
 import { describe, expect, it } from "vitest";
 import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
@@ -123,7 +124,7 @@ describe("alchemist shop actions", () => {
       });
       setAlchemistState(createInitialAlchemistState());
       setRunProgress({
-        completedResearch: { "botanical-distillation": 4 },
+        completedResearch: { ...readRunProfile(defaultGameSession).completedResearch, "botanical-distillation": 4 },
         effects: computeHomesteadEffects({}, {}, { "botanical-distillation": 4 }),
       });
       const actions = buildActions();
@@ -425,7 +426,7 @@ describe("trinket shop actions", () => {
         for (const trinket of trinketLibrary.slice(buyLast ? 1 : 0)) gear.addTrinket(trinket.id);
       });
       const actions = buildActions();
-      actions.trinket.initialize();
+      initializeShopForTest("trinket", defaultGameSession);
       if (buyLast) {
         const trinket = trinketLibrary[0]!;
         expect(actions.trinket.buy(trinket, shopItemSlotKey(trinket.id, 0))).toBe(true);

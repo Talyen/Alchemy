@@ -61,11 +61,5 @@ export const manaTalents = [
     "ShieldHalf",
     setEffect("manaShellActive", true),
   ),
-  t(
-    "mana-arcane-mending",
-    "Arcane Mending",
-    "Gaining Mana also restores Health",
-    "Wand",
-    setEffect("healthPerMana", 1),
-  ),
+  t("mana-arcane-mending", "Arcane Mending", "Restore 1 Health per Mana gained", "Wand", setEffect("healthPerMana", 1)),
 ];

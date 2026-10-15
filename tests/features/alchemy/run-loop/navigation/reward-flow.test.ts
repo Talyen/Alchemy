@@ -12,34 +12,30 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 
 describe("reward flow orchestration", () => {
-  describe("createEmptyRewardState", () => {
-    it("accepts optional destinations", () => {
-      const result = createEmptyRewardState(["Campfire", "Mystery"]);
-      expect(result.destinations).toEqual(["Campfire", "Mystery"]);
-    });
+  it("createEmptyRewardState accepts optional destinations", () => {
+    const result = createEmptyRewardState(["Campfire", "Mystery"]);
+    expect(result.destinations).toEqual(["Campfire", "Mystery"]);
   });
 
-  describe("createNextRewardState", () => {
-    it("clears choices, gold, and selection but keeps destinations and selectedBossId", () => {
-      const previous = {
-        ...createEmptyRewardState(["Normal Combat", "Campfire"]),
-        choices: [{ id: "card-a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: {} }],
-        gold: 12,
-        selectedId: "card-a",
-        rewardType: "trinket" as const,
-        selectedBossId: "boss-1",
-      };
+  it("createNextRewardState clears choices, gold, and selection but keeps destinations and selectedBossId", () => {
+    const previous = {
+      ...createEmptyRewardState(["Normal Combat", "Campfire"]),
+      choices: [{ id: "card-a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: {} }],
+      gold: 12,
+      selectedId: "card-a",
+      rewardType: "trinket" as const,
+      selectedBossId: "boss-1",
+    };
 
-      const next = createNextRewardState(previous);
+    const next = createNextRewardState(previous);
 
-      expect(next.choices).toEqual([]);
-      expect(next.gold).toBe(0);
-      expect(next.selectedId).toBeNull();
-      expect(next.rewardType).toBe("card");
-      expect(next.destinations).toEqual(["Normal Combat", "Campfire"]);
-      expect(next.selectedBossId).toBe("boss-1");
-      expect(next.materials).toEqual(emptyInventory());
-    });
+    expect(next.choices).toEqual([]);
+    expect(next.gold).toBe(0);
+    expect(next.selectedId).toBeNull();
+    expect(next.rewardType).toBe("card");
+    expect(next.destinations).toEqual(["Normal Combat", "Campfire"]);
+    expect(next.selectedBossId).toBe("boss-1");
+    expect(next.materials).toEqual(emptyInventory());
   });
 
   describe("getCompanionCardChoices", () => {

@@ -51,6 +51,7 @@ export function ArmoryOverlays({
               <img
                 src={gearDefinitions[heldPending.instance.definitionId]?.art}
                 alt=""
+                decoding="async"
                 className="mx-auto h-24 w-24 rounded-xl object-contain"
               />
               {heldCharacterName ? (

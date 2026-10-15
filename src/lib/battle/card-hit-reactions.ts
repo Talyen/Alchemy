@@ -22,7 +22,7 @@ function applyBurnDamageRiders(
   const canAward = !enemyWasBurningBefore && !forgeTriggers?.has("emberforged");
   if (canAward) forgeTriggers?.add("emberforged");
   const nextState = canAward ? applyEmberforgedPayout(state, combatTexts, false) : state;
-  if (rollBattleChance(state.talentEffects.burnStunChance, state)) {
+  if (nextState.enemyHealth > 0 && rollBattleChance(state.talentEffects.burnStunChance, nextState)) {
     return resolveFollowUpHit(
       nextState,
       { source: "talent-derived", damageType: "stun", amount: modifiedDamage },
@@ -106,12 +106,10 @@ export function applyCardHitReactions(
     );
   }
 
-  const enemyWasStunned = eligibility.enemyCC.stunSkipTurns > 0;
   const cardHealing = request.origin === "played-card" || request.origin === "triggered-card";
   const companionAttack = request.origin === "companion";
   if (
     effect.lifesteal ||
-    (effect.damageType === "physical" && enemyWasStunned && facts.eligibility.talentEffects.physicalLeechVsStunned) ||
     (effect.damageType === "physical" &&
       !companionAttack &&
       eligibility.playerHealth < eligibility.playerMaxHealth / 2 &&
@@ -122,24 +120,6 @@ export function applyCardHitReactions(
       effect.damageType === "poison" ? facts.healthDamage : modifiedDamage,
       combatTexts,
       cardHealing && !!effect.lifesteal,
-      !companionAttack && !!effect.lifesteal,
-    );
-  }
-
-  if (
-    modifiedDamage > 0 &&
-    companionAttack &&
-    eligibility.enemyCC.freezeSkipTurns > 0 &&
-    eligibility.talentEffects.companionFreezeDamageVsFrozen > 0
-  ) {
-    nextState = resolveFollowUpHit(
-      nextState,
-      {
-        source: "talent-fixed",
-        damageType: "freeze",
-        amount: eligibility.talentEffects.companionFreezeDamageVsFrozen,
-      },
-      combatTexts,
     );
   }
 

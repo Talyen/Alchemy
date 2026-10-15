@@ -1,6 +1,6 @@
 import { useEffect, useRef, type KeyboardEvent, type RefObject } from "react";
 
-import { focusableControls, focusControl, focusScreenStart } from "./focus-navigation";
+import { focusableControls, focusControl, focusScreenStart, isFocusAvailable } from "./focus-navigation";
 
 // A desktop pause menu can cover a still-pending choice. Only the most recently
 // mounted interactive dialog may reclaim focus; covered dialogs stay resumable.
@@ -16,17 +16,31 @@ export function useDialogFocus(returnFocusRef?: RefObject<HTMLElement | null>) {
       dialogPanels.findLast((candidate) => candidate.isConnected && !candidate.closest("[inert]")) === panel;
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const returnTarget = returnFocusRef?.current ?? previous;
-    const cancel =
-      panel?.querySelector<HTMLElement>("[data-dialog-cancel], [data-dialog-initial-focus]") ??
-      panel?.querySelector<HTMLElement>("button:not(:disabled), [tabindex='0']");
+    // Controls can be disabled, removed, or replaced while a dialog stays mounted.
+    const initialControl = () =>
+      [...panel.querySelectorAll<HTMLElement>("[data-dialog-cancel], [data-dialog-initial-focus]")].find(
+        isFocusAvailable,
+      ) ??
+      focusableControls(panel)[0] ??
+      panel;
     let frame = 0;
     const focusPanel = () => {
       if (!ownsFocus()) return;
-      if (getComputedStyle(cancel ?? panel).visibility === "hidden") {
+      if (getComputedStyle(panel).visibility === "hidden") {
         frame = requestAnimationFrame(focusPanel);
         return;
       }
-      (cancel ?? panel).focus();
+      const control = initialControl();
+      control.focus();
+      // The panel can become visible before its controls have layout boxes.
+      // Do not finish initial focus on the fallback while a preferred action
+      // is still preparing; disabled actions continue to use the fallback.
+      if (
+        document.activeElement !== control ||
+        (control === panel &&
+          panel.querySelector("[data-dialog-cancel]:not(:disabled), [data-dialog-initial-focus]:not(:disabled)"))
+      )
+        frame = requestAnimationFrame(focusPanel);
     };
     // Portaled panels mount invisibly to measure and decode their artwork.
     const content = panel?.closest("[data-modal-content]");
@@ -39,7 +53,7 @@ export function useDialogFocus(returnFocusRef?: RefObject<HTMLElement | null>) {
     if (content) observer.observe(content, { attributes: true, attributeFilter: ["inert"] });
     const keepFocus = (event: FocusEvent) => {
       if (!ownsFocus()) return;
-      if (event.target instanceof Node && !panel?.contains(event.target)) (cancel ?? panel)?.focus();
+      if (event.target instanceof Node && !panel.contains(event.target)) initialControl().focus();
     };
     document.addEventListener("focusin", keepFocus);
     return () => {
@@ -47,12 +61,19 @@ export function useDialogFocus(returnFocusRef?: RefObject<HTMLElement | null>) {
       observer.disconnect();
       cancelAnimationFrame(frame);
       document.removeEventListener("focusin", keepFocus);
+      // Opening from the page itself is a focus state to restore, not a lost opener.
+      if (!returnTarget || returnTarget === document.body || returnTarget === document.documentElement) {
+        const active = document.activeElement;
+        if (active instanceof HTMLElement && panel.contains(active)) active.blur();
+        return;
+      }
       if (focusControl(returnTarget)) return;
       // A route change may remove the opener while its screen is still inert.
       requestAnimationFrame(() => {
         const active = document.activeElement;
         if (active instanceof HTMLElement && active !== document.body && active.isConnected && !panel?.contains(active))
           return;
+        if (focusControl(returnTarget)) return;
         focusScreenStart();
       });
     };
@@ -61,6 +82,11 @@ export function useDialogFocus(returnFocusRef?: RefObject<HTMLElement | null>) {
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key !== "Tab") return;
     const elements = focusableControls(event.currentTarget);
+    if (elements.length === 0) {
+      event.preventDefault();
+      event.currentTarget.focus();
+      return;
+    }
     const first = elements[0];
     const last = elements.at(-1);
     if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget)) {

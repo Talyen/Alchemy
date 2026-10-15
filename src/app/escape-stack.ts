@@ -29,6 +29,7 @@ function refreshSortedCache(): void {
 }
 
 function handleWindowKeyDown(event: KeyboardEvent) {
+  // oxlint-disable-next-line typescript/no-deprecated -- Some IME commit events expose only legacy code 229.
   if (event.key !== "Escape" || event.isComposing || event.keyCode === 229) return;
   if (event.repeat) {
     event.preventDefault();

@@ -190,13 +190,14 @@ export async function captureBrowser(session, root = ROOT, key = taskKey(), requ
   await save(file, record);
   if (previous?.guardian && (await processInfo(previous.guardian.pid))?.started === previous.guardian.started) {
     await save(file, { ...record, guardian: previous.guardian });
-    return;
+    return !previous;
   }
   const child = spawn(process.execPath, [launcher, "--watch", file], { detached: true, stdio: "ignore" });
   child.unref();
   const guardian = await processInfo(child.pid);
   if (!guardian) throw new Error("Browser guardian did not start; preserve the session record");
   await save(file, { ...record, guardian: { pid: child.pid, started: guardian.started } });
+  return !previous;
 }
 export async function watchBrowser(file) {
   for (;;) {
