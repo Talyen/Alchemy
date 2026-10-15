@@ -13,6 +13,13 @@ input ownership and detached command results stay at the transaction boundary.
 Freezing caches fully traversed objects, so later revisions traverse only changed
 branches and retain structural sharing.
 
+Keep committed values as plain records, arrays, and primitives. Functions,
+accessors, class instances, and mutable built-ins such as `Map`, `Set`, and `Date`
+do not belong in gameplay snapshots. Freezing an object does not make a mutable
+built-in's internal contents immutable. Execution capabilities belong in the
+command context; detached command results have a separate, broader contract
+under [command atomicity](#command-atomicity).
+
 | Aggregate region | Concern                                                                                                                                                                                    | Lifetime                                                                                                           |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
 | `run`            | Deck, HP, acts, run Boons on `run.activeRun`; presentation screen on `run.navigation`; one resumable active run                                                                            | Resets on run termination                                                                                          |
@@ -69,6 +76,11 @@ failures are logged independently and cannot suppress later subscribers, autosav
 or command completion effects. Subscription changes during gameplay notification
 apply to the next commit. Execution failures still roll back; explicit
 `afterCommit` failures still propagate after the committed state is retained.
+
+Gameplay and save-status observers run during command publication while the
+command guard is still held. They may read the installed revision, but must not
+dispatch another gameplay command. Put command follow-ups in `afterCommit` or
+after the original dispatcher returns, when the guard has been released.
 
 Domain operations receive the transaction explicitly and compose inside one command;
 a command body must not call another command. Transactional checks that guard
@@ -140,6 +152,11 @@ plays commit before presentation. `commitEndTurn` resolves the turn and its
 Companion follow-up with the engine-owned `resolveBattleAction` end-turn request,
 awards Dodge XP only after acceptance, and publishes the result atomically before
 discard or enemy animation.
+
+`BattleState` is the engine's execution shape, which may carry RNG and action
+callbacks. Use `battleSnapshot(state)` when converting engine or fixture state
+to committed data; a type assertion does not remove executable fields. The
+helper strips execution metadata without drawing RNG or resolving gameplay.
 
 Playback consumes detached `BattleTurnFrame` values and updates only
 `battle-presentation-store.displayedBattle`; cancellation or failed animation

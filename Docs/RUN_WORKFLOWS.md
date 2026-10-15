@@ -101,6 +101,12 @@ Inside an existing reward, shop, or mystery command, call the mutator with that 
 
 Resolve battle gameplay and commit its RNG/XP before starting presentation. Return detached frames for playback; never commit gameplay from a draw or animation callback. Older activity fields are read only by migration; unfinished legacy combat is abandoned after winner selection, without executing obsolete rules.
 
+Fixtures entering the gameplay aggregate follow the same snapshot boundary as
+production. Convert an engine fixture with `battleSnapshot(createBattleState(...))`
+before assigning it to a battle activity. Keep its RNG and callbacks in the
+resolution context; do not cast executable `BattleState` into `BattleSnapshot`.
+Pure engine tests can continue to use the execution shape directly.
+
 ---
 
 ## Campfire brewing and Transmutation visits
