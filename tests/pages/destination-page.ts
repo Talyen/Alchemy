@@ -9,7 +9,7 @@ export class DestinationPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.heading = this.page.getByRole("heading", { name: /^Act \d+-\d+$/ });
+    this.heading = this.page.getByRole("heading", { name: "Choose Destination" });
   }
 
   async expectVisible(timeout = 5000) {

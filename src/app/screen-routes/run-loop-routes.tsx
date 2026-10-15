@@ -132,7 +132,6 @@ function RewardsScreenRoute({ routeCommands }: RunLoopRouteCtx) {
     <RewardsScreen
       rewardState={r.rewardState}
       claimInFlight={r.rewardClaimInFlight}
-      clearedAct={r.clearedAct}
       rewardMaterials={r.rewardMaterials}
       onSkip={commands.skip}
       onClaimReward={commands.claimChoice}
@@ -153,7 +152,6 @@ function DestinationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
     <DestinationScreen
       rewardState={r.rewardState}
       currentAct={r.currentAct}
-      destinationIndexInAct={r.destinationIndexInAct}
       onChoose={commands.choose}
       onPrepare={commands.prepare}
     />

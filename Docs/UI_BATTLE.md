@@ -97,10 +97,8 @@ use two columns, with notices spanning both. Impact and audio cues follow each
 incoming action's actual events, never accumulated display totals. Resource
 payments and removals do not invent damage impacts.
 
-Critical damage uses larger, heavier, italic numbers with a slight angle and a
-stronger dark outline, without a visible text label. The damage type retains its
-ordinary color and icon. The distinction remains visible with muted sound and
-reduced motion, and the accessible label includes Critical.
+Critical damage uses ordinary typed damage text, retaining its damage color and
+icon. Critical remains in the accessible label and uses the existing sound cue.
 
 Each action appears immediately above card flights, anchored to its moving portrait.
 Measured layout moves earlier bursts upward without changing their values or

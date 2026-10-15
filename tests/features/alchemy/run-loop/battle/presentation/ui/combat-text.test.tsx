@@ -42,7 +42,7 @@ describe("CombatTextRail", () => {
     },
   );
 
-  it("distinguishes Critical damage visibly and accessibly without changing typed damage color", () => {
+  it("keeps critical and ordinary damage visually consistent with an accessible critical description", () => {
     const burst: CombatTextBurst = {
       id: "critical-hit",
       target: "enemy",
@@ -59,11 +59,7 @@ describe("CombatTextRail", () => {
     expect(entries[0]?.getAttribute("aria-label")).toBe("Critical Stun: -22");
     expect(entries[1]?.textContent).toBe("-10");
     expect(entries[1]?.getAttribute("aria-label")).toBe("Stun: -10");
-    expect(entries[0]?.classList.contains("font-black")).toBe(true);
-    expect(entries[0]?.classList.contains("text-amber-300")).toBe(true);
-    expect(entries[1]?.classList.contains("text-amber-300")).toBe(true);
-    expect(entries[1]?.className).not.toContain("font-black");
-    expect(entries[0]?.getAttribute("data-stat")).toBe(entries[1]?.getAttribute("data-stat"));
+    expect(entries[0]?.className).toBe(entries[1]?.className);
   });
 
   it("keeps existing action nodes and typed numbers when a new action appears", () => {

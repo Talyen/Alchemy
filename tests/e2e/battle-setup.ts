@@ -35,7 +35,7 @@ export async function startAtDestination(
     }),
   });
   if (!loaded) await navigateToGame(page);
-  await expect(page.getByRole("heading", { name: /^Act \d+-\d+$/ })).toBeVisible({ timeout: 8000 });
+  await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 8000 });
   await expect(page.getByRole("button", { name: destinationLabel(options.forceDestination), exact: true })).toBeVisible(
     { timeout: 3000 },
   );
