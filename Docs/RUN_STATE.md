@@ -296,8 +296,9 @@ adapter uses the platform backend by default. Sessions can inject feedback callb
 independent sessions default to silent presentation. Device-local display preferences
 and the local error buffer remain application services.
 
-`await session.dispose()` removes subscriptions, cancels autosave/navigation work,
-clears lifecycle channels, drains already-submitted saves, and disables further
+`GameSession` supports `await using` and explicit `await session.dispose()`: both
+remove subscriptions, cancel autosave/navigation work,
+clear lifecycle channels, drain already-submitted saves, and disable further
 writes. Commands and reads reject disposed handles. Disposing one session cannot
 cancel another session’s timers or writes. `session-lifetime.ts` owns resource
 registration and the clock's timer inventory. Closing the lifetime revokes feedback
@@ -310,6 +311,8 @@ borrow the same lifetime predicate. Disposal during notification revokes later
 callbacks in that publication as well as queued reentrant events. Restore and
 teardown also stop their remaining presentation work once their session closes;
 already-submitted storage work still drains.
+Notification-channel subscriptions and registered cleanup handles remain callable and also
+support `using`; `lib/cleanup.ts` owns their idempotent explicit/scoped release.
 
 ## Activity and rewards
 

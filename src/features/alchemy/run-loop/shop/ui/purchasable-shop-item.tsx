@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import { getGearInstanceTitle } from "@/lib/gear";
@@ -26,7 +26,7 @@ export function PurchasableCardItem({
   onBuy,
   widthClass = getTileWidthClass("collection"),
 }: BasePurchasableProps & { card: BattleCard; widthClass?: string }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const purchaseState = getShopPurchaseState(price, gold, purchased);
   const { canPurchase } = purchaseState;
   const media = (
@@ -34,8 +34,8 @@ export function PurchasableCardItem({
       card={card}
       onClick={canPurchase ? onBuy : undefined}
       ariaDisabled={!canPurchase}
-      ariaLabel={displayText(
-        getShopItemAriaLabel(getCardDisplayTitle(card), price, purchased, purchaseState.canAfford),
+      ariaLabel={i18n.displayText(
+        i18n.read(() => getShopItemAriaLabel(getCardDisplayTitle(card), price, purchased, purchaseState.canAfford)),
       )}
       shimmerActive={false}
       shimmerToken={undefined}
@@ -55,7 +55,7 @@ export function PurchasableGearItem({
   purchased,
   onBuy,
 }: BasePurchasableProps & { instance: GearInstance }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const purchaseState = getShopPurchaseState(price, gold, purchased);
   const { canPurchase } = purchaseState;
   const media = (
@@ -66,8 +66,15 @@ export function PurchasableGearItem({
       shine={!purchased}
       ariaDisabled={!canPurchase}
       onClick={canPurchase ? onBuy : undefined}
-      ariaLabel={displayText(
-        getShopItemAriaLabel(displayText(getGearInstanceTitle(instance)), price, purchased, purchaseState.canAfford),
+      ariaLabel={i18n.displayText(
+        i18n.read(() =>
+          getShopItemAriaLabel(
+            i18n.displayText(getGearInstanceTitle(instance)),
+            price,
+            purchased,
+            purchaseState.canAfford,
+          ),
+        ),
       )}
     >
       <ShopPriceChip price={price} purchased={purchased} purchaseState={purchaseState} />
@@ -83,7 +90,7 @@ export function PurchasableTrinketItem({
   purchased,
   onBuy,
 }: BasePurchasableProps & { trinket: TrinketEntry }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const purchaseState = getShopPurchaseState(price, gold, purchased);
   const { canPurchase } = purchaseState;
   const media = (
@@ -94,8 +101,10 @@ export function PurchasableTrinketItem({
       shine={!purchased}
       ariaDisabled={!canPurchase}
       onClick={canPurchase ? onBuy : undefined}
-      ariaLabel={displayText(
-        getShopItemAriaLabel(displayText(trinket.title), price, purchased, purchaseState.canAfford),
+      ariaLabel={i18n.displayText(
+        i18n.read(() =>
+          getShopItemAriaLabel(i18n.displayText(trinket.title), price, purchased, purchaseState.canAfford),
+        ),
       )}
     >
       <ShopPriceChip price={price} purchased={purchased} purchaseState={purchaseState} />

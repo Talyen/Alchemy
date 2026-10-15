@@ -1,4 +1,3 @@
-import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { useLayoutEffect, useRef, type CSSProperties } from "react";
@@ -65,7 +64,7 @@ export function ManaPanel({
   maxMana: number;
   presentation: BattlePresentationStore;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const reduced = useReducedMotionPreference();
   const mounted = useRef(false);
   const stored = useStore(presentation, (state) => state.manaPresentation);
@@ -83,7 +82,7 @@ export function ManaPanel({
   return (
     <button
       type="button"
-      aria-label={gameText("ui.mana-dock.1", "Inspect Mana: {{value0}} / {{value1}}", {
+      aria-label={i18n.text("ui.mana-dock.1", "Inspect Mana: {{value0}} / {{value1}}", {
         value0: mana,
         value1: maxMana,
       })}
@@ -144,7 +143,11 @@ export function ManaPanel({
           </span>
           {gem.index === MANA_DOCK_VISIBLE_COUNT - 1 && state.hidden > 0 ? (
             <span key={`overflow-${state.revision}`} className="mana-dock-overflow">
-              <GameMessage id="ui.mana-dock.s1" defaultValue="+<part0/>" parts={{ part0: displayText(state.hidden) }} />
+              <GameMessage
+                id="ui.mana-dock.s1"
+                defaultValue="+<part0/>"
+                parts={{ part0: i18n.displayText(state.hidden) }}
+              />
             </span>
           ) : null}
         </span>
@@ -163,7 +166,7 @@ export function ManaPanel({
             <GameMessage
               id="ui.mana-dock.s3"
               defaultValue="<part0/> bonus Mana"
-              parts={{ part0: displayText(mana - maxMana) }}
+              parts={{ part0: i18n.displayText(mana - maxMana) }}
             />
           </span>
         ) : null}
@@ -172,7 +175,7 @@ export function ManaPanel({
             <GameMessage
               id="ui.mana-dock.s4"
               defaultValue="<part0/> crystals beyond the visible <part1/>"
-              parts={{ part0: displayText(state.hidden), part1: displayText(MANA_DOCK_VISIBLE_COUNT) }}
+              parts={{ part0: i18n.displayText(state.hidden), part1: i18n.displayText(MANA_DOCK_VISIBLE_COUNT) }}
             />
           </span>
         ) : null}

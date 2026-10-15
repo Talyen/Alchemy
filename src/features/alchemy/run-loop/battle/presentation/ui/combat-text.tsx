@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import { createElement, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
@@ -160,13 +160,13 @@ export function CombatTextRail({ bursts }: { bursts: CombatTextBurst[] }) {
 }
 
 function CombatTextEntry({ entry, staticMotion }: { entry: FloatingCombatText; staticMotion: boolean }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const icon = getCombatTextIcon(entry);
   const leading = getCombatTextLeadingIcon(entry);
   return (
     <div
       data-testid="combat-text"
-      aria-label={displayText(getCombatTextAccessibleLabel(entry))}
+      aria-label={i18n.displayText(i18n.read(() => getCombatTextAccessibleLabel(entry)))}
       data-kind={entry.kind}
       data-stat={entry.stat}
       className={cn(
@@ -178,7 +178,7 @@ function CombatTextEntry({ entry, staticMotion }: { entry: FloatingCombatText; s
           (staticMotion ? "combat-text-critical-static" : "combat-text-critical"),
       )}
     >
-      {displayText(
+      {i18n.displayText(
         leading
           ? createElement(leading, {
               "aria-hidden": true,
@@ -187,7 +187,7 @@ function CombatTextEntry({ entry, staticMotion }: { entry: FloatingCombatText; s
             })
           : null,
       )}
-      {displayText(
+      {i18n.displayText(
         icon
           ? createElement(icon, {
               style: {
@@ -211,7 +211,7 @@ function CombatTextEntry({ entry, staticMotion }: { entry: FloatingCombatText; s
                 : `${entry.reservedDigits + (/^[+-]/.test(entry.displayText) ? 1 : 0)}ch`,
           }}
         >
-          {displayText(entry.displayText)}
+          {i18n.displayText(entry.displayText)}
         </span>
       ) : null}
     </div>

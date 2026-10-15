@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TextAnimate } from "@/components/ui/text-animate";
@@ -45,7 +45,7 @@ function MysteryEventChoiceButton({
   choice: MysteryChoice;
   onPick: (choice: MysteryChoice) => void;
 } & LookupProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible();
 
   return (
@@ -64,7 +64,7 @@ function MysteryEventChoiceButton({
         data-testid="mystery-choice"
         onClick={() => onPick(choice)}
       >
-        {displayText(choice.label)}
+        {i18n.displayText(choice.label)}
       </Button>
       <PortaledTooltip triggerRef={triggerRef} visible={visible} maxWidthFraction={0.4}>
         <MysteryEffectList
@@ -91,7 +91,7 @@ export function MysteryEventIntro({
   findTrinket: (id: string) => TrinketEntry | undefined;
   onPick: (choice: MysteryChoice) => void;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
   const featuredCard = findCard(event.id);
   const isHovered = hoveredCardId === event.id;
@@ -115,7 +115,7 @@ export function MysteryEventIntro({
         >
           <img
             src={event.art}
-            alt={displayText(event.title)}
+            alt={i18n.displayText(event.title)}
             width={CONFIG.EVENT_IMAGE_WIDTH}
             height={CONFIG.EVENT_IMAGE_HEIGHT}
             className={cn("h-full w-full", landscapeArtImageClass)}
@@ -131,7 +131,7 @@ export function MysteryEventIntro({
             hovered={isHovered}
             onHoverStart={() => setHoveredCardId(event.id)}
             onHoverEnd={() => setHoveredCardId(null)}
-            ariaLabel={displayText(featuredCard.title)}
+            ariaLabel={i18n.displayText(featuredCard.title)}
             shimmerActive={false}
             shimmerToken={undefined}
             shineColor={getCardInspectionShineColors(featuredCard)}
@@ -141,7 +141,7 @@ export function MysteryEventIntro({
       ) : null}
       <div>
         <TextAnimate once className={cn("max-w-lg text-center", bodyTextClass)}>
-          {displayText(event.narrative)}
+          {i18n.displayText(event.narrative)}
         </TextAnimate>
       </div>
 

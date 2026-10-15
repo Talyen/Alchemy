@@ -1,4 +1,3 @@
-import { text as gameText } from "@/lib/localization/runtime";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
@@ -115,7 +114,7 @@ function SelectableCardSurface({
   shimmerActive: boolean;
   shimmerToken: number | undefined;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const buttonProps = {
     card,
     shineColor: disabled ? undefined : shineColor,
@@ -125,7 +124,9 @@ function SelectableCardSurface({
     onClick: () => {
       if (!disabled) onSelect();
     },
-    ariaLabel: gameText("ui.selectable-card.msg1", "Select {{value0}}", { value0: getCardDisplayTitle(card) }),
+    ariaLabel: i18n.text("ui.selectable-card.msg1", "Select {{value0}}", {
+      value0: i18n.read(() => getCardDisplayTitle(card)),
+    }),
     selected: chrome === "corruption" ? false : isSelected,
     className: cn(
       widthClass ?? DEFAULT_WIDTH_BY_CHROME[chrome],

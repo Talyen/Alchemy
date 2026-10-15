@@ -17,6 +17,7 @@ type EffectDescription = CardDescriptionPart[][];
 function joinOptions(items: readonly string[], alwaysComma = false): string {
   const rest = [...items];
   const last = rest.pop() ?? "";
+  if (rest.length === 0) return last;
   return `${rest.join(", ")}${rest.length > 1 || alwaysComma ? "," : ""} or ${last}`;
 }
 

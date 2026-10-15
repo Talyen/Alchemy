@@ -1,4 +1,3 @@
-import { text as gameText } from "@/lib/localization/runtime";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { BoardRewardScreen } from "@/features/alchemy/shared/ui/board-reward-screen";
 import { playUISound } from "@/lib/audio";
@@ -31,7 +30,7 @@ import { useGearArmorySlice, useGearCombatRestrictions } from "@/features/alchem
 import type { MetaRouteCtx } from "./route-ctx";
 
 function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const commands = routeCommands.meta;
   const { hasUnspentTalents, hasAffordableHomestead } = useMenuBadges();
   const hasActiveRun = useHasActiveRun();
@@ -41,7 +40,7 @@ function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
     return (
       <BoardRewardScreen
         boardId={pendingBoardRewardId}
-        continueLabel={gameText("ui.meta-routes.attr1", "Main Menu")}
+        continueLabel={i18n.text("ui.meta-routes.attr1", "Main Menu")}
         onUseBoard={() => {
           routeCommands.boards.acknowledgeReward(pendingBoardRewardId, true);
         }}

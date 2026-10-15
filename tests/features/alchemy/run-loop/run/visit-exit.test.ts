@@ -72,15 +72,12 @@ describe("transaction-owned visit exits", () => {
       session,
     );
     const before = readGameplayState(session);
-    const roll = vi.spyOn(config, "rollFreshBossId").mockImplementation(() => {
+    using _roll = vi.spyOn(config, "rollFreshBossId").mockImplementation(() => {
       throw new Error("boss roll failed");
     });
-    try {
-      expect(() => createProgressionCommands(session).leaveVisit("corruption")).toThrow("boss roll failed");
-      expect(readGameplayState(session)).toBe(before);
-    } finally {
-      roll.mockRestore();
-    }
+
+    expect(() => createProgressionCommands(session).leaveVisit("corruption")).toThrow("boss roll failed");
+    expect(readGameplayState(session)).toBe(before);
   });
 
   it.each(["campfire", "mystery", "corruption", "shop", "transmutation"] as const)(

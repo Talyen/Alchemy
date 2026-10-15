@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+import { text as gameText } from "@/lib/localization/runtime";
 import { useId, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,7 @@ export function RunEndScreen({
   onContinue: () => void;
   continueLabel?: string;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const [boonsOpen, setBoonsOpen] = useState(false);
   const [talentsExpanded, setTalentsExpanded] = useState(false);
   const talentGridId = useId();
@@ -100,10 +100,10 @@ export function RunEndScreen({
                 variant="ghost"
                 size="icon"
                 className="h-11 w-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-pale"
-                aria-label={displayText(
+                aria-label={i18n.displayText(
                   talentsExpanded
-                    ? gameText("ui.run-end-screen.d1", "Show fewer Talent XP")
-                    : gameText("ui.run-end-screen.d2", "Show all Talent XP"),
+                    ? i18n.text("ui.run-end-screen.d1", "Show fewer Talent XP")
+                    : i18n.text("ui.run-end-screen.d2", "Show all Talent XP"),
                 )}
                 aria-expanded={talentsExpanded}
                 aria-controls={talentGridId}

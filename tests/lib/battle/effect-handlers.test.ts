@@ -158,15 +158,12 @@ describe("conditional effect handlers", () => {
 it.each(["nope", "toString", "constructor", "__proto__"])(
   "applyEffectByKind unknown kind rejects unknown kind %s without invoking a handler",
   (kind) => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    try {
-      const state = patchBattleState();
-      const unknown = applyEffectByKind(state, makeTestCard(), { kind } as never, 1, []);
-      expect(unknown).toBe(state);
-      expect(warn).toHaveBeenCalledWith(expect.stringContaining("Missing handler"));
-    } finally {
-      warn.mockRestore();
-    }
+    using warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const state = patchBattleState();
+    const unknown = applyEffectByKind(state, makeTestCard(), { kind } as never, 1, []);
+    expect(unknown).toBe(state);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("Missing handler"));
   },
 );
 

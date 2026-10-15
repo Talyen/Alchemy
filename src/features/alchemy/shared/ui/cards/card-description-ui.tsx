@@ -36,7 +36,7 @@ export function renderMultilineTokenizedDescription(text: string): ReactNode[] {
 }
 
 function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId; matchedText: string }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const definition = keywordDefinitions[keywordId];
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLSpanElement>();
@@ -57,7 +57,9 @@ function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId; matche
             <span className={cn("flex items-center gap-2", tooltipHeaderClass)}>
               <KeywordTag keywordId={keywordId} className="text-sm sm:text-base" />
             </span>
-            <TooltipBody>{displayText(renderColoredKeywords(definition.description))}</TooltipBody>
+            <TooltipBody>
+              {i18n.displayText(i18n.read(() => renderColoredKeywords(definition.description)))}
+            </TooltipBody>
           </>
         ) : null}
       </PortaledTooltip>
@@ -76,7 +78,7 @@ export function DescriptionLines({
   newLineIndices?: ReadonlySet<number> | undefined;
   card?: Pick<BattleCard, "corruptedValuePositions"> & Partial<Pick<BattleCard, "effects" | "description">>;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const rendered =
     card?.effects && card.description ? renderCardDescription(card.effects, card.description) : undefined;
   const content = lines.map((line, lineIndex) => {
@@ -108,15 +110,15 @@ export function DescriptionLines({
         );
     return (
       <div key={`${idPrefix}-${lineIndex}`} className={tooltipBodyLineClass}>
-        {renderMessage(message, undefined, marks)}
+        {i18n.read(() => renderMessage(message, undefined, marks))}
         {newLineIndices?.has(lineIndex) ? (
-          <TooltipChip className="ml-1.5 align-middle">{gameText("card.new", "NEW")}</TooltipChip>
+          <TooltipChip className="ml-1.5 align-middle">{i18n.text("card.new", "NEW")}</TooltipChip>
         ) : null}
       </div>
     );
   });
 
-  return <TooltipBody>{displayText(content)}</TooltipBody>;
+  return <TooltipBody>{i18n.displayText(content)}</TooltipBody>;
 }
 
 type TitleCard = Pick<BattleCard, "title" | "corrupted"> & Partial<Pick<BattleCard, "transmuted" | "baseTitle">>;
@@ -139,8 +141,8 @@ export function getCardDisplayTitle(card: TitleCard): string {
 }
 
 export function CardTitle({ card, className }: { card: TitleCard; className?: string }) {
-  useGameTranslation();
-  const title = cardTitleMessage(card);
+  const i18n = useGameTranslation();
+  const title = i18n.read(() => cardTitleMessage(card));
   function render(nodes: RichTextNode[]): ReactNode[] {
     return nodes.map((node, index) => {
       if (node.name === "modifier" && card.transmuted)
@@ -160,7 +162,7 @@ export function CardTitle({ card, className }: { card: TitleCard; className?: st
   }
   let children: ReactNode = title;
   try {
-    children = render(parseRichText(title, new Set(["modifier", "corruption"])));
+    children = render(i18n.read(() => parseRichText(title, new Set(["modifier", "corruption"]))));
   } catch {
     /* Keep unknown legacy titles readable. */
   }

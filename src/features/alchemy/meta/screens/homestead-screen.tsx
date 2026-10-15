@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { useEffect, useState, useMemo, useRef } from "react";
 import { RotateCcw } from "lucide-react";
 import { ChromeIconButton } from "../../shared/ui/chrome-icon-button";
@@ -70,7 +70,7 @@ export function HomesteadScreen({
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const liveProgress = useMemo(
     () => ({
       gold: liveGold,
@@ -215,12 +215,12 @@ export function HomesteadScreen({
     <PageLayout>
       <ScreenShell maxWidthClass="max-w-[calc(88*var(--content-rem,1rem))]" className="relative">
         <ScreenHeaderRow
-          title={gameText("ui.homestead-screen.1", "Homestead")}
+          title={i18n.text("ui.homestead-screen.1", "Homestead")}
           onBack={onBack}
           onMenu={onMenu}
           trailing={
             <ChromeIconButton
-              aria-label={gameText("ui.homestead-screen.2", "Reset Homestead")}
+              aria-label={i18n.text("ui.homestead-screen.2", "Reset Homestead")}
               disabled={
                 !hasPurchases ||
                 resetSnapshot !== null ||
@@ -309,12 +309,12 @@ export function HomesteadScreen({
         </div>
         <ConfirmationDialog
           open={showResetConfirm}
-          title={gameText("ui.homestead-screen.3", "Reset Homestead")}
-          description={gameText(
+          title={i18n.text("ui.homestead-screen.3", "Reset Homestead")}
+          description={i18n.text(
             "ui.homestead-screen.4",
             "This will reset all Homestead upgrades and Companion bonds and refund all spent materials.",
           )}
-          confirmLabel={gameText("ui.homestead-screen.5", "Reset")}
+          confirmLabel={i18n.text("ui.homestead-screen.5", "Reset")}
           tone="default"
           dimBackground={false}
           onConfirm={resetHomestead}
@@ -323,17 +323,17 @@ export function HomesteadScreen({
         {error && (
           <p role="alert" className="absolute inset-x-0 top-full mt-2 text-center text-sm text-destructive">
             {typeof error === "string"
-              ? displayText(error)
+              ? i18n.displayText(error)
               : error.action === "Build"
-                ? gameText("homestead.build-failed", "Could not build {{item}}. Materials were not spent.", {
-                    item: displayText(error.item),
+                ? i18n.text("homestead.build-failed", "Could not build {{item}}. Materials were not spent.", {
+                    item: i18n.displayText(error.item),
                   })
                 : error.action === "Upgrade"
-                  ? gameText("homestead.upgrade-failed", "Could not upgrade {{item}}. Materials were not spent.", {
-                      item: displayText(error.item),
+                  ? i18n.text("homestead.upgrade-failed", "Could not upgrade {{item}}. Materials were not spent.", {
+                      item: i18n.displayText(error.item),
                     })
-                  : gameText("homestead.bond-failed", "Could not bond {{item}}. Materials were not spent.", {
-                      item: displayText(error.item),
+                  : i18n.text("homestead.bond-failed", "Could not bond {{item}}. Materials were not spent.", {
+                      item: i18n.displayText(error.item),
                     })}
           </p>
         )}

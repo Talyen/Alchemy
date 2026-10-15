@@ -1,4 +1,3 @@
-import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { useMemo, useState } from "react";
@@ -27,7 +26,7 @@ function formatLoggedError(entry: LoggedError): string {
 }
 
 export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const errors = useErrorLogStore((s) => s.errors);
   const clearErrors = useErrorLogStore((s) => s.clearErrors);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -58,35 +57,35 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
   return (
     <ScreenShell maxWidthClass="max-w-4xl">
       <ScreenHeaderRow
-        title={gameText("ui.error-log-viewer.1", "Error Log")}
+        title={i18n.text("ui.error-log-viewer.1", "Error Log")}
         trailing={
           <Button variant="outline" size="sm" onClick={onClose}>
-            {gameText("ui.error-log-viewer.2", "Close")}
+            {i18n.text("ui.error-log-viewer.2", "Close")}
           </Button>
         }
       />
 
       <div className="mt-4 flex gap-2">
         <Button size="sm" variant="outline" onClick={() => void handleCopyAll()} disabled={errors.length === 0}>
-          {gameText("ui.error-log-viewer.3", "Copy All")}
+          {i18n.text("ui.error-log-viewer.3", "Copy All")}
         </Button>
         <Button size="sm" variant="destructive" onClick={clearErrors} disabled={errors.length === 0}>
-          {gameText("ui.error-log-viewer.4", "Clear")}
+          {i18n.text("ui.error-log-viewer.4", "Clear")}
         </Button>
         <span className="ml-auto self-center text-sm text-muted-foreground">
           <GameMessage
             id="ui.error-log-viewer.s1"
             defaultValue="<part0/><part1/> error<part2/>"
             parts={{
-              part0: displayText(
+              part0: i18n.displayText(
                 visibleCopyFeedback?.status === "copied"
-                  ? gameText("ui.error-log-viewer.d1", "Copied · ")
+                  ? i18n.text("ui.error-log-viewer.d1", "Copied · ")
                   : visibleCopyFeedback?.status === "failed"
-                    ? gameText("ui.error-log-viewer.d2", "Copy failed · ")
+                    ? i18n.text("ui.error-log-viewer.d2", "Copy failed · ")
                     : null,
               ),
-              part1: displayText(errors.length),
-              part2: displayText(errors.length !== 1 ? "s" : ""),
+              part1: i18n.displayText(errors.length),
+              part2: i18n.displayText(errors.length !== 1 ? "s" : ""),
             }}
           />
         </span>
@@ -95,7 +94,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
       <div className="mt-4 flex max-h-[60cqh] flex-col gap-2 overflow-y-auto">
         {errors.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            {gameText("ui.error-log-viewer.6", "No errors logged")}
+            {i18n.text("ui.error-log-viewer.6", "No errors logged")}
           </p>
         ) : (
           reversedErrors.map((e) => (
@@ -118,19 +117,23 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
                             : "bg-blue-900/40 text-blue-300",
                       )}
                     >
-                      {displayText(e.source)}
+                      {i18n.displayText(e.source)}
                     </span>
-                    <span className="truncate text-sm font-semibold text-foreground">{displayText(e.message)}</span>
+                    <span className="truncate text-sm font-semibold text-foreground">
+                      {i18n.displayText(e.message)}
+                    </span>
                   </span>
                   <span className="mt-1 block text-xs text-muted-foreground">
-                    {displayText(new Date(e.timestamp).toLocaleString())}
+                    {i18n.displayText(new Date(e.timestamp).toLocaleString())}
                   </span>
                 </span>
               </button>
 
               {expandedId === e.id && (
                 <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
-                  <p className="text-sm break-words whitespace-pre-wrap text-foreground">{displayText(e.message)}</p>
+                  <p className="text-sm break-words whitespace-pre-wrap text-foreground">
+                    {i18n.displayText(e.message)}
+                  </p>
                   {[
                     { label: "Stack", text: e.stack },
                     { label: "Component Stack", text: e.componentStack },
@@ -142,11 +145,11 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
                           <GameMessage
                             id="ui.error-log-viewer.s2"
                             defaultValue="<part0/>:"
-                            parts={{ part0: displayText(label) }}
+                            parts={{ part0: i18n.displayText(label) }}
                           />
                         </p>
                         <pre className="mt-1 rounded-lg bg-black/30 p-2 text-xs break-all whitespace-pre-wrap text-foreground/80">
-                          {displayText(text)}
+                          {i18n.displayText(text)}
                         </pre>
                       </div>
                     ) : null,

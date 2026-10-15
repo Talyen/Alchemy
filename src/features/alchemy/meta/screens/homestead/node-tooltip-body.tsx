@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -23,7 +23,7 @@ export function HomesteadTooltipBody({
   animate: boolean;
   reducedMotion: boolean;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const contentRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
   useLayoutEffect(() => {
@@ -38,7 +38,7 @@ export function HomesteadTooltipBody({
   }, []);
   const materials = MATERIAL_IDS.filter((material) => (node.cost?.[material] ?? 0) > 0);
   const costLabel = materials
-    .map((material) => `${node.cost![material]} ${displayText(materialLabels[material])}`)
+    .map((material) => `${node.cost![material]} ${i18n.displayText(materialLabels[material])}`)
     .join(", ");
   return (
     <motion.div
@@ -58,21 +58,23 @@ export function HomesteadTooltipBody({
               <TooltipBody className="mt-2 space-y-1">
                 {[...node.bonuses, ...node.production].map((line, index) => (
                   <p key={index} className="min-h-6 leading-6">
-                    {renderTextWithMaterials(line, {
-                      renderPlain: (text, key) => (
-                        <Fragment key={key}>
-                          {text
-                            .split(/(\d+(?:\.\d+)?%?)/)
-                            .map((part, index) =>
-                              /^\d/.test(part) ? (
-                                <TooltipValue key={index} value={part} animate={animate} />
-                              ) : (
-                                <Fragment key={index}>{displayText(part)}</Fragment>
-                              ),
-                            )}
-                        </Fragment>
-                      ),
-                    })}
+                    {i18n.read(() =>
+                      renderTextWithMaterials(line, {
+                        renderPlain: (text, key) => (
+                          <Fragment key={key}>
+                            {text
+                              .split(/(\d+(?:\.\d+)?%?)/)
+                              .map((part, index) =>
+                                /^\d/.test(part) ? (
+                                  <TooltipValue key={index} value={part} animate={animate} />
+                                ) : (
+                                  <Fragment key={index}>{i18n.displayText(part)}</Fragment>
+                                ),
+                              )}
+                          </Fragment>
+                        ),
+                      }),
+                    )}
                   </p>
                 ))}
               </TooltipBody>
@@ -86,12 +88,12 @@ export function HomesteadTooltipBody({
                     "flex min-h-6 items-center justify-between gap-4 text-sm leading-6",
                     node.level === 0 && "mt-3",
                   )}
-                  aria-label={gameText("ui.node-tooltip-body.1", "{{value0}} cost: {{value1}}", {
-                    value0: displayText(node.action),
-                    value1: displayText(costLabel),
+                  aria-label={i18n.text("ui.node-tooltip-body.1", "{{value0}} cost: {{value1}}", {
+                    value0: i18n.displayText(node.action),
+                    value1: i18n.displayText(costLabel),
                   })}
                 >
-                  <span className="text-muted-foreground">{displayText(node.action)}</span>
+                  <span className="text-muted-foreground">{i18n.displayText(node.action)}</span>
                   <span className="inline-flex items-center gap-3" aria-hidden="true">
                     {materials.map((material) => (
                       <span
@@ -112,7 +114,7 @@ export function HomesteadTooltipBody({
           </>
         ) : (
           <TooltipBody className="mt-2">
-            {gameText("ui.node-tooltip-body.2", "Discover this Companion during a Run.")}
+            {i18n.text("ui.node-tooltip-body.2", "Discover this Companion during a Run.")}
           </TooltipBody>
         )}
       </div>

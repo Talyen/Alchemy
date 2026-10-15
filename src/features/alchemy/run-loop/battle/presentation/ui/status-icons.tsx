@@ -1,4 +1,3 @@
-import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { type ReactNode } from "react";
@@ -102,7 +101,7 @@ function StatusTooltip({
 }
 
 export function StatusIcon({ chip }: { chip: StatusChip }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const haste = chip.id === "haste";
   const phoenix = chip.id === "phoenixFeather";
   const augment = augmentDefinitions[chip.id as keyof typeof augmentDefinitions];
@@ -121,12 +120,12 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
         : getPlasmaColorPair([kw]);
   return (
     <StatusChipShell
-      ariaLabel={displayText(
+      ariaLabel={i18n.displayText(
         phoenix || hideValue
           ? definition.label
-          : gameText("ui.status-icons.d1", "{{value0}} {{value1}}", {
-              value0: displayText(definition.label),
-              value1: displayText(chip.value),
+          : i18n.text("ui.status-icons.d1", "{{value0}} {{value1}}", {
+              value0: i18n.displayText(definition.label),
+              value1: i18n.displayText(chip.value),
             }),
       )}
       icon={<Icon className={cn(STATUS_ICON_CLASS, definition.colorClass)} />}
@@ -134,7 +133,7 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
         <StatusTooltip
           labelNode={
             special ? (
-              <TooltipHeader className="mb-0">{displayText(definition.label)}</TooltipHeader>
+              <TooltipHeader className="mb-0">{i18n.displayText(definition.label)}</TooltipHeader>
             ) : (
               <KeywordTag keywordId={kw} className="text-sm sm:text-base" />
             )
@@ -142,8 +141,10 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
           value={chip.value}
           hideValue={hideValue}
           valueColorClass={definition.colorClass}
-          description={displayText(
-            haste ? definition.description : renderColoredKeywords(chip.description ?? definition.description),
+          description={i18n.displayText(
+            haste
+              ? definition.description
+              : i18n.read(() => renderColoredKeywords(chip.description ?? definition.description)),
           )}
         />
       }
@@ -160,13 +161,13 @@ const HASTE_STATUS = {
 };
 
 export function DeathsDoorStatusIcon({ remainingTurns }: { remainingTurns?: number | null }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   return (
     <StatusChipShell
-      ariaLabel={displayText(
+      ariaLabel={i18n.displayText(
         remainingTurns == null
-          ? gameText("ui.status-icons.d2", "Death's Door")
-          : gameText("battle.deaths-door-status", "Death's Door: {{count}} protected turns remaining", {
+          ? i18n.text("ui.status-icons.d2", "Death's Door")
+          : i18n.text("battle.deaths-door-status", "Death's Door: {{count}} protected turns remaining", {
               count: remainingTurns,
             }),
       )}
@@ -174,23 +175,23 @@ export function DeathsDoorStatusIcon({ remainingTurns }: { remainingTurns?: numb
       icon={<Skull className={STATUS_ICON_CLASS} />}
       tooltip={
         <>
-          <TooltipHeader>{gameText("ui.status-icons.1", "Death's Door")}</TooltipHeader>
+          <TooltipHeader>{i18n.text("ui.status-icons.1", "Death's Door")}</TooltipHeader>
           <TooltipBody>
             {remainingTurns != null && (
               <p>
-                {gameText("battle.deaths-door-remaining", "{{count}} protected turns remaining.", {
+                {i18n.text("battle.deaths-door-remaining", "{{count}} protected turns remaining.", {
                   count: remainingTurns,
                 })}
               </p>
             )}
             <p>
-              {gameText(
+              {i18n.text(
                 "ui.status-icons.4",
                 "Fatal damage leaves you at 1 Health while protected. Healing does not end protection.",
               )}
             </p>
             <p>
-              {gameText(
+              {i18n.text(
                 "ui.status-icons.5",
                 "Once protection expires, fatal damage can defeat you. Death's Door triggers once per combat.",
               )}

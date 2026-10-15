@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { useEffect, useState, type CSSProperties } from "react";
 import { HOMESTEAD_FEEDBACK } from "@/lib/game-constants/ui-motion";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
@@ -31,7 +31,7 @@ export function HomesteadNodeArtwork({
   awaitingProgress: boolean;
   onPurchase: () => void;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLButtonElement>();
   const reducedMotion = useReducedMotionPreference();
@@ -70,7 +70,7 @@ export function HomesteadNodeArtwork({
   const canPurchase = node.affordable && !saving && !awaitingProgress;
   const materials = MATERIAL_IDS.filter((material) => (node.cost?.[material] ?? 0) > 0);
   const costLabel = materials
-    .map((material) => `${node.cost![material]} ${displayText(materialLabels[material])}`)
+    .map((material) => `${node.cost![material]} ${i18n.displayText(materialLabels[material])}`)
     .join(", ");
   return (
     <>
@@ -90,16 +90,16 @@ export function HomesteadNodeArtwork({
         onClick={() => {
           if (canPurchase) onPurchase();
         }}
-        ariaLabel={displayText(
+        ariaLabel={i18n.displayText(
           saving
-            ? gameText("ui.node-artwork.d1", "Saving {{value0}}", { value0: displayText(node.title) })
+            ? i18n.text("ui.node-artwork.d1", "Saving {{value0}}", { value0: i18n.displayText(node.title) })
             : node.cost
-              ? gameText("ui.node-artwork.d2", "{{value0}} {{value1}} for {{value2}}", {
-                  value0: displayText(node.action),
-                  value1: displayText(node.title),
-                  value2: displayText(costLabel),
+              ? i18n.text("ui.node-artwork.d2", "{{value0}} {{value1}} for {{value2}}", {
+                  value0: i18n.displayText(node.action),
+                  value1: i18n.displayText(node.title),
+                  value2: i18n.displayText(costLabel),
                 })
-              : gameText("ui.node-artwork.d3", "View {{value0}}", { value0: displayText(node.title) }),
+              : i18n.text("ui.node-artwork.d3", "View {{value0}}", { value0: i18n.displayText(node.title) }),
         )}
         ariaDisabled={!canPurchase}
         style={feedbackStyle}
@@ -114,7 +114,7 @@ export function HomesteadNodeArtwork({
               role="status"
               className="pointer-events-none absolute inset-x-0 bottom-3 z-20 text-center text-sm text-foreground"
             >
-              <span className="rounded-full bg-black/80 px-3 py-1">{gameText("ui.node-artwork.1", "Saving…")}</span>
+              <span className="rounded-full bg-black/80 px-3 py-1">{i18n.text("ui.node-artwork.1", "Saving…")}</span>
             </span>
           ) : feedback ? (
             <>
@@ -131,16 +131,16 @@ export function HomesteadNodeArtwork({
               {complete ? (
                 <Check
                   className="h-5 w-5 text-foreground/80"
-                  aria-label={displayText(
+                  aria-label={i18n.displayText(
                     node.companion
-                      ? gameText("ui.node-artwork.d4", "Max bond")
-                      : gameText("ui.node-artwork.d5", "Complete"),
+                      ? i18n.text("ui.node-artwork.d4", "Max bond")
+                      : i18n.text("ui.node-artwork.d5", "Complete"),
                   )}
                 />
               ) : (
                 <LockKeyhole
                   className="h-5 w-5 text-foreground/80"
-                  aria-label={gameText("ui.node-artwork.2", "Undiscovered")}
+                  aria-label={i18n.text("ui.node-artwork.2", "Undiscovered")}
                 />
               )}
             </span>
@@ -149,7 +149,7 @@ export function HomesteadNodeArtwork({
       >
         <img
           src={node.art}
-          alt={displayText(node.title)}
+          alt={i18n.displayText(node.title)}
           draggable={false}
           decoding="async"
           className={cn(
@@ -182,14 +182,14 @@ export function HomesteadNodeArtwork({
         className="homestead-tooltip"
       >
         <TooltipHeader className="mb-0 flex items-center justify-between gap-3">
-          <span>{displayText(node.title)}</span>
+          <span>{i18n.displayText(node.title)}</span>
           {node.discovered && (
             <span
               role="img"
-              aria-label={gameText("ui.node-artwork.3", "{{value0}} {{value1}} of {{value2}}", {
-                value0: displayText(node.companion ? "Bond" : "Level"),
-                value1: displayText(node.level),
-                value2: displayText(node.maxLevel),
+              aria-label={i18n.text("ui.node-artwork.3", "{{value0}} {{value1}} of {{value2}}", {
+                value0: i18n.displayText(node.companion ? "Bond" : "Level"),
+                value1: i18n.displayText(node.level),
+                value2: i18n.displayText(node.maxLevel),
               })}
               className="inline-flex shrink-0 items-center gap-0.5"
             >

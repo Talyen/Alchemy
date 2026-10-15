@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { screenShellPaddingClass } from "@/features/alchemy/shared/config";
 import {
   characters,
@@ -62,7 +62,7 @@ export function ArmoryScreen({
   onBack,
   onMenu,
 }: ArmoryScreenProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const feedbackSequence = useRef(0);
   useEffect(
     () => () => {
@@ -265,7 +265,7 @@ export function ArmoryScreen({
       >
         <ScreenHeaderRow
           className="min-h-10 px-12"
-          title={gameText("ui.armory-screen.1", "Armory")}
+          title={i18n.text("ui.armory-screen.1", "Armory")}
           onBack={onBack}
           onMenu={onMenu}
         />
@@ -348,9 +348,9 @@ export function ArmoryScreen({
         <ArmoryFeedback
           notice={
             typeof notice === "string"
-              ? displayText(notice)
-              : gameText("armory.salvage-complete", "{{item}} salvaged. Rewards added.", {
-                  item: displayText(notice.item),
+              ? i18n.displayText(notice)
+              : i18n.text("armory.salvage-complete", "{{item}} salvaged. Rewards added.", {
+                  item: i18n.displayText(notice.item),
                 })
           }
           result={craftingResult}

@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText } from "@/lib/localization/runtime";
+
 import {
   BattleEndTurnButton,
   type BattleEndTurnButtonProps,
@@ -16,12 +16,12 @@ import { useBattleClusterState } from "@/features/alchemy/shared/stores/use-run-
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
 function BattleAutoplayToggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   return (
     <ChromeIconButton
       variant={enabled ? "primary" : "ghost"}
       onClick={onToggle}
-      aria-label={gameText("ui.battle-cluster.1", "Autoplay")}
+      aria-label={i18n.text("ui.battle-cluster.1", "Autoplay")}
       aria-pressed={enabled}
       data-testid="autoplay-toggle"
     >
@@ -31,7 +31,7 @@ function BattleAutoplayToggle({ enabled, onToggle }: { enabled: boolean; onToggl
 }
 
 function BattleSkipCombatButton({ onSkip, disabled }: { onSkip: () => void; disabled: boolean }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -39,7 +39,7 @@ function BattleSkipCombatButton({ onSkip, disabled }: { onSkip: () => void; disa
     <>
       <ChromeIconButton
         ref={triggerRef}
-        aria-label={gameText("ui.battle-cluster.2", "Skip Combat")}
+        aria-label={i18n.text("ui.battle-cluster.2", "Skip Combat")}
         disabled={disabled}
         onClick={onSkip}
         onMouseEnter={() => setHovered(true)}
@@ -56,7 +56,7 @@ function BattleSkipCombatButton({ onSkip, disabled }: { onSkip: () => void; disa
         allowFlip={false}
         horizontalInset={8}
       >
-        {gameText("ui.battle-cluster.3", "Skip Combat")}
+        {i18n.text("ui.battle-cluster.3", "Skip Combat")}
       </PortaledTooltip>
     </>
   );
@@ -89,7 +89,7 @@ export function BattleCluster({
   onOpenGameMenu,
   onSkipCombat,
 }: BattleClusterProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { gold, hasWishOptions, battleState, hasActiveBattle } = useBattleClusterState();
   return (
     <div inert={inert} className="absolute top-4 right-4 z-[80] flex items-center gap-2">
@@ -108,7 +108,7 @@ export function BattleCluster({
       ) : null}
       <HamburgerTrigger
         onClick={onOpenGameMenu}
-        label={gameText("ui.battle-cluster.4", "Open game menu")}
+        label={i18n.text("ui.battle-cluster.4", "Open game menu")}
         active={gameMenuOpen}
       />
     </div>

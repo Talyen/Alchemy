@@ -14,7 +14,12 @@ override, Steam's per-game language, system/browser preferences when Steam is
 unavailable, then English. The override is stored separately from progress and
 Steam Cloud. Reset Options returns it to Automatic; Clear Save Data preserves it.
 
-React presentation subscribes with `useGameTranslation()`. Use `text(id, English,
+React presentation uses `const i18n = useGameTranslation()`. Call `i18n.text`
+and `i18n.displayText` in components; use `i18n.read(() => helper(...))` for
+presentation helpers that read localization. Include `i18n` in explicit memo
+dependencies. This makes language changes visible to React Compiler caches.
+Global readers belong in non-React helpers; the offline gate rejects their use
+inside component bodies. Use `text(id, English,
 values)` for complete messages and `GameMessage` for sentences containing movable
 React slots. `displayText` resolves canonical catalog strings at rendering
 boundaries. Translate catalog names before supplying message parameters; `text`

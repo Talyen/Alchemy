@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import { memo } from "react";
 import type { TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
@@ -34,7 +34,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
   onCombatLockedAttempt: () => void;
   isArtHidden?: boolean;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const {
     isHovered,
     shimmerActive,
@@ -62,7 +62,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
       {trinket && showPopup ? (
         <DetailPopup
           idPrefix={`armory-slot-${trinket.id}`}
-          title={displayText(<TrinketItemTitle trinket={trinket} />)}
+          title={i18n.displayText(<TrinketItemTitle trinket={trinket} />)}
           descriptionLines={trinket.descriptionLines}
           visible={isHovered}
           triggerRef={wrapperRef}
@@ -71,7 +71,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
       ) : null}
       <Surface
         as="button"
-        ariaLabel={displayText(SLOT_ARIA_LABELS.trinket)}
+        ariaLabel={i18n.displayText(SLOT_ARIA_LABELS.trinket)}
         ariaPressed={selected}
         overlay={showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
         selected={selected}

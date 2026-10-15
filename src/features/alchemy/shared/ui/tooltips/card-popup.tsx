@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import { type ReactNode, type RefObject } from "react";
 
 import type { BattleCard } from "@/lib/game-data";
@@ -38,7 +38,7 @@ export function DetailPopup({
   padding?: number | undefined;
   plasmaColorPair?: PlasmaColorPair | null | undefined;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   return (
     <PortaledTooltip
       triggerRef={triggerRef}
@@ -59,7 +59,7 @@ export function DetailPopup({
         {...(card ? { card } : {})}
       />
       {descriptionNodes?.map((node, i) => (
-        <TooltipBody key={i}>{displayText(node)}</TooltipBody>
+        <TooltipBody key={i}>{i18n.displayText(node)}</TooltipBody>
       ))}
     </PortaledTooltip>
   );

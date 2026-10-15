@@ -25,7 +25,10 @@ interface AttackPacket {
 
 // Builds an immutable candidate; dealDamageToEnemy commits its flag changes
 // only after establishing a positive attack and passing Dodge.
-function consumeAttackPacketFlags(state: BattleState, effect: DamageEffect): { state: BattleState } & AttackPacket {
+export function consumeAttackPacketFlags(
+  state: BattleState,
+  effect: DamageEffect,
+): { state: BattleState } & AttackPacket {
   const convertToPoison = readCombatFlag(state, "nextHitPoison");
   const poisonPacket = convertToPoison ? { ...effect, damageType: "poison" as const } : effect;
   let damageState = convertToPoison ? { ...state, flags: { ...state.flags, nextHitPoison: false } } : state;

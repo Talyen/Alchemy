@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { vi } from "vitest";
 import { battlePresentation } from "@/app/battle-presentation";
 import type { AlchemyRouteCommands } from "@/features/alchemy/shell/route-commands";
@@ -106,7 +107,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       handleAutoplayWish: fn(),
       skipCombatDevMode: fn(),
       bindPlayback: fn(),
-      subscribePlayback: vi.fn(() => () => {}),
+      subscribePlayback: vi.fn(() => createCleanup(() => {})),
       isCardPlayInProgress: vi.fn(() => false),
       isProgressSavePending: vi.fn(() => false),
       subscribeProgressSave: vi.fn(() => () => {}),

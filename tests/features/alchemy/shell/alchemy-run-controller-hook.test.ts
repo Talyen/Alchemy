@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import "../../../helpers/mock-audio";
 import { battlePresentation } from "@/app/battle-presentation";
 import {
@@ -77,19 +78,17 @@ describe("useAlchemyRunController", () => {
     setRunSession({ hasActiveRun: true, activity: { kind: "labyrinth-map" }, labyrinthMap: map });
     const { result } = renderController();
     const completion = sessionRuntime(defaultGameSession).progressCompletion;
-    try {
-      act(() => completion.mark(readRunRevision(defaultGameSession) + 1));
-      act(() => result.current.routeCommands.runLoop.labyrinth.handleNodeSelect(map.currentNodeId));
-      expect(readRunSession(defaultGameSession).selectedLabyrinthNodeId).toBe(map.currentNodeId);
-      act(() => result.current.routeCommands.runLoop.labyrinth.handleNodeSelect(room.id));
-      expect(readRunSession(defaultGameSession).selectedLabyrinthNodeId).toBe(room.id);
-      expect(result.current.routeCommands.runLoop.labyrinth.handleNodeEnter()).toBe(false);
-      expect(readRunSession(defaultGameSession).activeLabyrinthPendingNode).toBeNull();
-      act(() => result.current.routeCommands.runLoop.labyrinth.handleNodeDeselect());
-      expect(readRunSession(defaultGameSession).selectedLabyrinthNodeId).toBeNull();
-    } finally {
-      act(() => completion.cancel());
-    }
+    using _scopeCleanup = createCleanup(() => act(() => completion.cancel()));
+
+    act(() => completion.mark(readRunRevision(defaultGameSession) + 1));
+    act(() => result.current.routeCommands.runLoop.labyrinth.handleNodeSelect(map.currentNodeId));
+    expect(readRunSession(defaultGameSession).selectedLabyrinthNodeId).toBe(map.currentNodeId);
+    act(() => result.current.routeCommands.runLoop.labyrinth.handleNodeSelect(room.id));
+    expect(readRunSession(defaultGameSession).selectedLabyrinthNodeId).toBe(room.id);
+    expect(result.current.routeCommands.runLoop.labyrinth.handleNodeEnter()).toBe(false);
+    expect(readRunSession(defaultGameSession).activeLabyrinthPendingNode).toBeNull();
+    act(() => result.current.routeCommands.runLoop.labyrinth.handleNodeDeselect());
+    expect(readRunSession(defaultGameSession).selectedLabyrinthNodeId).toBeNull();
   });
 
   it("keeps routeCommands identity across a no-op rerender", () => {

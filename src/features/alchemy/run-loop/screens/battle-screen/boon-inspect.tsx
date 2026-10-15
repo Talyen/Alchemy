@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { useMemo, type ReactNode } from "react";
 import { Trophy, X } from "lucide-react";
 
@@ -21,13 +21,13 @@ import { useDialogFocus } from "../../../shared/ui/use-dialog-focus";
 const INSPECT_COLUMNS = 4;
 
 export function BattleBoonInspectButton({ open, onToggle }: { open: boolean; onToggle: () => void }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   return (
     <ChromeIconButton
       variant={open ? "primary" : "ghost"}
       onClick={onToggle}
-      aria-label={displayText(
-        open ? gameText("ui.boon-inspect.d1", "Close Boons") : gameText("ui.boon-inspect.d2", "Inspect Boons"),
+      aria-label={i18n.displayText(
+        open ? i18n.text("ui.boon-inspect.d1", "Close Boons") : i18n.text("ui.boon-inspect.d2", "Inspect Boons"),
       )}
       data-testid="battle-boon-inspect-toggle"
     >
@@ -45,7 +45,7 @@ export function BattleBoonInspectOverlay({
   trinketIds: readonly string[];
   onClose: () => void;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const trinkets = useMemo(() => uniqueRunBoons(trinketIds), [trinketIds]);
   const {
     page: safePage,
@@ -67,18 +67,18 @@ export function BattleBoonInspectOverlay({
       <BoonInspectPanel>
         <div className="grid w-full grid-cols-[calc(2.5*var(--content-rem,1rem))_1fr_calc(2.5*var(--content-rem,1rem))] items-start">
           <span />
-          <ScreenHeader title={gameText("ui.boon-inspect.1", "Boons")} />
+          <ScreenHeader title={i18n.text("ui.boon-inspect.1", "Boons")} />
           <ChromeIconButton
             className="h-10 w-10 justify-self-end"
             onClick={onClose}
-            aria-label={gameText("ui.boon-inspect.2", "Close boons")}
+            aria-label={i18n.text("ui.boon-inspect.2", "Close boons")}
           >
             <X className="h-5 w-5" />
           </ChromeIconButton>
         </div>
 
         {trinkets.length === 0 ? (
-          <InspectionEmptyState icon={Trophy} label={gameText("ui.boon-inspect.3", "Empty Boons")} />
+          <InspectionEmptyState icon={Trophy} label={i18n.text("ui.boon-inspect.3", "Empty Boons")} />
         ) : (
           <>
             <FadeSlot
@@ -112,7 +112,7 @@ export function BattleBoonInspectOverlay({
 }
 
 function BoonInspectPanel({ children }: { children: ReactNode }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { panelRef, handleKeyDown } = useDialogFocus();
   return (
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Modal contains focus and shields its backdrop from content clicks
@@ -120,7 +120,7 @@ function BoonInspectPanel({ children }: { children: ReactNode }) {
       ref={panelRef}
       role="dialog"
       aria-modal="true"
-      aria-label={gameText("ui.boon-inspect.4", "Boons")}
+      aria-label={i18n.text("ui.boon-inspect.4", "Boons")}
       tabIndex={-1}
       onKeyDown={handleKeyDown}
       className="alchemy-shell game-page-scroll relative max-h-full w-fit max-w-full overflow-y-auto rounded-shell-screen border border-border/80 px-8 py-8"

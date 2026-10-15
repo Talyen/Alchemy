@@ -1,4 +1,3 @@
-import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { useMemo } from "react";
@@ -32,7 +31,7 @@ interface LookupProps {
 }
 
 function MysteryCardRewardItem({ card }: { card: BattleCard }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
     "mystery-reward",
     card.id,
@@ -45,7 +44,7 @@ function MysteryCardRewardItem({ card }: { card: BattleCard }) {
         hovered={isHovered}
         onHoverStart={onHoverStart}
         onHoverEnd={onHoverEnd}
-        ariaLabel={getCardDisplayTitle(card)}
+        ariaLabel={i18n.read(() => getCardDisplayTitle(card))}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
         shineColor={getCardInspectionShineColors(card)}
@@ -88,7 +87,7 @@ function MysteryRewardEffectItem({
   grantedGear: GearInstance | undefined;
   chosenCardId: string | null;
 } & LookupProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   switch (effect.kind) {
     case "addCard": {
       const card = findCard(effect.cardId);
@@ -108,7 +107,7 @@ function MysteryRewardEffectItem({
       if (item) return <MysteryEquipmentRewardItem item={item} />;
       return (
         <p className={cn(controlLabelClass, "text-balance")}>
-          {gameText("ui.mystery-reward-summary.1", "Gained a random Boon for this run")}
+          {i18n.text("ui.mystery-reward-summary.1", "Gained a random Boon for this run")}
         </p>
       );
     }
@@ -116,7 +115,8 @@ function MysteryRewardEffectItem({
     case "gainRandomGear": {
       const fallbackLabel =
         effect.kind === "gainGeneratedGear" ? "Added Gear to your Armory" : "Added random Gear to your Armory";
-      if (!grantedGear) return <p className={cn(controlLabelClass, "text-balance")}>{displayText(fallbackLabel)}</p>;
+      if (!grantedGear)
+        return <p className={cn(controlLabelClass, "text-balance")}>{i18n.displayText(fallbackLabel)}</p>;
       return <MysteryEquipmentRewardItem item={grantedGear} />;
     }
     case "loseGold":
@@ -163,7 +163,7 @@ export function MysteryRewardSummary({
   talentXP?: TalentXP;
   onContinue: () => void;
 } & LookupProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const xpKeywords = new Set<Extract<MysteryEffect, { kind: "gainXP" }>["keyword"]>();
   let totalGold = 0;
   let hasResources = false;
@@ -213,7 +213,7 @@ export function MysteryRewardSummary({
 
       <div>
         <Button size="lg" className="min-w-56" onClick={onContinue}>
-          {gameText("ui.mystery-reward-summary.3", "Continue")}
+          {i18n.text("ui.mystery-reward-summary.3", "Continue")}
         </Button>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { BookOpen, Cog, House, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
 import { getProgressionFeatureUnlockMessage } from "@/lib/game-data";
@@ -61,7 +61,7 @@ function anchoredMenuStyle(anchorRect: DOMRect): React.CSSProperties {
 }
 
 function GameMenuPanel({ children }: { children: ReactNode }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { panelRef, handleKeyDown } = useDialogFocus();
   return (
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Modal contains focus and shields its backdrop from content clicks
@@ -69,7 +69,7 @@ function GameMenuPanel({ children }: { children: ReactNode }) {
       ref={panelRef}
       role="dialog"
       aria-modal="true"
-      aria-label={gameText("ui.game-menu.1", "Game menu")}
+      aria-label={i18n.text("ui.game-menu.1", "Game menu")}
       tabIndex={-1}
       data-testid="game-menu"
       onKeyDown={handleKeyDown}
@@ -98,7 +98,7 @@ export function GameMenu({
   isTalentsLocked = false,
   isHomesteadLocked = false,
 }: GameMenuProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const [confirmEndRun, setConfirmEndRun] = useState(false);
   if ((!isOpen || !onEndRun) && confirmEndRun) setConfirmEndRun(false);
 
@@ -143,8 +143,8 @@ export function GameMenu({
             <Fragment key={key}>
               {danger && <div className="my-0.5 border-t border-border/60" />}
               <LockedMenuItem
-                title={displayText(label)}
-                message={displayText(lock?.message ?? "")}
+                title={i18n.displayText(label)}
+                message={i18n.displayText(lock?.message ?? "")}
                 locked={lock?.locked ?? false}
                 onSelect={() => {
                   if (key === "end-run") {
@@ -157,7 +157,7 @@ export function GameMenu({
                 icon={<Icon className={cn("h-6 w-6 shrink-0", iconClassName)} />}
                 className={cn(controlLabelClass, "h-11 w-full justify-start gap-3", danger && "text-red-400")}
               >
-                {displayText(label)}
+                {i18n.displayText(label)}
               </LockedMenuItem>
             </Fragment>
           );
@@ -180,7 +180,7 @@ export function GameMenu({
       >
         {layoutAnchorRect ? (
           <div className="fixed z-[121]" style={anchoredMenuStyle(layoutAnchorRect)}>
-            {displayText(panel)}
+            {i18n.displayText(panel)}
           </div>
         ) : (
           panel
@@ -188,9 +188,9 @@ export function GameMenu({
       </ModalOverlayShell>
       <ConfirmationDialog
         open={isOpen && confirmEndRun && Boolean(onEndRun)}
-        title={gameText("ui.game-menu.2", "End this run?")}
-        description={gameText("ui.game-menu.3", "You won’t be able to continue this run.")}
-        confirmLabel={gameText("ui.game-menu.4", "End Run")}
+        title={i18n.text("ui.game-menu.2", "End this run?")}
+        description={i18n.text("ui.game-menu.3", "You won’t be able to continue this run.")}
+        confirmLabel={i18n.text("ui.game-menu.4", "End Run")}
         onCancel={() => setConfirmEndRun(false)}
         onConfirm={() => {
           setConfirmEndRun(false);

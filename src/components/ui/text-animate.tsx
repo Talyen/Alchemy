@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import { useMemo } from "react";
 import { motion, stagger, type Variants } from "motion/react";
 
@@ -41,7 +41,7 @@ export function TextAnimate({
   startOnView = true,
   once = false,
 }: TextAnimateProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   // Split on whitespace runs but keep the separators so intentional spacing
   // and line breaks survive `whitespace-pre-wrap` instead of collapsing.
   const tokens = useMemo(() => children.split(/(\s+)/).filter((part) => part.length > 0), [children]);
@@ -80,12 +80,12 @@ export function TextAnimate({
       {tokens.map((token, i) =>
         /^\s+$/.test(token) ? (
           <span key={`sep-${i}`} aria-hidden="true">
-            {displayText(token)}
+            {i18n.displayText(token)}
           </span>
         ) : (
           <span key={`word-${i}`} className="inline-block" aria-hidden="true">
             <motion.span variants={itemVariants} className="inline-block">
-              {displayText(token)}
+              {i18n.displayText(token)}
             </motion.span>
           </span>
         ),

@@ -1,4 +1,3 @@
-import { text as gameText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { CombatantFrame } from "./combatant-frame";
@@ -238,7 +237,7 @@ function ActorArtFrame({
   turnShineColors?: readonly string[] | undefined;
   ccKeyword?: ActiveCcKeyword | null;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { pulse, sparksOverflow } = useImpactPulse(impactCue);
   const recoilRef = useRef<HTMLDivElement>(null);
   const lastRecoilSequence = useRef(0);
@@ -297,7 +296,7 @@ function ActorArtFrame({
                 }
               : undefined
           }
-          ariaLabel={gameText("ui.actor-panel.1", "Inspect {{value0}}", { value0: title })}
+          ariaLabel={i18n.text("ui.actor-panel.1", "Inspect {{value0}}", { value0: title })}
           testId={`battle-${side}-art-panel`}
           clipContents={false}
           className={cn(
@@ -370,7 +369,7 @@ function ActorStatsPanel({
   healthPercent: number;
   healthToken: number;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   return (
     <div
       className={cn(
@@ -386,7 +385,7 @@ function ActorStatsPanel({
       <div className={cn("relative", isDead && "opacity-0 transition-opacity duration-700")}>
         <ActorHealthHeader side={side} title={title} health={health} maxHealth={maxHealth} healthToken={healthToken} />
         <Progress
-          aria-label={gameText("ui.actor-panel.2", "{{value0}} health", { value0: title })}
+          aria-label={i18n.text("ui.actor-panel.2", "{{value0}} health", { value0: title })}
           value={healthPercent}
           className={cn("mt-1.5 h-3 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")}
         />

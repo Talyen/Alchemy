@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import {
   type CSSProperties,
   type MouseEvent,
@@ -172,15 +172,22 @@ function CardHoverPopup({
   descriptionContext: CardDescriptionContext;
   padding?: number | undefined;
 }) {
-  useGameTranslation();
-  const descriptionLines = useMemo(
-    () => (visible ? getEffectiveCardDescriptionLines(card, descriptionContext) : []),
+  const i18n = useGameTranslation();
+  const inspectedCard = useMemo(
+    () => (visible ? (descriptionContext.inspectBattleCard?.(card) ?? card) : card),
     [visible, card, descriptionContext],
+  );
+  const descriptionLines = useMemo(
+    () => (visible ? getEffectiveCardDescriptionLines(inspectedCard, descriptionContext) : []),
+    [visible, inspectedCard, descriptionContext],
   );
   const newLineIndices = useMemo(() => {
     if (!visible || !comparisonCard) return undefined;
     const remaining = new Map<string, number>();
-    for (const line of getEffectiveCardDescriptionLines(comparisonCard, descriptionContext)) {
+    for (const line of getEffectiveCardDescriptionLines(
+      descriptionContext.inspectBattleCard?.(comparisonCard) ?? comparisonCard,
+      descriptionContext,
+    )) {
       remaining.set(line, (remaining.get(line) ?? 0) + 1);
     }
     const changed = new Set<number>();
@@ -195,7 +202,7 @@ function CardHoverPopup({
   return (
     <DetailPopup
       idPrefix={card.id}
-      title={displayText(<CardTitle card={card} />)}
+      title={i18n.displayText(<CardTitle card={card} />)}
       subtitle={undefined}
       descriptionLines={descriptionLines}
       newLineIndices={newLineIndices}
@@ -203,7 +210,7 @@ function CardHoverPopup({
       triggerRef={triggerRef}
       plasmaColorPair={plasmaColorPair}
       {...(padding !== undefined ? { padding } : {})}
-      card={card}
+      card={inspectedCard}
     />
   );
 }
@@ -231,13 +238,13 @@ function CardButtonSurface({
   shineColor,
   scenePiece = false,
 }: BattleCardButtonProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const colors = shineColor ?? (card.transmuted ? getCardKeywordShineColors(card) : undefined);
   const showShine = Boolean(hovered && !dragging && !disabled && colors?.length);
   const artwork = (
     <img
       src={card.art || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"}
-      alt={getCardDisplayTitle(card)}
+      alt={i18n.read(() => getCardDisplayTitle(card))}
       className={cn("block h-auto w-full", cardArtImageClass)}
       loading="eager"
       decoding="async"
@@ -272,7 +279,7 @@ function CardButtonSurface({
       ariaLabel={ariaLabel}
       overlay={showShine && colors ? <ShineBorder shineColor={colors} borderWidth={2} className="z-20" /> : undefined}
     >
-      {scenePiece ? <BattleSceneArtwork>{displayText(artwork)}</BattleSceneArtwork> : artwork}
+      {scenePiece ? <BattleSceneArtwork>{i18n.displayText(artwork)}</BattleSceneArtwork> : artwork}
       {children}
     </Surface>
   );

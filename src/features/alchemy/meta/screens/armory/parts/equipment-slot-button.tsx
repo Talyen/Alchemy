@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import { ShineBorder } from "@/components/ui/shine-border";
 import {
   GEAR_ASTRAL_SHINE_BORDER_WIDTH,
@@ -55,17 +55,19 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   onCombatLockedAttempt: () => void;
   isArtHidden?: boolean;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
   const shineColors = instance ? getAstralShineColors(instance) : undefined;
-  const target = getArmoryItemInteraction({
-    instance,
-    reservedBy,
-    salvageMode,
-    activeCurrencyId,
-    editable,
-    surface: { kind: "equipment", selected },
-  });
+  const target = i18n.read(() =>
+    getArmoryItemInteraction({
+      instance,
+      reservedBy,
+      salvageMode,
+      activeCurrencyId,
+      editable,
+      surface: { kind: "equipment", selected },
+    }),
+  );
   const { salvageable, blockedReason, mode, targetAriaLabel } = target;
   const ariaLabel = targetAriaLabel ?? SLOT_ARIA_LABELS[slot];
   const {
@@ -87,7 +89,10 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
       data-testid={ARMORY_GEAR_SLOT_TESTID}
       data-slot={slot}
       data-salvageable={salvageable ? "true" : undefined}
-      className={cn("relative", targetingRingClass(mode))}
+      className={cn(
+        "relative",
+        i18n.read(() => targetingRingClass(mode)),
+      )}
       onMouseEnter={handleHoverStart}
       onMouseLeave={handleMouseLeave}
     >
@@ -99,12 +104,12 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
           plasmaColorPair={getPlasmaColorPairForGear(instance)}
         >
           <GearTooltipContent definition={definition} instance={instance} />
-          {blockedReason ? <p className="mt-3 text-sm text-warning">{displayText(blockedReason)}</p> : null}
+          {blockedReason ? <p className="mt-3 text-sm text-warning">{i18n.displayText(blockedReason)}</p> : null}
         </PortaledTooltip>
       ) : null}
       <Surface
         as="button"
-        ariaLabel={displayText(ariaLabel)}
+        ariaLabel={i18n.displayText(ariaLabel)}
         {...(reservedBy ? { ariaDisabled: true } : {})}
         ariaPressed={selected}
         overlay={

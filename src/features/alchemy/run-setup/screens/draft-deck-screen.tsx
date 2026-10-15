@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { useMemo, useState } from "react";
 import { getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
@@ -29,7 +29,7 @@ function DraftedCardItem({
   interactionKey: string;
   onHoverChange: (hovered: boolean) => void;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
     interactionKey,
     card.id,
@@ -47,7 +47,7 @@ function DraftedCardItem({
         onHoverEnd();
         onHoverChange(false);
       }}
-      ariaLabel={getCardDisplayTitle(card)}
+      ariaLabel={i18n.read(() => getCardDisplayTitle(card))}
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
       scaleOnHover={false}
@@ -66,7 +66,7 @@ interface Props {
 }
 
 export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick }: Props) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const round = draftedCards.length;
   const isComplete = draftedCards.length >= DRAFT_ROUNDS;
   const [hoveredCard, setHoveredCard] = useState<BattleCard | null>(null);
@@ -80,22 +80,22 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
   return (
     <FadeSlot swapKey={isComplete ? "complete" : round} className="h-full w-full">
       <TitledScreenShell
-        title={displayText(
+        title={i18n.displayText(
           isComplete
-            ? gameText("ui.draft-deck-screen.d1", "Draft Complete")
-            : gameText("ui.draft-deck-screen.d2", "Draft a Deck"),
+            ? i18n.text("ui.draft-deck-screen.d1", "Draft Complete")
+            : i18n.text("ui.draft-deck-screen.d2", "Draft a Deck"),
         )}
         maxWidthClass="max-w-6xl"
       >
         <p className={cn("mt-3 text-center", bodyTextClass)}>
-          {displayText(
+          {i18n.displayText(
             isComplete
-              ? gameText("ui.draft-deck-screen.d3", "You drafted {{value0}} cards. Ready to begin your run.", {
-                  value0: displayText(String(draftedCards.length)),
+              ? i18n.text("ui.draft-deck-screen.d3", "You drafted {{value0}} cards. Ready to begin your run.", {
+                  value0: i18n.displayText(String(draftedCards.length)),
                 })
-              : gameText("ui.draft-deck-screen.d4", "Pick 1 of 3 cards - {{value0}}/{{value1}} selected", {
-                  value0: displayText(String(round)),
-                  value1: displayText(String(DRAFT_ROUNDS)),
+              : i18n.text("ui.draft-deck-screen.d4", "Pick 1 of 3 cards - {{value0}}/{{value1}} selected", {
+                  value0: i18n.displayText(String(round)),
+                  value1: i18n.displayText(String(DRAFT_ROUNDS)),
                 }),
           )}
         </p>
@@ -135,7 +135,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
         {isComplete ? (
           <div className="mt-6 flex justify-center">
             <Button size="lg" variant="primary" className="min-w-56" onClick={() => onComplete()}>
-              {gameText("ui.draft-deck-screen.1", "Continue")}
+              {i18n.text("ui.draft-deck-screen.1", "Continue")}
             </Button>
           </div>
         ) : null}

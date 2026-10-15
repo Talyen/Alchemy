@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import {
   gearInstanceRarity,
   getGearInstanceTooltipEntries,
@@ -22,7 +22,7 @@ export function GearTooltipContent({
   definition: GearDefinition;
   instance?: GearInstance | undefined;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const rarity = instance
     ? (gearInstanceRarity(instance) ?? definition.rarity ?? "basic")
     : (definition.rarity ?? "basic");
@@ -52,11 +52,11 @@ export function GearTooltipContent({
               <div key={entry.key}>
                 <TooltipSubheader>
                   <ShineText colors={colors} fallbackClassName="text-inherit">
-                    {displayText(entry.name)}
+                    {i18n.displayText(entry.name)}
                   </ShineText>
                 </TooltipSubheader>
                 <p className={cn(tooltipBodyLineClass, "mt-0 pl-3")}>
-                  {displayText(renderColoredKeywords(entry.text))}
+                  {i18n.displayText(i18n.read(() => renderColoredKeywords(entry.text)))}
                 </p>
               </div>
             );
@@ -66,7 +66,7 @@ export function GearTooltipContent({
         <TooltipBody>
           {entries.map((entry) => (
             <p key={entry.key} className={tooltipBodyLineClass}>
-              {displayText(renderColoredKeywords(entry.text))}
+              {i18n.displayText(i18n.read(() => renderColoredKeywords(entry.text)))}
             </p>
           ))}
         </TooltipBody>

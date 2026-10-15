@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import type { RefObject } from "react";
 import { ArrowDownToLine, ArrowUpFromLine, Layers } from "lucide-react";
 import type { BattleCard, CardDescriptionContext } from "@/lib/game-data";
@@ -33,7 +33,7 @@ interface CardInspectionOverlayProps {
 }
 
 export function CardInspectionOverlay(props: CardInspectionOverlayProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const heldSelected = useHeldWhile(props.open, props.selected ?? "deck");
   const collection = props.collections.find((entry) => entry.id === heldSelected) ?? props.collections[0];
   const cards = collection?.cards ?? [];
@@ -42,7 +42,7 @@ export function CardInspectionOverlay(props: CardInspectionOverlayProps) {
       open={props.open}
       escapeId="card-inspection"
       testId="card-inspection-overlay"
-      title={gameText("ui.card-inspection-overlay.1", "Deck")}
+      title={i18n.text("ui.card-inspection-overlay.1", "Deck")}
       header={
         props.collections.length > 1 ? (
           <TabBar
@@ -58,7 +58,7 @@ export function CardInspectionOverlay(props: CardInspectionOverlayProps) {
           />
         ) : undefined
       }
-      closeLabel={gameText("ui.card-inspection-overlay.attr1", "Close card inspection")}
+      closeLabel={i18n.text("ui.card-inspection-overlay.attr1", "Close card inspection")}
       onClose={props.onClose}
       returnFocusRef={props.returnFocusRef}
       overlayClassName={cn(
@@ -68,7 +68,7 @@ export function CardInspectionOverlay(props: CardInspectionOverlayProps) {
       )}
     >
       {cards.length === 0 ? (
-        <InspectionEmptyState icon={Layers} label={displayText(EMPTY_LABELS[heldSelected])} />
+        <InspectionEmptyState icon={Layers} label={i18n.displayText(EMPTY_LABELS[heldSelected])} />
       ) : (
         <InspectionCardGrid
           cards={cards}

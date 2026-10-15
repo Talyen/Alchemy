@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { useState } from "react";
 
 import { cardHoverScaleClass } from "@/features/alchemy/shared/config";
@@ -17,17 +17,17 @@ export function CurrencyAmount({
   iconClassName?: string | undefined;
   className?: string | undefined;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   return (
     <>
       <HomesteadResourceArtwork
         resource="gold"
         size="md"
         className={iconClassName}
-        alt={displayText(suffix ? "" : gameText("ui.display-elements.d1", "Gold"))}
+        alt={i18n.displayText(suffix ? "" : i18n.text("ui.display-elements.d1", "Gold"))}
       />
       <span className={cn("tabular-nums", className)}>
-        {displayText(formatLargeAmount(amount))}
+        {i18n.displayText(formatLargeAmount(amount))}
         {suffix}
       </span>
     </>
@@ -66,7 +66,7 @@ export function GoldDisplay({
   testId?: string;
   className?: string;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const [previousGold, setPreviousGold] = useState(gold);
   const [increaseToken, setIncreaseToken] = useState(0);
   if (gold !== previousGold) {
@@ -83,12 +83,12 @@ export function GoldDisplay({
         increaseToken > 0 && "battle-gold-increase",
         className,
       )}
-      aria-label={gameText("ui.display-elements.1", "Gold: {{value0}}", { value0: gold })}
+      aria-label={i18n.text("ui.display-elements.1", "Gold: {{value0}}", { value0: gold })}
       role="img"
       data-testid={testId}
     >
       <HomesteadResourceArtwork resource="gold" size="md" alt="" />
-      <span>{displayText(formatLargeAmount(gold))}</span>
+      <span>{i18n.displayText(formatLargeAmount(gold))}</span>
     </div>
   );
 }

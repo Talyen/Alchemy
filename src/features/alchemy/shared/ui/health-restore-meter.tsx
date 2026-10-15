@@ -1,4 +1,3 @@
-import { text as gameText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { Progress } from "@/components/ui/progress";
@@ -15,12 +14,12 @@ export function HealthRestoreMeter({
   maxHealth: number;
   progressHealth: number;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   return (
     <div className={cn("max-w-full rounded-shell-inner px-5 py-3.5 surface-muted", battleCardWidthClass)}>
       <div className="flex items-center justify-between gap-3">
         <p className={cn("text-lg font-semibold", keywordDefinitions.health.colorClass)}>
-          {gameText("ui.health-restore-meter.1", "Health")}
+          {i18n.text("ui.health-restore-meter.1", "Health")}
         </p>
         <p className="text-base font-medium text-muted-foreground tabular-nums">
           <GameMessage
@@ -31,7 +30,7 @@ export function HealthRestoreMeter({
         </p>
       </div>
       <Progress
-        aria-label={gameText("ui.health-restore-meter.3", "Health")}
+        aria-label={i18n.text("ui.health-restore-meter.3", "Health")}
         value={(progressHealth / maxHealth) * 100}
         fillStyle={{ transition: "none" }}
         className="mt-1.5 h-3 bg-background/80 [&>div]:bg-destructive"

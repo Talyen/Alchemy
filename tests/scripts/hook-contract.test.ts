@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { mkdtempSync, readFileSync, writeFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
@@ -56,41 +57,39 @@ describe("canonical verification commands", () => {
 
   it("finishes independent static checks after failures and still returns failure", async () => {
     const root = mkdtempSync(join(tmpdir(), "alchemy-static-settled-"));
-    try {
-      const runner = async (_command: string, _args: string[], options: Record<string, unknown>) => {
-        const name = basename(String(options.logPath), ".log");
-        const status = name === "dead-code" ? 1 : 0;
-        await new Promise((resolve) => {
-          setTimeout(resolve, status === 1 ? 0 : 250);
-        });
-        writeFileSync(join(root, `${name}.done`), "done");
-        return { status, elapsedMs: 1, output: status === 0 ? "passed" : "failed", logPath: String(options.logPath) };
-      };
-      const result = await runCiLint({
-        rootDir: root,
-        runner,
+    using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
+
+    const runner = async (_command: string, _args: string[], options: Record<string, unknown>) => {
+      const name = basename(String(options.logPath), ".log");
+      const status = name === "dead-code" ? 1 : 0;
+      await new Promise((resolve) => {
+        setTimeout(resolve, status === 1 ? 0 : 250);
       });
-      expect(result).toBe(1);
-      expect(
-        readdirSync(root)
-          .filter((name) => name.endsWith(".done"))
-          .sort(),
-      ).toEqual(
-        [
-          "localization",
-          "static-checks",
-          "documentation-checks",
-          "dead-code",
-          "dependency-boundaries",
-          "architecture-smoke",
-          "Playwright-collection",
-        ]
-          .map((name) => `${name}.done`)
-          .sort(),
-      );
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
+      writeFileSync(join(root, `${name}.done`), "done");
+      return { status, elapsedMs: 1, output: status === 0 ? "passed" : "failed", logPath: String(options.logPath) };
+    };
+    const result = await runCiLint({
+      rootDir: root,
+      runner,
+    });
+    expect(result).toBe(1);
+    expect(
+      readdirSync(root)
+        .filter((name) => name.endsWith(".done"))
+        .sort(),
+    ).toEqual(
+      [
+        "localization",
+        "static-checks",
+        "documentation-checks",
+        "dead-code",
+        "dependency-boundaries",
+        "architecture-smoke",
+        "Playwright-collection",
+      ]
+        .map((name) => `${name}.done`)
+        .sort(),
+    );
   });
 
   it("runs critical browser journeys on every push and keeps manual save selection unfiltered", () => {

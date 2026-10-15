@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { autoUpdate, computePosition, flip, offset, shift } from "@floating-ui/dom";
 import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
@@ -31,7 +31,7 @@ export function LabyrinthMapViewport({
   onSelect,
   onDeselect,
 }: Props) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const viewportRef = useRef<HTMLDivElement>(null);
   const inspectorRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0, scale: 1 });
@@ -136,9 +136,9 @@ export function LabyrinthMapViewport({
 
   return (
     <section
-      aria-label={gameText("ui.labyrinth-map-viewport.1", "Labyrinth map")}
-      aria-description={gameText("ui.labyrinth-map-viewport.msg1", "Floor {{value0}}", {
-        value0: displayText(map.currentFloor),
+      aria-label={i18n.text("ui.labyrinth-map-viewport.1", "Labyrinth map")}
+      aria-description={i18n.text("ui.labyrinth-map-viewport.msg1", "Floor {{value0}}", {
+        value0: i18n.displayText(map.currentFloor),
       })}
       className="flex min-h-0 min-w-0 flex-1 flex-col"
     >

@@ -75,9 +75,6 @@ describe("localized game presentation", () => {
   it("reorders whole UI sentences while preserving their interactive controls", async () => {
     localization.addResource("de", "translation", "test.reordered", "Weiter mit <action/>.");
     const click = vi.fn();
-    await act(async () => {
-      await localization.changeLanguage("de");
-    });
     render(
       <GameMessage
         id="test.reordered"
@@ -85,6 +82,13 @@ describe("localized game presentation", () => {
         parts={{ action: <button onClick={click}>OK</button> }}
       />,
     );
+    const button = screen.getByRole("button", { name: "OK" });
+    button.focus();
+    await act(async () => {
+      await localization.changeLanguage("de");
+    });
+    expect(screen.getByRole("button", { name: "OK" })).toBe(button);
+    expect(document.activeElement).toBe(button);
     fireEvent.click(screen.getByRole("button", { name: "OK" }));
     expect(click).toHaveBeenCalledOnce();
     expect(screen.getByRole("button", { name: "OK" }).parentElement?.textContent).toContain("Weiter mit OK.");

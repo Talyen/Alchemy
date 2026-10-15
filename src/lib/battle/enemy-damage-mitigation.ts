@@ -1,5 +1,10 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
-import { HALF_DIVISOR, LABYRINTH_MODIFIER_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
+import {
+  GLACIAL_SURGE_FREEZE_DAMAGE_BONUS,
+  HALF_DIVISOR,
+  LABYRINTH_MODIFIER_CONFIG,
+  PERCENT_DENOMINATOR,
+} from "../game-constants";
 import { mergeCombatText } from "./combat-text-events";
 import { paceCombatDamage } from "./fight-pacing";
 import { armorMitigatesElementalDamage, reduceDamageByMana } from "./status-helpers";
@@ -70,7 +75,8 @@ export function prepareEnemyDamage(
     effect.damageType === "burn"
       ? state.enemyStatuses.burnBonus
       : effect.damageType === "freeze"
-        ? state.enemyStatuses.freezeBonus
+        ? state.enemyStatuses.freezeBonus +
+          (hasEnemyTrait(state, "glacial-shell") ? GLACIAL_SURGE_FREEZE_DAMAGE_BONUS : 0)
         : 0;
   const scale = (amount: number) => {
     let damage = Math.max(0, amount + (options.flatBonus ?? 0)) * (options.amountMultiplier ?? 1);

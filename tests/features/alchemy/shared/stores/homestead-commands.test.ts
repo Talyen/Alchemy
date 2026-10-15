@@ -125,36 +125,33 @@ describe("four-tier Homestead persistence and settlement", () => {
 describe("meta intent commands", () => {
   it("purchases upgrades in the supplied career without changing the default career", async () => {
     const commands = await import("@/features/alchemy/shared/stores/meta-commands");
-    const session = createGameSession();
-    try {
-      dispatchGameplayCommand(
-        (draft) => {
-          addMaterialsToStockpile(draft, { ...emptyInventory(), stone: 4, iron: 11, food: 21, gems: 10 });
-          setDiscoveredCardIds(draft, ["wolf-companion"]);
-          return acceptCommand();
-        },
-        undefined,
-        session,
-      );
-      const defaultRevision = readRunRevision(defaultGameSession);
-      expect(commands.constructBuilding("blacksmiths-forge", session)).toBe(true);
-      expect(commands.plantFarm("wheat-field", session)).toBe(true);
-      expect(commands.completeResearch("leyline-energy", session)).toBe(true);
-      expect(commands.bondCompanion("wolf", session)).toBe(true);
-      expect(readRunProfile(session)).toMatchObject({
-        constructedBuildings: { "blacksmiths-forge": 1 },
-        plantedFarms: { "wheat-field": 1 },
-        completedResearch: { "leyline-energy": 1 },
-        bondedCompanions: { wolf: 1 },
-        materialInventory: emptyInventory(),
-      });
-      const revision = readRunRevision(session);
-      expect(commands.constructBuilding("blacksmiths-forge", session)).toBe(false);
-      expect(readRunRevision(session)).toBe(revision);
-      expect(readRunRevision(defaultGameSession)).toBe(defaultRevision);
-    } finally {
-      await session.dispose();
-    }
+    await using session = createGameSession();
+
+    dispatchGameplayCommand(
+      (draft) => {
+        addMaterialsToStockpile(draft, { ...emptyInventory(), stone: 4, iron: 11, food: 21, gems: 10 });
+        setDiscoveredCardIds(draft, ["wolf-companion"]);
+        return acceptCommand();
+      },
+      undefined,
+      session,
+    );
+    const defaultRevision = readRunRevision(defaultGameSession);
+    expect(commands.constructBuilding("blacksmiths-forge", session)).toBe(true);
+    expect(commands.plantFarm("wheat-field", session)).toBe(true);
+    expect(commands.completeResearch("leyline-energy", session)).toBe(true);
+    expect(commands.bondCompanion("wolf", session)).toBe(true);
+    expect(readRunProfile(session)).toMatchObject({
+      constructedBuildings: { "blacksmiths-forge": 1 },
+      plantedFarms: { "wheat-field": 1 },
+      completedResearch: { "leyline-energy": 1 },
+      bondedCompanions: { wolf: 1 },
+      materialInventory: emptyInventory(),
+    });
+    const revision = readRunRevision(session);
+    expect(commands.constructBuilding("blacksmiths-forge", session)).toBe(false);
+    expect(readRunRevision(session)).toBe(revision);
+    expect(readRunRevision(defaultGameSession)).toBe(defaultRevision);
   });
 
   it("constructBuilding returns false and does not mutate when resources are insufficient", async () => {

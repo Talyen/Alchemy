@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { makeTestCard } from "../../../../../fixtures/cards";
 import { createRef, type MouseEventHandler, type RefObject } from "react";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -135,24 +136,22 @@ describe("BattleHand", () => {
       .spyOn(target, "getClientRects")
       .mockReturnValue([new DOMRect(0, 0, 44, 44)] as unknown as DOMRectList);
     target.scrollIntoView = vi.fn();
-    try {
-      const card = screen.getByRole("button", { name: "Play Slash" });
-      card.focus();
-      fireEvent.keyDown(card, { key: "Enter" });
-      fireEvent.click(card);
-      expect(onCardClick).toHaveBeenCalledOnce();
-      if (interruption === "blur") {
-        fireEvent.blur(window);
-        fireEvent.focus(window);
-      }
-      if (interruption !== "none" && interruption !== "blur") {
-        fireEvent.keyDown(card, { key: interruption });
-      }
-      rerender(tree([]));
-      expect(document.activeElement).toBe(interruption !== "none" ? document.body : target);
-    } finally {
-      geometry.mockRestore();
+    using _scopeCleanup = createCleanup(() => geometry.mockRestore());
+
+    const card = screen.getByRole("button", { name: "Play Slash" });
+    card.focus();
+    fireEvent.keyDown(card, { key: "Enter" });
+    fireEvent.click(card);
+    expect(onCardClick).toHaveBeenCalledOnce();
+    if (interruption === "blur") {
+      fireEvent.blur(window);
+      fireEvent.focus(window);
     }
+    if (interruption !== "none" && interruption !== "blur") {
+      fireEvent.keyDown(card, { key: interruption });
+    }
+    rerender(tree([]));
+    expect(document.activeElement).toBe(interruption !== "none" ? document.body : target);
   });
 
   it("keeps playable cards colored and interactive during transfers", () => {
@@ -174,17 +173,15 @@ describe("BattleHand", () => {
       setBattleActiveForTest(draft, true);
       setScreen(draft, "battle");
     });
-    try {
-      renderHand();
-      const expensive = screen.getByRole("button", { name: "Play Meteor" });
-      const affordable = screen.getByRole("button", { name: "Play Slash" });
-      act(() => battlePresentation.getState().rejectCardPlay(getHandCardKey(expensiveCard, 1), true));
-      expect(expensive.classList.contains("card-play-rejected")).toBe(true);
-      expect(affordable.classList.contains("card-play-rejected")).toBe(false);
-      act(() => battlePresentation.getState().resetPresentation());
-      expect(expensive.classList.contains("card-play-rejected")).toBe(false);
-    } finally {
-      audioState.muted = wasMuted;
-    }
+    using _scopeCleanup = createCleanup(() => (audioState.muted = wasMuted));
+
+    renderHand();
+    const expensive = screen.getByRole("button", { name: "Play Meteor" });
+    const affordable = screen.getByRole("button", { name: "Play Slash" });
+    act(() => battlePresentation.getState().rejectCardPlay(getHandCardKey(expensiveCard, 1), true));
+    expect(expensive.classList.contains("card-play-rejected")).toBe(true);
+    expect(affordable.classList.contains("card-play-rejected")).toBe(false);
+    act(() => battlePresentation.getState().resetPresentation());
+    expect(expensive.classList.contains("card-play-rejected")).toBe(false);
   });
 });

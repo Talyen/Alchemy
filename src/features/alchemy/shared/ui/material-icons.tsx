@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import { cn, formatLargeAmount } from "@/lib/utils";
 import { materialLabels, type MaterialId } from "@/lib/homestead/types";
 import {
@@ -75,14 +75,14 @@ export function HomesteadResourceArtwork({
   className?: string | undefined;
   alt?: string | undefined;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const artSrc = RESOURCE_ART_MAP[resource];
   const sizeClass = SIZE_CLASSES[size];
 
   return (
     <img
       src={artSrc}
-      alt={displayText(alt ?? RESOURCE_LABELS[resource] ?? resource)}
+      alt={i18n.displayText(alt ?? RESOURCE_LABELS[resource] ?? resource)}
       className={cn("shrink-0 object-contain select-none", sizeClass, className)}
       loading="eager"
       decoding="async"
@@ -114,7 +114,7 @@ export function ResourcePill({
   size?: "md" | "lg" | undefined;
   className?: string | undefined;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const displayTitle = title ?? RESOURCE_LABELS[resource] ?? resource;
   const formattedAmount = formatLargeAmount(amount);
   const displayedValue = showsIncreasePrefix ? `+${formattedAmount}` : formattedAmount;
@@ -139,19 +139,19 @@ export function ResourcePill({
       <HomesteadResourceArtwork resource={resource} size={large ? "xl" : "lg"} className="drop-shadow-sm" />
       <div className="flex min-w-0 flex-1 flex-col text-left leading-tight">
         <span
-          title={displayText(displayTitle)}
+          title={i18n.displayText(displayTitle)}
           className={cn(
             "truncate font-medium whitespace-nowrap text-muted-foreground uppercase",
             large ? RESOURCE_LABEL_CLASS_LARGE : RESOURCE_LABEL_CLASS,
           )}
         >
-          {displayText(displayTitle)}
+          {i18n.displayText(displayTitle)}
         </span>
         <span
-          title={displayText(displayedValue)}
+          title={i18n.displayText(displayedValue)}
           className={cn("truncate font-bold text-foreground tabular-nums", large ? "text-xl" : "text-lg")}
         >
-          {displayText(displayedValue)}
+          {i18n.displayText(displayedValue)}
         </span>
       </div>
     </div>

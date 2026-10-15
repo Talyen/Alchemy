@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { memo } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { SHINE_PALETTES } from "@/features/alchemy/shared/config/shine-palettes";
@@ -43,7 +43,7 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
   onHover,
   onFocus,
 }: Props) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const visual = labyrinthNodeVisualState(map, node.id);
   const discovered = visual !== "undiscovered";
   const current = node.id === map.currentNodeId;
@@ -58,20 +58,20 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
         labyrinthShroudedArt[hashStringToUint32(node.id) % labyrinthShroudedArt.length]!;
   const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("labyrinth", node.id);
   const status = current
-    ? gameText("labyrinth.node-status-0", "you are here")
+    ? i18n.text("labyrinth.node-status-0", "you are here")
     : visual === "cleared"
-      ? gameText("labyrinth.node-status-1", "completed")
+      ? i18n.text("labyrinth.node-status-1", "completed")
       : visual === "reachable"
-        ? gameText("labyrinth.node-status-2", "reachable, enterable")
-        : gameText("labyrinth.node-status-3", "discovered, out of reach");
+        ? i18n.text("labyrinth.node-status-2", "reachable, enterable")
+        : i18n.text("labyrinth.node-status-3", "discovered, out of reach");
   const label = discovered
-    ? gameText("ui.labyrinth-node-seal.msg1", "{{value0}} chamber, {{value1}}", {
-        value0: displayText(NODE_TYPE_LABELS[node.type]),
-        value1: displayText(status),
+    ? i18n.text("ui.labyrinth-node-seal.msg1", "{{value0}} chamber, {{value1}}", {
+        value0: i18n.displayText(NODE_TYPE_LABELS[node.type]),
+        value1: i18n.displayText(status),
       })
-    : gameText("ui.labyrinth-node-seal.msg2", "Undiscovered chamber, row {{value0}}, column {{value1}}", {
-        value0: displayText(node.gridPosition.row + 1),
-        value1: displayText(node.gridPosition.col + LABYRINTH_GRID.sideColumns + 1),
+    : i18n.text("ui.labyrinth-node-seal.msg2", "Undiscovered chamber, row {{value0}}, column {{value1}}", {
+        value0: i18n.displayText(node.gridPosition.row + 1),
+        value1: i18n.displayText(node.gridPosition.col + LABYRINTH_GRID.sideColumns + 1),
       });
 
   return (
@@ -85,7 +85,7 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
     >
       <Surface
         as="button"
-        ariaLabel={displayText(label)}
+        ariaLabel={i18n.displayText(label)}
         ariaCurrent={current ? "location" : undefined}
         ariaPressed={selected}
         ariaDisabled={!discovered}

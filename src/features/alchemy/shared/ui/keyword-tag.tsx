@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import type { KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -35,7 +35,7 @@ export function KeywordTag({
   disabled = false,
   selected,
 }: KeywordTagProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLButtonElement>();
 
@@ -65,7 +65,7 @@ export function KeywordTag({
           aria-hidden="true"
         />
       ) : null}
-      {displayText(def.label)}
+      {i18n.displayText(def.label)}
     </span>
   );
 
@@ -81,10 +81,10 @@ export function KeywordTag({
         choice && ["transmutation-keyword-choice", def.colorClass],
         selected && !choice && "ring-2 ring-current",
       )}
-      aria-label={displayText(
+      aria-label={i18n.displayText(
         onSelect
-          ? gameText("ui.keyword-tag.d1", "Choose {{value0}}", { value0: displayText(def.label) })
-          : gameText("ui.keyword-tag.d2", "Inspect {{value0}} keyword", { value0: displayText(def.label) }),
+          ? i18n.text("ui.keyword-tag.d1", "Choose {{value0}}", { value0: i18n.displayText(def.label) })
+          : i18n.text("ui.keyword-tag.d2", "Inspect {{value0}} keyword", { value0: i18n.displayText(def.label) }),
       )}
       aria-pressed={onSelect ? selected : undefined}
       disabled={disabled}
@@ -94,7 +94,7 @@ export function KeywordTag({
       onFocusCapture={onFocusCapture}
       onBlurCapture={onBlurCapture}
     >
-      <span className={onSelect ? undefined : "cursor-help"}>{displayText(tag)}</span>
+      <span className={onSelect ? undefined : "cursor-help"}>{i18n.displayText(tag)}</span>
       {choice && selected && !reducedMotion ? (
         <ShineBorder shineColor={getKeywordShineColors(keywordId)} borderWidth={2} duration={8} />
       ) : null}
@@ -106,7 +106,7 @@ export function KeywordTag({
         <span className={cn("flex items-center gap-2", tooltipHeaderClass)}>
           <KeywordTag keywordId={keywordId} className="text-sm sm:text-base" showIcon />
         </span>
-        <TooltipBody>{renderColoredKeywords(def.description)}</TooltipBody>
+        <TooltipBody>{i18n.read(() => renderColoredKeywords(def.description))}</TooltipBody>
       </PortaledTooltip>
     </button>
   );

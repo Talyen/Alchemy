@@ -14,6 +14,27 @@ export interface GearBaseItemDefinition {
   salvageByRarity: Record<GearRarity, MaterialInventory>;
 }
 
+// Each placement owns both its hand rule and legal slots.
+function baseItem(slotRule: GearSlotRule, compatibleSlots: GearSlot[]) {
+  return (
+    displayName: string,
+    affinityKeywords: KeywordId[],
+    salvageByRarity: GearBaseItemDefinition["salvageByRarity"],
+  ): Omit<GearBaseItemDefinition, "id"> => ({
+    displayName,
+    affinityKeywords,
+    salvageByRarity,
+    slotRule,
+    compatibleSlots: [...compatibleSlots],
+  });
+}
+const oneHanded = baseItem("standard", ["main-hand", "off-hand"]);
+const twoHanded = baseItem("two-handed", ["main-hand"]);
+const ranged = baseItem("ranged", ["main-hand"]);
+const offHand = baseItem("standard", ["off-hand"]);
+const quiver = baseItem("quiver", ["off-hand"]);
+const bodyArmor = baseItem("standard", ["body"]);
+
 function salvageBy(
   basic: Partial<MaterialInventory>,
   astral: Partial<MaterialInventory>,
@@ -71,153 +92,27 @@ function jewelryBaseItems(): Record<JewelryBaseItemId, Omit<GearBaseItemDefiniti
 }
 
 const gearBaseItemCatalog = {
-  "double-axe": {
-    displayName: "Double Axe",
-    compatibleSlots: ["main-hand"],
-    slotRule: "two-handed",
-    affinityKeywords: ["physical", "stun", "bleed"],
-    salvageByRarity: ironHeavy,
-  },
-  maul: {
-    displayName: "Maul",
-    compatibleSlots: ["main-hand"],
-    slotRule: "two-handed",
-    affinityKeywords: ["physical", "stun", "holy"],
-    salvageByRarity: ironHeavy,
-  },
-  greatsword: {
-    displayName: "Greatsword",
-    compatibleSlots: ["main-hand"],
-    slotRule: "two-handed",
-    affinityKeywords: ["physical", "stun", "forge"],
-    salvageByRarity: ironHeavy,
-  },
-  hatchet: {
-    displayName: "Hatchet",
-    compatibleSlots: ["main-hand", "off-hand"],
-    slotRule: "standard",
-    affinityKeywords: ["physical", "bleed"],
-    salvageByRarity: salvageBy({ iron: 3, wood: 3 }, { iron: 6, wood: 3 }),
-  },
-  longsword: {
-    displayName: "Longsword",
-    compatibleSlots: ["main-hand", "off-hand"],
-    slotRule: "standard",
-    affinityKeywords: ["physical", "forge", "holy"],
-    salvageByRarity: ironMedium,
-  },
-  shortsword: {
-    displayName: "Shortsword",
-    compatibleSlots: ["main-hand", "off-hand"],
-    slotRule: "standard",
-    affinityKeywords: ["physical", "forge", "bleed"],
-    salvageByRarity: ironLight,
-  },
-  dagger: {
-    displayName: "Dagger",
-    compatibleSlots: ["main-hand", "off-hand"],
-    slotRule: "standard",
-    affinityKeywords: ["physical", "bleed", "poison", "dodge"],
-    salvageByRarity: ironLight,
-  },
-  mace: {
-    displayName: "Mace",
-    compatibleSlots: ["main-hand", "off-hand"],
-    slotRule: "standard",
-    affinityKeywords: ["physical", "stun", "holy"],
-    salvageByRarity: ironMedium,
-  },
-  flail: {
-    displayName: "Flail",
-    compatibleSlots: ["main-hand", "off-hand"],
-    slotRule: "standard",
-    affinityKeywords: ["physical", "stun"],
-    salvageByRarity: ironMedium,
-  },
-  longbow: {
-    displayName: "Longbow",
-    compatibleSlots: ["main-hand"],
-    slotRule: "ranged",
-    affinityKeywords: ["archery", "physical", "nature", "companion"],
-    salvageByRarity: woodMedium,
-  },
-  shortbow: {
-    displayName: "Shortbow",
-    compatibleSlots: ["main-hand"],
-    slotRule: "ranged",
-    affinityKeywords: ["archery", "physical", "nature", "companion", "dodge"],
-    salvageByRarity: woodLight,
-  },
-  "recurve-bow": {
-    displayName: "Recurve Bow",
-    compatibleSlots: ["main-hand"],
-    slotRule: "ranged",
-    affinityKeywords: ["archery", "nature", "physical", "companion"],
-    salvageByRarity: woodMedium,
-  },
-  crossbow: {
-    displayName: "Crossbow",
-    compatibleSlots: ["main-hand"],
-    slotRule: "ranged",
-    affinityKeywords: ["archery", "physical"],
-    salvageByRarity: salvageBy({ wood: 6, iron: 3 }, { wood: 6, iron: 6 }),
-  },
-  staff: {
-    displayName: "Staff",
-    compatibleSlots: ["main-hand"],
-    slotRule: "two-handed",
-    affinityKeywords: ["burn", "freeze", "mana"],
-    salvageByRarity: salvageBy({ wood: 3, gems: 3 }, { wood: 6, gems: 3 }),
-  },
-  wand: {
-    displayName: "Wand",
-    compatibleSlots: ["main-hand", "off-hand"],
-    slotRule: "standard",
-    affinityKeywords: ["burn", "freeze", "mana"],
-    salvageByRarity: salvageBy({ wood: 3 }, { wood: 3, gems: 3 }),
-  },
-  "leather-buckler": {
-    displayName: "Leather Buckler",
-    compatibleSlots: ["off-hand"],
-    slotRule: "standard",
-    affinityKeywords: ["block", "armor", "physical", "dodge"],
-    salvageByRarity: woodHideLight,
-  },
-  "kite-shield": {
-    displayName: "Kite Shield",
-    compatibleSlots: ["off-hand"],
-    slotRule: "standard",
-    affinityKeywords: ["block", "armor", "stun", "physical"],
-    salvageByRarity: ironHeavy,
-  },
-  quiver: {
-    displayName: "Quiver",
-    compatibleSlots: ["off-hand"],
-    slotRule: "quiver",
-    affinityKeywords: ["archery", "physical", "dodge"],
-    salvageByRarity: hideLight,
-  },
-  spellbook: {
-    displayName: "Spellbook",
-    compatibleSlots: ["off-hand"],
-    slotRule: "standard",
-    affinityKeywords: ["burn", "freeze", "holy"],
-    salvageByRarity: salvageBy({ gems: 6 }, { gems: 9 }),
-  },
-  "leather-armor": {
-    displayName: "Leather Armor",
-    compatibleSlots: ["body"],
-    slotRule: "standard",
-    affinityKeywords: ["physical", "health", "armor", "dodge"],
-    salvageByRarity: hideLight,
-  },
-  "plate-armor": {
-    displayName: "Plate Armor",
-    compatibleSlots: ["body"],
-    slotRule: "standard",
-    affinityKeywords: ["armor", "block", "stun", "physical"],
-    salvageByRarity: ironHeavy,
-  },
+  "double-axe": twoHanded("Double Axe", ["physical", "stun", "bleed"], ironHeavy),
+  maul: twoHanded("Maul", ["physical", "stun", "holy"], ironHeavy),
+  greatsword: twoHanded("Greatsword", ["physical", "stun", "forge"], ironHeavy),
+  hatchet: oneHanded("Hatchet", ["physical", "bleed"], salvageBy({ iron: 3, wood: 3 }, { iron: 6, wood: 3 })),
+  longsword: oneHanded("Longsword", ["physical", "forge", "holy"], ironMedium),
+  shortsword: oneHanded("Shortsword", ["physical", "forge", "bleed"], ironLight),
+  dagger: oneHanded("Dagger", ["physical", "bleed", "poison", "dodge"], ironLight),
+  mace: oneHanded("Mace", ["physical", "stun", "holy"], ironMedium),
+  flail: oneHanded("Flail", ["physical", "stun"], ironMedium),
+  longbow: ranged("Longbow", ["archery", "physical", "nature", "companion"], woodMedium),
+  shortbow: ranged("Shortbow", ["archery", "physical", "nature", "companion", "dodge"], woodLight),
+  "recurve-bow": ranged("Recurve Bow", ["archery", "nature", "physical", "companion"], woodMedium),
+  crossbow: ranged("Crossbow", ["archery", "physical"], salvageBy({ wood: 6, iron: 3 }, { wood: 6, iron: 6 })),
+  staff: twoHanded("Staff", ["burn", "freeze", "mana"], salvageBy({ wood: 3, gems: 3 }, { wood: 6, gems: 3 })),
+  wand: oneHanded("Wand", ["burn", "freeze", "mana"], salvageBy({ wood: 3 }, { wood: 3, gems: 3 })),
+  "leather-buckler": offHand("Leather Buckler", ["block", "armor", "physical", "dodge"], woodHideLight),
+  "kite-shield": offHand("Kite Shield", ["block", "armor", "stun", "physical"], ironHeavy),
+  quiver: quiver("Quiver", ["archery", "physical", "dodge"], hideLight),
+  spellbook: offHand("Spellbook", ["burn", "freeze", "holy"], salvageBy({ gems: 6 }, { gems: 9 })),
+  "leather-armor": bodyArmor("Leather Armor", ["physical", "health", "armor", "dodge"], hideLight),
+  "plate-armor": bodyArmor("Plate Armor", ["armor", "block", "stun", "physical"], ironHeavy),
   ...jewelryBaseItems(),
 } satisfies Record<string, Omit<GearBaseItemDefinition, "id">>;
 

@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { describe, expect, it, vi, afterEach } from "vitest";
@@ -121,22 +122,22 @@ describe("SCREEN_ROUTES registry", () => {
     const props = createMockProps("transmutation");
     const completion = sessionRuntime(defaultGameSession).progressCompletion;
     const deactivate = completion.registerRetryDriver(vi.fn());
-    try {
-      initializeAlchemyVisit("transmutation", defaultGameSession);
-      expect(completion.read().kind).toBe("saving");
-      const before = readGameplayState(defaultGameSession);
-      const view = render(renderAlchemyScreenRoute(props));
-      view.unmount();
-      render(renderAlchemyScreenRoute(props));
-      expect(readGameplayState(defaultGameSession)).toBe(before);
-      expect(transmutationRender).toHaveBeenCalled();
-      for (const [visit] of transmutationRender.mock.calls) {
-        expect(visit.transmutation?.choices).toHaveLength(3);
-        expect(visit.completed).toBe(false);
-      }
-    } finally {
+    using _scopeCleanup = createCleanup(() => {
       cleanup();
       deactivate();
+    });
+
+    initializeAlchemyVisit("transmutation", defaultGameSession);
+    expect(completion.read().kind).toBe("saving");
+    const before = readGameplayState(defaultGameSession);
+    const view = render(renderAlchemyScreenRoute(props));
+    view.unmount();
+    render(renderAlchemyScreenRoute(props));
+    expect(readGameplayState(defaultGameSession)).toBe(before);
+    expect(transmutationRender).toHaveBeenCalled();
+    for (const [visit] of transmutationRender.mock.calls) {
+      expect(visit.transmutation?.choices).toHaveLength(3);
+      expect(visit.completed).toBe(false);
     }
   });
 

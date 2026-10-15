@@ -154,6 +154,19 @@ the current immutable battle snapshot and one presentation-store subscription.
 The engine owns legality; presentation only excludes hidden cards from interaction.
 Do not mirror engine field dependencies in a separate UI cache.
 
+## Damage values in battle inspection
+
+Card hover and keyboard inspection in the battle hand, Wish, and Deck/Draw/Discard
+viewer show current offensive damage before Block, Armor, resistance, dodge, or
+critical strikes. The combat owner's offensive stages supply Forge, active
+bonuses, prepared Poison conversion, current conditions, mana remaining after
+payment, and fight pacing. Resource-based attacks show a damage number. Random
+damage keeps an adjusted range; chance branches remain separate. Delayed attacks
+retain authored values because future resources and pacing are unknown. These
+values describe attack packets, excluding follow-up reactions and damage over time.
+Inspection never rolls randomness or spends live resources or prepared effects.
+Collection and other nonbattle views retain authored descriptions.
+
 ## Deck and pile inspection
 
 The stacked-cards toolbar icon opens the run Deck during drafting, run screens,
@@ -195,10 +208,11 @@ and Abilities headings without a divider. Abilities reuse `BattleCardButton`,
 card pagination. Cards show portrait art only; effects appear in ordinary card
 tooltips on hover or keyboard focus. Inspection cards cannot be played or flipped
 and do not inherit the hero's description context. Bestiary inspection uses
-canonical card values. Live battle inspection passes `EnemyDescriptionContext`
-to `getEncounterEnemyAbility` in `src/lib/battle/enemy-description.ts`, deriving
-displayed amounts from the encounter's room scaling, ability pressure, and
-difficulty modifiers. Trait descriptions use the same encounter context through
+canonical card values. Live battle inspection passes the displayed battle snapshot
+to `getBattleDamageInspectionCard` in `src/lib/battle/card-damage-inspection.ts`,
+including room scaling, ability pressure, difficulty modifiers, enemy Forge,
+active attack traits (including Glacial Surge), and pacing, before hero defenses.
+The repertoire remains visible without selecting or revealing the next ability. Trait descriptions use the same encounter context through
 `getEncounterEnemyTrait`. These are presentation copies; never pass scaled cards
 back into ability resolution or mutate the canonical catalog.
 

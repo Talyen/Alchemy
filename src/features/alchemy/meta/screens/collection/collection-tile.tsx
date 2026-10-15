@@ -47,7 +47,7 @@ export const CollectionTile = memo(function CollectionTile({
   onEnemyActivate,
   inspectionOpen = false,
 }: CollectionTileProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
     `collection-${item.frameType}`,
     item.id,
@@ -78,7 +78,7 @@ export const CollectionTile = memo(function CollectionTile({
       {showPopup ? <CollectionTilePopup item={item} hovered={visible} triggerRef={wrapperRef} /> : null}
       <Surface
         as="button"
-        ariaLabel={displayText(inspectAriaLabel(item))}
+        ariaLabel={i18n.displayText(i18n.read(() => inspectAriaLabel(item)))}
         onFocus={handleHoverStart}
         onBlur={handleBlur}
         shimmerActive={shimmerActive}
@@ -141,7 +141,7 @@ function CollectionTilePopup({
   hovered: boolean;
   triggerRef: RefObject<HTMLElement | null>;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   if (item.frameType === "hero") {
     return (
       <HeroTooltip
@@ -175,7 +175,7 @@ function CollectionTilePopup({
   return (
     <DetailPopup
       idPrefix={item.id}
-      title={displayText(title)}
+      title={i18n.displayText(title)}
       subtitle={item.subtitle}
       descriptionLines={descriptionLines}
       triggerRef={triggerRef}
@@ -223,11 +223,11 @@ function CollectionTileMedia({ item, flipped }: { item: CollectionTileItem; flip
 }
 
 function TileImage({ item, className }: { item: CollectionTileItem; className: string }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   return (
     <img
       src={item.art || undefined}
-      alt={displayText(item.title)}
+      alt={i18n.displayText(item.title)}
       decoding="async"
       className={cn(
         "block w-full transition-opacity duration-300",

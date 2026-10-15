@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -18,7 +18,7 @@ export function DisabledTooltip({
   message: ReactNode;
   children: ReactNode;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const {
     wrapperRef: triggerRef,
     visible,
@@ -51,7 +51,7 @@ export function DisabledTooltip({
       {show ? (
         <PortaledTooltip triggerRef={triggerRef} visible={visible} className="whitespace-nowrap">
           <p className={cn(tooltipBodyClass, "mt-0 space-y-0 leading-none text-foreground")}>
-            {displayText(renderUnlockNode(message))}
+            {i18n.displayText(i18n.read(() => renderUnlockNode(message)))}
           </p>
         </PortaledTooltip>
       ) : null}

@@ -1,4 +1,3 @@
-import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { useEffect, useRef, useState, type RefObject } from "react";
@@ -46,16 +45,16 @@ function BoardTile({
   selected: boolean;
   onActivate: (trigger: HTMLButtonElement) => void;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const hover = useInteractiveCard("collection-board", entry.kind === "board" ? entry.id : entry.kind);
   return (
     <Surface
       as="button"
-      ariaLabel={displayText(
+      ariaLabel={i18n.displayText(
         entry.kind === "board"
-          ? gameText("ui.boards-collection.d1", "Inspect {{value0}}{{value1}}", {
-              value0: displayText(entry.title),
-              value1: displayText(owned ? "" : " (Locked)"),
+          ? i18n.text("ui.boards-collection.d1", "Inspect {{value0}}{{value1}}", {
+              value0: i18n.displayText(entry.title),
+              value1: i18n.displayText(owned ? "" : " (Locked)"),
             })
           : entry.title,
       )}
@@ -97,7 +96,7 @@ function BoardTile({
           </>
         ) : (
           <span className="absolute inset-0 flex items-center justify-center text-2xl text-gold-pale">
-            {displayText(entry.title)}
+            {i18n.displayText(entry.title)}
           </span>
         )}
       </div>
@@ -118,7 +117,7 @@ function BoardPreview({
   onUseBoard: () => void;
   onClose: () => void;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { panelRef, handleKeyDown } = useDialogFocus(returnFocusRef);
   return (
     <ModalOverlayShell
@@ -134,20 +133,20 @@ function BoardPreview({
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label={displayText(board.title)}
+        aria-label={i18n.displayText(board.title)}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
         className="relative h-full w-full overflow-hidden bg-black"
       >
         <img
           src={boardArt[board.id]?.full}
-          alt={displayText(board.title)}
+          alt={i18n.displayText(board.title)}
           decoding="async"
           className="absolute inset-0 h-full w-full object-fill"
         />
         <ChromeIconButton
           className="absolute top-4 right-4 bg-black/70 text-gold-pale"
-          aria-label={gameText("ui.boards-collection.1", "Close board inspection")}
+          aria-label={i18n.text("ui.boards-collection.1", "Close board inspection")}
           data-dialog-initial-focus
           onClick={onClose}
         >
@@ -156,14 +155,14 @@ function BoardPreview({
         <div className="absolute inset-x-0 top-2/3 bottom-0 flex items-center justify-center p-5">
           {owned ? (
             <Button variant="primary" size="lg" className="min-w-56" onClick={onUseBoard}>
-              {gameText("ui.boards-collection.2", "Use Board")}
+              {i18n.text("ui.boards-collection.2", "Use Board")}
             </Button>
           ) : (
             <p className="max-w-xl rounded-xl bg-black/70 p-4 text-center text-gold-pale">
               <GameMessage
                 id="ui.boards-collection.s1"
                 defaultValue="Finish a run after completing <part0/> rooms to collect a new board."
-                parts={{ part0: displayText(BOARD_REWARD_ROOM_THRESHOLD) }}
+                parts={{ part0: i18n.displayText(BOARD_REWARD_ROOM_THRESHOLD) }}
               />
             </p>
           )}
@@ -192,7 +191,7 @@ export function BoardsCollection({
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   useEffect(() => {
     endBossPreview();
   }, []);
@@ -212,7 +211,7 @@ export function BoardsCollection({
   return (
     <PageLayout>
       <ScreenShell maxWidthClass={collectionShellWidthClass}>
-        <ScreenHeaderRow title={gameText("ui.boards-collection.5", "Collection")} onBack={onBack} onMenu={onMenu} />
+        <ScreenHeaderRow title={i18n.text("ui.boards-collection.5", "Collection")} onBack={onBack} onMenu={onMenu} />
         <CollectionTabs collectionTab="boards" onSelectTab={onSelectTab} />
         <CollectionContentLayout
           pagination={

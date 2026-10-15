@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { Dices } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { sectionTitleClass } from "@/features/alchemy/shared/config";
@@ -76,7 +76,7 @@ export function ArmoryPickerPanel({
   placeholderIndex,
   hiddenArtworkIds,
 }: ArmoryPickerPanelProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { editable, salvageMode, activeCurrencyId, craftingResult } = targeting;
   const paging = { page, totalPages, onPageChange, fillerCount, placeholderIndex, hiddenArtworkIds };
   return (
@@ -86,7 +86,7 @@ export function ArmoryPickerPanel({
     >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="relative z-20 mb-3 flex min-h-11 w-full flex-wrap items-center justify-between gap-2">
-          <h2 className={cn("font-sans", sectionTitleClass)}>{displayText(SLOT_LABELS[selectedSlot])}</h2>
+          <h2 className={cn("font-sans", sectionTitleClass)}>{i18n.displayText(SLOT_LABELS[selectedSlot])}</h2>
           <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
             <ArmoryInventoryControls
               key={`${characterId}:${selectedSlot}`}
@@ -102,10 +102,10 @@ export function ArmoryPickerPanel({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  aria-label={displayText(
+                  aria-label={i18n.displayText(
                     selectedSlot === "trinket"
-                      ? gameText("ui.armory-picker-panel.d1", "Spawn random trinket")
-                      : gameText("ui.armory-picker-panel.d2", "Spawn random gear"),
+                      ? i18n.text("ui.armory-picker-panel.d1", "Spawn random trinket")
+                      : i18n.text("ui.armory-picker-panel.d2", "Spawn random gear"),
                   )}
                   onClick={() => {
                     if (selectedSlot === "trinket") {

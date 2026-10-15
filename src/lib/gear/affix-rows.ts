@@ -1,7 +1,8 @@
 import {
   offensiveAffix,
   defensiveAffix,
-  uniqueAffix,
+  offensiveUnique,
+  defensiveUnique,
   flatDamageAffix,
   resistAffix,
   startOfCombatAffix,
@@ -15,153 +16,132 @@ import {
 // Order is part of seeded Gear generation. Presentation and manifest defaults
 // derive from these same rows, without making combat depend on tooltip parsing.
 export const gearAffixRows = [
-  uniqueAffix(
+  offensiveUnique(
     "the-unclosing-wound",
     "The Unclosing Wound",
-    "offensive",
     "bleed",
     "physical",
   )("bleedDecaysByHalf", "Enemy Bleed halves each turn instead of expiring."),
-  uniqueAffix(
+  offensiveUnique(
     "kingbreaker",
     "Kingbreaker",
-    "offensive",
     "stun",
     "physical",
   )("armorIncreasesStun", "Enemy Armor increases your Stun damage instead of reducing it."),
-  uniqueAffix(
+  offensiveUnique(
     "everkeen",
     "Everkeen",
-    "offensive",
     "forge",
     "physical",
   )("forgeReadiesPhysicalRepeat", "Gaining Forge makes your next Physical card strike twice."),
-  uniqueAffix(
+  offensiveUnique(
     "red-harvest",
     "Red Harvest",
-    "offensive",
     "physical",
     "bleed",
   )("physicalCritDetonatesBleed", "Physical Critical Hits detonate Bleed"),
-  uniqueAffix(
+  offensiveUnique(
     "oathkeeper",
     "Oathkeeper",
-    "offensive",
     "forge",
     "holy",
   )("oathkeeperHolyAndBlock", "Holy damage is increased by half your Forge. Damaging Holy attacks grant 1 Block."),
-  uniqueAffix(
+  offensiveUnique(
     "the-patient-edge",
     "The Patient Edge",
-    "offensive",
     "forge",
     "physical",
   )("forgeEveryThreeTurns", "Gain 1 Forge every 3 turns"),
-  uniqueAffix(
+  offensiveUnique(
     "vipers-courtesy",
     "Viper’s Courtesy",
-    "offensive",
     "dodge",
     "poison",
   )("dodgeReadiesVenomousHit", "After Dodging, your next Physical hit adds half its damage as Poison and Bleed."),
-  uniqueAffix(
+  offensiveUnique(
     "the-lingering-bell",
     "The Lingering Bell",
-    "offensive",
     "stun",
     "holy",
   )("retainStunBuildup", "Stunning an enemy preserves a quarter of its Stun buildup."),
-  uniqueAffix(
+  offensiveUnique(
     "huntsmasters-call",
     "Huntsmaster’s Call",
-    "offensive",
     "archery",
     "companion",
   )("archeryCritDrawsCompanion", "Archery Critical Hits draw a Companion card"),
-  uniqueAffix(
+  offensiveUnique(
     "wrenflight",
     "Wrenflight",
-    "offensive",
     "archery",
     "dodge",
   )("archeryDodgeAndDraw", "Archery grants 10% Dodge until your next turn. Dodging draws an Archery card."),
-  uniqueAffix(
+  offensiveUnique(
     "the-returning-gale",
     "The Returning Gale",
-    "offensive",
     "archery",
     "nature",
   )("archeryEchoNextTurn", "Archery cards repeat their damage at half strength next turn."),
-  uniqueAffix(
+  offensiveUnique(
     "the-final-spark",
     "The Final Spark",
-    "offensive",
     "mana",
     "burn",
   )("lastManaElementalRepeat", "Spend your last Mana to repeat a Burn or Freeze card’s damage. Once per turn."),
-  uniqueAffix(
+  defensiveUnique(
     "laughing-guard",
     "Laughing Guard",
-    "defensive",
     "block",
     "dodge",
   )(
     "dodgeSpendsPreservedBlock",
     "Keep Block between turns. Dodging spends half your Block to deal that much Physical damage.",
   ),
-  uniqueAffix(
+  defensiveUnique(
     "the-knights-answer",
     "The Knight’s Answer",
-    "defensive",
     "block",
     "physical",
   )("blockReadiesFreePhysical", "Blocking an attack makes your next Physical card free."),
-  uniqueAffix(
+  offensiveUnique(
     "the-returning-flight",
     "The Returning Flight",
-    "offensive",
     "archery",
     "dodge",
   )("recoverLastArcheryCard", "Each turn, recover your last Archery card. It costs 1 less Mana."),
-  uniqueAffix(
+  offensiveUnique(
     "threefold-grace",
     "Threefold Grace",
-    "offensive",
     "burn",
     "freeze",
   )("elementalDamageManaChance", "Dealing Burn, Freeze, or Holy damage has a {value}% chance to restore 1 Mana", 10),
-  uniqueAffix(
+  offensiveUnique(
     "bloodember-pendant",
     "Bloodember Pendant",
-    "offensive",
     "burn",
     "bleed",
   )("sharedBurnBleedBonuses", "Burn and Bleed share their damage bonuses."),
-  uniqueAffix(
+  offensiveUnique(
     "winters-credit",
     "Winter’s Credit",
-    "offensive",
     "freeze",
     "mana",
   )("blockPaysFreezeMana", "Spend 3 Block per missing Mana for Freeze cards. Block depletion rewards do not trigger."),
-  uniqueAffix(
+  offensiveUnique(
     "serpents-eye",
     "Serpent’s Eye",
-    "offensive",
     "poison",
     "archery",
   )("poisonedAttacksPierce", "Attacks against Poisoned enemies ignore Armor and cannot be Dodged."),
-  uniqueAffix(
+  defensiveUnique(
     "wildhearts-favor",
     "Wildheart’s Favor",
-    "defensive",
     "dodge",
     "nature",
   )("dodgeReadiesNatureCrit", "Dodging makes your next Nature card free and guarantees its damage Critically Hits."),
-  uniqueAffix(
+  offensiveUnique(
     "the-golden-crucible",
     "The Golden Crucible",
-    "offensive",
     "gold",
     "forge",
   )(
@@ -520,16 +500,14 @@ export const gearAffixRows = [
     "forge",
     "block",
   )("blockOnForgeGain", rollRange(1, 1, 2, 2), "When you gain Forge, gain {value} Block"),
-  uniqueAffix(
+  offensiveUnique(
     "wardbreaker-purge",
     "Wardbreaking",
-    "offensive",
     "stun",
   )("attackPurgeOncePerTurn", "Once per turn, your attacks Purge one beneficial status effect"),
-  uniqueAffix(
+  defensiveUnique(
     "dance-of-blades",
     "Bladedance",
-    "defensive",
     "dodge",
     "physical",
   )("dodgeDrawAndPlay", "When you Dodge, you have a 25% chance to draw and play a random card"),
@@ -563,10 +541,9 @@ export const gearAffixRows = [
     rollRange(2, 3, 4, 6),
     "Your next attack deals {value} additional Physical damage when you Dodge",
   ),
-  uniqueAffix(
+  offensiveUnique(
     "dodge-crit",
     "Off-Balance",
-    "offensive",
     "dodge",
   )("nextAttackCritOnDodge", "Your next attack is guaranteed to Critically Hit when you Dodge"),
   offensiveAffix("dodge-bleed", "Fleeting", "dodge")(
@@ -574,54 +551,48 @@ export const gearAffixRows = [
     rollRange(2, 3, 4, 5),
     "When you Dodge a Bleeding enemy, deal {value} Bleed damage",
   ),
-  uniqueAffix(
+  offensiveUnique(
     "bloodfire",
     "Bloodfire",
-    "offensive",
     "burn",
     "bleed",
   )(
     "burnBleedMirrorAndLeech",
     "Burn has a 20% chance to inflict Bleed, and vice versa. Both gain Leech against enemies already Burning and Bleeding",
   ),
-  uniqueAffix(
+  offensiveUnique(
     "rimeheart",
     "Rimeheart",
-    "offensive",
     "freeze",
     "block",
   )(
     "freezeGrantsBlockAndMana",
     "While you have no Block, Freeze damage grants equal Block. Freezing an enemy while you have no Mana restores Mana equal to half your Block",
   ),
-  uniqueAffix(
+  offensiveUnique(
     "blackfletch",
     "Blackfletch",
-    "offensive",
     "archery",
     "poison",
   )(
     "archeryDetonateBleedPoison",
     "Against enemies below 30% Health, Archery attacks deal all remaining Bleed and Poison damage and remove both",
   ),
-  uniqueAffix(
+  offensiveUnique(
     "twin-casting",
     "Twincasting",
-    "offensive",
     "burn",
     "freeze",
   )("elementalTwinCasting", "Playing a Burn card draws a Freeze card, and vice versa"),
-  uniqueAffix(
+  defensiveUnique(
     "saintfall",
     "Saintfall",
-    "defensive",
     "block",
     "holy",
   )("saintfallRetribution", "When Block is depleted, deal {value} Holy to the attacker and restore {value} Health", 4),
-  uniqueAffix(
+  offensiveUnique(
     "golden-verdict",
     "Verdict",
-    "offensive",
     "holy",
     "stun",
   )("holyStunBuildupGold", "Holy damage causes Stun build-up and steals {value} Gold when it Stuns an enemy"),

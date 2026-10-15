@@ -81,10 +81,46 @@ export async function extractMessages() {
       continue;
     const code = fs.readFileSync(path.join(ROOT, "src", file), "utf8");
     const ast = parse(code, file);
+    const globalReaders = new Set(
+      ast.program.body
+        .filter((node) => node.type === "ImportDeclaration" && /localization\/runtime$/.test(node.source.value))
+        .flatMap((node) =>
+          node.specifiers
+            .filter((specifier) => ["text", "displayText"].includes(specifier.imported?.name))
+            .map((specifier) => specifier.local.name),
+        ),
+    );
+    if (globalReaders.size)
+      babel.traverse(ast, {
+        CallExpression(call) {
+          if (call.node.callee.type !== "Identifier" || !globalReaders.has(call.node.callee.name)) return;
+          for (let fn = call.getFunctionParent(); fn; fn = fn.getFunctionParent()) {
+            const name =
+              fn.node.id?.name ??
+              (fn.parentPath.isVariableDeclarator()
+                ? fn.parentPath.node.id.name
+                : fn.parentPath.isCallExpression() && fn.parentPath.parentPath.isVariableDeclarator()
+                  ? fn.parentPath.parentPath.node.id.name
+                  : undefined);
+            if (
+              name &&
+              ((/^[A-Z]/.test(name) && file.endsWith(".tsx")) || /^use[A-Z]/.test(name)) &&
+              call.node.start >= fn.node.body.start
+            ) {
+              issues.push(
+                `${file}:${call.node.loc.start.line}: use the bound useGameTranslation() reader inside React`,
+              );
+              break;
+            }
+          }
+        },
+      });
     walk(ast, (node, parent) => {
       if (
         node.type === "CallExpression" &&
-        ["text", "gameText"].includes(node.callee.name) &&
+        ["text", "gameText"].includes(
+          node.callee.name ?? (node.callee.type === "MemberExpression" ? node.callee.property.name : undefined),
+        ) &&
         node.arguments[0]?.type === "StringLiteral" &&
         node.arguments[1]?.type === "StringLiteral"
       ) {

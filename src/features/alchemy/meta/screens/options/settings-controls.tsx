@@ -1,4 +1,3 @@
-import { displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { useSelectDismiss } from "../../../shared/ui/use-select-dismiss";
@@ -49,7 +48,7 @@ interface SettingsSelectProps<T extends string> {
 }
 
 export function SettingsSelect<T extends string>({ id, label, value, options, onChange }: SettingsSelectProps<T>) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const selectDismiss = useSelectDismiss();
   return (
     <div className="options-settings-row">
@@ -70,7 +69,7 @@ export function SettingsSelect<T extends string>({ id, label, value, options, on
         <SelectContent>
           {options.map((option) => (
             <SelectItem key={option.value} value={option.value}>
-              {option.native ? <span>{option.label}</span> : displayText(option.label)}
+              {option.native ? <span>{option.label}</span> : i18n.displayText(option.label)}
             </SelectItem>
           ))}
         </SelectContent>

@@ -25,12 +25,12 @@ export function InspectionCardGrid({
   resetKey: string;
   sort?: boolean;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const [pagination, setPagination] = useState({ key: resetKey, page: 0 });
   if (pagination.key !== resetKey) setPagination({ key: resetKey, page: 0 });
   const items = useMemo(
-    () => (sort ? sortInspectionCards(cards) : cards).map((card, index) => ({ card, index })),
-    [cards, sort],
+    () => (sort ? i18n.read(() => sortInspectionCards(cards)) : cards).map((card, index) => ({ card, index })),
+    [cards, sort, i18n],
   );
   return (
     <CardSelectionGrid
@@ -41,7 +41,7 @@ export function InspectionCardGrid({
         <div className={viewCardWidthClass}>
           <BattleCardButton
             card={card}
-            ariaLabel={getCardDisplayTitle(card)}
+            ariaLabel={i18n.read(() => getCardDisplayTitle(card))}
             shimmerActive={false}
             shimmerToken={undefined}
             className={viewCardWidthClass}

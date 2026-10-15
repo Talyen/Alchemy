@@ -227,12 +227,9 @@ describe("reward flow orchestration", () => {
     });
 
     it("returns null when the potion pool is empty", () => {
-      const poolSpy = vi.spyOn(cardPools, "getStandardPotionPool").mockReturnValue([]);
-      try {
-        expect(getRandomPotionCard(() => 0)).toBeNull();
-      } finally {
-        poolSpy.mockRestore();
-      }
+      using _poolSpy = vi.spyOn(cardPools, "getStandardPotionPool").mockReturnValue([]);
+
+      expect(getRandomPotionCard(() => 0)).toBeNull();
     });
   });
 });

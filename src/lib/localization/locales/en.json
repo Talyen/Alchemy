@@ -37,7 +37,7 @@
     "text": "{{item}} salvaged. Rewards added.",
     "context": "features/alchemy/meta/screens/armory-screen.tsx",
     "parameters": {
-      "item": "displayText(notice.item)"
+      "item": "i18n.displayText(notice.item)"
     },
     "terms": []
   },
@@ -7488,12 +7488,11 @@
     "terms": []
   },
   "catalog.enemyBestiary.frostwarden.traits.glacial-shell.description": {
-    "text": "Freeze damage increases by 1 every other turn, up to 2 additional damage",
+    "text": "Increases Freeze damage by 1",
     "context": "Game catalog: enemyBestiary.frostwarden.traits.glacial-shell.description",
-    "aliasOf": "description.685e7793a3b87103",
+    "aliasOf": "description.99e1ba3b2a057b7d",
     "values": {
-      "value0": 1,
-      "value1": 2
+      "value0": 1
     },
     "terms": ["Freeze"]
   },
@@ -16662,134 +16661,6 @@
     "values": {},
     "terms": ["Freeze"]
   },
-  "content.lib.gear.base-items.displayName.106b1df5f8c1": {
-    "text": "Longbow",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.longbow.displayName"
-  },
-  "content.lib.gear.base-items.displayName.179abf2383ab": {
-    "text": "Greatsword",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.greatsword.displayName"
-  },
-  "content.lib.gear.base-items.displayName.231393bd9282": {
-    "text": "Shortsword",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.shortsword.displayName"
-  },
-  "content.lib.gear.base-items.displayName.23d292bb8b65": {
-    "text": "Spellbook",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.spellbook.displayName"
-  },
-  "content.lib.gear.base-items.displayName.24909fee1095": {
-    "text": "Hatchet",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.hatchet.displayName"
-  },
-  "content.lib.gear.base-items.displayName.5e47b3a57047": {
-    "text": "Staff",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.staff.displayName"
-  },
-  "content.lib.gear.base-items.displayName.62c1d08cb5ad": {
-    "text": "Quiver",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.quiver.displayName"
-  },
-  "content.lib.gear.base-items.displayName.6c59a6d3dad3": {
-    "text": "Maul",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.cardLibrary.maul.title"
-  },
-  "content.lib.gear.base-items.displayName.6cfa9d6f3883": {
-    "text": "Dagger",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.dagger.displayName"
-  },
-  "content.lib.gear.base-items.displayName.9fdde9326b01": {
-    "text": "Longsword",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.longsword.displayName"
-  },
-  "content.lib.gear.base-items.displayName.a1fa0af21d11": {
-    "text": "Kite Shield",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.kite-shield.displayName"
-  },
-  "content.lib.gear.base-items.displayName.a290b1b3e628": {
-    "text": "Double Axe",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.double-axe.displayName"
-  },
-  "content.lib.gear.base-items.displayName.a8db3cd778a3": {
-    "text": "Plate Armor",
-    "context": "lib/gear/base-items.ts: displayName",
-    "aliasOf": "description.8b960f6f36d5bc65",
-    "values": {},
-    "terms": ["Armor"]
-  },
-  "content.lib.gear.base-items.displayName.b09a39f745f4": {
-    "text": "Leather Armor",
-    "context": "lib/gear/base-items.ts: displayName",
-    "aliasOf": "description.5d6621c4ef8d08ca",
-    "values": {},
-    "terms": ["Armor"]
-  },
-  "content.lib.gear.base-items.displayName.b394c6aed962": {
-    "text": "Shortbow",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.shortbow.displayName"
-  },
-  "content.lib.gear.base-items.displayName.bb6bb7428b3e": {
-    "text": "Wand",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.wand.displayName"
-  },
-  "content.lib.gear.base-items.displayName.be4a7d63a403": {
-    "text": "Recurve Bow",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.recurve-bow.displayName"
-  },
-  "content.lib.gear.base-items.displayName.c0282e5988a6": {
-    "text": "Leather Buckler",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.leather-buckler.displayName"
-  },
-  "content.lib.gear.base-items.displayName.e6e7ebd86cda": {
-    "text": "Mace",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.mace.displayName"
-  },
-  "content.lib.gear.base-items.displayName.fbf2a5daa238": {
-    "text": "Flail",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.flail.displayName"
-  },
-  "content.lib.gear.base-items.displayName.fe36953334c1": {
-    "text": "Crossbow",
-    "context": "lib/gear/base-items.ts: displayName",
-    "terms": [],
-    "aliasOf": "catalog.gearBaseItems.crossbow.displayName"
-  },
   "content.lib.gear.base-items.label.2420c18f1d86": {
     "text": "Sapphire",
     "context": "lib/gear/base-items.ts: label",
@@ -16884,6 +16755,48 @@
     "context": "lib/gear/crafting.ts: displayName",
     "terms": [],
     "aliasOf": "catalog.CRAFTING_CURRENCY_LIST.smiths-whetstone.displayName"
+  },
+  "content.lib.gear.unique-catalog.displayName.0ad10d94f425": {
+    "text": "Golden Verdict",
+    "context": "lib/gear/unique-catalog.ts: displayName",
+    "terms": [],
+    "aliasOf": "catalog.gearDefinitions.golden-verdict.displayName"
+  },
+  "content.lib.gear.unique-catalog.displayName.338d6154f895": {
+    "text": "Wardbreaker",
+    "context": "lib/gear/unique-catalog.ts: displayName",
+    "terms": [],
+    "aliasOf": "catalog.gearDefinitions.wardbreaker.displayName"
+  },
+  "content.lib.gear.unique-catalog.displayName.3c9340ec25ad": {
+    "text": "Rimeheart Locket",
+    "context": "lib/gear/unique-catalog.ts: displayName",
+    "terms": [],
+    "aliasOf": "catalog.gearDefinitions.rimeheart-locket.displayName"
+  },
+  "content.lib.gear.unique-catalog.displayName.660d65047a93": {
+    "text": "Bloodfire Signet",
+    "context": "lib/gear/unique-catalog.ts: displayName",
+    "terms": [],
+    "aliasOf": "catalog.gearDefinitions.bloodfire-signet.displayName"
+  },
+  "content.lib.gear.unique-catalog.displayName.bd33a6134a84": {
+    "text": "Twin Casting",
+    "context": "lib/gear/unique-catalog.ts: displayName",
+    "terms": [],
+    "aliasOf": "catalog.gearDefinitions.twin-casting.displayName"
+  },
+  "content.lib.gear.unique-catalog.displayName.be10f4e12be5": {
+    "text": "Dance of Blades",
+    "context": "lib/gear/unique-catalog.ts: displayName",
+    "terms": [],
+    "aliasOf": "catalog.gearDefinitions.dance-of-blades.displayName"
+  },
+  "content.lib.gear.unique-catalog.displayName.f027bc9fa577": {
+    "text": "Saintfall Plate",
+    "context": "lib/gear/unique-catalog.ts: displayName",
+    "terms": [],
+    "aliasOf": "catalog.gearDefinitions.saintfall-plate.displayName"
   },
   "deck.inspect": {
     "text": "View Deck · {{count}} cards",
@@ -20241,16 +20154,6 @@
     },
     "terms": ["Bleed", "Block"]
   },
-  "description.685e7793a3b87103": {
-    "text": "<keyword0>Freeze</keyword0> damage increases by {{value0}} every other turn, up to {{value1}} additional damage",
-    "context": "Catalog description",
-    "slotTypes": {
-      "keyword0": {
-        "keywordId": "freeze"
-      }
-    },
-    "terms": ["Freeze"]
-  },
   "description.686e5ce43d581a16": {
     "text": "Desperate <keyword0>Forge</keyword0>",
     "context": "Catalog description",
@@ -22220,7 +22123,7 @@
   },
   "description.99e1ba3b2a057b7d": {
     "text": "Increases <keyword0>Freeze</keyword0> damage by {{value0}}",
-    "context": "Gear affix description",
+    "context": "Catalog description",
     "slotTypes": {
       "keyword0": {
         "keywordId": "freeze"
@@ -26490,7 +26393,7 @@
     "text": "Could not bond {{item}}. Materials were not spent.",
     "context": "features/alchemy/meta/screens/homestead-screen.tsx",
     "parameters": {
-      "item": "displayText(error.item)"
+      "item": "i18n.displayText(error.item)"
     },
     "terms": []
   },
@@ -26498,7 +26401,7 @@
     "text": "Could not build {{item}}. Materials were not spent.",
     "context": "features/alchemy/meta/screens/homestead-screen.tsx",
     "parameters": {
-      "item": "displayText(error.item)"
+      "item": "i18n.displayText(error.item)"
     },
     "terms": []
   },
@@ -26506,7 +26409,7 @@
     "text": "Could not upgrade {{item}}. Materials were not spent.",
     "context": "features/alchemy/meta/screens/homestead-screen.tsx",
     "parameters": {
-      "item": "displayText(error.item)"
+      "item": "i18n.displayText(error.item)"
     },
     "terms": []
   },
@@ -30528,54 +30431,6 @@
     "terms": [],
     "aliasOf": "catalog.gearDefinitions.golden-verdict.displayName"
   },
-  "labels.lib.gear.unique-catalog.0ccf1e8d3508": {
-    "text": "Blackfletch",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.blackfletch.name"
-  },
-  "labels.lib.gear.unique-catalog.0d4e79696bac": {
-    "text": "The Final Spark",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.the-final-spark.name"
-  },
-  "labels.lib.gear.unique-catalog.1080a08c0734": {
-    "text": "Oathkeeper",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.oathkeeper.name"
-  },
-  "labels.lib.gear.unique-catalog.24fa13891e71": {
-    "text": "The Golden Crucible",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.the-golden-crucible.name"
-  },
-  "labels.lib.gear.unique-catalog.27bdfe7b64e2": {
-    "text": "Everkeen",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.everkeen.name"
-  },
-  "labels.lib.gear.unique-catalog.28362c0eeb4a": {
-    "text": "The Unclosing Wound",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.the-unclosing-wound.name"
-  },
-  "labels.lib.gear.unique-catalog.305bd56e0104": {
-    "text": "Threefold Grace",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.threefold-grace.name"
-  },
-  "labels.lib.gear.unique-catalog.32a9703b7bac": {
-    "text": "Bloodember Pendant",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.bloodember-pendant.name"
-  },
   "labels.lib.gear.unique-catalog.338d6154f895": {
     "text": "Wardbreaker",
     "context": "lib/gear/unique-catalog.ts",
@@ -30588,77 +30443,11 @@
     "terms": [],
     "aliasOf": "catalog.gearDefinitions.rimeheart-locket.displayName"
   },
-  "labels.lib.gear.unique-catalog.4e4f1dc9828e": {
-    "text": "The Lingering Bell",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.the-lingering-bell.name"
-  },
-  "labels.lib.gear.unique-catalog.4fe399408cb5": {
-    "text": "Viper’s Courtesy",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.vipers-courtesy.name"
-  },
-  "labels.lib.gear.unique-catalog.5d80473e025a": {
-    "text": "Huntsmaster’s Call",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.huntsmasters-call.name"
-  },
   "labels.lib.gear.unique-catalog.660d65047a93": {
     "text": "Bloodfire Signet",
     "context": "lib/gear/unique-catalog.ts",
     "terms": [],
     "aliasOf": "catalog.gearDefinitions.bloodfire-signet.displayName"
-  },
-  "labels.lib.gear.unique-catalog.66fd3eddc873": {
-    "text": "Kingbreaker",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.kingbreaker.name"
-  },
-  "labels.lib.gear.unique-catalog.6d3690534f7b": {
-    "text": "The Patient Edge",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.the-patient-edge.name"
-  },
-  "labels.lib.gear.unique-catalog.74f8291007d3": {
-    "text": "Laughing Guard",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.laughing-guard.name"
-  },
-  "labels.lib.gear.unique-catalog.7c7d58049a25": {
-    "text": "Serpent’s Eye",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.serpents-eye.name"
-  },
-  "labels.lib.gear.unique-catalog.819e2d234702": {
-    "text": "The Returning Gale",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.the-returning-gale.name"
-  },
-  "labels.lib.gear.unique-catalog.9b5ee22a3c01": {
-    "text": "Winter’s Credit",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.winters-credit.name"
-  },
-  "labels.lib.gear.unique-catalog.a1c7feafd287": {
-    "text": "Wildheart’s Favor",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.wildhearts-favor.name"
-  },
-  "labels.lib.gear.unique-catalog.afcd03222e5a": {
-    "text": "The Returning Flight",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.the-returning-flight.name"
   },
   "labels.lib.gear.unique-catalog.bd33a6134a84": {
     "text": "Twin Casting",
@@ -30672,29 +30461,11 @@
     "terms": [],
     "aliasOf": "catalog.gearDefinitions.dance-of-blades.displayName"
   },
-  "labels.lib.gear.unique-catalog.dea8439f702e": {
-    "text": "Red Harvest",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.red-harvest.name"
-  },
   "labels.lib.gear.unique-catalog.f027bc9fa577": {
     "text": "Saintfall Plate",
     "context": "lib/gear/unique-catalog.ts",
     "terms": [],
     "aliasOf": "catalog.gearDefinitions.saintfall-plate.displayName"
-  },
-  "labels.lib.gear.unique-catalog.f668c90f5922": {
-    "text": "The Knight’s Answer",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.the-knights-answer.name"
-  },
-  "labels.lib.gear.unique-catalog.ff5feaf04754": {
-    "text": "Wrenflight",
-    "context": "lib/gear/unique-catalog.ts",
-    "terms": [],
-    "aliasOf": "catalog.gearAffixCatalog.wrenflight.name"
   },
   "labels.lib.homestead.data.0e6c146bd0d3": {
     "text": "Mycology Cellar",
@@ -31837,7 +31608,7 @@
     "text": "Choose 1 of {{choices}} cards",
     "context": "features/alchemy/run-loop/screens/mystery/mystery-effect-badge.tsx",
     "parameters": {
-      "choices": "displayText(MYSTERY_CARD_CHOICES)"
+      "choices": "i18n.displayText(MYSTERY_CARD_CHOICES)"
     },
     "terms": []
   },
@@ -31845,7 +31616,7 @@
     "text": "Choose 1 of {{choices}} cards to add to your deck",
     "context": "features/alchemy/run-loop/screens/mystery/mystery-effect-badge.tsx",
     "parameters": {
-      "choices": "displayText(MYSTERY_CARD_CHOICES)"
+      "choices": "i18n.displayText(MYSTERY_CARD_CHOICES)"
     },
     "terms": []
   },
@@ -32173,7 +31944,7 @@
     "text": "Your earned demo progress has been imported. Start a new adventure in the full game.<part0/>",
     "context": "App.tsx",
     "slots": {
-      "part0": "<Button variant=\"ghost\" className=\"ml-4\" onClick={() => setVisible(false)}>\n              {gameText(\"ui.App.2\", \"Dismiss\")}\n            </Button>"
+      "part0": "<Button variant=\"ghost\" className=\"ml-4\" onClick={() => setVisible(false)}>\n              {i18n.text(\"ui.App.2\", \"Dismiss\")}\n            </Button>"
     },
     "terms": []
   },
@@ -32330,7 +32101,7 @@
     "text": "Close {{value0}}",
     "context": "features/alchemy/meta/screens/armory/armory-inventory-menu.tsx",
     "parameters": {
-      "value0": "displayText(label.toLowerCase())"
+      "value0": "i18n.displayText(label.toLowerCase())"
     },
     "terms": []
   },
@@ -32349,7 +32120,7 @@
     "text": "Equipped by <part0/>. Salvaging will unequip this item.",
     "context": "features/alchemy/meta/screens/armory/armory-overlays.tsx",
     "slots": {
-      "part0": "displayText(heldCharacterName)"
+      "part0": "i18n.displayText(heldCharacterName)"
     },
     "terms": []
   },
@@ -32427,8 +32198,8 @@
     "text": "Inspect {{value0}}{{value1}}",
     "context": "features/alchemy/meta/screens/collection/boards-collection.tsx",
     "parameters": {
-      "value0": "displayText(entry.title)",
-      "value1": "displayText(owned ? \"\" : \" (Locked)\")"
+      "value0": "i18n.displayText(entry.title)",
+      "value1": "i18n.displayText(owned ? \"\" : \" (Locked)\")"
     },
     "terms": []
   },
@@ -32436,7 +32207,7 @@
     "text": "Finish a run after completing <part0/> rooms to collect a new board.",
     "context": "features/alchemy/meta/screens/collection/boards-collection.tsx",
     "slots": {
-      "part0": "displayText(BOARD_REWARD_ROOM_THRESHOLD)"
+      "part0": "i18n.displayText(BOARD_REWARD_ROOM_THRESHOLD)"
     },
     "terms": []
   },
@@ -32490,7 +32261,7 @@
     "text": "Inspect brew result: {{value0}}",
     "context": "features/alchemy/run-loop/screens/brew-potion-panel.tsx",
     "parameters": {
-      "value0": "displayText(result.title)"
+      "value0": "i18n.displayText(result.title)"
     },
     "terms": []
   },
@@ -32611,7 +32382,7 @@
     "text": "You received <part0/>",
     "context": "features/alchemy/run-loop/screens/campfire-screen.tsx",
     "slots": {
-      "part0": "<strong>{displayText(visit.result.title)}</strong>"
+      "part0": "<strong>{i18n.displayText(visit.result.title)}</strong>"
     },
     "terms": []
   },
@@ -32619,7 +32390,7 @@
     "text": "<part0/> Gold added to your purse.",
     "context": "features/alchemy/run-loop/screens/campfire-screen.tsx",
     "slots": {
-      "part0": "displayText(LABYRINTH_MODIFIER_CONFIG.hiddenPurseGold)"
+      "part0": "i18n.displayText(LABYRINTH_MODIFIER_CONFIG.hiddenPurseGold)"
     },
     "terms": ["Gold"]
   },
@@ -32664,7 +32435,7 @@
     "text": "{{value0}} (Locked)",
     "context": "features/alchemy/run-setup/screens/character-select-screen.tsx",
     "parameters": {
-      "value0": "displayText(char.name)"
+      "value0": "i18n.displayText(char.name)"
     },
     "terms": []
   },
@@ -32672,7 +32443,7 @@
     "text": "Select {{value0}}",
     "context": "features/alchemy/run-setup/screens/character-select-screen.tsx",
     "parameters": {
-      "value0": "displayText(char.name)"
+      "value0": "i18n.displayText(char.name)"
     },
     "terms": []
   },
@@ -32712,7 +32483,7 @@
     "text": "Active companion: {{value0}}",
     "context": "features/alchemy/run-loop/battle/presentation/ui/companion-panel.tsx",
     "parameters": {
-      "value0": "displayText(companion.title)"
+      "value0": "i18n.displayText(companion.title)"
     },
     "terms": ["Companion"]
   },
@@ -32720,7 +32491,7 @@
     "text": "Inspect {{value0}}",
     "context": "features/alchemy/run-loop/battle/presentation/ui/companion-panel.tsx",
     "parameters": {
-      "value0": "displayText(companion.title)"
+      "value0": "i18n.displayText(companion.title)"
     },
     "terms": [],
     "aliasOf": "ui.actor-panel.1"
@@ -32781,7 +32552,7 @@
     "text": "Original: {{value0}}",
     "context": "features/alchemy/run-loop/screens/corruption-screen.tsx",
     "parameters": {
-      "value0": "getCardDisplayTitle(result.originalCard)"
+      "value0": "i18n.read(() => getCardDisplayTitle(result.originalCard))"
     },
     "terms": []
   },
@@ -32789,7 +32560,7 @@
     "text": "Result: {{value0}}",
     "context": "features/alchemy/run-loop/screens/corruption-screen.tsx",
     "parameters": {
-      "value0": "getCardDisplayTitle(result.corruptedCard)"
+      "value0": "i18n.read(() => getCardDisplayTitle(result.corruptedCard))"
     },
     "terms": []
   },
@@ -32819,7 +32590,7 @@
     "context": "features/alchemy/meta/screens/armory/crafting-result.tsx",
     "slots": {
       "part0": "<GearItemTitle instance={after} className=\"whitespace-normal\" />",
-      "part1": "displayText(getCraftingCurrencyDefinition(result.currencyId).displayName)"
+      "part1": "i18n.displayText(getCraftingCurrencyDefinition(result.currencyId).displayName)"
     },
     "terms": []
   },
@@ -32827,7 +32598,7 @@
     "text": "→ <part0/>",
     "context": "features/alchemy/meta/screens/armory/crafting-result.tsx",
     "slots": {
-      "part0": "displayText(change.after)"
+      "part0": "i18n.displayText(change.after)"
     },
     "terms": []
   },
@@ -32840,7 +32611,7 @@
     "text": "Use {{value0}}",
     "context": "features/alchemy/meta/screens/armory/parts/crafting-strip.tsx",
     "parameters": {
-      "value0": "displayText(currency.displayName)"
+      "value0": "i18n.displayText(currency.displayName)"
     },
     "terms": []
   },
@@ -32875,7 +32646,7 @@
     "text": "<part0/> gear into crafting materials.",
     "context": "features/alchemy/meta/screens/armory/parts/crafting-strip.tsx",
     "slots": {
-      "part0": "<strong className=\"font-semibold text-foreground\">\n                        {gameText(\"ui.crafting-strip.4\", \"Dismantle\")}\n                      </strong>"
+      "part0": "<strong className=\"font-semibold text-foreground\">\n                        {i18n.text(\"ui.crafting-strip.4\", \"Dismantle\")}\n                      </strong>"
     },
     "terms": []
   },
@@ -32913,7 +32684,7 @@
     "text": "Boss - {{value0}}",
     "context": "features/alchemy/shared/ui/destination-choices.tsx",
     "parameters": {
-      "value0": "displayText(campaignActLabel(currentAct))"
+      "value0": "i18n.displayText(campaignActLabel(currentAct))"
     },
     "terms": []
   },
@@ -32984,7 +32755,7 @@
     "text": "You drafted {{value0}} cards. Ready to begin your run.",
     "context": "features/alchemy/run-setup/screens/draft-deck-screen.tsx",
     "parameters": {
-      "value0": "displayText(String(draftedCards.length))"
+      "value0": "i18n.displayText(String(draftedCards.length))"
     },
     "terms": []
   },
@@ -32992,8 +32763,8 @@
     "text": "Pick 1 of 3 cards - {{value0}}/{{value1}} selected",
     "context": "features/alchemy/run-setup/screens/draft-deck-screen.tsx",
     "parameters": {
-      "value0": "displayText(String(round))",
-      "value1": "displayText(String(DRAFT_ROUNDS))"
+      "value0": "i18n.displayText(String(round))",
+      "value1": "i18n.displayText(String(DRAFT_ROUNDS))"
     },
     "terms": []
   },
@@ -33115,9 +32886,9 @@
     "text": "<part0/><part1/> error<part2/>",
     "context": "features/alchemy/meta/screens/options/error-log-viewer.tsx",
     "slots": {
-      "part0": "displayText(\n                visibleCopyFeedback?.status === \"copied\"\n                  ? gameText(\"ui.error-log-viewer.d1\", \"Copied · \")\n                  : visibleCopyFeedback?.status === \"failed\"\n                    ? gameText(\"ui.error-log-viewer.d2\", \"Copy failed · \")\n                    : null,\n              )",
-      "part1": "displayText(errors.length)",
-      "part2": "displayText(errors.length !== 1 ? \"s\" : \"\")"
+      "part0": "i18n.displayText(\n                visibleCopyFeedback?.status === \"copied\"\n                  ? i18n.text(\"ui.error-log-viewer.d1\", \"Copied · \")\n                  : visibleCopyFeedback?.status === \"failed\"\n                    ? i18n.text(\"ui.error-log-viewer.d2\", \"Copy failed · \")\n                    : null,\n              )",
+      "part1": "i18n.displayText(errors.length)",
+      "part2": "i18n.displayText(errors.length !== 1 ? \"s\" : \"\")"
     },
     "terms": []
   },
@@ -33125,7 +32896,7 @@
     "text": "<part0/>:",
     "context": "features/alchemy/meta/screens/options/error-log-viewer.tsx",
     "slots": {
-      "part0": "displayText(label)"
+      "part0": "i18n.displayText(label)"
     },
     "terms": []
   },
@@ -33166,7 +32937,7 @@
     "text": "Play {{value0}}",
     "context": "features/alchemy/run-loop/screens/battle-screen/hand.tsx",
     "parameters": {
-      "value0": "getCardDisplayTitle(card)"
+      "value0": "i18n.read(() => getCardDisplayTitle(card))"
     },
     "terms": []
   },
@@ -33223,7 +32994,7 @@
     "text": "Inspect {{value0}}",
     "context": "features/alchemy/run-loop/screens/hero-unlocked-screen.tsx",
     "parameters": {
-      "value0": "displayText(characters[characterId].name)"
+      "value0": "i18n.displayText(characters[characterId].name)"
     },
     "terms": [],
     "aliasOf": "ui.actor-panel.1"
@@ -33266,8 +33037,8 @@
     "text": "{{value0}}. {{value1}}",
     "context": "features/alchemy/meta/screens/armory/item-picker-grid.tsx",
     "parameters": {
-      "value0": "displayText(title)",
-      "value1": "displayText(reservationReason)"
+      "value0": "i18n.displayText(title)",
+      "value1": "i18n.displayText(reservationReason)"
     },
     "terms": []
   },
@@ -33275,8 +33046,8 @@
     "text": "{{value0}} level {{value1}} progress",
     "context": "features/alchemy/run-loop/screens/keyword-progress-card.tsx",
     "parameters": {
-      "value0": "displayText(def?.label ?? kw)",
-      "value1": "displayText(displayLevel)"
+      "value0": "i18n.displayText(def?.label ?? kw)",
+      "value1": "i18n.displayText(displayLevel)"
     },
     "terms": []
   },
@@ -33284,7 +33055,7 @@
     "text": "Lv<part0/>",
     "context": "features/alchemy/run-loop/screens/keyword-progress-card.tsx",
     "slots": {
-      "part0": "displayText(displayLevel)"
+      "part0": "i18n.displayText(displayLevel)"
     },
     "terms": []
   },
@@ -33292,7 +33063,7 @@
     "text": "Choose {{value0}}",
     "context": "features/alchemy/shared/ui/keyword-tag.tsx",
     "parameters": {
-      "value0": "displayText(def.label)"
+      "value0": "i18n.displayText(def.label)"
     },
     "terms": []
   },
@@ -33300,7 +33071,7 @@
     "text": "Inspect {{value0}} keyword",
     "context": "features/alchemy/shared/ui/keyword-tag.tsx",
     "parameters": {
-      "value0": "displayText(def.label)"
+      "value0": "i18n.displayText(def.label)"
     },
     "terms": []
   },
@@ -33318,7 +33089,7 @@
     "text": "Floor {{value0}}",
     "context": "features/alchemy/run-loop/screens/labyrinth/labyrinth-map-viewport.tsx",
     "parameters": {
-      "value0": "displayText(map.currentFloor)"
+      "value0": "i18n.displayText(map.currentFloor)"
     },
     "terms": []
   },
@@ -33336,7 +33107,7 @@
     "text": "Floor {{value0}}",
     "context": "features/alchemy/run-loop/screens/labyrinth/labyrinth-node-inspector.tsx",
     "parameters": {
-      "value0": "displayText(node.floor)"
+      "value0": "i18n.displayText(node.floor)"
     },
     "terms": [],
     "aliasOf": "ui.labyrinth-map-viewport.msg1"
@@ -33355,8 +33126,8 @@
     "text": "Leave <part0/> unexplored <part1/> behind.",
     "context": "features/alchemy/run-loop/screens/labyrinth/labyrinth-node-inspector.tsx",
     "slots": {
-      "part0": "displayText(remaining)",
-      "part1": "displayText(\n                        remaining === 1\n                          ? gameText(\"ui.labyrinth-node-inspector.d2\", \"chamber\")\n                          : gameText(\"ui.labyrinth-node-inspector.d3\", \"chambers\"),\n                      )"
+      "part0": "i18n.displayText(remaining)",
+      "part1": "i18n.displayText(\n                        remaining === 1\n                          ? i18n.text(\"ui.labyrinth-node-inspector.d2\", \"chamber\")\n                          : i18n.text(\"ui.labyrinth-node-inspector.d3\", \"chambers\"),\n                      )"
     },
     "terms": []
   },
@@ -33364,8 +33135,8 @@
     "text": "{{value0}} chamber, {{value1}}",
     "context": "features/alchemy/run-loop/screens/labyrinth/labyrinth-node-seal.tsx",
     "parameters": {
-      "value0": "displayText(NODE_TYPE_LABELS[node.type])",
-      "value1": "displayText(status)"
+      "value0": "i18n.displayText(NODE_TYPE_LABELS[node.type])",
+      "value1": "i18n.displayText(status)"
     },
     "terms": []
   },
@@ -33373,8 +33144,8 @@
     "text": "Undiscovered chamber, row {{value0}}, column {{value1}}",
     "context": "features/alchemy/run-loop/screens/labyrinth/labyrinth-node-seal.tsx",
     "parameters": {
-      "value0": "displayText(node.gridPosition.row + 1)",
-      "value1": "displayText(node.gridPosition.col + LABYRINTH_GRID.sideColumns + 1)"
+      "value0": "i18n.displayText(node.gridPosition.row + 1)",
+      "value1": "i18n.displayText(node.gridPosition.col + LABYRINTH_GRID.sideColumns + 1)"
     },
     "terms": []
   },
@@ -33403,7 +33174,7 @@
     "text": "+<part0/>",
     "context": "features/alchemy/run-loop/battle/presentation/ui/mana-dock.tsx",
     "slots": {
-      "part0": "displayText(state.hidden)"
+      "part0": "i18n.displayText(state.hidden)"
     },
     "terms": []
   },
@@ -33420,7 +33191,7 @@
     "text": "<part0/> bonus Mana",
     "context": "features/alchemy/run-loop/battle/presentation/ui/mana-dock.tsx",
     "slots": {
-      "part0": "displayText(mana - maxMana)"
+      "part0": "i18n.displayText(mana - maxMana)"
     },
     "terms": ["Mana"]
   },
@@ -33428,8 +33199,8 @@
     "text": "<part0/> crystals beyond the visible <part1/>",
     "context": "features/alchemy/run-loop/battle/presentation/ui/mana-dock.tsx",
     "slots": {
-      "part0": "displayText(state.hidden)",
-      "part1": "displayText(MANA_DOCK_VISIBLE_COUNT)"
+      "part0": "i18n.displayText(state.hidden)",
+      "part1": "i18n.displayText(MANA_DOCK_VISIBLE_COUNT)"
     },
     "terms": []
   },
@@ -33570,7 +33341,7 @@
     "text": "Take {{value0}} damage",
     "context": "features/alchemy/run-loop/screens/mystery/mystery-effect-badge.tsx",
     "parameters": {
-      "value0": "displayText(effect.amount)"
+      "value0": "i18n.displayText(effect.amount)"
     },
     "terms": []
   },
@@ -33578,7 +33349,7 @@
     "text": "Add <part0/> to your deck",
     "context": "features/alchemy/run-loop/screens/mystery/mystery-effect-badge.tsx",
     "slots": {
-      "part0": "<ShineText colors={colors} {...mysteryShineTextProps}>\n                  {displayText(title)}\n                </ShineText>"
+      "part0": "<ShineText colors={colors} {...mysteryShineTextProps}>\n                  {i18n.displayText(title)}\n                </ShineText>"
     },
     "terms": []
   },
@@ -33586,7 +33357,7 @@
     "text": "Add <part0/>",
     "context": "features/alchemy/run-loop/screens/mystery/mystery-effect-badge.tsx",
     "slots": {
-      "part0": "displayText(title)"
+      "part0": "i18n.displayText(title)"
     },
     "terms": []
   },
@@ -33594,8 +33365,8 @@
     "text": "Gain <part0/> <part1/>",
     "context": "features/alchemy/run-loop/screens/mystery/mystery-effect-badge.tsx",
     "slots": {
-      "part0": "<ShineText colors={colors} {...mysteryShineTextProps}>\n                  {displayText(title)}\n                </ShineText>",
-      "part1": "<TooltipChip className=\"mx-0.5 mt-0 align-baseline\">\n                  {gameText(\"ui.mystery-effect-badge.9\", \"Boon\")}\n                </TooltipChip>"
+      "part0": "<ShineText colors={colors} {...mysteryShineTextProps}>\n                  {i18n.displayText(title)}\n                </ShineText>",
+      "part1": "<TooltipChip className=\"mx-0.5 mt-0 align-baseline\">\n                  {i18n.text(\"ui.mystery-effect-badge.9\", \"Boon\")}\n                </TooltipChip>"
     },
     "terms": []
   },
@@ -33603,7 +33374,7 @@
     "text": "Add <part0/> for this run",
     "context": "features/alchemy/run-loop/screens/mystery/mystery-effect-badge.tsx",
     "slots": {
-      "part0": "displayText(title)"
+      "part0": "i18n.displayText(title)"
     },
     "terms": []
   },
@@ -33611,7 +33382,7 @@
     "text": "Gain a random <part0/> for this run",
     "context": "features/alchemy/run-loop/screens/mystery/mystery-effect-badge.tsx",
     "slots": {
-      "part0": "<ShineText colors={colors} {...mysteryShineTextProps}>\n                  {gameText(\"ui.mystery-effect-badge.14\", \"Boon\")}\n                </ShineText>"
+      "part0": "<ShineText colors={colors} {...mysteryShineTextProps}>\n                  {i18n.text(\"ui.mystery-effect-badge.14\", \"Boon\")}\n                </ShineText>"
     },
     "terms": []
   },
@@ -33619,7 +33390,7 @@
     "text": "Add <part0/> to your Armory",
     "context": "features/alchemy/run-loop/screens/mystery/mystery-effect-badge.tsx",
     "slots": {
-      "part0": "tooltip ? (\n                <ShineText colors={colors} {...mysteryShineTextProps}>\n                  {displayText(title)}\n                </ShineText>\n              ) : (\n                title\n              )"
+      "part0": "tooltip ? (\n                <ShineText colors={colors} {...mysteryShineTextProps}>\n                  {i18n.displayText(title)}\n                </ShineText>\n              ) : (\n                title\n              )"
     },
     "terms": []
   },
@@ -33677,9 +33448,9 @@
     "text": "{{value0}} {{value1}} of {{value2}}",
     "context": "features/alchemy/meta/screens/homestead/node-artwork.tsx",
     "parameters": {
-      "value0": "displayText(node.companion ? \"Bond\" : \"Level\")",
-      "value1": "displayText(node.level)",
-      "value2": "displayText(node.maxLevel)"
+      "value0": "i18n.displayText(node.companion ? \"Bond\" : \"Level\")",
+      "value1": "i18n.displayText(node.level)",
+      "value2": "i18n.displayText(node.maxLevel)"
     },
     "terms": []
   },
@@ -33687,7 +33458,7 @@
     "text": "Saving {{value0}}",
     "context": "features/alchemy/meta/screens/homestead/node-artwork.tsx",
     "parameters": {
-      "value0": "displayText(node.title)"
+      "value0": "i18n.displayText(node.title)"
     },
     "terms": []
   },
@@ -33695,9 +33466,9 @@
     "text": "{{value0}} {{value1}} for {{value2}}",
     "context": "features/alchemy/meta/screens/homestead/node-artwork.tsx",
     "parameters": {
-      "value0": "displayText(node.action)",
-      "value1": "displayText(node.title)",
-      "value2": "displayText(costLabel)"
+      "value0": "i18n.displayText(node.action)",
+      "value1": "i18n.displayText(node.title)",
+      "value2": "i18n.displayText(costLabel)"
     },
     "terms": []
   },
@@ -33705,7 +33476,7 @@
     "text": "View {{value0}}",
     "context": "features/alchemy/meta/screens/homestead/node-artwork.tsx",
     "parameters": {
-      "value0": "displayText(node.title)"
+      "value0": "i18n.displayText(node.title)"
     },
     "terms": []
   },
@@ -33723,8 +33494,8 @@
     "text": "{{value0}} cost: {{value1}}",
     "context": "features/alchemy/meta/screens/homestead/node-tooltip-body.tsx",
     "parameters": {
-      "value0": "displayText(node.action)",
-      "value1": "displayText(costLabel)"
+      "value0": "i18n.displayText(node.action)",
+      "value1": "i18n.displayText(costLabel)"
     },
     "terms": []
   },
@@ -33930,7 +33701,7 @@
     "text": "Original: {{value0}}",
     "context": "features/alchemy/run-loop/screens/potion-comparison.tsx",
     "parameters": {
-      "value0": "getCardDisplayTitle(original)"
+      "value0": "i18n.read(() => getCardDisplayTitle(original))"
     },
     "terms": [],
     "aliasOf": "ui.corruption-screen.7"
@@ -33939,7 +33710,7 @@
     "text": "Inspect brew result: {{value0}}",
     "context": "features/alchemy/run-loop/screens/potion-comparison.tsx",
     "parameters": {
-      "value0": "getCardDisplayTitle(result)"
+      "value0": "i18n.read(() => getCardDisplayTitle(result))"
     },
     "terms": [],
     "aliasOf": "ui.brew-potion-panel.3"
@@ -33989,7 +33760,7 @@
     "text": "Select {{value0}}",
     "context": "features/alchemy/run-loop/screens/rewards-screen.tsx",
     "parameters": {
-      "value0": "displayText(getGearInstanceTitle(instance))"
+      "value0": "i18n.displayText(getGearInstanceTitle(instance))"
     },
     "terms": [],
     "aliasOf": "ui.character-select-screen.d2"
@@ -33998,7 +33769,7 @@
     "text": "Select {{value0}}",
     "context": "features/alchemy/run-loop/screens/rewards-screen.tsx",
     "parameters": {
-      "value0": "displayText(trinket.title)"
+      "value0": "i18n.displayText(trinket.title)"
     },
     "terms": [],
     "aliasOf": "ui.character-select-screen.d2"
@@ -34023,7 +33794,7 @@
     "text": "Your descent reached floor {{value0}}.",
     "context": "app/screen-routes/run-end-routes.tsx",
     "parameters": {
-      "value0": "displayText(runEndLabyrinthFloor)"
+      "value0": "i18n.displayText(runEndLabyrinthFloor)"
     },
     "terms": []
   },
@@ -34063,7 +33834,7 @@
     "text": "Select {{value0}}",
     "context": "features/alchemy/shared/ui/cards/selectable-card.tsx",
     "parameters": {
-      "value0": "getCardDisplayTitle(card)"
+      "value0": "i18n.read(() => getCardDisplayTitle(card))"
     },
     "terms": [],
     "aliasOf": "ui.character-select-screen.d2"
@@ -34118,8 +33889,8 @@
     "text": "{{value0}} {{value1}}",
     "context": "features/alchemy/run-loop/battle/presentation/ui/status-icons.tsx",
     "parameters": {
-      "value0": "displayText(definition.label)",
-      "value1": "displayText(chip.value)"
+      "value0": "i18n.displayText(definition.label)",
+      "value1": "i18n.displayText(chip.value)"
     },
     "terms": []
   },
@@ -34141,7 +33912,7 @@
     "text": "{{value0}} (Locked)",
     "context": "features/alchemy/shared/ui/tab-bar.tsx",
     "parameters": {
-      "value0": "displayText(tab.ariaLabel ?? tab.label)"
+      "value0": "i18n.displayText(tab.ariaLabel ?? tab.label)"
     },
     "terms": [],
     "aliasOf": "ui.character-select-screen.d1"
@@ -34150,7 +33921,7 @@
     "text": "Select {{value0}} Talents",
     "context": "features/alchemy/meta/talents/talent-overview-grid.tsx",
     "parameters": {
-      "value0": "displayText(definition.label)"
+      "value0": "i18n.displayText(definition.label)"
     },
     "terms": []
   },
@@ -34236,7 +34007,7 @@
     "text": "Transmuted: {{value0}}",
     "context": "features/alchemy/run-loop/screens/transmutation-screen.tsx",
     "parameters": {
-      "value0": "getCardDisplayTitle(visit.result)"
+      "value0": "i18n.read(() => getCardDisplayTitle(visit.result))"
     },
     "terms": []
   },
@@ -34266,7 +34037,7 @@
     "text": "Original: {{value0}}",
     "context": "features/alchemy/run-loop/screens/transmutation-screen.tsx",
     "parameters": {
-      "value0": "getCardDisplayTitle(source)"
+      "value0": "i18n.read(() => getCardDisplayTitle(source))"
     },
     "terms": [],
     "aliasOf": "ui.corruption-screen.7"
@@ -34275,7 +34046,7 @@
     "text": "Preview: {{value0}}",
     "context": "features/alchemy/run-loop/screens/transmutation-screen.tsx",
     "parameters": {
-      "value0": "getCardDisplayTitle(preview)"
+      "value0": "i18n.read(() => getCardDisplayTitle(preview))"
     },
     "terms": []
   },
@@ -34283,8 +34054,8 @@
     "text": "{{value0}}. {{value1}}",
     "context": "features/alchemy/meta/screens/armory/trinket-picker-grid.tsx",
     "parameters": {
-      "value0": "displayText(trinket.title)",
-      "value1": "displayText(reservationReason)"
+      "value0": "i18n.displayText(trinket.title)",
+      "value1": "i18n.displayText(reservationReason)"
     },
     "terms": [],
     "aliasOf": "ui.item-picker-grid.d2"
@@ -34314,7 +34085,7 @@
     "text": "Choose {{value0}}",
     "context": "features/alchemy/run-loop/screens/battle-screen/wish-overlay.tsx",
     "parameters": {
-      "value0": "getCardDisplayTitle(card)"
+      "value0": "i18n.read(() => getCardDisplayTitle(card))"
     },
     "terms": [],
     "aliasOf": "ui.keyword-tag.d1"

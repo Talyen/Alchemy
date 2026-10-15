@@ -126,7 +126,7 @@ export function createGameplayCommand<Args extends unknown[], Ret>(
   return (...args) => dispatchGameplayCommand<Ret>((draft) => mutate(draft, ...args), options, gameSession);
 }
 
-export function subscribeRunSessionCommits(listener: (revision: number) => void, gameSession: GameSession): () => void {
+export function subscribeRunSessionCommits(listener: (revision: number) => void, gameSession: GameSession) {
   return subscribeGameplayCommits(listener, gameSession);
 }
 

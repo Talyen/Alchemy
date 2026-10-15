@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import type { ReactNode } from "react";
 
 import type { TrinketEntry } from "@/lib/game-data";
@@ -79,13 +79,13 @@ export function TrinketTile({
   children,
   onHoverChange,
 }: TrinketTileProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const resolvedChip = (chip !== undefined ? chip : footerChip) ?? (temporary ? "Boon" : undefined);
   return (
     <InteractiveArtTile
       id={trinket.id}
       interactionKey={interactionKey}
-      title={displayText(trinket.title)}
+      title={i18n.displayText(trinket.title)}
       art={trinket.art}
       className={cn(trinketArtTileClass, className)}
       imageClassName={cn(trinketArtFillClass, trinketArtImageClass, imageClassName)}
@@ -108,7 +108,7 @@ export function TrinketTile({
       popup={({ visible, triggerRef }) => (
         <DetailPopup
           idPrefix={idPrefix}
-          title={displayText(<TrinketItemTitle trinket={trinket} />)}
+          title={i18n.displayText(<TrinketItemTitle trinket={trinket} />)}
           chip={resolvedChip === null ? undefined : resolvedChip}
           descriptionLines={trinket.descriptionLines}
           visible={visible}
@@ -155,14 +155,14 @@ export function GearTile({
   children,
   onHoverChange,
 }: GearTileProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const definition = gearDefinitions[instance.definitionId];
   const title = getGearInstanceTitle(instance);
   return (
     <InteractiveArtTile
       id={instance.instanceId}
       interactionKey={interactionKey}
-      title={displayText(title)}
+      title={i18n.displayText(title)}
       art={definition?.art ?? ""}
       className={cn(cardSurfaceClass, getTileWidthClass("collection"), gearArtAspectClass)}
       imageClassName={gearArtFillClass}

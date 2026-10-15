@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { campaignActLabel } from "@/lib/campaign-act";
 import { useRef } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -32,7 +32,7 @@ export function DestinationChoices({
   onChoose: (destination: Destination) => void;
   selectedBoss?: BestiaryEntry | null;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const bossOnly = destinationOptions.length === 1 && destinationOptions[0] === DESTINATIONS.BOSS_COMBAT;
   const tooltipEntry = bossOnly ? (selectedBoss ?? getBossEnemy()) : null;
 
@@ -52,10 +52,10 @@ export function DestinationChoices({
           <DestinationChoiceTile
             key={destination}
             destination={destination}
-            label={displayText(
+            label={i18n.displayText(
               destination === DESTINATIONS.BOSS_COMBAT
-                ? gameText("ui.destination-choices.d1", "Boss - {{value0}}", {
-                    value0: displayText(campaignActLabel(currentAct)),
+                ? i18n.text("ui.destination-choices.d1", "Boss - {{value0}}", {
+                    value0: i18n.displayText(campaignActLabel(currentAct)),
                   })
                 : destinationLabel(destination),
             )}

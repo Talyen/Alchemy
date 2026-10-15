@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { useLayoutEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { characterArt, characters, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -20,7 +20,7 @@ export function HeroUnlockedScreen({
   onContinue: () => void;
   continueLabel: string;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const button = useRef<HTMLButtonElement>(null);
   const { ref: portraitRef, pending: portraitPending } = useArtworkReady(characterId);
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
@@ -31,15 +31,15 @@ export function HeroUnlockedScreen({
   }, [characterId]);
 
   return (
-    <TitledScreenShell title={gameText("ui.hero-unlocked-screen.1", "Hero Unlocked")}>
+    <TitledScreenShell title={i18n.text("ui.hero-unlocked-screen.1", "Hero Unlocked")}>
       <div className="mt-8 flex flex-col items-center gap-8 text-center">
         <div className="flex flex-col items-center gap-4">
           <button
             key={characterId}
             ref={triggerRef}
             type="button"
-            aria-label={gameText("ui.hero-unlocked-screen.2", "Inspect {{value0}}", {
-              value0: displayText(characters[characterId].name),
+            aria-label={i18n.text("ui.hero-unlocked-screen.2", "Inspect {{value0}}", {
+              value0: i18n.displayText(characters[characterId].name),
             })}
             onClick={onMouseEnter}
             onMouseEnter={onMouseEnter}
@@ -51,7 +51,7 @@ export function HeroUnlockedScreen({
             <div ref={portraitRef} data-artwork-pending={portraitPending} className="hero-unlock-portrait w-full">
               <img
                 src={characterArt[characterId]}
-                alt={displayText(characters[characterId].name)}
+                alt={i18n.displayText(characters[characterId].name)}
                 decoding="async"
                 className="aspect-[3/4] w-full rounded-shell-tooltip border border-gold-pale/40 object-cover shadow-xl"
               />
@@ -67,7 +67,9 @@ export function HeroUnlockedScreen({
               />
             ) : null}
           </button>
-          <h2 className="font-sans text-3xl font-bold text-gold-pale">{displayText(characters[characterId].name)}</h2>
+          <h2 className="font-sans text-3xl font-bold text-gold-pale">
+            {i18n.displayText(characters[characterId].name)}
+          </h2>
         </div>
         <Button ref={button} size="lg" variant="primary" className="min-w-56" onClick={onContinue}>
           {continueLabel}

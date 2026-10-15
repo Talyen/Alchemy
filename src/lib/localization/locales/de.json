@@ -21,7 +21,7 @@
   },
   "armory.salvage-complete": {
     "text": "{{item}} zerlegt. Belohnungen hinzugefügt.",
-    "sourceHash": "3d095ce8c8c721337b10a73a6b3b81f4aae59b64a76fd0d499ceecfed4b1a3a5",
+    "sourceHash": "3eee9ddf7f264c290e37d84ea7d408c981f81b661978766218aa602f75b93755",
     "reviewed": true
   },
   "armory.salvage-item": {
@@ -5353,8 +5353,8 @@
     "reviewed": true
   },
   "catalog.enemyBestiary.frostwarden.traits.glacial-shell.description": {
-    "text": "Schaden vom Typ Frost steigt jede zweite Runde um 1, bis zu 2 zusätzlichem Schaden",
-    "sourceHash": "324f491eb1d255931117a06cb12b1073672ee5bbed640b10012d8dea799456ea",
+    "text": "Erhöht Schaden vom Typ Frost um 1",
+    "sourceHash": "2b810e8672508b0b3f1a905cba2992431bb7156b488764708ff5993fec662ac8",
     "reviewed": true
   },
   "catalog.enemyBestiary.frostwarden.traits.glacial-shell.title": {
@@ -12507,111 +12507,6 @@
     "sourceHash": "fdea39758c17301d8335feca76ff480103aaa1a72f0790e08439544d0e0c6ad4",
     "reviewed": true
   },
-  "content.lib.gear.base-items.displayName.106b1df5f8c1": {
-    "text": "Langbogen",
-    "sourceHash": "dfcfb1e0dc52302c132a010196b5116a2e0c7cef37638c8d83cdca6f5f35fa85",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.179abf2383ab": {
-    "text": "Großschwert",
-    "sourceHash": "20eaef895552f60404e66604d3c5e6940f71864332863b47f16b9731242f16f1",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.231393bd9282": {
-    "text": "Kurzschwert",
-    "sourceHash": "b6b5cf61b9795cca1cb9822d4328678d0f22a408a159e79b3ddae613ed670b49",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.23d292bb8b65": {
-    "text": "Zauberbuch",
-    "sourceHash": "6539ca8ea16999f8716f0a5166aa8182c4ec8b119c2559745f496e7d9cb64203",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.24909fee1095": {
-    "text": "Beil",
-    "sourceHash": "154d2b4bdef75cbfbb44cc12a9b9f5fff462cffd86acf4a541032deb49201d9a",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.5e47b3a57047": {
-    "text": "Stab",
-    "sourceHash": "03bef50d9463c9fc3dc72128feca0b2840d029e07a3409e1df86c32d8b303778",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.62c1d08cb5ad": {
-    "text": "Köcher",
-    "sourceHash": "f260a807eacc4f10e2eece4c7842b440e400c3cf720e878c3df61a0456667206",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.6c59a6d3dad3": {
-    "text": "Kriegshammer",
-    "sourceHash": "d9c6145bb6dd5d8e216bb9fffa913250dd22ffcaee20dbc2d404d896135e48b2",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.6cfa9d6f3883": {
-    "text": "Dolch",
-    "sourceHash": "39c14faf0af0e9319e9abe80f49d1dfe46eb396e55d30d1a198ca54ce7fddd22",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.9fdde9326b01": {
-    "text": "Langschwert",
-    "sourceHash": "1382a486c3ed91a5b0883966c5817dff8bb36bf2fca14ed4202ee8b55c287b03",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.a1fa0af21d11": {
-    "text": "Drachenschild",
-    "sourceHash": "5f8f79196abda047929e6d0b0aa34a2d377e4545bd9b51ac471c7ccd464a71b9",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.a290b1b3e628": {
-    "text": "Doppelaxt",
-    "sourceHash": "380253aa0801ced0ab50a3b15d3f56126e6261b63dbb7a2564390ffc4bc3b31b",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.a8db3cd778a3": {
-    "text": "Plattenrüstung",
-    "sourceHash": "596dec0fff1b0a68a21eb4193da11bcc46c243ffee0b9aa4d006b61bb811870d",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.b09a39f745f4": {
-    "text": "Lederrüstung",
-    "sourceHash": "e130d67331ee960c58673c91cf38f4b2a88d195ed2f65643dc4ad50f80745ceb",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.b394c6aed962": {
-    "text": "Kurzbogen",
-    "sourceHash": "f10d3f540e7ff740ef092496da317ace8cd8b92f819bbb9fa56838a60358cb8e",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.bb6bb7428b3e": {
-    "text": "Zauberstab",
-    "sourceHash": "86f10add3b4bb671d0bc0c8a884aaf6f62eb755a4d4e65292808f2466206013e",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.be4a7d63a403": {
-    "text": "Reflexbogen",
-    "sourceHash": "79d797502f1e96832450864d0956de04c4b99dd2c43d5636ea4d5d9c0e20cbbc",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.c0282e5988a6": {
-    "text": "Lederfaustschild",
-    "sourceHash": "2ec4457f8f167d74cf0e0a736a8b2ae90bb234ba3ed9636f8f781148010171df",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.e6e7ebd86cda": {
-    "text": "Streitkolben",
-    "sourceHash": "2be25a7caaecec05dde04782044ac001b67ede530f5c0bf3cf0a8d199cc581f3",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.fbf2a5daa238": {
-    "text": "Flegel",
-    "sourceHash": "3595039e12944f68f2b0c9b94d6a10bd48cc6fc60dc978352b74217cf8e7469a",
-    "reviewed": true
-  },
-  "content.lib.gear.base-items.displayName.fe36953334c1": {
-    "text": "Armbrust",
-    "sourceHash": "d6ac0d7ce666169d298c05ea0096ef7510d38658a0e153a5352b9dd418df413c",
-    "reviewed": true
-  },
   "content.lib.gear.base-items.label.2420c18f1d86": {
     "text": "Saphir",
     "sourceHash": "d583d3b0d3cccefc00e70011b2f9d2579b91d7246fa72c94b6b9c6f747549f93",
@@ -12690,6 +12585,41 @@
   "content.lib.gear.crafting.displayName.ac88741b83e5": {
     "text": "Schleifstein des Schmieds",
     "sourceHash": "73ac9007a374ff7eaf2fb00e6fd34bdffbbf16c80d0a651f850aac6023fb6d9f",
+    "reviewed": true
+  },
+  "content.lib.gear.unique-catalog.displayName.0ad10d94f425": {
+    "text": "Goldener Richtspruch",
+    "sourceHash": "8109d16bf979e25271a8eb0fba49da6698a171d985437efd8afd6825339f9d07",
+    "reviewed": true
+  },
+  "content.lib.gear.unique-catalog.displayName.338d6154f895": {
+    "text": "Schutzbrecher",
+    "sourceHash": "e973ca5c2fcf8b33b02facb1203038b6e43d9805590b8d9f9af32a3beeebb2fe",
+    "reviewed": true
+  },
+  "content.lib.gear.unique-catalog.displayName.3c9340ec25ad": {
+    "text": "Reifherzmedaillon",
+    "sourceHash": "cdec4a19fdb494f13aee3dbb04aaec8aaaa8b83f99fbad7d643934c7edba9c91",
+    "reviewed": true
+  },
+  "content.lib.gear.unique-catalog.displayName.660d65047a93": {
+    "text": "Blutfeuersiegel",
+    "sourceHash": "4bdd2b3fed46f20eaac59a43b1245e78c4d19c94a9375c4da39676d31b1b74ff",
+    "reviewed": true
+  },
+  "content.lib.gear.unique-catalog.displayName.bd33a6134a84": {
+    "text": "Doppelwirkung",
+    "sourceHash": "37b429092981bf71f8f30a2e7d37b3c70903fdb36e74991ecd666d0948609530",
+    "reviewed": true
+  },
+  "content.lib.gear.unique-catalog.displayName.be10f4e12be5": {
+    "text": "Tanz der Klingen",
+    "sourceHash": "e7aeee749a575ae7d725d4bc88bd0b85cc0560d1cadb2987b69e75ae82809ec0",
+    "reviewed": true
+  },
+  "content.lib.gear.unique-catalog.displayName.f027bc9fa577": {
+    "text": "Heiligensturzpanzer",
+    "sourceHash": "d364937afbe6541a49b28b945fe6b171ef8bc7874f6507154bc1bf7adcb04538",
     "reviewed": true
   },
   "deck.inspect": {
@@ -14121,11 +14051,6 @@
     "sourceHash": "4ccbeacd13b35d5dbd966c827aa5d755f93d7ff6e6caab93b81e86585a696fc8",
     "reviewed": true
   },
-  "description.685e7793a3b87103": {
-    "text": "Schaden vom Typ <keyword0>Frost</keyword0> steigt jede zweite Runde um {{value0}}, bis zu {{value1}} zusätzlichem Schaden",
-    "sourceHash": "f30c077b22868cd04e6aede4b5469bbf6b74641d5f06b38b56a671b3a15a4c9b",
-    "reviewed": true
-  },
   "description.686e5ce43d581a16": {
     "text": "Verzweifelte <keyword0>Schmiedekraft</keyword0>",
     "sourceHash": "a838273a34d0ab940b2f7dcb4b7ad7ca3d053ead445544ac0e4296a5518a653c",
@@ -14978,7 +14903,7 @@
   },
   "description.99e1ba3b2a057b7d": {
     "text": "Erhöht Schaden vom Typ <keyword0>Frost</keyword0> um {{value0}}",
-    "sourceHash": "b296cedcf5a086bddc516f14ff26afa3a421df924e8dccc0f8acd69929176961",
+    "sourceHash": "2d3b262e0595598e6854b636f88281c19719483752d90e182ff55d89c8cf5878",
     "reviewed": true
   },
   "description.9a25c7c44ae91c": {
@@ -16818,17 +16743,17 @@
   },
   "homestead.bond-failed": {
     "text": "Die Bindung mit {{item}} konnte nicht gestärkt werden. Es wurden keine Materialien verbraucht.",
-    "sourceHash": "46a0226ab32bf3f434439ec976b8570d80457b673fb3864651d59ff469249806",
+    "sourceHash": "aab14edfde380fdd4e35d7e3b4ff284a0f2738fa971a3fcb6d234258100e6a9b",
     "reviewed": true
   },
   "homestead.build-failed": {
     "text": "{{item}} konnte nicht gebaut werden. Es wurden keine Materialien verbraucht.",
-    "sourceHash": "a8ab5ad0282d2f94b7fe6146d704637d372835d208cdacdc8e4642d96ab1331b",
+    "sourceHash": "9d0f6415d62ae8a5549e02c5a9f92b960a7e93d42fc5614743d6397d1c161a52",
     "reviewed": true
   },
   "homestead.upgrade-failed": {
     "text": "{{item}} konnte nicht aufgewertet werden. Es wurden keine Materialien verbraucht.",
-    "sourceHash": "d13329caa4a7f3c5499205a61ae026288bce3ed84aff32aac4fc245e4c5230a1",
+    "sourceHash": "9af1dd393f9ac24e7704104632749d93c9c537c07b5ab48990a8ba2305099295",
     "reviewed": true
   },
   "labels.app.app-overlays.88864c9a27ea": {
@@ -20036,46 +19961,6 @@
     "sourceHash": "d445f50ec8a70fdb1851853bb853186e7778a8bc1b39692faeea7d17831b5ed7",
     "reviewed": true
   },
-  "labels.lib.gear.unique-catalog.0ccf1e8d3508": {
-    "text": "Schwarzfeder",
-    "sourceHash": "4ec9a764516c406f115bd42d6a8756d69d829131bf516904b06ee447e5749156",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.0d4e79696bac": {
-    "text": "Der letzte Funke",
-    "sourceHash": "81eefd428e6d1e1daf59631cb40738ef43d4ff2615fb22a56e4a95531e66cbe6",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.1080a08c0734": {
-    "text": "Eidwahrer",
-    "sourceHash": "e02bf83c02b92710fc4953d240ba74a33e8fd5291fd8f26802791a8e2de857ee",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.24fa13891e71": {
-    "text": "Der goldene Schmelztiegel",
-    "sourceHash": "5ca6e67d0ca7bafd4ffe52adcf280a899e49fef5ea419a7a0921e33f0d59847f",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.27bdfe7b64e2": {
-    "text": "Ewig scharf",
-    "sourceHash": "7d18a87dc33a97922b2536c77ba31bf542e4a224565e1b5fc682bafd3d5f328f",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.28362c0eeb4a": {
-    "text": "Die offene Wunde",
-    "sourceHash": "7e1aa8fda1d1c1ef21c3d6e82df0492d98f8345bf31f781677e5143f25d3da06",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.305bd56e0104": {
-    "text": "Dreifache Gnade",
-    "sourceHash": "ce17d2ca4587f43e49ff4be32aefabb6e15f6d1015710c02c3e1f75ee5b6502f",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.32a9703b7bac": {
-    "text": "Blutglutanhänger",
-    "sourceHash": "13cdbc247ad4877b8b4f31b0a3fa61f23109934f4d415e6e9373c8f2fdeafdc4",
-    "reviewed": true
-  },
   "labels.lib.gear.unique-catalog.338d6154f895": {
     "text": "Schutzbrecher",
     "sourceHash": "e5d0fa1c4559f4ae5302a295959b1fe1ae22e208b25ff5b360fe80aefae70cd5",
@@ -20086,64 +19971,9 @@
     "sourceHash": "0edb8036e3b3a87cee17ed3aa6ecf81aaef638ec0e3433b4b51b5a0a768324cb",
     "reviewed": true
   },
-  "labels.lib.gear.unique-catalog.4e4f1dc9828e": {
-    "text": "Die nachhallende Glocke",
-    "sourceHash": "569c3db103976e39deb616fc91151c97f1884c600f480ea5556670f66896cfa0",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.4fe399408cb5": {
-    "text": "Höflichkeit der Viper",
-    "sourceHash": "a441b58a359a0809932b2399e555027e7b51785729c8e34e7857bce9e7fad59f",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.5d80473e025a": {
-    "text": "Ruf des Jagdmeisters",
-    "sourceHash": "c70b984e55e6763b5153cb7fe09282957da2f7e790fffe819bd21f0492bc4ad0",
-    "reviewed": true
-  },
   "labels.lib.gear.unique-catalog.660d65047a93": {
     "text": "Blutfeuersiegel",
     "sourceHash": "aea8df883e5ac9595ba4267f5f1e2a0c50390edb48707a96eed61226c06d9ed1",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.66fd3eddc873": {
-    "text": "Königsbrecher",
-    "sourceHash": "5c451dae10269501077f0653702d8f72d806ea94a14b0065c3bf51802bba711b",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.6d3690534f7b": {
-    "text": "Die geduldige Klinge",
-    "sourceHash": "a052534742c9f90cf2f81d0478a38f7bd757ffcee6e257059c6d104f91386c26",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.74f8291007d3": {
-    "text": "Lachende Wache",
-    "sourceHash": "ec31b607485d5d15ee0c18670c905d7729e158829d8cd811c0b8f51fe3c80c0e",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.7c7d58049a25": {
-    "text": "Auge der Schlange",
-    "sourceHash": "26b9b5dc9316f9cc39d1aae090143bc54478e5a96e76adecb63e6d8a9f13f70f",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.819e2d234702": {
-    "text": "Die zurückkehrende Sturmboe",
-    "sourceHash": "602448153f508d121d59463d6b43983299819e986840745c1c65337bc00910e4",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.9b5ee22a3c01": {
-    "text": "Winters Kredit",
-    "sourceHash": "b05ad2e47015b6e34022c09d4720a45d21d1a56313b32da72e97142f821aafb1",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.a1c7feafd287": {
-    "text": "Gunst des Wildherzens",
-    "sourceHash": "6d1c358f3fcedd1d5c505834ef9f2ca027ebb3ea32303e70d4705f617fa7ab68",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.afcd03222e5a": {
-    "text": "Der zurückkehrende Flug",
-    "sourceHash": "7b7c4a7e84eac767511f4101e4689ecaf55cb22033c89d64b1c529cb3d0e0355",
     "reviewed": true
   },
   "labels.lib.gear.unique-catalog.bd33a6134a84": {
@@ -20156,24 +19986,9 @@
     "sourceHash": "68be6b359e403fc111588eedcbeb768d4845f27744b462f9ed41d575a25c79dd",
     "reviewed": true
   },
-  "labels.lib.gear.unique-catalog.dea8439f702e": {
-    "text": "Rote Ernte",
-    "sourceHash": "3abd9f15ec4e396139a3a81d8fa7a7ea2efef4e32f50cb996149b151540241da",
-    "reviewed": true
-  },
   "labels.lib.gear.unique-catalog.f027bc9fa577": {
     "text": "Heiligensturzpanzer",
     "sourceHash": "2f957794af9bc3ca277cc4eee6bf84c833f142d913af27ed5f59dd5e4f869901",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.f668c90f5922": {
-    "text": "Die Antwort des Ritters",
-    "sourceHash": "77f8a0345da7eecc8ac24738d8cf78934adf19772df54987c002039bfad006f9",
-    "reviewed": true
-  },
-  "labels.lib.gear.unique-catalog.ff5feaf04754": {
-    "text": "Zaunkönigflug",
-    "sourceHash": "46afcdc03bf0e936faa1bca40a163120447f8cecc453c750600ded2752837225",
     "reviewed": true
   },
   "labels.lib.homestead.data.0e6c146bd0d3": {
@@ -21118,12 +20933,12 @@
   },
   "mystery.choose-card": {
     "text": "Wähle 1 von {{choices}} Karten",
-    "sourceHash": "81a48ab7c07b122523080da8e1893aa0823c3171f06a764cfae55b138d5df8f0",
+    "sourceHash": "b3abb4a69cc69bdebac9c19048d7234e507d92160d9d8ad08f897144b233708a",
     "reviewed": true
   },
   "mystery.choose-card-details": {
     "text": "Wähle 1 von {{choices}} Karten für dein Deck",
-    "sourceHash": "e9d4d177341a4402497ea94867ced6d42c3de3239d59689383a080a8cb1cb2d3",
+    "sourceHash": "f8074ce556af05bca9e8f386ba939b7c84d831c69a71cd200177e6a6d4d5644e",
     "reviewed": true
   },
   "mystery.gain-xp": {
@@ -21402,7 +21217,7 @@
   },
   "ui.App.s1": {
     "text": "Dein erspielter Demo-Fortschritt wurde übernommen. Beginne ein neues Abenteuer im vollständigen Spiel.<part0/>",
-    "sourceHash": "2226970f0a84052f86510524f57286ffc06f01e3170a2074a8fa93034debeb01",
+    "sourceHash": "5a4f04a234564ba0b7c949b0c58d51524af3643593cdecfc4481d6273f80d328",
     "reviewed": true
   },
   "ui.actor-panel.1": {
@@ -21537,7 +21352,7 @@
   },
   "ui.armory-inventory-menu.1": {
     "text": "{{value0}} schließen",
-    "sourceHash": "ca675d32b485bcd69833a095ca8ec8cd3e58fd9729239893102528d8cad84826",
+    "sourceHash": "467b45da3c7e9a81e61626bb7c6c6e7b991c1fe81ac0d0cade24c9850bee9d38",
     "reviewed": true
   },
   "ui.armory-overlays.1": {
@@ -21552,7 +21367,7 @@
   },
   "ui.armory-overlays.s1": {
     "text": "Ausgerüstet von <part0/>. Beim Zerlegen wird dieser Gegenstand abgelegt.",
-    "sourceHash": "c7f55325f272b9156da1330be8180e3ac0cd2ec482a85cc642e72c64b5a095cc",
+    "sourceHash": "bc9ceaf152d253731fa2a6ec1839ca7163162dcf7397e99114d0ad5a6b417a3a",
     "reviewed": true
   },
   "ui.armory-picker-panel.d1": {
@@ -21622,12 +21437,12 @@
   },
   "ui.boards-collection.d1": {
     "text": "{{value0}}{{value1}} untersuchen",
-    "sourceHash": "908c855399499b4a1640aadadeda1a788b1e20ce52a8cc2fdcd5b1a55afe7e4c",
+    "sourceHash": "f7463d687443f9d9754b0e3514e2a5fc85ea5cf34c854cb7bb6ceca64e148d8a",
     "reviewed": true
   },
   "ui.boards-collection.s1": {
     "text": "Beende einen Lauf nach mindestens <part0/> Räumen, um ein neues Spielbrett zu erhalten.",
-    "sourceHash": "831319ae43530298b56ffc385f717588fd386b4b1a158e0e7c63732601d68842",
+    "sourceHash": "45c3153fbcd4fd4b462d83d531266e8cf630be65bb739fb3ba899237f908ce57",
     "reviewed": true
   },
   "ui.boon-inspect.1": {
@@ -21677,7 +21492,7 @@
   },
   "ui.brew-potion-panel.3": {
     "text": "Gebräuergebnis untersuchen: {{value0}}",
-    "sourceHash": "7ba2060c3d919c2e839d50fedc94abf0ce7aa2ec4746d90ff9c5c69b949fd86d",
+    "sourceHash": "4b7abbbf0cde2d6baeb5a4f88ad518bd5779cc19b92bd67250413877eee8f937",
     "reviewed": true
   },
   "ui.brew-potion-panel.6": {
@@ -21782,12 +21597,12 @@
   },
   "ui.campfire-screen.s1": {
     "text": "Du hast erhalten: <part0/>",
-    "sourceHash": "6102ec88c4dcb235fe06b3a6f0823589d00d43837935259fbf2919099e7025b7",
+    "sourceHash": "ac3fe7b9a351c5015fc5e60d76a4774c4e195c369e01b3eeb14e943ac3870864",
     "reviewed": true
   },
   "ui.campfire-screen.s2": {
     "text": "<part0/> Gold deinem Beutel hinzugefügt.",
-    "sourceHash": "8e71eeef4694fb4d809f24245ed44b2a891a8521c4e2d59d6633370fbacc6655",
+    "sourceHash": "8e871ed4588c2cc5f3445f711bea776ba246b9b9407a9e1b6105941f2f35c4a5",
     "reviewed": true
   },
   "ui.card-inspection-overlay.1": {
@@ -21827,12 +21642,12 @@
   },
   "ui.character-select-screen.d1": {
     "text": "{{value0}} (Gesperrt)",
-    "sourceHash": "d93db63b199fec6d1b9bd6f6054bc55f488418c46d214f945b7966cec169ad9e",
+    "sourceHash": "c8a0dfa1c9519a1dc52ea71269bb40ab8595beb8ae2e90697642c1877012ad44",
     "reviewed": true
   },
   "ui.character-select-screen.d2": {
     "text": "{{value0}} auswählen",
-    "sourceHash": "219eeb6536541f30628e987939ec94033a1d09a5295ecb5adbaccbfa75d8d233",
+    "sourceHash": "2cf6a24b58123076f54265a1d619970b88a4456896136150366ff613caaad9e2",
     "reviewed": true
   },
   "ui.collection-screen.1": {
@@ -21857,12 +21672,12 @@
   },
   "ui.companion-panel.1": {
     "text": "Aktiver Begleiter: {{value0}}",
-    "sourceHash": "089fb4dac1ca931f8493fc60f7da7641f70f60a834fcb996ac559762c976cb93",
+    "sourceHash": "194c2aee50badd518ac8eb9763499c2d2b2dbd898664bb90c466e2024ca68fce",
     "reviewed": true
   },
   "ui.companion-panel.2": {
     "text": "{{value0}} untersuchen",
-    "sourceHash": "e572ae509cf54c08ca687fc83242a21c6d79ee745858e495c6e1f153b4c28885",
+    "sourceHash": "6ca42d78aa51eb331532ed9aaf0057c966654c429423ae4d34fbe3650f89bcc0",
     "reviewed": true
   },
   "ui.corruption-screen.1": {
@@ -21917,12 +21732,12 @@
   },
   "ui.corruption-screen.7": {
     "text": "Original: {{value0}}",
-    "sourceHash": "13f832fae0003afcc3851fcc3dcc6796a7bc36e1b0cb7f04fcffac1a6f9fb0e1",
+    "sourceHash": "850663809d9543b8784175bcacf5ec279f3a2e0319bcac1c48cb9b18d193552e",
     "reviewed": true
   },
   "ui.corruption-screen.8": {
     "text": "Ergebnis: {{value0}}",
-    "sourceHash": "c82de5edcea37c43ae459a493bc3f526464d5e882cbd12315515cf9cb5f33006",
+    "sourceHash": "e699269e69afd45f236a2ca8969517c50a0eb7c8036557efaa87d680c58228e5",
     "reviewed": true
   },
   "ui.corruption-screen.9": {
@@ -21947,12 +21762,12 @@
   },
   "ui.crafting-result.s1": {
     "text": "<part0/>: <part1/> angewendet.",
-    "sourceHash": "c8e6f052f91f0e8046275e5c3afc8c00fc9cc6dcd600b3746e995447cd2f5ea5",
+    "sourceHash": "c00d7ce5af3ce502945f9e6ec6b9152a7a5bd4857cf030904583aaf4508f2a6a",
     "reviewed": true
   },
   "ui.crafting-result.s2": {
     "text": "→ <part0/>",
-    "sourceHash": "6492a191c0aac08fc19f09e9f376157fe32d210688cb5a68952160d1030c4052",
+    "sourceHash": "32a5dfd664db3b9736b903456a742a683b27176fdb04a5b98c3c017e189b7d23",
     "reviewed": true
   },
   "ui.crafting-strip.1": {
@@ -21962,7 +21777,7 @@
   },
   "ui.crafting-strip.2": {
     "text": "{{value0}} verwenden",
-    "sourceHash": "884c2fbb12db2fa071fa689cae8f55e7f4952b6d8e8073be19aaef9ea8b150ea",
+    "sourceHash": "2f2a859e2fc3cb28fbd2a30f4f5ff6b3928a66873b390701815c48954df361b7",
     "reviewed": true
   },
   "ui.crafting-strip.3": {
@@ -21992,7 +21807,7 @@
   },
   "ui.crafting-strip.s1": {
     "text": "<part0/> Ausrüstung zu Herstellungsmaterialien.",
-    "sourceHash": "234c28e224bb222e31db2ed1f109f7cd138c5c6b594e36fe16baf68ebe2db2c7",
+    "sourceHash": "020455c3440922b84470e02e0536e29f1c76adc9c5671e4d0220dd120874aefc",
     "reviewed": true
   },
   "ui.currency-chip.1": {
@@ -22022,7 +21837,7 @@
   },
   "ui.destination-choices.d1": {
     "text": "Boss - {{value0}}",
-    "sourceHash": "30c4b9e60bb06211d381dd59a645b50b396593893e5402e6bd278b180fb89d5c",
+    "sourceHash": "58d1d0265d2fe3f703a5f0f87761b082daece0aacc150fcf239a369b2561c403",
     "reviewed": true
   },
   "ui.dialogs.default-cancelLabel": {
@@ -22077,12 +21892,12 @@
   },
   "ui.draft-deck-screen.d3": {
     "text": "Du hast {{value0}} Karten gewählt. Dein Lauf kann beginnen.",
-    "sourceHash": "e4db0b1dd7dfd81cbb72c4696ffb8a166cd262caa4d48804b96f066ad7e77db6",
+    "sourceHash": "d8e665898977e3ae02fc824ae5cf319948277adc6eb836ed6bcc00bdf062bdf2",
     "reviewed": true
   },
   "ui.draft-deck-screen.d4": {
     "text": "Wähle 1 von 3 Karten - {{value0}}/{{value1}} gewählt",
-    "sourceHash": "994e300ba8962f498067c8268e537174fcf2c848960f34b04e88150dc22b4d33",
+    "sourceHash": "0ab085b2186a58386d9f7ff1f7bfe2ac5616fc2458f10a46e55b7a801b84dce2",
     "reviewed": true
   },
   "ui.end-turn-button.1": {
@@ -22197,12 +22012,12 @@
   },
   "ui.error-log-viewer.s1": {
     "text": "<part0/><part1/> Fehler<part2/>",
-    "sourceHash": "54e3a4ad0af4e963434e9eddfceb42dd3b86405e91a60b1250e3f09838612f7c",
+    "sourceHash": "340847d1194088a802cf1ac628f5f657d7cad2904cd26c56525db76f22f3d6aa",
     "reviewed": true
   },
   "ui.error-log-viewer.s2": {
     "text": "<part0/>:",
-    "sourceHash": "52f7351573b763aaafc094e3fd2101535074a930c5e10473d968040a20725466",
+    "sourceHash": "91694d43afb7a4cfd7963bb31bc999b730d344683ec6f86ec96815fff67c37fd",
     "reviewed": true
   },
   "ui.game-menu.1": {
@@ -22237,7 +22052,7 @@
   },
   "ui.hand.1": {
     "text": "{{value0}} spielen",
-    "sourceHash": "fa3aa2ee555d3b66cdbfd453b8bf05ebad710d4814508f6b6e0af6648fe1d67e",
+    "sourceHash": "064ff733dc08aafe9ff6cd43d38744b48bf200aef69a7aa85586c0f21b9253bb",
     "reviewed": true
   },
   "ui.health-restore-meter.1": {
@@ -22282,7 +22097,7 @@
   },
   "ui.hero-unlocked-screen.2": {
     "text": "{{value0}} untersuchen",
-    "sourceHash": "02c882a1a2fd53da41ac19e8c7bfa682c5669fb83ad00da74ff50e0d948259a7",
+    "sourceHash": "21176ae62e1dc07848a53af89e91cea83bfe8c7b114268a5096979c59836150d",
     "reviewed": true
   },
   "ui.homestead-screen.1": {
@@ -22317,27 +22132,27 @@
   },
   "ui.item-picker-grid.d2": {
     "text": "{{value0}}. {{value1}}",
-    "sourceHash": "4aac11ae84c970335d1b44e7427d0118e0631144158cba7a5b2d1224e2835e2c",
+    "sourceHash": "36e4bc60d74de26c164f6b04fc94d363d8c1628dfdac6a15691f37799e0db2b9",
     "reviewed": true
   },
   "ui.keyword-progress-card.2": {
     "text": "{{value0}}: Fortschritt auf Stufe {{value1}}",
-    "sourceHash": "144d084dad794aefa69309b8c289503d3354e3dea22a16767f28ec7757055d79",
+    "sourceHash": "aa120c98747dfdab1ca22b59462bc4347a828b8010492a94c304684b262951fb",
     "reviewed": true
   },
   "ui.keyword-progress-card.s1": {
     "text": "St. <part0/>",
-    "sourceHash": "8d2f54377590386139bcb6f0cced587185ae37739725f4c3b2b865334125e0d2",
+    "sourceHash": "0ebfe74f75f6812015b4dea4a94592c57e374f3cafad3e8661edd45099b408f5",
     "reviewed": true
   },
   "ui.keyword-tag.d1": {
     "text": "{{value0}} wählen",
-    "sourceHash": "a2954cbdb4415122c18857d4fdd7a82fb8541cb11b0ddd4b68e8e510921a9328",
+    "sourceHash": "fc8876ce4d283c8946b95ea3afd24a496ab294eecdcb1b5a00d996a4a642b6a0",
     "reviewed": true
   },
   "ui.keyword-tag.d2": {
     "text": "Schlüsselwort {{value0}} untersuchen",
-    "sourceHash": "750f417ba8187772c794cab58ebdcd7a684d1125fb9a204f8cca42e71fe9da68",
+    "sourceHash": "d71df4d41078f3209cc3992f8e242e4a250a89ac4beb715eda250c1ba59f47a3",
     "reviewed": true
   },
   "ui.labyrinth-map-screen.1": {
@@ -22352,7 +22167,7 @@
   },
   "ui.labyrinth-map-viewport.msg1": {
     "text": "Ebene {{value0}}",
-    "sourceHash": "5d9f483e0ea5fc7ec93a02272e08cf9ac3948d210dcbb389cfa39b5abe702ee5",
+    "sourceHash": "75f0b2d9d595d58be4340cc66171df1018019fe2ca2f7a59f206bc30d52f5e11",
     "reviewed": true
   },
   "ui.labyrinth-node-inspector.1": {
@@ -22367,7 +22182,7 @@
   },
   "ui.labyrinth-node-inspector.d1": {
     "text": "Ebene {{value0}}",
-    "sourceHash": "fdf042e34c2e31d3a1eb2e608d1d39eb95bdabafcafd32aa18d463752097b202",
+    "sourceHash": "3b7e632ab00c31e1619f9828ed3e0ae1ed82197bbd79bd7d4342abe459caf2a9",
     "reviewed": true
   },
   "ui.labyrinth-node-inspector.d2": {
@@ -22382,17 +22197,17 @@
   },
   "ui.labyrinth-node-inspector.s1": {
     "text": "Lasse <part0/> unerforschte <part1/> zurück.",
-    "sourceHash": "c85e356f93c30b628b1b7620f1e0479e1ee17f87a6f450c733a5b6209e86ba60",
+    "sourceHash": "b732fc7725abeb2f16768b479611fc23a300f7c0718ab591f2ecdfb9073605f0",
     "reviewed": true
   },
   "ui.labyrinth-node-seal.msg1": {
     "text": "{{value0}}kammer, {{value1}}",
-    "sourceHash": "67bda27810d72209200b8fee933fb30d9289a40f8a3a91a033e2b417e44fd4e9",
+    "sourceHash": "8a35ef45325773b3ccc97183a1b7267455ef0aeb4d03dcc23e9f991138721b1b",
     "reviewed": true
   },
   "ui.labyrinth-node-seal.msg2": {
     "text": "Unentdeckte Kammer, Reihe {{value0}}, Spalte {{value1}}",
-    "sourceHash": "bf9a901f135a349fb823b08a729f04d6538f1d4afe7af422a1b0dae7630d3b91",
+    "sourceHash": "12dbee6f4b917a78194b5080f09eb40c40216f8f2f65901d054ce9fd813dc08d",
     "reviewed": true
   },
   "ui.layout-components.1": {
@@ -22412,7 +22227,7 @@
   },
   "ui.mana-dock.s1": {
     "text": "+<part0/>",
-    "sourceHash": "0ed0fc62ae705044d55bb49baaf5fd4625ecf1cde8c75ac53837411664e5403c",
+    "sourceHash": "30f5c0e2b8a46e769172081ab94a1f79406cb091645811ac6349ff92a46fcdcd",
     "reviewed": true
   },
   "ui.mana-dock.s2": {
@@ -22422,12 +22237,12 @@
   },
   "ui.mana-dock.s3": {
     "text": "<part0/> zusätzliches Mana",
-    "sourceHash": "24de527fbffaf3f59a6c3540d1adecbbdfc37436e77d687e6855a05b6881f12e",
+    "sourceHash": "dc5614120523912fd110a7056bbff7b43ca407d118072155590b72d29e29f412",
     "reviewed": true
   },
   "ui.mana-dock.s4": {
     "text": "<part0/> Kristalle zusätzlich zu den sichtbaren <part1/>",
-    "sourceHash": "764521a0e25b884e3cf2520b2dc1ada96fc73b3fd7e956a05aed640fbb6fbcae",
+    "sourceHash": "22c09607686e180aba5852d561a5e38133f3efd11544ea909ea7347f4e89e01a",
     "reviewed": true
   },
   "ui.menu-screen.2": {
@@ -22542,37 +22357,37 @@
   },
   "ui.mystery-effect-badge.d3": {
     "text": "{{value0}} Schaden erleiden",
-    "sourceHash": "62366a579075d2c7b9b3a5cbf8a5be4d88e525a81af9f813bc1809ce71e822a4",
+    "sourceHash": "3ee6694ac63f98739a286aca423d452144b7df13bb50b92f720573608f5cab80",
     "reviewed": true
   },
   "ui.mystery-effect-badge.s1": {
     "text": "Füge <part0/> deinem Deck hinzu",
-    "sourceHash": "93b6e3f0e5659e9bd32c5b96756dfa371fe92313c64d5f60f84aeb4f98aaa0dc",
+    "sourceHash": "e5a194052579e86b05939fd57f1ff39b4dfdb977a0a1fe445192920feee8006d",
     "reviewed": true
   },
   "ui.mystery-effect-badge.s2": {
     "text": "Füge <part0/> hinzu",
-    "sourceHash": "90f8af0929dc17ba28c7a77bae5e2695f0a187c76aee41d863326c1f2b39de9f",
+    "sourceHash": "c2647a074aa085a5b2670d07ca96d38d25f2abf811ee56fd777a5159fc4e9464",
     "reviewed": true
   },
   "ui.mystery-effect-badge.s3": {
     "text": "Erhalte <part0/> <part1/>",
-    "sourceHash": "33d6c5e07b73bec3b0af45723a23f03ec7ac04a3b70f6c3e29c3b054d1667524",
+    "sourceHash": "904f40dd863402a20225c2b1d1fbf6854fea7de124c5093a49ef7a6f9e26aace",
     "reviewed": true
   },
   "ui.mystery-effect-badge.s4": {
     "text": "Füge <part0/> für diesen Lauf hinzu",
-    "sourceHash": "7f0cb6eadb6e0c9ac81e2104d8654dc7d954bfb1ccd3eda3e89a62e62b28dfe0",
+    "sourceHash": "eadd9b44eaa915f98a77311495b6342890d0938567b9f4baaeaa4e4e0ef4561f",
     "reviewed": true
   },
   "ui.mystery-effect-badge.s5": {
     "text": "Erhalte für diesen Lauf zufällig: <part0/>",
-    "sourceHash": "e05cdd7e2eef9c2fe1059bec79307b50b10987525bb350e0e245447eee31e8d8",
+    "sourceHash": "83ed73bbc52c74e4e243f26805b50c7504b8500f650896b3d273e866a325128e",
     "reviewed": true
   },
   "ui.mystery-effect-badge.s6": {
     "text": "Füge <part0/> deiner Rüstkammer hinzu",
-    "sourceHash": "717ee045aeb7db3ea37ffe6adbdc3e1fe9bed415d391e292d5bd1fecacf2f0d3",
+    "sourceHash": "f7d4a9638b9e586df2486ad89ec6783dab24ef5c2417d51a889e70365761f891",
     "reviewed": true
   },
   "ui.mystery-reward-summary.1": {
@@ -22622,22 +22437,22 @@
   },
   "ui.node-artwork.3": {
     "text": "{{value0}} {{value1}} von {{value2}}",
-    "sourceHash": "bf8df0455e7aac595555847dc51b3c743cf50e2a186f7e0c13dbfdc2a3aaa806",
+    "sourceHash": "ac5b24026b80565310a365e4fc8ba323093fff2de363b965fa39b3b21e1fde9a",
     "reviewed": true
   },
   "ui.node-artwork.d1": {
     "text": "{{value0}} speichern",
-    "sourceHash": "22debf8a1d5796f145cef7e81b4923a6e96fce1df1e5a227d9ee74aea85d465b",
+    "sourceHash": "361f20cfcad3dd888324f00803d28481c8112f6ad7b137fd65d93712473a38fb",
     "reviewed": true
   },
   "ui.node-artwork.d2": {
     "text": "{{value0}} {{value1}} für {{value2}}",
-    "sourceHash": "9e0c79fadb19af7d1438bc31a19e3d6dafa72254d2189b3e96103bf6571e133b",
+    "sourceHash": "7c7005ad478137517d0d44c20d0f84b505d9295df573926d7a36313cccf3e13c",
     "reviewed": true
   },
   "ui.node-artwork.d3": {
     "text": "{{value0}} ansehen",
-    "sourceHash": "c04a793ae1dfe543f40456bd27b1ac1ebcb33c3bbbf7b7e011d0eea5132910aa",
+    "sourceHash": "f2f30ba47fb40f55b69fa112947230ead43de7aa307897de2fb3f66309ff8b18",
     "reviewed": true
   },
   "ui.node-artwork.d4": {
@@ -22652,7 +22467,7 @@
   },
   "ui.node-tooltip-body.1": {
     "text": "Kosten für {{value0}}: {{value1}}",
-    "sourceHash": "e9b52bbba344d58e96ff038d0478469eea7ac2bb29acd9bc630539b3546ab6b9",
+    "sourceHash": "082725a61751d9d0a7c953e78b8df7db6d90baf966d0df12e782e8793183b745",
     "reviewed": true
   },
   "ui.node-tooltip-body.2": {
@@ -22847,12 +22662,12 @@
   },
   "ui.potion-comparison.2": {
     "text": "Original: {{value0}}",
-    "sourceHash": "7cd940bd00a030b377cee16a388b02354a7fad73110430bb7ae69d4fdaf3f270",
+    "sourceHash": "4af60d5c41330fbca323ab7bebc728c97a11279983b2bbda2177d35d82282919",
     "reviewed": true
   },
   "ui.potion-comparison.3": {
     "text": "Gebräuergebnis untersuchen: {{value0}}",
-    "sourceHash": "853f2e81983e95e02cf306d37fe1f1b4c94a8275ca18ed20acf9cb31e9a5a5e6",
+    "sourceHash": "be14e515ef7629c0061f706c8bb58ea5def2bf996c0bd00229c955980a3460af",
     "reviewed": true
   },
   "ui.purchasable-shop-tile.1": {
@@ -22892,12 +22707,12 @@
   },
   "ui.rewards-screen.1": {
     "text": "{{value0}} auswählen",
-    "sourceHash": "336d5fbdc42812fd39ca56a94416c0a35a73cf9ab01145bca058dac9b15e33ed",
+    "sourceHash": "fc367b81852485768a881d55329692b8a41b65aa1157aaa0dd129a15937fc7d2",
     "reviewed": true
   },
   "ui.rewards-screen.2": {
     "text": "{{value0}} auswählen",
-    "sourceHash": "10d71b68e9008a5d987f939b25ec63a767ea54e2fff8a26821b2ef183753e9b2",
+    "sourceHash": "ce25d90557784a64700c1bdc342d6c8e20d0a788c63a6add5ce5e773cd113694",
     "reviewed": true
   },
   "ui.rewards-screen.3": {
@@ -22917,7 +22732,7 @@
   },
   "ui.run-end-routes.msg1": {
     "text": "Dein Abstieg führte bis Ebene {{value0}}.",
-    "sourceHash": "5e26af4c8ab678f7f41abbd9f21b9c134415154a9dfd449d4861735d375bc7b0",
+    "sourceHash": "81e507d459776743747868d137ac18d497f51a0a4b351dbcfcb0e4d7c0738aed",
     "reviewed": true
   },
   "ui.run-end-screen.d1": {
@@ -22952,7 +22767,7 @@
   },
   "ui.selectable-card.msg1": {
     "text": "{{value0}} auswählen",
-    "sourceHash": "84d88b43286b7636883e14ce3b66b512380943e2fed013214e84ba347768cc8b",
+    "sourceHash": "f40893c6b53070b179d5b6f85eecc042ce3a2b4032741e6c1465051218e421b1",
     "reviewed": true
   },
   "ui.settings-controls.s1": {
@@ -22992,7 +22807,7 @@
   },
   "ui.status-icons.d1": {
     "text": "{{value0}} {{value1}}",
-    "sourceHash": "33c166da24a744f637c7a4f4f28185aabf8e46cb98681eb9d2e0100224e9bf26",
+    "sourceHash": "5f6a40f4c8aff4d9fcd400df130cc87d108c496a931d476d8c1528a80548581f",
     "reviewed": true
   },
   "ui.status-icons.d2": {
@@ -23007,12 +22822,12 @@
   },
   "ui.tab-bar.d1": {
     "text": "{{value0}} (Gesperrt)",
-    "sourceHash": "f99838c59ac269470f1a06d9016882a617830d51ade1628dd52dd4f49ea4d559",
+    "sourceHash": "6eacdb225c6f93413b297e2bec6bc4e4a2b2fa0842a3c4a6a4b79c9f9473e7bf",
     "reviewed": true
   },
   "ui.talent-overview-grid.1": {
     "text": "Talente für {{value0}} wählen",
-    "sourceHash": "60f3f8a0a354aeb5832de3e9c6442fe049b5da66fc683c4d11766ea7d4bacd8f",
+    "sourceHash": "99f2ee4000d040e2b1dff6defd66a246bbfcf850e8a51d790612fc7f77806411",
     "reviewed": true
   },
   "ui.talent-overview-grid.2": {
@@ -23092,7 +22907,7 @@
   },
   "ui.transmutation-screen.3": {
     "text": "Transmutiert: {{value0}}",
-    "sourceHash": "c7ba4ba57890d33b97a86d9027d9c4954b598206ece6ade1138729a26d379ead",
+    "sourceHash": "1ece011d798153bcb0b06dfa834a5ae83bb197961aeba14949d63707a235ff84",
     "reviewed": true
   },
   "ui.transmutation-screen.4": {
@@ -23117,17 +22932,17 @@
   },
   "ui.transmutation-screen.8": {
     "text": "Original: {{value0}}",
-    "sourceHash": "f3b4747ec8d53f96fb47c94b4f42957712645606c5456c37b4d8c0b8eb13e466",
+    "sourceHash": "fde66eacb425a07f000dbb8ac7a19efe5c3c320f908e9c9c50ac1dd730022dea",
     "reviewed": true
   },
   "ui.transmutation-screen.9": {
     "text": "Vorschau: {{value0}}",
-    "sourceHash": "12e59383a2590b427b049916748c57b49ccd9b34c275e7a8bc7657977d54afa8",
+    "sourceHash": "c19cff1b2aef86d39aa7a1139bf8f2f8e6d514af2df98b9bab0c5a021208324c",
     "reviewed": true
   },
   "ui.trinket-picker-grid.d1": {
     "text": "{{value0}}. {{value1}}",
-    "sourceHash": "904b69b834ee1841dc6374da4d7d707553ce31a642f8717644fedaf713bc7100",
+    "sourceHash": "2eb566cdf67c67cbe6d5327669e448ef32bd095c2be50465ed993297a5afece5",
     "reviewed": true
   },
   "ui.trinket-shop-screen.1": {
@@ -23152,7 +22967,7 @@
   },
   "ui.wish-overlay.1": {
     "text": "{{value0}} wählen",
-    "sourceHash": "0c1fe12fa682a0adee5714f00162b8bd54c9e1a6a6c6e48b045f9373f1bf6a3d",
+    "sourceHash": "4f01f8c4b40dfc181a6ec24d4699714efc5bb0e2b4ddaef4e1dabf4407071a67",
     "reviewed": true
   },
   "ui.wish-overlay.2": {

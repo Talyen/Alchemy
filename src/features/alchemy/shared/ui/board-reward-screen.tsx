@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+import { text as gameText } from "@/lib/localization/runtime";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ export function BoardRewardScreen({
   onContinue: () => void;
   continueLabel?: string;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { ref: artworkRef, pending } = useArtworkReady(boardId);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const board = boardCatalog.find((entry) => entry.id === boardId);
@@ -32,20 +32,20 @@ export function BoardRewardScreen({
     [onContinue],
   );
   return (
-    <TitledScreenShell title={gameText("ui.board-reward-screen.1", "Board Collected")} maxWidthClass="max-w-6xl">
+    <TitledScreenShell title={i18n.text("ui.board-reward-screen.1", "Board Collected")} maxWidthClass="max-w-6xl">
       <div className="mt-6 flex flex-col items-center gap-5">
         <div ref={artworkRef} data-artwork-pending={pending} className="w-full">
           <img
             src={boardArt[boardId]?.full}
-            alt={displayText(board?.title ?? "Game Board")}
+            alt={i18n.displayText(board?.title ?? "Game Board")}
             decoding="async"
             className="max-h-[55vh] w-full rounded-shell-tooltip object-contain"
           />
         </div>
-        <h2 className="text-center font-sans text-3xl text-gold-pale">{displayText(board?.title)}</h2>
+        <h2 className="text-center font-sans text-3xl text-gold-pale">{i18n.displayText(board?.title)}</h2>
         <div className="flex justify-center gap-4">
           <Button variant="primary" size="lg" onClick={onUseBoard}>
-            {gameText("ui.board-reward-screen.2", "Use Board")}
+            {i18n.text("ui.board-reward-screen.2", "Use Board")}
           </Button>
           <Button ref={buttonRef} size="lg" onClick={onContinue}>
             {continueLabel}

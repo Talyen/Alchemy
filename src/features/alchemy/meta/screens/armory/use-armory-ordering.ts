@@ -1,3 +1,4 @@
+import { useGameTranslation } from "@/components/use-game-translation";
 import { useCallback, useMemo, useState } from "react";
 import type { CharacterId, TrinketEntry } from "@/lib/game-data";
 import type { ArmorySlot, GearInstance } from "@/lib/gear";
@@ -61,6 +62,8 @@ export function useArmoryOrdering({
   pickerItems: GearInstance[];
   ownedTrinkets: TrinketEntry[];
 }) {
+  const i18n = useGameTranslation();
+
   const isTrinket = selectedSlot === "trinket";
   const activeKey = `${characterId}:${selectedSlot}`;
 
@@ -84,7 +87,7 @@ export function useArmoryOrdering({
   const poolSet = useMemo(() => new Set(pool.map((row) => row.id)), [pool]);
 
   const entry = stored[activeKey];
-  const reconciled = reconcileCategory(entry, pool, poolSet);
+  const reconciled = i18n.read(() => reconcileCategory(entry, pool, poolSet));
   const orderedIds = reconciled.order;
   const storedPage = reconciled.page;
 
@@ -101,10 +104,10 @@ export function useArmoryOrdering({
     const item = byId.get(id);
     if (!item) continue;
     if ("instanceId" in item) {
-      if (!matchesGearFilters(item, filters)) continue;
+      if (!i18n.read(() => matchesGearFilters(item, filters))) continue;
       visibleGear.push(item);
     } else {
-      if (!matchesTrinketFilters(item, filters)) continue;
+      if (!i18n.read(() => matchesTrinketFilters(item, filters))) continue;
       visibleTrinkets.push(item);
     }
     visibleIds.push(id);
@@ -152,7 +155,7 @@ export function useArmoryOrdering({
     setPlaceholderIndex(null);
     const sorted = new Set(
       [...pool]
-        .sort((a, b) => compareOrderRows(a, b, isTrinket && option === "rarity" ? "name" : option))
+        .sort((a, b) => i18n.read(() => compareOrderRows(a, b, isTrinket && option === "rarity" ? "name" : option)))
         .map((row) => row.id),
     );
     commitOrder([...sorted], 0);

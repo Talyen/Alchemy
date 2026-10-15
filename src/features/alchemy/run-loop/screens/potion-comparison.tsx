@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText } from "@/lib/localization/runtime";
+
 import { MoveRight } from "lucide-react";
 import type { BattleCard } from "@/lib/game-data";
 import { viewCardWidthClass, getCardInspectionShineColors } from "../../shared/config";
@@ -7,16 +7,16 @@ import { BattleCardButton } from "../../shared/ui/cards/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../shared/ui/cards/card-description-ui";
 
 export function PotionComparison({ original, result }: { original: BattleCard; result: BattleCard }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   return (
     <div
       className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3"
-      aria-label={gameText("ui.potion-comparison.1", "Brew comparison")}
+      aria-label={i18n.text("ui.potion-comparison.1", "Brew comparison")}
     >
       <BattleCardButton
         card={original}
-        ariaLabel={gameText("ui.potion-comparison.2", "Original: {{value0}}", {
-          value0: getCardDisplayTitle(original),
+        ariaLabel={i18n.text("ui.potion-comparison.2", "Original: {{value0}}", {
+          value0: i18n.read(() => getCardDisplayTitle(original)),
         })}
         className={viewCardWidthClass}
         shineColor={getCardInspectionShineColors(original)}
@@ -26,8 +26,8 @@ export function PotionComparison({ original, result }: { original: BattleCard; r
       <MoveRight aria-hidden="true" className="h-10 w-10 self-center text-gold-pale" />
       <BattleCardButton
         card={result}
-        ariaLabel={gameText("ui.potion-comparison.3", "Inspect brew result: {{value0}}", {
-          value0: getCardDisplayTitle(result),
+        ariaLabel={i18n.text("ui.potion-comparison.3", "Inspect brew result: {{value0}}", {
+          value0: i18n.read(() => getCardDisplayTitle(result)),
         })}
         className={viewCardWidthClass}
         shineColor={getCardInspectionShineColors(result)}

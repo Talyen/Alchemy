@@ -1,4 +1,3 @@
-import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import {
@@ -24,7 +23,7 @@ export function CraftingResultPreview({
   after: GearInstance;
   onDismiss: () => void;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const beforeEntries = getGearAffixTooltipEntries(result.before.affixes, gearInstanceRarity(result.before));
   const afterEntries = getGearAffixTooltipEntries(after.affixes, gearInstanceRarity(after));
   const beforeById = new Map(beforeEntries.map((entry) => [entry.affixId, entry]));
@@ -52,31 +51,31 @@ export function CraftingResultPreview({
           defaultValue="<part0/>: <part1/> applied."
           parts={{
             part0: <GearItemTitle instance={after} className="whitespace-normal" />,
-            part1: displayText(getCraftingCurrencyDefinition(result.currencyId).displayName),
+            part1: i18n.displayText(getCraftingCurrencyDefinition(result.currencyId).displayName),
           }}
         />
       </p>
-      {upgraded ? <p className="mt-2 text-gold-pale">{gameText("ui.crafting-result.4", "Basic → Astral")}</p> : null}
+      {upgraded ? <p className="mt-2 text-gold-pale">{i18n.text("ui.crafting-result.4", "Basic → Astral")}</p> : null}
       <ul className="mt-2 max-h-[35dvh] space-y-2 overflow-y-auto">
         {changes.map((change) => (
           <li key={change.id} className="armory-affix-feedback rounded-lg bg-emerald-300/10 px-2 py-1">
-            <span className="font-semibold">{displayText(change.name)}</span>
-            <span className="block text-muted-foreground">{displayText(change.before)}</span>
+            <span className="font-semibold">{i18n.displayText(change.name)}</span>
+            <span className="block text-muted-foreground">{i18n.displayText(change.before)}</span>
             <span className="block text-emerald-100">
               <GameMessage
                 id="ui.crafting-result.s2"
                 defaultValue="→ <part0/>"
-                parts={{ part0: displayText(change.after) }}
+                parts={{ part0: i18n.displayText(change.after) }}
               />
             </span>
           </li>
         ))}
       </ul>
       {!changes.length && !upgraded ? (
-        <p className="mt-2">{gameText("ui.crafting-result.6", "The roll produced the same affixes and values.")}</p>
+        <p className="mt-2">{i18n.text("ui.crafting-result.6", "The roll produced the same affixes and values.")}</p>
       ) : null}
       <button type="button" className="mt-2 rounded px-2 py-1 underline underline-offset-4" onClick={onDismiss}>
-        {gameText("ui.crafting-result.7", "Dismiss result")}
+        {i18n.text("ui.crafting-result.7", "Dismiss result")}
       </button>
     </div>
   );

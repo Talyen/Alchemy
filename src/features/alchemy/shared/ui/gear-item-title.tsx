@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import {
   getGearDefinitionTextShineColors,
   getGearDefinitionTitle,
@@ -21,7 +21,7 @@ interface GearProps {
 }
 
 export function GearItemTitle({ instance, definition, className }: GearProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const title = instance ? getGearInstanceTitle(instance) : definition ? getGearDefinitionTitle(definition) : "Gear";
   const colors = instance
     ? getGearInstanceTextShineColors(instance)
@@ -31,7 +31,7 @@ export function GearItemTitle({ instance, definition, className }: GearProps) {
 
   return (
     <ShineText colors={colors} className={cn("whitespace-nowrap", className)}>
-      {displayText(title)}
+      {i18n.displayText(title)}
     </ShineText>
   );
 }
@@ -42,10 +42,10 @@ interface TrinketProps {
 }
 
 export function TrinketItemTitle({ trinket, className }: TrinketProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   return (
     <ShineText colors={getTrinketTextShineColors(trinket.id)} className={className}>
-      {displayText(trinket.title)}
+      {i18n.displayText(trinket.title)}
     </ShineText>
   );
 }

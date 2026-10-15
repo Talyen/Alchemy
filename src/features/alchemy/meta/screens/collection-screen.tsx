@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText } from "@/lib/localization/runtime";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { endBossPreview, getBossMusicKey, previewBossMusic } from "@/lib/audio";
 import { useControlledPagination } from "../../shared/ui/use-pagination";
@@ -66,7 +66,7 @@ function StandardCollectionScreen({
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const isBestiary = collectionTab === "bestiary";
   const referenceTileWidth = isBestiary ? COLLECTION_BESTIARY_REFERENCE_WIDTH : COLLECTION_CARD_REFERENCE_WIDTH;
   const maxColumns = isBestiary ? COLLECTION_BESTIARY_MAX_COLUMNS : COLLECTION_CARD_MAX_COLUMNS;
@@ -124,7 +124,7 @@ function StandardCollectionScreen({
   return (
     <PageLayout>
       <ScreenShell maxWidthClass={collectionShellWidthClass}>
-        <ScreenHeaderRow title={gameText("ui.collection-screen.1", "Collection")} onBack={onBack} onMenu={onMenu} />
+        <ScreenHeaderRow title={i18n.text("ui.collection-screen.1", "Collection")} onBack={onBack} onMenu={onMenu} />
         <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
 
         <CollectionContentLayout

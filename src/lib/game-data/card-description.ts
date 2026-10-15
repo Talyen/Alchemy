@@ -3,6 +3,7 @@ import { getCompanionDescriptionLines } from "./cards/companion-turn-description
 import type { BattleCard } from "./types";
 
 export interface CardDescriptionContext {
+  inspectBattleCard?: (card: BattleCard) => BattleCard;
   companionDamageModifiers?: CompanionDamageModifiers;
   companionBondLevels?: Record<string, number>;
 }

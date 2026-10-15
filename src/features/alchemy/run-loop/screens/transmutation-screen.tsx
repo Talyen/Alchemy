@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { cn } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
 import { MoveRight } from "lucide-react";
@@ -36,7 +36,7 @@ export function TransmutationScreen({
   afterProgressSaved?: (feedback: () => void) => void;
   isProgressSavePending?: () => boolean;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const [page, setPage] = useState(0);
   const [error, setError] = useState("");
   const [committedHere, setCommittedHere] = useState(false);
@@ -159,7 +159,7 @@ export function TransmutationScreen({
   if (!available && !completed) return null;
 
   return (
-    <TitledScreenShell title={gameText("ui.transmutation-screen.1", "Transmutation")}>
+    <TitledScreenShell title={i18n.text("ui.transmutation-screen.1", "Transmutation")}>
       <div
         ref={panelRef}
         className="mt-5 flex flex-col items-center gap-5 text-center"
@@ -177,14 +177,14 @@ export function TransmutationScreen({
               swapKey="result"
               className="flex flex-col items-center gap-3"
               onReady={() => setResultReady(true)}
-              aria-label={gameText("ui.transmutation-screen.2", "Transmutation result")}
+              aria-label={i18n.text("ui.transmutation-screen.2", "Transmutation result")}
             >
               <div className={cn("reward-choice relative", resultReady && committedHere && "reward-choice-selected")}>
                 <BattleCardButton
                   card={visit.result}
                   comparisonCard={visit.original ?? undefined}
-                  ariaLabel={gameText("ui.transmutation-screen.3", "Transmuted: {{value0}}", {
-                    value0: getCardDisplayTitle(visit.result),
+                  ariaLabel={i18n.text("ui.transmutation-screen.3", "Transmuted: {{value0}}", {
+                    value0: i18n.read(() => getCardDisplayTitle(visit.result)),
                   })}
                   className={viewCardWidthClass}
                   shineColor={getCardInspectionShineColors(visit.result)}
@@ -207,7 +207,7 @@ export function TransmutationScreen({
                 onContinue();
               }}
             >
-              {gameText("ui.transmutation-screen.4", "Continue")}
+              {i18n.text("ui.transmutation-screen.4", "Continue")}
             </Button>
           </>
         ) : !source ? (
@@ -227,7 +227,7 @@ export function TransmutationScreen({
               )}
             />
             <Button size="lg" variant="outline" disabled={locked} onClick={leave}>
-              {gameText("ui.transmutation-screen.5", "Leave")}
+              {i18n.text("ui.transmutation-screen.5", "Leave")}
             </Button>
           </>
         ) : (
@@ -235,7 +235,7 @@ export function TransmutationScreen({
             <div
               className="flex flex-wrap justify-center gap-5"
               role="group"
-              aria-label={gameText("ui.transmutation-screen.6", "Alterations")}
+              aria-label={i18n.text("ui.transmutation-screen.6", "Alterations")}
             >
               {selection?.choices.map((choice) => (
                 <KeywordTag
@@ -253,13 +253,13 @@ export function TransmutationScreen({
             {preview && (
               <div
                 className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3"
-                aria-label={gameText("ui.transmutation-screen.7", "Transmutation comparison")}
+                aria-label={i18n.text("ui.transmutation-screen.7", "Transmutation comparison")}
               >
                 <div className={cn(viewCardWidthClass, "flex flex-col items-center gap-3")}>
                   <BattleCardButton
                     card={source}
-                    ariaLabel={gameText("ui.transmutation-screen.8", "Original: {{value0}}", {
-                      value0: getCardDisplayTitle(source),
+                    ariaLabel={i18n.text("ui.transmutation-screen.8", "Original: {{value0}}", {
+                      value0: i18n.read(() => getCardDisplayTitle(source)),
                     })}
                     className={viewCardWidthClass}
                     shineColor={getCardInspectionShineColors(source)}
@@ -279,8 +279,8 @@ export function TransmutationScreen({
                   <BattleCardButton
                     card={preview}
                     comparisonCard={source}
-                    ariaLabel={gameText("ui.transmutation-screen.9", "Preview: {{value0}}", {
-                      value0: getCardDisplayTitle(preview),
+                    ariaLabel={i18n.text("ui.transmutation-screen.9", "Preview: {{value0}}", {
+                      value0: i18n.read(() => getCardDisplayTitle(preview)),
                     })}
                     className={viewCardWidthClass}
                     shineColor={getCardInspectionShineColors(preview)}
@@ -298,7 +298,7 @@ export function TransmutationScreen({
         {source && !showResult && (
           <div className="flex flex-wrap justify-center gap-3">
             <Button size="lg" variant="outline" disabled={locked} onClick={() => select({ kind: "back" })}>
-              {gameText("ui.transmutation-screen.10", "Back")}
+              {i18n.text("ui.transmutation-screen.10", "Back")}
             </Button>
             {keyword && (
               <Button
@@ -317,13 +317,13 @@ export function TransmutationScreen({
                 }
                 onClick={confirm}
               >
-                {gameText("ui.transmutation-screen.11", "Transmute")}
+                {i18n.text("ui.transmutation-screen.11", "Transmute")}
               </Button>
             )}
           </div>
         )}
         {(error || staleSource) && (
-          <p role="alert">{displayText(error || "Your deck changed. Choose a card again.")}</p>
+          <p role="alert">{i18n.displayText(error || "Your deck changed. Choose a card again.")}</p>
         )}
       </div>
     </TitledScreenShell>

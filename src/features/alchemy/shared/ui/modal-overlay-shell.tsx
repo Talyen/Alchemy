@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import { useState, type KeyboardEvent, type ReactNode, type SyntheticEvent } from "react";
 import { createPortal } from "react-dom";
 import { useModalRoot } from "./modal-root";
@@ -46,7 +46,7 @@ function ModalContent({
   className: string | undefined;
   children: ReactNode;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const [session, setSession] = useState({ open, id: 0 });
   if (session.open !== open) setSession({ open, id: session.id + (open ? 1 : 0) });
   const { ref: artworkRef, pending: artworkPending } = useArtworkReady(session.id);
@@ -72,7 +72,7 @@ function ModalContent({
       onClickCapture={!interactive ? blockInteraction : undefined}
       onKeyDownCapture={!interactive ? blockInactiveKey : undefined}
     >
-      {displayText(shownChildren)}
+      {i18n.displayText(shownChildren)}
     </div>
   );
 }

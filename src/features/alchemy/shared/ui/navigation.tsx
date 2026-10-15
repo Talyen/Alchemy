@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+import { text as gameText } from "@/lib/localization/runtime";
 import { ChevronLeft, ChevronRight, Menu } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -21,13 +21,13 @@ function PageArrow({
   className,
   hidden = false,
 }: PaginationProps & { direction: -1 | 1; hidden?: boolean }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const previous = direction === -1;
   const Icon = previous ? ChevronLeft : ChevronRight;
   return (
     <Button
-      aria-label={displayText(
-        previous ? gameText("ui.navigation.d1", "Previous page") : gameText("ui.navigation.d2", "Next page"),
+      aria-label={i18n.displayText(
+        previous ? i18n.text("ui.navigation.d1", "Previous page") : i18n.text("ui.navigation.d2", "Next page"),
       )}
       aria-hidden={hidden || undefined}
       tabIndex={hidden ? -1 : undefined}

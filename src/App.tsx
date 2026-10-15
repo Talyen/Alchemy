@@ -1,4 +1,3 @@
-import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { battlePresentation } from "@/app/battle-presentation";
@@ -102,7 +101,7 @@ function AppMainContent({
   tooltipBlocked: boolean;
   gameMenu: GameMenuState;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { screen: controllerScreen } = run;
   const runPhase = useRunPhase(controllerScreen);
   const nav = useReturnToRunNavigation({ run, renderedScreen });
@@ -204,18 +203,20 @@ function AppMainContent({
           onBack={nav.screenBackHandler}
           deckInspection={deckInspection}
         >
-          {displayText(
-            renderAlchemyScreenRoute({
-              screen: renderedScreen,
-              cardInspection: { canOpen: inspection.canOpen, onOpen: openCardInspection },
-              routeCommands: run.routeCommands,
-              onOpenBoards: nav.openBoardsFromOptions,
-              onClearSaveData: dev.clearSaveData,
-              onUnlockAllDevMode: dev.unlockAllDevMode,
-              gameMenuOpen: gameMenu.gameMenuOpen,
-              onOpenGameMenu: gameMenu.openGameMenu,
-              onBack: nav.screenBackHandler,
-            }),
+          {i18n.displayText(
+            i18n.read(() =>
+              renderAlchemyScreenRoute({
+                screen: renderedScreen,
+                cardInspection: { canOpen: inspection.canOpen, onOpen: openCardInspection },
+                routeCommands: run.routeCommands,
+                onOpenBoards: nav.openBoardsFromOptions,
+                onClearSaveData: dev.clearSaveData,
+                onUnlockAllDevMode: dev.unlockAllDevMode,
+                gameMenuOpen: gameMenu.gameMenuOpen,
+                onOpenGameMenu: gameMenu.openGameMenu,
+                onBack: nav.screenBackHandler,
+              }),
+            ),
           )}
         </AppScreenChromeProvider>
       </CardDescriptionProvider>
@@ -262,7 +263,7 @@ function AppMainContent({
           backgroundParticlesIntensity={backgroundParticlesIntensity}
         />
         <AppKeywordPlasmaBackground renderedScreen={renderedScreen} intensity={backgroundGlowIntensity} />
-        {displayText(content)}
+        {i18n.displayText(content)}
         {showBattleCluster ? (
           <BattleCluster
             endTurn={{
@@ -314,7 +315,7 @@ function AppMainContent({
 }
 
 function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtualResolution> }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const settings = useAppSettings();
   const vrStageRef = useRef<HTMLDivElement>(null);
   const { frameStyle, stageStyle, tooltipStyle, aspectMode, stagePixelRatio } = displayLayout;
@@ -343,7 +344,7 @@ function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtu
   const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(run.screen);
 
   return (
-    <ErrorBoundary label={displayText(screen)}>
+    <ErrorBoundary label={i18n.displayText(screen)}>
       <SaveWriteNotice onRetry={run.retryProgressSave} />
       <div
         aria-busy={run.progressSave.kind !== "idle"}
@@ -411,7 +412,7 @@ export default function App() {
 }
 
 function DemoImportNotice() {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const [visible, setVisible] = useState(true);
   if (!visible) return null;
   return (
@@ -425,7 +426,7 @@ function DemoImportNotice() {
         parts={{
           part0: (
             <Button variant="ghost" className="ml-4" onClick={() => setVisible(false)}>
-              {gameText("ui.App.2", "Dismiss")}
+              {i18n.text("ui.App.2", "Dismiss")}
             </Button>
           ),
         }}

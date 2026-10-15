@@ -1,4 +1,3 @@
-import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import type { RefObject } from "react";
@@ -33,16 +32,16 @@ export function ArmoryOverlays({
   afterProgressSaved = (feedback) => feedback(),
   onClearSalvageTarget,
 }: Props) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const heldCharacterName = useHeldWhile(salvagePending !== null, equippedCharacterName);
   const heldPending = useHeldWhile(salvagePending !== null, salvagePending);
   return (
     <>
       <ConfirmationDialog
         open={salvagePending !== null}
-        title={gameText("ui.armory-overlays.1", "Salvage")}
+        title={i18n.text("ui.armory-overlays.1", "Salvage")}
         returnFocusRef={returnFocusRef}
-        description={displayText(
+        description={i18n.displayText(
           heldPending ? (
             <>
               <GameMessage
@@ -67,7 +66,7 @@ export function ArmoryOverlays({
                   <GameMessage
                     id="ui.armory-overlays.s1"
                     defaultValue="Equipped by <part0/>. Salvaging will unequip this item."
-                    parts={{ part0: displayText(heldCharacterName) }}
+                    parts={{ part0: i18n.displayText(heldCharacterName) }}
                   />
                 </p>
               ) : null}
@@ -75,7 +74,7 @@ export function ArmoryOverlays({
             </div>
           ) : null
         }
-        confirmLabel={gameText("ui.armory-overlays.4", "Salvage")}
+        confirmLabel={i18n.text("ui.armory-overlays.4", "Salvage")}
         icon={Sparkles}
         dismissOnBackdrop={false}
         onCancel={onClearSalvageTarget}

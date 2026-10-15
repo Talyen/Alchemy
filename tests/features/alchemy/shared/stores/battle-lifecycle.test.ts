@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { snapshotSessionSave } from "@/features/alchemy/shared/storage";
 import { savedActivityFixture, savedActivityData } from "../../../../fixtures/run-activity";
 import "../../../../helpers/mock-audio";
@@ -36,23 +37,20 @@ it("rejects every battle command after End Run without changing progress, RNG, o
   expect(abandonRun(defaultGameSession)).toBe(true);
   const before = readGameplayState(defaultGameSession);
   const commit = vi.fn();
-  const unsubscribe = subscribeRunSessionCommits(commit, defaultGameSession);
+  using _unsubscribe = createCleanup(subscribeRunSessionCommits(commit, defaultGameSession));
   const started = vi.fn();
   const start = createBattleStartCommands(started, defaultGameSession);
-  try {
-    expect(commitCardPlay(readBattle(defaultGameSession).battleState, 0, slash.id, defaultGameSession)).toBeNull();
-    expect(commitBattleWish(readBattle(defaultGameSession).battleState, slash.id, defaultGameSession)).toBeNull();
-    expect(commitEndTurn(readBattle(defaultGameSession).battleState, defaultGameSession)).toBeNull();
-    expect(start.startBattle({ enemyId: "goblin" })).toBeNull();
-    expect(start.startBossById({ bossId: "forge-golem" })).toBe(false);
-    expect(readGameplayState(defaultGameSession)).toBe(before);
-    expect(readBattle(defaultGameSession).hasActiveBattle).toBe(false);
-    expect(snapshotSessionSave(defaultGameSession).activeRun).toBeNull();
-    expect(commit).not.toHaveBeenCalled();
-    expect(started).not.toHaveBeenCalled();
-  } finally {
-    unsubscribe();
-  }
+
+  expect(commitCardPlay(readBattle(defaultGameSession).battleState, 0, slash.id, defaultGameSession)).toBeNull();
+  expect(commitBattleWish(readBattle(defaultGameSession).battleState, slash.id, defaultGameSession)).toBeNull();
+  expect(commitEndTurn(readBattle(defaultGameSession).battleState, defaultGameSession)).toBeNull();
+  expect(start.startBattle({ enemyId: "goblin" })).toBeNull();
+  expect(start.startBossById({ bossId: "forge-golem" })).toBe(false);
+  expect(readGameplayState(defaultGameSession)).toBe(before);
+  expect(readBattle(defaultGameSession).hasActiveBattle).toBe(false);
+  expect(snapshotSessionSave(defaultGameSession).activeRun).toBeNull();
+  expect(commit).not.toHaveBeenCalled();
+  expect(started).not.toHaveBeenCalled();
 });
 
 it("starts combat only once and preserves its activity while visiting the Menu", () => {
@@ -138,14 +136,11 @@ it.each([
   });
   const before = readGameplayState(defaultGameSession);
   const commit = vi.fn();
-  const unsubscribe = subscribeRunSessionCommits(commit, defaultGameSession);
-  try {
-    expect(commitCardPlay(readBattle(defaultGameSession).battleState, 0, slash.id, defaultGameSession)).toBeNull();
-    expect(commitBattleWish(readBattle(defaultGameSession).battleState, slash.id, defaultGameSession)).toBeNull();
-    expect(commitEndTurn(readBattle(defaultGameSession).battleState, defaultGameSession)).toBeNull();
-    expect(readGameplayState(defaultGameSession)).toBe(before);
-    expect(commit).not.toHaveBeenCalled();
-  } finally {
-    unsubscribe();
-  }
+  using _unsubscribe = createCleanup(subscribeRunSessionCommits(commit, defaultGameSession));
+
+  expect(commitCardPlay(readBattle(defaultGameSession).battleState, 0, slash.id, defaultGameSession)).toBeNull();
+  expect(commitBattleWish(readBattle(defaultGameSession).battleState, slash.id, defaultGameSession)).toBeNull();
+  expect(commitEndTurn(readBattle(defaultGameSession).battleState, defaultGameSession)).toBeNull();
+  expect(readGameplayState(defaultGameSession)).toBe(before);
+  expect(commit).not.toHaveBeenCalled();
 });

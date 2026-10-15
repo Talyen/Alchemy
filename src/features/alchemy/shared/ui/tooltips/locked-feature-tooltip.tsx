@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { displayText } from "@/lib/localization/runtime";
+
 import type { ReactNode } from "react";
 import { Lock } from "lucide-react";
 import { tooltipChipIconClass } from "../../config/typography";
@@ -7,7 +7,7 @@ import { TooltipBody, TooltipHeader } from "./tooltip-panel";
 import { renderUnlockNode } from "../unlock-text";
 
 export function LockedFeatureTooltip({ title, message }: { title: string; message: ReactNode }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   return (
     <>
       <TooltipHeader>
@@ -17,7 +17,7 @@ export function LockedFeatureTooltip({ title, message }: { title: string; messag
         </span>
       </TooltipHeader>
       <TooltipBody>
-        <p>{displayText(renderUnlockNode(message))}</p>
+        <p>{i18n.displayText(i18n.read(() => renderUnlockNode(message)))}</p>
       </TooltipBody>
     </>
   );

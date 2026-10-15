@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import type { RefObject } from "react";
 import { Lock } from "lucide-react";
 import type { CharacterId, TrinketEntry } from "@/lib/game-data";
@@ -56,7 +56,7 @@ export function ArmoryEquipmentPanel({
   onSelectCurrency,
   onToggleSalvageMode,
 }: ArmoryEquipmentPanelProps) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { editable, salvageMode, activeCurrencyId, craftingResult } = targeting;
   return (
     <section
@@ -65,7 +65,7 @@ export function ArmoryEquipmentPanel({
     >
       <div className="relative flex min-h-10 w-full items-center justify-center">
         <h2 className={cn("text-center font-sans", sectionTitleClass)}>
-          {gameText("ui.armory-equipment-panel.1", "Equipment")}
+          {i18n.text("ui.armory-equipment-panel.1", "Equipment")}
         </h2>
       </div>
       <div
@@ -127,11 +127,13 @@ export function ArmoryEquipmentPanel({
           <div className="max-w-xs text-center">
             <Lock className="mx-auto h-8 w-8" />
             <p className="mt-2 font-semibold">
-              {displayText(
-                renderUnlockMessage(
-                  gameText("ui.armory-equipment-panel.msg1", "Finish a Run as the {{value0}} to unlock", {
-                    value0: lockedCharacterName,
-                  }),
+              {i18n.displayText(
+                i18n.read(() =>
+                  renderUnlockMessage(
+                    i18n.text("ui.armory-equipment-panel.msg1", "Finish a Run as the {{value0}} to unlock", {
+                      value0: lockedCharacterName,
+                    }),
+                  ),
                 ),
               )}
             </p>

@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+import { text as gameText } from "@/lib/localization/runtime";
 import { useMemo, useState, type ReactNode } from "react";
 import { Trash2 } from "lucide-react";
 
@@ -37,7 +37,7 @@ export function RemoveCardPanel({
   compact?: boolean;
   fitHeight?: boolean;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const [selectionDeck, setSelectionDeck] = useState(runDeck);
@@ -63,7 +63,7 @@ export function RemoveCardPanel({
   return (
     <div className={cn(fitHeight ? "flex min-h-0 flex-1 flex-col gap-3" : compact ? "space-y-3" : "space-y-6")}>
       {intro}
-      {selectionNotice && <p role="status">{displayText(selectionNotice)}</p>}
+      {selectionNotice && <p role="status">{i18n.displayText(selectionNotice)}</p>}
       <CardSelectionGrid
         fitHeight={fitHeight}
         items={items}
@@ -93,10 +93,10 @@ export function RemoveCardPanel({
         ) : null}
         <Button size="lg" variant="primary" disabled={confirmDisabled} onClick={handleConfirm}>
           <Trash2 className="h-7 w-7" />{" "}
-          {displayText(
+          {i18n.displayText(
             fitHeight
-              ? gameText("ui.remove-card-panel.d1", "Remove")
-              : gameText("ui.remove-card-panel.d2", "Remove Card"),
+              ? i18n.text("ui.remove-card-panel.d1", "Remove")
+              : i18n.text("ui.remove-card-panel.d2", "Remove Card"),
           )}
           {removePrice !== undefined && <GoldCost amount={removePrice} affordable={canAfford} />}
         </Button>

@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText } from "@/lib/localization/runtime";
+
 import { playUISound } from "@/lib/audio";
 import { useEffect } from "react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
@@ -30,7 +30,7 @@ export function LabyrinthMapScreen({
   onNodeEnter,
   onDescend,
 }: Props) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const selectedNode =
     labyrinthMap && selectedNodeId && canInspectLabyrinthNode(labyrinthMap, selectedNodeId)
       ? (labyrinthMap.nodes[selectedNodeId] ?? null)
@@ -62,7 +62,7 @@ export function LabyrinthMapScreen({
     <div className="h-full min-h-0 overflow-hidden">
       <ScreenShell className="h-full min-h-0 gap-4" maxWidthClass="max-w-none">
         <div className="shrink-0">
-          <ScreenHeaderRow title={gameText("ui.labyrinth-map-screen.1", "Labyrinth")} />
+          <ScreenHeaderRow title={i18n.text("ui.labyrinth-map-screen.1", "Labyrinth")} />
         </div>
         <FadeSlot
           swapKey={labyrinthMap?.currentFloor ?? 1}

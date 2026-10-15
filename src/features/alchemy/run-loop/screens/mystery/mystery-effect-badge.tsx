@@ -1,4 +1,3 @@
-import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import type { BattleCard } from "@/lib/game-data";
@@ -37,7 +36,7 @@ export function MysteryEffectBadge({
   findTrinket?: ((id: string) => { title: string } | undefined) | undefined;
   tooltip?: boolean;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const pillClass = cn(
     "inline-flex items-center gap-1 rounded-full border shadow-xs",
     tooltip
@@ -59,9 +58,9 @@ export function MysteryEffectBadge({
         >
           <HomesteadResourceArtwork resource={resource} size={tooltip ? "xs" : "sm"} />
           <span className="leading-none">
-            {displayText(effect.amount)}{" "}
-            {displayText(
-              resource === "gold" ? gameText("ui.mystery-effect-badge.d1", "Gold") : materialLabels[resource],
+            {i18n.displayText(effect.amount)}{" "}
+            {i18n.displayText(
+              resource === "gold" ? i18n.text("ui.mystery-effect-badge.d1", "Gold") : materialLabels[resource],
             )}
           </span>
         </span>
@@ -93,11 +92,11 @@ export function MysteryEffectBadge({
     case "damageHealth": {
       return (
         <span className="font-semibold text-red-400">
-          {displayText(
+          {i18n.displayText(
             tooltip
-              ? gameText("ui.mystery-effect-badge.d2", "Take damage")
-              : gameText("ui.mystery-effect-badge.d3", "Take {{value0}} damage", {
-                  value0: displayText(effect.amount),
+              ? i18n.text("ui.mystery-effect-badge.d2", "Take damage")
+              : i18n.text("ui.mystery-effect-badge.d3", "Take {{value0}} damage", {
+                  value0: i18n.displayText(effect.amount),
                 }),
           )}
         </span>
@@ -127,7 +126,7 @@ export function MysteryEffectBadge({
             parts={{
               part0: (
                 <ShineText colors={colors} {...mysteryShineTextProps}>
-                  {displayText(title)}
+                  {i18n.displayText(title)}
                 </ShineText>
               ),
             }}
@@ -138,7 +137,7 @@ export function MysteryEffectBadge({
           <GameMessage
             id="ui.mystery-effect-badge.s2"
             defaultValue="Add <part0/>"
-            parts={{ part0: displayText(title) }}
+            parts={{ part0: i18n.displayText(title) }}
           />
         </span>
       );
@@ -161,12 +160,12 @@ export function MysteryEffectBadge({
               />
             )
           ) : tooltip ? (
-            gameText("mystery.choose-card-details", "Choose 1 of {{choices}} cards to add to your deck", {
-              choices: displayText(MYSTERY_CARD_CHOICES),
+            i18n.text("mystery.choose-card-details", "Choose 1 of {{choices}} cards to add to your deck", {
+              choices: i18n.displayText(MYSTERY_CARD_CHOICES),
             })
           ) : (
-            gameText("mystery.choose-card", "Choose 1 of {{choices}} cards", {
-              choices: displayText(MYSTERY_CARD_CHOICES),
+            i18n.text("mystery.choose-card", "Choose 1 of {{choices}} cards", {
+              choices: i18n.displayText(MYSTERY_CARD_CHOICES),
             })
           )}
         </span>
@@ -184,12 +183,12 @@ export function MysteryEffectBadge({
             parts={{
               part0: (
                 <ShineText colors={colors} {...mysteryShineTextProps}>
-                  {displayText(title)}
+                  {i18n.displayText(title)}
                 </ShineText>
               ),
               part1: (
                 <TooltipChip className="mx-0.5 mt-0 align-baseline">
-                  {gameText("ui.mystery-effect-badge.9", "Boon")}
+                  {i18n.text("ui.mystery-effect-badge.9", "Boon")}
                 </TooltipChip>
               ),
             }}
@@ -200,7 +199,7 @@ export function MysteryEffectBadge({
           <GameMessage
             id="ui.mystery-effect-badge.s4"
             defaultValue="Add <part0/> for this run"
-            parts={{ part0: displayText(title) }}
+            parts={{ part0: i18n.displayText(title) }}
           />
         </span>
       );
@@ -218,7 +217,7 @@ export function MysteryEffectBadge({
             parts={{
               part0: (
                 <ShineText colors={colors} {...mysteryShineTextProps}>
-                  {gameText("ui.mystery-effect-badge.14", "Boon")}
+                  {i18n.text("ui.mystery-effect-badge.14", "Boon")}
                 </ShineText>
               ),
             }}
@@ -226,14 +225,14 @@ export function MysteryEffectBadge({
         </span>
       ) : (
         <span className="text-sm text-pretty text-muted-foreground">
-          {gameText("ui.mystery-effect-badge.17", "Gain a random Boon for this run")}
+          {i18n.text("ui.mystery-effect-badge.17", "Gain a random Boon for this run")}
         </span>
       );
     }
     case "gainRandomGear": {
       return (
         <span className="text-sm text-pretty text-muted-foreground">
-          {gameText("ui.mystery-effect-badge.18", "Add random Gear to your Armory")}
+          {i18n.text("ui.mystery-effect-badge.18", "Add random Gear to your Armory")}
         </span>
       );
     }
@@ -262,7 +261,7 @@ export function MysteryEffectBadge({
             parts={{
               part0: tooltip ? (
                 <ShineText colors={colors} {...mysteryShineTextProps}>
-                  {displayText(title)}
+                  {i18n.displayText(title)}
                 </ShineText>
               ) : (
                 title
@@ -275,7 +274,7 @@ export function MysteryEffectBadge({
     case "removeCard": {
       return (
         <span className="text-sm text-muted-foreground">
-          {gameText("ui.mystery-effect-badge.22", "Remove a random card")}
+          {i18n.text("ui.mystery-effect-badge.22", "Remove a random card")}
         </span>
       );
     }
@@ -298,11 +297,11 @@ export function MysteryEffectList({
   findTrinket: ((id: string) => { title: string } | undefined) | undefined;
   choiceLabel?: string;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const sortedEffects = sortMysteryEffectsByDisplayOrder(effects);
   return (
     <div className="flex flex-col items-start gap-1.5">
-      <TooltipHeader>{displayText(choiceLabel ?? "Outcome")}</TooltipHeader>
+      <TooltipHeader>{i18n.displayText(choiceLabel ?? "Outcome")}</TooltipHeader>
       {sortedEffects.map((effect, i) => {
         const prefix =
           effect.kind === "gainGold" || effect.kind === "gainMaterial"
@@ -313,7 +312,7 @@ export function MysteryEffectList({
 
         return (
           <div key={i} className="flex items-center gap-1.5 text-sm leading-none">
-            {prefix && <span className="text-muted-foreground">{displayText(prefix)}</span>}
+            {prefix && <span className="text-muted-foreground">{i18n.displayText(prefix)}</span>}
             <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} tooltip />
           </div>
         );

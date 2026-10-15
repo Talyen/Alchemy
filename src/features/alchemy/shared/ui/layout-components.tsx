@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+
 import { DeckInspectButton } from "./deck-inspect-button";
 import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
@@ -34,7 +34,7 @@ export function ScreenHeaderRow({
   onMenu?: ((rect: DOMRect) => void) | undefined;
   className?: string;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const chrome = useOptionalAppScreenChrome();
   const effectiveBack = onBack ?? chrome?.onBack;
   const effectiveMenu = onMenu ?? chrome?.openGameMenu;
@@ -42,7 +42,7 @@ export function ScreenHeaderRow({
   const leadingContent =
     leading ??
     (effectiveBack ? (
-      <ChromeIconButton onClick={effectiveBack} aria-label={gameText("ui.layout-components.1", "Back")}>
+      <ChromeIconButton onClick={effectiveBack} aria-label={i18n.text("ui.layout-components.1", "Back")}>
         <ArrowLeft className="h-7 w-7" />
       </ChromeIconButton>
     ) : null);
@@ -50,7 +50,7 @@ export function ScreenHeaderRow({
   const menuButton = effectiveMenu ? (
     <HamburgerTrigger
       onClick={effectiveMenu}
-      label={gameText("ui.layout-components.2", "Open game menu")}
+      label={i18n.text("ui.layout-components.2", "Open game menu")}
       active={chrome?.isMenuOpen}
     />
   ) : null;
@@ -58,7 +58,7 @@ export function ScreenHeaderRow({
     trailing || menuButton ? (
       <div className="flex items-center gap-2">
         {trailing}
-        {displayText(menuButton)}
+        {i18n.displayText(menuButton)}
       </div>
     ) : null;
 
@@ -67,13 +67,13 @@ export function ScreenHeaderRow({
       <div className="flex w-full max-w-2xl flex-col items-center">
         <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center px-3">
           <div className="flex items-center gap-2">
-            {displayText(leadingContent)}
+            {i18n.displayText(leadingContent)}
             {chrome?.deckInspection ? <DeckInspectButton {...chrome.deckInspection} /> : null}
           </div>
           <div className="flex min-w-0 flex-col items-center px-3 text-center">
             <h1 className={cn("text-center font-sans", screenTitleClass)}>{title}</h1>
           </div>
-          <div className="flex items-center justify-end gap-2">{displayText(trailingContent)}</div>
+          <div className="flex items-center justify-end gap-2">{i18n.displayText(trailingContent)}</div>
         </div>
         <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-gold-pale/75 to-transparent" />
       </div>

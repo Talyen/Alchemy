@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { text as gameText, displayText } from "@/lib/localization/runtime";
+import { displayText } from "@/lib/localization/runtime";
 import { Fragment, type ReactNode } from "react";
 import { useChangeToken } from "./use-change-token";
 import { cn } from "@/lib/utils";
@@ -40,7 +40,7 @@ export function CurrencyChip({
   ariaLabel?: string;
   onSelect?: () => void;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible();
   const countToken = useChangeToken(count);
   const label = `${ariaLabel ?? currency.displayName}, ${count}${onSelect ? " available" : ""}`;
@@ -72,12 +72,12 @@ export function CurrencyChip({
       onBlurCapture={onBlurCapture}
     >
       <PortaledTooltip triggerRef={triggerRef} visible={visible} className="armory-inventory-tooltip !shadow-none">
-        <TooltipHeader>{displayText(currency.displayName)}</TooltipHeader>
+        <TooltipHeader>{i18n.displayText(currency.displayName)}</TooltipHeader>
         <TooltipBody>
-          <p>{displayText(renderBoldSegments(currency.tooltipEffect))}</p>
-          {showDescription ? <p className="mt-2">{displayText(currency.description)}</p> : null}
+          <p>{i18n.displayText(i18n.read(() => renderBoldSegments(currency.tooltipEffect)))}</p>
+          {showDescription ? <p className="mt-2">{i18n.displayText(currency.description)}</p> : null}
           {disabled && count > 0 ? (
-            <p className="mt-2">{gameText("ui.currency-chip.1", "Crafting is unavailable.")}</p>
+            <p className="mt-2">{i18n.text("ui.currency-chip.1", "Crafting is unavailable.")}</p>
           ) : null}
         </TooltipBody>
       </PortaledTooltip>
@@ -86,7 +86,7 @@ export function CurrencyChip({
           type="button"
           data-testid={testId}
           data-currency-id={currency.id}
-          aria-label={displayText(label)}
+          aria-label={i18n.displayText(label)}
           aria-pressed={armed}
           aria-disabled={disabled}
           className={className}
@@ -95,7 +95,7 @@ export function CurrencyChip({
             if (!disabled) onSelect();
           }}
         >
-          {displayText(content)}
+          {i18n.displayText(content)}
         </button>
       ) : (
         <div
@@ -104,10 +104,10 @@ export function CurrencyChip({
           role="group"
           data-testid={testId}
           data-currency-id={currency.id}
-          aria-label={displayText(label)}
+          aria-label={i18n.displayText(label)}
           className={className}
         >
-          {displayText(content)}
+          {i18n.displayText(content)}
         </div>
       )}
     </div>

@@ -111,6 +111,7 @@ export function selectCardInspectionData(state: GameplayState) {
       battle.turnPhase === "player" &&
       !battle.wishOptions &&
       getBattleOutcome(battle) === null,
+    battleState: battle,
     hand: battle.hand,
     drawPile: battle.deck,
     discardPile: battle.discard,

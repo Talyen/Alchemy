@@ -44,7 +44,7 @@ export function ShopBrowseOfferings({
   onLeave: () => void;
   serviceClassName?: string;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   return (
     <div className="flex flex-col items-center gap-6">
       <FadeSlot swapKey={swapKey} className="grid grid-cols-1 gap-8 sm:grid-cols-3">
@@ -52,7 +52,7 @@ export function ShopBrowseOfferings({
       </FadeSlot>
       {services ? <div className={cn("flex flex-wrap justify-center gap-3", serviceClassName)}>{services}</div> : null}
       <Button size="lg" variant="primary" wrapperClassName="mt-2" className="min-w-56" onClick={onLeave}>
-        {gameText("ui.shop-browse-shell.1", "Leave")}
+        {i18n.text("ui.shop-browse-shell.1", "Leave")}
       </Button>
     </div>
   );
@@ -71,16 +71,16 @@ export function RefreshShopServiceButton({
   onRefresh: () => void;
   label?: string;
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   return (
     <ServiceButton
       icon={RefreshCw}
       label={label}
       cost={refreshPrice}
       disabled={refreshesLeft <= 0 || gold < refreshPrice}
-      disabledMessage={gameText("ui.shop-browse-shell.attr1", "Not Enough Gold")}
+      disabledMessage={i18n.text("ui.shop-browse-shell.attr1", "Not Enough Gold")}
       used={refreshesLeft <= 0}
-      soldOutText={gameText("shop.service-sold-out", "{{label}} - Sold Out", { label: label })}
+      soldOutText={i18n.text("shop.service-sold-out", "{{label}} - Sold Out", { label: label })}
       onClick={onRefresh}
     />
   );

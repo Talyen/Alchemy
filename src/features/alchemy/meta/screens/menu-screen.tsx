@@ -1,4 +1,3 @@
-import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { UI_GOLD } from "@/lib/game-constants/ui-colors";
@@ -78,7 +77,7 @@ export function MenuScreen({
   hasAffordableHomestead?: boolean;
   finishedRunCharacters: CharacterId[];
 }) {
-  useGameTranslation();
+  const i18n = useGameTranslation();
   const isTalentsLocked = !isProgressionFeatureUnlocked("talents", finishedRunCharacters);
   const isHomesteadLocked = !isProgressionFeatureUnlocked("homestead", finishedRunCharacters);
   const optionsButton = (
@@ -109,7 +108,7 @@ export function MenuScreen({
           width={1200}
           height={1046}
           src={logoSrc}
-          alt={gameText("ui.menu-screen.2", "Alchemy logo")}
+          alt={i18n.text("ui.menu-screen.2", "Alchemy logo")}
           className={cn("h-full max-h-full w-auto max-w-full object-contain brightness-90", cardHoverScaleClass)}
           loading="eager"
           decoding="async"
@@ -120,7 +119,7 @@ export function MenuScreen({
         {onWishlist ? (
           <div className="flex flex-wrap justify-center gap-3">
             <Button variant="outline" onClick={onWishlist}>
-              {gameText("ui.menu-screen.3", "Wishlist on Steam")}
+              {i18n.text("ui.menu-screen.3", "Wishlist on Steam")}
             </Button>
           </div>
         ) : null}
@@ -134,8 +133,8 @@ export function MenuScreen({
             onClick={onPlay}
           >
             <Swords className="h-7 w-7" />
-            {displayText(
-              hasActiveRun ? gameText("ui.menu-screen.d1", "Continue") : gameText("ui.menu-screen.d2", "Play"),
+            {i18n.displayText(
+              hasActiveRun ? i18n.text("ui.menu-screen.d1", "Continue") : i18n.text("ui.menu-screen.d2", "Play"),
             )}
           </Button>
         </MenuPlasmaHover>
@@ -157,8 +156,8 @@ export function MenuScreen({
           </MenuPlasmaHover>
           <MenuPlasmaHover colorPair={HOMESTEAD_PLASMA_PAIR}>
             <LockedMenuItem
-              title={gameText("ui.menu-screen.5", "Homestead")}
-              message={displayText(getProgressionFeatureUnlockMessage("homestead"))}
+              title={i18n.text("ui.menu-screen.5", "Homestead")}
+              message={i18n.displayText(getProgressionFeatureUnlockMessage("homestead"))}
               locked={isHomesteadLocked}
               onSelect={onHomestead}
               icon={<TreePine className="h-7 w-7 text-emerald-400" />}
@@ -168,7 +167,7 @@ export function MenuScreen({
               variant="outline"
               tooltipPlacement="side-end"
             >
-              {gameText("ui.menu-screen.6", "Homestead")}
+              {i18n.text("ui.menu-screen.6", "Homestead")}
             </LockedMenuItem>
             {hasAffordableHomestead && !isHomesteadLocked && (
               <ShineBorder shineColor={SHINE_PALETTES.gold} borderWidth={2} duration={8} className="rounded-xl" />
@@ -178,8 +177,8 @@ export function MenuScreen({
         <div className="grid grid-cols-2 gap-3">
           <MenuPlasmaHover colorPair={TALENTS_PLASMA_PAIR}>
             <LockedMenuItem
-              title={gameText("ui.menu-screen.7", "Talents")}
-              message={displayText(getProgressionFeatureUnlockMessage("talents"))}
+              title={i18n.text("ui.menu-screen.7", "Talents")}
+              message={i18n.displayText(getProgressionFeatureUnlockMessage("talents"))}
               locked={isTalentsLocked}
               onSelect={onTalents}
               icon={<WandSparkles className="h-7 w-7 text-violet-400" />}
@@ -189,7 +188,7 @@ export function MenuScreen({
               variant="outline"
               tooltipPlacement="side-start"
             >
-              {gameText("ui.menu-screen.8", "Talents")}
+              {i18n.text("ui.menu-screen.8", "Talents")}
             </LockedMenuItem>
             {hasUnspentTalents && !isTalentsLocked && (
               <ShineBorder shineColor={SHINE_PALETTES.gold} borderWidth={2} duration={8} className="rounded-xl" />
@@ -228,7 +227,7 @@ export function MenuScreen({
                 />
               </Button>
             </div>
-            {displayText(optionsButton)}
+            {i18n.displayText(optionsButton)}
           </div>
         ) : (
           optionsButton
