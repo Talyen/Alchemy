@@ -30,7 +30,17 @@ export function useDialogFocus(returnFocusRef?: RefObject<HTMLElement | null>) {
         frame = requestAnimationFrame(focusPanel);
         return;
       }
-      initialControl().focus();
+      const control = initialControl();
+      control.focus();
+      // The panel can become visible before its controls have layout boxes.
+      // Do not finish initial focus on the fallback while a preferred action
+      // is still preparing; disabled actions continue to use the fallback.
+      if (
+        document.activeElement !== control ||
+        (control === panel &&
+          panel.querySelector("[data-dialog-cancel]:not(:disabled), [data-dialog-initial-focus]:not(:disabled)"))
+      )
+        frame = requestAnimationFrame(focusPanel);
     };
     // Portaled panels mount invisibly to measure and decode their artwork.
     const content = panel?.closest("[data-modal-content]");

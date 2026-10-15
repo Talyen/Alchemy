@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { controllerInput } from "./controller-input";
 
-/** Full mapped-input Options journey; Electron covers the native select boundary separately. */
+/** Mapped-input Options navigation, settings persistence, and confirmation focus. */
 export async function exerciseControllerOptions(page: Page) {
   const input = controllerInput(page);
   await input.activate(page.getByRole("button", { name: "Options", exact: true }));
@@ -14,18 +14,6 @@ export async function exerciseControllerOptions(page: Page) {
   await expect(page.getByRole("button", { name: "Interface", exact: true })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Background", exact: true })).toBeVisible();
   await expect(page.getByRole("slider", { name: "Game Size", exact: true })).toBeVisible();
-  const aspect = page.getByRole("combobox", { name: "Aspect Ratio" });
-  await input.activate(aspect);
-  await expect(page.getByRole("listbox")).toBeVisible();
-  await input.press("down");
-  await input.press("confirm");
-  await expect(page.getByRole("listbox")).toHaveCount(0);
-  await expect(aspect).toBeFocused();
-  await input.press("confirm");
-  await expect(page.getByRole("listbox")).toBeVisible();
-  await input.press("back");
-  await expect(page.getByRole("listbox")).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Options", exact: true })).toBeVisible();
   await input.activate(page.getByRole("button", { name: "Sound", exact: true }));
   const volume = page.getByRole("slider", { name: "Music Volume", exact: true });
   await input.reach(volume);

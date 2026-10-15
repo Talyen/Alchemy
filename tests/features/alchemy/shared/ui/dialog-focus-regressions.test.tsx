@@ -95,6 +95,20 @@ describe("dialog focus regressions", () => {
     expect(document.activeElement).toBe(opener);
   });
 
+  it("waits for prepared controls instead of leaving initial focus on the dialog", () => {
+    const rects = document.body.getClientRects();
+    let controlsReady = false;
+    vi.spyOn(HTMLElement.prototype, "getClientRects").mockImplementation(function (this: HTMLElement) {
+      return this.tagName === "BUTTON" && !controlsReady ? ([] as unknown as DOMRectList) : rects;
+    });
+    render(<Dialog />);
+    vi.runOnlyPendingTimers();
+    expect(document.activeElement).toBe(screen.getByRole("dialog"));
+    controlsReady = true;
+    vi.runOnlyPendingTimers();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Preferred" }));
+  });
+
   it("focuses an enabled control when the preferred initial action is disabled", () => {
     render(<Dialog disabled />);
     vi.runOnlyPendingTimers();
