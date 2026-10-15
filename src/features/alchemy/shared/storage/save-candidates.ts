@@ -129,7 +129,8 @@ function recordActivity(run: Record<string, unknown> | undefined): Record<string
 
 export interface SaveCandidateSelection {
   state: SaveLoadState;
-  useRecovery: boolean;
+  /** Ordered write attempts, including only compatibility-permitted fallback slots. */
+  writeSlots: readonly ("primary" | "recovery")[];
 }
 
 /** Select progress and its safe write slot from the same compatibility pass. */
@@ -200,7 +201,13 @@ export function selectSaveCandidates(
   }
   return {
     state,
-    useRecovery: futureSlots.has("primary") || (recovery.length > 0 && !futureSlots.has("recovery")),
+    writeSlots: futureSlots.has("primary")
+      ? ["recovery"]
+      : futureSlots.has("recovery")
+        ? ["primary"]
+        : recovery.length > 0
+          ? ["recovery"]
+          : ["primary", "recovery"],
   };
 }
 

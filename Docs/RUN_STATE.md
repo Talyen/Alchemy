@@ -128,6 +128,11 @@ asynchronous continuations are observed to avoid an additional unhandled
 rejection; the boundary cannot cancel external work already started by an
 invalid callback.
 
+Gear's coupled mutation and Health rebinding scope can invalidate its owning
+command through `abortGameplayCommand`. The coordinator retains that failure
+until the draft closes: catching it inside an enclosing recipe cannot publish
+the partial operation. This failure state belongs to that command only.
+
 ### Post-commit behavior
 
 Audio, navigation timers, presentation updates, and other non-rollbackable work
@@ -445,7 +450,7 @@ battle display data to persist a run.
 
 `SaveOperationQueue` serializes loads, writes, and clears; a load seals pending save coalescing, observes preceding writes, and establishes slot protection before following writes. Demo initialization writes inside its load operation, so a later clear cannot be overtaken by import. Exit writes use the synchronous path only when no load or clear is pending; otherwise they follow the queue's protection and cancellation rules. Draining storage includes pending loads and their initialization writes. `save-io.ts` also drains published write outcomes, including failure status and session progress receipts, so transport completion cannot outrun acknowledgement.
 
-The storage owner reads primary and recovery slots before selecting the freshest playable save. Unreadable or newer-format data stays in its slot while new progress saves to the other slot; a failed primary write also tries recovery. Load status is diagnostic only, so the app continues into play without a save-problem screen. The [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract) owns the exact routing and wipe rules.
+The storage owner reads primary and recovery slots before selecting the freshest playable save. Selection also determines the permitted write attempts; a failed primary write only tries recovery when compatibility allows it. Unreadable or newer-format data stays in its slot under the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract), which owns the exact fallback and wipe rules. Load status is diagnostic only, so the app continues into play without a save-problem screen.
 
 Save snapshots are detached from live state; read ports borrow immutable committed
 values as described under [Run state](#run-state). Restoring active combat returns

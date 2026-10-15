@@ -4,6 +4,7 @@ import { onRunRestored } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { assertSessionOwnership, registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
 import { PlaybackLifetime } from "./playback-lifetime";
 import { useRef, useMemo, useLayoutEffect, useState } from "react";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import type { BattleRefs, CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
@@ -18,9 +19,14 @@ export type AutoplayCardHandler = (
   card: BattleCard,
   index: number,
   control: AutoplayCardControl,
+  expected: BattleSnapshot,
 ) => boolean | Promise<boolean>;
 
-export type AutoplayWishHandler = (card: BattleCard, control: AutoplayCardControl) => boolean | Promise<boolean>;
+export type AutoplayWishHandler = (
+  card: BattleCard,
+  control: AutoplayCardControl,
+  expected: BattleSnapshot,
+) => boolean | Promise<boolean>;
 
 export type { BattlePlaybackBind } from "./playback-lifetime";
 

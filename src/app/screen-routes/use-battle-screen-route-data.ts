@@ -30,6 +30,7 @@ export function useBattleScreenRouteData(presentation: BattlePresentationStore) 
 
   return {
     battleScreenData: hasActiveBattle ? battleScreenData : shown,
+    inputBattleState: battleState,
     hasActiveBattle,
   };
 }

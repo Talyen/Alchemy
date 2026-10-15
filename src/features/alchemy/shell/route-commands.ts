@@ -114,9 +114,14 @@ export interface AlchemyRouteCommands {
   };
   battle: {
     presentation: BattlePresentationStore;
-    handleCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
-    handleWishChoice: (card: BattleCard) => void;
-    handleEndTurn: (expected?: BattleSnapshot) => void;
+    handleCardClick: (
+      card: BattleCard,
+      index: number,
+      event: MouseEvent<HTMLButtonElement>,
+      expected: BattleSnapshot,
+    ) => void;
+    handleWishChoice: (card: BattleCard, expected: BattleSnapshot) => void;
+    handleEndTurn: (expected: BattleSnapshot) => void;
     handleAutoplayCard: AutoplayCardHandler;
     handleAutoplayWish: AutoplayWishHandler;
     skipCombatDevMode: () => void;
