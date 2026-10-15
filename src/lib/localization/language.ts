@@ -1,51 +1,20 @@
 import { tryLocalStorageGetItem, tryLocalStorageSetItem } from "../storage-environment";
 import { getDesktopApi } from "../desktop-api";
 import { localization, type GameLocale, type LanguagePreference } from "./runtime";
+import languages from "./locales/languages.json";
 
 const STORAGE_KEY = "alchemy-language-v1";
-const steamLocales: Record<string, string> = {
-  english: "en",
-  german: "de",
-  french: "fr",
-  italian: "it",
-  spanish: "es",
-  latam: "es-419",
-  brazilian: "pt-BR",
-  portuguese: "pt-PT",
-  schinese: "zh-Hans",
-  tchinese: "zh-Hant",
-  japanese: "ja",
-  koreana: "ko",
-  russian: "ru",
-  polish: "pl",
-  ukrainian: "uk",
-  arabic: "ar",
-  bulgarian: "bg",
-  czech: "cs",
-  danish: "da",
-  dutch: "nl",
-  finnish: "fi",
-  greek: "el",
-  hungarian: "hu",
-  indonesian: "id",
-  malay: "ms",
-  norwegian: "nb",
-  romanian: "ro",
-  swedish: "sv",
-  thai: "th",
-  turkish: "tr",
-  vietnamese: "vi",
-};
+const steamLocales: Record<string, string> = Object.fromEntries(
+  Object.entries(languages).map(([locale, { steam }]) => [steam, locale]),
+);
 export const LANGUAGE_OPTIONS: ReadonlyArray<{ value: LanguagePreference; label: string; native?: boolean }> = [
   { value: "auto", label: "Automatic" },
-  { value: "en", label: "English", native: true },
-  { value: "de", label: "Deutsch", native: true },
-  ...(import.meta.env.DEV
-    ? [
-        { value: "en-XA" as const, label: "Expanded English (test)" },
-        { value: "zh-Hans" as const, label: "简体中文（字体测试）", native: true },
-      ]
-    : []),
+  ...Object.entries(languages).map(([value, language]) => ({
+    value: value as GameLocale,
+    label: language.name,
+    native: true,
+  })),
+  ...(import.meta.env.DEV ? [{ value: "en-XA" as const, label: "Expanded English (test)" }] : []),
 ];
 export function resolveLocale(
   preference: LanguagePreference,
@@ -53,10 +22,14 @@ export function resolveLocale(
   system: readonly string[],
 ): GameLocale {
   if (preference !== "auto") return preference;
-  const candidates = steam ? [steamLocales[steam] ?? steam] : system;
+  const candidates = steam ? [Object.hasOwn(steamLocales, steam) ? steamLocales[steam]! : steam] : system;
   for (const candidate of candidates) {
-    if (candidate === "de" || candidate.startsWith("de-")) return "de";
-    if (candidate === "en" || candidate.startsWith("en-")) return "en";
+    const code = candidate.toLowerCase();
+    for (const locale of ["en", "de", "ru"] as const)
+      if (code === locale || code.startsWith(locale + "-")) return locale;
+    if (code === "zh" || /^(zh-hans|zh-cn|zh-sg)(-|$)/.test(code)) return "zh-Hans";
+    if (code === "es" || /^es-es(-|$)/.test(code)) return "es";
+    if (/^pt-br(-|$)/.test(code)) return "pt-BR";
   }
   return "en";
 }

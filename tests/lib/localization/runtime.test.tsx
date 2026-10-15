@@ -112,6 +112,16 @@ describe("localized game presentation", () => {
     expect(text("battle.deaths-door-remaining", "{{count}} protected turns remaining.", { count: 3 })).toBe(
       "Noch 3 geschützte Züge.",
     );
+    for (const [locale, counts] of [
+      ["zh-Hans", ["查看牌组 · 1张牌", "查看牌组 · 2张牌", "查看牌组 · 5张牌"]],
+      ["ru", ["Просмотр колоды · 1 карта", "Просмотр колоды · 2 карты", "Просмотр колоды · 5 карт"]],
+      ["es", ["Ver mazo · 1 carta", "Ver mazo · 2 cartas", "Ver mazo · 5 cartas"]],
+      ["pt-BR", ["Ver baralho · 1 carta", "Ver baralho · 2 cartas", "Ver baralho · 5 cartas"]],
+    ] as const) {
+      await localization.changeLanguage(locale);
+      for (const [index, count] of [1, 2, 5].entries())
+        expect(text("deck.inspect", "View Deck · {{count}} cards", { count })).toBe(counts[index]);
+    }
     await localization.changeLanguage("en-XA");
     expect(text("deck.inspect", "View Deck · {{count}} cards", { count: 1 })).toBe(
       pseudolocalize("View Deck · {{count}} card").replace("{{count}}", "1"),
@@ -135,7 +145,23 @@ describe("localized game presentation", () => {
     finish("english");
     await pending;
     expect(localization.language).toBe("de");
-    expect(resolveLocale("auto", "schinese", ["de-DE"])).toBe("en");
+    expect(resolveLocale("auto", "schinese", ["de-DE"])).toBe("zh-Hans");
+    for (const [steam, locale] of [
+      ["russian", "ru"],
+      ["spanish", "es"],
+      ["brazilian", "pt-BR"],
+    ])
+      expect(resolveLocale("auto", steam!, ["en-US"])).toBe(locale);
+    for (const [system, locale] of [
+      ["zh-CN", "zh-Hans"],
+      ["zh-SG", "zh-Hans"],
+      ["ru-RU", "ru"],
+      ["es-ES", "es"],
+      ["pt-BR", "pt-BR"],
+    ])
+      expect(resolveLocale("auto", null, [system!])).toBe(locale);
+    for (const steam of ["tchinese", "latam", "portuguese", "constructor", "__proto__"])
+      expect(resolveLocale("auto", steam, ["de-DE"])).toBe("en");
     expect(resolveLocale("auto", null, ["de-DE"])).toBe("de");
   });
 });

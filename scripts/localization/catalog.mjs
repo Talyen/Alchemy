@@ -1,8 +1,9 @@
 import crypto from "node:crypto";
+import languages from "../../src/lib/localization/locales/languages.json" with { type: "json" };
 
 export const INSTRUCTIONS =
   "alchemy-localization-v1: translate complete messages; preserve meaning, negation, conditions, named parameters and semantic tags; use glossary consistently with grammatical inflection; review before apply";
-export const TARGETS = ["de"];
+export const TARGETS = Object.keys(languages).filter((locale) => locale !== "en");
 export const digest = (value) => crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
 export const ordered = (value) =>
   Object.fromEntries(Object.entries(value).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));

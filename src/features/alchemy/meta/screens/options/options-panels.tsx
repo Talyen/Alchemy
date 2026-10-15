@@ -51,11 +51,6 @@ export function DisplayOptionsPanel({
   return (
     <div className="space-y-4">
       <SettingsSection title={i18n.text("ui.options-panels.1", "Display")}>
-        {import.meta.env.DEV && display.languagePreference === "zh-Hans" ? (
-          <p lang="zh-Hans" data-chinese-font-sample>
-            {"简体中文字体测试：造成 12 点伤害，获得 5 点格挡。"}
-          </p>
-        ) : null}
         <SettingsSelect
           id="language"
           label={i18n.text("options.language-choice", "Language")}

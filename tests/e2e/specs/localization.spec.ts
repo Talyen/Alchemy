@@ -16,6 +16,7 @@ import { assertNoOverflow, assertReachableControlsInViewport, waitForLayoutSettl
 import catalogs from "../../../src/lib/localization/locales/runtime.json" with { type: "json" };
 import { pseudolocalize } from "../../../src/lib/localization/pseudolocalize";
 import { critical } from "../../playwright-tags";
+import languages from "../../../src/lib/localization/locales/languages.json" with { type: "json" };
 
 // Browser-specific coverage: real font loading, translated accessible names,
 // live route switching, and a separately booted localized saved battle.
@@ -36,11 +37,14 @@ test.beforeEach(async ({ page }) => {
   }, DEVICE_DISPLAY_RANGES);
 });
 
-function translatedLabel(locale: "de" | "en-XA", english: string): string {
+const acceptanceLocales = ["de", "zh-Hans", "ru", "es", "pt-BR", "en-XA"] as const;
+type AcceptanceLocale = (typeof acceptanceLocales)[number];
+
+function translatedLabel(locale: AcceptanceLocale, english: string): string {
   if (locale === "en-XA") return pseudolocalize(english);
   const id = Object.entries(catalogs.en).find(([, value]) => value === english)?.[0];
   if (!id) throw new Error(`Unregistered acceptance label: ${english}`);
-  return (catalogs.de as Record<string, string>)[id]!;
+  return (catalogs[locale] as Record<string, string>)[id]!;
 }
 
 async function reviewLayout(page: Page, name: string) {
@@ -82,13 +86,13 @@ function mechanics(value: unknown): unknown {
   );
 }
 
-for (const locale of ["de", "en-XA"] as const) {
+for (const locale of acceptanceLocales) {
   test(`${locale} switching preserves a live battle and its fresh-page resume`, critical, async ({ page }) => {
     // oxlint-disable-next-line playwright/no-skipped-test -- QA locales are deliberately absent from production builds.
     test.skip(locale === "en-XA" && process.env.PLAYWRIGHT_VITE_MODE !== "dev", "Expanded English is a QA locale");
     // This journey includes a cold module load and an independently booted resume.
     test.setTimeout(60_000);
-    const label = (english: string, german: string) => (locale === "de" ? german : pseudolocalize(english));
+    const label = (english: string) => translatedLabel(locale, english);
     const deck = Array.from({ length: 6 }, () =>
       makeCard({
         id: "slash",
@@ -108,21 +112,25 @@ for (const locale of ["de", "en-XA"] as const) {
     await page.getByRole("button", { name: "Options", exact: true }).click();
     await page.locator("#language").click();
     await page
-      .getByRole("option", { name: locale === "de" ? "Deutsch" : "Expanded English (test)", exact: true })
+      .getByRole("option", {
+        name: locale === "en-XA" ? "Expanded English (test)" : languages[locale].name,
+        exact: true,
+      })
       .click();
-    await expect(page.locator("html")).toHaveAttribute("lang", locale === "de" ? "de" : "en");
-    await expect(page.getByRole("heading", { name: label("Options", "Optionen"), exact: true })).toBeVisible();
-    await page.getByRole("button", { name: label("Back", "Zurück"), exact: true }).click();
-    await page.getByRole("button", { name: label("Continue", "Weiter"), exact: true }).click();
-    await expect(page.getByRole("button", { name: label("End Turn", "Zug beenden"), exact: true })).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("lang", locale === "en-XA" ? "en" : locale);
+    await expect(page.getByRole("heading", { name: label("Options"), exact: true })).toBeVisible();
+    await page.getByRole("button", { name: label("Back"), exact: true }).click();
+    await page.getByRole("button", { name: label("Continue"), exact: true }).click();
+    await expect(page.getByRole("button", { name: label("End Turn"), exact: true })).toBeVisible();
     expect(mechanics((await readSavedGame(page)).activeRun)).toEqual(before);
     await withSavedGame(page, async (resumed) => {
-      await expect(resumed.getByRole("button", { name: label("End Turn", "Zug beenden"), exact: true })).toBeVisible();
+      await expect(resumed.getByRole("button", { name: label("End Turn"), exact: true })).toBeVisible();
       expect(mechanics((await readSavedGame(resumed)).activeRun)).toEqual(before);
       await resumed.locator('[data-hand-card="true"]').first().hover();
-      await expect(resumed.locator('[role="tooltip"]:visible').last()).toContainText(
-        locale === "de" ? "Schaden" : "dáámáágëë",
-      );
+      const descriptionPattern = label("Deal 4 Physical damage")
+        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+        .replace("4", "\\d+");
+      await expect(resumed.locator('[role="tooltip"]:visible').last()).toContainText(new RegExp(descriptionPattern));
       await reviewLayout(resumed, `${locale} battle`);
       if (layoutReview) {
         const lastCard = resumed.locator("[data-hand-slot] button").last();
@@ -134,7 +142,7 @@ for (const locale of ["de", "en-XA"] as const) {
   });
 }
 
-for (const locale of ["de", "en-XA"] as const) {
+for (const locale of acceptanceLocales) {
   test(`${locale} Options tabs fit and keep translated controls usable`, async ({ page }) => {
     // oxlint-disable-next-line playwright/no-skipped-test -- QA locales are deliberately absent from production builds.
     test.skip(locale === "en-XA" && process.env.PLAYWRIGHT_VITE_MODE !== "dev", "Expanded English is a QA locale");
@@ -173,41 +181,31 @@ for (const locale of ["de", "en-XA"] as const) {
   });
 }
 
-test("Chinese sample uses its bundled glyph font and wraps without clipping", async ({ page }) => {
-  // oxlint-disable-next-line playwright/no-skipped-test -- QA locales are deliberately absent from production builds.
-  test.skip(
-    process.env.PLAYWRIGHT_VITE_MODE !== "dev",
-    "Chinese is a developer font sample, not a supported game language",
-  );
-  await page.addInitScript(() => localStorage.setItem("alchemy-language-v1", "zh-Hans"));
-  await page.goto("/");
-  const sample = page.locator("[data-chinese-font-sample]");
-  await openOptions(page, "选项", sample);
-  const loaded = await sample.evaluate(async (element) => {
-    const faces = await document.fonts.load('16px "Alchemy Chinese Sample"', element.textContent ?? "");
-    return {
-      loaded: faces.length > 0 && faces.every((face) => face.status === "loaded"),
-      family: getComputedStyle(element).fontFamily,
-      clipped: element.scrollWidth > element.clientWidth + 1,
-    };
-  });
-  expect(loaded.loaded).toBe(true);
-  expect(loaded.family).toContain("Alchemy Chinese Sample");
-  expect(loaded.clipped).toBe(false);
-  const wrappedValues = await page
-    .locator(".options-settings-control > p")
-    .evaluateAll((values) =>
-      values.some(
-        (value) =>
-          value.getBoundingClientRect().height > Number.parseFloat(getComputedStyle(value).lineHeight) + 1 ||
-          value.scrollWidth > value.clientWidth + 1,
-      ),
+for (const [locale, family, phrase] of [
+  ["zh-Hans", "Alchemy Chinese", "造成伤害，获得格挡。简体中文"],
+  ["ru", "Alchemy Cyrillic", "Здоровье, броня, оглушение"],
+] as const) {
+  test(`${locale} uses a bundled font for its script`, async ({ page }) => {
+    await page.addInitScript((value) => localStorage.setItem("alchemy-language-v1", value), locale);
+    await page.goto("/");
+    await openOptions(
+      page,
+      translatedLabel(locale, "Options"),
+      page.getByRole("heading", { name: translatedLabel(locale, "Options"), exact: true }),
     );
-  expect(wrappedValues).toBe(false);
-  await assertNoOverflow(page, "Chinese sample");
-});
+    const loaded = await page.evaluate(
+      async ({ family, phrase }) => {
+        const faces = await document.fonts.load(`16px "${family}"`, phrase);
+        return faces.length > 0 && faces.every((face) => face.status === "loaded");
+      },
+      { family, phrase },
+    );
+    expect(loaded).toBe(true);
+    await assertNoOverflow(page, `${locale} font coverage`);
+  });
+}
 
-for (const locale of ["de", "en-XA"] as const) {
+for (const locale of acceptanceLocales) {
   test(`${locale} shop, menus and confirmation dialog retain usable translated controls`, async ({ page }) => {
     // oxlint-disable-next-line playwright/no-skipped-test -- QA locales are deliberately absent from production builds.
     test.skip(locale === "en-XA" && process.env.PLAYWRIGHT_VITE_MODE !== "dev", "Expanded English is a QA locale");

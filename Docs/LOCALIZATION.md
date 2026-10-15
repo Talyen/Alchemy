@@ -1,6 +1,9 @@
 # Localization
 
-English is Alchemy's authoritative text. AI coding agents translate and review
+English is Alchemy's authoritative text. The shipped language registry is
+`src/lib/localization/locales/languages.json`; it owns native names, locale IDs and
+Steam export codes for English, German, Simplified Chinese, Russian, Spanish–Spain
+and Brazilian Portuguese. AI coding agents translate and review
 changed messages as part of their normal development task. There is no translation
 service, AI API key, or runtime translation request. This uses the existing agent
 allowance; deterministic scripts cannot generate new translations by themselves.
@@ -84,31 +87,32 @@ quality; AI semantic review remains part of completing the task.
 
 ## Qualification and Steam
 
-German is the complete pilot. Expanded English and a partial Simplified Chinese
-font sample are developer tools, not additional advertised language support. The
-Chinese font is a licensed subset covering the sample, not a production CJK font.
-The offline gate reads its font character map and rejects missing sample glyphs.
+Expanded English is a developer-only layout tool. Chinese and Russian use bundled
+Noto Sans SC and Noto Sans variable fonts with their OFL licenses. These complete
+fonts replace the former Chinese sample subset. The offline gate reads font
+character maps and rejects any missing Chinese or Cyrillic catalog glyphs. Native
+language names use the same fallbacks even before selecting those languages.
 Verified renderer packages also check a generated catalog manifest and SHA-256
 digest, so omitted or corrupted bundled catalogs cannot pass packaging.
 Use the browser acceptance scenarios to check live switching, focus, clipping,
 keyword interactions, and saved combat. Browser/Electron and builds follow the
 execution policy in [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change).
 
-The opt-in German layout review runs the existing acceptance journeys at 1280×720
+The opt-in localization layout review runs the existing acceptance journeys at 1280×720
 with the current maximum Game Size and Tooltip Size settings. It checks popup and
 control bounds and captures Options tabs, combat, shops and confirmations under
 `reports/localization-layout/` for visual review:
 
 ```sh
-ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:e2e:dev -- tests/e2e/specs/localization.spec.ts --grep 'de (switching|Options|shop)' --workers=1
+ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:e2e:dev -- tests/e2e/specs/localization.spec.ts --workers=1
 ```
 
 Review the packaged Electron Options tabs, including desktop display controls,
-at the same settings with:
+at the same settings with (choose a shipped locale ID):
 
 ```sh
 npm run build:desktop
-ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:ship:desktop
+ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 ALCHEMY_LOCALIZATION_REVIEW_LOCALE=zh-Hans npm run test:ship:desktop
 ```
 
 Real Steam install/update and per-game language qualification require an approved
@@ -136,29 +140,30 @@ provisional prioritization signal. The combined-platform
 [September 2026 Steam survey](https://store.steampowered.com/hwsurvey/Steam-Hardware-Software-Survey-Welcome-to-Steam)
 reports the following interface-language shares:
 
-| Recommended launch target | Survey share | Work remaining                                                  |
-| ------------------------- | -----------: | --------------------------------------------------------------- |
-| English                   |       34.20% | Baseline and release qualification                              |
-| Simplified Chinese        |       31.39% | Full catalog, production font coverage and layout qualification |
-| Russian                   |        9.05% | Catalog, Cyrillic glyph coverage and layout qualification       |
-| Spanish–Spain             |        4.08% | Catalog and layout qualification                                |
-| Brazilian Portuguese      |        3.70% | Catalog and layout qualification                                |
-| German                    |        2.48% | Existing pilot; release qualification                           |
+| Bundled language     | Survey share |
+| -------------------- | -----------: |
+| English              |       34.20% |
+| Simplified Chinese   |       31.39% |
+| Russian              |        9.05% |
+| Spanish–Spain        |        4.08% |
+| Brazilian Portuguese |        3.70% |
+| German               |        2.48% |
 
 These shares sum to 84.90% of survey respondents' selected interface languages;
 they do not estimate Alchemy sales, incremental reach or player language fluency.
 Participation is optional and anonymous, and monthly shares fluctuate. Recheck the
 survey before committing the launch scope.
 
-Recommended implementation order after German: Simplified Chinese, Russian,
-Spanish–Spain, Brazilian Portuguese. Japanese (2.41%) and French (2.08%) are the
-next candidates, bringing the selected shares to 89.39%. This ordering is our
+The rollout after German follows Simplified Chinese, Russian, Spanish–Spain, then
+Brazilian Portuguese. Japanese (2.41%) and French (2.08%) remain the next candidates,
+bringing the selected shares to 89.39%. This ordering is our
 inference from the survey, not a claim about deckbuilder purchasing behavior.
 Spanish–Latin America and European Portuguese are separate locales; do not count
 them as qualified by the Spanish–Spain and Brazilian catalogs.
 
-Keep candidate languages disabled until their complete catalogs, AI semantic
-review, fonts, save/resume and rendered layouts pass. The current Chinese sample
-does not qualify Chinese support. Once a store page exists, use regional wishlists,
+Keep future candidate languages disabled until their complete catalogs, AI semantic
+review, fonts, save/resume and rendered layouts pass. Each bundled language still
+requires the real Steam/Windows release gate above before its Steam support is
+advertised. Once a store page exists, use regional wishlists,
 traffic and community feedback to revise this order, as recommended by
 [Valve's localization guidance](https://partner.steamgames.com/doc/store/localization).

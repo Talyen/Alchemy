@@ -1,4 +1,4 @@
-/** TrueType cmap coverage check for the deliberately small Chinese QA font. */
+/** Read bundled TrueType/OpenType cmap coverage without relying on system fallbacks. */
 export function fontHasGlyph(bytes, codePoint) {
   let cmap;
   for (let index = 0; index < bytes.readUInt16BE(4); index++) {
@@ -37,8 +37,6 @@ export function fontHasGlyph(bytes, codePoint) {
   return false;
 }
 
-export function missingChineseGlyphs(bytes, text) {
-  return [...new Set(text.match(/[\p{Script=Han}\u3000-\u303f\uff00-\uffef]/gu) ?? [])].filter(
-    (character) => !fontHasGlyph(bytes, character.codePointAt(0)),
-  );
+export function missingGlyphs(bytes, text, pattern) {
+  return [...new Set(text.match(pattern) ?? [])].filter((character) => !fontHasGlyph(bytes, character.codePointAt(0)));
 }

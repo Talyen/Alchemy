@@ -12,8 +12,18 @@ import { MenuPage } from "../pages/menu-page";
 import { assertNoOverflow, assertReachableControlsInViewport, waitForLayoutSettled } from "../e2e/layout-assertions";
 import { DEVICE_DISPLAY_RANGES } from "../../src/lib/settings-values";
 import { desktop } from "../playwright-tags";
+import catalogs from "../../src/lib/localization/locales/runtime.json" with { type: "json" };
+import languages from "../../src/lib/localization/locales/languages.json" with { type: "json" };
 
 const layoutReview = process.env.ALCHEMY_LOCALIZATION_LAYOUT_REVIEW === "1";
+const reviewLocale = process.env.ALCHEMY_LOCALIZATION_REVIEW_LOCALE ?? "de";
+if (!Object.hasOwn(languages, reviewLocale)) throw new Error(`Unknown desktop review locale: ${reviewLocale}`);
+const locale = reviewLocale as keyof typeof languages;
+const label = (english: string) => {
+  const id = Object.entries(catalogs.en).find(([, value]) => value === english)?.[0];
+  if (!id) throw new Error(`Unregistered desktop review label: ${english}`);
+  return (catalogs[locale] as Record<string, string>)[id]!;
+};
 
 test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
   let electronApp: ElectronApplication | undefined;
@@ -58,13 +68,13 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
     // Prove the app protocol loads bundled catalogs and retains the local override.
     await window.getByRole("button", { name: "Options", exact: true }).click();
     await window.locator("#language").click();
-    await window.getByRole("option", { name: "Deutsch", exact: true }).click();
-    await expect(window.getByRole("heading", { name: "Optionen", exact: true })).toBeVisible();
+    await window.getByRole("option", { name: languages[locale].name, exact: true }).click();
+    await expect(window.getByRole("heading", { name: label("Options"), exact: true })).toBeVisible();
     if (layoutReview) {
       const directory = path.resolve("reports/localization-layout");
       fs.mkdirSync(directory, { recursive: true });
-      for (const tab of ["Anzeige", "Ton", "Spielablauf", "Sonstiges"]) {
-        await window.getByRole("button", { name: tab, exact: true }).click();
+      for (const tab of ["Display", "Sound", "Gameplay", "Other"]) {
+        await window.getByRole("button", { name: label(tab), exact: true }).click();
         await waitForLayoutSettled(window);
         await assertNoOverflow(window, `Desktop ${tab}`);
         await assertReachableControlsInViewport(window, `Desktop ${tab}`);
@@ -78,12 +88,12 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
             .toPNG()
             .toString("base64"),
         );
-        fs.writeFileSync(path.join(directory, `de-desktop-${tab}.png`), Buffer.from(png, "base64"));
+        fs.writeFileSync(path.join(directory, `${locale}-desktop-${tab}.png`), Buffer.from(png, "base64"));
       }
     }
     await window.reload();
-    await expect(window.locator("html")).toHaveAttribute("lang", "de");
-    await expect(window.getByRole("button", { name: "Optionen", exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(window.locator("html")).toHaveAttribute("lang", locale);
+    await expect(window.getByRole("button", { name: label("Options"), exact: true })).toBeVisible({ timeout: 15_000 });
     if (ELECTRON_TEST_BACKGROUND) {
       expect(
         await electronApp!.evaluate(({ BrowserWindow }) => {

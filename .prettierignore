@@ -19,6 +19,10 @@ package-lock.json
 # Message records use deterministic one-record-per-line formatting from i18n:extract.
 src/lib/localization/locales/en.json
 src/lib/localization/locales/de.json
+src/lib/localization/locales/zh-Hans.json
+src/lib/localization/locales/ru.json
+src/lib/localization/locales/es.json
+src/lib/localization/locales/pt-BR.json
 .worktrees/
 .git/
 blob-report/

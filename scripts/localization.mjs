@@ -1,7 +1,8 @@
-import { missingChineseGlyphs } from "./localization/font.mjs";
+import { missingGlyphs } from "./localization/font.mjs";
 import { format } from "prettier";
 import fs from "node:fs";
 import path from "node:path";
+import languages from "../src/lib/localization/locales/languages.json" with { type: "json" };
 import { extractMessages } from "./localization/extract.mjs";
 import {
   TARGETS,
@@ -70,12 +71,6 @@ function compiled(messages, glossary) {
       )
         for (const [category, value] of Object.entries(entry.forms)) locales[locale][`${id}_${category}`] = value;
     }
-  const sample = read("zh-Hans.sample");
-  locales["zh-Hans"] = Object.fromEntries(
-    Object.entries(messages)
-      .filter(([, message]) => Object.hasOwn(sample, message.text))
-      .map(([id, message]) => [id, sample[message.text]]),
-  );
   return locales;
 }
 
@@ -83,10 +78,7 @@ function steamExports(messages, glossary) {
   const locales = compiled(messages, glossary);
   const store = {};
   const presence = [];
-  for (const [locale, steamLanguage] of [
-    ["en", "english"],
-    ["de", "german"],
-  ]) {
+  for (const [locale, { steam: steamLanguage }] of Object.entries(languages)) {
     store[locale] = {};
     const translated = locales[locale];
     const tokens = [];
@@ -165,15 +157,18 @@ try {
     console.log(`Applied ${Object.keys(results).length} reviewed translations for ${locale}`);
   } else {
     const failures = [...issues];
-    const sampleText =
-      JSON.stringify(read("zh-Hans.sample")) +
-      fs.readFileSync(path.join(ROOT, "src/lib/localization/language.ts"), "utf8") +
-      fs.readFileSync(path.join(ROOT, "src/features/alchemy/meta/screens/options/options-panels.tsx"), "utf8");
-    const glyphs = missingChineseGlyphs(
-      fs.readFileSync(path.join(ROOT, "public/fonts/noto-sans-sc-sample.ttf")),
-      sampleText,
-    );
-    if (glyphs.length) failures.push(`Chinese sample font lacks: ${glyphs.join("")}`);
+    const catalogs = compiled(messages, glossary);
+    for (const [locale, file, pattern] of [
+      ["zh-Hans", "noto-sans-sc.ttf", /[\p{Script=Han}\u3000-\u303f\uff00-\uffef]/gu],
+      ["ru", "noto-sans.ttf", /\p{Script=Cyrillic}/gu],
+    ]) {
+      const glyphs = missingGlyphs(
+        fs.readFileSync(path.join(ROOT, "public/fonts", file)),
+        JSON.stringify(catalogs[locale]) + JSON.stringify(languages),
+        pattern,
+      );
+      if (glyphs.length) failures.push(`${locale} font lacks: ${glyphs.join("")}`);
+    }
     const steam = steamExports(messages, glossary);
     if (
       fs.readFileSync(path.join(ROOT, "steam/localized-store-copy.json"), "utf8") !== steam.store ||
@@ -182,15 +177,6 @@ try {
       failures.push("Steam localization exports are stale; run npm run i18n:extract");
     if (serialize(read("runtime")) !== serialize(compiled(messages, glossary)))
       failures.push("Runtime catalogs are stale; run npm run i18n:extract");
-    for (const [english, translated] of Object.entries(read("zh-Hans.sample"))) {
-      if (!Object.values(messages).some((message) => message.text === english))
-        failures.push(`Chinese sample source changed: ${english}`);
-      try {
-        validateTranslation({ text: english }, translated);
-      } catch (error) {
-        failures.push(`Chinese sample: ${error.message}`);
-      }
-    }
     if (fs.readFileSync(path.join(directory, "en.json"), "utf8") !== serializeRecords(messages))
       failures.push("English catalog differs from source; run npm run i18n:extract");
     for (const [id, message] of Object.entries(messages)) {

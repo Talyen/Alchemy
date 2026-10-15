@@ -3,6 +3,7 @@ export { pseudolocalize } from "./pseudolocalize";
 import { buildDescriptionMessage } from "@/lib/game-data";
 import i18next from "i18next";
 import extraMessages from "./extra-messages.json";
+import type languages from "./locales/languages.json";
 export const localization = i18next.createInstance();
 let source: Record<string, string> = {};
 let sourceIds = new Map<string, string>();
@@ -31,7 +32,7 @@ export function installCatalogs(catalogs: Record<string, Record<string, string>>
     localization.addResourceBundle(locale, "translation", entries, false, true);
 }
 
-export type GameLocale = "en" | "de" | "en-XA" | "zh-Hans";
+export type GameLocale = keyof typeof languages | "en-XA";
 export type LanguagePreference = "auto" | GameLocale;
 
 function translateMessage(

@@ -18,5 +18,45 @@
       "about": "Kämpfe in der Kampagne, im Labyrinth und im Wildwald-Draft in Kartenkämpfen eins gegen eins. Verdiene Talente, baue eine Heimstatt und sammle Ausrüstung und Schmuckstücke für künftige Läufe.",
       "shortDescription": "Wähle einen Helden, baue ein Deck und werde zwischen den Läufen stärker in einem Fantasy-Roguelite-Deckbuilder."
     }
+  },
+  "zh-Hans": {
+    "demo": {
+      "about": "构筑牌组，挑战战役首位首领，发展你的家园。重玩试玩版，并将已获得的永久进度带入完整版。",
+      "shortDescription": "探索Alchemy的第一幕，这是一款具有永久成长的奇幻轻度肉鸽牌组构筑游戏。"
+    },
+    "full": {
+      "about": "在战役、迷宫和荒林选牌中进行一对一卡牌战斗。获得天赋，建设家园，收集装备与饰品，为未来冒险做好准备。",
+      "shortDescription": "选择英雄，构筑牌组，在冒险之间不断成长。踏入这款奇幻轻度肉鸽牌组构筑游戏。"
+    }
+  },
+  "ru": {
+    "demo": {
+      "about": "Соберите колоду, сразитесь с первым боссом кампании и развивайте поместье. Играйте в демоверсию снова и переносите заслуженный постоянный прогресс в полную игру.",
+      "shortDescription": "Исследуйте акт I в Alchemy — фэнтезийной roguelite-игре о сборке колоды с постоянным развитием."
+    },
+    "full": {
+      "about": "Сражайтесь один на один в карточных боях кампании, Лабиринта и Драфта Диколесья. Получайте таланты, стройте поместье и собирайте снаряжение и талисманы для будущих забегов.",
+      "shortDescription": "Выберите героя, соберите колоду и становитесь сильнее между забегами в фэнтезийной roguelite-игре о сборке колоды."
+    }
+  },
+  "es": {
+    "demo": {
+      "about": "Construye un mazo, enfréntate al primer jefe de la campaña y desarrolla tu hogar. Vuelve a jugar la demo y lleva tu progreso permanente al juego completo.",
+      "shortDescription": "Explora el acto I de Alchemy, un roguelite de construcción de mazos de fantasía con progresión permanente."
+    },
+    "full": {
+      "about": "Libra combates de cartas uno contra uno en la campaña, el laberinto y la Selección del Bosque Salvaje. Consigue talentos, construye un hogar y reúne equipo y abalorios para futuras aventuras.",
+      "shortDescription": "Elige un héroe, construye un mazo y hazte más fuerte entre aventuras en un roguelite de construcción de mazos de fantasía."
+    }
+  },
+  "pt-BR": {
+    "demo": {
+      "about": "Monte um baralho, enfrente o primeiro chefe da campanha e desenvolva sua propriedade. Jogue a demo novamente e leve seu progresso permanente para o jogo completo.",
+      "shortDescription": "Explore o ato I de Alchemy, um roguelite de fantasia de construção de baralhos com progressão permanente."
+    },
+    "full": {
+      "about": "Trave batalhas de cartas um contra um na campanha, no labirinto e na Seleção do Bosque Selvagem. Ganhe talentos, construa uma propriedade e reúna equipamentos e amuletos para futuras jornadas.",
+      "shortDescription": "Escolha um herói, monte um baralho e fique mais forte entre jornadas em um roguelite de fantasia de construção de baralhos."
+    }
   }
 }

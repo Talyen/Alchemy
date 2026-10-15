@@ -1,18 +1,20 @@
 @font-face {
-  font-family: "Alchemy Chinese Sample";
-  src: url("/fonts/noto-sans-sc-sample.ttf") format("truetype");
-  font-weight: 400;
+  font-family: "Alchemy Chinese";
+  src: url("/fonts/noto-sans-sc.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Alchemy Cyrillic";
+  src: url("/fonts/noto-sans.ttf") format("truetype");
+  font-weight: 100 900;
   font-display: swap;
 }
 
 html:lang(zh-Hans) {
-  --font-sans: "Inter", "Alchemy Chinese Sample", sans-serif;
   line-break: strict;
   overflow-wrap: anywhere;
-}
-
-html:lang(zh-Hans) body {
-  font-family: var(--font-sans);
 }
 
 @layer base {
