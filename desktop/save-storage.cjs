@@ -120,8 +120,12 @@ function registerSaveShutdown(app, store) {
     if (ready) return;
     event.preventDefault();
     draining ??= store.close().then(() => {
-      ready = true;
-      app.quit();
+      // Electron resets its native quitting flag after will-quit returns.
+      // An already-resolved drain must not retry inside that event's microtasks.
+      setImmediate(() => {
+        ready = true;
+        app.quit();
+      });
     });
   });
 }

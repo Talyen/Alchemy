@@ -98,9 +98,34 @@ it("shutdown accepts the renderer's unload save, drains writes, and quits exactl
   await writing;
   await f.store.close();
   await Promise.resolve();
+  await new Promise<void>((resolve) => setImmediate(resolve));
   expect(exitsDuringWrite).toBe(0);
   expect(await unloadWrite).toBe(true);
   expect(await lateWrite).toBe(false);
   expect(exits).toBe(1);
   expect(await io.readFile(f.slots.primary.file, "utf8")).toBe("unload progress");
+});
+
+it("resumes an idle shutdown only after Electron has cancelled its first quit", async () => {
+  const app = new EventEmitter() as EventEmitter & { quit: () => void };
+  const store = { close: vi.fn(() => Promise.resolve()) };
+  let quitting = false;
+  let exits = 0;
+  app.quit = vi.fn(() => {
+    if (quitting) return;
+    quitting = true;
+    const event = { preventDefault: vi.fn() };
+    app.emit("will-quit", event);
+    // Native event emission runs promise callbacks before it resets is_quitting_.
+    queueMicrotask(() => {
+      if (event.preventDefault.mock.calls.length) quitting = false;
+      else exits++;
+    });
+  });
+  registerSaveShutdown(app, store);
+  app.quit();
+  await Promise.resolve();
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  expect(store.close).toHaveBeenCalledOnce();
+  expect(exits).toBe(1);
 });
