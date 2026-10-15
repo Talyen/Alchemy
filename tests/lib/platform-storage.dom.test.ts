@@ -95,6 +95,26 @@ describe("platform save backend", () => {
     vi.mocked(console.error).mockRestore();
   });
 
+  it("preserves an unreadable Cloud source while continuing from the local save", async () => {
+    const desktop = installDesktopApi({
+      saveCandidates: ["local"],
+      overrides: {
+        steamCloudRead: vi.fn().mockRejectedValue(new Error("Cloud unavailable")),
+      },
+    });
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await expect(createDesktopSaveBackend().readCandidates(SAVE_KEY)).resolves.toEqual({
+        ok: true,
+        candidates: ["local"],
+        cloudReadFailed: true,
+      });
+      expect(desktop.readSaveSlot).toHaveBeenCalledWith(undefined);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
   it("keeps readable backups when another local candidate cannot be read", async () => {
     installDesktopApi({
       overrides: {

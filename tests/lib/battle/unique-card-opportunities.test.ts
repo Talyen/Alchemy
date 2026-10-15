@@ -16,7 +16,7 @@ describe("Unique Gear unique card opportunities", () => {
     expect(computeEffectiveCost(next, next.hand[0]!).effectiveCost).toBe(1);
     const result = playBattleCardResolved(next, card.id, 0).state;
     expect(result.mana).toBe(9);
-    expect(result.uniqueGear.returningFlightUid).toBeNull();
+    expect(result.uniqueGear.returningFlightUids).toEqual([]);
   });
 
   it("Winter's Credit pays only the missing Mana with Block and rejects unaffordable cards", () => {

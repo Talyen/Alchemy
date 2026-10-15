@@ -5,7 +5,7 @@ import { tryLocalStorageGetItem, tryLocalStorageRemoveItem, tryLocalStorageSetIt
 import { SAVE_KEY, SAVE_RECOVERY_KEY } from "./game-constants";
 
 type SaveBackendReadResult =
-  | { ok: true; candidates: string[]; localReadFailed?: boolean }
+  | { ok: true; candidates: string[]; localReadFailed?: boolean; cloudReadFailed?: boolean }
   | { ok: false; error: unknown };
 type SaveBackendWriteResult = { ok: true } | { ok: false; error: unknown };
 
@@ -112,9 +112,11 @@ async function readDesktopCandidates(desktop: DesktopApi, recovery: boolean): Pr
   }
 
   let cloudCandidate: string | null = null;
+  let cloudReadFailed = false;
   try {
     cloudCandidate = (await desktop.steamCloudRead?.(slot)) ?? null;
   } catch (error) {
+    cloudReadFailed = true;
     logStorageFailure("Steam Cloud read failed", error);
   }
 
@@ -125,6 +127,7 @@ async function readDesktopCandidates(desktop: DesktopApi, recovery: boolean): Pr
     // Dedup keeps the local ring ahead of the Cloud mirror in first-seen order.
     candidates: [...new Set(cloudCandidate ? [...local.candidates, cloudCandidate] : local.candidates)],
     ...(local.localReadFailed ? { localReadFailed: true } : {}),
+    ...(cloudReadFailed ? { cloudReadFailed: true } : {}),
   };
 }
 

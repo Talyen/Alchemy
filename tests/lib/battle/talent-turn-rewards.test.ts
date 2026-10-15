@@ -24,7 +24,7 @@ describe("Talent talent turn rewards", () => {
     expect(after.discard).not.toContainEqual(returning);
     const recovered = after.pendingHandCards.find((card) => card.id === returning.id)!;
     expect(recovered).toBeDefined();
-    expect(after.uniqueGear.returningFlightUid).toBe(recovered.uid);
+    expect(after.uniqueGear.returningFlightUids).toContain(recovered.uid);
     expect(after.hand.length + after.pendingHandCards.length + after.deck.length + after.discard.length).toBe(
       count + 5,
     );

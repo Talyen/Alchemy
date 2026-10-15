@@ -22,6 +22,8 @@ const {
 const { initializeMainSentry } = require("./sentry.cjs");
 const { resolveEdition, editionPolicy } = require("../game-edition.mjs");
 const { createDemoProgressBridge, stampSaveOwner } = require("./demo-progress.cjs");
+const { readCloudSave } = require("./cloud-save.cjs");
+const { createLocalSaveStore, registerSaveShutdown } = require("./local-save-store.cjs");
 const TEST_PROFILE_ISOLATED =
   app.commandLine.hasSwitch("user-data-dir") || (!app.isPackaged && Boolean(process.env.ALCHEMY_ELECTRON_TEST_PROFILE));
 // Background automation is restricted to isolated development profiles.
@@ -77,6 +79,14 @@ const demoProgress = createDemoProgressBridge({
   isSavePayload,
   edition: EDITION,
 });
+
+const localSaves = createLocalSaveStore({
+  slots: SAVE_SLOTS,
+  isSavePayload,
+  stampSave: (data) => stampSaveOwner(data, steamClient),
+  beforeClear: () => demoProgress.complete({ localOnly: true }),
+});
+registerSaveShutdown(app, localSaves);
 
 if (!USE_PACKAGED_RENDERER) parseDevServerUrl(DEV_SERVER_URL);
 
@@ -184,23 +194,6 @@ function resolveSaveSlot(slot) {
   throw new Error("Invalid save slot");
 }
 
-async function readSaveSlot(slot) {
-  const paths = resolveSaveSlot(slot);
-  const candidates = [];
-  let localReadFailed = false;
-  for (const filePath of [paths.file, ...paths.backups]) {
-    try {
-      const data = await fs.promises.readFile(filePath, "utf8");
-      if (isSavePayload(data)) candidates.push(data);
-    } catch (error) {
-      if (error?.code === "ENOENT") continue;
-      console.error(`[save] Error reading save candidate ${filePath}:`, error);
-      localReadFailed = true;
-    }
-  }
-  return { candidates, localReadFailed };
-}
-
 function registerIpcHandlers() {
   handleAuthorized("alchemy:demo-import-source", () => demoProgress.readSource());
   handleAuthorized("alchemy:demo-initialization", () => demoProgress.complete());
@@ -218,100 +211,27 @@ function registerIpcHandlers() {
   });
 
   handleAuthorized("alchemy:list-save-candidates", async (slot) => {
-    const result = await readSaveSlot(slot);
+    const result = await localSaves.read(slot);
     if (result.localReadFailed) throw new Error("Save candidates could not be read completely");
     return result.candidates;
   });
-  handleAuthorized("alchemy:read-save-slot", readSaveSlot);
+  handleAuthorized("alchemy:read-save-slot", localSaves.read);
 
-  let saveIpcQueue = Promise.resolve();
-
-  handleAuthorized("alchemy:write-save", (data, slot) => {
-    if (!isSavePayload(data)) return Promise.resolve(false);
-    data = stampSaveOwner(data, steamClient);
-    const paths = resolveSaveSlot(slot);
-    const writeTask = saveIpcQueue.then(async () => {
-      try {
-        await fs.promises.mkdir(path.dirname(paths.file), { recursive: true });
-        const handle = await fs.promises.open(paths.tmp, "w");
-        try {
-          await handle.writeFile(data, "utf8");
-          await handle.datasync();
-        } finally {
-          await handle.close();
-        }
-        for (let index = paths.backups.length - 1; index >= 0; index -= 1) {
-          const to = paths.backups[index];
-          const from = index === 0 ? paths.file : paths.backups[index - 1];
-          try {
-            await fs.promises.access(from, fs.constants.F_OK);
-          } catch (error) {
-            if (error?.code === "ENOENT") continue;
-            throw error;
-          }
-          if (index === paths.backups.length - 1) {
-            await fs.promises.unlink(to).catch((error) => {
-              if (error?.code !== "ENOENT") throw error;
-            });
-          }
-          await fs.promises.rename(from, to);
-        }
-        await fs.promises.rename(paths.tmp, paths.file);
-        return true;
-      } catch (error) {
-        await fs.promises.unlink(paths.tmp).catch((cleanupError) => {
-          if (cleanupError?.code !== "ENOENT") console.error("[save] Error cleaning up temp save file:", cleanupError);
-        });
-        console.error("[save] Error writing save file:", error);
-        return false;
-      }
-    });
-    saveIpcQueue = writeTask.catch(() => {});
-    return writeTask;
-  });
-
-  handleAuthorized("alchemy:clear-save", async () => {
-    if (!(await demoProgress.complete({ localOnly: true }))) return false;
-    // Wipe both rings so an older recovery snapshot cannot restore a cleared profile.
-    try {
-      for (const paths of Object.values(SAVE_SLOTS)) {
-        for (const filePath of [paths.file, paths.tmp, ...paths.backups]) {
-          try {
-            await fs.promises.unlink(filePath);
-          } catch (error) {
-            if (error?.code !== "ENOENT") throw error;
-          }
-        }
-      }
-      return true;
-    } catch (error) {
-      console.error("[save] Error clearing save files:", error);
-      return false;
-    }
-  });
+  handleAuthorized("alchemy:write-save", localSaves.write);
+  handleAuthorized("alchemy:clear-save", localSaves.clear);
 
   handleAuthorized("alchemy:steam-cloud-read", async (slot) => {
     const { name } = resolveSaveSlot(slot);
-    if (!steamClient) return null;
-    try {
-      if (!steamClient.cloud.fileExists(name)) return null;
-      const buffer = await steamClient.cloud.readFile(name);
-      if (buffer && buffer.length > MAX_SAVE_PAYLOAD_BYTES) {
-        console.error(`[save] Steam Cloud save exceeds ${MAX_SAVE_PAYLOAD_BYTES} bytes; ignoring.`);
-        return null;
-      }
-      return buffer ? buffer.toString("utf8") : null;
-    } catch (error) {
-      console.error("[save] Error reading Steam Cloud save:", error);
-      return null;
-    }
+    return readCloudSave(steamClient, name, MAX_SAVE_PAYLOAD_BYTES);
   });
 
   handleAuthorized("alchemy:steam-cloud-write", async (data, slot) => {
     const { name } = resolveSaveSlot(slot);
     if (!steamClient || !isSavePayload(data)) return false;
+    const stamped = stampSaveOwner(data, steamClient);
+    if (!isSavePayload(stamped)) return false;
     try {
-      return steamClient.cloud.writeFile(name, stampSaveOwner(data, steamClient));
+      return await steamClient.cloud.writeFile(name, stamped);
     } catch (error) {
       console.error("[save] Error writing Steam Cloud save:", error);
       return false;
