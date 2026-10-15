@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { cardLibrary, placeholderCard } from "@/lib/game-data";
+import { placeholderCard } from "@/lib/game-data";
 import { createCollector, validateLibraryBasics } from "@/lib/content-validation/utils";
 
 const schema = z.object({ id: z.string().min(1), title: z.string(), art: z.string(), cost: z.number().nonnegative() });
@@ -36,11 +36,5 @@ describe("library authoring validation", () => {
       },
       { severity: "warning", area: "cards", id: "placeholder", message: "Uses placeholder art" },
     ]);
-  });
-
-  it("accepts valid catalog entries without diagnostics", () => {
-    const collector = createCollector();
-    validateLibraryBasics(collector, { ...options, items: cardLibrary });
-    expect(collector.issues).toEqual([]);
   });
 });

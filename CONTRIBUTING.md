@@ -124,6 +124,14 @@ CLI tests that create package or release artifacts must use temporary project ro
 including the script dependency closure and output directories. Never create or
 remove fixtures in the checkout's real package-output or Steam build directories.
 
+For lint policy tests, batch distinct fixture paths through
+`lintFixtures` in `tests/helpers/lint-fixture.ts` so they share a real linter
+launch. Preserve the original paths and configuration overrides. Independent
+statements for the same path can share a source file when they parse together;
+assert diagnostic source lines to distinguish rejected statements from allowed
+neighbors. Keep separate launches for different configuration or type-aware modes.
+Do not trade away path exceptions or diagnostic precision to reduce process count.
+
 ### Component and hook tests
 
 Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. Name browser-API suites without React `*.dom.test.ts` so their environment is clear and the shared glob selects them. React `*.test.tsx` and `use-*` / `*-hook` suites already select DOM. The include/exclude patterns in `vitest.config.ts` own that classification; the project guard checks actual collection rules for omissions and overlap. Full unit runs share the four-worker ceiling used by related and ship checks, leaving one CPU free on smaller hosts. CLI worker overrides remain available for focused diagnosis.

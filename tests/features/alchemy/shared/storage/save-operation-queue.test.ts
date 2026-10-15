@@ -112,14 +112,30 @@ describe("SaveOperationQueue", () => {
     },
   );
 
-  it("owns its snapshot so caller mutations after enqueue cannot corrupt the write", async () => {
+  it("owns nested progress while a preceding load delays the write", async () => {
     const queue = new SaveOperationQueue();
+    const gate = deferred<void>();
+    const loading = queue.enqueueLoad(() => gate.promise);
     const write = vi.fn().mockResolvedValue("saved");
     const data = snapshot(1);
+    data.materialInventory.wood = 2;
+    data.discoveredCardIds = ["slash"];
+    data.completedDifficulties.knight = ["difficulty-1"];
+    const expected = snapshot(1);
+    expected.materialInventory.wood = 2;
+    expected.discoveredCardIds = ["slash"];
+    expected.completedDifficulties.knight = ["difficulty-1"];
     const outcome = queue.enqueue(data, write);
     data.gold = 999;
+    data.materialInventory.wood = 999;
+    data.discoveredCardIds.push("fireball");
+    data.completedDifficulties.knight.push("difficulty-2");
+    await Promise.resolve();
+    expect(write).not.toHaveBeenCalled();
+    gate.resolve();
+    await loading;
     expect(await outcome).toBe("saved");
-    expect(write).toHaveBeenCalledExactlyOnceWith(snapshot(1));
+    expect(write).toHaveBeenCalledExactlyOnceWith(expected);
   });
 
   it.each(["clear", "protection"])("%s cancels in-flight acknowledgement and pending writes", async (action) => {
