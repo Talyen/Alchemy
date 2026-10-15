@@ -59,9 +59,13 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
   );
   const gameplay = createGameplayStore(generateRunSeed);
   const progressCompletion = new ProgressCompletion();
+  const lifecycle = createRunLifecycleEffects(feedback);
   const io = createSaveIo(options.saveBackend, sourceClock.now, allowPlatformStorage);
   // Storage invalidation is a session event, independent of autosave clients.
   lifetime.track(io.subscribeSaveCancellation(() => progressCompletion.cancel()));
+  // Restore publication installs both stores before this event, and notifies
+  // their observers only after old navigation and playback have been revoked.
+  lifetime.track(progressCompletion.subscribeRestore(() => lifecycle.restore()));
   return {
     gameplay,
     presentationBase: gameplay.reads.getState(),
@@ -77,7 +81,7 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     progressCompletion,
     saveSnapshots: new SessionSaveSnapshots(progressCompletion),
     persistentClearInFlight: false,
-    lifecycle: createRunLifecycleEffects(feedback),
+    lifecycle,
     track: lifetime.track,
     lifetime,
   };

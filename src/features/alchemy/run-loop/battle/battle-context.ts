@@ -1,4 +1,7 @@
 import type { BattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { onRunRestored } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { assertSessionOwnership, registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
 import { PlaybackLifetime } from "./playback-lifetime";
 import { useRef, useMemo, useLayoutEffect, useState } from "react";
 import type { BattleCard } from "@/lib/game-data";
@@ -38,7 +41,11 @@ export interface BattleControllerContext extends BattleControllerContextProps, B
   getPresentation: () => BattlePresentationPort;
 }
 
-export function useBattleControllerContext(props: BattleControllerContextProps): BattleControllerContext {
+export function useBattleControllerContext(
+  props: BattleControllerContextProps,
+  gameSession: GameSession,
+): BattleControllerContext {
+  assertSessionOwnership(gameSession, props.battle, props.presentation);
   const endTurnButtonRef = useRef<HTMLButtonElement | null>(null);
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const drawPileRef = useRef<HTMLDivElement | null>(null);
@@ -50,8 +57,13 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
   const [playback] = useState(() => new PlaybackLifetime());
   useLayoutEffect(() => {
     playback.activate();
-    return () => playback.cancel();
-  }, [playback]);
+    const unsubscribe = onRunRestored(() => playback.restart(), gameSession);
+    const release = registerSessionCleanup(gameSession, () => playback.cancel());
+    return () => {
+      unsubscribe();
+      release();
+    };
+  }, [playback, gameSession]);
   const context = useMemo<BattleControllerContext>(
     () => ({
       ...props,

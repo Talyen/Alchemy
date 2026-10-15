@@ -200,6 +200,11 @@ export function onRunTeardown(listener: () => void, gameSession: GameSession): (
   const runtime = sessionRuntime(gameSession);
   return runtime.track(runtime.lifecycle.onTeardown(listener));
 }
+/** Cancellation only: runs during restore publication, before store observers. */
+export function onRunRestored(listener: () => void, gameSession: GameSession): () => void {
+  const runtime = sessionRuntime(gameSession);
+  return runtime.track(runtime.lifecycle.onRestore(listener));
+}
 export function onClearBattlePresentation(listener: () => void, gameSession: GameSession): () => void {
   const runtime = sessionRuntime(gameSession);
   return runtime.track(runtime.lifecycle.onClearPresentation(listener));
