@@ -71,7 +71,6 @@ describe("Campaign first-boss Homestead grant", () => {
       });
       const before = readGameplayState(session);
       const preview = RUN_SCREEN_SELECTORS.rewards(before);
-      expect(preview.clearedAct).toBe(1);
       expect(preview.rewardMaterials).toEqual({ ...emptyInventory(), ...expected });
       const commits: Array<ReturnType<typeof readGameplayState>> = [];
       const unsubscribe = subscribeGameplayCommits(() => commits.push(readGameplayState(session)), session);

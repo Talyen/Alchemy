@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
-import { campfire } from "@/features/alchemy/shared/config/game-data-catalog";
+import { cn } from "@/lib/utils";
+import { campfire, keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { getCampfireRestHealth } from "@/lib/campfire-heal";
 import type { BattleCard } from "@/lib/game-data";
 import type { AlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
@@ -102,21 +103,33 @@ export function CampfireScreen({
             />
             <HealthRestoreMeter displayHealth={playerHealth} maxHealth={maxHealth} progressHealth={playerHealth} />
             <div className="flex flex-wrap justify-center gap-4">
-              <Button
-                aria-label={`Rest, restore ${restore} Health`}
-                onClick={() => {
-                  if (isProgressSavePending()) return;
-                  const from = playerHealth;
-                  const to = playerHealth + restore;
-                  if (onRest()) {
-                    setRest({ from, to, saved: false });
-                    afterProgressSaved(() => setRest({ from, to, saved: true }));
-                  } else setError("This Campfire has already been used.");
-                }}
-              >
-                Rest <Heart aria-hidden="true" className="size-5 fill-red-500 text-red-500" />
-                <span className="tabular-nums">{restore}</span>
-              </Button>
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  aria-describedby="campfire-rest-recovery"
+                  onClick={() => {
+                    if (isProgressSavePending()) return;
+                    const from = playerHealth;
+                    const to = playerHealth + restore;
+                    if (onRest()) {
+                      setRest({ from, to, saved: false });
+                      afterProgressSaved(() => setRest({ from, to, saved: true }));
+                    } else setError("This Campfire has already been used.");
+                  }}
+                >
+                  Rest
+                </Button>
+                <p
+                  id="campfire-rest-recovery"
+                  className={cn(
+                    "flex items-center gap-1.5 font-semibold tabular-nums",
+                    keywordDefinitions.health.colorClass,
+                  )}
+                >
+                  <Heart aria-hidden="true" className="size-5 fill-current" />
+                  {restore}
+                  <span className="sr-only"> Health</span>
+                </p>
+              </div>
               <Button onClick={() => setBrewing(true)}>Brew Potion</Button>
             </div>
           </>

@@ -16,13 +16,11 @@ import type { RewardState } from "@/lib/active-run-session";
 export function DestinationScreen({
   rewardState,
   currentAct,
-  destinationIndexInAct,
   onChoose,
   onPrepare,
 }: {
   rewardState: RewardState;
   currentAct: number;
-  destinationIndexInAct: number;
   onChoose: (destination: Destination) => void;
   onPrepare?: () => void;
 }) {
@@ -48,7 +46,7 @@ export function DestinationScreen({
   const title = bossOnly ? (
     <ShineText colors={bossTextShineColors}>{bossForShine?.title ?? getBossEnemy().title}</ShineText>
   ) : (
-    `Act ${currentAct}-${destinationIndexInAct + 1}`
+    "Choose Destination"
   );
 
   return (

@@ -168,10 +168,10 @@ header, gold counter, and instruction text; the Remove action retains its gold c
 
 ## Campaign destinations and Campfire
 
-Before choosing at Campfire, Rest shows a red heart and the actual recovery
-amount, including zero at full Health. Campaign destination headers show the
-upcoming choice as Act 1-1, Act 1-2, and so on; each act restarts its room count.
-The named boss entrance keeps its existing title.
+Before choosing at Campfire, a heart in the Health keyword color and the actual
+recovery amount appear below Rest, including zero at full Health. Campaign
+destination headers say Choose Destination without an act indicator. The named
+boss entrance keeps its existing title; reward screens say Victory.
 
 ## Rewards and Wishes
 

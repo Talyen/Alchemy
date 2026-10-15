@@ -120,7 +120,7 @@ for (const kind of ["purchase", "reward", "victory"] as const) {
         if (kind === "purchase") await new ShopPage(page).waitForPurchase();
         else
           await expect(
-            page.getByRole("heading", { name: kind === "reward" ? /^Act \d+-\d+$/ : "Victory", exact: true }),
+            page.getByRole("heading", { name: kind === "reward" ? "Choose Destination" : "Victory", exact: true }),
           ).toBeVisible();
         await expect(page.getByText("Saving…", { exact: true })).toHaveCount(0);
         const completed = saved(profile);
@@ -137,7 +137,7 @@ for (const kind of ["purchase", "reward", "victory"] as const) {
         const resumedErrors = failOnRuntimeErrors(page);
         await expect(
           page.getByRole("heading", {
-            name: kind === "purchase" ? "Card Shop" : kind === "reward" ? /^Act \d+-\d+$/ : "Victory",
+            name: kind === "purchase" ? "Card Shop" : kind === "reward" ? "Choose Destination" : "Victory",
             exact: true,
           }),
         ).toBeVisible();

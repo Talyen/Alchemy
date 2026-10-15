@@ -38,23 +38,6 @@ afterEach(() => {
 });
 
 describe("RewardsScreen", () => {
-  it.each([
-    [1, "I"],
-    [2, "II"],
-    [3, "III"],
-  ] as const)("marks Campaign Act %s cleared without promising another act", (clearedAct, numeral) => {
-    render(
-      <RewardsScreen
-        rewardState={readRunSession(defaultGameSession).rewardFlow.state}
-        clearedAct={clearedAct}
-        onSkip={vi.fn()}
-        onClaimReward={vi.fn()}
-      />,
-    );
-    expect(screen.getByRole("heading", { name: `Act ${numeral} Cleared` })).toBeTruthy();
-    expect(screen.queryByText(/Next Act|Act IV/)).toBeNull();
-  });
-
   it("routes reward selection through controller action instead of mutating the store directly", async () => {
     const user = userEvent.setup();
     const onClaimReward = vi.fn();
@@ -70,6 +53,7 @@ describe("RewardsScreen", () => {
     await user.click(screen.getByRole("button", { name: /select slash/i }));
 
     expect(onClaimReward).toHaveBeenCalledWith("slash");
+    expect(screen.getByRole("heading", { name: "Victory" })).toBeTruthy();
     expect(readRunSession(defaultGameSession).rewardFlow.state.selectedId).toBeNull();
     expect(
       screen
