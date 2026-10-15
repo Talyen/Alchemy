@@ -129,6 +129,7 @@
     "test:smoke": "node scripts/run-local-tests.mjs",
     "verify:unit": "node scripts/verify-changed.mjs --unit",
     "test:full:verbose": "node scripts/run-compact.mjs --live vitest run",
+    "i18n:fonts": "node scripts/localization/subset-fonts.mjs",
     "i18n:extract": "node scripts/localization.mjs extract",
     "i18n:tasks": "node scripts/localization.mjs tasks",
     "i18n:apply": "node scripts/localization.mjs apply",

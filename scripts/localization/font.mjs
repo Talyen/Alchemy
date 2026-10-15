@@ -40,3 +40,30 @@ export function fontHasGlyph(bytes, codePoint) {
 export function missingGlyphs(bytes, text, pattern) {
   return [...new Set(text.match(pattern) ?? [])].filter((character) => !fontHasGlyph(bytes, character.codePointAt(0)));
 }
+
+// Source digests pin the exact OFL variable fonts used to produce the bundled subsets.
+export const FONTTOOLS_VERSION = "4.60.1";
+export const FONT_REQUIREMENTS = [
+  {
+    locale: "zh-Hans",
+    file: "noto-sans-sc.ttf",
+    pattern: /[\p{Script=Han}\u3000-\u303f\uff00-\uffef]/gu,
+    url: "https://raw.githubusercontent.com/google/fonts/a85815a42757630ce188fdad368c2dfc444d4773/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf",
+    sha256: "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
+  },
+  {
+    locale: "ru",
+    file: "noto-sans.ttf",
+    pattern: /\p{Script=Cyrillic}/gu,
+    url: "https://raw.githubusercontent.com/google/fonts/8b0a1d0f5983c89bc2b93f1b5fb55f9e252744b5/ofl/notosans/NotoSans%5Bwdth%2Cwght%5D.ttf",
+    sha256: "bfb7bb691513f12e734dc346c03a03f784912432d7e3fa8e56efcf906fe86b3d",
+  },
+];
+export function requiredFontText(catalogs, languages, requirement) {
+  const text =
+    Object.values(catalogs[requirement.locale] ?? {}).join("\n") +
+    Object.values(languages)
+      .map(({ name }) => name)
+      .join("");
+  return [...new Set(text.match(requirement.pattern) ?? [])].sort().join("");
+}

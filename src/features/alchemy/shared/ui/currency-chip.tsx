@@ -43,7 +43,10 @@ export function CurrencyChip({
   const i18n = useGameTranslation();
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible();
   const countToken = useChangeToken(count);
-  const label = `${ariaLabel ?? currency.displayName}, ${count}${onSelect ? " available" : ""}`;
+  const name = ariaLabel ?? i18n.displayText(currency.displayName);
+  const label = onSelect
+    ? i18n.text("currency.available", "{{name}}, {{count}} available", { name, count })
+    : i18n.text("currency.count", "{{name}}, {{count}}", { name, count });
   const className = cn(
     "armory-currency-art relative block overflow-hidden rounded-xl border border-border/80 bg-black",
     armed && surfaceSelectedRingClass,
@@ -86,7 +89,7 @@ export function CurrencyChip({
           type="button"
           data-testid={testId}
           data-currency-id={currency.id}
-          aria-label={i18n.displayText(label)}
+          aria-label={label}
           aria-pressed={armed}
           aria-disabled={disabled}
           className={className}
@@ -104,7 +107,7 @@ export function CurrencyChip({
           role="group"
           data-testid={testId}
           data-currency-id={currency.id}
-          aria-label={i18n.displayText(label)}
+          aria-label={label}
           className={className}
         >
           {i18n.displayText(content)}

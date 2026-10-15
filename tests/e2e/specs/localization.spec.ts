@@ -1,5 +1,3 @@
-import fs from "node:fs";
-import path from "node:path";
 import type { Page, Locator } from "@playwright/test";
 import { expect, test } from "../../fixtures/e2e";
 import {
@@ -12,15 +10,13 @@ import {
 } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { DEVICE_DISPLAY_RANGES } from "../../../src/lib/settings-values";
-import { assertNoOverflow, assertReachableControlsInViewport, waitForLayoutSettled } from "../layout-assertions";
-import catalogs from "../../../src/lib/localization/locales/runtime.json" with { type: "json" };
-import { pseudolocalize } from "../../../src/lib/localization/pseudolocalize";
+import { assertNoOverflow } from "../layout-assertions";
+import { acceptanceLocales, layoutReview, mechanics, reviewLayout, translatedLabel } from "../localization";
 import { critical } from "../../playwright-tags";
 import languages from "../../../src/lib/localization/locales/languages.json" with { type: "json" };
 
 // Browser-specific coverage: real font loading, translated accessible names,
 // live route switching, and a separately booted localized saved battle.
-const layoutReview = process.env.ALCHEMY_LOCALIZATION_LAYOUT_REVIEW === "1";
 test.use({ viewport: layoutReview ? { width: 1280, height: 720 } : { width: 1920, height: 1080 } });
 
 test.beforeEach(async ({ page }) => {
@@ -37,53 +33,12 @@ test.beforeEach(async ({ page }) => {
   }, DEVICE_DISPLAY_RANGES);
 });
 
-const acceptanceLocales = ["de", "zh-Hans", "ru", "es", "pt-BR", "en-XA"] as const;
-type AcceptanceLocale = (typeof acceptanceLocales)[number];
-
-function translatedLabel(locale: AcceptanceLocale, english: string): string {
-  if (locale === "en-XA") return pseudolocalize(english);
-  const id = Object.entries(catalogs.en).find(([, value]) => value === english)?.[0];
-  if (!id) throw new Error(`Unregistered acceptance label: ${english}`);
-  return (catalogs[locale] as Record<string, string>)[id]!;
-}
-
-async function reviewLayout(page: Page, name: string) {
-  await assertNoOverflow(page, name);
-  if (!layoutReview) return;
-  await waitForLayoutSettled(page);
-  const directory = path.resolve("reports/localization-layout");
-  fs.mkdirSync(directory, { recursive: true });
-  await page.screenshot({ path: path.join(directory, name.replace(/[^a-z0-9]+/gi, "-") + ".png") });
-  await assertReachableControlsInViewport(page, name);
-}
-
 async function openOptions(page: Page, name: string | RegExp, ready: Locator) {
   // Development bootstrap can replace the first menu during an early click.
   await expect(async () => {
     if (!(await ready.isVisible())) await page.getByRole("button", { name, exact: true }).click({ timeout: 2000 });
     await expect(ready).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 15_000 });
-}
-
-function mechanics(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(mechanics);
-  if (!value || typeof value !== "object") return value;
-  return Object.fromEntries(
-    Object.entries(value)
-      .filter(
-        ([key]) =>
-          ![
-            "title",
-            "baseTitle",
-            "description",
-            "descriptionLines",
-            "message",
-            "art",
-            "corruptedValuePositions",
-          ].includes(key),
-      )
-      .map(([key, item]) => [key, mechanics(item)]),
-  );
 }
 
 for (const locale of acceptanceLocales) {

@@ -17,6 +17,7 @@ src/lib/validation/metadata.generated.ts
 src/lib/game-data/assets.generated.ts
 package-lock.json
 # Message records use deterministic one-record-per-line formatting from i18n:extract.
+src/lib/localization/locales/runtime.json
 src/lib/localization/locales/en.json
 src/lib/localization/locales/de.json
 src/lib/localization/locales/zh-Hans.json

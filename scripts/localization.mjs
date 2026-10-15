@@ -1,4 +1,6 @@
-import { missingGlyphs } from "./localization/font.mjs";
+import { packCatalogs, unpackCatalogs } from "../src/lib/localization/catalog-format.mjs";
+import { isDeepStrictEqual } from "node:util";
+import { missingGlyphs, FONT_REQUIREMENTS, requiredFontText } from "./localization/font.mjs";
 import { format } from "prettier";
 import fs from "node:fs";
 import path from "node:path";
@@ -26,15 +28,26 @@ const serializeRecords = (value) =>
     .map(([id, entry]) => `  ${JSON.stringify(id)}: ${JSON.stringify(entry)}`)
     .join(",\n") +
   "\n}\n";
+const serializeRuntime = (value) =>
+  `{
+  "version": 1,
+  "languages": ${JSON.stringify(value.languages)},
+  "messages": ${serializeRecords(value.messages).trimEnd()},
+  "aliases": ${serializeRecords(value.aliases).trimEnd()}
+}
+`;
+const runtimeCatalog = (messages, glossary) => packCatalogs(compiled(messages, glossary), messages);
 const write = async (file, value) => {
   const destination = path.join(directory, file + ".json");
   const temporary = `${destination}.${process.pid}.tmp`;
   try {
     fs.writeFileSync(
       temporary,
-      file === "en" || TARGETS.includes(file)
-        ? serializeRecords(value)
-        : await format(serialize(value), { parser: "json" }),
+      file === "runtime"
+        ? serializeRuntime(value)
+        : file === "en" || TARGETS.includes(file)
+          ? serializeRecords(value)
+          : await format(serialize(value), { parser: "json" }),
     );
     fs.renameSync(temporary, destination);
   } finally {
@@ -113,7 +126,7 @@ try {
         locale,
         validateResults({ messages, glossary: glossary[locale], locale, results: {}, previous: read(locale) }),
       );
-    await write("runtime", compiled(messages, glossary));
+    await write("runtime", runtimeCatalog(messages, glossary));
     writeSteamExports(messages, glossary);
     console.log(`Extracted ${Object.keys(messages).length} English messages`);
   } else if (command === "tasks") {
@@ -152,22 +165,19 @@ try {
     const next = validateResults({ messages, glossary: glossary[locale], locale, results, previous: read(locale) });
     // Validate the complete result before replacing any catalog.
     await write(locale, next);
-    await write("runtime", compiled(messages, glossary));
+    await write("runtime", runtimeCatalog(messages, glossary));
     writeSteamExports(messages, glossary);
     console.log(`Applied ${Object.keys(results).length} reviewed translations for ${locale}`);
   } else {
     const failures = [...issues];
     const catalogs = compiled(messages, glossary);
-    for (const [locale, file, pattern] of [
-      ["zh-Hans", "noto-sans-sc.ttf", /[\p{Script=Han}\u3000-\u303f\uff00-\uffef]/gu],
-      ["ru", "noto-sans.ttf", /\p{Script=Cyrillic}/gu],
-    ]) {
+    for (const requirement of FONT_REQUIREMENTS) {
       const glyphs = missingGlyphs(
-        fs.readFileSync(path.join(ROOT, "public/fonts", file)),
-        JSON.stringify(catalogs[locale]) + JSON.stringify(languages),
-        pattern,
+        fs.readFileSync(path.join(ROOT, "public/fonts", requirement.file)),
+        requiredFontText(catalogs, languages, requirement),
+        requirement.pattern,
       );
-      if (glyphs.length) failures.push(`${locale} font lacks: ${glyphs.join("")}`);
+      if (glyphs.length) failures.push(`${requirement.locale} font lacks: ${glyphs.join("")}; run npm run i18n:fonts`);
     }
     const steam = steamExports(messages, glossary);
     if (
@@ -175,8 +185,11 @@ try {
       fs.readFileSync(path.join(ROOT, "steam/rich-presence.vdf"), "utf8") !== steam.presence
     )
       failures.push("Steam localization exports are stale; run npm run i18n:extract");
-    if (serialize(read("runtime")) !== serialize(compiled(messages, glossary)))
+    const packed = runtimeCatalog(messages, glossary);
+    if (fs.readFileSync(path.join(directory, "runtime.json"), "utf8") !== serializeRuntime(packed))
       failures.push("Runtime catalogs are stale; run npm run i18n:extract");
+    if (!isDeepStrictEqual(unpackCatalogs(packed), catalogs))
+      failures.push("Packed runtime catalogs differ from expanded messages");
     if (fs.readFileSync(path.join(directory, "en.json"), "utf8") !== serializeRecords(messages))
       failures.push("English catalog differs from source; run npm run i18n:extract");
     for (const [id, message] of Object.entries(messages)) {

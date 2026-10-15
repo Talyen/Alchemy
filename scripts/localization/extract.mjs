@@ -320,6 +320,11 @@ export async function extractMessages() {
     for (const message of Object.values(messages)) {
       if (!/benefitDescription|nonCombatBenefitDescription/.test(message.context) || message.text.includes("<"))
         continue;
+      // Homestead nodes present each benefit line independently, with local slot numbering.
+      for (const line of message.text.split("\n")) {
+        const semanticLine = descriptionMessages.buildDescriptionMessage([{ text: line }], true);
+        if (!messages[semanticLine.id]) addDescription(semanticLine, "Homestead benefit line with resource slots");
+      }
       const semantic = descriptionMessages.buildDescriptionMessage([{ text: message.text }], true);
       addDescription(semantic, "Homestead benefit with resource slots");
       if (semantic.template !== message.text) {

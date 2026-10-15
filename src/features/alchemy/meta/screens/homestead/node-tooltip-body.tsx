@@ -68,7 +68,7 @@ export function HomesteadTooltipBody({
                                 /^\d/.test(part) ? (
                                   <TooltipValue key={index} value={part} animate={animate} />
                                 ) : (
-                                  <Fragment key={index}>{i18n.displayText(part)}</Fragment>
+                                  <Fragment key={index}>{part}</Fragment>
                                 ),
                               )}
                           </Fragment>

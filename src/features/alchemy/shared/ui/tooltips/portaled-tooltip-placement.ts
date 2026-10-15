@@ -105,6 +105,8 @@ export function usePortaledTooltipPlacement(
             }),
           shift({
             boundary: stage,
+            // Fixed-side panels still shift inward when translated content reaches an edge.
+            crossAxis: !allowFlip,
             padding: { top: padding, bottom: padding, left: horizontalInset, right: horizontalInset },
           }),
         ],
@@ -115,7 +117,13 @@ export function usePortaledTooltipPlacement(
         // celebratory scale never feed transformed panel dimensions back into placement.
         const tooltipStyle: CSSProperties =
           !allowFlip && finalPlacement === "top"
-            ? { left, bottom: `${window.innerHeight - trigger.getBoundingClientRect().top + padding}px` }
+            ? {
+                left,
+                bottom: `${Math.min(
+                  window.innerHeight - trigger.getBoundingClientRect().top + padding,
+                  window.innerHeight - bounds.top - padding - tooltipEl.offsetHeight,
+                )}px`,
+              }
             : { left, top: `${y}px` };
         setPosition((previous) =>
           previous.placement === finalPlacement &&

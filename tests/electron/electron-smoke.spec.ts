@@ -12,15 +12,17 @@ import { MenuPage } from "../pages/menu-page";
 import { assertNoOverflow, assertReachableControlsInViewport, waitForLayoutSettled } from "../e2e/layout-assertions";
 import { DEVICE_DISPLAY_RANGES } from "../../src/lib/settings-values";
 import { desktop } from "../playwright-tags";
-import catalogs from "../../src/lib/localization/locales/runtime.json" with { type: "json" };
+import { unpackCatalogs } from "../../src/lib/localization/catalog-format.mjs";
+import packed from "../../src/lib/localization/locales/runtime.json" with { type: "json" };
 import languages from "../../src/lib/localization/locales/languages.json" with { type: "json" };
 
+const catalogs = unpackCatalogs(packed);
 const layoutReview = process.env.ALCHEMY_LOCALIZATION_LAYOUT_REVIEW === "1";
 const reviewLocale = process.env.ALCHEMY_LOCALIZATION_REVIEW_LOCALE ?? "de";
 if (!Object.hasOwn(languages, reviewLocale)) throw new Error(`Unknown desktop review locale: ${reviewLocale}`);
 const locale = reviewLocale as keyof typeof languages;
 const label = (english: string) => {
-  const id = Object.entries(catalogs.en).find(([, value]) => value === english)?.[0];
+  const id = Object.entries(catalogs.en!).find(([, value]) => value === english)?.[0];
   if (!id) throw new Error(`Unregistered desktop review label: ${english}`);
   return (catalogs[locale] as Record<string, string>)[id]!;
 };

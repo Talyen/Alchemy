@@ -1,3 +1,4 @@
+import { unpackCatalogs } from "./catalog-format.mjs";
 import { pseudolocalize } from "./pseudolocalize";
 export { pseudolocalize } from "./pseudolocalize";
 import { buildDescriptionMessage } from "@/lib/game-data";
@@ -25,7 +26,8 @@ void localization.init({
   returnEmptyString: false,
 });
 
-export function installCatalogs(catalogs: Record<string, Record<string, string>>): void {
+export function installCatalogs(bundled: unknown): void {
+  const catalogs = unpackCatalogs(bundled);
   source = catalogs.en ?? {};
   sourceIds = new Map(Object.entries(source).map(([id, value]) => [value, id]));
   for (const [locale, entries] of Object.entries(catalogs))

@@ -56,7 +56,10 @@ describe("usePortaledTooltipPlacement", () => {
     vi.restoreAllMocks();
   });
 
-  it("centers a fixed toolbar tooltip below an icon inside the usual edge inset", async () => {
+  it.each([
+    { triggerY: 16, height: 40, expectedTop: 64 },
+    { triggerY: 1040, height: 80, expectedTop: 992 },
+  ])("keeps fixed below tooltips within the viewport at y=$triggerY", async ({ triggerY, height, expectedTop }) => {
     const center = 1836;
     const { computePosition } = await vi.importActual<typeof floatingUi>("@floating-ui/dom");
     vi.spyOn(floatingUi, "autoUpdate").mockImplementation(() => () => {});
@@ -66,8 +69,8 @@ describe("usePortaledTooltipPlacement", () => {
         platform: {
           ...floatingUi.platform,
           getElementRects: async () => ({
-            reference: { x: center - 20, y: 16, width: 40, height: 40 },
-            floating: { x: 0, y: 0, width: 140, height: 40 },
+            reference: { x: center - 20, y: triggerY, width: 40, height: 40 },
+            floating: { x: 0, y: 0, width: 140, height },
           }),
           getClippingRect: async () => ({ x: 0, y: 0, width: 1920, height: 1080 }),
           getOffsetParent: async () => window,
@@ -82,7 +85,7 @@ describe("usePortaledTooltipPlacement", () => {
 
     const floating = screen.getByTestId("tip-floating");
     await waitFor(() => expect(floating.style.left).toBe(`${center - 70}px`));
-    expect(floating.style.top).toBe("64px");
+    expect(floating.style.top).toBe(`${expectedTop}px`);
     expect(floating.dataset.placeBelow).toBe("true");
     expect(floating.dataset.side).toBe("none");
   });

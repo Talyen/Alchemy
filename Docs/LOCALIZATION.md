@@ -55,7 +55,12 @@ formatted by `i18n:extract` and checked by `i18n:check`. Translation files store
 canonical entries with their source hashes, review status and plural forms.
 Identical-message and numeric aliases are expanded during compilation and validation;
 they never duplicate translations or review metadata in the authored locale files.
-The generated runtime catalog remains fully expanded for direct lookup in the game.
+The generated runtime asset stores each canonical message and shared alias only
+once, with a fixed language order and exact English overrides where keyword
+canonicalization changes case. `catalog-format.mjs` validates and expands this
+versioned data before installing resources. The offline check compares every expanded
+message against the authoritative compiler output, including plurals and slots.
+Build and package gates validate all shipped languages and the asset digest.
 
 ## Agent workflow
 
@@ -88,12 +93,31 @@ quality; AI semantic review remains part of completing the task.
 ## Qualification and Steam
 
 Expanded English is a developer-only layout tool. Chinese and Russian use bundled
-Noto Sans SC and Noto Sans variable fonts with their OFL licenses. These complete
-fonts replace the former Chinese sample subset. The offline gate reads font
-character maps and rejects any missing Chinese or Cyrillic catalog glyphs. Native
+Noto Sans SC and Noto Sans variable font subsets with their OFL licenses. The
+subsets retain variable weights, hinting and layout features, Latin characters,
+punctuation, symbols, and every required Chinese/Cyrillic catalog glyph and native
+language label. The offline gate reads the actual bundled character maps and
+rejects missing glyphs; adding an uncovered character blocks integration
+until the fonts are regenerated. Native
 language names use the same fallbacks even before selecting those languages.
 Verified renderer packages also check a generated catalog manifest and SHA-256
 digest, so omitted or corrupted bundled catalogs cannot pass packaging.
+Font regeneration is an explicit authoring operation, separate from offline checks:
+
+```sh
+python3 -m venv reports/font-tools
+reports/font-tools/bin/python -m pip install fonttools==4.60.1
+ALCHEMY_FONT_PYTHON=reports/font-tools/bin/python npm run i18n:fonts
+npm run i18n:check
+```
+
+The generator uses commit-pinned Google Fonts URLs and verifies source SHA-256
+digests before subsetting. `--source-dir <directory>` accepts those original TTF
+files for offline regeneration; ordinary checks and builds require neither Python
+nor network access. Outputs are deterministic. Keep the source notices and OFL
+licenses with the subsets. The tool and options follow the
+[fontTools subset documentation](https://fonttools.readthedocs.io/en/latest/subset/index.html).
+
 Use the browser acceptance scenarios to check live switching, focus, clipping,
 keyword interactions, and saved combat. Browser/Electron and builds follow the
 execution policy in [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change).
@@ -105,6 +129,17 @@ control bounds and captures Options tabs, combat, shops and confirmations under
 
 ```sh
 ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:e2e:dev -- tests/e2e/specs/localization.spec.ts --workers=1
+```
+
+The deeper gameplay review covers mixed/distilled Potions, transmutation previews
+and generated names, corruption, Homestead purchases, Gear crafting, Labyrinth
+discovery and reward claims. It checks acknowledged checkpoints after closing the
+seeded page, then resumes in a different language and compares saved effects,
+description marks, inventories, resources and RNG. The Homestead journey also
+checks complete translated benefit lines and the edge placement of long tooltips.
+
+```sh
+ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:e2e:dev -- tests/e2e/specs/localization-gameplay.spec.ts --workers=1
 ```
 
 Review the packaged Electron Options tabs, including desktop display controls,

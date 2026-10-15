@@ -1,3 +1,4 @@
+import { packCatalogs, unpackCatalogs } from "../../../src/lib/localization/catalog-format.mjs";
 import { describe, expect, it } from "vitest";
 import { sourceHash, validateResults, resolveAliases, relatedTerms } from "../../../scripts/localization/catalog.mjs";
 
@@ -127,5 +128,48 @@ describe("localization ingestion", () => {
         results: { draft: { text: "Wähle 2 von 3", sourceHash: sourceHash(fixed, {}, "de"), reviewed: true } },
       }),
     ).toThrow("quantities");
+  });
+});
+
+describe("bundled catalog encoding", () => {
+  it("retains exact English wording, plurals and moved slots while deriving numeric aliases", () => {
+    const expanded = {
+      en: {
+        attack: "Deal <damage>{{amount}}</damage> damage",
+        alias: "Deal 4 damage",
+        copy: "Deal <damage>{{amount}}</damage> damage",
+        case: "deal 4 damage",
+        count_one: "{{count}} card",
+      },
+      de: {
+        attack: "<damage>{{amount}}</damage> Schaden",
+        alias: "4 Schaden",
+        copy: "<damage>{{amount}}</damage> Schaden",
+        case: "4 Schaden",
+        count_one: "{{count}} Karte",
+      },
+    };
+    const packed = packCatalogs(expanded, {
+      alias: { aliasOf: "attack", values: { amount: 4 } },
+      copy: { aliasOf: "attack" },
+      case: { aliasOf: "attack", values: { amount: 4 } },
+    });
+    expect(packed.messages.alias).toBeUndefined();
+    expect(packed.aliases.case?.english).toBe("deal 4 damage");
+    expect(unpackCatalogs(packed)).toEqual(expanded);
+  });
+
+  it("rejects corrupt bundles before any partial resources can be installed", () => {
+    const valid = packCatalogs({ en: { a: "A" }, de: { a: "Ein" } }, {});
+    for (const invalid of [
+      {},
+      { ...valid, version: 2 },
+      { ...valid, languages: ["en", "en"] },
+      { ...valid, messages: { a: ["A"] } },
+      { ...valid, aliases: { a: { id: "a" } } },
+      { ...valid, aliases: { b: { id: "constructor" } } },
+      { ...valid, aliases: { b: { id: "c" }, c: { id: "b" } } },
+    ])
+      expect(() => unpackCatalogs(invalid)).toThrow();
   });
 });

@@ -5,5 +5,5 @@ export async function loadBundledCatalogs(): Promise<void> {
   // Both the web distribution and the packaged app include the same file.
   const response = await fetch(new URL("../lib/localization/locales/runtime.json", import.meta.url));
   if (!response.ok) throw new Error("Bundled localization catalogs could not be loaded");
-  installCatalogs((await response.json()) as Record<string, Record<string, string>>);
+  installCatalogs(await response.json());
 }
