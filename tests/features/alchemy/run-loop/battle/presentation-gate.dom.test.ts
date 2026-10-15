@@ -71,7 +71,7 @@ describe("useBattlePresentationGateRef", () => {
     renderHook(() => useBattlePresentationGateRef(battlePresentation, onGateChangeRef));
 
     act(() => {
-      battlePresentation.setState({ enemyShaking: true });
+      battlePresentation.getState().telegraphAttack("enemy");
     });
 
     expect(onGateChange).not.toHaveBeenCalled();
@@ -96,7 +96,7 @@ describe("useBattlePresentationGateRef", () => {
     renderHook(() => useBattlePresentationGateRef(battlePresentation, onGateChangeRef));
 
     act(() => {
-      battlePresentation.setState({ cardTransferInProgress: true });
+      battlePresentation.getState().setCardTransferInProgress(true);
     });
 
     expect(onGateChange).toHaveBeenCalledOnce();

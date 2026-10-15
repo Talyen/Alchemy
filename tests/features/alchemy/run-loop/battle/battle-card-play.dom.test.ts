@@ -167,9 +167,10 @@ describe("createBattleCardPlay", () => {
     givenBattle(state);
     const shown = battleSnapshot({ ...state, mana: 2 });
     battlePresentation.getState().setDisplayedBattle(shown);
+    const published = battlePresentation.getState().displayedBattle;
     const { handleCardClick } = makeDeps();
     clickCard(handleCardClick, card, 0);
-    expect(battlePresentation.getState().displayedBattle).toBe(shown);
+    expect(battlePresentation.getState().displayedBattle).toBe(published);
     expect(readBattle(defaultGameSession).battleState.mana).toBe(0);
     expect(battlePresentation.getState().cardRejection).toEqual({ cardKey: getHandCardKey(card, 0), mana: true });
     clickCard(handleCardClick, card, 0);

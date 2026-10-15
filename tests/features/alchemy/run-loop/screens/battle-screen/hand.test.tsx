@@ -2,6 +2,8 @@ import { createRef, type MouseEventHandler, type RefObject } from "react";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { mutateRunForTest, setBattleActiveForTest } from "../../../../../helpers/run-domain-store-test";
+import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { battlePresentation } from "@/app/battle-presentation";
 import { BattleHand } from "@/features/alchemy/run-loop/screens/battle-screen/hand";
 import type {
@@ -122,7 +124,7 @@ describe("BattleHand", () => {
             presentation={battlePresentation}
             view={{ battleState: { ...state, hand }, stagePixelRatio: 1 } as unknown as RequiredBattleViewProps}
             refs={refs}
-            actions={{ onCardClick } as BattleActionsProps}
+            actions={{ onCardClick, onWishChoice: vi.fn() }}
             playabilityState={{ ...state, hand }}
           />
         </section>
@@ -152,7 +154,7 @@ describe("BattleHand", () => {
   });
 
   it("keeps playable cards colored and interactive during transfers", () => {
-    battlePresentation.setState({ cardTransferInProgress: true });
+    battlePresentation.getState().setCardTransferInProgress(true);
     renderHand();
 
     const affordable = screen.getByRole("button", { name: "Play Slash" });
@@ -166,16 +168,18 @@ describe("BattleHand", () => {
   it("visibly acknowledges an unaffordable rejection while muted and clears it afterwards", () => {
     const wasMuted = audioState.muted;
     audioState.muted = true;
+    mutateRunForTest((draft) => {
+      setBattleActiveForTest(draft, true);
+      setScreen(draft, "battle");
+    });
     try {
       renderHand();
       const expensive = screen.getByRole("button", { name: "Play Meteor" });
       const affordable = screen.getByRole("button", { name: "Play Slash" });
-      act(() =>
-        battlePresentation.setState({ cardRejection: { cardKey: getHandCardKey(expensiveCard, 1), mana: true } }),
-      );
+      act(() => battlePresentation.getState().rejectCardPlay(getHandCardKey(expensiveCard, 1), true));
       expect(expensive.classList.contains("card-play-rejected")).toBe(true);
       expect(affordable.classList.contains("card-play-rejected")).toBe(false);
-      act(() => battlePresentation.setState({ cardRejection: null }));
+      act(() => battlePresentation.getState().resetPresentation());
       expect(expensive.classList.contains("card-play-rejected")).toBe(false);
     } finally {
       audioState.muted = wasMuted;

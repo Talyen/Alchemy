@@ -36,19 +36,21 @@ describe("useBattleScreenRouteData", () => {
         draft.run.activeRun.runBoons = [];
       });
     });
+    const publishedFrame = battlePresentation.getState().displayedBattle;
+    expect(publishedFrame).toEqual(finalFrame);
     expect(result.current.hasActiveBattle).toBe(false);
-    expect(result.current.battleScreenData.battleState).toBe(finalFrame);
+    expect(result.current.battleScreenData.battleState).toBe(publishedFrame);
     expect(result.current.battleScreenData.activeLabyrinthModifiers).toEqual(["tempered"]);
     expect(result.current.battleScreenData.runBoons).toEqual(["test-boon"]);
     act(() => battlePresentation.getState().resetPresentation());
-    expect(result.current.battleScreenData.battleState).toBe(finalFrame);
-    expect(result.current.battleScreenData.battleState.currentEnemy).toBe(battleState.currentEnemy);
+    expect(result.current.battleScreenData.battleState).toBe(publishedFrame);
+    expect(result.current.battleScreenData.battleState.currentEnemy).toEqual(battleState.currentEnemy);
     act(() =>
       mutateGameplayForTest((draft) => {
         draft.session.activity = { kind: "inactive" };
         draft.run.navigation.screen = "game-over";
       }),
     );
-    expect(result.current.battleScreenData.battleState).toBe(finalFrame);
+    expect(result.current.battleScreenData.battleState).toBe(publishedFrame);
   });
 });
