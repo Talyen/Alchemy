@@ -354,7 +354,7 @@ describe("serialized local integration", () => {
   }, 20000);
 });
 
-it("archives ignored evidence, retains the branch and leaves a peer untouched", () => {
+it("deletes local outputs, retains the branch and leaves a peer untouched", () => {
   const { root, taskPath, git, integrate, archive } = integrationFixture();
   try {
     writeFileSync(join(root, "main.txt"), "main\n");
@@ -371,9 +371,8 @@ it("archives ignored evidence, retains the branch and leaves a peer untouched", 
     writeFileSync(join(peer, "unfinished"), "peer work");
     const result = integrate();
     expect(result.status, result.stderr).toBe(0);
-    const snapshot = readdirSync(archive)[0];
-    expect(readFileSync(join(archive, snapshot, "checkout", "ignored"), "utf8")).toBe("local evidence");
-    expect(existsSync(join(archive, snapshot, "checkout", "node_modules"))).toBe(false);
+    expect(readdirSync(archive)).toEqual([]);
+    expect(git(["worktree", "list", "--porcelain"])).not.toContain(taskPath);
     expect(readFileSync(join(peer, "unfinished"), "utf8")).toBe("peer work");
     expect(git(["rev-parse", "agent/task"])).toBe(git(["rev-parse", "main"]));
   } finally {
