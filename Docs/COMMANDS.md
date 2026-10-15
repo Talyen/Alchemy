@@ -40,6 +40,28 @@ requires no active or blocked plans and does not finish or delete them.
 Ordinary documentation handoff uses `docs:check` plus the task-scoped `check`;
 other tasks' active or blocked plans may remain.
 
+## Local development
+
+`npm run dev` and `npm run dev:desktop` validate committed prepared outputs through
+their `predev` lifecycle. The external Asset Library is needed for authoring and
+raw-source freshness checks, not ordinary development. If validation reports stale
+outputs, follow [asset preparation](./WORKFLOWS-ASSETS.md#local-library-and-ci)
+rather than bypassing the check.
+
+If Electron's binary download was skipped or the installation is incomplete, run
+`npm run ensure:electron` before `npm run dev:desktop`. It repairs the existing
+Electron installation; it does not build the renderer or launch the game.
+
+Set `ALCHEMY_DEV_PORT` to a free port for concurrent development checkouts, for
+example `ALCHEMY_DEV_PORT=5273 npm run dev:desktop` in a POSIX shell. Vite, desktop
+readiness polling, and development cleanup share that setting; a Vite-only
+`--port` override does not configure the desktop waiter. The default is 5173;
+invalid values fail, and Vite fails if the selected port remains occupied rather
+than silently selecting another port.
+Cleanup only stops listeners identified as belonging to its checkout. Keep other
+checkouts' servers running; [browser-test ports](../tests/e2e/README.md#browser-and-electron-commands)
+have separate overrides.
+
 ## Build commands decision tree
 
 - **Local web/dev** — `npm run dev` / `npm run build`

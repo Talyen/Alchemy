@@ -79,6 +79,13 @@ closing the menu restores focus to the choice. Inert panels do not reclaim focus
 Confirmation focus containment pauses while the panel is inert; focus returns
 to its existing target when the panel unmounts.
 
+Use `focusableControls` from `shared/ui/focus-navigation.ts` for traversal and
+`isFocusAvailable` before programmatic focus. Recompute eligible controls when
+handling input: a save, choice, pagination change, or rerender can disable or
+replace a previously eligible button. Native disabled, hidden, detached, and
+inert controls are unavailable; inspection-only `aria-disabled` controls remain
+focusable. Do not maintain a second selector or cached traversal list in a dialog.
+
 ## Keyboard and Steam Input navigation
 
 Steam Input uses the existing keyboard and pointer interfaces; there is no second

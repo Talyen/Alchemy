@@ -83,11 +83,36 @@ presentation errors retain the complete committed room.
 Readiness and saving use [Boot and loading](./ARCHITECTURE.md#boot-and-loading) and the [Persistence API](./RUN_STATE.md#persistence-api).
 
 - **Combat feedback:** each presentation call is one resolved action batch. The pure `combat-feedback-model.ts` copies and prepares events; `combat-feedback-merge.ts` consolidates them across actions into ephemeral `CombatTextBurst` records (identity, target, typed entries, lifetime); burst state is never persisted or used for gameplay. `combat-feedback.ts` owns a per-store lifetime for expiry timers, shake replacement, telegraphs, and feedback identities. The presentation store supplies visibility and clock reads and cancels that lifetime before atomically resetting all visible presentation state. Clearing combat text only cancels text expiry; full reset also cancels shakes. Enemy-turn start, ability resolution, and separately presented Companion actions retain their batch boundaries, including immediate battle-ending presentation.
-- **Screen transition:** `navigateTo` → `transition` → guard check, then `assertScreenTransitionAllowed()` → gameplay preparation and `session.activity` → delayed `navigation.screen` → `renderAlchemyScreenRoute()`. Interactive transitions use the exhaustive `ALLOWED_SCREEN_TRANSITIONS` table in `src/lib/routing/screen-transition-policy.ts`; boot restore/hydration bypasses that policy after save validation. `createScreenNavigation` checks its guard first (a guarded no-op stays silent even on a disallowed edge), then validates, before cancelling pending presentation. It runs an explicit `prepare` callback synchronously; the domain commands in that callback commit gameplay and its activity together, so saves and subsequent commands see the completed gameplay even before the screen appears. Navigation never infers an activity from the target screen or initializes a visit. Showing a screen only writes the display location. Only presentation waits for `delayMs` or `NAVIGATION_DELAY_MS`; `immediate` takes precedence. A redirect during preparation supersedes the original request. Cancellation and hook unmount clear pending presentation timers without undoing completed gameplay. The rendered-screen fade runs independently and never commits gameplay; activity route data retains its outgoing snapshot for that fade.
+- **Screen transition:** `navigateTo` delegates to `transition`; [navigation timing](#navigation-timing) separates gameplay preparation, save acknowledgement, display navigation, and the rendered fade.
 - **Run-loop screens:** `screen-routes` call their screen-specific read hook for display props; `routeCommands` from the shell controller provide actions.
 - **Route registration:** phase tables register statically imported React components directly. Each component takes its phase route context and selects its commands there; `SCREEN_ROUTES` checks completeness for every `Screen`. `renderAlchemyScreenRoute` mounts the selected component with JSX inside the screen error boundary, so React owns its hooks and lifetime. Do not invoke registry entries as ordinary functions or add a second prop-adapter registry.
-- **Navigation input:** `useScreenTransitions` exposes transient `navigationPending` through `AlchemyRunCommands`. It spans the prepared destination's presentation delay, clears on commit/cancellation, and is never persisted. App input remains inert until this flag clears, the rendered screen matches the committed screen, and mounted artwork is ready. Global Escape Back and menu-opening shortcuts follow the same gate; active dialogs and an already-open menu remain dismissible. Outgoing run-end summaries retain their screen data when teardown clears the live run.
+- **Navigation input:** `useScreenTransitions` exposes transient `navigationPending` through `AlchemyRunCommands`. It spans the save wait and presentation delay, clears on display commit/cancellation, and is never persisted. App input remains inert until this flag clears, the rendered screen matches the committed screen, and mounted artwork is ready. Global Escape Back and menu-opening shortcuts follow the same gate; active dialogs and an already-open menu remain dismissible. Outgoing run-end summaries retain their screen data when teardown clears the live run.
 - **Opening draw readiness:** `run-loop/battle/use-battle-opening-draw.ts` waits for playback binding and mounted refs; the session adapter reconciles screen entry, outcome settlement, and teardown. Opening-hand gameplay is committed before this presentation hook runs.
+
+### Navigation timing
+
+`createScreenNavigation` in `shell/screen-navigation.ts` owns this sequence:
+
+1. Check the guard, then validate the interactive edge against
+   `ALLOWED_SCREEN_TRANSITIONS` in `src/lib/routing/screen-transition-policy.ts`.
+   A guarded no-op stays silent, even on a disallowed edge. Resume uses its
+   separate validated resume policy; boot hydration sets its validated screen directly.
+2. Cancel the previous presentation request and run `prepare` synchronously.
+   Domain commands commit gameplay and `session.activity` together. Navigation
+   never infers an activity from the target screen or initializes a visit. A
+   redirect during preparation supersedes the original request.
+3. For prepared transitions and battle/reward/run-end progression routes, wait
+   through the session's `afterProgressSaved` gate before starting the presentation
+   delay. A pending or failed save keeps the route pending; Retry saves the
+   committed outcome without executing preparation again. With no pending save,
+   the gate continues immediately. See [local saving](./RUN_STATE.md#completed-actions-and-local-saving).
+4. Wait for `delayMs` or `NAVIGATION_DELAY_MS`, then write `navigation.screen`.
+   `immediate` skips this delay; it does not bypass the save gate. The rendered
+   fade and mounted-artwork readiness run separately, retaining outgoing route
+   data and never committing gameplay.
+
+Cancellation and hook unmount invalidate pending presentation, including a
+save-gated continuation, without undoing completed gameplay or its save.
 
 ## Playback lifetime and gameplay commands
 

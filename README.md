@@ -37,7 +37,9 @@ npm run dev
 ```
 
 `npm run dev` starts the Vite dev server and opens the browser automatically.
-Desktop local development is `npm run dev:desktop`.
+Desktop local development is `npm run dev:desktop`. See
+[local development](./Docs/COMMANDS.md#local-development) for missing Electron
+binaries, prepared-asset failures, and running checkouts on separate ports.
 
 ## Develop
 
@@ -51,6 +53,7 @@ Desktop local development is `npm run dev:desktop`.
 | `npm run lint`             | Lint all source files                                   |
 | `npm run verify -- --diff` | Run lightweight changed-path verification               |
 | `npm run check -- --diff`  | Run the lightweight push and handoff gate               |
+| `npm run docs:check`       | Validate documentation links, commands, and contracts   |
 
 Install Playwright's browser once before the first local E2E run:
 

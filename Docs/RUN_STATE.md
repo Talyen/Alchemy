@@ -79,6 +79,11 @@ wait until the current event reaches every observer. Listener failures are isola
 through the channel owner's diagnostic handler. Execution failures still roll back; explicit
 `afterCommit` failures still propagate after the committed state is retained.
 
+Gameplay and save-status observers run during command publication while the
+command guard is still held. They may read the installed revision, but must not
+dispatch another gameplay command. Put command follow-ups in `afterCommit` or
+after the original dispatcher returns, when the guard has been released.
+
 Domain operations receive the transaction explicitly and compose inside one command;
 a command body must not call another command. Transactional checks that guard
 a write (shop Gold, refresh counts, purchased slots) read from that draft rather
@@ -159,6 +164,11 @@ plays commit before presentation. `commitEndTurn` resolves the turn and its
 Companion follow-up with the engine-owned `resolveBattleAction` end-turn request,
 awards Dodge XP only after acceptance, and publishes the result atomically before
 discard or enemy animation.
+
+`BattleState` is the engine's execution shape, which may carry RNG and action
+callbacks. Use `battleSnapshot(state)` when converting engine or fixture state
+to committed data; a type assertion does not remove executable fields. The
+helper strips execution metadata without drawing RNG or resolving gameplay.
 
 Playback consumes detached `BattleTurnFrame` values and updates only
 `battle-presentation-store.displayedBattle`; cancellation or failed animation
