@@ -481,6 +481,7 @@ it("rolls back a caught battle initialization failure instead of publishing part
     const effect = vi.fn();
     subscribeRunSessionCommits(committed, session);
     const caught = vi.fn();
+    let stagedRooms: number | undefined;
     // An invalid execution-time modifier fails after room admission. The command
     // boundary must still reject every earlier write if its caller catches it.
     const request = { kind: "battle", options: { enemyId: "skeleton", modifiers: [null] } } as unknown as Parameters<
@@ -495,7 +496,7 @@ it("rolls back a caught battle initialization failure instead of publishing part
             initializeBattle(transaction, request);
           } catch (error) {
             caught(error);
-            expect(transaction.run.activeRun.roomsEncountered).toBe(before.run.activeRun.roomsEncountered + 1);
+            stagedRooms = transaction.run.activeRun.roomsEncountered;
           }
           return acceptCommand();
         },
@@ -504,6 +505,7 @@ it("rolls back a caught battle initialization failure instead of publishing part
       ),
     ).toThrow();
     expect(caught).toHaveBeenCalledOnce();
+    expect(stagedRooms).toBe(before.run.activeRun.roomsEncountered + 1);
     expect(readGameplayState(session)).toBe(before);
     expect(committed).not.toHaveBeenCalled();
     expect(effect).not.toHaveBeenCalled();
