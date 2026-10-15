@@ -15,7 +15,6 @@ export interface RunStartSnapshot {
   contentSystemType: ContentSystemId;
   freshDeck: BattleCard[];
   selectedDifficulty: DifficultyId | null;
-  startGoldGrant: number;
   runPlayerHealth: number;
   runMaxHealth: number;
   roomsEncountered: number;
@@ -30,7 +29,6 @@ export interface RunStartInput {
   characterId: CharacterId;
   contentSystemType: ContentSystemId;
   difficultyId?: DifficultyId | null | undefined;
-  talentStartGold: number;
   talentXP: TalentXP;
   draftedDeck?: BattleCard[] | undefined;
   gearMaxHealthBonus?: number;
@@ -41,7 +39,6 @@ export function createRunStartSnapshot({
   characterId,
   contentSystemType,
   difficultyId = null,
-  talentStartGold,
   talentXP,
   draftedDeck,
   gearMaxHealthBonus = 0,
@@ -54,7 +51,6 @@ export function createRunStartSnapshot({
     contentSystemType,
     freshDeck: (draftedDeck ?? getStartingDeck(characterId)).map(cloneBattleCard),
     selectedDifficulty: contentSystemType === "campaign" ? difficultyId : null,
-    startGoldGrant: talentStartGold,
     runPlayerHealth: runMaxHealth,
     runMaxHealth,
     roomsEncountered: 0,

@@ -420,3 +420,40 @@ describe("SaveStorage ownership", () => {
     },
   );
 });
+
+it.each(["load", "clear"] as const)("%s completion cannot revoke newer write protection", async (operation) => {
+  const pending = deferred<void>();
+  const started = deferred<void>();
+  const write = vi.fn(async () => ({ ok: true as const }));
+  const storage = new SaveStorage(
+    createSaveBackend({
+      readCandidates: async () => {
+        started.resolve();
+        await pending.promise;
+        return { ok: false, error: "unavailable" };
+      },
+      clear: async () => {
+        started.resolve();
+        await pending.promise;
+        return { ok: true };
+      },
+      write,
+    }),
+  );
+  const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    const running = storage[operation]();
+    await started.promise;
+    storage.setWritesDisabled(true);
+    pending.resolve();
+    await running;
+    expect(await storage.save(createDefaultSaveData())).toBe("skipped");
+    expect(await storage.saveForExit(createDefaultSaveData())).toBe("skipped");
+    expect(write).not.toHaveBeenCalled();
+    storage.setWritesDisabled(false);
+    expect(await storage.save(createDefaultSaveData())).toBe("saved");
+  } finally {
+    pending.resolve();
+    logged.mockRestore();
+  }
+});

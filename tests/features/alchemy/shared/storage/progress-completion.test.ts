@@ -1,3 +1,4 @@
+import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
 import { createSaveBackend } from "../../../../helpers/save-backend";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
 import { afterEach, expect, it, vi } from "vitest";
@@ -454,5 +455,92 @@ it("retries a restored career after an older in-flight save completes and the re
     lifecycle.dispose(false);
     await session.dispose();
     vi.useRealTimers();
+  }
+});
+
+it("a new checkpoint at an acknowledged gameplay revision waits for its own settings snapshot", async () => {
+  const writing = deferred<{ ok: true }>();
+  let blocked = false;
+  const session = createGameSession({
+    saveBackend: createSaveBackend({
+      write: async () => (blocked ? writing.promise : { ok: true }),
+    }),
+  });
+  const persistence = createSessionPersistence(session);
+  try {
+    expect(await persistence.checkpoint()).toBe("saved");
+    blocked = true;
+    sessionRuntime(session).settings.getState().setMusicVolume(17);
+    const checkpoint = persistence.checkpoint();
+    const feedback = vi.fn();
+    persistence.afterProgressSaved(feedback);
+    expect(persistence.readProgress().kind).toBe("saving");
+    expect(feedback).not.toHaveBeenCalled();
+    writing.resolve({ ok: true });
+    expect(await checkpoint).toBe("saved");
+    expect(feedback).toHaveBeenCalledOnce();
+  } finally {
+    writing.resolve({ ok: true });
+    await session.dispose();
+  }
+});
+
+it("an older checkpoint cannot acknowledge a newer checkpoint with the same gameplay revision", async () => {
+  const firstWrite = deferred<{ ok: true }>();
+  const secondWrite = deferred<{ ok: true }>();
+  let count = 0;
+  const session = createGameSession({
+    saveBackend: createSaveBackend({
+      write: () => (++count === 1 ? firstWrite.promise : secondWrite.promise),
+    }),
+  });
+  const persistence = createSessionPersistence(session);
+  try {
+    const first = persistence.checkpoint();
+    await Promise.resolve();
+    sessionRuntime(session).settings.getState().setMusicVolume(17);
+    const second = persistence.checkpoint();
+    const feedback = vi.fn();
+    persistence.afterProgressSaved(feedback);
+    firstWrite.resolve({ ok: true });
+    await first;
+    expect(persistence.readProgress().kind).toBe("saving");
+    expect(feedback).not.toHaveBeenCalled();
+    secondWrite.resolve({ ok: true });
+    expect(await second).toBe("saved");
+    expect(feedback).toHaveBeenCalledOnce();
+  } finally {
+    firstWrite.resolve({ ok: true });
+    secondWrite.resolve({ ok: true });
+    await session.dispose();
+  }
+});
+
+it("holds remaining completion feedback when an earlier callback starts another checkpoint", async () => {
+  const secondWrite = deferred<{ ok: true }>();
+  let writes = 0;
+  const session = createGameSession({
+    saveBackend: createSaveBackend({ write: async () => (++writes === 1 ? { ok: true } : secondWrite.promise) }),
+  });
+  const persistence = createSessionPersistence(session);
+  const events: string[] = [];
+  let next: Promise<unknown> = Promise.resolve();
+  try {
+    const first = persistence.checkpoint();
+    persistence.afterProgressSaved(() => {
+      events.push("first");
+      next = persistence.checkpoint();
+      persistence.afterProgressSaved(() => events.push("nested"));
+    });
+    persistence.afterProgressSaved(() => events.push("second"));
+    expect(await first).toBe("saved");
+    expect(persistence.readProgress().kind).toBe("saving");
+    expect(events).toEqual(["first"]);
+    secondWrite.resolve({ ok: true });
+    await next;
+    expect(events).toEqual(["first", "second", "nested"]);
+  } finally {
+    secondWrite.resolve({ ok: true });
+    await session.dispose();
   }
 });

@@ -20,7 +20,7 @@ describe("opening draws and lethal Archery hits", () => {
     expect(state.pendingHandCards).toEqual([older]);
   });
 
-  it("does not spend battle RNG on an extra Archery hit after the first hit kills", () => {
+  it("does not spend battle RNG on an Archery rider after the hit kills", () => {
     const card = makeTestCard({
       tags: ["archery"],
       effects: [{ kind: "damage", damageType: "physical", amount: 4, lifesteal: true }],
@@ -32,12 +32,12 @@ describe("opening draws and lethal Archery hits", () => {
       enemyHealth: 2,
       playerHealth: 10,
       playerMaxHealth: 40,
-      talentEffects: { archeryPlayTwiceChance: 50 },
+      talentEffects: { archeryBleedDamageChance: 50 },
     });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.enemyHealth).toBe(0);
     expect(result.state.playerHealth).toBe(12);
-    // The attack rolls Dodge and Crit; a defeated target cannot roll Split Shot.
+    // The attack rolls Dodge and Crit; a defeated target cannot roll Broadhead.
     expect(rng).toHaveBeenCalledTimes(2);
     expect(result.combatTexts.filter((event) => event.target === "enemy" && event.stat === "physical")).toEqual([
       expect.objectContaining({ kind: "damage", amount: 4 }),

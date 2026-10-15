@@ -3,7 +3,6 @@ import { describe, it, expect } from "vitest";
 import { ActiveRunDataSchema } from "@/lib/validation";
 import { createMixedPotion } from "@/lib/alchemist";
 import { cardById } from "@/lib/game-data";
-import { applyWishEffect } from "@/lib/battle/wish";
 import { defaultBattleState } from "@/lib/battle";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { createSeededRng } from "@/lib/rng";
@@ -32,14 +31,7 @@ describe("ActiveRunDataSchema normalize", () => {
       }),
     });
     const battle = savedActivityData(result, "battle")!.battleState;
-    const next = applyWishEffect(
-      { ...battle, rng: () => 0.99, talentEffects: { ...battle.talentEffects, wishGemsGold: 2 } },
-      undefined,
-      1,
-      [],
-    );
-    expect(next.pendingMaterials.gems).toBe(2);
-    expect(next.gold).toBe(battle.gold);
+    expect(battle.contentSystemType).toBe("campaign");
   });
 
   it("preserves generated Mixed Potions in the run and every battle pile on resume", () => {

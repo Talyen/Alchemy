@@ -77,32 +77,45 @@ export function preferredAutoplayEnabled(fields: {
 // Live writes clamp through the shared settings-values helpers (the same
 // ranges the save schema enforces on load), so in-memory state can never hold
 // an out-of-range value that load would silently repair.
-export function createSettingsStore(isActive: () => boolean = () => true) {
-  const store = createStore<SettingsStore>()((set) => ({
-    ...createDefaultSettingsSaveFields(),
+export function createSettingsStore(
+  isActive: () => boolean = () => true,
+  track: (cleanup: () => void) => () => void = (cleanup) => cleanup,
+) {
+  const assertActive = () => {
+    if (!isActive()) throw new Error("Game session is disposed or invalid");
+  };
+  const store = createStore<SettingsStore>()((publish) => {
+    const set = (change: Partial<SettingsStore> | ((state: SettingsStore) => Partial<SettingsStore>)) => {
+      assertActive();
+      // Settings actions always merge a field patch; replacement stays private.
+      publish(change);
+    };
+    return {
+      ...createDefaultSettingsSaveFields(),
 
-    setDisplayMode: (displayMode) => set({ displayMode }),
-    setBrightness: (brightness) => set({ brightness: clampBrightnessPct(brightness) }),
-    setBackgroundParticlesIntensity: (backgroundParticlesIntensity) =>
-      set({ backgroundParticlesIntensity: clampSpecialEffectsPct(backgroundParticlesIntensity) }),
-    setBackgroundGlowIntensity: (backgroundGlowIntensity) =>
-      set({ backgroundGlowIntensity: clampSpecialEffectsPct(backgroundGlowIntensity) }),
-    setMusicVolume: (musicVolume) => set({ musicVolume: clampVolumePct(musicVolume) }),
-    setSfxVolume: (sfxVolume) => set({ sfxVolume: clampVolumePct(sfxVolume) }),
-    setMasterVolume: (masterVolume) => set({ masterVolume: clampVolumePct(masterVolume) }),
-    setMuteInBackground: (muteInBackground) => set({ muteInBackground }),
-    setBossLyricsEnabled: (bossLyricsEnabled) => set({ bossLyricsEnabled }),
-    setAutoEndTurn: (autoEndTurn) => set({ autoEndTurn }),
-    setRememberAutoplayPreference: (rememberAutoplayPreference) =>
-      set((state) => ({
-        rememberAutoplayPreference,
-        // Intentional: turning remember off clears the stored autoplay choice
-        // (pinned by profile-settings-stores test), it does not pause it.
-        autoplayEnabled: rememberAutoplayPreference ? state.autoplayEnabled : false,
-      })),
-    setAutoplayEnabled: (autoplayEnabled) => set({ autoplayEnabled }),
-    resetToDefaults: () => set({ ...createDefaultSettingsSaveFields() }),
-  }));
+      setDisplayMode: (displayMode) => set({ displayMode }),
+      setBrightness: (brightness) => set({ brightness: clampBrightnessPct(brightness) }),
+      setBackgroundParticlesIntensity: (backgroundParticlesIntensity) =>
+        set({ backgroundParticlesIntensity: clampSpecialEffectsPct(backgroundParticlesIntensity) }),
+      setBackgroundGlowIntensity: (backgroundGlowIntensity) =>
+        set({ backgroundGlowIntensity: clampSpecialEffectsPct(backgroundGlowIntensity) }),
+      setMusicVolume: (musicVolume) => set({ musicVolume: clampVolumePct(musicVolume) }),
+      setSfxVolume: (sfxVolume) => set({ sfxVolume: clampVolumePct(sfxVolume) }),
+      setMasterVolume: (masterVolume) => set({ masterVolume: clampVolumePct(masterVolume) }),
+      setMuteInBackground: (muteInBackground) => set({ muteInBackground }),
+      setBossLyricsEnabled: (bossLyricsEnabled) => set({ bossLyricsEnabled }),
+      setAutoEndTurn: (autoEndTurn) => set({ autoEndTurn }),
+      setRememberAutoplayPreference: (rememberAutoplayPreference) =>
+        set((state) => ({
+          rememberAutoplayPreference,
+          // Intentional: turning remember off clears the stored autoplay choice
+          // (pinned by profile-settings-stores test), it does not pause it.
+          autoplayEnabled: rememberAutoplayPreference ? state.autoplayEnabled : false,
+        })),
+      setAutoplayEnabled: (autoplayEnabled) => set({ autoplayEnabled }),
+      resetToDefaults: () => set({ ...createDefaultSettingsSaveFields() }),
+    };
+  });
   type Listener = (state: SettingsStore, previous: SettingsStore) => void;
   const notifications = createNotificationChannel<Parameters<Listener>>((error) => {
     logError("Settings subscriber failed", "other", undefined, undefined, undefined, error);
@@ -115,11 +128,22 @@ export function createSettingsStore(isActive: () => boolean = () => true) {
     if (!installing) notify(state, previous);
   });
   return {
-    ...store,
-    subscribe: notifications.subscribe,
+    getState: () => {
+      assertActive();
+      return store.getState();
+    },
+    getInitialState: () => {
+      assertActive();
+      return store.getInitialState();
+    },
+    subscribe: (listener: Listener) => {
+      assertActive();
+      return track(notifications.subscribe(listener));
+    },
     // Restore installs both stores and arms save protection before either
     // store's subscribers can snapshot or render the replacement.
     commitHydration(fields: SettingsSaveFields, prepareObservers: () => void) {
+      assertActive();
       const previous = store.getState();
       installing = true;
       try {

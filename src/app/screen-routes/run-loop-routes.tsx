@@ -26,8 +26,8 @@ import { useBattleScreenRouteData } from "@/app/screen-routes/use-battle-screen-
 import { useBattlePlayback } from "@/app/screen-routes/use-battle-playback";
 import { MysteryScreenRoute } from "@/app/screen-routes/mystery-screen-route";
 import { useRunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
-import { useHomesteadEffects, useTalentEffects } from "@/features/alchemy/shared/stores/use-run-reads";
-import { getCampfireHealFraction } from "@/lib/campfire-heal";
+import { useHomesteadEffects } from "@/features/alchemy/shared/stores/use-run-reads";
+import { CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
 
 function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: BattleRouteCtx) {
@@ -161,8 +161,7 @@ function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.destinations;
   const r = useRunScreenData("campfire");
   const healingBonus = useHomesteadEffects().homesteadHealing;
-  const talentEffects = useTalentEffects();
-  const healFraction = labyrinthCampfireHealing(getCampfireHealFraction(talentEffects.campfireHealBonus), r.modifiers);
+  const healFraction = labyrinthCampfireHealing(CAMPFIRE_HEAL_FRACTION, r.modifiers);
   return (
     <CampfireScreen
       playerHealth={r.runPlayerHealth}
@@ -172,7 +171,6 @@ function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
       modifiers={r.modifiers}
       runDeck={r.runDeck}
       visit={r.visit}
-      potency={talentEffects.potionMixPotency}
       afterProgressSaved={routeCommands.progress.afterSaved}
       isProgressSavePending={routeCommands.progress.isPending}
       onRest={commands.rest}
@@ -197,7 +195,7 @@ function CardShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
       purchasedSlotKeys={r.shopState.purchasedSlotKeys}
       getPrice={commands.getCardBuyPrice}
       removePrice={commands.getRemoveCardPrice()}
-      refreshPrice={commands.getRefreshPrice(r.shopState.refreshesLeft, undefined, r.shopState.freeRefreshUsed)}
+      refreshPrice={commands.getRefreshPrice()}
       onBuy={commands.buyCard}
       onRemoveCard={commands.removeCard}
       onRefresh={commands.refresh}
@@ -210,7 +208,6 @@ function AlchemistShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.shop.alchemist;
   const onContinue = () => routeCommands.runLoop.shop.continue("alchemist");
   const r = useRunScreenData("alchemist");
-  const potency = useTalentEffects().potionMixPotency;
   return (
     <AlchemistShopScreen
       afterProgressSaved={routeCommands.progress.afterSaved}
@@ -223,16 +220,11 @@ function AlchemistShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
       purchasedSlotKeys={r.alchemistState.purchasedSlotKeys}
       getPrice={commands.getPotionBuyPrice}
       mixPrice={commands.getMixPrice()}
-      refreshPrice={commands.getRefreshPrice(
-        r.alchemistState.refreshesLeft,
-        undefined,
-        r.alchemistState.freeRefreshUsed,
-      )}
+      refreshPrice={commands.getRefreshPrice()}
       onBuy={commands.buyPotion}
       onRefresh={commands.refresh}
       onMixPotions={commands.mixPotions}
       onStrengthenPotion={commands.strengthenPotion}
-      potency={potency}
       onContinue={onContinue}
     />
   );
@@ -250,11 +242,7 @@ function TrinketShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
       refreshesLeft={r.trinketShopState.refreshesLeft}
       purchasedSlotKeys={r.trinketShopState.purchasedSlotKeys}
       getPrice={commands.getBuyPrice}
-      refreshPrice={commands.getRefreshPrice(
-        r.trinketShopState.refreshesLeft,
-        undefined,
-        r.trinketShopState.freeRefreshUsed,
-      )}
+      refreshPrice={commands.getRefreshPrice()}
       onBuy={commands.buy}
       onRefresh={commands.refresh}
       onContinue={onContinue}
@@ -274,11 +262,7 @@ function EquipmentShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
       refreshesLeft={r.equipmentShopState.refreshesLeft}
       purchasedSlotKeys={r.equipmentShopState.purchasedSlotKeys}
       getPrice={commands.getBuyPrice}
-      refreshPrice={commands.getRefreshPrice(
-        r.equipmentShopState.refreshesLeft,
-        undefined,
-        r.equipmentShopState.freeRefreshUsed,
-      )}
+      refreshPrice={commands.getRefreshPrice()}
       onBuy={commands.buy}
       onRefresh={commands.refresh}
       onContinue={onContinue}

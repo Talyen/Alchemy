@@ -65,7 +65,7 @@ describe("useAppAudioEffects mute-in-background", () => {
     battleActive.value = false;
     battleActive.enemyId = "skeleton";
     battleActive.enemyType = "normal";
-    useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+    useSettingsStore.getState().resetToDefaults();
     vi.mocked(setMuted).mockClear();
     vi.mocked(setMasterVolume).mockClear();
     vi.mocked(setMusicVolume).mockClear();

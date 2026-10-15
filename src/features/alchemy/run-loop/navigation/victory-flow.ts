@@ -13,8 +13,6 @@ import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-tra
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import {
   BOSS_GOLD_BONUS_FRACTION,
-  COMPANION_GOLD_FIND_CHANCE_FRACTION,
-  COMPANION_GOLD_MULTIPLIER,
   ELITE_GOLD_BONUS_FRACTION,
   ENEMY_TRAIT_IDS,
   GOLD_REWARD_MAX,
@@ -81,7 +79,6 @@ export interface VictoryRewardsResult {
 
   persistedGold: number;
   playerHealth: number;
-  maxHealthDelta: number;
   destinationOfferState: DestinationOfferState;
 }
 
@@ -94,7 +91,7 @@ interface VictoryGoldRoll {
 }
 
 function victoryGoldPerCombat(talentEffects: TalentEffectManifest, battleState: BattleSnapshot): number {
-  return talentEffects.goldPerCombat + (battleState.activeCompanion ? talentEffects.companionVictoryGold : 0);
+  return battleState.activeCompanion ? talentEffects.companionVictoryGold : 0;
 }
 
 function rollVictoryGold(
@@ -106,22 +103,12 @@ function rollVictoryGold(
   const baseGold = Math.floor(rng() * (GOLD_REWARD_MAX - GOLD_REWARD_MIN + 1) + GOLD_REWARD_MIN);
   let gold = Math.round(baseGold * (1 + talentEffects.enemyGoldDropBonus));
 
-  if (
-    talentEffects.companionGoldFindActive &&
-    battleState.activeCompanion &&
-    rng() < COMPANION_GOLD_FIND_CHANCE_FRACTION
-  ) {
-    gold = Math.round(gold * COMPANION_GOLD_MULTIPLIER);
-  }
-
   if (battleState.currentEnemy.traits?.some((t) => t.id === ENEMY_TRAIT_IDS.GOLD_TROVE)) {
     gold = Math.round(gold * GOLD_TROVE_REWARD_MULTIPLIER);
   }
 
-  const eliteFraction =
-    ELITE_GOLD_BONUS_FRACTION +
-    (battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE ? talentEffects.eliteGoldDropBonus : 0);
-  const eliteBonus = battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE ? Math.round(gold * eliteFraction) : 0;
+  const eliteBonus =
+    battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE ? Math.round(gold * ELITE_GOLD_BONUS_FRACTION) : 0;
   const bossBonus =
     battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS ? Math.round(gold * BOSS_GOLD_BONUS_FRACTION) : 0;
   const generousBonus = getGenerousGoldBonus(labyrinthRewardModifiers, gold);
@@ -208,27 +195,24 @@ function computeVictorySettlement(
     herbalist: labyrinthRewardModifiers.includes("herbalist"),
     rng,
   });
-  const maxHealthDelta = Math.max(0, talentEffects.maxHealthPerCombat);
-  const effectiveMaxHealth = input.runMaxHealth + maxHealthDelta;
   const wellProvisionedHealing =
     input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD
       ? 0
-      : getWellProvisionedHealing(labyrinthRewardModifiers, effectiveMaxHealth);
+      : getWellProvisionedHealing(labyrinthRewardModifiers, input.runMaxHealth);
   const baseVictoryHealing = wellProvisionedHealing + Math.max(0, talentEffects.healthRestorePerCombat);
   const victoryHealing = baseVictoryHealing + (baseVictoryHealing > 0 ? talentEffects.homesteadHealing : 0);
   const playerHealth =
     input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD || victoryHealing > 0
-      ? Math.min(effectiveMaxHealth, input.battleState.playerHealth + victoryHealing)
+      ? Math.min(input.runMaxHealth, input.battleState.playerHealth + victoryHealing)
       : input.battleState.playerHealth;
 
-  return { goldResult, materials, playerHealth, maxHealthDelta, effectiveMaxHealth };
+  return { goldResult, materials, playerHealth };
 }
 
 function prepareVictoryDestinations(
   input: VictoryRewardsInput,
   playerHealth: number,
   persistedGold: number,
-  effectiveMaxHealth: number,
   destinationRng: () => number,
 ) {
   if (input.contentSystemType === CONTENT_SYSTEMS.LABYRINTH)
@@ -237,7 +221,7 @@ function prepareVictoryDestinations(
     ...input.destinationEligibility,
     runPlayerHealth: playerHealth,
     gold: persistedGold,
-    runMaxHealth: effectiveMaxHealth,
+    runMaxHealth: input.runMaxHealth,
   });
   return sampleDestinationChoices(eligibleDestinations, input.destinationOfferState, destinationRng);
 }
@@ -266,7 +250,6 @@ export function computeVictoryRewards(
     goldEarned: settlement.goldResult.earnedBeforeMultiplier,
     persistedGold: settlement.goldResult.persistedGold,
     playerHealth: settlement.playerHealth,
-    maxHealthDelta: settlement.maxHealthDelta,
   };
   const goldPayout = settlement.goldResult.persistedGold - input.purseGold;
   if (input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
@@ -294,7 +277,6 @@ export function computeVictoryRewards(
     input,
     settlement.playerHealth,
     settlement.goldResult.persistedGold,
-    settlement.effectiveMaxHealth,
     destinationRng,
   );
   const destinations = sampled.choices;

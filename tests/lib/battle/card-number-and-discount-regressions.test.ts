@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { cardById, cardLibrary, BattleCardEffectSchema } from "@/lib/game-data";
+import { cardById, BattleCardEffectSchema } from "@/lib/game-data";
 import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corruption/numeric";
-import { buildWishOptions } from "@/lib/battle/wish";
+import { upgradeWishCard } from "@/lib/battle/wish-upgrade";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { addCorruptionEffect } from "@/lib/corruption/card-edits";
@@ -49,11 +49,7 @@ describe("card number and discount regressions", () => {
   });
 
   it("Powerful Wish upgrades Tithe's fixed damage and Gold values", () => {
-    const state = patchBattleState({
-      talentEffects: { wishCardsUpgraded: true, wishExtraChoices: cardLibrary.length },
-      rng: () => 0.99,
-    });
-    const tithe = buildWishOptions(state, cardById.wish!).find((card) => card.id === "tithe")!;
+    const tithe = upgradeWishCard(cardById.tithe!);
     expect(tithe.descriptionLines).toEqual(["Deal 3 Holy damage", "Gain 2 Gold"]);
     expect(tithe.effects).toEqual([
       { kind: "damage", damageType: "holy", amount: 3 },

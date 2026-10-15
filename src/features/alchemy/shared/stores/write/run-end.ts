@@ -1,4 +1,3 @@
-import { settlePendingBattleMaterials } from "./run-battle";
 import { awardRunBoard } from "./boards";
 import { characters, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
 import type { RunRecap } from "@/lib/active-run-session";
@@ -46,7 +45,6 @@ export function settleRunEnd(draft: GameplayDraft, ending: RunRecap["ending"]): 
     isCharacterUnlocked(id, draft.profile.finishedRunCharacters),
   );
 
-  if (session.activity.kind === "battle") settlePendingBattleMaterials(draft);
   awardRunBoard(draft, ending);
   captureRunEndResources(draft);
   captureRunRecap(draft, ending);

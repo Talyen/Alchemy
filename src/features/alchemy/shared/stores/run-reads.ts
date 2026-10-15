@@ -82,13 +82,14 @@ export function readRunPhase(gameSession: GameSession): RunPhase {
 
 export function selectAutosaveAllowed(
   state: {
-    battle: { hasActiveBattle: boolean; battleState: { enemyHealth: number } };
+    battle: { hasActiveBattle: boolean; battleState: Pick<BattleSnapshot, "enemyHealth" | "wishOptions"> };
   },
   screen: Screen,
 ): boolean {
   const phase = getRunPhase(screen, state.battle.hasActiveBattle);
   if (phase === "runEnd") return false;
-  if (phase === "battle" && state.battle.battleState.enemyHealth <= 0) return false;
+  if (phase === "battle" && state.battle.battleState.enemyHealth <= 0 && !state.battle.battleState.wishOptions)
+    return false;
 
   return true;
 }
@@ -115,7 +116,6 @@ export function selectCardInspectionData(state: GameplayState) {
     discardPile: battle.discard,
     talentEffects: battle.talentEffects,
     companionDamageBonus: companionModifiers.damageBonus,
-    companionBleedDamageBonus: companionModifiers.bleedDamageBonus,
     companionDamageMultiplier: companionModifiers.damageMultiplier,
   };
 }

@@ -145,11 +145,10 @@ export function useCardInspection({
       ...data.talentEffects,
       companionDamageModifiers: {
         damageBonus: data.companionDamageBonus,
-        bleedDamageBonus: data.companionBleedDamageBonus,
         damageMultiplier: data.companionDamageMultiplier,
       },
     }),
-    [data.talentEffects, data.companionDamageBonus, data.companionBleedDamageBonus, data.companionDamageMultiplier],
+    [data.talentEffects, data.companionDamageBonus, data.companionDamageMultiplier],
   );
 
   return {

@@ -5,7 +5,6 @@ declare global {
   interface Window {
     alchemyDesktop?: AlchemyDesktopApi;
     __alchemySplashWordTimer?: number;
-    __alchemySplashWordIndex?: number;
   }
 }
 

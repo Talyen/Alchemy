@@ -21,9 +21,9 @@ const {
 } = require("./security.cjs");
 const { initializeMainSentry } = require("./sentry.cjs");
 const { resolveEdition, editionPolicy } = require("../game-edition.mjs");
+const { createDesktopSaveStorage, registerSaveShutdown } = require("./save-storage.cjs");
+const { createSteamCloudStorage } = require("./steam-cloud-storage.cjs");
 const { createDemoProgressBridge, stampSaveOwner } = require("./demo-progress.cjs");
-const { readCloudSave } = require("./cloud-save.cjs");
-const { createLocalSaveStore, registerSaveShutdown } = require("./local-save-store.cjs");
 const TEST_PROFILE_ISOLATED =
   app.commandLine.hasSwitch("user-data-dir") || (!app.isPackaged && Boolean(process.env.ALCHEMY_ELECTRON_TEST_PROFILE));
 // Background automation is restricted to isolated development profiles.
@@ -80,13 +80,22 @@ const demoProgress = createDemoProgressBridge({
   edition: EDITION,
 });
 
-const localSaves = createLocalSaveStore({
+const saveStorage = createDesktopSaveStorage({
   slots: SAVE_SLOTS,
+  demoProgress,
   isSavePayload,
-  stampSave: (data) => stampSaveOwner(data, steamClient),
-  beforeClear: () => demoProgress.complete({ localOnly: true }),
+  stampOwner: (data) => stampSaveOwner(data, steamClient),
 });
-registerSaveShutdown(app, localSaves);
+
+registerSaveShutdown(app, saveStorage);
+
+const steamCloudStorage = createSteamCloudStorage({
+  resolveSlot: resolveSaveSlot,
+  getSteam: () => steamClient,
+  isSavePayload,
+  stampOwner: stampSaveOwner,
+  maxPayloadBytes: MAX_SAVE_PAYLOAD_BYTES,
+});
 
 if (!USE_PACKAGED_RENDERER) parseDevServerUrl(DEV_SERVER_URL);
 
@@ -195,8 +204,8 @@ function resolveSaveSlot(slot) {
 }
 
 function registerIpcHandlers() {
-  handleAuthorized("alchemy:demo-import-source", () => demoProgress.readSource());
-  handleAuthorized("alchemy:demo-initialization", () => demoProgress.complete());
+  handleAuthorized("alchemy:demo-import-source", saveStorage.readDemoImportSource);
+  handleAuthorized("alchemy:demo-initialization", saveStorage.completeDemoInitialization);
   handleAuthorized("alchemy:wishlist", () =>
     openWishlist({
       appId: app.isPackaged ? metadata.fullGameSteamAppId : process.env.STEAM_APP_ID,
@@ -211,43 +220,18 @@ function registerIpcHandlers() {
   });
 
   handleAuthorized("alchemy:list-save-candidates", async (slot) => {
-    const result = await localSaves.read(slot);
+    const result = await saveStorage.read(slot);
     if (result.localReadFailed) throw new Error("Save candidates could not be read completely");
     return result.candidates;
   });
-  handleAuthorized("alchemy:read-save-slot", localSaves.read);
+  handleAuthorized("alchemy:read-save-slot", saveStorage.read);
 
-  handleAuthorized("alchemy:write-save", localSaves.write);
-  handleAuthorized("alchemy:clear-save", localSaves.clear);
+  handleAuthorized("alchemy:write-save", saveStorage.write);
+  handleAuthorized("alchemy:clear-save", saveStorage.clear);
 
-  handleAuthorized("alchemy:steam-cloud-read", async (slot) => {
-    const { name } = resolveSaveSlot(slot);
-    return readCloudSave(steamClient, name, MAX_SAVE_PAYLOAD_BYTES);
-  });
-
-  handleAuthorized("alchemy:steam-cloud-write", async (data, slot) => {
-    const { name } = resolveSaveSlot(slot);
-    if (!steamClient || !isSavePayload(data)) return false;
-    const stamped = stampSaveOwner(data, steamClient);
-    if (!isSavePayload(stamped)) return false;
-    try {
-      return await steamClient.cloud.writeFile(name, stamped);
-    } catch (error) {
-      console.error("[save] Error writing Steam Cloud save:", error);
-      return false;
-    }
-  });
-
-  handleAuthorized("alchemy:steam-cloud-delete", async (slot) => {
-    const { name } = resolveSaveSlot(slot);
-    if (!steamClient) return false;
-    try {
-      return steamClient.cloud.fileExists(name) ? steamClient.cloud.deleteFile(name) : true;
-    } catch (error) {
-      console.error("[save] Error deleting Steam Cloud save:", error);
-      return false;
-    }
-  });
+  handleAuthorized("alchemy:steam-cloud-read", steamCloudStorage.read);
+  handleAuthorized("alchemy:steam-cloud-write", steamCloudStorage.write);
+  handleAuthorized("alchemy:steam-cloud-delete", steamCloudStorage.remove);
 
   handleAuthorized("alchemy:steam-get-name", () => {
     try {

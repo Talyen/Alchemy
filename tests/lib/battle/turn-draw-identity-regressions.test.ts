@@ -26,17 +26,38 @@ describe("queued Returning Flight discounts", () => {
     expect(played.mana).toBe(0);
     expect(played.uniqueGear.returningFlightUids).toEqual([]);
   });
-  it("retains older queued discounts alongside a later recovery and expires discarded ones", () => {
+  it("keeps an earlier queued discount when another Archery card is recovered next turn", () => {
     const state = regressionBattle({
-      hand: Array.from({ length: 7 }, (_, i) => arrow(i)),
-      pendingHandCards: [arrow(11)],
-      discard: [arrow(12), arrow(13)],
+      hand: Array.from({ length: 7 }, (_, i) => ({ ...arrow(i), consume: false })),
+      pendingHandCards: Array.from({ length: 15 }, (_, i) => arrow(100 + i)),
+      discard: [arrow(12)],
+      nextCardUid: 200,
+      gearEffects: { recoverLastArcheryCard: 1 },
+      uniqueGear: { lastArcheryUid: 12 },
+      enemyCC: { stunSkipTurns: 3 },
+    });
+    const firstTurn = advanceToPlayerTurn(state);
+    const firstUid = firstTurn.uniqueGear.returningFlightUids[0]!;
+    const played = playBattleCardResolved(firstTurn, firstTurn.hand[0]!.id, 0).state;
+    const next = endPlayerTurn(played).state;
+    expect(next.uniqueGear.returningFlightUids).toHaveLength(2);
+    expect(next.uniqueGear.returningFlightUids).toContain(firstUid);
+    for (const uid of next.uniqueGear.returningFlightUids) {
+      const recovered = next.pendingHandCards.find((card) => card.uid === uid)!;
+      expect(recovered).toBeDefined();
+      expect(computeEffectiveCost(next, recovered).effectiveCost).toBe(1);
+    }
+  });
+
+  it("expires a discarded discount even if an ordinary draw returns the card", () => {
+    const state = regressionBattle({
+      discard: [arrow(13)],
       nextCardUid: 20,
       gearEffects: { recoverLastArcheryCard: 1 },
-      uniqueGear: { returningFlightUids: [11, 13], lastArcheryUid: 12 },
+      uniqueGear: { returningFlightUids: [13] },
     });
     const next = advanceToPlayerTurn(state);
-    expect(next.uniqueGear.returningFlightUids).toEqual([11, next.pendingHandCards.at(-1)!.uid]);
-    expect(next.pendingHandCards.map((card) => computeEffectiveCost(next, card).effectiveCost)).toEqual([1, 2, 1]);
+    expect(next.uniqueGear.returningFlightUids).toEqual([]);
+    expect(computeEffectiveCost(next, next.hand[0]!).effectiveCost).toBe(2);
   });
 });

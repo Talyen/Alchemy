@@ -133,7 +133,11 @@ export function BattleEndTurnButton({
       <ConfirmationDialog
         open={open}
         title="End turn?"
-        description="Discard your hand and let the enemy act."
+        description={
+          battleState.playerStatuses.haste > 0
+            ? "Discard your hand and take another turn."
+            : "Discard your hand and let the enemy act."
+        }
         confirmLabel="End Turn"
         tone="default"
         icon={CircleArrowRight}

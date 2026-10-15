@@ -54,7 +54,7 @@ function mutateSession(session: GameSession, mutate: (draft: GameplayDraft) => v
 }
 
 beforeEach(() => {
-  useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+  useSettingsStore.getState().resetToDefaults();
   useUiStore.getState().setShowClearSaveConfirm(false);
   resetRunDomainStore();
 });

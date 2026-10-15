@@ -9,18 +9,13 @@ function addNumericEffect(current: number, added: number): number {
   return Number.isInteger(sum) ? sum : Math.round(sum * 10000) / 10000;
 }
 
-function addCardHealBonuses(base: Record<string, number>, added: Record<string, number> = {}): void {
-  for (const [id, amount] of Object.entries(added)) base[id] = (base[id] ?? 0) + amount;
-}
-
 function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<HomesteadEffectManifest>): void {
   if (!partial) return;
-  const { cardHealBonus, companionBondLevels, ...numericEffects } = partial;
+  const { companionBondLevels, ...numericEffects } = partial;
   for (const key of Object.keys(numericEffects) as Array<keyof typeof numericEffects>) {
     const amount = numericEffects[key];
     if (typeof amount === "number") base[key] = addNumericEffect(base[key], amount);
   }
-  addCardHealBonuses(base.cardHealBonus, cardHealBonus);
   if (companionBondLevels) {
     const bonds = base.companionBondLevels;
     for (const id of Object.keys(companionBondLevels) as CompanionId[]) {
@@ -52,7 +47,6 @@ export function computeHomesteadEffects(
   const effects: HomesteadEffectManifest = {
     ...defaultHomesteadEffects,
     companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels },
-    cardHealBonus: { ...defaultHomesteadEffects.cardHealBonus },
   };
 
   applyItemTiers(effects, buildings, constructedBuildings);
@@ -74,7 +68,6 @@ export function mergeIntoManifest(
 ): TalentEffectManifest {
   const merged: TalentEffectManifest = {
     ...talentEffects,
-    cardHealBonus: { ...talentEffects.cardHealBonus },
     companionBondLevels: { ...talentEffects.companionBondLevels },
   };
 
@@ -82,7 +75,6 @@ export function mergeIntoManifest(
     merged[key] = addNumericEffect(merged[key], homesteadEffects[key]);
   }
 
-  addCardHealBonuses(merged.cardHealBonus, homesteadEffects.cardHealBonus);
   for (const id of Object.keys(homesteadEffects.companionBondLevels) as CompanionId[]) {
     merged.companionBondLevels[id] = Math.max(
       merged.companionBondLevels[id] ?? 0,

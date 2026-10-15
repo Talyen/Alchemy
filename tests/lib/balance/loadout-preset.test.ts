@@ -33,7 +33,6 @@ describe("resolveSimLoadout", () => {
     const first = resolveSimLoadout(options);
     const expected = structuredClone(first);
     first.homesteadCombat.companionBondLevels.wolf = 999;
-    first.homesteadCombat.cardHealBonus.apple = 999;
     first.gearEffects.maxHealth = 999;
     first.coreTrinketIds.push("meteorite");
     expect(resolveSimLoadout(options)).toEqual(expected);

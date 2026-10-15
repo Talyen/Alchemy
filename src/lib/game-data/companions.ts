@@ -91,7 +91,6 @@ export const defaultCompanionBondLevels: Record<CompanionId, number> = Object.fr
 
 export interface CompanionDamageModifiers {
   damageBonus: number;
-  bleedDamageBonus: number;
   damageMultiplier: number;
 }
 
@@ -108,26 +107,7 @@ export function getModifiedCompanionEffects(
   // One walk avoids constructing an intermediate bonded effect tree.
   function scale(effect: BattleCardEffect): BattleCardEffect {
     if (effect.kind === "damage") {
-      const pool = effect.damageTypePool;
-      if (pool?.includes("bleed") && pool.length > 1 && modifiers.bleedDamageBonus !== 0) {
-        // Resolve type-specific amounts through ordinary chance effects so combat
-        // and inspection share the same magnitudes without boosting other types.
-        const { damageTypePool: _pool, ...hit } = effect;
-        const [damageType, ...remaining] = pool;
-        return {
-          kind: "chance",
-          probability: 1 / pool.length,
-          successEffects: [scale({ ...hit, damageType: damageType! })],
-          failureEffects: [
-            scale({
-              ...hit,
-              damageType: remaining[0]!,
-              ...(remaining.length > 1 ? { damageTypePool: remaining } : {}),
-            }),
-          ],
-        };
-      }
-      const bonus = modifiers.damageBonus + (effect.damageType === "bleed" ? modifiers.bleedDamageBonus : 0);
+      const bonus = modifiers.damageBonus;
       return { ...effect, amount: Math.round((effect.amount + amountBond + bonus) * modifiers.damageMultiplier) };
     }
     if (effect.kind === "chance") {

@@ -1,3 +1,4 @@
+import { getCatalogArt } from "./assets";
 import type { BestiaryEntry, TrinketEntry } from "./types";
 
 const ENEMY_SUBTITLES = { boss: "Boss", normal: "Normal", elite: "Elite" } as const;
@@ -12,11 +13,12 @@ export function regeneration(title: string): BestiaryEntry["traits"][number] {
   return trait("regeneration", title, "Restores Health each turn");
 }
 
-type EnemyDefinition = Omit<BestiaryEntry, "subtitle" | "descriptionLines">;
+type EnemyDefinition = Omit<BestiaryEntry, "subtitle" | "descriptionLines" | "art"> & { art?: string };
 
 export function defineEnemy<const T extends EnemyDefinition>(entry: T): BestiaryEntry & T {
   return {
     ...entry,
+    art: entry.art ?? getCatalogArt(entry.id),
     subtitle: ENEMY_SUBTITLES[entry.enemyType],
     descriptionLines: [],
   };

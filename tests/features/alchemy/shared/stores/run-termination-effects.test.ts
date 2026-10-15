@@ -1,6 +1,3 @@
-import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { acceptCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import { createSaveBackend } from "../../../../helpers/save-backend";
 import { afterEach, expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
@@ -153,24 +150,3 @@ it.each(["abandoned", "death", "victory"] as const)(
     expect(readRunSession(session).runEndUnlockedCharacters).toEqual([]);
   },
 );
-
-it.each(["abandoned", "death"] as const)("keeps battle-earned Gems when the run ends by %s", async (ending) => {
-  const { session, controller, bytes, persistence } = start();
-  dispatchGameplayCommand(
-    (draft) => {
-      if (draft.session.activity.kind !== "battle") throw new Error("Expected live battle");
-      draft.session.activity.data.battleState.pendingMaterials.gems = 3;
-      return acceptCommand();
-    },
-    undefined,
-    session,
-  );
-  const end = () => (ending === "abandoned" ? controller.flow.handleAbandonRun() : completeRunDefeat(session));
-  end();
-  expect(readGameplayState(session).runProfile.materialInventory.gems).toBe(3);
-  expect(readRunSession(session).runEndMaterials.gems).toBe(3);
-  end();
-  expect(readGameplayState(session).runProfile.materialInventory.gems).toBe(3);
-  await persistence.waitForWrites();
-  expect(JSON.parse(bytes.get(SAVE_KEY)!).materialInventory.gems).toBe(3);
-});

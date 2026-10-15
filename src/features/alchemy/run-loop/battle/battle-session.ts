@@ -62,6 +62,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
   function checkBattleEnd(state: BattleSnapshot, session: number): boolean {
     if (!isCurrentBattleSession(session)) return false;
     const outcome = getBattleOutcome(state);
+    if (outcome === "victory" && state.wishOptions) return false;
     if (outcome !== null) {
       handleVictoryDefeat(outcome);
       return true;

@@ -8,7 +8,6 @@ export * from "./compendium";
 export * from "./difficulties";
 export * from "./effects";
 export * from "./enemy-abilities";
-export * from "./gear-art.generated";
 export * from "./keywords";
 export * from "./reward-selection";
 export type { TalentEffectManifest } from "./talent-effect-manifest";

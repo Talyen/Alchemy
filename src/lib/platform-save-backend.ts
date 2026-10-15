@@ -27,6 +27,9 @@ interface SaveBackendClearOptions {
 }
 
 type DesktopApi = NonNullable<ReturnType<typeof getDesktopApi>>;
+// Adapters are session-local, but IPC addresses the same physical files. The
+// desktop identity owns ordering across adapters, including clear/read barriers.
+const desktopOperations = new WeakMap<DesktopApi, Promise<void>>();
 const mirrors = new WeakMap<DesktopApi, CloudSaveMirror>();
 function cloudMirror(desktop: DesktopApi) {
   let mirror = mirrors.get(desktop);
@@ -37,6 +40,21 @@ function cloudMirror(desktop: DesktopApi) {
   return mirror;
 }
 
+async function enqueueDesktopOperation<T>(desktop: DesktopApi, operation: () => Promise<T>): Promise<T> {
+  const preceding = desktopOperations.get(desktop) ?? Promise.resolve();
+  const result = preceding.then(operation);
+  const finished = result.then(
+    () => {},
+    () => {},
+  );
+  desktopOperations.set(desktop, finished);
+  try {
+    return await result;
+  } finally {
+    if (desktopOperations.get(desktop) === finished) desktopOperations.delete(desktop);
+  }
+}
+
 async function withDesktopSaveApi<T extends SaveBackendReadResult | SaveBackendWriteResult>(
   operation: (desktop: DesktopApi) => Promise<T>,
 ): Promise<T | { ok: false; error: unknown }> {
@@ -45,7 +63,7 @@ async function withDesktopSaveApi<T extends SaveBackendReadResult | SaveBackendW
     return { ok: false, error: new Error("Desktop save API is unavailable") };
   }
   try {
-    return await operation(desktop);
+    return await enqueueDesktopOperation(desktop, () => operation(desktop));
   } catch (error) {
     return { ok: false, error };
   }
@@ -151,18 +169,18 @@ async function writeDesktopSave(
 }
 
 async function readDemoImportSource(): Promise<DemoImportSource> {
-  return (
-    getDesktopApi()?.readDemoImportSource?.() ?? {
-      initialized: true,
-      fullSaveExists: false,
-      readFailed: false,
-      candidates: [],
-    }
-  );
+  const desktop = getDesktopApi();
+  if (desktop?.readDemoImportSource) {
+    return enqueueDesktopOperation(desktop, () => desktop.readDemoImportSource!());
+  }
+  return { initialized: true, fullSaveExists: false, readFailed: false, candidates: [] };
 }
 
 async function completeDemoInitialization(): Promise<boolean> {
-  return (await getDesktopApi()?.completeDemoInitialization?.()) ?? false;
+  const desktop = getDesktopApi();
+  return desktop?.completeDemoInitialization
+    ? enqueueDesktopOperation(desktop, () => desktop.completeDemoInitialization!())
+    : false;
 }
 
 export function createBrowserSaveBackend(): SaveBackend {

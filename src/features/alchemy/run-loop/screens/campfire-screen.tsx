@@ -21,7 +21,6 @@ export function CampfireScreen({
   modifiers = [],
   runDeck,
   visit,
-  potency,
   onRest,
   onBrew,
   onContinue,
@@ -35,7 +34,6 @@ export function CampfireScreen({
   modifiers?: readonly EncounterRewardTraitId[];
   runDeck: BattleCard[];
   visit: AlchemyVisit;
-  potency: number;
   onRest: () => boolean;
   onBrew: (operation: BrewOperation) => BattleCard | null;
   onContinue: () => void;
@@ -88,7 +86,6 @@ export function CampfireScreen({
               kind={brewKind}
               deck={runDeck}
               offers={visit.offers}
-              potency={potency}
               onConfirm={onBrew}
               isProgressSavePending={isProgressSavePending}
               onBack={() => setBrewing(false)}

@@ -95,7 +95,6 @@ function normalizeTalentEffects(
     }),
   ) as Partial<TalentEffectManifest>;
   const merged = { ...defaults, ...knownSaved };
-  merged.cardHealBonus = normalizeMagnitudeDictionary(merged.cardHealBonus);
   merged.cardHealMultipliers = normalizeMagnitudeDictionary(merged.cardHealMultipliers);
   merged.companionBondLevels = normalizeNonNegativeRecord(defaults.companionBondLevels, merged.companionBondLevels);
   merged.healthThresholdArmor = Array.isArray(merged.healthThresholdArmor)

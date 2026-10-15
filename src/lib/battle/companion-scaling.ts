@@ -23,7 +23,6 @@ export function getBattleCompanionDamageModifiers(state: CompanionScalingState):
       state.trinketEffects.companionDamageBonus +
       state.companionDamageBuff +
       (state.enemyCC.freezeSkipTurns > 0 ? talents.companionVsFrozenBonus : 0),
-    bleedDamageBonus: talents.companionBleedDamageBonus,
     damageMultiplier:
       talents.companionDoubledVsLowHealth &&
       state.enemyHealth < (state.enemyMaxHealth * LOW_HEALTH_THRESHOLD_PERCENT) / PERCENT_DENOMINATOR

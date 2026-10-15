@@ -123,7 +123,7 @@ const ROUTES = Object.freeze([
       "public/apple-touch-icon.png",
       "public/site.webmanifest",
       "src/lib/game-data/assets.generated.ts",
-      "src/lib/game-data/gear-art.generated.ts",
+      "src/lib/game-data/catalog-art.ts",
     ],
     ["related", "assets-check"],
     [doc("Docs/WORKFLOWS-ASSETS.md", null, "asset workflow")],

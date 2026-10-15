@@ -41,62 +41,48 @@ describe("computeHomesteadEffects", () => {
     expect(effects.healthRestorePerCombat).toBe(4);
     expect(effects.startThorns).toBe(2);
     expect(effects.foodFindBonus).toBe(0.6);
-    expect(effects.cardHealBonus).toEqual({});
     expect(effects.companionBondLevels.wolf).toBe(2);
     expect(effects.companionDamage).toBe(0);
 
     effects.foodFindBonus = 99;
     effects.companionBondLevels.wolf = 99;
     const fresh = computeHomesteadEffects({}, {}, {});
-    expect(fresh.cardHealBonus).toEqual({});
     expect(fresh.companionBondLevels.wolf).toBe(0);
   });
 });
 
-it("mergeIntoManifest adds card healing and takes the higher companion bond without mutating either manifest", () => {
+it("mergeIntoManifest adds combat bonuses and takes the higher companion bond without mutating either manifest", () => {
   const talent = {
     ...createEmptyTalentEffectManifest(),
     flatPhysicalDamage: 3,
-    startGold: 10,
     startBlock: 2,
-    campfireHealBonus: 0.1,
   };
   talent.firstBurnCardFree = true;
   talent.armorPhysicalDamagePercent = 100;
-  talent.cardHealBonus = { bread: 3, apple: 1 };
   talent.companionBondLevels.wolf = 3;
   const homestead = {
     ...defaultHomesteadEffects,
     flatPhysicalDamage: 1,
     companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels, wolf: 2 },
     homesteadPotionBonus: 1,
-    cardHealBonus: { bread: 2, potion: 4 },
   };
   const talentBefore = structuredClone(talent);
   const homesteadBefore = structuredClone(homestead);
   const merged = mergeIntoManifest(talent, homestead);
   expect(merged).toMatchObject({
     flatPhysicalDamage: 4,
-    startGold: 10,
     startBlock: 2,
-    campfireHealBonus: 0.1,
     firstBurnCardFree: true,
     armorPhysicalDamagePercent: 100,
     homesteadPotionBonus: 1,
   });
   expect(merged).not.toHaveProperty("endRunFoodPerRoom");
-  expect(merged.cardHealBonus).toEqual({
-    bread: 5,
-    apple: 1,
-    potion: 4,
-  });
+
   expect(merged.companionBondLevels.wolf).toBe(3);
   expect(talent).toEqual(talentBefore);
   expect(homestead).toEqual(homesteadBefore);
-  merged.cardHealBonus.bread = 99;
   merged.companionBondLevels.wolf = 99;
   const withoutBonuses = mergeIntoManifest(talent, defaultHomesteadEffects);
-  withoutBonuses.cardHealBonus.bread = 99;
   withoutBonuses.companionBondLevels.wolf = 99;
   expect(talent).toEqual(talentBefore);
   expect(homestead).toEqual(homesteadBefore);

@@ -7,8 +7,7 @@ import {
   AppBackgroundParticles,
   AppScreenChromeProvider,
   GameMenuOverlay,
-  StartupLoadingScreen,
-  dismissStartupSplash,
+  syncStartupSplash,
   useAlchemyAutosaveFromStores,
   useAppAudioEffects,
   useAppDisplayEffects,
@@ -114,7 +113,6 @@ function AppMainContent({
     () => ({
       companionDamageModifiers: {
         damageBonus: homesteadEffects.companionDamage + talentEffects.companionDamage,
-        bleedDamageBonus: 0,
         damageMultiplier: 1,
       },
       companionBondLevels: homesteadBondedCompanions,
@@ -388,13 +386,11 @@ export default function App() {
   });
 
   useEffect(() => {
-    if (bootstrapResult && initialLoadReady) {
-      dismissStartupSplash();
-    }
-  }, [bootstrapResult, initialLoadReady]);
+    syncStartupSplash(startupProgress, bootstrapResult !== null && initialLoadReady);
+  }, [bootstrapResult, initialLoadReady, startupProgress]);
 
   if (!bootstrapResult || !initialLoadReady) {
-    return <StartupLoadingScreen progress={startupProgress} />;
+    return null;
   }
 
   return (

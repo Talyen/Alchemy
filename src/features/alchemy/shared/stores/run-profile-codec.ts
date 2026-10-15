@@ -9,7 +9,10 @@ import { RUN_PROFILE_SAVE_KEYS, type RunProfileSaveFields } from "./run-profile-
 export type { RunProfileSaveFields } from "./run-profile-save-fields";
 
 function encodeRunProfileSnapshot(snapshot: RunProfileSaveFields): RunProfileSaveFields {
-  return Object.fromEntries(RUN_PROFILE_SAVE_KEYS.map((key) => [key, snapshot[key]])) as RunProfileSaveFields;
+  // Both restore input and standalone encoded fields cross an ownership boundary.
+  return structuredClone(
+    Object.fromEntries(RUN_PROFILE_SAVE_KEYS.map((key) => [key, snapshot[key]])),
+  ) as RunProfileSaveFields;
 }
 
 function createDefaultRunProfileSaveFields(): RunProfileSaveFields {

@@ -32,9 +32,7 @@ export const MUSIC_COPY_CONCURRENCY = resolveAssetConcurrency(4);
 export const VALIDATION_CONCURRENCY = resolveAssetConcurrency(16);
 
 /**
- * Single source of truth for art presets. Content manifests read dimensions
- * through the WIDTH/QUALITY views below; the gear preset is read directly off
- * this table so no second accessor can drift from it.
+ * Single source of truth for complete art presets, including per-image tuning.
  */
 export const ART_PRESETS = Object.freeze({
   board: Object.freeze({ width: 2752, quality: 100 }),
@@ -65,14 +63,6 @@ export const ART_PRESETS = Object.freeze({
   cursor: Object.freeze({ width: 26, quality: 90 }),
   gear: Object.freeze({ width: 420, quality: 82 }),
 });
-
-export const WIDTH = Object.freeze(
-  Object.fromEntries(Object.entries(ART_PRESETS).map(([kind, preset]) => [kind, preset.width])),
-);
-
-export const QUALITY = Object.freeze(
-  Object.fromEntries(Object.entries(ART_PRESETS).map(([kind, preset]) => [kind, preset.quality])),
-);
 
 export const LOUDNORM_FILTER = "loudnorm=I=-16:TP=-1.5:LRA=11";
 export const VORBIS_QUALITY = "4";
@@ -115,6 +105,5 @@ export const MANAGED_DIRS = Object.freeze({
 
 export const GENERATED_OUTPUTS = Object.freeze({
   assets: "src/lib/game-data/assets.generated.ts",
-  gearArt: "src/lib/game-data/gear-art.generated.ts",
   versionMetadata: "src/lib/validation/metadata.generated.ts",
 });

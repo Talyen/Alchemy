@@ -21,6 +21,7 @@ export interface ScreenNavigation {
   resumeTo: (screen: Screen, prepareNavigation?: () => void, immediate?: boolean) => void;
   transition: (screen: Screen, options?: ScreenTransitionOptions) => void;
   cancelPending: () => void;
+  dispose: () => void;
 }
 
 export function createScreenNavigation(
@@ -36,33 +37,45 @@ export function createScreenNavigation(
   gameSession: GameSession,
 ): ScreenNavigation {
   const timers = new TimerGroup(sessionClock(gameSession));
-  // Revision protocol: cancelPending bumps revision and clears timers.
-  // transition snapshots it, runs prepare (which may redirect via a nested
-  // navigateTo and bump revision), then drops the stale outer request.
-  // Explicit domain preparation commits synchronously; only presentation waits.
+  // Every external callback can redirect. A request retains its own revision
+  // across guards, cancellation notifications, preparation, and save completion.
   let revision = 0;
+  let disposed = false;
 
-  function cancelPending() {
-    revision += 1;
+  function invalidatePending() {
+    const invalidation = ++revision;
     timers.clearAll();
     onPendingChange?.(false);
+    return invalidation;
   }
 
-  function transitionTo(screen: Screen, options: ScreenTransitionOptions, resume: boolean, feedback?: UISound) {
+  function cancelPending() {
+    if (!disposed) invalidatePending();
+  }
+
+  function transitionTo(screen: Screen, input: ScreenTransitionOptions, resume: boolean, feedback?: UISound) {
+    if (disposed) return;
+    const entryRevision = revision;
+    const options = bindSessionCapabilities(gameSession, input);
+    const isCurrent = (request: number) => !disposed && revision === request;
     // Guard first (approved): a skipped move stays a silent no-op even on an
     // unusual edge; only unskipped moves validate against the policy table.
     if (options.guard && !options.guard()) return;
+    if (!isCurrent(entryRevision)) return;
     const previousScreen = readScreen();
+    if (!isCurrent(entryRevision)) return;
     if (resume) assertRunResumeTransitionAllowed(previousScreen, screen);
     else assertScreenTransitionAllowed(previousScreen, screen);
-    cancelPending();
-    const requestedRevision = revision;
+    const requestedRevision = invalidatePending();
+    if (!isCurrent(requestedRevision)) return;
     options.prepare?.();
-    if (requestedRevision !== revision) return;
+    if (!isCurrent(requestedRevision)) return;
     if (feedback && previousScreen !== screen) sessionFeedback(gameSession).playUISound(feedback);
+    if (!isCurrent(requestedRevision)) return;
     onPendingChange?.(true);
+    if (!isCurrent(requestedRevision)) return;
     const show = () => {
-      if (requestedRevision !== revision) return;
+      if (disposed || requestedRevision !== revision) return;
       try {
         showScreen(screen);
       } finally {
@@ -70,7 +83,7 @@ export function createScreenNavigation(
       }
     };
     const present = () => {
-      if (requestedRevision !== revision) return;
+      if (disposed || requestedRevision !== revision) return;
       if (options.immediate) show();
       else timers.setTimeout(show, options.delayMs ?? NAVIGATION_DELAY_MS);
     };
@@ -90,13 +103,25 @@ export function createScreenNavigation(
     transitionTo(screen, options, false);
   }
 
-  registerSessionCleanup(gameSession, cancelPending);
-  onRunRestored(cancelPending, gameSession);
-  return bindSessionCapabilities(gameSession, {
+  function dispose() {
+    if (disposed) return;
+    disposed = true;
+    try {
+      invalidatePending();
+    } finally {
+      releaseRestore();
+      releaseSession();
+    }
+  }
+  const releaseRestore = onRunRestored(cancelPending, gameSession);
+  const releaseSession = registerSessionCleanup(gameSession, dispose);
+  const commands: Omit<ScreenNavigation, "dispose"> = bindSessionCapabilities(gameSession, {
     navigateTo: (screen, prepare) => transitionTo(screen, prepare ? { prepare } : {}, false, "navigate"),
     resumeTo: (screen, prepare, immediate = false) =>
       transitionTo(screen, prepare ? { prepare, immediate } : { immediate }, true, "resumeRun"),
     transition,
     cancelPending,
   });
+  // Cleanup releases ownership even when the session has already closed.
+  return Object.freeze({ ...commands, dispose });
 }

@@ -29,6 +29,7 @@ import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared
 import {
   createDraftRunRandomSource,
   setHasActiveRun,
+  setMysteryChosenChoice,
   setGold,
   setDiscoveredCardIds,
   setMaterials as setRunProfileMaterials,
@@ -529,4 +530,31 @@ describe("run-session transaction coordinator", () => {
       }
     }
   });
+});
+
+it("a caught visit-operation failure cannot publish partial activity, Gold or RNG", () => {
+  const before = readGameplayState(defaultGameSession);
+  const failure = new Error("choice construction failed");
+  const afterCommit = vi.fn();
+  expect(() =>
+    dispatchGameplayCommand(
+      (draft) => {
+        setGold(draft, 99);
+        createDraftRunRandomSource(draft, "events")();
+        try {
+          // The visit setter establishes the activity before invoking its updater.
+          setMysteryChosenChoice(draft, () => {
+            throw failure;
+          });
+        } catch {
+          /* A fallback cannot repair a partially applied domain operation. */
+        }
+        return acceptCommand();
+      },
+      { afterCommit },
+      defaultGameSession,
+    ),
+  ).toThrow(failure);
+  expect(readGameplayState(defaultGameSession)).toBe(before);
+  expect(afterCommit).not.toHaveBeenCalled();
 });

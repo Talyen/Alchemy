@@ -112,7 +112,9 @@ export function dispatchGameplayCommand<T>(
   } finally {
     runtime.inCommand = false;
   }
-  if (outcome.kind === "accepted") options?.afterCommit?.(outcome.value);
+  // Publication observers may close this session. Committed data survives,
+  // but a closed owner cannot start new presentation or follow-up commands.
+  if (outcome.kind === "accepted" && runtime.lifetime.isActive()) options?.afterCommit?.(outcome.value);
   return outcome.value;
 }
 

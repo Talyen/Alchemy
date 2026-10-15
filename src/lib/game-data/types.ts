@@ -84,7 +84,7 @@ export interface EnemyTrait {
 // Ordinary effect fields derive from validation; recursive edges remain explicit.
 // Preserve exact optional properties for authored effects (Zod permits undefined).
 type AuthoredEffect<T> = T extends unknown ? { [K in keyof T]: Exclude<T[K], undefined> } : never;
-type TemplateEffect = AuthoredEffect<output<(typeof TEMPLATE_EFFECT_DEFINITIONS)[number]["schema"]>>;
+type TemplateEffect = AuthoredEffect<output<(typeof TEMPLATE_EFFECT_DEFINITIONS)[number]>>;
 export type BattleCardEffect =
   | TemplateEffect
   | { kind: "chance"; probability: number; successEffects: BattleCardEffect[]; failureEffects: BattleCardEffect[] }

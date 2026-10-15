@@ -11,7 +11,6 @@ import { companionLibrary } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { advanceToPlayerTurn, reducePlayerSkipTurns } from "@/lib/battle/player-turn-transition";
-import { applyWishEffect } from "@/lib/battle/wish";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { regressionBattle } from "../../fixtures/battle";
@@ -37,13 +36,7 @@ const rng = () => 0.99;
 describe("playing recovered battles", () => {
   it("repairs broken pending material balances before reward settlement", () => {
     const missing = restore({ pendingMaterials: null });
-    const wished = applyWishEffect(
-      { ...missing, rng, talentEffects: { ...missing.talentEffects, wishGemsGold: 2 } },
-      undefined,
-      1,
-      [],
-    );
-    expect(wished.pendingMaterials).toEqual({ ...emptyInventory(), gems: 2 });
+    expect(missing.pendingMaterials).toEqual(emptyInventory());
     const partial = restore({ pendingMaterials: { gems: 3, herbs: "broken", wood: -2 } });
     expect(partial.pendingMaterials).toEqual({ ...emptyInventory(), gems: 3 });
   });
