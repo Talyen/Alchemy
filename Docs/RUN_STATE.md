@@ -158,6 +158,10 @@ only, while the command guard remains held. This applies even to equal-data rest
 and bootstrap hydration that preserves an initialized run: their old presentation
 work still refers to the previous inputs. Failed restores emit no invalidation.
 Session disposal also cancels mounted playback without waiting for React unmount.
+Successful Clear Save Data uses this same replacement publication after disk
+deletion, including save-receipt and presentation invalidation. Settings and
+gameplay reset together before any observer can snapshot the new career; failed
+deletion leaves the current state and pending presentation intact.
 
 Teardown always clears battle UI, notifies presentation cancellation, then notifies
 run teardown, even if an adapter or listener fails. Listener changes apply on the

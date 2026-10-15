@@ -69,7 +69,7 @@ All endings use the store-owned `settleRunEnd` operation, including victory insi
 [`reset.ts`](../src/features/alchemy/shared/stores/reset.ts) owns test/teardown and Options wipe:
 
 - `resetTransientRunUi()` — test/boot helper that resets the UI store and transient session fields. Clearing the session removes active combat along with its activity, without settling progression or cleaning up battle playback; use the outcome/lifecycle commands above for a live run.
-- `clearAllPersistentGameData()` — Options' Clear Save Data action. It first deletes save slots through `localWipe`; only acknowledged deletion resets settings, profile discoveries/unlocks, Talents, Homestead, Gear, and active-run state. Failure leaves memory unchanged. Device-local display sizes and demo-import initialization receipts survive under the [deletion contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#deletion).
+- `clearAllPersistentGameData()` — Options' Clear Save Data action. It first deletes save slots through `localWipe`; only acknowledged deletion resets settings, profile discoveries/unlocks, Talents, Homestead, Gear, and active-run state. Those changes use one restore publication: outgoing navigation and battle playback are cancelled, snapshots captured during deletion are invalidated, and observers see the complete new career before the confirmation closes. Failure leaves memory and pending presentation unchanged. If the session closes during deletion, the disk operation finishes without publishing into the disposed session. Device-local display sizes and demo-import initialization receipts survive under the [deletion contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#deletion).
 
 ## Gameplay command boundary
 
