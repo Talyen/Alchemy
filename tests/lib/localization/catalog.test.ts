@@ -78,14 +78,23 @@ describe("localization ingestion", () => {
       messages: source,
       glossary,
       locale: "de",
-      previous: { retired: valid(), attack: valid() },
+      previous: { retired: valid(), attack: valid(), alias: { ...valid(), text: "Incorrect cached wording" } },
       results: {},
     });
     expect(next.retired).toBeUndefined();
+    expect(next.alias).toBeUndefined();
     expect(next.attack).toEqual(valid());
     const derived = resolveAliases(source, next, glossary, "de");
     expect(derived.alias?.text).toBe("Verursache 4 Schaden");
     expect(derived.alias?.reviewed).toBe(true);
+    expect(() =>
+      validateResults({
+        messages: source,
+        glossary,
+        locale: "de",
+        results: { alias: { ...valid(), sourceHash: sourceHash(alias, glossary, "de") } },
+      }),
+    ).toThrow("Derived translation");
   });
   it("preserves semantic tags when reusing identical whole messages", () => {
     const alias = { ...message, aliasOf: "attack" };

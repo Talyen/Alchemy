@@ -47,6 +47,13 @@ locally before mounting React. The packaged CSP permits same-origin `alchemy://a
 requests for these assets and continues to block external connections. English defaults remain usable if that asset fails
 to load. No translation server is contacted.
 
+English metadata and canonical translations use one JSON message record per line,
+formatted by `i18n:extract` and checked by `i18n:check`. Translation files store only
+canonical entries with their source hashes, review status and plural forms.
+Identical-message and numeric aliases are expanded during compilation and validation;
+they never duplicate translations or review metadata in the authored locale files.
+The generated runtime catalog remains fully expanded for direct lookup in the game.
+
 ## Agent workflow
 
 The [localization skill](../.agents/skills/localization/SKILL.md) applies whenever

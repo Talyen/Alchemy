@@ -18,11 +18,23 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 const directory = path.join(ROOT, "src/lib/localization/locales");
 const read = (file) => JSON.parse(fs.readFileSync(path.join(directory, file + ".json"), "utf8"));
 const serialize = (value) => JSON.stringify(value, null, 2) + "\n";
+// One message per line keeps metadata diffs readable without expanding every field.
+const serializeRecords = (value) =>
+  "{\n" +
+  Object.entries(ordered(value))
+    .map(([id, entry]) => `  ${JSON.stringify(id)}: ${JSON.stringify(entry)}`)
+    .join(",\n") +
+  "\n}\n";
 const write = async (file, value) => {
   const destination = path.join(directory, file + ".json");
   const temporary = `${destination}.${process.pid}.tmp`;
   try {
-    fs.writeFileSync(temporary, await format(serialize(value), { parser: "json" }));
+    fs.writeFileSync(
+      temporary,
+      file === "en" || TARGETS.includes(file)
+        ? serializeRecords(value)
+        : await format(serialize(value), { parser: "json" }),
+    );
     fs.renameSync(temporary, destination);
   } finally {
     if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
@@ -107,7 +119,7 @@ try {
     for (const locale of TARGETS)
       await write(
         locale,
-        ordered(Object.fromEntries(Object.entries(read(locale)).filter(([id]) => Object.hasOwn(messages, id)))),
+        validateResults({ messages, glossary: glossary[locale], locale, results: {}, previous: read(locale) }),
       );
     await write("runtime", compiled(messages, glossary));
     writeSteamExports(messages, glossary);
@@ -147,7 +159,7 @@ try {
       throw new Error("Expected results keyed by message ID");
     const next = validateResults({ messages, glossary: glossary[locale], locale, results, previous: read(locale) });
     // Validate the complete result before replacing any catalog.
-    await write(locale, resolveAliases(messages, next, glossary[locale], locale));
+    await write(locale, next);
     await write("runtime", compiled(messages, glossary));
     writeSteamExports(messages, glossary);
     console.log(`Applied ${Object.keys(results).length} reviewed translations for ${locale}`);
@@ -179,7 +191,7 @@ try {
         failures.push(`Chinese sample: ${error.message}`);
       }
     }
-    if (serialize(read("en")) !== serialize(messages))
+    if (fs.readFileSync(path.join(directory, "en.json"), "utf8") !== serializeRecords(messages))
       failures.push("English catalog differs from source; run npm run i18n:extract");
     for (const [id, message] of Object.entries(messages)) {
       try {
@@ -191,15 +203,15 @@ try {
     }
     for (const locale of TARGETS) {
       const translations = read(locale);
-      const expectedAliases = resolveAliases(messages, translations, glossary[locale], locale);
+      const resolved = resolveAliases(messages, translations, glossary[locale], locale);
+      if (fs.readFileSync(path.join(directory, `${locale}.json`), "utf8") !== serializeRecords(translations))
+        failures.push(`${locale}: catalog record formatting differs; run npm run i18n:extract`);
       for (const [id, message] of Object.entries(messages)) {
-        const entry = translations[id];
+        const entry = resolved[id];
         if (!entry || entry.sourceHash !== sourceHash(message, glossary[locale], locale) || entry.reviewed !== true) {
           failures.push(`${locale}: missing/stale/unreviewed ${id}`);
           continue;
         }
-        if (message.aliasOf && entry.text !== expectedAliases[id]?.text)
-          failures.push(`${locale}: inconsistent derived translation ${id}`);
         try {
           validateTranslation(message, entry.text);
           validatePluralForms(message, entry, locale);
@@ -209,6 +221,8 @@ try {
       }
       for (const id of Object.keys(translations))
         if (!Object.hasOwn(messages, id)) failures.push(`${locale}: orphan ${id}`);
+        else if (messages[id].aliasOf)
+          failures.push(`${locale}: stored derived translation ${id}; run npm run i18n:extract`);
     }
     if (failures.length)
       throw new Error(

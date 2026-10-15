@@ -103,6 +103,7 @@ export function validateResults({ messages, glossary, locale, results, previous 
   for (const [id, result] of Object.entries(results)) {
     const message = messages[id];
     if (!message) throw new Error(`Unknown message: ${id}`);
+    if (message.aliasOf) throw new Error(`Derived translation must use its canonical message: ${id}`);
     if (!result || typeof result !== "object" || Array.isArray(result))
       throw new Error(`Invalid translation result: ${id}`);
     if (result.sourceHash !== sourceHash(message, glossary, locale)) throw new Error(`Outdated translation: ${id}`);
@@ -120,7 +121,9 @@ export function validateResults({ messages, glossary, locale, results, previous 
       ...(result.forms ? { forms: ordered(result.forms) } : {}),
     };
   }
-  return ordered(Object.fromEntries(Object.entries(next).filter(([id]) => Object.hasOwn(messages, id))));
+  return ordered(
+    Object.fromEntries(Object.entries(next).filter(([id]) => Object.hasOwn(messages, id) && !messages[id].aliasOf)),
+  );
 }
 
 export function resolveAliases(messages, entries, glossary, locale) {
