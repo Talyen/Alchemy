@@ -7,6 +7,7 @@ import {
 } from "../game-constants";
 import type { BattleCard, BattleCardEffect } from "../game-data";
 import {
+  BattleCardEffectSchema,
   areBattleCardEffectsEqual,
   cloneBattleCard,
   createEffectDescription,
@@ -79,7 +80,7 @@ function scaledPotionParts(card: BattleCard, multiplier: number, potencyBonus: n
   };
 }
 
-export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number = 0): BattleCard {
+function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number): BattleCard | null {
   if (!cardA || !cardB) {
     throw new Error(MIXED_POTION_ERROR);
   }
@@ -105,6 +106,9 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
   const parts = (sameCard ? [cardA] : [cardA, cardB]).map((card) =>
     scaledPotionParts(card, sameCard ? 2 : 1, potencyBonus),
   );
+  // Reject before a command can spend Gold or replace either ingredient.
+  if (parts.some((part) => part.effects.some((effect) => !BattleCardEffectSchema.safeParse(effect).success)))
+    return null;
 
   let effectOffset = 0;
   const description = parts.flatMap((part) => {
@@ -138,13 +142,19 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
   );
 }
 
+export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number = 0): BattleCard {
+  const potion = prepareMixedPotion(cardA, cardB, potencyBonus);
+  if (!potion) throw new Error("Mixed Potion effects exceed supported values");
+  return potion;
+}
+
 export function tryCreateMixedPotion(
   cardA: BattleCard | undefined,
   cardB: BattleCard | undefined,
   potencyBonus: number = 0,
 ): BattleCard | null {
   if (!cardA || !cardB) return null;
-  return createMixedPotion(cardA, cardB, potencyBonus);
+  return prepareMixedPotion(cardA, cardB, potencyBonus);
 }
 
 export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: number, mixed: BattleCard): BattleCard[] {

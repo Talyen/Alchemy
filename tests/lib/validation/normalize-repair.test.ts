@@ -147,7 +147,7 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
         chosenCardId: "slash",
       }),
     });
-    expect(savedActivityData(result, "mystery")?.cardChoices).toEqual([]);
+    expect(savedActivityData(result, "mystery")?.cardChoices).toBeNull();
     expect(result.rng.counters.events).toBe(0);
   });
 

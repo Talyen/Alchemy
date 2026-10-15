@@ -83,7 +83,7 @@ export const TalentXPSchema = z.preprocess((val) => {
   for (const [key, xp] of Object.entries(val as Record<string, unknown>)) {
     if (!Object.hasOwn(keywordDefinitions, key)) continue;
     const floored = toFiniteNonNegativeInt(xp);
-    if (floored !== null) result[key] = floored;
+    if (floored !== null && Number.isSafeInteger(floored)) result[key] = floored;
   }
   return result;
 }, z.record(z.string(), z.number().int().nonnegative()).catch({}));

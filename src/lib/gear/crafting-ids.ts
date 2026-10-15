@@ -1,4 +1,4 @@
-import { createNumericManifest, mergeNumericManifests } from "@/lib/manifest-utils";
+import { createNumericManifest } from "@/lib/manifest-utils";
 
 export const CRAFTING_CURRENCY_IDS = [
   "discordant-dice",
@@ -14,7 +14,9 @@ export type CraftingCurrencyId = (typeof CRAFTING_CURRENCY_IDS)[number];
 export const EMPTY_CRAFTING_CURRENCIES = createNumericManifest(CRAFTING_CURRENCY_IDS);
 
 function sanitizeCurrencyValue(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+  if (typeof value !== "number" || value <= 0) return 0;
+  const amount = Math.floor(value);
+  return Number.isSafeInteger(amount) ? amount : 0;
 }
 
 export function normalizeCraftingCurrencies(
@@ -34,9 +36,10 @@ export function addCraftingCurrencies(
   base: Partial<Record<string, unknown>> | null | undefined,
   added: Partial<Record<string, unknown>> | null | undefined,
 ): Record<CraftingCurrencyId, number> {
-  return mergeNumericManifests(
-    normalizeCraftingCurrencies(base),
-    normalizeCraftingCurrencies(added),
-    CRAFTING_CURRENCY_IDS,
-  );
+  const balances = normalizeCraftingCurrencies(base);
+  const payout = normalizeCraftingCurrencies(added);
+  for (const id of CRAFTING_CURRENCY_IDS) {
+    balances[id] = Math.min(Number.MAX_SAFE_INTEGER, balances[id] + payout[id]);
+  }
+  return balances;
 }

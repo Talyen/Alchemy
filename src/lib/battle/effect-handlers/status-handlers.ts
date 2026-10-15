@@ -47,10 +47,12 @@ export const STATUS_HANDLERS = {
     } else if (effect.perManaCrystal !== undefined) {
       adjustedAmount = effect.perManaCrystal * state.maxMana;
     }
-    adjustedAmount = applyPotionMultiplier(adjustedAmount, potionMult);
     const status = effect.statusPool
       ? (pickRandom(effect.statusPool, getBattleRng(nextState)) ?? effect.status)
       : effect.status;
+    if (status !== "haste" && status !== "phoenixFeather") {
+      adjustedAmount = applyPotionMultiplier(adjustedAmount, potionMult);
+    }
     return applyPlayerStatusEffect(
       nextState,
       {
