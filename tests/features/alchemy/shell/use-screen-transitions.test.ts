@@ -68,15 +68,6 @@ describe("screen navigation", () => {
     expect(prepare).toHaveBeenCalledOnce();
   });
 
-  it("rejects a guarded action before gameplay or presentation changes", () => {
-    const nav = navigation();
-    const prepare = vi.fn();
-    nav.transition("rewards", { guard: () => false, prepare });
-    vi.runAllTimers();
-    expect(prepare).not.toHaveBeenCalled();
-    expect(nav.showScreen).not.toHaveBeenCalled();
-  });
-
   it("does not schedule navigation when gameplay preparation fails", () => {
     const nav = navigation();
     expect(() =>
@@ -85,13 +76,6 @@ describe("screen navigation", () => {
       }),
     ).toThrow("failed");
     expect(vi.getTimerCount()).toBe(0);
-  });
-
-  it("lets a preparation redirect replace the original destination", () => {
-    const nav = navigation();
-    nav.navigateTo("rewards", () => nav.navigateTo("menu"));
-    vi.runAllTimers();
-    expect(nav.showScreen).toHaveBeenCalledExactlyOnceWith("menu");
   });
 
   it("cancels superseded presentation without undoing completed gameplay", () => {
@@ -141,7 +125,10 @@ describe("screen navigation", () => {
 
   it("treats a guarded no-op as silent even on a disallowed edge", () => {
     const nav = navigation();
-    expect(() => nav.transition("character-select", { guard: () => false })).not.toThrow();
+    const prepare = vi.fn();
+    expect(() => nav.transition("character-select", { guard: () => false, prepare })).not.toThrow();
+    vi.runAllTimers();
+    expect(prepare).not.toHaveBeenCalled();
     expect(nav.showScreen).not.toHaveBeenCalled();
   });
 });

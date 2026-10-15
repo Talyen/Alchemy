@@ -37,6 +37,11 @@ blocks card/turn input and automation while the dialog is open, and clears befor
 a confirmed command or on teardown. The controller-owned `endTurnButtonRef`
 connects hand focus recovery to the toolbar without depending on DOM ancestry.
 Playback cancellation remains responsible for presentation work.
+Mounted playback subscribes to its session's restore lifecycle: replacement
+invalidates the old generation, aborts transfers and timers, and resets displayed
+frames before store observers see the restored battle. A battle-to-battle restore
+therefore needs no screen change or React remount to revoke old outcomes. Session
+disposal cancels that playback as well.
 
 At interaction time, those callbacks resolve gameplay before presentation:
 

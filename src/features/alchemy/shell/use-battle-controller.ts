@@ -101,17 +101,20 @@ export function useBattleController({
   }, [updateAutoplayEnabled, gameSession]);
 
   const battle = useMemo(() => createBattleCapabilities(gameSession), [gameSession]);
-  const ctx = useBattleControllerContext({
-    battle,
-    presentation,
-    screen,
-    setHoveredCardId,
-    onBattleVictory,
-    onBattleDefeat,
-    measureElementRect,
-    measureVisualCardRect,
-    onSessionPrepared: applyPreferredAutoplay,
-  });
+  const ctx = useBattleControllerContext(
+    {
+      battle,
+      presentation,
+      screen,
+      setHoveredCardId,
+      onBattleVictory,
+      onBattleDefeat,
+      measureElementRect,
+      measureVisualCardRect,
+      onSessionPrepared: applyPreferredAutoplay,
+    },
+    gameSession,
+  );
 
   const playbackBound = useSyncExternalStore(ctx.playback.subscribe, ctx.playback.isBound);
   const bindPlayback = ctx.playback.bind;

@@ -150,7 +150,15 @@ listener, logging its failure without aborting the caller's remaining work.
 Execution and persistence errors retain their own failure contracts; the command
 dispatcher does not suppress arbitrary `afterCommit` errors.
 
-The same owner provides each session's presentation-clear and teardown channels.
+The same owner provides each session's restore, presentation-clear, and teardown channels.
+Accepted restore publication invalidates deferred navigation and restarts mounted
+battle playback before clearing outgoing battle presentation, then notifies settings,
+progress, and gameplay observers. `onRunRestored` listeners perform cancellation
+only, while the command guard remains held. This applies even to equal-data restores
+and bootstrap hydration that preserves an initialized run: their old presentation
+work still refers to the previous inputs. Failed restores emit no invalidation.
+Session disposal also cancels mounted playback without waiting for React unmount.
+
 Teardown always clears battle UI, notifies presentation cancellation, then notifies
 run teardown, even if an adapter or listener fails. Listener changes apply on the
 next notification. Run abandonment and defeat submit their settled save before

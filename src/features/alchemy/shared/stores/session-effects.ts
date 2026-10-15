@@ -42,6 +42,7 @@ function createLifecycleChannel(name: string) {
 export function createRunLifecycleEffects(feedback: Pick<SessionFeedback, "clearBattleUi">) {
   const presentation = createLifecycleChannel("clear battle presentation listener");
   const teardown = createLifecycleChannel("run teardown listener");
+  const restore = createLifecycleChannel("run restore listener");
   function clearPresentation() {
     feedback.clearBattleUi();
     presentation.emit();
@@ -49,6 +50,13 @@ export function createRunLifecycleEffects(feedback: Pick<SessionFeedback, "clear
   return {
     onClearPresentation: (listener: () => void) => presentation.on(listener),
     onTeardown: (listener: () => void) => teardown.on(listener),
+    onRestore: (listener: () => void) => restore.on(listener),
+    restore() {
+      // Revoke deferred work before clearing its visible state. Cancellation
+      // handlers may themselves finish transfers or remove outgoing frames.
+      restore.emit();
+      clearPresentation();
+    },
     clearPresentation,
     teardown() {
       clearPresentation();
@@ -57,6 +65,7 @@ export function createRunLifecycleEffects(feedback: Pick<SessionFeedback, "clear
     dispose() {
       presentation.clear();
       teardown.clear();
+      restore.clear();
     },
   };
 }
