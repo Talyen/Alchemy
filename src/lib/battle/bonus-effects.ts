@@ -4,68 +4,33 @@ import {
   resolveNatureGoldReward,
   resolveNatureManaReward,
 } from "./resource-reward-resolution";
-import { FREE_CARD_SENTINEL } from "../game-constants";
 import { drawFromState, applyDrawResult } from "./draw";
-import { addGoldWithCombatText, gainManaWithCombatText } from "./player-rewards";
+import {
+  addGoldWithCombatText,
+  gainManaWithCombatText,
+  rollForgeAffixAwards,
+  addForgeToPlayer,
+  applyBlockReward,
+} from "./player-rewards";
 import type { BattleState, CombatTextEvent } from "./types";
-import { writeCombatFlag as setFlag } from "./action-context";
-import { stripEnemyArmor, stripEnemyBlock } from "./enemy-mitigation-state";
-import { rollForgeAffixAwards, addForgeToPlayer, applyBlockReward } from "./status-player";
-import { mergeCombatText } from "./combat-text-events";
+import { resolveCrowdControlBonuses, type CrowdControlTriggerBonuses } from "./crowd-control-resolution";
 
-export interface CrowdControlTriggerBonuses {
-  block?: number;
-  forge?: number;
-  mana?: number;
-  draw?: number;
-  nextCardFree?: boolean;
-  stripArmor?: boolean;
-  stripBlock?: boolean;
-}
+export type { CrowdControlTriggerBonuses } from "./crowd-control-resolution";
 
 export function applyCrowdControlTriggerBonuses(
   state: BattleState,
   bonuses: CrowdControlTriggerBonuses,
   combatTexts?: CombatTextEvent[],
 ): BattleState {
-  let nextState = state;
-  const draw = bonuses.draw ?? 0;
-  if (draw > 0) {
-    nextState = applyDrawResult(nextState, drawFromState(nextState, draw), combatTexts);
-    nextState = nextState.onEmptyDraw?.(nextState, draw, combatTexts ?? []) ?? nextState;
-  }
-  if (bonuses.nextCardFree) {
-    nextState = setFlag(nextState, "nextCardCostReduction", FREE_CARD_SENTINEL);
-  }
-  const block = bonuses.block ?? 0;
-  if (block > 0) {
-    nextState = applyBlockReward(nextState, block, combatTexts ?? []);
-  }
-  const forge = bonuses.forge ?? 0;
-  if (forge > 0) {
-    nextState = addForgeToPlayer(nextState, forge, combatTexts);
-  }
-  for (const [stat, enabled, strip] of [
-    ["armor", bonuses.stripArmor, stripEnemyArmor],
-    ["block", bonuses.stripBlock, stripEnemyBlock],
-  ] as const) {
-    if (!enabled) continue;
-    if (combatTexts && nextState.enemyMitigation[stat] > 0) {
-      mergeCombatText(combatTexts, {
-        target: "enemy",
-        kind: "damage",
-        stat,
-        amount: nextState.enemyMitigation[stat],
-        impact: false,
-      });
-    }
-    nextState = strip(nextState);
-  }
-  const mana = bonuses.mana ?? 0;
-  if (mana > 0) {
-    nextState = gainManaWithCombatText(nextState, mana, combatTexts);
-  }
-  return nextState;
+  return resolveCrowdControlBonuses(state, bonuses, combatTexts ?? [], {
+    draw: (current, amount, texts) => {
+      const drawn = applyDrawResult(current, drawFromState(current, amount), texts);
+      return drawn.onEmptyDraw?.(drawn, amount, texts) ?? drawn;
+    },
+    block: applyBlockReward,
+    forge: addForgeToPlayer,
+    mana: gainManaWithCombatText,
+  });
 }
 
 const resourceRewardPort = { chance: rollBattleChance, mana: gainManaWithCombatText, gold: addGoldWithCombatText };

@@ -75,6 +75,35 @@ describe("damage inspection follows utility effect execution", () => {
       );
     },
   );
+  it("carries Thunderstone's guaranteed Mana refund into the following hit", () => {
+    compare(
+      [
+        { kind: "damage", damageType: "stun", amount: 50 },
+        { kind: "damage", damageType: "burn", amount: 1 },
+      ],
+      {
+        trinketEffects: { thunderstoneDamageOnStun: 2 },
+        gearEffects: { manaOnNatureDamageChance: 100 },
+        talentEffects: { burnDamagePerMana: 100 },
+      },
+      [50, 4],
+      56,
+    );
+  });
+  it("carries Thunderstone's guaranteed Gold reward into the following hit", () => {
+    compare(
+      [
+        { kind: "damage", damageType: "stun", amount: 50 },
+        { kind: "damage", damageType: "physical", amount: 0, equalToGoldPercent: 100 },
+      ],
+      {
+        gold: 0,
+        trinketEffects: { thunderstoneDamageOnStun: 2, luckyCloverGoldChance: 100 },
+      },
+      [50, 2],
+      54,
+    );
+  });
   it("settles Mana Crystal loss damage before the next hit", () => {
     const effects: BattleCardEffect[] = [
       { kind: "lose-max-mana", amount: 1 },

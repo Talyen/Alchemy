@@ -1,10 +1,9 @@
 import { createPlayerResourceResolver } from "./player-resource-resolution";
-import { resolveSecondaryAction } from "./action-context";
 import { drawKeywordCard } from "./draw";
 import { mergeCombatText } from "./combat-text-events";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import type { DamageType, PlayerStatusId } from "@/lib/game-data";
+import type { DamageType } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
 import { rollBattleChance } from "./chance-roll";
 import { damageEnemyHealth } from "./health-state";
@@ -121,11 +120,6 @@ export function applyIronGuardReward(
     : state;
 }
 
-export function applyArmorReward(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
-  if (amount <= 0) return state;
-  return resolveSecondaryAction(state, "reward", (current) => applyArmorStatusEffect(current, amount, combatTexts));
-}
-
 export function rollForgeAffixAwards(state: BattleState, chances: readonly number[]): number {
   return chances.reduce((total, chance) => total + Number(rollBattleChance(chance, state)), 0);
 }
@@ -145,92 +139,23 @@ const resources = createPlayerResourceResolver({
   },
 });
 
-function resolveHealingWithFeedback(
-  state: BattleState,
-  amount: number,
-  combatTexts?: CombatTextEvent[],
-  allowOverhealBlock = false,
-) {
-  return resources.resolveHealingWithFeedback(state, amount, combatTexts, allowOverhealBlock);
-}
+const { resolveHealingWithFeedback, applyRestorativeCleanse } = resources;
 
-export function applyHealingWithCombatText(
-  state: BattleState,
-  amount: number,
-  combatTexts?: CombatTextEvent[],
-  options?: { skipFightPacing?: boolean; allowOverhealBlock?: boolean },
-): BattleState {
-  return resources.applyHealingWithCombatText(state, amount, combatTexts, options);
-}
-
-function applyRestorativeCleanse(state: BattleState, actualHeal: number, combatTexts?: CombatTextEvent[]): BattleState {
-  return resources.applyRestorativeCleanse(state, actualHeal, combatTexts);
-}
-
-export function applyHealOnManaGain(
-  state: BattleState,
-  gainAmount: number,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  return resources.applyHealOnManaGain(state, gainAmount, combatTexts);
-}
-
-export function gainManaWithCombatText(
-  state: BattleState,
-  amount: number,
-  combatTexts?: CombatTextEvent[],
-  options?: { skipFightPacing?: boolean; allowOverflow?: boolean },
-): BattleState {
-  return resources.gainManaWithCombatText(state, amount, combatTexts, options);
-}
-
-export function addPlayerStatusWithCombatText(
-  state: BattleState,
-  stat: PlayerStatusId,
-  amount: number,
-  combatTexts?: CombatTextEvent[],
-  options?: { skipFightPacing?: boolean },
-): BattleState {
-  return resources.addPlayerStatusWithCombatText(state, stat, amount, combatTexts, options);
-}
-
-export function addGoldWithCombatText(
-  state: BattleState,
-  amount: number,
-  combatTexts?: CombatTextEvent[],
-): BattleState {
-  return resources.addGoldWithCombatText(state, amount, combatTexts);
-}
-
-export function applyBlockReward(
-  state: BattleState,
-  amount: number,
-  combatTexts: CombatTextEvent[],
-  options?: { skipFightPacing?: boolean },
-): BattleState {
-  return resources.applyBlockReward(state, amount, combatTexts, options);
-}
-
-export function addForgeToPlayer(state: BattleState, baseAmount: number, combatTexts?: CombatTextEvent[]): BattleState {
-  return resources.addForgeToPlayer(state, baseAmount, combatTexts);
-}
-
-export function applyCleanseHeals(
-  state: BattleState,
-  combatTexts?: CombatTextEvent[],
-  removedStatuses = 1,
-): BattleState {
-  return resources.applyCleanseHeals(state, combatTexts, removedStatuses);
-}
-
-export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]) {
-  return resources.removeHarmfulPlayerStatuses(state, amount, combatTexts);
-}
-
-export function applyArmorStatusEffect(
-  state: BattleState,
-  amount: number,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  return resources.applyArmorStatusEffect(state, amount, combatTexts);
-}
+export const {
+  applyArmorReward,
+  applyCardHealing,
+  applyBlockDepletionRewards,
+  applyHealthThresholdCleanse,
+  checkHealthThresholds,
+  applyPlayerStatusEffect,
+  applyHealingWithCombatText,
+  applyHealOnManaGain,
+  gainManaWithCombatText,
+  addPlayerStatusWithCombatText,
+  addGoldWithCombatText,
+  applyBlockReward,
+  addForgeToPlayer,
+  applyCleanseHeals,
+  removeHarmfulPlayerStatuses,
+  applyArmorStatusEffect,
+} = resources;

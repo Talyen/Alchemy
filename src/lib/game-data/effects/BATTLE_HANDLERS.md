@@ -41,7 +41,10 @@ remain separate policies.
 ## Resource reward ownership
 
 `battle/player-resource-resolution.ts` owns the ordered Health, Mana, Gold, Forge,
-Armor, Block, and Cleanse recipes. Live combat and damage inspection instantiate
+Armor, Block, and Cleanse recipes, including card overhealing, Health-threshold
+rewards, and Block depletion. `player-rewards.ts` binds the live interpreter and
+exports its operations directly; `status-player.ts` retains status-application
+helpers and the existing resource exports. Live combat and damage inspection instantiate
 that same interpreter. Its ports supply chance outcomes, healing reactions, and
 Holy draws; live combat retains seeded rolls, while inspection admits only
 guaranteed procs and never samples a pile or consumes RNG. Unknown draws remain
@@ -53,6 +56,17 @@ execution and inspection use these rules. Inspection carries earned resources
 between damage packets, including Gold, so later ingredients use the resulting
 purse, Mana, Block, and Health. Rendering still owns damage ranges, presentation
 copies, and nonrandom attack projection; it must not execute the displayed card.
+
+## Crowd-control ownership
+
+`battle/crowd-control-resolution.ts` owns enemy Stun and Freeze eligibility,
+retained buildup, trait reactions, and reward ordering. Live combat and inspection
+supply resource and hit policies to the same recipes. `status-stun-core.ts` binds
+live Stun reactions without importing its Leech orchestrator; Freeze binds through
+`damage-status-riders.ts`. Guaranteed Thunderstone Mana and Gold rewards carry
+into later inspected packets. `scaled-damage.ts` shares pacing, vulnerability,
+Block spending, and Armor mitigation before host-specific hit reactions. Unknown
+draws remain unprojected.
 
 ## Ordering and semantics
 
