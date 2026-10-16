@@ -246,7 +246,8 @@ export function advanceToPlayerTurn(
     nextState.deck.length === 0 &&
     nextState.discard.length === 0
   )
-    nextState = applyEmergencyWish(nextState, combatTexts);
+    nextState = resolvePendingBattleReactions(applyEmergencyWish(nextState, combatTexts), combatTexts);
+  if (getBattleOutcome(nextState) !== null) return nextState;
   const recovered =
     state.flags.darkRecoveryMana > 0
       ? gainManaWithCombatText(nextState, state.flags.darkRecoveryMana, combatTexts, {

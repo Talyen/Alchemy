@@ -2,13 +2,17 @@ import {
   DAMAGE_TYPES,
   carryCardDescriptionMarks,
   getCardDescription,
+  getCardEffect,
   getCardKeywords,
+  effectChildren,
+  mapCardDescriptionReferences,
   isEnemyAbilityCard,
   isMixedPotionCard,
   isPotionCard,
   withCardDescription,
   type BattleCard,
   type BattleCardEffect,
+  type CardEffectAddress,
 } from "@/lib/game-data";
 import { applyPotionMultiplier, applyPercentBonus } from "./amount-helpers";
 import { computeCardPayment } from "./card-cost-rules";
@@ -21,7 +25,16 @@ import { prepareEnemyDamage } from "./enemy-damage-mitigation";
 import { getEncounterEnemyAbility } from "./enemy-description";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { addPlayerStatus, blockAmountWithForge } from "./status-state";
-import { resolvePlayerHealing, applyPlayerCombatDamage, mitigatePlayerCombatDamage } from "./health-state";
+import {
+  resolvePlayerHealing,
+  applyPlayerCombatDamage,
+  mitigatePlayerCombatDamage,
+  playerHealthLostToDamage,
+} from "./health-state";
+import { isPlayerDefeated } from "./battle-outcome";
+import { hasEncounterBenefit } from "./encounter-trait-state";
+import { resolveSecondaryAction } from "./action-context";
+import { BATTLE_CONFIG } from "../game-constants";
 import { armorMitigatesElementalDamage, reduceDamageByMana } from "./status-helpers";
 import { scaleReceivedPlayerDamage } from "./damage-modifiers";
 import { gainMana, scaleGoldReward } from "./resource-state";
@@ -115,7 +128,36 @@ export function getBattleDamageInspectionCard(
       ? state.talentEffects.potionPotency + (isMixedPotionCard(card) ? state.talentEffects.mixedPotionPotency : 0)
       : 1;
 
-  function attack(effect: DamageEffect, current: BattleState): { effect: DamageEffect; state: BattleState } {
+  function projectHealthThresholds(current: BattleState, previousHealth: number): BattleState {
+    if (isPlayerDefeated(current)) return current;
+    const crossed = (threshold: number) =>
+      previousHealth >= (current.playerMaxHealth * threshold) / 100 &&
+      current.playerHealth < (current.playerMaxHealth * threshold) / 100;
+    const block = current.talentEffects.healthThresholdBlockOnce;
+    if (block && !current.flags.desperateGuardUsed && crossed(block.threshold)) {
+      current = grantPlayerStatus(current, "block", block.amount);
+      current = { ...current, flags: { ...current.flags, desperateGuardUsed: true } };
+    }
+    for (const armor of current.talentEffects.healthThresholdArmor) {
+      if (crossed(armor.threshold)) current = grantPlayerStatus(current, "armor", armor.amount);
+    }
+    return current;
+  }
+
+  function projectManaHealing(current: BattleState, gained: number): BattleState {
+    return gained > 0 && current.talentEffects.healthPerMana > 0
+      ? resolvePlayerHealing(
+          current,
+          paceCombatMagnitude(current, gained * current.talentEffects.healthPerMana, "player"),
+        ).state
+      : current;
+  }
+
+  function attack(
+    effect: DamageEffect,
+    current: BattleState,
+  ): { effect: DamageEffect; state: BattleState; followUp?: DamageEffect } {
+    if (!enemy && isPlayerDefeated(current)) return { effect: flatAttack(effect, 0), state: current };
     const selected = resolveConditionalCardDamage(effect, {
       actorBlock: enemy ? current.enemyMitigation.block : current.playerStatuses.block,
       targetBlock: enemy ? current.playerStatuses.block : current.enemyMitigation.block,
@@ -165,9 +207,22 @@ export function getBattleDamageInspectionCard(
       },
       false,
     );
-    return { effect: flatAttack(consumed.packet, power.damage + armorBonus), state: power.state };
+    let followUp: DamageEffect | undefined;
+    if (consumed.packet.damageType !== "physical" && consumed.physicalBonus > 0 && power.damage + armorBonus > 0) {
+      resolveSecondaryAction(power.state, "reward", (secondary) => {
+        const packet = { kind: "damage" as const, damageType: "physical" as const, amount: consumed.physicalBonus };
+        followUp = flatAttack(packet, computeCardAttackPower(secondary, packet, undefined, undefined, false).damage);
+        return secondary;
+      });
+    }
+    return {
+      effect: flatAttack(consumed.packet, power.damage + armorBonus),
+      state: power.state,
+      ...(followUp ? { followUp } : {}),
+    };
   }
 
+  const projectedSources = new Map<BattleCardEffect, BattleCardEffect>();
   function project(effects: readonly BattleCardEffect[], initial: BattleState): BattleCardEffect[] {
     let current = initial;
     return effects.flatMap((effect): BattleCardEffect | BattleCardEffect[] => {
@@ -209,16 +264,28 @@ export function getBattleDamageInspectionCard(
         const flagKeys = Object.keys(first.state.flags) as Array<keyof CombatFlags>;
         if (outcomes.every((outcome) => flagKeys.every((key) => outcome.state.flags[key] === first.state.flags[key])))
           current = first.state;
-        const uniqueTypes = [...new Set(outcomes.map((outcome) => outcome.effect.damageType))];
-        if (outcomes.every((outcome) => outcome.effect.amount === first.effect.amount))
-          return { ...first.effect, ...(uniqueTypes.length > 1 ? { damageTypePool: uniqueTypes } : {}) };
-        return {
-          kind: "random-damage",
-          minAmount: Math.min(...outcomes.map((outcome) => outcome.effect.amount)),
-          maxAmount: Math.max(...outcomes.map((outcome) => outcome.effect.amount)),
-          damageTypePool: uniqueTypes,
-          ...(effect.lifesteal ? { lifesteal: true } : {}),
+        const summarize = (packets: DamageEffect[]): BattleCardEffect => {
+          const firstPacket = packets[0]!;
+          const uniqueTypes = [...new Set(packets.map((packet) => packet.damageType))];
+          if (packets.every((packet) => packet.amount === firstPacket.amount))
+            return { ...firstPacket, ...(uniqueTypes.length > 1 ? { damageTypePool: uniqueTypes } : {}) };
+          return {
+            kind: "random-damage",
+            minAmount: Math.min(...packets.map((packet) => packet.amount)),
+            maxAmount: Math.max(...packets.map((packet) => packet.amount)),
+            damageTypePool: uniqueTypes,
+            ...(firstPacket.lifesteal ? { lifesteal: true } : {}),
+          };
         };
+        const projected = [summarize(outcomes.map((outcome) => outcome.effect))];
+        projectedSources.set(projected[0]!, effect);
+        if (outcomes.some((outcome) => outcome.followUp))
+          projected.push(
+            summarize(
+              outcomes.map((outcome) => outcome.followUp ?? { kind: "damage", damageType: "physical", amount: 0 }),
+            ),
+          );
+        return projected;
       }
       if (!enemy && effect.kind === "self-damage") {
         const incoming = scaleReceivedPlayerDamage(
@@ -230,9 +297,16 @@ export function getBattleDamageInspectionCard(
         const damage = armorMitigatesElementalDamage(current, effect.damageType)
           ? Math.max(0, resisted - current.playerStatuses.armor)
           : resisted;
-        const before = current.playerHealth;
+        const before = current;
         current = applyPlayerCombatDamage(current, damage, "self", effect.damageType, { ignoreMitigation: true });
-        current = addPlayerStatus(current, effect.damageType, Math.max(0, before - current.playerHealth));
+        current = addPlayerStatus(current, effect.damageType, playerHealthLostToDamage(before, current));
+        if (damage > 0 && current.playerStatuses.armor > 0 && !hasEncounterBenefit(current, "ironclad")) {
+          const armor = Math.max(0, current.playerStatuses.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT);
+          current = { ...current, playerStatuses: { ...current.playerStatuses, armor } };
+          if (armor === 0 && !isPlayerDefeated(current))
+            current = grantPlayerStatus(current, "block", current.talentEffects.armorBreakBlock);
+        }
+        current = projectHealthThresholds(current, before.playerHealth);
       }
       if (!enemy && effect.kind === "cleanse-player-status-to-damage") {
         const stacks = current.playerStatuses[effect.status];
@@ -280,12 +354,15 @@ export function getBattleDamageInspectionCard(
       }
       if (!enemy && effect.kind === "lose-mana")
         current = { ...current, mana: Math.max(0, current.mana - effect.amount) };
-      if (!enemy && effect.kind === "restore-mana" && !effect.ifEnemyFrozen)
+      if (!enemy && effect.kind === "restore-mana" && !effect.ifEnemyFrozen) {
+        const previousMana = current.mana;
         current = gainMana(
           current,
           paceCombatMagnitude(current, applyPotionMultiplier(effect.amount, potionMult), "player"),
           effect.allowOverflow,
         );
+        current = projectManaHealing(current, current.mana - previousMana);
+      }
       if (!enemy && effect.kind === "heal") {
         const potionBonus =
           isPotionCard(card) && effect.amount > 0 ? (current.talentEffects.homesteadPotionBonus ?? 0) : 0;
@@ -299,9 +376,15 @@ export function getBattleDamageInspectionCard(
         );
         current = resolvePlayerHealing(current, paceCombatMagnitude(current, amount, "player"), true).state;
       }
-      if (!enemy && effect.kind === "lose-health") current = applyPlayerCombatDamage(current, effect.amount, "self");
-      if (!enemy && effect.kind === "gain-max-mana")
+      if (!enemy && effect.kind === "lose-health") {
+        const previousHealth = current.playerHealth;
+        current = applyPlayerCombatDamage(current, effect.amount, "self", "health", { ignoreMitigation: true });
+        current = projectHealthThresholds(current, previousHealth);
+      }
+      if (!enemy && effect.kind === "gain-max-mana") {
         current = { ...current, mana: current.mana + effect.amount, maxMana: current.maxMana + effect.amount };
+        current = projectManaHealing(current, effect.amount);
+      }
       if (!enemy && effect.kind === "gain-gold" && (!effect.ifEnemyStunned || current.enemyCC.stunSkipTurns > 0))
         current = {
           ...current,
@@ -332,6 +415,23 @@ export function getBattleDamageInspectionCard(
   if (!effects.some((effect) => ["damage", "random-damage", "chance"].includes(effect.kind))) return presentation;
   const { description: _description, ...base } = presentation;
   const projected = { ...base, effects };
-  const description = carryCardDescriptionMarks(getCardDescription(card), getCardDescription(projected));
+  const projectedAddresses = new Map<BattleCardEffect, CardEffectAddress>();
+  const recordAddress = (effect: BattleCardEffect, address: CardEffectAddress) => {
+    projectedAddresses.set(projectedSources.get(effect) ?? effect, address);
+    effectChildren(effect).forEach((child, index) =>
+      recordAddress(child, { ...address, effectPath: [...(address.effectPath ?? []), index] }),
+    );
+  };
+  effects.forEach((effect, effectIndex) => recordAddress(effect, { effectIndex }));
+  // Added follow-up lines must neither steal a later effect's marks nor reuse its magnitude ID.
+  const previous = mapCardDescriptionReferences(getCardDescription(card), (reference) => {
+    const original = getCardEffect(card.effects, reference);
+    const address = original && projectedAddresses.get(original);
+    return address ? { ...reference, ...address } : reference;
+  });
+  const description = carryCardDescriptionMarks(
+    previous,
+    mapCardDescriptionReferences(getCardDescription(projected), (reference) => reference, "inspection"),
+  );
   return withCardDescription(projected, description);
 }

@@ -113,7 +113,8 @@ function applyBlockDepletedHeal(
       { source: "player-follow-up", damageType: "holy", amount: prevState.gearEffects.saintfallRetribution },
       combatTexts,
     );
-    if (finalState.enemyHealth > 0) {
+    finalState = settleReactions(finalState, combatTexts);
+    if (!isPlayerDefeated(finalState) && finalState.enemyHealth > 0) {
       finalState = applyHealingWithCombatText(finalState, prevState.gearEffects.saintfallRetribution, combatTexts);
     }
   }

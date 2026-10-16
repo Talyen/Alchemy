@@ -15,12 +15,20 @@ import { addForgeToPlayer, applyIronGuardReward } from "./status-player";
 import type { BattleState, CombatTextEvent } from "./types";
 import { applyPurgeGearRewards, purgeEnemyBenefits } from "./enemy-purge";
 import { drawKeywordCard } from "./draw";
+import { isPlayerDefeated } from "./battle-outcome";
+
+type SettleHitReactions = (state: BattleState, combatTexts: CombatTextEvent[]) => BattleState;
 
 /** Direct player hits have explicit recipes; shallow sources never re-enter card reactions. */
-export function resolvePlayerHit(state: BattleState, request: HitRequest, combatTexts: CombatTextEvent[]): BattleState {
+export function resolvePlayerHit(
+  state: BattleState,
+  request: HitRequest,
+  combatTexts: CombatTextEvent[],
+  settleReactions?: SettleHitReactions,
+): BattleState {
   switch (request.source) {
     case "card-attack":
-      return resolveCardHit(state, request, combatTexts);
+      return resolveCardHit(state, request, combatTexts, settleReactions);
     case "player-follow-up":
     case "talent-fixed":
     case "talent-derived":
@@ -109,14 +117,20 @@ function applyCardArcheryReactions(
   return nextState;
 }
 
-function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts: CombatTextEvent[]): BattleState {
+function resolveCardHit(
+  state: BattleState,
+  request: CardHitRequest,
+  combatTexts: CombatTextEvent[],
+  settleReactions?: SettleHitReactions,
+): BattleState {
   request = { ...request, forgeTriggers: request.forgeTriggers ?? new Set<string>() };
   const { card, effect, resolvedDamage: modifiedDamage, onDamageDealt } = request;
   const companionAttack = request.origin === "companion";
   const eligibility = state;
   // Eligibility precedes purge, but Health facts describe the target after purge.
-  const prePurgeState = resolveAttackPurgeHit(state, combatTexts);
-  if (prePurgeState.enemyHealth <= 0) return prePurgeState;
+  const purged = resolveAttackPurgeHit(state, combatTexts);
+  const prePurgeState = settleReactions?.(purged, combatTexts) ?? purged;
+  if (prePurgeState.enemyHealth <= 0 || isPlayerDefeated(prePurgeState)) return prePurgeState;
   const hit = applyHitHealth(prePurgeState, modifiedDamage, eligibility, request.critical ?? false);
   const facts = hit.facts;
   const { previousHealth } = facts;

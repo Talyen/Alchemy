@@ -4,6 +4,7 @@ import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { recordEnemyAbilityHit, type EnemyAbilityContext } from "./enemy-ability-context";
 import { applyArmorReward, applyHealingWithCombatText } from "./player-rewards";
 import { resolveEnemyAttackHit } from "./enemy-attack-hit";
+import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { applyPlayerStatusFromAttack } from "./status-player";
 import { purgeOnePlayerBenefit } from "./player-purge";
@@ -99,6 +100,8 @@ export function applyAbilityFollowups(
         combatTexts,
       ),
     );
+    nextState = resolvePendingBattleReactions(nextState, combatTexts);
+    if (getBattleOutcome(nextState) === "defeat") return nextState;
     if (thornsHealthDamage > 0 && nextState.gearEffects.armorOnThornsDamage > 0) {
       nextState = applyArmorReward(nextState, nextState.gearEffects.armorOnThornsDamage, combatTexts);
     }

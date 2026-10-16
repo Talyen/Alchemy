@@ -189,6 +189,7 @@ export function dealDamageToEnemy(
       },
     },
     combatTexts,
+    resolvePendingBattleReactions,
   );
   const payoffs = reactionEligible ? getPostHitReactionPayoffs(state, result, packet.damageType, healthDamage) : [];
   if (
