@@ -272,6 +272,21 @@ Enforced in `oxlint.config.ts` (composition in `lint/fragments.js` + `lint/bound
 
 ## Boot and loading
 
+`app/alchemy-bootstrap.ts` owns one bootstrap operation per GameSession, including
+platform configuration, the development wipe, load/recovery selection, and restore.
+React adapters subscribe to its result; Strict Mode replay and shell remounts share
+pending work and retain completed readiness without restoring over newer progress.
+Closing the session revokes continuations before another persistence operation or
+restore can start. Independent sessions bootstrap independently.
+
+Image preload pipelines borrow deduplicated fetch/decode work from `lib/preload/image.ts`.
+Each pipeline owns cancellation across its batches, frame yields, and progress
+callbacks. Unmount cancels both essential and deferred art work. Cache reset revokes
+all existing pipelines before releasing their images, so suspended producers cannot
+refill the cache afterward. Cancelling one borrower preserves another borrower's
+fetch; the last departure aborts readiness and releases the source immediately.
+Completed entries retain the bounded cache policy.
+
 - **Shell preload / autosave:** App warms `essentialGameArt` before reveal and starts the remaining per-item Gear art as soon as that essential preload settles; autosave and chrome read needed fields through capability modules. Sound warming follows the [audio runtime contract](./AUDIO.md#runtime-contract); it does not gate startup on successful playback or decoding.
 
 One loading experience at cold start, then navigation through the shared fade — no per-route "Loading …" fallbacks. Route and in-screen reveals hold the fade until mounted artwork has decoded; see [UI](./UI_MOTION.md#screen-fade-motion).

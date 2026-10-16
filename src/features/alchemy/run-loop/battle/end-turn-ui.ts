@@ -114,9 +114,8 @@ export function createBattleEndTurnUi(
     const result = commitEndTurn(ctx.battle, currentState);
     if (!result) return;
     playBattleEvent("endTurn");
-    ctx.playback.clearAutoEndTurn();
-    ctx.playback.beginAction();
-    session.clearAllBattleTimeouts();
+    if (!ctx.playback.beginAction(sessionNum)) return;
+    session.clearAllBattleTimeouts(sessionNum);
     if (getBattleOutcome(result.state) !== null) {
       for (const { before, turn, companion } of result.frames) {
         if (turn.kind === "haste") {

@@ -468,7 +468,7 @@ describe("createBattleCardPlay", () => {
     const { handleAutoplayCard, handleCardClick } = makeDeps({
       playback: (() => {
         const lifetime = new PlaybackLifetime();
-        lifetime.beginAction();
+        lifetime.beginAction(lifetime.id);
         return lifetime;
       })(),
     });

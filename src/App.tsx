@@ -379,7 +379,7 @@ export default function App() {
       document.documentElement.style.removeProperty("--content-scale");
     };
   }, [contentScale]);
-  const bootstrapResult = useAlchemyBootstrap();
+  const bootstrapResult = useAlchemyBootstrap(defaultGameSession);
 
   const { ready: initialLoadReady, progress: startupProgress } = useInitialLoadReady({
     bootstrapReady: bootstrapResult != null,

@@ -64,7 +64,7 @@ async function openConfirmation(button: HTMLButtonElement) {
 describe("toolbar End Turn", () => {
   it("enables End Turn when opening playback completes without another presentation update", () => {
     const playback = new PlaybackLifetime();
-    playback.beginOpening();
+    playback.beginOpening(playback.id);
     const { button } = setup({
       isCardPlayInProgress: () => playback.cardPlayInProgress,
       subscribePlayback: playback.subscribe,
@@ -72,7 +72,7 @@ describe("toolbar End Turn", () => {
     expect(button.disabled).toBe(true);
     act(() => playback.completeAction(playback.id));
     expect(button.disabled).toBe(false);
-    act(() => playback.beginAction());
+    act(() => playback.beginAction(playback.id));
     expect(button.disabled).toBe(true);
     act(() => playback.completeAction(playback.id));
     expect(button.disabled).toBe(false);

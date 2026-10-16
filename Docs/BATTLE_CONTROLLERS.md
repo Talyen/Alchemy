@@ -152,7 +152,13 @@ available during victory grace. Late completions cannot unlock a newer lifetime
 or restart auto-end-turn in a finishing battle. Lifetime subscriptions publish
 phase changes so End Turn updates when opening or action playback completes,
 even after the final presentation update. React subscribes to binding
-readiness; no callback-ref bundle or binding-version counter is needed.
+readiness. Each generation is a distinct record containing its phase, abort
+controller, timers, cancellation callbacks, and draw counts. Phase admission
+requires the originating generation ID and reports rejection if an autoplay
+adapter or observer replaces it reentrantly. Callers stop presentation after
+rejection. Raw timer groups stay private; generation-scoped cleanup cannot
+cancel a replacement battle's timers. Autoplay binding replacement separately
+rejects an older bind if its cleanup installs a newer binding.
 
 Hand reveals acquire a draw lease from this lifetime and release it on success,
 failure, or cancellation. Transfer visibility reads the same pending count; it
