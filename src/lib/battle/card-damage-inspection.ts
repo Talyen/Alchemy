@@ -42,7 +42,12 @@ import { gainMana, scaleGoldReward } from "./resource-state";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { decayEnemyArmor, reduceEnemyArmor } from "./enemy-mitigation-state";
 import { computeLeechHeal, leechHealingAmount, scaleLeechBase } from "./damage-rider-leech";
-import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
+import {
+  addEnemyMitigationWithCombatText,
+  processEncounterTraitHealthThreshold,
+} from "./encounter-trait-health-threshold";
+import { purgeEnemyBenefits } from "./enemy-purge";
+import { applyShatter, canShatter } from "./elemental-reactions";
 import type { BattleSnapshot, BattleState } from "./types";
 
 type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
@@ -204,9 +209,28 @@ export function getBattleDamageInspectionCard(
       : current;
   }
 
+  function projectLeech(current: BattleState, damage: number, cardHealing = false, percent?: number): BattleState {
+    const base = percent === undefined ? computeLeechHeal(damage) : Math.round((damage * percent) / 100);
+    if (base <= 0) return current;
+    const healing = resolvePlayerHealing(current, leechHealingAmount(current, scaleLeechBase(current, base)));
+    let healed = healing.state;
+    if (
+      (healing.restored > 0 && current.gearEffects.healCleanseChance >= 100) ||
+      (cardHealing && healing.overflow > 0 && current.talentEffects.cleanseOnCardOverheal)
+    )
+      healed = projectCleanse(healed, 1);
+    if (healing.restored > 0 && current.playerHealth + healing.restored >= current.playerMaxHealth) {
+      const previousMana = healed.mana;
+      healed = gainMana(healed, paceCombatMagnitude(healed, current.talentEffects.manaOnLeechToFull, "player"));
+      healed = projectManaHealing(healed, healed.mana - previousMana);
+    }
+    return healed;
+  }
+
   function attack(
     effect: DamageEffect,
     current: BattleState,
+    forgeTriggers: Set<string>,
   ): { effect: DamageEffect; state: BattleState; followUp?: DamageEffect } {
     if (!enemy && (isPlayerDefeated(current) || current.enemyHealth <= 0))
       return { effect: flatAttack(effect, 0), state: current };
@@ -249,8 +273,15 @@ export function getBattleDamageInspectionCard(
     const baseDamageBonus = consumed.packet.damageType === "physical" ? consumed.physicalBonus : 0;
     if (armorBonus <= 0 && computeBaseDamage(consumed.state, consumed.packet, { card, bonus: baseDamageBonus }) <= 0)
       return { effect: flatAttack(consumed.packet, 0), state: spent };
+    const shatter =
+      consumed.packet.damageType === "physical" &&
+      canShatter(consumed.state) &&
+      computeCardAttackPower(consumed.state, consumed.packet, card, { origin: "played-card", baseDamageBonus }).damage >
+        0;
+    const shatterDamage = shatter ? consumed.state.reactions.shatterDamage : 0;
+    const damageState = shatter ? applyShatter(consumed.state, []) : consumed.state;
     const power = computeCardAttackPower(
-      consumed.state,
+      damageState,
       consumed.packet,
       card,
       {
@@ -271,7 +302,7 @@ export function getBattleDamageInspectionCard(
     // later effects. Defenses can prevent buildup and Leech even though the
     // tooltip deliberately shows the packet before those defenses.
     const resolved = computeCardDamageToEnemy(
-      consumed.state,
+      damageState,
       consumed.packet,
       card,
       {
@@ -283,6 +314,13 @@ export function getBattleDamageInspectionCard(
       "prepared-only",
     );
     let after = resolved.nextState;
+    if (after.gearEffects.attackPurgeOncePerTurn > 0 && !after.uniqueGear.wardbreakerPurgeUsed) {
+      const purged = purgeEnemyBenefits(after, 1, []);
+      if (purged.removed > 0) {
+        after = { ...purged.state, uniqueGear: { ...purged.state.uniqueGear, wardbreakerPurgeUsed: true } };
+        after = grantPlayerStatus(after, "block", after.gearEffects.blockOnPurge);
+      }
+    }
     const damage = resolved.modifiedDamage;
     const healthDamage = Math.min(current.enemyHealth, damage);
     if (damage > 0) {
@@ -297,18 +335,40 @@ export function getBattleDamageInspectionCard(
         )
           after = reduceEnemyArmor(after, damage);
       }
-      if (consumed.packet.lifesteal) {
-        const base = computeLeechHeal(type === "poison" ? healthDamage : damage);
-        if (base > 0) {
-          const healing = resolvePlayerHealing(after, leechHealingAmount(after, scaleLeechBase(after, base)));
-          after = healing.state;
-          if (
-            (healing.restored > 0 && after.gearEffects.healCleanseChance >= 100) ||
-            (healing.overflow > 0 && after.talentEffects.cleanseOnCardOverheal)
-          )
-            after = projectCleanse(after, 1);
+      const explicitLeech = consumed.packet.lifesteal === true;
+      const physicalLeech =
+        type === "physical" &&
+        current.playerHealth * 2 < current.playerMaxHealth &&
+        current.gearEffects.physicalLeechBelowHalfHealth > 0;
+      if (explicitLeech || physicalLeech)
+        after = projectLeech(after, type === "poison" ? healthDamage : damage, explicitLeech);
+      if (type === "holy") {
+        if (
+          !explicitLeech &&
+          current.playerHealth * 2 < current.playerMaxHealth &&
+          after.talentEffects.holyLifestealPercent > 0
+        )
+          after = projectLeech(after, damage, false, after.talentEffects.holyLifestealPercent);
+        if (after.gearEffects.oathkeeperHolyAndBlock > 0 && !forgeTriggers.has("oathkeeper")) {
+          forgeTriggers.add("oathkeeper");
+          after = grantPlayerStatus(after, "block", 1);
         }
+        if (healthDamage > 0 && current.playerStatuses.block === 0)
+          after = grantPlayerStatus(after, "block", after.gearEffects.blockOnHolyHitWithoutBlock);
       }
+      if (
+        type === "nature" &&
+        !explicitLeech &&
+        current.enemyStatuses.poison > 0 &&
+        after.gearEffects.natureLeechVsPoisoned > 0
+      )
+        after = projectLeech(after, healthDamage);
+    }
+    after = processEncounterTraitHealthThreshold(current.enemyHealth, after, []);
+    if (shatterDamage > 0 && after.enemyHealth > 0 && !isPlayerDefeated(after)) {
+      const previousHealth = after.enemyHealth;
+      after = decayEnemyArmor({ ...after, enemyHealth: Math.max(0, previousHealth - shatterDamage) });
+      after = processEncounterTraitHealthThreshold(previousHealth, after, []);
     }
     return {
       effect: flatAttack(consumed.packet, power.damage + armorBonus),
@@ -318,14 +378,18 @@ export function getBattleDamageInspectionCard(
   }
 
   const projectedSources = new Map<BattleCardEffect, BattleCardEffect>();
-  function project(effects: readonly BattleCardEffect[], initial: BattleState): BattleCardEffect[] {
+  function project(
+    effects: readonly BattleCardEffect[],
+    initial: BattleState,
+    forgeTriggers = new Set<string>(),
+  ): BattleCardEffect[] {
     let current = initial;
     return effects.flatMap((effect): BattleCardEffect | BattleCardEffect[] => {
       if (effect.kind === "chance") {
         return {
           ...effect,
-          successEffects: project(effect.successEffects, current),
-          failureEffects: project(effect.failureEffects, current),
+          successEffects: project(effect.successEffects, current, new Set(forgeTriggers)),
+          failureEffects: project(effect.failureEffects, current, new Set(forgeTriggers)),
         };
       }
       // Future turns have unknown resources and pacing: retain their authored values.
@@ -341,26 +405,32 @@ export function getBattleDamageInspectionCard(
               : [effect.damageType];
         const amounts = effect.kind === "random-damage" ? [effect.minAmount, effect.maxAmount] : [effect.amount];
         const outcomes = types.flatMap((damageType) =>
-          amounts.map((amount) =>
-            attack(
-              {
-                ...effect,
-                kind: "damage",
-                damageType,
-                amount,
-              },
-              current,
-            ),
-          ),
+          amounts.map((amount) => {
+            const triggers = new Set(forgeTriggers);
+            return {
+              ...attack({ ...effect, kind: "damage", damageType, amount }, current, triggers),
+              forgeTriggers: triggers,
+            };
+          }),
         );
         const first = outcomes[0]!;
+        for (const trigger of first.forgeTriggers) {
+          if (outcomes.every((outcome) => outcome.forgeTriggers.has(trigger))) forgeTriggers.add(trigger);
+        }
         // Retain only facts shared by every possible packet. In particular,
         // a range's first endpoint cannot choose later Health or buildup.
         for (const field of ["mana", "playerHealth", "enemyHealth"] as const) {
           if (outcomes.every((outcome) => outcome.state[field] === first.state[field]))
             current = { ...current, [field]: first.state[field] };
         }
-        for (const field of ["flags", "playerStatuses", "enemyStatuses", "enemyMitigation"] as const) {
+        for (const field of [
+          "flags",
+          "playerStatuses",
+          "enemyStatuses",
+          "enemyMitigation",
+          "uniqueGear",
+          "reactions",
+        ] as const) {
           const shared = Object.entries(first.state[field]).every(([key, value]) =>
             outcomes.every((outcome) => (outcome.state[field] as Record<string, unknown>)[key] === value),
           );
@@ -422,6 +492,7 @@ export function getBattleDamageInspectionCard(
             ...(effect.lifesteal ? { lifesteal: true } : {}),
           },
           current,
+          forgeTriggers,
         );
         current = converted.state;
         return [
