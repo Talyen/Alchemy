@@ -77,9 +77,16 @@ The shell retains outgoing children and layout classes, so clearing a payload or
 resetting pagination cannot change the closing panel. Reopening cancels removal and
 starts a fresh panel mount and artwork gate. Consumers retain action-specific guards
 such as Wish's single-selection latch and confirmation buttons' disabled state.
+`dialog-focus-owner.ts` owns the ordered interactive panel stack, focus containment,
+initial focus, recovery, and opener restoration. `useDialogFocus` registers a panel
+with that owner; controller traversal uses the same active panel rather than portal
+DOM order. One shared focus listener and mutation observer serve the stack and are
+released when the last panel and pending restoration are gone.
 Dialog focus containment belongs to the most recently opened interactive panel.
 Opening the pause menu over a pending Wish suspends the Wish's focus trap;
-closing the menu restores focus to the choice. Inert panels do not reclaim focus.
+closing the menu restores focus to the choice. Inert and hidden panels do not reclaim focus. When a focused choice disappears or
+becomes unavailable, focus recovers inside the active panel; removing a covered
+panel preserves the foreground selection.
 Confirmation focus containment pauses while the panel is inert; focus returns
 to its existing target when the panel unmounts.
 
@@ -117,8 +124,9 @@ aria-disabled controls can still be traversed and inspected. Recovery scrolls
 only as needed. Closing inspection does not trigger screen-focus recovery.
 Dialogs restore their opener or fall back to the active screen when a previously
 focused opener disappeared. Opening a dialog with no control focused restores
-that unfocused state on close. Deferred restoration retries an opener that was
-temporarily inert. Existing focus is respected when deferred recovery runs.
+that unfocused state on close. Deferred restoration retains an opener through temporary screen preparation,
+including when it stays inert beyond the first recovery frame. Fresh pointer input
+or focus elsewhere cancels that pending restoration. Existing focus is respected when deferred recovery runs.
 
 Battle hand recovery is local to the hand and uses stable card identities. After a
 keyboard play, focus goes to the next playable card in the prior visual order,
