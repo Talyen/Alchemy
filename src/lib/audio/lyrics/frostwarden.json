@@ -3,7 +3,7 @@
   "lyricsSha256": "427efb176b44cfa68aad687c521c8eb57bacead7860c8dbcdfb3ccba494aedd1",
   "audioDuration": 341.76,
   "model": "small.en; small.en for suspect phrases",
-  "method": "independent ASR phrase matching with repeats/omissions; bounded word alignment; no manual timestamps",
+  "method": "independent ASR phrase matching with repeats/omissions; bounded word alignment; no manual word timestamps",
   "coverage": {
     "detectedPhrases": 56,
     "unmatchedAsrWords": 19,
@@ -11,7 +11,8 @@
     "rejectedTimingPhrases": 0,
     "alignedPhrases": 60,
     "recoveredPhrases": 4,
-    "realignedPhrases": 2
+    "realignedPhrases": 2,
+    "vocalCuePassages": 4
   },
   "lines": [
     {
@@ -99,6 +100,14 @@
     {
       "text": "Melts me, breaks the chains",
       "timings": [122.04, 123.1, 123.1, 124.62, 124.62, 125.6, 125.6, 125.98, 125.98, 126.34]
+    },
+    {
+      "text": "[vocalizing]",
+      "timings": [126.4, 134.0]
+    },
+    {
+      "text": "[vocalizing]",
+      "timings": [136.4, 141.8]
     },
     {
       "text": "You sealed your hands in winter light",
@@ -197,6 +206,10 @@
       "timings": [236.02, 237.16, 237.16, 238.88, 238.88, 239.64, 239.64, 239.96, 239.96, 240.4]
     },
     {
+      "text": "[vocalizing]",
+      "timings": [240.5, 248.4]
+    },
+    {
       "text": "Ice meets fire",
       "timings": [259.18, 261.5, 261.5, 262.0, 262.0, 262.68]
     },
@@ -259,6 +272,10 @@
     {
       "text": "Melts me, breaks the chains",
       "timings": [322.36, 323.14, 323.14, 324.5, 324.5, 325.68, 325.68, 326.0, 326.0, 326.36]
+    },
+    {
+      "text": "[vocalizing]",
+      "timings": [326.4, 337.7]
     }
   ],
   "undetectedWrittenPhrases": ["Aaaah…"],
@@ -268,5 +285,6 @@
     "separationModel": "htdemucs",
     "alignmentModel": "small.en",
     "method": "bounded contextual vocal-stem alignment; no manual word timestamps"
-  }
+  },
+  "vocalCueMethod": "manually bounded vocal-stem passages; descriptive captions, not transcribed words"
 }

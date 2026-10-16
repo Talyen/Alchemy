@@ -94,7 +94,9 @@ The cached full transcript is reused only for the same recording hash.
 The supplied `forge-golem.txt`, `frostwarden.txt` and `iron-bear.txt` match the
 lyric metadata embedded in their shipped MP3s. Section labels, singer labels
 and sound directions are excluded. Forge Golem's held chants are split into
-single-word phrases so a long rest does not stretch one phrase across them.
+single-word phrases for alignment candidates so a long rest does not stretch
+one phrase across them. The runtime snapshot captions these uncertain groups as
+`[chants]` instead of asserting unreliable word timings.
 The matcher permits a one-word phrase as well as longer lines.
 
 Use separate output directories to retain each song's evidence and transcript
@@ -177,10 +179,15 @@ Remaining uncertainties include Iron Bear's growled "Break him" / "Burn him"
 and "I won't kneel" / "I won't fold", its final "remember what you bleed" and
 one backing vocal, Forge Golem's other chants, and Frostwarden's nonlexical
 "Aaaah". Independent transcription and a CTC alignment comparison of separated
-vocals did not provide reliable confirmation for these passages. Keep their
-omissions explicit; neither forced positive intervals nor a supplied sheet
-alone proves the performed words and their timing. Audible qualification remains
-necessary; these model checks do not establish a listening pass.
+vocals did not provide reliable confirmation for these passages. The runtime
+snapshots describe them with `[growls]`, `[chants]`, or `[vocalizing]`, preserving
+clear adjoining words. These cue rows use manually bounded vocal passages and
+are recorded separately in `vocalCueMethod` and `coverage.vocalCuePassages`;
+they are not recovered words. Instrumental breaks stay blank. Reapply these
+authored cue rows when regenerating a snapshot from model output. Neither forced
+positive intervals nor a supplied sheet alone proves the performed words and
+their timing. Audible qualification remains necessary; these model checks do not
+establish a listening pass.
 
 Dependencies and models download on first use. Subsequent runs use local caches;
 no audio or lyrics are sent to a service. Models, environments, vocal stems,

@@ -52,7 +52,13 @@ function SungLyrics({ musicKey, lines }: { musicKey: string; lines: NonNullable<
               )}
             >
               {index > 0 ? " " : ""}
-              {word.text}
+              {word.text === "[chants]"
+                ? i18n.text("ui.boss-lyrics.chants", "[chants]")
+                : word.text === "[growls]"
+                  ? i18n.text("ui.boss-lyrics.growls", "[growls]")
+                  : word.text === "[vocalizing]"
+                    ? i18n.text("ui.boss-lyrics.vocalizing", "[vocalizing]")
+                    : word.text}
             </span>
           ))
         : null}

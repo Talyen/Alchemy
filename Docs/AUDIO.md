@@ -37,7 +37,7 @@ The Frostwarden and The Iron Bear live in `src/lib/audio/lyrics/`, each tied to
 its recording by SHA-256. `lyrics.ts` registers them by music key. The new lyric
 sheets are retained in `scripts/lyrics-trial/` and match the supplied sheets and
 the MP3 lyric metadata; section labels and sound directions are excluded.
-Long Forge Golem chants use separate phrase windows for each held word.
+Unclear Forge Golem chant groups use bracketed vocal cues.
 The experiment remains a separate comparison tool. Generated timings still need
 performance-coverage and audible synchronization review; coverage metadata
 records undetected phrases and unmatched ASR words rather than forcing them
@@ -52,8 +52,12 @@ longer consume the preceding "What burns me" call. The
 retains source hashes, search windows and model settings. These lines were in
 the supplied sheets; detection and invalid word timings caused their omission.
 Iron Bear's growled bridge, final "remember what you bleed" and one backing
-vocal, Forge Golem's remaining chants, and Frostwarden's "Aaaah" remain
-unresolved. This does not establish that they are absent from the recordings.
+vocal, Forge Golem's chants, and Frostwarden's "Aaaah" remain unresolved as exact
+word alignments. These passages now display `[growls]`, `[chants]`, or
+`[vocalizing]` in bounded vocal windows. Clear adjoining lyrics retain their word
+timings. Cue boundaries are manually annotated from the separated vocal timeline;
+they describe the passage without asserting its words. This does not establish
+that the supplied words are absent from the recordings.
 
 `Boss Lyrics` in Audio settings defaults on and persists through the normal
 settings codec. The battle lyric leaf samples `readMusicPlayback()` from the
@@ -68,7 +72,7 @@ transcription, audio decoding, or per-word timers run in the game.
 Iron Bear timings use the original recording's timestamps, including its
 six-second playback skip; no second offset is applied. Sung words remain in the
 recording's language when the interface language changes. The accessible
-"Song lyrics" label follows the interface language.
+"Song lyrics" label and bracketed vocal cues follow the interface language.
 
 ## Runtime contract
 

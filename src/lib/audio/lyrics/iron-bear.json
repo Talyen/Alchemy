@@ -3,7 +3,7 @@
   "lyricsSha256": "a0ba0935d81d6db0e2aa72e319da12d3740793d976aa9e6bed8ce95b679b5948",
   "audioDuration": 302.12,
   "model": "small.en; small.en for suspect phrases",
-  "method": "independent ASR phrase matching with repeats/omissions; bounded word alignment; no manual timestamps",
+  "method": "independent ASR phrase matching with repeats/omissions; bounded word alignment; no manual word timestamps",
   "coverage": {
     "detectedPhrases": 55,
     "unmatchedAsrWords": 30,
@@ -11,7 +11,8 @@
     "rejectedTimingPhrases": 1,
     "alignedPhrases": 54,
     "recoveredPhrases": 4,
-    "realignedPhrases": 0
+    "realignedPhrases": 0,
+    "vocalCuePassages": 5
   },
   "lines": [
     {
@@ -165,8 +166,16 @@
       "timings": [150.36, 150.84, 150.84, 151.42, 151.42, 152.3, 152.3, 153.26, 153.26, 154.12]
     },
     {
+      "text": "[growls]",
+      "timings": [155.5, 161.7]
+    },
+    {
       "text": "Feed the mountain.",
       "timings": [161.92, 162.88, 162.88, 163.48, 163.48, 164.3]
+    },
+    {
+      "text": "[growls]",
+      "timings": [164.6, 172.9]
     },
     {
       "text": "Feed the mountain.",
@@ -217,8 +226,16 @@
       "timings": [210.31, 210.51, 210.51, 210.83, 210.83, 211.37]
     },
     {
+      "text": "[chants]",
+      "timings": [211.4, 213.0]
+    },
+    {
       "text": "we are what the mountain breeds",
       "timings": [213.06, 213.42, 213.42, 213.8, 213.8, 214.12, 214.12, 214.5, 214.5, 215.12, 215.12, 215.54]
+    },
+    {
+      "text": "[chants]",
+      "timings": [217.5, 220.3]
     },
     {
       "text": "the cards are cast—",
@@ -227,6 +244,10 @@
     {
       "text": "we are fire,",
       "timings": [221.66, 221.86, 221.86, 222.1, 222.1, 222.7]
+    },
+    {
+      "text": "[chants]",
+      "timings": [222.75, 224.35]
     },
     {
       "text": "we are what the mountain breeds",
@@ -245,5 +266,6 @@
     "separationModel": "htdemucs",
     "alignmentModel": "small.en",
     "method": "bounded contextual vocal-stem alignment; no manual word timestamps"
-  }
+  },
+  "vocalCueMethod": "manually bounded vocal-stem passages; descriptive captions, not transcribed words"
 }

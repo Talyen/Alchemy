@@ -3,12 +3,14 @@
   "lyricsSha256": "151e52f6fb60aed13faa245103ad140164bdb6df8ea91aba39afcbb19c6e48ae",
   "audioDuration": 214.12,
   "model": "small.en; medium.en for suspect phrases",
-  "method": "independent ASR phrase matching with repeats/omissions; bounded word alignment; no manual timestamps",
+  "method": "independent ASR phrase matching with repeats/omissions; bounded word alignment; no manual word timestamps",
   "coverage": {
     "detectedPhrases": 23,
     "unmatchedAsrWords": 11,
     "undetectedWrittenPhrases": 0,
-    "rejectedTimingPhrases": 0
+    "rejectedTimingPhrases": 0,
+    "alignedPhrases": 20,
+    "vocalCuePassages": 3
   },
   "lines": [
     {
@@ -28,6 +30,10 @@
     {
       "text": "slow as a buried quake.",
       "timings": [43.4, 44.48, 44.48, 44.92, 44.92, 45.12, 45.12, 45.88, 45.88, 46.94]
+    },
+    {
+      "text": "[chants]",
+      "timings": [48.1, 57.4]
     },
     {
       "text": "Strike and strike, but I do not fall",
@@ -72,16 +78,8 @@
       ]
     },
     {
-      "text": "Forge…",
-      "timings": [112.7, 112.86]
-    },
-    {
-      "text": "Forge…",
-      "timings": [112.96, 116.22]
-    },
-    {
-      "text": "Forge…",
-      "timings": [119.84, 120.76]
+      "text": "[chants]",
+      "timings": [112.7, 120.76]
     },
     {
       "text": "Soprano, sing of rust and rain,",
@@ -104,6 +102,10 @@
         140.44, 141.04, 141.04, 141.4, 141.4, 141.9, 141.9, 142.84, 142.84, 143.04, 143.04, 143.4, 143.4, 143.98,
         143.98, 145.54
       ]
+    },
+    {
+      "text": "[chants]",
+      "timings": [152.1, 162.5]
     },
     {
       "text": "Strike and strike, but I do not fall",
@@ -130,5 +132,6 @@
       "text": "I answer with iron for all",
       "timings": [179.88, 180.1, 180.1, 180.64, 180.64, 181.08, 181.08, 181.5, 181.5, 182.12, 182.12, 182.44]
     }
-  ]
+  ],
+  "vocalCueMethod": "manually bounded vocal-stem passages; descriptive captions, not transcribed words"
 }
