@@ -28,6 +28,7 @@ export function resolveStunFollowUpHit(
       hit.facts.previousHealth,
       false,
       leech,
+      hit.facts.healthDamage,
     );
     if (modifiedDamage > 0) {
       mergeCombatText(combatTexts, {

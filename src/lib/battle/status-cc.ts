@@ -1,3 +1,4 @@
+import { prepareCcReactions } from "./elemental-reaction-state";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { mergeCombatText } from "./combat-text-events";
 import { applyArmorReward } from "./status-player";
@@ -92,6 +93,7 @@ export function resolvePlayerCrowdControlTriggers(state: BattleState, combatText
 
 export interface EnemyCcTriggerCheckInput {
   preHitHealth: number;
+  setupHealthDamage?: number;
 
   nextState: BattleState;
   stat: ActiveCcKeyword;
@@ -122,5 +124,5 @@ export function tryTriggerEnemyCc(input: EnemyCcTriggerCheckInput): EnemyCcTrigg
     stat,
     text: stat === "stun" ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
   });
-  return { kind: "skip", state };
+  return { kind: "skip", state: prepareCcReactions(state, stat, input.setupHealthDamage ?? 0) };
 }

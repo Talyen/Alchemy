@@ -121,13 +121,23 @@ Reworked Talents may retain their IDs, while current run restoration rebinds der
 
 Battle flags default safely, normalize to their declared boolean/number types, and preserve their current values on resume. Their turn/combat/until-consumed lifetimes are owned by [combat-flags.ts](../../../../../src/lib/battle/combat-flags.ts): Archery sequence flags reset each player turn, while Hawk Eye and Riposte readiness survive until consumed and the first-Burn-free allowance lasts for the combat. Never reconstruct readiness from existing status or Dodge state, or replay opening draws/rewards during normalization. New battles initialize fresh flags.
 
-This includes the independent Layered, Ironroot, Shatter, Wildfire, Vanguard’s
-Crest, and Obsidian Hammer per-turn allowances: loading preserves spent uses,
+This includes the independent Layered, Ironroot, Vanguard’s Crest, and Obsidian
+Hammer per-turn allowances: loading preserves spent uses,
 while missing flags use their declared defaults. Forge has no deferred spending
 or threshold-reward queue; normalization discards obsolete queues and retired
 manifest fields.
 Current [Forge rules](../../../../../Docs/GAME_RULES.md#persistent-forge) and
 [Gear rules](../../../../../Docs/ARMORY.md#battle-integration) own their mechanics.
+
+Universal reactions store earned damage separately from turn flags. Shatter and
+Frostfire retain independent Freeze opportunities; Thunderclap retains its Stun
+opportunity. Wildfire stores one optional unmatched natural Burn tick and the
+sum of completed, individually rounded pairs. Current-format resume preserves
+all amounts, including spent opportunities. Missing reaction data starts empty,
+retired `shatterUsed` / `wildfireUsed` flags are ignored, and normalization never
+reconstructs progress from CC or Burn. Invalid scalars repair independently;
+CC rewards outside their active CC are cleared. This additive default needs no
+schema-version bump under the pre-release baseline.
 
 `pendingCardBleedLeechHealing` is the explicit-card subset of queued Bleed Leech.
 It defaults to zero, cannot exceed total queued Leech, and preserves attribution

@@ -22,10 +22,11 @@ import { hasEncounterBenefit } from "./encounter-trait-state";
 import { applySunderingArmorRemoval } from "./enemy-mitigation-state";
 import { writeCombatFlag as setFlag } from "./action-context";
 
-function applyCrit(damage: number, state: BattleState, guaranteed = false) {
+function applyCrit(damage: number, state: BattleState, guaranteed = false, rollCritical = true) {
   const chance =
     GLOBAL_CRIT_CHANCE_PERCENT + (state.deathsDoorActive ? state.gearEffects.criticalChanceWhileDeathsDoor : 0);
-  const critical = guaranteed || readCombatFlag(state, "nextHitCrit") || rollPercent(chance, getBattleRng(state));
+  const critical =
+    guaranteed || readCombatFlag(state, "nextHitCrit") || (rollCritical && rollPercent(chance, getBattleRng(state)));
   return {
     damage: critical && damage > 0 ? damage * CRIT_MULTIPLIER : damage,
     critical: critical && damage > 0,
@@ -184,6 +185,7 @@ export function computeCardDamageToEnemy(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   card?: BattleCard,
   context?: CardEffectResolutionContext,
+  criticalMode: "random" | "prepared-only" = "random",
 ) {
   const power = computeCardAttackPower(state, effect, card, context);
   const stateAfterFirst = power.state;
@@ -198,6 +200,7 @@ export function computeCardDamageToEnemy(
     power.damage,
     stateAfterFirst,
     context?.guaranteedCrit === true || physicalCritReady || hawkEyeCritReady,
+    criticalMode === "random",
   );
   const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
   const finalDamage = Math.round(

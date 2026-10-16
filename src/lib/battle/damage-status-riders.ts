@@ -169,7 +169,13 @@ function applyStunStatusRider(
 ): BattleState {
   if (actualDamage <= 0) return state;
   emitEnemyBuildupImmunity(state, "stun", actualDamage, combatTexts);
-  return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts, preHitHealth, fromHolyDamage);
+  return resolveStunTrigger(
+    addEnemyStatus(state, "stun", actualDamage),
+    combatTexts,
+    preHitHealth,
+    fromHolyDamage,
+    Math.min(actualDamage, preHitHealth),
+  );
 }
 
 export function tryTriggerEnemyFreeze(
@@ -177,6 +183,7 @@ export function tryTriggerEnemyFreeze(
   nextState: BattleState,
   combatTexts: CombatTextEvent[],
   preHitHealth = preHitState.enemyHealth,
+  setupHealthDamage = 0,
 ): BattleState {
   const freezeThreshold = Math.max(
     MIN_CC_THRESHOLD_FRACTION,
@@ -186,6 +193,7 @@ export function tryTriggerEnemyFreeze(
     preHitHealth,
     nextState,
     stat: "freeze",
+    setupHealthDamage,
     stackValue: nextState.enemyStatuses.freeze,
     thresholdFraction: freezeThreshold,
     // Immunity is judged on the latest state, matching the stun path.
@@ -245,7 +253,7 @@ function applyFreezeStatusRider(
       skipFightPacing: true,
     });
   }
-  return tryTriggerEnemyFreeze(eligibility, nextState, combatTexts, preHitHealth);
+  return tryTriggerEnemyFreeze(eligibility, nextState, combatTexts, preHitHealth, Math.min(actualDamage, preHitHealth));
 }
 
 function applyPhysicalStatusRider(

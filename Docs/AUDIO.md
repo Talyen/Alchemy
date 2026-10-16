@@ -153,6 +153,10 @@ Holy Radiance, Burning Blade, Cauterize and Bellows Blast follow their actual
 resolved outcome. Companion turns use their actual damage/healing/status results;
 summoning cards retain their arrival cues.
 
+Shatter uses its existing impact recording without implying a Critical.
+Thunderclap and Frostfire reuse ordinary typed-damage selection and existing
+assets; their reaction names use the existing combat announcements.
+
 Death's Door replaces the ordinary action cue. Actual Shatter, Dodge, Freeze and
 Stun outcomes precede ordinary results; prepared, removed and immune statuses are
 not control procs. Otherwise summed damage by keyword and direct/periodic role, actual Health restored,

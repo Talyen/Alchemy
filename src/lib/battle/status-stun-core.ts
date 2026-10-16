@@ -87,6 +87,7 @@ export function resolveStunTriggerCore(
   preHitHealth: number,
   fromHolyDamage: boolean,
   leech: ThunderstoneLeech,
+  setupHealthDamage = 0,
 ) {
   const threshold = Math.max(
     MIN_CC_THRESHOLD_FRACTION,
@@ -96,6 +97,7 @@ export function resolveStunTriggerCore(
     preHitHealth,
     nextState: state,
     stat: "stun",
+    setupHealthDamage,
     stackValue: state.enemyStatuses.stun,
     thresholdFraction: threshold,
     ccCooldown: state.enemyCC.cooldown,

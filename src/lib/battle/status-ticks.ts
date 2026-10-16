@@ -1,3 +1,4 @@
+import { recordWildfireTick } from "./elemental-reaction-state";
 import { rollBattleChance } from "./chance-roll";
 import { resolveBattleSequence } from "./battle-sequence";
 import { checkHealthThresholds } from "./status-player";
@@ -57,7 +58,9 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (!preventsDecay && !hasEncounterBenefit(state, "eternal-flame")) {
     nextBurn = decayHalvedStatus(nextBurn);
   }
-  return dealEnemyDotTick(state, "burn", finalDamage, nextBurn, combatTexts);
+  return dealEnemyDotTick(state, "burn", finalDamage, nextBurn, combatTexts, (next, hit) =>
+    recordWildfireTick(next, hit.healthDamage),
+  );
 }
 
 export function tickEnemyPoison(state: BattleState, combatTexts: CombatTextEvent[]) {

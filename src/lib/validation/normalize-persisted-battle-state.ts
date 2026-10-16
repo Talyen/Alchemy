@@ -4,7 +4,13 @@ import {
   GEAR_CHANCE_EFFECT_KEYS,
   type GearEffectManifest,
 } from "@/lib/gear";
-import { battleSnapshot, defaultBattleState, type BattleSnapshot } from "@/lib/battle";
+import {
+  battleSnapshot,
+  defaultBattleState,
+  expireCcReactions,
+  createElementalReactionState,
+  type BattleSnapshot,
+} from "@/lib/battle";
 import {
   findEnemyAbilityCard,
   enemyById,
@@ -22,6 +28,20 @@ import {
   sanitizeEncounterTraitIds,
   sanitizePersistedEnemyTraits,
 } from "@/lib/content-systems/encounter-traits";
+
+function normalizeReactions(saved: unknown): BattleSnapshot["reactions"] {
+  const reactions = createElementalReactionState();
+  if (!saved || typeof saved !== "object" || Array.isArray(saved)) return reactions;
+  const record = saved as Record<string, unknown>;
+  for (const key of Object.keys(reactions) as Array<keyof typeof reactions>) {
+    const value = Object.hasOwn(record, key) ? record[key] : undefined;
+    const amount = typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
+    if (key === "wildfirePendingTickDamage" || key === "wildfireLastTickTurn")
+      reactions[key] = amount !== null && amount > 0 ? amount : null;
+    else reactions[key] = amount ?? 0;
+  }
+  return reactions;
+}
 
 function normalizeGearEffects(saved: Partial<GearEffectManifest> | undefined): GearEffectManifest {
   const result = { ...defaultGearEffects };
@@ -320,6 +340,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
     gearEffects: normalizeGearEffects(saved.gearEffects),
     talentEffects: normalizeTalentEffects(defaults.talentEffects, saved.talentEffects),
     flags: normalizeCombatFlags(defaults.flags, saved.flags),
+    reactions: normalizeReactions(saved.reactions),
     uniqueGear: Object.fromEntries(
       Object.entries(defaults.uniqueGear).map(([key, value]) => [
         key,
@@ -339,6 +360,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
         ? saved.lastEnemyAbilityId
         : null,
   };
+  merged.reactions = expireCcReactions(merged).reactions;
   // battleMetrics is runtime-only telemetry; never persisted.
   delete merged.battleMetrics;
   // Glacial Surge is now a native flat bonus; saved growth must not stack with it.

@@ -310,7 +310,8 @@ describe("saved reaction allowances", () => {
     const rearmed = applyDamageStatuses(first.state, freeze, 40, []);
     expect(rearmed.flags.hawkEyeReady).toBe(true);
     const resumedRearmed = resume(rearmed);
-    expect(play(resumedRearmed, arrow).state.enemyHealth).toBe(72);
+    expect(resumedRearmed.reactions.shatterDamage).toBe(10);
+    expect(play(resumedRearmed, arrow).state.enemyHealth).toBe(62); // Critical Arrow 4 plus Shatter 10.
   });
 
   it("Verdict pays for each Holy Stun after immunity expires, including after resume", () => {

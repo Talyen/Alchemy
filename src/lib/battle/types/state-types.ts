@@ -1,3 +1,4 @@
+import type { ElementalReactionState } from "../elemental-reaction-state";
 import type { BattleActionContext } from "../action-context";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import type { ContentSystemId } from "@/lib/content-systems/types";
@@ -93,6 +94,7 @@ export interface BattleSnapshot {
   trinketEffects: TrinketManifest;
   gearEffects: GearEffectManifest;
   flags: CombatFlags;
+  reactions: ElementalReactionState;
   uniqueGear: UniqueGearBattleState;
   pendingTurnStartEffects: PendingTurnStartPulse[];
   discoveredCardIds: string[];

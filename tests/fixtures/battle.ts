@@ -46,6 +46,7 @@ const BATTLE_RECORD_FIELDS = [
   "talentEffects",
   "gearEffects",
   "flags",
+  "reactions",
   "uniqueGear",
   "enemyMitigation",
   "playerCC",

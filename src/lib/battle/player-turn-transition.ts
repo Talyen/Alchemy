@@ -1,3 +1,4 @@
+import { expireCcReactions } from "./elemental-reaction-state";
 import { resetTurnFlags } from "./combat-flags";
 import { mergeCombatText } from "./combat-text-events";
 import { resolveSecondaryAction } from "./action-context";
@@ -267,10 +268,10 @@ export function advanceToPlayerTurn(
 export function reduceSkipTurns(state: BattleState, combatTexts: CombatTextEvent[] = []): BattleState {
   const prevCc = state.enemyCC;
   const decrementedCc = decrementCcSkipTurns(prevCc);
-  const nextState = {
+  const nextState = expireCcReactions({
     ...state,
     enemyCC: finalizeCcSkipTurnDecrement(prevCc, decrementedCc),
-  };
+  });
   return prevCc.freezeSkipTurns > 0 &&
     nextState.enemyCC.freezeSkipTurns === 0 &&
     getBattleOutcome(nextState) === null &&

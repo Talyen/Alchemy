@@ -111,6 +111,7 @@ const PersistedBattleStateWireSchema = z.looseObject({
   playerStatuses: z.record(z.string(), z.unknown()).catch({}),
   enemyStatuses: z.record(z.string(), z.unknown()).catch({}),
   flags: z.record(z.string(), z.unknown()).catch({}),
+  reactions: z.record(z.string(), z.unknown()).catch({}),
   uniqueGear: UniqueGearBattleStateSchema,
   encounterBenefits: EncounterRewardTraitArraySchema,
   discoveredCardIds: z.array(z.unknown()).catch([]),

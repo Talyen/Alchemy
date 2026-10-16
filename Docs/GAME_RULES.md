@@ -454,12 +454,54 @@ Damage converts to another damage type; Block, Armor, Forge, and Thorns convert 
 
 The keyword buttons sit above the original card and its preview, joined by a right arrow. Transmute commits the exact preview, reveals the result after saving, and waits for Continue. Resuming a completed visit shows that saved result without altering the card again or replaying completion feedback. Cards keep their identity and artwork, gain the keyword's title prefix and shine, and can be altered only once. Transmutation and Corruption are mutually exclusive. Strengthened standard Potions remain eligible; Mixed Potions are excluded.
 
-Shatter and Wildfire each activate once per player turn through card hits (including automatic plays) or Companion actions. Their saved flags reset before turn-start Companion actions. Secondary Gear/talent damage, retaliation, delayed pulses, and status ticks do not initiate reactions.
+### Universal reactions
 
-- **Shatter:** a positive Physical attack against an actually Frozen enemy destroys all enemy Block and Armor before mitigation and guarantees that hit's Critical. Freeze remains. Later hits resolve normally. Dodge is resolved before removing defenses or spending the opportunity; Frozen enemies currently cannot Dodge under the existing crowd-control rule.
-- **Wildfire:** a positive resolved Nature hit against an already Burning enemy detonates the remaining projected Burn ticks and clears Burn, after the hit and its normal follow-ups/retaliation, only while the hero and enemy survive. It uses remaining-tick detonation modifiers and per-tick rounding; unmodified 8 Burn pays 8 + 4 + 2 + 1 = 15. It adds no multiplier or Nature buildup.
+Shatter, Frostfire, Thunderclap, and Wildfire reward earned preparation. Direct
+card hits (including eligible automatic plays) and Companion attacks can release
+payoffs. Secondary Gear/talent hits, retaliation, delayed pulses, secondary
+repeats, and status ticks cannot release them, but successful crowd control from
+any source can prepare a payoff. Reaction damage never removes Burn, shortens
+crowd control, or spends another reaction's opportunity.
 
-Resolved reactions use the existing [battle feedback](./UI_BATTLE.md#battle-feedback) for defense removal, Critical Hits, and Burn damage. Card descriptions and keyword explanations follow the [authoring contract](./CONTENT_AUTHORING.md#add-a-new-card); they do not preview these universal reactions. Gameplay commits independently of presentation.
+Successful enemy Freeze prepares independent Shatter and Frostfire bonuses;
+successful Stun prepares Thunderclap. Each bonus is 25% of the actual Health
+damage dealt by the packet causing that CC, rounded once, with a minimum of 1.
+Non-damaging CC prepares the minimum. The amount is fixed when CC begins, so a
+small finishing hit or Companion receives the full reward. Each opportunity
+expires when its CC ends. Haste, duration extensions, additional buildup, and
+player-turn resets cannot replenish it; only a fresh successful CC can.
+
+- **Shatter:** a positive Physical attack against a Frozen enemy destroys all
+  Block and Armor before mitigation, then releases its stored Physical bonus.
+  Dodge and zero-power attacks preserve readiness. Shatter does not guarantee a
+  Critical; the underlying attack uses its ordinary Critical rules.
+- **Frostfire:** an eligible Freeze hit that successfully Freezes an already
+  Burning enemy releases its stored Burn bonus. Alternatively, a Burn hit dealing
+  Health damage to an already Frozen enemy releases it. These routes share one
+  opportunity per Freeze. Bonus damage adds no Burn stacks.
+- **Thunderclap:** Nature damage against an enemy already Stunned before that hit
+  releases its stored Nature bonus, once per Stun. The finishing hit must deal
+  positive Health damage.
+- **Wildfire:** two positive natural enemy-turn Burn ticks prepare bonus Burn
+  damage equal to 25% of their combined actual Health damage, rounded once. Ticks
+  of 8 and 4 prepare 3; ticks of 4 and 2 prepare 2. Only normal enemy-turn ticks
+  count, including CC-skipped enemy turns; Haste, extra ticks, direct hits, and
+  detonations do not. A Nature hit dealing positive Health damage releases all
+  completed pairs without consuming Burn. Additional pairs accumulate while
+  waiting; unmatched ticks carry forward, including across gaps between fires
+  and after Burn reaches zero. Preparation resets between battles.
+
+Bonuses bypass Block and Armor, cannot Critical, and apply no second damage
+scaling, status buildup, attack riders, or recursive reactions. Resolve them after
+normal attack follow-ups and retaliation, only while both combatants survive.
+Thunderclap resolves before Wildfire when both qualify. Standard health-threshold
+handling and once-only kill rewards still apply, including Archery attribution.
+
+Persist reaction progress in battle snapshots; reload cannot refresh spent
+opportunities or replay earned damage. Resolved reactions reuse existing battle
+announcements, damage feedback, and audio assets. Add no readiness UI, explanations,
+tutorials, or card-description/keyword previews; see the
+[authoring contract](./CONTENT_AUTHORING.md#add-a-new-card).
 
 ### Persistent Forge
 
