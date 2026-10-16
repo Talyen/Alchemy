@@ -189,7 +189,6 @@ Teardown always clears battle UI, notifies presentation cancellation, then notif
 run teardown, even if an adapter or listener fails. Listener changes apply on the
 next notification. Run abandonment and defeat submit their settled save before
 these effects; neither requires a route adapter to remember presentation cleanup.
-Defeat's optional `clearCombatPresentation` callback remains an additional adapter.
 
 ### Committed battle playback
 

@@ -184,6 +184,14 @@ or negotiating ownership. Reuse the chat's existing suitable worktree.
 `--detached` for verification-only runs. Creation links `node_modules` from
 the root checkout automatically when present; run `npm ci` only if package
 dependencies change.
+
+If `agent/<slug>` already exists, creation checks out that retained branch at its
+current commit; `--base` applies only when creating a new branch (or a detached
+checkout). Inspect the resulting branch and commit before reviewing or editing.
+Use a fresh slug for new work when the retained branch belongs to an earlier task;
+when intentionally continuing it, incorporate current `main` in the task worktree
+before relying on its documentation or source.
+
 Run worktree management commands from the original checkout. Removal validates
 the exact registered worktree; an unregistered directory requires inspection
 and explicit `--force`. An empty normalized task name is rejected.
