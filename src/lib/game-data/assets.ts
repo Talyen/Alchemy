@@ -1,4 +1,5 @@
 import type { KeywordId } from "./types";
+import type languages from "@/lib/localization/locales/languages.json";
 import * as assetRefs from "./assets.generated";
 import { boardArt, gearArtByDefinitionId } from "./catalog-art";
 export { boardArt, gearArtByDefinitionId } from "./catalog-art";
@@ -13,7 +14,14 @@ export const normalEnemyBg = assetRefs.normalEnemy;
 const pointerCursor = assetRefs.pointerCShaded;
 
 export const menuLogo = assetRefs.alchemyLogo;
-export const demoFeatureShowcase = assetRefs.demoFeatureShowcase;
+export const demoFeatureShowcaseByLocale = {
+  en: assetRefs.demoFeatureShowcase,
+  de: assetRefs.demoFeatureShowcaseDe,
+  "zh-Hans": assetRefs.demoFeatureShowcaseZhHans,
+  ru: assetRefs.demoFeatureShowcaseRu,
+  es: assetRefs.demoFeatureShowcaseEs,
+  "pt-BR": assetRefs.demoFeatureShowcasePtBr,
+} satisfies Record<keyof typeof languages, string>;
 export const armorySalvageArt = assetRefs.armorySalvage;
 
 export const combatantFrameArt = {

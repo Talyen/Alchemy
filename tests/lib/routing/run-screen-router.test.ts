@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { characters } from "@/lib/game-data";
 import { describe, expect, it } from "vitest";
 import { getRunPhase, isRunLoopScreen, ROUTE_SCREENS } from "@/lib/routing";
+import languages from "@/lib/localization/locales/languages.json";
 import { getSteamRichPresenceToken } from "@/lib/routing/run-phase-presence";
 
 describe("run-screen-router", () => {
@@ -23,15 +24,27 @@ describe("run-screen-router", () => {
 it("exports valid localized Steam tokens for every route, outcome and hero", () => {
   const vdf = readFileSync(new URL("../../../steam/rich-presence.vdf", import.meta.url), "utf8");
   expect(vdf.match(/"lang"/g)).toHaveLength(1);
-  for (const language of ["english", "german"])
-    expect(vdf).toMatch(new RegExp(`"${language}"\\s*\\{\\s*"tokens"\\s*\\{`));
-  const tokens = [...vdf.matchAll(/^\s*"(#[^"]+)" "(.+)"$/gm)].map((match) => match[1]);
-  for (const token of tokens) expect(token).toMatch(/^#[a-zA-Z0-9_]+$/);
-  for (const screen of Object.values(ROUTE_SCREENS)) {
-    const token = getSteamRichPresenceToken(screen, getRunPhase(screen, screen === ROUTE_SCREENS.BATTLE));
-    expect(tokens.filter((entry) => entry === token)).toHaveLength(2);
+  const sections = [...vdf.matchAll(/^ {2}"([^"]+)"\s*\{\s*"tokens"\s*\{([\s\S]*?)^ {4}\}/gm)];
+  expect(sections.map((section) => section[1]).sort()).toEqual(
+    Object.values(languages)
+      .map((entry) => entry.steam)
+      .sort(),
+  );
+  for (const [, language, body] of sections) {
+    const tokens = [...body.matchAll(/^\s*"(#[^"]+)" "(.+)"$/gm)].map((match) => match[1]);
+    for (const token of tokens) expect(token).toMatch(/^#[a-zA-Z0-9_]+$/);
+    for (const screen of Object.values(ROUTE_SCREENS)) {
+      const token = getSteamRichPresenceToken(screen, getRunPhase(screen, screen === ROUTE_SCREENS.BATTLE));
+      expect(
+        tokens.filter((entry) => entry === token),
+        `${language}: ${token}`,
+      ).toHaveLength(1);
+    }
+    for (const hero of Object.keys(characters))
+      expect(
+        tokens.filter((entry) => entry === `#hero_${hero}`),
+        `${language}: ${hero}`,
+      ).toHaveLength(1);
+    expect(body.match(/\{#hero_%hero%\}/g), language).toHaveLength(1);
   }
-  for (const hero of Object.keys(characters))
-    expect(tokens.filter((entry) => entry === `#hero_${hero}`)).toHaveLength(2);
-  expect(vdf.match(/\{#hero_%hero%\}/g)).toHaveLength(2);
 });

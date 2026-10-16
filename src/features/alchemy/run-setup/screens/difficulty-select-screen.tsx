@@ -252,7 +252,7 @@ export function DifficultySelectScreen({
           <DifficultyCard
             key={d.id}
             difficultyId={d.id}
-            name={d.name}
+            name={i18n.displayText(d.name)}
             description={i18n.displayText(d.description)}
             completed={completedDifficulties.includes(d.id)}
             locked={!isDifficultyUnlocked(d.id, completedDifficulties)}

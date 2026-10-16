@@ -4,13 +4,21 @@ import type { Page } from "@playwright/test";
 import {
   injectLabyrinthRun,
   readSavedGame,
-  withSavedGame,
   startAtDestination,
   makeCard,
   enterPrimaryRewardScreen,
   openArmory,
   failOnRuntimeErrors,
+  injectHomestead,
+  injectSaveState,
+  injectActiveBattle,
+  injectBossState,
+  makeGoblinBattleState,
+  makeHighDamageCard,
+  waitForLayoutSettled,
 } from "../../browser-helpers";
+import { savedActivityFixture } from "../../fixtures/run-activity";
+import { controllerInput } from "../controller-input";
 import { gridLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
 import { HomesteadPage } from "../../pages/homestead-page";
 import { DEVICE_DISPLAY_RANGES } from "../../../src/lib/settings-values";
@@ -21,6 +29,7 @@ import {
   mechanics,
   reviewLayout,
   translatedLabel,
+  localizedCheckpoint,
 } from "../localization";
 
 // Distinct renderer risks: generated/modified card presentation, movable keyword
@@ -56,15 +65,6 @@ async function nextSeedPage(previous: Page): Promise<Page> {
   await page.addInitScript(() => localStorage.setItem("alchemy-language-v1", "en"));
   return page;
 }
-async function localizedCheckpoint(page: Page, locale: AcceptanceLocale, verify: (fresh: Page) => Promise<void>) {
-  await page.evaluate((value) => localStorage.setItem("alchemy-language-v1", value), locale);
-  // Simulate exit before resume. The fixture page must not later autosave its seed over live progress.
-  await page.close();
-  await withSavedGame(page, async (fresh) => {
-    await expect(fresh.locator("html")).toHaveAttribute("lang", locale === "en-XA" ? "en" : locale);
-    await verify(fresh);
-  });
-}
 
 async function crossLanguageResume(page: Page, locale: AcceptanceLocale, ready: string) {
   const before = await readSavedGame(page);
@@ -86,6 +86,214 @@ for (const locale of acceptanceLocales) {
     });
 
     const label = (english: string) => translatedLabel(locale, english);
+
+    test("localized setup chooses a difficulty and completes a saved draft", async ({ page, fastBattle }) => {
+      void fastBattle;
+      await injectHomestead(page, { completedDifficulties: { knight: ["difficulty-1"] } });
+      await page.goto("/");
+      await localizedCheckpoint(page, locale, async (fresh) => {
+        await fresh.getByRole("button", { name: label("Play"), exact: true }).click();
+        await reviewLayout(fresh, `${locale} mode selection`);
+        await fresh.getByRole("button", { name: label("The Campaign"), exact: true }).click();
+        await reviewLayout(fresh, `${locale} hero selection`);
+        await fresh
+          .getByRole("button", {
+            name: label("Select {{value0}}").replace("{{value0}}", label("Knight")),
+            exact: true,
+          })
+          .click();
+        await expect(fresh.getByRole("heading", { name: label("A Knight's Journey"), exact: true })).toBeVisible();
+        const novice = fresh.getByRole("button", { name: label("Novice"), exact: true });
+        await controllerInput(fresh).activate(novice);
+        await expect(novice).toHaveAttribute("aria-pressed", "true");
+        await reviewLayout(fresh, `${locale} difficulty selection`);
+        await fresh.getByRole("button", { name: locale === "en-XA" ? /Plááy\]$/ : label("Play"), exact: true }).click();
+        await expect(fresh.getByRole("button", { name: label("End Turn"), exact: true })).toBeVisible();
+        await expect.poll(async () => (await readSavedGame(fresh)).activeRun?.selectedDifficulty).toBe("difficulty-1");
+      });
+      page = await nextSeedPage(page);
+      await injectSaveState(page, {
+        contentSystemType: "wildwood",
+        selectedDifficulty: null,
+        runDeck: Array.from({ length: 5 }, () => makeCard()),
+        activity: savedActivityFixture("draft-deck"),
+        wildwoodDraft: {
+          phase: "draft",
+          draftChoices: [makeCard({ id: "bash", title: "Bash" })],
+          remainingBossIds: [],
+          previousBossId: null,
+          currentBossId: null,
+          currentCombatTraitIds: [],
+          currentRewardTraitIds: [],
+        },
+      });
+      await page.goto("/");
+      await localizedCheckpoint(page, locale, async (fresh) => {
+        await expect(fresh.getByRole("heading", { name: label("Draft a Deck"), exact: true })).toBeVisible();
+        await reviewLayout(fresh, `${locale} draft choices`);
+        await controllerInput(fresh).activate(
+          fresh.getByRole("button", {
+            name: label("Select {{value0}}").replace("{{value0}}", label("Bash")),
+            exact: true,
+          }),
+        );
+        await expect(fresh.getByRole("heading", { name: label("Draft Complete"), exact: true })).toBeVisible();
+        await reviewLayout(fresh, `${locale} completed draft`);
+        await crossLanguageResume(fresh, locale, "Draft Complete");
+      });
+    });
+
+    test("Talents and Collection keep localized keyboard targets and saved allocation", async ({ page }) => {
+      test.setTimeout(60_000);
+      await injectHomestead(page, { talentXP: { dodge: 550 }, unlockedTalents: {}, discoveredCardIds: ["anvil"] });
+      await page.goto("/");
+      await localizedCheckpoint(page, locale, async (fresh) => {
+        await fresh.getByRole("button", { name: label("Talents"), exact: true }).click();
+        await fresh
+          .getByRole("button", {
+            name: label("Select {{value0}} Talents").replace("{{value0}}", label("Dodge")),
+            exact: true,
+          })
+          .click();
+        const node = fresh.getByRole("button").filter({ has: fresh.getByText(label("Lightfoot"), { exact: true }) });
+        await controllerInput(fresh).activate(node, 50);
+        await expect(node).toHaveAttribute("aria-disabled", "true");
+        await expect.poll(async () => (await readSavedGame(fresh)).unlockedTalents.dodge).toEqual(["dodge-lightfoot"]);
+        await reviewLayout(fresh, `${locale} talent allocation`);
+        await fresh.getByRole("button", { name: label("Open game menu"), exact: true }).click();
+        await fresh
+          .getByTestId("game-menu")
+          .getByRole("button", { name: label("Collection"), exact: true })
+          .click();
+        await fresh.getByRole("button", { name: label("Cards"), exact: true }).click();
+        await waitForLayoutSettled(fresh);
+        const inspect = fresh.getByRole("button", {
+          name: label("Inspect {{value0}}").replace("{{value0}}", label("Anvil")),
+          exact: true,
+        });
+        // Catalog ordering follows the selected language, so inspect the same
+        // discovered card through real pagination rather than assuming page one.
+        await expect(async () => {
+          if (await inspect.isVisible()) return;
+          await fresh.getByRole("button", { name: label("Next page"), exact: true }).click();
+          await waitForLayoutSettled(fresh);
+          await expect(inspect).toBeVisible({ timeout: 300 });
+        }).toPass({ timeout: 20_000, intervals: [0] });
+        await controllerInput(fresh).reach(inspect, 50);
+        await expect(fresh.getByRole("tooltip").last()).toContainText(label("Anvil"));
+        await reviewLayout(fresh, `${locale} Collection inspection`);
+        await localizedCheckpoint(fresh, locale === "ru" ? "zh-Hans" : "ru", async (resumed) => {
+          expect((await readSavedGame(resumed)).unlockedTalents.dodge).toEqual(["dodge-lightfoot"]);
+        });
+      });
+    });
+
+    test("Mystery choice remains translated and settles once across a language change", async ({ page }) => {
+      const event = {
+        id: "ancient-altar",
+        title: "Ancient Altar",
+        art: "",
+        narrative: "A sunlit stone altar holds a bowl of gold and a gleaming topaz relic.",
+        choices: [
+          {
+            label: "Take the Offering",
+            effects: [
+              { kind: "gainXP", keyword: "holy", amount: 8 },
+              { kind: "gainGold", amount: 20 },
+            ],
+          },
+        ],
+      };
+      await injectSaveState(page, {
+        activity: savedActivityFixture("mystery", {
+          event,
+          chosenChoice: null,
+          cardChoices: null,
+          grantedTrinketIds: [],
+          grantedGear: [],
+          chosenCardId: null,
+        }),
+      });
+      await page.goto("/");
+      await localizedCheckpoint(page, locale, async (fresh) => {
+        await expect(fresh.getByRole("heading", { name: label(event.title), exact: true })).toBeVisible();
+        const choice = fresh.getByRole("button", { name: label("Take the Offering"), exact: true });
+        await controllerInput(fresh).reach(choice);
+        await expect(fresh.getByRole("tooltip").last()).toBeVisible();
+        await reviewLayout(fresh, `${locale} Mystery choice`);
+        const before = await readSavedGame(fresh);
+        await fresh.keyboard.press("Enter");
+        await expect(fresh.getByRole("heading", { name: label("Reward"), exact: true })).toBeVisible();
+        await expect.poll(async () => (await readSavedGame(fresh)).gold).toBe((before.gold ?? 0) + 20);
+        await reviewLayout(fresh, `${locale} Mystery reward`);
+        await crossLanguageResume(fresh, locale, "Reward");
+      });
+    });
+
+    test("defeat and final victory keep localized recap controls and settle progress", async ({ page, fastBattle }) => {
+      void fastBattle;
+      await injectActiveBattle(
+        page,
+        makeGoblinBattleState({
+          hand: [],
+          mana: 0,
+          playerHealth: 1,
+          deathsDoorUsed: true,
+          deathsDoorActive: false,
+          playerStatuses: { poison: 50 },
+          gearEffects: { dodgeChance: 0 },
+          talentEffects: { dodgeChanceBelowHalfHealth: 0 },
+          currentEnemy: { id: "goblin", abilityIds: ["slash", "sunder", "burning-blade"] },
+        }),
+        { runPlayerHealth: 1, runGoldEarned: 42, runBoons: ["bone-charm"] },
+      );
+      await localizedCheckpoint(page, locale, async (fresh) => {
+        await fresh.getByRole("button", { name: label("End Turn"), exact: true }).click();
+        await fresh
+          .getByRole("dialog")
+          .getByRole("button", { name: label("End Turn"), exact: true })
+          .click();
+        await expect(fresh.getByRole("heading", { name: label("Journey’s End"), exact: true })).toBeVisible();
+        await expect(fresh.getByText("+42", { exact: true })).toBeVisible();
+        await reviewLayout(fresh, `${locale} defeat recap`);
+        await fresh.getByRole("button", { name: label("Inspect Boons"), exact: true }).click();
+        await expect(fresh.getByRole("heading", { name: label("Boons"), exact: true })).toBeVisible();
+        await reviewLayout(fresh, `${locale} recap Boons`);
+        await fresh
+          .getByTestId("battle-boon-inspect-overlay")
+          .getByRole("button", { name: label("Close boons"), exact: true })
+          .click();
+        await fresh.getByRole("button", { name: label("Main Menu"), exact: true }).click();
+        await expect.poll(async () => (await readSavedGame(fresh)).activeRun).toBeNull();
+      });
+      page = await nextSeedPage(page);
+      const card = makeHighDamageCard();
+      await injectBossState(page, 3, {
+        activity: savedActivityFixture("battle", {
+          battleState: makeGoblinBattleState({
+            currentEnemy: { id: "blight-treant" },
+            hand: [card],
+            enemyHealth: 1,
+            enemyMaxHealth: 1,
+            contentSystemType: "campaign",
+          }),
+          activeLabyrinthModifiers: [],
+          activeLabyrinthRewardModifiers: [],
+        }),
+      });
+      await page.goto("/");
+      await localizedCheckpoint(page, locale, async (fresh) => {
+        await fresh.locator('[data-hand-card="true"] button').first().click();
+        await fresh.locator(".reward-choice button").first().click();
+        await expect(fresh.getByRole("heading", { name: label("Victory"), exact: true })).toBeVisible();
+        await expect(
+          fresh.getByText(label("The primordial evils have been vanquished. Alchemy is saved."), { exact: true }),
+        ).toBeVisible();
+        await reviewLayout(fresh, `${locale} victory recap`);
+        await fresh.getByRole("button", { name: label("Main Menu"), exact: true }).click();
+        await expect.poll(async () => (await readSavedGame(fresh)).activeRun).toBeNull();
+      });
+    });
 
     test("mixed and distilled Potions retain their modifications across languages", async ({ page }) => {
       let brewed: BattleCard | undefined;

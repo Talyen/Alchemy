@@ -1,6 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
-import { campaignActLabel } from "@/lib/campaign-act";
 import { useRef } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -54,8 +53,8 @@ export function DestinationChoices({
             destination={destination}
             label={i18n.displayText(
               destination === DESTINATIONS.BOSS_COMBAT
-                ? i18n.text("ui.destination-choices.d1", "Boss - {{value0}}", {
-                    value0: i18n.displayText(campaignActLabel(currentAct)),
+                ? i18n.text("ui.destination-choices.d1", "Boss - Act {{act}}", {
+                    act: ["I", "II", "III"][currentAct - 1] ?? currentAct,
                   })
                 : destinationLabel(destination),
             )}

@@ -70,13 +70,19 @@ export async function assertHorizontalNeighborGap(
   }).toPass({ timeout: 5_000 });
 }
 
-/** Wait for the active view and virtual-stage geometry before measuring layout. */
+/** Wait for artwork and geometry; inspection dialogs may keep the ready backdrop inert. */
 export async function waitForLayoutSettled(page: Page, readyTarget?: Locator) {
   if (readyTarget) await expect(readyTarget.first()).toBeVisible();
   await page.waitForFunction(() => {
     const stage = document.querySelector('[data-testid="vr-stage"]');
     const root = document.querySelector(".page-enter");
-    if (!stage || !root || getComputedStyle(root).opacity !== "1") return false;
+    if (
+      !stage ||
+      !root ||
+      root.getAttribute("data-artwork-pending") === "true" ||
+      getComputedStyle(root).opacity !== "1"
+    )
+      return false;
     const frame = stage.parentElement;
     if (!frame) return false;
     const stageBounds = stage.getBoundingClientRect();

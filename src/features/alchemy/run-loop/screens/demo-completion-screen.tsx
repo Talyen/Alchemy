@@ -1,6 +1,6 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
-import { demoFeatureShowcase } from "@/lib/game-data";
+import { demoFeatureShowcaseByLocale } from "@/lib/game-data";
 import { useLayoutEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { focusControl } from "../../shared/ui/focus-navigation";
@@ -8,6 +8,9 @@ import { ScreenHeader } from "../../shared/ui/layout-components";
 
 export function DemoCompletionScreen({ onWishlist, onMainMenu }: { onWishlist?: () => void; onMainMenu: () => void }) {
   const i18n = useGameTranslation();
+  const artwork = Object.hasOwn(demoFeatureShowcaseByLocale, i18n.locale)
+    ? demoFeatureShowcaseByLocale[i18n.locale as keyof typeof demoFeatureShowcaseByLocale]
+    : demoFeatureShowcaseByLocale.en;
   const wishlist = useRef<HTMLButtonElement>(null);
   const mainMenu = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
@@ -18,7 +21,7 @@ export function DemoCompletionScreen({ onWishlist, onMainMenu }: { onWishlist?: 
       <ScreenHeader title={i18n.text("ui.demo-completion-screen.1", "The Journey Continues")} />
       <div className="flex min-h-0 w-full flex-1 items-center justify-center">
         <img
-          src={demoFeatureShowcase}
+          src={artwork}
           width={2752}
           height={1536}
           alt={i18n.text(

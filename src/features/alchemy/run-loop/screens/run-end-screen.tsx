@@ -85,7 +85,7 @@ export function RunEndScreen({
       }
     >
       <div className="mt-6 flex flex-col items-center gap-8 text-center">
-        {subtitle ? <p className={cn(bodyTextClass, "text-xl")}>{subtitle}</p> : null}
+        {subtitle ? <p className={cn(bodyTextClass, "text-xl")}>{i18n.displayText(subtitle)}</p> : null}
 
         {entries.length > 0 ? (
           <div className="flex w-full flex-col items-center gap-2">

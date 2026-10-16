@@ -12,6 +12,8 @@ import { GearItemTitle } from "@/features/alchemy/shared/ui/gear-item-title";
 import { gearDefinitionList } from "@/lib/gear";
 import { displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
+import { DemoCompletionScreen } from "@/features/alchemy/run-loop/screens/demo-completion-screen";
+import languages from "@/lib/localization/locales/languages.json";
 
 beforeAll(() => installCatalogs(catalogs));
 afterEach(async () => {
@@ -24,6 +26,36 @@ afterEach(async () => {
 });
 
 describe("localized game presentation", () => {
+  it("switches promo artwork in place for every shipped language and keeps the focused action", async () => {
+    const onMainMenu = vi.fn();
+    render(<DemoCompletionScreen onMainMenu={onMainMenu} />);
+    const image = screen.getByTestId("demo-marketing-image");
+    const original = image.getAttribute("src");
+    const englishAlt = image.getAttribute("alt");
+    const button = screen.getByRole("button", { name: "Main Menu" });
+    button.focus();
+    expect(document.activeElement).toBe(button);
+    const images = new Set([original]);
+    for (const locale of Object.keys(languages).filter((locale) => locale !== "en")) {
+      await act(async () => {
+        await localization.changeLanguage(locale);
+      });
+      expect(screen.getByTestId("demo-marketing-image")).toBe(image);
+      expect(image.getAttribute("src")).toMatch(`demo-feature-showcase-${locale.toLowerCase()}.webp`);
+      expect(image.getAttribute("alt")).not.toContain("More Bosses");
+      expect(document.activeElement).toBe(button);
+      images.add(image.getAttribute("src"));
+    }
+    expect(images.size).toBe(Object.keys(languages).length);
+    await act(async () => {
+      await localization.changeLanguage("en-XA");
+    });
+    expect(image.getAttribute("src")).toBe(original);
+    expect(image.getAttribute("alt")).not.toBe(englishAlt);
+    fireEvent.click(button);
+    expect(onMainMenu).toHaveBeenCalledOnce();
+  });
+
   it("changes language without remounting controls or losing keyboard focus", async () => {
     function Control() {
       useGameTranslation();

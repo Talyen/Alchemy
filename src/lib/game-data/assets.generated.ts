@@ -63,6 +63,11 @@ export { default as crystalGarden } from "@/assets/optimized/crystal-garden.webp
 export { default as culinaryArts } from "@/assets/optimized/culinary-arts.webp";
 export { default as cutpurseKnife } from "@/assets/optimized/cutpurse-knife.webp";
 export { default as darkPact } from "@/assets/optimized/dark-pact.webp";
+export { default as demoFeatureShowcaseDe } from "@/assets/optimized/demo-feature-showcase-de.webp";
+export { default as demoFeatureShowcaseEs } from "@/assets/optimized/demo-feature-showcase-es.webp";
+export { default as demoFeatureShowcasePtBr } from "@/assets/optimized/demo-feature-showcase-pt-br.webp";
+export { default as demoFeatureShowcaseRu } from "@/assets/optimized/demo-feature-showcase-ru.webp";
+export { default as demoFeatureShowcaseZhHans } from "@/assets/optimized/demo-feature-showcase-zh-hans.webp";
 export { default as demoFeatureShowcase } from "@/assets/optimized/demo-feature-showcase.webp";
 export { default as detectMagic } from "@/assets/optimized/detect-magic.webp";
 export { default as difficulty1 } from "@/assets/optimized/difficulty-1.webp";
