@@ -135,6 +135,8 @@ for (const kind of ["purchase", "reward", "victory"] as const) {
         app = await launchElectronApp({ packagedRenderer: true, profile });
         page = await getElectronMainWindow(app);
         const resumedErrors = failOnRuntimeErrors(page);
+        // Relaunch performs real image/font loading before revealing the restored activity.
+        await expect(page.locator("#startup-splash")).toHaveCount(0, { timeout: 30_000 });
         await expect(
           page.getByRole("heading", {
             name: kind === "purchase" ? "Card Shop" : kind === "reward" ? "Choose Destination" : "Victory",
@@ -202,6 +204,7 @@ for (const stage of [
       app = await launchElectronApp({ packagedRenderer: true, profile });
       page = await getElectronMainWindow(app);
       const resumedErrors = failOnRuntimeErrors(page);
+      await expect(page.locator("#startup-splash")).toHaveCount(0, { timeout: 30_000 });
       await expect(page.getByRole("heading", { name: "Card Shop", exact: true })).toBeVisible();
       const shop = new ShopPage(page);
       if (!acquired) {
