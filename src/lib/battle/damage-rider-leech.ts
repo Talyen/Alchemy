@@ -32,17 +32,25 @@ function scalePlayerLeechHeal(state: BattleState, amount: number): number {
   return amount * (hasEncounterBenefit(state, "blood-feast") ? LABYRINTH_MODIFIER_CONFIG.double : 1);
 }
 
+export function leechHealingAmount(
+  state: BattleState,
+  amount: number,
+  afflicted = state.enemyStatuses.poison > 0 || state.enemyStatuses.bleed > 0,
+): number {
+  const bonus = afflicted ? state.talentEffects.afflictionLeechBonusPercent : 0;
+  return (
+    applyPercentBonus(amount, bonus, PERCENT_DENOMINATOR) +
+    (amount > 0 ? (state.talentEffects.homesteadLeechHealing ?? 0) : 0)
+  );
+}
+
 export function applyLeechHealing(
   state: BattleState,
   amount: number,
   combatTexts: CombatTextEvent[],
   options: { cardHealing?: boolean; afflicted?: boolean } = {},
 ): BattleState {
-  const afflicted = options.afflicted ?? (state.enemyStatuses.poison > 0 || state.enemyStatuses.bleed > 0);
-  const bonus = afflicted ? state.talentEffects.afflictionLeechBonusPercent : 0;
-  const healing =
-    applyPercentBonus(amount, bonus, PERCENT_DENOMINATOR) +
-    (amount > 0 ? (state.talentEffects.homesteadLeechHealing ?? 0) : 0);
+  const healing = leechHealingAmount(state, amount, options.afflicted);
   // Capture Leech's own restoration before cleansing or kill rewards can heal again.
   const actualHealing = resolvePlayerHealing(state, healing).restored;
   const belowHalf = state.playerHealth < state.playerMaxHealth / HALF_DIVISOR;
@@ -82,7 +90,7 @@ export function applyLeechHealing(
 }
 
 /** Shared base scaler: desperate → gear → Deep Siphon → blood-feast. */
-function scaleLeechBase(state: BattleState, amount: number): number {
+export function scaleLeechBase(state: BattleState, amount: number): number {
   const base = scaledGearLeechHeal(applyDesperateLeechBonus(state, amount), state.gearEffects);
   return scalePlayerLeechHeal(state, base + state.talentEffects.leechHealingBonus);
 }
