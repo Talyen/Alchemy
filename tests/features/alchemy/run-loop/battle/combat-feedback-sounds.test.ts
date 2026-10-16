@@ -165,3 +165,24 @@ describe("one sound selected from committed action results", () => {
     expect(playCardSound).toHaveBeenCalledTimes(1);
   });
 });
+
+it("selects Shatter by stable reaction identity rather than its displayed wording", () => {
+  expect(
+    selectCombatSound(
+      [
+        {
+          target: "enemy",
+          kind: "notice",
+          stat: "physical",
+          text: "Zersplittern",
+          signal: "reaction",
+          reactionId: "shatter",
+        },
+      ],
+      false,
+    ),
+  ).toBe("shatter");
+  expect(
+    selectCombatSound([{ target: "enemy", kind: "notice", stat: "physical", text: "Shatter" }], false),
+  ).toBeUndefined();
+});

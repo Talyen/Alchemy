@@ -68,7 +68,7 @@ export function selectCombatSound(events: CombatTextEvent[], hasFocalSound: bool
   }
   for (const event of events) {
     if (event.kind === "notice") {
-      if (event.text === "Shatter") controls.add("shatter");
+      if (event.signal === "reaction" && event.reactionId === "shatter") controls.add("shatter");
       else if (event.stat === "dodge") controls.add("dodge");
       if (event.signal === "purge" || event.text === "Purged") resources.add("purge");
       else if (event.signal === "cleanse") resources.add("cleanse");

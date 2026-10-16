@@ -29,7 +29,11 @@ function combinedEntry(existing: FloatingCombatText, incoming: FloatingCombatTex
   const merged = [{ ...existing }];
   mergeCombatText(merged, incoming);
   const result = merged[0]!;
-  return { ...result, displayText: combatTextDisplay(result) };
+  return {
+    ...result,
+    displayText: combatTextDisplay(result),
+    ...(result.kind === "damage" && result.critical ? { includesCritical: true } : {}),
+  };
 }
 
 function mergeIntoExisting(current: CombatTextBurst[], burst: CombatTextBurst, now: number) {

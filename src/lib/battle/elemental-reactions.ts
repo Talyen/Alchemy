@@ -1,23 +1,29 @@
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import type { BattleSnapshot, BattleState, CombatTextEvent } from "./types";
 import type { DamageType } from "@/lib/game-data";
+import { REACTION_DEFINITIONS, type ReactionId } from "./reaction-definitions";
+import { getReactionBonus } from "./elemental-reaction-state";
 import { getBattleOutcome } from "./battle-outcome";
 import { mergeCombatText } from "./combat-text-events";
 import { damageEnemyHealth } from "./health-state";
 import { applyHitEpilogue } from "./player-rewards";
 import { decayArmorAfterDamage } from "./status-helpers";
 
-export type ReactionDamageKey = "shatterDamage" | "frostfireDamage" | "thunderclapDamage" | "wildfireDamage";
+type ReactionDamageKey = "shatterDamage" | "frostfireDamage" | "thunderclapDamage" | "wildfireDamage";
 export interface ReactionPayoff {
-  key: ReactionDamageKey;
+  id: ReactionId;
   damage: number;
 }
-const REACTION_FEEDBACK = {
-  shatterDamage: { text: "Shatter", stat: "physical" },
-  frostfireDamage: { text: "Frostfire", stat: "burn" },
-  thunderclapDamage: { text: "Thunderclap", stat: "nature" },
-  wildfireDamage: { text: "Wildfire", stat: "burn" },
-} as const;
+const STORED_REACTION_KEYS: Partial<Record<ReactionId, ReactionDamageKey>> = {
+  shatter: "shatterDamage",
+  frostfire: "frostfireDamage",
+  thunderclap: "thunderclapDamage",
+  wildfire: "wildfireDamage",
+};
+function announceReaction(texts: CombatTextEvent[], id: ReactionId) {
+  const { text, stat } = REACTION_DEFINITIONS[id];
+  mergeCombatText(texts, { target: "enemy", kind: "notice", signal: "reaction", reactionId: id, text, stat });
+}
 
 export function canInitiateElementalReaction(state: BattleState, context?: CardEffectResolutionContext): boolean {
   return (
@@ -46,14 +52,21 @@ export function getPostHitReactionPayoffs(
     (damageType === "freeze" && !frozenBefore && after.enemyCC.freezeSkipTurns > 0 && before.enemyStatuses.burn > 0)
   ) {
     const damage = damageType === "freeze" ? after.reactions.frostfireDamage : before.reactions.frostfireDamage;
-    if (damage > 0) payoffs.push({ key: "frostfireDamage", damage });
+    if (damage > 0) payoffs.push({ id: "frostfire", damage });
   }
   if (damageType === "nature" && healthDamage > 0) {
     if (before.enemyCC.stunSkipTurns > 0 && before.reactions.thunderclapDamage > 0)
-      payoffs.push({ key: "thunderclapDamage", damage: before.reactions.thunderclapDamage });
-    if (before.reactions.wildfireDamage > 0)
-      payoffs.push({ key: "wildfireDamage", damage: before.reactions.wildfireDamage });
+      payoffs.push({ id: "thunderclap", damage: before.reactions.thunderclapDamage });
+    if (before.reactions.wildfireDamage > 0) payoffs.push({ id: "wildfire", damage: before.reactions.wildfireDamage });
   }
+  if (
+    damageType === "burn" &&
+    healthDamage > 0 &&
+    before.enemyStatuses.burn === 0 &&
+    before.enemyStatuses.poison > 0 &&
+    after.enemyStatuses.burn > 0
+  )
+    payoffs.push({ id: "venomflash", damage: getReactionBonus(before.enemyStatuses.poison) });
   return payoffs;
 }
 
@@ -64,12 +77,17 @@ export function applyShatter(state: BattleState, texts: CombatTextEvent[]): Batt
     enemyMitigation: { ...state.enemyMitigation, block: 0, armor: 0 },
     reactions: { ...state.reactions, shatterDamage: 0 },
   };
-  mergeCombatText(texts, { target: "enemy", kind: "notice", ...REACTION_FEEDBACK.shatterDamage });
+  announceReaction(texts, "shatter");
   if (block > 0)
     mergeCombatText(texts, { target: "enemy", kind: "damage", stat: "block", amount: block, impact: false });
   if (armor > 0)
     mergeCombatText(texts, { target: "enemy", kind: "damage", stat: "armor", amount: armor, impact: false });
   return next;
+}
+
+export function consumeReactionOpportunity(state: BattleState, id: ReactionId): BattleState {
+  const key = STORED_REACTION_KEYS[id];
+  return key ? { ...state, reactions: { ...state.reactions, [key]: 0 } } : state;
 }
 
 /** An already-scaled bonus: no mitigation, Critical, buildup, or attack riders. */
@@ -79,9 +97,9 @@ export function applyElementalReactionDamage(
   texts: CombatTextEvent[],
 ): BattleState {
   if (getBattleOutcome(state) !== null || payoff.damage <= 0) return state;
-  const marked = { ...state, reactions: { ...state.reactions, [payoff.key]: 0 } };
-  const feedback = REACTION_FEEDBACK[payoff.key];
-  if (payoff.key !== "shatterDamage") mergeCombatText(texts, { target: "enemy", kind: "notice", ...feedback });
+  const marked = consumeReactionOpportunity(state, payoff.id);
+  const feedback = REACTION_DEFINITIONS[payoff.id];
+  if (payoff.id !== "shatter") announceReaction(texts, payoff.id);
   const hit = damageEnemyHealth(marked, payoff.damage);
   const damaged = decayArmorAfterDamage(hit.state, payoff.damage, "enemy", texts);
   mergeCombatText(texts, {

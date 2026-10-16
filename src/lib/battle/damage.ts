@@ -191,7 +191,16 @@ export function dealDamageToEnemy(
     combatTexts,
   );
   const payoffs = reactionEligible ? getPostHitReactionPayoffs(state, result, packet.damageType, healthDamage) : [];
-  if (shatter) payoffs.unshift({ key: "shatterDamage", damage: shatterDamage });
+  if (
+    reactionEligible &&
+    packet.damageType === "holy" &&
+    healthDamage > 0 &&
+    state.enemyStatuses.bleed > 0 &&
+    result.enemyStatuses.bleed > 0
+  ) {
+    result = { ...result, reactions: { ...result.reactions, consecrated: true } };
+  }
+  if (shatter) payoffs.unshift({ id: "shatter", damage: shatterDamage });
   result = applyAttackPacketFollowUps(
     result,
     packet.damageType,

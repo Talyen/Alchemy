@@ -1,3 +1,4 @@
+import { prepareCombatFeedback } from "@/features/alchemy/run-loop/battle/combat-feedback-model";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { CombatTextRail } from "@/features/alchemy/run-loop/battle/presentation/ui/combat-text";
@@ -86,4 +87,30 @@ describe("CombatTextRail", () => {
     expect(firstNode?.textContent).toBe("-5");
     expect(container.querySelector('[data-burst-id="second"]')?.textContent).toBe("-8");
   });
+});
+
+it("shows a named reaction and one Critical-inclusive total without a lone reaction icon", () => {
+  const prepared = prepareCombatFeedback(
+    [
+      { target: "enemy", kind: "notice", stat: "physical", text: "Shatter", signal: "reaction", reactionId: "shatter" },
+      { target: "enemy", kind: "damage", stat: "physical", amount: 6, critical: true },
+      { target: "enemy", kind: "damage", stat: "physical", amount: 8, additive: false },
+    ],
+    1,
+    0,
+    1100,
+  );
+  const { container } = render(<CombatTextRail bursts={prepared.bursts} reactions={prepared.reactions} />);
+  expect(container.querySelectorAll('[data-testid="combat-text"]')).toHaveLength(1);
+  expect(container.querySelector('[data-testid="combat-text"]')?.getAttribute("aria-label")).toBe(
+    "Physical: -14 (includes a Critical)",
+  );
+  const name = container.querySelector('[data-reaction="shatter"]');
+  expect(name?.textContent).toBe("Shatter");
+  expect(name?.closest('[data-testid="combat-feedback-action"]')).toBe(
+    container.querySelector('[data-testid="combat-text"]')?.closest('[data-testid="combat-feedback-action"]'),
+  );
+  expect((name!.firstElementChild as HTMLElement).style.webkitTextStroke).toBe("0px");
+  expect(name?.querySelector("svg")).toBeNull();
+  expect(container.querySelectorAll("svg")).toHaveLength(1);
 });

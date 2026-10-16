@@ -46,3 +46,4 @@ export { getEncounterEnemyAbility, getEncounterEnemyTrait, type EnemyDescription
 export { getBattleDamageInspectionCard } from "./card-damage-inspection";
 
 export { createElementalReactionState, expireCcReactions } from "./elemental-reaction-state";
+export { REACTION_DEFINITIONS, type ReactionId } from "./reaction-definitions";

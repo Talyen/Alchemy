@@ -1,4 +1,5 @@
 import type { ElementalReactionState } from "../elemental-reaction-state";
+import type { ReactionId } from "../reaction-definitions";
 import type { BattleActionContext } from "../action-context";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import type { ContentSystemId } from "@/lib/content-systems/types";
@@ -154,7 +155,16 @@ interface NoticeCombatTextEvent {
   signal?: "prepared" | "cleanse" | "purge" | "immune";
 }
 
-export type CombatTextEvent = NumericCombatTextEvent | NoticeCombatTextEvent;
+export interface ReactionCombatTextEvent {
+  target: CombatTextTarget;
+  kind: "notice";
+  stat: CombatTextStat;
+  text: string;
+  signal: "reaction";
+  reactionId: ReactionId;
+}
+
+export type CombatTextEvent = NumericCombatTextEvent | NoticeCombatTextEvent | ReactionCombatTextEvent;
 
 export interface BattleResolution {
   state: BattleState;

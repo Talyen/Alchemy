@@ -85,6 +85,11 @@ export function getCombatTextAccessibleLabel(event: FloatingCombatText): string 
       return displayText(event.text) || text("battle.prepared", "{{label}} prepared", { label: displayText(label) });
     return displayText(event.text || (event.stat === "deathsDoor" ? "Death's Door" : label));
   }
+  if (event.kind === "damage" && event.includesCritical)
+    return text("battle.damage-includes-critical", "{{label}}: {{amount}} (includes a Critical)", {
+      label: displayText(label),
+      amount: displayText(event.displayText),
+    });
   return event.kind === "damage" && event.critical
     ? text("battle.critical-label", "Critical {{label}}: {{amount}}", {
         label: displayText(label),

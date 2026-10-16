@@ -83,6 +83,37 @@ use two columns, with notices spanning both. Impact and audio cues follow each
 incoming action's actual events, never accumulated display totals. Resource
 payments and removals do not invent damage impacts.
 
+Universal reactions show their localized names above the numbers in the same
+portrait-anchored action group, without a standalone damage-type icon or a repeated
+bonus amount. Reaction IDs select the shared names and keyword palettes:
+Shatter uses Freeze/Physical, Frostfire Freeze/Burn, Thunderclap Stun/Nature,
+Wildfire Burn/Nature, Consecration Bleed/Holy, Bloodboil Burn/Bleed, and Venomflash
+Poison/Burn. Reuse keyword text shine with a dark drop shadow. Transparent gradient
+text must reset inherited text strokes: an outline can cut through its letter interiors.
+This applies to all shared ShineText consumers and the corrupted-title shine.
+
+Reaction names last 1,600 ms independently of numeric bursts. Pop from 90% to 108%
+by 140 ms, settle to 100% by 240 ms, and fade from 1,250 to 1,600 ms.
+Names and numbers share the ordinary combat-feedback upward trajectory. Names
+remain at its final position until their independent lifetime ends. Reserve space for the numeric pop so
+numbers cannot cross names; older actions stack above newer ones. Fit dense rapid
+sequences within the viewport instead of placing announcements above the artwork.
+The existing shine sweeps once between 100 and 1,100 ms. Names
+use 1.25 times the numeric base size. One or two simultaneous names use one column;
+three or more use two. Names never wrap or truncate: fit their size to their
+column, accounting for the pop scale. Keep at most
+three announcement groups per target; newer groups may evict older groups. Numeric
+merging never restarts a name animation or extends its lifetime. Reduced/disabled
+motion shows static keyword-colored names for the same readable duration. Names
+never block play, and teardown cancels their timers and portrait tracking.
+
+Within each resolved action, damaging packets of the same type and recipient
+produce one numeric total, including non-additive reaction damage and natural
+ticks. Resource removals and Health costs remain separate. Preserve original
+packets for gameplay, audio, and impact strength; visual aggregation never turns
+a reaction into a Critical. A total containing Critical damage uses the existing
+accent and an accessible label saying it includes a Critical.
+
 Critical damage uses ordinary typed damage text, retaining its damage color and
 icon. A pale flash fades over 140 ms and a gold glow fades over 480 ms, without
 changing font size, weight, or angle. Reduced/disabled motion uses a steady gold

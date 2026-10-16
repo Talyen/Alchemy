@@ -137,7 +137,12 @@ all amounts, including spent opportunities. Missing reaction data starts empty,
 retired `shatterUsed` / `wildfireUsed` flags are ignored, and normalization never
 reconstructs progress from CC or Burn. Invalid scalars repair independently;
 CC rewards outside their active CC are cleared. This additive default needs no
-schema-version bump under the pre-release baseline.
+schema-version bump under the pre-release baseline. Consecration adds one
+`consecrated` boolean, default false; hydration preserves a valid mark only while
+Bleed remains. A natural Bleed tick consumes it before riders resolve, and
+clearing/detonating Bleed cancels it. Bloodboil uses phase-local actual tick facts;
+Venomflash uses the packet's pre-hit Poison/Burn and successful ignition. Neither
+adds saved counters or reconstructs progress during load.
 
 `pendingCardBleedLeechHealing` is the explicit-card subset of queued Bleed Leech.
 It defaults to zero, cannot exceed total queued Leech, and preserves attribution

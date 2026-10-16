@@ -188,3 +188,99 @@ for (const reducedMotion of [false, true]) {
     expect(labels.every((text) => /^[+−-]?\d+$/.test(text.trim()))).toBe(true);
   });
 }
+
+for (const reducedMotion of [false, true]) {
+  test(
+    `translated simultaneous reactions stay single-line and clear of numbers (reduced motion=${reducedMotion})`,
+    slow,
+    async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
+      await page.addInitScript(() => localStorage.setItem("alchemy-language-v1", "ru"));
+      const hand = [
+        makeCard({
+          id: "slash",
+          cost: 0,
+          effects: [
+            { kind: "damage", damageType: "burn", amount: 4 },
+            { kind: "damage", damageType: "physical", amount: 6 },
+            { kind: "damage", damageType: "nature", amount: 4 },
+          ],
+        }),
+      ];
+      await injectActiveBattle(
+        page,
+        makeGoblinBattleState({
+          hand,
+          enemyHealth: 300,
+          enemyMaxHealth: 300,
+          appliesFightPacing: false,
+          enemyStatuses: { poison: 12 },
+          enemyCC: { freezeSkipTurns: 2 },
+          reactions: { shatterDamage: 8, frostfireDamage: 8, wildfireDamage: 3 },
+        }),
+        { runDeck: hand, autoEndTurn: false, masterVolume: 0 },
+      );
+      const card = page.locator('[data-hand-card="true"] button').first();
+      await expect.poll(() => card.evaluate((node) => !node.closest("[inert]"))).toBe(true);
+      await card.click();
+      await expect(page.getByTestId("reaction-text")).toHaveCount(4);
+      const review = await page.evaluate(async () => {
+        const started = performance.now();
+        let lastSeen = 0;
+        let frames = 0;
+        let overflow = false;
+        let overlap = false;
+        let smallestGlyphHeight = Infinity;
+        while (performance.now() - started < 1750) {
+          const names = [...document.querySelectorAll<HTMLElement>('[data-testid="reaction-text"]')].filter(
+            (node) => getComputedStyle(node).visibility === "visible",
+          );
+          if (names.length > 0) {
+            lastSeen = performance.now() - started;
+            frames++;
+            const numbers = [...document.querySelectorAll<HTMLElement>('[data-testid="combat-text"]')]
+              .filter((node) => Number(getComputedStyle(node.parentElement!).opacity) > 0.05)
+              .map((node) => node.getBoundingClientRect());
+            for (const name of names) {
+              const glyph = name.firstElementChild as HTMLElement;
+              const bounds = glyph.getBoundingClientRect();
+              if (performance.now() - started > 240) smallestGlyphHeight = Math.min(smallestGlyphHeight, bounds.height);
+              overflow ||=
+                getComputedStyle(name).whiteSpace !== "nowrap" ||
+                glyph.offsetWidth > name.clientWidth + 1 ||
+                bounds.left < 0 ||
+                bounds.right > innerWidth ||
+                bounds.top < 0 ||
+                bounds.bottom > innerHeight;
+              overlap ||= numbers.some(
+                (number) =>
+                  bounds.left < number.right &&
+                  bounds.right > number.left &&
+                  bounds.top < number.bottom &&
+                  bounds.bottom > number.top,
+              );
+            }
+          }
+          await new Promise<void>((resolve) => {
+            requestAnimationFrame(() => resolve());
+          });
+        }
+        return {
+          frames,
+          lastSeen,
+          overflow,
+          overlap,
+          smallestGlyphHeight,
+          remaining: document.querySelectorAll('[data-testid="reaction-text"]').length,
+        };
+      });
+      expect(review.frames).toBeGreaterThan(10);
+      expect(review.lastSeen).toBeGreaterThan(1300);
+      expect(review.lastSeen).toBeLessThan(1750);
+      expect(review.overflow).toBe(false);
+      expect(review.overlap).toBe(false);
+      expect(review.smallestGlyphHeight).toBeGreaterThan(12);
+      expect(review.remaining).toBe(0);
+    },
+  );
+}

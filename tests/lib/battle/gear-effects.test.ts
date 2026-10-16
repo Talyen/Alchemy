@@ -237,7 +237,8 @@ describe("gear-effects", () => {
     });
     const texts: CombatTextEvent[] = [];
     const result2 = tickEnemyStatuses(state2, texts);
-    expect(result2.enemyHealth).toBe(82);
+    expect(result2.enemyHealth).toBe(77); // Burn 15, Bleed 3, Bloodboil 5.
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 15, periodic: true });
   });
 
   it("stun-on-block-hit: deals stun when player block is depleted", () => {

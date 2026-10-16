@@ -35,6 +35,10 @@ function normalizeReactions(saved: unknown): BattleSnapshot["reactions"] {
   const record = saved as Record<string, unknown>;
   for (const key of Object.keys(reactions) as Array<keyof typeof reactions>) {
     const value = Object.hasOwn(record, key) ? record[key] : undefined;
+    if (key === "consecrated") {
+      reactions.consecrated = value === true;
+      continue;
+    }
     const amount = typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
     if (key === "wildfirePendingTickDamage" || key === "wildfireLastTickTurn")
       reactions[key] = amount !== null && amount > 0 ? amount : null;
@@ -361,6 +365,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
         : null,
   };
   merged.reactions = expireCcReactions(merged).reactions;
+  if (merged.enemyStatuses.bleed <= 0) merged.reactions.consecrated = false;
   // battleMetrics is runtime-only telemetry; never persisted.
   delete merged.battleMetrics;
   // Glacial Surge is now a native flat bonus; saved growth must not stack with it.

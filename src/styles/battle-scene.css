@@ -231,3 +231,14 @@ html.alchemy-disable-animations .combat-text-critical {
     filter: drop-shadow(0 0 8px var(--color-gold-light));
   }
 }
+.reaction-text-shine {
+  animation-duration: 1000ms;
+  animation-delay: 100ms;
+  animation-iteration-count: 1;
+  animation-fill-mode: both;
+}
+
+.reaction-text-static {
+  animation: none;
+  background-position: 50% 50%;
+}

@@ -4,7 +4,7 @@ import { computeCardAttackPower, computeCardDamageToEnemy } from "./damage-calc"
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import { resolveSecondaryAction } from "./action-context";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
-import { canShatter, getPostHitReactionPayoffs } from "./elemental-reactions";
+import { canShatter, consumeReactionOpportunity, getPostHitReactionPayoffs } from "./elemental-reactions";
 import type { BattleSnapshot, BattleState } from "./types";
 
 type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
@@ -65,17 +65,26 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
   );
   const healthDamage = Math.min(candidate.enemyHealth, resolved.modifiedDamage);
   let state = { ...resolved.nextState, enemyHealth: candidate.enemyHealth - healthDamage };
-  // Existing policy remains heuristic; project only already-earned reactions, without predicting CC procs or RNG.
+  // Project certain direct status additions, never chance riders or CC procs.
+  const stat = consumed.packet.damageType;
+  if ((stat === "burn" || stat === "poison") && healthDamage > 0) {
+    state = {
+      ...state,
+      enemyStatuses: {
+        ...state.enemyStatuses,
+        [stat]: Math.min(Number.MAX_SAFE_INTEGER, state.enemyStatuses[stat] + resolved.modifiedDamage),
+      },
+    };
+  }
   const payoffs = getPostHitReactionPayoffs(before, state, consumed.packet.damageType, healthDamage);
   let score = shatter ? before.enemyMitigation.block + before.enemyMitigation.armor : 0;
-  if (shatter) payoffs.unshift({ key: "shatterDamage", damage: before.reactions.shatterDamage });
+  if (shatter) payoffs.unshift({ id: "shatter", damage: before.reactions.shatterDamage });
   for (const payoff of payoffs) {
     if (state.enemyHealth <= 0) break;
     score += Math.min(state.enemyHealth, payoff.damage);
     state = {
-      ...state,
+      ...consumeReactionOpportunity(state, payoff.id),
       enemyHealth: Math.max(0, state.enemyHealth - payoff.damage),
-      reactions: { ...state.reactions, [payoff.key]: 0 },
     };
   }
   return { ...path, state, score: path.score + score };
@@ -86,7 +95,14 @@ function mergeProjections(paths: Projection[]): Projection[] {
   const merged = new Map<string, Projection>();
   for (const path of paths) {
     const state = path.state;
-    const key = JSON.stringify([state.enemyHealth, state.enemyMitigation, state.reactions, state.flags, state.action]);
+    const key = JSON.stringify([
+      state.enemyHealth,
+      state.enemyMitigation,
+      state.enemyStatuses,
+      state.reactions,
+      state.flags,
+      state.action,
+    ]);
     const prior = merged.get(key);
     if (!prior) merged.set(key, path);
     else {
@@ -105,13 +121,6 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
   for (const effect of effects) {
     paths = mergeProjections(
       paths.flatMap((path): Projection[] => {
-        if (
-          path.state.reactions.shatterDamage <= 0 &&
-          path.state.reactions.frostfireDamage <= 0 &&
-          path.state.reactions.thunderclapDamage <= 0 &&
-          path.state.reactions.wildfireDamage <= 0
-        )
-          return [path];
         if (effect.kind === "chance")
           return [
             ...projectEffects(
@@ -186,13 +195,6 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
 }
 
 export function scoreAvailableReactions(card: BattleCard, snapshot: BattleSnapshot): number {
-  if (
-    snapshot.reactions.shatterDamage <= 0 &&
-    snapshot.reactions.frostfireDamage <= 0 &&
-    snapshot.reactions.thunderclapDamage <= 0 &&
-    snapshot.reactions.wildfireDamage <= 0
-  )
-    return 0;
   const paths = projectEffects(
     [{ state: { ...snapshot, rng: unexpectedScoringRoll }, score: 0, probability: 1 }],
     card,

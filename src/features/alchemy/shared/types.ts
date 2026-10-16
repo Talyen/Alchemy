@@ -1,7 +1,7 @@
 import type { CSSProperties, RefObject } from "react";
 
 import type { BattleCard, EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
-import type { CombatTextEvent } from "@/lib/battle";
+import type { CombatTextEvent, ReactionId } from "@/lib/battle";
 export type { DisplayMode } from "@/lib/settings-values";
 import type { ArmedFlagChipId, PendingPulseChipId } from "./augment-definitions";
 
@@ -55,7 +55,17 @@ export type FloatingCombatText = CombatTextEvent & {
   id: string;
   displayText: string;
   reservedDigits?: number;
+  includesCritical?: boolean;
 };
+
+export interface ReactionAnnouncement {
+  id: string;
+  burstId: string;
+  target: CombatTextEvent["target"];
+  reactionIds: ReactionId[];
+  firstShownAt: number;
+  lifetimeMs: number;
+}
 
 export interface CombatTextBurst {
   id: string;

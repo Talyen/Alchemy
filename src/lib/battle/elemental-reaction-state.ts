@@ -9,6 +9,7 @@ export interface ElementalReactionState {
   wildfirePendingTickDamage: number | null;
   wildfireLastTickTurn: number | null;
   wildfireDamage: number;
+  consecrated: boolean;
 }
 
 export function createElementalReactionState(): ElementalReactionState {
@@ -19,7 +20,20 @@ export function createElementalReactionState(): ElementalReactionState {
     wildfirePendingTickDamage: null,
     wildfireLastTickTurn: null,
     wildfireDamage: 0,
+    consecrated: false,
   };
+}
+
+/** Divide first so even two safe-integer damage facts retain one exact rounding. */
+export function getReactionBonus(...amounts: readonly number[]): number {
+  const divisor = PERCENT_DENOMINATOR / ELEMENTAL_REACTION_DAMAGE_PERCENT;
+  let whole = 0;
+  let remainder = 0;
+  for (const amount of amounts) {
+    whole += (amount - (amount % divisor)) / divisor;
+    remainder += amount % divisor;
+  }
+  return amounts.some((amount) => amount > 0) ? Math.max(1, whole + Math.round(remainder / divisor)) : 0;
 }
 
 export function prepareCcReactions(state: BattleState, stat: "freeze" | "stun", healthDamage: number): BattleState {
@@ -54,14 +68,7 @@ export function expireCcReactions<T extends BattleSnapshot>(state: T): T {
 export function recordWildfireTick(state: BattleState, healthDamage: number): BattleState {
   if (healthDamage <= 0 || state.reactions.wildfireLastTickTurn === state.turn) return state;
   const pending = state.reactions.wildfirePendingTickDamage;
-  // Divide before adding to retain one exact rounding even at safe-integer boundaries.
-  const divisor = PERCENT_DENOMINATOR / ELEMENTAL_REACTION_DAMAGE_PERCENT;
-  const damage =
-    pending === null
-      ? 0
-      : (pending - (pending % divisor)) / divisor +
-        (healthDamage - (healthDamage % divisor)) / divisor +
-        Math.round(((pending % divisor) + (healthDamage % divisor)) / divisor);
+  const damage = pending === null ? 0 : getReactionBonus(pending, healthDamage);
   return {
     ...state,
     reactions: {

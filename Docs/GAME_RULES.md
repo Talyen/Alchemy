@@ -456,10 +456,11 @@ The keyword buttons sit above the original card and its preview, joined by a rig
 
 ### Universal reactions
 
-Shatter, Frostfire, Thunderclap, and Wildfire reward earned preparation. Direct
+Shatter, Frostfire, Thunderclap, Wildfire, Consecration, Bloodboil, and Venomflash
+reward earned preparation. Direct
 card hits (including eligible automatic plays) and Companion attacks can release
 payoffs. Secondary Gear/talent hits, retaliation, delayed pulses, secondary
-repeats, and status ticks cannot release them, but successful crowd control from
+repeats, and extra status ticks cannot initiate attack reactions, but successful crowd control from
 any source can prepare a payoff. Reaction damage never removes Burn, shortens
 crowd control, or spends another reaction's opportunity.
 
@@ -491,15 +492,38 @@ player-turn resets cannot replenish it; only a fresh successful CC can.
   waiting; unmatched ticks carry forward, including across gaps between fires
   and after Burn reaches zero. Preparation resets between battles.
 
+- **Consecration:** an eligible Holy hit dealing positive Health damage to an
+  already Bleeding enemy consecrates its next natural Bleed tick. The tick releases
+  Holy damage equal to 25% of its actual Health damage, rounded, minimum 1. More
+  Holy hits do not stack marks. Capture and consume the mark when the tick begins;
+  clearing or detonating Bleed cancels it. Preserved Bleed can be consecrated again
+  for a later tick. Current-format resume preserves the mark without replaying it.
+- **Bloodboil:** when Burn and Bleed both deal positive natural tick damage in the
+  same enemy phase, release Burn damage equal to 25% of their combined actual
+  Health damage, rounded once, minimum 1. A final Burn stack counts even if it
+  expires before Bleed resolves. Separate phases, extra ticks, and detonations
+  cannot combine. CC-skipped natural phases count. Bloodboil and Consecration
+  resolve after the Bleed tick and its riders, Consecration first.
+- **Venomflash:** an eligible Burn hit dealing positive Health damage newly ignites
+  an already Poisoned enemy: Burn was zero before that packet and the packet adds
+  Burn. Release Burn damage equal to 25% of the pre-hit Poison stacks, rounded,
+  minimum 1. Existing fires cannot trigger it; extinguishing and igniting again
+  can. Ordered effects in one card can establish Poison before ignition. Poison
+  and Burn stacks remain intact.
+
 Bonuses bypass Block and Armor, cannot Critical, and apply no second damage
 scaling, status buildup, attack riders, or recursive reactions. Resolve them after
 normal attack follow-ups and retaliation, only while both combatants survive.
-Thunderclap resolves before Wildfire when both qualify. Standard health-threshold
+Thunderclap resolves before Wildfire when both qualify; Venomflash follows other
+qualifying attack reactions. Standard health-threshold
 handling and once-only kill rewards still apply, including Archery attribution.
 
 Persist reaction progress in battle snapshots; reload cannot refresh spent
 opportunities or replay earned damage. Resolved reactions reuse existing battle
-announcements, damage feedback, and audio assets. Add no readiness UI, explanations,
+audio assets and announce their names with the keyword-colored text shine and
+independent 1.6-second floating motion described in [battle feedback](./UI_BATTLE.md#battle-feedback).
+Numeric presentation totals ordinary and reaction damage by type within each
+action, preserving separate engine packets. Add no readiness UI, explanations,
 tutorials, or card-description/keyword previews; see the
 [authoring contract](./CONTENT_AUTHORING.md#add-a-new-card).
 

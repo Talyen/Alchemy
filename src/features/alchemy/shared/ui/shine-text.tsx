@@ -23,6 +23,8 @@ export function ShineText({
 
   const style: CSSProperties = {
     backgroundImage: gradient,
+    // Transparent glyphs expose inherited strokes inside the gradient fill.
+    WebkitTextStroke: 0,
   };
 
   return (

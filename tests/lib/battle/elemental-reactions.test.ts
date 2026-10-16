@@ -412,6 +412,7 @@ describe("reaction persistence and selection", () => {
       shatterDamage: 0,
       frostfireDamage: 0,
       thunderclapDamage: 0,
+      consecrated: false,
       wildfirePendingTickDamage: null,
       wildfireLastTickTurn: null,
       wildfireDamage: 3,
@@ -483,7 +484,9 @@ describe("reaction persistence and selection", () => {
     const card = makeTestCard({
       effects: Array.from({ length: 6 }, () => ({ kind: "random-damage" as const, minAmount: 1, maxAmount: 1 })),
     });
-    expect(getEffectiveDamageScore(card, state)).toBeCloseTo(6 + 3 * (1 - (7 / 8) ** 6));
+    // Venomflash also pays 1 when Poison precedes the first Burn in the sequence.
+    const firstPoisonThenBurn = 1 - (7 / 8) ** 6 - 0.5 * (1 - (6 / 8) ** 6);
+    expect(getEffectiveDamageScore(card, state)).toBeCloseTo(6 + 3 * (1 - (7 / 8) ** 6) + firstPoisonThenBurn);
     const before = wildfire();
     const kingbreaker = {
       ...before,

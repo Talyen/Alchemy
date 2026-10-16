@@ -521,6 +521,7 @@
 }
 
 @utility boss-title-shine {
+  -webkit-text-stroke: 0;
   animation: var(--animate-boss-title-shine);
   will-change: background-position;
 }
@@ -569,6 +570,7 @@
 }
 
 .text-shine-corruption {
+  -webkit-text-stroke: 0;
   background-image: linear-gradient(
     in oklab 90deg,
     var(--color-destructive),

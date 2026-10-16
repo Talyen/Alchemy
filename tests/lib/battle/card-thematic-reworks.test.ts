@@ -321,13 +321,13 @@ describe("thematic card effects", () => {
     expect(result.enemyHealth).toBe(97);
   });
 
-  it("Cinderbloom deals one random elemental hit", () => {
+  it("Cinderbloom retains its random element and fresh Burn can ignite Poison", () => {
     const burn = play("cinderbloom", {
       rng: sequenceRng([0, 0.99]),
       enemyStatuses: { poison: 1 },
       talentEffects: { poisonPreventsEnemyDodge: true },
     });
-    expect(burn.enemyHealth).toBe(98);
+    expect(burn.enemyHealth).toBe(97); // Burn 2 plus minimum Venomflash 1.
     expect(burn.enemyStatuses.burn).toBe(2);
 
     const nature = play("cinderbloom", {
