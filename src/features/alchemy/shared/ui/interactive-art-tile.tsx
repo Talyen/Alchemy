@@ -1,5 +1,3 @@
-import { useGameTranslation } from "@/components/use-game-translation";
-
 import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
 import { type RefObject, type ReactNode } from "react";
 
@@ -67,7 +65,6 @@ export function InteractiveArtTile({
   children,
   onHoverChange,
 }: InteractiveArtTileProps) {
-  const i18n = useGameTranslation();
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(interactionKey, id);
   const wrappedHoverStart = onHoverChange
     ? () => {
@@ -130,7 +127,7 @@ export function InteractiveArtTile({
         // must not suppress that feedback. Purchase callers omit their action.
         onClick={interactive && !disabled ? onClick : undefined}
         {...(interactive ? { onFocus: handleHoverStart, onBlur: handleBlur } : {})}
-        ariaLabel={i18n.displayText(ariaLabel ?? title)}
+        ariaLabel={ariaLabel ?? title}
         {...(ariaDisabled !== undefined ? { ariaDisabled } : {})}
       >
         {art ? <img src={art} alt={title} className={imageClassName} decoding="async" /> : null}

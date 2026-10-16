@@ -54,7 +54,7 @@ export function HeroTooltip({
             <>
               <TooltipSubheader>{i18n.text("ui.hero-tooltip.1", "Starting Deck")}</TooltipSubheader>
               <TooltipBody>
-                <p>{i18n.displayText(character.startingDeck.map((card) => card.title).join(", "))}</p>
+                <p>{character.startingDeck.map((card) => i18n.displayText(card.title)).join(", ")}</p>
               </TooltipBody>
             </>
           ) : (

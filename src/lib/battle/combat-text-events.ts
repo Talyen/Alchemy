@@ -46,7 +46,8 @@ export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: Comba
     if (existing.healthLost !== undefined || nextEvent.healthLost !== undefined)
       existing.healthLost = (existing.healthLost ?? previousAmount) + (nextEvent.healthLost ?? nextEvent.amount);
     if (existing.absorbedDamage !== undefined || nextEvent.absorbedDamage !== undefined)
-      existing.absorbedDamage = (existing.absorbedDamage ?? 0) + (nextEvent.absorbedDamage ?? 0);
+      existing.absorbedDamage =
+        (existing.absorbedDamage ?? previousAmount) + (nextEvent.absorbedDamage ?? nextEvent.amount);
     if (nextEvent.critical) existing.critical = true;
     if (nextEvent.periodic) existing.periodic = true;
   }

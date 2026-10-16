@@ -9,6 +9,8 @@ import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-sche
 import { cardById, cloneBattleCard, renderCardDescription } from "@/lib/game-data";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { GearItemTitle } from "@/features/alchemy/shared/ui/gear-item-title";
+import { GearTile } from "@/features/alchemy/shared/ui/collection-art-tiles";
+import { makeGearInstance } from "../../fixtures/gear";
 import { gearDefinitionList } from "@/lib/gear";
 import { displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
@@ -176,8 +178,15 @@ describe("localized game presentation", () => {
   it("translates canonical names once even when German wording is another English name", async () => {
     await localization.changeLanguage("de");
     const staff = gearDefinitionList.find((definition) => definition.displayName === "Staff")!;
-    render(<GearItemTitle definition={staff} />);
+    render(
+      <>
+        <GearItemTitle definition={staff} />
+        <GearTile instance={makeGearInstance(staff.id)} interactionKey="collection" as="button" />
+      </>,
+    );
     expect(screen.getByText("Stab")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Stab", exact: true })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Stab", exact: true })).toBeTruthy();
     expect(screen.queryByText("Stich")).toBeNull();
     const name = displayText("Staff");
     expect(text("test.verbatim-name", "{{name}}", { name })).toBe("Stab");

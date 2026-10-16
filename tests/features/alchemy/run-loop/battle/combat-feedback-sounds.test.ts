@@ -120,6 +120,23 @@ describe("one sound selected from committed action results", () => {
     expect(selectCombatSound([...events, { target: "player", kind: "heal", stat: "health", amount: 4 }], false)).toBe(
       "playerHeal",
     );
+    for (const packets of [
+      [
+        { target: "player", kind: "damage", stat: "block", amount: 3 },
+        { target: "player", kind: "damage", stat: "block", amount: 1, absorbedDamage: 2 },
+      ],
+      [
+        { target: "player", kind: "damage", stat: "block", amount: 1, absorbedDamage: 2 },
+        { target: "player", kind: "damage", stat: "block", amount: 3 },
+      ],
+    ] satisfies CombatTextEvent[][]) {
+      const combined: CombatTextEvent[] = [];
+      for (const packet of packets) mergeCombatText(combined, packet);
+      expect(combined).toEqual([{ target: "player", kind: "damage", stat: "block", amount: 4, absorbedDamage: 5 }]);
+      expect(
+        selectCombatSound([...combined, { target: "player", kind: "heal", stat: "health", amount: 4 }], false),
+      ).toBe("blockAbsorb");
+    }
   });
 
   it("retains authored action identity but chooses actual branches and companion turn outcomes", () => {

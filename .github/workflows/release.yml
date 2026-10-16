@@ -198,6 +198,8 @@ jobs:
         run: npm run test:e2e -- tests/e2e/specs/steam-demo.spec.ts tests/e2e/specs/localization-demo.spec.ts
         env:
           ALCHEMY_LOCALIZATION_LAYOUT_REVIEW: "1"
+      - name: Ensure Electron binary
+        run: node scripts/ensure-electron.mjs
       - name: Qualify native localized quit and resume
         run: xvfb-run -a npm run test:ship:desktop -- tests/electron/localization-demo.spec.ts
         env:
