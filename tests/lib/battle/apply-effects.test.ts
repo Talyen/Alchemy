@@ -65,6 +65,21 @@ describe("applyCardEffects", () => {
     expect(result.state.flags.playNextCardTwice).toBe(false);
   });
 
+  it("does not repeat card effects when the first copy defeats the enemy", () => {
+    const card = makeTestCard({
+      id: "slash",
+      effects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+    });
+    const state = makeState({
+      enemyHealth: 8,
+      hand: [card],
+      flags: { playNextCardTwice: true },
+    });
+    const result = playBattleCardResolved(state, "slash", 0);
+    expect(result.state.enemyHealth).toBe(0);
+    expect(result.state.flags.playNextCardTwice).toBe(false);
+  });
+
   it("guarantees a crit on the next damaging card", () => {
     const card = makeTestCard({
       id: "slash",

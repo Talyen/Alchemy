@@ -38,11 +38,6 @@ function computeStandardCost(state: CardCostState, card: BattleCard, discountedC
   }
   if (discountedCost === 0) return result;
 
-  const armedReduction = readCombatFlag(state, "nextCardCostReduction");
-  result.effectiveCost = applyCostDiscount(discountedCost, armedReduction);
-  result.spentArmedDiscount = armedReduction > 0 && result.effectiveCost < discountedCost;
-  if (result.effectiveCost === 0) return result;
-
   // Holy, then Archery, then Nature: spend only the first matching opportunity.
   let freeFlag: BooleanCombatFlag | undefined;
   if (readCombatFlag(state, "nextHolyCardFree") && (cardHasKeyword(card, "holy") || cardHasDamageType(card, "holy"))) {
@@ -54,9 +49,13 @@ function computeStandardCost(state: CardCostState, card: BattleCard, discountedC
   }
   if (freeFlag) {
     result.effectiveCost = 0;
-    result.spentArmedDiscount = false;
     result.disarmedFlags.add(freeFlag);
+    return result;
   }
+
+  const armedReduction = readCombatFlag(state, "nextCardCostReduction");
+  result.effectiveCost = applyCostDiscount(discountedCost, armedReduction);
+  result.spentArmedDiscount = armedReduction > 0 && result.effectiveCost < discountedCost;
   return result;
 }
 

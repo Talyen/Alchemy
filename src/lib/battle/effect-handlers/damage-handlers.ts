@@ -3,7 +3,7 @@ import { resolveConditionalCardDamage } from "../conditional-card-damage";
 import { mergeCombatText } from "../combat-text-events";
 import { setPlayerStatus } from "../status-state";
 import { applyBlockDepletionRewards, checkHealthThresholds } from "../status-player";
-import { DAMAGE_TYPES } from "@/lib/game-data";
+import { DAMAGE_TYPES, harmfulPlayerStatusIds } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rngInt } from "@/lib/rng";
 import { applyPotionMultiplier, halveRounded } from "../amount-helpers";
 import { dealDamageToEnemy } from "../damage";
@@ -55,12 +55,9 @@ export const DAMAGE_HANDLERS = {
       healthLost,
       healthAfterDamage,
     } = dealSelfDamage(state, effect.amount, effect.damageType, combatTexts);
-    const thresholded = checkHealthThresholds(
-      state.playerHealth,
-      healthAfterDamage,
-      addPlayerStatus(postDamage, effect.damageType, healthLost),
-      combatTexts,
-    );
+    const statusType = harmfulPlayerStatusIds.find((id) => id === effect.damageType);
+    const withStatus = statusType && healthLost > 0 ? addPlayerStatus(postDamage, statusType, healthLost) : postDamage;
+    const thresholded = checkHealthThresholds(state.playerHealth, healthAfterDamage, withStatus, combatTexts);
     return resolvePlayerCrowdControlTriggers(thresholded, combatTexts);
   },
   "random-damage": (state, card, effect, potionMult, combatTexts, context) => {
