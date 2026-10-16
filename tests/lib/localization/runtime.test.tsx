@@ -185,8 +185,8 @@ describe("localized game presentation", () => {
       </>,
     );
     expect(screen.getByText("Stab")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Stab", exact: true })).toBeTruthy();
-    expect(screen.getByRole("img", { name: "Stab", exact: true })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Stab" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Stab" })).toBeTruthy();
     expect(screen.queryByText("Stich")).toBeNull();
     const name = displayText("Staff");
     expect(text("test.verbatim-name", "{{name}}", { name })).toBe("Stab");

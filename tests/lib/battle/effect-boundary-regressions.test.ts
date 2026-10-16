@@ -16,15 +16,12 @@ describe("effect resolution boundaries", () => {
     expect(canPlayCard(next, followUp, 0)).toBe(false);
   });
 
-  it("does not corrupt player statuses with NaN when taking physical self-damage", () => {
+  it("does not grant Thorns when taking Thorns self-damage", () => {
     const state = patchBattleState({ playerHealth: 30, playerMaxHealth: 30 });
-    const card = makeTestCard({ effects: [{ kind: "self-damage", damageType: "physical", amount: 5 }] });
+    const card = makeTestCard({ effects: [{ kind: "self-damage", damageType: "thorns", amount: 5 }] });
     const next = applyCardEffects(state, card, []);
     expect(next.playerHealth).toBe(25);
-    expect(next.playerStatuses).not.toHaveProperty("physical");
-    for (const value of Object.values(next.playerStatuses)) {
-      expect(Number.isNaN(value)).toBe(false);
-    }
+    expect(next.playerStatuses).toEqual(state.playerStatuses);
   });
 
   it.each(["haste", "phoenixFeather"] as const)("keeps %s duration fixed under Potion potency", (status) => {
