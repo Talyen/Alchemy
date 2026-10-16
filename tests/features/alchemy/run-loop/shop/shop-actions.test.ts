@@ -174,24 +174,23 @@ describe("alchemist shop actions", () => {
       expect(readRunProfile(defaultGameSession).gold).toBe(999 - ALCHEMIST_MIX_PRICE);
     });
 
-    it("no-ops a second mix on the same actions instance without double-spending gold", () => {
-      setRunProgress({
-        gold: 999,
-        runDeck: [
-          makeCard({ id: "health-potion", title: "Potion A" }),
-          makeCard({ id: "mana-potion", title: "Potion B" }),
-          makeCard({ id: "panacea-potion", title: "Potion C" }),
-          makeCard({ id: "stoneskin-potion", title: "Potion D" }),
-        ],
-      });
-      setAlchemistState(createInitialAlchemistState());
-      const actions = buildActions();
-
-      expect(actions.alchemist.mixPotions(0, 1)).not.toBeNull();
-      expect(actions.alchemist.mixPotions(0, 1)).toBeNull();
-      expect(readRunProfile(defaultGameSession).gold).toBe(999 - ALCHEMIST_MIX_PRICE);
-      expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist").mixUsed).toBe(true);
-    });
+    it.each(["mix", "distill"] as const)(
+      "rejects unsavable %s results without spending Gold, ingredients, or the service",
+      (operation) => {
+        const potion = makeCard({ id: "health-potion", effects: [{ kind: "heal", amount: 999 }] });
+        setRunProgress({ gold: 999, runDeck: [potion, potion] });
+        setAlchemistState(createInitialAlchemistState());
+        const beforeRun = readActiveRun(defaultGameSession);
+        const beforeVisit = readRunSession(defaultGameSession);
+        const actions = buildActions();
+        const result = operation === "mix" ? actions.alchemist.mixPotions(0, 1) : actions.alchemist.strengthenPotion(0);
+        expect(result).toBeNull();
+        expect(readRunProfile(defaultGameSession).gold).toBe(999);
+        expect(readActiveRun(defaultGameSession)).toEqual(beforeRun);
+        expect(readRunSession(defaultGameSession)).toEqual(beforeVisit);
+        expect(playUISound).not.toHaveBeenCalled();
+      },
+    );
   });
   it("strengthening pays once and uses the same service slot as mixing", () => {
     const originalDeck = [cardById["health-potion"]!, cardById["mana-potion"]!, cardById["stoneskin-potion"]!];

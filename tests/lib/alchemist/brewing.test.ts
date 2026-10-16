@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  BattleCardEffectSchema,
   cardById,
   createEffectDescription,
   getCardDescription,
@@ -155,4 +156,17 @@ describe("brewing content", () => {
     Object.assign(chance.failureEffects[0], { amount: 99 });
     expect(card).toEqual(before);
   });
+});
+
+it.each(["distill", "mix"] as const)("rejects %s results that cannot survive a save round trip", (operation) => {
+  const card = makeTestCard({
+    id: "health-potion",
+    consume: true,
+    effects: [{ kind: "heal", amount: 999 }],
+  });
+  const before = structuredClone(card);
+  expect(BattleCardEffectSchema.safeParse(card.effects[0]).success).toBe(true);
+  const result = operation === "distill" ? strengthenPotion(card) : tryCreateMixedPotion(card, card);
+  expect(result).toBeNull();
+  expect(card).toEqual(before);
 });

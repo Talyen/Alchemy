@@ -118,5 +118,15 @@ export function selectRewardCards(
     }
   }
 
+  // Dampening changes preference, not the number of distinct choices promised.
+  if (selected.length < count) {
+    const fallback = pool.filter((card) => !selectedIds.has(card.id));
+    while (selected.length < count && fallback.length > 0) {
+      const chosen = pickRandom(fallback, rng)!;
+      selected.push(chosen);
+      selectedIds.add(chosen.id);
+      pruneSelectedCards(fallback, selectedIds);
+    }
+  }
   return selected;
 }

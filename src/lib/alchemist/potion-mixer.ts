@@ -7,6 +7,7 @@ import {
 } from "../game-constants";
 import type { BattleCard, BattleCardEffect } from "../game-data";
 import {
+  BattleCardEffectSchema,
   areBattleCardEffectsEqual,
   cloneBattleCard,
   createEffectDescription,
@@ -144,7 +145,8 @@ export function tryCreateMixedPotion(
   potencyBonus: number = 0,
 ): BattleCard | null {
   if (!cardA || !cardB) return null;
-  return createMixedPotion(cardA, cardB, potencyBonus);
+  const mixed = createMixedPotion(cardA, cardB, potencyBonus);
+  return mixed.effects.every((effect) => BattleCardEffectSchema.safeParse(effect).success) ? mixed : null;
 }
 
 export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: number, mixed: BattleCard): BattleCard[] {
