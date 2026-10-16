@@ -2,6 +2,20 @@ import { expect, test } from "../../fixtures/e2e";
 import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { slow } from "../../playwright-tags";
+import type { JSHandle } from "@playwright/test";
+
+async function observeDuringAction<T>(
+  observation: JSHandle<{ result: Promise<T>; cancel: () => void }>,
+  action: () => Promise<void>,
+) {
+  try {
+    await action();
+    return await observation.evaluate(async ({ result }) => result);
+  } finally {
+    await observation.evaluate(({ cancel }) => cancel());
+    await observation.dispose();
+  }
+}
 
 test.describe("Combat feedback animations", slow, () => {
   test.setTimeout(60_000);
@@ -33,45 +47,73 @@ test.describe("Combat feedback animations", slow, () => {
       },
     );
     const battle = new BattlePage(page);
-    await battle.playFirstCard();
     const burst = page.locator('[data-testid="combat-text-burst"][data-target="player"]');
-    await expect(burst).toBeVisible();
-    await expect(burst.locator('[data-testid="combat-text"][data-kind="heal"][data-stat="health"]')).toContainText("1");
+    // Arm in the renderer before input: protocol round trips must not consume the burst's lifetime.
+    const observation = await page.evaluateHandle(() => {
+      let cancelled = false;
+      const frame = () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => resolve());
+        });
+      const result = (async () => {
+        let node: HTMLElement | null = null;
+        while (!cancelled && !node) {
+          node = document.querySelector('[data-testid="combat-text-burst"][data-target="player"]');
+          if (!node) await frame();
+        }
+        if (!node) return { samples: [], healingText: null };
+        const layer = node.closest('[data-testid="combat-text-layer"]')!;
+        const portrait = document.querySelector('[data-testid="battle-player-art-panel"]')!;
+        const lunge = portrait.closest('[data-testid="combatant-attack-lunge"]')!;
+        const animation = lunge
+          .getAnimations()
+          .find((item) => item instanceof CSSAnimation && item.animationName === "combatant-attack-lunge");
+        if (!animation) throw new Error("Attack lunge was missing when combat text appeared");
+        animation.pause();
+        const samples = [];
+        try {
+          while (node.isConnected && getComputedStyle(node).visibility !== "visible") await frame();
+          for (const time of [0, 114, 228, 650]) {
+            animation.currentTime = time;
+            await frame();
+            await frame();
+            const anchor = portrait.getBoundingClientRect();
+            const overlay = layer.getBoundingClientRect();
+            samples.push({
+              x: anchor.x,
+              connected: node.isConnected,
+              error: Math.max(
+                Math.abs(anchor.x - overlay.x),
+                Math.abs(anchor.y - overlay.y),
+                Math.abs(anchor.width - overlay.width),
+                Math.abs(anchor.height - overlay.height),
+              ),
+            });
+          }
+          return { samples, healingText: node.querySelector('[data-kind="heal"][data-stat="health"]')?.textContent };
+        } finally {
+          animation.play();
+        }
+      })();
+      return {
+        result,
+        cancel: () => {
+          cancelled = true;
+        },
+      };
+    });
+    const { samples, healingText } = await observeDuringAction(observation, () => battle.playFirstCard());
+    expect(healingText).toContain("1");
     await expect.poll(() => battle.playerHealth()).toBe(11);
     await expect.poll(() => battle.enemyHealth()).toBe(39);
-    const samples = await burst.evaluate(async (node) => {
-      const layer = node.closest('[data-testid="combat-text-layer"]')!;
-      const portrait = document.querySelector('[data-testid="battle-player-art-panel"]')!;
-      const lunge = portrait.closest('[data-testid="combatant-attack-lunge"]')!;
-      const animation = lunge
-        .getAnimations()
-        .find((item) => item instanceof CSSAnimation && item.animationName === "combatant-attack-lunge")!;
-      animation.pause();
-      const samples = [];
-      for (const time of [0, 114, 228, 650]) {
-        animation.currentTime = time;
-        await new Promise<void>((resolve) => {
-          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-        });
-        const anchor = portrait.getBoundingClientRect();
-        const overlay = layer.getBoundingClientRect();
-        samples.push({
-          x: anchor.x,
-          error: Math.max(
-            Math.abs(anchor.x - overlay.x),
-            Math.abs(anchor.y - overlay.y),
-            Math.abs(anchor.width - overlay.width),
-            Math.abs(anchor.height - overlay.height),
-          ),
-        });
-      }
-      animation.play();
-      return samples;
-    });
     expect(
       Math.max(...samples.map((sample) => sample.x)) - Math.min(...samples.map((sample) => sample.x)),
     ).toBeGreaterThan(10);
-    expect(samples.every((sample) => sample.error < 2)).toBe(true);
+    expect(
+      samples.every((sample) => sample.connected),
+      JSON.stringify(samples),
+    ).toBe(true);
+    expect(Math.max(...samples.map((sample) => sample.error)), JSON.stringify(samples)).toBeLessThan(2);
     await expect(burst).toHaveCount(0);
   });
 
@@ -85,31 +127,61 @@ test.describe("Combat feedback animations", slow, () => {
       autoEndTurn: false,
     });
     const battle = new BattlePage(page);
-    await battle.playFirstCard();
-
-    const burst = page.locator('[data-testid="combat-text-burst"][data-target="enemy"]').first();
-    await expect(burst).toBeVisible();
-    await battle.hand.first().press("Enter");
-    await expect(page.getByTestId("combatant-status-effect")).toBeVisible();
-
-    await expect
-      .poll(
-        async () =>
-          burst.evaluate((node) => {
-            const layer = node.closest('[data-testid="combat-text-layer"]')!;
-            const portrait = document.querySelector('[data-testid="battle-enemy-art-panel"]')!;
+    await expect(battle.hand.last()).toBeEnabled();
+    const target = (await page.locator("[data-hand-slot]").last().boundingBox())!;
+    const observation = await page.evaluateHandle(() => {
+      let cancelled = false;
+      const measured: { burst: Element | null; sawBeforeStun: boolean } = { burst: null, sawBeforeStun: false };
+      const record = () => {
+        measured.burst ??= document.querySelector('[data-testid="combat-text-burst"][data-target="enemy"]');
+        measured.sawBeforeStun ||= Boolean(
+          measured.burst &&
+          !document
+            .querySelector('[data-testid="battle-enemy-art-panel"]')
+            ?.closest('[data-testid="combatant-status-effect"]'),
+        );
+      };
+      const observer = new MutationObserver(record);
+      observer.observe(document.body, { childList: true, subtree: true });
+      const result = (async () => {
+        while (!cancelled) {
+          record();
+          const { burst, sawBeforeStun } = measured;
+          if (burst && !burst.isConnected) return { sawBeforeStun, connected: false, error: Infinity };
+          const portrait = document.querySelector('[data-testid="battle-enemy-art-panel"]');
+          const stunned = portrait?.closest('[data-testid="combatant-status-effect"]');
+          if (burst && stunned && portrait) {
             const anchor = portrait.getBoundingClientRect();
-            const overlay = layer.getBoundingClientRect();
-            return Math.max(
+            const overlay = burst.closest('[data-testid="combat-text-layer"]')!.getBoundingClientRect();
+            const error = Math.max(
               Math.abs(anchor.x - overlay.x),
               Math.abs(anchor.y - overlay.y),
               Math.abs(anchor.width - overlay.width),
               Math.abs(anchor.height - overlay.height),
             );
-          }),
-        { intervals: [16], timeout: 2000 },
-      )
-      .toBeLessThan(2);
+            if (!burst.isConnected || error < 2) return { sawBeforeStun, connected: burst.isConnected, error };
+          }
+          await new Promise<void>((resolve) => {
+            requestAnimationFrame(() => resolve());
+          });
+        }
+        return { sawBeforeStun: measured.sawBeforeStun, connected: false, error: Infinity };
+      })();
+      return {
+        result,
+        cancel: () => {
+          cancelled = true;
+          observer.disconnect();
+        },
+      };
+    });
+    const result = await observeDuringAction(observation, async () => {
+      await battle.playFirstCard();
+      await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
+    });
+    expect(result.sawBeforeStun).toBe(true);
+    expect(result.connected).toBe(true);
+    expect(result.error).toBeLessThan(2);
   });
 
   for (const side of ["player", "enemy"] as const) {
@@ -119,34 +191,41 @@ test.describe("Combat feedback animations", slow, () => {
       const battle = new BattlePage(page);
       await expect(battle.hand.first()).toBeVisible();
       await expect(page.getByRole("combobox", { name: "Combat text animation" })).toHaveCount(0);
-      await page.evaluate(() => {
-        const measuredWindow = window as Window & { combatElapsed?: number };
-        const observer = new MutationObserver(() => {
-          if (!document.querySelector('[data-testid="combat-text"]')) return;
-          const lunge = document.querySelector(".animate-attack-lunge");
-          const animation = lunge
-            ?.getAnimations()
-            .find((item) => item instanceof CSSAnimation && item.animationName === "combatant-attack-lunge");
-          measuredWindow.combatElapsed = Number(animation?.currentTime ?? 0);
-          observer.disconnect();
-        });
-        observer.observe(document, { childList: true, subtree: true });
+      const observation = await page.evaluateHandle(() => {
+        let cancelled = false;
+        const result = (async () => {
+          while (!cancelled) {
+            const text = document.querySelector('[data-testid="combat-text"]');
+            if (text && getComputedStyle(text).visibility === "visible") {
+              const animation = document
+                .querySelector(".animate-attack-lunge")
+                ?.getAnimations()
+                .find((item) => item instanceof CSSAnimation && item.animationName === "combatant-attack-lunge");
+              return { visible: true, elapsed: Number(animation?.currentTime ?? 0) };
+            }
+            await new Promise<void>((resolve) => {
+              requestAnimationFrame(() => resolve());
+            });
+          }
+          return { visible: false, elapsed: Infinity };
+        })();
+        return {
+          result,
+          cancel: () => {
+            cancelled = true;
+          },
+        };
       });
-      if (side === "player") await battle.playFirstCard();
-      else {
-        await battle.endTurnBtn.click();
-        const confirm = page
-          .getByRole("dialog", { name: "End turn?", exact: true })
-          .getByRole("button", { name: "End Turn", exact: true });
-        await confirm.click();
-      }
-      await expect(page.getByTestId("combat-text").first()).toBeVisible();
-      const elapsed = await page.evaluate(() => (window as Window & { combatElapsed?: number }).combatElapsed);
+      const timing = await observeDuringAction(observation, async () => {
+        if (side === "player") await battle.playFirstCard();
+        else await battle.endTurn();
+      });
       await testInfo.attach(`${side}-feedback-timing`, {
-        body: JSON.stringify({ elapsed }),
+        body: JSON.stringify(timing),
         contentType: "application/json",
       });
-      expect(elapsed).toBeLessThan(170);
+      expect(timing.visible).toBe(true);
+      expect(timing.elapsed).toBeLessThan(170);
     });
   }
 });
@@ -171,20 +250,198 @@ for (const reducedMotion of [false, true]) {
     const battle = new BattlePage(page);
     await expect(battle.hand).toHaveCount(3);
     await battle.waitForOpeningHand();
-    await battle.playFirstCard();
-    const player = page.locator('[data-testid="combat-text-burst"][data-target="player"]');
-    const block = player.locator('[data-stat="block"]');
-    await expect(block).toHaveText("+2");
-    const id = await player.getAttribute("data-burst-id");
-    const started = Number(await player.getAttribute("data-first-shown-at"));
+    const target = (await page.locator("[data-hand-slot]").last().boundingBox())!;
+    const started = await page.evaluate(() => Date.now());
     // Freeze Date only: leave animation frames and interaction clocks running normally.
-    await page.clock.setFixedTime(started + 100);
-    await battle.hand.first().press("Enter");
-    await expect(player).toHaveCount(1);
-    await expect(player).toHaveAttribute("data-burst-id", id!);
-    await expect(block).toHaveText("+4");
-    await expect(page.locator('[data-testid="combat-text-burst"][data-target="enemy"]')).toHaveCount(1);
-    const labels = await page.getByTestId("combat-text").allTextContents();
-    expect(labels.every((text) => /^[+−-]?\d+$/.test(text.trim()))).toBe(true);
+    await page.clock.setFixedTime(started);
+    const observation = await page.evaluateHandle(() => {
+      interface FirstBurst {
+        id: string | null;
+        block: string | null;
+      }
+      let first: FirstBurst | null = null;
+      let observer: MutationObserver;
+      const result = new Promise<{
+        first: FirstBurst | null;
+        id: string | null;
+        players: number;
+        enemies: number;
+        labels: string[];
+      }>((resolve) => {
+        observer = new MutationObserver(() => {
+          const players = document.querySelectorAll('[data-testid="combat-text-burst"][data-target="player"]');
+          const player = players[0];
+          const block = player?.querySelector('[data-stat="block"]')?.textContent ?? null;
+          if (player && !first) first = { id: player.getAttribute("data-burst-id"), block };
+          if (player && block === "+4") {
+            resolve({
+              first,
+              id: player.getAttribute("data-burst-id"),
+              players: players.length,
+              enemies: document.querySelectorAll('[data-testid="combat-text-burst"][data-target="enemy"]').length,
+              labels: [...document.querySelectorAll('[data-testid="combat-text"]')].map(
+                (node) => node.textContent ?? "",
+              ),
+            });
+            observer.disconnect();
+          }
+        });
+        observer.observe(document.body, { childList: true, characterData: true, subtree: true });
+      });
+      return { result, cancel: () => observer.disconnect() };
+    });
+    const review = await observeDuringAction(observation, async () => {
+      await battle.playFirstCard();
+      await page.clock.setFixedTime(started + 100);
+      await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
+    });
+    expect(review.first?.block).toBe("+2");
+    expect(review.id).toBe(review.first?.id);
+    expect(review.players).toBe(1);
+    expect(review.enemies).toBe(1);
+    expect(review.labels.every((text) => /^[+−-]?\d+$/.test(text.trim()))).toBe(true);
   });
+}
+
+for (const reducedMotion of [false, true]) {
+  test(
+    `translated simultaneous reactions stay single-line and clear of numbers (reduced motion=${reducedMotion})`,
+    slow,
+    async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
+      await page.addInitScript(() => localStorage.setItem("alchemy-language-v1", "ru"));
+      const hand = [
+        makeCard({
+          id: "slash",
+          cost: 0,
+          effects: [
+            { kind: "damage", damageType: "burn", amount: 4 },
+            { kind: "damage", damageType: "physical", amount: 6 },
+            { kind: "damage", damageType: "nature", amount: 4 },
+          ],
+        }),
+      ];
+      await injectActiveBattle(
+        page,
+        makeGoblinBattleState({
+          hand,
+          enemyHealth: 300,
+          enemyMaxHealth: 300,
+          appliesFightPacing: false,
+          enemyStatuses: { poison: 12 },
+          enemyCC: { freezeSkipTurns: 2 },
+          reactions: { shatterDamage: 8, frostfireDamage: 8, wildfireDamage: 3 },
+        }),
+        { runDeck: hand, autoEndTurn: false, masterVolume: 0 },
+      );
+      const card = page.locator('[data-hand-card="true"] button').first();
+      await expect.poll(() => card.evaluate((node) => !node.closest("[inert]"))).toBe(true);
+      const observation = await page.evaluateHandle(() => {
+        let cancelled = false;
+        // Resize observers finish after rAF callbacks; sample the painted geometry.
+        const afterPaint = () =>
+          new Promise<void>((resolve) => {
+            requestAnimationFrame(() => {
+              setTimeout(resolve, 0);
+            });
+          });
+        const result = (async () => {
+          while (!cancelled && !document.querySelector('[data-testid="reaction-text"]')) {
+            await afterPaint();
+          }
+          const started = performance.now();
+          let lastSeen = 0;
+          let frames = 0;
+          let maximumNames = 0;
+          let overflow = false;
+          let overflowDetails = "";
+          let overlap = false;
+          let smallestGlyphHeight = Infinity;
+          let smallestGlyphDetails = "";
+          while (!cancelled && performance.now() - started < 1750) {
+            await afterPaint();
+            if (performance.now() - started >= 1750) break;
+            const names = [...document.querySelectorAll<HTMLElement>('[data-testid="reaction-text"]')].filter(
+              (node) => getComputedStyle(node).visibility === "visible",
+            );
+            if (names.length > 0) {
+              maximumNames = Math.max(maximumNames, names.length);
+              lastSeen = performance.now() - started;
+              frames++;
+              const numbers = [...document.querySelectorAll<HTMLElement>('[data-testid="combat-text"]')]
+                .filter((node) => Number(getComputedStyle(node.parentElement!).opacity) > 0.05)
+                .map((node) => node.getBoundingClientRect());
+              for (const name of names) {
+                const glyph = name.firstElementChild as HTMLElement;
+                const bounds = glyph.getBoundingClientRect();
+                if (performance.now() - started > 240 && bounds.height < smallestGlyphHeight) {
+                  smallestGlyphHeight = bounds.height;
+                  smallestGlyphDetails = JSON.stringify({
+                    text: name.textContent,
+                    elapsedMs: performance.now() - started,
+                    fontSize: getComputedStyle(name).fontSize,
+                    width: name.clientWidth,
+                    glyphWidth: glyph.offsetWidth,
+                  });
+                }
+                const outside =
+                  getComputedStyle(name).whiteSpace !== "nowrap" ||
+                  glyph.offsetWidth > name.clientWidth + 1 ||
+                  bounds.left < 0 ||
+                  bounds.right > innerWidth ||
+                  bounds.top < 0 ||
+                  bounds.bottom > innerHeight;
+                if (outside && !overflow)
+                  overflowDetails = JSON.stringify({
+                    elapsedMs: performance.now() - started,
+                    text: name.textContent,
+                    bounds: bounds.toJSON(),
+                    whitespace: getComputedStyle(name).whiteSpace,
+                    width: name.clientWidth,
+                    glyphWidth: glyph.offsetWidth,
+                    fontSize: getComputedStyle(name).fontSize,
+                    glyphFont: getComputedStyle(glyph).fontSize,
+                    transition: getComputedStyle(name).transition,
+                  });
+                overflow ||= outside;
+                overlap ||= numbers.some(
+                  (number) =>
+                    bounds.left < number.right &&
+                    bounds.right > number.left &&
+                    bounds.top < number.bottom &&
+                    bounds.bottom > number.top,
+                );
+              }
+            }
+          }
+          return {
+            frames,
+            maximumNames,
+            lastSeen,
+            overflow,
+            overflowDetails,
+            overlap,
+            smallestGlyphHeight,
+            smallestGlyphDetails,
+            remaining: document.querySelectorAll('[data-testid="reaction-text"]').length,
+          };
+        })();
+        return {
+          result,
+          cancel: () => {
+            cancelled = true;
+          },
+        };
+      });
+      const review = await observeDuringAction(observation, () => card.click());
+      expect(review.maximumNames).toBe(4);
+      expect(review.frames).toBeGreaterThan(10);
+      expect(review.lastSeen).toBeGreaterThan(1300);
+      expect(review.lastSeen).toBeLessThan(1750);
+      expect(review.overflow, review.overflowDetails).toBe(false);
+      expect(review.overlap).toBe(false);
+      expect(review.smallestGlyphHeight, review.smallestGlyphDetails).toBeGreaterThan(12);
+      expect(review.remaining).toBe(0);
+    },
+  );
 }

@@ -24,7 +24,7 @@ describe("turn boundaries", () => {
     const state = { ...enemyTurn(), mana: 0, maxMana: 4 };
     state.playerStatuses.block = 9;
     state.enemyMitigation.block = 9;
-    state.flags.wildfireUsed = true;
+    state.flags.layeredArmorUsedThisTurn = true;
     state.flags.nextHitCrit = true;
     const result = advanceToPlayerTurn(state);
     expect(result.hand.map((card) => card.id)).toEqual(["d4", "d3", "d2", "d1"]);
@@ -34,13 +34,13 @@ describe("turn boundaries", () => {
     expect(result.turn).toBe(state.turn + 1);
     expect(result.playerStatuses.block).toBe(5);
     expect(result.enemyMitigation.block).toBe(9);
-    expect(result.flags.wildfireUsed).toBe(false);
+    expect(result.flags.layeredArmorUsedThisTurn).toBe(false);
     expect(result.flags.nextHitCrit).toBe(true);
     expect(resetEnemyTurnState(result).enemyMitigation.block).toBe(5);
     expect(state.hand).toEqual([]);
     expect(state.deck).toHaveLength(5);
     expect(state.playerStatuses.block).toBe(9);
-    expect(state.flags.wildfireUsed).toBe(true);
+    expect(state.flags.layeredArmorUsedThisTurn).toBe(true);
   });
 
   it("uses Mana captured at turn end for Wellspring, rather than Mana earned during the enemy phase", () => {

@@ -32,6 +32,14 @@ describe("asset loading contract", () => {
     expect(unexpected.slice(0, 10), `${unexpected.length} unexpected dynamic imports`).toEqual([]);
   });
 
+  it("keeps URL globs eager and confined to the catalog owner", () => {
+    const globOwners = matchingFiles(listNonTestSourceFiles("src"), /import\.meta\.glob/u);
+    expect(globOwners).toEqual(["src/lib/game-data/catalog-art.ts"]);
+    const owner = readText(globOwners[0]!);
+    expect(owner).toMatch(/eager:\s*true/u);
+    expect(owner).toMatch(/import:\s*"default"/u);
+  });
+
   it("references the whole art catalog only from boot preload and validation", () => {
     const allowed = new Set([
       "src/lib/game-data/assets.ts",

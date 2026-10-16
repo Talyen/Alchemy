@@ -6,7 +6,15 @@ export function useScreenFocus(screen: string, ready: boolean) {
   const keyboard = useRef(false);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (
+      if (event.altKey || event.ctrlKey || event.metaKey) {
+        keyboard.current = false;
+        if (event.key === "Tab") {
+          // OS window switching must not reach native traversal or dialog traps.
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+      } else if (
         ["Tab", "F7", "Enter", " ", "Escape", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)
       ) {
         keyboard.current = true;
@@ -27,9 +35,11 @@ export function useScreenFocus(screen: string, ready: boolean) {
     };
     window.addEventListener("keydown", onKey, true);
     document.addEventListener("pointerdown", onPointer, true);
+    window.addEventListener("blur", onPointer);
     return () => {
       window.removeEventListener("keydown", onKey, true);
       document.removeEventListener("pointerdown", onPointer, true);
+      window.removeEventListener("blur", onPointer);
     };
   }, []);
 

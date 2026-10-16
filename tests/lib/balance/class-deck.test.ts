@@ -82,7 +82,6 @@ it("simulation homestead presets keeps mutable fight effects isolated from later
   const current = buildTypicalHomesteadEffects("mid");
   current.runMaxHealthBonus = 999;
   current.companionBondLevels.wolf = 999;
-  current.cardHealBonus.apple = 999;
   expect(buildTypicalHomesteadEffects("mid")).toEqual(before);
   expect(buildTypicalHomesteadEffects("early").runMaxHealthBonus).toBe(0);
   expect(buildTypicalHomesteadEffects("late").runMaxHealthBonus).toBe(10);

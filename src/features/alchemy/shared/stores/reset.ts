@@ -11,6 +11,7 @@ import {
   resetToDefaults as resetRunSessionToDefaults,
 } from "./run-session-write-port";
 import { sessionRuntime } from "./session-runtime";
+import { createDefaultSettingsSaveFields } from "./settings-state";
 
 // Test/boot helper only: resets UI and session activity, including combat.
 // It does not settle progression or cancel battle playback; use lifecycle
@@ -30,11 +31,10 @@ export async function clearAllPersistentGameData(gameSession: GameSession): Prom
       logStorageFailure("Save data could not be cleared; memory was left unchanged");
       return false;
     }
-    runtime.settings.getState().resetToDefaults();
+    if (runtime.lifetime.disposed) return true;
     // Device display sizes intentionally survive: they live outside the
     // versioned save (see MIGRATIONS.md public save contract) and Reset
     // Options — not this wipe — is their reset path.
-    runtime.feedback.clearSaveConfirmation();
     dispatchGameplayCommand(
       (draft) => {
         resetRunSessionToDefaults(draft);
@@ -44,7 +44,10 @@ export async function clearAllPersistentGameData(gameSession: GameSession): Prom
 
         return acceptCommand();
       },
-      undefined,
+      {
+        restore: { settings: createDefaultSettingsSaveFields() },
+        afterCommit: () => runtime.feedback.clearSaveConfirmation(),
+      },
       gameSession,
     );
     return true;

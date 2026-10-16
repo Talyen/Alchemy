@@ -29,6 +29,7 @@ import {
   TreePine,
   User,
   Wind,
+  Wallpaper,
   Zap,
   Trophy,
 } from "lucide-react";
@@ -64,7 +65,7 @@ export const collectionTabMeta: Array<{
   { id: "bestiary", label: "Bestiary", icon: ShieldAlert, iconClassName: keywordDefinitions.health.colorClass },
   { id: "trinkets", label: "Trinkets", icon: Trophy, iconClassName: keywordDefinitions.gold.colorClass },
   { id: "uniques", label: "Uniques", icon: Gem, iconClassName: keywordDefinitions.consume.colorClass },
-  { id: "boards", label: "Boards", icon: BookOpen, iconClassName: "text-gold-pale" },
+  { id: "boards", label: "Boards", icon: Wallpaper, iconClassName: "text-[#b98968]" },
 ];
 
 interface ThemedChooserMeta {

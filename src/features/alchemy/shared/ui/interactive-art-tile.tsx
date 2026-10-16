@@ -51,7 +51,7 @@ export function InteractiveArtTile({
   popup,
   as = "div",
   interactive = true,
-  selected = false,
+  selected,
   interactiveChrome = true,
   shineColor,
   shineOnHover = false,
@@ -120,7 +120,8 @@ export function InteractiveArtTile({
         shimmerActive={showShimmer && canInteract && shimmerActive}
         shimmerToken={canInteract ? shimmerToken : undefined}
         overlay={showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
-        selected={interactiveChrome && selected}
+        selected={interactiveChrome && (selected ?? false)}
+        {...(selected !== undefined ? { ariaPressed: selected } : {})}
         disabled={disabled}
         // Unavailable tiles may supply an explicit rejection handler; visual chrome
         // must not suppress that feedback. Purchase callers omit their action.

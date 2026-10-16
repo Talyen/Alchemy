@@ -20,12 +20,12 @@ it("explains the completed collection and disables a refresh of the empty shelf"
   render(
     <TrinketShopScreen
       gold={100}
-      trinkets={[]}
+      items={[]}
       refreshesLeft={1}
       purchasedSlotKeys={[]}
-      getTrinketPrice={() => 50}
+      getPrice={() => 50}
       refreshPrice={15}
-      onBuyTrinket={() => false}
+      onBuy={() => false}
       onRefresh={onRefresh}
       onContinue={() => {}}
     />,
@@ -42,21 +42,21 @@ it("buys the offered identity and prevents a repeat purchase of its slot", async
   const view = (purchasedSlotKeys: string[]) => (
     <TrinketShopScreen
       gold={100}
-      trinkets={[testTrinket]}
+      items={[testTrinket]}
       refreshesLeft={1}
       purchasedSlotKeys={purchasedSlotKeys}
-      getTrinketPrice={() => 50}
+      getPrice={() => 50}
       refreshPrice={15}
-      onBuyTrinket={onBuyTrinket}
+      onBuy={onBuyTrinket}
       onRefresh={vi.fn()}
       onContinue={vi.fn()}
     />
   );
   const { rerender } = render(view([]));
-  await userEvent.click(screen.getByRole("button", { name: "Buy Lucky Coin" }));
+  await userEvent.click(screen.getByRole("button", { name: "Buy Lucky Coin for 50 Gold" }));
   expect(onBuyTrinket).toHaveBeenCalledExactlyOnceWith(testTrinket, "lucky-coin-0");
   rerender(view(["lucky-coin-0"]));
-  const purchased = screen.getByRole("button", { name: "Lucky Coin" });
+  const purchased = screen.getByRole("button", { name: "Lucky Coin. Purchased" });
   expect(purchased.getAttribute("aria-disabled")).toBe("true");
   purchased.focus();
   expect(document.activeElement).toBe(purchased);

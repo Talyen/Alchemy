@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { trinketById } from "@/lib/game-data";
 import type { RunObtainedItem } from "@/lib/active-run-session";
 import { cn } from "@/lib/utils";
@@ -11,6 +13,7 @@ const ITEM_COLUMNS = 4;
 const RUN_END_ITEM_WIDTH = "w-[calc(13.8308*var(--content-rem,1rem))]";
 
 export function RunEndObtainedItems({ items }: { items: readonly RunObtainedItem[] }) {
+  useGameTranslation();
   const visibleItems = items.filter((item) => item.kind === "gear" || trinketById[item.trinketId]);
   const { page, totalPages, pageItems, setPage } = usePaginatedRows(visibleItems, ITEM_PAGE_SIZE, ITEM_COLUMNS);
   if (visibleItems.length === 0) return null;
@@ -40,6 +43,7 @@ function obtainedItemKey(item: RunObtainedItem): string {
 }
 
 function RunEndObtainedItemTile({ item, interactionKey }: { item: RunObtainedItem; interactionKey: string }) {
+  const i18n = useGameTranslation();
   let tile;
   if (item.kind === "gear") {
     tile = <GearTile instance={item.instance} interactionKey={interactionKey} />;
@@ -48,5 +52,5 @@ function RunEndObtainedItemTile({ item, interactionKey }: { item: RunObtainedIte
     if (!trinket) return null;
     tile = <TrinketTile trinket={trinket} interactionKey={interactionKey} />;
   }
-  return <div className={cn(RUN_END_ITEM_WIDTH, "[&>*>*]:!w-full")}>{tile}</div>;
+  return <div className={cn(RUN_END_ITEM_WIDTH, "[&>*>*]:!w-full")}>{i18n.displayText(tile)}</div>;
 }

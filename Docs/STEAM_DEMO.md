@@ -1,6 +1,6 @@
 # Steam demo edition
 
-Approved scope: Campaign Act 1, Novice only, Knight → Rogue → Ranger, English,
+Approved scope: Campaign Act 1, Novice only, Knight → Rogue → Ranger, the bundled languages in [localization](./LOCALIZATION.md),
 Steam only, unlimited replay, and continued availability after full-game launch.
 Existing content pools, progression costs and victory/defeat/abandonment unlocks
 remain unchanged. There is no separate tutorial. Excluded choices show full-game
@@ -85,9 +85,11 @@ dialog or screen. Native gamepad polling, glyphs and rumble are outside scope.
 Published layouts and hardware validation remain governed by
 [release setup](./RELEASE_SETUP.md#steam-input-default-mapping-controller-playable).
 
-Desktop focus loss and the default Shift+Tab chord open the game menu, stopping
-automatic battle actions until the player dismisses it. Wishlist opening does
-the same; the store opens in the overlay only when
+Native Steam overlay activation and the default Shift+Tab chord open the game
+menu during an active battle, stopping automatic battle actions until the player
+dismisses it. Ordinary window blur follows the [focus policy](./UI_INTERACTION.md#keyboard-and-steam-input-navigation)
+without opening the menu. Wishlist opening also requests a battle pause; the store
+opens in the overlay only when
 `client.isOverlayEnabled()` returns true at click time, otherwise it uses the
 fixed Steam store URL in the browser. Unknown availability is not success:
 overlay activation returns void and can silently do nothing.

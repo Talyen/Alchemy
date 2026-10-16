@@ -4,17 +4,14 @@ import { extractKeywordIds, keywordPattern } from "@/features/alchemy/shared/con
 
 it("keyword extraction cache reuses parsing without letting a caller change keyword order or membership", () => {
   const text = "Keyword cache ownership: Frozen, Mana Crystal, Freeze, Bleeding.";
-  const matchAll = vi.spyOn(keywordPattern, Symbol.matchAll);
-  try {
-    const first = extractKeywordIds(text);
-    expect(first).toEqual(["freeze", "mana", "bleed"]);
-    first.reverse();
-    first.push("burn");
-    expect(extractKeywordIds(text)).toEqual(["freeze", "mana", "bleed"]);
-    expect(matchAll).toHaveBeenCalledOnce();
-  } finally {
-    matchAll.mockRestore();
-  }
+  using matchAll = vi.spyOn(keywordPattern, Symbol.matchAll);
+
+  const first = extractKeywordIds(text);
+  expect(first).toEqual(["freeze", "mana", "bleed"]);
+  first.reverse();
+  first.push("burn");
+  expect(extractKeywordIds(text)).toEqual(["freeze", "mana", "bleed"]);
+  expect(matchAll).toHaveBeenCalledOnce();
 });
 
 it("keywordAliases recognizes every keyword label without classifying Phoenix Feather as a keyword", () => {

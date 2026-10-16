@@ -1,3 +1,6 @@
+import { packCatalogs } from "../../src/lib/localization/catalog-format.mjs";
+import languages from "../../src/lib/localization/locales/languages.json";
+import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -45,7 +48,24 @@ async function archive(files: Record<string, string>, extraPublicFiles: Record<s
 
 const desktopHtml =
   '<script type="module" src="./assets/index.js"></script><link rel="stylesheet" href="./assets/index.css">';
+const catalog = JSON.stringify(
+  packCatalogs(
+    Object.fromEntries(
+      Object.keys(languages).map((locale) => [locale, { play: locale === "de" ? "Spielen" : "Play" }]),
+    ),
+    {},
+  ),
+);
+const localizationAssets = {
+  "dist/assets/runtime-test.json": catalog,
+  "dist/localization.json": JSON.stringify({
+    version: 1,
+    catalog: "assets/runtime-test.json",
+    sha256: createHash("sha256").update(catalog).digest("hex"),
+  }),
+};
 const renderer: Record<string, string> = {
+  ...localizationAssets,
   "dist/index.html": desktopHtml,
   "dist/assets/index.js": "console.log('ready');",
   "dist/assets/index.css": "body { color: white; }",
@@ -69,7 +89,35 @@ it.each(["dist", "dist-demo"])(
   },
 );
 
+const missingRussian = JSON.stringify(
+  packCatalogs(
+    Object.fromEntries(
+      Object.keys(languages)
+        .filter((locale) => locale !== "ru")
+        .map((locale) => [locale, { play: "Play" }]),
+    ),
+    {},
+  ),
+);
+
 it.each([
+  [
+    {
+      ...renderer,
+      "dist/assets/runtime-test.json": missingRussian,
+      "dist/localization.json": JSON.stringify({
+        version: 1,
+        catalog: "assets/runtime-test.json",
+        sha256: createHash("sha256").update(missingRussian).digest("hex"),
+      }),
+    },
+    /localization catalog is incomplete/u,
+  ],
+  [
+    Object.fromEntries(Object.entries(renderer).filter(([name]) => !name.endsWith("runtime-test.json"))),
+    /localization catalog is missing/u,
+  ],
+  [{ ...renderer, "dist/assets/runtime-test.json": "{}" }, /localization catalog integrity/u],
   [
     Object.fromEntries(Object.entries(renderer).filter(([name]) => !name.includes("Music/"))),
     /asset is missing: Music/u,

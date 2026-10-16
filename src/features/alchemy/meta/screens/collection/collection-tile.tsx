@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText, displayText } from "@/lib/localization/runtime";
 import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
 import { isEditionCharacterAvailable } from "@/lib/game-edition";
 import { memo, useState, type RefObject } from "react";
@@ -45,6 +47,7 @@ export const CollectionTile = memo(function CollectionTile({
   onEnemyActivate,
   inspectionOpen = false,
 }: CollectionTileProps) {
+  const i18n = useGameTranslation();
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
     `collection-${item.frameType}`,
     item.id,
@@ -75,7 +78,7 @@ export const CollectionTile = memo(function CollectionTile({
       {showPopup ? <CollectionTilePopup item={item} hovered={visible} triggerRef={wrapperRef} /> : null}
       <Surface
         as="button"
-        ariaLabel={inspectAriaLabel(item)}
+        ariaLabel={i18n.displayText(i18n.read(() => inspectAriaLabel(item)))}
         onFocus={handleHoverStart}
         onBlur={handleBlur}
         shimmerActive={shimmerActive}
@@ -120,9 +123,13 @@ function collectionTileShineColors(item: CollectionTileItem): readonly string[] 
 
 function inspectAriaLabel(item: CollectionTileItem): string {
   if (item.frameType === "hero") {
-    return item.discovered ? `Inspect ${item.title}` : `Inspect ${item.title} (Locked)`;
+    return item.discovered
+      ? gameText("ui.collection-tile.msg1", "Inspect {{value0}}", { value0: displayText(item.title) })
+      : gameText("ui.collection-tile.msg2", "Inspect {{value0}} (Locked)", { value0: displayText(item.title) });
   }
-  return item.discovered ? `Inspect ${item.title}` : "Inspect Undiscovered Entry";
+  return item.discovered
+    ? gameText("ui.collection-tile.msg3", "Inspect {{value0}}", { value0: displayText(item.title) })
+    : "Inspect Undiscovered Entry";
 }
 
 function CollectionTilePopup({
@@ -134,6 +141,7 @@ function CollectionTilePopup({
   hovered: boolean;
   triggerRef: RefObject<HTMLElement | null>;
 }) {
+  const i18n = useGameTranslation();
   if (item.frameType === "hero") {
     return (
       <HeroTooltip
@@ -167,7 +175,7 @@ function CollectionTilePopup({
   return (
     <DetailPopup
       idPrefix={item.id}
-      title={title}
+      title={i18n.displayText(title)}
       subtitle={item.subtitle}
       descriptionLines={descriptionLines}
       triggerRef={triggerRef}
@@ -188,6 +196,7 @@ function CollectionTilePopup({
 }
 
 function CollectionTileMedia({ item, flipped }: { item: CollectionTileItem; flipped: boolean }) {
+  useGameTranslation();
   if (item.frameType === "card") {
     return (
       <CardFlip
@@ -214,10 +223,11 @@ function CollectionTileMedia({ item, flipped }: { item: CollectionTileItem; flip
 }
 
 function TileImage({ item, className }: { item: CollectionTileItem; className: string }) {
+  const i18n = useGameTranslation();
   return (
     <img
       src={item.art || undefined}
-      alt={item.title}
+      alt={i18n.displayText(item.title)}
       decoding="async"
       className={cn(
         "block w-full transition-opacity duration-300",

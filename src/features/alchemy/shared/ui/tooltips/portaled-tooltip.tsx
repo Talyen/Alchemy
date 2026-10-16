@@ -23,6 +23,7 @@ export interface PortaledTooltipProps {
 
   placement?: PortaledTooltipPlacement;
   allowFlip?: boolean;
+  horizontalInset?: number;
 
   maxWidthFraction?: number;
 
@@ -117,6 +118,7 @@ export function PortaledTooltip({
   padding = 8,
   placement = "above",
   allowFlip = true,
+  horizontalInset,
   maxWidthFraction,
   fadeOutMs = TOOLTIP_FADE_MS,
   plasmaColorPair = null,
@@ -160,6 +162,7 @@ export function PortaledTooltip({
     placement,
     maxWidthFraction,
     allowFlip,
+    horizontalInset,
   );
 
   if (!mounted) return null;

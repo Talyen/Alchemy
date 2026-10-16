@@ -11,7 +11,6 @@ import { companionLibrary } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { advanceToPlayerTurn, reducePlayerSkipTurns } from "@/lib/battle/player-turn-transition";
-import { applyWishEffect } from "@/lib/battle/wish";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { regressionBattle } from "../../fixtures/battle";
@@ -37,15 +36,24 @@ const rng = () => 0.99;
 describe("playing recovered battles", () => {
   it("repairs broken pending material balances before reward settlement", () => {
     const missing = restore({ pendingMaterials: null });
-    const wished = applyWishEffect(
-      { ...missing, rng, talentEffects: { ...missing.talentEffects, wishGemsGold: 2 } },
-      undefined,
-      1,
-      [],
-    );
-    expect(wished.pendingMaterials).toEqual({ ...emptyInventory(), gems: 2 });
+    expect(missing.pendingMaterials).toEqual(emptyInventory());
     const partial = restore({ pendingMaterials: { gems: 3, herbs: "broken", wood: -2 } });
     expect(partial.pendingMaterials).toEqual({ ...emptyInventory(), gems: 3 });
+  });
+
+  it("resumes multiple queued Returning Flight discounts and drops ambiguous references", () => {
+    const state = restore({
+      hand: [{ ...cardById["bounty-shot"]!, uid: 1, cost: 2 }],
+      pendingHandCards: [{ ...cardById["bounty-shot"]!, uid: 2, cost: 2 }],
+      gearEffects: { recoverLastArcheryCard: 1 },
+      uniqueGear: { returningFlightUids: [1, 2, 2, 99] },
+    });
+    expect(state.uniqueGear.returningFlightUids).toEqual([1, 2]);
+    const next = advanceToPlayerTurn({ ...state, rng });
+    expect(next.uniqueGear.returningFlightUids).toEqual([1, 2]);
+    const played = playBattleCardResolved({ ...next, rng, mana: 1 }, "bounty-shot", 0).state;
+    expect(played.mana).toBe(0);
+    expect(played.uniqueGear.returningFlightUids).toEqual([2]);
   });
 
   it("repairs crowd-control counters that cannot decrement", () => {
@@ -133,7 +141,7 @@ describe("playing recovered battles", () => {
       hand: [{ ...cardById.slash!, uid: 1 }, { ...cardById.slash!, uid: 1 }, cardById.block!],
       discard: [{ ...cardById.slash!, uid: 8 }],
       nextCardUid: 2,
-      uniqueGear: { lastArcheryUid: 8, returningFlightUid: 1 },
+      uniqueGear: { lastArcheryUid: 8, returningFlightUids: [1] },
     });
     const cards = [...state.hand, ...state.discard];
     expect(new Set(cards.map((card) => card.uid)).size).toBe(cards.length);
@@ -141,7 +149,7 @@ describe("playing recovered battles", () => {
     expect(state.hand[0]!.uid).toBe(1);
     expect(state.discard[0]!.uid).toBe(8);
     expect(state.uniqueGear.lastArcheryUid).toBe(8);
-    expect(state.uniqueGear.returningFlightUid).toBeNull();
+    expect(state.uniqueGear.returningFlightUids).toEqual([]);
     expect(state.nextCardUid).toBeGreaterThan(Math.max(...cards.map((card) => card.uid!)));
   });
 

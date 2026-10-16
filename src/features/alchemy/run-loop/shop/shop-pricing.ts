@@ -84,14 +84,12 @@ const SHOP_REFRESH_POLICY: Record<ShopRefreshKind, { basePrice: number; freeTrai
 
 export function getShopRefreshPrice(
   kind: ShopRefreshKind,
-  talentEffects: TalentEffectManifest,
   refreshesLeft: number,
   modifiers: readonly EncounterRewardTraitId[] = [],
-  freeRefreshUsed = false,
 ): number {
   const { basePrice, freeTrait } = SHOP_REFRESH_POLICY[kind];
   if (refreshesLeft > 0 && freeTrait !== null && modifiers.includes(freeTrait)) return 0;
-  return talentEffects.shopFreeRefresh && !freeRefreshUsed && refreshesLeft > 0 ? 0 : basePrice;
+  return basePrice;
 }
 
 export function computeRemoveCardPrice(

@@ -6,15 +6,31 @@ Shared conventions: [UI](./UI.md).
 
 ### Boards
 
-The Boards tab shows landscape art in two measured rows, capped at three columns
-(six boards); narrower layouts reduce the column count. It shares Collection's
-page memory, resize anchoring, grayscale locked art, full-color hover/focus,
-neutral hover Shine Border, and inspection/focus restoration. Names remain visible
-for locked boards. Inspection shows the native full-color artwork, with Use Board
-for owned boards or the five-room reward requirement for locked boards.
+The Boards tab uses a fixed three-column, two-row gallery with six entries per
+page at every window width. Tiles grow to fill the shared Collection shell width,
+shrinking together in narrower windows, and preserve the artwork's aspect ratio.
+It reserves the same two portrait rows and pagination slot as every Collection
+tab, keeping headers, tabs, and pagination stationary. Partial pages center real
+entries without fillers. The Boards tab uses a Wallpaper icon with a warm brown
+accent.
 
-None and Random Collected are selected-state controls above the gallery. Equipped
-art has a visible Selected state. Options → Display → Browse Boards opens this tab;
+None and Random are the first two paginated entries, with their names centered
+inside the artwork area; activating either selects it immediately. Random picks
+only collected boards. Art tiles have no captions or collected count. The active
+choice has no persistent selection border; accessible current state remains.
+Tiles use Collection's 103.5% hover/focus scale and standard 3px gold Shine Border,
+reserving the 1px frame so interaction cannot shift the layout. Board names and
+locked state remain in accessible control names; a lock indicator sits inside
+locked artwork. Locked art stays grayscale until hover/focus.
+
+Inspection fills the game area with full-color artwork, scaling its width and
+height independently to fill the viewport. Use Board sits centered in the lower third
+for owned boards, including the currently equipped board. Successful selection
+closes the preview; a rejected selection keeps it open. Locked previews show the
+five-room reward requirement in that position. The top-right close control and
+Escape dismiss the preview and restore focus to the originating tile.
+
+Options → Display → Browse Boards opens this tab;
 Back returns to Options while preserving its original return target.
 
 A collected board is revealed after the run recap and hero reveals, before demo
@@ -22,11 +38,13 @@ completion or Main Menu. Use Board equips it and continues; Continue preserves
 selection. Unacknowledged reveals recover at Main Menu after restart. Ownership
 commits during settlement, independently of the reveal.
 
-Battle boards fill the existing game stage with independent width/height scaling,
-preserving every edge without cropping or internal margins. Stage layering is
+Battle boards use a centered 16:9 surface that covers the game stage. Artwork
+keeps its proportions; excess edges crop to fit wider or taller viewports without
+stretching or internal margins. Stage layering is
 board art, existing background plasma glow, battle particles, then combat UI.
-Existing glow/particle settings remain effective. Board-specific dimming, color
-treatment, animation, and interactions are deferred.
+Existing glow/particle settings remain effective. The shared
+[tabletop treatment](./UI_BATTLE.md#shared-tabletop-appearance) derives ambient
+tint from the board thumbnail; boards require no authored lighting metadata.
 
 Collection measures available grid width and scaled tile size. Page size is two
 rows times the resolved column count, capped at four columns for Heroes, Cards,
@@ -147,6 +165,13 @@ and pagination/actions. It shows two rows when they fit and one otherwise, keepi
 card size readable and the header and actions stationary across pages. Only the
 card area scrolls if even one row cannot fit. The removal header replaces the shop
 header, gold counter, and instruction text; the Remove action retains its gold cost.
+
+## Campaign destinations and Campfire
+
+Before choosing at Campfire, a heart in the Health keyword color and the actual
+recovery amount appear below Rest, including zero at full Health. Campaign
+destination headers say Choose Destination without an act indicator. The named
+boss entrance keeps its existing title; reward screens say Victory.
 
 ## Rewards and Wishes
 

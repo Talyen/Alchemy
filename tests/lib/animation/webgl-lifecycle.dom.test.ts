@@ -47,18 +47,62 @@ describe("attachWebGLContextLifecycle", () => {
     expect(onAvailabilityChange).toHaveBeenCalledTimes(3);
   });
 
-  it("logs unavailable error when start returns null", () => {
-    const onAvailabilityChange = vi.fn();
+  it("falls back after failed startup and retries when the context is restored", () => {
+    const stop = vi.fn();
+    const start = vi
+      .fn()
+      .mockImplementationOnce(() => {
+        throw new Error("startup failed");
+      })
+      .mockReturnValue(stop);
+    const available = vi.fn();
+    const detach = attachWebGLContextLifecycle({ canvas, start, onAvailabilityChange: available });
+    expect(available).toHaveBeenLastCalledWith(false);
+    canvas.dispatchEvent(new Event("webglcontextrestored"));
+    expect(available).toHaveBeenLastCalledWith(true);
+    detach();
+    expect(stop).toHaveBeenCalledOnce();
+  });
 
+  it("revokes a renderer that loses its context before startup returns", () => {
+    const interruptedStop = vi.fn();
+    const restoredStop = vi.fn();
+    const start = vi
+      .fn()
+      .mockImplementationOnce(() => {
+        canvas.dispatchEvent(new Event("webglcontextlost", { cancelable: true }));
+        return interruptedStop;
+      })
+      .mockReturnValue(restoredStop);
+    const available = vi.fn();
+    const detach = attachWebGLContextLifecycle({ canvas, start, onAvailabilityChange: available });
+    expect(interruptedStop).toHaveBeenCalledOnce();
+    expect(available.mock.calls).toEqual([[false]]);
+    canvas.dispatchEvent(new Event("webglcontextrestored"));
+    expect(available).toHaveBeenLastCalledWith(true);
+    detach();
+    expect(interruptedStop).toHaveBeenCalledOnce();
+    expect(restoredStop).toHaveBeenCalledOnce();
+  });
+
+  it("isolates observer and teardown failures without losing the next renderer", () => {
+    const oldStop = vi.fn(() => {
+      throw new Error("cleanup failed");
+    });
+    const nextStop = vi.fn();
+    const start = vi.fn().mockReturnValueOnce(oldStop).mockReturnValue(nextStop);
     const detach = attachWebGLContextLifecycle({
       canvas,
-      start: () => null,
-      onAvailabilityChange,
-      unavailableErrorMessage: "WebGL failed to initialize",
+      start,
+      onAvailabilityChange: () => {
+        throw new Error("observer failed");
+      },
     });
-
-    expect(onAvailabilityChange).toHaveBeenCalledWith(false);
-    expect(logError).toHaveBeenCalledWith("WebGL failed to initialize", "other");
+    canvas.dispatchEvent(new Event("webglcontextrestored"));
     detach();
+    detach();
+    expect(start).toHaveBeenCalledTimes(2);
+    expect(oldStop).toHaveBeenCalledOnce();
+    expect(nextStop).toHaveBeenCalledOnce();
   });
 });

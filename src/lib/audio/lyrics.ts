@@ -1,4 +1,7 @@
 import blightTreant from "./lyrics/blight-treant.json";
+import forgeGolem from "./lyrics/forge-golem.json";
+import frostwarden from "./lyrics/frostwarden.json";
+import ironBear from "./lyrics/iron-bear.json";
 import { MUSIC_KEYS } from "../game-constants";
 
 export interface LyricWord {
@@ -8,12 +11,22 @@ export interface LyricWord {
 }
 
 // Store phrase text once and interleave start/end times to keep eager timing data compact.
-const blightTreantLines: ReadonlyArray<readonly LyricWord[]> = blightTreant.lines.map(({ text, timings }) =>
-  text.split(" ").map((word, index) => ({ text: word, start: timings[index * 2]!, end: timings[index * 2 + 1]! })),
+const tracks = new Map<string, ReadonlyArray<readonly LyricWord[]>>(
+  Object.entries({
+    [MUSIC_KEYS.BOSS_BLIGHT_TREANT]: blightTreant,
+    [MUSIC_KEYS.BOSS_FORGE_GOLEM]: forgeGolem,
+    [MUSIC_KEYS.BOSS_FROSTWARDEN]: frostwarden,
+    [MUSIC_KEYS.BOSS_IRON_BEAR]: ironBear,
+  }).map(([key, { lines }]) => [
+    key,
+    lines.map(({ text, timings }) =>
+      text.split(" ").map((word, index) => ({ text: word, start: timings[index * 2]!, end: timings[index * 2 + 1]! })),
+    ),
+  ]),
 );
 
 export function getMusicLyrics(key: string): ReadonlyArray<readonly LyricWord[]> | undefined {
-  return key === MUSIC_KEYS.BOSS_BLIGHT_TREANT ? blightTreantLines : undefined;
+  return tracks.get(key);
 }
 
 export interface LyricFrame {

@@ -103,7 +103,7 @@ export const RunProgressSchema = z.object({
       return Object.fromEntries(
         Object.entries(value).filter(
           (entry): entry is [string, number] =>
-            typeof entry[1] === "number" && Number.isInteger(entry[1]) && entry[1] >= 0,
+            typeof entry[1] === "number" && Number.isSafeInteger(entry[1]) && entry[1] >= 0,
         ),
       );
     },

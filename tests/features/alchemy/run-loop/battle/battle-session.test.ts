@@ -9,6 +9,7 @@ import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-s
 import { battlePresentation } from "@/app/battle-presentation";
 import { battleStageMarkName, markBattleStage } from "@/lib/performance/marks";
 import { defaultBattleState } from "@/lib/battle";
+import { cardById } from "@/lib/game-data";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { ROUTE_SCREENS } from "@/lib/routing";
@@ -70,6 +71,34 @@ describe("createBattleSession", () => {
     },
   );
 
+  it.each(["player", "enemy"] as const)(
+    "settles every pending Wish before victory during the %s phase",
+    (turnPhase) => {
+      const { session, battle, onBattleVictory } = makeSession();
+      mutateGameplayForTest((draft) =>
+        setSyncedBattleState(draft, {
+          ...defaultBattleState(),
+          enemyHealth: 0,
+          turnPhase,
+          wishOptions: [cardById.slash!],
+          wishQueue: [[cardById.heal!]],
+        }),
+      );
+      let state = battle.read().battleState;
+      expect(session.checkBattleEnd(state, 1)).toBe(false);
+      expect(onBattleVictory).not.toHaveBeenCalled();
+      expect(battle.chooseWish(state, "slash")).not.toBeNull();
+      state = battle.read().battleState;
+      expect(session.checkBattleEnd(state, 1)).toBe(false);
+      expect(battle.chooseWish(state, "heal")).not.toBeNull();
+      state = battle.read().battleState;
+      expect(session.checkBattleEnd(state, 1)).toBe(true);
+      session.checkBattleEnd(state, 1);
+      expect(state.hand.map((card) => card.id)).toEqual(["slash", "heal"]);
+      expect(onBattleVictory).toHaveBeenCalledOnce();
+    },
+  );
+
   it("ignores checkBattleEnd when session is stale", () => {
     const { session, playback, onBattleVictory } = makeSession();
     playback.restart();
@@ -80,7 +109,7 @@ describe("createBattleSession", () => {
 
   it("keeps the current session active during victory grace after the battle flag clears", () => {
     const { session, playback } = makeSession();
-    playback.finish();
+    playback.finish(playback.id);
     mutateGameplayForTest((draft) => {
       setHasActiveBattle(draft, false);
       setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
@@ -90,7 +119,7 @@ describe("createBattleSession", () => {
 
   it("rejects a stale session id even during victory grace", () => {
     const { session, playback } = makeSession();
-    playback.finish();
+    playback.finish(playback.id);
     mutateGameplayForTest((draft) => {
       setHasActiveBattle(draft, false);
       setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
@@ -110,12 +139,12 @@ describe("createBattleSession", () => {
   });
 
   it("resetBattleSession releases marks from the previous battle session", () => {
-    const { session } = makeSession();
+    const { session, playback } = makeSession();
     const name = battleStageMarkName("draw-end");
     performance.clearMarks(name);
     markBattleStage("draw-end");
     markBattleStage("draw-end");
-    session.clearAllBattleTimeouts();
+    session.clearAllBattleTimeouts(playback.id);
     expect(performance.getEntriesByName(name, "mark")).toHaveLength(2);
     session.resetBattleSession();
     expect(performance.getEntriesByName(name, "mark")).toHaveLength(0);
@@ -125,10 +154,12 @@ describe("createBattleSession", () => {
   });
 
   it("resetBattleSession clears portrait impact cues", () => {
-    battlePresentation.setState({
-      playerImpactCue: { sequence: 1, colors: ["#fff"], healthLost: true, amount: 5, periodic: false, recoil: true },
-      enemyImpactCue: { sequence: 2, colors: ["#fff"], healthLost: true, amount: 5, periodic: false, recoil: true },
-    });
+    battlePresentation.getState().showCombatTexts([
+      { target: "player", kind: "damage", stat: "physical", amount: 5 },
+      { target: "enemy", kind: "damage", stat: "physical", amount: 5 },
+    ]);
+    expect(battlePresentation.getState().playerImpactCue).not.toBeNull();
+    expect(battlePresentation.getState().enemyImpactCue).not.toBeNull();
     const { session } = makeSession();
     session.resetBattleSession();
     expect(battlePresentation.getState().playerImpactCue).toBeNull();
@@ -149,7 +180,7 @@ describe("createBattleSession", () => {
 
   it("runIfSessionActive succeeds during victory grace when hasActiveBattle is false", () => {
     const { session, playback } = makeSession();
-    playback.finish();
+    playback.finish(playback.id);
     mutateGameplayForTest((draft) => {
       setHasActiveBattle(draft, false);
       setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
@@ -165,7 +196,7 @@ describe("createBattleSession", () => {
   it("runIfSessionActive skips stale sessions without side effects", () => {
     const { session, playback } = makeSession();
     playback.restart();
-    playback.beginAction();
+    playback.beginAction(playback.id);
     const onComplete = vi.fn();
 
     const result = session.runIfSessionActive(1, onComplete, undefined);
@@ -181,13 +212,13 @@ describe("createBattleSession", () => {
     const oldSignal = playback.signal;
     const cancel = vi.fn();
     playback.registerCancel(cancel);
-    playback.beginAction();
+    playback.beginAction(playback.id);
     session.reconcile("menu", true);
     expect(oldSignal.aborted).toBe(true);
     expect(cancel).toHaveBeenCalledOnce();
     expect(playback.canAcceptInput()).toBe(false);
     session.reconcile("battle", true);
-    playback.beginAction();
+    playback.beginAction(playback.id);
     playback.completeAction(generation);
     expect(playback.cardPlayInProgress).toBe(true);
     expect(playback.canAcceptInput()).toBe(false);
@@ -199,7 +230,7 @@ describe("createBattleSession", () => {
     const { session, playback, onBattleVictory } = makeSession();
     const scheduleAutoEndTurn = vi.fn();
     playback.bind({ scheduleAutoEndTurn, clearAutoEndTurn: vi.fn() });
-    playback.beginAction();
+    playback.beginAction(playback.id);
     session.handleVictoryDefeat("victory");
     playback.completeAction(playback.id);
     playback.scheduleAutoEndTurn(defaultBattleState());

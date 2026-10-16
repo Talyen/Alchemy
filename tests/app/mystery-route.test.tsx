@@ -22,17 +22,7 @@ const mysteryScreenData = vi.hoisted(() => ({
 }));
 
 vi.mock("@/features/alchemy/shared/stores/use-run-screen-data", () => ({
-  useAlchemistScreenData: vi.fn(),
-  useCampfireScreenData: vi.fn(),
-  useCorruptionScreenData: vi.fn(),
-  useDestinationScreenData: vi.fn(),
-  useEquipmentShopScreenData: vi.fn(),
-  useLabyrinthMapScreenData: vi.fn(),
-  useMysteryScreenData: () => mysteryScreenData.current,
-  useRewardsScreenData: vi.fn(),
-  useShopScreenData: vi.fn(),
-  useTrinketShopScreenData: vi.fn(),
-  useWildwoodRemovalScreenData: vi.fn(),
+  useRunScreenData: () => mysteryScreenData.current,
 }));
 
 vi.mock("@/features/alchemy/run-loop/screens", () => {

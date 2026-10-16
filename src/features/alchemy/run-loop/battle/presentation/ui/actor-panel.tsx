@@ -1,3 +1,5 @@
+import { GameMessage } from "@/components/localization";
+import { useGameTranslation } from "@/components/use-game-translation";
 import type { EnemyDescriptionContext } from "@/lib/battle";
 import { type CSSProperties, type ReactNode, type Ref, useLayoutEffect, useRef } from "react";
 
@@ -35,6 +37,7 @@ import type { ActiveCcKeyword } from "../../../../shared/utils/cc-presentation";
 
 interface ArtPanelProps {
   side: "player" | "enemy";
+  artOverlay?: ReactNode;
   title: string;
   art: string;
   health: number;
@@ -96,11 +99,13 @@ export function ArtPanel({
   turnUrgentHide = false,
   turnShineColors,
   artCorner,
+  artOverlay,
   ccKeyword = null,
   attackToken = 0,
   castToken = 0,
   plasmaColorPair = null,
 }: ArtPanelProps) {
+  useGameTranslation();
   const healthToken = useChangeToken(health);
   const healthPercent = maxHealth > 0 ? (health / maxHealth) * 100 : 0;
   const {
@@ -143,6 +148,7 @@ export function ArtPanel({
             />
             <ActorArtFrame
               side={side}
+              artOverlay={artOverlay}
               title={title}
               art={art}
               shimmerId={shimmerId}
@@ -191,6 +197,7 @@ export function ArtPanel({
 
 function ActorArtFrame({
   side,
+  artOverlay,
   title,
   art,
   shimmerId,
@@ -210,6 +217,7 @@ function ActorArtFrame({
   ccKeyword = null,
 }: {
   side: "player" | "enemy";
+  artOverlay?: ReactNode;
   title: string;
   art: string;
   shimmerId: string;
@@ -228,6 +236,7 @@ function ActorArtFrame({
   turnShineColors?: readonly string[] | undefined;
   ccKeyword?: ActiveCcKeyword | null;
 }) {
+  const i18n = useGameTranslation();
   const { pulse, sparksOverflow } = useImpactPulse(impactCue);
   const recoilRef = useRef<HTMLDivElement>(null);
   const lastRecoilSequence = useRef(0);
@@ -286,7 +295,7 @@ function ActorArtFrame({
                 }
               : undefined
           }
-          ariaLabel={`Inspect ${title}`}
+          ariaLabel={i18n.text("ui.actor-panel.1", "Inspect {{value0}}", { value0: title })}
           testId={`battle-${side}-art-panel`}
           clipContents={false}
           className={cn(
@@ -330,6 +339,7 @@ function ActorArtFrame({
               />
             </BattleSceneArtwork>
           )}
+          {artOverlay}
           <PortraitImpactVfx pulse={pulse} showHealthFlash={!isDead && pulse?.healthLost === true} />
         </Surface>
       </CombatantStatusEffectPresentation>
@@ -357,6 +367,7 @@ function ActorStatsPanel({
   healthPercent: number;
   healthToken: number;
 }) {
+  const i18n = useGameTranslation();
   return (
     <div
       className={cn(
@@ -371,7 +382,7 @@ function ActorStatsPanel({
       <div className={cn("relative", isDead && "opacity-0 transition-opacity duration-700")}>
         <ActorHealthHeader side={side} title={title} health={health} maxHealth={maxHealth} healthToken={healthToken} />
         <Progress
-          aria-label={`${title} health`}
+          aria-label={i18n.text("ui.actor-panel.2", "{{value0}} health", { value0: title })}
           value={healthPercent}
           className={cn("mt-1.5 h-3 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")}
         />
@@ -394,6 +405,7 @@ function ActorHealthHeader({
   maxHealth,
   healthToken,
 }: Pick<ArtPanelProps, "side" | "title" | "health" | "maxHealth"> & { healthToken: number }) {
+  useGameTranslation();
   return (
     <div className="flex items-baseline justify-between gap-3">
       <p className={cn("font-sans", sectionTitleClass)}>{title}</p>
@@ -402,7 +414,11 @@ function ActorHealthHeader({
         data-testid={`${side}-health`}
         className={cn("text-lg font-semibold text-gold-pale/75", healthToken > 0 && "hp-number-pop")}
       >
-        {health}/{maxHealth}
+        <GameMessage
+          id="ui.actor-panel.s1"
+          defaultValue="<part0/>/<part1/>"
+          parts={{ part0: health, part1: maxHealth }}
+        />
       </p>
     </div>
   );
@@ -417,6 +433,7 @@ function ActorStatusRow({
 }: Pick<ArtPanelProps, "deathsDoorGraceTurnsRemaining" | "title" | "statuses" | "side"> & {
   deathsDoorActive: boolean | undefined;
 }) {
+  useGameTranslation();
   return (
     <div className="mt-2.5 flex min-h-9 items-center gap-1" data-testid={`${side}-statuses`}>
       {deathsDoorActive ? <DeathsDoorStatusIcon remainingTurns={deathsDoorGraceTurnsRemaining} /> : null}

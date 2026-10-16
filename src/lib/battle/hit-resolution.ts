@@ -2,7 +2,6 @@ import { rollBattleChance } from "./chance-roll";
 import { applyBleedDamageDraw, applyElementalDamageManaRestore, applyHitHealth } from "./player-hit-core";
 import type { CardHitRequest, HitFacts, HitRequest } from "./player-hit-core";
 import { BLACKFLETCH_EXECUTE_HEALTH_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
-import { halveRounded } from "./amount-helpers";
 import { applyHitEpilogue } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
 import { computeReflectedHolyDamageToEnemy } from "./damage-calc";
@@ -16,13 +15,20 @@ import { addForgeToPlayer, applyIronGuardReward } from "./status-player";
 import type { BattleState, CombatTextEvent } from "./types";
 import { applyPurgeGearRewards, purgeEnemyBenefits } from "./enemy-purge";
 import { drawKeywordCard } from "./draw";
+import { isPlayerDefeated } from "./battle-outcome";
+
+type SettleHitReactions = (state: BattleState, combatTexts: CombatTextEvent[]) => BattleState;
 
 /** Direct player hits have explicit recipes; shallow sources never re-enter card reactions. */
-export function resolvePlayerHit(state: BattleState, request: HitRequest, combatTexts: CombatTextEvent[]): BattleState {
+export function resolvePlayerHit(
+  state: BattleState,
+  request: HitRequest,
+  combatTexts: CombatTextEvent[],
+  settleReactions?: SettleHitReactions,
+): BattleState {
   switch (request.source) {
     case "card-attack":
-    case "archery-extra":
-      return resolveCardHit(state, request, combatTexts);
+      return resolveCardHit(state, request, combatTexts, settleReactions);
     case "player-follow-up":
     case "talent-fixed":
     case "talent-derived":
@@ -97,23 +103,8 @@ function applyCardArcheryReactions(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const { resolvedDamage } = facts;
-  if (
-    request.source !== "card-attack" ||
-    !request.card.tags?.includes("archery") ||
-    resolvedDamage <= 0 ||
-    nextState.enemyHealth <= 0
-  ) {
+  if (!request.card.tags?.includes("archery") || resolvedDamage <= 0 || nextState.enemyHealth <= 0) {
     return nextState;
-  }
-  if (rollBattleChance(nextState.talentEffects.archeryPlayTwiceChance, nextState)) {
-    const secondHit = halveRounded(resolvedDamage);
-    if (secondHit > 0) {
-      nextState = resolveCardHit(
-        nextState,
-        { ...request, source: "archery-extra", resolvedDamage: secondHit, critical: false },
-        combatTexts,
-      );
-    }
   }
   nextState = tryTalentTypedHit(
     nextState,
@@ -126,14 +117,20 @@ function applyCardArcheryReactions(
   return nextState;
 }
 
-function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts: CombatTextEvent[]): BattleState {
+function resolveCardHit(
+  state: BattleState,
+  request: CardHitRequest,
+  combatTexts: CombatTextEvent[],
+  settleReactions?: SettleHitReactions,
+): BattleState {
   request = { ...request, forgeTriggers: request.forgeTriggers ?? new Set<string>() };
   const { card, effect, resolvedDamage: modifiedDamage, onDamageDealt } = request;
   const companionAttack = request.origin === "companion";
   const eligibility = state;
   // Eligibility precedes purge, but Health facts describe the target after purge.
-  const prePurgeState = request.source === "archery-extra" ? state : resolveAttackPurgeHit(state, combatTexts);
-  if (prePurgeState.enemyHealth <= 0) return prePurgeState;
+  const purged = resolveAttackPurgeHit(state, combatTexts);
+  const prePurgeState = settleReactions?.(purged, combatTexts) ?? purged;
+  if (prePurgeState.enemyHealth <= 0 || isPlayerDefeated(prePurgeState)) return prePurgeState;
   const hit = applyHitHealth(prePurgeState, modifiedDamage, eligibility, request.critical ?? false);
   const facts = hit.facts;
   const { previousHealth } = facts;
@@ -144,7 +141,6 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
 
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy", combatTexts);
 
-  // Reactions stay depth-first: Archery's extra hit finishes before the outer hit's payout.
   nextState = applyCardHitReactions(nextState, request, facts, combatTexts);
   nextState = applyCardArcheryReactions(nextState, request, facts, combatTexts);
   if (
@@ -177,7 +173,8 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
       kind: "damage",
       stat: effect.damageType,
       amount: modifiedDamage,
-      ...(facts.critical ? { critical: true } : {}),
+      ...(facts.healthDamage !== modifiedDamage ? { healthLost: facts.healthDamage } : {}),
+      ...(facts.critical && facts.healthDamage > 0 ? { critical: true } : {}),
     });
   }
 

@@ -1,3 +1,4 @@
+import { expireCcReactions } from "./elemental-reaction-state";
 import { resetTurnFlags } from "./combat-flags";
 import { mergeCombatText } from "./combat-text-events";
 import { resolveSecondaryAction } from "./action-context";
@@ -42,7 +43,11 @@ function applyPlagueDoctorMask(state: BattleState, combatTexts: CombatTextEvent[
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "poison", amount: removed, impact: false });
   }
   const reduced = { ...state, playerStatuses: { ...state.playerStatuses, poison } };
-  const cleansed = poison === 0 ? applyCleanseHeals(reduced, combatTexts) : reduced;
+  const cleansed = resolvePendingBattleReactions(
+    poison === 0 ? applyCleanseHeals(reduced, combatTexts) : reduced,
+    combatTexts,
+  );
+  if (getBattleOutcome(cleansed) !== null) return cleansed;
   return resolvePendingBattleReactions(
     resolveSecondaryAction(cleansed, "delayed-card", (current) =>
       resolveFollowUpHit(
@@ -170,9 +175,12 @@ function performDrawAndResetPhase(
     getBattleRng(state),
     state.pendingHandCards,
   );
-  let returningFlightUid: number | null = null;
+  // Enemy-phase deliveries and overflow queues have not had a playable turn yet.
+  const eligibleUids = new Set([...state.hand, ...state.pendingHandCards].map((card) => card.uid));
+  const returningFlightUids = state.uniqueGear.returningFlightUids.filter((uid) => eligibleUids.has(uid));
   if (recovered) {
-    returningFlightUid = nextDraw.nextCardUid;
+    const returningFlightUid = nextDraw.nextCardUid;
+    returningFlightUids.push(returningFlightUid);
     const card = { ...recovered, uid: returningFlightUid };
     if (nextDraw.hand.length < MAX_HAND_SIZE) nextDraw.hand.push(card);
     else nextDraw.pendingHandCards.push(card);
@@ -184,7 +192,7 @@ function performDrawAndResetPhase(
     hadUnspentMana && state.talentEffects.wellspringKeepMana > 0 ? state.talentEffects.wellspringKeepMana : 0;
   return {
     ...applyDrawResult(nextState, nextDraw),
-    uniqueGear: { ...nextState.uniqueGear, returningFlightUid },
+    uniqueGear: { ...nextState.uniqueGear, returningFlightUids },
     turnPhase: "player",
     mana:
       nextState.maxMana +
@@ -242,7 +250,8 @@ export function advanceToPlayerTurn(
     nextState.deck.length === 0 &&
     nextState.discard.length === 0
   )
-    nextState = applyEmergencyWish(nextState, combatTexts);
+    nextState = resolvePendingBattleReactions(applyEmergencyWish(nextState, combatTexts), combatTexts);
+  if (getBattleOutcome(nextState) !== null) return nextState;
   const recovered =
     state.flags.darkRecoveryMana > 0
       ? gainManaWithCombatText(nextState, state.flags.darkRecoveryMana, combatTexts, {
@@ -264,10 +273,10 @@ export function advanceToPlayerTurn(
 export function reduceSkipTurns(state: BattleState, combatTexts: CombatTextEvent[] = []): BattleState {
   const prevCc = state.enemyCC;
   const decrementedCc = decrementCcSkipTurns(prevCc);
-  const nextState = {
+  const nextState = expireCcReactions({
     ...state,
     enemyCC: finalizeCcSkipTurnDecrement(prevCc, decrementedCc),
-  };
+  });
   return prevCc.freezeSkipTurns > 0 &&
     nextState.enemyCC.freezeSkipTurns === 0 &&
     getBattleOutcome(nextState) === null &&

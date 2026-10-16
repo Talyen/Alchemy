@@ -1,15 +1,41 @@
-import type { TalentDefinition, TalentEffectOperation } from "./types";
 import type { KeywordId } from "../types";
 
-// Each keyword pool repeats its keyword on every row (and must match its
-// filename). Presetting it once per file removes the repetition and makes a
-// misbucketed row impossible.
+export interface HealthThresholdBonus {
+  threshold: number;
+  amount: number;
+}
+
+export interface AdditiveTalentBonus {
+  kind: "add";
+  amount: number;
+}
+
+export type TalentBonus =
+  | null
+  | number
+  | boolean
+  | HealthThresholdBonus
+  | HealthThresholdBonus[]
+  | Record<string, number>
+  | AdditiveTalentBonus;
+
+export function add(amount: number): AdditiveTalentBonus {
+  return { kind: "add", amount };
+}
+
+export function isAdditiveBonus(value: TalentBonus): value is AdditiveTalentBonus {
+  return typeof value === "object" && value !== null && "kind" in value && value.kind === "add";
+}
+
+// Fix the keyword and saved identity before inferring each row's bonus fields.
 export function talentFor(keywordId: KeywordId) {
-  return (
-    id: string,
-    name: string,
-    description: string,
-    icon: string,
-    ...ops: [TalentEffectOperation, ...TalentEffectOperation[]]
-  ): TalentDefinition => ({ id, keywordId, name, description, icon, effects: ops });
+  return (id: string, name: string) =>
+    <Effects extends Record<string, TalentBonus>>(icon: string, description: string, effects: Effects) => ({
+      id,
+      keywordId,
+      name,
+      icon,
+      description,
+      effects,
+    });
 }

@@ -1,3 +1,4 @@
+import { displayText } from "@/lib/localization/runtime";
 import { Fragment, type ReactNode } from "react";
 
 const UNLOCK_HIGHLIGHT_SOURCE = String.raw`\*\*([^*]+)\*\*|\b(Knight|Rogue|Wizard|Ranger|Alchemist|Warlock|Druid|Wildcard|Run|Runs|Gear|Difficulty|Difficulties|Companion|Companions|Gold|Resources|Potions)\b`;
@@ -7,6 +8,8 @@ export function renderUnlockNode(message: ReactNode): ReactNode {
 }
 
 export function renderUnlockMessage(text: string): ReactNode {
+  const translated = displayText(text);
+  if (translated !== text) return translated;
   const parts: ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -20,7 +23,7 @@ export function renderUnlockMessage(text: string): ReactNode {
     const matchedText = match[1] ?? match[2] ?? match[0];
     parts.push(
       <strong key={`${match.index}-${keyCounter++}`} className="font-semibold text-foreground">
-        {matchedText}
+        {displayText(matchedText)}
       </strong>,
     );
     lastIndex = match.index + match[0].length;
@@ -31,5 +34,5 @@ export function renderUnlockMessage(text: string): ReactNode {
     parts.push(text.slice(lastIndex));
   }
 
-  return parts.length > 0 ? <Fragment>{parts}</Fragment> : text;
+  return parts.length > 0 ? <Fragment>{displayText(parts)}</Fragment> : text;
 }

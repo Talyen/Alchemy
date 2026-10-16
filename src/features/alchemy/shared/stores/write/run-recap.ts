@@ -41,7 +41,7 @@ export function completeRunRoom(draft: GameplayDraft): void {
 export function addRunGoldEarned(draft: GameplayDraft, amount: number): void {
   const run = draft.run.activeRun;
   if (draft.session.activity.kind !== "inactive" && run.runGoldEarned !== null && amount > 0)
-    run.runGoldEarned += amount;
+    run.runGoldEarned = Math.min(Number.MAX_SAFE_INTEGER, run.runGoldEarned + amount);
 }
 
 export function captureRunRecap(draft: GameplayDraft, ending: RunRecap["ending"]): void {

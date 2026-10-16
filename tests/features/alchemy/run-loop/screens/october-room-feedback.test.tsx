@@ -14,7 +14,7 @@ it("Hidden Purse acknowledges its Gold after a resumed Rest completion", () => {
     maxHealth: 100,
     healFraction: 0.3,
     runDeck: [],
-    potency: 0,
+
     onRest: vi.fn(() => true),
     onBrew: vi.fn(() => null),
     onContinue: vi.fn(),
@@ -31,7 +31,6 @@ it("Herbal Hearth acknowledges the Potion added by Rest without calling it a bre
       maxHealth={100}
       healFraction={0.3}
       runDeck={[]}
-      potency={0}
       visit={{ ...emptyAlchemyVisit(), completed: true }}
       modifiers={["herbal-hearth"]}
       onRest={() => true}

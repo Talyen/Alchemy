@@ -27,22 +27,27 @@ export function useInitialLoadReady({
 
   useEffect(() => {
     let cancelled = false;
-    const fontsAbort = new AbortController();
+    const loadLifetime = new AbortController();
 
     function preloadDeferredGearArt() {
       if (cancelled) return;
       const essential = new Set(essentialGameArt);
       const deferred = allGameArt.filter((src) => !essential.has(src) && !onDemandBoardArt.has(src));
       if (deferred.length === 0) return;
-      void preloadImagesInBatches(deferred, IMAGE_PRELOAD_BATCH_SIZE).catch((error: unknown) => {
-        logError("Deferred art preload failed", "other", { error: String(error) });
-      });
+      void preloadImagesInBatches(deferred, IMAGE_PRELOAD_BATCH_SIZE, undefined, loadLifetime.signal).catch(
+        (error: unknown) => {
+          logError("Deferred art preload failed", "other", { error: String(error) });
+        },
+      );
     }
 
     function preloadEssentialArt(onProgress?: (loaded: number, total: number) => void, onSettled?: () => void) {
-      const preload = onProgress
-        ? preloadImagesInBatches(essentialGameArt, IMAGE_PRELOAD_BATCH_SIZE, onProgress)
-        : preloadImagesInBatches(essentialGameArt, IMAGE_PRELOAD_BATCH_SIZE);
+      const preload = preloadImagesInBatches(
+        essentialGameArt,
+        IMAGE_PRELOAD_BATCH_SIZE,
+        onProgress,
+        loadLifetime.signal,
+      );
       void (async () => {
         try {
           await preload;
@@ -60,10 +65,10 @@ export function useInitialLoadReady({
     if (skipGate) {
       markStartupReady();
       preloadEssentialArt();
-      void waitForFonts(fontsAbort.signal);
+      void waitForFonts(loadLifetime.signal);
       return () => {
         cancelled = true;
-        fontsAbort.abort();
+        loadLifetime.abort();
       };
     }
 
@@ -108,14 +113,14 @@ export function useInitialLoadReady({
       () => apply({ type: "images-settled" }),
     );
 
-    void waitForFonts(fontsAbort.signal).then(() => {
+    void waitForFonts(loadLifetime.signal).then(() => {
       apply({ type: "fonts-settled" });
     });
 
     return () => {
       cancelled = true;
       publishLoadEventRef.current = null;
-      fontsAbort.abort();
+      loadLifetime.abort();
       window.clearTimeout(timer);
       window.cancelAnimationFrame(rafId);
     };

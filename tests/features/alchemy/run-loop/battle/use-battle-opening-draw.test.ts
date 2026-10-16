@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { act, renderHook } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
@@ -14,7 +15,7 @@ import { installImmediateRafForTests } from "./battle-test-reset";
 installImmediateRafForTests();
 
 it("starts opening playback when its injected store becomes ready, even with the application store unarmed", async () => {
-  const session = createGameSession();
+  await using session = createGameSession();
   const presentation = createBattlePresentationStore(session);
   const state = makeTestBattleState({
     hand: Array.from({ length: 4 }, (_, uid) => makeTestCardWithId(`card-${uid}`, { uid })),
@@ -34,7 +35,7 @@ it("starts opening playback when its injected store becomes ready, even with the
     presentation,
     getPresentation: presentation.getState,
     battleSceneRef: { current: document.createElement("div") },
-    drawPileRef: { current: document.createElement("div") },
+    handDockRef: { current: document.createElement("div") },
   };
   battlePresentation.getState().setOpeningDrawPending(false);
   const { unmount } = renderHook(() =>
@@ -46,16 +47,13 @@ it("starts opening playback when its injected store becomes ready, even with the
       playbackBound: true,
     }),
   );
-  try {
-    expect(drawDeps.animateDrawnHand).not.toHaveBeenCalled();
-    act(() => presentation.getState().setOpeningDrawPending(true));
-    await vi.waitFor(() => expect(ctx.playback.completeAction).toHaveBeenCalledWith(3));
-    expect(drawDeps.animateDrawnHand).toHaveBeenCalledOnce();
-    expect(ctx.playback.scheduleAutoEndTurn).toHaveBeenCalledWith(ctx.battle.read().battleState);
-    expect(presentation.getState().openingDrawPending).toBe(false);
-    expect(battlePresentation.getState().openingDrawPending).toBe(false);
-  } finally {
-    unmount();
-    await session.dispose();
-  }
+  using _scopeCleanup = createCleanup(() => unmount());
+
+  expect(drawDeps.animateDrawnHand).not.toHaveBeenCalled();
+  act(() => presentation.getState().setOpeningDrawPending(true));
+  await vi.waitFor(() => expect(ctx.playback.completeAction).toHaveBeenCalledWith(3));
+  expect(drawDeps.animateDrawnHand).toHaveBeenCalledOnce();
+  expect(ctx.playback.scheduleAutoEndTurn).toHaveBeenCalledWith(ctx.battle.read().battleState);
+  expect(presentation.getState().openingDrawPending).toBe(false);
+  expect(battlePresentation.getState().openingDrawPending).toBe(false);
 });

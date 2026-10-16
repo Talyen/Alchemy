@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { useCallback, useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { ArrowDownWideNarrow, Search, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,7 @@ function InventoryIconButton({
   "aria-expanded": expanded,
   ...props
 }: ComponentProps<typeof ChromeIconButton> & { label: string }) {
+  useGameTranslation();
   const { triggerRef, visible, onMouseEnter, onMouseMove, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible({ suspended: Boolean(expanded) });
   return (
@@ -61,6 +64,7 @@ export function ArmoryInventoryControls({
   onSort: (option: ArmorySortOption) => void;
   onBrowse: () => void;
 }) {
+  const i18n = useGameTranslation();
   const [menu, setMenu] = useState<"filter" | "sort" | null>(null);
   const [searchExpanded, setSearchExpanded] = useState(Boolean(filters.search));
   const searchRef = useRef<HTMLInputElement>(null);
@@ -96,7 +100,7 @@ export function ArmoryInventoryControls({
       <div className="armory-inventory-search" data-expanded={searchExpanded}>
         <InventoryIconButton
           ref={searchTriggerRef}
-          label="Search inventory"
+          label={i18n.text("ui.armory-inventory-controls.1", "Search inventory")}
           active={searchExpanded}
           aria-expanded={searchExpanded}
           onClick={() => {
@@ -111,8 +115,8 @@ export function ArmoryInventoryControls({
           <input
             ref={searchRef}
             type="search"
-            aria-label="Search inventory"
-            placeholder="Search names and effects…"
+            aria-label={i18n.text("ui.armory-inventory-controls.2", "Search inventory")}
+            placeholder={i18n.text("ui.armory-inventory-controls.3", "Search names and effects…")}
             value={filters.search}
             onChange={(event) => onFiltersChange({ ...filters, search: event.target.value })}
             className="h-11 w-full min-w-0 rounded-xl border border-border/80 bg-background pr-9 pl-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary [&::-webkit-search-cancel-button]:hidden"
@@ -120,7 +124,7 @@ export function ArmoryInventoryControls({
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Close inventory search"
+            aria-label={i18n.text("ui.armory-inventory-controls.4", "Close inventory search")}
             className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2"
             onClick={closeSearch}
           >
@@ -129,14 +133,14 @@ export function ArmoryInventoryControls({
         </div>
       </div>
       <ArmoryInventoryMenu
-        label="Inventory filters"
+        label={i18n.text("ui.armory-inventory-controls.5", "Inventory filters")}
         open={menu === "filter"}
         triggerRef={filterTriggerRef}
         onDismiss={dismissFilter}
         trigger={(panelId) => (
           <InventoryIconButton
             ref={filterTriggerRef}
-            label="Filters"
+            label={i18n.text("ui.armory-inventory-controls.6", "Filters")}
             active={menu === "filter" || filtersActive}
             aria-expanded={menu === "filter"}
             aria-controls={menu === "filter" ? panelId : undefined}
@@ -148,7 +152,7 @@ export function ArmoryInventoryControls({
         )}
       >
         {!isTrinket ? (
-          <FilterGroup title="Rarity">
+          <FilterGroup title={i18n.text("ui.armory-inventory-controls.7", "Rarity")}>
             <div className="flex flex-wrap gap-2">
               {RARITIES.map(({ id, label }) => (
                 <Button
@@ -162,13 +166,19 @@ export function ArmoryInventoryControls({
                   )}
                   onClick={() => onFiltersChange({ ...filters, rarities: toggleValue(filters.rarities, id) })}
                 >
-                  {label}
+                  {i18n.displayText(label)}
                 </Button>
               ))}
             </div>
           </FilterGroup>
         ) : null}
-        <FilterGroup title={isTrinket ? "Effect Keywords" : "Affix Keywords"}>
+        <FilterGroup
+          title={i18n.displayText(
+            isTrinket
+              ? i18n.text("ui.armory-inventory-controls.d1", "Effect Keywords")
+              : i18n.text("ui.armory-inventory-controls.d2", "Affix Keywords"),
+          )}
+        >
           <div className="grid grid-cols-2 gap-1">
             {ARMORY_FILTER_KEYWORDS.map(({ id, label }) => (
               <label
@@ -181,7 +191,7 @@ export function ArmoryInventoryControls({
                   onChange={() => onFiltersChange({ ...filters, keywords: toggleValue(filters.keywords, id) })}
                   className="h-4 w-4 shrink-0 accent-primary"
                 />
-                {label}
+                {i18n.displayText(label)}
               </label>
             ))}
           </div>
@@ -193,19 +203,19 @@ export function ArmoryInventoryControls({
             disabled={!filtersActive}
             onClick={() => onFiltersChange({ ...filters, rarities: [], keywords: [] })}
           >
-            Clear filters
+            {i18n.text("ui.armory-inventory-controls.8", "Clear filters")}
           </Button>
         </div>
       </ArmoryInventoryMenu>
       <ArmoryInventoryMenu
-        label="Sort inventory"
+        label={i18n.text("ui.armory-inventory-controls.9", "Sort inventory")}
         open={menu === "sort"}
         triggerRef={sortTriggerRef}
         onDismiss={dismissSort}
         trigger={(panelId) => (
           <InventoryIconButton
             ref={sortTriggerRef}
-            label="Sort inventory"
+            label={i18n.text("ui.armory-inventory-controls.10", "Sort inventory")}
             active={menu === "sort"}
             aria-expanded={menu === "sort"}
             aria-controls={menu === "sort" ? panelId : undefined}
@@ -234,7 +244,7 @@ export function ArmoryInventoryControls({
                 dismissSort(true);
               }}
             >
-              {label}
+              {i18n.displayText(label)}
             </Button>
           ))}
         </div>
@@ -244,6 +254,7 @@ export function ArmoryInventoryControls({
 }
 
 function FilterGroup({ title, children }: { title: string; children: ReactNode }) {
+  useGameTranslation();
   return (
     <fieldset className="mb-3">
       <legend className="mb-2 text-sm font-semibold text-muted-foreground">{title}</legend>

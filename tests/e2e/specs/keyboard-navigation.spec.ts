@@ -108,7 +108,11 @@ test("opening the menu during card transfer cancels hand focus recovery", critic
   await input.press("back");
   await expect(page.getByTestId("game-menu")).toBeVisible();
   await expect(battle.hand).toHaveCount(2);
-  await expect(battle.endTurnBtn).toBeEnabled();
+  await expect(battle.endTurnBtn).toBeDisabled();
   await expect(page.locator(".card-ghost-overlay")).toHaveCount(0);
+  expect(await page.getByTestId("battle-hand").evaluate((hand) => hand.contains(document.activeElement))).toBe(false);
+  await input.press("back");
+  await expect(page.getByTestId("game-menu")).toHaveCount(0);
+  await expect(battle.endTurnBtn).toBeEnabled();
   expect(await page.getByTestId("battle-hand").evaluate((hand) => hand.contains(document.activeElement))).toBe(false);
 });

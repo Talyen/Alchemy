@@ -1,3 +1,4 @@
+import { patchBattleState } from "../../../../../fixtures/battle";
 import { createRef } from "react";
 import { EnemyTooltip } from "@/features/alchemy/shared/ui/tooltips/enemy-tooltip";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -130,6 +131,40 @@ describe("enemy inspection presentation", () => {
     fireEvent.mouseEnter(ability.parentElement!);
     await waitFor(() =>
       expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain("Gain 5 Block"),
+    );
+  });
+
+  it("updates live enemy attack power on hover without applying hero defenses", async () => {
+    const entry = enemyById.goblin;
+    const state = patchBattleState({
+      currentEnemy: entry,
+      enemyMitigation: { forge: 3 },
+      playerStatuses: { block: 90, armor: 90 },
+    });
+    const { rerender } = render(<EnemyInspectionOverlay open entry={entry} battleState={state} onClose={() => {}} />);
+    await waitForArtwork();
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close enemy inspection" })),
+    );
+    const ability = screen.getByRole("button", { name: "Slash" });
+    fireEvent.mouseEnter(ability.parentElement!);
+    await waitFor(() =>
+      expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain(
+        "Deal 7 Physical damage",
+      ),
+    );
+    rerender(
+      <EnemyInspectionOverlay
+        open
+        entry={entry}
+        battleState={{ ...state, enemyMitigation: { ...state.enemyMitigation, forge: 5 } }}
+        onClose={() => {}}
+      />,
+    );
+    await waitFor(() =>
+      expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain(
+        "Deal 9 Physical damage",
+      ),
     );
   });
 

@@ -1,3 +1,6 @@
+import { unpackCatalogs } from "../../../src/lib/localization/catalog-format.mjs";
+import languages from "../../../src/lib/localization/locales/languages.json" with { type: "json" };
+import { createHash } from "node:crypto";
 import { releaseEdition, assertPackageEdition } from "./game-edition.mjs";
 import { execFileSync } from "node:child_process";
 import { closeSync, existsSync, openSync, readFileSync, readdirSync, readSync, statSync } from "node:fs";
@@ -30,6 +33,16 @@ function verifyRendererResources(html, readResource) {
     resources.push(reference);
   }
   if (!hasScript) throw new Error("Desktop renderer HTML must reference an application script.");
+  let catalogManifest;
+  try { catalogManifest = JSON.parse(readResource("localization.json").toString("utf8")); }
+  catch (cause) { throw new Error("Renderer localization manifest is missing or invalid", { cause }); }
+  if (catalogManifest.version !== 1 || typeof catalogManifest.catalog !== "string" || !/^assets\/runtime-[\w-]+\.json$/.test(catalogManifest.catalog)) throw new Error("Renderer localization catalog path is invalid");
+  let catalog;
+  try { catalog = readResource(catalogManifest.catalog); }
+  catch (cause) { throw new Error("Renderer localization catalog is missing", { cause }); }
+  if (createHash("sha256").update(catalog).digest("hex") !== catalogManifest.sha256) throw new Error("Renderer localization catalog integrity differs");
+  const locales = unpackCatalogs(JSON.parse(catalog.toString("utf8")));
+  if (Object.keys(languages).some((locale) => !locales[locale] || Object.keys(locales[locale]).length === 0 || Object.values(locales[locale]).some((text) => typeof text !== "string"))) throw new Error("Renderer localization catalog is incomplete");
   for (const reference of new Set(resources)) {
     if (/^(?:[\\/]|[a-z][a-z\d+.-]*:)/iu.test(reference)) {
       throw new Error(`Desktop renderer resources must be relative: ${reference} (run npm run build:desktop).`);

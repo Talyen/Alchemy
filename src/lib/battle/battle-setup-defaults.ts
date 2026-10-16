@@ -6,6 +6,7 @@ import { EMPTY_ENEMY_MITIGATION } from "./enemy-mitigation-state";
 import { defaultTrinketEffects } from "../trinkets";
 import { defaultGearEffects } from "@/lib/gear";
 import { placeholderRng } from "@/lib/rng";
+import { createElementalReactionState } from "./elemental-reaction-state";
 import { createInitialFlags } from "./combat-flags";
 import { createUniqueGearBattleState } from "./unique-gear-state";
 
@@ -85,6 +86,7 @@ export function defaultBattleState(): BattleState {
     trinketEffects: { ...defaultTrinketEffects },
     gearEffects: { ...defaultGearEffects },
     flags: createInitialFlags(),
+    reactions: createElementalReactionState(),
     uniqueGear: createUniqueGearBattleState(),
     pendingTurnStartEffects: [],
     discoveredCardIds: [],

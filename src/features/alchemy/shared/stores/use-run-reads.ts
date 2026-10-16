@@ -11,14 +11,7 @@ import {
 } from "@/lib/game-data";
 import { getRunPhase, type Screen } from "@/lib/routing";
 import { useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
-import {
-  selectBattle,
-  pickRunSessionBattleSlice,
-  selectCardInspectionData,
-  type RunSessionBattleSlice,
-  type RunSessionBattleContext,
-  type RunSessionNavigationSlice,
-} from "./run-reads";
+import { selectBattle, selectCardInspectionData } from "./run-reads";
 
 function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {
   return useGameplayStateStore(useShallow(selector));
@@ -95,10 +88,6 @@ export function useActiveRunBoons(): string[] {
   return useGameplayStateStore(useShallow((state) => state.run.activeRun.runBoons));
 }
 
-function useRunSessionBattleSlice(): RunSessionBattleSlice {
-  return useShallowRunSelector((state) => pickRunSessionBattleSlice(selectBattle(state)));
-}
-
 export function useBattleClusterState() {
   return useGameplayStateStore(
     useShallow((state) => ({
@@ -110,32 +99,15 @@ export function useBattleClusterState() {
   );
 }
 
-export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleContext {
-  const battle = useRunSessionBattleSlice();
-  const activeLabyrinthModifiers = useGameplayStateStore(useShallow((state) => state.session.activeLabyrinthModifiers));
-  const committedScreen = useGameplayStateStore((state) => state.run.navigation.screen);
-  const phase = getRunPhase(screen ?? committedScreen, battle.hasActiveBattle);
-  return useMemo(() => ({ phase, battle, activeLabyrinthModifiers }), [phase, battle, activeLabyrinthModifiers]);
+export function useRunSessionBattleContext() {
+  const battle = useShallowRunSelector(selectBattle);
+  const activeLabyrinthModifiers = useGameplayStateStore((state) => state.session.activeLabyrinthModifiers);
+  return { battle, activeLabyrinthModifiers };
 }
 
-export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigationSlice {
-  const session = useShallowRunSelector((state) => ({
-    screen: state.run.navigation.screen,
-    hasActiveBattle: state.session.activity.kind === "battle",
-    hasActiveRun: isActiveRunActivity(state.session.activity),
-    pendingCharacterId: state.session.pendingCharacterId,
-    pendingContentSystemType: state.session.pendingContentSystemType,
-  }));
-  const phase = getRunPhase(screen ?? session.screen, session.hasActiveBattle);
-  return useMemo(
-    () => ({
-      phase,
-      hasActiveBattle: session.hasActiveBattle,
-      hasActiveRun: session.hasActiveRun,
-      pendingCharacterId: session.pendingCharacterId,
-      pendingContentSystemType: session.pendingContentSystemType,
-    }),
-    [phase, session],
+export function useRunPhase(screen?: Screen) {
+  return useGameplayStateStore((state) =>
+    getRunPhase(screen ?? state.run.navigation.screen, state.session.activity.kind === "battle"),
   );
 }
 

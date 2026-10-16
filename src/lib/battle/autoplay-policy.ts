@@ -1,3 +1,4 @@
+import { scoreAvailableReactions } from "./reaction-score";
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import type { BattleSnapshot } from "./types/state-types";
 import {
@@ -217,7 +218,10 @@ export function getImmediateDefense(card: BattleCard, state?: BattleSnapshot): n
 
 export function getEffectiveDamageScore(card: BattleCard, state: BattleSnapshot): number {
   const cost = computeEffectiveCost(state, card).effectiveCost;
-  return scoreEffects(card.effects, state, Math.max(0, state.maxMana - Math.max(0, state.mana - cost)));
+  return (
+    scoreEffects(card.effects, state, Math.max(0, state.maxMana - Math.max(0, state.mana - cost))) +
+    scoreAvailableReactions(card, { ...state, mana: Math.max(0, state.mana - cost) })
+  );
 }
 
 export function pickHighestScoring(

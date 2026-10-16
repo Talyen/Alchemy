@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText } from "@/lib/localization/runtime";
 import { useId, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,7 +38,7 @@ export function RunEndScreen({
   runEndCurrencies,
   runEndItems,
   onContinue,
-  continueLabel = "Main Menu",
+  continueLabel = gameText("ui.run-end-screen.default-continueLabel", "Main Menu"),
 }: {
   runRecap: RunRecap | null;
   title: string;
@@ -49,8 +51,9 @@ export function RunEndScreen({
   runEndCurrencies: Record<CraftingCurrencyId, number>;
   runEndItems: readonly RunObtainedItem[];
   onContinue: () => void;
-  continueLabel?: "Main Menu" | "Continue";
+  continueLabel?: string;
 }) {
+  const i18n = useGameTranslation();
   const [boonsOpen, setBoonsOpen] = useState(false);
   const [talentsExpanded, setTalentsExpanded] = useState(false);
   const talentGridId = useId();
@@ -82,7 +85,7 @@ export function RunEndScreen({
       }
     >
       <div className="mt-6 flex flex-col items-center gap-8 text-center">
-        {subtitle ? <p className={cn(bodyTextClass, "text-xl")}>{subtitle}</p> : null}
+        {subtitle ? <p className={cn(bodyTextClass, "text-xl")}>{i18n.displayText(subtitle)}</p> : null}
 
         {entries.length > 0 ? (
           <div className="flex w-full flex-col items-center gap-2">
@@ -97,7 +100,11 @@ export function RunEndScreen({
                 variant="ghost"
                 size="icon"
                 className="h-11 w-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-pale"
-                aria-label={talentsExpanded ? "Show fewer Talent XP" : "Show all Talent XP"}
+                aria-label={i18n.displayText(
+                  talentsExpanded
+                    ? i18n.text("ui.run-end-screen.d1", "Show fewer Talent XP")
+                    : i18n.text("ui.run-end-screen.d2", "Show all Talent XP"),
+                )}
                 aria-expanded={talentsExpanded}
                 aria-controls={talentGridId}
                 onClick={() => setTalentsExpanded((expanded) => !expanded)}

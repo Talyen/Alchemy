@@ -4,7 +4,13 @@ import {
   GEAR_CHANCE_EFFECT_KEYS,
   type GearEffectManifest,
 } from "@/lib/gear";
-import { battleSnapshot, defaultBattleState, type BattleSnapshot } from "@/lib/battle";
+import {
+  battleSnapshot,
+  defaultBattleState,
+  expireCcReactions,
+  createElementalReactionState,
+  type BattleSnapshot,
+} from "@/lib/battle";
 import {
   findEnemyAbilityCard,
   enemyById,
@@ -16,12 +22,30 @@ import {
   type TalentEffectManifest,
 } from "@/lib/game-data";
 import { MAX_HAND_SIZE, MIN_MAX_MANA_FLOOR } from "@/lib/game-constants";
-import { toFiniteNonNegativeInt } from "./save-schemas/validation-utils";
+import { toFiniteNonNegativeInt, toSafeNonNegativeInt } from "./save-schemas/validation-utils";
 import {
   ENCOUNTER_TRAITS,
   sanitizeEncounterTraitIds,
   sanitizePersistedEnemyTraits,
 } from "@/lib/content-systems/encounter-traits";
+
+function normalizeReactions(saved: unknown): BattleSnapshot["reactions"] {
+  const reactions = createElementalReactionState();
+  if (!saved || typeof saved !== "object" || Array.isArray(saved)) return reactions;
+  const record = saved as Record<string, unknown>;
+  for (const key of Object.keys(reactions) as Array<keyof typeof reactions>) {
+    const value = Object.hasOwn(record, key) ? record[key] : undefined;
+    if (key === "consecrated") {
+      reactions.consecrated = value === true;
+      continue;
+    }
+    const amount = typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
+    if (key === "wildfirePendingTickDamage" || key === "wildfireLastTickTurn")
+      reactions[key] = amount !== null && amount > 0 ? amount : null;
+    else reactions[key] = amount ?? 0;
+  }
+  return reactions;
+}
 
 function normalizeGearEffects(saved: Partial<GearEffectManifest> | undefined): GearEffectManifest {
   const result = { ...defaultGearEffects };
@@ -95,7 +119,6 @@ function normalizeTalentEffects(
     }),
   ) as Partial<TalentEffectManifest>;
   const merged = { ...defaults, ...knownSaved };
-  merged.cardHealBonus = normalizeMagnitudeDictionary(merged.cardHealBonus);
   merged.cardHealMultipliers = normalizeMagnitudeDictionary(merged.cardHealMultipliers);
   merged.companionBondLevels = normalizeNonNegativeRecord(defaults.companionBondLevels, merged.companionBondLevels);
   merged.healthThresholdArmor = Array.isArray(merged.healthThresholdArmor)
@@ -214,7 +237,7 @@ function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapsho
     enemyRegeneration: clampNonNegative(state.enemyRegeneration, defaults.enemyRegeneration),
     enemyPhysicalDamageBonus: clampNonNegative(state.enemyPhysicalDamageBonus, defaults.enemyPhysicalDamageBonus),
     companionDamageBuff: clampNonNegative(state.companionDamageBuff, defaults.companionDamageBuff),
-    gold: clampNonNegative(state.gold, defaults.gold),
+    gold: toSafeNonNegativeInt(state.gold) ?? defaults.gold,
     mana: clampNonNegative(state.mana, defaults.mana),
     maxMana: Math.max(MIN_MAX_MANA_FLOOR, clampNonNegative(state.maxMana, defaults.maxMana)),
   };
@@ -263,7 +286,9 @@ function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
     uniqueGear: {
       ...state.uniqueGear,
       lastArcheryUid: unambiguousUid(state.uniqueGear.lastArcheryUid),
-      returningFlightUid: unambiguousUid(state.uniqueGear.returningFlightUid),
+      returningFlightUids: [...new Set(state.uniqueGear.returningFlightUids)].filter(
+        (uid) => unambiguousUid(uid) !== null,
+      ),
     },
     cardsPlayedThisTurn: toFiniteNonNegativeInt(state.cardsPlayedThisTurn) ?? 0,
     nextCardUid,
@@ -319,6 +344,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
     gearEffects: normalizeGearEffects(saved.gearEffects),
     talentEffects: normalizeTalentEffects(defaults.talentEffects, saved.talentEffects),
     flags: normalizeCombatFlags(defaults.flags, saved.flags),
+    reactions: normalizeReactions(saved.reactions),
     uniqueGear: Object.fromEntries(
       Object.entries(defaults.uniqueGear).map(([key, value]) => [
         key,
@@ -338,8 +364,12 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
         ? saved.lastEnemyAbilityId
         : null,
   };
+  merged.reactions = expireCcReactions(merged).reactions;
+  if (merged.enemyStatuses.bleed <= 0) merged.reactions.consecrated = false;
   // battleMetrics is runtime-only telemetry; never persisted.
   delete merged.battleMetrics;
+  // Glacial Surge is now a native flat bonus; saved growth must not stack with it.
+  if (currentEnemy.traits.some((trait) => trait.id === "glacial-shell")) merged.enemyStatuses.freezeBonus = 0;
   const companion = merged.activeCompanion;
   const resources = normalizeCombatResources(merged, defaults);
   const survival = normalizeSurvival(merged, saved, defaults);

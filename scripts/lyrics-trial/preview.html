@@ -2,7 +2,7 @@
 <html lang="en">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Blight Treant · automatic karaoke trial</title>
+  <title>Boss songs · automatic karaoke trial</title>
   <style>
     * {
       box-sizing: border-box;
@@ -105,6 +105,15 @@
   </style>
   <main>
     <h1>The Blight Treant · word timing trial</h1>
+    <label
+      >Boss song
+      <select id="boss">
+        <option value="blight-treant">The Blight Treant</option>
+        <option value="forge-golem">The Forge Golem</option>
+        <option value="frostwarden">The Frostwarden</option>
+        <option value="iron-bear">The Iron Bear</option>
+      </select></label
+    >
     <p>
       Automatic word alignment; the inferred-order option adjusts the lyric sequence. Proposed placement: centered above
       the hand. Placeholder layout; not the live battle UI.
@@ -148,16 +157,59 @@
     const jump = document.querySelector("#jump");
     const status = document.querySelector("#status");
     try {
-      const requested = new URLSearchParams(location.search).get("alignment");
-      const source = ["mix", "vocals", "performance", "phrases"].includes(requested) ? requested : "mix";
+      const parameters = new URLSearchParams(location.search);
+      const boss = document.querySelector("#boss");
+      const requestedBoss = parameters.get("boss");
+      if ([...boss.options].some((option) => option.value === requestedBoss)) boss.value = requestedBoss;
+      const title = boss.selectedOptions[0].textContent;
+      document.querySelector("h1").textContent = `${title} · word timing trial`;
+      const portrait = document.querySelector("img.portrait");
+      portrait.src = `../../src/assets/optimized/${boss.value === "iron-bear" ? "" : "the-"}${boss.value}.webp`;
+      portrait.alt = title;
+      audio.src = `../../public/Music/${encodeURIComponent(title)}.mp3`;
+      const requested = parameters.get("alignment");
+      const source =
+        boss.value !== "blight-treant"
+          ? "phrases"
+          : ["mix", "vocals", "performance", "phrases"].includes(requested)
+            ? requested
+            : "mix";
       const input = document.querySelector("#input");
       input.value = source;
-      input.addEventListener("change", () => {
-        location.search = `?alignment=${input.value}`;
+      input.disabled = boss.value !== "blight-treant";
+      boss.addEventListener("change", () => {
+        parameters.set("boss", boss.value);
+        parameters.set("alignment", "phrases");
+        location.search = parameters.toString();
       });
-      const response = await fetch(`./alignment-${source}.json`);
+      input.addEventListener("change", () => {
+        parameters.set("alignment", input.value);
+        location.search = parameters.toString();
+      });
+      const response = await fetch(
+        boss.value === "blight-treant" ? `./alignment-${source}.json` : `../../src/lib/audio/lyrics/${boss.value}.json`,
+      );
       if (!response.ok) throw new Error(`Alignment HTTP ${response.status}`);
-      const data = await response.json();
+      const snapshot = await response.json();
+      const data =
+        boss.value === "blight-treant"
+          ? snapshot
+          : {
+              segments: snapshot.lines.map(({ text, timings }) => ({
+                start: timings[0],
+                end: timings.at(-1),
+                text,
+                words: text.split(" ").map((word, index) => ({
+                  word: `${index ? " " : ""}${word}`,
+                  start: timings[index * 2],
+                  end: timings[index * 2 + 1],
+                })),
+              })),
+              provenance: snapshot,
+              coverage: snapshot.coverage,
+              rejectedTimingPhrases: snapshot.rejectedTimingPhrases,
+              undetectedWrittenPhrases: snapshot.undetectedWrittenPhrases,
+            };
       const recording = await fetch(audio.src);
       if (!recording.ok) throw new Error(`Recording HTTP ${recording.status}`);
       audio.src = URL.createObjectURL(await recording.blob());
@@ -170,6 +222,15 @@
       warning.textContent = `Experimental timing: ${suspect} suspect words (zero duration or over 5 seconds). No timestamps were manually corrected.`;
       if (data.coverage) {
         warning.textContent += ` ${data.coverage.detectedPhrases} phrases detected; ${data.coverage.unmatchedAsrWords} ASR words unmatched; ${data.coverage.undetectedWrittenPhrases} distinct written phrases undetected. Missing matches remain unresolved.`;
+      }
+      if (data.rejectedTimingPhrases?.length) {
+        warning.textContent += ` ${data.rejectedTimingPhrases.length} complete phrases excluded for invalid word timing: ${data.rejectedTimingPhrases.join(" / ")}`;
+      }
+      if (data.coverage?.recoveredPhrases) {
+        warning.textContent += ` ${data.coverage.recoveredPhrases} phrases restored from vocal-stem alignment; ${data.coverage.realignedPhrases} neighboring phrases realigned.`;
+      }
+      if (data.undetectedWrittenPhrases?.length) {
+        warning.textContent += ` Still undetected: ${data.undetectedWrittenPhrases.join(" / ")}`;
       }
       document.querySelector("h1").after(warning);
       jump.replaceChildren(

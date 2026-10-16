@@ -1,16 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../scripts/sync-art-barrels.mjs", () => ({ syncArtBarrels: vi.fn(), syncGearArt: vi.fn() }));
+vi.mock("../../scripts/sync-art-barrels.mjs", () => ({ syncArtBarrels: vi.fn() }));
 vi.mock("../../scripts/sync-version-metadata.mjs", () => ({ syncVersionMetadata: vi.fn() }));
 
-const { syncArtBarrels, syncGearArt } = await import("../../scripts/sync-art-barrels.mjs");
+const { syncArtBarrels } = await import("../../scripts/sync-art-barrels.mjs");
 const { syncVersionMetadata } = await import("../../scripts/sync-version-metadata.mjs");
 const { syncGenerated } = await import("../../scripts/sync-generated.mjs");
 
 describe("syncGenerated fan-out", () => {
   beforeEach(() => {
     vi.mocked(syncArtBarrels).mockReset().mockResolvedValue(undefined);
-    vi.mocked(syncGearArt).mockReset().mockResolvedValue(undefined);
     vi.mocked(syncVersionMetadata).mockReset().mockResolvedValue(undefined);
     vi.spyOn(console, "log").mockImplementation(() => {});
   });
@@ -19,7 +18,6 @@ describe("syncGenerated fan-out", () => {
     await syncGenerated();
     expect(syncArtBarrels).toHaveBeenCalledWith({ check: false });
     expect(syncVersionMetadata).toHaveBeenCalledWith({ check: false });
-    expect(syncGearArt).not.toHaveBeenCalled();
   });
 
   it("passes check mode through to both outputs", async () => {
@@ -34,8 +32,8 @@ describe("syncGenerated fan-out", () => {
     expect(syncVersionMetadata).not.toHaveBeenCalled();
     vi.clearAllMocks();
     await syncGenerated({ gearOnly: true });
-    expect(syncGearArt).toHaveBeenCalledOnce();
-    expect(syncArtBarrels).not.toHaveBeenCalled();
+    expect(syncArtBarrels).toHaveBeenCalledOnce();
+    expect(syncVersionMetadata).not.toHaveBeenCalled();
     vi.clearAllMocks();
     await syncGenerated({ versionOnly: true });
     expect(syncVersionMetadata).toHaveBeenCalledOnce();

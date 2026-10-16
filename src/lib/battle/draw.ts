@@ -19,12 +19,15 @@ function remapDrawnCardBenefits(state: BattleState, changes: readonly CardUidCha
     return change ? change.next : uid;
   };
   const uniqueGear = state.uniqueGear;
-  const returningFlightUid = remapUid(uniqueGear.returningFlightUid);
+  const returningFlightUids = uniqueGear.returningFlightUids.map((uid) => remapUid(uid)!);
   const lastArcheryUid = remapUid(uniqueGear.lastArcheryUid);
-  if (returningFlightUid === uniqueGear.returningFlightUid && lastArcheryUid === uniqueGear.lastArcheryUid) {
+  if (
+    returningFlightUids.every((uid, index) => uid === uniqueGear.returningFlightUids[index]) &&
+    lastArcheryUid === uniqueGear.lastArcheryUid
+  ) {
     return uniqueGear;
   }
-  return { ...uniqueGear, returningFlightUid, lastArcheryUid };
+  return { ...uniqueGear, returningFlightUids, lastArcheryUid };
 }
 
 function refillDeck(

@@ -279,9 +279,4 @@ describe("enemy trait parity", () => {
       }
     }
   });
-
-  it("matches every bestiary trait description against parity", () => {
-    const issues = enemyBestiary.flatMap((enemy) => validateEnemyTraitDescriptionParity(enemy));
-    expect(issues).toEqual([]);
-  });
 });

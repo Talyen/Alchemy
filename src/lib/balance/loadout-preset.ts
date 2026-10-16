@@ -45,11 +45,10 @@ export function resolveSimLoadout(options: {
   preset: TalentPreset;
   characterId: CharacterId;
   mode: BalanceLoadoutMode;
-  startGold?: number;
   seed?: number;
   skipGear?: boolean;
 }): SimLoadout {
-  const gold = TIER_GOLD[options.preset] + (options.startGold ?? 0);
+  const gold = TIER_GOLD[options.preset];
   const talentPointHealth = talentPointHealthForCharacter(options.characterId, options.preset);
 
   const typical = options.mode === "typical";

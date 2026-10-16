@@ -14,7 +14,7 @@ const PACKAGED_CSP = [
   "img-src 'self' data: blob:",
   "font-src 'self'",
   "media-src 'self' blob:",
-  "connect-src 'none'",
+  "connect-src 'self'",
   "object-src 'none'",
   "frame-src 'none'",
   "base-uri 'none'",

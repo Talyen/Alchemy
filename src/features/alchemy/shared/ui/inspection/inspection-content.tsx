@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { useId, useMemo, useState, type ReactNode, type RefObject } from "react";
 import { X, type LucideIcon } from "lucide-react";
 import { ChromeIconButton } from "../chrome-icon-button";
@@ -23,11 +25,12 @@ export function InspectionCardGrid({
   resetKey: string;
   sort?: boolean;
 }) {
+  const i18n = useGameTranslation();
   const [pagination, setPagination] = useState({ key: resetKey, page: 0 });
   if (pagination.key !== resetKey) setPagination({ key: resetKey, page: 0 });
   const items = useMemo(
-    () => (sort ? sortInspectionCards(cards) : cards).map((card, index) => ({ card, index })),
-    [cards, sort],
+    () => (sort ? i18n.read(() => sortInspectionCards(cards)) : cards).map((card, index) => ({ card, index })),
+    [cards, sort, i18n],
   );
   return (
     <CardSelectionGrid
@@ -38,7 +41,7 @@ export function InspectionCardGrid({
         <div className={viewCardWidthClass}>
           <BattleCardButton
             card={card}
-            ariaLabel={getCardDisplayTitle(card)}
+            ariaLabel={i18n.read(() => getCardDisplayTitle(card))}
             shimmerActive={false}
             shimmerToken={undefined}
             className={viewCardWidthClass}
@@ -52,6 +55,7 @@ export function InspectionCardGrid({
 }
 
 export function InspectionEmptyState({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+  useGameTranslation();
   return (
     <div
       role="img"
@@ -68,6 +72,7 @@ export function InspectionOverlayShell({
   escapeId,
   testId,
   title,
+  header,
   closeLabel,
   onClose,
   returnFocusRef,
@@ -78,12 +83,14 @@ export function InspectionOverlayShell({
   escapeId: string;
   testId: string;
   title: string;
+  header?: ReactNode;
   closeLabel: string;
   onClose: () => void;
   returnFocusRef?: RefObject<HTMLElement | null> | undefined;
   overlayClassName?: string;
   children: ReactNode;
 }) {
+  useGameTranslation();
   return (
     <ModalOverlayShell
       open={open}
@@ -94,7 +101,13 @@ export function InspectionOverlayShell({
       testId={testId}
       className={overlayClassName ?? "flex items-center justify-center p-6"}
     >
-      <InspectionPanel title={title} closeLabel={closeLabel} onClose={onClose} returnFocusRef={returnFocusRef}>
+      <InspectionPanel
+        header={header}
+        title={title}
+        closeLabel={closeLabel}
+        onClose={onClose}
+        returnFocusRef={returnFocusRef}
+      >
         {children}
       </InspectionPanel>
     </ModalOverlayShell>
@@ -103,17 +116,20 @@ export function InspectionOverlayShell({
 
 function InspectionPanel({
   title,
+  header,
   closeLabel,
   onClose,
   returnFocusRef,
   children,
 }: {
   title: string;
+  header?: ReactNode;
   closeLabel: string;
   onClose: () => void;
   returnFocusRef?: RefObject<HTMLElement | null> | undefined;
   children: ReactNode;
 }) {
+  useGameTranslation();
   const titleId = useId();
   const { panelRef, handleKeyDown } = useDialogFocus(returnFocusRef);
   return (
@@ -129,9 +145,10 @@ function InspectionPanel({
       className="alchemy-shell game-page-scroll relative flex max-h-full w-fit max-w-[min(100%,72rem)] flex-col overflow-y-auto rounded-shell-screen border border-border/80 p-6"
     >
       <div className="relative mb-3 flex min-h-11 shrink-0 items-center justify-center px-14">
-        <h2 id={titleId} className="text-center font-sans text-3xl">
+        <h2 id={titleId} className={header ? "sr-only" : "text-center font-sans text-3xl"}>
           {title}
         </h2>
+        {header}
         <ChromeIconButton
           className="absolute top-0 right-0"
           aria-label={closeLabel}

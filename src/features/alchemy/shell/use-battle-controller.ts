@@ -153,8 +153,7 @@ export function useBattleController({
     () => ({
       endTurnButtonRef: ctx.endTurnButtonRef,
       handCardRefs: ctx.handCardRefs,
-      drawPileRef: ctx.drawPileRef,
-      discardPileRef: ctx.discardPileRef,
+      handDockRef: ctx.handDockRef,
       battleSceneRef: ctx.battleSceneRef,
       playerPanelRef: ctx.playerPanelRef,
       enemyPanelRef: ctx.enemyPanelRef,
@@ -176,6 +175,7 @@ export function useBattleController({
       toggleBoonInspect,
       closeBoonInspect,
       isCardPlayInProgress: () => ctx.playback.cardPlayInProgress,
+      subscribePlayback: ctx.playback.subscribe,
       isProgressSavePending: () => persistence.readProgress().kind !== "idle",
       subscribeProgressSave: persistence.subscribeProgress,
       presentBattleStart: actions.init.presentBattleStart,

@@ -105,7 +105,7 @@ describe("HomesteadScreen", () => {
     expect(panel.textContent).toContain("Find 10% more");
     expect(panel.textContent).not.toContain("Physical damage is increased by 2");
     expect(tile.classList.contains("homestead-node-affordable")).toBe(false);
-    expect(vi.mocked(playUISound).mock.calls.filter(([sound]) => sound === "talentUnlock")).toHaveLength(1);
+    expect(vi.mocked(playUISound).mock.calls.filter(([sound]) => sound === "homesteadBuild")).toHaveLength(1);
   });
 
   it("accepts each tier once even when acknowledgment runs before React renders", async () => {
@@ -195,7 +195,7 @@ describe("HomesteadScreen", () => {
     await inspect();
     expect(defaultProps.onConstructBuilding).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("img", { name: "Blacksmith" }).classList.contains("grayscale")).toBe(false);
-    expect(vi.mocked(playUISound).mock.calls.filter(([sound]) => sound === "talentUnlock")).toHaveLength(1);
+    expect(vi.mocked(playUISound).mock.calls.filter(([sound]) => sound === "homesteadBuild")).toHaveLength(1);
   });
 
   it("reports a rejected purchase outside the tooltip without saving or spending again", async () => {

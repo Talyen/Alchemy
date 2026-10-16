@@ -1,3 +1,5 @@
+import { GameMessage } from "@/components/localization";
+import { useGameTranslation } from "@/components/use-game-translation";
 import { battlePresentation } from "@/app/battle-presentation";
 import { defaultGameSession } from "@/app/application-session";
 import { SaveWriteNotice } from "@/app/save-write-notice";
@@ -7,8 +9,7 @@ import {
   AppBackgroundParticles,
   AppScreenChromeProvider,
   GameMenuOverlay,
-  StartupLoadingScreen,
-  dismissStartupSplash,
+  syncStartupSplash,
   useAlchemyAutosaveFromStores,
   useAppAudioEffects,
   useAppDisplayEffects,
@@ -37,7 +38,7 @@ import {
   useBondedCompanions,
   useHomesteadEffects,
   useHasActiveBattle,
-  useRunSessionNavigationSlice,
+  useRunPhase,
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/use-run-reads";
 import { useAppSettings } from "@/features/alchemy/shared/stores/settings-store";
@@ -63,6 +64,7 @@ const OPTIONS_PREVIEW_PLASMA_PAIR = { primary: "#fbbf24", secondary: "#78350f" }
 type GameMenuState = ReturnType<typeof useGameMenuState>;
 
 function AppKeywordPlasmaBackground({ renderedScreen, intensity }: { renderedScreen: Screen; intensity: number }) {
+  useGameTranslation();
   const plasmaColorPair = useUiStore(
     (state) => state.plasmaInteraction?.colorPair ?? state.plasmaBaseline?.colorPair ?? null,
   );
@@ -99,8 +101,9 @@ function AppMainContent({
   tooltipBlocked: boolean;
   gameMenu: GameMenuState;
 }) {
+  const i18n = useGameTranslation();
   const { screen: controllerScreen } = run;
-  const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
+  const runPhase = useRunPhase(controllerScreen);
   const nav = useReturnToRunNavigation({ run, renderedScreen });
 
   useAlchemyAutosaveFromStores();
@@ -114,7 +117,6 @@ function AppMainContent({
     () => ({
       companionDamageModifiers: {
         damageBonus: homesteadEffects.companionDamage + talentEffects.companionDamage,
-        bleedDamageBonus: 0,
         damageMultiplier: 1,
       },
       companionBondLevels: homesteadBondedCompanions,
@@ -201,17 +203,21 @@ function AppMainContent({
           onBack={nav.screenBackHandler}
           deckInspection={deckInspection}
         >
-          {renderAlchemyScreenRoute({
-            screen: renderedScreen,
-            cardInspection: { canOpen: inspection.canOpen, onOpen: openCardInspection },
-            routeCommands: run.routeCommands,
-            onOpenBoards: nav.openBoardsFromOptions,
-            onClearSaveData: dev.clearSaveData,
-            onUnlockAllDevMode: dev.unlockAllDevMode,
-            gameMenuOpen: gameMenu.gameMenuOpen,
-            onOpenGameMenu: gameMenu.openGameMenu,
-            onBack: nav.screenBackHandler,
-          })}
+          {i18n.displayText(
+            i18n.read(() =>
+              renderAlchemyScreenRoute({
+                screen: renderedScreen,
+                cardInspection: { canOpen: inspection.canOpen, onOpen: openCardInspection },
+                routeCommands: run.routeCommands,
+                onOpenBoards: nav.openBoardsFromOptions,
+                onClearSaveData: dev.clearSaveData,
+                onUnlockAllDevMode: dev.unlockAllDevMode,
+                gameMenuOpen: gameMenu.gameMenuOpen,
+                onOpenGameMenu: gameMenu.openGameMenu,
+                onBack: nav.screenBackHandler,
+              }),
+            ),
+          )}
         </AppScreenChromeProvider>
       </CardDescriptionProvider>
     </div>
@@ -233,13 +239,21 @@ function AppMainContent({
             ...stageStyle,
             "--battle-scene-tint": `rgb(${sceneAppearance.ambientColor.join(" ")})`,
             "--battle-scene-tint-opacity": sceneAppearance.ambientOpacity,
+            "--battle-scene-exposure": sceneAppearance.artworkExposure,
+            "--battle-scene-shade": sceneAppearance.shadeOpacity,
             "--battle-scene-shadow-opacity": sceneAppearance.shadowOpacity,
             "--battle-scene-left-tint": `rgb(${sceneAppearance.regions.left.ambientColor.join(" ")})`,
             "--battle-scene-left-opacity": sceneAppearance.regions.left.ambientOpacity,
+            "--battle-scene-left-exposure": sceneAppearance.regions.left.artworkExposure,
+            "--battle-scene-left-shade": sceneAppearance.regions.left.shadeOpacity,
             "--battle-scene-right-tint": `rgb(${sceneAppearance.regions.right.ambientColor.join(" ")})`,
             "--battle-scene-right-opacity": sceneAppearance.regions.right.ambientOpacity,
+            "--battle-scene-right-exposure": sceneAppearance.regions.right.artworkExposure,
+            "--battle-scene-right-shade": sceneAppearance.regions.right.shadeOpacity,
             "--battle-scene-lower-tint": `rgb(${sceneAppearance.regions.lower.ambientColor.join(" ")})`,
             "--battle-scene-lower-opacity": sceneAppearance.regions.lower.ambientOpacity,
+            "--battle-scene-lower-exposure": sceneAppearance.regions.lower.artworkExposure,
+            "--battle-scene-lower-shade": sceneAppearance.regions.lower.shadeOpacity,
           } as React.CSSProperties
         }
       >
@@ -249,7 +263,7 @@ function AppMainContent({
           backgroundParticlesIntensity={backgroundParticlesIntensity}
         />
         <AppKeywordPlasmaBackground renderedScreen={renderedScreen} intensity={backgroundGlowIntensity} />
-        {content}
+        {i18n.displayText(content)}
         {showBattleCluster ? (
           <BattleCluster
             endTurn={{
@@ -258,6 +272,7 @@ function AppMainContent({
               buttonRef: run.routeCommands.battle.refs.endTurnButtonRef,
               onEndTurn: run.routeCommands.battle.handleEndTurn,
               isCardPlayInProgress: run.routeCommands.battle.isCardPlayInProgress,
+              subscribePlayback: run.routeCommands.battle.subscribePlayback,
               isProgressSavePending: run.routeCommands.battle.isProgressSavePending,
               subscribeProgressSave: run.routeCommands.battle.subscribeProgressSave,
             }}
@@ -276,6 +291,7 @@ function AppMainContent({
         <CardInspectionOverlay
           open={inspection.open}
           selected={inspection.selected}
+          onSelect={openCardInspection}
           collections={inspection.collections}
           descriptionContext={inspection.battleDescriptionContext ?? cardDescriptionContext}
           onClose={inspection.close}
@@ -299,6 +315,7 @@ function AppMainContent({
 }
 
 function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtualResolution> }) {
+  const i18n = useGameTranslation();
   const settings = useAppSettings();
   const vrStageRef = useRef<HTMLDivElement>(null);
   const { frameStyle, stageStyle, tooltipStyle, aspectMode, stagePixelRatio } = displayLayout;
@@ -327,7 +344,7 @@ function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtu
   const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(run.screen);
 
   return (
-    <ErrorBoundary label={screen}>
+    <ErrorBoundary label={i18n.displayText(screen)}>
       <SaveWriteNotice onRetry={run.retryProgressSave} />
       <div
         aria-busy={run.progressSave.kind !== "idle"}
@@ -362,6 +379,7 @@ function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtu
 }
 
 export default function App() {
+  useGameTranslation();
   const displayPreferences = useDeviceDisplayPreferences();
   const displayLayout = useVirtualResolution(false, displayPreferences);
   const { contentScale } = displayLayout;
@@ -371,20 +389,18 @@ export default function App() {
       document.documentElement.style.removeProperty("--content-scale");
     };
   }, [contentScale]);
-  const bootstrapResult = useAlchemyBootstrap();
+  const bootstrapResult = useAlchemyBootstrap(defaultGameSession);
 
   const { ready: initialLoadReady, progress: startupProgress } = useInitialLoadReady({
     bootstrapReady: bootstrapResult != null,
   });
 
   useEffect(() => {
-    if (bootstrapResult && initialLoadReady) {
-      dismissStartupSplash();
-    }
-  }, [bootstrapResult, initialLoadReady]);
+    syncStartupSplash(startupProgress, bootstrapResult !== null && initialLoadReady);
+  }, [bootstrapResult, initialLoadReady, startupProgress]);
 
   if (!bootstrapResult || !initialLoadReady) {
-    return <StartupLoadingScreen progress={startupProgress} />;
+    return null;
   }
 
   return (
@@ -396,6 +412,7 @@ export default function App() {
 }
 
 function DemoImportNotice() {
+  const i18n = useGameTranslation();
   const [visible, setVisible] = useState(true);
   if (!visible) return null;
   return (
@@ -403,10 +420,17 @@ function DemoImportNotice() {
       role="status"
       className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-border bg-background p-4 text-foreground"
     >
-      Your earned demo progress has been imported. Start a new adventure in the full game.
-      <Button variant="ghost" className="ml-4" onClick={() => setVisible(false)}>
-        Dismiss
-      </Button>
+      <GameMessage
+        id="ui.App.s1"
+        defaultValue="Your earned demo progress has been imported. Start a new adventure in the full game.<part0/>"
+        parts={{
+          part0: (
+            <Button variant="ghost" className="ml-4" onClick={() => setVisible(false)}>
+              {i18n.text("ui.App.2", "Dismiss")}
+            </Button>
+          ),
+        }}
+      />
     </div>
   );
 }

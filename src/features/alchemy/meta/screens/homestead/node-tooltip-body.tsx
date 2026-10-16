@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -21,6 +23,7 @@ export function HomesteadTooltipBody({
   animate: boolean;
   reducedMotion: boolean;
 }) {
+  const i18n = useGameTranslation();
   const contentRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | null>(null);
   useLayoutEffect(() => {
@@ -34,7 +37,9 @@ export function HomesteadTooltipBody({
     return () => observer.disconnect();
   }, []);
   const materials = MATERIAL_IDS.filter((material) => (node.cost?.[material] ?? 0) > 0);
-  const costLabel = materials.map((material) => `${node.cost![material]} ${materialLabels[material]}`).join(", ");
+  const costLabel = materials
+    .map((material) => `${node.cost![material]} ${i18n.displayText(materialLabels[material])}`)
+    .join(", ");
   return (
     <motion.div
       initial={false}
@@ -53,21 +58,23 @@ export function HomesteadTooltipBody({
               <TooltipBody className="mt-2 space-y-1">
                 {[...node.bonuses, ...node.production].map((line, index) => (
                   <p key={index} className="min-h-6 leading-6">
-                    {renderTextWithMaterials(line, {
-                      renderPlain: (text, key) => (
-                        <Fragment key={key}>
-                          {text
-                            .split(/(\d+(?:\.\d+)?%?)/)
-                            .map((part, index) =>
-                              /^\d/.test(part) ? (
-                                <TooltipValue key={index} value={part} animate={animate} />
-                              ) : (
-                                <Fragment key={index}>{part}</Fragment>
-                              ),
-                            )}
-                        </Fragment>
-                      ),
-                    })}
+                    {i18n.read(() =>
+                      renderTextWithMaterials(line, {
+                        renderPlain: (text, key) => (
+                          <Fragment key={key}>
+                            {text
+                              .split(/(\d+(?:\.\d+)?%?)/)
+                              .map((part, index) =>
+                                /^\d/.test(part) ? (
+                                  <TooltipValue key={index} value={part} animate={animate} />
+                                ) : (
+                                  <Fragment key={index}>{part}</Fragment>
+                                ),
+                              )}
+                          </Fragment>
+                        ),
+                      }),
+                    )}
                   </p>
                 ))}
               </TooltipBody>
@@ -81,9 +88,12 @@ export function HomesteadTooltipBody({
                     "flex min-h-6 items-center justify-between gap-4 text-sm leading-6",
                     node.level === 0 && "mt-3",
                   )}
-                  aria-label={`${node.action} cost: ${costLabel}`}
+                  aria-label={i18n.text("ui.node-tooltip-body.1", "{{value0}} cost: {{value1}}", {
+                    value0: i18n.displayText(node.action),
+                    value1: i18n.displayText(costLabel),
+                  })}
                 >
-                  <span className="text-muted-foreground">{node.action}</span>
+                  <span className="text-muted-foreground">{i18n.displayText(node.action)}</span>
                   <span className="inline-flex items-center gap-3" aria-hidden="true">
                     {materials.map((material) => (
                       <span
@@ -103,7 +113,9 @@ export function HomesteadTooltipBody({
             )}
           </>
         ) : (
-          <TooltipBody className="mt-2">Discover this Companion during a Run.</TooltipBody>
+          <TooltipBody className="mt-2">
+            {i18n.text("ui.node-tooltip-body.2", "Discover this Companion during a Run.")}
+          </TooltipBody>
         )}
       </div>
     </motion.div>
@@ -111,6 +123,7 @@ export function HomesteadTooltipBody({
 }
 
 function TooltipValue({ value, animate }: { value: string; animate: boolean }) {
+  useGameTranslation();
   const [previous, setPrevious] = useState(value);
   const [changed, setChanged] = useState(false);
   if (previous !== value) {

@@ -1,48 +1,53 @@
 import { anchoredPage } from "@/features/alchemy/shared/ui/pagination";
 import { describe, expect, it } from "vitest";
 import { getVirtualResolutionLayout } from "@/features/alchemy/shared/ui/use-virtual-resolution";
-import { CONTENT_REFERENCE_VIEWPORT, STAGE_HEIGHT } from "@/lib/game-constants";
 import { getGridCapacity } from "@/features/alchemy/shared/ui/adaptive-grid";
 
 describe("display sizing", () => {
-  it("preserves the reference browser content size", () => {
-    const { width, height } = CONTENT_REFERENCE_VIEWPORT;
-    const layout = getVirtualResolutionLayout(width, height);
-    expect(layout.contentScale).toBeCloseTo(height / STAGE_HEIGHT, 12);
-    expect(layout.stageContentScale).toBeCloseTo(1, 12);
-    expect(layout.tooltipScale).toBeCloseTo(1, 12);
-    expect(parseFloat(layout.frameStyle.width)).toBeCloseTo(width);
-    expect(parseFloat(layout.frameStyle.height)).toBeCloseTo(height);
+  it("preserves the established 720p density", () => {
+    const layout = getVirtualResolutionLayout(1280, 720);
+    expect(layout.contentScale).toBeCloseTo(0.5950113378684807, 12);
+    expect(layout.stageContentScale).toBeCloseTo(0.892517006802721, 12);
+    expect(layout.tooltipScale).toBeCloseTo(0.8707482993197279, 12);
   });
-  it.each([0.5, 1, 2, 4, 8])("preserves composition proportions at %ix reference size", (factor) => {
-    const { width, height } = CONTENT_REFERENCE_VIEWPORT;
-    const reference = getVirtualResolutionLayout(width, height);
-    const layout = getVirtualResolutionLayout(width * factor, height * factor);
-    expect(layout.contentScale / reference.contentScale).toBeCloseTo(factor, 12);
-    expect(layout.stageContentScale).toBeCloseTo(reference.stageContentScale, 12);
-    expect(layout.tooltipScale / reference.tooltipScale).toBeCloseTo(factor, 12);
+  it.each([
+    [1920, 1080, 0.8092154195011337],
+    [2560, 1440, 1.0234195011337868],
+    [3840, 2160, 1.4518276643990928],
+  ])("uses balanced density at %i x %i", (width, height, expected) => {
+    expect(getVirtualResolutionLayout(width, height).contentScale).toBeCloseTo(expected, 12);
   });
-  it("adds space instead of enlarging content when only one dimension grows", () => {
-    const { width, height } = CONTENT_REFERENCE_VIEWPORT;
-    const reference = getVirtualResolutionLayout(width, height);
-    for (const [w, h] of [
-      [width * 2, height],
-      [width, height * 2],
-    ]) {
-      const layout = getVirtualResolutionLayout(w!, h!);
-      expect(layout.contentScale).toBeCloseTo(reference.contentScale, 12);
-      expect(parseFloat(layout.frameStyle.width)).toBeCloseTo(w!, 12);
-      expect(parseFloat(layout.frameStyle.height)).toBeCloseTo(h!, 12);
+  it("keeps content equally sized at the same height across standard and wide aspects", () => {
+    for (const height of [720, 1080, 1440, 2160]) {
+      const standard = getVirtualResolutionLayout((height * 16) / 9, height);
+      for (const aspect of [21 / 9, 32 / 9]) {
+        const wide = getVirtualResolutionLayout(height * aspect, height);
+        expect(wide.contentScale).toBeCloseTo(standard.contentScale, 12);
+        expect(wide.tooltipScale).toBeCloseTo(standard.tooltipScale, 12);
+      }
     }
   });
-  it("scales continuously across 1080 CSS pixels and has no large-window cap", () => {
-    const aspect = CONTENT_REFERENCE_VIEWPORT.width / CONTENT_REFERENCE_VIEWPORT.height;
-    const reference = getVirtualResolutionLayout(1080 * aspect, 1080);
-    const nearby = getVirtualResolutionLayout(1080.001 * aspect, 1080.001);
-    expect(nearby.contentScale).toBeCloseTo(reference.contentScale, 5);
-    const huge = getVirtualResolutionLayout(4320 * aspect, 4320);
-    expect(huge.contentScale).toBe(4);
-    expect(huge.stageContentScale).toBe(1);
+  it("fits narrow windows by width and gives taller windows extra playing space", () => {
+    for (const [width, height] of [
+      [1024, 768],
+      [1280, 800],
+      [1500, 1000],
+      [1920, 1200],
+    ]) {
+      const narrow = getVirtualResolutionLayout(width!, height!);
+      const standard = getVirtualResolutionLayout(width!, (width! * 9) / 16);
+      expect(narrow.contentScale).toBeCloseTo(standard.contentScale, 12);
+    }
+  });
+  it("scales continuously around 720p and keeps growing without a hard cap", () => {
+    const reference = getVirtualResolutionLayout(1280, 720);
+    for (const height of [719.999, 720.001]) {
+      expect(getVirtualResolutionLayout((height * 16) / 9, height).contentScale).toBeCloseTo(reference.contentScale, 5);
+    }
+    const fullHd = getVirtualResolutionLayout(1920, 1080);
+    const fourK = getVirtualResolutionLayout(3840, 2160);
+    expect(fourK.contentScale).toBeGreaterThan(fullHd.contentScale);
+    expect(fourK.contentScale / fullHd.contentScale).toBeLessThan(2);
   });
   it.each([
     [0, 0],
@@ -55,7 +60,14 @@ describe("display sizing", () => {
     expect(Number.isFinite(layout.stageScale)).toBe(true);
   });
   it.each([
+    [1024, 768, "narrow"],
     [1280, 720, "standard"],
+    [1280, 800, "narrow"],
+    [1500, 1000, "narrow"],
+    [1920, 1080, "standard"],
+    [2560, 1440, "standard"],
+    [3840, 2160, "standard"],
+    [3840, 1080, "ultrawide"],
     [1920, 1200, "narrow"],
     [1080, 1920, "narrow"],
     [3440, 1440, "ultrawide"],

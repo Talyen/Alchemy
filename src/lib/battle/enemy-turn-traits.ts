@@ -6,14 +6,11 @@ import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-trai
 import { logError } from "../error-logger";
 import type { BattleState, CombatTextEvent } from "./types";
 import { addEnemyMitigation } from "./enemy-mitigation-state";
-import { addEnemyStatus } from "./status-state";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import {
-  GLACIAL_SURGE_MAX_FREEZE_BONUS,
   IRON_HIDE_ARMOR_PER_TURN,
   REACTION_ONLY_ENEMY_TRAIT_IDS as REACTION_ONLY_IDS,
   TRAIT_FORGE_PER_TURN,
-  TRAIT_FREEZE_BONUS_PER_TURN,
 } from "../game-constants";
 
 function isEveryOtherTurnScalingTurn(state: { turn: number }): boolean {
@@ -49,26 +46,12 @@ interface EnemyTurnStartTrait {
 const enemyTraitTurnStartHandlers = new Map<string, EnemyTurnStartTrait>([
   ["rusting-carapace", { handler: makeMitigationHandler("forge", TRAIT_FORGE_PER_TURN), everyOtherTurn: true }],
   ["iron-hide", { handler: makeMitigationHandler("armor", IRON_HIDE_ARMOR_PER_TURN), everyOtherTurn: true }],
-  [
-    "glacial-shell",
-    {
-      everyOtherTurn: true,
-      handler: (state, combatTexts) => {
-        const amount = Math.min(
-          TRAIT_FREEZE_BONUS_PER_TURN,
-          GLACIAL_SURGE_MAX_FREEZE_BONUS - state.enemyStatuses.freezeBonus,
-        );
-        if (amount <= 0) return state;
-        mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "freezeBonus", amount });
-        return addEnemyStatus(state, "freezeBonus", amount);
-      },
-    },
-  ],
   ["cleric", { handler: makeMitigationHandler("block", 1), everyOtherTurn: false }],
   ["stone-golem", { handler: makeMitigationHandler("block", 1), everyOtherTurn: false }],
 ]);
 
 const PASSIVE_ONLY_TRAITS = new Set<string>([
+  "glacial-shell",
   "brittle-bones",
   "glacial-body",
   "minor-freeze-vulnerability",

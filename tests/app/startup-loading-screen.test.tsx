@@ -1,156 +1,108 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { StartupLoadingScreen } from "@/app/startup-loading-screen";
-import { dismissStartupSplash } from "@/app/startup-splash";
+import { installCatalogs, localization } from "@/lib/localization/runtime";
+import catalogs from "@/lib/localization/locales/runtime.json";
+import { localizeStartupSplash, syncStartupSplash } from "@/app/startup-splash";
 import { applyInitialAnimationPreference } from "@/startup";
-import { INITIAL_LOAD_MIN_DURATION_MS, LOADING_WORD_INTERVAL_MS } from "@/lib/game-constants";
 
-function stubMatchMedia(matches: boolean) {
-  vi.stubGlobal(
-    "matchMedia",
-    vi.fn(() => ({ matches })),
-  );
+function mountStartupSplash() {
+  const shell = new DOMParser().parseFromString(readFileSync("index.html", "utf8"), "text/html");
+  const splash = shell.getElementById("startup-splash")!;
+  document.body.appendChild(splash);
+  runInNewContext(readFileSync("public/startup-words.js", "utf8"), { window, document });
+  return splash;
 }
 
-describe("StartupLoadingScreen", () => {
+describe("startup splash ownership", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.spyOn(Math, "random").mockReturnValue(0);
-    stubMatchMedia(false);
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => ({ matches: false })),
+    );
   });
 
-  afterEach(() => {
-    cleanup();
+  afterEach(async () => {
+    await localization.changeLanguage("en");
+    vi.clearAllTimers();
     vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     document.getElementById("startup-splash")?.remove();
-    delete window.__alchemySplashWordIndex;
+    document.documentElement.classList.remove("alchemy-disable-animations");
     delete window.__alchemySplashWordTimer;
   });
 
-  it("fills the gold header left to right and advances the phrase on each tick", () => {
-    const { unmount } = render(<StartupLoadingScreen progress={0.5} />);
-
-    const heading = screen.getByRole("heading", { name: "Alchemy" });
-    expect(heading.textContent).toBe("AlchemyAlchemy");
-    expect(heading.className).not.toContain("alchemy-loading-logo-pulse");
-    const fillLayer = heading.querySelector<HTMLElement>(".alchemy-loading-logo-fill");
-    expect(fillLayer?.style.animationDuration).toBe(`${INITIAL_LOAD_MIN_DURATION_MS}ms`);
-    const fill = fillLayer?.querySelector("span");
-    expect(fill?.className).not.toContain("boss-title-shine");
-    expect(fill?.className).toContain("text-primary");
-    const phrase = screen.getByText("Adventure awaits...");
-    expect(phrase.tagName).toBe("P");
-    expect(phrase.className).toContain("alchemy-loading-word");
-    expect(phrase.className).toContain("text-muted-foreground");
-    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("50");
-
-    act(() => {
-      vi.advanceTimersByTime(LOADING_WORD_INTERVAL_MS);
-    });
-
-    expect(screen.getByText("Polishing trinkets...")).toBeTruthy();
-
-    unmount();
-    expect(vi.getTimerCount()).toBe(0);
-  });
-
-  it("renders the header with no timer under reduced motion", () => {
-    stubMatchMedia(true);
-    render(<StartupLoadingScreen progress={0.5} />);
-
-    const heading = screen.getByRole("heading", { name: "Alchemy" });
-    expect(heading.textContent).toBe("AlchemyAlchemy");
-    expect(heading.querySelector(".alchemy-loading-logo-fill")).toBeTruthy();
-    expect(vi.getTimerCount()).toBe(0);
-  });
-
-  it("synchronizes progress and phrase to existing HTML startup-splash element", () => {
-    const splash = document.createElement("div");
-    splash.id = "startup-splash";
-    const phrase = document.createElement("p");
-    phrase.id = "startup-splash-phrase";
-    phrase.textContent = "Adventure awaits...";
-    splash.appendChild(phrase);
-    document.body.appendChild(splash);
-
-    const { unmount } = render(<StartupLoadingScreen progress={0.75} />);
-
-    expect(splash.getAttribute("aria-valuenow")).toBe("75");
-    expect(phrase.textContent).toBe("Adventure awaits...");
-
-    act(() => {
-      vi.advanceTimersByTime(LOADING_WORD_INTERVAL_MS);
-    });
-    expect(phrase.textContent).toBe("Polishing trinkets...");
-
-    unmount();
-    splash.remove();
-  });
-
-  it("seamlessly continues from a phrase rotated pre-React load and clears pre-React timer", () => {
-    const splash = document.createElement("div");
-    splash.id = "startup-splash";
-    const phrase = document.createElement("p");
-    phrase.id = "startup-splash-phrase";
-    phrase.textContent = "Shuffling decks...";
-    splash.appendChild(phrase);
-    document.body.appendChild(splash);
-
-    const dummyTimer = 999;
-    window.__alchemySplashWordTimer = dummyTimer;
-    window.__alchemySplashWordIndex = 2;
-    const clearIntervalSpy = vi.spyOn(window, "clearInterval");
-
-    const { unmount } = render(<StartupLoadingScreen progress={0.5} />);
-
-    expect(clearIntervalSpy).toHaveBeenCalledWith(dummyTimer);
-    expect(window.__alchemySplashWordTimer).toBeUndefined();
-    expect(screen.getAllByText("Shuffling decks...")).toHaveLength(2);
+  it("keeps the original artwork and phrase clock while React publishes real loading progress", () => {
+    const splash = mountStartupSplash();
+    const phrase = splash.querySelector("#startup-splash-phrase")!;
+    const artwork = splash.querySelector(".loading-decoration");
+    vi.advanceTimersByTime(1500);
     expect(phrase.textContent).toBe("Shuffling decks...");
+    const timer = window.__alchemySplashWordTimer;
 
-    act(() => {
-      vi.advanceTimersByTime(LOADING_WORD_INTERVAL_MS);
-    });
-
-    expect(screen.getAllByText("Waking monsters...")).toHaveLength(2);
+    for (const progress of [0.1, 0.5, 0.75, 1]) syncStartupSplash(progress, false);
+    expect(splash.getAttribute("aria-valuenow")).toBe("100");
+    expect(splash.classList.contains("alchemy-splash-dismissed")).toBe(false);
+    expect(splash.querySelector(".loading-decoration")).toBe(artwork);
+    expect(document.querySelectorAll('[role="progressbar"]')).toHaveLength(1);
+    expect(window.__alchemySplashWordTimer).toBe(timer);
+    expect(vi.getTimerCount()).toBe(1);
+    vi.advanceTimersByTime(750);
     expect(phrase.textContent).toBe("Waking monsters...");
 
-    unmount();
-    splash.remove();
-    clearIntervalSpy.mockRestore();
-  });
-});
-
-describe("dismissStartupSplash", () => {
-  it("safely handles missing splash element", () => {
-    expect(() => dismissStartupSplash()).not.toThrow();
-  });
-
-  it("adds the dismissed class and removes the splash element", () => {
-    const splash = document.createElement("div");
-    splash.id = "startup-splash";
-    document.body.appendChild(splash);
-
-    dismissStartupSplash();
+    syncStartupSplash(1, true);
+    syncStartupSplash(1, true);
     expect(splash.classList.contains("alchemy-splash-dismissed")).toBe(true);
-
+    expect(window.__alchemySplashWordTimer).toBeUndefined();
+    expect(vi.getTimerCount()).toBe(1);
     splash.dispatchEvent(new Event("transitionend"));
     expect(document.getElementById("startup-splash")).toBeNull();
+    vi.advanceTimersByTime(1000);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(phrase.textContent).toBe("Waking monsters...");
   });
 
-  it("clears active __alchemySplashWordTimer when dismissing splash", () => {
-    const dummyTimer = 888;
-    window.__alchemySplashWordTimer = dummyTimer;
-    const clearIntervalSpy = vi.spyOn(window, "clearInterval");
+  it("hands the early splash clock to localized text and cancels it on dismissal", async () => {
+    installCatalogs(catalogs);
+    await localization.changeLanguage("de");
+    const splash = mountStartupSplash();
+    const earlyTimer = window.__alchemySplashWordTimer;
+    localizeStartupSplash();
+    expect(splash.getAttribute("aria-label")).toBe("Alchemy wird geladen");
+    expect(splash.querySelector("#startup-splash-phrase")!.textContent).toBe("Das Abenteuer wartet...");
+    expect(window.__alchemySplashWordTimer).not.toBe(earlyTimer);
+    expect(vi.getTimerCount()).toBe(1);
+    vi.advanceTimersByTime(1500);
+    expect(splash.querySelector("#startup-splash-phrase")!.textContent).toBe("Decks werden gemischt...");
+    syncStartupSplash(1, true);
+    vi.advanceTimersByTime(1000);
+    expect(vi.getTimerCount()).toBe(0);
+  });
 
-    dismissStartupSplash();
+  it.each(["reduced-motion", "disabled-animations"])("dismisses without a transition event under %s", (mode) => {
+    if (mode === "reduced-motion")
+      vi.stubGlobal(
+        "matchMedia",
+        vi.fn(() => ({ matches: true })),
+      );
+    else document.documentElement.classList.add("alchemy-disable-animations");
+    const splash = mountStartupSplash();
+    expect(vi.getTimerCount()).toBe(0);
+    syncStartupSplash(0.5, false);
+    expect(splash.getAttribute("aria-valuenow")).toBe("50");
+    expect(splash.classList.contains("alchemy-splash-dismissed")).toBe(false);
+    syncStartupSplash(1, true);
+    vi.advanceTimersByTime(400);
+    expect(document.getElementById("startup-splash")).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+  });
 
-    expect(clearIntervalSpy).toHaveBeenCalledWith(dummyTimer);
-    expect(window.__alchemySplashWordTimer).toBeUndefined();
-    clearIntervalSpy.mockRestore();
+  it("tolerates a splash that has already been removed", () => {
+    expect(() => syncStartupSplash(1, true)).not.toThrow();
+    expect(vi.getTimerCount()).toBe(0);
   });
 });
 

@@ -23,6 +23,7 @@ descriptions can use available width to fit; tooltips never scroll or truncate.
 - Drive hover through `useHoverVisible()` and `triggerRef`. Card/tile grids that track hover via `useInteractiveCard` pass its `isHovered`, `onHoverStart`, and `onHoverEnd` to the same hook, with `holdMs: TOOLTIP_FADE_MS` and `focusWithinGuard: true` to preserve the exit fade and keyboard inspection.
 - Use `placement="side-start"` or `"side-end"` for explicitly side-anchored panels.
 - Use `allowFlip={false}` when a layout owns a fixed side. Homestead places top-row tooltips below and bottom-row tooltips above, preserving that side as purchase feedback changes panel height. Other tooltips retain automatic flipping by default; horizontal bounds still apply to fixed vertical placement.
+- End Turn and dev-only Skip Combat tooltips stay below their toolbar icons. Use `horizontalInset={8}` for these edge controls so the standard wide content inset does not shift their labels away from their icons.
 - Use `maxWidthFraction` for small-window bounds.
 - Tooltip entrance fades and moves away from the trigger; exit fades with a return movement. [Component styles](../src/styles/components.css) own the offsets and easing, with durations from [motion constants](../src/lib/game-constants/ui-motion.ts). CSS `@starting-style` supplies the first-render entrance, and transitions reverse smoothly on re-hover. Hover remains immediate for rapid inspection. Keep `--tooltip-exit-duration` in sync with `TOOLTIP_FADE_MS`.
 - Passive tooltip panels are `pointer-events-none`; nested interactive tooltips are unsupported.
@@ -54,6 +55,9 @@ uses only the fade; reduced motion omits the settle. Cards appear together, and
 populated panels retain content-based sizing without animated dimensions. Empty
 collections show a centered, muted collection icon in a 10rem-high content area with a
 20rem minimum panel width, bounded by the available viewport with overflow scrolling.
+The battle Deck viewer anchors its tab header near the top of the viewport and
+keeps a bounded shared width, so switching to a smaller or empty pile leaves
+Deck, Draw, and Discard in place. Outside battle, Deck retains content-based sizing.
 Deck, Draw Pile, and Discard Pile use the stacked-cards icon; Boons uses the trophy icon.
 Each empty icon is exposed as an image labelled Empty Deck, Empty Draw Pile,
 Empty Discard Pile, or Empty Boons.
@@ -73,9 +77,16 @@ The shell retains outgoing children and layout classes, so clearing a payload or
 resetting pagination cannot change the closing panel. Reopening cancels removal and
 starts a fresh panel mount and artwork gate. Consumers retain action-specific guards
 such as Wish's single-selection latch and confirmation buttons' disabled state.
+`dialog-focus-owner.ts` owns the ordered interactive panel stack, focus containment,
+initial focus, recovery, and opener restoration. `useDialogFocus` registers a panel
+with that owner; controller traversal uses the same active panel rather than portal
+DOM order. One shared focus listener and mutation observer serve the stack and are
+released when the last panel and pending restoration are gone.
 Dialog focus containment belongs to the most recently opened interactive panel.
 Opening the pause menu over a pending Wish suspends the Wish's focus trap;
-closing the menu restores focus to the choice. Inert panels do not reclaim focus.
+closing the menu restores focus to the choice. Inert and hidden panels do not reclaim focus. When a focused choice disappears or
+becomes unavailable, focus recovers inside the active panel; removing a covered
+panel preserves the foreground selection.
 Confirmation focus containment pauses while the panel is inert; focus returns
 to its existing target when the panel unmounts.
 
@@ -97,6 +108,10 @@ up/down leave them. Text editing and dropdowns keep their own arrow behavior.
 Tab/Shift+Tab remain keyboard traversal; Steam Input uses F7/Tab for bumpers
 to avoid the Steam overlay chord. Directional focus stops at layout edges.
 F7 counts as keyboard input for deferred screen-focus recovery while artwork is preparing.
+Window switching (Alt+Tab or Command+Tab) does not traverse controls or arm deferred
+focus recovery. Window blur cancels pending screen and hand focus recovery without
+opening the game menu; existing focus stays in place on return. Steam overlay
+activation still opens the battle pause menu.
 The controlled select state registers above dialogs in the Escape stack so it
 cannot accidentally navigate out of Options or Armory.
 
@@ -109,8 +124,9 @@ aria-disabled controls can still be traversed and inspected. Recovery scrolls
 only as needed. Closing inspection does not trigger screen-focus recovery.
 Dialogs restore their opener or fall back to the active screen when a previously
 focused opener disappeared. Opening a dialog with no control focused restores
-that unfocused state on close. Deferred restoration retries an opener that was
-temporarily inert. Existing focus is respected when deferred recovery runs.
+that unfocused state on close. Deferred restoration retains an opener through temporary screen preparation,
+including when it stays inert beyond the first recovery frame. Fresh pointer input
+or focus elsewhere cancels that pending restoration. Existing focus is respected when deferred recovery runs.
 
 Battle hand recovery is local to the hand and uses stable card identities. After a
 keyboard play, focus goes to the next playable card in the prior visual order,

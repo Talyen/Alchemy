@@ -264,14 +264,19 @@ describe("chooseCard tag filtering", () => {
     expect(slashOnly).toHaveLength(1);
     expect(getCardKeywords(slashOnly[0])).not.toContain("archery");
 
-    const poolSpy = vi.spyOn(cardPools, "getOfferableCardPool").mockReturnValue(slashOnly);
-    try {
-      apply({ kind: "chooseCard", tag: "archery" });
-      const offered = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryCardChoices!;
-      expect(offered.length).toBeGreaterThan(0);
-      expect(offered.every((card) => card.id === "slash")).toBe(true);
-    } finally {
-      poolSpy.mockRestore();
-    }
+    using _poolSpy = vi.spyOn(cardPools, "getOfferableCardPool").mockReturnValue(slashOnly);
+
+    apply({ kind: "chooseCard", tag: "archery" });
+    const offered = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryCardChoices!;
+    expect(offered.length).toBeGreaterThan(0);
+    expect(offered.every((card) => card.id === "slash")).toBe(true);
   });
+});
+
+it("does not treat inherited object keys in a saved Mystery reward as cards", () => {
+  const before = readActiveRun(defaultGameSession).runDeck;
+  expect(() => apply({ kind: "addCard", cardId: "constructor" })).not.toThrow();
+  expect(readActiveRun(defaultGameSession).runDeck).toEqual(before);
+  apply({ kind: "addCard", cardId: "slash" });
+  expect(readActiveRun(defaultGameSession).runDeck.at(-1)?.id).toBe("slash");
 });

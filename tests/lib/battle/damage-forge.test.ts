@@ -37,4 +37,17 @@ describe("applyForgeStunRider", () => {
     const result = dealDamage(state, card);
     expect(result.enemyCC.stunSkipTurns).toBe(0);
   });
+
+  it("does not stun or spend obsidian hammer when the hit defeats the enemy", () => {
+    const state = patchBattleState({
+      enemyHealth: 5,
+      playerStatuses: { forge: 5 },
+      trinketEffects: { forgeStunThreshold: 4, forgeStunAmount: 2 },
+      flags: { obsidianHammerUsedThisTurn: false },
+    });
+    const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
+    const result = dealDamage(state, card);
+    expect(result.enemyHealth).toBe(0);
+    expect(result.flags.obsidianHammerUsedThisTurn).toBe(false);
+  });
 });

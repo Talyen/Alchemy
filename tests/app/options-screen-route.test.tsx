@@ -14,9 +14,9 @@ import type { OptionsRouteCtx } from "@/app/screen-routes/route-ctx";
 const OptionsRoute = optionsScreenRoutes.options;
 
 interface OptionsScreenStubProps {
-  audio: {
-    musicVolume: number;
-    onMusicVolumeChange: (value: number) => void;
+  preferences: {
+    values: { musicVolume: number };
+    actions: { setMusicVolume: (value: number) => void };
   };
   saveData: {
     showClearSaveConfirm: boolean;
@@ -27,11 +27,11 @@ interface OptionsScreenStubProps {
 }
 
 vi.mock("@/features/alchemy/meta/screens", () => ({
-  OptionsScreen: ({ audio, saveData }: OptionsScreenStubProps) => (
+  OptionsScreen: ({ preferences, saveData }: OptionsScreenStubProps) => (
     <div>
-      <output data-testid="music-volume">{audio.musicVolume}</output>
+      <output data-testid="music-volume">{preferences.values.musicVolume}</output>
       <output data-testid="clear-save-confirm">{String(saveData.showClearSaveConfirm)}</output>
-      <button type="button" onClick={() => audio.onMusicVolumeChange(25)}>
+      <button type="button" onClick={() => preferences.actions.setMusicVolume(25)}>
         Change Music Volume
       </button>
       <button type="button" onClick={saveData.onOpenClearSaveConfirm}>
@@ -57,7 +57,7 @@ const routeContext: OptionsRouteCtx = {
 
 describe("options screen route", () => {
   beforeEach(() => {
-    useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+    useSettingsStore.getState().resetToDefaults();
     useUiStore.getState().setShowClearSaveConfirm(false);
     localStorage.removeItem(DEVICE_DISPLAY_STORAGE_KEY);
     initDeviceDisplayPreferences();

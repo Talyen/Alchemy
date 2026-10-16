@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/persistence";
-import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   setHasActiveRun,
   setRunProgressActivity,
@@ -14,17 +13,17 @@ beforeEach(() => {
   resetAllTestStores();
 });
 
-describe("resolveActiveRunForSave", () => {
+describe("active-run save projection", () => {
   it("snapshots the live activity independently of presentation navigation", () => {
     setRunProgress({ gold: 15, initialized: true });
     mutateRunForTest((draft) => {
       setHasActiveRun(draft, true);
       setRunProgressActivity(draft, "destination");
-      setScreen(draft, ROUTE_SCREENS.DESTINATION);
+      setScreen(draft, ROUTE_SCREENS.MENU);
     });
 
-    const activeRun = resolveActiveRunForSave(defaultGameSession);
     const save = buildAlchemySaveDataFromStores(defaultGameSession);
+    const { activeRun } = save;
 
     expect(activeRun).not.toBeNull();
     expect(activeRun).not.toHaveProperty("runGold");

@@ -5,7 +5,7 @@ import { playUISound } from "@/lib/audio";
 import { StrictMode } from "react";
 import { TransmutationScreen } from "@/features/alchemy/run-loop/screens/transmutation-screen";
 import { selectTransmutation, transmuteCard } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
-import { useTransmutationScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
+import { useRunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { cardById, keywordDefinitions, type BattleCard } from "@/lib/game-data";
 import { getTransmutationVariants, getTransmutationOffers } from "@/lib/alchemist/transmutation";
@@ -34,7 +34,7 @@ function Harness({
 }) {
   return (
     <TransmutationScreen
-      {...useTransmutationScreenData()}
+      {...useRunScreenData("transmutation")}
       onSelect={(command) => selectTransmutation(command, defaultGameSession)}
       onExchange={onExchange}
       onContinue={onContinue}

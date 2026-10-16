@@ -1,3 +1,5 @@
+import { GameMessage } from "@/components/localization";
+import { useGameTranslation } from "@/components/use-game-translation";
 import { PotionComparison } from "./potion-comparison";
 import { playUISound } from "@/lib/audio";
 import { useLayoutEffect, useRef, useState } from "react";
@@ -17,7 +19,6 @@ export function BrewPotionPanel({
   kind,
   price = 0,
   gold = 0,
-  potency = 0,
   selectionSound = "selection",
   onConfirm,
   isProgressSavePending = () => false,
@@ -28,12 +29,12 @@ export function BrewPotionPanel({
   kind: BrewOperation["kind"];
   price?: number;
   gold?: number;
-  potency?: number;
   selectionSound?: "selection" | "shopSelect";
   onConfirm: (operation: BrewOperation) => BattleCard | null;
   isProgressSavePending?: () => boolean;
   onBack: () => void;
 }) {
+  const i18n = useGameTranslation();
   const [selected, setSelected] = useState<number[]>([]);
   const [page, setPage] = useState(0);
   const [error, setError] = useState("");
@@ -71,7 +72,7 @@ export function BrewPotionPanel({
           ? strengthenPotion(sourceDeck[a])
           : null
         : a !== b
-          ? tryCreateMixedPotion(sourceDeck[a], sourceDeck[b], potency)
+          ? tryCreateMixedPotion(sourceDeck[a], sourceDeck[b])
           : null;
   const afford = gold >= price;
   function confirm(operation: BrewOperation) {
@@ -98,15 +99,23 @@ export function BrewPotionPanel({
   return (
     <div className="flex w-full max-w-4xl flex-col items-center gap-5">
       <h2 className="text-xl">
-        {kind === "new" ? "Choose a Potion" : kind === "combine" ? "Mix Potion" : "Select a Potion to Distill"}
+        {i18n.displayText(
+          kind === "new"
+            ? i18n.text("ui.brew-potion-panel.d1", "Choose a Potion")
+            : kind === "combine"
+              ? i18n.text("ui.brew-potion-panel.d2", "Mix Potion")
+              : i18n.text("ui.brew-potion-panel.d3", "Select a Potion to Distill"),
+        )}
       </h2>
       {!items.length ? (
         <p role="status">
-          {kind === "strengthen"
-            ? "No eligible Potions."
-            : kind === "new"
-              ? "No Potion recipes are available."
-              : "Two eligible Potions required."}
+          {i18n.displayText(
+            kind === "strengthen"
+              ? i18n.text("ui.brew-potion-panel.d4", "No eligible Potions.")
+              : kind === "new"
+                ? i18n.text("ui.brew-potion-panel.d5", "No Potion recipes are available.")
+                : i18n.text("ui.brew-potion-panel.d6", "Two eligible Potions required."),
+          )}
         </p>
       ) : kind === "strengthen" && result && sourceDeck[a] ? (
         <PotionComparison original={sourceDeck[a]} result={result} />
@@ -128,29 +137,44 @@ export function BrewPotionPanel({
           )}
         />
       )}
-      {kind === "combine" && items.length === 1 && <p role="status">Two eligible Potions required.</p>}
+      {kind === "combine" && items.length === 1 && (
+        <p role="status">{i18n.text("ui.brew-potion-panel.1", "Two eligible Potions required.")}</p>
+      )}
       {kind === "combine" && result && (
-        <div className="flex flex-col items-center gap-3" aria-label="Brew preview">
+        <div
+          className="flex flex-col items-center gap-3"
+          aria-label={i18n.text("ui.brew-potion-panel.2", "Brew preview")}
+        >
           <BattleCardButton
             card={result}
-            ariaLabel={`Inspect brew result: ${result.title}`}
+            ariaLabel={i18n.text("ui.brew-potion-panel.3", "Inspect brew result: {{value0}}", {
+              value0: i18n.displayText(result.title),
+            })}
             className={collectionTileWidthClass}
             shimmerActive={false}
             shimmerToken={undefined}
           />
         </div>
       )}
-      {!submitted && !afford && <p role="status">Not enough Gold. Brewing costs {price} Gold.</p>}
-      {error && <p role="alert">{error}</p>}
+      {!submitted && !afford && (
+        <p role="status">
+          <GameMessage
+            id="ui.brew-potion-panel.s1"
+            defaultValue="Not enough Gold. Brewing costs <part0/> Gold."
+            parts={{ part0: price }}
+          />
+        </p>
+      )}
+      {error && <p role="alert">{i18n.displayText(error)}</p>}
       <div className="flex justify-center gap-3">
         <Button variant="outline" onClick={onBack}>
-          Back
+          {i18n.text("ui.brew-potion-panel.6", "Back")}
         </Button>
         {kind !== "new" && (
           <>
             {kind === "strengthen" && result && (
               <Button variant="outline" disabled={submitted} onClick={() => setSelected([])}>
-                Choose Another Potion
+                {i18n.text("ui.brew-potion-panel.7", "Choose Another Potion")}
               </Button>
             )}
             <Button
@@ -158,8 +182,14 @@ export function BrewPotionPanel({
               disabled={submitted || !result || !afford || isProgressSavePending()}
               onClick={() => confirm(operation)}
             >
-              {kind === "combine" ? "Mix" : "Distill"}
-              {price ? ` · ${price} Gold` : ""}
+              {i18n.displayText(
+                kind === "combine"
+                  ? i18n.text("ui.brew-potion-panel.d7", "Mix")
+                  : i18n.text("ui.brew-potion-panel.d8", "Distill"),
+              )}
+              {i18n.displayText(
+                price ? i18n.text("ui.brew-potion-panel.d9", " · {{value0}} Gold", { value0: price }) : "",
+              )}
             </Button>
           </>
         )}

@@ -33,31 +33,6 @@ describe("gear affixes", () => {
   });
 
   describe("normalizeAffixRolls", () => {
-    it("validates and rounds canonical affix rolls", () => {
-      expect(
-        normalizeAffixRolls([
-          { id: "flat-burn", value: 2.4 },
-          { id: "flat-physical", value: 5 },
-        ]),
-      ).toEqual([
-        { id: "flat-burn", value: 2 },
-        { id: "flat-physical", value: 5 },
-      ]);
-    });
-
-    it("strips invalid and non-positive roll values", () => {
-      expect(
-        normalizeAffixRolls([
-          { id: "flat-physical", value: 2 },
-          { id: "not-an-affix", value: 1 },
-          { id: "flat-stun", value: 0 },
-          { id: "flat-stun", value: -1 },
-          { id: "flat-stun", value: NaN },
-          { id: "flat-stun", value: Infinity },
-        ]),
-      ).toEqual([{ id: "flat-physical", value: 2 }]);
-    });
-
     it("ignores inherited object keys when restoring rolls and aggregating effects", () => {
       const raw = [
         { id: "constructor", value: 3 },
@@ -88,6 +63,8 @@ describe("gear affixes", () => {
       Object.freeze({ id: "absorb-per-mana", value: 5 }),
       Object.freeze({ id: "flat-stun", value: -1 }),
       Object.freeze({ id: "flat-stun", value: NaN }),
+      Object.freeze({ id: "flat-stun", value: Infinity }),
+      Object.freeze({ id: "flat-stun", value: 0 }),
     ] as const);
     const raw = Object.freeze([...knownAffixes, Object.freeze({ id: "not-an-affix", value: 1 })]);
     for (const [rarity, flatPhysicalDamage, flatBurnDamage, damageReductionPerMana] of [

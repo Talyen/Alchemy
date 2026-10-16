@@ -1,5 +1,4 @@
 import type { KeywordId } from "@/lib/game-data";
-import type { GearEffectManifest } from "./gear-effect-manifest";
 import type { GearRarity } from "./types";
 
 export type GearAffixAspect = "offensive" | "defensive";
@@ -28,7 +27,7 @@ export interface AffixRowInput {
   keywordId: KeywordId;
   secondaryKeywordId?: KeywordId;
   descriptionTemplate: string;
-  effectKey: keyof GearEffectManifest;
+  effectKey: string;
   roll: AffixRollRange;
   uniqueOnly?: boolean;
 }
@@ -39,44 +38,49 @@ export function formatAffixDescription(template: string, value: number): string 
   return template.replaceAll("{value}", String(value));
 }
 
-export function uniqueAffix<const T extends string>(
-  id: T,
-  name: string,
-  aspect: GearAffixAspect,
-  keywordId: KeywordId,
-  descriptionTemplate: string,
-  effectKey: keyof GearEffectManifest,
-  secondaryKeywordId?: KeywordId,
-  rollValue = 1,
-): AffixRowInput & { id: T } {
-  return {
-    id,
-    name,
-    aspect,
-    keywordId,
-    ...(secondaryKeywordId ? { secondaryKeywordId } : {}),
-    descriptionTemplate,
-    effectKey,
-    roll: rollRange(rollValue, rollValue, rollValue, rollValue),
-    uniqueOnly: true,
+// Identity and affinity stay together; the second stage preserves the literal
+// effect key so the catalog can define the combat manifest without a second list.
+function affixFor(aspect: GearAffixAspect) {
+  return <const Id extends string>(id: Id, name: string, keywordId: KeywordId, secondaryKeywordId?: KeywordId) =>
+    <const Effect extends string>(effectKey: Effect, roll: AffixRollRange, descriptionTemplate: string) => ({
+      id,
+      name,
+      aspect,
+      keywordId,
+      ...(secondaryKeywordId ? { secondaryKeywordId } : {}),
+      effectKey,
+      roll,
+      descriptionTemplate,
+    });
+}
+
+export const offensiveAffix = affixFor("offensive");
+export const defensiveAffix = affixFor("defensive");
+
+function uniqueAffixFor(aspect: GearAffixAspect) {
+  return <const Id extends string>(id: Id, name: string, keywordId: KeywordId, secondaryKeywordId?: KeywordId) => {
+    const define = affixFor(aspect)(id, name, keywordId, secondaryKeywordId);
+    return <const Effect extends string>(effectKey: Effect, descriptionTemplate: string, rollValue = 1) => ({
+      ...define(effectKey, rollRange(rollValue, rollValue, rollValue, rollValue), descriptionTemplate),
+      uniqueOnly: true,
+    });
   };
 }
 
-export function resistAffix<const T extends string>(
+export const offensiveUnique = uniqueAffixFor("offensive");
+export const defensiveUnique = uniqueAffixFor("defensive");
+
+export function resistAffix<const T extends string, const E extends string>(
   id: T,
   name: string,
   keywordId: KeywordId,
-  effectKey: keyof GearEffectManifest,
-): AffixRowInput & { id: T } {
-  return {
-    id,
-    name,
-    aspect: "defensive",
-    keywordId,
-    descriptionTemplate: `Reduce ${affixLabel(keywordId)} damage taken by {value}%`,
+  effectKey: E,
+): AffixRowInput & { id: T; effectKey: E } {
+  return defensiveAffix(id, name, keywordId)(
     effectKey,
-    roll: ROLL_RESIST,
-  };
+    ROLL_RESIST,
+    `Reduce ${affixLabel(keywordId)} damage taken by {value}%`,
+  );
 }
 
 function affixLabel(keywordId: KeywordId): string {
@@ -86,44 +90,36 @@ function affixLabel(keywordId: KeywordId): string {
 // "Increases {Keyword} damage by {value}" rows (flat damage bonuses). The
 // template derives from the keyword exactly like resistAffix, so new damage
 // types cannot drift from the catalog wording.
-export function flatDamageAffix<const T extends string>(
+export function flatDamageAffix<const T extends string, const E extends string>(
   id: T,
   name: string,
   keywordId: KeywordId,
-  effectKey: keyof GearEffectManifest,
+  effectKey: E,
   roll: AffixRollRange = ROLL_SMALL,
   secondaryKeywordId?: KeywordId,
-): AffixRowInput & { id: T } {
-  return {
+): AffixRowInput & { id: T; effectKey: E } {
+  return offensiveAffix(
     id,
     name,
-    aspect: "offensive",
     keywordId,
-    ...(secondaryKeywordId ? { secondaryKeywordId } : {}),
-    descriptionTemplate: `Increases ${affixLabel(keywordId)} damage by {value}`,
-    effectKey,
-    roll,
-  };
+    secondaryKeywordId,
+  )(effectKey, roll, `Increases ${affixLabel(keywordId)} damage by {value}`);
 }
 
 // "Gain {value} {Keyword} at the start of combat" rows. Restore/Deal wordings
 // (start-heal, start-freeze) stay explicit: the verb is part of their rules.
-export function startOfCombatAffix<const T extends string>(
+export function startOfCombatAffix<const T extends string, const E extends string>(
   id: T,
   name: string,
   keywordId: KeywordId,
-  effectKey: keyof GearEffectManifest,
+  effectKey: E,
   roll: AffixRollRange,
   secondaryKeywordId?: KeywordId,
-): AffixRowInput & { id: T } {
-  return {
+): AffixRowInput & { id: T; effectKey: E } {
+  return defensiveAffix(
     id,
     name,
-    aspect: "defensive",
     keywordId,
-    ...(secondaryKeywordId ? { secondaryKeywordId } : {}),
-    descriptionTemplate: `Gain {value} ${affixLabel(keywordId)} at the start of combat`,
-    effectKey,
-    roll,
-  };
+    secondaryKeywordId,
+  )(effectKey, roll, `Gain {value} ${affixLabel(keywordId)} at the start of combat`);
 }

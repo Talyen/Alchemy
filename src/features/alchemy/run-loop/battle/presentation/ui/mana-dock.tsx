@@ -1,6 +1,8 @@
+import { GameMessage } from "@/components/localization";
+import { useGameTranslation } from "@/components/use-game-translation";
 import { useLayoutEffect, useRef, type CSSProperties } from "react";
 import { useStore } from "zustand";
-import { manaDockFrame, manaDockFull, manaDockEmpty } from "@/features/alchemy/shared/config/game-data-catalog";
+import { manaDockFull, manaDockEmpty } from "@/features/alchemy/shared/config/game-data-catalog";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import type { BattlePresentationStore } from "../../battle-presentation-store";
 import { MANA_DOCK_VISIBLE_COUNT, projectMana, type ManaGemExit } from "../../mana-presentation";
@@ -18,6 +20,7 @@ const SHARD_SHAPES = [
 ];
 
 function ManaExit({ exit }: { exit: ManaGemExit }) {
+  useGameTranslation();
   const art = exit.filled ? manaDockFull : manaDockEmpty;
   return (
     <span
@@ -61,12 +64,15 @@ export function ManaPanel({
   maxMana: number;
   presentation: BattlePresentationStore;
 }) {
+  const i18n = useGameTranslation();
   const reduced = useReducedMotionPreference();
   const mounted = useRef(false);
   const stored = useStore(presentation, (state) => state.manaPresentation);
-  const state = stored?.mana === mana && stored.maxMana === maxMana ? stored : projectMana(null, mana, maxMana, false);
+  // Keep unchanged animation keys while the layout effect commits the new display.
+  const state =
+    stored?.mana === mana && stored.maxMana === maxMana ? stored : projectMana(stored, mana, maxMana, !reduced);
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture, handleHoverStart } =
-    useHoverVisible();
+    useHoverVisible<HTMLButtonElement>();
 
   useLayoutEffect(() => {
     presentation.getState().setManaDisplay(mana, maxMana, mounted.current && !reduced);
@@ -74,7 +80,13 @@ export function ManaPanel({
   }, [mana, maxMana, presentation, reduced]);
 
   return (
-    <div
+    <button
+      type="button"
+      aria-label={i18n.text("ui.mana-dock.1", "Inspect Mana: {{value0}} / {{value1}}", {
+        value0: mana,
+        value1: maxMana,
+      })}
+      onClick={handleHoverStart}
       ref={triggerRef}
       className="mana-dock"
       data-testid="mana-panel"
@@ -86,10 +98,7 @@ export function ManaPanel({
       onFocusCapture={onFocusCapture}
       onBlurCapture={onBlurCapture}
     >
-      <BattleSceneArtwork className="mana-dock-frame battle-scene-silhouette" maskSource={manaDockFrame}>
-        <img src={manaDockFrame} alt="" draggable={false} decoding="async" className="block h-full w-full" />
-      </BattleSceneArtwork>
-      <div className="battle-mana-spill" style={{ maskImage: `url("${manaDockFrame}")` }} aria-hidden="true">
+      <div className="battle-mana-spill" aria-hidden="true">
         {state.gems.map((gem) => (
           <span
             key={gem.index}
@@ -98,12 +107,6 @@ export function ManaPanel({
           />
         ))}
       </div>
-      <button
-        type="button"
-        className="mana-dock-inspect"
-        aria-label={`Inspect Mana: ${mana} / ${maxMana}`}
-        onClick={handleHoverStart}
-      />
       {state.gems.map((gem) => (
         <span
           key={gem.index}
@@ -140,7 +143,11 @@ export function ManaPanel({
           </span>
           {gem.index === MANA_DOCK_VISIBLE_COUNT - 1 && state.hidden > 0 ? (
             <span key={`overflow-${state.revision}`} className="mana-dock-overflow">
-              +{state.hidden}
+              <GameMessage
+                id="ui.mana-dock.s1"
+                defaultValue="+<part0/>"
+                parts={{ part0: i18n.displayText(state.hidden) }}
+              />
             </span>
           ) : null}
         </span>
@@ -148,15 +155,31 @@ export function ManaPanel({
       {!reduced ? state.exits.map((exit) => <ManaExit key={exit.id} exit={exit} />) : null}
       <PortaledTooltip triggerRef={triggerRef} visible={visible} width="w-auto" placement="above">
         <span className="font-semibold text-sky-400">
-          Mana {mana} / {maxMana}
+          <GameMessage
+            id="ui.mana-dock.s2"
+            defaultValue="Mana <part0/> / <part1/>"
+            parts={{ part0: mana, part1: maxMana }}
+          />
         </span>
-        {mana > maxMana ? <span className="block text-sm">{mana - maxMana} bonus Mana</span> : null}
+        {mana > maxMana ? (
+          <span className="block text-sm">
+            <GameMessage
+              id="ui.mana-dock.s3"
+              defaultValue="<part0/> bonus Mana"
+              parts={{ part0: i18n.displayText(mana - maxMana) }}
+            />
+          </span>
+        ) : null}
         {state.hidden > 0 ? (
           <span className="block text-sm">
-            {state.hidden} crystals beyond the visible {MANA_DOCK_VISIBLE_COUNT}
+            <GameMessage
+              id="ui.mana-dock.s4"
+              defaultValue="<part0/> crystals beyond the visible <part1/>"
+              parts={{ part0: i18n.displayText(state.hidden), part1: i18n.displayText(MANA_DOCK_VISIBLE_COUNT) }}
+            />
           </span>
         ) : null}
       </PortaledTooltip>
-    </div>
+    </button>
   );
 }

@@ -39,8 +39,7 @@ character/difficulty routing. `run-resume-navigation.ts` owns current-run resume
 `new-run-initialization.ts` prepares new runs and drafts in commands before navigation. Run-start snapshots belong to
 `run-start-command.ts`; Wildcard starter-draft sampling belongs to
 `shared/run-flow/starter-draft.ts`.
-`new-run-initialization.ts` owns Campaign launch: run setup, starting Gold,
-discovery, destination offers, pending-character cleanup, and opening combat
+`new-run-initialization.ts` owns Campaign launch: run setup, discovery, destination offers, pending-character cleanup, and opening combat
 commit in one command. Initialization failure rolls all of them back. After
 commit, it schedules Battle before presenting opening feedback, so an immediate
 Companion outcome supersedes that request. Presentation failure retains a
@@ -193,13 +192,16 @@ layers live beside their leaves (`card-ghost-overlay.tsx`,
 
 ## Shop commands
 
+`shop-shelf.tsx` owns the shared shelf props, item identity, and Card, Gear, and Trinket tile selection. Shop screens add their own services; routes use the same `items`, `getPrice`, and `onBuy` props for every shelf.
+
 `create-shop-actions.ts` composes the matching `*-shop-commands.ts` modules and
 binds them once to a `GameSession`. Callers supply no Talent or Homestead
 manifests. `shop-pricing-context.ts` derives effects from current session
 progression for quotes and from the open transaction for mutations. Purchases,
-services, refresh chances, potion potency, and Gear sampling therefore use the
+services, refresh chances, and Gear sampling therefore use the
 same progression as payment and visit state, including after upgrades, resets,
-or save restoration. Retained capabilities do not need to be recreated.
+or save restoration. Refresh quotes read the live visit; callers supply no cached
+refresh allowance or progression overrides. Retained capabilities do not need to be recreated.
 `shop-commands-core.ts` owns shared purchase actions and live price helpers.
 Each shop supplies typed shelf selection, item identity, pricing, and acquisition
 rules; the shared purchase owner uses that pricing rule for both displayed quotes
@@ -227,16 +229,21 @@ shelf assignment, and modifier ordering, follow
 
 ## Settings and meta profile
 
+[Localization](./LOCALIZATION.md) owns bundled message catalogs, presentation-only text resolution, language selection and the device-local language preference. It adds no gameplay provider or run state.
+
 - `settings-store` owns synchronized display, audio, and gameplay preferences. It does not contain gameplay progression.
 - `device-display-store` owns Game Size and Tooltip Size. Its storage seam writes a versioned device-local record, outside the settings save codec and Steam Cloud. Defaults load synchronously before layout; unavailable storage falls back to in-memory preferences. Options receives values and actions through its route props.
 - `lib/settings-values.ts` owns the shared value sets and numeric bounds consumed by save validation, Options, audio,
-  and the desktop bridge; the settings codec still owns defaults, encoding, and hydration.
+  and the desktop bridge. `lib/validation/save-schemas/settings.ts` owns synchronized
+  preference fields, their saved defaults, and load repair; the settings codec
+  derives fresh defaults and field types from it and owns encoding and hydration.
+  Options receives these values and named actions directly through route props.
 
 Gameplay progression remains in the [aggregate regions](./RUN_STATE.md#run-state); persistence follows the [codec contract](./RUN_STATE.md#persistence-api). Run reward finalization uses the write module and `run-lifecycle.ts` (`finalizeRunXP`, `awardMaterialsDuringRun` — see [grant materials](./RUN_WORKFLOWS.md#grant-materials-during-a-run)), never the discovery-only profile region. `error-log-store.ts` is a standalone local-only error buffer (own storage key, debounced persist); `shared/stores/reset.ts` owns the Options wipe (distinct from the audio test reset in `src/lib/audio/reset.ts`). Both sit outside the gameplay aggregate and its save codecs.
 
 ## Permanent Gear (`gear-store`)
 
-Owned Gear and per-character loadouts live in `shared/stores/gear-store.ts`. Pure rules live under `src/lib/gear/`; per-command draft views and health-sync wrappers live in `gear-session-command.ts` (`GearDraftView` with deeply readonly collection views and guarded mutation methods, explicit write tracking — no snapshot comparison). `createInitialGearState` lives in `gear-actions.ts` beside the other pure draft mutators. Player actions live in `gear-commands.ts`; routes and headless playthroughs cannot supply draft callbacks or save-flush adapters. Salvage owns removal and all payouts in `salvageGearInTransaction`, outside the generic draft view. Import boundaries keep Gear mutation internals store-owned. Gear is meta progression, not copied into active-run data; battle snapshots `BattleState.gearEffects` and live meta mutations rebind via `rebindLiveRunMeta`. Feature code reads through `gear-store.ts`. Screen, mutations, and HP-sync: [ARMORY.md](./ARMORY.md). Authoring new items: [WORKFLOWS § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
+Owned Gear and per-character loadouts live in `shared/stores/gear-store.ts`. Pure rules live under `src/lib/gear/`; per-command draft views and health-sync wrappers live in `gear-session-command.ts` (`GearDraftView` with deeply readonly collection views and guarded mutation methods, explicit write tracking — no snapshot comparison). `gear-state-defaults.ts` owns `createInitialGearState` and save-field defaults independently of live mutation code; `gear-actions.ts` owns draft mutators. Player actions live in `gear-commands.ts`; routes and headless playthroughs cannot supply draft callbacks or save-flush adapters. Salvage owns removal and all payouts in `salvageGearInTransaction`, outside the generic draft view. Import boundaries keep Gear mutation internals store-owned. Gear is meta progression, not copied into active-run data; battle snapshots `BattleState.gearEffects` and live meta mutations rebind via `rebindLiveRunMeta`. Feature code reads through `gear-store.ts`. Screen, mutations, and HP-sync: [ARMORY.md](./ARMORY.md). Authoring new items: [WORKFLOWS § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
 
 ## Types
 
@@ -251,7 +258,7 @@ explicit capabilities (for example command-bound RNG), rather than data to copy.
 
 `GameplayState` in `gameplay-state.ts` defines the [aggregate regions](./RUN_STATE.md#run-state). Read, write, command, and screen contracts are listed in the [capability reference](./RUN_STATE.md#session-capability-ports); persistence types are in the [codec contract](./RUN_STATE.md#persistence-api).
 
-Run-progress contracts and the exhaustive `ACTIVE_RUN_PROGRESS_KEYS` projection live in `lib/active-run-session/run-progress.ts`, independently of save validation. `lib/validation` owns saved-run parsing and recovery; its schemas check the domain contracts. Initial progress and permanent fields, `generateRunSeed`, and `pickActiveRunView` live in `run-state-init.ts`; `run-domain-types.ts` defines session, battle, and run-data fields. `profile-store-types.ts` owns its domain (completion buckets derived from the character registry); `gear-actions.ts` owns the initial gear state. Fresh-run snapshots live in `shared/run-flow/run-start.ts`. Shared numeric manifest defaults use `createNumericManifest` / `mergeNumericManifests` from `manifest-utils.ts`.
+Run-progress contracts and the exhaustive `ACTIVE_RUN_PROGRESS_KEYS` projection live in `lib/active-run-session/run-progress.ts`, independently of save validation. `lib/validation` owns saved-run parsing and recovery; its schemas check the domain contracts. Initial progress and permanent fields, `generateRunSeed`, and `pickActiveRunView` live in `run-state-init.ts`; `run-domain-types.ts` defines session, battle, and run-data fields. `profile-store-types.ts` owns its domain (completion buckets derived from the character registry); `gear-state-defaults.ts` owns the initial gear state. Fresh-run snapshots live in `shared/run-flow/run-start.ts`. Shared numeric manifest defaults use `createNumericManifest` from `manifest-utils.ts`. Talent IDs, presentation, and bonuses share the ordered `talents/talent-rows.ts` catalog. Its authored bonus shapes derive `TalentEffectManifest` and neutral defaults; `manifest-defaults.ts` registers only Homestead-only fields and special defaults. Numeric additions use explicit `add(amount)` values, while ordinary values set and arrays concatenate.
 
 ## Import boundaries
 
@@ -270,6 +277,21 @@ Enforced in `oxlint.config.ts` (composition in `lint/fragments.js` + `lint/bound
 
 ## Boot and loading
 
+`app/alchemy-bootstrap.ts` owns one bootstrap operation per GameSession, including
+platform configuration, the development wipe, load/recovery selection, and restore.
+React adapters subscribe to its result; Strict Mode replay and shell remounts share
+pending work and retain completed readiness without restoring over newer progress.
+Closing the session revokes continuations before another persistence operation or
+restore can start. Independent sessions bootstrap independently.
+
+Image preload pipelines borrow deduplicated fetch/decode work from `lib/preload/image.ts`.
+Each pipeline owns cancellation across its batches, frame yields, and progress
+callbacks. Unmount cancels both essential and deferred art work. Cache reset revokes
+all existing pipelines before releasing their images, so suspended producers cannot
+refill the cache afterward. Cancelling one borrower preserves another borrower's
+fetch; the last departure aborts readiness and releases the source immediately.
+Completed entries retain the bounded cache policy.
+
 - **Shell preload / autosave:** App warms `essentialGameArt` before reveal and starts the remaining per-item Gear art as soon as that essential preload settles; autosave and chrome read needed fields through capability modules. Sound warming follows the [audio runtime contract](./AUDIO.md#runtime-contract); it does not gate startup on successful playback or decoding.
 
 One loading experience at cold start, then navigation through the shared fade — no per-route "Loading …" fallbacks. Route and in-screen reveals hold the fade until mounted artwork has decoded; see [UI](./UI_MOTION.md#screen-fade-motion).
@@ -282,9 +304,20 @@ One loading experience at cold start, then navigation through the shared fade �
 | Screen JS | `src/app/screen-routes/`                                                       | Static imports — **no** `React.lazy()`                                                                                                  |
 | SFX       | `use-app-effects.ts`                                                           | Critical sounds eager; rest on idle                                                                                                     |
 
-`StartupLoadingScreen` shows the wordmark filling left to right with the CTA gold (`text-primary`) over the 3s minimum display, rotating loading phrases below (`startup-loading-screen.tsx`) — no progress bar. The determinate readout lives on as the screen's `progressbar` ARIA value, still a smoothed meter of art decode, fonts, and save bootstrap (`startup-load-state.ts`) — not a timed CSS fill. `startup-load-state.ts` owns the reveal decision; `use-initial-load-ready.ts` supplies browser preload, font, timer, and animation-frame events. Reveal waits until that work has settled, the 3s minimum display has elapsed, **and** the eased display has caught 100%. A rejected essential art preload is logged and treated as settled so startup can continue. Deferred per-item gear art starts decoding as soon as essential art settles so it overlaps the minimum window, continuing in the background after reveal if unfinished. The pre-React `index.html` shell displays the unified startup loading screen (slime animation and filling wordmark) immediately upon first paint, keeping visual continuity while React and essential game assets load before smoothly fading out into the menu.
+`index.html` owns the single startup splash, including its artwork, filling
+wordmark, styles and reduced-motion behavior. `public/startup-words.js` rotates
+phrases on one timer from first paint until dismissal. React renders no second
+loader: `App` calls `syncStartupSplash` to publish smoothed progress to the
+splash's `progressbar` ARIA value and dismiss it once bootstrap and initial
+loading are ready. The fill animation matches `INITIAL_LOAD_MIN_DURATION_MS`;
+the architecture smoke check guards that shared timing. `startup-load-state.ts`
+owns the reveal decision; `use-initial-load-ready.ts` supplies image, font,
+bootstrap, timer and frame events. Reveal waits for settled work, the minimum
+duration and the eased progress reaching 100%. Essential art failures are logged
+and treated as settled. Deferred Gear art begins as soon as essential art settles,
+overlapping the minimum loading window and continuing after reveal if needed.
 
-**Do not add:** `React.lazy()` on route screens; lazy game art; per-screen spinners for assets in `allGameArt`.
+**Do not add:** `React.lazy()` on route screens, lazy game art outside the board decode exception, or per-screen spinners for assets in `allGameArt`. Board and Gear URLs register eagerly in `game-data/catalog-art.ts`; the board catalog owns board identity and prepared filenames own Gear identity. General art keeps its generated named exports. Card and enemy builders derive conventional art from content IDs, with explicit overrides for shared or differently named art. Board art is excluded from both startup decode sets through `onDemandBoardArt` and decoded on demand. Follow the [board asset workflow](./WORKFLOWS-ASSETS.md#game-board-artwork) when changing that explicit exception.
 
 **E2E bypass:** `localStorage["alchemy-skip-loading-screen"]` — startup gate only (`shouldSkipStartupLoadingGate()`).
 
@@ -313,3 +346,8 @@ Run outcomes and navigation share one construction owner: `createRunOutcomes`
 exposes `connect(actions)`. Both UI and headless shells supply presentation
 capabilities; domain commands own destination eligibility and sampling.
 Hover-clearing navigation is wrapped once in the shell.
+
+Route and shop command types derive from their composition factories. The route
+surface excludes battle initialization and cancellation; screens borrow only their
+phase's commands. Changes to command signatures update consumers without a second
+handwritten capability inventory.

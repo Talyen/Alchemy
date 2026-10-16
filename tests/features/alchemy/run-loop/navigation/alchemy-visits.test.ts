@@ -216,10 +216,16 @@ describe("alchemy visit transactions and resume", () => {
   });
   it("preserves spent reaction opportunities in a current battle save", () => {
     mutateGameplayForTest((draft) =>
-      initializeActiveBattle(draft, patchBattleState({ flags: { shatterUsed: true, wildfireUsed: true } })),
+      initializeActiveBattle(
+        draft,
+        patchBattleState({ reactions: { wildfireDamage: 3, wildfirePendingTickDamage: 2 } }),
+      ),
     );
     reload();
-    expect(readBattle(defaultGameSession).battleState.flags).toMatchObject({ shatterUsed: true, wildfireUsed: true });
+    expect(readBattle(defaultGameSession).battleState.reactions).toMatchObject({
+      wildfireDamage: 3,
+      wildfirePendingTickDamage: 2,
+    });
   });
   it("free brewing modifiers apply to Strengthen without spending Gold", () => {
     setRunProgress({ contentSystemType: "labyrinth", gold: 0 });

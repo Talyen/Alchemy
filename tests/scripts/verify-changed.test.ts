@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -64,15 +65,13 @@ describe("verification selection", () => {
 
   it("loads a large selection losslessly from a JSON file", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "verify-paths-"));
-    try {
-      const filename = path.join(root, "paths.json");
-      const paths = ["src/a space.ts", "src/another.ts"];
-      fs.writeFileSync(filename, JSON.stringify(paths));
-      expect(parseVerifyArgs(["--paths-file", filename, "--plan"]).paths).toEqual(paths);
-      expect(() => parseVerifyArgs(["--paths-file", filename, "--diff"])).toThrow("Choose");
-    } finally {
-      fs.rmSync(root, { recursive: true, force: true });
-    }
+    using _scopeCleanup = createCleanup(() => fs.rmSync(root, { recursive: true, force: true }));
+
+    const filename = path.join(root, "paths.json");
+    const paths = ["src/a space.ts", "src/another.ts"];
+    fs.writeFileSync(filename, JSON.stringify(paths));
+    expect(parseVerifyArgs(["--paths-file", filename, "--plan"]).paths).toEqual(paths);
+    expect(() => parseVerifyArgs(["--paths-file", filename, "--diff"])).toThrow("Choose");
   });
 
   it("executes changed tests directly", () => {
@@ -223,32 +222,30 @@ describe("verification diagnostics", () => {
 
   it("writes a bounded digest and separate full log", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "verify-digest-"));
-    try {
-      const repeated = "Error: repeated failure\n at same.ts:10\n".repeat(200);
-      const result = {
-        status: 1,
-        elapsedMs: 10,
-        output: `${repeated}TypeError: independent cause\n at other.ts:2\n${repeated}`,
-      };
-      const files = writeFailureDigest(
-        root,
-        { key: "test", label: "test", command: "npm", args: ["test"], reason: "fixture" },
-        result,
-        "run-id",
-        0,
-      );
-      const digest = fs.readFileSync(files.digestPath, "utf8");
-      expect(Buffer.byteLength(digest)).toBeLessThan(4_000);
-      expect(digest).toContain("TypeError: independent cause");
-      expect(digest).toContain("at other.ts:2");
-      expect(digest.match(/Error: repeated failure/gu)).toHaveLength(1);
-      expect(digest).toContain("L1 (400 occurrences; last L801)");
-      const log = fs.readFileSync(files.logPath, "utf8");
-      expect(log).toBe(result.output);
-      expect(log.split("\n")[800]).toBe("Error: repeated failure");
-    } finally {
-      fs.rmSync(root, { recursive: true, force: true });
-    }
+    using _scopeCleanup = createCleanup(() => fs.rmSync(root, { recursive: true, force: true }));
+
+    const repeated = "Error: repeated failure\n at same.ts:10\n".repeat(200);
+    const result = {
+      status: 1,
+      elapsedMs: 10,
+      output: `${repeated}TypeError: independent cause\n at other.ts:2\n${repeated}`,
+    };
+    const files = writeFailureDigest(
+      root,
+      { key: "test", label: "test", command: "npm", args: ["test"], reason: "fixture" },
+      result,
+      "run-id",
+      0,
+    );
+    const digest = fs.readFileSync(files.digestPath, "utf8");
+    expect(Buffer.byteLength(digest)).toBeLessThan(4_000);
+    expect(digest).toContain("TypeError: independent cause");
+    expect(digest).toContain("at other.ts:2");
+    expect(digest.match(/Error: repeated failure/gu)).toHaveLength(1);
+    expect(digest).toContain("L1 (400 occurrences; last L801)");
+    const log = fs.readFileSync(files.logPath, "utf8");
+    expect(log).toBe(result.output);
+    expect(log.split("\n")[800]).toBe("Error: repeated failure");
   });
 
   it("keeps compact output useful", () => {

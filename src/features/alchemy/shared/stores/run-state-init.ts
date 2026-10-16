@@ -27,6 +27,7 @@ export interface PermanentProgressFields {
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
   materialInventory: MaterialInventory;
+  starterHomesteadGrantResolved: boolean;
   constructedBuildings: Record<BuildingId, number>;
   plantedFarms: Record<FarmId, number>;
   completedResearch: Record<ResearchId, number>;
@@ -60,7 +61,7 @@ function hydrateDestinations(initialActiveRun: ActiveRunData): {
 // Collection fields with fresh empty defaults, shared by the fresh-run and
 // resume constructors. Tied to ACTIVE_RUN_PROGRESS_KEYS so a new collection
 // field cannot be added to the interface without deciding its default here.
-export const EMPTY_ACTIVE_RUN_COLLECTION_KEYS = [
+const EMPTY_ACTIVE_RUN_COLLECTION_KEYS = [
   "completedDestinations",
   "lastOfferedDestinations",
   "destinationRoundsSinceOffered",
@@ -188,6 +189,7 @@ export function createInitialPermanentFields(): PermanentProgressFields {
     talentXP: {},
     unlockedTalents: {},
     materialInventory: emptyInventory(),
+    starterHomesteadGrantResolved: false,
     constructedBuildings,
     plantedFarms,
     completedResearch,

@@ -54,7 +54,7 @@ const difficultyModifierSchema = z
   });
 
 const pendingTurnStartEffectSchema = z.object({
-  remainingTurns: z.number().int().positive(),
+  remainingTurns: z.number().int().min(1).max(10),
   effects: z.array(BattleCardEffectSchema),
   sourceCard: z
     .object({
@@ -111,6 +111,7 @@ const PersistedBattleStateWireSchema = z.looseObject({
   playerStatuses: z.record(z.string(), z.unknown()).catch({}),
   enemyStatuses: z.record(z.string(), z.unknown()).catch({}),
   flags: z.record(z.string(), z.unknown()).catch({}),
+  reactions: z.record(z.string(), z.unknown()).catch({}),
   uniqueGear: UniqueGearBattleStateSchema,
   encounterBenefits: EncounterRewardTraitArraySchema,
   discoveredCardIds: z.array(z.unknown()).catch([]),

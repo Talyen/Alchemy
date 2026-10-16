@@ -3,7 +3,7 @@ import { mergeCombatText } from "@/lib/battle/combat-text-events";
 import type { CombatTextEvent, NumericCombatTextEvent } from "@/lib/battle";
 
 describe("combat feedback aggregation", () => {
-  it("preserves resolved audio metadata while keeping the same numeric aggregation", () => {
+  it("keeps direct and periodic audio identities separate without losing amounts", () => {
     const texts: CombatTextEvent[] = [];
     mergeCombatText(texts, { target: "enemy", kind: "damage", stat: "burn", amount: 2 });
     mergeCombatText(texts, {
@@ -15,7 +15,8 @@ describe("combat feedback aggregation", () => {
       periodic: true,
     });
     expect(texts).toEqual([
-      { target: "enemy", kind: "damage", stat: "burn", amount: 5, critical: true, periodic: true },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 2 },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 3, critical: true, periodic: true },
     ]);
   });
   it("hides status buildup while retaining damage, control notices and beneficial gains", () => {

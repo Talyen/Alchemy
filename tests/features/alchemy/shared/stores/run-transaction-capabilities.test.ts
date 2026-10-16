@@ -1,4 +1,6 @@
+import { createCleanup } from "@/lib/cleanup";
 import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
+import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -15,6 +17,8 @@ import {
   deductGold,
   createDraftRunRandomSource,
   setGold,
+  initializeBattle,
+  setHasActiveRun,
   setRunDeck,
   setRunActivityData,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -24,6 +28,7 @@ import {
   mutateGearWithRunHealthSync,
 } from "@/features/alchemy/shared/stores/gear-session-command";
 import type { GearInstance } from "@/lib/gear";
+import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-types";
 import { getGoldMultiplier } from "@/lib/game-data";
 import { makeTestBattleState, makeTestCard } from "../../../../fixtures/battle";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
@@ -153,26 +158,23 @@ describe("feature transaction capabilities", () => {
     const before = readGameplayState(defaultGameSession);
     const effect = vi.fn();
     const commit = vi.fn();
-    const unsubscribe = subscribeRunSessionCommits(commit, defaultGameSession);
-    try {
-      expect(() =>
-        dispatchRunSessionCommand(
-          (transaction) => {
-            setGold(transaction, 17);
-            createDraftRunRandomSource(transaction, "world")();
-            write(transaction);
-            return acceptCommand();
-          },
-          { afterCommit: effect },
-          defaultGameSession,
-        ),
-      ).toThrow(/readonly/);
-      expect(readGameplayState(defaultGameSession)).toBe(before);
-      expect(commit).not.toHaveBeenCalled();
-      expect(effect).not.toHaveBeenCalled();
-    } finally {
-      unsubscribe();
-    }
+    using _unsubscribe = createCleanup(subscribeRunSessionCommits(commit, defaultGameSession));
+
+    expect(() =>
+      dispatchRunSessionCommand(
+        (transaction) => {
+          setGold(transaction, 17);
+          createDraftRunRandomSource(transaction, "world")();
+          write(transaction);
+          return acceptCommand();
+        },
+        { afterCommit: effect },
+        defaultGameSession,
+      ),
+    ).toThrow(/readonly/);
+    expect(readGameplayState(defaultGameSession)).toBe(before);
+    expect(commit).not.toHaveBeenCalled();
+    expect(effect).not.toHaveBeenCalled();
   });
 
   it("keeps transaction reads current while Gold operations settle purse, battle, and run earnings once", () => {
@@ -344,4 +346,159 @@ describe("feature transaction capabilities", () => {
     expect(readGameplayState(defaultGameSession)).toBe(before);
     expect(readBattle(defaultGameSession).battleState.playerMaxHealth).toBe(37);
   });
+
+  it.each(["return", "throw"] as const)(
+    "revokes Gear writes after its callback %s so late equipment cannot bypass Health synchronization",
+    (ending) => {
+      const armor: GearInstance = {
+        instanceId: "scoped-armor",
+        definitionId: "leather-armor-basic",
+        affixes: [{ id: "max-health", value: 7 }],
+      };
+      setRunProgress({ runMaxHealth: 30, runMetaMaxHealth: 30, runPlayerHealth: 30 });
+      setRunSession({ hasActiveRun: true });
+      dispatchGearMutationWithRunHealthSync(
+        {
+          mutate: (gear) => {
+            gear.addInstance(armor, "knight");
+            gear.equip("knight", "body", armor);
+          },
+        },
+        defaultGameSession,
+      );
+      const before = readGameplayState(defaultGameSession);
+      const committed = vi.fn();
+      using _unsubscribe = createCleanup(subscribeRunSessionCommits(committed, defaultGameSession));
+      const effect = vi.fn();
+
+      expect(() =>
+        dispatchRunSessionCommand(
+          (transaction) => {
+            setGold(transaction, 17);
+            createDraftRunRandomSource(transaction, "world")();
+            let retained!: GearDraftView["unequip"];
+            try {
+              mutateGearWithRunHealthSync(transaction, {
+                mutate: (gear) => {
+                  retained = gear.unequip;
+                  if (ending === "throw") throw new Error("abort gear callback");
+                },
+              });
+            } catch (error) {
+              if (!(error instanceof Error) || error.message !== "abort gear callback") throw error;
+            }
+            retained("knight", "body");
+            return acceptCommand();
+          },
+          { afterCommit: effect },
+          defaultGameSession,
+        ),
+      ).toThrow(/current Gear mutation/);
+      expect(readGameplayState(defaultGameSession)).toBe(before);
+      expect(before.gear.loadouts.knight.body).toBe(armor.instanceId);
+      expect(before.run.activeRun.runMaxHealth).toBe(37);
+      expect(committed).not.toHaveBeenCalled();
+      expect(effect).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["throw", "async"] as const)(
+    "rolls back a %s Gear callback even when the enclosing command catches its failure and accepts",
+    async (failure) => {
+      const armor: GearInstance = {
+        instanceId: "failed-gear-armor",
+        definitionId: "leather-armor-basic",
+        affixes: [{ id: "max-health", value: 7 }],
+      };
+      setRunProgress({ runMaxHealth: 30, runMetaMaxHealth: 30, runPlayerHealth: 30 });
+      setRunSession({ hasActiveRun: true });
+      dispatchGearMutationWithRunHealthSync(
+        {
+          mutate: (gear) => {
+            gear.addInstance(armor, "knight");
+            gear.equip("knight", "body", armor);
+          },
+        },
+        defaultGameSession,
+      );
+      const before = readGameplayState(defaultGameSession);
+      const committed = vi.fn();
+      const effect = vi.fn();
+      const caught = vi.fn();
+      using _unsubscribe = createCleanup(subscribeRunSessionCommits(committed, defaultGameSession));
+
+      expect(() =>
+        dispatchRunSessionCommand(
+          (transaction) => {
+            setGold(transaction, 17);
+            createDraftRunRandomSource(transaction, "world")();
+            try {
+              mutateGearWithRunHealthSync(transaction, {
+                mutate: (gear): unknown => {
+                  gear.unequip("knight", "body");
+                  if (failure === "throw") throw new Error("Gear callback failed");
+                  return (async () => {
+                    await Promise.resolve();
+                    gear.addCurrencies({ voidstone: 1 });
+                  })();
+                },
+              });
+            } catch (error) {
+              caught(error);
+            }
+            return acceptCommand();
+          },
+          { afterCommit: effect },
+          defaultGameSession,
+        ),
+      ).toThrow(failure === "throw" ? /Gear callback failed/ : /must be synchronous/);
+      // Invalid asynchronous continuations are observed after their methods revoke.
+      await Promise.resolve();
+      expect(caught).toHaveBeenCalledOnce();
+      expect(readGameplayState(defaultGameSession)).toBe(before);
+      expect(before.gear.loadouts.knight.body).toBe(armor.instanceId);
+      expect(before.run.activeRun.runMaxHealth).toBe(37);
+      expect(committed).not.toHaveBeenCalled();
+      expect(effect).not.toHaveBeenCalled();
+    },
+  );
+});
+
+it("rolls back a caught battle initialization failure instead of publishing partial progression", async () => {
+  await using session = createGameSession();
+
+  dispatchRunSessionCommand((transaction) => acceptCommand(setHasActiveRun(transaction, true)), undefined, session);
+  const before = readGameplayState(session);
+  const committed = vi.fn();
+  const effect = vi.fn();
+  subscribeRunSessionCommits(committed, session);
+  const caught = vi.fn();
+  let stagedRooms: number | undefined;
+  // An invalid execution-time modifier fails after room admission. The command
+  // boundary must still reject every earlier write if its caller catches it.
+  const request = { kind: "battle", options: { enemyId: "skeleton", modifiers: [null] } } as unknown as Parameters<
+    typeof initializeBattle
+  >[1];
+  expect(() =>
+    dispatchRunSessionCommand(
+      (transaction) => {
+        setGold(transaction, 17);
+        createDraftRunRandomSource(transaction, "world")();
+        try {
+          initializeBattle(transaction, request);
+        } catch (error) {
+          caught(error);
+          stagedRooms = transaction.run.activeRun.roomsEncountered;
+        }
+        return acceptCommand();
+      },
+      { afterCommit: effect },
+      session,
+    ),
+  ).toThrow();
+  expect(caught).toHaveBeenCalledOnce();
+  expect(stagedRooms).toBe(before.run.activeRun.roomsEncountered + 1);
+  expect(readGameplayState(session)).toBe(before);
+  expect(committed).not.toHaveBeenCalled();
+  expect(effect).not.toHaveBeenCalled();
 });

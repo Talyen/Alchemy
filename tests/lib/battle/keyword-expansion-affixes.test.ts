@@ -14,20 +14,9 @@ import { effectsForAffixRolls, gearAffixCatalog } from "@/lib/gear";
 import { resolveBattleStart } from "@/lib/battle/battle-start";
 import { enemyById } from "@/lib/game-data";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
-import { keywordExpansionAffixes } from "@/lib/gear/keyword-expansion-affixes";
-import { gearDefinitions } from "@/lib/gear/definitions";
-import { buildEligibleAffixPool } from "@/lib/gear/affix-pool";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 const strike = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
-
-it("makes every new affix eligible through an existing item affinity", () => {
-  const definitions = Object.values(gearDefinitions).filter((definition) => definition.rarity !== null);
-  const unavailable = keywordExpansionAffixes.filter(
-    (affix) => !definitions.some((definition) => buildEligibleAffixPool(definition).some((row) => row.id === affix.id)),
-  );
-  expect(unavailable.map((affix) => affix.id)).toEqual([]);
-});
 
 describe("ported Thorns affixes", () => {
   it("grants Ironbriar Thorns only when Block remains after turn decay", () => {

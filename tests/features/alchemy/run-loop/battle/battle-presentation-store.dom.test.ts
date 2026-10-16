@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import {
   mutateRunForTest,
   setBattleActiveForTest as setHasActiveBattle,
@@ -51,32 +52,6 @@ describe("battle-presentation-store", () => {
     vi.useRealTimers();
   });
 
-  it("telegraphs cast motion and resets on resetPresentation", () => {
-    battlePresentation.getState().telegraphCast("player");
-    expect(battlePresentation.getState().playerCastToken).toBe(1);
-    expect(battlePresentation.getState().enemyCastToken).toBe(0);
-
-    battlePresentation.getState().telegraphCast("enemy");
-    expect(battlePresentation.getState().enemyCastToken).toBe(1);
-
-    battlePresentation.getState().resetPresentation();
-    expect(battlePresentation.getState().playerCastToken).toBe(0);
-    expect(battlePresentation.getState().enemyCastToken).toBe(0);
-  });
-
-  it("spawnCardGhost and removeCardGhost round-trip", () => {
-    battlePresentation.getState().spawnCardGhost({
-      art: "test.webp",
-      rect: { x: 0, y: 0, width: 10, height: 10 },
-      rotation: 0,
-      delay: 0,
-      variant: "activate",
-    });
-    const id = battlePresentation.getState().cardGhosts[0]!.id;
-    battlePresentation.getState().removeCardGhost(id);
-    expect(battlePresentation.getState().cardGhosts).toHaveLength(0);
-  });
-
   it("caps overlapping ghosts, shedding the oldest", () => {
     for (let i = 0; i < 8; i += 1) {
       battlePresentation.getState().spawnCardGhost({
@@ -92,15 +67,6 @@ describe("battle-presentation-store", () => {
     expect(ghosts[0]?.art).toBe("test-2.webp");
   });
 
-  it("shakeEnemy sets and clears enemyShaking", async () => {
-    vi.useFakeTimers();
-    battlePresentation.getState().shakeEnemy();
-    expect(battlePresentation.getState().enemyShaking).toBe(true);
-    await vi.advanceTimersByTimeAsync(SHAKE_DURATION_MS);
-    expect(battlePresentation.getState().enemyShaking).toBe(false);
-    vi.useRealTimers();
-  });
-
   it("restarts a shake timer so an older hit cannot clear a newer shake", async () => {
     vi.useFakeTimers();
     battlePresentation.getState().shakeEnemy();
@@ -113,27 +79,9 @@ describe("battle-presentation-store", () => {
     vi.useRealTimers();
   });
 
-  it("telegraphAttack bumps the acting combatant's token and maps companion onto player", () => {
-    battlePresentation.getState().telegraphAttack("player");
-    battlePresentation.getState().telegraphAttack("enemy");
-    battlePresentation.getState().telegraphAttack("companion");
-    battlePresentation.getState().telegraphAttack("player");
-    const s = battlePresentation.getState();
-    expect(s.playerAttackToken).toBe(3);
-    expect(s.enemyAttackToken).toBe(1);
-  });
-
   it("resetPresentation clears VFX state", () => {
-    battlePresentation.setState({
-      playerImpactCue: {
-        sequence: 1,
-        colors: keywordDefinitions.burn.shineColors,
-        healthLost: true,
-        amount: 5,
-        periodic: false,
-        recoil: true,
-      },
-    });
+    const show = activateBattle();
+    show([{ target: "player", kind: "damage", stat: "physical", amount: 5 }]);
     battlePresentation.getState().telegraphAttack("player");
     battlePresentation.getState().spawnCardGhost({
       art: "test.webp",
@@ -163,16 +111,8 @@ describe("battle-presentation-store", () => {
   });
 
   it("clearBattlePresentationUi resets full presentation VFX", () => {
-    battlePresentation.setState({
-      playerImpactCue: {
-        sequence: 1,
-        colors: keywordDefinitions.freeze.shineColors,
-        healthLost: true,
-        amount: 5,
-        periodic: false,
-        recoil: true,
-      },
-    });
+    const show = activateBattle();
+    show([{ target: "player", kind: "damage", stat: "physical", amount: 5 }]);
     battlePresentation.getState().shakeEnemy();
     battlePresentation.getState().telegraphAttack("enemy");
     battlePresentation.getState().spawnCardGhost({
@@ -487,15 +427,13 @@ describe("battle-presentation-store", () => {
   it("keeps a readable lifetime when fast animations are enabled", async () => {
     const show = activateBattle();
     localStorage.setItem("alchemy-disable-animations", "true");
-    try {
-      show([{ target: "enemy", kind: "damage", stat: "physical", amount: 5 }]);
-      expect(battlePresentation.getState().floatingCombatBursts[0]!.lifetimeMs).toBe(400);
-      await vi.advanceTimersByTimeAsync(399);
-      expect(battlePresentation.getState().floatingCombatBursts).toHaveLength(1);
-      await vi.advanceTimersByTimeAsync(1);
-      expect(battlePresentation.getState().floatingCombatBursts).toEqual([]);
-    } finally {
-      localStorage.removeItem("alchemy-disable-animations");
-    }
+    using _scopeCleanup = createCleanup(() => localStorage.removeItem("alchemy-disable-animations"));
+
+    show([{ target: "enemy", kind: "damage", stat: "physical", amount: 5 }]);
+    expect(battlePresentation.getState().floatingCombatBursts[0]!.lifetimeMs).toBe(400);
+    await vi.advanceTimersByTimeAsync(399);
+    expect(battlePresentation.getState().floatingCombatBursts).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(battlePresentation.getState().floatingCombatBursts).toEqual([]);
   });
 });

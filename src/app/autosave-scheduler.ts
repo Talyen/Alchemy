@@ -44,6 +44,7 @@ export function createAutosaveScheduler(maxWaitMs: number, retryCooldownMs: numb
   return {
     cancel,
     canSubmit,
+    hasUnsavedChanges: () => revision > acknowledgedRevision,
     retryNow() {
       submittedRevision = acknowledgedRevision;
       exitAttemptedRevision = 0;

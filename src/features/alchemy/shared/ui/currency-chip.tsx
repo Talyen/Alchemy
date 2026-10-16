@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { displayText } from "@/lib/localization/runtime";
 import { Fragment, type ReactNode } from "react";
 import { useChangeToken } from "./use-change-token";
 import { cn } from "@/lib/utils";
@@ -11,10 +13,10 @@ function renderBoldSegments(text: string): ReactNode {
   return text.split(/\*\*(.+?)\*\*/g).map((part, index) =>
     index % 2 === 1 ? (
       <strong key={index} className="font-semibold text-foreground">
-        {part}
+        {displayText(part)}
       </strong>
     ) : (
-      <Fragment key={index}>{part}</Fragment>
+      <Fragment key={index}>{displayText(part)}</Fragment>
     ),
   );
 }
@@ -38,9 +40,13 @@ export function CurrencyChip({
   ariaLabel?: string;
   onSelect?: () => void;
 }) {
+  const i18n = useGameTranslation();
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible();
   const countToken = useChangeToken(count);
-  const label = `${ariaLabel ?? currency.displayName}, ${count}${onSelect ? " available" : ""}`;
+  const name = ariaLabel ?? i18n.displayText(currency.displayName);
+  const label = onSelect
+    ? i18n.text("currency.available", "{{name}}, {{count}} available", { name, count })
+    : i18n.text("currency.count", "{{name}}, {{count}}", { name, count });
   const className = cn(
     "armory-currency-art relative block overflow-hidden rounded-xl border border-border/80 bg-black",
     armed && surfaceSelectedRingClass,
@@ -69,11 +75,13 @@ export function CurrencyChip({
       onBlurCapture={onBlurCapture}
     >
       <PortaledTooltip triggerRef={triggerRef} visible={visible} className="armory-inventory-tooltip !shadow-none">
-        <TooltipHeader>{currency.displayName}</TooltipHeader>
+        <TooltipHeader>{i18n.displayText(currency.displayName)}</TooltipHeader>
         <TooltipBody>
-          <p>{renderBoldSegments(currency.tooltipEffect)}</p>
-          {showDescription ? <p className="mt-2">{currency.description}</p> : null}
-          {disabled && count > 0 ? <p className="mt-2">Crafting is unavailable.</p> : null}
+          <p>{i18n.displayText(i18n.read(() => renderBoldSegments(currency.tooltipEffect)))}</p>
+          {showDescription ? <p className="mt-2">{i18n.displayText(currency.description)}</p> : null}
+          {disabled && count > 0 ? (
+            <p className="mt-2">{i18n.text("ui.currency-chip.1", "Crafting is unavailable.")}</p>
+          ) : null}
         </TooltipBody>
       </PortaledTooltip>
       {onSelect ? (
@@ -90,7 +98,7 @@ export function CurrencyChip({
             if (!disabled) onSelect();
           }}
         >
-          {content}
+          {i18n.displayText(content)}
         </button>
       ) : (
         <div
@@ -102,7 +110,7 @@ export function CurrencyChip({
           aria-label={label}
           className={className}
         >
-          {content}
+          {i18n.displayText(content)}
         </div>
       )}
     </div>

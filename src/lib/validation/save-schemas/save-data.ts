@@ -7,23 +7,16 @@ import {
   normalizeBoardSave,
 } from "./board-schemas";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { hasHomesteadPurchases } from "@/lib/homestead/purchases";
 import { companionTierItems } from "@/lib/homestead/companions";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
-import {
-  DEFAULT_BACKGROUND_GLOW_PCT,
-  DEFAULT_BACKGROUND_PARTICLES_PCT,
-  DEFAULT_BRIGHTNESS_PCT,
-  DEFAULT_MASTER_VOLUME_PCT,
-  DEFAULT_MUSIC_VOLUME_PCT,
-  DEFAULT_SFX_VOLUME_PCT,
-} from "@/lib/game-constants";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTENT_VERSION } from "../metadata";
-import { SETTINGS_RANGES, resolveAutoplayEnabled } from "@/lib/settings-values";
+import { resolveAutoplayEnabled } from "@/lib/settings-values";
 import {
   deduplicatedSetArraySchema,
   deduplicatedStringArraySchema,
   isUsableLiveCombatGold,
-  toFiniteNonNegativeInt,
+  toSafeNonNegativeInt,
 } from "./validation-utils";
 import {
   CHARACTER_IDS,
@@ -32,7 +25,6 @@ import {
   CRAFTING_CURRENCY_ZERO_INVENTORY,
   createTierRecordSchema,
   CompletedDifficultiesSchema,
-  DisplayModeSchema,
   MaterialInventorySchema,
   CraftingCurrencyInventorySchema,
   TalentXPSchema,
@@ -52,15 +44,8 @@ import {
   type GearLoadouts,
   type EquippedTrinkets,
 } from "@/lib/gear/types";
-import { clamp } from "@/lib/math";
+import { SettingsSaveFieldsSchema } from "./settings";
 import { pruneOrphanGearLoadouts } from "@/lib/gear/loadout-operations";
-
-function clampedSettingSchema(defaultValue: number, range: { min: number; max: number }) {
-  return z
-    .number()
-    .catch(defaultValue)
-    .transform((v) => clamp(v, range.min, range.max));
-}
 
 function characterShape<T extends z.ZodType>(factory: (id: string) => T): Record<string, T> {
   const shape: Record<string, T> = {};
@@ -99,11 +84,12 @@ const EquippedTrinketsSchema = z
   .catch(createEmptyEquippedTrinkets)
   .transform((value) => value as EquippedTrinkets);
 
-function resolvePersistedGold(purseGold: number, liveCombatGold: unknown): number {
-  if (isUsableLiveCombatGold(liveCombatGold)) {
-    return Math.floor(liveCombatGold);
-  }
-  return purseGold;
+function readRawCombatGold(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const save = value as Record<string, unknown>;
+  const run = save.activeRun as { activity?: { kind?: unknown; data?: { battleState?: { gold?: unknown } } } } | null;
+  const activity = run?.activity;
+  return activity?.kind === "battle" ? activity.data?.battleState?.gold : undefined;
 }
 
 // Single owner for the live-combat-gold rule: the mid-fight purse override is
@@ -113,19 +99,13 @@ export function isCombatGoldOverride(liveCombatGold: unknown, persistedGold: num
   return isUsableLiveCombatGold(liveCombatGold) && Math.floor(liveCombatGold) === persistedGold;
 }
 
-export const SaveDataSchema = z
+const SaveDataObjectSchema = z
   .object({
     saveSchemaVersion: z.literal(CURRENT_SAVE_SCHEMA_VERSION).catch(CURRENT_SAVE_SCHEMA_VERSION),
     gameBuildVersion: z.string().catch(CURRENT_GAME_BUILD_VERSION),
     steamAccountId: z.string().regex(/^\d+$/u).nullable().catch(null),
     contentVersion: z.number().int().nonnegative().catch(CURRENT_CONTENT_VERSION),
-    displayMode: DisplayModeSchema.catch("borderless-fullscreen"),
-    brightness: clampedSettingSchema(DEFAULT_BRIGHTNESS_PCT, SETTINGS_RANGES.brightness),
-    backgroundParticlesIntensity: clampedSettingSchema(
-      DEFAULT_BACKGROUND_PARTICLES_PCT,
-      SETTINGS_RANGES.specialEffects,
-    ),
-    backgroundGlowIntensity: clampedSettingSchema(DEFAULT_BACKGROUND_GLOW_PCT, SETTINGS_RANGES.specialEffects),
+    ...SettingsSaveFieldsSchema.shape,
     collectedBoardIds: CollectedBoardIdsSchema,
     boardSelection: BoardSelectionSchema,
     activeBoardId: ActiveBoardIdSchema,
@@ -142,17 +122,10 @@ export const SaveDataSchema = z
     talentXP: TalentXPSchema,
     unlockedTalents: UnlockedTalentsSchema,
 
-    musicVolume: clampedSettingSchema(DEFAULT_MUSIC_VOLUME_PCT, SETTINGS_RANGES.volume),
-    sfxVolume: clampedSettingSchema(DEFAULT_SFX_VOLUME_PCT, SETTINGS_RANGES.volume),
-    masterVolume: clampedSettingSchema(DEFAULT_MASTER_VOLUME_PCT, SETTINGS_RANGES.volume),
-    muteInBackground: z.boolean().catch(true),
-    bossLyricsEnabled: z.boolean().catch(true),
-    autoEndTurn: z.boolean().catch(true),
-    rememberAutoplayPreference: z.boolean().catch(false),
-    autoplayEnabled: z.boolean().catch(false),
     activeRun: ActiveRunDataSchema.nullable().catch(null),
     gold: z.number().int().nonnegative().catch(0),
     materialInventory: MaterialInventorySchema.catch(() => ({ ...MATERIAL_ZERO_INVENTORY })),
+    starterHomesteadGrantResolved: z.boolean().optional().catch(undefined),
     craftingCurrencies: CraftingCurrencyInventorySchema.catch(() => ({ ...CRAFTING_CURRENCY_ZERO_INVENTORY })),
     constructedBuildings: createTierRecordSchema(buildings).catch(() => createEmptyTierRecord(buildings)),
     plantedFarms: createTierRecordSchema(farmPlots).catch(() => createEmptyTierRecord(farmPlots)),
@@ -163,26 +136,40 @@ export const SaveDataSchema = z
     // Single normalizer shared with getRawLastSavedAt (migration/index.ts):
     // fractional timestamps floor instead of resetting to 0, so candidate
     // freshness ordering agrees between the raw future check and this schema.
-    lastSavedAt: z.preprocess(
-      (value) => toFiniteNonNegativeInt(value) ?? value,
-      z.number().int().nonnegative().catch(0),
-    ),
+    lastSavedAt: z.preprocess((value) => toSafeNonNegativeInt(value) ?? value, z.number().int().nonnegative().catch(0)),
   })
   .transform((save) => {
     const flatInventory = flattenGearInventories(save.gearInventories);
     return {
       ...normalizeBoardSave(save),
-      // Load-only repairs (encode never applies these): live combat gold
-      // overrides the purse so a reloaded fight keeps its stakes, and orphan
-      // loadout references are pruned against the restored inventory.
-      // save-candidates.ts suppresses warnings for the gold override because
-      // it is intentional, not damage.
-      gold: resolvePersistedGold(
-        save.gold,
-        save.activeRun?.activity.kind === "battle" ? save.activeRun.activity.data.battleState.gold : undefined,
-      ),
       autoplayEnabled: resolveAutoplayEnabled(save),
+      starterHomesteadGrantResolved: save.starterHomesteadGrantResolved ?? hasHomesteadPurchases(save),
       gearLoadouts: pruneOrphanGearLoadouts(flatInventory, save.gearLoadouts),
+    };
+  });
+
+// Keep the raw candidate until validation proves the battle itself is usable.
+// A repaired zero must never override a valid purse, and a rejected battle has
+// no authority over permanent Gold even when its raw balance was valid.
+export const SaveDataSchema = z
+  .preprocess(
+    (value) => ({ save: value, combatGold: readRawCombatGold(value) }),
+    z.object({ save: SaveDataObjectSchema, combatGold: z.unknown() }),
+  )
+  .transform(({ save, combatGold }) => {
+    const run = save.activeRun;
+    if (run?.activity.kind !== "battle") return save;
+    const gold = isUsableLiveCombatGold(combatGold) ? Math.floor(combatGold) : save.gold;
+    return {
+      ...save,
+      gold,
+      activeRun: {
+        ...run,
+        activity: {
+          ...run.activity,
+          data: { battleState: { ...run.activity.data.battleState, gold } },
+        },
+      },
     };
   });
 

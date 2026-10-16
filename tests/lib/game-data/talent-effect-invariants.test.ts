@@ -1,3 +1,5 @@
+import { isAdditiveBonus } from "@/lib/game-data/talents/talent-builder";
+import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { describe, expect, it } from "vitest";
 import {
   createEmptyTalentEffectManifest,
@@ -6,13 +8,26 @@ import {
   talentPool,
 } from "@/lib/game-data";
 describe("talent effect invariants", () => {
+  it("keeps only fields granted by current Talents, Homestead tiers, or Companion Bonds", () => {
+    const granted = new Set<string>(["companionBondLevels"]);
+    for (const talent of talentPool) {
+      for (const field of Object.keys(talent.effects ?? {})) granted.add(field);
+    }
+    for (const item of [...buildings, ...farmPlots, ...researchUpgrades]) {
+      for (const tier of item.tiers) {
+        for (const field of Object.keys(tier.effects ?? {})) granted.add(field);
+      }
+    }
+    expect(Object.keys(DEFAULT_TALENT_EFFECTS).filter((field) => !granted.has(field))).toEqual([]);
+  });
+
   it("non-boolean set fields have a single writer unless they concatenate as arrays", () => {
     const writers = new Map<string, string[]>();
     for (const talent of talentPool) {
       if (isTalentPlaceholder(talent)) continue;
-      for (const effect of talent.effects ?? []) {
-        if (effect.kind !== "set" || typeof effect.value === "boolean" || Array.isArray(effect.value)) continue;
-        writers.set(effect.field, [...(writers.get(effect.field) ?? []), talent.id]);
+      for (const [field, value] of Object.entries(talent.effects ?? {})) {
+        if (typeof value === "boolean" || Array.isArray(value) || isAdditiveBonus(value)) continue;
+        writers.set(field, [...(writers.get(field) ?? []), talent.id]);
       }
     }
 
@@ -25,7 +40,6 @@ describe("talent effect invariants", () => {
     const first = createEmptyTalentEffectManifest();
     const next = createEmptyTalentEffectManifest();
     const before = structuredClone(next);
-    first.cardHealBonus.slash = 99;
     first.cardHealMultipliers.slash = 99;
     first.companionBondLevels.wolf = 99;
     first.healthThresholdArmor.push({ threshold: 50, amount: 3 });

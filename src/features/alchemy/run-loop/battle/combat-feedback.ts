@@ -4,10 +4,12 @@ import {
   COMBAT_RECOIL_COOLDOWN_MS,
   COMBAT_TEXT_LIFETIME_MS,
   COMBAT_TEXT_MIN_LIFETIME_MS,
+  COMBAT_TEXT_MAX_BURSTS_PER_RAIL,
+  REACTION_TEXT_LIFETIME_MS,
   SHAKE_DURATION_MS,
 } from "@/lib/game-constants";
 import { resolveGameDelay, TimerGroup } from "@/lib/animation/game-timer";
-import type { CombatImpactCue, CombatTextBurst } from "../../shared/types";
+import type { CombatImpactCue, CombatTextBurst, ReactionAnnouncement } from "../../shared/types";
 import { consolidateCombatBursts } from "./combat-feedback-merge";
 import { prepareCombatFeedback } from "./combat-feedback-model";
 
@@ -15,6 +17,7 @@ type Combatant = "player" | "enemy" | "companion";
 
 export interface CombatFeedbackState {
   floatingCombatBursts: CombatTextBurst[];
+  reactionAnnouncements: ReactionAnnouncement[];
   cardRejection: { cardKey: string; mana: boolean } | null;
   enemyShaking: boolean;
   playerShaking: boolean;
@@ -41,6 +44,7 @@ export interface CombatFeedbackActions {
 export function createCombatFeedbackState(): CombatFeedbackState {
   return {
     floatingCombatBursts: [],
+    reactionAnnouncements: [],
     cardRejection: null,
     enemyShaking: false,
     playerShaking: false,
@@ -130,7 +134,7 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
         const timestamp = now();
         const lifetimeMs = Math.max(COMBAT_TEXT_MIN_LIFETIME_MS, resolveGameDelay(COMBAT_TEXT_LIFETIME_MS));
         const prepared = prepareCombatFeedback(events, ++actionId, timestamp, lifetimeMs);
-        if (prepared.bursts.length === 0) return;
+        if (prepared.bursts.length === 0 && prepared.reactions.length === 0) return;
         const impacts: Partial<Pick<CombatFeedbackState, "playerImpactCue" | "enemyImpactCue">> = {};
         for (const key of ["playerImpactCue", "enemyImpactCue"] as const) {
           const visual = prepared.impacts[key];
@@ -145,21 +149,42 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
         update((state) => {
           const result = consolidateCombatBursts(state.floatingCombatBursts, prepared.bursts, timestamp);
           added = result.added;
-          return { floatingCombatBursts: result.bursts, ...impacts };
+          const reactionAnnouncements = (["player", "enemy"] as const).flatMap((target) =>
+            [...state.reactionAnnouncements, ...prepared.reactions]
+              .filter((entry) => entry.target === target && timestamp < entry.firstShownAt + entry.lifetimeMs)
+              .slice(-COMBAT_TEXT_MAX_BURSTS_PER_RAIL),
+          );
+          return { floatingCombatBursts: result.bursts, reactionAnnouncements, ...impacts };
         });
         // Subscribers may clear presentation while the update is being published.
-        if (sequence !== generation || added.length === 0) return;
-        const ids = new Set(added.map((burst) => burst.id));
-        textTimers.setTimeout(() => {
-          if (sequence !== generation) return;
-          update((state) => ({
-            floatingCombatBursts: state.floatingCombatBursts.filter((burst) => !ids.has(burst.id)),
-          }));
-        }, lifetimeMs);
+        if (sequence !== generation) return;
+        if (added.length > 0) {
+          const ids = new Set(added.map((burst) => burst.id));
+          textTimers.setTimeout(() => {
+            if (sequence !== generation) return;
+            update((state) => ({
+              floatingCombatBursts: state.floatingCombatBursts.filter((burst) => !ids.has(burst.id)),
+            }));
+          }, lifetimeMs);
+        }
+        if (prepared.reactions.length > 0) {
+          const ids = new Set(prepared.reactions.map((entry) => entry.id));
+          textTimers.setTimeout(() => {
+            if (sequence !== generation) return;
+            update((state) => ({
+              reactionAnnouncements: state.reactionAnnouncements.filter((entry) => !ids.has(entry.id)),
+            }));
+          }, REACTION_TEXT_LIFETIME_MS);
+        }
       },
       clearFloatingCombatTexts: () => {
         cancelTexts();
-        update(() => ({ floatingCombatBursts: [], playerImpactCue: null, enemyImpactCue: null }));
+        update(() => ({
+          floatingCombatBursts: [],
+          reactionAnnouncements: [],
+          playerImpactCue: null,
+          enemyImpactCue: null,
+        }));
       },
     },
   };

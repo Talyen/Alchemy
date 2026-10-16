@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import "../../../../helpers/mock-audio";
 import { bindRunMutationForTest, resetAllTestStores, setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -31,30 +32,27 @@ describe("shop refresh transaction", () => {
     setShopState({ ...emptyShopState(), cards: newItems, refreshesLeft: 1 });
     const before = readGameplayState(defaultGameSession);
     const onCommit = vi.fn();
-    const unsubscribe = subscribeRunSessionCommits(onCommit, defaultGameSession);
+    using _unsubscribe = createCleanup(subscribeRunSessionCommits(onCommit, defaultGameSession));
     vi.mocked(playGoldSpend).mockClear();
     vi.mocked(playUISound).mockClear();
-    try {
-      const result = runShopTransaction(
-        "shop",
-        (draft) => {
-          deductGold(draft, 25);
-          createDraftRunRandomSource(draft, "shops")();
-          mutateShopState(draft, { ...emptyShopState(), cards: [], refreshesLeft: 0 });
-          return { committed: false, price: 25, value: null };
-        },
-        "shopRefresh",
-        defaultGameSession,
-      );
 
-      expect(result).toEqual({ committed: false, price: 25, value: null });
-      expect(readGameplayState(defaultGameSession)).toBe(before);
-      expect(onCommit).not.toHaveBeenCalled();
-      expect(playGoldSpend).not.toHaveBeenCalled();
-      expect(playUISound).not.toHaveBeenCalled();
-    } finally {
-      unsubscribe();
-    }
+    const result = runShopTransaction(
+      "shop",
+      (draft) => {
+        deductGold(draft, 25);
+        createDraftRunRandomSource(draft, "shops")();
+        mutateShopState(draft, { ...emptyShopState(), cards: [], refreshesLeft: 0 });
+        return { committed: false, price: 25, value: null };
+      },
+      "shopRefresh",
+      defaultGameSession,
+    );
+
+    expect(result).toEqual({ committed: false, price: 25, value: null });
+    expect(readGameplayState(defaultGameSession)).toBe(before);
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(playGoldSpend).not.toHaveBeenCalled();
+    expect(playUISound).not.toHaveBeenCalled();
   });
 
   it("commits gold and refreshed state atomically", () => {

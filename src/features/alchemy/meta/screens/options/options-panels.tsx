@@ -1,44 +1,27 @@
+import type { LanguagePreference } from "@/lib/localization/runtime";
+import { useGameTranslation } from "@/components/use-game-translation";
+
+import { LANGUAGE_OPTIONS } from "@/lib/localization/language";
 import { Button } from "@/components/ui/button";
 import { displayModeOptions } from "@/features/alchemy/shared/config";
 import { DEVICE_DISPLAY_RANGES, SETTINGS_RANGES } from "@/lib/settings-values";
 import { SettingsSelect, SettingsSlider, SettingsToggle, SettingsSection, SettingsAction } from "./settings-controls";
-import type { DisplayMode } from "../../../shared/types";
+import type { SettingsActions, SettingsSaveFields } from "../../../shared/stores/settings-store";
 
 export interface DisplayOptionsProps {
   onOpenBoards?: (() => void) | undefined;
-  displayMode: DisplayMode;
-  onDisplayModeChange: (mode: DisplayMode) => void;
+  languagePreference: LanguagePreference;
+  onLanguageChange: (value: LanguagePreference) => void;
   showDisplayMode: boolean;
-  brightness: number;
-  onBrightnessChange: (value: number) => void;
-  backgroundParticlesIntensity: number;
-  onBackgroundParticlesIntensityChange: (value: number) => void;
-  backgroundGlowIntensity: number;
-  onBackgroundGlowIntensityChange: (value: number) => void;
   gameSizePercent: number;
   tooltipSizePercent: number;
   onGameSizeChange: (value: number) => void;
   onTooltipSizeChange: (value: number) => void;
 }
 
-export interface AudioOptionsProps {
-  masterVolume: number;
-  musicVolume: number;
-  sfxVolume: number;
-  onMasterVolumeChange: (value: number) => void;
-  onMusicVolumeChange: (value: number) => void;
-  onSfxVolumeChange: (value: number) => void;
-  bossLyricsEnabled: boolean;
-  onBossLyricsEnabledChange: (checked: boolean) => void;
-  muteInBackground: boolean;
-  onMuteInBackgroundChange: (checked: boolean) => void;
-}
-
-export interface GameplayOptionsProps {
-  autoEndTurn: boolean;
-  onAutoEndTurnChange: (checked: boolean) => void;
-  rememberAutoplayPreference: boolean;
-  onRememberAutoplayPreferenceChange: (checked: boolean) => void;
+export interface OptionsPreferences {
+  values: SettingsSaveFields;
+  actions: SettingsActions;
 }
 
 export interface SaveDataOptionsProps {
@@ -54,55 +37,73 @@ export interface DevOptionsProps {
   onOpenErrorLog?: () => void;
 }
 
-export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps }) {
+export function DisplayOptionsPanel({
+  display,
+  preferences,
+}: {
+  display: DisplayOptionsProps;
+  preferences: OptionsPreferences;
+}) {
+  const i18n = useGameTranslation();
+  const { values, actions } = preferences;
   return (
     <div className="space-y-4">
-      <SettingsSection title="Display">
+      <SettingsSection title={i18n.text("ui.options-panels.1", "Display")}>
+        <SettingsSelect
+          id="language"
+          label={i18n.text("options.language-choice", "Language")}
+          value={display.languagePreference}
+          options={LANGUAGE_OPTIONS}
+          onChange={display.onLanguageChange}
+        />
         {display.onOpenBoards ? (
-          <SettingsAction label="Game Boards" description="Battle background artwork">
-            <Button onClick={display.onOpenBoards}>Browse Boards</Button>
+          <SettingsAction
+            label={i18n.text("ui.options-panels.2", "Game Boards")}
+            description={i18n.text("ui.options-panels.3", "Battle background artwork")}
+          >
+            <Button onClick={display.onOpenBoards}>{i18n.text("ui.options-panels.4", "Browse Boards")}</Button>
           </SettingsAction>
         ) : null}
         {display.showDisplayMode ? (
           <SettingsSelect
             id="display-mode"
-            label="Display Mode"
-            value={display.displayMode}
+            label={i18n.text("ui.options-panels.5", "Display Mode")}
+            value={values.displayMode}
             options={displayModeOptions}
-            onChange={display.onDisplayModeChange}
+            onChange={actions.setDisplayMode}
           />
         ) : null}
         <SettingsSlider
-          label="Brightness"
-          value={display.brightness}
-          onChange={display.onBrightnessChange}
+          label={i18n.text("ui.options-panels.6", "Brightness")}
+          value={values.brightness}
+          onChange={actions.setBrightness}
           min={SETTINGS_RANGES.brightness.min}
           max={SETTINGS_RANGES.brightness.max}
         />
         <SettingsSlider
-          label="Game Size"
+          label={i18n.text("ui.options-panels.7", "Game Size")}
           value={display.gameSizePercent}
           onChange={display.onGameSizeChange}
           {...DEVICE_DISPLAY_RANGES.gameSizePercent}
         />
         <SettingsSlider
-          label="Tooltip Size"
+          label={i18n.text("ui.options-panels.8", "Tooltip Size")}
           value={display.tooltipSizePercent}
           onChange={display.onTooltipSizeChange}
           {...DEVICE_DISPLAY_RANGES.tooltipSizePercent}
         />
       </SettingsSection>
-      <SettingsSection title="Background">
+      <SettingsSection title={i18n.text("ui.options-panels.9", "Background")}>
         <SettingsSlider
-          label="Background Glow"
-          value={display.backgroundGlowIntensity}
-          onChange={display.onBackgroundGlowIntensityChange}
+          label={i18n.text("ui.options-panels.10", "Background Glow")}
+          value={values.backgroundGlowIntensity}
+          onChange={actions.setBackgroundGlowIntensity}
           {...SETTINGS_RANGES.specialEffects}
         />
         <SettingsSlider
-          label="Background Particles"
-          value={display.backgroundParticlesIntensity}
-          onChange={display.onBackgroundParticlesIntensityChange}
+          label={i18n.text("ui.options-panels.11", "Background Particles")}
+          value={values.backgroundParticlesIntensity}
+          onChange={actions.setBackgroundParticlesIntensity}
           {...SETTINGS_RANGES.specialEffects}
         />
       </SettingsSection>
@@ -110,56 +111,77 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
   );
 }
 
-export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
+export function AudioOptionsPanel({ preferences }: { preferences: OptionsPreferences }) {
+  const i18n = useGameTranslation();
+  const { values, actions } = preferences;
   return (
-    <SettingsSection title="Audio">
+    <SettingsSection title={i18n.text("ui.options-panels.12", "Audio")}>
       {(
         [
-          ["Overall Volume", audio.masterVolume, audio.onMasterVolumeChange],
-          ["Music Volume", audio.musicVolume, audio.onMusicVolumeChange],
-          ["Sound Effects Volume", audio.sfxVolume, audio.onSfxVolumeChange],
+          ["Overall Volume", values.masterVolume, actions.setMasterVolume],
+          ["Music Volume", values.musicVolume, actions.setMusicVolume],
+          ["Sound Effects Volume", values.sfxVolume, actions.setSfxVolume],
         ] as const
       ).map(([label, value, onChange]) => (
-        <SettingsSlider key={label} label={label} value={value} onChange={onChange} {...SETTINGS_RANGES.volume} />
+        <SettingsSlider
+          key={label}
+          label={i18n.displayText(label)}
+          value={value}
+          onChange={onChange}
+          {...SETTINGS_RANGES.volume}
+        />
       ))}
       <SettingsToggle
-        label="Boss Lyrics"
-        checked={audio.bossLyricsEnabled}
-        onChange={audio.onBossLyricsEnabledChange}
+        label={i18n.text("ui.options-panels.13", "Boss Lyrics")}
+        checked={values.bossLyricsEnabled}
+        onChange={actions.setBossLyricsEnabled}
       />
       <SettingsToggle
-        label="Mute in Background"
-        checked={audio.muteInBackground}
-        onChange={audio.onMuteInBackgroundChange}
+        label={i18n.text("ui.options-panels.14", "Mute in Background")}
+        checked={values.muteInBackground}
+        onChange={actions.setMuteInBackground}
       />
     </SettingsSection>
   );
 }
 
-export function GameplayOptionsPanel({ gameplay }: { gameplay: GameplayOptionsProps }) {
+export function GameplayOptionsPanel({ preferences }: { preferences: OptionsPreferences }) {
+  const i18n = useGameTranslation();
+  const { values, actions } = preferences;
   return (
-    <SettingsSection title="Battle">
-      <SettingsToggle label="Auto-End Turn" checked={gameplay.autoEndTurn} onChange={gameplay.onAutoEndTurnChange} />
+    <SettingsSection title={i18n.text("ui.options-panels.15", "Battle")}>
       <SettingsToggle
-        label="Remember Auto-Battle Preference"
-        checked={gameplay.rememberAutoplayPreference}
-        onChange={gameplay.onRememberAutoplayPreferenceChange}
+        label={i18n.text("ui.options-panels.16", "Auto-End Turn")}
+        checked={values.autoEndTurn}
+        onChange={actions.setAutoEndTurn}
+      />
+      <SettingsToggle
+        label={i18n.text("ui.options-panels.17", "Remember Auto-Battle Preference")}
+        checked={values.rememberAutoplayPreference}
+        onChange={actions.setRememberAutoplayPreference}
       />
     </SettingsSection>
   );
 }
 
 function SaveDataOptionsPanel({ saveData }: { saveData: SaveDataOptionsProps }) {
+  const i18n = useGameTranslation();
   return (
-    <SettingsSection title="Reset & Save Data">
-      <SettingsAction label="Options" description="Reset all options to default values">
+    <SettingsSection title={i18n.text("ui.options-panels.18", "Reset & Save Data")}>
+      <SettingsAction
+        label={i18n.text("ui.options-panels.19", "Options")}
+        description={i18n.text("ui.options-panels.20", "Reset all options to default values")}
+      >
         <Button variant="outline" onClick={saveData.onResetOptions}>
-          Reset to Default
+          {i18n.text("ui.options-panels.21", "Reset to Default")}
         </Button>
       </SettingsAction>
-      <SettingsAction label="Save Data" description="Clear all existing save data and start fresh">
+      <SettingsAction
+        label={i18n.text("ui.options-panels.22", "Save Data")}
+        description={i18n.text("ui.options-panels.23", "Clear all existing save data and start fresh")}
+      >
         <Button variant="destructive" onClick={saveData.onOpenClearSaveConfirm}>
-          Clear Save Data
+          {i18n.text("ui.options-panels.24", "Clear Save Data")}
         </Button>
       </SettingsAction>
     </SettingsSection>
@@ -167,19 +189,26 @@ function SaveDataOptionsPanel({ saveData }: { saveData: SaveDataOptionsProps }) 
 }
 
 function DevOptionsPanel({ dev }: { dev: DevOptionsProps }) {
+  const i18n = useGameTranslation();
   if (!import.meta.env.DEV) return null;
   return (
-    <SettingsSection title="Dev Only">
+    <SettingsSection title={i18n.text("ui.options-panels.25", "Dev Only")}>
       <SettingsAction
-        label="Dev / QA Unlocks"
-        description="Unlock every collection entry and grant every talent node for testing"
+        label={i18n.text("ui.options-panels.27", "Dev / QA Unlocks")}
+        description={i18n.text(
+          "ui.options-panels.28",
+          "Unlock every collection entry and grant every talent node for testing",
+        )}
       >
-        <Button onClick={dev.onUnlockAll}>Unlock All</Button>
+        <Button onClick={dev.onUnlockAll}>{i18n.text("ui.options-panels.29", "Unlock All")}</Button>
       </SettingsAction>
       {dev.onOpenErrorLog ? (
-        <SettingsAction label="Error Log" description="Inspect errors logged during this session for bug reports">
+        <SettingsAction
+          label={i18n.text("ui.options-panels.30", "Error Log")}
+          description={i18n.text("ui.options-panels.31", "Inspect errors logged during this session for bug reports")}
+        >
           <Button variant="outline" onClick={dev.onOpenErrorLog}>
-            View Log
+            {i18n.text("ui.options-panels.32", "View Log")}
           </Button>
         </SettingsAction>
       ) : null}
@@ -188,6 +217,7 @@ function DevOptionsPanel({ dev }: { dev: DevOptionsProps }) {
 }
 
 export function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; dev: DevOptionsProps }) {
+  useGameTranslation();
   return (
     <div className="space-y-4">
       <SaveDataOptionsPanel saveData={saveData} />

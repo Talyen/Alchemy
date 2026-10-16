@@ -104,17 +104,17 @@ describe("playUISound", () => {
     expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
   });
 
-  it("plays salvage with the mine sound", () => {
-    expect(uiSounds.salvage).toBe("mine-2.ogg");
+  it("plays the committed salvage cue", () => {
+    expect(uiSounds.salvage).toBe("fit-item-salvage.ogg");
     playUISound("salvage");
-    expect(lastFakeAudio()?.src).toContain("mine-2.");
+    expect(lastFakeAudio()?.src).toContain("fit-item-salvage.");
     expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
   });
 });
 
 it("playVictory plays victory stinger", () => {
   playVictory();
-  expect(lastFakeAudio()?.src).toContain("harpsichord-level-complete.");
+  expect(lastFakeAudio()?.src).toContain("fit-victory.");
   expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
 });
 
@@ -139,7 +139,7 @@ describe("cold runtime playback", () => {
     expect(soundedFakeAudio()).toHaveLength(3);
     expect(soundedFakeAudio().some((el) => el.src.includes("denied-03."))).toBe(true);
     expect(soundedFakeAudio().some((el) => el.src.includes(battleEventSounds.enemyHit))).toBe(true);
-    expect(soundedFakeAudio().some((el) => el.src.includes("harpsichord-level-complete."))).toBe(true);
+    expect(soundedFakeAudio().some((el) => el.src.includes("fit-victory."))).toBe(true);
   });
 
   it("does not play when muted", () => {

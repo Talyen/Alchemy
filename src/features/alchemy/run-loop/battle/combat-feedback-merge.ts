@@ -1,4 +1,4 @@
-import type { CombatTextEvent } from "@/lib/battle";
+import { mergeCombatText, type CombatTextEvent } from "@/lib/battle";
 import { COMBAT_TEXT_MERGE_WINDOW_MS, COMBAT_TEXT_MAX_BURSTS_PER_RAIL } from "@/lib/game-constants";
 import type { CombatTextBurst, FloatingCombatText } from "../../shared/types";
 
@@ -20,13 +20,20 @@ function combinedEntry(existing: FloatingCombatText, incoming: FloatingCombatTex
     existing.additive === false ||
     incoming.additive === false ||
     existing.impact !== incoming.impact ||
+    !!existing.periodic !== !!incoming.periodic ||
     Math.sign(existing.amount) !== Math.sign(incoming.amount)
   )
     return;
   const amount = existing.amount + incoming.amount;
   if (String(Math.abs(amount)).length > (existing.reservedDigits ?? 0)) return;
-  const result = { ...existing, amount };
-  return { ...result, displayText: combatTextDisplay(result) };
+  const merged = [{ ...existing }];
+  mergeCombatText(merged, incoming);
+  const result = merged[0]!;
+  return {
+    ...result,
+    displayText: combatTextDisplay(result),
+    ...(result.kind === "damage" && result.critical ? { includesCritical: true } : {}),
+  };
 }
 
 function mergeIntoExisting(current: CombatTextBurst[], burst: CombatTextBurst, now: number) {

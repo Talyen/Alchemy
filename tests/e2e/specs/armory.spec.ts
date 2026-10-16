@@ -34,6 +34,7 @@ test.describe("Armory equip", () => {
         gearInventories,
         gearLoadouts: createEmptyGearLoadouts(),
       });
+      await menu.expectMainMenuAfterColdStart();
       await injectActiveBattle(page, makeGoblinBattleState());
 
       await page.getByRole("button", { name: "Open game menu" }).click();
@@ -67,7 +68,9 @@ test(
     gearInventories.knight = [affixedSword, bodyGear];
     const gearLoadouts = createEmptyGearLoadouts();
     gearLoadouts.knight["main-hand"] = affixedSword.instanceId;
-    await new MenuPage(page).gotoWithUnlockedMeta({ gearInventories, gearLoadouts });
+    const menu = new MenuPage(page);
+    await menu.gotoWithUnlockedMeta({ gearInventories, gearLoadouts });
+    await menu.expectMainMenuAfterColdStart();
     await injectActiveBattle(
       page,
       makeGoblinBattleState({

@@ -32,13 +32,32 @@ for every action or change the intentional silent-content registrations below.
 
 The [boss karaoke experiment](../scripts/lyrics-trial/README.md) runs local
 word alignment against supplied lyrics and provides a standalone preview.
-The accepted phrase-bounded Blight Treant timing snapshot is checked in at
-`src/lib/audio/lyrics/blight-treant.json`, tied to the recording by SHA-256.
-It supplies the first Battle UI lyric track; other bosses remain without lyrics
-until their own timing data is authored. The experiment remains a separate
-comparison tool. Generated timings still need performance-coverage and audible
-synchronization review; two introductory lines were undetected and two ASR
-words remain unmatched in this trial.
+Phrase-bounded timing snapshots for The Blight Treant, The Forge Golem,
+The Frostwarden and The Iron Bear live in `src/lib/audio/lyrics/`, each tied to
+its recording by SHA-256. `lyrics.ts` registers them by music key. The new lyric
+sheets are retained in `scripts/lyrics-trial/` and match the supplied sheets and
+the MP3 lyric metadata; section labels and sound directions are excluded.
+Unclear Forge Golem chant groups use bracketed vocal cues.
+The experiment remains a separate comparison tool. Generated timings still need
+performance-coverage and audible synchronization review; coverage metadata
+records undetected phrases and unmatched ASR words rather than forcing them
+into the timeline. Treant's existing snapshot has two undetected introductory
+lines and two unmatched ASR words.
+
+Targeted vocal-stem recovery restores Iron Bear's three rejected chorus repeats
+and second "singe through hide" line, plus four missing Frostwarden lines.
+The two adjoining Frostwarden "Melts me" responses are realigned so they no
+longer consume the preceding "What burns me" call. The
+[recovery workflow](../scripts/lyrics-trial/README.md#targeted-vocal-stem-recovery)
+retains source hashes, search windows and model settings. These lines were in
+the supplied sheets; detection and invalid word timings caused their omission.
+Iron Bear's growled bridge, final "remember what you bleed" and one backing
+vocal, Forge Golem's chants, and Frostwarden's "Aaaah" remain unresolved as exact
+word alignments. These passages now display `[growls]`, `[chants]`, or
+`[vocalizing]` in bounded vocal windows. Clear adjoining lyrics retain their word
+timings. Cue boundaries are manually annotated from the separated vocal timeline;
+they describe the passage without asserting its words. This does not establish
+that the supplied words are absent from the recordings.
 
 `Boss Lyrics` in Audio settings defaults on and persists through the normal
 settings codec. The battle lyric leaf samples `readMusicPlayback()` from the
@@ -50,6 +69,10 @@ the visible words or highlight change. Words build the phrase as sung, with a
 180ms opacity and small scale pop on entry. Earlier words stay dim and still;
 only the current whole word uses the gold highlight. No alignment models,
 transcription, audio decoding, or per-word timers run in the game.
+Iron Bear timings use the original recording's timestamps, including its
+six-second playback skip; no second offset is applied. Sung words remain in the
+recording's language when the interface language changes. The accessible
+"Song lyrics" label and bracketed vocal cues follow the interface language.
 
 ## Runtime contract
 
@@ -66,7 +89,7 @@ Playback modules live together in `src/lib/audio/`; callers use `@/lib/audio`, b
 
 - `useAppAudioEffects` starts best-effort warming when the app shell mounts after the startup gate. UI sounds and the draw-transfer cue warm immediately; the remaining manifest warms in one input-idle callback. Startup does not wait for audio fetching or decoding. Battle initialization also warms the full battle event set, opening-hand cards, and enemy ability cards.
 - Crafted Mixed Potion IDs resolve to the base Potion sound for both playback and battle preloading.
-- Every card and companion has a nonempty focal registration, enforced by exact catalog coverage in `tests/lib/audio/sound-registry.test.ts`. Companion turns use their summoning card's cue. Enemy turns use ability card cues, and Bestiary portrait clicks have no sound effect. Gold gain/spending remain distinct, and explicit UI/service silence remains intentional.
+- Every card and companion has a nonempty focal registration, enforced by exact catalog coverage in `tests/lib/audio/sound-registry.test.ts`. Companion turns select from their actual resolved effects; summoning cards retain their authored arrival cue. Enemy turns use ability card cues, and Bestiary portrait clicks have no sound effect. Gold gain/spending remain distinct, and explicit UI/service silence remains intentional.
 - Card selections in drafting, Transmutation and Corruption, plus battle draw-batch acknowledgment, are intentionally silent. Successful Transmutation plays the existing card-reward chime (`talentUnlock`) once after the covering save; resuming its result screen is silent. Card movement into the hand retains its separate draw-transfer cue.
 - UI event keys remain available when their cue is `null`. Playback and preloading skip these explicit silence choices. Resolved registrations and processing inputs live in [the approved cue mappings](./design/audio-review/approved-choices.json).
 
@@ -122,32 +145,51 @@ still needs an in-game listening pass.
 
 ### Battle sound focus
 
-Accepted cards, enemy abilities, and companion actions request one authored focal
-cue at activation. Card playback returns the selected filename even
-when muted or cooldown-suppressed; this identifies the source for its later
-feedback, rather than claiming playback succeeded. No shared action pointer or
-persisted audio state is needed. Accepted Cleanse still sounds when it removes
-nothing. End Turn and Wish selection acknowledge successful commits.
+Accepted cards and enemy abilities select one cue from their committed results
+before playback. Authored sword, bow, bite, food, Potion, ritual and movement
+identities remain the ordinary cues. Maul, Cinderbloom, Sunburst, Blessed Aegis,
+Molten Bulwark, Golden Plate, Spiked Shield, Pixie Dust, Shield Bash, Astral Arrow,
+Holy Radiance, Burning Blade, Cauterize and Bellows Blast follow their actual
+resolved outcome. Companion turns use their actual damage/healing/status results;
+summoning cards retain their arrival cues.
 
-An authored focal cue suppresses routine damage, healing, Gold, Armor, Forge,
-and other status layers. At resolution, at most one accent is selected:
-Shatter, Wildfire, critical hit, Dodge, Freeze, then Stun. Prepared or removed
-statuses are not procs. If the accent uses the focal recording, it is omitted
-without substituting another accent. Death's Door, slice death and outcome
-stingers remain separate. Quiet draw/discard paper cues follow card movement.
-Different actions may overlap while their clips finish; there is no global
-voice-stealing rule.
+Shatter uses its existing impact recording without implying a Critical.
+Thunderclap and Frostfire reuse ordinary typed-damage selection and existing
+assets; their reaction names use the existing combat announcements.
 
-Armor stripping has no standalone cue; its triggering action supplies the sound.
-Standalone Armor gains use the equipment rustle cue. An authored focal cue
-suppresses routine Armor gain feedback.
+Death's Door replaces the ordinary action cue. Actual Shatter, Dodge, Freeze and
+Stun outcomes precede ordinary results; prepared, removed and immune statuses are
+not control procs. Otherwise summed damage by keyword and direct/periodic role, actual Health restored,
+Block gained and Block absorbed compete. Ties favor damage, healing, then Block,
+with source order retained within a priority. Mana, Gold, Armor, Forge, Thorns,
+Wish and draw are semantic fallbacks; stripping and spending do not add strength.
+Critical Health-damage metadata selects a typed critical recording for the winning
+damage result. There is no universal metallic critical layer or extra Wildfire
+sound over a focal cue. Slash/Stab retain weapon criticals; Astral Arrow uses one
+bow-plus-element recording matching its actual element, with corresponding critical
+revisions. Periodic Poison and Bleed retain separate tick recordings.
 
-Without a focal cue, one standalone feedback cue is selected: special outcomes,
-damage, healing, cleanse, Mana, Armor, Forge, Block, Thorns, Gold, Wish, then draw.
-Only damage magnitudes compete numerically. Ties prefer Burn, Poison, Bleed,
-player hit, Block absorption, then enemy hit. Resolved `critical` and `periodic`
-metadata distinguishes ordinary spells from critical hits and Burn/Poison/Bleed
-ticks. The selector does not change combat calculations, saves or visual feedback.
+Feedback packet metadata carries actual `healthLost` and `absorbedDamage` when
+the resolver has those facts; displayed damage and Block spending amounts stay
+unchanged. Merging sums these resolved facts and keeps direct hits separate from
+periodic ticks. Self-costs and stripped Block use non-impact feedback.
+
+The chosen filename travels to later text presentation so it cannot replay or add
+a second cue. Playback returns this filename even when muted or cooldown-suppressed;
+it does not claim output was audible. Accepted Cleanse still sounds when it removes
+nothing. End Turn and Wish selection acknowledge successful commits. Slice death,
+quiet paper movement and outcome stingers remain separate beats. Separate actions
+may overlap; no new global voice-stealing policy is introduced.
+
+Trinket's Heal, Holy impact, Gut Punch, control activation, Dodge, Salvage,
+talent-unlock, toggle and short Victory recordings are adopted through the source
+manifest. Corruption uses the dark Life Tap cue; structure improvements use the
+hammer cue and companion bonding retains the positive piano. The short rock
+revision used by Meteor/Earthquake selects 0–1.2 seconds; shared revisions and
+critical/bow processing are recorded by the Asset Library's
+`Sounds/Game Sources/Sound Effects/Shared Revisions/sound_fit_20261015/sources.json`.
+Both games retain their own encoders and user-volume controls. Perceptual and
+hardware mix acceptance remains pending.
 
 The [focused Sound desk](#battle-replacement-auditions)
 covers card and companion cues. Exorcism uses

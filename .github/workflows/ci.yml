@@ -60,6 +60,9 @@ jobs:
               - "index.html"
               - "public/startup-*.js"
               - "src/main.tsx"
+              - "src/lib/localization/**"
+              - "scripts/localization*"
+              - "scripts/localization/**"
               - "src/lib/platform.ts"
               - "src/lib/desktop-api.ts"
               - "src/lib/settings-values.ts"
@@ -100,6 +103,9 @@ jobs:
               - "src/main.tsx"
               - "src/App.tsx"
               - "src/app/**"
+              - "src/lib/localization/**"
+              - "scripts/localization*"
+              - "scripts/localization/**"
               - "src/lib/platform.ts"
               - "src/lib/desktop-api.ts"
               - "src/lib/settings-values.ts"
@@ -297,6 +303,13 @@ jobs:
 
       - run: mkdir -p reports
 
+      - name: Localization layout, gameplay and font acceptance
+        # The six-locale acceptance matrix needs a longer aggregate budget than critical smoke.
+        run: npm run test:e2e:dev -- tests/e2e/specs/localization.spec.ts tests/e2e/specs/localization-gameplay.spec.ts --global-timeout=900000
+        env:
+          ALCHEMY_LOCALIZATION_LAYOUT_REVIEW: "1"
+          PLAYWRIGHT_JSON_OUTPUT_NAME: reports/playwright-localization-results.json
+
       - name: Run critical e2e tests
         run: npm run test:e2e:critical
         env:
@@ -327,8 +340,39 @@ jobs:
             playwright-report/
             test-results/
             reports/playwright-results.json
+            reports/playwright-localization-results.json
+            reports/localization-layout/
             reports/current-run.*
             reports/runs/
+          retention-days: 1
+
+  localization-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      ALCHEMY_EDITION: demo
+      ALCHEMY_LOCALIZATION_LAYOUT_REVIEW: "1"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/setup-playwright
+      - run: npm run build:desktop
+      - run: npm run check:bundle
+      - name: Qualify production demo and localized endings
+        run: npm run test:e2e -- tests/e2e/specs/steam-demo.spec.ts tests/e2e/specs/localization-demo.spec.ts
+      - name: Ensure Electron binary
+        run: node scripts/ensure-electron.mjs
+      - name: Qualify native localized quit and resume
+        run: xvfb-run -a npm run test:ship:desktop -- tests/electron/localization-demo.spec.ts
+        env:
+          PLAYWRIGHT_ELECTRON_FULL: "1"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: failure()
+        with:
+          name: localization-demo-diagnostics
+          path: |
+            reports/
+            test-results/
           retention-days: 1
 
   ship-gate:

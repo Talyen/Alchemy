@@ -5,7 +5,6 @@ import { createNumericManifest } from "@/lib/manifest-utils";
 export const defaultHomesteadEffects: HomesteadEffectManifest = {
   ...createNumericManifest(HOMESTEAD_BATTLE_NUMERIC_KEYS),
   companionBondLevels: { ...defaultCompanionBondLevels },
-  cardHealBonus: {},
   herbFindBonus: 0,
   woodFindBonus: 0,
   stoneFindBonus: 0,

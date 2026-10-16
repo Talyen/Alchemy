@@ -240,6 +240,14 @@
     translate: 0 6px;
   }
 
+  .card-inspection-overlay-tabs {
+    align-items: flex-start;
+    padding-top: max(1.5rem, 10vh);
+  }
+  .card-inspection-overlay-tabs > [role="dialog"] {
+    width: min(100%, calc(64 * var(--content-rem, 1rem)));
+  }
+
   .card-inspection-overlay-empty > [role="dialog"] {
     min-width: min(20rem, 100%);
   }
@@ -299,89 +307,43 @@
       shine 8s linear infinite,
       talentAllocatableShineIn 500ms var(--ease-out-expo) both;
   }
-
-  .alchemy-startup-bar {
-    background: var(--color-primary);
-    transform-origin: left;
-    will-change: transform;
-  }
-
-  .alchemy-loading-fade {
-    animation: startupBlurFadeIn 320ms var(--ease-out-expo) both;
-  }
-
-  .alchemy-loading-word {
-    animation: loadingWordFade 200ms ease-out both;
-    will-change: opacity, transform;
-  }
-
-  .alchemy-loading-logo-fill {
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 100%;
-    overflow: hidden;
-    transform: translate3d(-100%, 0, 0);
-    animation: loadingLogoReveal 5000ms ease-out forwards;
-    will-change: transform;
-  }
-
-  .alchemy-loading-logo-fill-text {
-    display: block;
-    width: 100%;
-    transform: translate3d(100%, 0, 0);
-    animation: loadingLogoCounter 5000ms ease-out forwards;
-    will-change: transform;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .alchemy-loading-logo-fill {
-      animation: none;
-      transform: translate3d(0%, 0, 0);
-    }
-
-    .alchemy-loading-logo-fill-text {
-      animation: none;
-      transform: translate3d(0%, 0, 0);
-    }
-  }
 }
 
-/* Resource changes resize the crystals inside the fixed frame. */
+/* The hand rests at the viewport edge; Mana follows the hero portrait. */
 .battle-hand-dock {
   position: relative;
+  width: min(100%, calc(68 * var(--content-rem, 1rem)));
   min-width: 0;
 }
-.battle-hand-dock .mana-hand {
+.battle-hand-dock .battle-hand {
   width: 78%;
   margin-inline: auto;
 }
 .mana-dock {
   position: absolute;
-  width: 80%;
+  /* Half the former dock's dimensions keeps every crystal and effect at half size. */
+  width: min(calc(27.2 * var(--content-rem, 1rem)), calc((100vw - 2.25 * var(--content-rem, 1rem)) * 0.4));
   aspect-ratio: 2165 / 333;
-  left: 10%;
-  bottom: calc(-1.125 * var(--content-rem, 1rem) - 4px);
-  z-index: 50;
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, 20%);
+  z-index: 20;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: help;
   pointer-events: none;
 }
-.mana-dock-frame {
-  display: block;
-  width: 100%;
-  height: 100%;
-  user-select: none;
-}
-.mana-dock-inspect {
+.mana-dock::before {
+  content: "";
   position: absolute;
-  inset: 0;
-  background: transparent;
-  border: 0;
-  padding: 0;
-  cursor: help;
-  clip-path: polygon(0 100%, 0 43%, 5% 20%, 12% 15%, 16% 4%, 50% 0, 84% 4%, 88% 15%, 95% 20%, 100% 43%, 100% 100%);
+  inset: 28% 18% 30%;
   pointer-events: auto;
 }
-.mana-dock-inspect:focus-visible {
+.mana-dock:focus-visible {
   outline: none;
+}
+.mana-dock:focus-visible::before {
   background: rgb(255 244 222 / 8%);
 }
 .mana-dock-gem {
@@ -559,6 +521,7 @@
 }
 
 @utility boss-title-shine {
+  -webkit-text-stroke: 0;
   animation: var(--animate-boss-title-shine);
   will-change: background-position;
 }
@@ -607,6 +570,7 @@
 }
 
 .text-shine-corruption {
+  -webkit-text-stroke: 0;
   background-image: linear-gradient(
     in oklab 90deg,
     var(--color-destructive),

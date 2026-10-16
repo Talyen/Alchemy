@@ -1,3 +1,6 @@
+import { packCatalogs } from "../../src/lib/localization/catalog-format.mjs";
+import languages from "../../src/lib/localization/locales/languages.json";
+import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
@@ -122,7 +125,14 @@ function packagingFixture(edition: "full" | "demo", html = '<script type="module
   const repo = new URL("../..", import.meta.url);
   // Keep all packaging writes in a temporary project, including generated config.
   cpSync(new URL("scripts", repo), join(root, "scripts"), { recursive: true });
-  for (const file of ["package.json", "game-edition.mjs", "desktop/package-layout.cjs", "steam/platforms.json"]) {
+  for (const file of [
+    "package.json",
+    "game-edition.mjs",
+    "desktop/package-layout.cjs",
+    "steam/platforms.json",
+    "src/lib/localization/catalog-format.mjs",
+    "src/lib/localization/locales/languages.json",
+  ]) {
     const target = join(root, file);
     mkdirSync(dirname(target), { recursive: true });
     cpSync(new URL(file, repo), target);
@@ -135,6 +145,23 @@ function packagingFixture(edition: "full" | "demo", html = '<script type="module
   const renderer = edition === "demo" ? "dist-demo" : "dist";
   mkdirSync(join(root, renderer, "assets"), { recursive: true });
   writeFileSync(join(root, renderer, "edition.json"), JSON.stringify({ edition }));
+  const catalog = JSON.stringify(
+    packCatalogs(
+      Object.fromEntries(
+        Object.keys(languages).map((locale) => [locale, { play: locale === "de" ? "Spielen" : "Play" }]),
+      ),
+      {},
+    ),
+  );
+  writeFileSync(join(root, renderer, "assets/runtime-fixture.json"), catalog);
+  writeFileSync(
+    join(root, renderer, "localization.json"),
+    JSON.stringify({
+      version: 1,
+      catalog: "assets/runtime-fixture.json",
+      sha256: createHash("sha256").update(catalog).digest("hex"),
+    }),
+  );
   writeFileSync(join(root, renderer, "index.html"), html);
   writeFileSync(join(root, renderer, "assets/index.js"), "console.log('ready');");
   for (const [asset, bytes] of Object.entries({

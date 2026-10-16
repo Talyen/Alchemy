@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { describe, expect, it, vi } from "vitest";
 
 import { validateMusicRegistry } from "../../scripts/assets/music-assets.mjs";
@@ -20,13 +21,11 @@ describe("registry validation consolidation", () => {
     await expect(validateSoundAssetRegistry()).resolves.toBeUndefined();
     const overlap = generatedSoundAssets[0].target;
     curatedSoundFiles.push(alias ? overlap[0].toUpperCase() + overlap.slice(1) : overlap);
-    try {
-      await expect(validateSoundAssetRegistry()).rejects.toThrow(
-        `Sound target is both generated and curated: "${overlap}"`,
-      );
-    } finally {
-      curatedSoundFiles.pop();
-    }
+    using _scopeCleanup = createCleanup(() => curatedSoundFiles.pop());
+
+    await expect(validateSoundAssetRegistry()).rejects.toThrow(
+      `Sound target is both generated and curated: "${overlap}"`,
+    );
   });
 
   it.each(["../escaped.ogg", "nested/escaped.ogg", "nested\\escaped.ogg"])(
@@ -39,11 +38,9 @@ describe("registry validation consolidation", () => {
         generatedSoundAssets.pop();
       }
       curatedSoundFiles.push(target);
-      try {
-        await expect(validateSoundAssetRegistry()).rejects.toThrow("Invalid target");
-      } finally {
-        curatedSoundFiles.pop();
-      }
+      using _scopeCleanup = createCleanup(() => curatedSoundFiles.pop());
+
+      await expect(validateSoundAssetRegistry()).rejects.toThrow("Invalid target");
     },
   );
 
@@ -56,29 +53,25 @@ describe("registry validation consolidation", () => {
       generatedSoundAssets.pop();
     }
     curatedSoundFiles.push("extra.ogg", "Extra.ogg");
-    try {
-      await expect(validateSoundAssetRegistry()).rejects.toThrow("Duplicate asset target");
-    } finally {
-      curatedSoundFiles.splice(-2);
-    }
+    using _scopeCleanup = createCleanup(() => curatedSoundFiles.splice(-2));
+
+    await expect(validateSoundAssetRegistry()).rejects.toThrow("Duplicate asset target");
   });
 });
 
 it("asset worker limits keeps asset workers positive and safe for fractional or oversized overrides", () => {
-  try {
-    vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "");
-    const fallback = resolveAssetConcurrency(4);
-    expect(fallback).toBeGreaterThan(0);
-    expect(fallback).toBeLessThanOrEqual(4);
-    vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "1");
-    expect(resolveAssetConcurrency(16)).toBe(1);
-    vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "0.5");
-    expect(resolveAssetConcurrency(4)).toBe(1);
-    vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "0");
-    expect(resolveAssetConcurrency(4)).toBe(fallback);
-    vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "1e100");
-    expect(resolveAssetConcurrency(4)).toBe(fallback);
-  } finally {
-    vi.unstubAllEnvs();
-  }
+  using _scopeCleanup = createCleanup(() => vi.unstubAllEnvs());
+
+  vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "");
+  const fallback = resolveAssetConcurrency(4);
+  expect(fallback).toBeGreaterThan(0);
+  expect(fallback).toBeLessThanOrEqual(4);
+  vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "1");
+  expect(resolveAssetConcurrency(16)).toBe(1);
+  vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "0.5");
+  expect(resolveAssetConcurrency(4)).toBe(1);
+  vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "0");
+  expect(resolveAssetConcurrency(4)).toBe(fallback);
+  vi.stubEnv("ALCHEMY_ASSET_CONCURRENCY", "1e100");
+  expect(resolveAssetConcurrency(4)).toBe(fallback);
 });

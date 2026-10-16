@@ -42,6 +42,7 @@ function applyTierUpgrade(
   if (!result.ok) return false;
   profile.materialInventory = result.inventory;
   levels[id] = result.nextLevel;
+  profile.starterHomesteadGrantResolved = true;
   recomputeEffects(profile);
   return true;
 }

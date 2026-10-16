@@ -29,10 +29,13 @@ A retained action cannot affect a later turn, Wish queue, replacement battle, or
 restored save even when card IDs and turn numbers repeat. Unrelated navigation
 leaves the battle snapshot intact and does not invalidate input. Autoplay retains
 its snapshot across preview delays; headless offers retain it in their callbacks.
-The toolbar's manual End Turn confirmation passes its captured snapshot to
-`handleEndTurn(expected)`; the controller rejects a changed snapshot before
-playback. Automatic turn endings call the same handler without a captured UI
-confirmation. The session-owned presentation flag `endTurnConfirmationOpen`
+The battle route binds manual Card and Wish callbacks to the committed input
+snapshot captured for that render, separately from copied playback frames.
+Autoplay retains the snapshot used to select
+its card, and automatic turn endings retain the snapshot that scheduled their
+timer. The toolbar's manual End Turn confirmation passes its captured snapshot
+to `handleEndTurn(expected)`; all input handlers require that identity and reject
+a changed snapshot before playback. The session-owned presentation flag `endTurnConfirmationOpen`
 blocks card/turn input and automation while the dialog is open, and clears before
 a confirmed command or on teardown. The controller-owned `endTurnButtonRef`
 connects hand focus recovery to the toolbar without depending on DOM ancestry.
@@ -42,6 +45,17 @@ invalidates the old generation, aborts transfers and timers, and resets displaye
 frames before store observers see the restored battle. A battle-to-battle restore
 therefore needs no screen change or React remount to revoke old outcomes. Session
 disposal cancels that playback as well.
+
+`battle-presentation-store.ts` keeps its mutable Zustand store private. The public
+port exposes React-compatible reads and selector subscriptions; every action in
+read and subscription snapshots is bound to the owning session. Borrowed actions
+are revoked on disposal, which resets effects and releases all subscriptions.
+Display frames, ghosts, and transfers are copied on ingress, and roots and nested
+data are frozen before publication. Functional transfer updates receive immutable
+prior data. Observers receive queued publications in order; a failed observer
+cannot interrupt another observer or the action's resource cleanup. Disposal revokes
+remaining captured listeners and queued publications before resetting private state;
+that final cleanup does not notify consumers of the closed session.
 
 At interaction time, those callbacks resolve gameplay before presentation:
 
@@ -105,19 +119,28 @@ Readiness and saving use [Boot and loading](./ARCHITECTURE.md#boot-and-loading) 
 2. Cancel the previous presentation request and run `prepare` synchronously.
    Domain commands commit gameplay and `session.activity` together. Navigation
    never infers an activity from the target screen or initializes a visit. A
-   redirect during preparation supersedes the original request.
+   redirect from a guard, screen reader, pending-state notification, preparation,
+   or feedback supersedes the older request. Each callback checks the revision it
+   entered with; cancellation notifications cannot lend a newer request's revision
+   to an older caller.
 3. For prepared transitions and battle/reward/run-end progression routes, wait
    through the session's `afterProgressSaved` gate before starting the presentation
    delay. A pending or failed save keeps the route pending; Retry saves the
    committed outcome without executing preparation again. With no pending save,
    the gate continues immediately. See [local saving](./RUN_STATE.md#completed-actions-and-local-saving).
 4. Wait for `delayMs` or `NAVIGATION_DELAY_MS`, then write `navigation.screen`.
-   `immediate` skips this delay; it does not bypass the save gate. The rendered
+   Transition options are captured at admission, so caller mutations during the
+   save wait cannot change timing or preparation. `immediate` skips this delay;
+   it does not bypass the save gate. The rendered
    fade and mounted-artwork readiness run separately, retaining outgoing route
    data and never committing gameplay.
 
 Cancellation and hook unmount invalidate pending presentation, including a
 save-gated continuation, without undoing completed gameplay or its save.
+Navigation subscriptions are created after React commits and released on owner
+replacement or unmount. A retained command from a released owner cannot prepare
+gameplay or schedule another screen. Strict Mode effect replay creates a fresh
+owner without retaining the preceding owner's restore subscription.
 
 ## Playback lifetime and gameplay commands
 
@@ -126,8 +149,16 @@ and cancelled phases, plus the generation, abort signal, timers, transfer
 cancellation, draw counts, and autoplay binding. End-turn input is accepted only
 while ready; manual card plays may overlap card-draw presentation and remain
 available during victory grace. Late completions cannot unlock a newer lifetime
-or restart auto-end-turn in a finishing battle. React subscribes to binding
-readiness; no callback-ref bundle or binding-version counter is needed.
+or restart auto-end-turn in a finishing battle. Lifetime subscriptions publish
+phase changes so End Turn updates when opening or action playback completes,
+even after the final presentation update. React subscribes to binding
+readiness. Each generation is a distinct record containing its phase, abort
+controller, timers, cancellation callbacks, and draw counts. Phase admission
+requires the originating generation ID and reports rejection if an autoplay
+adapter or observer replaces it reentrantly. Callers stop presentation after
+rejection. Raw timer groups stay private; generation-scoped cleanup cannot
+cancel a replacement battle's timers. Autoplay binding replacement separately
+rejects an older bind if its cleanup installs a newer binding.
 
 Hand reveals acquire a draw lease from this lifetime and release it on success,
 failure, or cancellation. Transfer visibility reads the same pending count; it
@@ -140,6 +171,10 @@ existing lifetime, owns its visible transfer and pending callbacks, and releases
 them before completion or cancellation. Scheduling after settlement does nothing;
 cleanup returned by a synchronous completion is released immediately. Callback
 failures reject the task after cleanup rather than leaving a draw suspended.
+Lifetime cancellation revokes the generation before releasing timers, transfers,
+draw leases, and autoplay work, then notifies observers. Cleanup and observer
+failures are reported independently so one adapter cannot strand another task
+or prevent a replacement battle from becoming ready.
 Consumers supply cancellation fallbacks and presentation work; they do not
 reimplement completion flags or unregister/timer/frame cleanup ordering.
 `PlaybackLifetime.capture(generation)` supplies revocable scheduling and cancellation

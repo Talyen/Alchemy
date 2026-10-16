@@ -40,7 +40,7 @@ export function xpToNextPoint(xp: number): number {
 export function addTalentXP(xp: TalentXP, keywordIds: KeywordId[], amount = 1): TalentXP {
   const next = { ...xp };
   for (const kw of keywordIds) {
-    next[kw] = (next[kw] ?? 0) + amount;
+    next[kw] = Math.min(Number.MAX_SAFE_INTEGER, (next[kw] ?? 0) + amount);
   }
   return next;
 }
@@ -49,7 +49,7 @@ export function computeRunEndTalentXPSnapshot(runTalentXP: TalentXP, multiplier:
   const next: TalentXP = {};
   for (const [kw, amount] of Object.entries(runTalentXP)) {
     if (typeof amount === "number") {
-      next[kw as KeywordId] = Math.round(amount * multiplier);
+      next[kw as KeywordId] = Math.min(Number.MAX_SAFE_INTEGER, Math.round(amount * multiplier));
     }
   }
   return next;
@@ -59,7 +59,7 @@ export function mergeRunTalentXPIntoPermanent(runTalentXP: TalentXP, talentXP: T
   const nextTalentXP = { ...talentXP };
   for (const [kw, bonus] of Object.entries(computeRunEndTalentXPSnapshot(runTalentXP, multiplier))) {
     const keyword = kw as KeywordId;
-    nextTalentXP[keyword] = (nextTalentXP[keyword] ?? 0) + bonus;
+    nextTalentXP[keyword] = Math.min(Number.MAX_SAFE_INTEGER, (nextTalentXP[keyword] ?? 0) + bonus);
   }
   return nextTalentXP;
 }

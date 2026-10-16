@@ -25,7 +25,6 @@ import { characters, type BattleCard } from "@/lib/game-data";
 import { offerBrewingChoices, type BrewingObservation } from "./brewing-offers";
 import { scoreCombatCards } from "./combat-policy";
 import { brewCandidates } from "./brewing-policy";
-import { computeTalentEffects } from "@/lib/game-data";
 import { scoreArchetypeRemoval, scoreStrategyCard } from "./archetype-policy";
 import type { OfferChoice } from "./choice-catalog";
 import type { createPlaythroughController } from "./controller";
@@ -143,9 +142,7 @@ export function offerRunChoices(
             : config.brewing === "on" &&
                 destination === DESTINATIONS.ALCHEMIST_SHOP &&
                 profile.gold >= shop().alchemist.getMixPrice() &&
-                brewCandidates(run.runDeck, computeTalentEffects(profile.unlockedTalents).potionMixPotency).some(
-                  (c) => c.improvement > 0,
-                )
+                brewCandidates(run.runDeck).some((c) => c.improvement > 0)
               ? 3
               : 1,
           () => flow.handleDestinationChoice(destination),

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { cardById, cardLibrary, type BattleCard } from "@/lib/game-data";
+import { cardById, type BattleCard } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
-import { buildWishOptions } from "@/lib/battle/wish";
+import { upgradeWishCard } from "@/lib/battle/wish-upgrade";
 import { BattleCardEffectSchema } from "@/lib/game-data";
 import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corruption/numeric";
 import { makeTestCard, regressionBattle } from "../../fixtures/battle";
@@ -112,18 +112,10 @@ describe("encounter event regressions", () => {
   });
 
   it("Powerful Wish upgrades every Luck Potion outcome", () => {
-    const state = battle("none");
-    const options = buildWishOptions(
-      {
-        ...state,
-        talentEffects: { ...state.talentEffects, wishCardsUpgraded: true, wishExtraChoices: cardLibrary.length },
-      },
-      cardById.wish!,
-    );
-    const potion = options.find((card) => card.id === "luck-potion")!;
+    const potion = upgradeWishCard(cardById["luck-potion"]!);
     expect(potion.descriptionLines[0]).toBe("Gain 5 Mana, Gold, or Block");
     expect(JSON.stringify(potion.effects)).not.toContain('"amount":4');
-    const dice = options.find((card) => card.id === "roll-the-dice")!;
+    const dice = upgradeWishCard(cardById["roll-the-dice"]!);
     expect(dice.descriptionLines).toEqual(cardById["roll-the-dice"]!.descriptionLines);
     expect(dice.effects.every((effect) => BattleCardEffectSchema.safeParse(effect).success)).toBe(true);
     expect(dice.effects).toEqual([{ kind: "random-draw", minAmount: 1, maxAmount: 6 }]);

@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import {
   BattleEndTurnButton,
   type BattleEndTurnButtonProps,
@@ -14,11 +16,12 @@ import { useBattleClusterState } from "@/features/alchemy/shared/stores/use-run-
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
 function BattleAutoplayToggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
+  const i18n = useGameTranslation();
   return (
     <ChromeIconButton
       variant={enabled ? "primary" : "ghost"}
       onClick={onToggle}
-      aria-label="Autoplay"
+      aria-label={i18n.text("ui.battle-cluster.1", "Autoplay")}
       aria-pressed={enabled}
       data-testid="autoplay-toggle"
     >
@@ -28,6 +31,7 @@ function BattleAutoplayToggle({ enabled, onToggle }: { enabled: boolean; onToggl
 }
 
 function BattleSkipCombatButton({ onSkip, disabled }: { onSkip: () => void; disabled: boolean }) {
+  const i18n = useGameTranslation();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -35,7 +39,7 @@ function BattleSkipCombatButton({ onSkip, disabled }: { onSkip: () => void; disa
     <>
       <ChromeIconButton
         ref={triggerRef}
-        aria-label="Skip Combat"
+        aria-label={i18n.text("ui.battle-cluster.2", "Skip Combat")}
         disabled={disabled}
         onClick={onSkip}
         onMouseEnter={() => setHovered(true)}
@@ -45,8 +49,14 @@ function BattleSkipCombatButton({ onSkip, disabled }: { onSkip: () => void; disa
       >
         <SkipForward className="h-6 w-6" />
       </ChromeIconButton>
-      <PortaledTooltip triggerRef={triggerRef} visible={!disabled && (hovered || focused)}>
-        Skip Combat
+      <PortaledTooltip
+        triggerRef={triggerRef}
+        visible={!disabled && (hovered || focused)}
+        placement="below"
+        allowFlip={false}
+        horizontalInset={8}
+      >
+        {i18n.text("ui.battle-cluster.3", "Skip Combat")}
       </PortaledTooltip>
     </>
   );
@@ -79,6 +89,7 @@ export function BattleCluster({
   onOpenGameMenu,
   onSkipCombat,
 }: BattleClusterProps) {
+  const i18n = useGameTranslation();
   const { gold, hasWishOptions, battleState, hasActiveBattle } = useBattleClusterState();
   return (
     <div inert={inert} className="absolute top-4 right-4 z-[80] flex items-center gap-2">
@@ -95,7 +106,11 @@ export function BattleCluster({
       {isAlchemyDevBuild() ? (
         <BattleSkipCombatButton onSkip={onSkipCombat} disabled={gameMenuOpen || boonInspectOpen || hasWishOptions} />
       ) : null}
-      <HamburgerTrigger onClick={onOpenGameMenu} label="Open game menu" active={gameMenuOpen} />
+      <HamburgerTrigger
+        onClick={onOpenGameMenu}
+        label={i18n.text("ui.battle-cluster.4", "Open game menu")}
+        active={gameMenuOpen}
+      />
     </div>
   );
 }

@@ -52,15 +52,14 @@ export async function main() {
     !uiMotion.includes("TOOLTIP_FADE_OUT_MS"),
     "TOOLTIP_FADE_OUT_MS alias must stay removed; use TOOLTIP_FADE_MS directly",
   );
-  const loadingWordJsMatch = uiMotion.match(/LOADING_WORD_FADE_MS[^=]*=\s*(\d+)/);
-  assert.ok(loadingWordJsMatch, "ui-motion.ts must define LOADING_WORD_FADE_MS");
-  const loadingWordCssMatch = componentsCss.match(/loadingWordFade\s+(\d+)ms/);
-  assert.ok(loadingWordCssMatch, "components.css must define loadingWordFade duration");
-  assert.equal(
-    Number(loadingWordJsMatch[1]),
-    Number(loadingWordCssMatch[1]),
-    "LOADING_WORD_FADE_MS must equal loadingWordFade duration",
-  );
+  const startupHtml = readFileSync(path.join(process.cwd(), "index.html"), "utf8");
+  const minimumLoadMs = uiMotion.match(/INITIAL_LOAD_MIN_DURATION_MS[^=]*=\s*(\d+)/);
+  assert.ok(minimumLoadMs, "ui-motion.ts must define INITIAL_LOAD_MIN_DURATION_MS");
+  for (const animation of ["loadingLogoReveal", "loadingLogoCounter"]) {
+    const duration = startupHtml.match(new RegExp(animation + "\\s+(\\d+)ms"));
+    assert.ok(duration, "index.html must define " + animation + " duration");
+    assert.equal(Number(duration[1]), Number(minimumLoadMs[1]), "Startup fill must match the minimum load duration");
+  }
   assert.ok(!uiMotion.includes("PAGE_EXIT_MS"), "PAGE_EXIT_MS alias must stay removed; use MOTION_FADE_MS directly");
 
   const constantsDir = path.join(process.cwd(), "src/lib/game-constants");

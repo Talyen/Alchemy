@@ -4,6 +4,7 @@ import { playBattleEvent } from "@/lib/audio";
 import type { CardRect, CardTransfer } from "../../shared/types";
 import type { BattleControllerContext } from "./battle-context";
 import type { HandDrawSequenceDeps } from "./draw-sequence";
+import { getCardRotation } from "./presentation/scene-geometry";
 import { runPlaybackTask } from "./playback-task";
 import {
   animateDiscardedHand,
@@ -31,14 +32,22 @@ export function createBattleTransferDeps(
       if (isActive()) getPresentation().setCardTransferInProgress(active);
     };
 
-    function playTransferSound(delaySeconds = 0) {
-      const play = () => {
-        if (isActive() && ctx.battle.read().hasActiveBattle)
-          playBattleEvent("drawTransfer", { volume: CARD_TRANSFER_CONFIG.soundVolume });
-      };
-      if (!isActive()) return;
-      if (delaySeconds > 0) scope.setTimeout(play, delaySeconds * 1000);
-      else play();
+    function playTransferSound() {
+      if (isActive() && ctx.battle.read().hasActiveBattle)
+        playBattleEvent("drawTransfer", { volume: CARD_TRANSFER_CONFIG.soundVolume });
+    }
+
+    function waitForDeparture(delayMs: number): Promise<boolean> {
+      return runPlaybackTask(
+        scope.registerCancel,
+        () => false,
+        (task) => {
+          task.schedule(
+            (callback) => scope.setGameTimeout(callback, delayMs),
+            () => task.complete(isActive()),
+          );
+        },
+      );
     }
 
     function runCardTransfer(transfer: Omit<CardTransfer, "id">, onComplete?: () => void): Promise<void> {
@@ -77,15 +86,14 @@ export function createBattleTransferDeps(
 
     const cardTransferDeps: CardTransferAnimationDeps = {
       isSessionActive: (id) => id === session && isActive(),
-      measureDiscardPile: () =>
-        isActive()
-          ? ctx.measureElementRect(
-              ctx.discardPileRef.current?.querySelector<HTMLElement>("[data-pile-top-card]") ??
-                ctx.discardPileRef.current,
-              scene(),
-            )
-          : null,
-      measureDrawPile: () => (isActive() ? ctx.measureElementRect(ctx.drawPileRef.current, scene()) : null),
+      measureHandDock: () => {
+        if (!isActive()) return null;
+        const dock = ctx.measureElementRect(ctx.handDockRef.current, scene());
+        const viewport = ctx.measureElementRect(scene(), scene());
+        return dock && viewport ? { ...dock, y: viewport.height - dock.height } : null;
+      },
+      measureHandCardRotation: (key) => (isActive() ? getCardRotation(ctx.handCardRefs.current[key] ?? null) : null),
+      waitForDeparture,
       measureHandCard: stableHandCardDeps.measureHandCard,
       runCardTransfer,
       playTransferSound,

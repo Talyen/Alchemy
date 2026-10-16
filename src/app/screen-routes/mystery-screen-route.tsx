@@ -2,14 +2,15 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFadePresence, useHeldWhile } from "@/features/alchemy/shared/ui/use-fade";
 import { cardById, trinketById } from "@/features/alchemy/shared/config/game-data-catalog";
 import { MysteryScreen, MysteryScreenShell } from "@/features/alchemy/run-loop/screens";
-import { useMysteryScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
+import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/run-screen-data";
+import { useRunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import type { RunLoopRouteCtx } from "./route-ctx";
 import { computeGoldReward, computeMysteryMaterialReward } from "@/lib/homestead/material-rewards";
 
 const findCard = (id: string) => cardById[id];
 const findTrinket = (id: string) => trinketById[id];
 
-function useHeldMysteryVisit(r: ReturnType<typeof useMysteryScreenData>) {
+function useHeldMysteryVisit(r: RunScreenDataByScreen["mystery"]) {
   const isMysteryActive = Boolean(r.mysteryEvent);
   const { mounted } = useFadePresence(isMysteryActive);
   const liveVisit = useMemo(
@@ -40,7 +41,7 @@ function useHeldMysteryVisit(r: ReturnType<typeof useMysteryScreenData>) {
 
 export function MysteryScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.mystery;
-  const r = useMysteryScreenData();
+  const r = useRunScreenData("mystery");
   const { handleContinue } = commands;
 
   const lastMysteryEventIdRef = useRef<string | null>(null);

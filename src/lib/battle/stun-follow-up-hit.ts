@@ -28,6 +28,7 @@ export function resolveStunFollowUpHit(
       hit.facts.previousHealth,
       false,
       leech,
+      hit.facts.healthDamage,
     );
     if (modifiedDamage > 0) {
       mergeCombatText(combatTexts, {
@@ -35,7 +36,8 @@ export function resolveStunFollowUpHit(
         kind: "damage",
         stat: "stun",
         amount: modifiedDamage,
-        ...(critical ? { critical: true } : {}),
+        ...(hit.facts.healthDamage !== modifiedDamage ? { healthLost: hit.facts.healthDamage } : {}),
+        ...(critical && hit.facts.healthDamage > 0 ? { critical: true } : {}),
       });
     }
     nextState = applyHitEpilogue(

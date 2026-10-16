@@ -4,6 +4,7 @@ import { gearDefinitions, getOwnedUniqueDefinitionIds } from "@/lib/gear";
 import { eventHasUnresolvedRandomTrinket, repairUnresolvedMysteryTrinkets } from "@/lib/mystery";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
+import { snapshotReadonlyValue } from "./readonly-view";
 import { restoreActiveBattle } from "./battle-restore";
 import { gameplayDraftRuntime, type GameplayDraft } from "./gameplay-command";
 import { decodeRunResumeSnapshot, type DecodedRunResumeSession } from "./run-resume-codec";
@@ -74,6 +75,9 @@ function restoreRunSession(draft: GameplayDraft, decoded: DecodedRunResumeSessio
 }
 
 export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRunData | null): void {
+  // Decode and rebind only owned data: Immer also freezes unchanged nested
+  // branches, including pending battle effects and direct visit payloads.
+  activeRun = activeRun ? snapshotReadonlyValue(activeRun) : null;
   clearTransientSession(draft);
   const decoded = activeRun ? decodeRunResumeSnapshot(activeRun, gameplayDraftRuntime(draft).generateRunSeed) : null;
   if (decoded) initializeFromResumeSnapshot(draft, decoded.progress);

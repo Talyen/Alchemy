@@ -147,10 +147,14 @@ describe("distinct talent conditions", () => {
 
   it("Brittle Ice stacks with Shatter and Snow Pack does not add a separate Freeze hit", () => {
     const shatter = play(
-      battle({ talentEffects: talents("Brittle Ice"), enemyCC: { freezeSkipTurns: 1 } }),
+      battle({
+        talentEffects: talents("Brittle Ice"),
+        enemyCC: { freezeSkipTurns: 1 },
+        reactions: { shatterDamage: 3, frostfireDamage: 3 },
+      }),
       makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
     );
-    expect(shatter.enemyHealth).toBe(90);
+    expect(shatter.enemyHealth).toBe(92);
 
     const initial = battle({
       talentEffects: talents("Snow Pack"),
@@ -158,7 +162,7 @@ describe("distinct talent conditions", () => {
       enemyCC: { freezeSkipTurns: 1 },
     });
     const next = processCompanionTurnStart(initial, []);
-    expect(next.enemyHealth).toBe(96);
+    expect(next.enemyHealth).toBe(98);
     expect(next.enemyStatuses.freeze).toBe(0);
     expect(
       processCompanionTurnStart(

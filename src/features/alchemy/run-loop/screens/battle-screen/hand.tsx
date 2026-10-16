@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
 import { type MouseEvent, type RefObject, memo, useEffect, useLayoutEffect, useRef } from "react";
 
@@ -65,6 +67,7 @@ const HandCardItem = memo(function HandCardItem({
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   descriptionContext: CardDescriptionContext;
 }) {
+  const i18n = useGameTranslation();
   const cardKey = getHandCardKey(card, index);
   const { isHovered, shimmerActive, shimmerToken } = useInteractiveCard("hand", cardKey);
   // Autoplay previews reuse the hover lift + shine without the description popup.
@@ -105,7 +108,7 @@ const HandCardItem = memo(function HandCardItem({
       data-hand-slot={cardKey}
       data-hovered={isHovered || undefined}
       data-hand-hidden={isHidden || undefined}
-      className="relative flex min-w-0 shrink basis-[calc(var(--hand-card-width)-3*var(--content-rem,1rem))] justify-center"
+      className="relative flex min-w-0 shrink basis-[calc(var(--hand-card-width)-2.5*var(--content-rem,1rem))] justify-center"
       style={{
         zIndex: visualHovered ? HAND_CARD_HOVER_Z_INDEX : HAND_CARD_BASE_Z_INDEX + index,
       }}
@@ -122,7 +125,9 @@ const HandCardItem = memo(function HandCardItem({
             onClick={(event) => onCardClick(card, index, event)}
             buttonRef={elementRef}
             ariaDisabled={!isInteractionEnabled}
-            ariaLabel={`Play ${getCardDisplayTitle(card)}`}
+            ariaLabel={i18n.text("ui.hand.1", "Play {{value0}}", {
+              value0: i18n.read(() => getCardDisplayTitle(card)),
+            })}
             descriptionContext={descriptionContext}
             shimmerActive={shimmerActive}
             shimmerToken={shimmerToken}
@@ -165,6 +170,7 @@ export function BattleHand({
   actions: BattleActionsProps;
   playabilityState: BattleSnapshot;
 }) {
+  useGameTranslation();
   const { battleState, stagePixelRatio } = view;
   const { handCardRefs } = refs;
   const { onCardClick } = actions;
@@ -206,13 +212,16 @@ export function BattleHand({
       keyboardActivation.current = false;
     };
     const onKey = (event: KeyboardEvent) => {
-      if (["Tab", "Escape"].includes(event.key)) cancel();
+      if (["Tab", "F7", "Escape", "Alt", "Meta", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key))
+        cancel();
     };
     document.addEventListener("pointerdown", cancel, true);
     window.addEventListener("keydown", onKey, true);
+    window.addEventListener("blur", cancel);
     return () => {
       document.removeEventListener("pointerdown", cancel, true);
       window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("blur", cancel);
     };
   }, []);
 
@@ -247,10 +256,7 @@ export function BattleHand({
         keyboardActivation.current = !event.repeat && (event.key === "Enter" || event.key === " ");
       }}
       data-testid="battle-hand"
-      className={cn(battleHandContainerClass, "mana-hand")}
-      style={{
-        paddingBottom: `calc(6% + ${12 + Math.max(0, battleState.hand.length - 4) * 12}px * var(--content-scale, 1))`,
-      }}
+      className={cn(battleHandContainerClass, "battle-hand")}
     >
       {battleState.hand.map((card, index) => {
         const cardKey = getHandCardKey(card, index);

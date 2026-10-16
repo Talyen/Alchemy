@@ -31,7 +31,7 @@ describe("Mystery visit resume", () => {
     const visit = {
       mysteryEvent: event,
       mysteryChosenChoice: event.choices[0]!,
-      mysteryCardChoices: [card],
+      mysteryCardChoices: null,
       mysteryGrantedTrinketIds: ["bone-charm"],
       mysteryGrantedGearInstances: [{ instanceId: "claimed-gear", definitionId: "emerald-ring-basic", affixes: [] }],
       mysteryChosenCardId: card.id,

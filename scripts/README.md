@@ -19,13 +19,13 @@ choice between fast generated checks and prepared-output verification.
 Asset and synchronization CLIs validate selectors before writing, including in
 skip mode; keep that validation at each entry point.
 
-| Concern                                    | Implementation owner                                                                                                                                                                                                                                                                                                             |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs` (canonical surface; `npm run assets:check` is the local source check; `assets:check:outputs` adds `--outputs-only` for CI; direct `optimize-*.mjs` calls are the supported iteration shortcut behind `assets:optimize[:art\|:sounds\|:music]`)                                               |
-| Art, sound, and music optimization         | `assets/optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` via `assets/asset-pipeline-runner.mjs`                                                                                                                                                                                      |
-| Generated art barrels and version metadata | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs` (`sync:art` syncs both barrels; `sync:gear-art` alone refuses stale `assets.generated.ts`; `sync:version` stamps the build version alone; asset preparation syncs art barrels and version metadata independently; `assets:check` only validates them) |
-| Fast generated-output validation           | `sync-generated.mjs --check`                                                                                                                                                                                                                                                                                                     |
-| Read-only prepared-output freshness        | `assets.mjs --check` → `check-prepared-assets.mjs` (partial-failure `prepare` advances barrels when art succeeds; `check` is all-or-nothing)                                                                                                                                                                                     |
+| Concern                                    | Implementation owner                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs` (canonical surface; `npm run assets:check` is the local source check; `assets:check:outputs` adds `--outputs-only` for CI; direct `optimize-*.mjs` calls are the supported iteration shortcut behind `assets:optimize[:art\|:sounds\|:music]`)                                                                                |
+| Art, sound, and music optimization         | `assets/optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` via `assets/asset-pipeline-runner.mjs`                                                                                                                                                                                                                       |
+| Generated art barrels and version metadata | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs` (`sync:art` syncs the general art barrel; Boards/Gear use eager catalog registration; `sync:gear-art` aliases the art sync; `sync:version` stamps the build version alone; asset preparation syncs art barrels and version metadata independently; `assets:check` only validates them) |
+| Fast generated-output validation           | `sync-generated.mjs --check`                                                                                                                                                                                                                                                                                                                                      |
+| Read-only prepared-output freshness        | `assets.mjs --check` → `check-prepared-assets.mjs` (partial-failure `prepare` advances barrels when art succeeds; `check` is all-or-nothing)                                                                                                                                                                                                                      |
 
 Shared: `assets/asset-constants.mjs` (tuning, `MANAGED_DIRS` managed outputs — the manifest is the complete inventory, no directory exceptions), `assets/asset-pipeline-runner.mjs` (pipeline paths, output-dir creation, source reads, freshness, failure normalization),
 `assets/asset-manifest-cache.mjs` (freshness,
@@ -184,6 +184,14 @@ or negotiating ownership. Reuse the chat's existing suitable worktree.
 `--detached` for verification-only runs. Creation links `node_modules` from
 the root checkout automatically when present; run `npm ci` only if package
 dependencies change.
+
+If `agent/<slug>` already exists, creation checks out that retained branch at its
+current commit; `--base` applies only when creating a new branch (or a detached
+checkout). Inspect the resulting branch and commit before reviewing or editing.
+Use a fresh slug for new work when the retained branch belongs to an earlier task;
+when intentionally continuing it, incorporate current `main` in the task worktree
+before relying on its documentation or source.
+
 Run worktree management commands from the original checkout. Removal validates
 the exact registered worktree; an unregistered directory requires inspection
 and explicit `--force`. An empty normalized task name is rejected.
@@ -214,19 +222,23 @@ Failures preserve task work and leave `main` unchanged. Never bypass serializati
 with a manual update to `main`. Keep unintegrated work committed and recoverable;
 cleanup must not discard work.
 
-Successful integration automatically archives and unregisters only the named task
+Successful integration automatically deletes and unregisters only the named task
 worktree while holding the integration lock. Cleanup rechecks its branch, commit,
 clean status, unfinished Git operations, registration and lock state; submodules
 block automatic cleanup. Failed verification never removes a worktree. A cleanup
 failure leaves the completed integration in place and reports the blocker.
 
-The full checkout moves atomically to `~/.codex/worktree-archives/Alchemy/` before
-unregistration. Ignored evidence and late writes remain recoverable. Installed
-`node_modules` is discarded unless tracked; all other files and the task branch
-are retained. `recovery.json` records its original path, branch and commit. Restore
-with `git worktree add <original-path> <branch>`, then copy needed archived files.
-Archives never expire automatically. `CODEX_WORKTREE_ARCHIVE_ROOT` can select an
-external directory; moving across filesystems fails without deleting the source.
+The checkout first moves atomically to a temporary directory under
+`~/.codex/worktree-archives/Alchemy/` so failed unregistration can restore it.
+After unregistration, the temporary directory is deleted immediately, including
+ignored files and build outputs. Successful integration retains no archived
+checkout. The task branch remains available through
+`git worktree add <original-path> <branch>`; ignored and other local-only files are
+permanently deleted. Use `--keep-worktree` when those files are still needed.
+`CODEX_WORKTREE_ARCHIVE_ROOT` can select an external staging directory; moving
+across filesystems fails without deleting the source. If cleanup fails after
+integration, inspect the reported checkout or staging directory; `recovery.json`
+records the original path, branch and commit.
 
 Use `node scripts/agent-worktree.mjs integrate --task <slug> --keep-worktree` for
 intermediate integration when requested work, a preview or an experiment still

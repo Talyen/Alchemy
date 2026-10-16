@@ -11,6 +11,16 @@ test.describe("packaged Electron security boundary", { tag: [desktop.tag] }, () 
       expect(await page.evaluate(() => window.alchemyDesktop?.isDesktop)).toBe(true);
 
       const results = await page.evaluate(async () => {
+        const blockedConnections: string[] = [];
+        document.addEventListener("securitypolicyviolation", (event) => {
+          if (event.effectiveDirective === "connect-src") blockedConnections.push(event.blockedURI);
+        });
+        let externalFetchBlocked = false;
+        try {
+          await fetch("https://example.com/blocked-localization-probe");
+        } catch {
+          externalFetchBlocked = true;
+        }
         const marker = "__alchemyInlineScriptExecuted";
         const script = document.createElement("script");
         script.textContent = `window.${marker} = true`;
@@ -35,6 +45,8 @@ test.describe("packaged Electron security boundary", { tag: [desktop.tag] }, () 
         });
 
         return {
+          externalFetchBlocked,
+          connectionBlockedByCsp: blockedConnections.some((uri) => uri.startsWith("https://example.com")),
           inlineRan: (window as unknown as Record<string, unknown>)[marker] === true,
           permission: permission.state,
           popupOpened: popup !== null,
@@ -43,6 +55,8 @@ test.describe("packaged Electron security boundary", { tag: [desktop.tag] }, () 
       });
 
       expect(results).toEqual({
+        externalFetchBlocked: true,
+        connectionBlockedByCsp: true,
         inlineRan: false,
         permission: "denied",
         popupOpened: false,
@@ -74,6 +88,7 @@ test.describe("packaged Electron security boundary", { tag: [desktop.tag] }, () 
           return await attacker.webContents.executeJavaScript(`Promise.all([
             window.alchemyDesktop.writeSave("attacker").then(() => false, () => true),
             window.alchemyDesktop.steamGetName().then(() => false, () => true),
+            window.alchemyDesktop.steamGetGameLanguage().then(() => false, () => true),
             window.alchemyDesktop.quit().then(() => false, () => true)
           ])`);
         } finally {
@@ -81,7 +96,7 @@ test.describe("packaged Electron security boundary", { tag: [desktop.tag] }, () 
         }
       });
 
-      expect(attempts).toEqual([true, true, true]);
+      expect(attempts).toEqual([true, true, true, true]);
       expect(await page.evaluate(() => window.alchemyDesktop?.listSaveCandidates())).toEqual([]);
     } finally {
       await electronApp.close();

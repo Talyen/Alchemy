@@ -156,6 +156,7 @@ describe("combat reward ordering", () => {
     { id: "ice-shot", enemyHealth: 3, gold: 2 },
     { id: "bounty-shot", enemyHealth: 3, gold: 4 },
     { id: "bounty-shot", enemyHealth: 1, gold: 4 },
+    { id: "bounty-shot", enemyHealth: 6, gold: 6 },
   ])(
     "Trophy Shot pays once for $id defeating $enemyHealth Health, including secondary hits",
     ({ id, enemyHealth, gold }) => {
@@ -172,7 +173,7 @@ describe("combat reward ordering", () => {
       });
       const result = playBattleCardResolved(state, card.id, 0).state;
       expect(result.enemyHealth).toBe(0);
-      expect(result.gold).toBe(gold + (id === "bounty-shot" ? 2 : 0));
+      expect(result.gold).toBe(gold);
     },
   );
 });

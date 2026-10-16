@@ -15,7 +15,6 @@ import {
   setMysteryChosenChoice,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
-import { cardById } from "@/lib/game-data";
 import type { MysteryChoice } from "@/lib/mystery";
 export function chooseMysteryOption(choice: MysteryChoice, gameSession: GameSession): Array<"gain" | "spend"> | null {
   const activity = readRunSession(gameSession).activity;
@@ -65,9 +64,7 @@ export function chooseMysteryCard(cardId: string, gameSession: GameSession): boo
       if (readActivityData(snapshotTransactionValue(draft.session.activity), "mystery").mysteryChosenCardId !== null)
         return rejectCommand("Mystery choice is unavailable", false);
       const choices = readActivityData(snapshotTransactionValue(draft.session.activity), "mystery").mysteryCardChoices;
-      if (!choices || !choices.some((card) => card.id === cardId))
-        return rejectCommand("Mystery choice is unavailable", false);
-      const card = cardById[cardId];
+      const card = choices?.find((offered) => offered.id === cardId);
       if (!card) return rejectCommand("Mystery choice is unavailable", false);
       appendCardToRunWithDiscovery(draft, card);
       setMysteryChosenCardId(draft, cardId);

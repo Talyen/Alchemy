@@ -25,6 +25,13 @@ Keep passing-journey screenshots in explicit visual acceptance or layout-review
 workflows. Functional checks assert state and geometry without screenshot encoding
 or attachment I/O. Motion checks observe frames or actual transition events and
 stop when the animation settles; declared CSS properties alone cannot prove motion.
+Arm short-lived feedback samplers in the renderer before sending input, then
+read their captured result after the action. Locator assertions and protocol
+round trips can outlast the feedback being measured. For transition sampling,
+remember that motion started and check settled visual values independently of
+temporary feedback flags; those flags may clear before enough stable frames arrive.
+For fitted text, sample after the frame's resize observers finish, rather than
+reading intermediate geometry from a requestAnimationFrame callback.
 
 ## Running focused checks
 
@@ -106,7 +113,6 @@ owners directly.
 | Start battle or destination   | `battle-setup.ts`: `startBattleWithDeck`, `startAtDestination`      | Bootstraps battle                                                                                                 |
 | Inject mid-battle             | `save-injection.ts`: `injectActiveBattle`                           | Boots directly into battle                                                                                        |
 | Win and claim reward          | `battle-setup.ts`: `winBattleAndClaimReward`                        | Wins through combat and claims the first reward card                                                              |
-| End run and return            | `battle-setup.ts`: `assertEndRunShowsRecap`                         | Ends immediately without confirmation, asserts recap, then continues to the menu                                  |
 | Seed exact persisted state    | `save-injection.ts`: `injectSaveState`, `injectMysterySummaryVisit` | Page initialization scripts rerun on navigation and reload                                                        |
 | Inspect acknowledged save     | `save-injection.ts`: `withSavedGame`, `readSavedGame`               | The former opens an unseeded page, checks runtime errors and closes it; the latter reads the acknowledged payload |
 | Collect errors on extra pages | `errors.ts`: `failOnRuntimeErrors`                                  | Assert collected errors before closing; the browser fixture covers its own page automatically                     |
@@ -135,7 +141,7 @@ use `tests/pages/game-stage.ts` (`expectRunPhase`).
 - Card factories are in `cards.ts`; use named presets when the assertion depends on a specific card.
 - Injected decks and draft choices must use live library ids as shells (for example `slash`): hydrate drops unknown ids via `filterLiveCards` and `hydrateCard` renders titles from the library while keeping the injected effects and cost, so play cards by the library title.
 - `enableFastMode` disables animations and is forbidden in animation-focused specs.
-- `BattlePage.endTurn` must work with animations both on and off; changing it requires the critical animation canary, which checks enemy damage and hand replenishment. Ordinary battle actions use actionable clicks without `force`.
+- `BattlePage.endTurn` opens the toolbar's End turn? dialog, confirms End Turn, and waits for turn readiness or a battle outcome. Clicking the toolbar alone does not commit a turn; keyboard journeys must also handle the confirmation, whose initial focus is Cancel. The helper must work with animations both on and off; changing it requires the critical animation canary, which checks enemy damage and hand replenishment. Ordinary battle actions use actionable clicks without `force`.
 - After entering battle, await `battle.waitForOpeningHand()` instead of a single `handCount()` read: the opening deal briefly shows a zero-hand frame during animation/remount, so poll-then-read flakes in CI.
 - Prefer `winViaCombat`, `playCardNamed`, or `playFirstCard`; `playAllCards` is normally internal.
 - Do not use `skipCombatToVictory`, `skipCombatBtn`, or production-hidden Unlock All/Skip Combat strings. Legitimate in-game Skip actions remain valid.

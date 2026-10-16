@@ -41,18 +41,18 @@ describe("AlchemistShopScreen mix Escape", () => {
     const props = {
       gold: 25,
       runDeck: [cardById["health-potion"]!],
-      potionCards: [],
+      items: [],
       refreshesLeft: 0,
       mixUsed: false,
       purchasedSlotKeys: [],
-      getPotionPrice: () => 10,
+      getPrice: () => 10,
       mixPrice: 25,
       refreshPrice: 15,
-      onBuyCard: () => true,
+      onBuy: () => true,
       onRefresh: () => {},
       onMixPotions,
       onStrengthenPotion,
-      potency: 0,
+
       onContinue: () => {},
     };
     const { rerender } = render(<AlchemistShopScreen {...props} />);
@@ -80,18 +80,17 @@ describe("AlchemistShopScreen mix Escape", () => {
       <AlchemistShopScreen
         gold={100}
         runDeck={[potion, cardById["mana-potion"]!]}
-        potionCards={[potion]}
+        items={[potion]}
         refreshesLeft={1}
         mixUsed={false}
         purchasedSlotKeys={[]}
-        getPotionPrice={() => 10}
+        getPrice={() => 10}
         mixPrice={25}
         refreshPrice={15}
-        onBuyCard={() => true}
+        onBuy={() => true}
         onRefresh={() => true}
         onMixPotions={onMixPotions}
         onStrengthenPotion={() => null}
-        potency={0}
         onContinue={() => {}}
       />,
     );
@@ -121,18 +120,17 @@ describe("AlchemistShopScreen mix Escape", () => {
       <AlchemistShopScreen
         gold={100}
         runDeck={[potion]}
-        potionCards={[]}
+        items={[]}
         refreshesLeft={0}
         mixUsed={false}
         purchasedSlotKeys={[]}
-        getPotionPrice={() => 10}
+        getPrice={() => 10}
         mixPrice={25}
         refreshPrice={15}
-        onBuyCard={() => true}
+        onBuy={() => true}
         onRefresh={() => {}}
         onMixPotions={() => null}
         onStrengthenPotion={onStrengthenPotion}
-        potency={0}
         onContinue={() => {}}
         afterProgressSaved={(run) => pending.push(run)}
       />,
@@ -165,18 +163,17 @@ describe("AlchemistShopScreen mix Escape", () => {
       <AlchemistShopScreen
         gold={100}
         runDeck={[potion, cardById["mana-potion"]!]}
-        potionCards={[potion]}
+        items={[potion]}
         refreshesLeft={1}
         mixUsed={false}
         purchasedSlotKeys={[]}
-        getPotionPrice={() => 10}
+        getPrice={() => 10}
         mixPrice={25}
         refreshPrice={15}
-        onBuyCard={() => true}
+        onBuy={() => true}
         onRefresh={() => true}
         onMixPotions={() => null}
         onStrengthenPotion={() => null}
-        potency={0}
         onContinue={() => {}}
       />,
     );

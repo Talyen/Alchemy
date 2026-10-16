@@ -33,13 +33,14 @@ it("seeds a playable current-format activity and preserves explicit visit overri
   expect(loaded.data.gold).toBe(42);
   expect(loaded.data.activeRun?.activity).toEqual(activity);
   for (const kind of ["campfire", "transmutation"] as const) {
-    const visit = savedActivityFixture(kind);
+    const offers = kind === "campfire" ? [cardById["health-potion"]!] : [];
+    const visit = savedActivityFixture(kind, { offers, result: null, original: null, completed: false });
     await injectSaveState(page, { activity: visit, runDeck: [cardById.slash!] });
     const restored = evaluateSaveCandidates([JSON.stringify(payload)]);
     expect(restored.status).toEqual({ kind: "ok" });
     expect(restored.data.activeRun?.activity).toEqual(visit);
     expect(restored.data.activeRun?.activity).toMatchObject({
-      data: { offers: [], result: null, original: null, completed: false },
+      data: { offers, result: null, original: null, completed: false },
     });
   }
   for (const key of ["activeCombat", "currentScreen", "interruptedFlow", "shopState"])

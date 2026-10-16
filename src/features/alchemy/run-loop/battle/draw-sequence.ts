@@ -1,6 +1,6 @@
 import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
-import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
+import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 import { getHandCardKey } from "./playable-hand";
 import { logBattleError } from "./controller-utils";
 import { markBattleStage } from "@/lib/performance/marks";
@@ -65,7 +65,7 @@ export async function runHandDrawSequence(
     deps.setHiddenHandCardKeys((current) => new Set([...current, ...hiddenDrawKeys]));
     onReveal();
     if (!(await deps.playback.waitForFrame(session)) || !deps.isSessionActive(session)) return false;
-    if (!isAnimationDisabled()) {
+    if (!shouldReduceMotion()) {
       await deps.animateDrawnHand(drawnCards, newState.hand, session);
     }
   } finally {

@@ -6,59 +6,24 @@ import {
   setBattleActiveForTest as mutateHasActiveBattle,
   replaceBattleForTest as mutateSyncedBattleState,
   resetRunDomainStore,
-  resetRunSessionSlice,
   setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
 import { subscribeGameplayCommits } from "@/features/alchemy/shared/stores/gameplay-state-reads";
-import {
-  abandonRun,
-  syncBattleToRun as mutateBattleToRun,
-  syncRunToBattleStart as mutateRunToBattleStart,
-  teardownRun,
-} from "@/features/alchemy/shared/stores/run-lifecycle";
-import {
-  readActiveRun,
-  readActiveRunScreen,
-  readBattle,
-  readRunSession,
-} from "@/features/alchemy/shared/stores/run-reads";
-import {
-  useRunSessionBattleContext,
-  useRunSessionNavigationSlice,
-} from "@/features/alchemy/shared/stores/use-run-reads";
+import { abandonRun, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { readActiveRunScreen, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import { setHasActiveRun as mutateHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { createEmptyRewardState, readActivityData } from "@/lib/active-run-session";
 import { defaultBattleState } from "@/lib/battle";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultGameSession } from "@/app/application-session";
-const syncBattleToRun = bindRunMutationForTest(mutateBattleToRun);
-const syncRunToBattleStart = bindRunMutationForTest(mutateRunToBattleStart);
 const setSyncedBattleState = bindGameplayMutationForTest(mutateSyncedBattleState);
 const setHasActiveBattle = bindRunMutationForTest(mutateHasActiveBattle);
 const setHasActiveRun = bindRunMutationForTest(mutateHasActiveRun);
 
 beforeEach(() => {
   resetRunDomainStore();
-});
-
-describe("session slice", () => {
-  beforeEach(() => {
-    resetRunSessionSlice();
-  });
-
-  it("has empty shop and alchemist state", () => {
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "shop").cards).toEqual([]);
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist").potions).toEqual([]);
-  });
-
-  it("starts with empty reward state and no active run", () => {
-    expect(readRunSession(defaultGameSession).rewardFlow.state).toEqual(createEmptyRewardState());
-    expect(readRunSession(defaultGameSession).hasActiveRun).toBe(false);
-  });
 });
 
 describe("run transitions", () => {
@@ -69,24 +34,6 @@ describe("run transitions", () => {
     setRunProgress({ runPlayerHealth: 18, runMaxHealth: 24, gold: 40, initialized: true });
     setSyncedBattleState({ ...defaultBattleState(), playerHealth: 10, gold: 7 });
     setHasActiveRun(true);
-  });
-
-  it("syncRunToBattleStart clamps and persists run HP", () => {
-    const health = syncRunToBattleStart();
-    expect(health).toBeGreaterThan(0);
-    expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(health);
-  });
-
-  it("does not restore Health from Grove's Favor at battle start", () => {
-    setRunProgress({ runPlayerHealth: 18, runMaxHealth: 24, runBoons: ["groves-favor"] });
-
-    expect(syncRunToBattleStart()).toBe(18);
-    expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(18);
-  });
-
-  it("syncBattleToRun copies battle HP to the run store", () => {
-    syncBattleToRun({ playerHealth: 14 });
-    expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(14);
   });
 
   it("teardownRun clears session flags and returns to menu", () => {
@@ -117,20 +64,7 @@ describe("run transitions", () => {
   });
 });
 
-describe("session narrow hooks", () => {
-  it("useRunSessionBattleContext reports battle phase when combat is active", () => {
-    setHasActiveBattle(true);
-    const { result } = renderHook(() => useRunSessionBattleContext(ROUTE_SCREENS.BATTLE));
-    expect(result.current.phase).toBe("battle");
-    expect(result.current.battle.hasActiveBattle).toBe(true);
-  });
-
-  it("useRunSessionNavigationSlice reports meta on menu", () => {
-    const { result } = renderHook(() => useRunSessionNavigationSlice(ROUTE_SCREENS.MENU));
-    expect(result.current.phase).toBe("meta");
-    expect(result.current.hasActiveBattle).toBe(false);
-  });
-
+describe("commit subscriptions", () => {
   it("notifies the session and gameplay commit subscriptions once per command", () => {
     const calls: string[] = [];
     const unsubscribeSession = subscribeRunSessionCommits(() => calls.push("session"), defaultGameSession);

@@ -1,10 +1,16 @@
-import { applyShatter, applyWildfire, canInitiateElementalReaction, canShatter } from "./elemental-reactions";
+import {
+  applyShatter,
+  applyElementalReactionDamage,
+  getPostHitReactionPayoffs,
+  canInitiateElementalReaction,
+  canShatter,
+} from "./elemental-reactions";
 import { readCombatFlag } from "./action-context";
 import { scalePercent } from "./amount-helpers";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { addGoldWithCombatText } from "./player-rewards";
-import { computeCardDamageToEnemy } from "./damage-calc";
+import { computeCardAttackPower, computeCardDamageToEnemy } from "./damage-calc";
 import { computeBaseDamage } from "./player-damage-base";
 import { resolvePlayerHit } from "./hit-resolution";
 import { tryDodgePlayerAttackPacket } from "./dodge";
@@ -25,7 +31,10 @@ interface AttackPacket {
 
 // Builds an immutable candidate; dealDamageToEnemy commits its flag changes
 // only after establishing a positive attack and passing Dodge.
-function consumeAttackPacketFlags(state: BattleState, effect: DamageEffect): { state: BattleState } & AttackPacket {
+export function consumeAttackPacketFlags(
+  state: BattleState,
+  effect: DamageEffect,
+): { state: BattleState } & AttackPacket {
   const convertToPoison = readCombatFlag(state, "nextHitPoison");
   const poisonPacket = convertToPoison ? { ...effect, damageType: "poison" as const } : effect;
   let damageState = convertToPoison ? { ...state, flags: { ...state.flags, nextHitPoison: false } } : state;
@@ -140,9 +149,12 @@ export function dealDamageToEnemy(
 
   captureDamageEffect(packet);
   const reactionEligible = canInitiateElementalReaction(state, context);
-  const wildfireReady =
-    reactionEligible && packet.damageType === "nature" && state.enemyStatuses.burn > 0 && !state.flags.wildfireUsed;
-  const shatter = reactionEligible && packet.damageType === "physical" && canShatter(state);
+  const shatter =
+    reactionEligible &&
+    packet.damageType === "physical" &&
+    canShatter(state) &&
+    computeCardAttackPower(consumed.state, packet, card, { ...context, baseDamageBonus }).damage > 0;
+  const shatterDamage = shatter ? state.reactions.shatterDamage : 0;
   const damageState = shatter ? applyShatter(consumed.state, combatTexts) : consumed.state;
 
   // Resolve magnitude and defenses before riders, follow-up hits, then reactions.
@@ -150,7 +162,7 @@ export function dealDamageToEnemy(
     manaAtStart: damageState.mana,
     enemyFreezeSkipTurnsAtStart: damageState.enemyCC.freezeSkipTurns,
     ...context,
-    guaranteedCrit: shatter || context?.guaranteedCrit === true,
+    guaranteedCrit: context?.guaranteedCrit === true,
     baseDamageBonus,
   });
   const viper =
@@ -160,6 +172,7 @@ export function dealDamageToEnemy(
     damageState.gearEffects.dodgeReadiesVenomousHit > 0 &&
     damageState.uniqueGear.viperReady;
   const afterViper = viper ? { ...nextState, uniqueGear: { ...nextState.uniqueGear, viperReady: false } } : nextState;
+  let healthDamage = 0;
   let result = resolvePlayerHit(
     afterViper,
     {
@@ -170,10 +183,25 @@ export function dealDamageToEnemy(
       critical,
       origin: context?.origin,
       ...(context?.forgeTriggers ? { forgeTriggers: context.forgeTriggers } : {}),
-      onDamageDealt: context?.onDamageDealt,
+      onDamageDealt: (amount) => {
+        healthDamage = amount;
+        context?.onDamageDealt?.(amount);
+      },
     },
     combatTexts,
+    resolvePendingBattleReactions,
   );
+  const payoffs = reactionEligible ? getPostHitReactionPayoffs(state, result, packet.damageType, healthDamage) : [];
+  if (
+    reactionEligible &&
+    packet.damageType === "holy" &&
+    healthDamage > 0 &&
+    state.enemyStatuses.bleed > 0 &&
+    result.enemyStatuses.bleed > 0
+  ) {
+    result = { ...result, reactions: { ...result.reactions, consecrated: true } };
+  }
+  if (shatter) payoffs.unshift({ id: "shatter", damage: shatterDamage });
   result = applyAttackPacketFollowUps(
     result,
     packet.damageType,
@@ -183,17 +211,17 @@ export function dealDamageToEnemy(
     applyPartingCut,
     combatTexts,
   );
-  // Award once after the whole attack packet, including its secondary hits.
-  if (result.enemyHealth <= 0 && card.tags?.includes("archery") && result.talentEffects.goldOnArcheryKill > 0) {
+  const attackKilledEnemy = result.enemyHealth <= 0;
+  if (attackKilledEnemy && card.tags?.includes("archery") && result.talentEffects.goldOnArcheryKill > 0) {
     result = addGoldWithCombatText(result, result.talentEffects.goldOnArcheryKill, combatTexts);
   }
   result = resolvePendingBattleReactions(applyEncounterThorns(result, combatTexts), combatTexts);
-  if (!wildfireReady || modifiedDamage <= 0) return result;
-  const enemyAliveBeforeWildfire = result.enemyHealth > 0;
-  result = resolvePendingBattleReactions(applyWildfire(result, combatTexts), combatTexts);
-  // A lethal detonation belongs to this attack; earlier packet kills already paid above.
+  for (const payoff of payoffs) {
+    result = resolvePendingBattleReactions(applyElementalReactionDamage(result, payoff, combatTexts), combatTexts);
+  }
+  // Attribute the entire packet, including reaction kills, to its Archery card exactly once.
   if (
-    enemyAliveBeforeWildfire &&
+    !attackKilledEnemy &&
     result.enemyHealth <= 0 &&
     card.tags?.includes("archery") &&
     result.talentEffects.goldOnArcheryKill > 0

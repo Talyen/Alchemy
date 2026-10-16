@@ -1,3 +1,4 @@
+import { makeTestCard } from "./cards";
 import { savedActivityFixture } from "./run-activity";
 import { saveEnvelopeFixture } from "./saves";
 import { gridLabyrinthMapFixture } from "./labyrinth-map";
@@ -31,14 +32,13 @@ export function currentSchemaCampaignSave() {
       runHistoryPartial: false,
       runGoldEarned: 35,
       runDeck: [
-        {
+        makeTestCard({
           id: "slash",
           title: "Slash",
           descriptionLines: ["Deal 6 Physical damage"],
           art: "old-slash.webp",
-          cost: 1,
           effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-        },
+        }),
       ],
       runPlayerHealth: 18,
       runMaxHealth: 30,
@@ -52,6 +52,7 @@ export function currentSchemaCampaignSave() {
       activity: savedActivityFixture("destination"),
     },
     materialInventory: { wood: 4, iron: 2 },
+    starterHomesteadGrantResolved: true,
     constructedBuildings: { "blacksmiths-forge": 1 },
     plantedFarms: { pasture: 1 },
     completedResearch: { "leyline-energy": 1 },

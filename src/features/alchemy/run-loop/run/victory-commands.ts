@@ -18,7 +18,6 @@ import {
   enterWildwoodVictory,
   setDestinationOfferState,
   setGold,
-  setRunMaxHealth,
   settleBattleVictory,
   settlePendingBattleMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -45,11 +44,11 @@ export function commitVictoryRewards(
   settlePendingBattleMaterials(draft);
 
   completeRunRoom(draft);
-  addRunGoldEarned(draft, Math.max(0, result.persistedGold - draft.runProfile.gold));
+  const previousGold = draft.runProfile.gold;
   setGold(draft, result.persistedGold);
-  if (result.maxHealthDelta > 0) {
-    setRunMaxHealth(draft, (prev) => prev + result.maxHealthDelta);
-  }
+  const goldAward = Math.max(0, draft.runProfile.gold - previousGold);
+  addRunGoldEarned(draft, goldAward);
+
   syncBattleToRun(draft, { playerHealth: result.playerHealth });
 
   setDestinationOfferState(draft, result.destinationOfferState);
@@ -64,7 +63,7 @@ export function commitVictoryRewards(
       ? getCompanionCardChoices(rng, result.labyrinthRewardModifiers)
       : null,
   );
-  return result.goldEarned > 0;
+  return result.goldEarned > 0 && goldAward > 0;
 }
 
 export function createVictoryCommand(gameSession: GameSession) {
@@ -118,7 +117,8 @@ export function createVictoryCommand(gameSession: GameSession) {
       (draft) => {
         if (draft.session.activity.kind !== "battle") return rejectCommand("There is no active battle to finish", null);
         const state = draft.session.activity.data.battleState;
-        if (getBattleOutcome(state) !== "victory") return rejectCommand("Battle has not been won", null);
+        if (getBattleOutcome(state) !== "victory" || state.wishOptions)
+          return rejectCommand("Battle victory is not ready to settle", null);
         const committedResult = computeVictoryResult(draft);
         const battleState = snapshotTransactionValue(draft.session.activity.data.battleState);
         const runState = draft.run.activeRun;

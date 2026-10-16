@@ -110,6 +110,11 @@ export function addEnemyStatus(
 }
 
 export function setEnemyStatus(state: BattleState, status: EnemyStatusId, value: number): BattleState {
-  if (Object.is(state.enemyStatuses[status], value)) return state;
-  return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: value } };
+  const clearConsecration = status === "bleed" && value <= 0 && state.reactions.consecrated;
+  if (Object.is(state.enemyStatuses[status], value) && !clearConsecration) return state;
+  return {
+    ...state,
+    enemyStatuses: { ...state.enemyStatuses, [status]: value },
+    ...(clearConsecration ? { reactions: { ...state.reactions, consecrated: false } } : {}),
+  };
 }

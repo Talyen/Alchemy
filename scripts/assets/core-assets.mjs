@@ -30,6 +30,13 @@ export const coreAssets = [
     target: "demo-feature-showcase.webp",
     ...ART_PRESETS.marketing,
   },
+  ...artGroup({ folder: "Branding/Marketing", preset: ART_PRESETS.marketing }, [
+    ["Unlock Full Game Demo Promo - de.png", "demo-feature-showcase-de.webp"],
+    ["Unlock Full Game Demo Promo - zh-Hans.png", "demo-feature-showcase-zh-hans.webp"],
+    ["Unlock Full Game Demo Promo - ru.png", "demo-feature-showcase-ru.webp"],
+    ["Unlock Full Game Demo Promo - es.png", "demo-feature-showcase-es.webp"],
+    ["Unlock Full Game Demo Promo - pt-BR.png", "demo-feature-showcase-pt-br.webp"],
+  ]),
   // Piles share the boon quality (82): flat graphic fields band at card quality (80).
   ...artGroup(
     {

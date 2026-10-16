@@ -25,14 +25,14 @@ contract and controller seams.
 
 `src/lib/gear/definitions.ts`, `crafting.ts`, and `crafting-ids.ts` are authoritative. Item titles live with definitions (`getGearInstanceTitle`), and canonical affix resolution is centralized in `getGearInstanceAffixes`. Affix pool/roll helpers live in `affix-pool.ts` so generation and crafting depend down. Durable invariants:
 
-- A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and rolled `affixes`; it never embeds definition objects or art URLs.
+- A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and an `affixes` array. Basic and Astral items persist their rolls; Unique items keep that array empty and resolve canonical affixes from the catalog. Instances never embed definition objects or art URLs.
 - Inventories and loadouts are keyed by character. A loadout maps each slot to at most one instance ID.
 - Permanent Trinkets are unique definition IDs in `ownedTrinketIds`, not generated `GearInstance` values; they have no rarity, affixes, crafting, or salvage.
 - `equippedTrinkets` maps each character to one owned Trinket at most. Equipping a shared Trinket moves it from any other character.
-- Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata. One-handed melee weapons and wands may occupy `main-hand` or `off-hand`; two-handers and ranged weapons stay main-hand only (ranged pairs with a quiver off-hand).
+- Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata. Placement presets in `base-items.ts` bind legal slots and hand rules together. One-handed melee weapons and wands may occupy `main-hand` or `off-hand`; two-handers and ranged weapons stay main-hand only (ranged pairs with a quiver off-hand).
 - `loadout-operations.ts` owns one private hand-pair resolver shared by slot validation, equipping, and saved-loadout repair. Equipping preserves the incoming hand by displacing a conflicting item; save repair preserves main-hand by clearing an invalid off-hand. Quiver requirements reject incompatible selections (including a shield beside a bow or a melee weapon beside a Quiver). Equipping body armor or accessories preserves valid hand pairs. The Armory grid checks legality through `isGearCompatibleWithLoadoutSlot`; `equipGear` applies the same resolution. `pruneOrphanGearLoadouts` repairs saved pairs and removes orphan references; removing, salvaging, or transferring a bow also unequips its unsupported Quiver without removing the Quiver from inventory.
 - Gear slots are `main-hand`, `off-hand`, `body`, `left-accessory`, and `right-accessory`. Both Accessory slots accept Rings or Amulets. The Armory lays these out over `left-accessory | trinket | right-accessory`; the dedicated Trinket slot accepts only permanent Trinkets.
-- **Unique** is a third Gear rarity (alongside basic and astral). Each base item has exactly one named Unique with one exclusive signature and three fixed standard supporting affixes. Supporting rolls always use the standard Unique/Astral maximum from the affix catalog; the signature has its own fixed magnitude. Generation, tooltips, manifests, and saved-item normalization share these canonical affixes, and saved Unique instances store no rolls at all — older saves carrying stored rolls converge on the catalog at load without changing identity, ownership, or Collection discovery. Crafting currencies cannot modify uniques. Unique salvage follows the crafting and homestead salvage definitions. Collection tracks discovered unique definition IDs independently of current inventory, so salvage does not hide an already-found unique.
+- **Unique** is a third Gear rarity (alongside basic and astral). Each base item has exactly one named Unique with one exclusive signature and three fixed standard supporting affixes. Signature affixes supply the item's default ID and title; `unique-catalog.ts` keeps explicit overrides where item and affix identities differ. Supporting rolls always use the standard Unique/Astral maximum from the affix catalog; the signature has its own fixed magnitude. Generation, tooltips, manifests, and saved-item normalization share these canonical affixes, and saved Unique instances store no rolls at all — older saves carrying stored rolls converge on the catalog at load without changing identity, ownership, or Collection discovery. Crafting currencies cannot modify uniques. Unique salvage follows the crafting and homestead salvage definitions. Collection tracks discovered unique definition IDs independently of current inventory, so salvage does not hide an already-found unique.
 - Uniqueness is inventory-scoped: a unique definition is excluded from shops and rewards while any character still holds an instance. Salvaging it returns that definition to the drop pool. Reward and shop screens never offer the same unique twice, and never pair a unique with another item of the same base item.
 
 Presentation follows [UI item shine](./UI.md#item-shine). Pass affix identity and normalized values together so tooltip text and max-roll shine use the same item data.
@@ -64,7 +64,7 @@ Edit the source weights and progression points in `run-rewards.ts`, then run `np
 
 ## Materials tuning
 
-Homestead material payouts are tuned separately from gear offers in `src/lib/game-constants/materials-economy.ts`. Combat victories use a shared pool independent of enemy identity: Normal encounters pay 3/4/5 materials across bands 1/2/3, Elites pay 5/6/7, and Bosses pay 8/10/12. Campaign uses the current act, Labyrinth the current floor, and Wildwood the current boss number; bands cap at 3. Each bundle of two picks one of all seven materials with equal odds and replacement; odd totals end with a single-material roll. The seeded reward stream owns every roll. `computeCombatMaterialReward` applies scavenger doubling and the herbalist bonus before Homestead find bonuses. Mystery grants use `computeMysteryMaterialReward`; direct Wish Gems/Gold are modified before combat text and pending grants. Find bonuses add across nodes, then multiply each matching source quantity once and round with `Math.round`, without extra RNG. Gold find bonuses affect victory, Mystery, and direct Wish payouts, excluding other generated Gold and the existing purse. Salvage and run-end accounting never apply find bonuses. The policy in `src/lib/homestead/material-rewards.ts` owns quantity calculation. The seeded report in `reports/loot-progression/materials.html` (built by `npm run balance:loot`) shows mean base payouts per progression band and encounter type; build-dependent modifiers are not simulated.
+Homestead material payouts are tuned separately from gear offers in `src/lib/game-constants/materials-economy.ts`. Combat victories use a shared pool independent of enemy identity: Normal encounters pay 3/4/5 materials across bands 1/2/3, Elites pay 5/6/7, and Bosses pay 8/10/12. Campaign uses the current act, Labyrinth the current floor, and Wildwood the current boss number; bands cap at 3. Each bundle of two picks one of all seven materials with equal odds and replacement; odd totals end with a single-material roll. The seeded reward stream owns every roll. `computeCombatMaterialReward` applies scavenger doubling and the herbalist bonus before Homestead find bonuses. Mystery grants use `computeMysteryMaterialReward`. Find bonuses add across nodes, then multiply each matching source quantity once and round with `Math.round`, without extra RNG. Gold find bonuses affect victory and Mystery payouts, excluding other generated Gold and the existing purse. Salvage and run-end accounting never apply find bonuses. The policy in `src/lib/homestead/material-rewards.ts` owns quantity calculation. The seeded report in `reports/loot-progression/materials.html` (built by `npm run balance:loot`) shows mean base payouts per progression band and encounter type; build-dependent modifiers are not simulated.
 
 ## Inventory ordering and equipment movement
 
@@ -153,7 +153,14 @@ actions consume no RNG, publish no revision, and request no save.
 import boundaries. Store-owned acquisition helpers use
 `mutateGearWithRunHealthSync(transaction, { mutate })` inside their existing
 transaction; its readonly `GearDraftView` exposes guarded mutations and tracks
-writes. It has no salvage operation. Bootstrap hydration uses the Gear codec;
+writes. Mutation capabilities close when the `mutate` callback returns or throws,
+before live Health and manifests are rebound. A retained method cannot change
+equipment later in the enclosing command and leave those derived values stale.
+The inner callback must return synchronously; its result is validated even when
+the enclosing command ignores it, so an asynchronous callback cannot commit its
+partial changes. A callback or rebinding failure invalidates the enclosing command;
+catching the error cannot publish incomplete equipment, Health, or discovery changes.
+It has no salvage operation. Bootstrap hydration uses the Gear codec;
 feature code cannot initialize or reset Gear through an Armory action.
 
 Salvage has one transaction-level recipe: `salvageGearInTransaction(transaction,
@@ -196,11 +203,14 @@ Cleanse, Purge, and Death's Door remain mechanics rather than Alchemy keywords; 
 
 Fateful uses Mana as its secondary affinity so its Wish draw effect can roll on ordinary Mana Gear. The affix catalog test checks that every ordinary affix is reachable on at least one Basic or Astral item.
 
-Effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest.ts`). Each entry in `gearAffixCatalog` declares its `effectKey: keyof GearEffectManifest`. The architecture guards `tests/architecture/affix-catalog-guard.test.ts` and `src/lib/content-validation/validators-gear.ts` assert:
-
-- Every `effectKey` in the catalog is a member of `GEAR_EFFECT_KEYS` (catches silent zero-roll typos).
-- Every key in `GEAR_EFFECT_KEYS` is referenced by at least one affix.
-- The keys are unique.
+`src/lib/gear/affix-rows.ts` owns the ordered affix definitions. Typed builders
+preserve literal IDs and effect keys; `GearEffectManifest`, numeric defaults, and
+`GEAR_EFFECT_KEYS` derive from those rows. Only the independent-roll policy for
+Forge chances is listed separately in `gear-effect-manifest.ts`; all other effects
+sum numerically. `affix-catalog.ts` adds visible tooltip keywords without becoming
+a dependency of manifest construction. Preserve row order when editing: seeded
+Gear generation depends on it. Catalog guards and content validation retain
+unique-ID, display-name, roll-range, and ordinary-affix reachability checks.
 
 ## Persistence
 

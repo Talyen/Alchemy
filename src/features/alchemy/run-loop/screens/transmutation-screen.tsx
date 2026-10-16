@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { cn } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
 import { MoveRight } from "lucide-react";
@@ -34,6 +36,7 @@ export function TransmutationScreen({
   afterProgressSaved?: (feedback: () => void) => void;
   isProgressSavePending?: () => boolean;
 }) {
+  const i18n = useGameTranslation();
   const [page, setPage] = useState(0);
   const [error, setError] = useState("");
   const [committedHere, setCommittedHere] = useState(false);
@@ -154,9 +157,10 @@ export function TransmutationScreen({
   }
 
   if (!available && !completed) return null;
+  const resultCard = visit.result;
 
   return (
-    <TitledScreenShell title="Transmutation">
+    <TitledScreenShell title={i18n.text("ui.transmutation-screen.1", "Transmutation")}>
       <div
         ref={panelRef}
         className="mt-5 flex flex-col items-center gap-5 text-center"
@@ -168,28 +172,30 @@ export function TransmutationScreen({
           restoreFocus.current = false;
         }}
       >
-        {showResult && visit.result ? (
+        {showResult && resultCard ? (
           <>
             <FadeSlot
               swapKey="result"
               className="flex flex-col items-center gap-3"
               onReady={() => setResultReady(true)}
-              aria-label="Transmutation result"
+              aria-label={i18n.text("ui.transmutation-screen.2", "Transmutation result")}
             >
               <div className={cn("reward-choice relative", resultReady && committedHere && "reward-choice-selected")}>
                 <BattleCardButton
-                  card={visit.result}
+                  card={resultCard}
                   comparisonCard={visit.original ?? undefined}
-                  ariaLabel={`Transmuted: ${getCardDisplayTitle(visit.result)}`}
+                  ariaLabel={i18n.text("ui.transmutation-screen.3", "Transmuted: {{value0}}", {
+                    value0: i18n.read(() => getCardDisplayTitle(resultCard)),
+                  })}
                   className={viewCardWidthClass}
-                  shineColor={getCardInspectionShineColors(visit.result)}
+                  shineColor={getCardInspectionShineColors(resultCard)}
                   selected
                   shimmerActive={false}
                   shimmerToken={undefined}
                 />
               </div>
               <div className={controlLabelClass}>
-                <CardTitle card={visit.result} />
+                <CardTitle card={resultCard} />
               </div>
             </FadeSlot>
             <Button
@@ -202,7 +208,7 @@ export function TransmutationScreen({
                 onContinue();
               }}
             >
-              Continue
+              {i18n.text("ui.transmutation-screen.4", "Continue")}
             </Button>
           </>
         ) : !source ? (
@@ -222,12 +228,16 @@ export function TransmutationScreen({
               )}
             />
             <Button size="lg" variant="outline" disabled={locked} onClick={leave}>
-              Leave
+              {i18n.text("ui.transmutation-screen.5", "Leave")}
             </Button>
           </>
         ) : (
           <>
-            <div className="flex flex-wrap justify-center gap-5" role="group" aria-label="Alterations">
+            <div
+              className="flex flex-wrap justify-center gap-5"
+              role="group"
+              aria-label={i18n.text("ui.transmutation-screen.6", "Alterations")}
+            >
               {selection?.choices.map((choice) => (
                 <KeywordTag
                   key={choice.keyword}
@@ -244,12 +254,14 @@ export function TransmutationScreen({
             {preview && (
               <div
                 className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3"
-                aria-label="Transmutation comparison"
+                aria-label={i18n.text("ui.transmutation-screen.7", "Transmutation comparison")}
               >
                 <div className={cn(viewCardWidthClass, "flex flex-col items-center gap-3")}>
                   <BattleCardButton
                     card={source}
-                    ariaLabel={`Original: ${getCardDisplayTitle(source)}`}
+                    ariaLabel={i18n.text("ui.transmutation-screen.8", "Original: {{value0}}", {
+                      value0: i18n.read(() => getCardDisplayTitle(source)),
+                    })}
                     className={viewCardWidthClass}
                     shineColor={getCardInspectionShineColors(source)}
                     shimmerActive={false}
@@ -268,7 +280,9 @@ export function TransmutationScreen({
                   <BattleCardButton
                     card={preview}
                     comparisonCard={source}
-                    ariaLabel={`Preview: ${getCardDisplayTitle(preview)}`}
+                    ariaLabel={i18n.text("ui.transmutation-screen.9", "Preview: {{value0}}", {
+                      value0: i18n.read(() => getCardDisplayTitle(preview)),
+                    })}
                     className={viewCardWidthClass}
                     shineColor={getCardInspectionShineColors(preview)}
                     shimmerActive={false}
@@ -285,7 +299,7 @@ export function TransmutationScreen({
         {source && !showResult && (
           <div className="flex flex-wrap justify-center gap-3">
             <Button size="lg" variant="outline" disabled={locked} onClick={() => select({ kind: "back" })}>
-              Back
+              {i18n.text("ui.transmutation-screen.10", "Back")}
             </Button>
             {keyword && (
               <Button
@@ -304,12 +318,14 @@ export function TransmutationScreen({
                 }
                 onClick={confirm}
               >
-                Transmute
+                {i18n.text("ui.transmutation-screen.11", "Transmute")}
               </Button>
             )}
           </div>
         )}
-        {(error || staleSource) && <p role="alert">{error || "Your deck changed. Choose a card again."}</p>}
+        {(error || staleSource) && (
+          <p role="alert">{i18n.displayText(error || "Your deck changed. Choose a card again.")}</p>
+        )}
       </div>
     </TitledScreenShell>
   );

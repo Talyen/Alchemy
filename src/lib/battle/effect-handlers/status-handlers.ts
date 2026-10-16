@@ -1,15 +1,14 @@
 import type { EffectHandlers } from "./handler-types";
 import { applyPotionMultiplier } from "../amount-helpers";
 import type { BattleState, CombatTextEvent } from "../types";
-import { addEnemyStatus, setPlayerStatus } from "../status-state";
+import { addEnemyStatus } from "../status-state";
 import { mergeCombatText } from "../combat-text-events";
-import { applyPlayerStatusEffect, applyCleanseHeals, removeHarmfulPlayerStatuses } from "../status-player";
+import { UTILITY_HANDLERS } from "./utility-handlers";
 import { tryTriggerEnemyFreeze } from "../damage-status-riders";
 import { resolveStunTrigger } from "../status-stun-resolve";
 import { dealDamageToEnemy } from "../damage";
-import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
+import type { EnemyStatusId } from "@/lib/game-data";
 import { resolveFollowUpHit } from "../follow-up-hit-resolution";
-import { getBattleRng, pickRandom } from "@/lib/rng";
 
 function resolveEnemyStatusCcTrigger(
   preHitState: BattleState,
@@ -22,50 +21,7 @@ function resolveEnemyStatusCcTrigger(
   return nextState;
 }
 
-function cleansePlayerStatus(state: BattleState, status: PlayerStatusId, combatTexts: CombatTextEvent[]): BattleState {
-  if (state.playerStatuses[status] <= 0) return state;
-  mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: status, signal: "cleanse", text: "" });
-  return applyCleanseHeals(setPlayerStatus(state, status, 0), combatTexts);
-}
-
 export const STATUS_HANDLERS = {
-  "player-status": (state, _card, effect, potionMult, combatTexts, context) => {
-    let adjustedAmount = effect.amount;
-    let nextState = state;
-    if (effect.convertCurrentMana !== undefined) {
-      adjustedAmount = (context?.manaAtStart ?? state.mana) * effect.convertCurrentMana;
-      if (state.mana > 0) {
-        mergeCombatText(combatTexts, {
-          target: "player",
-          kind: "damage",
-          stat: "mana",
-          amount: state.mana,
-          impact: false,
-        });
-      }
-      nextState = { ...state, mana: 0 };
-    } else if (effect.perManaCrystal !== undefined) {
-      adjustedAmount = effect.perManaCrystal * state.maxMana;
-    }
-    const status = effect.statusPool
-      ? (pickRandom(effect.statusPool, getBattleRng(nextState)) ?? effect.status)
-      : effect.status;
-    if (status !== "haste" && status !== "phoenixFeather") {
-      adjustedAmount = applyPotionMultiplier(adjustedAmount, potionMult);
-    }
-    return applyPlayerStatusEffect(
-      nextState,
-      {
-        ...effect,
-        status,
-        amount:
-          status === "forge" && effect.forgeAmount !== undefined
-            ? applyPotionMultiplier(effect.forgeAmount, potionMult)
-            : adjustedAmount,
-      },
-      combatTexts,
-    );
-  },
   "enemy-status": (state, _card, effect, potionMult, combatTexts) => {
     const amount = applyPotionMultiplier(effect.amount, potionMult);
     if (effect.status === "stun" || effect.status === "freeze") {
@@ -81,15 +37,6 @@ export const STATUS_HANDLERS = {
     });
 
     return nextState;
-  },
-  "remove-harmful-status": (state, _card, effect, potionMult, combatTexts) => {
-    const adjustedRemove = effect.removeAll
-      ? Number.POSITIVE_INFINITY
-      : applyPotionMultiplier(effect.amount ?? 0, potionMult);
-    return removeHarmfulPlayerStatuses(state, adjustedRemove, combatTexts);
-  },
-  "remove-player-status": (state, _card, effect, _potionMult, combatTexts) => {
-    return cleansePlayerStatus(state, effect.status, combatTexts);
   },
   "multiply-enemy-status": (state, _card, effect, _potionMult, combatTexts) => {
     const current = state.enemyStatuses[effect.status];
@@ -113,7 +60,13 @@ export const STATUS_HANDLERS = {
     const stacks = state.playerStatuses[effect.status];
     if (stacks <= 0) return state;
 
-    const cleansed = cleansePlayerStatus(state, effect.status, combatTexts);
+    const cleansed = UTILITY_HANDLERS["remove-player-status"](
+      state,
+      card,
+      { kind: "remove-player-status", status: effect.status },
+      1,
+      combatTexts,
+    );
     const amount = applyPotionMultiplier(stacks, potionMult);
 
     return dealDamageToEnemy(

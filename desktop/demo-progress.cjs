@@ -46,15 +46,21 @@ function createDemoProgressBridge({
   function cloudEnabled(client) {
     return Boolean(client?.cloud.isEnabledForAccount() && client.cloud.isEnabledForApp());
   }
+  let receiptQueue = Promise.resolve();
   async function complete({ localOnly = false } = {}) {
     if (edition !== "full") return true;
-    try {
-      await fs.mkdir(directory, { recursive: true });
-      await fs.writeFile(`${receiptPath}.tmp`, "initialized", "utf8");
-      await fs.rename(`${receiptPath}.tmp`, receiptPath);
-    } catch {
-      return false;
-    }
+    const receipt = receiptQueue.then(async () => {
+      try {
+        await fs.mkdir(directory, { recursive: true });
+        await fs.writeFile(`${receiptPath}.tmp`, "initialized", "utf8");
+        await fs.rename(`${receiptPath}.tmp`, receiptPath);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    receiptQueue = receipt.catch(() => {});
+    if (!(await receipt)) return false;
     // A local wipe requires a durable local receipt; Cloud remains best effort.
     // Cloud-first deletion still requires its receipt before removing mirrors.
     try {

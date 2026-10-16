@@ -5,12 +5,7 @@ import {
   setShopState,
   setScreen,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
-  useDraftDeckScreenData,
-  useShopScreenData,
-  useRunEndScreenData,
-  useLabyrinthMapScreenData,
-} from "@/features/alchemy/shared/stores/use-run-screen-data";
+import { useRunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { emptyShopState } from "@/lib/active-run-session";
 import { act, renderHook } from "@testing-library/react";
@@ -45,7 +40,7 @@ describe("screen-specific run data hooks", () => {
             ? { ...createInitialWildwoodDraftState("wildcard", () => 0.5), draftChoices: choices }
             : null,
       });
-      const { result } = renderHook(() => useDraftDeckScreenData());
+      const { result } = renderHook(() => useRunScreenData("draft-deck"));
       const outgoing = result.current;
       act(() => {
         expect(abandonCurrentRun(defaultGameSession)).toBe(true);
@@ -59,7 +54,7 @@ describe("screen-specific run data hooks", () => {
   it.each(["game-over", "run-victory"] as const)("retains the %s summary while teardown clears the run", (screen) => {
     setRunSession({ runEndTalentXP: { physical: 25 }, runEndLabyrinthFloor: 7 });
     mutateRunForTest((draft) => setScreen(draft, screen));
-    const { result } = renderHook(() => useRunEndScreenData());
+    const { result } = renderHook(() => useRunScreenData("game-over"));
     const shown = result.current;
     act(() => teardownRun(defaultGameSession));
     expect(readRunSession(defaultGameSession).runEndTalentXP).toEqual({});
@@ -69,7 +64,7 @@ describe("screen-specific run data hooks", () => {
 
   it("retains the selected map room while entering an encounter", () => {
     setRunSession({ activity: { kind: "labyrinth-map" }, selectedLabyrinthNodeId: "room-1" });
-    const { result } = renderHook(() => useLabyrinthMapScreenData());
+    const { result } = renderHook(() => useRunScreenData("labyrinth-map"));
     act(() => {
       mutateRunForTest((draft) => setShopState(draft, emptyShopState()));
       setRunSession({ selectedLabyrinthNodeId: null });
@@ -82,7 +77,7 @@ describe("screen-specific run data hooks", () => {
     let renders = 0;
     renderHook(() => {
       renders += 1;
-      return useShopScreenData();
+      return useRunScreenData("shop");
     });
 
     act(() => {
@@ -97,7 +92,7 @@ describe("screen-specific run data hooks", () => {
     let renders = 0;
     const { result } = renderHook(() => {
       renders += 1;
-      return useShopScreenData();
+      return useRunScreenData("shop");
     });
     act(() => mutateRunForTest((draft) => setShopState(draft, { ...emptyShopState(), refreshesLeft: 0 })));
     const outgoing = result.current;

@@ -1,3 +1,4 @@
+import { makeTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { addEnemyStatus, tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
@@ -28,16 +29,14 @@ function enemyWith(...ids: Array<keyof typeof ENCOUNTER_TRAITS>): BestiaryEntry 
 }
 
 function card(overrides: Partial<BattleCard> = {}): BattleCard {
-  return {
-    id: "test-card",
+  return makeTestCard({
     uid: 1,
     title: "Test Card",
     descriptionLines: [],
-    art: "",
     cost: 0,
     effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
     ...overrides,
-  };
+  });
 }
 
 describe("encounter trait enemy actions", () => {

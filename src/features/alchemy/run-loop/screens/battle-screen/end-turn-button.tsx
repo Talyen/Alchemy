@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { useCallback, useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { CircleArrowRight } from "lucide-react";
 import { useStore } from "zustand";
@@ -20,6 +22,7 @@ export interface BattleEndTurnButtonProps {
   presentation: BattlePresentationStore;
   buttonRef: RefObject<HTMLButtonElement | null>;
   isCardPlayInProgress: () => boolean;
+  subscribePlayback: (listener: () => void) => () => void;
   isProgressSavePending: () => boolean;
   subscribeProgressSave: (listener: () => void) => () => void;
   onEndTurn: (expected: BattleSnapshot) => void;
@@ -33,15 +36,18 @@ export function BattleEndTurnButton({
   presentation,
   buttonRef,
   isCardPlayInProgress,
+  subscribePlayback,
   isProgressSavePending,
   subscribeProgressSave,
   onEndTurn,
 }: BattleEndTurnButtonProps) {
+  const i18n = useGameTranslation();
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [confirmationState, setConfirmationState] = useState<BattleSnapshot | null>(null);
   const pendingConfirmation = useRef<BattleSnapshot | null>(null);
   const inspectionOpen = useUiStore(isBattleInspectionOpen);
+  const cardPlayInProgress = useSyncExternalStore(subscribePlayback, isCardPlayInProgress);
   const savePending = useSyncExternalStore(subscribeProgressSave, isProgressSavePending);
   const gate = useStore(
     presentation,
@@ -73,7 +79,7 @@ export function BattleEndTurnButton({
     );
   }
 
-  const unavailable = savePending || inspectionOpen || gate.openingDrawPending || !canEndTurn();
+  const unavailable = cardPlayInProgress || savePending || inspectionOpen || gate.openingDrawPending || !canEndTurn();
   const open =
     gate.endTurnConfirmationOpen && confirmationState !== null && confirmationState === battleState && !unavailable;
   const closeConfirmation = useCallback(() => {
@@ -101,7 +107,7 @@ export function BattleEndTurnButton({
     <>
       <ChromeIconButton
         ref={buttonRef}
-        aria-label="End Turn"
+        aria-label={i18n.text("ui.end-turn-button.1", "End Turn")}
         data-battle-end-turn
         disabled={unavailable || gate.endTurnConfirmationOpen}
         onClick={() => {
@@ -121,14 +127,21 @@ export function BattleEndTurnButton({
       <PortaledTooltip
         triggerRef={buttonRef}
         visible={!unavailable && !gate.endTurnConfirmationOpen && (hovered || focused)}
+        placement="below"
+        allowFlip={false}
+        horizontalInset={8}
       >
-        End Turn
+        {i18n.text("ui.end-turn-button.2", "End Turn")}
       </PortaledTooltip>
       <ConfirmationDialog
         open={open}
-        title="End turn?"
-        description="Discard your hand and let the enemy act."
-        confirmLabel="End Turn"
+        title={i18n.text("ui.end-turn-button.3", "End turn?")}
+        description={i18n.displayText(
+          battleState.playerStatuses.haste > 0
+            ? i18n.text("ui.end-turn-button.d1", "Discard your hand and take another turn.")
+            : i18n.text("ui.end-turn-button.d2", "Discard your hand and let the enemy act."),
+        )}
+        confirmLabel={i18n.text("ui.end-turn-button.4", "End Turn")}
         tone="default"
         icon={CircleArrowRight}
         returnFocusRef={buttonRef}

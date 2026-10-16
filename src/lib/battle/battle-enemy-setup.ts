@@ -14,6 +14,7 @@ import {
   ENEMY_HEALTH_OVERRIDES,
   ENEMY_PRESSURE_OVERRIDES,
   ENEMY_PROGRESSION_DEPTH_LIMIT,
+  ENEMY_BOSS_HEALTH_SCALE,
 } from "../game-constants";
 
 function enemyProgressionDepth(roomMultiplier: number): number {
@@ -46,7 +47,8 @@ function scaleEnemyHealth(enemy: BestiaryEntry, roomMul: number): number {
   const baseHealth = Math.round(BASE_ENEMY_HEALTH * roomMul * hpTypeMul);
   const growth = evaluateEnemyCurve(ENEMY_BALANCE_BY_TYPE[enemy.enemyType].health, enemyProgressionDepth(roomMul));
   const contentMultiplier = Object.hasOwn(ENEMY_HEALTH_OVERRIDES, enemy.id) ? ENEMY_HEALTH_OVERRIDES[enemy.id]! : 1;
-  return Math.round(baseHealth * growth * contentMultiplier);
+  const bossHealthScale = enemy.enemyType === "boss" ? ENEMY_BOSS_HEALTH_SCALE : 1;
+  return Math.round(baseHealth * growth * contentMultiplier * bossHealthScale);
 }
 
 export function scaleEnemyAbilityDamage(

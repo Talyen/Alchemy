@@ -364,12 +364,9 @@ describe("independent game sessions", () => {
 
       const loaded = await loadAlchemySaveState(b.session);
       expect(loaded.status.kind).toBe("ok");
-      const resumed = createGameSession({ initialSave: loaded.data });
-      try {
-        expect(snapshotCareer(resumed)).toEqual(snapshotCareer(b.session));
-      } finally {
-        await resumed.dispose();
-      }
+      await using resumed = createGameSession({ initialSave: loaded.data });
+
+      expect(snapshotCareer(resumed)).toEqual(snapshotCareer(b.session));
     } finally {
       transportA.release();
       autosaveB.dispose(false);

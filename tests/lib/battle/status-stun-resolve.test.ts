@@ -49,14 +49,11 @@ describe("resolveStunTrigger", () => {
   });
 
   it("draws cards with drawOnStun", () => {
-    const card = {
+    const card = makeTestCard({
       id: "strike",
       title: "Strike",
-      descriptionLines: [""],
-      art: "",
-      cost: 1,
       effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 4 }],
-    };
+    });
     const state = stunnedEnemy({
       deck: [card, card, card],
       talentEffects: { drawOnStun: 2 },

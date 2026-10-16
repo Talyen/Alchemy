@@ -2,6 +2,8 @@
 from difflib import SequenceMatcher
 import re
 
+FUNCTION_WORDS = frozenset('a an the i am is are we you it to of and in on my your me what'.split())
+
 
 def tokens(text):
     return re.findall(r"[a-z]+", text.lower())
@@ -17,8 +19,9 @@ def match_phrases(phrases, words, threshold=.67):
         target = tokens(text)
         if not target:
             continue
+        content = [token for token in target if token not in FUNCTION_WORDS]
         for start in range(len(stream)):
-            for length in range(max(2, round(len(target)*.8)), int(len(target)*1.35)+2):
+            for length in range(max(min(2, len(target)), round(len(target)*.8)), int(len(target)*1.35)+2):
                 end = start+length
                 if end > len(stream):
                     break
@@ -26,6 +29,10 @@ def match_phrases(phrases, words, threshold=.67):
                 if any(b['start']-a['end'] > 2 for a, b in zip(selected, selected[1:])):
                     continue
                 heard = [v[0] for v in stream[start:end]]
+                # Shared grammar alone cannot identify the only content word:
+                # "I am the lion" previously matched "I am the blade" repeatedly.
+                if len(content) == 1 and not any(SequenceMatcher(None, content[0], token, autojunk=False).ratio() >= .6 for token in heard):
+                    continue
                 token_score = SequenceMatcher(None, target, heard, autojunk=False).ratio()
                 spelling_score = SequenceMatcher(None, ' '.join(target), ' '.join(heard), autojunk=False).ratio()
                 score = max(token_score, spelling_score*.95)

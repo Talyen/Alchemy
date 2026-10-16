@@ -1,3 +1,5 @@
+import { GameMessage } from "@/components/localization";
+import { useGameTranslation } from "@/components/use-game-translation";
 import type { RefObject } from "react";
 import { armorySalvageArt } from "@/lib/game-data";
 import { CRAFTING_CURRENCY_LIST, type CraftingCurrencyId } from "@/lib/gear";
@@ -27,11 +29,12 @@ export function CraftingStrip({
   onSelectCurrency: (currencyId: CraftingCurrencyId) => void;
   onToggleSalvageMode: () => void;
 }) {
+  const i18n = useGameTranslation();
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible();
 
   return (
     <div data-testid="armory-crafting-strip" className="mt-4 w-full">
-      <h3 className={cn("text-center font-sans", sectionTitleClass)}>Crafting</h3>
+      <h3 className={cn("text-center font-sans", sectionTitleClass)}>{i18n.text("ui.crafting-strip.1", "Crafting")}</h3>
       <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
         {CRAFTING_CURRENCY_LIST.map((currency) => (
           <CurrencyChip
@@ -40,7 +43,9 @@ export function CraftingStrip({
             count={craftingCurrencies[currency.id] ?? 0}
             armed={activeCurrencyId === currency.id}
             disabled={!editable || (craftingCurrencies[currency.id] ?? 0) <= 0}
-            ariaLabel={`Use ${currency.displayName}`}
+            ariaLabel={i18n.text("ui.crafting-strip.2", "Use {{value0}}", {
+              value0: i18n.displayText(currency.displayName),
+            })}
             onSelect={() => onSelectCurrency(currency.id)}
           />
         ))}
@@ -52,19 +57,35 @@ export function CraftingStrip({
           onBlurCapture={onBlurCapture}
         >
           <PortaledTooltip triggerRef={triggerRef} visible={visible} className="armory-inventory-tooltip !shadow-none">
-            <TooltipHeader>Salvage</TooltipHeader>
+            <TooltipHeader>{i18n.text("ui.crafting-strip.3", "Salvage")}</TooltipHeader>
             <TooltipBody>
               <p>
-                <strong className="font-semibold text-foreground">Dismantle</strong> gear into crafting materials.
+                <GameMessage
+                  id="ui.crafting-strip.s1"
+                  defaultValue="<part0/> gear into crafting materials."
+                  parts={{
+                    part0: (
+                      <strong className="font-semibold text-foreground">
+                        {i18n.text("ui.crafting-strip.4", "Dismantle")}
+                      </strong>
+                    ),
+                  }}
+                />
               </p>
-              {!editable ? <p className="mt-2">Salvaging is unavailable.</p> : null}
+              {!editable ? (
+                <p className="mt-2">{i18n.text("ui.crafting-strip.6", "Salvaging is unavailable.")}</p>
+              ) : null}
             </TooltipBody>
           </PortaledTooltip>
           <button
             type="button"
             ref={salvageButtonRef}
             data-testid="armory-salvage-toggle"
-            aria-label={salvageMode ? "Cancel salvage" : "Salvage"}
+            aria-label={i18n.displayText(
+              salvageMode
+                ? i18n.text("ui.crafting-strip.d1", "Cancel salvage")
+                : i18n.text("ui.crafting-strip.d2", "Salvage"),
+            )}
             aria-pressed={salvageMode}
             disabled={!editable || (!hasSalvageableGear && !salvageMode)}
             className={cn(

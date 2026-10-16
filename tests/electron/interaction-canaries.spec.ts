@@ -101,6 +101,9 @@ async function lastManaJourney(info: TestInfo, reducedMotion: boolean) {
     await expect(page.getByRole("button", { name: /^View Deck/ })).toBeFocused();
     const health = await battle.playerHealth();
     await controllerInput(page).activate(battle.endTurnBtn);
+    const confirmation = page.getByRole("dialog", { name: "End turn?", exact: true });
+    await expect(confirmation.getByRole("button", { name: "Cancel", exact: true })).toBeFocused();
+    await controllerInput(page).activate(confirmation.getByRole("button", { name: "End Turn", exact: true }));
     await expect.poll(() => battle.playerHealth()).toBeLessThan(health);
     await expect(battle.hand.first()).toBeVisible();
     await expect(battle.endTurnBtn).toBeEnabled();
@@ -136,8 +139,8 @@ test(
         runMaxHealth: 30,
         activity: savedActivityFixture("campfire"),
       });
-      await page.getByRole("button", { name: "Rest", exact: true }).click({ clickCount: 2 });
-      await expect(page.getByRole("button", { name: "Rest", exact: true })).toHaveCount(0);
+      await page.getByRole("button", { name: /^Rest$/ }).click({ clickCount: 2 });
+      await expect(page.getByRole("button", { name: /^Rest$/ })).toHaveCount(0);
       const profile = await app.evaluate(({ app: host }) => host.getPath("userData"));
       await expect.poll(() => readSave(profile)?.activeRun?.runPlayerHealth).toBeGreaterThan(10);
       const restoredHealth = readSave(profile)?.activeRun?.runPlayerHealth;
@@ -195,7 +198,7 @@ test(
 );
 
 test(
-  "native focus loss pauses playback and returning releases input after resize",
+  "native window switching preserves focus without opening the menu after resize",
   { tag: "@interaction-nightly" },
   async ({}, info) => {
     // Background launches intentionally cannot exercise native foreground focus.
@@ -206,10 +209,14 @@ test(
     );
     await desktopJourney(info, async (page, app) => {
       const battle = await seedDrawBattle(page);
-      await battle.playFirstCard();
-      await battle.autoplayToggle.click();
+      await battle.endTurnBtn.focus();
+      await page.keyboard.press("Alt+Tab");
+      await expect(battle.endTurnBtn).toBeFocused();
+      await page.keyboard.press("Alt+Shift+Tab");
+      await expect(battle.endTurnBtn).toBeFocused();
       await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.blur());
-      await expect(page.getByTestId("game-menu")).toBeVisible();
+      await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(false);
+      await expect(page.getByTestId("game-menu")).toHaveCount(0);
       await app.evaluate(({ BrowserWindow }) => {
         const window = BrowserWindow.getAllWindows()[0]!;
         window.setFullScreen(true);
@@ -218,14 +225,10 @@ test(
       await expect
         .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isFullScreen()))
         .toBe(true);
-      await expect(page.getByTestId("game-menu")).toBeVisible();
-      await expect(page.getByText("Saving…", { exact: true })).toHaveCount(0);
-      const pausedMana = await battle.mana();
-      await page.emulateMedia({ reducedMotion: "reduce" });
-      expect(await battle.mana()).toBe(pausedMana);
-      await page.keyboard.press("Escape");
+      await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(true);
       await expect(page.getByTestId("game-menu")).toHaveCount(0);
-      await battle.autoplayToggle.click();
+      await expect(battle.endTurnBtn).toBeFocused();
+      await expect(page.getByText("Saving…", { exact: true })).toHaveCount(0);
       await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setFullScreen(false));
       await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false");
       await battle.endTurn();

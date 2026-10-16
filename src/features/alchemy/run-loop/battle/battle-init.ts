@@ -10,15 +10,18 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
     preloadBattleSounds(openingCardIds, battleState.currentEnemy.abilityIds);
     session.resetBattleSession();
     const presentationStore = ctx.getPresentation();
-    ctx.playback.beginOpening();
+    if (!ctx.playback.beginOpening(ctx.playback.id)) return;
     presentationStore.setOpeningDrawPending(true);
     presentationStore.setCardTransferInProgress(true);
-    const focalSound = companionId ? playCompanionSound(companionId) : undefined;
+    const focalSound = companionId
+      ? playCompanionSound(companionId, startingTexts, battleState.deathsDoorActive)
+      : battleState.deathsDoorActive
+        ? playBattleEvent("deathsDoor")
+        : undefined;
     if (companionId) {
       presentationStore.shakeCompanion();
       presentationStore.telegraphAttack("companion");
     }
-    if (battleState.deathsDoorActive) playBattleEvent("deathsDoor");
     presentCombatTexts(presentationStore, startingTexts, focalSound);
     if (outcome) session.handleVictoryDefeat?.(outcome);
   }

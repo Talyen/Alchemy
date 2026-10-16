@@ -1,268 +1,290 @@
-import { describe, expect, it, vi } from "vitest";
-import { lintFixture } from "../helpers/lint-fixture";
+import { describe, expect, it } from "vitest";
+import { lintFixture, lintFixtures } from "../helpers/lint-fixture";
 
-vi.setConfig({ testTimeout: 30_000 });
-async function effectiveMessages(filePath: string, code: string, ruleId: string) {
-  return lintFixture(filePath, code).filter((message) => message.ruleId === ruleId);
+interface PolicyProbe {
+  filePath: string;
+  code: string;
+  lines: number[];
+}
+
+function checkPolicy(ruleId: string, probes: PolicyProbe[]) {
+  const results = lintFixtures(probes);
+  for (const [index, probe] of probes.entries()) {
+    const messages = results[index]!.filter((message) => message.ruleId === ruleId);
+    expect
+      .soft(
+        messages.map(({ line }) => line).sort((a, b) => a - b),
+        probe.filePath,
+      )
+      .toEqual(probe.lines);
+  }
+  return results;
+}
+
+function checkPaths(ruleId: string, paths: string[], code: string, lines: number[]) {
+  return checkPolicy(
+    ruleId,
+    paths.map((filePath) => ({ filePath, code, lines })),
+  );
 }
 
 describe("Oxlint policies", () => {
-  it("reserves visit initialization for room entry across route, command, and headless adapters", async () => {
+  it("reserves visit initialization for room entry across route, command, and headless adapters", () => {
     const code = 'import { initializeShopVisit } from "@/features/alchemy/run-loop/run/room-visit-initialization";';
-    for (const file of [
+    const paths = [
       "src/app/screen-routes/run-loop-routes.tsx",
       "src/features/alchemy/shell/run-route-actions.ts",
       "src/features/alchemy/run-loop/shop/merchant-shop-commands.ts",
       "src/features/alchemy/run-loop/navigation/alchemy-commands.ts",
       "src/app/playthrough/controller.ts",
       "src/features/alchemy/shared/stores/meta-commands.ts",
-    ]) {
-      const messages = await effectiveMessages(file, code, "no-restricted-imports");
-      expect(messages, file).not.toEqual([]);
-    }
-    expect(
-      await effectiveMessages(
-        "src/features/alchemy/run-loop/run/room-entry-commands.ts",
-        code,
-        "no-restricted-imports",
-      ),
-    ).toEqual([]);
-  });
-
-  it("bans any .rng access including nextState, computed, and destructuring", async () => {
-    const cases = [
-      `const x = state.rng;`,
-      `const x = nextState.rng();`,
-      `const x = state["rng"];`,
-      `const { rng } = state;`,
-      `const { rng: myRng } = state;`,
-      `function foo({ rng }) {}`,
     ];
-    for (const code of cases) {
-      const msgs = await effectiveMessages("src/lib/battle/card-play.ts", code, "alchemy/restricted-syntax");
-      expect(msgs.length, `should ban ${code}`).toBeGreaterThan(0);
-    }
-    const allowed = await effectiveMessages(
-      "src/lib/battle/rng.ts",
-      `import { getBattleRng } from "./rng"; const x = getBattleRng(state);`,
-      "alchemy/restricted-syntax",
-    );
-    expect(allowed.length).toBe(0);
+    checkPolicy("no-restricted-imports", [
+      ...paths.map((filePath) => ({ filePath, code, lines: [1] })),
+      { filePath: "src/features/alchemy/run-loop/run/room-entry-commands.ts", code, lines: [] },
+    ]);
   });
 
-  it("bans Math.floor/ceil/trunc but allows Math.round", async () => {
-    for (const fn of ["floor", "ceil", "trunc"]) {
-      const msgs = await effectiveMessages(
-        "src/lib/battle/card-play.ts",
-        `Math.${fn}(1.5); Math["${fn}"](1.5);`,
-        "alchemy/restricted-syntax",
-      );
-      expect(msgs.length, `should ban dot and computed Math.${fn}`).toBe(2);
-    }
-    const allowed = await effectiveMessages(
-      "src/lib/battle/card-play.ts",
-      `Math.round(1.5);`,
-      "alchemy/restricted-syntax",
-    );
-    expect(allowed.length).toBe(0);
+  it("bans dot, computed and destructured RNG access while allowing the seeded owner", () => {
+    checkPolicy("alchemy/restricted-syntax", [
+      {
+        filePath: "src/lib/battle/card-play.ts",
+        code: [
+          "const direct = state.rng;",
+          "const next = nextState.rng();",
+          'const computed = state["rng"];',
+          "const { rng } = state;",
+          "const { rng: myRng } = state;",
+          "function foo({ rng }) {}",
+        ].join("\n"),
+        lines: [1, 2, 3, 4, 5, 6],
+      },
+      {
+        filePath: "src/lib/battle/rng.ts",
+        code: 'import { getBattleRng } from "./rng"; const x = getBattleRng(state);',
+        lines: [],
+      },
+    ]);
   });
 
-  it("rejects dot and literal computed randomness without mistaking dynamic keys for builtins", async () => {
-    for (const file of [
+  it("bans dot and computed floor/ceil/trunc but allows round", () => {
+    checkPaths(
+      "alchemy/restricted-syntax",
+      ["src/lib/battle/card-play.ts"],
+      [
+        'Math.floor(1.5); Math["floor"](1.5);',
+        'Math.ceil(1.5); Math["ceil"](1.5);',
+        'Math.trunc(1.5); Math["trunc"](1.5);',
+        "Math.round(1.5);",
+      ].join("\n"),
+      [1, 1, 2, 2, 3, 3],
+    );
+  });
+
+  it("rejects literal randomness and nested command dispatch without mistaking dynamic keys for builtins", () => {
+    const code = [
+      "Math.random();",
+      "const direct = Math.random;",
+      'Math["random"]();',
+      'const computed = Math["random"];',
+      "Math[random]();",
+      'import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";',
+    ].join("\n");
+    const paths = [
       "src/lib/battle/card-play.ts",
       "src/features/alchemy/run-loop/run/progression-commands.ts",
       "src/features/alchemy/run-loop/navigation/example.tsx",
-    ]) {
-      const messages = await effectiveMessages(
-        file,
-        `Math.random(); const direct = Math.random; Math["random"](); const computed = Math["random"]; Math[random]();`,
-        "alchemy/restricted-syntax",
-      );
-      expect(messages, file).toHaveLength(4);
-      expect(messages.every((message) => message.message.includes("seeded"))).toBe(true);
-      if (file.includes("run-loop")) {
-        const nestedDispatch = await effectiveMessages(
-          file,
-          'import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";',
-          "no-restricted-imports",
-        );
-        expect(nestedDispatch, file).toHaveLength(1);
+    ];
+    const results = checkPaths("alchemy/restricted-syntax", paths, code, [1, 2, 3, 4]);
+    for (const [index, messages] of results.entries()) {
+      const randomness = messages.filter(({ ruleId }) => ruleId === "alchemy/restricted-syntax");
+      expect(
+        randomness.every(({ message }) => message.includes("seeded")),
+        paths[index],
+      ).toBe(true);
+      if (paths[index]!.includes("run-loop")) {
+        expect(messages.filter(({ ruleId }) => ruleId === "no-restricted-imports").map(({ line }) => line)).toEqual([
+          6,
+        ]);
       }
     }
   });
 });
 
-it.each([
-  "tests/e2e/specs/core-gameplay.spec.ts",
-  "tests/e2e/specs/draw-discard-animations.spec.ts",
-  "tests/e2e/specs/battle-end-turn-canary.spec.ts",
-  "performance/scenarios/battle-end-turn.perf.ts",
-])("keeps development-only controls out of %s", async (file) => {
-  for (const code of [
-    'page.getByRole("button", { name: "Skip Combat" });',
-    'page.getByRole("button", { name: "Unlock All" });',
-    "battle.skipCombatBtn.click();",
-    "battle.skipCombatToVictory();",
-  ]) {
-    expect(await effectiveMessages(file, code, "alchemy/restricted-syntax"), code).toHaveLength(1);
-  }
+it("keeps development-only controls out of production browser journeys", () => {
+  checkPaths(
+    "alchemy/restricted-syntax",
+    [
+      "tests/e2e/specs/core-gameplay.spec.ts",
+      "tests/e2e/specs/draw-discard-animations.spec.ts",
+      "tests/e2e/specs/battle-end-turn-canary.spec.ts",
+      "performance/scenarios/battle-end-turn.perf.ts",
+    ],
+    [
+      'page.getByRole("button", { name: "Skip Combat" });',
+      'page.getByRole("button", { name: "Unlock All" });',
+      "battle.skipCombatBtn.click();",
+      "battle.skipCombatToVictory();",
+    ].join("\n"),
+    [1, 2, 3, 4],
+  );
 });
 
-it.each(["tests/e2e/specs/draw-discard-animations.spec.ts", "tests/e2e/specs/battle-end-turn-canary.spec.ts"])(
-  "keeps real animation timing in %s",
-  async (filePath) => {
-    const results = lintFixture(filePath, 'import { test } from "../../fixtures/e2e"; enableFastMode(page);');
-    const rules = results.map((message) => message.ruleId);
-    expect(rules).not.toContain("no-restricted-imports");
-    expect(rules).toContain("alchemy/restricted-syntax");
-    for (const code of [
+it("keeps real animation timing in timing canaries", () => {
+  const results = checkPaths(
+    "alchemy/restricted-syntax",
+    ["tests/e2e/specs/draw-discard-animations.spec.ts", "tests/e2e/specs/battle-end-turn-canary.spec.ts"],
+    [
+      'import { test } from "../../fixtures/e2e"; enableFastMode(page);',
       'test("timing", async ({ page, fastBattle }) => { void fastBattle; });',
       'import { useFastBattle as fast } from "../../fixtures/e2e";',
-    ]) {
-      const messages = lintFixture(filePath, code);
-      expect(messages.some((message) => message.ruleId === "alchemy/restricted-syntax")).toBe(true);
-    }
-  },
-);
+    ].join("\n"),
+    [1, 2, 2, 2, 3],
+  );
+  for (const messages of results) expect(messages.map(({ ruleId }) => ruleId)).not.toContain("no-restricted-imports");
+});
 
-it("keeps context and aggregate exceptions independent from TSX conventions", async () => {
+it("keeps context and aggregate exceptions independent from TSX conventions", () => {
   const context = 'import { createContext as context } from "react"; export const value = context(null);';
   const aggregate = "useGameplayStateStore.getState();";
-  for (const file of [
+  const paths = [
     "src/features/alchemy/shared/stores/lint-probe.ts",
     "src/features/alchemy/shared/stores/lint-probe.tsx",
     "src/features/alchemy/run-loop/screens/lint-probe.tsx",
     "src/app/app-screen-chrome-context.tsx",
     "src/features/alchemy/shared/context/card-description-context.tsx",
-  ]) {
-    const messages = await effectiveMessages(file, `${context}\n${aggregate}`, "alchemy/restricted-syntax");
-    const contexts = messages.filter(({ message }) => message.includes("React Contexts"));
-    const aggregates = messages.filter(({ message }) => message.includes("useGameplayStateStore.getState()"));
-    expect(contexts, file).toHaveLength(file.includes("context") ? 0 : 1);
-    expect(aggregates, file).toHaveLength(file.includes("/stores/") ? 0 : 1);
-    expect(messages, file).toHaveLength(contexts.length + aggregates.length);
-  }
-  for (const file of [
-    "src/features/alchemy/shared/stores/lint-probe.tsx",
-    "src/app/app-screen-chrome-context.tsx",
-    "src/features/alchemy/shared/context/card-description-context.tsx",
-  ]) {
-    const code = [
+  ];
+  checkPolicy(
+    "alchemy/restricted-syntax",
+    paths.map((filePath) => ({
+      filePath,
+      code: `${context}\n${aggregate}`,
+      lines: [...(filePath.includes("context") ? [] : [1]), ...(filePath.includes("/stores/") ? [] : [2])],
+    })),
+  );
+  checkPaths(
+    "alchemy/restricted-syntax",
+    [
+      "src/features/alchemy/shared/stores/lint-probe.tsx",
+      "src/app/app-screen-chrome-context.tsx",
+      "src/features/alchemy/shared/context/card-description-context.tsx",
+    ],
+    [
       "export const template = <div className={`a ${active}`} />;",
       'export const concatenated = <div className={"a " + active} />;',
       'export const valid = <div className={cn("a", active)} />;',
-    ].join("\n");
-    const messages = await effectiveMessages(file, code, "alchemy/restricted-syntax");
-    expect(messages, file).toHaveLength(2);
-    expect(
-      messages.every(({ message }) => message.includes("Use cn()")),
-      file,
-    ).toBe(true);
-  }
+    ].join("\n"),
+    [1, 2],
+  );
 });
 
-it("allows erased type imports while blocking asset-loading imports across browser test categories", async () => {
-  for (const file of [
-    "tests/e2e/specs/core-gameplay.spec.ts",
-    "tests/e2e/specs/draw-discard-animations.spec.ts",
-    "tests/helpers/lint-probe.ts",
-    "performance/scenarios/battle-end-turn.perf.ts",
-  ]) {
-    const erased = [
+it("allows erased type imports while blocking asset-loading imports across browser test categories", () => {
+  checkPaths(
+    "alchemy/restricted-syntax",
+    [
+      "tests/e2e/specs/core-gameplay.spec.ts",
+      "tests/e2e/specs/draw-discard-animations.spec.ts",
+      "tests/helpers/lint-probe.ts",
+      "performance/scenarios/battle-end-turn.perf.ts",
+    ],
+    [
       'import type { Card as TypeCard } from "@/lib/game-data";',
       'import { type Card as InlineCard } from "@/lib/game-data";',
       'import { type Card as MultiCard, type Enemy } from "@/lib/game-data";',
-    ].join("\n");
-    expect(await effectiveMessages(file, erased, "alchemy/restricted-syntax"), file).toEqual([]);
-    const runtime = [
-      'import { Card as MixedCard, type Enemy } from "@/lib/game-data";',
+      'import { Card as MixedCard, type Enemy as MixedEnemy } from "@/lib/game-data";',
       'import { Card } from "@/lib/game-data";',
       'import DefaultCards from "@/lib/game-data";',
       'import * as Cards from "@/lib/game-data";',
       'import {} from "@/lib/game-data";',
       'import "@/lib/game-data";',
-    ].join("\n");
-    expect(await effectiveMessages(file, runtime, "alchemy/restricted-syntax"), file).toHaveLength(6);
-  }
+    ].join("\n"),
+    [4, 5, 6, 7, 8, 9],
+  );
 });
 
-it("checks assertion completeness and awaits while allowing messages and returned promises", async () => {
-  const file = "tests/lib/utils.test.ts";
-  for (const statement of ["expect(1);", "expect(1).toBe;", "expect(Promise.resolve(1)).resolves.toBe(1);"]) {
-    const code = `import { it, expect } from "vitest"; it("checks", () => { ${statement} });`;
-    expect(await effectiveMessages(file, code, "vitest/valid-expect"), statement).toHaveLength(1);
-  }
-  for (const statement of [
-    "expect(1, message).toBe(1);",
-    "return expect(Promise.resolve(1)).resolves.toBe(1);",
-    "await expect(Promise.resolve(1)).resolves.toBe(1);",
-  ]) {
-    const code = `import { it, expect } from "vitest"; it("checks", async () => { ${statement} });`;
-    expect(await effectiveMessages(file, code, "vitest/valid-expect"), statement).toEqual([]);
-  }
+it("checks assertion completeness and awaits while allowing messages and returned promises", () => {
+  checkPaths(
+    "vitest/valid-expect",
+    ["tests/lib/utils.test.ts"],
+    [
+      'import { it, expect } from "vitest";',
+      'it("checks", async () => {',
+      "expect(1);",
+      "expect(1).toBe;",
+      "expect(Promise.resolve(1)).resolves.toBe(1);",
+      "expect(1, message).toBe(1);",
+      "await expect(Promise.resolve(1)).resolves.toBe(1);",
+      "return expect(Promise.resolve(1)).resolves.toBe(1);",
+      "});",
+    ].join("\n"),
+    [3, 4, 5],
+  );
 });
 
-it("checks desktop globals without allowing DOM access in the main process", async () => {
-  for (const file of ["desktop/main.cjs", "desktop/preload.cjs", "tests/electron/profile.cjs"]) {
-    expect(await effectiveMessages(file, 'consoel.log("boot");', "no-undef"), file).toHaveLength(1);
-    expect(
-      await effectiveMessages(file, "module.exports = { process, Buffer, require, __dirname, Response };", "no-undef"),
-      file,
-    ).toEqual([]);
-    const messages = await effectiveMessages(file, 'document.getElementById("mock");', "no-undef");
-    expect(messages.length, file).toBe(file === "desktop/preload.cjs" ? 0 : 1);
-  }
+it("checks desktop globals without allowing DOM access in the main process", () => {
+  const paths = ["desktop/main.cjs", "desktop/preload.cjs", "tests/electron/profile.cjs"];
+  checkPolicy(
+    "no-undef",
+    paths.map((filePath) => ({
+      filePath,
+      code: [
+        'consoel.log("boot");',
+        "module.exports = { process, Buffer, require, __dirname, Response };",
+        'document.getElementById("mock");',
+      ].join("\n"),
+      lines: filePath === "desktop/preload.cjs" ? [1] : [1, 3],
+    })),
+  );
 });
 
-it("requires suppression reasons in tooling, configuration, desktop and performance files", async () => {
-  for (const file of [
-    "lint/plugin.js",
-    "oxlint.config.ts",
-    "desktop/main.cjs",
-    "performance/metrics.ts",
-    "scripts/check.mjs",
-  ]) {
-    const statement = "if (value == 1) {}";
-    expect(
-      await effectiveMessages(
-        file,
-        `// oxlint-disable-next-line eqeqeq\n${statement}`,
-        "alchemy/require-disable-reason",
-      ),
-      file,
-    ).toHaveLength(1);
-    expect(
-      await effectiveMessages(
-        file,
-        `// oxlint-disable-next-line eqeqeq -- intentional coercion fixture\n${statement}`,
-        "alchemy/require-disable-reason",
-      ),
-      file,
-    ).toEqual([]);
-  }
+it("requires suppression reasons in tooling, configuration, desktop and performance files", () => {
+  checkPaths(
+    "alchemy/require-disable-reason",
+    ["lint/plugin.js", "oxlint.config.ts", "desktop/main.cjs", "performance/metrics.ts", "scripts/check.mjs"],
+    [
+      "// oxlint-disable-next-line eqeqeq",
+      "if (value == 1) {}",
+      "// oxlint-disable-next-line eqeqeq -- intentional coercion fixture",
+      "if (value == 1) {}",
+    ].join("\n"),
+    [1],
+  );
 });
 
-it("checks mouse-only actions and focusable controls hidden from assistive technology", async () => {
+it("checks mouse-only actions and focusable controls hidden from assistive technology", () => {
   const file = "src/features/alchemy/shared/ui/lint-probe.tsx";
-  for (const [rule, rejected, allowed] of [
-    ["jsx-a11y/click-events-have-key-events", "<div onClick={action} />", "<button onClick={action} />"],
-    ["jsx-a11y/no-aria-hidden-on-focusable", '<button aria-hidden="true" />', '<span aria-hidden="true" />'],
-  ]) {
-    expect(await effectiveMessages(file, `export const view = ${rejected};`, rule), rule).toHaveLength(1);
-    expect(await effectiveMessages(file, `export const view = ${allowed};`, rule), rule).toEqual([]);
+  const [messages] = lintFixtures([
+    {
+      filePath: file,
+      code: [
+        "export const mouseOnly = <div onClick={action} />;",
+        "export const button = <button onClick={action} />;",
+        'export const hiddenButton = <button aria-hidden="true" />;',
+        'export const hiddenLabel = <span aria-hidden="true" />;',
+      ].join("\n"),
+    },
+  ]);
+  for (const [rule, line] of [
+    ["jsx-a11y/click-events-have-key-events", 1],
+    ["jsx-a11y/no-aria-hidden-on-focusable", 3],
+  ] as const) {
+    expect(
+      messages!.filter(({ ruleId }) => ruleId === rule).map(({ line }) => line),
+      rule,
+    ).toEqual([line]);
   }
 });
 
-it("keeps the shipping singleton out of reusable domains and headless careers", async () => {
-  const imports = [
+it("keeps the shipping singleton out of reusable domains and headless careers", () => {
+  const code = [
     'import { defaultGameSession } from "@/app/application-session";',
     'export { defaultGameSession } from "@/app/application-session";',
     'const session = import("@/app/application-session");',
     'import { battlePresentation } from "@/app/battle-presentation";',
     'export { battlePresentation } from "@/app/battle-presentation";',
     'const presentation = import("@/app/battle-presentation");',
-  ];
-  for (const file of [
+  ].join("\n");
+  const paths = [
     "src/features/alchemy/run-loop/shop/create-shop-actions.ts",
     "src/features/alchemy/shared/stores/battle-commands.ts",
     "src/features/alchemy/shared/storage/bootstrap-save-state.ts",
@@ -274,70 +296,59 @@ it("keeps the shipping singleton out of reusable domains and headless careers", 
     "src/features/alchemy/run-loop/battle/battle-presentation-store.ts",
     "src/features/alchemy/run-loop/battle/use-battle-opening-draw.ts",
     "src/features/alchemy/run-loop/screens/battle-screen/hand.tsx",
-  ]) {
-    expect(await effectiveMessages(file, imports.join("\n"), "alchemy/session-ownership"), file).toHaveLength(
-      imports.length,
-    );
-  }
-  for (const file of ["src/app/use-app-save-state.ts", "src/App.tsx"]) {
-    expect(
-      await effectiveMessages(
-        file,
-        'import { defaultGameSession } from "@/app/application-session";',
-        "alchemy/session-ownership",
-      ),
-    ).toHaveLength(0);
-  }
+  ];
+  checkPolicy("alchemy/session-ownership", [
+    ...paths.map((filePath) => ({ filePath, code, lines: [1, 2, 3, 4, 5, 6] })),
+    ...["src/app/use-app-save-state.ts", "src/App.tsx"].map((filePath) => ({ filePath, code, lines: [] })),
+  ]);
 });
 
-it("requires explicit sessions in functions and callback contracts", async () => {
-  const file = "src/features/alchemy/shared/stores/battle-commands.ts";
-  const imported = 'import type { GameSession as Career } from "./game-session-types";';
-  for (const code of [
-    "function command(session?: Career) {}",
-    "const command = (session: Career = fallback) => {};",
-    "type Command = (session?: Career) => void;",
-    "interface Commands { endTurn(session?: Career): void; }",
-  ]) {
-    expect(await effectiveMessages(file, imported + code, "alchemy/session-ownership"), code).toHaveLength(1);
-  }
-  expect(
-    await effectiveMessages(file, imported + "function command(session: Career) {}", "alchemy/session-ownership"),
-  ).toHaveLength(0);
+it("requires explicit sessions in functions and callback contracts", () => {
+  checkPaths(
+    "alchemy/session-ownership",
+    ["src/features/alchemy/shared/stores/battle-commands.ts"],
+    [
+      'import type { GameSession as Career } from "./game-session-types";',
+      "function optional(session?: Career) {}",
+      "const fallback = (session: Career = other) => {};",
+      "type Command = (session?: Career) => void;",
+      "interface Commands { endTurn(session?: Career): void; }",
+      "function required(session: Career) {}",
+    ].join("\n"),
+    [2, 3, 4, 5],
+  );
 });
 
-it("preserves layer boundaries and their owning exceptions", async () => {
-  for (const [file, code] of [
-    ["src/lib/probe.ts", 'import { view } from "@/features/alchemy/meta/view"; import React from "react";'],
-    ["src/features/alchemy/meta/probe.ts", 'import { flow } from "@/features/alchemy/run-loop/flow";'],
-    ["src/features/alchemy/run-setup/probe.ts", 'import { flow } from "@/features/alchemy/run-loop/flow";'],
-    ["src/features/alchemy/run-loop/probe.ts", 'import { setup } from "@/features/alchemy/run-setup/setup";'],
+it("preserves layer boundaries and their owning exceptions", () => {
+  const cases = [
+    ["src/lib/probe.ts", 'import { view } from "@/features/alchemy/meta/view"; import React from "react";', [1, 1]],
+    ["src/features/alchemy/meta/probe.ts", 'import { flow } from "@/features/alchemy/run-loop/flow";', [1]],
+    ["src/features/alchemy/run-setup/probe.ts", 'import { flow } from "@/features/alchemy/run-loop/flow";', [1]],
+    ["src/features/alchemy/run-loop/probe.ts", 'import { setup } from "@/features/alchemy/run-setup/setup";', [1]],
     [
       "src/features/alchemy/shared/ui/probe.tsx",
       'import { state } from "@/features/alchemy/shared/stores/gameplay-state-store";',
+      [1, 1],
     ],
     [
-      "src/features/alchemy/run-loop/probe.ts",
+      "src/features/alchemy/run-loop/read-probe.ts",
       'import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";',
+      [1],
     ],
     [
-      "src/features/alchemy/shared/ui/probe.tsx",
+      "src/features/alchemy/shared/ui/read-probe.tsx",
       'import { useHasActiveRun } from "@/features/alchemy/shared/stores/use-run-reads";',
+      [1],
     ],
-    ["src/features/alchemy/meta/screens/probe.tsx", 'import { navigation } from "@/app/use-app-navigation";'],
-    ["src/lib/balance/probe.ts", 'import { createBattleState } from "@/lib/battle";'],
-  ]) {
-    expect(await effectiveMessages(file!, code!, "no-restricted-imports"), file).not.toEqual([]);
-  }
-  for (const file of [
-    "src/features/alchemy/shared/storage/persistence.ts",
-    "src/features/alchemy/shared/storage/io.ts",
-  ]) {
-    expect(
-      await effectiveMessages(file, 'import { runtime } from "../stores/session-runtime";', "no-restricted-imports"),
-      file,
-    ).toEqual([]);
-  }
+    ["src/features/alchemy/meta/screens/probe.tsx", 'import { navigation } from "@/app/use-app-navigation";', [1]],
+    ["src/lib/balance/probe.ts", 'import { createBattleState } from "@/lib/battle";', [1]],
+    ["src/features/alchemy/shared/storage/persistence.ts", 'import { runtime } from "../stores/session-runtime";', []],
+    ["src/features/alchemy/shared/storage/io.ts", 'import { runtime } from "../stores/session-runtime";', []],
+  ] as const;
+  checkPolicy(
+    "no-restricted-imports",
+    cases.map(([filePath, code, lines]) => ({ filePath, code, lines: [...lines] })),
+  );
 });
 
 it("runs type-aware correctness checks through the installed companion", () => {
@@ -382,52 +393,67 @@ ${"value += 1;\n".repeat(52)}return value;
 });
 
 it("ignores other worktrees and rejects stale suppression comments", () => {
-  expect(lintFixture(".worktrees/other/src/probe.ts", "this is invalid syntax")).toEqual([]);
-  const messages = lintFixture(
-    "src/probe.ts",
-    "// oxlint-disable-next-line no-console -- interop seam\nexport const value = 1;",
+  const [ignored, messages] = lintFixtures(
+    [
+      { filePath: ".worktrees/other/src/probe.ts", code: "this is invalid syntax" },
+      {
+        filePath: "src/probe.ts",
+        code: "// oxlint-disable-next-line no-console -- interop seam\nexport const value = 1;",
+      },
+    ],
     { unused: "error" },
   );
-  expect(messages.some((message) => message.message.includes("Unused oxlint-disable"))).toBe(true);
+  expect(ignored).toEqual([]);
+  expect(messages!.some((message) => message.message.includes("Unused oxlint-disable"))).toBe(true);
 });
 
-it("keeps save validation out of run domain contracts, including erased type imports", async () => {
-  for (const code of [
-    'import { ActiveRunDataSchema } from "@/lib/validation"; export { ActiveRunDataSchema };',
-    'import type { ParsedActiveRunData } from "@/lib/validation"; export type Progress = ParsedActiveRunData;',
-    'import type { ParsedActiveRunData } from "../validation"; export type Progress = ParsedActiveRunData;',
-    'import type { ParsedActiveRunData } from "../validation/save-schemas/active-run"; export type Progress = ParsedActiveRunData;',
-  ]) {
-    const messages = await effectiveMessages("src/lib/active-run-session/probe.ts", code, "no-restricted-imports");
-    expect(messages, code).not.toEqual([]);
-  }
-  const allowed = await effectiveMessages(
-    "src/lib/validation/probe.ts",
-    'import type { ActiveRunData } from "@/lib/active-run-session"; export type Save = ActiveRunData;',
+it("keeps save validation out of run domain contracts, including erased type imports", () => {
+  checkPolicy("no-restricted-imports", [
+    {
+      filePath: "src/lib/active-run-session/probe.ts",
+      code: [
+        'import { ActiveRunDataSchema } from "@/lib/validation"; export { ActiveRunDataSchema };',
+        'import type { ParsedActiveRunData as Alias } from "@/lib/validation"; export type Progress = Alias;',
+        'import type { ParsedActiveRunData as Relative } from "../validation"; export type RelativeProgress = Relative;',
+        'import type { ParsedActiveRunData as Deep } from "../validation/save-schemas/active-run"; export type DeepProgress = Deep;',
+      ].join("\n"),
+      lines: [1, 1, 2, 3, 4],
+    },
+    {
+      filePath: "src/lib/validation/probe.ts",
+      code: 'import type { ActiveRunData } from "@/lib/active-run-session"; export type Save = ActiveRunData;',
+      lines: [],
+    },
+  ]);
+});
+
+it("enforces storage ownership through the shipping configuration", () => {
+  const code = [
+    'localStorage.setItem("save", "{}");',
+    'globalThis.sessionStorage.removeItem("save");',
+    "const { localStorage: storage } = window;",
+    'function scoped(localStorage: Storage) { return localStorage.getItem("save"); }',
+  ].join("\n");
+  checkPolicy("alchemy/no-unowned-web-storage", [
+    { filePath: "src/features/alchemy/run-loop/screens/destination-screen.tsx", code, lines: [1, 2, 3] },
+    { filePath: "src/lib/platform-save-backend.ts", code, lines: [] },
+    { filePath: "src/features/alchemy/shared/storage/preferences.ts", code, lines: [] },
+  ]);
+});
+
+it("keeps generic Gear mutation out of consumers while allowing domain commands", () => {
+  checkPaths(
     "no-restricted-imports",
-  );
-  expect(allowed).toEqual([]);
-});
-
-it.each([
-  "src/app/playthrough/meta-offers.ts",
-  "src/features/alchemy/meta/screens/armory-screen.tsx",
-  "src/features/alchemy/run-loop/run/reward-commands.ts",
-])("keeps generic Gear mutation and raw Gear actions out of %s", async (file) => {
-  for (const owner of ["gear-session-command", "gear-actions"]) {
-    expect(
-      await effectiveMessages(
-        file,
-        `import * as gearInternals from "@/features/alchemy/shared/stores/${owner}";`,
-        "no-restricted-imports",
-      ),
-    ).toHaveLength(1);
-  }
-  expect(
-    await effectiveMessages(
-      file,
+    [
+      "src/app/playthrough/meta-offers.ts",
+      "src/features/alchemy/meta/screens/armory-screen.tsx",
+      "src/features/alchemy/run-loop/run/reward-commands.ts",
+    ],
+    [
+      'import * as gearInternals from "@/features/alchemy/shared/stores/gear-session-command";',
+      'import * as gearActions from "@/features/alchemy/shared/stores/gear-actions";',
       'import { salvageGear } from "@/features/alchemy/shared/stores/gear-commands";',
-      "no-restricted-imports",
-    ),
-  ).toHaveLength(0);
+    ].join("\n"),
+    [1, 2],
+  );
 });

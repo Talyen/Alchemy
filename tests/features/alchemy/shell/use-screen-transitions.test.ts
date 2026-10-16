@@ -19,6 +19,9 @@ import { emptyShopState, createEmptyRewardState } from "@/lib/active-run-session
 import { defaultBattleState } from "@/lib/battle";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
 import { defaultGameSession } from "@/app/application-session";
+import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
+import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
+import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 beforeEach(() => {
   vi.useFakeTimers();
   resetRunDomainStore();
@@ -34,6 +37,26 @@ function navigation() {
 }
 
 describe("screen navigation", () => {
+  it("releases restore and disposal registrations and makes retained commands inert", async () => {
+    const session = createGameSession();
+    const onPendingChange = vi.fn();
+    const showScreen = vi.fn();
+    const nav = createScreenNavigation({ readScreen: () => "battle", showScreen, onPendingChange }, session);
+    nav.navigateTo("rewards");
+    nav.dispose();
+    nav.dispose();
+    onPendingChange.mockClear();
+    createSessionPersistence(session).restore(createDefaultSaveData());
+    const prepare = vi.fn();
+    nav.navigateTo("rewards", prepare);
+    nav.cancelPending();
+    await session.dispose();
+    expect(() => nav.dispose()).not.toThrow();
+    vi.runAllTimers();
+    expect(onPendingChange).not.toHaveBeenCalled();
+    expect(prepare).not.toHaveBeenCalled();
+    expect(showScreen).not.toHaveBeenCalled();
+  });
   it("reports pending navigation until commit or cancellation, including redirects", () => {
     const onPendingChange = vi.fn();
     const showScreen = vi.fn();
@@ -109,6 +132,31 @@ describe("screen navigation", () => {
   it("rejects transitions outside the screen policy", () => {
     const nav = navigation();
     expect(() => nav.navigateTo("character-select")).toThrow("Disallowed screen transition");
+  });
+
+  it("revokes retained navigation when its hook owner is replaced or unmounted", () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    const { result, rerender, unmount } = renderHook(
+      ({ show }) => useScreenTransitions(defaultGameSession, "battle", show),
+      { initialProps: { show: first }, reactStrictMode: true },
+    );
+    const old = result.current.navigateTo;
+    rerender({ show: second });
+    const prepare = vi.fn();
+    act(() => old("rewards", prepare));
+    vi.runAllTimers();
+    expect(prepare).not.toHaveBeenCalled();
+    expect(first).not.toHaveBeenCalled();
+    act(() => result.current.navigateTo("rewards"));
+    act(() => vi.runAllTimers());
+    expect(second).toHaveBeenCalledExactlyOnceWith("rewards");
+    const retained = result.current.navigateTo;
+    unmount();
+    retained("rewards", prepare);
+    vi.runAllTimers();
+    expect(prepare).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledTimes(1);
   });
 
   it("resumes a saved run through the same delayed preparation and cancellation path", () => {

@@ -28,6 +28,8 @@ export function createAlchemyAutosaveLifecycle(
   let cancelScheduledSave: (() => void) | null = null;
   const scheduler = createAutosaveScheduler(AUTOSAVE_MAX_WAIT_MS, AUTOSAVE_RETRY_COOLDOWN_MS);
   let mounted = true;
+  let clearing = persistence.isClearing();
+  let resumeDirty = clearing;
 
   const cancelTimer = () => {
     cancelScheduledSave?.();
@@ -41,7 +43,7 @@ export function createAlchemyAutosaveLifecycle(
 
   const schedule = () => {
     cancelTimer();
-    if (!mounted || !enabled()) return;
+    if (!mounted || !enabled() || clearing) return;
     const now = runtimeClock.now();
     const debounceMs = isAnimationDisabled()
       ? 0
@@ -57,7 +59,7 @@ export function createAlchemyAutosaveLifecycle(
   };
 
   const flush = (terminal = false) => {
-    if (!mounted) return;
+    if (!mounted || clearing) return;
     if (!enabled()) {
       cancelPending();
       return;
@@ -91,6 +93,10 @@ export function createAlchemyAutosaveLifecycle(
 
   const triggerSave = () => {
     if (!enabled()) return;
+    if (clearing) {
+      resumeDirty = true;
+      return;
+    }
     scheduler.markDirty(runtimeClock.now());
     schedule();
     // One microtask groups synchronous domain commits into one resolved action.
@@ -107,7 +113,24 @@ export function createAlchemyAutosaveLifecycle(
           flush();
         })
       : () => {};
-  const unsubscribeCancellation = persistence.subscribeCancellation(cancelPending);
+  const unsubscribeInterruption = persistence.subscribeInterruption((event) => {
+    if (event === "clear-started") {
+      resumeDirty ||= scheduler.hasUnsavedChanges() || persistence.readProgress().kind !== "idle";
+      clearing = true;
+      // Revoke submitted callbacks while retaining the need to save. A failed
+      // deletion resumes with a fresh snapshot, never the cancelled payload.
+      cancelPending();
+    } else if (event === "clear-failed") {
+      clearing = false;
+      const retry = resumeDirty;
+      resumeDirty = false;
+      if (retry) triggerSave();
+    } else {
+      if (event === "cleared") clearing = false;
+      resumeDirty = false;
+      cancelPending();
+    }
+  });
   const unsubscribePersistence = persistence.subscribe(triggerSave);
   // A preceding driver may have detached with an unsaved action. Its scheduler
   // is gone, but this session still owns the revision and completion feedback.
@@ -120,7 +143,7 @@ export function createAlchemyAutosaveLifecycle(
     } finally {
       mounted = false;
       cancelTimer();
-      unsubscribeCancellation();
+      unsubscribeInterruption();
       releaseProgress();
     }
   };

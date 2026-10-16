@@ -46,6 +46,33 @@ describe("createCanvasLifecycle", () => {
     vi.restoreAllMocks();
   });
 
+  it("rolls back scheduled frames and observers if setup fails before returning its disposer", () => {
+    let lateFrame: FrameRequestCallback = () => {};
+    const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      lateFrame = callback;
+      return 71;
+    });
+    const cancel = vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {
+          throw new Error("observer failed");
+        }
+        disconnect = disconnect;
+      },
+    );
+    const onFrame = vi.fn();
+    expect(() => createCanvasLifecycle({ canvas, onFrame })).toThrow("observer failed");
+    expect(disconnect).toHaveBeenCalledOnce();
+    expect(cancel).toHaveBeenCalledWith(71);
+    lateFrame(100);
+    window.dispatchEvent(new Event("focus"));
+    expect(onFrame).not.toHaveBeenCalled();
+    expect(raf).toHaveBeenCalledOnce();
+  });
+
   it("initializes logical dimensions without clearing an already-sized canvas", () => {
     vi.stubGlobal("devicePixelRatio", 1);
     canvas.width = 640;

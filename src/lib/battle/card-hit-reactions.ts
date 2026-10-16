@@ -39,6 +39,7 @@ function applyForgeStunRider(
   forgeBeforeHit: number,
 ) {
   if (
+    state.enemyHealth <= 0 ||
     state.flags.obsidianHammerUsedThisTurn ||
     effect.damageType !== "physical" ||
     state.trinketEffects.forgeStunThreshold <= 0 ||
@@ -80,7 +81,7 @@ export function applyCardHitReactions(
   if (effect.detonateAllBleed) {
     nextState = detonateEnemyStatuses(nextState, ["bleed"], combatTexts);
   }
-  if (modifiedDamage > 0)
+  if (modifiedDamage > 0 && nextState.enemyHealth > 0)
     nextState = applyForgeStunRider(nextState, effect, combatTexts, facts.eligibility.playerStatuses.forge);
   if (effect.damageType === "physical" && modifiedDamage > 0 && nextState.enemyHealth > 0) {
     const stunChance = nextState.talentEffects.physicalStunChance + nextState.gearEffects.physicalStunChance;

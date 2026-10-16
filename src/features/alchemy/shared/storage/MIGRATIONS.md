@@ -44,6 +44,12 @@ Battle difficulty modifiers are validated individually during load. Keep valid
 entries and drop malformed ones so the next enemy turn can resolve safely.
 Profile and run XP retain only current keyword IDs; unknown entries cannot
 contribute Talent points or starting Health.
+Unsafe numeric XP entries are dropped independently so valid sibling progress
+survives. Save timestamps use the same safe-integer policy for raw candidate
+ordering and parsed freshness. Crafting currencies must remain safely spendable.
+Damaged card UIDs, titles, and artwork do not remove otherwise usable cards;
+identity repair and catalog hydration restore them. Scheduled battle pulses
+retain the card effect schema's one-to-ten-turn duration limit.
 Saved enemies regain their current native Traits from the catalog and retain
 only current combat encounter Traits. Reward benefits stay in their separate
 field; unsupported saved Traits cannot enter combat.
@@ -53,12 +59,18 @@ Run activity and resume codecs preserve a single `activeRun` with one tagged
 pending-turn, display-screen, interrupted-flow, or separate optional visit fields.
 Migration converts valid older runs without executing gameplay. Only the selected
 candidate may request abandonment of a nonterminal unfinished legacy battle.
+Nonterminal current snapshots marked as enemy turns use that same settlement;
+the current engine cannot commit a resumable intermediate enemy phase.
 Restore uses current abandonment settlement atomically, then queues the terminal
 snapshot; stale bootstrap results cannot abandon an initialized run. Terminal
 committed battles remain resumable. Unusable selected activity structure drops
 only the run; permanent progress and future-save protection remain intact.
 A damaged Mystery offer retains its tag with null data so restore can exit that
 visit through the existing repair operation.
+An unfinished Campfire with no usable Potion offer rebuilds its standard offers
+once using the saved events stream. A resumed Labyrinth map clears stale pending
+room locks. Invalid or missing battle Gold falls back to valid purse Gold in both
+the battle and profile; a valid zero balance remains authoritative.
 
 ## Retired display aspect ratio
 
@@ -109,13 +121,28 @@ Reworked Talents may retain their IDs, while current run restoration rebinds der
 
 Battle flags default safely, normalize to their declared boolean/number types, and preserve their current values on resume. Their turn/combat/until-consumed lifetimes are owned by [combat-flags.ts](../../../../../src/lib/battle/combat-flags.ts): Archery sequence flags reset each player turn, while Hawk Eye and Riposte readiness survive until consumed and the first-Burn-free allowance lasts for the combat. Never reconstruct readiness from existing status or Dodge state, or replay opening draws/rewards during normalization. New battles initialize fresh flags.
 
-This includes the independent Layered, Ironroot, Shatter, Wildfire, Vanguard’s
-Crest, and Obsidian Hammer per-turn allowances: loading preserves spent uses,
+This includes the independent Layered, Ironroot, Vanguard’s Crest, and Obsidian
+Hammer per-turn allowances: loading preserves spent uses,
 while missing flags use their declared defaults. Forge has no deferred spending
 or threshold-reward queue; normalization discards obsolete queues and retired
 manifest fields.
 Current [Forge rules](../../../../../Docs/GAME_RULES.md#persistent-forge) and
 [Gear rules](../../../../../Docs/ARMORY.md#battle-integration) own their mechanics.
+
+Universal reactions store earned damage separately from turn flags. Shatter and
+Frostfire retain independent Freeze opportunities; Thunderclap retains its Stun
+opportunity. Wildfire stores one optional unmatched natural Burn tick and the
+sum of completed, individually rounded pairs. Current-format resume preserves
+all amounts, including spent opportunities. Missing reaction data starts empty,
+retired `shatterUsed` / `wildfireUsed` flags are ignored, and normalization never
+reconstructs progress from CC or Burn. Invalid scalars repair independently;
+CC rewards outside their active CC are cleared. This additive default needs no
+schema-version bump under the pre-release baseline. Consecration adds one
+`consecrated` boolean, default false; hydration preserves a valid mark only while
+Bleed remains. A natural Bleed tick consumes it before riders resolve, and
+clearing/detonating Bleed cancels it. Bloodboil uses phase-local actual tick facts;
+Venomflash uses the packet's pre-hit Poison/Burn and successful ignition. Neither
+adds saved counters or reconstructs progress during load.
 
 `pendingCardBleedLeechHealing` is the explicit-card subset of queued Bleed Leech.
 It defaults to zero, cannot exceed total queued Leech, and preserves attribution
@@ -127,6 +154,13 @@ card has no explicit Consume description. Keep valid modified effects, descripti
 UIDs, costs, and pile membership together. Summons still leave battle independently
 of Consume; an explicitly added Consume keyword remains a legitimate card edit.
 Reworked Talent manifests rebuild from purchased IDs without replaying any awards.
+
+Unauthored flat Stun, per-card flat healing, Companion Bleed bonuses, extra
+Archery hits, fixed extra Wish choices, Wish Gems/Gold, mixing bonuses, free
+refresh entitlements, starting Gold, victory maximum Health, and unused victory
+Gold bonuses are retired. Current catalogs own the remaining manifest fields;
+normalization drops retired keys and restoration rebuilds current bonuses.
+Modified cards and committed results remain valid; supported versions are unchanged.
 
 ## Run recap tracking
 
@@ -141,7 +175,7 @@ resurrect a saved run after death, abandonment, or victory.
 
 ## Defaults and resume normalization
 
-`createDefaultSaveData()` (`storage/defaults.ts`) is the top-level defaults owner: the Zod schema is parsed once into a frozen singleton and every caller receives a fresh clone, so top-level keys and values cannot drift (pinned by the migration contract test). Domain codec defaults must still be updated together: `createDefaultSettingsSaveFields` (`shared/stores/settings-store.ts`), `createDefaultProfileSaveFields` (`shared/stores/profile-store-types.ts`), `createInitialGearState` (`shared/stores/gear-state-defaults.ts`), and `createInitialPermanentFields` (`shared/stores/run-state-init.ts`), plus both fixture builders (`tests/fixtures/saves.ts` campaign-full, `tests/helpers/save-candidate-fixtures.ts` candidate-minimal). Validation supplies safe current-field defaults. Normalization repairs current-run choices and catalog references; hydration restores runtime cards and manifests. Repair happens in two layers with distinct owners: schema load-repair (`SaveDataSchema` transform in `save-data.ts`: live-combat gold override, autoplay derive, orphan gear-loadout prune) runs first, then codec hydrate-repair (`hydrateGameplayPersistenceFields` in `shared/stores/persistence-hydration.ts`: unknown-companion prune, homestead effects, unique ownership union). Complete-save restoration composes that helper inside its existing gameplay transaction; `hydrateAlchemyPersistenceFields` is the separate fields-only wrapper, not a nested restore step. Preserve valid saved card modifications, Health, defenses, flags, pending choices, and RNG. Never reapply starting grants or resolve an action during normalization. Keep material defaults and current field names; retired crystal/recovery and historical Talent conversions are no longer accepted as aliases. Live combat gold intentionally overrides the purse when finite and non-negative; that override is not a repair warning.
+`createDefaultSaveData()` (`storage/defaults.ts`) is the top-level defaults owner: the Zod schema is parsed once into a frozen singleton and every caller receives a fresh clone, so top-level keys and values cannot drift (pinned by the migration contract test). Domain defaults must still be updated together: `SettingsSaveFieldsSchema` and its `createDefaultSettingsSaveFields` factory (`src/lib/validation/save-schemas/settings.ts`), `createDefaultProfileSaveFields` (`shared/stores/profile-store-types.ts`), `createInitialGearState` (`shared/stores/gear-state-defaults.ts`), and `createInitialPermanentFields` (`shared/stores/run-state-init.ts`), plus both fixture builders (`tests/fixtures/saves.ts` campaign-full, `tests/helpers/save-candidate-fixtures.ts` candidate-minimal). Validation supplies safe current-field defaults. Normalization repairs current-run choices and catalog references; hydration restores runtime cards and manifests. Repair happens in two layers with distinct owners: schema load-repair (`SaveDataSchema` transform in `save-data.ts`: live-combat gold override, autoplay derive, orphan gear-loadout prune) runs first, then codec hydrate-repair (`hydrateGameplayPersistenceFields` in `shared/stores/persistence-hydration.ts`: unknown-companion prune, homestead effects, unique ownership union). Complete-save restoration composes that helper inside its existing gameplay transaction; `hydrateAlchemyPersistenceFields` is the separate fields-only wrapper, not a nested restore step. Preserve valid saved card modifications, Health, defenses, flags, pending choices, and RNG. Never reapply starting grants or resolve an action during normalization. Keep material defaults and current field names; retired crystal/recovery and historical Talent conversions are no longer accepted as aliases. Live combat gold intentionally overrides the purse when finite and non-negative; that override is not a repair warning.
 
 ## Public save contract
 
@@ -157,25 +191,44 @@ Read the applicable contract before changing its behavior:
 
 ## Policy: local is authoritative
 
-Steam Cloud is a one-way mirror. Both the primary (`save.json`) and recovery (`save-recovery.json`) slots write local-first, atomically with their own `bak.1-3` ring and `tmp` in `desktop/main.cjs`, then mirror to the matching Cloud filename. Browser storage uses the primary `alchemy-save-v1` and recovery `alchemy-save-recovery-v1` keys.
+Steam Cloud is a one-way mirror. Both the primary (`save.json`) and recovery (`save-recovery.json`) slots write local-first, atomically with their own `bak.1-3` ring and `tmp` in `desktop/save-storage.cjs`, then mirror to the matching Cloud filename. Browser storage uses the primary `alchemy-save-v1` and recovery `alchemy-save-recovery-v1` keys.
 
 Device display preferences (versioned `alchemy-device-display-v<n>` key, currently v1) stay outside the versioned save: they survive save wipes, are never cloud-mirrored, and never gate loads. A version mismatch resets them to defaults silently (no error-sink entry); only unreadable storage or corrupt JSON is logged.
 
 ## Load selection
 
-`readDesktopCandidates` in `src/lib/platform-save-backend.ts` collects each slot in preference order (local ring → Cloud). The local ring read order lives in `desktop/main.cjs`; the backend appends the matching Cloud mirror and deduplicates identical payloads. The storage owner evaluates primary candidates before recovery candidates, and the freshest playable candidate that Zod-validates wins by `lastSavedAt`; corrupt candidates fall through to another source. Evaluation is deterministic in `src/features/alchemy/shared/storage/save-candidates.ts#evaluateSaveCandidates`. Recovery diagnostics are logged at the I/O seam, and only the winning candidate is hydrated against the live catalog.
+`readDesktopCandidates` in `src/lib/platform-save-backend.ts` collects each slot in preference order (local ring → Cloud). The local ring read order lives in `desktop/save-storage.cjs`; the backend appends the matching Cloud mirror and deduplicates identical payloads. The storage owner evaluates primary candidates before recovery candidates, and the freshest playable candidate that Zod-validates wins by `lastSavedAt`; corrupt candidates fall through to another source. Evaluation is deterministic in `src/features/alchemy/shared/storage/save-candidates.ts#evaluateSaveCandidates`. Recovery diagnostics are logged at the I/O seam, and only the winning candidate is hydrated against the live catalog.
 
 Routine skips stay silent: missing, empty, and below-baseline candidates on fresh profiles never reach the error sink (`logStorageFailure`), because browser journeys assert zero runtime errors. Non-object roots and genuinely corrupt JSON do report. Candidate validation reports genuinely corrupt JSON and schema failures of otherwise versioned candidates; storage I/O failures are logged separately. Pinned by `save-version-protection.test.ts`.
 
 `selectSaveCandidates(primary, recovery)` inspects each candidate once and returns
-the load state together with its safe write-slot recommendation. Compatibility
+the load state together with the ordered write slots permitted by compatibility. Compatibility
 checks protect every newer-format candidate, including stale copies after the
 playable winner. The winning raw payload, validated data, and repair notes stay
 together until hydration. `evaluateSaveCandidates` is the single-source facade;
 demo import uses the same selection and rejects a protected source. Storage adds
-unreadable-primary protection at the I/O boundary.
+unreadable-primary protection at the I/O boundary. Ordinary saves, synchronous
+exit saves, and explicit recovery routing use the same permitted slots; a
+fallback cannot bypass the compatibility decision.
 
-A failed local candidate read is different from an empty or corrupt candidate set. Desktop still attempts the Cloud copy; the storage owner tries both slots and uses any compatible candidate it can read. If the primary is unreadable, new progress writes to the recovery slot, leaving the primary untouched. If neither slot can be read, play starts with defaults and writes still attempt the recovery slot. If a normal primary write fails, the same snapshot is attempted in recovery before autosave reports failure and retries. When both writes fail, committed progress remains in memory and autosave keeps retrying, while the renderer holds action completion and shows Couldn’t save with Retry under [write acknowledgement](#write-acknowledgement).
+A failed local candidate read is different from an empty or corrupt candidate set. Desktop still attempts the Cloud copy; the storage owner tries both slots and uses any compatible candidate it can read. If the primary is unreadable, new progress writes to the recovery slot, leaving the primary untouched, unless recovery is known to contain newer-format data. In that case, neither slot is writable and saves report failure. If neither slot can be read, play starts with defaults and writes still attempt the recovery slot. If a normal primary write fails, the same snapshot is attempted in recovery only when that slot is permitted. When all permitted writes fail, committed progress remains in memory and autosave keeps retrying, while the renderer holds action completion and shows Couldn’t save with Retry under [write acknowledgement](#write-acknowledgement).
+
+Unreadable Cloud files (including a present file returning no bytes or exceeding
+the native payload limit) protect their slot just like unreadable local files.
+An unreadable recovery slot is excluded from fallback writes when primary reads
+succeeded; a protected primary plus unreadable recovery leaves no writable slot.
+When both sources are unreadable, the existing last-resort recovery policy applies.
+Native reads, writes, and clears share one process queue across renderer lifetimes.
+Shutdown closes write admission and drains accepted operations before quitting.
+Owner stamping is included in the payload size limit before either disk or Cloud
+accepts a write. Demo initialization receipt writes also serialize so concurrent
+initialization and Clear Save requests cannot race their shared temporary file.
+
+Returning Flight saves store all outstanding card discounts in
+`uniqueGear.returningFlightUids`. Discounts follow queued cards across turns and
+are consumed independently on play; discarded cards lose unused discounts at the
+next turn boundary. Missing references default to an empty list, and hydration
+drops duplicate, missing, or ambiguous card references.
 
 ## Future schema saves
 
@@ -187,22 +240,33 @@ Tie rules: playable-vs-playable ties keep the first candidate in read order — 
 
 ## Write acknowledgement
 
-Normal saves and explicit flushes return `saved`, `failed`, `skipped`, or `superseded`. `saved` means local storage accepted that submitted snapshot in the active slot; a Cloud-mirror failure remains non-fatal. A pending submission replaced by coalescing returns `superseded`, and autosave retains its unacknowledged work for retry. Replacement success cannot acknowledge the discarded payload. `skipped` covers cancellation, protection, or unavailable storage. A failed primary write tries the recovery slot with the same snapshot. Serialization and backend failures are logged at the I/O seam and returned to the caller.
+Normal saves and explicit flushes return `saved`, `failed`, `skipped`, or `superseded`. `saved` means local storage accepted that submitted snapshot in the active slot; a Cloud-mirror failure remains non-fatal. A pending submission replaced by coalescing returns `superseded`, and autosave retains its unacknowledged work for retry. Replacement success cannot acknowledge the discarded payload. `skipped` covers cancellation, protection, or unavailable storage. A failed primary write tries a permitted recovery slot with the same snapshot. An empty permitted-slot set reports `failed`, retaining the retry gate. Serialization and backend failures are logged at the I/O seam and returned to the caller.
 
 Each storage instance serializes loads, writes, and clears in one operation queue.
+The native `desktop/save-storage.cjs` owner also serializes file operations and
+demo-initialization receipt work in a process-wide lane, shared by both slots.
+IPC reads and deletion wait for earlier ring writes even across renderer reloads;
+following writes cannot overtake deletion. A failed operation releases the lane.
+Native shutdown closes save admission at `will-quit`, after window unload handlers
+can submit their final snapshots, and drains accepted writes before process exit.
+It resumes quitting on the next event-loop turn, after Electron resets the
+cancelled quit's native state, including when the queue was already idle.
 Loads observe preceding completed writes and establish the safe write slot before
 later saves run. Pending saves coalesce only between load barriers. Demo import,
 its local write, and its initialization receipt belong to the load operation;
-a following clear waits for them and then deletes the imported data. Clear still
-immediately cancels pending save submissions and their acknowledgements. Failed
-loads reject their callers without blocking later storage work. Storage drain and
+a following clear waits for them and then deletes the imported data. Clear
+immediately revokes submitted snapshots and pauses autosave. The session retains
+the unsaved action and its completion callbacks until deletion succeeds. Failed
+deletion resumes autosave with a fresh snapshot and leaves the original action
+protected for retry. Overlapping clears share one pause; work resumes only if
+all fail. Failed loads reject their callers without blocking later storage work. Storage drain and
 backend replacement account for all queued operations. Session drains also wait
 for write failure notifications and progress receipts, including immediate saves
 that have no awaiting caller.
 
-Autosave retains unacknowledged changes until a covering write succeeds. In-memory revisions prevent an older completion from clearing newer progress. When building a snapshot or writing it fails, autosave retries through the existing single timer no sooner than `AUTOSAVE_RETRY_COOLDOWN_MS` after failure (see `src/lib/game-constants/storage.ts`; kept equal to `AUTOSAVE_MAX_WAIT_MS` so the backoff survives shrunken debounces, split so UX timing and retry backoff can diverge later), including when animations are disabled or new changes arrive. Timing math lives in `src/app/autosave-scheduler.ts` with unit coverage; `src/app/autosave-lifecycle.ts` owns debounce selection, snapshot building, completion gating, and subscriptions for both React and headless callers; the React hook adds browser lifecycle listeners. Exit signals may bypass that cooldown, with an exit-once latch per revision so back-to-back exit events write one snapshot. Clear requests and write protection invalidate pending acknowledgements and cancel scheduled autosaves; disabled persistence and hook cleanup also stop retries. Late timer callbacks and write completions cannot restart cancelled work or flush a disposed lifecycle. No scheduling metadata is persisted.
+Autosave retains unacknowledged changes until a covering write succeeds. In-memory revisions prevent an older completion from clearing newer progress. When building a snapshot or writing it fails, autosave retries through the existing single timer no sooner than `AUTOSAVE_RETRY_COOLDOWN_MS` after failure (see `src/lib/game-constants/storage.ts`; kept equal to `AUTOSAVE_MAX_WAIT_MS` so the backoff survives shrunken debounces, split so UX timing and retry backoff can diverge later), including when animations are disabled or new changes arrive. Timing math lives in `src/app/autosave-scheduler.ts` with unit coverage; `src/app/autosave-lifecycle.ts` owns debounce selection, snapshot building, completion gating, and subscriptions for both React and headless callers; the React hook adds browser lifecycle listeners. Exit signals may bypass that cooldown, with an exit-once latch per revision so back-to-back exit events write one snapshot. Clear requests pause scheduled autosaves; successful deletion and write protection invalidate pending acknowledgements and cancel scheduled autosaves; disabled persistence and hook cleanup also stop retries. Late timer callbacks and write completions cannot restart cancelled work or flush a disposed lifecycle. No scheduling metadata is persisted.
 
-Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest unacknowledged snapshot to `localStorage` via `writeSync`. A successful synchronous flush returns `saved` immediately when the queue is idle. If an older write may still land, the latest snapshot also replaces pending queue work and completion waits for that final write. No await sits between the sync write and the idle check, so check-and-enqueue is atomic on the event loop (see `SaveStorage.saveForExit` in [save-storage.ts](./save-storage.ts), the owner of this ordering; `io.ts` delegates exit saves to that storage instance). Each snapshot serialization stamps its own `lastSavedAt`. `SaveStorage` advances that timestamp beyond its loaded save and prior serialized writes, even when the clock repeats or moves backward, so a newer recovery save cannot lose to an older primary on reload. Primary-to-recovery fallback retries reuse the same serialized payload and timestamp. Desktop IPC uses the same serialized coalescing queue and returns a promise for the actual write outcome. A failed synchronous exit remains retryable through the scheduler retry while mounted. Desktop shutdown remains best effort, so earlier visibility/pagehide signals give IPC time to finish before the window closes. Terminal saves supersede queued snapshots that have not started writing.
+Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest unacknowledged snapshot to `localStorage` via `writeSync`. A successful synchronous flush returns `saved` immediately when the queue is idle. If an older write may still land, the latest snapshot also replaces pending queue work and completion waits for that final write. No await sits between the sync write and the idle check, so check-and-enqueue is atomic on the event loop (see `SaveStorage.saveForExit` in [save-storage.ts](./save-storage.ts), the owner of this ordering; `io.ts` delegates exit saves to that storage instance). Each snapshot serialization stamps its own `lastSavedAt`. `SaveStorage` advances that timestamp beyond its loaded save and prior serialized writes, even when the clock repeats or moves backward, so a newer recovery save cannot lose to an older primary on reload. Primary-to-recovery fallback retries reuse the same serialized payload and timestamp. Desktop IPC uses the same serialized coalescing queue and returns a promise for the actual write outcome. A failed synchronous exit remains retryable through the scheduler retry while mounted. Native shutdown drains file writes accepted before `will-quit` closes admission. Submitting unfinished renderer work before that boundary remains best effort; earlier visibility/pagehide signals provide more time for submission. Terminal saves supersede queued snapshots that have not started writing.
 
 While a load is pending, exit saves queue without attempting a synchronous write:
 slot protection is not yet known. A pending clear skips exit saves. Once loads
@@ -215,9 +279,13 @@ skipped or superseded writes never acknowledge it. If both slots fail, progressi
 Couldn’t save and Retry. Retrying saves the committed snapshot without executing
 the action again. Automatic retry remains with the existing scheduler and cooldown;
 explicit Retry resets its submission latch without changing normal exit deduplication.
+The retry request belongs to the pending career and checkpoint. Restore or
+cancellation during status notification revokes it before a driver can run. A
+missing or throwing driver falls back to a fresh session checkpoint so its failure
+cannot strand the pending action in Saving….
 
 Checkpoint revisions, epochs, pending presentation references, and failure status
-are runtime-only. Restoring another run, clear, write protection, and disposal
+are runtime-only. Restoring another run, successful clear, write protection, and disposal
 invalidate stale acknowledgements and completion feedback. No schema migration is
 needed. Completed outcomes survive process interruption after local acknowledgement;
 shutdown flushing of unfinished work remains best effort.
@@ -227,6 +295,10 @@ slots with the newest queued payload per slot. A mirror failure cannot delay loc
 completion. Clear cancels queued mirrors and waits for an active upload before
 Cloud deletion. Candidate selection, account ownership, and recovery policy retain
 the existing contracts.
+The process-wide `desktop/steam-cloud-storage.cjs` lane also serializes Cloud reads,
+uploads, and deletion across renderer replacement. Deletion waits for uploads
+already admitted by a departed renderer, and following reads observe its result.
+This transport ordering does not delay local write acknowledgement on Cloud.
 
 ## Deletion
 
@@ -318,3 +390,17 @@ does not grant Leech. Structured description magnitudes retain `distilled` marks
 through hydration and mixing so upgraded values remain green. These compatible
 additions use safe defaults without a schema bump; incompatible changes still
 follow the [supported baseline](#supported-baseline).
+
+## Starter Homestead grant
+
+`starterHomesteadGrantResolved` is an additive permanent run-profile boolean.
+New careers start false. Missing or malformed values recover as true when any
+valid Homestead tier or Companion Bond is purchased, otherwise false. Valid
+saved booleans survive unchanged. Claiming the first Campaign Act I boss reward
+resolves the receipt atomically with any material top-up. A successful Homestead
+purchase also resolves it. Homestead reset preserves it; Clear Save Data resets
+it. No schema-version increment or supported payload transformation is required.
+
+## Localized description cache
+
+Structured card description lines may carry an additive data-only `message` cache with an English template ID and named keyword/magnitude slots. Hydration regenerates this cache from saved literal parts, effects and magnitude bindings; invalid cache metadata cannot replace valid mechanics. Current-format cards, custom wording, Mixed Potion grouping and upgrades remain intact. Unknown legacy templates remain playable in English. The device-local language preference is outside the progress envelope and Steam Cloud; no save-version change is required. See [Localization](../../../../../Docs/LOCALIZATION.md).

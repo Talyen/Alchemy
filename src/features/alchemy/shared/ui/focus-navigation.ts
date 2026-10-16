@@ -1,34 +1,7 @@
-/** Shared eligibility for recovery and dialog traversal; inspection-only controls remain tabbable. */
-export function isFocusAvailable(element: HTMLElement): boolean {
-  return (
-    element.isConnected &&
-    !element.closest('[inert], [hidden], [aria-hidden="true"]') &&
-    !element.matches(":disabled") &&
-    element.getClientRects().length > 0 &&
-    getComputedStyle(element).visibility !== "hidden"
-  );
-}
+import { focusableControls, focusControl, isFocusAvailable } from "./focus-eligibility";
+import { activeDialogFocusRoot } from "./dialog-focus-owner";
 
-export function focusableControls(root: ParentNode): HTMLElement[] {
-  return [...root.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]")].filter(
-    (element) => element.tabIndex >= 0 && isFocusAvailable(element),
-  );
-}
-
-export function focusControl(element: HTMLElement | undefined | null): boolean {
-  if (!element || element === document.body || !isFocusAvailable(element)) return false;
-  element.focus({ preventScroll: true });
-  if (document.activeElement !== element) return false;
-  element.scrollIntoView({ block: "nearest", inline: "nearest" });
-  return true;
-}
-
-export function focusScreenStart() {
-  const screen = document.querySelector("[data-screen-content]:not([inert])");
-  if (!screen) return;
-  const controls = focusableControls(screen);
-  focusControl(controls.find((element) => element.getAttribute("aria-disabled") !== "true"));
-}
+export { isFocusAvailable, focusableControls, focusControl, focusScreenStart } from "./focus-eligibility";
 
 /** Steam Input uses F7 so backward focus does not activate Steam's Shift+Tab overlay. */
 export function focusPreviousControl(): void {
@@ -39,6 +12,8 @@ export function focusPreviousControl(): void {
 }
 
 function activeFocusRoot(): ParentNode {
+  const owned = activeDialogFocusRoot();
+  if (owned) return owned;
   const overlays = [...document.querySelectorAll<HTMLElement>('[role="dialog"], [data-modal-content]')].filter(
     isFocusAvailable,
   );

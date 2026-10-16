@@ -4,6 +4,7 @@ import { onRunRestored } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { assertSessionOwnership, registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
 import { PlaybackLifetime } from "./playback-lifetime";
 import { useRef, useMemo, useLayoutEffect, useState } from "react";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import type { BattleRefs, CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
@@ -18,9 +19,14 @@ export type AutoplayCardHandler = (
   card: BattleCard,
   index: number,
   control: AutoplayCardControl,
+  expected: BattleSnapshot,
 ) => boolean | Promise<boolean>;
 
-export type AutoplayWishHandler = (card: BattleCard, control: AutoplayCardControl) => boolean | Promise<boolean>;
+export type AutoplayWishHandler = (
+  card: BattleCard,
+  control: AutoplayCardControl,
+  expected: BattleSnapshot,
+) => boolean | Promise<boolean>;
 
 export type { BattlePlaybackBind } from "./playback-lifetime";
 
@@ -48,8 +54,7 @@ export function useBattleControllerContext(
   assertSessionOwnership(gameSession, props.battle, props.presentation);
   const endTurnButtonRef = useRef<HTMLButtonElement | null>(null);
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const drawPileRef = useRef<HTMLDivElement | null>(null);
-  const discardPileRef = useRef<HTMLDivElement | null>(null);
+  const handDockRef = useRef<HTMLDivElement | null>(null);
   const battleSceneRef = useRef<HTMLDivElement | null>(null);
   const playerPanelRef = useRef<HTMLDivElement | null>(null);
   const enemyPanelRef = useRef<HTMLDivElement | null>(null);
@@ -70,8 +75,7 @@ export function useBattleControllerContext(
       playback,
       endTurnButtonRef,
       handCardRefs,
-      drawPileRef,
-      discardPileRef,
+      handDockRef,
       battleSceneRef,
       playerPanelRef,
       enemyPanelRef,

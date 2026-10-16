@@ -1,12 +1,18 @@
 import { StrictMode } from "react";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { CurrencyChip } from "@/features/alchemy/shared/ui/currency-chip";
 import { CRAFTING_CURRENCY_LIST } from "@/lib/gear";
 
-afterEach(cleanup);
+import { installCatalogs, localization } from "@/lib/localization/runtime";
+import catalogs from "@/lib/localization/locales/runtime.json";
 
-it("acknowledges stock changes once and keeps disabled crafting from selecting a currency", () => {
+afterEach(async () => {
+  cleanup();
+  await localization.changeLanguage("en");
+});
+
+it("acknowledges stock changes once and keeps disabled crafting from selecting a currency", async () => {
   const currency = CRAFTING_CURRENCY_LIST[0]!;
   const onSelect = vi.fn();
   const chip = (count: number, disabled = false) => (
@@ -29,5 +35,14 @@ it("acknowledges stock changes once and keeps disabled crafting from selecting a
   expect(changedCount.classList.contains("armory-count-feedback")).toBe(true);
   rerender(chip(2));
   expect(screen.getByText("2")).toBe(changedCount);
-  expect(screen.getByRole("button").getAttribute("aria-label")).toBe(`${currency.displayName}, 2 available`);
+  const control = screen.getByRole("button");
+  expect(control.getAttribute("aria-label")).toBe(`${currency.displayName}, 2 available`);
+  control.focus();
+  installCatalogs(catalogs);
+  await act(async () => {
+    await localization.changeLanguage("ru");
+  });
+  expect(screen.getByRole("button", { name: "Кости раздора, доступно: 2" })).toBe(control);
+  expect(document.activeElement).toBe(control);
+  expect(screen.getByText("2")).toBe(changedCount);
 });

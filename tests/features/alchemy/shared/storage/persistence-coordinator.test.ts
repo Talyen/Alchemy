@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import {
   mutateGameplayForTest,
   getBattleForTest,
@@ -54,7 +55,7 @@ function mutateSession(session: GameSession, mutate: (draft: GameplayDraft) => v
 }
 
 beforeEach(() => {
-  useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+  useSettingsStore.getState().resetToDefaults();
   useUiStore.getState().setShowClearSaveConfirm(false);
   resetRunDomainStore();
 });
@@ -63,32 +64,31 @@ describe("persistence coordinator", () => {
   it.each(["idle", "mystery"] as const)(
     "can commit an incomplete %s activity but cannot save it as resumable progress",
     async (kind) => {
-      const session = createGameSession();
+      await using session = createGameSession();
       const listener = vi.fn();
       const unsubscribe = subscribeAlchemyPersistence(listener, session);
       const persistence = createSessionPersistence(session);
       const release = persistence.trackProgress(() => {});
-      try {
-        expect(() =>
-          mutateSession(session, (draft) => {
-            draft.session.activity = kind === "idle" ? { kind } : { kind, data: emptyHydratedMysteryVisit() };
-          }),
-        ).not.toThrow();
-        expect(listener).toHaveBeenCalledOnce();
-        expect(persistence.readProgress().kind).toBe("saving");
-        expect(() => persistence.snapshot()).toThrow(kind === "idle" ? "resumable activity" : "resolved visit");
-        expect(persistence.readProgress().kind).toBe("failed");
-      } finally {
+      using _scopeCleanup = createCleanup(() => {
         unsubscribe();
         release();
-        await session.dispose();
-      }
+      });
+
+      expect(() =>
+        mutateSession(session, (draft) => {
+          draft.session.activity = kind === "idle" ? { kind } : { kind, data: emptyHydratedMysteryVisit() };
+        }),
+      ).not.toThrow();
+      expect(listener).toHaveBeenCalledOnce();
+      expect(persistence.readProgress().kind).toBe("saving");
+      expect(() => persistence.snapshot()).toThrow(kind === "idle" ? "resumable activity" : "resolved visit");
+      expect(persistence.readProgress().kind).toBe("failed");
     },
   );
   it.each(["inactive", "destination", "battle"] as const)(
     "%s changes excluded from the save cannot arm the progress gate or trigger autosave",
     async (activity) => {
-      const session = createGameSession();
+      await using session = createGameSession();
       if (activity !== "inactive") {
         mutateSession(session, (draft) => {
           if (activity === "battle") getBattleForTest(draft);
@@ -100,32 +100,31 @@ describe("persistence coordinator", () => {
       const listener = vi.fn();
       const unsubscribe = subscribeAlchemyPersistence(listener, session);
       const release = persistence.trackProgress(() => {});
-      try {
-        mutateSession(session, (draft) => {
-          if (activity === "inactive") draft.run.activeRun.runPlayerHealth -= 1;
-          else if (activity === "destination") draft.session.rewardFlow.state.gold += 1;
-          else
-            getBattleForTest(draft).battleState.battleMetrics = {
-              enemyAttackActions: 1,
-              enemyAbilityActivations: {},
-            };
-        });
-        expect(buildAlchemySaveDataFromStores(session)).toEqual(before);
-        expect(listener).not.toHaveBeenCalled();
-        expect(persistence.readProgress().kind).toBe("idle");
-        mutateSession(session, (draft) => {
-          if (activity === "inactive") setGold(draft, 42);
-          else if (activity === "destination") draft.session.rewardFlow.state.destinations = ["Campfire"];
-          else getBattleForTest(draft).battleState.turn += 1;
-        });
-        expect(buildAlchemySaveDataFromStores(session)).not.toEqual(before);
-        expect(listener).toHaveBeenCalledOnce();
-        expect(persistence.readProgress().kind).toBe("saving");
-      } finally {
+      using _scopeCleanup = createCleanup(() => {
         unsubscribe();
         release();
-        await session.dispose();
-      }
+      });
+
+      mutateSession(session, (draft) => {
+        if (activity === "inactive") draft.run.activeRun.runPlayerHealth -= 1;
+        else if (activity === "destination") draft.session.rewardFlow.state.gold += 1;
+        else
+          getBattleForTest(draft).battleState.battleMetrics = {
+            enemyAttackActions: 1,
+            enemyAbilityActivations: {},
+          };
+      });
+      expect(buildAlchemySaveDataFromStores(session)).toEqual(before);
+      expect(listener).not.toHaveBeenCalled();
+      expect(persistence.readProgress().kind).toBe("idle");
+      mutateSession(session, (draft) => {
+        if (activity === "inactive") setGold(draft, 42);
+        else if (activity === "destination") draft.session.rewardFlow.state.destinations = ["Campfire"];
+        else getBattleForTest(draft).battleState.turn += 1;
+      });
+      expect(buildAlchemySaveDataFromStores(session)).not.toEqual(before);
+      expect(listener).toHaveBeenCalledOnce();
+      expect(persistence.readProgress().kind).toBe("saving");
     },
   );
   it("keeps hydrated profile fields from overwriting later inventory, discovery and settings changes", () => {

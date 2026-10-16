@@ -1,6 +1,6 @@
 @theme {
   /* Motion tokens: TS constants in src/lib/game-constants/ui-motion.ts own the
-     millisecond values (MOTION_FADE_MS, TOOLTIP_FADE_MS, LOADING_WORD_FADE_MS);
+     millisecond values (MOTION_FADE_MS, TOOLTIP_FADE_MS);
      these CSS vars mirror them for stylesheets. Parity is enforced by
      scripts/lint-architecture-smoke.mjs — update both sides together. */
   --color-background: hsl(30 10% 3%);
@@ -37,7 +37,7 @@
   /* Mirrors ANIMATION_DISABLED_DURATION in src/lib/animation/animation-prefs.ts (1): keep in sync. */
   --animation-disabled-duration: 1ms;
 
-  --font-sans: "Inter", sans-serif;
+  --font-sans: "Inter", "Alchemy Cyrillic", "Alchemy Chinese", sans-serif;
 
   /* Readable scale at 16px root: base 18, lg 20, xl 22. sm/2xl stay Tailwind defaults. */
   --text-base--line-height: calc(1.5 / 1.125);

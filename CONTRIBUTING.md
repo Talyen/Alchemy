@@ -86,6 +86,8 @@ Receipts expire after one hour. Reused results retain their original run ID and 
 
 Set `ALCHEMY_VERIFY_FRESH=1` for fresh local observations, including nondeterminism investigations and benchmark comparisons. Actual outcomes still replace or invalidate receipts. [Cache implementation details](./scripts/VERIFICATION.md#verification-cache) document input identity and the cost threshold.
 
+The default local check also runs the offline [localization freshness gate](./Docs/LOCALIZATION.md#agent-workflow). Agents update translations in the same task as English text edits; checks and builds never invoke a translation service.
+
 ## Test value and coverage strategy
 
 Add permanent tests for high-value protection by default. Add low- or medium-value tests only as rare exceptions with a concrete justification. Judge value by the failure detected, its consequence, assertion strength, distinct protection, diagnostic usefulness, runtime, and upkeep. Test counts and coverage percentages are not improvement targets; existing configured gates still apply.
@@ -123,6 +125,14 @@ When removing or moving tests, remove support code made unused by retirement and
 CLI tests that create package or release artifacts must use temporary project roots,
 including the script dependency closure and output directories. Never create or
 remove fixtures in the checkout's real package-output or Steam build directories.
+
+For lint policy tests, batch distinct fixture paths through
+`lintFixtures` in `tests/helpers/lint-fixture.ts` so they share a real linter
+launch. Preserve the original paths and configuration overrides. Independent
+statements for the same path can share a source file when they parse together;
+assert diagnostic source lines to distinguish rejected statements from allowed
+neighbors. Keep separate launches for different configuration or type-aware modes.
+Do not trade away path exceptions or diagnostic precision to reduce process count.
 
 ### Component and hook tests
 

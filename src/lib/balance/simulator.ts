@@ -177,7 +177,7 @@ function buildSimBattleConfig(config: BattleSimulationConfig, rng: () => number,
     skipGear: Boolean(config.gearEffects),
   });
   const talentEffects = resolveTalentEffects(config, playerDeck, loadout.homesteadCombat);
-  const gold = config.gold ?? loadout.gold + talentEffects.startGold;
+  const gold = config.gold ?? loadout.gold;
   const gearEffects = config.gearEffects ?? loadout.gearEffects;
   const trinketIds = config.trinketIds ?? loadout.coreTrinketIds;
   const baseMaxHealth = config.playerMaxHealth ?? MAX_PLAYER_HEALTH;

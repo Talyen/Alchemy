@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import type { ElementType } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -7,6 +9,7 @@ export interface TabBarProps<T extends string> {
   tabs: Array<{
     id: T;
     label: string;
+    ariaLabel?: string;
     icon: ElementType;
     disabled?: boolean;
     iconClassName?: string;
@@ -24,6 +27,7 @@ export function TabBar<T extends string>({
   activeClassName = "ring-2 ring-primary/70 ring-offset-1 ring-offset-background",
   className,
 }: TabBarProps<T>) {
+  const i18n = useGameTranslation();
   return (
     <div className={cn("flex flex-wrap justify-center gap-3", className)}>
       {tabs.map((tab) => {
@@ -42,11 +46,17 @@ export function TabBar<T extends string>({
             }}
             className={tab.id === activeTab ? activeClassName : undefined}
             wrapperClassName="shrink-0"
-            aria-label={isDisabled ? `${tab.label} (Locked)` : tab.label}
+            aria-label={i18n.displayText(
+              isDisabled
+                ? i18n.text("ui.tab-bar.d1", "{{value0}} (Locked)", {
+                    value0: i18n.displayText(tab.ariaLabel ?? tab.label),
+                  })
+                : (tab.ariaLabel ?? tab.label),
+            )}
             aria-pressed={tab.id === activeTab}
           >
             <Icon className={cn("h-7 w-7", tab.iconClassName)} />
-            {tab.label}
+            {i18n.displayText(tab.label)}
           </Button>
         );
       })}

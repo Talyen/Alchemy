@@ -1,0 +1,71 @@
+{
+  "iron-bear": {
+    "audio": "public/Music/The Iron Bear.mp3",
+    "regions": [
+      {
+        "id": "first-chorus-repeat",
+        "start": 63.04,
+        "end": 69.7,
+        "lines": ["Iron, forge, and flame I take", "For every wound, a stronger shape"],
+        "apply": [0],
+        "dynamicHeads": "8,3"
+      },
+      {
+        "id": "second-chorus-opening",
+        "start": 108.14,
+        "end": 113.8,
+        "lines": ["Iron, forge, and flame I take", "For every wound, a stronger shape"],
+        "apply": [0],
+        "dynamicHeads": "8,3"
+      },
+      {
+        "id": "second-chorus-repeat",
+        "start": 113.8,
+        "end": 120.2,
+        "lines": ["Iron, forge, and flame I take", "For every wound, a stronger shape"],
+        "apply": [0],
+        "dynamicHeads": "8,3"
+      },
+      {
+        "id": "second-singe",
+        "start": 135.8,
+        "end": 142.04,
+        "lines": ["Then I'll carve through iron,", "singe through hide."],
+        "apply": [1]
+      }
+    ]
+  },
+  "frostwarden": {
+    "audio": "public/Music/The Frostwarden.mp3",
+    "regions": [
+      {
+        "id": "first-chorus-repeat",
+        "start": 111.74,
+        "end": 116.95,
+        "lines": ["What freezes you", "Only feeds my veins"],
+        "apply": [0]
+      },
+      {
+        "id": "walk-through-sleep",
+        "start": 193.66,
+        "end": 202.9,
+        "lines": ["I call it fear", "I walk through the long sleep", "And drag you near"],
+        "apply": [1]
+      },
+      {
+        "id": "second-chorus-burns",
+        "start": 217.72,
+        "end": 224.6,
+        "lines": ["What burns me", "Melts me, breaks the chains"],
+        "apply": [0, 1]
+      },
+      {
+        "id": "second-chorus-burns-repeat",
+        "start": 233.7,
+        "end": 241.1,
+        "lines": ["What burns me", "Melts me, breaks the chains"],
+        "apply": [0, 1]
+      }
+    ]
+  }
+}

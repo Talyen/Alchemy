@@ -15,10 +15,14 @@ import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies } from "@/lib/ge
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { filterValidDestinations } from "@/lib/routing";
-import { DISPLAY_MODE_VALUES } from "@/lib/settings-values";
 import { z } from "zod";
 import { clamp } from "@/lib/math";
-import { deduplicateFromSet, deduplicateStrings, toFiniteNonNegativeInt } from "./validation-utils";
+import {
+  deduplicateFromSet,
+  deduplicateStrings,
+  toFiniteNonNegativeInt,
+  toSafeNonNegativeInt,
+} from "./validation-utils";
 
 function toNonEmptyTuple<T extends string>(values: readonly T[], label: string): [T, ...T[]] {
   if (values.length === 0) throw new Error(`${label} must define at least one value`);
@@ -59,7 +63,6 @@ export const LabyrinthNodeTypeSchema = z.enum([
   "equipment-shop",
   "boss",
 ]);
-export const DisplayModeSchema = z.enum(DISPLAY_MODE_VALUES);
 
 export const CRAFTING_CURRENCY_ZERO_INVENTORY = EMPTY_CRAFTING_CURRENCIES;
 
@@ -82,7 +85,7 @@ export const TalentXPSchema = z.preprocess((val) => {
   const result: Record<string, number> = {};
   for (const [key, xp] of Object.entries(val as Record<string, unknown>)) {
     if (!Object.hasOwn(keywordDefinitions, key)) continue;
-    const floored = toFiniteNonNegativeInt(xp);
+    const floored = toSafeNonNegativeInt(xp);
     if (floored !== null) result[key] = floored;
   }
   return result;

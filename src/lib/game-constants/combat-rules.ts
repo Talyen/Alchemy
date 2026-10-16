@@ -8,6 +8,7 @@ export const CRIT_MULTIPLIER = 2;
 export const BLEED_STATUS_MULTIPLIER = 1;
 export const STUN_THRESHOLD_FRACTION = 0.5;
 export const FREEZE_THRESHOLD_FRACTION = 0.5;
+export const ELEMENTAL_REACTION_DAMAGE_PERCENT = 25;
 // Shared floor for crowd-control trigger thresholds: reduction effects can
 // never push a threshold below 10% of max health, so buildup alone cannot
 // trigger a skip for free.
@@ -68,13 +69,12 @@ export const FIGHT_PACING = {
   damageRampByEnemyType: {
     normal: { startRound: 7, playerSpan: 4, enemySpan: 6 },
     elite: { startRound: 12, playerSpan: 4, enemySpan: 6 },
-    boss: { startRound: 20, playerSpan: 3, enemySpan: 3 },
+    boss: { startRound: 10, playerSpan: 5, enemySpan: 5 },
   },
 } as const;
 
 export const CAMPFIRE_HEAL_FRACTION = 0.3;
 
-export const WISH_GEMS_GOLD_PERCENT = 50;
 export const WISH_TRINKET_FORK_PERCENT = 50;
 
 export const BRASS_CENSER_SPLIT_CHANCE_PERCENT = 50;

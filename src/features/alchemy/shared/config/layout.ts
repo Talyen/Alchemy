@@ -46,8 +46,6 @@ export function getTileWidthClass(variant: TileWidthVariant): string {
   }
 }
 
-export const pileCardWidthClass = "w-[calc(var(--hand-card-width)*0.8)]";
-
 export const chooserArtWidthClass = "w-full max-w-[calc(26.3993*var(--content-rem,1rem))]";
 
 export const gameModeArtWidthClass = "w-full max-w-[calc(29.025*var(--content-rem,1rem))]";
@@ -121,11 +119,9 @@ export const battleActorHeroCellClass =
 export const battleActorEnemyCellClass = "relative flex items-start justify-start";
 
 // The previous inset scene lost 5.5 content rem to page and battle padding.
-// Retain that height cap so moving the dock does not enlarge hands or piles.
+// Retain that height cap so moving the dock does not enlarge hand cards.
 export const battleBottomBarClass =
-  "[--hand-card-width:min(calc(16.5038*var(--content-rem,1rem)),calc((100cqh_-_5.5*var(--content-rem,1rem))*0.2445))] absolute inset-x-[calc(1.125*var(--content-rem,1rem))] bottom-[calc(1.125*var(--content-rem,1rem))] grid grid-cols-[minmax(max-content,1fr)_minmax(0,calc(68*var(--content-rem,1rem)))_minmax(max-content,1fr)] items-end gap-4";
-
-export const battleBottomColumnClass = "flex flex-col items-center justify-end gap-4";
+  "[--hand-card-width:min(calc(16.5038*var(--content-rem,1rem)),calc((100cqh_-_5.5*var(--content-rem,1rem))*0.2445))] absolute inset-x-[calc(1.125*var(--content-rem,1rem))] bottom-0 flex justify-center items-end";
 
 export const battleHandContainerClass =
   "flex min-w-0 items-end justify-center min-h-[calc((100cqh_-_5.5*var(--content-rem,1rem))*0.3337)] px-[calc(var(--hand-card-width)*0.32)] pt-10";

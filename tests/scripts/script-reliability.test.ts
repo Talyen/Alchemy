@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -363,27 +364,27 @@ describe("script execution reliability", () => {
     const head = commit(root);
     git(root, "config", "core.untrackedCache", "true");
     git(root, "config", "core.fsmonitor", "true");
-    try {
-      for (let index = 0; index < 3; index += 1) git(root, "status", "--short", "--untracked-files=all");
-      const added = `${directory}/new é space.test.ts`;
-      fs.writeFileSync(path.join(root, added), "new test");
-      fs.writeFileSync(path.join(root, "ignored.test.ts"), "ignored");
-      fs.unlinkSync(path.join(root, "game.ts"));
-      expect(changedGitPaths(root)?.sort()).toEqual(["game.ts", added].sort());
-      expect(resolveSelectedPaths(root, { paths: [] }).sort()).toEqual(["game.ts", added].sort());
-      expect(expandRepositoryPaths(root, [directory])).toContain(added);
-      expect(listRepositoryFiles(root)).not.toContain("ignored.test.ts");
-      expect(resolveRoutes([added]).flatMap((route) => route.commands)).toContain("unit-changed");
-      // Untracked source alone must also reject a pre-push check.
-      fs.writeFileSync(path.join(root, "game.ts"), "original");
-      expect(() => resolvePushPaths(root, `refs/heads/main ${head} refs/heads/main ${"0".repeat(40)}\n`)).toThrow(
-        "clean checkout",
-      );
-      expect(git(root, "config", "--get", "core.fsmonitor")).toBe("true");
-      expect(git(root, "config", "--get", "core.untrackedCache")).toBe("true");
-    } finally {
-      spawnSync("git", ["fsmonitor--daemon", "stop"], { cwd: root, stdio: "ignore" });
-    }
+    using _scopeCleanup = createCleanup(() =>
+      spawnSync("git", ["fsmonitor--daemon", "stop"], { cwd: root, stdio: "ignore" }),
+    );
+
+    for (let index = 0; index < 3; index += 1) git(root, "status", "--short", "--untracked-files=all");
+    const added = `${directory}/new é space.test.ts`;
+    fs.writeFileSync(path.join(root, added), "new test");
+    fs.writeFileSync(path.join(root, "ignored.test.ts"), "ignored");
+    fs.unlinkSync(path.join(root, "game.ts"));
+    expect(changedGitPaths(root)?.sort()).toEqual(["game.ts", added].sort());
+    expect(resolveSelectedPaths(root, { paths: [] }).sort()).toEqual(["game.ts", added].sort());
+    expect(expandRepositoryPaths(root, [directory])).toContain(added);
+    expect(listRepositoryFiles(root)).not.toContain("ignored.test.ts");
+    expect(resolveRoutes([added]).flatMap((route) => route.commands)).toContain("unit-changed");
+    // Untracked source alone must also reject a pre-push check.
+    fs.writeFileSync(path.join(root, "game.ts"), "original");
+    expect(() => resolvePushPaths(root, `refs/heads/main ${head} refs/heads/main ${"0".repeat(40)}\n`)).toThrow(
+      "clean checkout",
+    );
+    expect(git(root, "config", "--get", "core.fsmonitor")).toBe("true");
+    expect(git(root, "config", "--get", "core.untrackedCache")).toBe("true");
   });
 
   it("fails verification discovery explicitly when Git cannot read the repository", () => {

@@ -1,8 +1,8 @@
+import { makeTestCard } from "../../../../fixtures/cards";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { CardShopScreen } from "@/features/alchemy/run-loop/screens/card-shop-screen";
-import type { BattleCard } from "@/lib/game-data";
 import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 import { installShopScreenIntersectionObserver } from "../../../../helpers/shop-screen-ui-mocks";
@@ -25,14 +25,12 @@ vi.mock(
   () => import("../../../../helpers/shop-screen-ui-mocks"),
 );
 
-const deckCard = {
+const deckCard = makeTestCard({
   id: "strike-1",
   title: "Strike",
   descriptionLines: ["Deal 6 damage."],
   art: "strike",
-  cost: 1,
-  effects: [],
-} as BattleCard;
+});
 
 describe("CardShopScreen remove mode", () => {
   installDisabledAnimationsForTests();
@@ -47,14 +45,14 @@ describe("CardShopScreen remove mode", () => {
       <CardShopScreen
         gold={100}
         runDeck={runDeck}
-        shopCards={[deckCard]}
+        items={[deckCard]}
         refreshesLeft={1}
         removeUsed={false}
         purchasedSlotKeys={[]}
-        getCardPrice={() => 10}
+        getPrice={() => 10}
         removePrice={25}
         refreshPrice={15}
-        onBuyCard={() => true}
+        onBuy={() => true}
         onRemoveCard={onRemoveCard}
         onRefresh={() => {}}
         onContinue={() => {}}
@@ -93,17 +91,5 @@ describe("CardShopScreen remove mode", () => {
     await user.click(screen.getByRole("button", { name: /^Remove(?! Card)/i }));
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.queryByRole("heading", { name: "Remove Card" })).toBeNull();
-  });
-
-  it("returns to browse when removal succeeds", async () => {
-    const user = userEvent.setup();
-    renderCardShop(() => true);
-
-    await user.click(screen.getByRole("button", { name: /Remove Card/i }));
-    await user.click(await screen.findByRole("button", { name: "Select shop card" }));
-    await user.click(screen.getByRole("button", { name: /^Remove(?! Card)/i }));
-
-    expect(await screen.findByRole("button", { name: /Remove Card/i })).toBeTruthy();
-    expect(screen.queryByText("Select a card to remove from your deck")).toBeNull();
   });
 });

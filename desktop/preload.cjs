@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld("alchemyDesktop", {
   readSaveSlot: (slot) => ipcRenderer.invoke("alchemy:read-save-slot", slot),
   writeSave: (data, slot) => ipcRenderer.invoke("alchemy:write-save", data, slot),
   clearSave: () => ipcRenderer.invoke("alchemy:clear-save"),
+  steamGetGameLanguage: () => ipcRenderer.invoke("alchemy:steam-get-game-language"),
   steamGetName: () => ipcRenderer.invoke("alchemy:steam-get-name"),
   steamSetRichPresence: (key, val) => ipcRenderer.invoke("alchemy:steam-set-rich-presence", key, val),
   steamCloudRead: (slot) => {

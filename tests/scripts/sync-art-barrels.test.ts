@@ -24,12 +24,11 @@ vi.mock("node:fs/promises", async (importOriginal) => {
 });
 
 fixture.root = mkdtempSync(path.join(tmpdir(), "alchemy-art-barrels-"));
-const { syncArtBarrels, syncAssets, syncGearArt } = await import("../../scripts/sync-art-barrels.mjs");
+const { syncArtBarrels } = await import("../../scripts/sync-art-barrels.mjs");
 const outputDir = path.join(fixture.root, "src/assets/optimized");
 const barrelDir = path.join(fixture.root, "src/lib/game-data");
 const manifestPath = path.join(outputDir, ".asset-hashes.json");
 const assetBarrel = path.join(barrelDir, "assets.generated.ts");
-const gearBarrel = path.join(barrelDir, "gear-art.generated.ts");
 const validManifest = {
   "gear-sword-basic.webp": { hash: "sword", outputHash: "output", ignoredMetadata: true },
   "gear-slot-weapon.webp": "weapon",
@@ -37,6 +36,8 @@ const validManifest = {
   "gear-slot-body.webp": "body",
   "gear-slot-accessory.webp": "accessory",
   "a.webp": "legacy",
+  "board-acorn.webp": "board",
+  "board-acorn-thumbnail.webp": "thumbnail",
 };
 
 async function setManifest(value: unknown) {
@@ -45,10 +46,7 @@ async function setManifest(value: unknown) {
 
 async function expectPreserved() {
   expect(await readFile(assetBarrel, "utf8")).toBe("existing assets");
-  expect(await readFile(gearBarrel, "utf8")).toBe("existing gear");
-  expect(vi.mocked(writeFile).mock.calls.filter(([file]) => file === assetBarrel || file === gearBarrel)).toHaveLength(
-    0,
-  );
+  expect(vi.mocked(writeFile).mock.calls.filter(([file]) => file === assetBarrel)).toHaveLength(0);
 }
 
 afterAll(() => rmSync(fixture.root, { recursive: true, force: true }));
@@ -62,7 +60,6 @@ beforeEach(async () => {
   await setManifest(validManifest);
   for (const target of Object.keys(validManifest)) await writeFile(path.join(outputDir, target), target);
   await writeFile(assetBarrel, "existing assets");
-  await writeFile(gearBarrel, "existing gear");
   vi.mocked(writeFile).mockClear();
   vi.mocked(readFile).mockClear();
   vi.spyOn(console, "log").mockImplementation(() => {});
@@ -77,7 +74,7 @@ describe("strict art barrel inputs", () => {
     await expectPreserved();
   });
 
-  it("rejects malformed JSON without replacing either barrel", async () => {
+  it("rejects malformed JSON without replacing the barrel", async () => {
     await writeFile(manifestPath, "{");
     await expect(syncArtBarrels()).rejects.toThrow(`Invalid art manifest "${manifestPath}": malformed JSON`);
     await expectPreserved();
@@ -104,16 +101,19 @@ describe("strict art barrel inputs", () => {
     await expectPreserved();
   });
 
-  it.each(Object.keys(validManifest).filter((target) => target !== "gear-sword-basic.webp"))(
-    "requires %s",
-    async (target) => {
-      const manifest: Record<string, unknown> = { ...validManifest };
-      delete manifest[target];
-      await setManifest(manifest);
-      await expect(syncArtBarrels()).rejects.toThrow(`missing required targets: ${target}`);
-      await expectPreserved();
-    },
-  );
+  it.each([
+    "a.webp",
+    "gear-slot-weapon.webp",
+    "gear-slot-trinket.webp",
+    "gear-slot-body.webp",
+    "gear-slot-accessory.webp",
+  ])("requires %s", async (target) => {
+    const manifest: Record<string, unknown> = { ...validManifest };
+    delete manifest[target];
+    await setManifest(manifest);
+    await expect(syncArtBarrels()).rejects.toThrow(`missing required targets: ${target}`);
+    await expectPreserved();
+  });
 
   it.each(["missing", "directory"])("preserves filesystem errors for a %s manifest", async (kind) => {
     await rm(manifestPath);
@@ -148,53 +148,20 @@ describe("strict art barrel inputs", () => {
 });
 
 describe("art barrel synchronization", () => {
-  it("reads one snapshot, accepts legacy and object hashes, and generates sorted matching exports", async () => {
+  it("reads one snapshot, accepts legacy and object hashes, and generates matching non-catalog exports", async () => {
     await syncArtBarrels();
+    expect(vi.mocked(writeFile).mock.calls.map(([file]) => file)).toEqual([assetBarrel]);
     expect(vi.mocked(readFile).mock.calls.filter(([file]) => file === manifestPath)).toHaveLength(1);
     const assets = await readFile(assetBarrel, "utf8");
-    const gear = await readFile(gearBarrel, "utf8");
-    expect(assets.match(/optimized\/([^"\n]+)/g)).toEqual(
-      Object.keys(validManifest)
-        .sort()
-        .map((target) => `optimized/${target}`),
-    );
-    expect(assets).toContain('export { default as gearSwordBasic } from "@/assets/optimized/gear-sword-basic.webp";');
-    expect(gear).toContain('"sword-basic": gearArtAssets.gearSwordBasic,');
-    expect(gear).not.toContain('"a":');
-    expect(gear.indexOf('"slot-accessory"')).toBeLessThan(gear.indexOf('"slot-body"'));
+    expect(assets.match(/optimized\/([^"\n]+)/g)).toEqual(["optimized/a.webp"]);
+    // Boards and Gear have one eager catalog registration, no parallel named exports.
+    expect(assets).not.toContain("gearSwordBasic");
+    expect(assets).not.toContain("boardAcorn");
     vi.mocked(writeFile).mockClear();
     await syncArtBarrels();
     await syncArtBarrels({ check: true });
     expect(writeFile).not.toHaveBeenCalled();
     expect(await readFile(assetBarrel, "utf8")).toBe(assets);
-    expect(await readFile(gearBarrel, "utf8")).toBe(gear);
-  });
-
-  it("writes only the assets barrel for the assets entry point", async () => {
-    await syncAssets();
-    expect(vi.mocked(writeFile).mock.calls.map(([file]) => file)).toEqual([assetBarrel]);
-    expect(await readFile(gearBarrel, "utf8")).toBe("existing gear");
-  });
-
-  it("writes only the gear barrel once the assets barrel is current", async () => {
-    await syncAssets();
-    const currentAssets = await readFile(assetBarrel, "utf8");
-    vi.mocked(writeFile).mockClear();
-    await syncGearArt();
-    expect(vi.mocked(writeFile).mock.calls.map(([file]) => file)).toEqual([gearBarrel]);
-    expect(await readFile(assetBarrel, "utf8")).toBe(currentAssets);
-  });
-
-  it("refuses a gear-only sync against a stale assets barrel without writing", async () => {
-    const staleBarrel = path.join("src", "lib", "game-data", "assets.generated.ts");
-    await expect(syncGearArt()).rejects.toThrow(`Gear art sync requires a current ${staleBarrel};`);
-    await expectPreserved();
-  });
-
-  it.each([syncAssets, syncGearArt, syncArtBarrels])("validates all inputs for every entry point", async (sync) => {
-    await rm(path.join(outputDir, "a.webp"));
-    await expect(sync()).rejects.toMatchObject({ code: "ENOENT" });
-    await expectPreserved();
   });
 
   it("reports stale barrels in check mode without writing", async () => {
@@ -207,6 +174,6 @@ describe("art barrel synchronization", () => {
     delete manifest["gear-sword-basic.webp"];
     await setManifest(manifest);
     await expect(syncArtBarrels()).resolves.toBeUndefined();
-    expect(await readFile(gearBarrel, "utf8")).not.toContain("sword-basic");
+    expect(await readFile(assetBarrel, "utf8")).not.toContain("gearSwordBasic");
   });
 });

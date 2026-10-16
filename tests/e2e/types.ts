@@ -10,7 +10,8 @@ export type DestinationName =
   | "Gear Shop"
   | "Mystery"
   | "Corruption"
-  | "Campfire";
+  | "Campfire"
+  | "Transmutation";
 
 export const GAME_MODE_TITLES: Record<GameMode, string> = {
   campaign: "The Campaign",

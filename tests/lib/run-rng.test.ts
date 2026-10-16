@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { setHasActiveRun, setRunProgressActivity } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createRunRngState, createRunStateRng, createRunStreamRng, nextRunRngValue, stepRunRng } from "@/lib/rng";
@@ -135,12 +136,10 @@ describe("run RNG", () => {
 
   it("seeds fresh runs deterministically under the test override", () => {
     setTestRunSeedOverride(777);
-    try {
-      expect(createInitialActiveRunFields(null).rng.seed).toBe(777);
-      expect(createInitialActiveRunFields(null).rng.seed).toBe(777);
-    } finally {
-      setTestRunSeedOverride(null);
-    }
+    using _scopeCleanup = createCleanup(() => setTestRunSeedOverride(null));
+
+    expect(createInitialActiveRunFields(null).rng.seed).toBe(777);
+    expect(createInitialActiveRunFields(null).rng.seed).toBe(777);
   });
 
   it("generates uint32 seeds without an override", () => {

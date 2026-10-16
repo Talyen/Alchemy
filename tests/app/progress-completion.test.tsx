@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { createSaveBackend } from "../helpers/save-backend";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
@@ -60,30 +61,28 @@ it("shows pending acknowledgement, retains displayed progress on failure, and Re
       </>
     );
   }
-  try {
-    render(<Purchase />);
-    fireEvent.click(screen.getByRole("button", { name: "Buy" }));
-    expect(screen.getByText("Saving…").textContent).toContain("Saving…");
-    expect(screen.getByLabelText("Gold").textContent).toBe("100");
-    await act(async () => {
-      await lifecycle.drain();
-    });
-    expect(screen.getByRole("alert").textContent).toContain("Couldn’t save");
-    fireEvent.click(screen.getByRole("button", { name: "Buy" }));
-    expect(spend).toHaveBeenCalledOnce();
-    expect(screen.queryByText(/Could not complete this purchase/)).toBeNull();
-    fail = false;
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-      fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-      await lifecycle.drain();
-    });
-    expect(writes).toBeGreaterThanOrEqual(3);
-    expect(spend).toHaveBeenCalledOnce();
-    expect(screen.getByLabelText("Gold").textContent).toBe("90");
-    expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.queryByText("Saving…")).toBeNull();
-  } finally {
-    lifecycle.dispose(false);
-  }
+  using _scopeCleanup = createCleanup(() => lifecycle.dispose(false));
+
+  render(<Purchase />);
+  fireEvent.click(screen.getByRole("button", { name: "Buy" }));
+  expect(screen.getByText("Saving…").textContent).toContain("Saving…");
+  expect(screen.getByLabelText("Gold").textContent).toBe("100");
+  await act(async () => {
+    await lifecycle.drain();
+  });
+  expect(screen.getByRole("alert").textContent).toContain("Couldn’t save");
+  fireEvent.click(screen.getByRole("button", { name: "Buy" }));
+  expect(spend).toHaveBeenCalledOnce();
+  expect(screen.queryByText(/Could not complete this purchase/)).toBeNull();
+  fail = false;
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    await lifecycle.drain();
+  });
+  expect(writes).toBeGreaterThanOrEqual(3);
+  expect(spend).toHaveBeenCalledOnce();
+  expect(screen.getByLabelText("Gold").textContent).toBe("90");
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(screen.queryByText("Saving…")).toBeNull();
 });

@@ -1,7 +1,17 @@
-import { TimerGroup } from "@/lib/animation/game-timer";
+import { TimerGroup, type TimerClock } from "@/lib/animation/game-timer";
 
 import type { BattleSnapshot } from "@/lib/battle";
 import { runPlaybackTask } from "./playback-task";
+import { createNotificationChannel } from "@/features/alchemy/shared/stores/notification-channel";
+import { logError } from "@/lib/error-logger";
+
+function runPlaybackCleanup(cleanup: () => void): void {
+  try {
+    cleanup();
+  } catch (error) {
+    logError("Battle playback cleanup failed", "battle", undefined, undefined, undefined, error);
+  }
+}
 
 export interface BattlePlaybackBind {
   scheduleAutoEndTurn: (state?: BattleSnapshot) => void;
@@ -17,101 +27,146 @@ export interface PlaybackScope {
 
 type PlaybackPhase = "opening" | "ready" | "playing" | "finishing" | "cancelled";
 
-/** One cancellation scope for a battle's timers, transfers, and asynchronous continuations. */
-export class PlaybackLifetime {
-  private generation = 0;
-  private controller = new AbortController();
-  private phase: PlaybackPhase = "ready";
-  private cancellations = new Set<() => void>();
-  private transferSequence = 0;
-  private draws = 0;
-  private cardDraws = 0;
-  readonly timers = new TimerGroup();
-  private binding: BattlePlaybackBind | null = null;
-  private listeners = new Set<() => void>();
+interface PlaybackGeneration {
+  readonly id: number;
+  readonly controller: AbortController;
+  readonly timers: TimerGroup;
+  readonly cancellations: Set<() => void>;
+  phase: PlaybackPhase;
+  draws: number;
+  cardDraws: number;
+  cancelling: boolean;
+}
 
-  readonly subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  };
+/** A generation owns all mutable playback state; replacement never retargets retained work. */
+export class PlaybackLifetime {
+  private current: PlaybackGeneration;
+  private transferSequence = 0;
+  private binding: BattlePlaybackBind | null = null;
+  private bindingRevision = 0;
+  private readonly notifications = createNotificationChannel<[]>((error) => {
+    logError("Battle playback observer failed", "battle", undefined, undefined, undefined, error);
+  });
+
+  constructor(private readonly clock?: TimerClock) {
+    this.current = this.createGeneration(0);
+  }
+
+  private createGeneration(id: number): PlaybackGeneration {
+    return {
+      id,
+      controller: new AbortController(),
+      timers: new TimerGroup(this.clock),
+      cancellations: new Set(),
+      phase: "ready",
+      draws: 0,
+      cardDraws: 0,
+      cancelling: false,
+    };
+  }
+
+  readonly subscribe = this.notifications.subscribe;
   readonly isBound = (): boolean => this.binding !== null;
   readonly bind = (binding: BattlePlaybackBind | null): void => {
-    this.binding?.clearAutoEndTurn();
+    const request = ++this.bindingRevision;
+    this.clearAutoEndTurn();
+    if (request !== this.bindingRevision) return;
     this.binding = binding;
-    for (const listener of this.listeners) listener();
+    this.notifications.publish();
   };
 
   scheduleAutoEndTurn(state?: BattleSnapshot): void {
-    if (this.phase === "ready") this.binding?.scheduleAutoEndTurn(state);
+    if (this.current.phase === "ready") this.binding?.scheduleAutoEndTurn(state);
   }
 
   clearAutoEndTurn(): void {
-    this.binding?.clearAutoEndTurn();
+    runPlaybackCleanup(() => this.binding?.clearAutoEndTurn());
   }
 
   get cardPlayInProgress(): boolean {
-    return this.phase === "playing" || this.phase === "opening";
+    return this.current.phase === "playing" || this.current.phase === "opening";
   }
 
   canAcceptInput(allowOverlappingDraws = false): boolean {
-    // Card play remains available during victory grace; ending the turn does not.
+    const { phase, cardDraws } = this.current;
     return (
-      this.phase === "ready" ||
-      (allowOverlappingDraws && (this.phase === "finishing" || (this.phase === "playing" && this.cardDraws > 0)))
+      phase === "ready" || (allowOverlappingDraws && (phase === "finishing" || (phase === "playing" && cardDraws > 0)))
     );
   }
 
-  beginOpening(): void {
-    if (this.phase === "ready") this.phase = "opening";
+  private setPhase(generation: PlaybackGeneration, phase: PlaybackPhase): boolean {
+    if (this.current !== generation) return false;
+    if (generation.phase !== phase) {
+      generation.phase = phase;
+      this.notifications.publish();
+    }
+    return this.current === generation && generation.phase === phase && !generation.controller.signal.aborted;
   }
 
-  beginAction(): void {
-    if (this.phase === "ready" || this.phase === "playing") {
-      this.clearAutoEndTurn();
-      this.phase = "playing";
-    }
+  beginOpening(id: number): boolean {
+    const generation = this.current;
+    if (!this.isCurrent(id) || generation.phase !== "ready") return false;
+    return this.setPhase(generation, "opening");
+  }
+
+  beginAction(id: number): boolean {
+    const generation = this.current;
+    if (!this.isCurrent(id) || (generation.phase !== "ready" && generation.phase !== "playing")) return false;
+    this.clearAutoEndTurn();
+    if (!this.isCurrent(id) || (generation.phase !== "ready" && generation.phase !== "playing")) return false;
+    return this.setPhase(generation, "playing");
   }
 
   completeAction(id: number): void {
-    if (this.isCurrent(id) && (this.phase === "playing" || this.phase === "opening")) this.phase = "ready";
+    const generation = this.current;
+    if (this.isCurrent(id) && (generation.phase === "playing" || generation.phase === "opening"))
+      this.setPhase(generation, "ready");
   }
 
   get id() {
-    return this.generation;
+    return this.current.id;
   }
   get signal() {
-    return this.controller.signal;
+    return this.current.controller.signal;
   }
   get pendingDraws() {
-    return this.draws + this.cardDraws;
+    return this.current.draws + this.current.cardDraws;
   }
   get pendingCardDraws() {
-    return this.cardDraws;
+    return this.current.cardDraws;
+  }
+  get pendingTimers() {
+    return this.current.timers.size;
   }
   get finishing() {
-    return this.phase === "finishing";
+    return this.current.phase === "finishing";
   }
 
   isCurrent(id: number): boolean {
-    return id === this.generation && this.phase !== "cancelled" && !this.signal.aborted;
+    return id === this.current.id && this.current.phase !== "cancelled" && !this.signal.aborted;
   }
 
-  /** Retained operations keep authority over their originating generation only. */
   capture(id: number): PlaybackScope {
+    const generation = this.current;
     const admitted = this.isCurrent(id);
-    const isCurrent = () => admitted && this.isCurrent(id);
+    const isCurrent = () => admitted && this.current === generation && this.isCurrent(id);
     const schedule = (callback: () => void, ms: number, gameDelay: boolean) => {
       if (!isCurrent()) return () => {};
       const run = () => {
         if (isCurrent()) callback();
       };
-      return gameDelay ? this.timers.setGameTimeout(run, ms) : this.timers.setTimeout(run, ms);
+      return gameDelay ? generation.timers.setGameTimeout(run, ms) : generation.timers.setTimeout(run, ms);
     };
     return Object.freeze({
       isCurrent,
       registerCancel: (callback: () => void) => {
-        if (isCurrent()) return this.registerCancel(callback);
-        callback();
+        if (isCurrent()) {
+          generation.cancellations.add(callback);
+          return () => {
+            generation.cancellations.delete(callback);
+          };
+        }
+        runPlaybackCleanup(callback);
         return () => {};
       },
       setTimeout: (callback: () => void, ms: number) => schedule(callback, ms, false),
@@ -119,59 +174,71 @@ export class PlaybackLifetime {
     });
   }
 
-  finish(): boolean {
-    if (this.phase === "finishing" || this.phase === "cancelled") return false;
+  finish(id: number): boolean {
+    const generation = this.current;
+    if (!this.isCurrent(id) || this.finishing) return false;
     this.clearAutoEndTurn();
-    this.phase = "finishing";
-    return true;
+    if (!this.isCurrent(id) || this.finishing) return false;
+    return this.setPhase(generation, "finishing");
   }
 
   registerCancel(callback: () => void): () => void {
-    if (this.phase === "cancelled") {
-      callback();
-      return () => {};
-    }
-    this.cancellations.add(callback);
-    return () => this.cancellations.delete(callback);
+    return this.capture(this.id).registerCancel(callback);
   }
 
   cancelTransfers(): void {
-    const callbacks = [...this.cancellations];
-    this.cancellations.clear();
-    for (const callback of callbacks) callback();
+    const generation = this.current;
+    const callbacks = [...generation.cancellations];
+    generation.cancellations.clear();
+    for (const callback of callbacks) runPlaybackCleanup(callback);
+  }
+
+  clearTimers(id: number): void {
+    if (this.isCurrent(id)) this.current.timers.clearAll();
   }
 
   cancel(): void {
-    this.phase = "cancelled";
-    this.controller.abort();
-    this.timers.clearAll();
-    this.cancelTransfers();
-    this.clearAutoEndTurn();
-    this.draws = 0;
-    this.cardDraws = 0;
+    const generation = this.current;
+    if (generation.cancelling || generation.phase === "cancelled") return;
+    generation.cancelling = true;
+    generation.phase = "cancelled";
+    try {
+      generation.draws = 0;
+      generation.cardDraws = 0;
+      generation.controller.abort();
+      runPlaybackCleanup(() => generation.timers.clearAll());
+      this.cancelTransfers();
+      this.clearAutoEndTurn();
+    } finally {
+      generation.cancelling = false;
+    }
+    this.notifications.publish();
   }
 
   activate(): void {
-    if (this.phase === "cancelled") this.restart();
+    if (this.current.phase === "cancelled") this.restart();
   }
 
   restart(): void {
+    const previous = this.current;
+    if (previous.cancelling) return;
     this.cancel();
-    this.generation += 1;
-    this.controller = new AbortController();
-    this.phase = "ready";
+    if (this.current !== previous) return;
+    this.current = this.createGeneration(previous.id + 1);
+    this.notifications.publish();
   }
 
   beginDraw(id: number, kind: "draw" | "card" = "draw"): () => void {
     if (!this.isCurrent(id)) return () => {};
-    if (kind === "card") this.cardDraws++;
-    else this.draws++;
+    const generation = this.current;
+    if (kind === "card") generation.cardDraws++;
+    else generation.draws++;
     let settled = false;
     return () => {
       if (settled || !this.isCurrent(id)) return;
       settled = true;
-      if (kind === "card") this.cardDraws--;
-      else this.draws--;
+      if (kind === "card") generation.cardDraws--;
+      else generation.draws--;
     };
   }
 

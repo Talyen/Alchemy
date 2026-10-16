@@ -40,7 +40,7 @@ export function sessionClock(gameSession: GameSession) {
   return sessionRuntime(gameSession).clock;
 }
 
-export function registerSessionCleanup(gameSession: GameSession, cleanup: () => void): () => void {
+export function registerSessionCleanup(gameSession: GameSession, cleanup: () => void) {
   return sessionRuntime(gameSession).track(cleanup);
 }
 
@@ -54,9 +54,10 @@ export function guardProgressAction<Args extends unknown[], Result>(
   const guarded = (...args: Args): Result => {
     const runtime = sessionRuntime(gameSession);
     const completion = runtime.progressCompletion;
+    if (runtime.io.isClearing() || runtime.persistentClearInFlight) return blocked;
     if (
       (completion.hasRetryDriver || completion.read().kind !== "idle") &&
-      (completion.read().kind !== "idle" || runtime.io.getSaveWriteFailure() || runtime.persistentClearInFlight)
+      (completion.read().kind !== "idle" || runtime.io.getSaveWriteFailure())
     )
       return blocked;
     return action(...args);

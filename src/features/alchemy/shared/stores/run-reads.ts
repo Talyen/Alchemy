@@ -7,8 +7,6 @@ import {
   getBattleOutcome,
   type BattleSnapshot,
 } from "@/lib/battle";
-import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
-import type { CharacterId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import { getRunPhase, type RunPhase, type Screen } from "@/lib/routing";
 import { readGameplayState, type GameplayState } from "./gameplay-state-reads";
 import type { RunSessionFields } from "./run-domain-types";
@@ -47,7 +45,7 @@ export function readActiveRun(gameSession: GameSession): ActiveRunReadView {
   return pickActiveRunView(readGameplayState(gameSession).run);
 }
 export function readRunProfile(gameSession: GameSession): RunProfileReadView {
-  return { ...readGameplayState(gameSession).runProfile };
+  return readGameplayState(gameSession).runProfile;
 }
 export function readRunSession(gameSession: GameSession): RunSessionReadView {
   const session = readGameplayState(gameSession).session;
@@ -62,9 +60,6 @@ export function readBattle(gameSession: GameSession): BattleReadView {
 }
 export function readRunRevision(gameSession: GameSession): number {
   return readGameplayState(gameSession).revision;
-}
-export function readRunInitialized(gameSession: GameSession): boolean {
-  return readGameplayState(gameSession).run.initialized;
 }
 export function readHasActiveRun(gameSession: GameSession): boolean {
   return isActiveRunActivity(readGameplayState(gameSession).session.activity);
@@ -87,66 +82,16 @@ export function readRunPhase(gameSession: GameSession): RunPhase {
 
 export function selectAutosaveAllowed(
   state: {
-    battle: { hasActiveBattle: boolean; battleState: { enemyHealth: number } };
+    battle: { hasActiveBattle: boolean; battleState: Pick<BattleSnapshot, "enemyHealth" | "wishOptions"> };
   },
   screen: Screen,
 ): boolean {
   const phase = getRunPhase(screen, state.battle.hasActiveBattle);
   if (phase === "runEnd") return false;
-  if (phase === "battle" && state.battle.battleState.enemyHealth <= 0) return false;
+  if (phase === "battle" && state.battle.battleState.enemyHealth <= 0 && !state.battle.battleState.wishOptions)
+    return false;
 
   return true;
-}
-
-type RunSessionRunSlice = ActiveRunReadView & { talentXP: TalentXP; unlockedTalents: UnlockedTalents; gold: number };
-type RunSessionTransientSlice = RunSessionReadView;
-export interface RunSessionBattleSlice {
-  hasActiveBattle: boolean;
-  battleState: BattleSnapshot;
-}
-export interface RunSession {
-  screen: Screen;
-  phase: RunPhase;
-  run: RunSessionRunSlice;
-  session: RunSessionTransientSlice;
-  battle: RunSessionBattleSlice;
-}
-export interface RunSessionBattleContext {
-  phase: RunPhase;
-  battle: RunSessionBattleSlice;
-  activeLabyrinthModifiers: EncounterCombatTraitId[];
-}
-export interface RunSessionNavigationSlice {
-  phase: RunPhase;
-  hasActiveBattle: boolean;
-  hasActiveRun: boolean;
-  pendingCharacterId: CharacterId | null;
-  pendingContentSystemType: ContentSystemId;
-}
-export function pickRunSessionBattleSlice(battle: {
-  hasActiveBattle: boolean;
-  battleState: BattleSnapshot;
-}): RunSessionBattleSlice {
-  return {
-    hasActiveBattle: battle.hasActiveBattle,
-    battleState: battle.battleState,
-  };
-}
-
-export function getRunSessionFromState(state: GameplayState, screen?: Screen): RunSession {
-  const resolvedScreen = screen ?? state.run.navigation.screen;
-  const battle = pickRunSessionBattleSlice(selectBattle(state));
-  const { talentXP, unlockedTalents } = state.runProfile;
-  return {
-    screen: resolvedScreen,
-    phase: getRunPhase(resolvedScreen, battle.hasActiveBattle),
-    run: { ...pickActiveRunView(state.run), talentXP, unlockedTalents, gold: state.runProfile.gold },
-    session: { ...state.session, hasActiveRun: isActiveRunActivity(state.session.activity) },
-    battle,
-  };
-}
-export function getRunSession(screen: Screen | undefined, gameSession: GameSession): RunSession {
-  return getRunSessionFromState(readGameplayState(gameSession), screen);
 }
 
 export function selectCardInspectionData(state: GameplayState) {
@@ -166,12 +111,12 @@ export function selectCardInspectionData(state: GameplayState) {
       battle.turnPhase === "player" &&
       !battle.wishOptions &&
       getBattleOutcome(battle) === null,
+    battleState: battle,
     hand: battle.hand,
     drawPile: battle.deck,
     discardPile: battle.discard,
     talentEffects: battle.talentEffects,
     companionDamageBonus: companionModifiers.damageBonus,
-    companionBleedDamageBonus: companionModifiers.bleedDamageBonus,
     companionDamageMultiplier: companionModifiers.damageMultiplier,
   };
 }

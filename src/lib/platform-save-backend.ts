@@ -5,7 +5,7 @@ import { tryLocalStorageGetItem, tryLocalStorageRemoveItem, tryLocalStorageSetIt
 import { SAVE_KEY, SAVE_RECOVERY_KEY } from "./game-constants";
 
 type SaveBackendReadResult =
-  | { ok: true; candidates: string[]; localReadFailed?: boolean }
+  | { ok: true; candidates: string[]; localReadFailed?: boolean; cloudReadFailed?: boolean }
   | { ok: false; error: unknown };
 type SaveBackendWriteResult = { ok: true } | { ok: false; error: unknown };
 
@@ -27,6 +27,9 @@ interface SaveBackendClearOptions {
 }
 
 type DesktopApi = NonNullable<ReturnType<typeof getDesktopApi>>;
+// Adapters are session-local, but IPC addresses the same physical files. The
+// desktop identity owns ordering across adapters, including clear/read barriers.
+const desktopOperations = new WeakMap<DesktopApi, Promise<void>>();
 const mirrors = new WeakMap<DesktopApi, CloudSaveMirror>();
 function cloudMirror(desktop: DesktopApi) {
   let mirror = mirrors.get(desktop);
@@ -37,6 +40,21 @@ function cloudMirror(desktop: DesktopApi) {
   return mirror;
 }
 
+async function enqueueDesktopOperation<T>(desktop: DesktopApi, operation: () => Promise<T>): Promise<T> {
+  const preceding = desktopOperations.get(desktop) ?? Promise.resolve();
+  const result = preceding.then(operation);
+  const finished = result.then(
+    () => {},
+    () => {},
+  );
+  desktopOperations.set(desktop, finished);
+  try {
+    return await result;
+  } finally {
+    if (desktopOperations.get(desktop) === finished) desktopOperations.delete(desktop);
+  }
+}
+
 async function withDesktopSaveApi<T extends SaveBackendReadResult | SaveBackendWriteResult>(
   operation: (desktop: DesktopApi) => Promise<T>,
 ): Promise<T | { ok: false; error: unknown }> {
@@ -45,7 +63,7 @@ async function withDesktopSaveApi<T extends SaveBackendReadResult | SaveBackendW
     return { ok: false, error: new Error("Desktop save API is unavailable") };
   }
   try {
-    return await operation(desktop);
+    return await enqueueDesktopOperation(desktop, () => operation(desktop));
   } catch (error) {
     return { ok: false, error };
   }
@@ -112,9 +130,11 @@ async function readDesktopCandidates(desktop: DesktopApi, recovery: boolean): Pr
   }
 
   let cloudCandidate: string | null = null;
+  let cloudReadFailed = false;
   try {
     cloudCandidate = (await desktop.steamCloudRead?.(slot)) ?? null;
   } catch (error) {
+    cloudReadFailed = true;
     logStorageFailure("Steam Cloud read failed", error);
   }
 
@@ -125,6 +145,7 @@ async function readDesktopCandidates(desktop: DesktopApi, recovery: boolean): Pr
     // Dedup keeps the local ring ahead of the Cloud mirror in first-seen order.
     candidates: [...new Set(cloudCandidate ? [...local.candidates, cloudCandidate] : local.candidates)],
     ...(local.localReadFailed ? { localReadFailed: true } : {}),
+    ...(cloudReadFailed ? { cloudReadFailed: true } : {}),
   };
 }
 
@@ -148,18 +169,18 @@ async function writeDesktopSave(
 }
 
 async function readDemoImportSource(): Promise<DemoImportSource> {
-  return (
-    getDesktopApi()?.readDemoImportSource?.() ?? {
-      initialized: true,
-      fullSaveExists: false,
-      readFailed: false,
-      candidates: [],
-    }
-  );
+  const desktop = getDesktopApi();
+  if (desktop?.readDemoImportSource) {
+    return enqueueDesktopOperation(desktop, () => desktop.readDemoImportSource!());
+  }
+  return { initialized: true, fullSaveExists: false, readFailed: false, candidates: [] };
 }
 
 async function completeDemoInitialization(): Promise<boolean> {
-  return (await getDesktopApi()?.completeDemoInitialization?.()) ?? false;
+  const desktop = getDesktopApi();
+  return desktop?.completeDemoInitialization
+    ? enqueueDesktopOperation(desktop, () => desktop.completeDemoInitialization!())
+    : false;
 }
 
 export function createBrowserSaveBackend(): SaveBackend {

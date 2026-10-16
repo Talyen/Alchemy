@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { BoardRewardScreen } from "@/features/alchemy/shared/ui/board-reward-screen";
 import { useBoards } from "@/features/alchemy/shared/stores/use-profile-store";
 import { IS_DEMO, isEditionCharacterAvailable } from "@/lib/game-edition";
@@ -7,7 +9,7 @@ import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { DemoCompletionScreen } from "@/features/alchemy/run-loop/screens/demo-completion-screen";
 import { HeroUnlockedScreen } from "@/features/alchemy/run-loop/screens/hero-unlocked-screen";
 import { RunEndScreen } from "@/features/alchemy/run-loop/screens/run-end-screen";
-import { useRunEndScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
+import { useRunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import type { RunEndRouteCtx } from "./route-ctx";
 
 const RUN_END_COPY = {
@@ -25,6 +27,7 @@ type RunEndStage =
   | { kind: "demo-completion" };
 
 function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
+  const i18n = useGameTranslation();
   const outcome = screen === "run-victory" ? "victory" : "defeat";
   const commands = routeCommands.runEnd;
   const {
@@ -37,7 +40,7 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
     runEndUnlockedCharacters,
     runEndLabyrinthFloor,
     runRecap,
-  } = useRunEndScreenData();
+  } = useRunScreenData("game-over");
   const { pendingBoardRewardId } = useBoards();
   const [stage, setStage] = useState<RunEndStage>({ kind: "recap" });
   const unlockedCharacters = runEndUnlockedCharacters.filter(isEditionCharacterAvailable);
@@ -64,7 +67,7 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
     return (
       <BoardRewardScreen
         boardId={stage.boardId}
-        continueLabel={demoVictory ? "Continue" : "Main Menu"}
+        continueLabel={demoVictory ? i18n.text("run-end.continue", "Continue") : i18n.text("run-end.menu", "Main Menu")}
         onUseBoard={() => {
           if (routeCommands.boards.acknowledgeReward(stage.boardId, true))
             routeCommands.progress.afterSaved(continueAfterBoard);
@@ -80,7 +83,11 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
     return (
       <HeroUnlockedScreen
         characterId={revealedCharacter}
-        continueLabel={hasNextHero || demoVictory || pendingBoardRewardId ? "Continue" : "Main Menu"}
+        continueLabel={
+          hasNextHero || demoVictory || pendingBoardRewardId
+            ? i18n.text("run-end.continue", "Continue")
+            : i18n.text("run-end.menu", "Main Menu")
+        }
         onContinue={() => {
           if (hasNextHero) setStage({ kind: "hero", index: stage.index + 1 });
           else continueAfterRewards();
@@ -98,14 +105,20 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
   const { title } = RUN_END_COPY[outcome];
   const subtitle =
     outcome === "defeat" && runEndLabyrinthFloor
-      ? `Your descent reached floor ${runEndLabyrinthFloor}.`
+      ? i18n.text("ui.run-end-routes.msg1", "Your descent reached floor {{value0}}.", {
+          value0: i18n.displayText(runEndLabyrinthFloor),
+        })
       : RUN_END_COPY[outcome].subtitle;
   return (
     <RunEndScreen
-      title={title}
+      title={i18n.displayText(title)}
       runRecap={runRecap}
       subtitle={demoVictory ? "" : subtitle}
-      continueLabel={demoVictory || unlockedCharacters.length > 0 || pendingBoardRewardId ? "Continue" : "Main Menu"}
+      continueLabel={
+        demoVictory || unlockedCharacters.length > 0 || pendingBoardRewardId
+          ? i18n.text("run-end.continue", "Continue")
+          : i18n.text("run-end.menu", "Main Menu")
+      }
       outcome={outcome}
       characterId={characterId}
       runEndTalentXP={runEndTalentXP}

@@ -1,32 +1,21 @@
+import { halveRounded } from "./amount-helpers";
 import { rollBattleChance } from "./chance-roll";
+import { burnBleedLeechAmount, resolveBleedGoldReward } from "./resource-reward-resolution";
 import type { BattleCardEffect } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
 import { addEnemyStatus } from "./status-state";
 import { reduceEnemyArmor } from "./enemy-mitigation-state";
-import { writeCombatFlag as setFlag } from "./action-context";
-import {
-  addGoldWithCombatText,
-  addPlayerStatusWithCombatText,
-  applyHitEpilogue,
-  gainManaWithCombatText,
-} from "./player-rewards";
+import { addGoldWithCombatText, addPlayerStatusWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { applyCrowdControlTriggerBonuses } from "./bonus-effects";
-import { tryTriggerEnemyCc } from "./status-cc";
+import { resolveEnemyFreeze } from "./crowd-control-resolution";
 import { resolveStunTrigger } from "./status-stun-resolve";
-import { applyPoisonDamageArmorRider, getEnemyDamageMultiplier } from "./status-helpers";
+import { applyPoisonDamageArmorRider } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
-import {
-  BLEED_STATUS_MULTIPLIER,
-  BATTLE_CONFIG,
-  BURN_BLEED_MIRROR_CHANCE_PERCENT,
-  FREEZE_THRESHOLD_FRACTION,
-  MIN_CC_THRESHOLD_FRACTION,
-} from "../game-constants";
-import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./scaled-damage";
+import { BLEED_STATUS_MULTIPLIER, BURN_BLEED_MIRROR_CHANCE_PERCENT } from "../game-constants";
+import { applyGearCcPhysicalDamage } from "./scaled-damage";
 import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { emitEnemyBuildupImmunity, mergeCombatText } from "./combat-text-events";
-import { halveRounded } from "./amount-helpers";
 
 function removeEnemyArmorWithFeedback(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   const nextState = reduceEnemyArmor(state, amount);
@@ -53,9 +42,8 @@ function applyGearBurnBleedMirrorLeech(
       mergeCombatText(combatTexts, { target: "enemy", kind: "multiply", stat: mirrorTarget, amount: added });
     }
   }
-  if (!alreadyBurningAndBleeding) return nextState;
-  const healAmount = Math.max(1, halveRounded(actualDamage));
-  return applyScaledLeechHealing(nextState, healAmount, combatTexts);
+  const healAmount = burnBleedLeechAmount(state, actualDamage, alreadyBurningAndBleeding);
+  return healAmount > 0 ? applyScaledLeechHealing(nextState, healAmount, combatTexts) : nextState;
 }
 
 function applyBurnStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -154,10 +142,7 @@ function applyBleedStatusRider(
     combatTexts,
     state.enemyStatuses.burn > 0 && state.enemyStatuses.bleed > 0,
   );
-  if (bleedAmount > 0 && nextState.trinketEffects.cutpurseGoldOnBleed > 0) {
-    nextState = addGoldWithCombatText(nextState, nextState.trinketEffects.cutpurseGoldOnBleed, combatTexts);
-  }
-  return nextState;
+  return resolveBleedGoldReward(nextState, bleedAmount, combatTexts, { gold: addGoldWithCombatText });
 }
 
 function applyStunStatusRider(
@@ -169,7 +154,13 @@ function applyStunStatusRider(
 ): BattleState {
   if (actualDamage <= 0) return state;
   emitEnemyBuildupImmunity(state, "stun", actualDamage, combatTexts);
-  return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts, preHitHealth, fromHolyDamage);
+  return resolveStunTrigger(
+    addEnemyStatus(state, "stun", actualDamage),
+    combatTexts,
+    preHitHealth,
+    fromHolyDamage,
+    Math.min(actualDamage, preHitHealth),
+  );
 }
 
 export function tryTriggerEnemyFreeze(
@@ -177,53 +168,20 @@ export function tryTriggerEnemyFreeze(
   nextState: BattleState,
   combatTexts: CombatTextEvent[],
   preHitHealth = preHitState.enemyHealth,
+  setupHealthDamage = 0,
 ): BattleState {
-  const freezeThreshold = Math.max(
-    MIN_CC_THRESHOLD_FRACTION,
-    FREEZE_THRESHOLD_FRACTION - preHitState.talentEffects.freezeThresholdReduction,
-  );
-  const triggered = tryTriggerEnemyCc({
-    preHitHealth,
+  return resolveEnemyFreeze(
+    preHitState,
     nextState,
-    stat: "freeze",
-    stackValue: nextState.enemyStatuses.freeze,
-    thresholdFraction: freezeThreshold,
-    // Immunity is judged on the latest state, matching the stun path.
-    ccCooldown: nextState.enemyCC.cooldown,
-    skipDuration: BATTLE_CONFIG.BASE_CC_DURATION + nextState.trinketEffects.freezeDurationExtension,
     combatTexts,
-  });
-  if (!triggered) return nextState;
-  if (triggered.kind === "immune") return triggered.state;
-
-  let result = preHitState.talentEffects.archeryCritOnCrowdControl
-    ? setFlag(triggered.state, "hawkEyeReady", true)
-    : triggered.state;
-  if (result.trinketEffects.frozenHeartDamage > 0) {
-    const enemyWasAlive = result.enemyHealth > 0;
-    const frozenHealth = result.enemyHealth;
-    const forgeAtHit = result.playerStatuses.forge >= 5;
-    result = dealEnemyScaledDamage(result, result.trinketEffects.frozenHeartDamage, "physical", combatTexts, {
-      multiplier: getEnemyDamageMultiplier(result, "physical") * gearFrozenDamageMultiplier(result),
-      riders: (damagedState, _damage, texts) =>
-        applyHitEpilogue(damagedState, frozenHealth, enemyWasAlive, texts, undefined, forgeAtHit),
-    });
-  }
-  result = applyGearCcPhysicalDamage(result, preHitState.gearEffects.damageOnFreezePhysical, combatTexts);
-  result = applyCrowdControlTriggerBonuses(
-    result,
     {
-      block: result.talentEffects.blockOnFreeze,
-      stripArmor: result.talentEffects.freezeStripArmor,
-      stripBlock: result.talentEffects.freezeStripBlock,
+      bonuses: applyCrowdControlTriggerBonuses,
+      physical: applyGearCcPhysicalDamage,
+      mana: (current, amount, texts) => gainManaWithCombatText(current, amount, texts, { skipFightPacing: true }),
     },
-    combatTexts,
+    preHitHealth,
+    setupHealthDamage,
   );
-  if (result.gearEffects.freezeGrantsBlockAndMana > 0 && preHitState.mana === 0) {
-    const manaGain = halveRounded(result.playerStatuses.block);
-    result = gainManaWithCombatText(result, manaGain, combatTexts, { skipFightPacing: true });
-  }
-  return result;
 }
 
 function applyFreezeStatusRider(
@@ -245,7 +203,7 @@ function applyFreezeStatusRider(
       skipFightPacing: true,
     });
   }
-  return tryTriggerEnemyFreeze(eligibility, nextState, combatTexts, preHitHealth);
+  return tryTriggerEnemyFreeze(eligibility, nextState, combatTexts, preHitHealth, Math.min(actualDamage, preHitHealth));
 }
 
 function applyPhysicalStatusRider(

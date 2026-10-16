@@ -1,7 +1,6 @@
 export {
   boardArt,
   alchemistShopBg,
-  manaDockFrame,
   manaDockFull,
   manaDockEmpty,
   campfire,
@@ -38,8 +37,6 @@ export {
   merchantShopBg,
   mysteryBg,
   normalEnemyBg,
-  pileDiscardArt,
-  pileDrawArt,
   theCampaign,
   theLabyrinth,
   wildwoodDraft,

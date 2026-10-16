@@ -10,8 +10,8 @@ failures use neutral grounding; late samples cannot repaint a different board.
 No board, combatant, or card needs authored lighting metadata.
 
 Framed portraits and cards use consistent contact and cast shadows. Transparent
-pile and Mana artwork use silhouette shadows. Raised hand cards crossfade an
-additional elevated shadow; card transfers, backs, play ghosts, Companions, and
+Mana artwork use silhouette shadows. Raised hand cards crossfade an
+additional elevated shadow; card transfers, play ghosts, Companions, and
 death slices retain the same treatment. Shadow sizes follow content scaling.
 The fixed tabletop clips overflow without becoming a scroll container, so focusing
 partially concealed controls cannot shift the scene.
@@ -22,20 +22,31 @@ the Battle tabletop so shared cards and inspection overlays retain their normal
 appearance elsewhere. Keep shadow filters on separate artwork wrappers so existing
 damage, crowd-control, hover, and Mana filters continue to compose. There are no
 continuous lighting updates, inferred board light directions, or asset variants.
+The same trimmed samples derive an artwork exposure factor of 0.94–1.03:
+factors below one paint up to 6% black, and above one paint up to 3% white.
+These washes preserve crisp ink lines without filtering transformed portraits.
+Directional shade stays at most 8%; regional values soften toward the whole board.
+Neutral fallback leaves exposure unchanged and disables directional shade.
 
 One cached sample also derives broad left, right, and lower ambient zones, each
 softened halfway toward the whole-board tint and bounded by the same color limits.
-Player and Companion assemblies inherit the left zone, enemies the right; cards,
-piles, and Mana inherit the lower zone. Zones follow objects through attacks,
+Player and Companion assemblies inherit the left zone, enemies the right; cards inherit the lower zone, while Mana follows the hero portrait. Zones follow objects through attacks,
 death slices, and card flights so movement does not change their color. These are
 broad tabletop regions, not precise lighting coordinates or inferred light sources.
 
-Rectangular artwork receives a faint upper edge highlight and lower edge shade.
+Artwork uses a consistent upper-left tabletop light convention with broad, lightly
+softened diagonal shade planes. Rectangular artwork receives a faint upper edge
+highlight and lower edge shade, with tight contact and short cast shadows.
+Raised cards retain their softer elevated shadow. A static monochrome grain at
+2% source opacity finishes artwork and panel backgrounds only; information and
+semantic overlays remain outside it. The existing global noise is behind the game
+stage, rather than doubled over these pieces. Transparent artwork masks the
+finish to its silhouette and receives no rectangular inset edge.
 Health/status panels share the assembly's depth and a restrained background wash;
 the wash sits behind their information. Semantic borders, Death's Door, and focus
 remain independent. Transparent artwork keeps its alpha-following treatment.
-Filled Mana gems cast a faint blue spill onto the frame only, clipped to the frame
-alpha; spending removes that spill. Only its opacity transitions, settling
+Filled Mana gems cast a faint blue spill behind the crystals inside the hero
+portrait; spending removes that spill. Only its opacity transitions, settling
 immediately with reduced motion.
 
 Shared conventions: [UI](./UI.md).
@@ -72,6 +83,44 @@ use two columns, with notices spanning both. Impact and audio cues follow each
 incoming action's actual events, never accumulated display totals. Resource
 payments and removals do not invent damage impacts.
 
+Universal reactions show their localized names above the numbers in the same
+portrait-anchored action group, without a standalone damage-type icon or a repeated
+bonus amount. Reaction IDs select the shared names and keyword palettes:
+Shatter uses Freeze/Physical, Frostfire Freeze/Burn, Thunderclap Stun/Nature,
+Wildfire Burn/Nature, Consecration Bleed/Holy, Bloodboil Burn/Bleed, and Venomflash
+Poison/Burn. Reuse keyword text shine with a dark drop shadow. Transparent gradient
+text must reset inherited text strokes: an outline can cut through its letter interiors.
+This applies to all shared ShineText consumers and the corrupted-title shine.
+
+Reaction names last 1,600 ms independently of numeric bursts. Pop from 90% to 108%
+by 140 ms, settle to 100% by 240 ms, and fade from 1,250 to 1,600 ms.
+Names and numbers share the ordinary combat-feedback upward trajectory. Names
+remain at its final position until their independent lifetime ends. Reserve space for the numeric pop so
+numbers cannot cross names; older actions stack above newer ones. Fit dense rapid
+sequences within the viewport instead of placing announcements above the artwork.
+The existing shine sweeps once between 100 and 1,100 ms. Names
+use 1.25 times the numeric base size. One or two simultaneous names use one column;
+three or more use two. Names never wrap or truncate: fit their size to their
+column, accounting for the pop scale. Keep at most
+three announcement groups per target; newer groups may evict older groups. Numeric
+merging never restarts a name animation or extends its lifetime. Reduced/disabled
+motion shows static keyword-colored names for the same readable duration. Names
+never block play, and teardown cancels their timers and portrait tracking.
+
+Within each resolved action, damaging packets of the same type and recipient
+produce one numeric total, including non-additive reaction damage and natural
+ticks. Resource removals and Health costs remain separate. Preserve original
+packets for gameplay, audio, and impact strength; visual aggregation never turns
+a reaction into a Critical. A total containing Critical damage uses the existing
+accent and an accessible label saying it includes a Critical.
+
+Critical damage uses ordinary typed damage text, retaining its damage color and
+icon. A pale flash fades over 140 ms and a gold glow fades over 480 ms, without
+changing font size, weight, or angle. Reduced/disabled motion uses a steady gold
+glow for the entry's ordinary lifetime. Critical remains in the accessible label
+and uses the existing sound cue. Merging into an already critical entry does not
+restart the pulse or extend the entry's lifetime.
+
 Each action appears immediately above card flights, anchored to its moving portrait.
 Measured layout moves earlier bursts upward without changing their values or
 restarting their animations. Keep at most three active bursts per target; overflow
@@ -84,7 +133,9 @@ Preserve text and icon sizing, portrait-relative placement, and static dark outl
 and shadows for contrast against artwork. Exact geometry, typography, and animation
 curves live in [combat text](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx);
 lifetimes and limits live in [motion constants](../src/lib/game-constants/ui-motion.ts).
-Do not duplicate outline elements or animate shadows. Implementation and playback
+Do not duplicate outline elements; ordinary dark shadows stay static. Only the
+brief critical gold glow fades, through its bounded filter animation in
+[battle styles](../src/styles/battle-scene.css). Implementation and playback
 ordering follow [the battle workflow](./WORKFLOWS.md#change-battle-playback).
 
 Divine Intervention opens or queues an ordinary Wish under the [Talent rules](./TALENT_RULES.md#wishes-and-mana), using the existing [Wish interaction](./UI_BROWSING.md#rewards-and-wishes).
@@ -120,40 +171,49 @@ the current immutable battle snapshot and one presentation-store subscription.
 The engine owns legality; presentation only excludes hidden cards from interaction.
 Do not mirror engine field dependencies in a separate UI cache.
 
+## Damage values in battle inspection
+
+Card hover and keyboard inspection in the battle hand, Wish, and Deck/Draw/Discard
+viewer show current offensive damage before Block, Armor, resistance, dodge, or
+critical strikes. The combat owner's offensive stages supply Forge, active
+bonuses, prepared Poison conversion, current conditions, mana remaining after
+payment, and fight pacing. Resource-based attacks show a damage number. Random
+damage keeps an adjusted range; chance branches remain separate. Delayed attacks
+retain authored values because future resources and pacing are unknown. These
+values describe attack packets, excluding follow-up reactions and damage over time.
+Inspection never rolls randomness or spends live resources or prepared effects.
+Collection and other nonbattle views retain authored descriptions.
+
 ## Deck and pile inspection
 
-The stacked-cards icon opens the run Deck during drafting,
-run screens, and meta detours from that run. Drafting exposes picks so far through
-the icon; it does not add a previous-picks strip. The icon has no tooltip. Draw
-and Discard piles have keyboard-accessible inspection actions without visible
-counters; counts remain in accessible action names.
+The stacked-cards toolbar icon opens the run Deck during drafting, run screens,
+and meta detours from that run. Opening always selects Deck. During battle the
+viewer header contains Deck, Draw, and Discard tabs, with counts only in their
+accessible names. Tabs reuse `TabBar` selection and keyboard focus feedback.
+Outside battle the viewer retains its centered Deck title without tabs.
 Titled screen headers place Deck on the left alongside any Back control and Menu
-on the right, with the title centered between them.
+on the right, with the title centered between them. The icon has no tooltip.
 
 `CardInspectionOverlay` is controlled by props and reuses the modal shell,
 `useDialogFocus`, card presentation, and adaptive pagination. Each copy remains
 visible individually, sorted by displayed title with an instance-content tie
-break independent of draw order. The grid uses [`viewCardWidthClass`](../src/features/alchemy/shared/config/layout.ts),
-matching `CardSelectionGrid`’s reference width; larger Collection tiles do not fit
-that measurement. The viewer shows only a centered collection title, cards,
-and an upper-right close button, plus pagination controls when needed. It has no
-collection tabs, counts, instructional text, or labels below cards. Empty collections
-show the collection icon using the shared [overlay layout](./UI_INTERACTION.md#overlay-lifecycle).
-Open each collection from its own opener. Pagination resets on reopening.
+break independent of draw order. The grid uses
+[`viewCardWidthClass`](../src/features/alchemy/shared/config/layout.ts), matching
+`CardSelectionGrid`'s reference width. The close button remains at the upper right;
+tabs replace the visible collection title during battle. Empty collections retain
+the tabs and show the collection icon. Pagination resets when switching collections
+or reopening. There are no visible counts, instructions, or labels below cards.
 Full Deck is the run deck, including cards Consumed in the current battle;
-battle-only generated cards appear in their current piles instead. Deck, Draw
-Pile, and Discard Pile cards show their keyword Shine Border on hover or
-keyboard focus, with neutral shine when no keywords resolve, matching
-Collection, Wish, and reward choices.
+battle-only generated cards appear in their current piles instead. Inspected
+cards show keyword Shine Border on hover or keyboard focus, with neutral shine
+when no keywords resolve, matching Collection, Wish, and reward choices.
 
 Inspection opens only between actions on a surviving player’s turn, with no
 Wish, pending transition, hidden hand card, card ghost, or card transfer. While
 open it contains focus and blocks underlying input, autoplay, and automatic End
 Turn without changing saved automation preferences. Navigation, run replacement,
 battle teardown, or opening a peer menu closes it. Escape, backdrop, and the close
-button dismiss it and return focus to the opener. Pile measurement wrappers must
-match the artwork bounds: their button is block-level so inline baseline spacing
-does not shift transfer anchors.
+button dismiss it and return focus to the toolbar opener.
 
 ## Enemy inspection
 
@@ -165,10 +225,11 @@ and Abilities headings without a divider. Abilities reuse `BattleCardButton`,
 card pagination. Cards show portrait art only; effects appear in ordinary card
 tooltips on hover or keyboard focus. Inspection cards cannot be played or flipped
 and do not inherit the hero's description context. Bestiary inspection uses
-canonical card values. Live battle inspection passes `EnemyDescriptionContext`
-to `getEncounterEnemyAbility` in `src/lib/battle/enemy-description.ts`, deriving
-displayed amounts from the encounter's room scaling, ability pressure, and
-difficulty modifiers. Trait descriptions use the same encounter context through
+canonical card values. Live battle inspection passes the displayed battle snapshot
+to `getBattleDamageInspectionCard` in `src/lib/battle/card-damage-inspection.ts`,
+including room scaling, ability pressure, difficulty modifiers, enemy Forge,
+active attack traits (including Glacial Surge), and pacing, before hero defenses.
+The repertoire remains visible without selecting or revealing the next ability. Trait descriptions use the same encounter context through
 `getEncounterEnemyTrait`. These are presentation copies; never pass scaled cards
 back into ability resolution or mutate the canonical catalog.
 

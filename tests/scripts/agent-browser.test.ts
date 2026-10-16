@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { execFileSync } from "node:child_process";
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -64,47 +65,41 @@ function harness() {
 describe.skipIf(process.platform === "win32")("managed browser command output", () => {
   it.each(["viewport", "device"])("preserves an explicit first %s behind global flags", (setting) => {
     const cli = harness();
-    try {
-      const output = cli.run(
-        "--config",
-        "/tmp/browser-config.json",
-        "--headed",
-        "false",
-        "--json",
-        "set",
-        setting,
-        ...(setting === "viewport" ? ["800", "600"] : ["iPhone 13"]),
-      );
-      const expected = setting === "viewport" ? [800, 600] : [390, 844];
-      expect(JSON.parse(output)).toEqual({ viewport: expected });
-      expect(cli.viewport()).toEqual(expected);
-    } finally {
-      cli.cleanup();
-    }
+    using _scopeCleanup = createCleanup(() => cli.cleanup());
+
+    const output = cli.run(
+      "--config",
+      "/tmp/browser-config.json",
+      "--headed",
+      "false",
+      "--json",
+      "set",
+      setting,
+      ...(setting === "viewport" ? ["800", "600"] : ["iPhone 13"]),
+    );
+    const expected = setting === "viewport" ? [800, 600] : [390, 844];
+    expect(JSON.parse(output)).toEqual({ viewport: expected });
+    expect(cli.viewport()).toEqual(expected);
   });
 
   it.each(["screenshot", "snapshot"])(
     "publishes the first %s at the default size and keeps later resizes",
     (capture) => {
       const cli = harness();
-      try {
-        expect(JSON.parse(cli.run("--json", capture))).toEqual({ viewport: [1920, 1080] });
-        cli.run("set", "viewport", "800", "600");
-        expect(JSON.parse(cli.run("--json", capture))).toEqual({ viewport: [800, 600] });
-      } finally {
-        cli.cleanup();
-      }
+      using _scopeCleanup = createCleanup(() => cli.cleanup());
+
+      expect(JSON.parse(cli.run("--json", capture))).toEqual({ viewport: [1920, 1080] });
+      cli.run("set", "viewport", "800", "600");
+      expect(JSON.parse(cli.run("--json", capture))).toEqual({ viewport: [800, 600] });
     },
   );
 
   it("keeps initialization out of JSON output and never repeats a mutating command", () => {
     const cli = harness();
-    try {
-      expect(JSON.parse(cli.run("--json", "eval", "window.counter++"))).toEqual({ viewport: [1280, 720] });
-      expect(cli.calls().filter((args) => args.includes("eval"))).toHaveLength(1);
-      expect(cli.viewport()).toEqual([1920, 1080]);
-    } finally {
-      cli.cleanup();
-    }
+    using _scopeCleanup = createCleanup(() => cli.cleanup());
+
+    expect(JSON.parse(cli.run("--json", "eval", "window.counter++"))).toEqual({ viewport: [1280, 720] });
+    expect(cli.calls().filter((args) => args.includes("eval"))).toHaveLength(1);
+    expect(cli.viewport()).toEqual([1920, 1080]);
   });
 });

@@ -4,6 +4,7 @@ import {
   CARD_REJECTION_FEEDBACK_MS,
   COMBAT_RECOIL_COOLDOWN_MS,
   COMBAT_TEXT_LIFETIME_MS,
+  REACTION_TEXT_LIFETIME_MS,
   SHAKE_DURATION_MS,
 } from "@/lib/game-constants";
 import { createCombatFeedback, createCombatFeedbackState } from "@/features/alchemy/run-loop/battle/combat-feedback";
@@ -96,11 +97,37 @@ describe("combat feedback lifetime", () => {
   it("leaves no timed work when a subscriber resets during publication", () => {
     const feedback = makeFeedback();
     feedback.store.subscribe((state) => {
-      if (state.floatingCombatBursts.length || state.enemyShaking) feedback.reset();
+      if (state.floatingCombatBursts.length || state.reactionAnnouncements.length || state.enemyShaking)
+        feedback.reset();
     });
     feedback.showCombatTexts([...hit]);
     feedback.shakeEnemy();
     expect(feedback.store.getState()).toEqual(createCombatFeedbackState());
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it("keeps reaction names independent of merged numbers, bounds overflow, and cancels all name timers", () => {
+    const feedback = makeFeedback();
+    const notice = {
+      target: "enemy",
+      kind: "notice",
+      stat: "physical",
+      text: "Shatter",
+      signal: "reaction",
+      reactionId: "shatter",
+    } as const;
+    feedback.showCombatTexts([...hit, notice]);
+    const first = feedback.store.getState().reactionAnnouncements[0]!;
+    vi.advanceTimersByTime(100);
+    feedback.showCombatTexts([...hit]);
+    expect(feedback.store.getState().reactionAnnouncements[0]).toBe(first);
+    vi.advanceTimersByTime(COMBAT_TEXT_LIFETIME_MS - 100);
+    expect(feedback.store.getState().floatingCombatBursts).toEqual([]);
+    expect(feedback.store.getState().reactionAnnouncements).toEqual([first]);
+    vi.advanceTimersByTime(REACTION_TEXT_LIFETIME_MS - COMBAT_TEXT_LIFETIME_MS);
+    expect(feedback.store.getState().reactionAnnouncements).toEqual([]);
+    for (let i = 0; i < 5; i++) feedback.showCombatTexts([notice]);
+    expect(feedback.store.getState().reactionAnnouncements).toHaveLength(3);
+    feedback.reset();
     expect(vi.getTimerCount()).toBe(0);
   });
 });

@@ -56,40 +56,18 @@ function applyHitRewards(
   return nextState;
 }
 
-export function applyAbilityDamage(
+/** Shared offensive stage; no hits, rewards, mitigation, or random selection. */
+export function prepareEnemyAbilityDamage(
   state: BattleState,
   effect: EnemyAbilityDamageEffect,
-  context: EnemyAbilityContext,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  const selected = resolveConditionalCardDamage(effect, {
-    actorBlock: state.enemyMitigation.block,
-    targetBlock: state.playerStatuses.block,
-    targetFrozen: state.playerCC.freezeSkipTurns > 0,
-  });
-  effect = selected.effect;
-  if (effect.damageTypePool) {
-    effect = { ...effect, damageType: pickRandom(effect.damageTypePool, getBattleRng(state)) ?? effect.damageType };
-  }
-  if (selected.blockSpent > 0) {
-    state = {
-      ...state,
-      enemyMitigation: { ...state.enemyMitigation, block: state.enemyMitigation.block - selected.blockSpent },
-    };
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "damage",
-      stat: "block",
-      amount: selected.blockSpent,
-      impact: false,
-    });
-  }
-  let nextState = state;
-  let amountMultiplier = context.brawlerPenalty ? BRAWLER_PENALTY_MULTIPLIER : 1;
+  brawlerPenalty: boolean,
+) {
+  const activatedTraits: string[] = [];
+  let amountMultiplier = brawlerPenalty ? BRAWLER_PENALTY_MULTIPLIER : 1;
   let flatBonus = 0;
-  const trait = (id: string) => hasEnemyTrait(nextState, id, context.traitSet);
+  const trait = (id: string) => hasEnemyTrait(state, id);
   const record = (id: string) => {
-    nextState = recordEnemyAbilityActivation(nextState, id);
+    activatedTraits.push(id);
   };
   if (trait("hellhound") && state.playerStatuses.burn > 0) {
     amountMultiplier *= HELLHOUND_BURN_MULTIPLIER;
@@ -143,6 +121,45 @@ export function applyAbilityDamage(
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("blood-cultist");
   }
+  return { damage, amountMultiplier, flatBonus, banditBonus, activatedTraits };
+}
+
+export function applyAbilityDamage(
+  state: BattleState,
+  effect: EnemyAbilityDamageEffect,
+  context: EnemyAbilityContext,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  const selected = resolveConditionalCardDamage(effect, {
+    actorBlock: state.enemyMitigation.block,
+    targetBlock: state.playerStatuses.block,
+    targetFrozen: state.playerCC.freezeSkipTurns > 0,
+  });
+  effect = selected.effect;
+  if (effect.damageTypePool) {
+    effect = { ...effect, damageType: pickRandom(effect.damageTypePool, getBattleRng(state)) ?? effect.damageType };
+  }
+  if (selected.blockSpent > 0) {
+    state = {
+      ...state,
+      enemyMitigation: { ...state.enemyMitigation, block: state.enemyMitigation.block - selected.blockSpent },
+    };
+    mergeCombatText(combatTexts, {
+      target: "enemy",
+      kind: "damage",
+      stat: "block",
+      amount: selected.blockSpent,
+      impact: false,
+    });
+  }
+  const { damage, amountMultiplier, flatBonus, banditBonus, activatedTraits } = prepareEnemyAbilityDamage(
+    state,
+    effect,
+    context.brawlerPenalty,
+  );
+  let nextState = state;
+  for (const id of activatedTraits) nextState = recordEnemyAbilityActivation(nextState, id);
+  const trait = (id: string) => hasEnemyTrait(nextState, id, context.traitSet);
   const result = resolveEnemyAttackHit(nextState, damage, combatTexts, {
     canDodge: true,
     ignoreArmor: effect.ignoreArmor === true,

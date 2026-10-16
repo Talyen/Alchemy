@@ -22,10 +22,11 @@ import { hasEncounterBenefit } from "./encounter-trait-state";
 import { applySunderingArmorRemoval } from "./enemy-mitigation-state";
 import { writeCombatFlag as setFlag } from "./action-context";
 
-function applyCrit(damage: number, state: BattleState, guaranteed = false) {
+function applyCrit(damage: number, state: BattleState, guaranteed = false, rollCritical = true) {
   const chance =
     GLOBAL_CRIT_CHANCE_PERCENT + (state.deathsDoorActive ? state.gearEffects.criticalChanceWhileDeathsDoor : 0);
-  const critical = guaranteed || readCombatFlag(state, "nextHitCrit") || rollPercent(chance, getBattleRng(state));
+  const critical =
+    guaranteed || readCombatFlag(state, "nextHitCrit") || (rollCritical && rollPercent(chance, getBattleRng(state)));
   return {
     damage: critical && damage > 0 ? damage * CRIT_MULTIPLIER : damage,
     critical: critical && damage > 0,
@@ -151,11 +152,12 @@ function resolveDamageAfterMitigation(
   };
 }
 
-export function computeCardDamageToEnemy(
+export function computeCardAttackPower(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   card?: BattleCard,
-  context?: CardEffectResolutionContext,
+  context?: Pick<CardEffectResolutionContext, "origin" | "baseDamageBonus" | "damageMultiplier">,
+  includeEnemyTraits = true,
 ) {
   const encounter = resolveEncounterFirstHit(state, effect, context?.origin === "played-card");
   state = encounter.state;
@@ -170,10 +172,23 @@ export function computeCardDamageToEnemy(
     card,
     firstBonus,
     companionAttack,
+    includeEnemyTraits,
   });
   const scaledDamage = Math.round(baseDamage * totalMultiplier * encounter.multiplier);
   const pacedDamage = paceCombatDamage(stateAfterFirst, scaledDamage, "player");
   const repeatedDamage = Math.round(pacedDamage * (context?.damageMultiplier ?? 1));
+  return { state: stateAfterFirst, damage: repeatedDamage };
+}
+
+export function computeCardDamageToEnemy(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  card?: BattleCard,
+  context?: CardEffectResolutionContext,
+  criticalMode: "random" | "prepared-only" = "random",
+) {
+  const power = computeCardAttackPower(state, effect, card, context);
+  const stateAfterFirst = power.state;
   const physicalCritReady = effect.damageType === "physical" && readCombatFlag(stateAfterFirst, "nextPhysicalCrit");
   const hawkEyeCritReady =
     card !== undefined &&
@@ -182,9 +197,10 @@ export function computeCardDamageToEnemy(
     state.talentEffects.archeryCritOnCrowdControl &&
     state.flags.hawkEyeReady;
   const criticalResult = applyCrit(
-    repeatedDamage,
+    power.damage,
     stateAfterFirst,
     context?.guaranteedCrit === true || physicalCritReady || hawkEyeCritReady,
+    criticalMode === "random",
   );
   const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
   const finalDamage = Math.round(

@@ -10,9 +10,9 @@ export type { DemoImportSource } from "@/lib/desktop-api";
 /** Copy one validated profile, never add currencies or replay run settlement. */
 export function prepareDemoProgressImport(source: DemoImportSource): UnstampedSaveData | null {
   if (source.initialized || source.fullSaveExists || source.readFailed || source.candidates.length === 0) return null;
-  const { state: loaded, useRecovery } = selectSaveCandidates(source.candidates);
+  const { state: loaded, writeSlots } = selectSaveCandidates(source.candidates);
   // Any newer-format source protects the demo profile, even alongside a usable backup.
-  if (useRecovery || loaded.status.kind !== "ok") return null;
+  if (writeSlots[0] !== "primary" || loaded.status.kind !== "ok") return null;
   const result = createDefaultSaveData();
   result.steamAccountId = loaded.data.steamAccountId;
   const keys = [

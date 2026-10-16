@@ -10,7 +10,7 @@ export function emptyInventory(): MaterialInventory {
 export function addInventory(a: MaterialInventory, b: MaterialInventory): MaterialInventory {
   const result = emptyInventory();
   for (const id of MATERIAL_IDS) {
-    result[id] = (a[id] ?? 0) + (b[id] ?? 0);
+    result[id] = Math.min(Number.MAX_SAFE_INTEGER, (a[id] ?? 0) + (b[id] ?? 0));
   }
   return result;
 }

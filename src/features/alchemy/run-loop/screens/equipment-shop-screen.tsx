@@ -1,48 +1,8 @@
-import type { GearInstance } from "@/lib/gear";
+import { useGameTranslation } from "@/components/use-game-translation";
 
-import { PurchasableGearItem } from "../shop/ui/purchasable-shop-item";
-import { GenericShopScreen } from "./generic-shop-screen";
+import { ShopShelf, type ShopShelfProps } from "./shop-shelf";
 
-export function EquipmentShopScreen({
-  gold,
-  gear,
-  refreshesLeft,
-  purchasedSlotKeys,
-  getGearPrice,
-  refreshPrice,
-  onBuyGear,
-  onRefresh,
-  onContinue,
-  isProgressSavePending = () => false,
-}: {
-  gold: number;
-  gear: GearInstance[];
-  refreshesLeft: number;
-  purchasedSlotKeys: string[];
-  getGearPrice: (instance: GearInstance) => number;
-  refreshPrice: number;
-  onBuyGear: (instance: GearInstance, slotKey: string) => boolean;
-  onRefresh: () => void;
-  onContinue: () => void;
-  isProgressSavePending?: () => boolean;
-}) {
-  return (
-    <GenericShopScreen
-      title="Gear Shop"
-      gold={gold}
-      items={gear}
-      refreshesLeft={refreshesLeft}
-      refreshPrice={refreshPrice}
-      purchasedSlotKeys={purchasedSlotKeys}
-      getSlotKey={(g) => g.instanceId}
-      getPrice={getGearPrice}
-      onBuy={onBuyGear}
-      onRefresh={onRefresh}
-      onContinue={onContinue}
-      isProgressSavePending={isProgressSavePending}
-      renderItem={(instance, price, purchased, onBuy) => (
-        <PurchasableGearItem instance={instance} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />
-      )}
-    />
-  );
+export function EquipmentShopScreen(props: ShopShelfProps<"gear">) {
+  const i18n = useGameTranslation();
+  return <ShopShelf {...props} kind="gear" title={i18n.text("ui.equipment-shop-screen.1", "Gear Shop")} />;
 }

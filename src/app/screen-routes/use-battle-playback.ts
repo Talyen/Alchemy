@@ -21,7 +21,7 @@ interface UseBattlePlaybackProps {
   hasActiveBattle: boolean;
   gameMenuOpen: boolean;
   isAutoplayEnabled: boolean;
-  handleEndTurn: () => void;
+  handleEndTurn: (expected: BattleSnapshot) => void;
   handleAutoplayCard: AutoplayCardHandler;
   handleAutoplayWish: AutoplayWishHandler;
   isCardPlayInProgress: () => boolean;

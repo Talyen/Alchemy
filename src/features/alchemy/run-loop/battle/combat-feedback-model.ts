@@ -1,5 +1,7 @@
 import { mergeCombatText, type CombatTextEvent } from "@/lib/battle";
-import type { CombatImpactCue, CombatTextBurst } from "../../shared/types";
+import type { CombatImpactCue, CombatTextBurst, ReactionAnnouncement, FloatingCombatText } from "../../shared/types";
+import { DAMAGE_TYPES, type DamageType } from "@/lib/game-data";
+import { REACTION_TEXT_LIFETIME_MS } from "@/lib/game-constants";
 import { getCombatImpactVisual } from "../../shared/utils";
 import { combatTextDisplay } from "./combat-feedback-merge";
 
@@ -10,12 +12,58 @@ export function prepareCombatFeedback(
   now: number,
   lifetimeMs: number,
 ) {
-  const consolidated: CombatTextEvent[] = [];
+  const consolidated: Array<CombatTextEvent & { includesCritical?: boolean }> = [];
+  const reactions: ReactionAnnouncement[] = [];
   // Resolved frames can be saved and replayed; presentation must never mutate their events.
-  for (const event of events) mergeCombatText(consolidated, { ...event });
+  for (const event of events) {
+    if (event.kind === "notice" && event.signal === "reaction") {
+      let announcement = reactions.find((entry) => entry.target === event.target);
+      if (!announcement) {
+        announcement = {
+          id: `reaction-${actionId}-${event.target}`,
+          burstId: `combat-burst-${actionId}-${event.target}`,
+          target: event.target,
+          reactionIds: [],
+          firstShownAt: now,
+          lifetimeMs: REACTION_TEXT_LIFETIME_MS,
+        };
+        reactions.push(announcement);
+      }
+      if (!announcement.reactionIds.includes(event.reactionId)) announcement.reactionIds.push(event.reactionId);
+      continue;
+    }
+    if (event.kind === "damage" && event.impact !== false && DAMAGE_TYPES.includes(event.stat as DamageType)) {
+      const index = consolidated.findIndex(
+        (entry) =>
+          entry.kind === "damage" &&
+          entry.impact !== false &&
+          entry.target === event.target &&
+          entry.stat === event.stat &&
+          Math.sign(entry.amount) === Math.sign(event.amount),
+      );
+      const previous = consolidated[index];
+      if (previous?.kind === "damage") {
+        // Numeric display totals may combine non-additive reaction packets; engine facts stay untouched.
+        const merged = [{ ...previous, impact: true, additive: true, periodic: false }];
+        mergeCombatText(merged, { ...event, impact: true, additive: true, periodic: false });
+        const { impact: _impact, additive: _additive, periodic: _periodic, ...aggregate } = merged[0]!;
+        consolidated[index] = {
+          ...previous,
+          ...aggregate,
+          ...(previous.periodic !== event.periodic ? { periodic: false } : {}),
+          includesCritical: previous.critical === true || event.critical === true,
+        };
+        continue;
+      }
+    }
+    mergeCombatText(consolidated, { ...event });
+  }
   const priority = (event: CombatTextEvent) => (event.kind === "notice" ? 0 : event.kind === "damage" ? 1 : 2);
   consolidated.sort((a, b) => priority(a) - priority(b));
-  const byTarget: Record<CombatTextEvent["target"], CombatTextEvent[]> = { player: [], enemy: [] };
+  const byTarget: Record<
+    CombatTextEvent["target"],
+    Array<CombatTextEvent & Pick<FloatingCombatText, "includesCritical">>
+  > = { player: [], enemy: [] };
   let hasMeaningful = false;
   for (const event of consolidated) {
     if (event.kind !== "notice" && event.amount === 0) continue;
@@ -44,7 +92,8 @@ export function prepareCombatFeedback(
       })),
     });
     let strongest: { amount: number; visual: NonNullable<ReturnType<typeof getCombatImpactVisual>> } | undefined;
-    for (const entry of entries) {
+    for (const entry of events) {
+      if (entry.target !== target) continue;
       const visual = getCombatImpactVisual(entry);
       if (!visual || entry.kind !== "damage") continue;
       if (
@@ -60,5 +109,5 @@ export function prepareCombatFeedback(
         ...strongest.visual,
       };
   }
-  return { bursts, impacts };
+  return { bursts, impacts, reactions };
 }

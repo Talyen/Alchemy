@@ -1,3 +1,4 @@
+import { makeTestCard } from "../../../../fixtures/cards";
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import {
@@ -22,7 +23,6 @@ import {
   initializeActiveRun as mutateInitializeActiveRun,
   resetProgress as mutateResetProgress,
   resetRunXP as mutateResetRunXP,
-  applyTalentState as mutateApplyTalentState,
   rebindLiveRunMeta,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
@@ -34,17 +34,11 @@ import {
   readActiveRun,
   readBattle,
   readActiveRunScreen,
-  readRunInitialized,
   readRunProfile,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
 import { createCompleteActiveRunData, makeActiveRunData } from "./active-run-data-fixture";
 import { createEmptyRewardState, serializePendingReward } from "@/lib/active-run-session";
-import {
-  ACTIVE_RUN_PROGRESS_KEYS,
-  EMPTY_ACTIVE_RUN_COLLECTION_KEYS,
-  RUN_SNAPSHOT_FIELD_KEYS,
-} from "@/features/alchemy/shared/stores/run-state-init";
 import { defaultGameSession } from "@/app/application-session";
 import { finalizeRunXP as mutateFinalizeRunXP } from "@/features/alchemy/shared/stores/write/run-meta";
 import { savedActivityFixture } from "../../../../fixtures/run-activity";
@@ -54,7 +48,6 @@ const applyRunStartSnapshot = bindGameplayMutationForTest(mutateRunStartSnapshot
 const finalizeRunXP = bindGameplayMutationForTest(mutateFinalizeRunXP);
 const unlockAllTalents = bindGameplayMutationForTest(mutateUnlockAllTalents);
 const initializeActiveRun = bindGameplayMutationForTest(mutateInitializeActiveRun);
-const applyTalentState = bindGameplayMutationForTest(mutateApplyTalentState);
 const awardCardXP = bindGameplayMutationForTest(mutateAwardCardXP);
 const awardMysteryXP = bindGameplayMutationForTest(mutateAwardMysteryXP);
 const unlockTalent = bindGameplayMutationForTest(mutateUnlockTalent);
@@ -67,61 +60,7 @@ beforeEach(() => {
   resetRunDomainStore();
 });
 
-it("run-domain progress: initial state starts a healthy knight with a deck and no earned progress", () => {
-  const run = readActiveRun(defaultGameSession);
-  const profile = readRunProfile(defaultGameSession);
-  expect(run.characterId).toBe("knight");
-  expect(run.runDeck.length).toBeGreaterThan(0);
-  expect(run.runPlayerHealth).toBeGreaterThan(0);
-  expect(run.runMaxHealth).toBeGreaterThanOrEqual(run.runPlayerHealth);
-  expect(run.currentAct).toBe(1);
-  expect(profile.gold).toBe(0);
-  expect(profile.talentXP).toEqual({});
-  expect(run.runTalentXP).toEqual({});
-  expect(profile.unlockedTalents).toEqual({});
-});
-
 describe("initialize", () => {
-  it("keeps the progress key contracts in sync", () => {
-    // The collection defaults and snapshot fields are subsets of the persisted
-    // progress keys (compile-guarded via satisfies); this pins the same
-    // contract at runtime for the key registries themselves.
-    const progressKeys = new Set<string>(ACTIVE_RUN_PROGRESS_KEYS);
-    for (const key of [...EMPTY_ACTIVE_RUN_COLLECTION_KEYS, ...RUN_SNAPSHOT_FIELD_KEYS]) {
-      expect(progressKeys.has(key)).toBe(true);
-    }
-  });
-
-  it("restores active run data", () => {
-    const activeRun = makeActiveRunData({
-      characterId: "rogue",
-      runDeck: [
-        {
-          id: "stab",
-          title: "Stab",
-          descriptionLines: [""],
-          art: "",
-          cost: 1,
-          effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
-          uid: 1,
-        },
-      ],
-      runPlayerHealth: 25,
-      runMaxHealth: 30,
-      roomsEncountered: 3,
-      destinationIndexInAct: 2,
-      completedDestinations: ["combat"],
-      rng: readActiveRun(defaultGameSession).rng,
-    });
-    initializeActiveRun(activeRun);
-    applyTalentState({ physical: 100 }, { physical: ["talent-1"] });
-    expect(readActiveRun(defaultGameSession).characterId).toBe("rogue");
-    expect(readRunProfile(defaultGameSession).gold).toBe(0);
-    expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(25);
-    expect(readRunProfile(defaultGameSession).talentXP.physical).toBe(100);
-    expect(readRunProfile(defaultGameSession).unlockedTalents.physical).toEqual(["talent-1"]);
-  });
-
   it("restores valid completed destination labels", () => {
     const activeRun = makeActiveRunData({
       characterId: "rogue",
@@ -135,16 +74,6 @@ describe("initialize", () => {
     initializeActiveRun(activeRun);
 
     expect(readActiveRun(defaultGameSession).completedDestinations).toEqual(["Normal Combat", "Corruption"]);
-  });
-
-  it("uses fallback character when no active run", () => {
-    initializeActiveRun(null, "wizard");
-    expect(readActiveRun(defaultGameSession).characterId).toBe("wizard");
-  });
-
-  it("uses knight as default fallback", () => {
-    initializeActiveRun(null);
-    expect(readActiveRun(defaultGameSession).characterId).toBe("knight");
   });
 
   it("restores navigation screen via restoreRun", () => {
@@ -374,18 +303,15 @@ it("reset preserves talentXP and unlockedTalents while clearing run state", () =
   expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({});
   expect(readRunProfile(defaultGameSession).gold).toBe(100);
   expect(readActiveRun(defaultGameSession).runPlayerHealth).toBeGreaterThan(0);
-  expect(readRunInitialized(defaultGameSession)).toBe(false);
+  expect(readGameplayState(defaultGameSession).run.initialized).toBe(false);
 });
 
 it("talent XP accumulation through run end awards card XP to runTalentXP then merges into permanent talentXP and points", () => {
-  const card: BattleCard = {
+  const card: BattleCard = makeTestCard({
     id: "slash",
     title: "Slash",
-    descriptionLines: [""],
-    art: "",
-    cost: 1,
     effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-  };
+  });
   setRunProgress({ selectedDifficulty: "difficulty-1" });
 
   for (let i = 0; i < 20; i++) {
@@ -414,7 +340,6 @@ it("applyRunStartSnapshot clears runTalentXP and run-end snapshots when starting
     contentSystemType: "campaign",
     freshDeck: [],
     selectedDifficulty: "difficulty-1",
-    startGoldGrant: 0,
     runPlayerHealth: 80,
     runMaxHealth: 80,
     roomsEncountered: 0,

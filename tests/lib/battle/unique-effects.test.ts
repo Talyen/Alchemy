@@ -341,6 +341,35 @@ describe("unique item battle effects", () => {
     expect(resolution.state.hand.some((c) => c.id === "fireball")).toBe(true);
   });
 
+  it("Twin Casting does not draw when the played card defeats the enemy", () => {
+    const burnCard = makeTestCard({
+      id: "fireball",
+      title: "Fireball",
+      effects: [{ kind: "damage", amount: 10, damageType: "burn" }],
+      tags: ["burn"],
+    });
+    const freezeCard = makeTestCard({
+      id: "frostbolt",
+      title: "Frostbolt",
+      effects: [{ kind: "damage", amount: 10, damageType: "freeze" }],
+      tags: ["freeze"],
+    });
+    const resolution = playBattleCardResolved(
+      patchBattleState({
+        enemyHealth: 5,
+        mana: 3,
+        hand: [burnCard],
+        deck: [freezeCard],
+        gearEffects: { elementalTwinCasting: 1 },
+      }),
+      "fireball",
+      0,
+    );
+    expect(resolution.state.enemyHealth).toBe(0);
+    expect(resolution.state.deck).toHaveLength(1);
+    expect(resolution.state.hand.find((c) => c.id === "frostbolt")).toBeUndefined();
+  });
+
   it.each([
     { roll: 0.1, expected: "freeze-second" },
     { roll: 0.9, expected: "burn-second" },
@@ -422,6 +451,22 @@ describe("unique item battle effects", () => {
     expect(afterSecondDepletion.playerStatuses.block).toBe(0);
     expect(afterSecondDepletion.enemyStatuses.stun).toBe(0);
     expect(afterSecondDepletion.playerHealth).toBe(38);
+  });
+
+  it("Saintfall Plate does not heal if holy retribution defeats the enemy", () => {
+    const baseState = patchBattleState({
+      playerHealth: 50,
+      playerMaxHealth: 100,
+      playerStatuses: { block: 5 },
+      enemyHealth: 2,
+      gearEffects: { saintfallRetribution: 4 },
+    });
+
+    const result = processEnemyDamageEffect(baseState, { kind: "damage", damageType: "physical", amount: 15 }, []);
+
+    expect(result.playerStatuses.block).toBe(0);
+    expect(result.enemyHealth).toBe(0);
+    expect(result.playerHealth).toBe(40);
   });
 
   it("damageTypePool selects from the provided element pool on card play", () => {

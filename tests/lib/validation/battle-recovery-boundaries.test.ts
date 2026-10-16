@@ -7,7 +7,6 @@ import { checkHealthThresholds } from "@/lib/battle/status-player";
 import { applyAbilityDamage } from "@/lib/battle/enemy-ability-damage";
 import { createEnemyAbilityContext } from "@/lib/battle/enemy-ability-context";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { buildWishOptions } from "@/lib/battle/wish";
 
 const oversized = Number.MAX_VALUE;
 function restore(patch: Record<string, unknown>) {
@@ -18,12 +17,13 @@ function restore(patch: Record<string, unknown>) {
 }
 
 describe("saved battle recovery boundaries", () => {
-  it("repairs malformed card healing dictionaries before a Potion is played", () => {
+  it("repairs malformed healing and drops retired bonuses before a Potion is played", () => {
     const state = restore({
       playerHealth: 10,
       playerMaxHealth: 50,
-      talentEffects: { cardHealMultipliers: null, cardHealBonus: { "health-potion": "broken" } },
+      talentEffects: { cardHealMultipliers: null, cardHealBonus: { "health-potion": 99 } },
     });
+    expect(state.talentEffects).not.toHaveProperty("cardHealBonus");
     expect(applyCardEffects(state, cardById["health-potion"]!, []).playerHealth).toBe(18);
   });
   it("drops malformed threshold rewards before the next Health loss", () => {
@@ -39,26 +39,10 @@ describe("saved battle recovery boundaries", () => {
     expect(result.playerStatuses.armor).toBe(3);
     expect(result.playerStatuses.block).toBe(0);
   });
-  it("rejects unsafe talent counts before Wish selection can loop indefinitely", () => {
-    const state = restore({ talentEffects: { wishExtraChoices: oversized, potionPotency: 1.2 } });
-    expect(state.talentEffects.wishExtraChoices).toBe(0);
+  it("rejects unsafe talent magnitudes while retaining fractional tuning", () => {
+    const state = restore({ talentEffects: { flatPhysicalDamage: oversized, potionPotency: 1.2 } });
+    expect(state.talentEffects.flatPhysicalDamage).toBe(0);
     expect(state.talentEffects.potionPotency).toBe(1.2);
-  });
-  it("bounds recovered Wish work to the available cards even for large safe counts", () => {
-    const state = restore({ talentEffects: { wishExtraChoices: 1e12 } });
-    let rolls = 0;
-    const options = buildWishOptions(
-      {
-        ...state,
-        rng: () => {
-          if (++rolls > 10000) throw new Error("Wish selection exceeded its card pool");
-          return 0.99;
-        },
-      },
-      undefined,
-    );
-    expect(options.length).toBeGreaterThan(0);
-    expect(new Set(options.map((card) => card.id)).size).toBe(options.length);
   });
   it("repairs malformed Trinket rewards before healing changes status stacks", () => {
     const state = restore({

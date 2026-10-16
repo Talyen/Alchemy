@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyEnemyDotDamage, dealEnemyDotTick, detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
+import { applyEnemyDotDamage, detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { BATTLE_CONFIG } from "@/lib/game-constants";
 import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
 
@@ -91,16 +91,6 @@ describe("applyEnemyDotDamage", () => {
     expect(next.mana).toBe(health > 4 ? 1 : 0);
     expect(next.gold).toBe(state.gold + (health > 6 ? 2 : 0));
   });
-});
-
-it("dealEnemyDotTick is a single-pulse applyEnemyDotDamage", () => {
-  const state = patchBattleState({
-    enemyHealth: 20,
-    enemyStatuses: { burn: 6 },
-  });
-  const next = dealEnemyDotTick(state, "burn", 6, 3, makeTexts());
-  expect(next.enemyHealth).toBe(14);
-  expect(next.enemyStatuses.burn).toBe(3);
 });
 
 describe("detonateEnemyStatuses", () => {

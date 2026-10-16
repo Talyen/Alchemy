@@ -1,9 +1,9 @@
+import type { AlchemyRunCommands } from "./route-commands";
 import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import type { BattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useRunControllerState } from "@/features/alchemy/shared/stores/use-session-run-reads";
-import type { AlchemyRouteCommands, AlchemyRunCommands } from "./route-commands";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { useCallback, useMemo, useSyncExternalStore } from "react";
@@ -16,10 +16,7 @@ import { useScreenTransitions } from "./use-screen-transitions";
 
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
-export function useAlchemyRunController(
-  gameSession: GameSession,
-  presentation: BattlePresentationStore,
-): AlchemyRunCommands {
+function useComposedRunController(gameSession: GameSession, presentation: BattlePresentationStore) {
   const protectVoid = useMemo(
     () =>
       <Args extends unknown[]>(action: (...args: Args) => void) =>
@@ -98,7 +95,7 @@ export function useAlchemyRunController(
     handleAbandonRun();
   }, [cancelBattle, handleAbandonRun]);
 
-  const routeCommands = useMemo<AlchemyRouteCommands>(
+  const routeCommands = useMemo(
     () => ({
       progress: {
         isPending: () => persistence.readProgress().kind !== "idle",
@@ -131,12 +128,15 @@ export function useAlchemyRunController(
           onSalvage: guardProgressAction(gameSession, runActions.salvageGear, false),
           onApplyCurrency: guardProgressAction(
             gameSession,
-            (currencyId, instanceId) => runActions.applyCurrencyToGear(currencyId, instanceId, undefined),
+            (currencyId: Parameters<typeof runActions.applyCurrencyToGear>[0], instanceId: string) =>
+              runActions.applyCurrencyToGear(currencyId, instanceId, undefined),
             false,
           ),
           ...(isAlchemyDevBuild()
             ? {
-                onSpawnDevGear: protectVoid((characterId) => runActions.spawnDevGear(characterId, undefined)),
+                onSpawnDevGear: protectVoid((characterId: Parameters<typeof runActions.spawnDevGear>[0]) =>
+                  runActions.spawnDevGear(characterId, undefined),
+                ),
                 onSpawnDevTrinket: protectVoid(() => runActions.spawnDevTrinket(undefined)),
               }
             : {}),
@@ -174,7 +174,12 @@ export function useAlchemyRunController(
           removeCard: protectVoid(nav.handleWildwoodRemoveCard),
           skipRemoval: protectVoid(nav.handleWildwoodSkipRemoval),
         },
-        shop: { ...shop, continue: protectVoid(nav.advanceToNextDestination) },
+        shop: {
+          ...shop,
+          continue: protectVoid((activity: "shop" | "alchemist" | "trinket-shop" | "equipment-shop") =>
+            nav.advanceToNextDestination(activity),
+          ),
+        },
         mystery: {
           handleChoice: guardProgressAction(gameSession, nav.handleMysteryChoice, false),
           handleChooseCard: guardProgressAction(gameSession, nav.handleMysteryChooseCard, false),
@@ -210,4 +215,10 @@ export function useAlchemyRunController(
     handleEndRun: protectVoid(handleEndRun),
     resetRunState: protectVoid(nav.resetRunState),
   };
+}
+
+export type ComposedRunCommands = ReturnType<typeof useComposedRunController>;
+
+export function useAlchemyRunController(...args: Parameters<typeof useComposedRunController>): AlchemyRunCommands {
+  return useComposedRunController(...args);
 }

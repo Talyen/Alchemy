@@ -1,4 +1,4 @@
-export { tokenizeDescription, getHoverId } from "./string";
+export { getHoverId } from "./string";
 export {
   getCombatTextColorClass,
   getCombatImpactVisual,

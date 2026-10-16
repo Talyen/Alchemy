@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import "../../../helpers/mock-audio";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
@@ -8,13 +9,15 @@ import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battl
 import { createBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useBattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
+import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
+import { createSaveBackend } from "../../../helpers/save-backend";
 import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 const sessions: GameSession[] = [];
 function career() {
-  const gameSession = createGameSession();
+  const gameSession = createGameSession({ saveBackend: createSaveBackend() });
   sessions.push(gameSession);
   return { gameSession, presentation: createBattlePresentationStore(gameSession) };
 }
@@ -62,7 +65,7 @@ it("retains pending navigation when restore fails before publication", () => {
   expect(showScreen).toHaveBeenCalledExactlyOnceWith("collection");
 });
 
-it("replaces mounted battle playback before restored settings or gameplay can be observed", () => {
+it.each(["restore", "wipe"] as const)("replaces mounted battle playback before %s observers run", async (operation) => {
   vi.useFakeTimers();
   const owner = career();
   dispatchRunSessionCommand(
@@ -90,7 +93,7 @@ it("replaces mounted battle playback before restored settings or gameplay can be
     ),
   );
   const playback = context.result.current.playback;
-  playback.beginAction();
+  playback.beginAction(playback.id);
   const scope = playback.capture(playback.id);
   const oldSignal = playback.signal;
   const lateOutcome = vi.fn();
@@ -106,22 +109,25 @@ it("replaces mounted battle playback before restored settings or gameplay can be
     displayed: owner.presentation.getState().displayedBattle,
   }));
   const unsubscribe = sessionRuntime(owner.gameSession).settings.subscribe(observer);
-  try {
-    act(() => persistence.restore(savedBattle));
-    expect(observer).toHaveBeenCalledOnce();
-    expect(observer).toHaveReturnedWith({ aborted: true, current: false, displayed: null });
-    expect(transferCancelled).toHaveBeenCalledOnce();
-    expect(playback.canAcceptInput()).toBe(true);
-    scope.setTimeout(lateOutcome, 0);
-    vi.runAllTimers();
-    expect(lateOutcome).not.toHaveBeenCalled();
-    playback.capture(playback.id).setTimeout(lateOutcome, 0);
-    vi.runAllTimers();
-    expect(lateOutcome).toHaveBeenCalledOnce();
-  } finally {
+  using _scopeCleanup = createCleanup(() => {
     unsubscribe();
     context.unmount();
-  }
+  });
+
+  await act(async () => {
+    if (operation === "restore") persistence.restore(savedBattle);
+    else expect(await clearAllPersistentGameData(owner.gameSession)).toBe(true);
+  });
+  expect(observer).toHaveBeenCalledOnce();
+  expect(observer).toHaveReturnedWith({ aborted: true, current: false, displayed: null });
+  expect(transferCancelled).toHaveBeenCalledOnce();
+  expect(playback.canAcceptInput()).toBe(true);
+  scope.setTimeout(lateOutcome, 0);
+  vi.runAllTimers();
+  expect(lateOutcome).not.toHaveBeenCalled();
+  playback.capture(playback.id).setTimeout(lateOutcome, 0);
+  vi.runAllTimers();
+  expect(lateOutcome).toHaveBeenCalledOnce();
 });
 
 it("cancels mounted playback on session disposal without touching another career", async () => {
@@ -149,14 +155,14 @@ it("cancels mounted playback on session disposal without touching another career
   const old = a.result.current.playback.capture(a.result.current.playback.id);
   old.setTimeout(late, 100);
   b.result.current.playback.capture(b.result.current.playback.id).setTimeout(unaffected, 100);
-  try {
-    await act(() => first.gameSession.dispose());
-    expect(old.isCurrent()).toBe(false);
-    vi.runAllTimers();
-    expect(late).not.toHaveBeenCalled();
-    expect(unaffected).toHaveBeenCalledOnce();
-  } finally {
+  using _scopeCleanup = createCleanup(() => {
     a.unmount();
     b.unmount();
-  }
+  });
+
+  await act(() => first.gameSession.dispose());
+  expect(old.isCurrent()).toBe(false);
+  vi.runAllTimers();
+  expect(late).not.toHaveBeenCalled();
+  expect(unaffected).toHaveBeenCalledOnce();
 });

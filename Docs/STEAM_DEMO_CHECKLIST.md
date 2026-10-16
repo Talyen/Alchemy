@@ -21,11 +21,11 @@ Implementation and transfer contracts are owned by [Steam demo](./STEAM_DEMO.md)
 - [x] Knight → Rogue → Ranger through the existing victory, defeat or abandonment unlock chain.
 - [x] Existing content pools, Talents, Homestead and Armory rules and costs; existing UI onboarding, without a separate tutorial.
 - [x] Excluded characters/modes retain their names and show bold red Requires Full Game tooltips. Victory recap leads to The Journey Continues with the selected promo image and wishlist CTA.
-- [x] English; Steam only; Windows x64; controller play through Steam Input and Deck through Proton, subject to the required hardware validation.
+- [x] Bundled languages follow [localization qualification](./LOCALIZATION.md#qualification-and-steam); Steam only; Windows x64; controller play through Steam Input and Deck through Proton, subject to the required hardware validation.
 - [x] Automatic one-time earned permanent-progress import through shared Steam Cloud, with local Windows fallback. Active runs and full-Campaign difficulty credit do not transfer.
 - [x] Demo remains available after full launch; demo and full candidates build from one source version.
 
-In-game feedback/support links, a new tutorial, localization, itch.io and a separate
+In-game feedback/support links, a new tutorial, itch.io and a separate
 demo store page are outside the approved implementation. Use the base game's Steam
 Discussions for feedback and configure customer-support contact information in
 Steamworks. Demo user reviews require the deferred separate demo store page.
@@ -60,7 +60,7 @@ Use [game rules](./GAME_RULES.md), [run state](./RUN_STATE.md), and
 - [ ] Resume current-format battles, pending/claimed rewards, destinations and special visits on an unseeded page or relaunched isolated app. Acknowledged progress, purchases and choices survive.
 - [ ] Verify progression/Options persistence, primary/recovery acknowledgement and failed writes. Both-slot failure shows Couldn’t save; Retry saves the original outcome once. Cloud-only failure does not imply local progress loss.
 - [ ] Verify menu, Options/Back, keyboard focus recovery and cancellation of automatic playback while the menu is open.
-- [ ] Quit opens no store/browser destination. Check the existing best-effort shutdown behavior separately from already acknowledged progress.
+- [ ] Quit opens no store/browser destination. Verify that native shutdown drains admitted file writes under the [write acknowledgement contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#write-acknowledgement); distinguish those writes from unfinished renderer work and already acknowledged progress.
 - [ ] Verify offline startup, Options and local saves without Steam, using isolated profiles.
 - [ ] Run affected current-save, future-save protection and source-preserving demo-import checks under the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 - [ ] **EXTERNAL:** Verify real overlay/custom chord/controller paths and shared-Cloud transfer under [physical Steam acceptance](#physical-steam-acceptance-evidence). Preserve the native-binding blocker in [Steam demo](./STEAM_DEMO.md#input-and-release-evidence).
@@ -76,7 +76,7 @@ Use the current [display sizing](./UI.md#display-sizing) bounds, not historical 
 - [ ] Reduced-motion inspection and consecutive keyboard plays settle and remain usable under the existing accessibility stance.
 - [ ] Verify native display modes on the target platform; browser geometry alone does not establish native behavior.
 - [ ] Volume/mute and interface sizing controls apply and persist, including background/foreground audio recovery.
-- [ ] Store-language claims remain consistent with the English-only scope.
+- [ ] Store-language claims match qualified catalogs and rendered evidence for the demo; marketing artwork is bundled for every shipped language.
 
 ## 6. Audio and performance
 

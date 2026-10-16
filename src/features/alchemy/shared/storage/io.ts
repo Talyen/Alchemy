@@ -2,6 +2,11 @@ import type { SaveBackend } from "@/lib/platform-save-backend";
 import type { GameSession } from "../stores/game-session-types";
 import { sessionRuntime } from "../stores/session-runtime";
 import type { UnstampedSaveData } from "./types";
+import type { SaveStorageEvent } from "./save-operation-queue";
+
+export function isSaveClearPending(gameSession: GameSession): boolean {
+  return sessionRuntime(gameSession).io.isClearing();
+}
 
 export function getSaveWriteFailure(gameSession: GameSession) {
   return sessionRuntime(gameSession).io.getSaveWriteFailure();
@@ -18,18 +23,14 @@ export function configureSaveBackend(backend: SaveBackend, gameSession: GameSess
 }
 export function setWritesDisabled(disabled: boolean, gameSession: GameSession) {
   const runtime = sessionRuntime(gameSession);
-  if (disabled) {
-    runtime.saveSnapshots.invalidate();
-    runtime.progressCompletion.cancel();
-  }
   runtime.io.setWritesDisabled(disabled);
 }
 export function routeWritesToRecovery(gameSession: GameSession) {
   sessionRuntime(gameSession).io.routeWritesToRecovery();
 }
-export function subscribeSaveCancellation(listener: () => void, gameSession: GameSession) {
+export function subscribeSaveEvents(listener: (event: SaveStorageEvent) => void, gameSession: GameSession) {
   const runtime = sessionRuntime(gameSession);
-  return runtime.track(runtime.io.subscribeSaveCancellation(listener));
+  return runtime.track(runtime.io.subscribeSaveEvents(listener));
 }
 export function waitForPendingSaveWrites(gameSession: GameSession) {
   return sessionRuntime(gameSession).io.waitForPendingSaveWrites();
@@ -53,8 +54,6 @@ export function saveAlchemySaveDataForExit(data: UnstampedSaveData, gameSession:
 }
 export function clearAlchemySaveData(mode: "default" | "localWipe" = "default", gameSession: GameSession) {
   const runtime = sessionRuntime(gameSession);
-  runtime.saveSnapshots.invalidate();
-  runtime.progressCompletion.cancel();
   return runtime.io.clearAlchemySaveData(mode);
 }
 export function resetStorageIoForTests(gameSession: GameSession) {

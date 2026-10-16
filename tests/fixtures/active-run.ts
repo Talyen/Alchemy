@@ -1,3 +1,4 @@
+import { makeTestCard } from "./cards";
 import { savedActivityFixture } from "./run-activity";
 import { ActiveRunDataSchema } from "@/lib/validation";
 
@@ -32,15 +33,12 @@ export function makeMinimalActiveRunInput(overrides: Record<string, unknown> = {
 export function makeRunCandidate(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return makeMinimalActiveRunInput({
     runDeck: [
-      {
+      makeTestCard({
         id: "slash",
         title: "Slash",
-        descriptionLines: [""],
-        art: "",
-        cost: 1,
         effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
         uid: 1,
-      },
+      }),
     ],
     runPlayerHealth: 25,
     roomsEncountered: 2,

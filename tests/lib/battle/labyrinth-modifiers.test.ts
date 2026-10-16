@@ -28,16 +28,15 @@ function state(overrides: BattleStatePatch = {}) {
 }
 
 function attack(type: DamageType = "physical", amount = 4, overrides: Partial<BattleCard> = {}): BattleCard {
-  return {
+  return makeEnemyTestCard({
     id: "attack",
     uid: 1,
     title: "Attack",
-    art: "",
     descriptionLines: [],
     cost: 0,
     effects: [{ kind: "damage", damageType: type, amount }],
     ...overrides,
-  };
+  });
 }
 
 function enemy(...ids: EncounterCombatTraitId[]) {

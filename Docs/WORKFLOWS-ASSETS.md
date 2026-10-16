@@ -29,27 +29,26 @@ Ordinary development and builds use committed outputs. `predev` and hosted CI ru
 
 ## Game Board artwork
 
-The explicit board catalog selects the JPG masters in
-`2d Assets/Game Sources/Interface/Board Backgrounds`. `scripts/assets/board-assets.mjs`
+To add or replace a board:
+
+1. Put its master under `2d Assets/Game Sources/Interface/Board Backgrounds` in the Asset Library.
+2. Add or update its `id`, `title`, and `sourceFilename` in `src/lib/boards/catalog.json`. Preserve existing IDs: ownership and selection use them in saves. Adding a library file alone does not register a board.
+3. Run `npm run assets:optimize:art` and `npm run sync:art`. The runtime derives full-image and thumbnail URLs from the catalog ID; no second map or named exports are needed.
+4. Run `npm run assets:check` and `npm run check:generated`, review the catalog, map, and generated diff, then follow the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change). For changes to selection, ownership, or rewards, use the existing `tests/features/alchemy/shared/stores/boards.test.ts` suite.
+
+`scripts/assets/board-assets.mjs` derives both outputs from that catalog and
 registers native 2752×1536 lossless WebP backgrounds and 640px, quality-90 gallery
 thumbnails in the existing art pipeline. Lossless encoding preserves decoded JPG
 pixels; it cannot restore information already lost in the original JPG.
 `lossless` participates in transform and selection fingerprints. Changing its value
 requires regeneration just like width or quality changes.
 
-`boardArt` in `src/lib/game-data/assets.ts` is the curated runtime map. Board URLs
+`catalog-art.ts` derives `boardArt` from the board catalog and Gear art from prepared filenames using eager Vite URL imports. Missing board images fail during catalog construction. Board URLs
 are eagerly registered, but `onDemandBoardArt` excludes full art and thumbnails
 from both essential and deferred startup decoding. The gallery displays thumbnails;
 inspection, reward reveals, and battle display the full-resolution image.
 
 ## Art style and generation prompts
-
-The mana dock uses separate frame, full octagonal crystal, and empty crystal
-masters under `Interface/Mana Dock`. The frame has uninterrupted leather rather
-than baked-in sockets; its selected revision is Charcoal and Gold Stitched Leather.
-Dedicated lossless presets preserve the frame's native
-detail (up to 3840px wide, without enlargement) and 512px crystal outputs.
-Source masters remain in the Asset Library; the core manifest owns their selection.
 
 Alchemy's visual identity is anchored by its **Master Action-Anime Art Style**.
 Canonical style reference images in the repository include `Knight` (`src/assets/optimized/knight.webp`), `Wizard` (`src/assets/optimized/wizard.webp`), and `Fireball` (`src/assets/optimized/fireball.webp`), as well as approved crafting currencies `Discordant Dice` and `Ascension Seal`.
@@ -110,18 +109,20 @@ Create a single game inventory icon. Square composition, genuinely transparent b
 
 1. Put the raw master in the local Asset Library and use a library-relative source reference.
 2. Register source, target, width, and quality in the topical manifest under
-   `scripts/assets/` (`core`, `content`, `card`, or `talent`) using presets from `scripts/assets/asset-constants.mjs` (`WIDTH`/`QUALITY`). Talent portraits belong in `talent-assets.mjs`.
+   `scripts/assets/` (`core`, `content`, `card`, or `talent`) using presets from `scripts/assets/asset-constants.mjs` (`ART_PRESETS`). Talent portraits belong in `talent-assets.mjs`.
 3. Run `npm run assets:optimize:art` followed by `npm run sync:art` for
    art-only iteration, or `node scripts/assets.mjs --prepare` for optimization
    and generated-output synchronization together.
 4. Import through the curated map in `src/lib/game-data/assets.ts` (e.g. `craftingArt`, `difficultyArt`, `talentArt`) — do not import `@/assets/optimized` directly.
 5. Run `npm run check:generated` (fast art-barrel and build-version validation); review the generated diff.
 
-`npm run sync:generated` updates both art barrels and version metadata.
-`npm run sync:art` updates both art barrels (`src/lib/game-data/assets.generated.ts`
-and `src/lib/game-data/gear-art.generated.ts`). `npm run sync:gear-art` updates only
-`src/lib/game-data/gear-art.generated.ts` and refuses to run against a stale
-`assets.generated.ts` — prefer the full art sync.
+`npm run sync:generated` updates the art barrel and version metadata.
+`npm run sync:art` updates `src/lib/game-data/assets.generated.ts`; Boards and Gear
+use eager catalog registration in `catalog-art.ts` instead of generated exports.
+`npm run sync:gear-art` remains an alias for the same art sync.
+Card and enemy builders resolve conventional artwork from their IDs through
+`getCatalogArt`; supply `art` explicitly when sharing or renaming artwork. Trinket
+art follows its catalog ID. Summon cards derive their roster and art from the Companion catalog. Missing conventional art fails during catalog construction.
 Do not add exports to generated files by hand. The hash schema salt lives in
 `scripts/assets/asset-constants.mjs`; bump it when all asset caches must be invalidated.
 
@@ -143,15 +144,24 @@ Set `requiresTransparency: true` in the owning art manifest when an image must h
 
 Also inspect approved artwork against light and dark backgrounds. The pixel check rejects opaque checkerboards and empty images but cannot prove that every background pixel is correct. If reference-based image generation repeatedly paints a checkerboard into the image, regenerate without image references using the approved visual description, then repeat pixel and visual checks. Current approved masters remain the authoring sources.
 
-`2d Assets/Game Sources/Interface/Card Elements/Card Back.png` is the single card used in transfer animations.
+`2d Assets/Game Sources/Interface/Card Elements/Card Back.png` supplies the back
+of Collection cards. Battle draws and discards use face-up card artwork under
+the [transfer motion contract](./UI_MOTION.md#battle-motion).
 `Draw Pile.png` (active compass stack, leaning left) and `Discard Pile.png`
 (spent/dormant compass stack, leaning right) are distinct compositions, not
-mirrors; both retain transparent margins and a 3:4 canvas. Keep pile artwork
-separate from the single-card master so animations never show a stack.
-`2d Assets/Game Sources/Items/Resources/Mana Crystal - Transparent.png` generates `battle-mana-crystal.webp` for the Mana display;
-it is distinct from the playable Mana Crystals card artwork. Available crystals
-use the full image, spent crystals use 20% opacity, and overflow crystals retain
-their brighter glow.
+mirrors; both retain transparent margins and a 3:4 canvas. Keep their source
+identities separate from the single-card master.
+The battle Mana display uses the separate full/empty crystal masters under
+`Interface/Mana Dock`, selected in `scripts/assets/core-assets.mjs`, inside the
+hero portrait. Its active outputs are `mana-dock-full.webp` and
+`mana-dock-empty.webp`; these are distinct from the playable Mana Crystals card
+artwork. The manifest also prepares `mana-dock-frame.webp`, which the current
+battle display does not render. Preserve alpha transparency and lossless
+preparation for these selected assets: the frame retains native detail up to
+3840px wide without enlargement, and crystals use 512px outputs. The selected
+Charcoal and Gold Stitched Leather frame has no baked-in sockets.
+[Display sizing](./UI.md#display-sizing) owns the dock layout and spent appearance;
+[battle feedback](./UI_BATTLE.md#battle-feedback) owns resource-change effects.
 
 ## Add or replace Gear art
 
@@ -159,15 +169,13 @@ their brighter glow.
    `.jpg` variants accepted by the optimizer; filename slugging lives in
    `scripts/assets/gear-filenames.mjs`).
 2. Run `npm run assets:optimize:art`.
-3. Run `npm run sync:art` to regenerate the asset exports and the Gear map
-   that consumes them (both barrels update together).
+3. Run `npm run sync:art` to refresh general art exports. Gear URLs derive
+   directly from the prepared `gear-*.webp` filenames in `catalog-art.ts`.
 4. Run `npm run check:generated` and confirm every generated definition ID
    matches the intended Gear definition.
 
-`gear-art.generated.ts` references exports from `assets.generated.ts`, so the two barrels
-always sync together; `sync:gear-art` alone is only a shortcut that refuses to
-run when `assets.generated.ts` is stale. Full preparation runs the combined
-synchronization automatically.
+`sync:gear-art` aliases the art sync. Gear definitions and slot backgrounds
+share the same eager URL registry; there is no second generated map to synchronize.
 
 Gear slot backgrounds use `{Slot name} Slot.{jpeg|jpg|png}` under
 `2d Assets/Game Sources/Interface/Gear Slots/`. Select all four `body`/`weapon`/`accessory`/`trinket` backgrounds in `gear-assets.mjs`; generated-art validation rejects missing slot targets.
@@ -215,13 +223,13 @@ Register playable tracks in `MUSIC_CATALOG` in `src/lib/audio/music-catalog.ts`.
 
 ## Importing art — barrel is the canonical surface
 
-Generated barrels are committed build products (`src/assets/optimized/` + `src/lib/game-data/assets.generated.ts` / `gear-art.generated.ts`). Never import `@/assets/optimized/*.webp` directly outside the barrel — Oxlint bans it. Always go through `src/lib/game-data/assets.ts` curated maps:
+Optimized images and `src/lib/game-data/assets.generated.ts` are committed build products. Never import `@/assets/optimized/*.webp` directly outside the asset owners — Oxlint bans it. Consumers use `src/lib/game-data/assets.ts`:
 
 - `characterArt`, `mysteryEventArt`, `talentArt`, `gearSlotBackgroundArt`, `craftingArt`, `difficultyArt` — typed maps built from `assetRefs` in `assets.ts` (`gearSlotBackgroundArt` derives from `gearArtByDefinitionId`).
 - `allGameArt` is the full static manifest; `essentialGameArt` selects startup-critical art. Preserve the [boot and loading contract](./ARCHITECTURE.md#boot-and-loading) when changing these sets. Bundle limits live in [Performance](./PERFORMANCE.md#eager-bundle-size).
-- `gearArtByDefinitionId` — re-exports `assets.generated` via `gearArtAssets` in `gear-art.generated.ts`.
+- `boardArt` and `gearArtByDefinitionId` — derive catalog identities from the eager registry in `catalog-art.ts`.
 
-The static barrel provides explicit export names (`toAssetExportName`, wrapping `kebabToCamel`) and the Vite asset graph; do not use `import.meta.glob` for art.
+The general art barrel provides explicit export names (`toAssetExportName`, wrapping `kebabToCamel`). Only `catalog-art.ts` uses a narrow `import.meta.glob` with `eager: true` and `import: "default"` for Board/Gear URLs. It replaces duplicate generated exports and maps while preserving the static Vite asset graph. Other consumers use the exported maps; lazy art imports remain unsupported.
 
 ## Skip mode and verification
 
@@ -252,8 +260,8 @@ npm run sync:gear-art -- --check
 npm run sync:version -- --check
 ```
 
-`sync:art` checks both art barrels; `sync:gear-art` checks the Gear barrel and
-requires a current main art barrel. `sync:version` checks only build metadata.
+`sync:art` and its `sync:gear-art` alias check the general art barrel.
+`sync:version` checks only build metadata.
 These commands do not establish prepared-media or raw-source freshness.
 
 For manual inspection:
@@ -262,27 +270,27 @@ For manual inspection:
 node scripts/assets.mjs --prepare
 npm run check:generated
 git diff -- src/assets/optimized public/sounds public/Music \
-  src/lib/game-data/assets.generated.ts src/lib/game-data/gear-art.generated.ts
+  src/lib/game-data/assets.generated.ts src/lib/game-data/catalog-art.ts
 ```
 
 Commit the intended generated outputs and selection manifest changes. Raw masters stay outside Git.
 
 ## Pipeline overview
 
-| Asset kind    | Authoring source                       | Generated output                                           | Registry / consumer                                   |
-| ------------- | -------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------- |
-| Game art      | Asset Library + `scripts/assets/*.mjs` | `src/assets/optimized/`                                    | `assets.generated.ts` → `src/lib/game-data/assets.ts` |
-| Gear art      | Asset Library + `gear-assets.mjs`      | Optimized WebP + `src/lib/game-data/gear-art.generated.ts` | Gear definitions by stable definition ID              |
-| Sound effects | Asset Library + sound manifest         | `public/sounds/` OGG and MP3 fallbacks                     | `src/lib/audio/sound-registry.ts`                     |
-| Music         | Asset Library + music selection        | `public/Music/`                                            | Audio owners under `src/lib/audio/`                   |
+| Asset kind    | Authoring source                       | Generated output                       | Registry / consumer                                   |
+| ------------- | -------------------------------------- | -------------------------------------- | ----------------------------------------------------- |
+| Game art      | Asset Library + `scripts/assets/*.mjs` | `src/assets/optimized/`                | `assets.generated.ts` → `src/lib/game-data/assets.ts` |
+| Gear art      | Asset Library + `gear-assets.mjs`      | Optimized WebP                         | `catalog-art.ts` → Gear definitions by stable ID      |
+| Sound effects | Asset Library + sound manifest         | `public/sounds/` OGG and MP3 fallbacks | `src/lib/audio/sound-registry.ts`                     |
+| Music         | Asset Library + music selection        | `public/Music/`                        | Audio owners under `src/lib/audio/`                   |
 
 Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run sync:version`) is owned by the release pipeline ([RELEASE_SETUP](./RELEASE_SETUP.md)); it is not an art authoring source. Full preparation refreshes it as an independent step alongside the art barrels, so a failed art sync never blocks the version stamp and vice versa — failures from either are reported together.
 
 `scripts/prepare-assets.mjs` is the full pipeline (invoked via the canonical
 `node scripts/assets.mjs --prepare` CLI for explicit local preparation). Art, sound, and music
 optimization run concurrently and report every failure (settled, not fail-fast)
-because their outputs are disjoint; generated
-art and Gear barrels update whenever art succeeds, even if sound or music fail,
+because their outputs are disjoint; the general art barrel updates whenever art
+succeeds, even if sound or music fail,
 and build version metadata syncs as a separate step in the same run —
 the run still throws, so partial success is never silent. Synchronization failures
 are reported together with optimization failures. Worker pools finish all started
@@ -299,8 +307,8 @@ changing them. Unreadable selected sources fail before processing; their diagnos
 
 Three authoring shapes coexist by design:
 
-- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Core and content manifests use `artGroup()` from `scripts/assets/art-group.mjs` to share a folder relative to `2d Assets/Game Sources`, an `ART_PRESETS` entry, and optional transparency requirements across explicit `[sourceFilename, targetFilename]` pairs. Nested source paths are allowed; targets remain explicit basenames. Adding files to the library never adds selections. Every target is explicitly registered and validated for duplicate targets and export names; shared sources may produce distinct targets. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/assets/asset-constants.mjs`.
-- **Explicit Gear and Music selections** — `scripts/assets/gear-assets.mjs` and `music-assets.mjs` select sources and stable targets. Adding files to Asset Library does not change a game's inventory. Every output directory is fully managed; unregistered outputs are swept only after successful preparation. All current sound masters live in Asset Library; OGG masters are copied unchanged and receive MP3 fallbacks.
+- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Art manifests use `artGroup()` from `scripts/assets/art-group.mjs` to share a folder relative to `2d Assets/Game Sources`, an `ART_PRESETS` entry, and optional transparency requirements across explicit `[sourceFilename, targetFilename, optionalPresetOverride]` rows. Nested source paths are allowed; targets remain explicit basenames. Adding files to the library never adds selections. Every target is explicitly registered and validated for duplicate targets and export names; shared sources may produce distinct targets. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/assets/asset-constants.mjs`.
+- **Explicit Gear and Music selections** — `scripts/assets/gear-assets.mjs` expands each selected item into Basic and Astral art using the canonical Gear filename owner. Music and sound manifests use `assetGroup()` from `scripts/assets/asset-group.mjs`: string selections retain source basenames (sounds use `.ogg`), while tuples pin renamed targets. `artGroup()` uses that same expansion with art presets. Selections never scan directories. Adding files to Asset Library does not change a game's inventory. Every output directory is fully managed; unregistered outputs are swept only after successful preparation. All current sound masters live in Asset Library; OGG masters are copied unchanged and receive MP3 fallbacks.
 
 - **Sound manifest** — `scripts/assets/sound-assets.mjs` lists `generatedSoundAssets` (WAV→OGG with loudnorm) plus the legacy `curatedSoundFiles` fallback (currently empty; all production masters are external). The optimizer owns `public/sounds/` and tags each hash manifest entry with `owner: generated|curated`.
 
@@ -331,16 +339,15 @@ successful outputs may still advance during the same failed preparation run.
 
 Barrel generation treats the committed art manifest as required input, not a
 recoverable cache. Missing or malformed manifests, empty or invalid entries,
-invalid filenames, and duplicate export names fail before either art barrel is
+invalid filenames, and duplicate export names fail before the art barrel is
 written. Targets must be lowercase kebab-case WebP basenames beginning with a
 letter. Legacy string hashes and object entries containing a string `hash` are
 accepted; unrelated cache metadata does not affect generation.
 
-Combined art synchronization reads and validates one manifest snapshot, then
-builds both barrels before writing either. The gear-only command uses the same
-validation but refuses to run when `assets.generated.ts` is stale, since
-`gear-art.generated.ts` imports it. Input-validation failures preserve both barrels;
-filesystem write failures do not provide transactional rollback.
+Art synchronization reads and validates one manifest snapshot before writing
+the general art barrel. The Gear alias uses the same validation. Input-validation
+failures preserve the existing barrel; filesystem write failures do not provide
+transactional rollback.
 
 The fast generated check requires every static target and all four Gear slot
 backgrounds, and checks that every referenced optimized asset is a regular file.

@@ -24,16 +24,17 @@ export interface DealEnemyScaledDamageOptions {
   riders?: (state: BattleState, finalDamage: number, combatTexts: CombatTextEvent[]) => BattleState;
 }
 
-export function dealEnemyScaledDamage(
+/** Shared pacing, vulnerability, Block spending and Armor mitigation before hit reactions. */
+export function prepareScaledEnemyHit(
   state: BattleState,
   baseDamage: number,
   stat: "physical" | "burn" | "nature",
   combatTexts: CombatTextEvent[],
-  options: DealEnemyScaledDamageOptions = {},
-): BattleState {
-  if (baseDamage <= 0 || state.enemyHealth <= 0) return state;
+  multiplier = 1,
+) {
+  if (baseDamage <= 0 || state.enemyHealth <= 0) return { state, damage: 0 };
   const pacedDamage = paceCombatDamage(state, baseDamage + getEnemyDamageVulnerabilityBonus(state), "player");
-  const damage = Math.max(0, Math.round(pacedDamage * (options.multiplier ?? 1)));
+  const damage = Math.max(0, Math.round(pacedDamage * multiplier));
   const absorbed = Math.min(damage, state.enemyMitigation.block);
   if (absorbed > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "block", amount: absorbed });
@@ -45,10 +46,25 @@ export function dealEnemyScaledDamage(
   const sundered = applySunderingArmorRemoval(blocked, stat);
   const armor = stat === "physical" ? sundered.enemyMitigation.armor : 0;
   const finalDamage = Math.max(0, damage - absorbed - armor);
+  return { state: sundered, damage: finalDamage };
+}
+
+export function dealEnemyScaledDamage(
+  state: BattleState,
+  baseDamage: number,
+  stat: "physical" | "burn" | "nature",
+  combatTexts: CombatTextEvent[],
+  options: DealEnemyScaledDamageOptions = {},
+): BattleState {
+  const { state: sundered, damage: finalDamage } = prepareScaledEnemyHit(
+    state,
+    baseDamage,
+    stat,
+    combatTexts,
+    options.multiplier,
+  );
   if (finalDamage <= 0) return sundered;
-  if (finalDamage > 0) {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat, amount: finalDamage });
-  }
+  mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat, amount: finalDamage });
   const hit = damageEnemyHealth(sundered, finalDamage);
   const rewarded = decayArmorAfterDamage(
     applyIronGuardReward(hit.state, stat, hit.healthDamage, combatTexts),

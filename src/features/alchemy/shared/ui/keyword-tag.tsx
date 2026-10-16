@@ -1,4 +1,5 @@
-import { Fragment } from "react";
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import type { KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -6,7 +7,7 @@ import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-p
 import { cn } from "@/lib/utils";
 
 import { getPlasmaColorPair, getKeywordShineColors, keywordIcons, tooltipHeaderClass } from "../config";
-import { tokenizeDescription } from "../utils/string";
+import { renderColoredKeywords } from "./localized-description";
 import { PortaledTooltip } from "./tooltips/portaled-tooltip";
 import { TooltipBody } from "./tooltips/tooltip-panel";
 import { useHoverVisible } from "./use-hover-visible";
@@ -34,6 +35,7 @@ export function KeywordTag({
   disabled = false,
   selected,
 }: KeywordTagProps) {
+  const i18n = useGameTranslation();
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLButtonElement>();
 
@@ -63,7 +65,7 @@ export function KeywordTag({
           aria-hidden="true"
         />
       ) : null}
-      {def.label}
+      {i18n.displayText(def.label)}
     </span>
   );
 
@@ -79,7 +81,11 @@ export function KeywordTag({
         choice && ["transmutation-keyword-choice", def.colorClass],
         selected && !choice && "ring-2 ring-current",
       )}
-      aria-label={onSelect ? `Choose ${def.label}` : `Inspect ${def.label} keyword`}
+      aria-label={i18n.displayText(
+        onSelect
+          ? i18n.text("ui.keyword-tag.d1", "Choose {{value0}}", { value0: i18n.displayText(def.label) })
+          : i18n.text("ui.keyword-tag.d2", "Inspect {{value0}} keyword", { value0: i18n.displayText(def.label) }),
+      )}
       aria-pressed={onSelect ? selected : undefined}
       disabled={disabled}
       onClick={onSelect}
@@ -88,7 +94,7 @@ export function KeywordTag({
       onFocusCapture={onFocusCapture}
       onBlurCapture={onBlurCapture}
     >
-      <span className={onSelect ? undefined : "cursor-help"}>{tag}</span>
+      <span className={onSelect ? undefined : "cursor-help"}>{i18n.displayText(tag)}</span>
       {choice && selected && !reducedMotion ? (
         <ShineBorder shineColor={getKeywordShineColors(keywordId)} borderWidth={2} duration={8} />
       ) : null}
@@ -100,17 +106,7 @@ export function KeywordTag({
         <span className={cn("flex items-center gap-2", tooltipHeaderClass)}>
           <KeywordTag keywordId={keywordId} className="text-sm sm:text-base" showIcon />
         </span>
-        <TooltipBody>
-          {tokenizeDescription(def.description).map((part, index) =>
-            part.keywordId ? (
-              <span key={index} className={cn(keywordDefinitions[part.keywordId]?.colorClass, "font-semibold")}>
-                {part.text}
-              </span>
-            ) : (
-              <Fragment key={index}>{part.text}</Fragment>
-            ),
-          )}
-        </TooltipBody>
+        <TooltipBody>{i18n.read(() => renderColoredKeywords(def.description))}</TooltipBody>
       </PortaledTooltip>
     </button>
   );

@@ -8,7 +8,7 @@ import {
 import { beforeEach, expect, it } from "vitest";
 import { deductGold, setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { commitResolvedBattle } from "@/features/alchemy/shared/stores/write/run-battle";
-import { readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { defaultGameSession } from "@/app/application-session";
 
@@ -24,16 +24,20 @@ it("profile gold write port deducts gold and clamps at zero", () => {
   expect(readRunProfile(defaultGameSession).gold).toBe(0);
 });
 
-it("commits a resolved battle's Gold change without replacing other purse changes in the transaction", () => {
+it.each([
+  { purse: 200, expected: 207, earned: 7 },
+  { purse: Number.MAX_SAFE_INTEGER - 1, expected: Number.MAX_SAFE_INTEGER, earned: 1 },
+])("commits a battle Gold change onto the live purse ($purse)", ({ purse, expected, earned }) => {
   setRunProgress({ gold: 100 });
   setRunSession({ hasActiveRun: true });
   mutateGameplayForTest((draft) => initializeActiveBattle(draft, makeTestBattleState({ gold: 100 })));
   const before = readBattle(defaultGameSession).battleState;
   mutateGameplayForTest((draft) => {
-    setGold(draft, 200);
+    setGold(draft, purse);
     commitResolvedBattle(draft, before, { ...before, gold: before.gold + 7 });
   });
-  expect(readRunProfile(defaultGameSession).gold).toBe(207);
-  expect(readBattle(defaultGameSession).battleState.gold).toBe(207);
+  expect(readRunProfile(defaultGameSession).gold).toBe(expected);
+  expect(readBattle(defaultGameSession).battleState.gold).toBe(expected);
+  expect(readActiveRun(defaultGameSession).runGoldEarned).toBe(earned);
   expect(readBattle(defaultGameSession)).not.toHaveProperty("pendingBattleTransition");
 });

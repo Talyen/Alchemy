@@ -17,13 +17,24 @@ vi.mock("@floating-ui/dom", async (importOriginal) => {
   };
 });
 
-function Harness({ placement }: { placement: PortaledTooltipPlacement }) {
+function Harness({
+  placement,
+  allowFlip = true,
+  horizontalInset,
+}: {
+  placement: PortaledTooltipPlacement;
+  allowFlip?: boolean;
+  horizontalInset?: number;
+}) {
   const triggerRef = useRef<HTMLDivElement>(null);
   const { tooltipRef, placeBelow, tooltipSide, tooltipStyle } = usePortaledTooltipPlacement(
     triggerRef,
     true,
     8,
     placement,
+    undefined,
+    allowFlip,
+    horizontalInset,
   );
   return (
     <>
@@ -43,6 +54,40 @@ describe("usePortaledTooltipPlacement", () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
+  });
+
+  it.each([
+    { triggerY: 16, height: 40, expectedTop: 64 },
+    { triggerY: 1040, height: 80, expectedTop: 992 },
+  ])("keeps fixed below tooltips within the viewport at y=$triggerY", async ({ triggerY, height, expectedTop }) => {
+    const center = 1836;
+    const { computePosition } = await vi.importActual<typeof floatingUi>("@floating-ui/dom");
+    vi.spyOn(floatingUi, "autoUpdate").mockImplementation(() => () => {});
+    vi.spyOn(floatingUi, "computePosition").mockImplementation((reference, floating, options) =>
+      computePosition(reference, floating, {
+        ...options,
+        platform: {
+          ...floatingUi.platform,
+          getElementRects: async () => ({
+            reference: { x: center - 20, y: triggerY, width: 40, height: 40 },
+            floating: { x: 0, y: 0, width: 140, height },
+          }),
+          getClippingRect: async () => ({ x: 0, y: 0, width: 1920, height: 1080 }),
+          getOffsetParent: async () => window,
+          isElement: async () => false,
+          convertOffsetParentRelativeRectToViewportRelativeRect: async ({ rect }) => rect,
+        },
+      }),
+    );
+    vi.spyOn(document.documentElement, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 1920, 1080));
+
+    render(<Harness placement="below" allowFlip={false} horizontalInset={8} />);
+
+    const floating = screen.getByTestId("tip-floating");
+    await waitFor(() => expect(floating.style.left).toBe(`${center - 70}px`));
+    expect(floating.style.top).toBe(`${expectedTop}px`);
+    expect(floating.dataset.placeBelow).toBe("true");
+    expect(floating.dataset.side).toBe("none");
   });
 
   it("keeps the newest position when an older measurement finishes after a resize", async () => {

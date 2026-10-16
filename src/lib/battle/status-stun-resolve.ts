@@ -9,6 +9,14 @@ export function resolveStunTrigger(
   combatTexts?: CombatTextEvent[],
   preHitHealth = state.enemyHealth,
   fromHolyDamage = false,
+  setupHealthDamage = 0,
 ): BattleState {
-  return resolveStunTriggerCore(state, combatTexts, preHitHealth, fromHolyDamage, applyThunderstoneLeech);
+  return resolveStunTriggerCore(
+    state,
+    combatTexts,
+    preHitHealth,
+    fromHolyDamage,
+    applyThunderstoneLeech,
+    setupHealthDamage,
+  );
 }

@@ -1,7 +1,11 @@
+import { createCleanup } from "@/lib/cleanup";
+import { makeTestCard } from "../../../../../fixtures/cards";
 import { createRef, type MouseEventHandler, type RefObject } from "react";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { mutateRunForTest, setBattleActiveForTest } from "../../../../../helpers/run-domain-store-test";
+import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { battlePresentation } from "@/app/battle-presentation";
 import { BattleHand } from "@/features/alchemy/run-loop/screens/battle-screen/hand";
 import type {
@@ -53,15 +57,13 @@ vi.mock("@/features/alchemy/run-loop/screens/battle-screen/use-battle-descriptio
   useBattleDescriptionContext: () => ({}),
 }));
 
-const affordableCard: BattleCard = {
+const affordableCard: BattleCard = makeTestCard({
   id: "slash",
   title: "Slash",
   descriptionLines: ["Deal damage."],
-  art: "",
-  cost: 1,
   effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
   uid: 1,
-};
+});
 
 const expensiveCard: BattleCard = {
   ...affordableCard,
@@ -107,7 +109,7 @@ describe("BattleHand", () => {
     battlePresentation.getState().resetPresentation();
   });
 
-  it("recovers focus to the toolbar reference outside the bottom bar after the last playable card", () => {
+  it.each(["none", "blur", "ArrowRight", "F7"])("respects input after playing a card (%s)", (interruption) => {
     const endTurnButtonRef = createRef<HTMLButtonElement>();
     const refs = { handCardRefs: { current: {} }, endTurnButtonRef } as unknown as BattleRefsProps;
     const onCardClick = vi.fn();
@@ -122,7 +124,7 @@ describe("BattleHand", () => {
             presentation={battlePresentation}
             view={{ battleState: { ...state, hand }, stagePixelRatio: 1 } as unknown as RequiredBattleViewProps}
             refs={refs}
-            actions={{ onCardClick } as BattleActionsProps}
+            actions={{ onCardClick, onWishChoice: vi.fn() }}
             playabilityState={{ ...state, hand }}
           />
         </section>
@@ -134,21 +136,26 @@ describe("BattleHand", () => {
       .spyOn(target, "getClientRects")
       .mockReturnValue([new DOMRect(0, 0, 44, 44)] as unknown as DOMRectList);
     target.scrollIntoView = vi.fn();
-    try {
-      const card = screen.getByRole("button", { name: "Play Slash" });
-      card.focus();
-      fireEvent.keyDown(card, { key: "Enter" });
-      fireEvent.click(card);
-      expect(onCardClick).toHaveBeenCalledOnce();
-      rerender(tree([]));
-      expect(document.activeElement).toBe(target);
-    } finally {
-      geometry.mockRestore();
+    using _scopeCleanup = createCleanup(() => geometry.mockRestore());
+
+    const card = screen.getByRole("button", { name: "Play Slash" });
+    card.focus();
+    fireEvent.keyDown(card, { key: "Enter" });
+    fireEvent.click(card);
+    expect(onCardClick).toHaveBeenCalledOnce();
+    if (interruption === "blur") {
+      fireEvent.blur(window);
+      fireEvent.focus(window);
     }
+    if (interruption !== "none" && interruption !== "blur") {
+      fireEvent.keyDown(card, { key: interruption });
+    }
+    rerender(tree([]));
+    expect(document.activeElement).toBe(interruption !== "none" ? document.body : target);
   });
 
   it("keeps playable cards colored and interactive during transfers", () => {
-    battlePresentation.setState({ cardTransferInProgress: true });
+    battlePresentation.getState().setCardTransferInProgress(true);
     renderHand();
 
     const affordable = screen.getByRole("button", { name: "Play Slash" });
@@ -162,52 +169,19 @@ describe("BattleHand", () => {
   it("visibly acknowledges an unaffordable rejection while muted and clears it afterwards", () => {
     const wasMuted = audioState.muted;
     audioState.muted = true;
-    try {
-      renderHand();
-      const expensive = screen.getByRole("button", { name: "Play Meteor" });
-      const affordable = screen.getByRole("button", { name: "Play Slash" });
-      act(() =>
-        battlePresentation.setState({ cardRejection: { cardKey: getHandCardKey(expensiveCard, 1), mana: true } }),
-      );
-      expect(expensive.classList.contains("card-play-rejected")).toBe(true);
-      expect(affordable.classList.contains("card-play-rejected")).toBe(false);
-      act(() => battlePresentation.setState({ cardRejection: null }));
-      expect(expensive.classList.contains("card-play-rejected")).toBe(false);
-    } finally {
-      audioState.muted = wasMuted;
-    }
-  });
+    mutateRunForTest((draft) => {
+      setBattleActiveForTest(draft, true);
+      setScreen(draft, "battle");
+    });
+    using _scopeCleanup = createCleanup(() => (audioState.muted = wasMuted));
 
-  it("overlays stun presentation on hand cards while the player is crowd-controlled", () => {
-    const battleState = {
-      ...defaultBattleState(),
-      turnPhase: "player" as const,
-      mana: 2,
-      wishOptions: null,
-      hand: [affordableCard, expensiveCard],
-      playerCC: { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 },
-    };
-    const view = {
-      battleState,
-      stagePixelRatio: 1,
-    } as unknown as RequiredBattleViewProps;
-    const refs = {
-      handCardRefs: { current: {} },
-    } as unknown as BattleRefsProps;
-    const actions = {
-      onCardClick: vi.fn(),
-    } as unknown as BattleActionsProps;
-
-    render(
-      <BattleHand
-        presentation={battlePresentation}
-        view={view}
-        refs={refs}
-        actions={actions}
-        playabilityState={battleState}
-      />,
-    );
-
-    expect(screen.getAllByTestId("combatant-status-effect")).toHaveLength(2);
+    renderHand();
+    const expensive = screen.getByRole("button", { name: "Play Meteor" });
+    const affordable = screen.getByRole("button", { name: "Play Slash" });
+    act(() => battlePresentation.getState().rejectCardPlay(getHandCardKey(expensiveCard, 1), true));
+    expect(expensive.classList.contains("card-play-rejected")).toBe(true);
+    expect(affordable.classList.contains("card-play-rejected")).toBe(false);
+    act(() => battlePresentation.getState().resetPresentation());
+    expect(expensive.classList.contains("card-play-rejected")).toBe(false);
   });
 });

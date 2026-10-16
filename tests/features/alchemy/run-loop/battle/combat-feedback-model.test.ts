@@ -13,6 +13,15 @@ const hit: CombatTextEvent = { target: "enemy", kind: "damage", stat: "physical"
 const heal: CombatTextEvent = { target: "enemy", kind: "heal", stat: "health", amount: 3 };
 
 describe("combat feedback preparation and merging", () => {
+  it("keeps a later Critical Hit visible when rapid hits merge", () => {
+    const current = burst(1, [{ ...hit, healthLost: 2 }]);
+    const incoming = burst(2, [{ ...hit, healthLost: 3, critical: true }], 10);
+    const result = consolidateCombatBursts([current], [incoming], 10);
+    expect(result.bursts).toHaveLength(1);
+    expect(result.bursts[0]!.entries[0]).toMatchObject({ amount: 10, healthLost: 5, critical: true });
+    expect(current.entries[0]).not.toHaveProperty("critical");
+  });
+
   it("merges a partial hit once, keeping expiry, order, and input events intact", () => {
     const current = [burst(1, [hit])];
     const incoming = [burst(2, [hit, heal], 10)];
@@ -76,6 +85,41 @@ describe("combat feedback preparation and merging", () => {
     expect(zero.bursts).toHaveLength(1);
     expect(zero.bursts[0]!.entries).toHaveLength(1);
     expect(zero.bursts[0]!.entries[0]).toMatchObject({ ...hit, amount: 0, displayText: "0" });
-    expect(prepareCombatFeedback([], 3, 20, 1100)).toEqual({ bursts: [], impacts: {} });
+    expect(prepareCombatFeedback([], 3, 20, 1100)).toEqual({ bursts: [], impacts: {}, reactions: [] });
   });
+});
+
+it("totals reaction damage for display while retaining packet facts for impacts and input events", () => {
+  const events: CombatTextEvent[] = [
+    { ...hit, amount: 6, critical: true },
+    { ...hit, amount: 8, additive: false },
+    { target: "enemy", kind: "notice", stat: "physical", text: "Shatter", signal: "reaction", reactionId: "shatter" },
+    { target: "enemy", kind: "damage", stat: "block", amount: 6, impact: false },
+    { target: "enemy", kind: "damage", stat: "armor", amount: 3, impact: false },
+    { target: "player", kind: "damage", stat: "health", amount: 2, impact: false },
+  ];
+  const original = structuredClone(events);
+  const prepared = prepareCombatFeedback(events, 8, 100, 1100);
+  expect(prepared.bursts[1]!.entries).toHaveLength(3);
+  expect(prepared.bursts[1]!.entries[0]).toMatchObject({ amount: 14, displayText: "-14", includesCritical: true });
+  expect(prepared.impacts.enemyImpactCue).toMatchObject({ amount: 8 });
+  expect(prepared.impacts.playerImpactCue).toBeUndefined();
+  expect(prepared.reactions).toMatchObject([{ target: "enemy", reactionIds: ["shatter"], lifetimeMs: 1600 }]);
+  expect(events).toEqual(original);
+});
+
+it("combines periodic and reaction Burn visually without feeding their total back into impact strength", () => {
+  const prepared = prepareCombatFeedback(
+    [
+      { target: "enemy", kind: "damage", stat: "burn", amount: 8, periodic: true },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 3, additive: false },
+      { target: "enemy", kind: "notice", stat: "burn", text: "Bloodboil", signal: "reaction", reactionId: "bloodboil" },
+    ],
+    1,
+    0,
+    1100,
+  );
+  expect(prepared.bursts[0]!.entries).toHaveLength(1);
+  expect(prepared.bursts[0]!.entries[0]).toMatchObject({ amount: 11, displayText: "-11" });
+  expect(prepared.impacts.enemyImpactCue).toMatchObject({ amount: 8, periodic: true });
 });

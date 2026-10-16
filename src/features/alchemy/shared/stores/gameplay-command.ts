@@ -18,11 +18,27 @@ interface GameplayCommandOptions<T> {
   restore?: { settings?: SettingsSaveFields };
 }
 
-const draftRuntimes = new WeakMap<object, SessionRuntime>();
+interface GameplayCommandScope {
+  runtime: SessionRuntime;
+  failure?: { error: unknown };
+}
+
+const draftScopes = new WeakMap<object, GameplayCommandScope>();
+function gameplayDraftScope(draft: GameplayDraft): GameplayCommandScope {
+  const scope = draftScopes.get(draft);
+  if (!scope) throw new Error("Gameplay input requires an open command draft");
+  return scope;
+}
+
 export function gameplayDraftRuntime(draft: GameplayDraft): SessionRuntime {
-  const runtime = draftRuntimes.get(draft);
-  if (!runtime) throw new Error("Gameplay input requires an open command draft");
-  return runtime;
+  return gameplayDraftScope(draft).runtime;
+}
+
+/** A failed coupled mutation cannot be accepted by catching its error in the outer recipe. */
+export function abortGameplayCommand(draft: GameplayDraft, error: unknown): never {
+  const scope = gameplayDraftScope(draft);
+  scope.failure ??= { error };
+  throw error;
 }
 
 /** Bind executable dependencies to this draft, rather than merely to its session. */
@@ -54,11 +70,13 @@ export function dispatchGameplayCommand<T>(
       ? runtime.settingsCodec.prepareHydration(options.restore.settings)
       : undefined;
     const next = produce(base, (draft: GameplayDraft) => {
-      draftRuntimes.set(draft, runtime);
+      const scope: GameplayCommandScope = { runtime };
+      draftScopes.set(draft, scope);
       try {
         outcome = execute(draft);
+        if (scope.failure) throw scope.failure.error;
       } finally {
-        draftRuntimes.delete(draft);
+        draftScopes.delete(draft);
       }
       assertSynchronousResult(outcome);
       if (!outcome || (outcome.kind !== "accepted" && outcome.kind !== "rejected") || !("value" in outcome)) {
@@ -94,7 +112,9 @@ export function dispatchGameplayCommand<T>(
   } finally {
     runtime.inCommand = false;
   }
-  if (outcome.kind === "accepted") options?.afterCommit?.(outcome.value);
+  // Publication observers may close this session. Committed data survives,
+  // but a closed owner cannot start new presentation or follow-up commands.
+  if (outcome.kind === "accepted" && runtime.lifetime.isActive()) options?.afterCommit?.(outcome.value);
   return outcome.value;
 }
 
@@ -106,7 +126,7 @@ export function createGameplayCommand<Args extends unknown[], Ret>(
   return (...args) => dispatchGameplayCommand<Ret>((draft) => mutate(draft, ...args), options, gameSession);
 }
 
-export function subscribeRunSessionCommits(listener: (revision: number) => void, gameSession: GameSession): () => void {
+export function subscribeRunSessionCommits(listener: (revision: number) => void, gameSession: GameSession) {
   return subscribeGameplayCommits(listener, gameSession);
 }
 

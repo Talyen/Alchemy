@@ -18,21 +18,21 @@ it("buys the offered identity and prevents a repeat purchase of its slot", async
   const view = (purchasedSlotKeys: string[]) => (
     <EquipmentShopScreen
       gold={100}
-      gear={[testGear]}
+      items={[testGear]}
       refreshesLeft={1}
       purchasedSlotKeys={purchasedSlotKeys}
-      getGearPrice={() => 60}
+      getPrice={() => 60}
       refreshPrice={15}
-      onBuyGear={onBuyGear}
+      onBuy={onBuyGear}
       onRefresh={vi.fn()}
       onContinue={vi.fn()}
     />
   );
   const { rerender } = render(view([]));
-  await userEvent.click(screen.getByRole("button", { name: "Buy Longsword" }));
+  await userEvent.click(screen.getByRole("button", { name: "Buy Longsword for 60 Gold" }));
   expect(onBuyGear).toHaveBeenCalledExactlyOnceWith(testGear, "iron-sword-1");
   rerender(view(["iron-sword-1"]));
-  const purchased = screen.getByRole("button", { name: "Longsword" });
+  const purchased = screen.getByRole("button", { name: "Longsword. Purchased" });
   expect(purchased.getAttribute("aria-disabled")).toBe("true");
   purchased.focus();
   expect(document.activeElement).toBe(purchased);

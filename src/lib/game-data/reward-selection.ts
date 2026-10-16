@@ -118,15 +118,18 @@ export function selectRewardCards(
     }
   }
 
-  // Dampening changes preference, not the number of distinct choices promised.
+  // Ownership changes preference, not the number of promised choices.
   if (selected.length < count) {
-    const fallback = pool.filter((card) => !selectedIds.has(card.id));
-    while (selected.length < count && fallback.length > 0) {
-      const chosen = pickRandom(fallback, rng)!;
-      selected.push(chosen);
-      selectedIds.add(chosen.id);
-      pruneSelectedCards(fallback, selectedIds);
+    for (const card of shuffle(
+      pool.filter((candidate) => !selectedIds.has(candidate.id)),
+      rng,
+    )) {
+      if (selectedIds.has(card.id)) continue;
+      selected.push(card);
+      selectedIds.add(card.id);
+      if (selected.length >= count) break;
     }
   }
+
   return selected;
 }

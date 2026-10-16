@@ -1,12 +1,13 @@
 import { useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import { CombatTextRail } from "@/features/alchemy/run-loop/battle/presentation/ui/combat-text";
-import type { BattleRefs, CardRect, CombatTextBurst } from "@/features/alchemy/shared/types";
+import type { BattleRefs, CardRect, CombatTextBurst, ReactionAnnouncement } from "@/features/alchemy/shared/types";
 import { getBattleSceneLocalRect, viewportRectToBattleSceneRect, type BattleSceneLocalRect } from "../controller-utils";
 import { useStore } from "zustand";
 import type { BattlePresentationStore } from "../battle-presentation-store";
 
 export function CombatTextLayer({ refs, presentation }: { refs: BattleRefs; presentation: BattlePresentationStore }) {
   const bursts = useStore(presentation, (state) => state.floatingCombatBursts);
+  const reactions = useStore(presentation, (state) => state.reactionAnnouncements);
   const targetBursts = useMemo(() => {
     const targets: Record<CombatTextBurst["target"], CombatTextBurst[]> = { player: [], enemy: [] };
     for (const burst of bursts) targets[burst.target].push(burst);
@@ -14,8 +15,10 @@ export function CombatTextLayer({ refs, presentation }: { refs: BattleRefs; pres
   }, [bursts]);
   const playerLayerRef = useRef<HTMLDivElement>(null);
   const enemyLayerRef = useRef<HTMLDivElement>(null);
-  const playerActive = targetBursts.player.length > 0;
-  const enemyActive = targetBursts.enemy.length > 0;
+  const playerReactions = reactions.filter((entry) => entry.target === "player");
+  const enemyReactions = reactions.filter((entry) => entry.target === "enemy");
+  const playerActive = targetBursts.player.length > 0 || playerReactions.length > 0;
+  const enemyActive = targetBursts.enemy.length > 0 || enemyReactions.length > 0;
   const { playerPanelRef, enemyPanelRef, battleSceneRef } = refs;
 
   useLayoutEffect(() => {
@@ -43,8 +46,8 @@ export function CombatTextLayer({ refs, presentation }: { refs: BattleRefs; pres
 
   return (
     <>
-      <CombatTextTarget layerRef={playerLayerRef} bursts={targetBursts.player} />
-      <CombatTextTarget layerRef={enemyLayerRef} bursts={targetBursts.enemy} />
+      <CombatTextTarget layerRef={playerLayerRef} bursts={targetBursts.player} reactions={playerReactions} />
+      <CombatTextTarget layerRef={enemyLayerRef} bursts={targetBursts.enemy} reactions={enemyReactions} />
     </>
   );
 }
@@ -90,11 +93,13 @@ function positionLayer(
 function CombatTextTarget({
   layerRef,
   bursts,
+  reactions,
 }: {
   layerRef: RefObject<HTMLDivElement | null>;
   bursts: CombatTextBurst[];
+  reactions: ReactionAnnouncement[];
 }) {
-  if (bursts.length === 0) return null;
+  if (bursts.length === 0 && reactions.length === 0) return null;
   // Portraits establish their own transform stacking contexts. Text must sit above card flights in the scene.
   return (
     <div
@@ -102,7 +107,7 @@ function CombatTextTarget({
       data-testid="combat-text-layer"
       className="pointer-events-none absolute top-0 left-0 z-[100] will-change-transform"
     >
-      <CombatTextRail bursts={bursts} />
+      <CombatTextRail bursts={bursts} reactions={reactions} />
     </div>
   );
 }

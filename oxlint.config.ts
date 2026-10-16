@@ -31,7 +31,6 @@ export default defineConfig({
     ".knip-output.json",
     ".eslintcache",
     "src/**/*.generated.ts",
-    "src/lib/game-data/gear-art.generated.ts",
   ],
   rules: {
     "constructor-super": "error",

@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
 import { isPlayerDefeated, getBattleCompanionDamageModifiers } from "@/lib/battle";
 import { BATTLE_ACTOR_TOP, BATTLE_ACTOR_VIEWPORT_OFFSET } from "@/lib/game-constants";
@@ -14,6 +16,7 @@ import {
   getEnemyKeywordShineColors,
   getPlasmaColorPairForCharacter,
 } from "@/features/alchemy/shared/config";
+import { ManaPanel } from "../../battle/presentation/ui/mana-dock";
 import { ShakingArtPanel, ShakingCompanionPanel } from "../../battle/presentation/actor-vfx";
 import { getActiveCcKeyword } from "@/features/alchemy/shared/utils";
 import type { BattleFeedbackProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
@@ -33,6 +36,7 @@ export function BattleActors({
   onInspectEnemy?: ((trigger: HTMLElement) => void) | undefined;
   enemyInspectionOpen?: boolean | undefined;
 }) {
+  const i18n = useGameTranslation();
   const { battleState, characterId, heroArt, playerName, aspectMode } = view;
   const { playerStatusChips, enemyStatusChips, activeLabyrinthModifiers } = feedback;
   const { playerPanelRef, enemyPanelRef } = refs;
@@ -60,7 +64,7 @@ export function BattleActors({
           <ShakingArtPanel
             presentation={presentation}
             side="player"
-            title={playerName}
+            title={i18n.displayText(playerName)}
             art={heroArt}
             health={battleState.playerHealth}
             maxHealth={battleState.playerMaxHealth}
@@ -75,6 +79,7 @@ export function BattleActors({
             turnShineColors={getCharacterShineColors(characterId)}
             ccKeyword={playerCcKeyword}
             plasmaColorPair={getPlasmaColorPairForCharacter(characterId)}
+            artOverlay={<ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} presentation={presentation} />}
             artCorner={
               battleState.activeCompanion ? (
                 <div className={battleCompanionCornerClass}>
@@ -98,7 +103,7 @@ export function BattleActors({
         <ShakingArtPanel
           presentation={presentation}
           side="enemy"
-          title={battleState.currentEnemy.title}
+          title={i18n.displayText(battleState.currentEnemy.title)}
           art={battleState.currentEnemy.art}
           health={battleState.enemyHealth}
           maxHealth={battleState.enemyMaxHealth}

@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import "../../../../helpers/mock-audio";
 
 import { describe, expect, it, vi } from "vitest";
@@ -5,12 +6,13 @@ import { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/bat
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { CardTransfer } from "@/features/alchemy/shared/types";
+import type { TimerClock } from "@/lib/animation/game-timer";
 import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
 import { playBattleEvent } from "@/lib/audio";
 
-function makeTransfers(respectGeneration = true) {
-  const playback = new PlaybackLifetime();
+function makeTransfers(respectGeneration = true, clock?: TimerClock) {
+  const playback = new PlaybackLifetime(clock);
   let transfers: CardTransfer[] = [];
   const presentation = {
     setCardTransfers: (update: (current: CardTransfer[]) => CardTransfer[]) => {
@@ -24,7 +26,7 @@ function makeTransfers(respectGeneration = true) {
     playback,
     getPresentation: () => presentation,
     battleSceneRef: { current: null },
-    discardPileRef: { current: null },
+    handDockRef: { current: null },
     handCardRefs: { current: {} },
     measureElementRect: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     measureVisualCardRect: () => ({ x: 0, y: 0, width: 100, height: 100 }),
@@ -42,45 +44,67 @@ describe("battle transfer lifetime wiring", () => {
     "revokes abandoned discard UI and scheduling authority (caller checks generation: %s)",
     async (respectGeneration) => {
       vi.useFakeTimers();
-      try {
-        const transfers = makeTransfers(respectGeneration);
-        const cards = [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })];
-        const abandoned = transfers.animateDiscardedHand(cards, transfers.playback.id);
-        expect(transfers.readTransfers()).toHaveLength(1);
-        transfers.playback.restart();
-        const replacement = transfers.animateDiscardedHand([cards[0]!], transfers.playback.id);
-        transfers.presentation.setCardTransferInProgress.mockClear();
-        await Promise.resolve();
-        expect(transfers.readTransfers()).toHaveLength(1);
-        expect(transfers.playback.timers.size).toBe(1);
-        expect(transfers.presentation.setCardTransferInProgress).not.toHaveBeenCalled();
-        transfers.playback.cancel();
-        await Promise.all([abandoned, replacement]);
-        expect(transfers.readTransfers()).toEqual([]);
-      } finally {
-        vi.useRealTimers();
-      }
+      using _scopeCleanup = createCleanup(() => vi.useRealTimers());
+
+      const transfers = makeTransfers(respectGeneration);
+      const cards = [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })];
+      const abandoned = transfers.animateDiscardedHand(cards, transfers.playback.id);
+      expect(transfers.readTransfers()).toHaveLength(1);
+      transfers.playback.restart();
+      const replacement = transfers.animateDiscardedHand([cards[0]!], transfers.playback.id);
+      transfers.presentation.setCardTransferInProgress.mockClear();
+      await Promise.resolve();
+      expect(transfers.readTransfers()).toHaveLength(1);
+      expect(transfers.playback.pendingTimers).toBe(1);
+      expect(transfers.presentation.setCardTransferInProgress).not.toHaveBeenCalled();
+      transfers.playback.cancel();
+      await Promise.all([abandoned, replacement]);
+      expect(transfers.readTransfers()).toEqual([]);
     },
   );
+
+  it("overlaps departures at 70 ms and waits for the final flight", async () => {
+    vi.useFakeTimers();
+    using _scopeCleanup = createCleanup(() => vi.useRealTimers());
+
+    const transfers = makeTransfers();
+    let finished = false;
+    const pending = transfers
+      .animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })], 0)
+      .then(() => {
+        finished = true;
+      });
+    expect(transfers.readTransfers()).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(69);
+    expect(transfers.readTransfers()).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(transfers.readTransfers()).toHaveLength(2);
+    expect(transfers.readTransfers().map((transfer) => transfer.card.id)).toEqual(["block", "slash"]);
+    await vi.advanceTimersByTimeAsync(410);
+    expect(transfers.readTransfers()).toHaveLength(1);
+    expect(finished).toBe(false);
+    await vi.advanceTimersByTimeAsync(70);
+    await pending;
+    expect(transfers.readTransfers()).toEqual([]);
+    expect(transfers.playback.pendingTimers).toBe(0);
+  });
 
   it("cancels delayed transfer sounds with their originating battle", async () => {
     vi.useFakeTimers();
     vi.mocked(playBattleEvent).mockClear();
-    try {
-      const transfers = makeTransfers();
-      const abandoned = transfers.animateDiscardedHand(
-        [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })],
-        transfers.playback.id,
-      );
-      expect(playBattleEvent).toHaveBeenCalledTimes(1);
-      transfers.playback.restart();
-      await abandoned;
-      await vi.runAllTimersAsync();
-      expect(playBattleEvent).toHaveBeenCalledTimes(1);
-      expect(transfers.playback.timers.size).toBe(0);
-    } finally {
-      vi.useRealTimers();
-    }
+    using _scopeCleanup = createCleanup(() => vi.useRealTimers());
+
+    const transfers = makeTransfers();
+    const abandoned = transfers.animateDiscardedHand(
+      [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })],
+      transfers.playback.id,
+    );
+    expect(playBattleEvent).toHaveBeenCalledTimes(1);
+    transfers.playback.restart();
+    await abandoned;
+    await vi.runAllTimersAsync();
+    expect(playBattleEvent).toHaveBeenCalledTimes(1);
+    expect(transfers.playback.pendingTimers).toBe(0);
   });
 
   it("revokes retained draw dependencies without exposing the replacement draw lease", async () => {
@@ -104,18 +128,16 @@ describe("battle transfer lifetime wiring", () => {
 
   it("cancels a transfer and removes its timer without requiring a full battle reset", async () => {
     vi.useFakeTimers();
-    try {
-      const transfers = makeTransfers();
-      const discarding = transfers.animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 })], 0);
-      expect(transfers.readTransfers()).toHaveLength(1);
-      expect(transfers.playback.timers.size).toBe(1);
-      transfers.playback.cancelTransfers();
-      await discarding;
-      expect(transfers.readTransfers()).toEqual([]);
-      expect(transfers.playback.timers.size).toBe(0);
-    } finally {
-      vi.useRealTimers();
-    }
+    using _scopeCleanup = createCleanup(() => vi.useRealTimers());
+
+    const transfers = makeTransfers();
+    const discarding = transfers.animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 })], 0);
+    expect(transfers.readTransfers()).toHaveLength(1);
+    expect(transfers.playback.pendingTimers).toBe(1);
+    transfers.playback.cancelTransfers();
+    await discarding;
+    expect(transfers.readTransfers()).toEqual([]);
+    expect(transfers.playback.pendingTimers).toBe(0);
   });
 
   it("does not publish or schedule a transfer after synchronous cancellation", async () => {
@@ -123,37 +145,37 @@ describe("battle transfer lifetime wiring", () => {
     transfers.playback.cancel();
     await transfers.animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 })], 0);
     expect(transfers.readTransfers()).toEqual([]);
-    expect(transfers.playback.timers.size).toBe(0);
+    expect(transfers.playback.pendingTimers).toBe(0);
   });
 
   it("finishes a transfer at its existing duration and releases its overlay", async () => {
     vi.useFakeTimers();
-    try {
-      const transfers = makeTransfers();
-      const discarding = transfers.animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 })], 0);
-      const transfer = transfers.readTransfers()[0]!;
-      const duration = Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs;
-      await vi.advanceTimersByTimeAsync(duration - 1);
-      expect(transfers.readTransfers()).toHaveLength(1);
-      await vi.advanceTimersByTimeAsync(1);
-      await discarding;
-      expect(transfers.readTransfers()).toEqual([]);
-      expect(transfers.playback.timers.size).toBe(0);
-      transfers.playback.cancelTransfers();
-      expect(transfers.readTransfers()).toEqual([]);
-    } finally {
-      vi.useRealTimers();
-    }
+    using _scopeCleanup = createCleanup(() => vi.useRealTimers());
+
+    const transfers = makeTransfers();
+    const discarding = transfers.animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 })], 0);
+    const transfer = transfers.readTransfers()[0]!;
+    const duration = Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs;
+    await vi.advanceTimersByTimeAsync(duration - 1);
+    expect(transfers.readTransfers()).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(1);
+    await discarding;
+    expect(transfers.readTransfers()).toEqual([]);
+    expect(transfers.playback.pendingTimers).toBe(0);
+    transfers.playback.cancelTransfers();
+    expect(transfers.readTransfers()).toEqual([]);
   });
 
   it("releases a published transfer if timer scheduling fails", async () => {
-    const transfers = makeTransfers();
     const failure = new Error("timer unavailable");
-    vi.spyOn(transfers.playback.timers, "setGameTimeout").mockImplementation(() => {
-      throw failure;
+    const transfers = makeTransfers(true, {
+      setTimeout: () => {
+        throw failure;
+      },
+      clearTimeout: () => {},
     });
     await expect(transfers.animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 })], 0)).rejects.toBe(failure);
     expect(transfers.readTransfers()).toEqual([]);
-    expect(transfers.playback.timers.size).toBe(0);
+    expect(transfers.playback.pendingTimers).toBe(0);
   });
 });
