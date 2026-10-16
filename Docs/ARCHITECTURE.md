@@ -184,7 +184,7 @@ owns explicit playback phases, binding readiness, cancellation, timers, transfer
 is shared even when callers copy dependencies to strengthen a screen guard.
 `battle/battle-transfers.ts` supplies DOM measurements, sound, and timed transfer wiring.
 `battle/battle-session.ts` adapts that lifetime to presentation and delegates turn
-commit to `shared/stores/battle-commands.ts`; restore hydrates committed snapshots; legacy activity conversion stays in the save migration. Battle start
+commit to `shared/stores/battle-commands.ts`; restore hydrates committed snapshots after save-version gating. Battle start
 uses `shared/stores/battle-start-commands.ts` and then arms presentation. Fight feedback (floating numbers + shake + sound) is
 unified in `presentCombatTexts` in `battle/controller-utils.ts`; card overlay
 layers live beside their leaves (`card-ghost-overlay.tsx`,

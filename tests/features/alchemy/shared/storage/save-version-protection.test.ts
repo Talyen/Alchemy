@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
+import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_CONTENT_VERSION } from "@/lib/validation";
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage";
 import {
   futureContentSaveCandidate,
@@ -8,6 +8,24 @@ import {
 } from "../../../../helpers/save-candidate-fixtures";
 
 describe("save version protection", () => {
+  it("protects future content even when its schema is a retired development format", () => {
+    const loaded = evaluateSaveCandidates([
+      playableSave(1000, { saveSchemaVersion: 20, contentVersion: CURRENT_CONTENT_VERSION + 1 }),
+    ]);
+    expect(loaded.status).toEqual({
+      kind: "unsupported-newer-content",
+      detectedContentVersion: CURRENT_CONTENT_VERSION + 1,
+    });
+  });
+
+  it("reports future schema before future content when both are unsupported", () => {
+    const loaded = evaluateSaveCandidates([futureSave(1000, { contentVersion: CURRENT_CONTENT_VERSION + 1 })]);
+    expect(loaded.status).toEqual({
+      kind: "unsupported-newer-schema",
+      detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+    });
+  });
+
   it("uses a compatible backup while retaining a newer-format candidate", () => {
     const loaded = evaluateSaveCandidates([playableSave(1000), futureSave(2000)]);
     expect(loaded.status.kind).toBe("ok");

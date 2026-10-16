@@ -98,35 +98,6 @@ export function repairUnresolvedMysteryTrinkets(
   return resolveMysteryEventTrinkets(event, ownedTrinketIds, rng);
 }
 
-function isMysteryTrinketSlotEffect(effect: MysteryEffect): boolean {
-  return (
-    effect.kind === "gainTrinket" ||
-    effect.kind === "gainRandomTrinket" ||
-    (effect.kind === "gainGeneratedGear" && Boolean(effect.astral))
-  );
-}
-
-export function applyResolvedMysteryTrinketIds(
-  event: MysteryEvent,
-  resolvedTrinketIds: readonly string[],
-): MysteryEvent {
-  if (resolvedTrinketIds.length === 0) return event;
-  let index = 0;
-  return {
-    ...event,
-    choices: event.choices.map((choice, choiceIndex) => ({
-      label: choice.label,
-      effects: choice.effects.map((effect, effectIndex) => {
-        if (!isMysteryTrinketSlotEffect(effect)) return effect;
-        const id = resolvedTrinketIds[index++];
-        if (id === undefined) return effect;
-        if (id === "") return mysteryTrinketFallbackEffect(`${event.id}:${choiceIndex}:${effectIndex}`);
-        return { kind: "gainTrinket", trinketId: id };
-      }),
-    })),
-  };
-}
-
 export function isMysteryLootEligible(
   event: MysteryEvent,
   progress: LootProgress,

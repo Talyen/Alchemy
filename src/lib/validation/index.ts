@@ -4,14 +4,7 @@ export {
   CURRENT_SAVE_SCHEMA_VERSION,
   LAUNCH_SAVE_SCHEMA_VERSION,
 } from "./metadata";
-export {
-  getCandidateSavedAt,
-  getRawContentVersion,
-  getRawSaveSchemaVersion,
-  isUnsupportedFutureContentData,
-  isUnsupportedFutureSaveData,
-  migrateSupportedSaveData,
-} from "./migration/index";
+export { getCandidateSavedAt, getSaveCompatibility } from "./save-versions";
 export { normalizePersistedBattleState } from "./normalize-persisted-battle-state";
 export {
   ActiveRunDataSchema,
@@ -29,7 +22,5 @@ export {
 } from "./save-schemas/index";
 
 export { parseActiveRun, toActiveRunData } from "./parse-active-run";
-
-export { legacyRunNeedsAbandonment } from "./migration";
 
 export { createDefaultSettingsSaveFields, type SettingsSaveFields } from "./save-schemas/settings";

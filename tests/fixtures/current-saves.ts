@@ -1,7 +1,6 @@
 import { makeTestCard } from "./cards";
 import { savedActivityFixture } from "./run-activity";
 import { saveEnvelopeFixture } from "./saves";
-import { gridLabyrinthMapFixture } from "./labyrinth-map";
 
 // Intentionally non-default values exercise round-trip recovery: every
 // override below is valid but differs from SaveDataSchema defaults, while
@@ -61,28 +60,26 @@ export function currentSchemaCampaignSave() {
   });
 }
 
-// The last supported shape before Mystery began storing its resolved offer.
-export function version19MysterySave() {
-  const priorRun = currentSchemaCampaignSave().activeRun as unknown as Record<string, unknown>;
+export function currentSchemaMysterySave() {
+  const save = currentSchemaCampaignSave();
   return {
-    ...currentSchemaCampaignSave(),
-    saveSchemaVersion: 19,
+    ...save,
     activeRun: {
-      ...priorRun,
-      contentSystemType: "labyrinth",
-      labyrinthMap: gridLabyrinthMapFixture(),
-      currentScreen: "mystery",
-      runMaxHealth: 30,
-      activeLabyrinthRewardModifiers: ["golden-omen"],
-      mysteryVisit: {
-        eventId: "fairy-ring",
+      ...save.activeRun,
+      activity: savedActivityFixture("mystery", {
+        event: {
+          id: "fairy-ring",
+          title: "Fairy Ring",
+          art: "test-art",
+          narrative: "A saved offer",
+          choices: [{ label: "Saved offer", effects: [{ kind: "gainGold", amount: 7 }] }],
+        },
         chosenChoice: null,
         cardChoices: null,
         grantedTrinketIds: [],
         grantedGear: [],
         chosenCardId: null,
-        resolvedTrinketIds: ["", "parasitic-bloom"],
-      },
+      }),
     },
   };
 }

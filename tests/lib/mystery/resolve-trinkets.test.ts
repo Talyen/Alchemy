@@ -2,11 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { trinketLibrary } from "@/lib/game-data";
 import { gearBaseItemList } from "@/lib/gear/base-items";
 import { findMysteryEvent, isMysteryLootEligible } from "@/lib/mystery";
-import {
-  applyResolvedMysteryTrinketIds,
-  repairUnresolvedMysteryTrinkets,
-  resolveMysteryEventTrinkets,
-} from "@/lib/mystery/resolve-trinkets";
+import { repairUnresolvedMysteryTrinkets, resolveMysteryEventTrinkets } from "@/lib/mystery/resolve-trinkets";
 
 const eventWithTwoTrinkets = {
   id: "owned-set-test",
@@ -128,55 +124,8 @@ describe("resolveMysteryEventTrinkets", () => {
   });
 });
 
-describe("version 19 Mystery Boon decoding", () => {
-  it("applies saved substitutions onto the pool event", () => {
-    const event = findMysteryEvent("enchanted-spring");
-    expect(event).not.toBeNull();
-    const resolved = resolveMysteryEventTrinkets(event!, ["icy-heart"], () => 0);
-    const hydrated = applyResolvedMysteryTrinketIds(event!, ["groves-favor", ""]);
-    expect(hydrated.choices).toEqual(resolved.choices);
-  });
-
-  it("decodes Astral fallback slots from the positional id contract", () => {
-    const allOwned = trinketLibrary.map((entry) => entry.id);
-    const resolved = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, () => 0);
-    const hydrated = applyResolvedMysteryTrinketIds(eventWithTwoTrinkets, ["", ""]);
-    expect(hydrated.choices).toEqual(resolved.choices);
-  });
-
-  it("does not rewrite authored gear when applying resolved trinket ids", () => {
-    const event = {
-      id: "authored-gear",
-      title: "Authored Gear",
-      art: "test-art",
-      narrative: "Test",
-      choices: [
-        {
-          label: "A",
-          effects: [
-            { kind: "gainGeneratedGear" as const, baseItemId: "staff" },
-            { kind: "gainTrinket" as const, trinketId: "icy-heart" },
-          ],
-        },
-      ],
-    };
-
-    const hydrated = applyResolvedMysteryTrinketIds(event, ["merchants-favor"]);
-    expect(hydrated.choices[0]?.effects[0]).toEqual({
-      kind: "gainGeneratedGear",
-      baseItemId: "staff",
-    });
-    expect(hydrated.choices[0]?.effects[1]).toEqual({ kind: "gainTrinket", trinketId: "merchants-favor" });
-  });
-
-  it("can re-apply resolved ids to an already resolved event with fallback astral gear", () => {
-    const allOwned = trinketLibrary.map((entry) => entry.id);
-    const resolved = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, () => 0);
-    const rehydrated = applyResolvedMysteryTrinketIds(resolved, ["", ""]);
-    expect(rehydrated.choices).toEqual(resolved.choices);
-  });
-
-  it("repairs a legacy visit that still has gainRandomTrinket", () => {
+describe("unresolved Mystery offer repair", () => {
+  it("resolves an unfinished random Boon before presenting the saved offer", () => {
     const repaired = repairUnresolvedMysteryTrinkets(eventWithConstrainedRandomTrinket, [], () => 0);
     const trinket = repaired.choices[0]?.effects.find((effect) => effect.kind === "gainTrinket");
     expect(trinket?.kind).toBe("gainTrinket");

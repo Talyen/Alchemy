@@ -4,7 +4,7 @@ import { deepFreeze } from "../stores/store-utils";
 
 // Single defaults owner: the Zod schema is the oracle so codec defaults,
 // schema .catch defaults, and fixtures cannot drift. The contract test in
-// save-migration-contract.test.ts pins this alignment. activeRun is null in
+// save-migration-contract.test.ts protects independent load isolation. activeRun is null in
 // defaults so no hydration (toActiveRunData) is required.
 function parseDefaultSaveData(): SaveData {
   const parsed = SaveDataSchema.parse({});

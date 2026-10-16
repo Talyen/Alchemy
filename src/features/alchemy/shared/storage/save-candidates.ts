@@ -2,16 +2,10 @@ import { toActiveRunData } from "@/lib/validation";
 import { getBattleOutcome } from "@/lib/battle";
 import {
   SaveDataSchema,
-  LAUNCH_SAVE_SCHEMA_VERSION,
   isCombatGoldOverride,
   safeParseWithErrors,
   getCandidateSavedAt,
-  getRawContentVersion,
-  getRawSaveSchemaVersion,
-  isUnsupportedFutureContentData,
-  isUnsupportedFutureSaveData,
-  migrateSupportedSaveData,
-  legacyRunNeedsAbandonment,
+  getSaveCompatibility,
   type ParsedSaveData,
 } from "@/lib/validation";
 import { createDefaultSaveData } from "./defaults";
@@ -64,7 +58,7 @@ function collectSaveRepairWarnings(raw: Record<string, unknown>, normalized: Par
   }
   const rawActiveRun = isPlainObject(raw.activeRun) ? raw.activeRun : undefined;
   if (
-    (rawActiveRun?.activeCombat != null || recordActivity(rawActiveRun).kind === "battle") &&
+    recordActivity(rawActiveRun).kind === "battle" &&
     normalized.activeRun &&
     normalized.activeRun.activity.kind !== "battle"
   ) {
@@ -73,8 +67,8 @@ function collectSaveRepairWarnings(raw: Record<string, unknown>, normalized: Par
   const rawGold = raw.gold;
   // Live combat gold intentionally overrides the purse in SaveDataSchema;
   // that override is not a repair.
-  const rawCombatCandidate =
-    recordActivity(rawActiveRun).kind === "battle" ? recordActivity(rawActiveRun).data : rawActiveRun?.activeCombat;
+  const rawActivity = recordActivity(rawActiveRun);
+  const rawCombatCandidate = rawActivity.kind === "battle" ? rawActivity.data : undefined;
   const rawCombat = isPlainObject(rawCombatCandidate) ? rawCombatCandidate : undefined;
   const rawBattleCandidate = rawCombat?.battleState;
   const rawBattle = isPlainObject(rawBattleCandidate) ? rawBattleCandidate : undefined;
@@ -114,16 +108,6 @@ function collectSaveRepairWarnings(raw: Record<string, unknown>, normalized: Par
   return warnings;
 }
 
-function getFutureSaveStatus(parsed: unknown): SaveLoadStatus | null {
-  if (isUnsupportedFutureSaveData(parsed)) {
-    return { kind: "unsupported-newer-schema", detectedSchemaVersion: getRawSaveSchemaVersion(parsed) };
-  }
-  if (isUnsupportedFutureContentData(parsed)) {
-    return { kind: "unsupported-newer-content", detectedContentVersion: getRawContentVersion(parsed) };
-  }
-  return null;
-}
-
 function recordActivity(run: Record<string, unknown> | undefined): Record<string, unknown> {
   return isPlainObject(run?.activity) ? run.activity : {};
 }
@@ -156,11 +140,11 @@ export function selectSaveCandidates(
         continue;
       }
 
-      const status = getFutureSaveStatus(parsed);
-      if (status) {
+      const compatibility = getSaveCompatibility(parsed);
+      if (compatibility.kind === "unsupported-newer-schema" || compatibility.kind === "unsupported-newer-content") {
         futureSlots.add(slot);
         const savedAt = getCandidateSavedAt(parsed, -1);
-        if (!future || savedAt > future.savedAt) future = { status, savedAt };
+        if (!future || savedAt > future.savedAt) future = { status: compatibility, savedAt };
         continue;
       }
       if (!isPlainObject(parsed)) {
@@ -168,11 +152,11 @@ export function selectSaveCandidates(
         continue;
       }
       // Disposable formats stay silent and cannot acquire current defaults.
-      if (getRawSaveSchemaVersion(parsed) < LAUNCH_SAVE_SCHEMA_VERSION) continue;
+      if (compatibility.kind === "retired") continue;
       // Timestamp normalization matches the schema. Ties retain read order;
       // candidates that cannot win need no expensive validation.
       if (playable && getCandidateSavedAt(parsed, 0) <= playable.data.lastSavedAt) continue;
-      const result = safeParseWithErrors(SaveDataSchema, migrateSupportedSaveData(parsed));
+      const result = safeParseWithErrors(SaveDataSchema, parsed);
       if (!result.success) {
         logStorageFailure("Save candidate failed validation, trying next candidate", result.error);
         continue;
@@ -193,9 +177,7 @@ export function selectSaveCandidates(
       activity.data.battleState.turnPhase === "enemy" &&
       getBattleOutcome(activity.data.battleState) === null;
     state = {
-      ...(playable.data.activeRun && (unfinishedTurn || legacyRunNeedsAbandonment(playable.raw))
-        ? { restoreActions: ["abandon-active-run" as const] }
-        : {}),
+      ...(unfinishedTurn ? { restoreActions: ["abandon-active-run" as const] } : {}),
       data: {
         ...playable.data,
         activeRun: playable.data.activeRun ? toActiveRunData(playable.data.activeRun) : null,

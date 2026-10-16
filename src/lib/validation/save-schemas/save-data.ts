@@ -133,7 +133,7 @@ const SaveDataObjectSchema = z
     bondedCompanions: createTierRecordSchema(companionTierItems).catch(() => createEmptyTierRecord(companionTierItems)),
     completedDifficulties: CompletedDifficultiesSchema.catch(EMPTY_COMPLETED_DIFFICULTIES),
     finishedRunCharacters: deduplicatedSetArraySchema(CHARACTER_IDS, CharacterIdSchema),
-    // Single normalizer shared with getRawLastSavedAt (migration/index.ts):
+    // Single normalizer shared with getCandidateSavedAt (save-versions.ts):
     // fractional timestamps floor instead of resetting to 0, so candidate
     // freshness ordering agrees between the raw future check and this schema.
     lastSavedAt: z.preprocess((value) => toSafeNonNegativeInt(value) ?? value, z.number().int().nonnegative().catch(0)),

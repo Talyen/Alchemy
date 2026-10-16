@@ -4,65 +4,26 @@ import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-c
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { CURRENT_SAVE_SCHEMA_VERSION, LAUNCH_SAVE_SCHEMA_VERSION, SaveDataSchema } from "@/lib/validation";
 import { createCompleteActiveRunData } from "../features/alchemy/shared/stores/active-run-data-fixture";
-import { currentSchemaCampaignSave, version19MysterySave } from "../fixtures/current-saves";
+import { currentSchemaCampaignSave, currentSchemaMysterySave } from "../fixtures/current-saves";
 
 describe("supported save baseline", () => {
-  it("keeps a removed version 19 Mystery visit marked for destination recovery", () => {
-    const saved = version19MysterySave();
-    const loaded = evaluateSaveCandidates([
-      JSON.stringify({
-        ...saved,
-        activeRun: {
-          ...saved.activeRun,
-          mysteryVisit: { ...saved.activeRun.mysteryVisit, eventId: "removed-mystery-event" },
-        },
-      }),
-    ]);
-    expect(loaded.status.kind).toBe("ok");
-    expect(loaded.data.activeRun?.activity.kind).toBe("mystery");
-    expect(savedActivityData(loaded.data.activeRun, "mystery")).toBeNull();
-  });
-
-  it("loads a version 19 Mystery offer with its resolved Boon and Labyrinth reward", () => {
-    const loaded = evaluateSaveCandidates([JSON.stringify(version19MysterySave())]);
-    expect(loaded.status.kind).toBe("ok");
-    expect(loaded.data.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    const event = savedActivityData(loaded.data.activeRun, "mystery")?.event;
-    expect(event?.id).toBe("fairy-ring");
-    expect(event?.choices[0]?.effects).toContainEqual(
-      expect.objectContaining({ kind: "gainGeneratedGear", astral: true }),
-    );
-    expect(event?.choices[0]?.effects).toContainEqual({ kind: "gainGold", amount: 40 });
-    expect(event?.choices[1]?.effects).toContainEqual({ kind: "gainTrinket", trinketId: "parasitic-bloom" });
-  });
-
   it("keeps a current Mystery offer even when its choices differ from the live pool", () => {
-    const migrated = evaluateSaveCandidates([JSON.stringify(version19MysterySave())]).data;
-    const visit = savedActivityData(migrated.activeRun, "mystery");
-    if (!migrated.activeRun || !visit) throw new Error("Mystery migration fixture did not load");
-    const offered = {
-      ...visit.event,
-      choices: [{ label: "Saved offer", effects: [{ kind: "gainGold" as const, amount: 7 }] }],
-    };
-    const saved = {
-      ...migrated,
-      activeRun: { ...migrated.activeRun, activity: savedActivityFixture("mystery", { ...visit, event: offered }) },
-    };
-
+    const saved = currentSchemaMysterySave();
     const loaded = evaluateSaveCandidates([JSON.stringify(saved)]);
-    expect(savedActivityData(loaded.data.activeRun, "mystery")?.event).toEqual(offered);
-    expect(loaded.data.gold).toBe(migrated.gold);
+    expect(savedActivityData(loaded.data.activeRun, "mystery")?.event).toEqual(
+      savedActivityData(saved.activeRun, "mystery")?.event,
+    );
+    expect(loaded.data.gold).toBe(saved.gold);
   });
 
   it("drops a malformed Mystery offer without discarding the run", () => {
-    const migrated = evaluateSaveCandidates([JSON.stringify(version19MysterySave())]).data;
-    if (!migrated.activeRun) throw new Error("Mystery migration fixture did not load");
+    const current = currentSchemaMysterySave();
     const saved = {
-      ...migrated,
+      ...current,
       activeRun: {
-        ...migrated.activeRun,
+        ...current.activeRun,
         activity: savedActivityFixture("mystery", {
-          ...savedActivityData(migrated.activeRun, "mystery")!,
+          ...savedActivityData(current.activeRun, "mystery")!,
           event: { id: "fairy-ring", choices: "invalid" },
         }),
       },
@@ -73,7 +34,7 @@ describe("supported save baseline", () => {
     expect(savedActivityData(loaded.data.activeRun, "mystery")).toBeNull();
   });
 
-  it.each([0, 11, 18])("rejects disposable schema %s before permissive defaults", (saveSchemaVersion) => {
+  it.each([0, 18, 19, 20])("rejects disposable schema %s before permissive defaults", (saveSchemaVersion) => {
     const raw = { ...currentSchemaCampaignSave(), saveSchemaVersion, gold: 999, lastSavedAt: 500 };
     const loaded = evaluateSaveCandidates([JSON.stringify(raw)]);
     expect(loaded.status.kind).toBe("corrupt");

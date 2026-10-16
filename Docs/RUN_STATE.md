@@ -463,8 +463,8 @@ retry never repeats the gameplay action or leaves saving dependent on a departed
 
 `run-resume-codec.ts` translates the active-run progress and session fields to and from `ActiveRunData`. The encoder selects
 progress, mode geography, and one tagged `activity`; the decoder hydrates that
-branch and derives its route directly. Historical screen/visit/reward precedence
-exists only in the version 20-to-21 migration. `run-restore.ts` applies the decoded
+branch and derives its route directly. Retired screen/visit/reward shapes are
+rejected before validation. `run-restore.ts` applies the decoded
 fields and explicit current-data repairs in the command draft.
 
 `run-lifecycle.ts` exposes `snapshotRun(session)`, `restoreRun(…)` for run-only
