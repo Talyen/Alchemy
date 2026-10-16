@@ -1,6 +1,6 @@
 # Steam demo edition
 
-Approved scope: Campaign Act 1, Novice only, Knight → Rogue → Ranger, English,
+Approved scope: Campaign Act 1, Novice only, Knight → Rogue → Ranger, the bundled languages in [localization](./LOCALIZATION.md),
 Steam only, unlimited replay, and continued availability after full-game launch.
 Existing content pools, progression costs and victory/defeat/abandonment unlocks
 remain unchanged. There is no separate tutorial. Excluded choices show full-game

@@ -137,10 +137,39 @@ discovery and reward claims. It checks acknowledged checkpoints after closing th
 seeded page, then resumes in a different language and compares saved effects,
 description marks, inventories, resources and RNG. The Homestead journey also
 checks complete translated benefit lines and the edge placement of long tooltips.
+It also covers localized mode/hero/difficulty selection, draft completion,
+keyboard talent allocation and Collection inspection, Mystery choice/reward
+checkpoints, and defeat/final-victory recaps. Difficulty header titles are explicit
+catalog fields; difficulty names and victory subtitles are translated at the screen
+boundary. Boss destinations use a complete message containing the act number.
 
 ```sh
 ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:e2e:dev -- tests/e2e/specs/localization-gameplay.spec.ts --workers=1
 ```
+
+Every-push CI runs both suites with expanded English, maximum sizing and the
+1280×720 viewport. Failure artifacts retain localization results and screenshots.
+The production demo has its own CI gate and release gate: fresh starter-card play,
+acknowledged save/resume, final Act 1 boss combat and rewards, localized recap,
+hero unlocks, marketing-screen accessible text and return to menu without duplicate
+progression.
+The final-room checkpoint is seeded; this is not an unseeded seven-room playthrough.
+The existing user-supplied marketing illustration still contains English labels;
+its accessible text and surrounding controls are translated. Localized replacement
+artwork remains separate from text-catalog qualification.
+
+```sh
+ALCHEMY_EDITION=demo npm run build:desktop
+ALCHEMY_EDITION=demo ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:e2e -- tests/e2e/specs/steam-demo.spec.ts tests/e2e/specs/localization-demo.spec.ts
+ALCHEMY_EDITION=demo PLAYWRIGHT_ELECTRON_FULL=1 npm run test:ship:desktop -- tests/electron/localization-demo.spec.ts
+```
+
+The native demo journey closes and relaunches the actual Electron process using
+one isolated temporary profile with normal motion, retains the Chinese language override, switches
+the resumed battle to Russian, then relaunches again and compares saved mechanics,
+full card data and RNG. It waits for the real startup/artwork and battle-input
+gates before interacting. Its profile never touches the player's normal saves.
+Native timing canaries and foreground/hardware qualification remain separate.
 
 Review the packaged Electron Options tabs, including desktop display controls,
 at the same settings with (choose a shipped locale ID):

@@ -180,19 +180,18 @@ it.each([false, true])("a replacement autosave driver respects a pending clear t
   });
   const persistence = createSessionPersistence(session);
   const first = createAlchemyAutosaveLifecycle(() => true, undefined, session, true);
-  let replacement: ReturnType<typeof createAlchemyAutosaveLifecycle> | undefined;
   const completed = vi.fn();
   using _scopeCleanup = createCleanup(() => {
     deletion.resolve(ok ? { ok: true } : { ok: false, error: "clear refused" });
     first.dispose(false);
-    replacement?.dispose(false);
   });
 
   dispatchRunSessionCommand((transaction) => acceptCommand(setGold(transaction, 70)), undefined, session);
   persistence.afterProgressSaved(completed);
   const clearing = persistence.clear();
   first.dispose(false);
-  replacement = createAlchemyAutosaveLifecycle(() => true, undefined, session, true);
+  const replacement = createAlchemyAutosaveLifecycle(() => true, undefined, session, true);
+  using _replacementCleanup = createCleanup(() => replacement.dispose(false));
   await vi.advanceTimersByTimeAsync(10_000);
   expect(writes).toEqual([]);
   deletion.resolve(ok ? { ok: true } : { ok: false, error: "clear refused" });

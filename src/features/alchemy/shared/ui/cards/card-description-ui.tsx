@@ -18,7 +18,7 @@ import { useHoverVisible } from "../use-hover-visible";
 import { getCorruptedValueOffsets, splitCorruptedNumericParts } from "./card-text";
 import { ShineText } from "../shine-text";
 
-export { renderColoredKeywords, renderTokenizedDescription, type TokenizedTextOptions } from "../localized-description";
+export { renderColoredKeywords } from "../localized-description";
 import { renderColoredKeywords, renderTokenizedDescription, renderMessage } from "../localized-description";
 
 export function renderMultilineTokenizedDescription(text: string): ReactNode[] {

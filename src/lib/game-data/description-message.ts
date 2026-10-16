@@ -12,7 +12,7 @@ export interface DescriptionMessageValue extends DescriptionMessage {
 }
 
 /** Stable template identity; callers reject collisions when assembling catalogs. */
-export function descriptionMessageId(template: string): string {
+function descriptionMessageId(template: string): string {
   let first = 2166136261;
   let second = 5381;
   for (let index = 0; index < template.length; index++) {

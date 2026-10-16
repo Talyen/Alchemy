@@ -5,7 +5,7 @@ import { withReportServer } from "../lib/vite-report-server.mjs";
 import { ordered, digest, tags, relatedTerms } from "./catalog.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
-export function walk(node, callback, parent) {
+function walk(node, callback, parent) {
   if (!node || typeof node !== "object" || callback(node, parent) === false) return;
   for (const key of babel.types.VISITOR_KEYS[node.type] ?? []) {
     const children = node[key];
@@ -13,7 +13,7 @@ export function walk(node, callback, parent) {
     else walk(children, callback, node);
   }
 }
-export function parse(code, filename) {
+function parse(code, filename) {
   return babel.parseSync(code, {
     filename,
     configFile: false,
@@ -46,6 +46,7 @@ const textProperties = new Set([
   "displayName",
   "name",
   "subtitle",
+  "headerTitle",
   "flavorText",
   "requirement",
   "descriptionLines",

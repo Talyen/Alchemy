@@ -2,6 +2,7 @@ import type { Screen } from "./screens";
 import { ROUTE_SCREENS } from "./screens";
 import type { RunPhase } from "./run-screen-router";
 
+/** @public Loaded through Vite SSR by scripts/localization/extract.mjs. */
 export const STEAM_SCREEN_LABELS: Partial<Record<Screen, string>> = {
   [ROUTE_SCREENS.HOMESTEAD]: "Upgrading Homestead",
   [ROUTE_SCREENS.TALENTS]: "Selecting Talents",

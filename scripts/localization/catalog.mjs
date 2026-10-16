@@ -7,7 +7,7 @@ export const TARGETS = Object.keys(languages).filter((locale) => locale !== "en"
 export const digest = (value) => crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
 export const ordered = (value) =>
   Object.fromEntries(Object.entries(value).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
-export const parameters = (value) => [...value.matchAll(/{{\s*([a-zA-Z][\w]*)\s*}}/g)].map((m) => m[1]).sort();
+const parameters = (value) => [...value.matchAll(/{{\s*([a-zA-Z][\w]*)\s*}}/g)].map((m) => m[1]).sort();
 export function tags(value) {
   const stack = [];
   const result = [];

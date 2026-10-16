@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
+import { withSavedGame } from "./save-injection";
 import { unpackCatalogs } from "../../src/lib/localization/catalog-format.mjs";
 import packed from "../../src/lib/localization/locales/runtime.json" with { type: "json" };
 import { pseudolocalize } from "../../src/lib/localization/pseudolocalize";
@@ -37,4 +38,19 @@ export function mechanics(value: unknown): unknown {
       .filter(([key]) => !["title", "baseTitle", "description", "descriptionLines", "message", "art"].includes(key))
       .map(([key, item]) => [key, mechanics(item)]),
   );
+}
+
+export async function localizedCheckpoint(
+  page: Page,
+  locale: AcceptanceLocale,
+  verify: (fresh: Page) => Promise<void>,
+) {
+  await expect(page.getByTestId("vr-stage")).toHaveAttribute("data-run-phase", /.+/);
+  await page.evaluate((value) => localStorage.setItem("alchemy-language-v1", value), locale);
+  // Simulate exit before resume. The fixture page must not later autosave its seed over live progress.
+  await page.close();
+  await withSavedGame(page, async (fresh) => {
+    await expect(fresh.locator("html")).toHaveAttribute("lang", locale === "en-XA" ? "en" : locale);
+    await verify(fresh);
+  });
 }
