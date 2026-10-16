@@ -13,6 +13,15 @@ const hit: CombatTextEvent = { target: "enemy", kind: "damage", stat: "physical"
 const heal: CombatTextEvent = { target: "enemy", kind: "heal", stat: "health", amount: 3 };
 
 describe("combat feedback preparation and merging", () => {
+  it("keeps a later Critical Hit visible when rapid hits merge", () => {
+    const current = burst(1, [{ ...hit, healthLost: 2 }]);
+    const incoming = burst(2, [{ ...hit, healthLost: 3, critical: true }], 10);
+    const result = consolidateCombatBursts([current], [incoming], 10);
+    expect(result.bursts).toHaveLength(1);
+    expect(result.bursts[0]!.entries[0]).toMatchObject({ amount: 10, healthLost: 5, critical: true });
+    expect(current.entries[0]).not.toHaveProperty("critical");
+  });
+
   it("merges a partial hit once, keeping expiry, order, and input events intact", () => {
     const current = [burst(1, [hit])];
     const incoming = [burst(2, [hit, heal], 10)];

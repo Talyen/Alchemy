@@ -9,13 +9,18 @@ import {
 import { beforeEach, describe, expect, it } from "vitest";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { defaultBattleState } from "@/lib/battle";
-import { parseActiveRun } from "@/lib/validation";
+import { parseActiveRun, SaveDataSchema } from "@/lib/validation";
 import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { gridLabyrinthMapFixture } from "../../../../fixtures/labyrinth-map";
 import { getStartingDeck } from "@/lib/game-data";
 import { DESTINATIONS } from "@/lib/routing";
 import { acceptCommand, dispatchGameplayCommand as command } from "@/features/alchemy/shared/stores/gameplay-command";
-import { readActiveRun, readRunSession, readCardInspectionData } from "@/features/alchemy/shared/stores/run-reads";
+import {
+  readActiveRun,
+  readRunSession,
+  readCardInspectionData,
+  readRunProfile,
+} from "@/features/alchemy/shared/stores/run-reads";
 import {
   abandonRun,
   applyRunDefeatTeardown,
@@ -59,6 +64,34 @@ beforeEach(() => {
 });
 
 describe("run recap", () => {
+  it("keeps a nearly full purse saveable when a noncombat reward is awarded", () => {
+    command(
+      (draft) => {
+        setGold(draft, Number.MAX_SAFE_INTEGER - 1);
+        addGold(draft, 20);
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    const { gold } = readRunProfile(defaultGameSession);
+    expect(SaveDataSchema.parse({ gold }).gold).toBe(Number.MAX_SAFE_INTEGER);
+    expect(readActiveRun(defaultGameSession).runGoldEarned).toBe(1);
+  });
+
+  it("preserves a full run Gold tally across the next award and resume", () => {
+    command(
+      (draft) => {
+        draft.run.activeRun.runGoldEarned = Number.MAX_SAFE_INTEGER;
+        addGold(draft, 1);
+        return acceptCommand();
+      },
+      undefined,
+      defaultGameSession,
+    );
+    expect(parseActiveRun(snapshotRun(defaultGameSession))?.runGoldEarned).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
   it("counts grants and committed battle Gold once, excluding starting purse and spending across resume", () => {
     command(
       (draft) => {

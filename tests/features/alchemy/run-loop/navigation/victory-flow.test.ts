@@ -568,30 +568,33 @@ describe("commitVictoryRewards", () => {
     expect(goldGained).toBe(true);
   });
 
-  it("writes persistedGold without re-applying the gold multiplier", () => {
-    setRunProgress({ gold: 10 });
-    const goldResult = computeVictoryGold({
-      battleState: { gold: 10 },
-      purseGold: 10,
-      runBoons: [],
-      gold: 15,
-      eliteBonus: 0,
-      generousBonus: 0,
-      wealthyBonus: 0,
-      bossBonus: 0,
-      talentGoldPerCombat: 0,
-      goldMultiplier: 2,
-    });
-    const goldGained = commit(
-      victoryResult({
-        goldEarned: goldResult.earnedBeforeMultiplier,
-        persistedGold: goldResult.persistedGold,
-      }),
-    );
-    expect(goldResult.persistedGold).toBe(40);
-    expect(readGameplayState(defaultGameSession).runProfile.gold).toBe(goldResult.persistedGold);
-    expect(goldGained).toBe(true);
-  });
+  it.each([10, Number.MAX_SAFE_INTEGER - 1, Number.MAX_SAFE_INTEGER])(
+    "settles the actual victory payout once onto purse %i",
+    (purseGold) => {
+      setRunProgress({ gold: purseGold });
+      const goldResult = computeVictoryGold({
+        battleState: { gold: purseGold },
+        purseGold,
+        runBoons: [],
+        gold: 15,
+        eliteBonus: 0,
+        generousBonus: 0,
+        wealthyBonus: 0,
+        bossBonus: 0,
+        talentGoldPerCombat: 0,
+        goldMultiplier: 2,
+      });
+      const goldGained = commit(
+        victoryResult({
+          goldEarned: goldResult.earnedBeforeMultiplier,
+          persistedGold: goldResult.persistedGold,
+        }),
+      );
+      expect(goldResult.persistedGold).toBe(Math.min(Number.MAX_SAFE_INTEGER, purseGold + 30));
+      expect(readGameplayState(defaultGameSession).runProfile.gold).toBe(goldResult.persistedGold);
+      expect(goldGained).toBe(purseGold < Number.MAX_SAFE_INTEGER);
+    },
+  );
 
   it("stamps victory routing context onto reward state", () => {
     const battleState = baseBattleState({

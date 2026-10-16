@@ -44,8 +44,10 @@ export function commitVictoryRewards(
   settlePendingBattleMaterials(draft);
 
   completeRunRoom(draft);
-  addRunGoldEarned(draft, Math.max(0, result.persistedGold - draft.runProfile.gold));
+  const previousGold = draft.runProfile.gold;
   setGold(draft, result.persistedGold);
+  const goldAward = Math.max(0, draft.runProfile.gold - previousGold);
+  addRunGoldEarned(draft, goldAward);
 
   syncBattleToRun(draft, { playerHealth: result.playerHealth });
 
@@ -61,7 +63,7 @@ export function commitVictoryRewards(
       ? getCompanionCardChoices(rng, result.labyrinthRewardModifiers)
       : null,
   );
-  return result.goldEarned > 0;
+  return result.goldEarned > 0 && goldAward > 0;
 }
 
 export function createVictoryCommand(gameSession: GameSession) {

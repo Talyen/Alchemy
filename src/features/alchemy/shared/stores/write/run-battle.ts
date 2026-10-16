@@ -25,7 +25,8 @@ export function setBattleState(
   action: BattleSnapshot | ((previous: BattleSnapshot) => BattleSnapshot),
 ): void {
   setSyncedBattleState(draft, action);
-  const gold = Math.max(0, activeBattle(draft).battleState.gold);
+  const gold = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, activeBattle(draft).battleState.gold));
+  activeBattle(draft).battleState.gold = gold;
   addRunGoldEarned(draft, Math.max(0, gold - draft.runProfile.gold));
   draft.runProfile.gold = gold;
 }
@@ -53,9 +54,9 @@ export function settleBattleVictory(
 /** Commit engine output as a resource change, never as a replacement of the live purse. */
 export function commitResolvedBattle(draft: GameplayDraft, before: BattleSnapshot, after: BattleSnapshot): void {
   const goldDelta = after.gold - before.gold;
-  const gold = Math.max(0, draft.runProfile.gold + goldDelta);
+  const gold = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, draft.runProfile.gold + goldDelta));
   setSyncedBattleState(draft, { ...after, gold });
-  addRunGoldEarned(draft, Math.max(0, goldDelta));
+  addRunGoldEarned(draft, Math.max(0, gold - draft.runProfile.gold));
   draft.runProfile.gold = gold;
 }
 

@@ -57,7 +57,7 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
   const chained = resolveCardEffectChain(nextState, drawn.card, combatTexts, { skipTalentRewards: playTwice });
   nextState = chained.state;
   const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
-  if (playTwice) {
+  if (playTwice && getBattleOutcome(nextState) === null) {
     nextState = applyCardEffects(nextState, drawn.card, combatTexts, {
       damageEffects: repeatedDamageEffects,
       origin: "triggered-card",
@@ -65,8 +65,8 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
       enemyFreezeSkipTurnsAtStart: nextState.enemyCC.freezeSkipTurns,
     });
     nextState = applyMortarAndPestlePotionUse(nextState, drawn.card, combatTexts);
-    nextState = applyCardPlayTalentRewards(nextState, drawn.card, combatTexts, hadNoThornsOnPlay);
   }
+  if (playTwice) nextState = applyCardPlayTalentRewards(nextState, drawn.card, combatTexts, hadNoThornsOnPlay);
   nextState = applyTwinCasting(nextState, drawn.card, combatTexts);
   nextState = processEncounterTraitCardAction(nextState, drawn.card, combatTexts, chained.attackAttempted);
   if (playTwice) {

@@ -158,8 +158,10 @@ export function addGoldWithCombatText(
 ): BattleState {
   if (amount <= 0) return state;
 
-  const scaledGold = scaleGoldReward(amount, state.gearEffects);
-  let nextState = { ...state, gold: state.gold + scaledGold };
+  const gold = Math.min(Number.MAX_SAFE_INTEGER, state.gold + scaleGoldReward(amount, state.gearEffects));
+  const scaledGold = gold - state.gold;
+  if (scaledGold <= 0) return state;
+  let nextState = { ...state, gold };
   if (combatTexts) {
     mergeCombatText(combatTexts, {
       target: "player",

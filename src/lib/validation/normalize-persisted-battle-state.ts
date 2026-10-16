@@ -16,7 +16,7 @@ import {
   type TalentEffectManifest,
 } from "@/lib/game-data";
 import { MAX_HAND_SIZE, MIN_MAX_MANA_FLOOR } from "@/lib/game-constants";
-import { toFiniteNonNegativeInt } from "./save-schemas/validation-utils";
+import { toFiniteNonNegativeInt, toSafeNonNegativeInt } from "./save-schemas/validation-utils";
 import {
   ENCOUNTER_TRAITS,
   sanitizeEncounterTraitIds,
@@ -213,7 +213,7 @@ function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapsho
     enemyRegeneration: clampNonNegative(state.enemyRegeneration, defaults.enemyRegeneration),
     enemyPhysicalDamageBonus: clampNonNegative(state.enemyPhysicalDamageBonus, defaults.enemyPhysicalDamageBonus),
     companionDamageBuff: clampNonNegative(state.companionDamageBuff, defaults.companionDamageBuff),
-    gold: clampNonNegative(state.gold, defaults.gold),
+    gold: toSafeNonNegativeInt(state.gold) ?? defaults.gold,
     mana: clampNonNegative(state.mana, defaults.mana),
     maxMana: Math.max(MIN_MAX_MANA_FLOOR, clampNonNegative(state.maxMana, defaults.maxMana)),
   };

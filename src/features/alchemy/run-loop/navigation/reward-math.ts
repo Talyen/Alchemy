@@ -81,6 +81,9 @@ export function computeVictoryGold({
   const findBonus = applyRewardFindBonus(eligiblePayout, goldFindBonus) - eligiblePayout;
   return {
     earnedBeforeMultiplier,
-    persistedGold: purseGold + Math.round(earnedBeforeMultiplier * goldMultiplier) + findBonus,
+    persistedGold: Math.min(
+      Number.MAX_SAFE_INTEGER,
+      purseGold + Math.round(earnedBeforeMultiplier * goldMultiplier) + findBonus,
+    ),
   };
 }
