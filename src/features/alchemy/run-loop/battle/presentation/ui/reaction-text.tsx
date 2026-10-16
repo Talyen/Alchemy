@@ -52,11 +52,13 @@ export function ReactionTextRail({ announcements }: { announcements: ReactionAnn
       document.fonts?.removeEventListener("loadingdone", fit);
     };
   }, [announcements, i18n]);
+  // The global reduced-motion duration override would otherwise start font-size
+  // transitions on every descendant and feed intermediate widths back into fitting.
   return (
     <div
       ref={railRef}
       data-testid="reaction-text-rail"
-      className="pointer-events-none relative z-40 flex w-full flex-col items-center gap-2 py-1"
+      className="pointer-events-none relative z-40 flex w-full flex-col items-center gap-2 py-1 [&_*]:transition-none"
       style={{ fontSize: `calc(${COMBAT_TEXT_BASE_SIZE_PX * 1.25}px * var(--content-scale, 1))` }}
     >
       <AnimatePresence>

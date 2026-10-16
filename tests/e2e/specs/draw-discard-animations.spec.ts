@@ -191,9 +191,6 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
   test("playable hand cards stay colored during discard and draw transfers", async ({ page }) => {
     test.setTimeout(60_000);
 
-    const flyingCards = page.locator("[data-flying-card]");
-    const visibleHandCards = page.locator('[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "]');
-
     await startBattleWithDeck(
       page,
       Array.from({ length: 6 }, () => makeCard()),
@@ -208,9 +205,18 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       const testWindow = window as Window & {
         cardColorObserver?: MutationObserver;
         drawGrayscaleFlashes?: string[];
+        discardColoredSeen?: boolean;
       };
       testWindow.drawGrayscaleFlashes = [];
+      testWindow.discardColoredSeen = false;
       testWindow.cardColorObserver = new MutationObserver(() => {
+        if (document.querySelector('[data-flying-card][data-transfer-kind="discard"]')) {
+          const cards = [
+            ...document.querySelectorAll('[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "]'),
+          ];
+          testWindow.discardColoredSeen ||=
+            cards.length > 0 && cards.every((card) => !card.classList.contains("hand-card-unplayable"));
+        }
         const drawStarts = performance.getEntriesByName("alchemy:battle:draw-start", "mark").length;
         const drawEnds = performance.getEntriesByName("alchemy:battle:draw-end", "mark").length;
         if (drawStarts <= drawEnds) return;
@@ -239,14 +245,9 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       .click();
 
     await expect
-      .poll(
-        async () => {
-          if ((await flyingCards.count()) === 0) return false;
-          const classes = await visibleHandCards.evaluateAll((cards) => cards.map((card) => card.className));
-          return classes.length > 0 && classes.every((className) => !className.includes("hand-card-unplayable"));
-        },
-        { message: "affordable cards should stay colored during discard" },
-      )
+      .poll(() => page.evaluate(() => (window as Window & { discardColoredSeen?: boolean }).discardColoredSeen), {
+        message: "affordable cards should stay colored during discard",
+      })
       .toBe(true);
 
     await expect
@@ -261,6 +262,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       const testWindow = window as Window & {
         cardColorObserver?: MutationObserver;
         drawGrayscaleFlashes?: string[];
+        discardColoredSeen?: boolean;
       };
       testWindow.cardColorObserver?.disconnect();
       return testWindow.drawGrayscaleFlashes ?? [];
