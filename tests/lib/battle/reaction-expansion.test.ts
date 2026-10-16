@@ -11,7 +11,7 @@ import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import type { BattleState, CombatTextEvent } from "@/lib/battle";
-import type { DamageType } from "@/lib/game-data";
+import { cardById, type DamageType } from "@/lib/game-data";
 import { patchBattleState, makeTestCard, type BattleStatePatch } from "../../fixtures/battle";
 
 const attack = (damageType: DamageType, amount = 4) =>
@@ -164,6 +164,22 @@ describe("Bloodboil", () => {
 });
 
 describe("Venomflash", () => {
+  it("rewards Combustion's fresh ignition even when the same hit detonates its Burn", () => {
+    const state = base({ enemyStatuses: { poison: 12 } });
+    const combustion = cardById.combustion!;
+    const texts: CombatTextEvent[] = [];
+    const first = applyCardEffects(state, combustion, texts);
+    expect(first.enemyHealth).toBe(95); // Burn hit 1, detonation 1, Venomflash 3.
+    expect(first.enemyStatuses).toMatchObject({ poison: 12, burn: 0 });
+    expect(reactions(texts)).toEqual(["venomflash"]);
+    const secondTexts: CombatTextEvent[] = [];
+    expect(applyCardEffects(first, combustion, secondTexts).enemyHealth).toBe(90);
+    expect(reactions(secondTexts)).toEqual(["venomflash"]);
+    const twice = makeTestCard({ effects: [...combustion.effects, ...combustion.effects] });
+    expect(getEffectiveDamageScore(twice, state)).toBe(8); // Authored hits 2, two ignition bonuses 6.
+    expect(state.enemyStatuses).toMatchObject({ poison: 12, burn: 0 });
+  });
+
   it("rewards fresh ignition, preserves Poison, and cannot repeat while Burn remains", () => {
     const state = base({ enemyStatuses: { poison: 12 } });
     const texts: CombatTextEvent[] = [];

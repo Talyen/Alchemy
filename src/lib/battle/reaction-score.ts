@@ -5,6 +5,7 @@ import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import { resolveSecondaryAction } from "./action-context";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 import { canShatter, consumeReactionOpportunity, getPostHitReactionPayoffs } from "./elemental-reactions";
+import { setEnemyStatus } from "./status-state";
 import type { BattleSnapshot, BattleState } from "./types";
 
 type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
@@ -76,6 +77,8 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
       },
     };
   }
+  if (selected.detonateAllBurn || (selected.detonateIfEnemyBurning && before.enemyStatuses.burn > 0))
+    state = setEnemyStatus(state, "burn", 0);
   const payoffs = getPostHitReactionPayoffs(before, state, consumed.packet.damageType, healthDamage);
   let score = shatter ? before.enemyMitigation.block + before.enemyMitigation.armor : 0;
   if (shatter) payoffs.unshift({ id: "shatter", damage: before.reactions.shatterDamage });

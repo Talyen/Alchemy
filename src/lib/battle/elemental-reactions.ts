@@ -59,13 +59,8 @@ export function getPostHitReactionPayoffs(
       payoffs.push({ id: "thunderclap", damage: before.reactions.thunderclapDamage });
     if (before.reactions.wildfireDamage > 0) payoffs.push({ id: "wildfire", damage: before.reactions.wildfireDamage });
   }
-  if (
-    damageType === "burn" &&
-    healthDamage > 0 &&
-    before.enemyStatuses.burn === 0 &&
-    before.enemyStatuses.poison > 0 &&
-    after.enemyStatuses.burn > 0
-  )
+  if (damageType === "burn" && healthDamage > 0 && before.enemyStatuses.burn === 0 && before.enemyStatuses.poison > 0)
+    // A positive Burn hit adds buildup before its riders; Combustion can consume it again.
     payoffs.push({ id: "venomflash", damage: getReactionBonus(before.enemyStatuses.poison) });
   return payoffs;
 }

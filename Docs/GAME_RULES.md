@@ -509,7 +509,8 @@ player-turn resets cannot replenish it; only a fresh successful CC can.
   Burn. Release Burn damage equal to 25% of the pre-hit Poison stacks, rounded,
   minimum 1. Existing fires cannot trigger it; extinguishing and igniting again
   can. Ordered effects in one card can establish Poison before ignition. Poison
-  and Burn stacks remain intact.
+  and Burn stacks remain intact from the bonus itself. Combustion's fresh
+  ignition still qualifies when its own detonation consumes the new Burn.
 
 Bonuses bypass Block and Armor, cannot Critical, and apply no second damage
 scaling, status buildup, attack riders, or recursive reactions. Resolve them after
