@@ -208,6 +208,7 @@
               provenance: snapshot,
               coverage: snapshot.coverage,
               rejectedTimingPhrases: snapshot.rejectedTimingPhrases,
+              undetectedWrittenPhrases: snapshot.undetectedWrittenPhrases,
             };
       const recording = await fetch(audio.src);
       if (!recording.ok) throw new Error(`Recording HTTP ${recording.status}`);
@@ -224,6 +225,12 @@
       }
       if (data.rejectedTimingPhrases?.length) {
         warning.textContent += ` ${data.rejectedTimingPhrases.length} complete phrases excluded for invalid word timing: ${data.rejectedTimingPhrases.join(" / ")}`;
+      }
+      if (data.coverage?.recoveredPhrases) {
+        warning.textContent += ` ${data.coverage.recoveredPhrases} phrases restored from vocal-stem alignment; ${data.coverage.realignedPhrases} neighboring phrases realigned.`;
+      }
+      if (data.undetectedWrittenPhrases?.length) {
+        warning.textContent += ` Still undetected: ${data.undetectedWrittenPhrases.join(" / ")}`;
       }
       document.querySelector("h1").after(warning);
       jump.replaceChildren(

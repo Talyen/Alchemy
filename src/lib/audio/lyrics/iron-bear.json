@@ -8,7 +8,10 @@
     "detectedPhrases": 55,
     "unmatchedAsrWords": 30,
     "undetectedWrittenPhrases": 5,
-    "rejectedTimingPhrases": 5
+    "rejectedTimingPhrases": 1,
+    "alignedPhrases": 54,
+    "recoveredPhrases": 4,
+    "realignedPhrases": 0
   },
   "lines": [
     {
@@ -56,6 +59,10 @@
     {
       "text": "For every wound, a stronger shape",
       "timings": [60.2, 60.68, 60.68, 61.24, 61.24, 61.98, 61.98, 62.02, 62.02, 62.48, 62.48, 62.96]
+    },
+    {
+      "text": "Iron, forge, and flame I take",
+      "timings": [63.04, 64.18, 64.18, 64.52, 64.52, 64.84, 64.84, 65.08, 65.08, 65.46, 65.46, 65.86]
     },
     {
       "text": "For every wound, a stronger shape",
@@ -110,8 +117,16 @@
       "timings": [107.28, 107.56, 107.56, 107.76, 107.76, 108.14]
     },
     {
+      "text": "Iron, forge, and flame I take",
+      "timings": [108.14, 109.38, 109.38, 109.78, 109.78, 109.94, 109.94, 110.26, 110.26, 110.64, 110.64, 110.96]
+    },
+    {
       "text": "For every wound, a stronger shape",
       "timings": [111.06, 111.5, 111.5, 112.02, 112.02, 112.76, 112.76, 112.84, 112.84, 113.28, 113.28, 113.8]
+    },
+    {
+      "text": "Iron, forge, and flame I take",
+      "timings": [113.8, 114.96, 114.96, 115.38, 115.38, 115.66, 115.66, 115.92, 115.92, 116.24, 116.24, 116.54]
     },
     {
       "text": "For every wound, a stronger shape",
@@ -128,6 +143,10 @@
     {
       "text": "Then I'll carve through iron,",
       "timings": [135.86, 137.1, 137.1, 137.38, 137.38, 137.68, 137.68, 138.08, 138.08, 138.5]
+    },
+    {
+      "text": "singe through hide.",
+      "timings": [140.04, 140.72, 140.72, 140.86, 140.86, 142.02]
     },
     {
       "text": "You swing like a verdict.",
@@ -218,11 +237,13 @@
       "timings": [242.25, 245.87, 245.87, 247.39]
     }
   ],
-  "rejectedTimingPhrases": [
-    "Iron, forge, and flame I take",
-    "Iron, forge, and flame I take",
-    "Iron, forge, and flame I take",
-    "singe through hide.",
-    "we are fire,"
-  ]
+  "rejectedTimingPhrases": ["we are fire,"],
+  "undetectedWrittenPhrases": ["Break him.", "I won't kneel.", "I won't fold.", "Burn him.", "remember what you bleed"],
+  "recovery": {
+    "regionsSha256": "119791b213229191f95b4e0a86d7cfcc53ef0fd25b6b04f2afac73d0781daa2c",
+    "stemSha256": "97779667126119413df5dc72a440c23623409474683ed00a749c948390d1f401",
+    "separationModel": "htdemucs",
+    "alignmentModel": "small.en",
+    "method": "bounded contextual vocal-stem alignment; no manual word timestamps"
+  }
 }

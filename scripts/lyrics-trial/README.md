@@ -133,6 +133,55 @@ After copying `preview.html` to `reports/boss-lyrics/index.html`, the **Boss son
 selector opens each new song's exported runtime snapshot alongside its original recording.
 Treant retains its comparison of mix, vocals, performance and phrase alignments.
 
+## Targeted vocal-stem recovery
+
+The missing lines were present in the supplied sheets. Some detections failed;
+others lost a whole phrase because a brief word such as "and" received zero
+duration. Isolating vocals and aligning with the neighboring lyric as context
+can recover these passages without changing the word-timing validity rules.
+
+Generate a full-length stem with the original recording's timeline and a hash
+sidecar, then run the targeted recovery plan:
+
+```sh
+reports/boss-lyrics/venv/bin/python scripts/lyrics-trial/separate.py --audio 'public/Music/The Iron Bear.mp3' --output reports/boss-lyrics/iron-vocals.wav --device mps
+reports/boss-lyrics/venv/bin/python scripts/lyrics-trial/recover.py --boss iron-bear --vocals reports/boss-lyrics/iron-vocals.wav --output reports/boss-lyrics/iron-recovered.json --evidence reports/boss-lyrics/iron-recovery-evidence.json
+```
+
+Use `--device cpu` on hosts without Apple GPU support. Substitute
+`The Frostwarden`, `frostwarden`, and distinct output filenames for that song.
+The output is a review candidate; writing it does not replace the runtime file.
+The original recording remains the listening reference.
+
+`recovery-regions.json` owns phrase search windows and neighboring source lines,
+not word timestamps. Each region selects which aligned lines to apply. Iron
+Bear's chorus uses dynamic attention-head selection (`8,3`); the broader
+context recovers the weak "and" instead of inventing a minimum duration.
+Other phrases use the default alignment heads. All word times come from the
+model and the original media offset; none are interpolated or manually repaired.
+
+Recovery verifies the recording, sheet and stem hashes and refuses a cropped or
+different-duration stem. It preserves unselected passages and other occurrences
+of repeated lyrics. It rejects word-count changes, invalid intervals, overlap
+with an unselected neighbor, and any replacement that would erase additional
+performed repeats. The complete result is validated before writing the candidate.
+Evidence retains the full context alignment, including lines not selected for
+replacement. Snapshot metadata distinguishes newly recovered and realigned lines.
+
+This recovers three Iron Bear chorus repeats and its second "singe through hide",
+and Frostwarden's missing "What freezes you", "I walk through the long sleep"
+and two "What burns me" calls. The latter also require realigning the adjoining
+responses, which previously started during the call.
+
+Remaining uncertainties include Iron Bear's growled "Break him" / "Burn him"
+and "I won't kneel" / "I won't fold", its final "remember what you bleed" and
+one backing vocal, Forge Golem's other chants, and Frostwarden's nonlexical
+"Aaaah". Independent transcription and a CTC alignment comparison of separated
+vocals did not provide reliable confirmation for these passages. Keep their
+omissions explicit; neither forced positive intervals nor a supplied sheet
+alone proves the performed words and their timing. Audible qualification remains
+necessary; these model checks do not establish a listening pass.
+
 Dependencies and models download on first use. Subsequent runs use local caches;
 no audio or lyrics are sent to a service. Models, environments, vocal stems,
 logs, and preview copies stay outside Git in ignored reports or model caches.

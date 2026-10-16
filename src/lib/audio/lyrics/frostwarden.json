@@ -7,8 +7,11 @@
   "coverage": {
     "detectedPhrases": 56,
     "unmatchedAsrWords": 19,
-    "undetectedWrittenPhrases": 2,
-    "rejectedTimingPhrases": 0
+    "undetectedWrittenPhrases": 1,
+    "rejectedTimingPhrases": 0,
+    "alignedPhrases": 60,
+    "recoveredPhrases": 4,
+    "realignedPhrases": 2
   },
   "lines": [
     {
@@ -82,6 +85,10 @@
       "timings": [106.68, 107.1, 107.1, 108.76, 108.76, 109.68, 109.68, 109.98, 109.98, 110.34]
     },
     {
+      "text": "What freezes you",
+      "timings": [111.74, 112.08, 112.08, 112.82, 112.82, 113.4]
+    },
+    {
       "text": "Only feeds my veins",
       "timings": [113.44, 115.08, 115.08, 115.88, 115.88, 116.44, 116.44, 116.9]
     },
@@ -150,6 +157,10 @@
       "timings": [193.66, 194.2, 194.2, 195.5, 195.5, 196.2, 196.2, 196.44]
     },
     {
+      "text": "I walk through the long sleep",
+      "timings": [197.3, 197.8, 197.8, 198.08, 198.08, 198.7, 198.7, 199.24, 199.24, 199.74, 199.74, 200.42]
+    },
+    {
       "text": "And drag you near",
       "timings": [200.92, 201.2, 201.2, 201.94, 201.94, 202.22, 202.22, 202.38]
     },
@@ -162,8 +173,12 @@
       "timings": [212.42, 213.12, 213.12, 213.94, 213.94, 214.3, 214.3, 214.68]
     },
     {
+      "text": "What burns me",
+      "timings": [217.72, 218.1, 218.1, 218.98, 218.98, 219.94]
+    },
+    {
       "text": "Melts me, breaks the chains",
-      "timings": [218.74, 221.1, 221.1, 222.82, 222.82, 222.92, 222.92, 224.0, 224.0, 224.5]
+      "timings": [219.94, 221.08, 221.08, 222.82, 222.82, 223.64, 223.64, 223.98, 223.98, 224.38]
     },
     {
       "text": "What freezes you",
@@ -174,8 +189,12 @@
       "timings": [228.56, 229.14, 229.14, 229.92, 229.92, 230.46, 230.46, 230.88]
     },
     {
+      "text": "What burns me",
+      "timings": [233.7, 234.12, 234.12, 234.96, 234.96, 236.02]
+    },
+    {
       "text": "Melts me, breaks the chains",
-      "timings": [234.78, 237.18, 237.18, 238.46, 238.46, 239.12, 239.12, 240.0, 240.0, 240.96]
+      "timings": [236.02, 237.16, 237.16, 238.88, 238.88, 239.64, 239.64, 239.96, 239.96, 240.4]
     },
     {
       "text": "Ice meets fire",
@@ -241,5 +260,13 @@
       "text": "Melts me, breaks the chains",
       "timings": [322.36, 323.14, 323.14, 324.5, 324.5, 325.68, 325.68, 326.0, 326.0, 326.36]
     }
-  ]
+  ],
+  "undetectedWrittenPhrases": ["Aaaah…"],
+  "recovery": {
+    "regionsSha256": "119791b213229191f95b4e0a86d7cfcc53ef0fd25b6b04f2afac73d0781daa2c",
+    "stemSha256": "ce90e65274016309f9cd2d7678426dfa3221be2c4a54eff73aabdfca5b2a0546",
+    "separationModel": "htdemucs",
+    "alignmentModel": "small.en",
+    "method": "bounded contextual vocal-stem alignment; no manual word timestamps"
+  }
 }

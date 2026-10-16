@@ -44,6 +44,17 @@ records undetected phrases and unmatched ASR words rather than forcing them
 into the timeline. Treant's existing snapshot has two undetected introductory
 lines and two unmatched ASR words.
 
+Targeted vocal-stem recovery restores Iron Bear's three rejected chorus repeats
+and second "singe through hide" line, plus four missing Frostwarden lines.
+The two adjoining Frostwarden "Melts me" responses are realigned so they no
+longer consume the preceding "What burns me" call. The
+[recovery workflow](../scripts/lyrics-trial/README.md#targeted-vocal-stem-recovery)
+retains source hashes, search windows and model settings. These lines were in
+the supplied sheets; detection and invalid word timings caused their omission.
+Iron Bear's growled bridge, final "remember what you bleed" and one backing
+vocal, Forge Golem's remaining chants, and Frostwarden's "Aaaah" remain
+unresolved. This does not establish that they are absent from the recordings.
+
 `Boss Lyrics` in Audio settings defaults on and persists through the normal
 settings codec. The battle lyric leaf samples `readMusicPlayback()` from the
 music player, using the active track key and actual media position rather than

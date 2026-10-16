@@ -5,7 +5,7 @@ import lyrics from "@/lib/audio/lyrics/blight-treant.json";
 import forgeGolem from "@/lib/audio/lyrics/forge-golem.json";
 import frostwarden from "@/lib/audio/lyrics/frostwarden.json";
 import ironBear from "@/lib/audio/lyrics/iron-bear.json";
-import { getMusicLyrics } from "@/lib/audio/lyrics";
+import { getLyricFrame, getMusicLyrics } from "@/lib/audio/lyrics";
 import { MUSIC_CATALOG } from "@/lib/audio/music-catalog";
 import { MUSIC_KEYS } from "@/lib/game-constants";
 
@@ -38,4 +38,26 @@ it.each([
       end = word.end;
     }
   }
+});
+
+it("keeps the recovered chorus repeats and verse lines instead of dropping whole phrases", () => {
+  const iron = getMusicLyrics(MUSIC_KEYS.BOSS_IRON_BEAR)!.map((line) => line.map((word) => word.text).join(" "));
+  const frost = getMusicLyrics(MUSIC_KEYS.BOSS_FROSTWARDEN)!.map((line) => line.map((word) => word.text).join(" "));
+  expect(iron.filter((line) => line === "Iron, forge, and flame I take")).toHaveLength(4);
+  expect(iron.filter((line) => line === "singe through hide.")).toHaveLength(2);
+  expect(frost.filter((line) => line === "What freezes you")).toHaveLength(6);
+  expect(frost.filter((line) => line === "What burns me")).toHaveLength(6);
+  expect(frost.filter((line) => line === "I walk through the long sleep")).toHaveLength(1);
+});
+
+it("keeps Frostwarden's restored call separate from the following response", () => {
+  const lines = getMusicLyrics(MUSIC_KEYS.BOSS_FROSTWARDEN)!;
+  function visibleAt(time: number) {
+    const frame = getLyricFrame(lines, time)!;
+    return lines[frame.line]!.slice(0, frame.visible)
+      .map((word) => word.text)
+      .join(" ");
+  }
+  expect(visibleAt(218.5)).toBe("What burns");
+  expect(visibleAt(220.5)).toBe("Melts");
 });
