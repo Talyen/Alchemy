@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { SHIMMER_COOLDOWN_MS } from "@/lib/game-constants";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
-import type { CombatantFrameStyle } from "../config/combatant-frames";
 import type { CardInspectionView } from "../types";
 
 type ShimmerState = { cardId: string; token: number; triggeredAt: number } | null;
@@ -21,8 +20,6 @@ interface PlasmaRegistration {
 }
 
 interface UiStore {
-  combatantFrameStyle: CombatantFrameStyle;
-  setCombatantFrameStyle: (style: CombatantFrameStyle) => void;
   enemyInspectionOpen: boolean;
   setEnemyInspectionOpen: (open: boolean) => void;
   cardInspection: CardInspectionView | null;
@@ -45,8 +42,6 @@ interface UiStore {
 }
 
 export const useUiStore = create<UiStore>()((set, get) => ({
-  combatantFrameStyle: "saddle",
-  setCombatantFrameStyle: (combatantFrameStyle) => set({ combatantFrameStyle }),
   enemyInspectionOpen: false,
   setEnemyInspectionOpen: (enemyInspectionOpen) =>
     set({ enemyInspectionOpen, ...(enemyInspectionOpen ? { cardInspection: null } : {}) }),

@@ -2,8 +2,6 @@ import type { LanguagePreference } from "@/lib/localization/runtime";
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { LANGUAGE_OPTIONS } from "@/lib/localization/language";
-import { COMBATANT_FRAME_OPTIONS } from "../../../shared/config/combatant-frames";
-import { useUiStore } from "../../../shared/stores/ui-store";
 import { Button } from "@/components/ui/button";
 import { displayModeOptions } from "@/features/alchemy/shared/config";
 import { DEVICE_DISPLAY_RANGES, SETTINGS_RANGES } from "@/lib/settings-values";
@@ -192,18 +190,9 @@ function SaveDataOptionsPanel({ saveData }: { saveData: SaveDataOptionsProps }) 
 
 function DevOptionsPanel({ dev }: { dev: DevOptionsProps }) {
   const i18n = useGameTranslation();
-  const frameStyle = useUiStore((state) => state.combatantFrameStyle);
-  const setFrameStyle = useUiStore((state) => state.setCombatantFrameStyle);
   if (!import.meta.env.DEV) return null;
   return (
     <SettingsSection title={i18n.text("ui.options-panels.25", "Dev Only")}>
-      <SettingsSelect
-        id="combatant-frame-style"
-        label={i18n.text("ui.options-panels.26", "Combatant Frames")}
-        value={frameStyle}
-        options={COMBATANT_FRAME_OPTIONS}
-        onChange={setFrameStyle}
-      />
       <SettingsAction
         label={i18n.text("ui.options-panels.27", "Dev / QA Unlocks")}
         description={i18n.text(

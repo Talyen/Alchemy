@@ -1,6 +1,5 @@
 export {
   boardArt,
-  combatantFrameArt,
   alchemistShopBg,
   manaDockFull,
   manaDockEmpty,

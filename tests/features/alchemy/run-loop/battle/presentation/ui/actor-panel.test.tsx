@@ -92,8 +92,7 @@ describe("ArtPanel hover motion", () => {
   });
 
   it("renders a lethal impact burst over the death slice without a Health-loss flash", () => {
-    const { rerender, container } = render(<ArtPanel {...baseProps} />);
-    expect(container.querySelectorAll(".combatant-material-frame")).toHaveLength(2);
+    const { rerender } = render(<ArtPanel {...baseProps} />);
 
     rerender(
       <ArtPanel
@@ -112,7 +111,6 @@ describe("ArtPanel hover motion", () => {
 
     expect(screen.getByTestId("portrait-impact-sparks").getAttribute("data-colors")).toBe("#67e8f9,#06b6d4");
     expect(screen.queryByTestId("portrait-health-loss-flash")).toBeNull();
-    expect(container.querySelectorAll(".combatant-material-frame")).toHaveLength(0);
   });
 
   it("restarts the Health-loss flash for rapid hits even when recoil is suppressed", () => {

@@ -1,6 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
-import { CombatantFrame } from "./combatant-frame";
 import { getCompanionDescriptionLines, type CompanionDefinition, type CompanionDamageModifiers } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
@@ -84,7 +83,6 @@ export function CompanionPanel({
             shaking && "animate-shake",
           )}
         >
-          <CombatantFrame />
           <ArtTurnActiveBorder
             side="player"
             testId="turn-badge-companion"

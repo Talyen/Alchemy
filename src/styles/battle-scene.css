@@ -198,47 +198,6 @@
   }
 }
 
-/* Decorative only: outside the art aperture, below turn, focus, and Death's Door cues. */
-.battle-tabletop .combatant-material-frame {
-  position: absolute;
-  inset: calc(-0.65 * var(--content-rem, 1rem));
-  z-index: 2;
-  border: calc(1.75 * var(--content-rem, 1rem)) solid transparent;
-  border-image-slice: 16%;
-  border-image-repeat: round;
-  pointer-events: none;
-}
-
-/* Material frames replace the old rim; keep its reserved width and live turn-state hooks. */
-.battle-tabletop .combatant-art:has(> .combatant-material-frame) {
-  border-color: transparent;
-}
-
-.battle-tabletop :is(.combatant-art, .battle-scene-panel):has(> .combatant-material-frame) > .shine-border {
-  display: none;
-}
-
-.battle-tabletop .combatant-art:has(> .combatant-material-frame) > .battle-scene-artwork::before {
-  box-shadow: none;
-}
-
-.battle-tabletop .battle-scene-panel:has(> .combatant-material-frame) {
-  box-shadow: none;
-}
-
-.battle-tabletop .battle-scene-panel:has(> .combatant-material-frame)::before {
-  box-shadow:
-    calc(1 * var(--battle-shadow-unit)) calc(2 * var(--battle-shadow-unit)) calc(2 * var(--battle-shadow-unit))
-      var(--battle-contact-shadow),
-    calc(3 * var(--battle-shadow-unit)) calc(6 * var(--battle-shadow-unit)) calc(5 * var(--battle-shadow-unit))
-      var(--battle-cast-shadow);
-}
-
-.battle-tabletop .combatant-art:has(> .combatant-material-frame):focus-visible {
-  outline: 2px solid var(--color-gold-pale);
-  outline-offset: calc(0.65 * var(--content-rem, 1rem) + 3px);
-}
-
 .combat-text-critical {
   animation:
     combat-text-critical-flash 140ms ease-out,

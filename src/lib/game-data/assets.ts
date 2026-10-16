@@ -24,13 +24,6 @@ export const demoFeatureShowcaseByLocale = {
 } satisfies Record<keyof typeof languages, string>;
 export const armorySalvageArt = assetRefs.armorySalvage;
 
-export const combatantFrameArt = {
-  charcoal: assetRefs.combatantFrameCharcoal,
-  saddle: assetRefs.combatantFrameSaddle,
-  walnut: assetRefs.combatantFrameWalnut,
-  oak: assetRefs.combatantFrameOak,
-} as const;
-
 export const labyrinthShroudedArt = [
   assetRefs.labyrinthShroudedVeiledArch,
   assetRefs.labyrinthShroudedDescendingSteps,
