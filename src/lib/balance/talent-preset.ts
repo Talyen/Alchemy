@@ -24,9 +24,9 @@ export const META_ONLY_TALENT_FIELDS: ReadonlySet<keyof TalentEffectManifest> = 
 
 export function isCombatTalent(talent: TalentDefinition): boolean {
   if (isTalentPlaceholder(talent)) return false;
-  const effects = talent.effects ?? [];
-  if (effects.length === 0) return false;
-  return effects.some((effect) => !META_ONLY_TALENT_FIELDS.has(effect.field));
+  return Object.keys(talent.effects ?? {}).some(
+    (field) => !META_ONLY_TALENT_FIELDS.has(field as keyof TalentEffectManifest),
+  );
 }
 
 export function combatTalentsInPoolOrder(keywordId: TalentDefinition["keywordId"]): TalentDefinition[] {

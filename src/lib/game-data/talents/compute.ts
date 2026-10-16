@@ -1,12 +1,8 @@
 import type { TalentEffectManifest } from "../talent-effect-manifest";
 import type { KeywordId } from "../types";
 import { getTalentById } from "./talent-pool-definitions";
-import {
-  isUsableTalentForKeyword,
-  type TalentDefinition,
-  type TalentEffectOperation,
-  type UnlockedTalents,
-} from "./types";
+import { isUsableTalentForKeyword, type TalentDefinition, type UnlockedTalents } from "./types";
+import { isAdditiveBonus, type TalentBonus } from "./talent-builder";
 import { createEmptyTalentEffectManifest } from "./manifest-defaults";
 
 function* usableUnlockedTalents(unlockedTalents: UnlockedTalents): Iterable<TalentDefinition> {
@@ -22,8 +18,8 @@ export function computeTalentEffects(unlockedTalents: UnlockedTalents): TalentEf
   const manifest = createEmptyTalentEffectManifest();
 
   for (const talent of usableUnlockedTalents(unlockedTalents)) {
-    for (const effect of talent.effects ?? []) {
-      applyTalentEffect(manifest, effect);
+    for (const [field, value] of Object.entries(talent.effects ?? {})) {
+      applyTalentBonus(manifest, field as keyof TalentEffectManifest, value);
     }
   }
 
@@ -40,16 +36,15 @@ export function normalizeUnlockedTalents(unlockedTalents: UnlockedTalents): Unlo
   return normalized;
 }
 
-function applyTalentEffect(manifest: TalentEffectManifest, effect: TalentEffectOperation) {
-  if (effect.kind === "add") {
-    manifest[effect.field] += effect.amount;
+function applyTalentBonus(manifest: TalentEffectManifest, field: keyof TalentEffectManifest, bonus: TalentBonus) {
+  if (isAdditiveBonus(bonus)) {
+    Object.assign(manifest, { [field]: (manifest[field] as number) + bonus.amount });
     return;
   }
-
-  const current = manifest[effect.field];
+  const current = manifest[field];
   // Catalog payloads outlive battles; each manifest owns its mutable values.
-  const value = typeof effect.value === "object" ? structuredClone(effect.value) : effect.value;
+  const value = typeof bonus === "object" ? structuredClone(bonus) : bonus;
   Object.assign(manifest, {
-    [effect.field]: Array.isArray(current) && Array.isArray(value) ? [...current, ...value] : value,
+    [field]: Array.isArray(current) && Array.isArray(value) ? [...current, ...value] : value,
   });
 }

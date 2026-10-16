@@ -71,8 +71,8 @@ describe("computeTalentEffects", () => {
     first.healthThresholdArmor.push({ threshold: 25, amount: 999 });
     first.cardHealMultipliers.apple = 999;
     expect(computeTalentEffects(unlocked)).toEqual(expected);
-    const operation = talentPool.find((talent) => talent.id === unlocked.armor[0])!.effects![0]!;
-    expect(operation).toMatchObject({ value: [{ threshold: 50, amount: 3 }] });
+    const effects = talentPool.find((talent) => talent.id === unlocked.armor[0])!.effects!;
+    expect(effects.healthThresholdArmor).toEqual([{ threshold: 50, amount: 3 }]);
   });
 
   it("ignores talent ids saved under the wrong keyword", () => {
