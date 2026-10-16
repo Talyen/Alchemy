@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { playBattleEvent, playCardSound } from "@/lib/audio";
+import { battleEventSounds } from "@/lib/audio/sound-registry";
 import {
   playCombatTextSounds,
   playResolvedCardSound,
@@ -12,7 +13,7 @@ import type { CombatTextEvent } from "@/lib/battle";
 vi.mock("@/lib/audio", () => ({ playBattleEvent: vi.fn(), playCardSound: vi.fn() }));
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(playBattleEvent).mockImplementation((event) => `${event}.ogg`);
+  vi.mocked(playBattleEvent).mockImplementation((event) => battleEventSounds[event] ?? undefined);
   vi.mocked(playCardSound).mockImplementation((card) => `${card}.ogg`);
 });
 
@@ -125,18 +126,23 @@ describe("one sound selected from committed action results", () => {
     const hit: CombatTextEvent = { target: "enemy", kind: "damage", stat: "physical", amount: 3 };
     expect(playResolvedCardSound("slash", [hit])).toBe("slash.ogg");
     expect(playCardSound).toHaveBeenCalledExactlyOnceWith("slash");
-    expect(playResolvedCardSound("slash", [{ ...hit, critical: true }])).toBe("slashCritical.ogg");
-    expect(playResolvedCardSound("cinderbloom", [{ ...hit, stat: "poison" }])).toBe("hitPiercing.ogg");
+    expect(playResolvedCardSound("slash", [{ ...hit, critical: true }])).toBe(battleEventSounds.slashCritical);
+    expect(playBattleEvent).toHaveBeenLastCalledWith("slashCritical");
+    expect(playResolvedCardSound("cinderbloom", [{ ...hit, stat: "poison" }])).toBe(battleEventSounds.hitPiercing);
+    expect(playBattleEvent).toHaveBeenLastCalledWith("hitPiercing");
     expect(
       playResolvedCardSound("molten-bulwark", [
         { ...hit, stat: "burn" },
         { target: "player", kind: "status", stat: "block", amount: 4 },
       ]),
-    ).toBe("blockGain.ogg");
-    expect(playResolvedCardSound("astral-arrow", [{ ...hit, stat: "freeze" }])).toBe("astralFreeze.ogg");
+    ).toBe(battleEventSounds.blockGain);
+    expect(playBattleEvent).toHaveBeenLastCalledWith("blockGain");
+    expect(playResolvedCardSound("astral-arrow", [{ ...hit, stat: "freeze" }])).toBe(battleEventSounds.astralFreeze);
+    expect(playBattleEvent).toHaveBeenLastCalledWith("astralFreeze");
     expect(playResolvedCardSound("astral-arrow", [{ ...hit, stat: "poison", critical: true }])).toBe(
-      "astralPiercingCritical.ogg",
+      battleEventSounds.astralPiercingCritical,
     );
+    expect(playBattleEvent).toHaveBeenLastCalledWith("astralPiercingCritical");
     playCompanionSound("wolf", [{ ...hit, stat: "bleed" }]);
     expect(playBattleEvent).toHaveBeenLastCalledWith("hitPiercing");
     expect(playCardSound).toHaveBeenCalledTimes(1);

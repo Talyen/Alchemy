@@ -2,7 +2,12 @@ import type { CombatTextEvent } from "@/lib/battle";
 import type { playBattleEvent } from "@/lib/audio";
 
 type BattleSound = Parameters<typeof playBattleEvent>[0];
-type Candidate = { sound: BattleSound; amount: number; priority: number; critical: boolean };
+interface Candidate {
+  sound: BattleSound;
+  amount: number;
+  priority: number;
+  critical: boolean;
+}
 
 const CONTROL_PRIORITY = ["shatter", "dodge", "freezeProc", "stunProc"] as const;
 const RESOURCE_PRIORITY = [
