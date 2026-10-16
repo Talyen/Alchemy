@@ -14,7 +14,7 @@ import { logError } from "../../error-logger";
 import type { CardEffectResolutionContext, EffectHandler, EffectHandlers } from "./handler-types";
 import { DAMAGE_HANDLERS } from "./damage-handlers";
 import { STATUS_HANDLERS } from "./status-handlers";
-import { MANA_HEALTH_HANDLERS } from "./mana-health-handlers";
+import { UTILITY_HANDLERS } from "./utility-handlers";
 import { SIMPLE_HANDLERS } from "./simple-handlers";
 
 type RegisteredEffectKind = keyof EffectHandlers;
@@ -24,7 +24,7 @@ type RegisteredEffectKind = keyof EffectHandlers;
 export const EFFECT_APPLY_BY_KIND: EffectHandlers = {
   ...DAMAGE_HANDLERS,
   ...STATUS_HANDLERS,
-  ...MANA_HEALTH_HANDLERS,
+  ...UTILITY_HANDLERS,
   ...SIMPLE_HANDLERS,
   "companion-action": (state, _card, effect, potionMult, combatTexts) => {
     let nextState = state;
@@ -36,7 +36,7 @@ export const EFFECT_APPLY_BY_KIND: EffectHandlers = {
 };
 
 const registeredKinds = [
-  ...[DAMAGE_HANDLERS, STATUS_HANDLERS, MANA_HEALTH_HANDLERS, SIMPLE_HANDLERS].flatMap((group) => Object.keys(group)),
+  ...[DAMAGE_HANDLERS, STATUS_HANDLERS, UTILITY_HANDLERS, SIMPLE_HANDLERS].flatMap((group) => Object.keys(group)),
   "companion-action",
 ];
 if (new Set(registeredKinds).size !== registeredKinds.length) {
