@@ -51,9 +51,10 @@ export function createBattleSession(ctx: BattleControllerContext) {
     return fallback;
   }
 
-  function handleVictoryDefeat(kind: BattleOutcome) {
-    if (ctx.playback.finish()) {
+  function handleVictoryDefeat(kind: BattleOutcome, id = ctx.playback.id) {
+    if (ctx.playback.finish(id)) {
       getPresentationStore().setDisplayedBattle(getStore().battleState);
+      if (!ctx.playback.isCurrent(id)) return;
       if (kind === "victory") ctx.onBattleVictory?.();
       else ctx.onBattleDefeat?.();
     }
@@ -64,7 +65,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
     const outcome = getBattleOutcome(state);
     if (outcome === "victory" && state.wishOptions) return false;
     if (outcome !== null) {
-      handleVictoryDefeat(outcome);
+      handleVictoryDefeat(outcome, session);
       return true;
     }
     return false;
@@ -78,8 +79,8 @@ export function createBattleSession(ctx: BattleControllerContext) {
     ctx.playback.cancelTransfers();
   }
 
-  function clearAllBattleTimeouts() {
-    ctx.playback.timers.clearAll();
+  function clearAllBattleTimeouts(id: number) {
+    ctx.playback.clearTimers(id);
   }
 
   function stopBattleFeedback() {

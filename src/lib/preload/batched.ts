@@ -3,37 +3,42 @@ export async function batchedPreload<T>(
   loadOne: (item: T) => Promise<void> | void,
   options: {
     batchSize?: number;
+    signal?: AbortSignal;
     yieldBetweenBatches?: () => Promise<void>;
   } = {},
 ): Promise<void> {
   const rawBatch = options.batchSize ?? 4;
   const batchSize = Number.isFinite(rawBatch) && rawBatch > 0 ? Math.max(1, Math.floor(rawBatch)) : 4;
-  for (let index = 0; index < items.length; index += batchSize) {
+  for (let index = 0; index < items.length && !options.signal?.aborted; index += batchSize) {
     const batch = items.slice(index, index + batchSize);
     // Capture synchronous throws as rejections too, so every started load
     // belongs to Promise.all and cannot leave an unhandled rejection behind.
-    await Promise.all(batch.map(async (item) => loadOne(item)));
-    if (index + batchSize < items.length) await options.yieldBetweenBatches?.();
+    await Promise.all(
+      batch.map(async (item) => {
+        if (!options.signal?.aborted) await loadOne(item);
+      }),
+    );
+    if (!options.signal?.aborted && index + batchSize < items.length) await options.yieldBetweenBatches?.();
   }
 }
 
-export function yieldToAnimationFrame(): Promise<void> {
+export function yieldToAnimationFrame(signal?: AbortSignal): Promise<void> {
+  if (signal?.aborted) return Promise.resolve();
   return new Promise((resolve) => {
-    if (typeof requestAnimationFrame !== "function") {
-      globalThis.setTimeout(resolve, 0);
-      return;
-    }
-    // Background tabs suspend RAF; the loading screen must still finish.
     let settled = false;
+    let frame: number | undefined;
     const finish = () => {
       if (settled) return;
       settled = true;
       globalThis.clearTimeout(timeout);
-      cancelAnimationFrame(frame);
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      signal?.removeEventListener("abort", finish);
       resolve();
     };
-    const timeout = globalThis.setTimeout(finish, 100);
-    const frame = requestAnimationFrame(finish);
+    // Background tabs suspend RAF; cancellation must release both scheduling paths.
+    const timeout = globalThis.setTimeout(finish, typeof requestAnimationFrame === "function" ? 100 : 0);
+    signal?.addEventListener("abort", finish, { once: true });
+    if (typeof requestAnimationFrame === "function") frame = requestAnimationFrame(finish);
   });
 }
 
