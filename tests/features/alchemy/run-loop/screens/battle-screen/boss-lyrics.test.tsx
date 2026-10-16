@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { BossLyrics } from "@/features/alchemy/run-loop/screens/battle-screen/boss-lyrics";
 import { readMusicPlayback } from "@/lib/audio";
 import { MUSIC_KEYS } from "@/lib/game-constants";
+import { localization } from "@/lib/localization/runtime";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 
 vi.mock("@/lib/audio", async (importOriginal) => ({
@@ -16,10 +17,11 @@ beforeEach(() => {
   useSettingsStore.getState().setBossLyricsEnabled(true);
   vi.mocked(readMusicPlayback).mockReturnValue({ key: MUSIC_KEYS.BOSS_BLIGHT_TREANT, currentTime: 0.7, audible: true });
 });
-afterEach(() => {
+afterEach(async () => {
   cleanup();
   vi.useRealTimers();
   useSettingsStore.getState().setBossLyricsEnabled(true);
+  await localization.changeLanguage("en");
 });
 
 function at(time: number, key: string = MUSIC_KEYS.BOSS_BLIGHT_TREANT, playing = true) {
@@ -29,7 +31,7 @@ function at(time: number, key: string = MUSIC_KEYS.BOSS_BLIGHT_TREANT, playing =
   });
 }
 
-it("builds words without remounting earlier words and recovers after gaps, pause, and loop", () => {
+it("keeps sung words verbatim and recovers after gaps, pause, and loop without remounting earlier words", async () => {
   render(<BossLyrics bossId="blight-treant" />);
   const lyrics = screen.getByTestId("boss-lyrics");
   expect(lyrics.textContent).toBe("I");
@@ -38,6 +40,11 @@ it("builds words without remounting earlier words and recovers after gaps, pause
   expect(lyrics.textContent).toBe("I was a grove");
   expect(lyrics.firstElementChild).toBe(first);
   expect(lyrics.querySelectorAll(".text-gold-pale")).toHaveLength(1);
+  await act(async () => {
+    await localization.changeLanguage("en-XA");
+  });
+  expect(lyrics.textContent).toBe("I was a grove");
+  expect(lyrics.getAttribute("aria-label")).not.toBe("Song lyrics");
   at(250);
   expect(lyrics.textContent).toBe("");
   at(1.8);
@@ -50,7 +57,7 @@ it("builds words without remounting earlier words and recovers after gaps, pause
   expect(lyrics.textContent).toBe("");
 });
 
-it("removes lyrics and polling when disabled or the boss has no timings, and cleans up on exit", () => {
+it("switches each boss using media time and stops polling when disabled, unsupported, or unmounted", () => {
   const { rerender, unmount } = render(<BossLyrics bossId="blight-treant" />);
   expect(vi.getTimerCount()).toBe(1);
   act(() => {
@@ -63,6 +70,19 @@ it("removes lyrics and polling when disabled or the boss has no timings, and cle
   });
   expect(screen.getByTestId("boss-lyrics").textContent).toBe("I");
   rerender(<BossLyrics bossId="forge-golem" />);
+  expect(screen.getByTestId("boss-lyrics").textContent).toBe("");
+  at(31, MUSIC_KEYS.BOSS_FORGE_GOLEM);
+  expect(screen.getByTestId("boss-lyrics").textContent).toBe("Built");
+  rerender(<BossLyrics bossId="frostwarden" />);
+  expect(screen.getByTestId("boss-lyrics").textContent).toBe("");
+  at(27, MUSIC_KEYS.BOSS_FROSTWARDEN);
+  expect(screen.getByTestId("boss-lyrics").textContent).toBe("Where");
+  rerender(<BossLyrics bossId="iron-bear" />);
+  at(6, MUSIC_KEYS.BOSS_IRON_BEAR);
+  expect(screen.getByTestId("boss-lyrics").textContent).toBe("");
+  at(31.1, MUSIC_KEYS.BOSS_IRON_BEAR);
+  expect(screen.getByTestId("boss-lyrics").textContent).toBe("From");
+  rerender(<BossLyrics bossId="unknown-boss" />);
   expect(vi.getTimerCount()).toBe(0);
   rerender(<BossLyrics bossId="blight-treant" />);
   unmount();

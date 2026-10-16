@@ -51,8 +51,8 @@ function SungLyrics({ musicKey, lines }: { musicKey: string; lines: NonNullable<
                 index === frame.active ? "text-gold-pale" : "text-muted-foreground",
               )}
             >
-              {i18n.displayText(index > 0 ? " " : "")}
-              {i18n.displayText(word.text)}
+              {index > 0 ? " " : ""}
+              {word.text}
             </span>
           ))
         : null}

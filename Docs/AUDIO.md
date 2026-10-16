@@ -32,13 +32,17 @@ for every action or change the intentional silent-content registrations below.
 
 The [boss karaoke experiment](../scripts/lyrics-trial/README.md) runs local
 word alignment against supplied lyrics and provides a standalone preview.
-The accepted phrase-bounded Blight Treant timing snapshot is checked in at
-`src/lib/audio/lyrics/blight-treant.json`, tied to the recording by SHA-256.
-It supplies the first Battle UI lyric track; other bosses remain without lyrics
-until their own timing data is authored. The experiment remains a separate
-comparison tool. Generated timings still need performance-coverage and audible
-synchronization review; two introductory lines were undetected and two ASR
-words remain unmatched in this trial.
+Phrase-bounded timing snapshots for The Blight Treant, The Forge Golem,
+The Frostwarden and The Iron Bear live in `src/lib/audio/lyrics/`, each tied to
+its recording by SHA-256. `lyrics.ts` registers them by music key. The new lyric
+sheets are retained in `scripts/lyrics-trial/` and match the supplied sheets and
+the MP3 lyric metadata; section labels and sound directions are excluded.
+Long Forge Golem chants use separate phrase windows for each held word.
+The experiment remains a separate comparison tool. Generated timings still need
+performance-coverage and audible synchronization review; coverage metadata
+records undetected phrases and unmatched ASR words rather than forcing them
+into the timeline. Treant's existing snapshot has two undetected introductory
+lines and two unmatched ASR words.
 
 `Boss Lyrics` in Audio settings defaults on and persists through the normal
 settings codec. The battle lyric leaf samples `readMusicPlayback()` from the
@@ -50,6 +54,10 @@ the visible words or highlight change. Words build the phrase as sung, with a
 180ms opacity and small scale pop on entry. Earlier words stay dim and still;
 only the current whole word uses the gold highlight. No alignment models,
 transcription, audio decoding, or per-word timers run in the game.
+Iron Bear timings use the original recording's timestamps, including its
+six-second playback skip; no second offset is applied. Sung words remain in the
+recording's language when the interface language changes. The accessible
+"Song lyrics" label follows the interface language.
 
 ## Runtime contract
 

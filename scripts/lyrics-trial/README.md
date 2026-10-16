@@ -1,8 +1,9 @@
 # Local boss karaoke experiment
 
-This standalone experiment aligns the supplied Blight Treant lyrics to the
-shipped recording. Its accepted phrase-bounded output also supplies the Blight
-Treant Battle UI timing snapshot; see [Audio workflow](../../Docs/AUDIO.md#local-lyric-alignment-experiment).
+This standalone experiment aligns supplied boss lyrics to their shipped
+recordings. Phrase-bounded output supplies the Battle UI timing snapshots for
+The Blight Treant, The Forge Golem, The Frostwarden and The Iron Bear; see
+[Audio workflow](../../Docs/AUDIO.md#local-lyric-alignment-experiment).
 Running this tool does not itself replace that checked-in snapshot. Its placeholder layout
 places lyrics centered between the combatants and the hand. Words appear as
 their inferred start times arrive, building the phrase as it is sung. Earlier
@@ -87,6 +88,50 @@ recognized text, unmatched ASR words, undetected written phrases, and retry
 outcomes. These omissions must be reviewed alongside timing quality; fewer
 flagged words alone does not establish a better or complete transcription.
 The cached full transcript is reused only for the same recording hash.
+
+## Other boss songs
+
+The supplied `forge-golem.txt`, `frostwarden.txt` and `iron-bear.txt` match the
+lyric metadata embedded in their shipped MP3s. Section labels, singer labels
+and sound directions are excluded. Forge Golem's held chants are split into
+single-word phrases so a long rest does not stretch one phrase across them.
+The matcher permits a one-word phrase as well as longer lines.
+
+Use separate output directories to retain each song's evidence and transcript
+caches. For example:
+
+```sh
+reports/boss-lyrics/venv/bin/python scripts/lyrics-trial/phrase-align.py --audio 'public/Music/The Forge Golem.mp3' --lyrics scripts/lyrics-trial/forge-golem.txt --output-dir reports/boss-lyrics/forge-golem --snapshot src/lib/audio/lyrics/forge-golem.json
+reports/boss-lyrics/venv/bin/python scripts/lyrics-trial/assess.py reports/boss-lyrics/forge-golem/alignment-phrases.json --audio 'public/Music/The Forge Golem.mp3'
+```
+
+Substitute `frostwarden` / `The Frostwarden` or `iron-bear` / `The Iron Bear`
+for the other songs. Iron Bear's repeated calls and overlapping final chorus
+use shorter phrase boundaries, with dashes attached to the preceding word so
+punctuation is not treated as a separate sung word. `--model` changes both initial
+transcription and bounded word alignment; transcript caches include model
+identity. Transcription uses temperature zero to avoid repeated stochastic
+fallback decoding of instrumental noise. Suspect phrases and unmatched speech
+regions still retry with `medium.en` by default. Frostwarden and Iron Bear's
+review candidates use `--retry-model small.en`; larger-model comparison did not
+reliably recover their difficult vocals. When a phrase has only one content
+word, matching requires evidence for that word: shared grammar cannot turn
+repeated "I am the lion" detections into "I am the blade".
+
+`--snapshot` exports compact word timings with the recording hash, lyric hash,
+duration, model, method and coverage counts. It refuses empty phrases,
+non-finite, overlapping, zero-duration or out-of-recording word intervals;
+it does not repair words. For an explicitly incomplete review candidate,
+`--allow-incomplete` excludes an entire invalid phrase and records its text in
+`rejectedTimingPhrases` and its count in coverage. The raw alignment and evidence
+retain the rejected words; the preview must use the exported snapshot to review
+exactly what the Battle UI will display. Export validation does not establish audible
+accuracy. Keep timestamps relative to the original recording; Iron Bear's
+six-second playback skip is already reflected by the media clock.
+
+After copying `preview.html` to `reports/boss-lyrics/index.html`, the **Boss song**
+selector opens each new song's exported runtime snapshot alongside its original recording.
+Treant retains its comparison of mix, vocals, performance and phrase alignments.
 
 Dependencies and models download on first use. Subsequent runs use local caches;
 no audio or lyrics are sent to a service. Models, environments, vocal stems,
