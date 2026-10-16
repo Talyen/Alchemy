@@ -5,6 +5,7 @@ import { format } from "prettier";
 import fs from "node:fs";
 import path from "node:path";
 import languages from "../src/lib/localization/locales/languages.json" with { type: "json" };
+import promoCopy from "./assets/demo-promo-copy.json" with { type: "json" };
 import { extractMessages } from "./localization/extract.mjs";
 import {
   TARGETS,
@@ -171,6 +172,14 @@ try {
   } else {
     const failures = [...issues];
     const catalogs = compiled(messages, glossary);
+    // These captions are baked into reviewed artwork, so text changes need new art.
+    if (!isDeepStrictEqual(Object.keys(promoCopy).sort(), Object.keys(languages).sort()))
+      failures.push("Promo artwork languages differ from the shipped registry");
+    for (const locale of Object.keys(languages))
+      if (promoCopy[locale] !== catalogs[locale]?.["ui.demo-completion-screen.2"])
+        failures.push(
+          `${locale}: promo artwork copy is stale; regenerate and review its image before updating demo-promo-copy.json`,
+        );
     for (const requirement of FONT_REQUIREMENTS) {
       const glyphs = missingGlyphs(
         fs.readFileSync(path.join(ROOT, "public/fonts", requirement.file)),

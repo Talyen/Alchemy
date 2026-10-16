@@ -50,3 +50,16 @@ size fitting between the heading and action row; it never crops or stretches.
 Accessible text repeats the supplied image's labels: More Bosses, Wildwood Draft,
 The Labyrinth, More Heroes, 200+ Talents, Trinkets & Uniques, Build a Homestead.
 Wishlist on Steam and Main Menu retain their actions.
+
+German, Simplified Chinese, Russian, Spanish–Spain and Brazilian Portuguese use
+localized variants of the same illustration. Their source masters sit alongside
+the English original as `Unlock Full Game Demo Promo - <locale>.png` in the Asset
+Library; the generation prompt set is `Unlock Full Game Demo Promo - localization
+prompts.json` in that folder. Built-in image generation replaces only the seven
+captions, preserving panel composition, framing, palette and the gold lettering
+treatment. Review spelling, accents, quantity, terminology and fit against the
+catalog before adoption. Long captions use smaller lettering within their plaques.
+The asset manifest selects these masters and commits optimized WebP outputs;
+changing language selects the corresponding bundled image immediately. Expanded
+English QA uses the English illustration. See [localization](./LOCALIZATION.md)
+for the caption freshness gate.

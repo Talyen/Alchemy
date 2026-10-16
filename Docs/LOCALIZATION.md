@@ -154,9 +154,15 @@ acknowledged save/resume, final Act 1 boss combat and rewards, localized recap,
 hero unlocks, marketing-screen accessible text and return to menu without duplicate
 progression.
 The final-room checkpoint is seeded; this is not an unseeded seven-room playthrough.
-The existing user-supplied marketing illustration still contains English labels;
-its accessible text and surrounding controls are translated. Localized replacement
-artwork remains separate from text-catalog qualification.
+The demo ending selects bundled promo artwork for every shipped language, with
+English artwork for expanded-English QA. The original English master is retained;
+localized variants edit its seven labels in the same panels. Accessible text and
+surrounding controls use the text catalogs. The production journey checks the
+selected image URL, loading, proportions and layout for every target language.
+`scripts/assets/demo-promo-copy.json` records the reviewed artwork captions;
+`i18n:check` rejects catalog changes that leave those captions stale. Regenerate
+and visually review affected artwork before updating that record, then prepare
+assets through the [asset workflow](./WORKFLOWS-ASSETS.md).
 
 ```sh
 ALCHEMY_EDITION=demo npm run build:desktop

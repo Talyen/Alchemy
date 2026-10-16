@@ -76,7 +76,7 @@ Use the current [display sizing](./UI.md#display-sizing) bounds, not historical 
 - [ ] Reduced-motion inspection and consecutive keyboard plays settle and remain usable under the existing accessibility stance.
 - [ ] Verify native display modes on the target platform; browser geometry alone does not establish native behavior.
 - [ ] Volume/mute and interface sizing controls apply and persist, including background/foreground audio recovery.
-- [ ] Store-language claims match qualified catalogs and rendered evidence for the demo; the selected marketing artwork retains English labels.
+- [ ] Store-language claims match qualified catalogs and rendered evidence for the demo; marketing artwork is bundled for every shipped language.
 
 ## 6. Audio and performance
 

@@ -118,6 +118,13 @@ for (const locale of acceptanceLocales.filter((entry) => entry !== "en-XA")) {
             "More Bosses; Wildwood Draft; The Labyrinth; More Heroes; 200+ Talents; Trinkets & Uniques; Build a Homestead",
           ),
         );
+        const artwork = resumed.getByTestId("demo-marketing-image");
+        await expect(artwork).toHaveAttribute("src", new RegExp(`demo-feature-showcase-${locale.toLowerCase()}[.-]`));
+        await expect
+          .poll(() => artwork.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 1000))
+          .toBe(true);
+        const ratio = await artwork.evaluate((image: HTMLImageElement) => image.naturalWidth / image.naturalHeight);
+        expect(ratio).toBeCloseTo(2752 / 1536, 2);
         await reviewLayout(resumed, `${locale} demo ending`);
         const mainMenu = resumed.getByRole("button", { name: label("Main Menu"), exact: true });
         await expect(mainMenu).toBeFocused();
