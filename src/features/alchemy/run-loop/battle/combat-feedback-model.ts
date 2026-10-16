@@ -44,13 +44,13 @@ export function prepareCombatFeedback(
       const previous = consolidated[index];
       if (previous?.kind === "damage") {
         // Numeric display totals may combine non-additive reaction packets; engine facts stay untouched.
-        const merged = [{ ...previous, impact: undefined, additive: true, periodic: false }];
-        mergeCombatText(merged, { ...event, impact: undefined, additive: true, periodic: false });
+        const merged = [{ ...previous, impact: true, additive: true, periodic: false }];
+        mergeCombatText(merged, { ...event, impact: true, additive: true, periodic: false });
+        const { impact: _impact, additive: _additive, periodic: _periodic, ...aggregate } = merged[0]!;
         consolidated[index] = {
-          ...merged[0]!,
-          impact: previous.impact,
-          additive: previous.additive,
-          periodic: previous.periodic === event.periodic ? previous.periodic : false,
+          ...previous,
+          ...aggregate,
+          ...(previous.periodic !== event.periodic ? { periodic: false } : {}),
           includesCritical: previous.critical === true || event.critical === true,
         };
         continue;
