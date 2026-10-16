@@ -50,13 +50,6 @@ inspection, reward reveals, and battle display the full-resolution image.
 
 ## Art style and generation prompts
 
-The mana dock uses separate frame, full octagonal crystal, and empty crystal
-masters under `Interface/Mana Dock`. The frame has uninterrupted leather rather
-than baked-in sockets; its selected revision is Charcoal and Gold Stitched Leather.
-Dedicated lossless presets preserve the frame's native
-detail (up to 3840px wide, without enlargement) and 512px crystal outputs.
-Source masters remain in the Asset Library; the core manifest owns their selection.
-
 Alchemy's visual identity is anchored by its **Master Action-Anime Art Style**.
 Canonical style reference images in the repository include `Knight` (`src/assets/optimized/knight.webp`), `Wizard` (`src/assets/optimized/wizard.webp`), and `Fireball` (`src/assets/optimized/fireball.webp`), as well as approved crafting currencies `Discordant Dice` and `Ascension Seal`.
 
@@ -159,16 +152,22 @@ CSS discards the center and repeats edge slices while preserving corner pieces.
 Portrait, landscape, Companion, and status-panel frames all reuse these masters.
 Keep labels, Health fill, statuses, and semantic highlights in live UI layers.
 
-`2d Assets/Game Sources/Interface/Card Elements/Card Back.png` is the single card used in transfer animations.
+`2d Assets/Game Sources/Interface/Card Elements/Card Back.png` supplies the back
+of Collection cards. Battle draws and discards use face-up card artwork under
+the [transfer motion contract](./UI_MOTION.md#battle-motion).
 `Draw Pile.png` (active compass stack, leaning left) and `Discard Pile.png`
 (spent/dormant compass stack, leaning right) are distinct compositions, not
-mirrors; both retain transparent margins and a 3:4 canvas. Keep pile artwork
-separate from the single-card master so animations never show a stack.
-The battle Mana display uses the frame and separate full/empty crystal masters
-under `Interface/Mana Dock`, selected in `scripts/assets/core-assets.mjs`.
-Its outputs are `mana-dock-frame.webp`, `mana-dock-full.webp`, and
+mirrors; both retain transparent margins and a 3:4 canvas. Keep their source
+identities separate from the single-card master.
+The battle Mana display uses the separate full/empty crystal masters under
+`Interface/Mana Dock`, selected in `scripts/assets/core-assets.mjs`, inside the
+hero portrait. Its active outputs are `mana-dock-full.webp` and
 `mana-dock-empty.webp`; these are distinct from the playable Mana Crystals card
-artwork. Preserve alpha transparency and lossless preparation for all three.
+artwork. The manifest also prepares `mana-dock-frame.webp`, which the current
+battle display does not render. Preserve alpha transparency and lossless
+preparation for these selected assets: the frame retains native detail up to
+3840px wide without enlargement, and crystals use 512px outputs. The selected
+Charcoal and Gold Stitched Leather frame has no baked-in sockets.
 [Display sizing](./UI.md#display-sizing) owns the dock layout and spent appearance;
 [battle feedback](./UI_BATTLE.md#battle-feedback) owns resource-change effects.
 
@@ -298,8 +297,8 @@ Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run 
 `scripts/prepare-assets.mjs` is the full pipeline (invoked via the canonical
 `node scripts/assets.mjs --prepare` CLI for explicit local preparation). Art, sound, and music
 optimization run concurrently and report every failure (settled, not fail-fast)
-because their outputs are disjoint; generated
-art and Gear barrels update whenever art succeeds, even if sound or music fail,
+because their outputs are disjoint; the general art barrel updates whenever art
+succeeds, even if sound or music fail,
 and build version metadata syncs as a separate step in the same run —
 the run still throws, so partial success is never silent. Synchronization failures
 are reported together with optimization failures. Worker pools finish all started

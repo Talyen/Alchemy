@@ -23,8 +23,8 @@ reserving the 1px frame so interaction cannot shift the layout. Board names and
 locked state remain in accessible control names; a lock indicator sits inside
 locked artwork. Locked art stays grayscale until hover/focus.
 
-Inspection fills the game area with full-color artwork, using the same independent
-width/height scaling as battle boards. Use Board sits centered in the lower third
+Inspection fills the game area with full-color artwork, scaling its width and
+height independently to fill the viewport. Use Board sits centered in the lower third
 for owned boards, including the currently equipped board. Successful selection
 closes the preview; a rejected selection keeps it open. Locked previews show the
 five-room reward requirement in that position. The top-right close control and

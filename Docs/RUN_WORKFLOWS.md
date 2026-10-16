@@ -113,7 +113,7 @@ Pure engine tests can continue to use the execution shape directly.
 
 ## Campfire brewing and Transmutation visits
 
-`navigation/alchemy-commands.ts` initializes fixed visit offers using the saved events RNG stream. Campfire and Transmutation activities own offers, completion, and result cards; Transmutation also saves class-independent keyword choices, source snapshots and indices, fixed randomly selected source keywords, exact alteration previews, and source/keyword selections; the resume codec persists them independently of the visible menu. Returning or reloading must not regenerate an initialized visit.
+`run/room-visit-initialization.ts` initializes fixed visit offers using the saved events RNG stream inside the room-entry transaction. `navigation/alchemy-commands.ts` owns brewing, source/keyword selection, and transmutation actions against that committed visit. Campfire and Transmutation activities own offers, completion, and result cards; Transmutation also saves class-independent keyword choices, source snapshots and indices, fixed randomly selected source keywords, exact alteration previews, and source/keyword selections; the resume codec persists them independently of the visible menu. Returning or reloading must not regenerate an initialized visit.
 
 Brew and alteration commands validate the current activity, completion, source eligibility, and selected offers before writing. Payment, deck replacement, discovery, and visit use commit synchronously through the run-session write port.
 

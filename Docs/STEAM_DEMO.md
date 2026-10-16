@@ -85,9 +85,11 @@ dialog or screen. Native gamepad polling, glyphs and rumble are outside scope.
 Published layouts and hardware validation remain governed by
 [release setup](./RELEASE_SETUP.md#steam-input-default-mapping-controller-playable).
 
-Desktop focus loss and the default Shift+Tab chord open the game menu, stopping
-automatic battle actions until the player dismisses it. Wishlist opening does
-the same; the store opens in the overlay only when
+Native Steam overlay activation and the default Shift+Tab chord open the game
+menu during an active battle, stopping automatic battle actions until the player
+dismisses it. Ordinary window blur follows the [focus policy](./UI_INTERACTION.md#keyboard-and-steam-input-navigation)
+without opening the menu. Wishlist opening also requests a battle pause; the store
+opens in the overlay only when
 `client.isOverlayEnabled()` returns true at click time, otherwise it uses the
 fixed Steam store URL in the browser. Unknown availability is not success:
 overlay activation returns void and can silently do nothing.
