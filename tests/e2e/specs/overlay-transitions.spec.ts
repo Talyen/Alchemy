@@ -73,7 +73,7 @@ test("closing during preparation never reveals late artwork, including reduced m
   await page.emulateMedia({ reducedMotion: "reduce" });
   const card = makeCard();
   await injectActiveBattle(page, makeGoblinBattleState({ hand: [card] }), { runDeck: [card] });
-  const opener = page.getByRole("button", { name: "View Deck · 1 cards" });
+  const opener = page.getByRole("button", { name: "View Deck · 1 card" });
   await expect(opener).toHaveAttribute("aria-disabled", "false");
   await page.evaluate(() => {
     const decode = HTMLImageElement.prototype.decode;

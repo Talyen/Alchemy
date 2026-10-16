@@ -158,6 +158,7 @@ test.describe("Responsive display sizes", slow, () => {
       );
       await assertStageFitsViewport(page);
       const cards = page.locator('[aria-label^="Play "]');
+      await waitForLayoutSettled(page, cards.first());
       await expect(cards.first()).toBeVisible();
       await controllerInput(page).reach(cards.first());
       const tip = page.locator("#tooltip-root .hover-popup-panel[data-visible]").first();
@@ -467,6 +468,7 @@ test(
 test("Armory currency artwork follows Game Size", slow, async ({ page }) => {
   await page.setViewportSize(CONTENT_REFERENCE_VIEWPORT);
   await page.goto("/");
+  await new MenuPage(page).expectMainMenuAfterColdStart();
   const widths: number[] = [];
   for (const gameSizePercent of [80, 120]) {
     await page.evaluate(
@@ -497,7 +499,10 @@ for (const deviceScaleFactor of [1.25, 2]) {
         Array.from({ length: 6 }, () => makeCard({ cost: 0 })),
         { autoEndTurn: false },
       );
+      // The first dealt card appears before opening playback admits input.
+      await expect(page.getByRole("button", { name: "End Turn", exact: true })).toBeEnabled();
       const cards = page.locator('[aria-label^="Play "]');
+      await waitForLayoutSettled(page, cards.first());
       await expect(cards.first()).toHaveAttribute("aria-disabled", "false");
       await controllerInput(page).reach(cards.first());
       await expectTooltipFitsViewport(page.locator("#tooltip-root .hover-popup-panel[data-visible]").first(), {

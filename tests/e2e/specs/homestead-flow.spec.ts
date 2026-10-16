@@ -18,7 +18,7 @@ async function expectNativeArtwork(art: Locator) {
 }
 
 async function observePurchase(page: Page, title: string, activate: () => Promise<void>, grows = true) {
-  const [frames] = await Promise.all([
+  const [observation] = await Promise.all([
     page.evaluate(async (title) => {
       const frames: Array<{
         height: number;
@@ -30,6 +30,7 @@ async function observePurchase(page: Page, title: string, activate: () => Promis
       }> = [];
       const start = performance.now();
       let settled = 0;
+      let sawTransition = false;
       while (performance.now() - start < 1800) {
         await new Promise<void>((resolve) => {
           requestAnimationFrame(() => resolve());
@@ -45,8 +46,10 @@ async function observePurchase(page: Page, title: string, activate: () => Promis
         const bounds = panel.getBoundingClientRect();
         const artwork = art.getBoundingClientRect();
         const active = body.getAttribute("data-homestead-transition") === "active";
+        sawTransition ||= active;
         const opacity = Number(getComputedStyle(body.firstElementChild!).opacity);
         const scale = Number.parseFloat(getComputedStyle(panel).scale) || 1;
+        const valueOpacity = Number(getComputedStyle(body.querySelector(".homestead-value-update") ?? body).opacity);
         frames.push({
           height: panel.offsetHeight,
           scale,
@@ -55,22 +58,25 @@ async function observePurchase(page: Page, title: string, activate: () => Promis
               ? artwork.top - bounds.bottom
               : bounds.top - artwork.bottom,
           opacity,
-          valueOpacity: Number(getComputedStyle(body.querySelector(".homestead-value-update") ?? body).opacity),
+          valueOpacity,
           active,
         });
         const complete =
           art.closest("button")?.querySelector('[role="status"]')?.textContent !== "Saving…" &&
-          active &&
+          sawTransition &&
           opacity === 1 &&
+          valueOpacity === 1 &&
           scale === 1 &&
           Number(getComputedStyle(art).opacity) === 1;
         settled = complete && frames.at(-2)?.height === panel.offsetHeight ? settled + 1 : 0;
         if (settled >= 6) break;
       }
-      return frames;
+      return { frames, settled, elapsedMs: performance.now() - start };
     }, title),
     activate(),
   ]);
+  const { frames, settled, elapsedMs } = observation;
+  expect(settled, `${title} did not settle within ${Math.round(elapsedMs)}ms`).toBe(6);
   expect(frames.every((frame) => frame.opacity === 1)).toBe(true);
   expect(frames.some((frame) => frame.valueOpacity > 0 && frame.valueOpacity < 1)).toBe(true);
   // CI may miss the overshoot peak; still require observed motion and a settled panel.

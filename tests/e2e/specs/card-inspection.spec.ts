@@ -93,7 +93,7 @@ test("shows an empty draft and updates the viewer after each pick", async ({ pag
     .getByRole("button", { name: /^Select / })
     .first()
     .click();
-  await page.getByRole("button", { name: "View Deck · 1 cards" }).click();
+  await page.getByRole("button", { name: "View Deck · 1 card" }).click();
   await expect(page.getByRole("dialog").getByRole("img", { name: "Slash", exact: true })).toBeVisible();
 });
 

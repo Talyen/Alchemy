@@ -25,6 +25,13 @@ Keep passing-journey screenshots in explicit visual acceptance or layout-review
 workflows. Functional checks assert state and geometry without screenshot encoding
 or attachment I/O. Motion checks observe frames or actual transition events and
 stop when the animation settles; declared CSS properties alone cannot prove motion.
+Arm short-lived feedback samplers in the renderer before sending input, then
+read their captured result after the action. Locator assertions and protocol
+round trips can outlast the feedback being measured. For transition sampling,
+remember that motion started and check settled visual values independently of
+temporary feedback flags; those flags may clear before enough stable frames arrive.
+For fitted text, sample after the frame's resize observers finish, rather than
+reading intermediate geometry from a requestAnimationFrame callback.
 
 ## Running focused checks
 

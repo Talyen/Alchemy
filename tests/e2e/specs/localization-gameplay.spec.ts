@@ -68,7 +68,10 @@ async function nextSeedPage(previous: Page): Promise<Page> {
 
 async function crossLanguageResume(page: Page, locale: AcceptanceLocale, ready: string) {
   const before = await readSavedGame(page);
-  const next = acceptanceLocales[(acceptanceLocales.indexOf(locale) + 1) % acceptanceLocales.length]!;
+  const resumeLocales = acceptanceLocales.filter(
+    (candidate) => candidate !== "en-XA" || process.env.PLAYWRIGHT_VITE_MODE === "dev",
+  );
+  const next = resumeLocales[(resumeLocales.indexOf(locale) + 1) % resumeLocales.length]!;
   await localizedCheckpoint(page, next, async (fresh) => {
     await expect(fresh.getByRole("heading", { name: translatedLabel(next, ready), exact: true })).toBeVisible();
     const after = await readSavedGame(fresh);
