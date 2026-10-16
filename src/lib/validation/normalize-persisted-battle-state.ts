@@ -262,7 +262,9 @@ function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
     uniqueGear: {
       ...state.uniqueGear,
       lastArcheryUid: unambiguousUid(state.uniqueGear.lastArcheryUid),
-      returningFlightUid: unambiguousUid(state.uniqueGear.returningFlightUid),
+      returningFlightUids: [...new Set(state.uniqueGear.returningFlightUids)].filter(
+        (uid) => unambiguousUid(uid) !== null,
+      ),
     },
     cardsPlayedThisTurn: toFiniteNonNegativeInt(state.cardsPlayedThisTurn) ?? 0,
     nextCardUid,
@@ -339,6 +341,8 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
   };
   // battleMetrics is runtime-only telemetry; never persisted.
   delete merged.battleMetrics;
+  // Glacial Surge is now a native flat bonus; saved growth must not stack with it.
+  if (currentEnemy.traits.some((trait) => trait.id === "glacial-shell")) merged.enemyStatuses.freezeBonus = 0;
   const companion = merged.activeCompanion;
   const resources = normalizeCombatResources(merged, defaults);
   const survival = normalizeSurvival(merged, saved, defaults);

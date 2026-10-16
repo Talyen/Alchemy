@@ -9,6 +9,7 @@ import {
   makeGoblinBattleState,
   seedRandom,
   startBattleWithDeck,
+  waitForLayoutSettled,
 } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 
@@ -42,6 +43,7 @@ test("inspects the run deck and each battle pile without advancing combat", crit
   await icon.click();
   const dialog = page.getByRole("dialog", { name: "Deck", exact: true });
   await expect(dialog.getByRole("img")).toHaveCount(4);
+  await waitForLayoutSettled(page, dialog);
   await expect(dialog.getByRole("img", { name: "Apple", exact: true })).toBeVisible();
   const draw = dialog.getByRole("button", { name: "Draw · 1 cards", exact: true });
   const tabTop = (await draw.boundingBox())!.y;

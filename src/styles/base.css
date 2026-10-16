@@ -1,3 +1,22 @@
+@font-face {
+  font-family: "Alchemy Chinese";
+  src: url("/fonts/noto-sans-sc.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Alchemy Cyrillic";
+  src: url("/fonts/noto-sans.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+html:lang(zh-Hans) {
+  line-break: strict;
+  overflow-wrap: anywhere;
+}
+
 @layer base {
   * {
     --content-rem: calc(1rem * var(--content-scale, 1));

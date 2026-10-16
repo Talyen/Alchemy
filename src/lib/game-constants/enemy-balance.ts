@@ -1,4 +1,5 @@
 export const ENEMY_PROGRESSION_DEPTH_LIMIT = 24;
+export const ENEMY_BOSS_HEALTH_SCALE = 0.9;
 
 export const ENEMY_BALANCE_BY_TYPE = {
   normal: {

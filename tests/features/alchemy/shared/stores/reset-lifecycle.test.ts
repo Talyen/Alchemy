@@ -12,7 +12,7 @@ import { deferred } from "../../../../helpers/deferred";
 
 it("publishes a wiped career atomically and revokes snapshots captured during deletion", async () => {
   let duringDeletion: UnstampedSaveData | undefined;
-  const session = createGameSession({
+  await using session = createGameSession({
     initialSave: { ...createDefaultSaveData(), gold: 725, musicVolume: 7 },
     saveBackend: createSaveBackend({
       clear: async () => {
@@ -29,21 +29,18 @@ it("publishes a wiped career atomically and revokes snapshots captured during de
   persistence.subscribe(observe);
   runtime.settings.subscribe(observe);
   runtime.gameplay.reads.subscribe(observe);
-  try {
-    expect(await clearAllPersistentGameData(session)).toBe(true);
-    expect(snapshots.length).toBeGreaterThan(0);
-    for (const snapshot of snapshots) {
-      expect(snapshot.gold).toBe(0);
-      expect(snapshot.musicVolume).toBe(createDefaultSaveData().musicVolume);
-      expect(snapshot.activeRun).toBeNull();
-    }
-    expect(duringDeletion?.gold).toBe(725);
-    expect(await persistence.write(duringDeletion!)).toBe("skipped");
-    expect(await persistence.checkpoint()).toBe("saved");
-    expect(persistence.readProgress().kind).toBe("idle");
-  } finally {
-    await session.dispose();
+
+  expect(await clearAllPersistentGameData(session)).toBe(true);
+  expect(snapshots.length).toBeGreaterThan(0);
+  for (const snapshot of snapshots) {
+    expect(snapshot.gold).toBe(0);
+    expect(snapshot.musicVolume).toBe(createDefaultSaveData().musicVolume);
+    expect(snapshot.activeRun).toBeNull();
   }
+  expect(duringDeletion?.gold).toBe(725);
+  expect(await persistence.write(duringDeletion!)).toBe("skipped");
+  expect(await persistence.checkpoint()).toBe("saved");
+  expect(persistence.readProgress().kind).toBe("idle");
 });
 
 it.each([true, false])("cancels outgoing navigation only when disk deletion succeeds (%s)", async (ok) => {

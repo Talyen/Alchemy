@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { expect, it, vi } from "vitest";
 import { defaultGameSession } from "@/app/application-session";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
@@ -28,23 +29,23 @@ it("failed audio output cannot strand a committed navigation", async () => {
     },
     defaultGameSession,
   );
-  try {
-    navigation.navigateTo("options");
-    await advance(1000);
-    expect(soundedFakeAudio().length).toBeGreaterThan(0);
-    expect(screen).toBe("options");
-    expect(pending).toBe(false);
-    navigation.navigateTo("collection");
-    await advance(1000);
-    expect(screen).toBe("collection");
-    expect(pending).toBe(false);
-  } finally {
+  using _scopeCleanup = createCleanup(() => {
     (uiSounds as Record<string, unknown>).navigate = originalNavigate;
     navigation.cancelPending();
     resetAudioRuntimeForTests();
     vi.unstubAllGlobals();
     vi.useRealTimers();
-  }
+  });
+
+  navigation.navigateTo("options");
+  await advance(1000);
+  expect(soundedFakeAudio().length).toBeGreaterThan(0);
+  expect(screen).toBe("options");
+  expect(pending).toBe(false);
+  navigation.navigateTo("collection");
+  await advance(1000);
+  expect(screen).toBe("collection");
+  expect(pending).toBe(false);
 });
 
 it("delayed media completion and muting cannot revive a cancelled navigation", async () => {
@@ -71,25 +72,25 @@ it("delayed media completion and muting cannot revive a cancelled navigation", a
     },
     defaultGameSession,
   );
-  try {
-    navigation.navigateTo("options");
-    navigation.navigateTo("collection");
-    setMuted(true);
-    await advance(1000);
-    expect(screen).toBe("collection");
-    expect(pending).toBe(false);
-    playback.resolve();
-    await advance(1);
-    expect(screen).toBe("collection");
-    expect(pending).toBe(false);
-    expect(soundedFakeAudio().length).toBeGreaterThan(0);
-    expect(soundedFakeAudio().every((element) => element.muted)).toBe(true);
-  } finally {
+  using _scopeCleanup = createCleanup(() => {
     (uiSounds as Record<string, unknown>).navigate = originalNavigate;
     navigation.cancelPending();
     setMuted(false);
     resetAudioRuntimeForTests();
     vi.unstubAllGlobals();
     vi.useRealTimers();
-  }
+  });
+
+  navigation.navigateTo("options");
+  navigation.navigateTo("collection");
+  setMuted(true);
+  await advance(1000);
+  expect(screen).toBe("collection");
+  expect(pending).toBe(false);
+  playback.resolve();
+  await advance(1);
+  expect(screen).toBe("collection");
+  expect(pending).toBe(false);
+  expect(soundedFakeAudio().length).toBeGreaterThan(0);
+  expect(soundedFakeAudio().every((element) => element.muted)).toBe(true);
 });

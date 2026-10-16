@@ -1,3 +1,4 @@
+import { text, displayText } from "@/lib/localization/runtime";
 import { characters, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import {
   craftingCurrencyBlockedReason,
@@ -11,7 +12,9 @@ export const COMBAT_LOCKED_MESSAGE = "Equipment cannot be changed during Combat.
 
 export function reservedReasonFor(reservedBy: CharacterId | null | undefined): string | null {
   if (!reservedBy) return null;
-  return `Reserved for ${characters[reservedBy].name} until their battle ends.`;
+  return text("armory.reserved", "Reserved for {{hero}} until their battle ends.", {
+    hero: displayText(characters[reservedBy].name),
+  });
 }
 
 type ArmoryTargetMode = "salvage" | "currency" | null;
@@ -47,16 +50,24 @@ export function getArmoryTargetState({
   const mode: ArmoryTargetMode = salvageable ? "salvage" : canCraft ? "currency" : null;
   let targetAriaLabel: string | null = null;
   if (activeCurrencyId && canCraft) {
-    targetAriaLabel = `Apply ${getCraftingCurrencyDefinition(activeCurrencyId).displayName} to ${title}`;
+    targetAriaLabel = text("armory.apply-currency", "Apply {{currency}} to {{title}}", {
+      currency: displayText(getCraftingCurrencyDefinition(activeCurrencyId).displayName),
+      title: displayText(title),
+    });
   } else if (salvageable) {
-    targetAriaLabel = `Salvage ${title}`;
+    targetAriaLabel = text("armory.salvage-item", "Salvage {{title}}", { title: displayText(title) });
   }
   return { canCraft, salvageable, blockedReason, mode, targetAriaLabel };
 }
 
 export function formatTrinketEquipAriaLabel(title: string, equippedBy: CharacterId | null | undefined): string {
   const characterName = equippedBy ? (characters[equippedBy]?.name ?? equippedBy) : null;
-  return `Equip ${title}${characterName ? ` from ${characterName}` : ""}`;
+  return characterName
+    ? text("armory.equip-from", "Equip {{title}} from {{hero}}", {
+        title: displayText(title),
+        hero: displayText(characterName),
+      })
+    : text("armory.equip", "Equip {{title}}", { title: displayText(title) });
 }
 
 type ArmoryItemAction =

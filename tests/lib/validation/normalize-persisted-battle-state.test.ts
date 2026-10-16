@@ -110,6 +110,23 @@ describe("normalizePersistedBattleState", () => {
     },
   );
 
+  it("resumes Frostwarden with the flat Glacial Surge rule without retaining saved growth or rescaling Health", () => {
+    const defaults = defaultBattleState();
+    const saved = {
+      ...defaults,
+      currentEnemy: enemyById.frostwarden,
+      turn: 8,
+      enemyHealth: 100,
+      enemyMaxHealth: 234,
+      enemyStatuses: { ...defaults.enemyStatuses, freezeBonus: 2, poison: 4 },
+    };
+    const resumed = normalizePersistedBattleState(saved);
+    expect(resumed.enemyStatuses).toMatchObject({ freezeBonus: 0, poison: 4 });
+    expect(resumed).toMatchObject({ enemyHealth: 100, enemyMaxHealth: 234, turn: 8 });
+    expect(normalizePersistedBattleState(resumed)).toEqual(resumed);
+    expect(saved.enemyStatuses.freezeBonus).toBe(2);
+  });
+
   it("fills missing gear and flag manifests from defaults and drops retired flags", () => {
     const saved = {
       ...defaultBattleState(),

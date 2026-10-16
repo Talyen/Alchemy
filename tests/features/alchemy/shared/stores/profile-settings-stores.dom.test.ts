@@ -1,13 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { renderHook } from "@testing-library/react";
 import { profilePersistenceCodec, readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { mutateGameplayForTest, resetProfileForTest } from "../../../../helpers/run-domain-store-test";
-import {
-  settingsPersistenceCodec,
-  useAppSettings,
-  useSettingsActions,
-  useSettingsStore,
-} from "@/features/alchemy/shared/stores/settings-store";
+import { settingsPersistenceCodec, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { defaultSaveData, type SaveData } from "@/features/alchemy/shared/storage";
 import {
   handleCollectionTabChange,
@@ -184,15 +178,5 @@ describe("settings store", () => {
 
     expect(useSettingsStore.getState().rememberAutoplayPreference).toBe(true);
     expect(useSettingsStore.getState().autoplayEnabled).toBe(true);
-  });
-
-  it("exposes actions and slices through hooks", () => {
-    const { result: actions } = renderHook(() => useSettingsActions());
-    actions.current.setBrightness(120);
-    expect(useSettingsStore.getState().brightness).toBe(120);
-
-    const { result: settings } = renderHook(() => useAppSettings());
-    expect(settings.current.brightness).toBe(120);
-    expect(settings.current).not.toHaveProperty("showClearSaveConfirm");
   });
 });

@@ -106,7 +106,6 @@ owners directly.
 | Start battle or destination   | `battle-setup.ts`: `startBattleWithDeck`, `startAtDestination`      | Bootstraps battle                                                                                                 |
 | Inject mid-battle             | `save-injection.ts`: `injectActiveBattle`                           | Boots directly into battle                                                                                        |
 | Win and claim reward          | `battle-setup.ts`: `winBattleAndClaimReward`                        | Wins through combat and claims the first reward card                                                              |
-| End run and return            | `battle-setup.ts`: `assertEndRunShowsRecap`                         | Ends immediately without confirmation, asserts recap, then continues to the menu                                  |
 | Seed exact persisted state    | `save-injection.ts`: `injectSaveState`, `injectMysterySummaryVisit` | Page initialization scripts rerun on navigation and reload                                                        |
 | Inspect acknowledged save     | `save-injection.ts`: `withSavedGame`, `readSavedGame`               | The former opens an unseeded page, checks runtime errors and closes it; the latter reads the acknowledged payload |
 | Collect errors on extra pages | `errors.ts`: `failOnRuntimeErrors`                                  | Assert collected errors before closing; the browser fixture covers its own page automatically                     |

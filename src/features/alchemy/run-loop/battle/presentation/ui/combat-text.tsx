@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { createElement, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
@@ -93,6 +95,7 @@ const FCT_ANIMATION_PROPS = (() => {
 })();
 
 export function CombatTextRail({ bursts }: { bursts: CombatTextBurst[] }) {
+  useGameTranslation();
   const reducedMotion = useReducedMotion();
   const staticMotion = reducedMotion === true || isAnimationDisabled();
   const newestRef = useRef<HTMLDivElement>(null);
@@ -145,7 +148,7 @@ export function CombatTextRail({ bursts }: { bursts: CombatTextBurst[] }) {
                 animate={staticMotion ? { opacity: 1, scale: 1, y: 0 } : FCT_ANIMATION_PROPS.animate}
               >
                 {burst.entries.map((entry) => (
-                  <CombatTextEntry key={entry.id} entry={entry} />
+                  <CombatTextEntry key={entry.id} entry={entry} staticMotion={staticMotion} />
                 ))}
               </motion.div>
             </motion.div>
@@ -156,37 +159,45 @@ export function CombatTextRail({ bursts }: { bursts: CombatTextBurst[] }) {
   );
 }
 
-function CombatTextEntry({ entry }: { entry: FloatingCombatText }) {
+function CombatTextEntry({ entry, staticMotion }: { entry: FloatingCombatText; staticMotion: boolean }) {
+  const i18n = useGameTranslation();
   const icon = getCombatTextIcon(entry);
   const leading = getCombatTextLeadingIcon(entry);
   return (
     <div
       data-testid="combat-text"
-      aria-label={getCombatTextAccessibleLabel(entry)}
+      aria-label={i18n.displayText(i18n.read(() => getCombatTextAccessibleLabel(entry)))}
       data-kind={entry.kind}
       data-stat={entry.stat}
       className={cn(
         "inline-flex items-center justify-center gap-1.5 whitespace-nowrap",
         entry.kind === "notice" && "col-span-full",
         getCombatTextColorClass(entry),
+        entry.kind === "damage" &&
+          entry.critical &&
+          (staticMotion ? "combat-text-critical-static" : "combat-text-critical"),
       )}
     >
-      {leading
-        ? createElement(leading, {
-            "aria-hidden": true,
-            style: { width: "0.94em", height: "0.94em" },
-            strokeWidth: 3,
-          })
-        : null}
-      {icon
-        ? createElement(icon, {
-            style: {
-              width: `calc(${FCT_BASE_SIZE_CQH * 0.94 * 10.8}px * var(--content-scale, 1))`,
-              height: `calc(${FCT_BASE_SIZE_CQH * 0.94 * 10.8}px * var(--content-scale, 1))`,
-            },
-            strokeWidth: 3,
-          })
-        : null}
+      {i18n.displayText(
+        leading
+          ? createElement(leading, {
+              "aria-hidden": true,
+              style: { width: "0.94em", height: "0.94em" },
+              strokeWidth: 3,
+            })
+          : null,
+      )}
+      {i18n.displayText(
+        icon
+          ? createElement(icon, {
+              style: {
+                width: `calc(${FCT_BASE_SIZE_CQH * 0.94 * 10.8}px * var(--content-scale, 1))`,
+                height: `calc(${FCT_BASE_SIZE_CQH * 0.94 * 10.8}px * var(--content-scale, 1))`,
+              },
+              strokeWidth: 3,
+            })
+          : null,
+      )}
       {entry.displayText ? (
         <span
           style={{
@@ -200,7 +211,7 @@ function CombatTextEntry({ entry }: { entry: FloatingCombatText }) {
                 : `${entry.reservedDigits + (/^[+-]/.test(entry.displayText) ? 1 : 0)}ch`,
           }}
         >
-          {entry.displayText}
+          {i18n.displayText(entry.displayText)}
         </span>
       ) : null}
     </div>

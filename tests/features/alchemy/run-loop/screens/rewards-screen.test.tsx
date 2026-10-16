@@ -1,3 +1,4 @@
+import { makeTestCard } from "../../../../fixtures/cards";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,14 +12,12 @@ import { mutateRunForTest, resetRunSessionSlice } from "../../../../helpers/run-
 import { defaultGameSession } from "@/app/application-session";
 import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 
-const testCard: BattleCard = {
+const testCard: BattleCard = makeTestCard({
   id: "slash",
   title: "Slash",
   descriptionLines: ["Deal 6 damage."],
-  art: "",
-  cost: 1,
   effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-};
+});
 
 installReadyArtworkForTests();
 
@@ -54,6 +53,7 @@ describe("RewardsScreen", () => {
     await user.click(screen.getByRole("button", { name: /select slash/i }));
 
     expect(onClaimReward).toHaveBeenCalledWith("slash");
+    expect(screen.getByRole("heading", { name: "Victory" })).toBeTruthy();
     expect(readRunSession(defaultGameSession).rewardFlow.state.selectedId).toBeNull();
     expect(
       screen

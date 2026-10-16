@@ -154,7 +154,13 @@ function resolveEnemyDamageEffectCore(
         }
       : state;
   if (preDamageBlockStrip > 0)
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: preDamageBlockStrip });
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "damage",
+      stat: "block",
+      amount: preDamageBlockStrip,
+      impact: false,
+    });
 
   const mitigation = calculateBlockAndArmorMitigation(hitState, effect, incomingDamage, combatTexts, options, state);
 

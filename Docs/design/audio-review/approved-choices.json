@@ -2623,7 +2623,7 @@
     "enemyHit": "battleEventSounds.enemyHit",
     "playerHit": "battleEventSounds.playerHit",
     "blockAbsorb": "battleEventSounds.blockAbsorb",
-    "critHit": "battleEventSounds.critHit",
+    "critHit": "battleEventSounds.hitCritical",
     "stunProc": "battleEventSounds.stunProc",
     "freezeProc": "battleEventSounds.freezeProc",
     "burnTick": "battleEventSounds.burnTick",
@@ -2665,16 +2665,36 @@
     "bond": "uiSounds.bond",
     "craft": "uiSounds.craft",
     "reward-claim": "uiSounds.talentUnlock",
-    "homestead-upgrade": "uiSounds.talentUnlock",
+    "homestead-upgrade": "uiSounds.homesteadBuild",
     "mystery-benefit": "uiSounds.talentUnlock",
     "victory": "stingerSounds.victory",
     "run-victory": "stingerSounds.runVictory",
     "defeat": "stingerSounds.defeat",
     "amb-camp": "screenAmbienceSounds.campfire",
     "amb-labyrinth": "screenAmbienceSounds.labyrinth-map",
-    "status-purge": "battleEventSounds.cleanse",
+    "status-purge": "battleEventSounds.purge",
     "mana-change": "battleEventSounds.manaChange",
-    "armor-gain": "battleEventSounds.armorGain"
+    "armor-gain": "battleEventSounds.armorGain",
+    "fit-hitBurnCritical": "battleEventSounds.hitBurnCritical",
+    "fit-hitFreezeCritical": "battleEventSounds.hitFreezeCritical",
+    "fit-hitStunCritical": "battleEventSounds.hitStunCritical",
+    "fit-hitPiercingCritical": "battleEventSounds.hitPiercingCritical",
+    "fit-hitHolyCritical": "battleEventSounds.hitHolyCritical",
+    "fit-slashCritical": "battleEventSounds.slashCritical",
+    "fit-stabCritical": "battleEventSounds.stabCritical",
+    "fit-astralBurn": "battleEventSounds.astralBurn",
+    "fit-astralFreeze": "battleEventSounds.astralFreeze",
+    "fit-astralPiercing": "battleEventSounds.astralPiercing",
+    "fit-astralBurnCritical": "battleEventSounds.astralBurnCritical",
+    "fit-astralFreezeCritical": "battleEventSounds.astralFreezeCritical",
+    "fit-astralPiercingCritical": "battleEventSounds.astralPiercingCritical",
+    "fit-hitBurn": "battleEventSounds.hitBurn",
+    "fit-hitFreeze": "battleEventSounds.hitFreeze",
+    "fit-hitStun": "battleEventSounds.hitStun",
+    "fit-hitPiercing": "battleEventSounds.hitPiercing",
+    "fit-hitHoly": "battleEventSounds.hitHoly",
+    "fit-cleanse": "battleEventSounds.cleanse",
+    "fit-corrupt": "uiSounds.corrupt"
   },
   "runtimeRevisions": {
     "shopBuy": {
@@ -2682,12 +2702,12 @@
       "reason": "2026-10-09: user selected quick coin gather for all shop purchases."
     },
     "card:caustic-jab": {
-      "runtimeFiles": ["sword-impact-hit-2.ogg"],
-      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+      "runtimeFiles": ["fit-hit-piercing.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
     },
     "card:rend": {
-      "runtimeFiles": ["monster-bite-3-7193d1d8-0-1339.ogg"],
-      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+      "runtimeFiles": ["fit-hit-piercing.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
     },
     "card:predators-focus": {
       "runtimeFiles": ["monster-bite-3-7193d1d8-0-1339.ogg"],
@@ -2698,8 +2718,8 @@
       "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
     },
     "card:pixie-dust": {
-      "runtimeFiles": ["buff-pickup.ogg"],
-      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+      "runtimeFiles": ["fireball-1.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
     },
     "card:mana-moth-companion": {
       "runtimeFiles": ["buff-pickup.ogg"],
@@ -2710,8 +2730,8 @@
       "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
     },
     "status-purge": {
-      "runtimeFiles": ["buff-pickup-1.ogg"],
-      "reason": "2026-10-03: user requested focal battle cues and coverage of previously silent actions."
+      "runtimeFiles": ["fit-purge.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
     },
     "mana-change": {
       "runtimeFiles": ["buff-pickup.ogg"],
@@ -2736,10 +2756,8 @@
       "notes": ""
     },
     "card:tithe": {
-      "runtimeFiles": ["battle-focus-impact-sound-design-hit-chime-resonant-f6318a19-0-1500.ogg"],
-      "reason": "2026-10-03: selected in the focused battle listening export.",
-      "choice": "f6318a19f7ff55a2",
-      "notes": ""
+      "runtimeFiles": ["fit-hit-holy.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
     },
     "card:prayer": {
       "runtimeFiles": ["battle-focus-church-choir-dm-a47d5cbc-0-1500.ogg"],
@@ -2776,6 +2794,146 @@
       "reason": "2026-10-03: selected in the focused battle listening export.",
       "choice": "f8eb76079359d8d6",
       "notes": ""
+    },
+    "toggle-on": {
+      "runtimeFiles": ["fit-ui-toggle-on.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "toggle-off": {
+      "runtimeFiles": ["fit-ui-toggle-off.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "critHit": {
+      "runtimeFiles": ["fit-hit-critical.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "stunProc": {
+      "runtimeFiles": ["fit-control-stun.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "freezeProc": {
+      "runtimeFiles": ["fit-control-freeze.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "burnTick": {
+      "runtimeFiles": ["fireball-1.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "playerHeal": {
+      "runtimeFiles": ["fit-heal.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "dodge": {
+      "runtimeFiles": ["fit-dodge.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "talentUnlock": {
+      "runtimeFiles": ["fit-talent-unlock.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "salvage": {
+      "runtimeFiles": ["fit-item-salvage.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "reward-claim": {
+      "runtimeFiles": ["fit-talent-unlock.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "homestead-upgrade": {
+      "runtimeFiles": ["fit-homestead-build.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "mystery-benefit": {
+      "runtimeFiles": ["fit-talent-unlock.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "victory": {
+      "runtimeFiles": ["fit-victory.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:cleanse": {
+      "runtimeFiles": ["fit-heal.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:heal": {
+      "runtimeFiles": ["fit-heal.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:poison-dagger": {
+      "runtimeFiles": ["fit-hit-piercing.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:bash": {
+      "runtimeFiles": ["fit-hit-stun.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:blessed-aegis": {
+      "runtimeFiles": ["fit-hit-holy.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:kindling": {
+      "runtimeFiles": ["fireball-1.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:hemorrhage": {
+      "runtimeFiles": ["fit-hit-piercing.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:shield-bash": {
+      "runtimeFiles": ["fit-hit-stun.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:blackjack": {
+      "runtimeFiles": ["fit-hit-stun.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:holy-radiance": {
+      "runtimeFiles": ["fit-hit-holy.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:venom-fangs": {
+      "runtimeFiles": ["monster-bite-3-7193d1d8-0-1339.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:bloodthorn": {
+      "runtimeFiles": ["fit-hit-piercing.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:serrated-edge": {
+      "runtimeFiles": ["fit-hit-piercing.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:pounce": {
+      "runtimeFiles": ["fit-hit-stun.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:maul": {
+      "runtimeFiles": ["fit-hit-piercing.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:astral-arrow": {
+      "runtimeFiles": ["fit-astral-bow-burn.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:panacea-potion": {
+      "runtimeFiles": ["fit-heal.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:molten-bulwark": {
+      "runtimeFiles": ["sword-blocked-1.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:golden-plate": {
+      "runtimeFiles": ["sword-blocked-1.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:smite": {
+      "runtimeFiles": ["fit-hit-holy.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
+    },
+    "card:judgment": {
+      "runtimeFiles": ["fit-hit-holy.ogg"],
+      "reason": "2026-10-15: user authorized the recommended Trinket/Alchemy sound-fit selections. Source/mapping review; perceptual listening remains pending."
     }
   },
   "battleFocusInstallation": {

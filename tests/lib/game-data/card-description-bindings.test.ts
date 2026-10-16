@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { describe, expect, it, vi } from "vitest";
 import { cardById, cloneBattleCard, cardMagnitude, getCardDescription, withCardDescription } from "@/lib/game-data";
 import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corruption";
@@ -86,19 +87,17 @@ describe("card description bindings", () => {
     const pool = vi
       .spyOn(cardPools, "getOfferableCardPool")
       .mockReturnValue([card, withCardDescription(ray, ray.description!)]);
-    try {
-      const options = buildWishOptions(
-        patchBattleState({ talentEffects: { wishCardsUpgraded: true }, rng: () => 0.99 }),
-        cardById.wish!,
-      );
-      expect(options.find((choice) => choice.id === card.id)?.effects).toEqual(card.effects);
-      expect(options.find((choice) => choice.id === ray.id)?.effects).toEqual([
-        { kind: "damage", damageType: "freeze", amount: 2 },
-        { kind: "damage", damageType: "freeze", amount: 2 },
-      ]);
-    } finally {
-      pool.mockRestore();
-    }
+    using _scopeCleanup = createCleanup(() => pool.mockRestore());
+
+    const options = buildWishOptions(
+      patchBattleState({ talentEffects: { wishCardsUpgraded: true }, rng: () => 0.99 }),
+      cardById.wish!,
+    );
+    expect(options.find((choice) => choice.id === card.id)?.effects).toEqual(card.effects);
+    expect(options.find((choice) => choice.id === ray.id)?.effects).toEqual([
+      { kind: "damage", damageType: "freeze", amount: 2 },
+      { kind: "damage", damageType: "freeze", amount: 2 },
+    ]);
   });
 
   it("keeps mixed ingredient bindings and highlights independent after a new effect is prepended and reloaded", () => {

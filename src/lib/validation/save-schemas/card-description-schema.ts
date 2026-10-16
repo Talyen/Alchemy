@@ -19,6 +19,17 @@ const referenceSchema = z.object({
 const descriptionSchema = z
   .array(
     z.object({
+      message: z
+        .object({
+          id: z.string(),
+          template: z.string(),
+          slots: z.record(
+            z.string(),
+            z.union([z.object({ magnitudeId: z.string() }), z.object({ keywordId: z.string() })]),
+          ),
+        })
+        .optional()
+        .catch(undefined),
       role: z.enum(["effect", "keyword", "consume"]),
       parts: z.array(
         z.union([
@@ -48,8 +59,11 @@ export function parseSavedCardDescription(
   // field. The renderer also checks every actual effect kind, field and shared value.
   const description = parsed.data as CardDescription;
   try {
-    renderCardDescription(effects, description);
-    return description;
+    const rendered = renderCardDescription(effects, description);
+    return description.map((line, index) => {
+      const { values: _values, ...message } = rendered.localizedLines[index]!;
+      return { ...line, message };
+    });
   } catch {
     return undefined;
   }

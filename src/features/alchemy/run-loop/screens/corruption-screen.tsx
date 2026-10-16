@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { playUISound } from "@/lib/audio";
 import { useMemo, useState } from "react";
 import { Dices, MoveRight } from "lucide-react";
@@ -34,6 +36,7 @@ function CorruptionDeckPicker({
   page: number;
   onPageChange: (page: number) => void;
 }) {
+  const i18n = useGameTranslation();
   const corruptionOptions = useMemo(
     () => runDeck.map((card, index) => ({ card, index })).filter(({ card }) => !card.corrupted && !card.transmuted),
     [runDeck],
@@ -45,7 +48,7 @@ function CorruptionDeckPicker({
       selectedIndex={corruptionOptions.findIndex((item) => item.index === selectedIndex)}
       page={page}
       onPageChange={onPageChange}
-      emptyMessage="No eligible cards remain."
+      emptyMessage={i18n.text("ui.corruption-screen.1", "No eligible cards remain.")}
       paginationReserveSpace
       renderItem={({ card, index }) => (
         <SelectableCard
@@ -72,13 +75,18 @@ function CorruptionIntro({
   onLeave: () => void;
   hasEligibleCards: boolean;
 }) {
+  const i18n = useGameTranslation();
   return (
     <div className="flex flex-col items-center gap-4">
-      {!hasEligibleCards ? <ScreenDescription tone="danger">No eligible cards remain.</ScreenDescription> : null}
+      {!hasEligibleCards ? (
+        <ScreenDescription tone="danger">
+          {i18n.text("ui.corruption-screen.2", "No eligible cards remain.")}
+        </ScreenDescription>
+      ) : null}
       <div>
         <img
           src={corruptionAltar}
-          alt="Altar of Corruption"
+          alt={i18n.text("ui.corruption-screen.3", "Altar of Corruption")}
           className="block w-full max-w-[calc(31.5023*var(--content-rem,1rem))] rounded-shell-panel object-contain"
           loading="eager"
           decoding="async"
@@ -86,7 +94,7 @@ function CorruptionIntro({
       </div>
       <div className="flex flex-wrap justify-center gap-3">
         <Button size="lg" variant="outline" className="min-w-56" onClick={onLeave}>
-          Leave
+          {i18n.text("ui.corruption-screen.4", "Leave")}
         </Button>
         <ShineAccentButton
           icon={Dices}
@@ -95,7 +103,7 @@ function CorruptionIntro({
           onClick={onBegin}
           disabled={!hasEligibleCards}
         >
-          Corrupt a Card
+          {i18n.text("ui.corruption-screen.5", "Corrupt a Card")}
         </ShineAccentButton>
       </div>
     </div>
@@ -103,16 +111,21 @@ function CorruptionIntro({
 }
 
 function CorruptionResultView({ result, onContinue }: { result: CorruptionResult; onContinue: () => void }) {
+  const i18n = useGameTranslation();
   return (
     <div className="flex flex-col items-center gap-4">
       <div>
-        <ScreenDescription tone="danger">The altar returns your card changed.</ScreenDescription>
+        <ScreenDescription tone="danger">
+          {i18n.text("ui.corruption-screen.6", "The altar returns your card changed.")}
+        </ScreenDescription>
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3">
         <div className="col-start-1 flex flex-col items-center">
           <BattleCardButton
             card={result.originalCard}
-            ariaLabel={`Original: ${getCardDisplayTitle(result.originalCard)}`}
+            ariaLabel={i18n.text("ui.corruption-screen.7", "Original: {{value0}}", {
+              value0: i18n.read(() => getCardDisplayTitle(result.originalCard)),
+            })}
             shimmerActive={false}
             shimmerToken={undefined}
             shineColor={getCardInspectionShineColors(result.originalCard)}
@@ -126,7 +139,9 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
           <BattleCardButton
             card={result.corruptedCard}
             comparisonCard={result.originalCard}
-            ariaLabel={`Result: ${getCardDisplayTitle(result.corruptedCard)}`}
+            ariaLabel={i18n.text("ui.corruption-screen.8", "Result: {{value0}}", {
+              value0: i18n.read(() => getCardDisplayTitle(result.corruptedCard)),
+            })}
             shimmerActive={false}
             shimmerToken={undefined}
             shineColor={getCardInspectionShineColors(result.corruptedCard)}
@@ -142,7 +157,7 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
       </div>
       <div>
         <Button size="lg" variant="primary" className="min-w-56" onClick={onContinue}>
-          Continue
+          {i18n.text("ui.corruption-screen.9", "Continue")}
         </Button>
       </div>
     </div>
@@ -160,6 +175,7 @@ export function CorruptionScreen({
   onCorrupt: (cardIndex: number) => void;
   onExit: () => void;
 }) {
+  const i18n = useGameTranslation();
   const [selecting, setSelecting] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [page, setPage] = useState(0);
@@ -195,7 +211,7 @@ export function CorruptionScreen({
 
   return (
     <FadeSlot swapKey={result ? "result" : selecting ? "select" : "intro"} className="h-full w-full">
-      <TitledScreenShell title="Altar of Corruption">
+      <TitledScreenShell title={i18n.text("ui.corruption-screen.10", "Altar of Corruption")}>
         <div className={cn("flex flex-col items-center gap-6 text-center", result || selecting ? "mt-3" : "mt-6")}>
           {result ? (
             <CorruptionResultView result={result} onContinue={handleExit} />
@@ -203,7 +219,7 @@ export function CorruptionScreen({
             <div className="flex w-full min-w-0 flex-col items-center gap-4">
               <div>
                 <ScreenDescription tone="danger">
-                  The altar may weaken, strengthen, or remake your card.
+                  {i18n.text("ui.corruption-screen.11", "The altar may weaken, strengthen, or remake your card.")}
                 </ScreenDescription>
               </div>
               <CorruptionDeckPicker
@@ -216,10 +232,10 @@ export function CorruptionScreen({
                 page={page}
                 onPageChange={setPage}
               />
-              {selectionNotice && <p role="status">{selectionNotice}</p>}
+              {selectionNotice && <p role="status">{i18n.displayText(selectionNotice)}</p>}
               <div className="flex justify-center gap-3">
                 <Button size="lg" variant="outline" onClick={cancelSelection}>
-                  Cancel
+                  {i18n.text("ui.corruption-screen.12", "Cancel")}
                 </Button>
                 <ShineAccentButton
                   icon={Dices}
@@ -228,7 +244,7 @@ export function CorruptionScreen({
                   disabled={!canConfirm}
                   onClick={handleConfirm}
                 >
-                  Corrupt
+                  {i18n.text("ui.corruption-screen.13", "Corrupt")}
                 </ShineAccentButton>
               </div>
             </div>

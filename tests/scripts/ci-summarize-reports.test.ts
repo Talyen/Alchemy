@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { formatVitestSummaryMarkdown, summarizeVitestReport } from "../../scripts/lib/verification/vitest-summary.mjs";
 import { parseSummaryArgs } from "../../scripts/ci-summarize.mjs";
@@ -152,25 +153,25 @@ describe("ci-summarize (playwright)", () => {
     const priorRunId = process.env.ALCHEMY_RUN_ID;
     process.env.ALCHEMY_RUN_ID = "playwright-reporter-run";
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    try {
-      const reporter = new PlaywrightRunReporter();
-      reporter.onBegin(
-        {},
-        {
-          allTests: () =>
-            (["expected", "unexpected", "flaky", "skipped"] as const).map((outcome) => ({ outcome: () => outcome })),
-        },
-      );
-      reporter.onEnd();
-      expect(log).toHaveBeenCalledWith("Playwright run: playwright-reporter-run");
-      expect(log).toHaveBeenCalledWith(
-        "playwright — 1 passed, 1 failed, 1 flaky, 1 skipped (run playwright-reporter-run)",
-      );
-    } finally {
+    using _scopeCleanup = createCleanup(() => {
       log.mockRestore();
       if (priorRunId === undefined) delete process.env.ALCHEMY_RUN_ID;
       else process.env.ALCHEMY_RUN_ID = priorRunId;
-    }
+    });
+
+    const reporter = new PlaywrightRunReporter();
+    reporter.onBegin(
+      {},
+      {
+        allTests: () =>
+          (["expected", "unexpected", "flaky", "skipped"] as const).map((outcome) => ({ outcome: () => outcome })),
+      },
+    );
+    reporter.onEnd();
+    expect(log).toHaveBeenCalledWith("Playwright run: playwright-reporter-run");
+    expect(log).toHaveBeenCalledWith(
+      "playwright — 1 passed, 1 failed, 1 flaky, 1 skipped (run playwright-reporter-run)",
+    );
   });
 
   it("keeps each project's failure message attached to its own test", () => {

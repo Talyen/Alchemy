@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { useEffect, useMemo } from "react";
 
 import { playBattleEvent, playUISound } from "@/lib/audio";
@@ -24,6 +26,7 @@ export function DestinationScreen({
   onChoose: (destination: Destination) => void;
   onPrepare?: () => void;
 }) {
+  const i18n = useGameTranslation();
   const destinationOptions = rewardState.destinations;
   const bossOnly = destinationOptions.length === 1 && destinationOptions[0] === DESTINATIONS.BOSS_COMBAT;
 
@@ -44,14 +47,17 @@ export function DestinationScreen({
   const bossTextShineColors = bossForShine ? getBossTextShineColors(bossForShine) : [];
 
   const title = bossOnly ? (
-    <ShineText colors={bossTextShineColors}>{bossForShine?.title ?? getBossEnemy().title}</ShineText>
+    <ShineText colors={bossTextShineColors}>{i18n.displayText(bossForShine?.title ?? getBossEnemy().title)}</ShineText>
   ) : (
     "Choose Destination"
   );
 
   return (
-    <TitledScreenShell title={title} maxWidthClass={bossOnly ? "max-w-3xl" : chooserRowShellWidthClass}>
-      <div className="mt-6 flex flex-col justify-center">
+    <TitledScreenShell
+      title={i18n.displayText(title)}
+      maxWidthClass={bossOnly ? "max-w-3xl" : chooserRowShellWidthClass}
+    >
+      <div className="mt-6 flex flex-col justify-center gap-4">
         <DestinationChoices
           destinationOptions={destinationOptions}
           currentAct={currentAct}

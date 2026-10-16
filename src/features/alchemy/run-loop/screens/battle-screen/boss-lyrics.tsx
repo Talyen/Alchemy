@@ -1,9 +1,12 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { useEffect, useState } from "react";
 import { getBossMusicKey, getLyricFrame, getMusicLyrics, readMusicPlayback, type LyricFrame } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 import { useSettingsStore } from "../../../shared/stores/settings-store";
 
 export function BossLyrics({ bossId }: { bossId: string }) {
+  useGameTranslation();
   const enabled = useSettingsStore((state) => state.bossLyricsEnabled);
   const musicKey = getBossMusicKey(bossId);
   const lines = musicKey ? getMusicLyrics(musicKey) : undefined;
@@ -11,6 +14,7 @@ export function BossLyrics({ bossId }: { bossId: string }) {
 }
 
 function SungLyrics({ musicKey, lines }: { musicKey: string; lines: NonNullable<ReturnType<typeof getMusicLyrics>> }) {
+  const i18n = useGameTranslation();
   const [frame, setFrame] = useState<LyricFrame | null>(null);
   useEffect(() => {
     let previous: LyricFrame | null = null;
@@ -36,7 +40,7 @@ function SungLyrics({ musicKey, lines }: { musicKey: string; lines: NonNullable<
     <div
       className="pointer-events-none absolute inset-x-0 bottom-full mb-3 flex min-h-8 flex-wrap items-center justify-center gap-x-[0.3em] px-8 text-center text-3xl font-semibold [text-shadow:0_2px_5px_#000,0_0_3px_#000]"
       data-testid="boss-lyrics"
-      aria-label="Song lyrics"
+      aria-label={i18n.text("ui.boss-lyrics.1", "Song lyrics")}
     >
       {frame
         ? lines[frame.line]!.slice(0, frame.visible).map((word, index) => (
@@ -48,7 +52,13 @@ function SungLyrics({ musicKey, lines }: { musicKey: string; lines: NonNullable<
               )}
             >
               {index > 0 ? " " : ""}
-              {word.text}
+              {word.text === "[chants]"
+                ? i18n.text("ui.boss-lyrics.chants", "[chants]")
+                : word.text === "[growls]"
+                  ? i18n.text("ui.boss-lyrics.growls", "[growls]")
+                  : word.text === "[vocalizing]"
+                    ? i18n.text("ui.boss-lyrics.vocalizing", "[vocalizing]")
+                    : word.text}
             </span>
           ))
         : null}

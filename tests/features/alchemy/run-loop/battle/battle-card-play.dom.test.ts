@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import "../../../../helpers/mock-audio";
 import {
   mutateGameplayForTest,
@@ -186,15 +187,13 @@ describe("createBattleCardPlay", () => {
         scheduleAutoEndTurnRef,
       });
     });
-    try {
-      givenBattle(makeTestBattleState({ hand: [{ ...slashCard(), uid: 7 }], mana: 3 }));
-      const replacement = readBattle(defaultGameSession).battleState;
-      act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS));
-      expect(readBattle(defaultGameSession).battleState).toBe(replacement);
-      expect(playBattleEvent).not.toHaveBeenCalled();
-    } finally {
-      unmount();
-    }
+    using _scopeCleanup = createCleanup(() => unmount());
+
+    givenBattle(makeTestBattleState({ hand: [{ ...slashCard(), uid: 7 }], mana: 3 }));
+    const replacement = readBattle(defaultGameSession).battleState;
+    act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS));
+    expect(readBattle(defaultGameSession).battleState).toBe(replacement);
+    expect(playBattleEvent).not.toHaveBeenCalled();
   });
 
   it("keeps a current route offer playable while showing a copied playback frame", () => {
@@ -202,16 +201,14 @@ describe("createBattleCardPlay", () => {
     givenBattle(makeTestBattleState({ hand: [card], mana: 3, enemyHealth: 30 }));
     battlePresentation.getState().setDisplayedBattle(readBattle(defaultGameSession).battleState);
     const { result, unmount } = renderHook(() => useBattleScreenRouteData(battlePresentation));
-    try {
-      const { battleScreenData, inputBattleState } = result.current;
-      expect(battleScreenData.battleState).not.toBe(inputBattleState);
-      const { handleCardClick } = makeDeps();
-      act(() => clickCard(handleCardClick, { ...battleScreenData.battleState.hand[0]!, uid: 7 }, 0, inputBattleState));
-      expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
-      expect(playCardSound).toHaveBeenCalledExactlyOnceWith("slash");
-    } finally {
-      unmount();
-    }
+    using _scopeCleanup = createCleanup(() => unmount());
+
+    const { battleScreenData, inputBattleState } = result.current;
+    expect(battleScreenData.battleState).not.toBe(inputBattleState);
+    const { handleCardClick } = makeDeps();
+    act(() => clickCard(handleCardClick, { ...battleScreenData.battleState.hand[0]!, uid: 7 }, 0, inputBattleState));
+    expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
+    expect(playCardSound).toHaveBeenCalledExactlyOnceWith("slash");
   });
 
   it.each(["manual", "autoplay"] as const)(
@@ -775,32 +772,32 @@ describe("createBattleCardPlay", () => {
           }),
         { initialProps: { enabled: true, gameMenuOpen: false } },
       );
-      try {
-        expect(useUiStore.getState().autoplayPreviewCardId).toBe("hand-slash-7");
-        if (interruption === "unmount") unmount();
-        else if (interruption === "confirmation") {
-          gate.current.endTurnConfirmationOpen = true;
-          battlePresentation.getState().setEndTurnConfirmationOpen(true);
-        } else rerender({ enabled: interruption !== "disabled", gameMenuOpen: interruption === "menu" });
-        await act(async () => {
-          await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
-        });
-        expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(initialState));
-        expect(awardCardXP).not.toHaveBeenCalled();
-        expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
-        if (interruption !== "unmount") {
-          gate.current.endTurnConfirmationOpen = false;
-          battlePresentation.getState().setEndTurnConfirmationOpen(false);
-          rerender({ enabled: true, gameMenuOpen: false });
-          await act(async () => {
-            await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS + 50);
-          });
-          expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
-        }
-      } finally {
+      using _scopeCleanup = createCleanup(() => {
         unmount();
         vi.useRealTimers();
         vi.mocked(shouldReduceMotion).mockReturnValue(true);
+      });
+
+      expect(useUiStore.getState().autoplayPreviewCardId).toBe("hand-slash-7");
+      if (interruption === "unmount") unmount();
+      else if (interruption === "confirmation") {
+        gate.current.endTurnConfirmationOpen = true;
+        battlePresentation.getState().setEndTurnConfirmationOpen(true);
+      } else rerender({ enabled: interruption !== "disabled", gameMenuOpen: interruption === "menu" });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
+      });
+      expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(initialState));
+      expect(awardCardXP).not.toHaveBeenCalled();
+      expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
+      if (interruption !== "unmount") {
+        gate.current.endTurnConfirmationOpen = false;
+        battlePresentation.getState().setEndTurnConfirmationOpen(false);
+        rerender({ enabled: true, gameMenuOpen: false });
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS + 50);
+        });
+        expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
       }
     },
   );

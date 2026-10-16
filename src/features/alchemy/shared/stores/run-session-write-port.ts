@@ -41,6 +41,8 @@ import * as session from "./write/run-session";
 
 export const initializeBattle = transactionOperation(battleStart.initializeBattle);
 
+export const resolveStarterHomesteadGrant = transactionOperation(homestead.resolveStarterHomesteadGrant);
+
 export const addGold = transactionOperation(gold.addGold);
 export const deductGold = transactionOperation(gold.deductGold);
 export const readDraftGold = transactionOperation(gold.readDraftGold);

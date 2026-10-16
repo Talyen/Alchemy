@@ -5,23 +5,12 @@ export const SLOT_BACKGROUND_PATTERN = /^(.+?)\sSlot\.(jpe?g|png)$/i;
 
 export const GEAR_SLOT_IDS = Object.freeze(["body", "weapon", "accessory", "trinket"]);
 
-export const WEBP_SUFFIX = ".webp";
-export const GEAR_PREFIX = "gear-";
-
-export function isWebpAsset(name) {
-  return name.endsWith(WEBP_SUFFIX);
-}
-
-export function isGearAsset(name) {
-  return name.startsWith(GEAR_PREFIX) && name.endsWith(WEBP_SUFFIX);
+function isWebpAsset(name) {
+  return name.endsWith(".webp");
 }
 
 export function getAssetFiles(manifest) {
   return Object.keys(manifest).filter(isWebpAsset).sort();
-}
-
-export function getGearFiles(manifest) {
-  return Object.keys(manifest).filter(isGearAsset).sort();
 }
 
 /**
@@ -40,8 +29,4 @@ export function slugifyGearName(name) {
 
 export function toGearTarget(displayName, rarity, extension = "webp") {
   return `gear-${slugifyGearName(displayName)}-${rarity.toLowerCase()}.${extension}`;
-}
-
-export function toDefinitionId(target) {
-  return target.replace(/^gear-/, "").replace(/\.webp$/, "");
 }

@@ -198,6 +198,23 @@ fallback cannot bypass the compatibility decision.
 
 A failed local candidate read is different from an empty or corrupt candidate set. Desktop still attempts the Cloud copy; the storage owner tries both slots and uses any compatible candidate it can read. If the primary is unreadable, new progress writes to the recovery slot, leaving the primary untouched, unless recovery is known to contain newer-format data. In that case, neither slot is writable and saves report failure. If neither slot can be read, play starts with defaults and writes still attempt the recovery slot. If a normal primary write fails, the same snapshot is attempted in recovery only when that slot is permitted. When all permitted writes fail, committed progress remains in memory and autosave keeps retrying, while the renderer holds action completion and shows Couldn’t save with Retry under [write acknowledgement](#write-acknowledgement).
 
+Unreadable Cloud files (including a present file returning no bytes or exceeding
+the native payload limit) protect their slot just like unreadable local files.
+An unreadable recovery slot is excluded from fallback writes when primary reads
+succeeded; a protected primary plus unreadable recovery leaves no writable slot.
+When both sources are unreadable, the existing last-resort recovery policy applies.
+Native reads, writes, and clears share one process queue across renderer lifetimes.
+Shutdown closes write admission and drains accepted operations before quitting.
+Owner stamping is included in the payload size limit before either disk or Cloud
+accepts a write. Demo initialization receipt writes also serialize so concurrent
+initialization and Clear Save requests cannot race their shared temporary file.
+
+Returning Flight saves store all outstanding card discounts in
+`uniqueGear.returningFlightUids`. Discounts follow queued cards across turns and
+are consumed independently on play; discarded cards lose unused discounts at the
+next turn boundary. Missing references default to an empty list, and hydration
+drops duplicate, missing, or ambiguous card references.
+
 ## Future schema saves
 
 Saves with a schema or content version newer than the current build are intentionally not migrated. Any playable candidate wins over a newer-format candidate, even when the newer copy has a later timestamp, so a compatible backup or recovery copy can still resume play. If no playable candidate exists, load defaults. The storage owner routes writes away from a slot holding newer-format data when another slot is available.
@@ -215,6 +232,10 @@ The native `desktop/save-storage.cjs` owner also serializes file operations and
 demo-initialization receipt work in a process-wide lane, shared by both slots.
 IPC reads and deletion wait for earlier ring writes even across renderer reloads;
 following writes cannot overtake deletion. A failed operation releases the lane.
+Native shutdown closes save admission at `will-quit`, after window unload handlers
+can submit their final snapshots, and drains accepted writes before process exit.
+It resumes quitting on the next event-loop turn, after Electron resets the
+cancelled quit's native state, including when the queue was already idle.
 Loads observe preceding completed writes and establish the safe write slot before
 later saves run. Pending saves coalesce only between load barriers. Demo import,
 its local write, and its initialization receipt belong to the load operation;
@@ -354,3 +375,17 @@ does not grant Leech. Structured description magnitudes retain `distilled` marks
 through hydration and mixing so upgraded values remain green. These compatible
 additions use safe defaults without a schema bump; incompatible changes still
 follow the [supported baseline](#supported-baseline).
+
+## Starter Homestead grant
+
+`starterHomesteadGrantResolved` is an additive permanent run-profile boolean.
+New careers start false. Missing or malformed values recover as true when any
+valid Homestead tier or Companion Bond is purchased, otherwise false. Valid
+saved booleans survive unchanged. Claiming the first Campaign Act I boss reward
+resolves the receipt atomically with any material top-up. A successful Homestead
+purchase also resolves it. Homestead reset preserves it; Clear Save Data resets
+it. No schema-version increment or supported payload transformation is required.
+
+## Localized description cache
+
+Structured card description lines may carry an additive data-only `message` cache with an English template ID and named keyword/magnitude slots. Hydration regenerates this cache from saved literal parts, effects and magnitude bindings; invalid cache metadata cannot replace valid mechanics. Current-format cards, custom wording, Mixed Potion grouping and upgrades remain intact. Unknown legacy templates remain playable in English. The device-local language preference is outside the progress envelope and Steam Cloud; no save-version change is required. See [Localization](../../../../../Docs/LOCALIZATION.md).

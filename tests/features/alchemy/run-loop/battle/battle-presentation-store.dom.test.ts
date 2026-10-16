@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import {
   mutateRunForTest,
   setBattleActiveForTest as setHasActiveBattle,
@@ -426,15 +427,13 @@ describe("battle-presentation-store", () => {
   it("keeps a readable lifetime when fast animations are enabled", async () => {
     const show = activateBattle();
     localStorage.setItem("alchemy-disable-animations", "true");
-    try {
-      show([{ target: "enemy", kind: "damage", stat: "physical", amount: 5 }]);
-      expect(battlePresentation.getState().floatingCombatBursts[0]!.lifetimeMs).toBe(400);
-      await vi.advanceTimersByTimeAsync(399);
-      expect(battlePresentation.getState().floatingCombatBursts).toHaveLength(1);
-      await vi.advanceTimersByTimeAsync(1);
-      expect(battlePresentation.getState().floatingCombatBursts).toEqual([]);
-    } finally {
-      localStorage.removeItem("alchemy-disable-animations");
-    }
+    using _scopeCleanup = createCleanup(() => localStorage.removeItem("alchemy-disable-animations"));
+
+    show([{ target: "enemy", kind: "damage", stat: "physical", amount: 5 }]);
+    expect(battlePresentation.getState().floatingCombatBursts[0]!.lifetimeMs).toBe(400);
+    await vi.advanceTimersByTimeAsync(399);
+    expect(battlePresentation.getState().floatingCombatBursts).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(battlePresentation.getState().floatingCombatBursts).toEqual([]);
   });
 });

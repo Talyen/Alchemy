@@ -16,4 +16,18 @@ describe("overlapping card discounts", () => {
     expect(result.flags.nextHolyCardFree).toBe(false);
     expect(result.flags.nextCardCostReduction).toBe(1);
   });
+
+  it("preserves an armed discount when a 1-cost card is made free by a Holy allowance", () => {
+    const card = makeTestCard({ cost: 1, tags: ["holy"], effects: [] });
+    const state = patchBattleState({
+      mana: 0,
+      hand: [card],
+      flags: { nextCardCostReduction: 1, nextHolyCardFree: true },
+    });
+    const result = playBattleCardResolved(state, card.id, 0).state;
+    expect(result.hand).toHaveLength(0);
+    expect(result.mana).toBe(0);
+    expect(result.flags.nextHolyCardFree).toBe(false);
+    expect(result.flags.nextCardCostReduction).toBe(1);
+  });
 });

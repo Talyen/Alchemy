@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { cn } from "@/lib/utils";
 
 import { useAdaptiveGrid } from "../adaptive-grid";
@@ -39,6 +41,7 @@ export function CardSelectionGrid({
   paginationSize?: "sm" | "default";
   paginationReserveSpace?: boolean;
 }) {
+  const i18n = useGameTranslation();
   const {
     onContainer,
     onMeasure,
@@ -88,7 +91,7 @@ export function CardSelectionGrid({
                     key={`${item.card.id}-${item.index}`}
                     className="flex justify-center"
                   >
-                    {renderItem(item, visualIndex)}
+                    {i18n.displayText(renderItem(item, visualIndex))}
                   </div>
                 );
               })}

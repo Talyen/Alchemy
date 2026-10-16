@@ -1,3 +1,6 @@
+import { text as gameText } from "@/lib/localization/runtime";
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { useMemo, useState, type ReactNode } from "react";
 import { playUISound } from "@/lib/audio";
 import type { BattleCard, KeywordId, TalentXP, TrinketEntry } from "@/lib/game-data";
@@ -50,6 +53,7 @@ export function MysteryScreen({
   findCard: (id: string) => BattleCard | undefined;
   findTrinket: (id: string) => TrinketEntry | undefined;
 }) {
+  const i18n = useGameTranslation();
   const [error, setError] = useState("");
   function handlePick(choice: MysteryChoice) {
     if (!onChoose(choice)) {
@@ -102,11 +106,11 @@ export function MysteryScreen({
 
   return (
     <FadeSlot swapKey={`${event.id}:${phase}`} className="h-full w-full">
-      <MysteryScreenShell title={title} keywordIds={plasmaKeywordIds}>
+      <MysteryScreenShell title={i18n.displayText(title)} keywordIds={plasmaKeywordIds}>
         <div className="mt-6 flex w-full flex-col">
           {error && (
             <p role="alert" className="mb-4 text-center">
-              {error}
+              {i18n.displayText(error)}
             </p>
           )}
           {mysteryCardChoices ? (
@@ -139,7 +143,7 @@ export function MysteryScreen({
 }
 
 export function MysteryScreenShell({
-  title = "Mystery",
+  title = gameText("ui.mystery-screen.default-title", "Mystery"),
   keywordIds,
   children,
 }: {
@@ -147,6 +151,7 @@ export function MysteryScreenShell({
   keywordIds?: readonly KeywordId[] | null | undefined;
   children?: ReactNode | undefined;
 }) {
+  useGameTranslation();
   usePlasmaBaseline(keywordIds ? getPlasmaColorPair(keywordIds) : null);
   return <TitledScreenShell title={title}>{children}</TitledScreenShell>;
 }

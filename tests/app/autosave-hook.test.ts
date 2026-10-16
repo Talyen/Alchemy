@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { createSaveBackend } from "../helpers/save-backend";
 import { setRunProgressActivity } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -108,25 +109,23 @@ describe("useAlchemyAutosaveFromStores", () => {
       },
       defaultGameSession,
     );
-    try {
-      changeGold(8);
-      changeGold(9);
-      callbacks[0]!();
-      await advance(0);
-      expect(write).not.toHaveBeenCalled();
-      callbacks[1]!();
-      await advance(0);
-      expect(write).toHaveBeenCalledOnce();
-      expect(JSON.parse(write.mock.calls[0]![1]).gold).toBe(9);
-      changeGold(10);
-      lifecycle.dispose(false);
-      callbacks[2]!();
-      lifecycle.flush(true);
-      await advance(0);
-      expect(write).toHaveBeenCalledOnce();
-    } finally {
-      lifecycle.dispose(false);
-    }
+    using _scopeCleanup = createCleanup(() => lifecycle.dispose(false));
+
+    changeGold(8);
+    changeGold(9);
+    callbacks[0]!();
+    await advance(0);
+    expect(write).not.toHaveBeenCalled();
+    callbacks[1]!();
+    await advance(0);
+    expect(write).toHaveBeenCalledOnce();
+    expect(JSON.parse(write.mock.calls[0]![1]).gold).toBe(9);
+    changeGold(10);
+    lifecycle.dispose(false);
+    callbacks[2]!();
+    lifecycle.flush(true);
+    await advance(0);
+    expect(write).toHaveBeenCalledOnce();
   });
 
   it("flushes the latest dirty snapshot on pagehide before the debounce expires", () => {

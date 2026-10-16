@@ -170,9 +170,12 @@ function performDrawAndResetPhase(
     getBattleRng(state),
     state.pendingHandCards,
   );
-  let returningFlightUid: number | null = null;
+  // Enemy-phase deliveries and overflow queues have not had a playable turn yet.
+  const eligibleUids = new Set([...state.hand, ...state.pendingHandCards].map((card) => card.uid));
+  const returningFlightUids = state.uniqueGear.returningFlightUids.filter((uid) => eligibleUids.has(uid));
   if (recovered) {
-    returningFlightUid = nextDraw.nextCardUid;
+    const returningFlightUid = nextDraw.nextCardUid;
+    returningFlightUids.push(returningFlightUid);
     const card = { ...recovered, uid: returningFlightUid };
     if (nextDraw.hand.length < MAX_HAND_SIZE) nextDraw.hand.push(card);
     else nextDraw.pendingHandCards.push(card);
@@ -184,7 +187,7 @@ function performDrawAndResetPhase(
     hadUnspentMana && state.talentEffects.wellspringKeepMana > 0 ? state.talentEffects.wellspringKeepMana : 0;
   return {
     ...applyDrawResult(nextState, nextDraw),
-    uniqueGear: { ...nextState.uniqueGear, returningFlightUid },
+    uniqueGear: { ...nextState.uniqueGear, returningFlightUids },
     turnPhase: "player",
     mana:
       nextState.maxMana +

@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import "./options/options-layout.css";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -13,10 +15,9 @@ import {
   DisplayOptionsPanel,
   GameplayOptionsPanel,
   OtherOptionsPanel,
-  type AudioOptionsProps,
   type DevOptionsProps,
   type DisplayOptionsProps,
-  type GameplayOptionsProps,
+  type OptionsPreferences,
   type SaveDataOptionsProps,
 } from "./options/options-panels";
 
@@ -35,19 +36,18 @@ export function OptionsScreen({
   onBack,
   onMenu,
   display,
-  audio,
-  gameplay,
+  preferences,
   saveData,
   dev,
 }: {
   onBack: () => void;
   onMenu?: ((rect: DOMRect) => void) | undefined;
   display: DisplayOptionsProps;
-  audio: AudioOptionsProps;
-  gameplay: GameplayOptionsProps;
+  preferences: OptionsPreferences;
   saveData: SaveDataOptionsProps;
   dev: DevOptionsProps;
 }) {
+  const i18n = useGameTranslation();
   const [tab, setTab] = useState<OptionsTab>("display");
   const [showErrorLog, setShowErrorLog] = useState(false);
 
@@ -58,7 +58,7 @@ export function OptionsScreen({
           <ErrorLogViewer onClose={() => setShowErrorLog(false)} />
         ) : (
           <ScreenShell maxWidthClass="max-w-4xl" className="p-4">
-            <ScreenHeaderRow title="Options" onBack={onBack} onMenu={onMenu} />
+            <ScreenHeaderRow title={i18n.text("ui.options-screen.1", "Options")} onBack={onBack} onMenu={onMenu} />
 
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               <TabBar tabs={optionsTabs} activeTab={tab} onSelectTab={setTab} />
@@ -66,9 +66,9 @@ export function OptionsScreen({
 
             <FadeSlot swapKey={tab} className="grid pt-4 text-left">
               {[
-                { id: "display", panel: <DisplayOptionsPanel display={display} /> },
-                { id: "sound", panel: <AudioOptionsPanel audio={audio} /> },
-                { id: "gameplay", panel: <GameplayOptionsPanel gameplay={gameplay} /> },
+                { id: "display", panel: <DisplayOptionsPanel display={display} preferences={preferences} /> },
+                { id: "sound", panel: <AudioOptionsPanel preferences={preferences} /> },
+                { id: "gameplay", panel: <GameplayOptionsPanel preferences={preferences} /> },
                 {
                   id: "other",
                   panel: (
@@ -85,7 +85,7 @@ export function OptionsScreen({
                   inert={tab !== id}
                   aria-hidden={tab !== id}
                 >
-                  {panel}
+                  {i18n.displayText(panel)}
                 </div>
               ))}
             </FadeSlot>
@@ -95,15 +95,13 @@ export function OptionsScreen({
 
       <ConfirmationDialog
         open={saveData.showClearSaveConfirm}
-        title="Clear Save Data"
-        description={
+        title={i18n.text("ui.options-screen.2", "Clear Save Data")}
+        description={i18n.displayText(
           <>
-            Are you sure you wish to clear all Save Data?
-            <br />
-            This cannot be undone
-          </>
-        }
-        confirmLabel="Clear Save Data"
+            {i18n.text("options.clear-confirm", "Are you sure you wish to clear all Save Data? This cannot be undone")}
+          </>,
+        )}
+        confirmLabel={i18n.text("ui.options-screen.3", "Clear Save Data")}
         dimBackground={false}
         onConfirm={saveData.onConfirmClearSave}
         onCancel={saveData.onCloseClearSaveConfirm}

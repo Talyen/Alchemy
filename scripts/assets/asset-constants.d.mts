@@ -6,6 +6,5 @@ export declare const MANAGED_DIRS: Readonly<Record<string, Readonly<{ dir: strin
 
 export const GENERATED_OUTPUTS: Readonly<{
   assets: string;
-  gearArt: string;
   versionMetadata: string;
 }>;

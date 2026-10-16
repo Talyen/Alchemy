@@ -1,4 +1,6 @@
-import { Fragment, type ReactNode } from "react";
+import { useGameTranslation } from "@/components/use-game-translation";
+
+import { type ReactNode } from "react";
 import {
   agilityTraining,
   alchemyLab,
@@ -26,18 +28,17 @@ import {
   woolTailoring,
 } from "@/lib/game-data";
 import {
-  MATERIAL_IDS,
   type BuildingId,
   type FarmId,
   type HomesteadBuilding,
   type HomesteadFarm,
   type HomesteadResearch,
   type ResearchId,
-  materialLabels,
 } from "@/lib/homestead/types";
 import { MaterialInlineChip, type HomesteadResource } from "../../../shared/ui/material-icons";
 import { TabBar } from "../../../shared/ui/tab-bar";
-import { renderTokenizedDescription, type TokenizedTextOptions } from "../../../shared/ui/cards/card-description-ui";
+import { renderMessage, type TokenizedTextOptions } from "../../../shared/ui/localized-description";
+import { buildDescriptionMessage } from "@/lib/game-data";
 import { Hammer, Wheat, FlaskConical, PawPrint } from "lucide-react";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 
@@ -86,21 +87,12 @@ export function getArt(id: string): string {
   return (itemArt as Record<string, string>)[id] ?? "";
 }
 
-const LABEL_TO_RESOURCE: Record<string, HomesteadResource> = {
-  ...Object.fromEntries(MATERIAL_IDS.map((material) => [materialLabels[material], material])),
-  Gold: "gold",
-};
-const RESOURCE_REGEX = new RegExp(`\\b(${Object.keys(LABEL_TO_RESOURCE).join("|")})\\b`, "g");
-
 export function renderTextWithMaterials(text: string, options?: TokenizedTextOptions): ReactNode {
-  // Resources include Gold, which the keyword renderer would otherwise consume.
-  return text.split(RESOURCE_REGEX).map((part, index) => {
-    const resource = LABEL_TO_RESOURCE[part];
-    return resource ? (
-      <MaterialInlineChip key={index} material={resource} label={part} />
-    ) : (
-      <Fragment key={index}>{renderTokenizedDescription(part, options)}</Fragment>
-    );
+  return renderMessage(buildDescriptionMessage([{ text }], true), {
+    ...options,
+    renderResource: (label, resourceId, key) => (
+      <MaterialInlineChip key={key} material={resourceId as HomesteadResource} label={label} />
+    ),
   });
 }
 
@@ -112,6 +104,7 @@ const tabs: Array<{ id: Tab; label: string; icon: typeof Hammer; iconClassName: 
 ];
 
 export function HomesteadTabs({ activeTab, onSelectTab }: { activeTab: Tab; onSelectTab: (tab: Tab) => void }) {
+  useGameTranslation();
   return <TabBar tabs={tabs} activeTab={activeTab} onSelectTab={onSelectTab} />;
 }
 

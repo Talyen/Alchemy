@@ -20,7 +20,7 @@ export class DestinationPage {
 
   destinationButton(name: string) {
     const label = destinationLabel(name as Destination);
-    return this.page.getByRole("button", { name: label, exact: true });
+    return this.page.getByRole("button", { name: label === "Boss" ? /^Boss - Act (?:I|II|III)$/ : label, exact: true });
   }
 
   async pick(name: string) {

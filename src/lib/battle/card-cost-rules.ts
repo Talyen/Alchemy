@@ -38,11 +38,6 @@ function computeStandardCost(state: CardCostState, card: BattleCard, discountedC
   }
   if (discountedCost === 0) return result;
 
-  const armedReduction = readCombatFlag(state, "nextCardCostReduction");
-  result.effectiveCost = applyCostDiscount(discountedCost, armedReduction);
-  result.spentArmedDiscount = armedReduction > 0 && result.effectiveCost < discountedCost;
-  if (result.effectiveCost === 0) return result;
-
   // Holy, then Archery, then Nature: spend only the first matching opportunity.
   let freeFlag: BooleanCombatFlag | undefined;
   if (readCombatFlag(state, "nextHolyCardFree") && (cardHasKeyword(card, "holy") || cardHasDamageType(card, "holy"))) {
@@ -54,9 +49,13 @@ function computeStandardCost(state: CardCostState, card: BattleCard, discountedC
   }
   if (freeFlag) {
     result.effectiveCost = 0;
-    result.spentArmedDiscount = false;
     result.disarmedFlags.add(freeFlag);
+    return result;
   }
+
+  const armedReduction = readCombatFlag(state, "nextCardCostReduction");
+  result.effectiveCost = applyCostDiscount(discountedCost, armedReduction);
+  result.spentArmedDiscount = armedReduction > 0 && result.effectiveCost < discountedCost;
   return result;
 }
 
@@ -76,7 +75,7 @@ function getEncounterCostDiscount(
   return { discount, quickdrawUsed: quickdraw };
 }
 
-type UniqueCostDiscounts = Partial<Pick<BattleSnapshot["uniqueGear"], "knightsAnswerReady" | "returningFlightUid">>;
+type UniqueCostDiscounts = Partial<Pick<BattleSnapshot["uniqueGear"], "knightsAnswerReady" | "returningFlightUids">>;
 
 function resolveGearCostTriggers(
   gear: CardCostState["gearEffects"],
@@ -86,13 +85,15 @@ function resolveGearCostTriggers(
   const natureFree = gear.dodgeReadiesNatureCrit > 0 && unique.wildheartReady && isNatureCard(card);
   const physicalFree =
     gear.blockReadiesFreePhysical > 0 && unique.knightsAnswerReady && cardHasDamageType(card, "physical");
-  const returned = card.uid !== undefined && gear.recoverLastArcheryCard > 0 && card.uid === unique.returningFlightUid;
+  const returned =
+    card.uid !== undefined && gear.recoverLastArcheryCard > 0 && unique.returningFlightUids.includes(card.uid);
 
   const uniqueDiscounts: UniqueCostDiscounts = {};
   if (card.cost > 0) {
     if (physicalFree) uniqueDiscounts.knightsAnswerReady = false;
   }
-  if (card.uid === unique.returningFlightUid) uniqueDiscounts.returningFlightUid = null;
+  if (card.uid !== undefined && unique.returningFlightUids.includes(card.uid))
+    uniqueDiscounts.returningFlightUids = unique.returningFlightUids.filter((uid) => uid !== card.uid);
 
   return {
     isFree: natureFree || physicalFree,

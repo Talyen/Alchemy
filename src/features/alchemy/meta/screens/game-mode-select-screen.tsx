@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { isEditionModeAvailable, FULL_GAME_LOCK_MESSAGE } from "@/lib/game-edition";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -37,6 +39,7 @@ function GameModeTile({
   isLocked: boolean;
   onSelect: () => void;
 }) {
+  const i18n = useGameTranslation();
   const Icon = meta.icon;
   const ariaLabel = isLocked ? `${meta.title} (Locked)` : meta.title;
   const tileTriggerRef = useRef<HTMLButtonElement>(null);
@@ -47,8 +50,8 @@ function GameModeTile({
       interactionId={modeId}
       art={meta.art}
       icon={Icon}
-      label={meta.title}
-      ariaLabel={ariaLabel}
+      label={i18n.displayText(meta.title)}
+      ariaLabel={i18n.displayText(ariaLabel)}
       accentClassName={meta.accentClassName}
       plasmaColorPair={isLocked ? null : meta.plasmaColorPair}
       widthClass={gameModeArtWidthClass}
@@ -66,18 +69,18 @@ function GameModeTile({
       renderTooltip={(visible) =>
         visible ? (
           <PortaledTooltip triggerRef={tileTriggerRef} visible className="text-center">
-            <TooltipHeader>{meta.title}</TooltipHeader>
+            <TooltipHeader>{i18n.displayText(meta.title)}</TooltipHeader>
             <TooltipBody>
               {isLocked ? (
                 <p>
                   {isEditionModeAvailable(modeId) ? (
-                    renderUnlockMessage(getGameModeUnlockMessage(modeId))
+                    i18n.read(() => renderUnlockMessage(getGameModeUnlockMessage(modeId)))
                   ) : (
-                    <strong className="font-bold text-destructive">{FULL_GAME_LOCK_MESSAGE}</strong>
+                    <strong className="font-bold text-destructive">{i18n.displayText(FULL_GAME_LOCK_MESSAGE)}</strong>
                   )}
                 </p>
               ) : (
-                <p>{meta.description}</p>
+                <p>{i18n.displayText(meta.description)}</p>
               )}
             </TooltipBody>
           </PortaledTooltip>
@@ -102,6 +105,7 @@ export function GameModeSelectScreen({
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
+  const i18n = useGameTranslation();
   const handlers: Record<GameModeId, () => void> = {
     campaign: onSelectCampaign,
     labyrinth: onSelectLabyrinth,
@@ -109,7 +113,12 @@ export function GameModeSelectScreen({
   };
 
   return (
-    <TitledScreenShell title="Start a Run" maxWidthClass={gameModeRowShellWidthClass} onBack={onBack} onMenu={onMenu}>
+    <TitledScreenShell
+      title={i18n.text("ui.game-mode-select-screen.1", "Start a Run")}
+      maxWidthClass={gameModeRowShellWidthClass}
+      onBack={onBack}
+      onMenu={onMenu}
+    >
       <div className="mt-6 flex flex-col justify-center">
         <div className={cn("flex w-full flex-nowrap items-start justify-center", chooserRowGapClass)}>
           {GAME_MODE_IDS.map((modeId) => {

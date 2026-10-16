@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import "../../../helpers/mock-audio";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -61,46 +62,46 @@ describe("session-bound React controllers", () => {
     const first = renderHook(() => useBattleController({ ...a, screen: "menu" }));
     const second = renderHook(() => useBattleController({ ...b, screen: "menu" }));
     const deactivate = runtime.progressCompletion.registerRetryDriver(() => {});
-    try {
-      act(() => {
-        dispatchRunSessionCommand(
-          (transaction) => {
-            setHasActiveRun(transaction, true);
-            setGold(transaction, 100);
-            return acceptCommand();
-          },
-          undefined,
-          a.gameSession,
-        );
-      });
-      // Complete the setup receipt, then start the actual player operation.
-      act(() =>
-        runtime.progressCompletion.complete(runtime.progressCompletion.token(readRunRevision(a.gameSession)), "saved"),
-      );
-      act(() => {
-        first.result.current.setAutoplayEnabled(true);
-        first.result.current.startBattle();
-      });
-      expect(readBattle(a.gameSession).hasActiveBattle).toBe(true);
-      expect(first.result.current.hasActiveBattle).toBe(false);
-      expect(readBattle(b.gameSession).hasActiveBattle).toBe(false);
-      expect(second.result.current.hasActiveBattle).toBe(false);
-      expect(runtime.settings.getState().autoplayEnabled).toBe(true);
-      expect(sound).toHaveBeenCalledExactlyOnceWith("toggleOn");
-      expect(sessionRuntime(b.gameSession).settings.getState().autoplayEnabled).toBe(false);
-      expect(a.presentation.getState().openingDrawPending).toBe(true);
-      expect(b.presentation.getState().openingDrawPending).toBe(false);
-
-      act(() =>
-        runtime.progressCompletion.complete(runtime.progressCompletion.token(readRunRevision(a.gameSession)), "saved"),
-      );
-      expect(first.result.current.hasActiveBattle).toBe(true);
-      expect(second.result.current.hasActiveBattle).toBe(false);
-    } finally {
+    using _scopeCleanup = createCleanup(() => {
       first.unmount();
       second.unmount();
       deactivate();
-    }
+    });
+
+    act(() => {
+      dispatchRunSessionCommand(
+        (transaction) => {
+          setHasActiveRun(transaction, true);
+          setGold(transaction, 100);
+          return acceptCommand();
+        },
+        undefined,
+        a.gameSession,
+      );
+    });
+    // Complete the setup receipt, then start the actual player operation.
+    act(() =>
+      runtime.progressCompletion.complete(runtime.progressCompletion.token(readRunRevision(a.gameSession)), "saved"),
+    );
+    act(() => {
+      first.result.current.setAutoplayEnabled(true);
+      first.result.current.startBattle();
+    });
+    expect(readBattle(a.gameSession).hasActiveBattle).toBe(true);
+    expect(first.result.current.hasActiveBattle).toBe(false);
+    expect(readBattle(b.gameSession).hasActiveBattle).toBe(false);
+    expect(second.result.current.hasActiveBattle).toBe(false);
+    expect(runtime.settings.getState().autoplayEnabled).toBe(true);
+    expect(sound).toHaveBeenCalledExactlyOnceWith("toggleOn");
+    expect(sessionRuntime(b.gameSession).settings.getState().autoplayEnabled).toBe(false);
+    expect(a.presentation.getState().openingDrawPending).toBe(true);
+    expect(b.presentation.getState().openingDrawPending).toBe(false);
+
+    act(() =>
+      runtime.progressCompletion.complete(runtime.progressCompletion.token(readRunRevision(a.gameSession)), "saved"),
+    );
+    expect(first.result.current.hasActiveBattle).toBe(true);
+    expect(second.result.current.hasActiveBattle).toBe(false);
   });
 
   it("keeps navigation usable when a battle controller rerenders with mounted DOM refs", () => {

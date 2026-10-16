@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import "../../../../helpers/mock-audio";
 import { initializeShopForTest } from "../../../../helpers/visit-initialization";
 
@@ -204,23 +205,22 @@ describe("alchemist shop actions", () => {
 
     setRunProgress({ gold: 2 * ALCHEMIST_MIX_PRICE });
     const commits: number[] = [];
-    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession);
-    try {
-      const strengthened = actions.alchemist.strengthenPotion(0);
-      expect(strengthened).toMatchObject({ effects: [{ kind: "heal", amount: 9 }] });
-      expect(readActiveRun(defaultGameSession).runDeck).toEqual([strengthened, ...originalDeck.slice(1)]);
-      expect(readRunProfile(defaultGameSession).gold).toBe(ALCHEMIST_MIX_PRICE);
-      expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist").mixUsed).toBe(true);
-      const after = readActiveRun(defaultGameSession);
-      expect(actions.alchemist.mixPotions(1, 2)).toBeNull();
-      expect(actions.alchemist.strengthenPotion(1)).toBeNull();
-      expect(readActiveRun(defaultGameSession)).toEqual(after);
-      expect(readRunProfile(defaultGameSession).gold).toBe(ALCHEMIST_MIX_PRICE);
-      expect(commits).toHaveLength(1);
-      expect(playUISound).toHaveBeenCalledExactlyOnceWith("alchemistMix");
-    } finally {
-      unsubscribe();
-    }
+    using _unsubscribe = createCleanup(
+      subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession),
+    );
+
+    const strengthened = actions.alchemist.strengthenPotion(0);
+    expect(strengthened).toMatchObject({ effects: [{ kind: "heal", amount: 9 }] });
+    expect(readActiveRun(defaultGameSession).runDeck).toEqual([strengthened, ...originalDeck.slice(1)]);
+    expect(readRunProfile(defaultGameSession).gold).toBe(ALCHEMIST_MIX_PRICE);
+    expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist").mixUsed).toBe(true);
+    const after = readActiveRun(defaultGameSession);
+    expect(actions.alchemist.mixPotions(1, 2)).toBeNull();
+    expect(actions.alchemist.strengthenPotion(1)).toBeNull();
+    expect(readActiveRun(defaultGameSession)).toEqual(after);
+    expect(readRunProfile(defaultGameSession).gold).toBe(ALCHEMIST_MIX_PRICE);
+    expect(commits).toHaveLength(1);
+    expect(playUISound).toHaveBeenCalledExactlyOnceWith("alchemistMix");
   });
 });
 

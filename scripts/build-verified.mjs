@@ -41,6 +41,9 @@ async function main(argv = process.argv.slice(2)) {
   if (!argv.includes("--help") && !argv.includes("-h")) {
     if (isDesktop) validateDesktopBuildConfig();
 
+    const localizationCheck = await runTaskCommand("node", ["scripts/localization.mjs", "check"], { cwd: REPO_ROOT });
+    if (localizationCheck.status !== 0) throw new Error("Localization is not current; run npm run i18n:tasks.");
+
     // Help does not build or upload; normal builds must reject stale outputs.
     await syncGenerated({ check: true });
   }

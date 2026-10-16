@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { useEffect, useRef, useState } from "react";
 import { FlaskConical } from "lucide-react";
 
@@ -32,6 +34,7 @@ export function AlchemistShopScreen({
   onStrengthenPotion: (index: number) => BattleCard | null;
   afterProgressSaved?: (feedback: () => void) => void;
 }) {
+  const i18n = useGameTranslation();
   const [brewMode, setBrewMode] = useState<"combine" | "strengthen" | null>(null);
   const [mixedCard, setMixedCard] = useState<BattleCard | null>(null);
   const [originalPotion, setOriginalPotion] = useState<BattleCard | null>(null);
@@ -69,7 +72,11 @@ export function AlchemistShopScreen({
   return (
     <FadeSlot swapKey={modeKey} className="h-full w-full">
       {mixedCard ? (
-        <ShopBrowseShell title="Alchemist's Shop" gold={gold} showGold={false}>
+        <ShopBrowseShell
+          title={i18n.text("ui.alchemist-shop-screen.1", "Alchemist's Shop")}
+          gold={gold}
+          showGold={false}
+        >
           <div className="flex flex-col items-center gap-6">
             {originalPotion ? (
               <PotionComparison original={originalPotion} result={mixedCard} />
@@ -77,7 +84,7 @@ export function AlchemistShopScreen({
               <div className="flex flex-col items-center gap-3">
                 <BattleCardButton
                   card={mixedCard}
-                  ariaLabel={mixedCard.title}
+                  ariaLabel={i18n.displayText(mixedCard.title)}
                   shimmerActive={false}
                   shimmerToken={undefined}
                   shineColor={getCardInspectionShineColors(mixedCard)}
@@ -94,13 +101,13 @@ export function AlchemistShopScreen({
                   setBrewMode(null);
                 }}
               >
-                Continue
+                {i18n.text("ui.alchemist-shop-screen.2", "Continue")}
               </Button>
             </div>
           </div>
         </ShopBrowseShell>
       ) : brewMode ? (
-        <ShopBrowseShell title="Alchemist's Shop" gold={gold}>
+        <ShopBrowseShell title={i18n.text("ui.alchemist-shop-screen.3", "Alchemist's Shop")} gold={gold}>
           <BrewPotionPanel
             deck={runDeck}
             kind={brewMode}
@@ -119,29 +126,33 @@ export function AlchemistShopScreen({
         <ShopShelf
           {...shelf}
           kind="card"
-          title="Alchemist's Shop"
+          title={i18n.text("ui.alchemist-shop-screen.4", "Alchemist's Shop")}
           gold={gold}
           isProgressSavePending={isProgressSavePending}
           extraServices={
             <>
               <ServiceButton
                 icon={FlaskConical}
-                label="Mix Potion"
+                label={i18n.text("ui.alchemist-shop-screen.5", "Mix Potion")}
                 cost={mixPrice}
                 disabled={mixDisabled}
                 disabledMessage={mixDisabledMessage}
                 used={mixUsed}
-                soldOutText="Mix Potion - Used"
+                soldOutText={i18n.text("ui.alchemist-shop-screen.attr1", "Mix Potion - Used")}
                 onClick={() => setBrewMode("combine")}
               />
               <ServiceButton
                 icon={FlaskConical}
-                label="Distill"
+                label={i18n.text("ui.alchemist-shop-screen.6", "Distill")}
                 cost={mixPrice}
                 disabled={strengthenDisabled}
-                disabledMessage={gold < mixPrice ? "Not Enough Gold" : "No eligible Potions to distill"}
+                disabledMessage={
+                  gold < mixPrice
+                    ? i18n.text("shop.not-enough-gold", "Not Enough Gold")
+                    : i18n.text("shop.no-distill", "No eligible Potions to distill")
+                }
                 used={mixUsed}
-                soldOutText="Distill - Used"
+                soldOutText={i18n.text("ui.alchemist-shop-screen.attr2", "Distill - Used")}
                 onClick={() => setBrewMode("strengthen")}
               />
             </>

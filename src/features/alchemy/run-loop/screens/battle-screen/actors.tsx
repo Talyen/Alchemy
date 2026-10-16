@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
 import { isPlayerDefeated, getBattleCompanionDamageModifiers } from "@/lib/battle";
 import { BATTLE_ACTOR_TOP, BATTLE_ACTOR_VIEWPORT_OFFSET } from "@/lib/game-constants";
@@ -34,6 +36,7 @@ export function BattleActors({
   onInspectEnemy?: ((trigger: HTMLElement) => void) | undefined;
   enemyInspectionOpen?: boolean | undefined;
 }) {
+  const i18n = useGameTranslation();
   const { battleState, characterId, heroArt, playerName, aspectMode } = view;
   const { playerStatusChips, enemyStatusChips, activeLabyrinthModifiers } = feedback;
   const { playerPanelRef, enemyPanelRef } = refs;
@@ -61,7 +64,7 @@ export function BattleActors({
           <ShakingArtPanel
             presentation={presentation}
             side="player"
-            title={playerName}
+            title={i18n.displayText(playerName)}
             art={heroArt}
             health={battleState.playerHealth}
             maxHealth={battleState.playerMaxHealth}
@@ -100,7 +103,7 @@ export function BattleActors({
         <ShakingArtPanel
           presentation={presentation}
           side="enemy"
-          title={battleState.currentEnemy.title}
+          title={i18n.displayText(battleState.currentEnemy.title)}
           art={battleState.currentEnemy.art}
           health={battleState.enemyHealth}
           maxHealth={battleState.enemyMaxHealth}

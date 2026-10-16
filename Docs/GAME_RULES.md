@@ -35,6 +35,12 @@ advances gameplay RNG.
 
 Operational rules for `src/lib/battle/` that deviate from typical CCG assumptions. Term definitions: [Domain Glossary](./GLOSSARY.md#domain-glossary). Tests: `tests/lib/battle/`.
 
+Combat feedback retains displayed amounts separately from optional resolved
+`healthLost` and `absorbedDamage` packet facts. Audio uses those facts for cue
+strength; they do not feed combat calculations. Direct and periodic packets remain
+separate when text events merge. Health costs and stripped Block are non-impact
+feedback. See [audio selection](./AUDIO.md#battle-sound-focus).
+
 ### Direct player hit resolution
 
 `player-hit-core.ts` names the source of each direct player-to-enemy hit. `hit-resolution.ts`
@@ -104,7 +110,7 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 - **Resolution** — `applyEnemyAbility` interprets self/opponent targets from the enemy's perspective without borrowing hero talents, Gear, mana, hand, or Gold. Room/difficulty scaling applies at resolution, keeping canonical card definitions immutable. Damage based on live Block or Forge skips a second room multiplier but still receives ability pressure and difficulty modifiers. Positive enemy ability damage has a minimum of 1 after room, progression, and difficulty scaling; zero-base effects retain their existing behavior, and defenses can still prevent all damage. Enemy benefits use enemy healing/mitigation owners; factor-based effects retain their authored factors. Multiplication feedback reports the added buildup, matching hero effects, and emits nothing when no buildup is added. A lethal counterattack stops remaining effects and follow-ups.
 - **Ability stages** — `enemy-turn-attack.ts` selects cards and sequences effects, `enemy-ability-damage.ts` resolves damage and once-per-ability hit rewards, and `enemy-ability-followups.ts` runs trait follow-ups after the effect sequence. `enemy-ability-context.ts` creates and records the shared per-ability hit facts so multi-hit abilities pay matching rewards once and apply follow-ups once. Keep hit and follow-up order, RNG draws, and combat text order when changing these stages.
 - **Enemy Forge** — each stack adds 1 Physical and Stun damage and persists through attacks, including blocked hits, dodges, and Forge-based Burn. Burning Blade adds rounded half existing Forge to its base damage without generating or spending Forge. Whitehot grants exactly 1 starting Forge, without room scaling; loading a battle preserves its saved Forge without granting it again. Existing Forge grants and Purge retain their rules.
-- **Enemy progression** — `game-constants/enemy-balance.ts` owns separate Health and ability-pressure curves by enemy type, with content-specific overrides. Elite ability pressure grows with diminishing returns at later depths. `battle-enemy-setup.ts` derives progression from the existing room multiplier; no hero identity, report tier, or additional saved field participates. Progression factors stop growing after depth 24 while ordinary room scaling continues. Health tuning applies only when creating a battle; saved Health, defenses, ability rosters, and action history remain intact. Block, Armor, healing, regeneration, and trait grants retain their existing scaling.
+- **Enemy progression** — `game-constants/enemy-balance.ts` owns separate Health and ability-pressure curves by enemy type, with content-specific overrides. Elite ability pressure grows with diminishing returns at later depths. `battle-enemy-setup.ts` derives progression from the existing room multiplier; no hero identity, report tier, or additional saved field participates. Progression factors stop growing after depth 24 while ordinary room scaling continues. New bosses receive 10% less Health after progression and content scaling, without changing ability pressure. Health tuning applies only when creating a battle; saved Health, defenses, ability rosters, and action history remain intact. Block, Armor, healing, regeneration, and trait grants retain their existing scaling.
 
 #### Enemy reactions
 
@@ -114,7 +120,7 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 - **Once-per-ability rewards** — Zealot, Cleric, Paladin, Seraph, and Stone Titan reward matching damage to hero Health once per ability. Fire Imp, Giant Spider, and Winter Wolf apply their follow-up once after an ability damages hero Health. Phoenix Feather healing does not cancel the Health damage that triggered it; fully prevented hits do not qualify. Banshee retains its landed-hit Purge, randomly selecting one active beneficial effect with world RNG; a purged Thorns stack does not retaliate that hit. Inquisitor doubles Holy hits against Burning heroes.
 - **Blood traits** — Blood Frenzy adds 1 damage to a Bleed hit against a hero already Bleeding before that hit; it grants no Leech. Blood Scent adds one separate 1-Bleed hit when the hero is strictly below half Health at ability start; defensive abilities do not trigger it and the bonus has no inherent Leech. Native Bleed Leech carries its own buildup into `pendingEnemyBleedLeechHealing`, so unrelated or bonus Bleed cannot fund extra healing. Cleansing Bleed clears that pending Leech; partial removal caps it to the remaining buildup before fresh Bleed can arrive. Existing healing reductions still apply. Profane Blood damages Blood Countess only when the hero actually restores Health, never from overhealing or the Countess's own healing.
 - **Enemy Thorns** — card-granted Thorns retaliate as Nature damage on a non-Dodged hero hit while the enemy survives, consuming the ordinary Thorns stacks. `legacyEnemyThornsReady` reserves one stack for the original encounter trait's distinct Physical, once-per-card retaliation while the enemy survives; new card stacks do not replace or disable that behavior.
-- **Boss traits** — Forge Golem gains 1 Forge every other turn; Frostwarden gains 1 Freeze damage every other turn up to a bonus of 2 (larger existing saved bonuses are retained); Iron Bear gains 1 Armor every other turn. Seraph heals from Holy attacks and Stone Titan gains Armor from Stun attacks instead of emitting passive damage pulses.
+- **Boss traits** — Forge Golem gains 1 Forge every other turn; Frostwarden’s Glacial Surge increases Freeze damage by 1 from the first turn, before ordinary damage pacing; it never grows or becomes a removable status, and resume discards its retired saved growth; Iron Bear gains 1 Armor every other turn. Seraph heals from Holy attacks and Stone Titan gains Armor from Stun attacks instead of emitting passive damage pulses.
 - **Elemental traits** — Frost Elemental and Ice Wraith add 1 room-scaled Freeze damage to Freeze hits. Ice Wraith has no additional damage penalty from Freeze buildup. Pyromancy adds 1 room-scaled Burn damage to Pyromancer ability Burn hits only while the hero has no Burn, through the original hit without a separate packet or direct buildup grant. Cinder Skin deals 1 room-scaled Burn damage on the first actual enemy Health damage on alternating player turns (1, 3, 5, and so on) while the enemy survives, including cards, Companions, triggered damage, and damage over time. Fully prevented and lethal hits do not spend the reaction. The Health-damage helper spends its once-per-turn flag and queues `pendingCinderSkinReaction`; action and tick resolvers drain it through the existing enemy damage path, clearing the pending flag before retaliation. Both flags persist through automatic actions; the once-per-turn flag resets at the next player turn.
 
 ### Damage, statuses, and survival
@@ -242,7 +248,7 @@ Classification queries use [Card classification](#card-classification).
 - **Homestead** — Wheat Field restores purchased-tier Health after each combat, stacking with post-combat recovery and clamping to maximum Health in every mode. Orchard adds purchased-tier starting Thorns alongside gear/encounter grants; resume never repeats starting grants. Crystal Garden adds 25 percentage points per tier to Freeze damage scaling from current Mana, stacking with talents and using normal damage-resolution timing. Homestead resource bonuses increase eligible reward quantities by 10 percentage points per node tier; they never grant per-room or run-end resources.
 - **Typed hit resolution** — `typed-hit-resolution.ts` owns the shared Health → Armor decay → buildup → combat text → threshold → kill-payout order for player follow-up and talent hits. Card attack riders retain their distinct ordering, including recursive Archery hits and persistent Forge. `follow-up-hit-resolution.ts` declares recurring damage-conversion reactions in ordered data; changing that order changes RNG consumption. Talent manifest types derive from their current defaults; retired fields follow the [save baseline](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
 - **Common damage modifiers** — `damage-modifiers.ts` owns the typed mapping from damage types to Talent and Gear flat bonuses, flat reductions, half-damage traits, and Gear resistances. Preserve their existing application stages and rounding; special conversion and reaction handlers keep their explicit order. Source manifests follow the current Talent and Gear contracts and the save baseline.
-- **Fight pacing** — hidden combat scaler, not a player-facing status. Paces damage, block, mana, and healing magnitudes; player Forge, armor and gold grants bypass it at every site (pinned by `tests/lib/battle/fight-pacing.test.ts`). Attack and triggered damage additionally multiply by `min(3, 1 + (overrun / span)²)` after round 7/12/20 for normal/elite/boss enemies. Player spans remain 4/4/3; enemy spans are 6/6/3. Damage-ramp tuning is separate from the resource clock, whose targets and comeback bonuses are unchanged. Healing and defensive/resource grants do not receive this extra multiplier. Derived hits and status ticks retain their existing inherited-damage rules rather than applying pacing again. [Domain Glossary](./GLOSSARY.md#domain-glossary). Balance simulator: `ALCHEMY_BALANCE_PACING=off` disables both pacing components but retains enemy progression scaling.
+- **Fight pacing** — hidden combat scaler, not a player-facing status. Paces damage, block, mana, and healing magnitudes; player Forge, armor and gold grants bypass it at every site (pinned by `tests/lib/battle/fight-pacing.test.ts`). Attack and triggered damage additionally multiply by `min(3, 1 + (overrun / span)²)` after round 7/12/10 for normal/elite/boss enemies. Player spans are 4/4/5; enemy spans are 6/6/5. The boss ramp is symmetric: it reaches 2× on turn 15 and the 3× cap on turn 18. Damage-ramp tuning is separate from the resource clock, whose targets and comeback bonuses are unchanged. Healing and defensive/resource grants do not receive this extra multiplier. Derived hits and status ticks retain their existing inherited-damage rules rather than applying pacing again. [Domain Glossary](./GLOSSARY.md#domain-glossary). Balance simulator: `ALCHEMY_BALANCE_PACING=off` disables both pacing components but retains enemy progression scaling.
 
 ### Non-card reaction eligibility
 
@@ -315,6 +321,15 @@ Gold and prior savings. Spending does not subtract from this earned total.
 
 The recap omits the room progression trail. Existing menu upgrade highlights
 continue to guide between-run progression.
+
+The first claimed Campaign Act I boss reward tops up the resulting stockpile to
+at least 4 Wood and 4 Stone when no Homestead upgrade or Companion Bond has
+been purchased. Ordinary reward Materials count first. This one-time grant and
+its receipt settle together; purchases also resolve eligibility, and Homestead
+reset cannot renew it. The reward row previews the actual payout.
+Campaign boss rewards mark the current act cleared, and ordinary destination
+choices display the current act. Final victory and demo completion keep their
+existing endings.
 
 Wildwood boss victories use the same boss Gold and shared Material payout rules as
 Campaign and Labyrinth while retaining Wildwood's reward choices and next-boss
@@ -412,7 +427,8 @@ hit-stage ordering above and must not reorder RNG or feedback.
 
 ## Brewing, Transmutation, and elemental reactions
 
-Campfires offer Rest or Brew, including at full Health. When the deck contains
+Campfires show current/max Health and Rest’s actual recovery before choosing.
+They offer Rest or Brew, including at full Health (where recovery is zero). When the deck contains
 at least two eligible Potions, Brew combines two chosen instances; otherwise, it
 grants one of three fixed standard Potion offers (at least one recovery/defense
 option). The deck determines which brewing action is available. Rest and Brew

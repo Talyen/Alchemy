@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { builtinEnvironments, type Environment } from "vitest/runtime";
 
 export default {
@@ -20,11 +21,9 @@ export default {
       const environment = await builtinEnvironments.jsdom.setup(global, options);
       return {
         async teardown(global) {
-          try {
-            await environment.teardown(global);
-          } finally {
-            restoreStorage();
-          }
+          using _scopeCleanup = createCleanup(() => restoreStorage());
+
+          await environment.teardown(global);
         },
       };
     } catch (error) {

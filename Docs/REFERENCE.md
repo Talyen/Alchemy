@@ -106,8 +106,8 @@ extraction/aggregation record in `rate-statistics.ts`. Batch summaries and repor
 aggregation use that record: counts always sum; rates and averages weight by
 battles or sampled enemy types. Adding a measurement to the contract and record
 updates projections and weighting automatically.
-Overgrowth and Regeneration count only successful Health restoration; Glacial
-Surge stops contributing activations at its Freeze Bonus cap.
+Overgrowth and Regeneration count only successful Health restoration. Glacial
+Surge is a flat damage modifier and has no scheduled growth activations.
 
 Paired sweeps describe reference fights and variants in `report-sweeps.ts`.
 `report-sweep-runner.ts` manages batch configuration, matched-fight checks, reference

@@ -1,9 +1,11 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const { setImmediate } = require("node:timers");
 
 /** Native profile storage outlives every renderer and its session queue. */
 function createDesktopSaveStorage({ slots, demoProgress, isSavePayload, stampOwner, filesystem = fs }) {
   let lane = Promise.resolve();
+  let closed = false;
   function enqueue(operation) {
     const result = lane.then(operation);
     // Reject only this caller. Later operations still own their place.
@@ -26,6 +28,7 @@ function createDesktopSaveStorage({ slots, demoProgress, isSavePayload, stampOwn
       try {
         const data = await filesystem.readFile(filePath, "utf8");
         if (isSavePayload(data)) candidates.push(data);
+        else localReadFailed = true;
       } catch (error) {
         if (error?.code === "ENOENT") continue;
         console.error(`[save] Error reading save candidate ${filePath}:`, error);
@@ -36,8 +39,10 @@ function createDesktopSaveStorage({ slots, demoProgress, isSavePayload, stampOwn
   }
 
   function write(input, slot) {
+    if (closed) return Promise.resolve(false);
     if (!isSavePayload(input)) return Promise.resolve(false);
     const data = stampOwner(input);
+    if (!isSavePayload(data)) return Promise.resolve(false);
     const paths = resolveSlot(slot);
     return enqueue(async () => {
       try {
@@ -98,9 +103,31 @@ function createDesktopSaveStorage({ slots, demoProgress, isSavePayload, stampOwn
   return {
     read: (slot) => enqueue(() => read(slot)),
     write,
-    clear: () => enqueue(clear),
+    clear: () => (closed ? Promise.resolve(false) : enqueue(clear)),
     readDemoImportSource: () => enqueue(() => demoProgress.readSource()),
-    completeDemoInitialization: () => enqueue(() => demoProgress.complete()),
+    completeDemoInitialization: () => (closed ? Promise.resolve(false) : enqueue(() => demoProgress.complete())),
+    close() {
+      closed = true;
+      return lane;
+    },
   };
 }
-module.exports = { createDesktopSaveStorage };
+function registerSaveShutdown(app, store) {
+  let ready = false;
+  let draining;
+  // Renderer beforeunload handlers submit their final saves while windows close.
+  // Keep admission open until will-quit, then drain before the process exits.
+  app.on("will-quit", (event) => {
+    if (ready) return;
+    event.preventDefault();
+    draining ??= store.close().then(() => {
+      // Electron resets its native quitting flag after will-quit returns.
+      // An already-resolved drain must not retry inside that event's microtasks.
+      setImmediate(() => {
+        ready = true;
+        app.quit();
+      });
+    });
+  });
+}
+module.exports = { createDesktopSaveStorage, registerSaveShutdown };

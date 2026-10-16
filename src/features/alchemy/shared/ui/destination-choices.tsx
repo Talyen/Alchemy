@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { useRef } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -29,6 +31,7 @@ export function DestinationChoices({
   onChoose: (destination: Destination) => void;
   selectedBoss?: BestiaryEntry | null;
 }) {
+  const i18n = useGameTranslation();
   const bossOnly = destinationOptions.length === 1 && destinationOptions[0] === DESTINATIONS.BOSS_COMBAT;
   const tooltipEntry = bossOnly ? (selectedBoss ?? getBossEnemy()) : null;
 
@@ -48,11 +51,13 @@ export function DestinationChoices({
           <DestinationChoiceTile
             key={destination}
             destination={destination}
-            label={
+            label={i18n.displayText(
               destination === DESTINATIONS.BOSS_COMBAT
-                ? `Boss - Act ${["I", "II", "III"][currentAct - 1] ?? currentAct}`
-                : destinationLabel(destination)
-            }
+                ? i18n.text("ui.destination-choices.d1", "Boss - Act {{act}}", {
+                    act: ["I", "II", "III"][currentAct - 1] ?? currentAct,
+                  })
+                : destinationLabel(destination),
+            )}
             art={art}
             icon={icon}
             accentClassName={accentClassName}
@@ -88,6 +93,7 @@ function DestinationChoiceTile({
   padded: boolean;
   onChoose: (destination: Destination) => void;
 }) {
+  useGameTranslation();
   const bossTriggerRef = useRef<HTMLButtonElement>(null);
 
   return (

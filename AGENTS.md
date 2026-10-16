@@ -31,6 +31,7 @@ Read known owners directly. Otherwise find filenames, scope searches, then read 
 
 ## High-risk invariants
 
+- Player-facing text changes include keeping every target language current. Use [localization](./.agents/skills/localization/SKILL.md); extraction, AI translation/review, and `npm run i18n:check` are part of the same task. Never add a paid translation service or require manual translation.
 - [Show, don’t tell](./Docs/UI.md#show-dont-tell): concise labels and visible state/outcomes; avoid routine instructions, paragraphs, or redundant success copy. Preserve mechanics, accessible names, and concise errors.
 - [Every player action receives feedback](./Docs/UI.md#every-player-action-receives-feedback): supported actions need timely visible acknowledgment and clear outcomes in UI/UX/gameplay design, implementation, and review. Essential meaning survives mute.
 - Outside `shared/stores/`, use capability ports. Writes go through `dispatchRunSessionCommand()` and `run-session-write-port.ts`.

@@ -296,8 +296,9 @@ adapter uses the platform backend by default. Sessions can inject feedback callb
 independent sessions default to silent presentation. Device-local display preferences
 and the local error buffer remain application services.
 
-`await session.dispose()` removes subscriptions, cancels autosave/navigation work,
-clears lifecycle channels, drains already-submitted saves, and disables further
+`GameSession` supports `await using` and explicit `await session.dispose()`: both
+remove subscriptions, cancel autosave/navigation work,
+clear lifecycle channels, drain already-submitted saves, and disable further
 writes. Commands and reads reject disposed handles. Disposing one session cannot
 cancel another session’s timers or writes. `session-lifetime.ts` owns resource
 registration and the clock's timer inventory. Closing the lifetime revokes feedback
@@ -310,6 +311,8 @@ borrow the same lifetime predicate. Disposal during notification revokes later
 callbacks in that publication as well as queued reentrant events. Restore and
 teardown also stop their remaining presentation work once their session closes;
 already-submitted storage work still drains.
+Notification-channel subscriptions and registered cleanup handles remain callable and also
+support `using`; `lib/cleanup.ts` owns their idempotent explicit/scoped release.
 
 ## Activity and rewards
 
@@ -401,8 +404,12 @@ Completed actions survive process termination after local acknowledgement. This
 promise does not cover power loss, subsequent filesystem failure, or browser eviction.
 
 Steam Cloud mirrors serialize independently and coalesce queued payloads per slot.
-Local acknowledgement does not wait for Cloud. Deletion discards queued uploads and
-drains an in-flight upload before removing mirrors so it cannot resurrect a save.
+Local acknowledgement does not wait for Cloud. Desktop adapters sharing the same
+IPC endpoint also share a physical operation lane in `platform-save-backend.ts`.
+Reads, local writes, deletes, and demo initialization receipt operations follow
+submission order across adapters; failure cannot poison the lane. A later save
+cannot acknowledge files while an earlier delete can still erase them.
+Deletion discards queued uploads and drains an in-flight upload before removing mirrors so it cannot resurrect a save.
 `desktop/steam-cloud-storage.cjs` owns the process-wide Cloud operation lane across
 both slots. Reads, uploads, and deletion share that lane even when their originating
 renderer has been replaced; renderer-local mirror scheduling cannot provide this
@@ -442,7 +449,10 @@ Low-level transport tests use the storage runtime directly to exercise arbitrary
 
 Acknowledged feedback has one session-owned FIFO delivery queue. A covering save
 reserves its batch before publishing idle, so idle observers and nested saves
-cannot deliver newer navigation or feedback ahead of older callbacks. Restore,
+cannot deliver newer navigation or feedback ahead of older callbacks. Delivery
+rechecks the save gate before each callback; a new checkpoint started by feedback
+or an idle observer pauses the remaining queue until that checkpoint is saved.
+Restore,
 clear, protection, and disposal revoke undelivered callbacks, including callbacks
 registered reentrantly while the queue is draining. Feedback failures are isolated.
 

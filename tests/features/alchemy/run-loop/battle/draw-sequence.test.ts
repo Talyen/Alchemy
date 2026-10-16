@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { clearBattleStageMarks, battleStageMarkName } from "@/lib/performance/marks";
 import { describe, expect, it, vi } from "vitest";
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
@@ -122,27 +123,25 @@ describe("runHandDrawSequence", () => {
       return 42;
     });
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
-    try {
-      const deps = makeDrawSequenceDeps({ playback, isSessionActive: (id) => playback.isCurrent(id) });
-      const drawing = runHandDrawSequence(
-        [],
-        { ...defaultBattleState(), hand: [makeTestCardWithId("slash", { uid: 1 })] },
-        () => {},
-        playback.id,
-        deps,
-      );
-      expect(playback.pendingDraws).toBe(1);
-      playback.restart();
-      const finishNewDraw = playback.beginDraw(playback.id);
-      await expect(drawing).resolves.toBe(false);
-      callbacks[0]!(0);
-      expect(playback.pendingDraws).toBe(1);
-      expect(deps.animateDrawnHand).not.toHaveBeenCalled();
-      expect(deps.setHiddenHandCardKeys).toHaveBeenCalledOnce();
-      finishNewDraw();
-    } finally {
-      vi.unstubAllGlobals();
-    }
+    using _scopeCleanup = createCleanup(() => vi.unstubAllGlobals());
+
+    const deps = makeDrawSequenceDeps({ playback, isSessionActive: (id) => playback.isCurrent(id) });
+    const drawing = runHandDrawSequence(
+      [],
+      { ...defaultBattleState(), hand: [makeTestCardWithId("slash", { uid: 1 })] },
+      () => {},
+      playback.id,
+      deps,
+    );
+    expect(playback.pendingDraws).toBe(1);
+    playback.restart();
+    const finishNewDraw = playback.beginDraw(playback.id);
+    await expect(drawing).resolves.toBe(false);
+    callbacks[0]!(0);
+    expect(playback.pendingDraws).toBe(1);
+    expect(deps.animateDrawnHand).not.toHaveBeenCalled();
+    expect(deps.setHiddenHandCardKeys).toHaveBeenCalledOnce();
+    finishNewDraw();
   });
 
   it("does not mutate presentation when the battle session ends mid-draw", async () => {

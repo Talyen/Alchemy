@@ -264,15 +264,12 @@ describe("chooseCard tag filtering", () => {
     expect(slashOnly).toHaveLength(1);
     expect(getCardKeywords(slashOnly[0])).not.toContain("archery");
 
-    const poolSpy = vi.spyOn(cardPools, "getOfferableCardPool").mockReturnValue(slashOnly);
-    try {
-      apply({ kind: "chooseCard", tag: "archery" });
-      const offered = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryCardChoices!;
-      expect(offered.length).toBeGreaterThan(0);
-      expect(offered.every((card) => card.id === "slash")).toBe(true);
-    } finally {
-      poolSpy.mockRestore();
-    }
+    using _poolSpy = vi.spyOn(cardPools, "getOfferableCardPool").mockReturnValue(slashOnly);
+
+    apply({ kind: "chooseCard", tag: "archery" });
+    const offered = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryCardChoices!;
+    expect(offered.length).toBeGreaterThan(0);
+    expect(offered.every((card) => card.id === "slash")).toBe(true);
   });
 });
 

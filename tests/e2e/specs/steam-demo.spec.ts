@@ -1,6 +1,5 @@
 import { test, expect } from "../../fixtures/e2e";
 import {
-  assertEndRunShowsRecap,
   withSavedGame,
   injectBossState,
   injectHomestead,
@@ -153,7 +152,22 @@ test.describe("Steam demo edition", () => {
         )
         .toBe(7);
       await battle.playFirstCard();
-      await assertEndRunShowsRecap(page);
+      await battle.menuBtn.click();
+      await page.getByTestId("game-menu").getByRole("button", { name: "End Run", exact: true }).click();
+      await page
+        .getByRole("dialog", { name: "End this run?", exact: true })
+        .getByRole("button", { name: "End Run", exact: true })
+        .click();
+      await expect(page.getByRole("heading", { name: "Journey’s End", exact: true })).toBeVisible();
+      if (hero !== "Ranger") {
+        await page.getByRole("button", { name: "Continue", exact: true }).click();
+        await expect(page.getByRole("heading", { name: "Hero Unlocked", exact: true })).toBeVisible();
+        await expect(
+          page.getByRole("heading", { name: hero === "Knight" ? "Rogue" : "Ranger", exact: true }),
+        ).toBeVisible();
+      }
+      await page.getByRole("button", { name: "Main Menu", exact: true }).click();
+      await expect(menu.playBtn).toBeVisible();
       await expect
         .poll(async () =>
           page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}").finishedRunCharacters, SAVE_KEY),

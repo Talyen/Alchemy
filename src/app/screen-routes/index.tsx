@@ -1,3 +1,4 @@
+import { displayText } from "@/lib/localization/runtime";
 import type { ReactNode } from "react";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { optionsScreenRoutes } from "./options-screen-route";
@@ -25,7 +26,7 @@ export function renderAlchemyScreenRoute(ctx: RenderAlchemyScreenProps): ReactNo
     throw new Error(`Missing screen route for ${ctx.screen}`);
   }
   return (
-    <ErrorBoundary label={ctx.screen}>
+    <ErrorBoundary label={displayText(ctx.screen)}>
       <Route {...ctx} />
     </ErrorBoundary>
   );

@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
@@ -95,6 +96,23 @@ describe("platform save backend", () => {
     vi.mocked(console.error).mockRestore();
   });
 
+  it("preserves an unreadable Cloud source while continuing from the local save", async () => {
+    const desktop = installDesktopApi({
+      saveCandidates: ["local"],
+      overrides: {
+        steamCloudRead: vi.fn().mockRejectedValue(new Error("Cloud unavailable")),
+      },
+    });
+    using _log = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(createDesktopSaveBackend().readCandidates(SAVE_KEY)).resolves.toEqual({
+      ok: true,
+      candidates: ["local"],
+      cloudReadFailed: true,
+    });
+    expect(desktop.readSaveSlot).toHaveBeenCalledWith(undefined);
+  });
+
   it("keeps readable backups when another local candidate cannot be read", async () => {
     installDesktopApi({
       overrides: {
@@ -152,14 +170,11 @@ describe("platform save backend", () => {
 
   it("keeps a successful local save when Cloud rejects", async () => {
     installDesktopApi({ overrides: { steamCloudWrite: vi.fn().mockRejectedValue(new Error("Cloud offline")) } });
-    const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    try {
-      await expect(createDesktopSaveBackend({ cloudSyncEnabled: true }).write(SAVE_KEY, "payload")).resolves.toEqual({
-        ok: true,
-      });
-    } finally {
-      warning.mockRestore();
-    }
+    using _warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    await expect(createDesktopSaveBackend({ cloudSyncEnabled: true }).write(SAVE_KEY, "payload")).resolves.toEqual({
+      ok: true,
+    });
   });
 
   it("writes desktop local before cloud and treats cloud failure as non-fatal", async () => {
@@ -199,6 +214,45 @@ describe("platform save backend", () => {
     upload.resolve(true);
     await expect(clearing).resolves.toEqual({ ok: true });
     expect(desktop.clearSave).toHaveBeenCalledOnce();
+  });
+
+  it("serializes a wipe and a later acknowledged write across adapters sharing desktop files", async () => {
+    const deleting = deferred<void>();
+    const releaseDelete = deferred<void>();
+    let local: string | null = "old-career";
+    let cloud: string | null = "old-career";
+    installDesktopApi({
+      overrides: {
+        clearSave: vi.fn(async () => {
+          deleting.resolve();
+          await releaseDelete.promise;
+          local = null;
+          return true;
+        }),
+        writeSave: vi.fn(async (value) => {
+          local = value;
+          return true;
+        }),
+        steamCloudDelete: vi.fn(async () => {
+          cloud = null;
+          return true;
+        }),
+        steamCloudWrite: vi.fn(async (value) => {
+          cloud = value;
+          return true;
+        }),
+      },
+    });
+    const first = createDesktopSaveBackend({ cloudSyncEnabled: true });
+    const second = createDesktopSaveBackend({ cloudSyncEnabled: true });
+    const clearing = first.clear(SAVE_KEY);
+    await deleting.promise;
+    const saving = second.write(SAVE_KEY, "new-career");
+    releaseDelete.resolve();
+    expect(await clearing).toEqual({ ok: true });
+    expect(await saving).toEqual({ ok: true });
+    expect(local).toBe("new-career");
+    expect(cloud).toBe("new-career");
   });
 
   it("two isolated devices select the fresher shared mirror without overwriting their independent local slots", async () => {
@@ -364,18 +418,27 @@ describe("platform save backend", () => {
     await expect(backend.readCandidates(SAVE_KEY)).resolves.toEqual({ ok: true, candidates: ["browser"] });
   });
 
-  it.each(["write", "clear"] as const)("returns a desktop %s rejection as a failure result", async (operation) => {
-    const error = new Error("IPC failed");
-    installDesktopApi({
-      overrides: {
-        writeSave: vi.fn().mockRejectedValue(error),
-        clearSave: vi.fn().mockRejectedValue(error),
-      },
-    });
-    const backend = createDesktopSaveBackend();
-    const result = operation === "write" ? backend.write(SAVE_KEY, "payload") : backend.clear(SAVE_KEY);
-    await expect(result).resolves.toEqual({ ok: false, error });
-  });
+  it.each(["write", "clear"] as const)(
+    "reports a desktop %s failure without blocking a later adapter write",
+    async (operation) => {
+      const error = new Error("IPC failed");
+      const desktop = installDesktopApi({
+        overrides: {
+          writeSave:
+            operation === "write"
+              ? vi.fn().mockRejectedValueOnce(error).mockResolvedValue(true)
+              : vi.fn().mockResolvedValue(true),
+          clearSave: vi.fn().mockRejectedValue(error),
+        },
+      });
+      const backend = createDesktopSaveBackend();
+      const result = operation === "write" ? backend.write(SAVE_KEY, "payload") : backend.clear(SAVE_KEY);
+      const following = createDesktopSaveBackend().write(SAVE_KEY, "after-failure");
+      await expect(result).resolves.toEqual({ ok: false, error });
+      await expect(following).resolves.toEqual({ ok: true });
+      expect(desktop.writeSave).toHaveBeenLastCalledWith("after-failure", undefined);
+    },
+  );
 
   it.each(["read", "write", "clear"] as const)(
     "returns a browser %s exception as a failure result",
@@ -403,14 +466,12 @@ describe("platform save backend", () => {
   it("reports browser storage failure instead of throwing without browser globals", async () => {
     vi.stubGlobal("window", undefined);
     vi.stubGlobal("localStorage", undefined);
-    try {
-      const backend = createBrowserSaveBackend();
-      await expect(backend.readCandidates("ignored")).resolves.toEqual({ ok: false, error: expect.anything() });
-      await expect(backend.write("ignored", "payload")).resolves.toEqual({ ok: false, error: expect.anything() });
-      expect(backend.writeSync("ignored", "payload")).toEqual({ ok: false, error: expect.anything() });
-      await expect(backend.clear("ignored")).resolves.toEqual({ ok: false, error: expect.anything() });
-    } finally {
-      vi.unstubAllGlobals();
-    }
+    using _scopeCleanup = createCleanup(() => vi.unstubAllGlobals());
+
+    const backend = createBrowserSaveBackend();
+    await expect(backend.readCandidates("ignored")).resolves.toEqual({ ok: false, error: expect.anything() });
+    await expect(backend.write("ignored", "payload")).resolves.toEqual({ ok: false, error: expect.anything() });
+    expect(backend.writeSync("ignored", "payload")).toEqual({ ok: false, error: expect.anything() });
+    await expect(backend.clear("ignored")).resolves.toEqual({ ok: false, error: expect.anything() });
   });
 });

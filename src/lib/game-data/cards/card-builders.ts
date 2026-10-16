@@ -1,3 +1,4 @@
+import { getCatalogArt } from "../assets";
 import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import { capitalizeWord } from "@/lib/utils";
 import { companionLibrary } from "../companions";
@@ -9,7 +10,7 @@ import { getCompanionDescriptionLines } from "./companion-turn-description";
 interface CardBaseInput {
   id: BattleCard["id"];
   title?: string;
-  art: BattleCard["art"];
+  art?: BattleCard["art"];
   cost?: number;
 }
 
@@ -67,7 +68,7 @@ export function effectsCard<const E extends BattleCardEffect[]>({
       id,
       title: deriveTitle(id, title),
       descriptionLines: [],
-      art,
+      art: art ?? getCatalogArt(id),
       cost,
       ...(tags ? { tags } : {}),
       ...(consume ? { consume: true } : {}),
@@ -90,16 +91,18 @@ export function summonCompanionCard({ id, title, art, companionId, cost = 1 }: S
   const companionTitle = companion.title.endsWith(" Companion")
     ? companion.title.slice(0, -" Companion".length)
     : undefined;
-  return {
-    id,
-    title: title ?? companionTitle ?? deriveTitle(id),
-    descriptionLines,
-    description: descriptionLines.map((line, index) => ({
+  return withCardDescription(
+    {
+      id,
+      title: title ?? companionTitle ?? deriveTitle(id),
+      descriptionLines,
+      art: art ?? companion.art,
+      cost,
+      effects: [{ kind: "summon-companion", companionId }],
+    },
+    descriptionLines.map((line, index) => ({
       parts: [line],
       role: index === descriptionLines.length - 1 ? "keyword" : "effect",
     })),
-    art,
-    cost,
-    effects: [{ kind: "summon-companion", companionId }],
-  };
+  );
 }

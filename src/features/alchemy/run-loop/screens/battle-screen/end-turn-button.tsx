@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { useCallback, useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { CircleArrowRight } from "lucide-react";
 import { useStore } from "zustand";
@@ -39,6 +41,7 @@ export function BattleEndTurnButton({
   subscribeProgressSave,
   onEndTurn,
 }: BattleEndTurnButtonProps) {
+  const i18n = useGameTranslation();
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [confirmationState, setConfirmationState] = useState<BattleSnapshot | null>(null);
@@ -104,7 +107,7 @@ export function BattleEndTurnButton({
     <>
       <ChromeIconButton
         ref={buttonRef}
-        aria-label="End Turn"
+        aria-label={i18n.text("ui.end-turn-button.1", "End Turn")}
         data-battle-end-turn
         disabled={unavailable || gate.endTurnConfirmationOpen}
         onClick={() => {
@@ -128,17 +131,17 @@ export function BattleEndTurnButton({
         allowFlip={false}
         horizontalInset={8}
       >
-        End Turn
+        {i18n.text("ui.end-turn-button.2", "End Turn")}
       </PortaledTooltip>
       <ConfirmationDialog
         open={open}
-        title="End turn?"
-        description={
+        title={i18n.text("ui.end-turn-button.3", "End turn?")}
+        description={i18n.displayText(
           battleState.playerStatuses.haste > 0
-            ? "Discard your hand and take another turn."
-            : "Discard your hand and let the enemy act."
-        }
-        confirmLabel="End Turn"
+            ? i18n.text("ui.end-turn-button.d1", "Discard your hand and take another turn.")
+            : i18n.text("ui.end-turn-button.d2", "Discard your hand and let the enemy act."),
+        )}
+        confirmLabel={i18n.text("ui.end-turn-button.4", "End Turn")}
         tone="default"
         icon={CircleArrowRight}
         returnFocusRef={buttonRef}

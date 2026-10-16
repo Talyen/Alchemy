@@ -96,9 +96,10 @@ function computeCardSpecificTalentBonus(state: BattleState, card?: BattleCard): 
 function computeExternalDamageMultipliers(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  includeEnemyTraits: boolean,
 ): number {
   let bonus = 0;
-  bonus += getEnemyDamageMultiplier(state, effect.damageType) - 1;
+  bonus += getEnemyDamageMultiplier(state, effect.damageType, includeEnemyTraits) - 1;
   bonus += gearFrozenDamageMultiplier(state) - 1;
   if (isLikeDamage(effect.damageType, "burn", state)) bonus += getBurnBonusToBleedingMultiplier(state) - 1;
 
@@ -108,13 +109,14 @@ function computeExternalDamageMultipliers(
 function computeAdditiveDamageBonus(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
-  card?: BattleCard,
+  card: BattleCard | undefined,
+  includeEnemyTraits: boolean,
 ): number {
   return (
     computeEffectBonusMultiplier(effect, state) +
     computeTypeSpecificDamageBonus(state, effect) +
     computeCardSpecificTalentBonus(state, card) +
-    computeExternalDamageMultipliers(state, effect)
+    computeExternalDamageMultipliers(state, effect, includeEnemyTraits)
   );
 }
 
@@ -142,10 +144,12 @@ export function resolveDamageBonusMultiplier(
     card,
     firstBonus,
     companionAttack = false,
+    includeEnemyTraits = true,
   }: {
     card?: BattleCard | undefined;
     firstBonus: number;
     companionAttack?: boolean;
+    includeEnemyTraits?: boolean;
   },
 ): number {
   const unwoundedBonus =
@@ -160,6 +164,7 @@ export function resolveDamageBonusMultiplier(
     state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR
       ? state.talentEffects.leechCardDamageVsLowHealthPercent / PERCENT_DENOMINATOR
       : 0;
-  const totalBonus = computeAdditiveDamageBonus(state, effect, card) + firstBonus + unwoundedBonus + cullBonus;
+  const totalBonus =
+    computeAdditiveDamageBonus(state, effect, card, includeEnemyTraits) + firstBonus + unwoundedBonus + cullBonus;
   return Math.max(MIN_DAMAGE_MULTIPLIER, 1 + totalBonus);
 }

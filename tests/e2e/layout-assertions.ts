@@ -70,13 +70,19 @@ export async function assertHorizontalNeighborGap(
   }).toPass({ timeout: 5_000 });
 }
 
-/** Wait for the active view and virtual-stage geometry before measuring layout. */
+/** Wait for artwork and geometry; inspection dialogs may keep the ready backdrop inert. */
 export async function waitForLayoutSettled(page: Page, readyTarget?: Locator) {
   if (readyTarget) await expect(readyTarget.first()).toBeVisible();
   await page.waitForFunction(() => {
     const stage = document.querySelector('[data-testid="vr-stage"]');
     const root = document.querySelector(".page-enter");
-    if (!stage || !root || getComputedStyle(root).opacity !== "1") return false;
+    if (
+      !stage ||
+      !root ||
+      root.getAttribute("data-artwork-pending") === "true" ||
+      getComputedStyle(root).opacity !== "1"
+    )
+      return false;
     const frame = stage.parentElement;
     if (!frame) return false;
     const stageBounds = stage.getBoundingClientRect();
@@ -99,4 +105,44 @@ export async function waitForLayoutSettled(page: Page, readyTarget?: Locator) {
     // Let resize observers and the resulting React render paint before sampling.
     for (let frame = 0; frame < 6; frame += 1) await new Promise(requestAnimationFrame);
   });
+}
+
+/** Check controls, raised hand cards and popups while allowing intentional resting-card bleed. */
+export async function assertReachableControlsInViewport(page: Page, screenName: string) {
+  const outside = await page
+    .locator('button,h1,[role="dialog"],[role="listbox"],.hover-popup-panel[data-visible]')
+    .evaluateAll((elements) =>
+      elements
+        .filter((element) => {
+          const rect = element.getBoundingClientRect();
+          if (
+            !rect.width ||
+            !rect.height ||
+            getComputedStyle(element).visibility === "hidden" ||
+            element.closest('[aria-hidden="true"]')
+          )
+            return false;
+          // UI.md allows resting hand artwork to cross the bottom edge; its center stays reachable.
+          const handSlot = element.closest("[data-hand-slot]");
+          if (handSlot && !handSlot.hasAttribute("data-hovered")) {
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            return x < 0 || y < 0 || x > innerWidth || y > innerHeight;
+          }
+          // Content below an intentional scroll viewport is reachable by scrolling.
+          for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+            if (
+              /(auto|scroll)/.test(getComputedStyle(parent).overflowY) &&
+              parent.scrollHeight > parent.clientHeight + 1
+            )
+              return false;
+          }
+          return rect.left < -1 || rect.top < -1 || rect.right > innerWidth + 1 || rect.bottom > innerHeight + 1;
+        })
+        .map((element) => ({
+          text: element.getAttribute("aria-label") ?? element.textContent,
+          bounds: element.getBoundingClientRect().toJSON(),
+        })),
+    );
+  expect(outside, `${screenName}: controls or popups outside the viewport`).toEqual([]);
 }

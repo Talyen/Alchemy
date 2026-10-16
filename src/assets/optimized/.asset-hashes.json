@@ -1074,6 +1074,31 @@
     "outputHash": "f902ddb435f303bc886fa449b17590eb",
     "selectionHash": "bc360c6ebe2c939f2dba8a85b0967de5569306469d00489324bb18e7c0321f5d"
   },
+  "demo-feature-showcase-de.webp": {
+    "hash": "b0a42fb99ec89d71ecb5ba398fad6d4f",
+    "outputHash": "ec435e1ad875a8909f5c96995227b54f",
+    "selectionHash": "4d2d4120ae1eca0e33a6c4e99367da0d6d8ecf0cee198862c147f789467ff9c7"
+  },
+  "demo-feature-showcase-es.webp": {
+    "hash": "a6d1ecde4019d1d0b544ed1c34433341",
+    "outputHash": "adb0036602c47a696da29d3ec38d5bbe",
+    "selectionHash": "eb635faee5d24722ef83138635f792b96726be8c2414c638991c57bbe988fa7c"
+  },
+  "demo-feature-showcase-pt-br.webp": {
+    "hash": "1a944c46ec7a77fa0d7201fbc971f657",
+    "outputHash": "28d9b755146aaf2df355ff7a4115eb1c",
+    "selectionHash": "4f316515d3e371bca270312541538e9d8a8a6b829a662ba9341f52c62d2dfb43"
+  },
+  "demo-feature-showcase-ru.webp": {
+    "hash": "e250ba5e6285c656ad684eed395c376f",
+    "outputHash": "52c250bf6fe9643062a8367e3b5fe49d",
+    "selectionHash": "15eba7470b1ef001173beb64d336a05cfdfb6220eb496c1ed1915279eb8ea1bc"
+  },
+  "demo-feature-showcase-zh-hans.webp": {
+    "hash": "a3ec879becc0fad4c9c482909d18f965",
+    "outputHash": "bf7f7f1ecfa31eb8e5c76d0b6bd7d302",
+    "selectionHash": "e11dae44cbc61e2bbc56b01c0c7df9475aba420ddb03d5c38480422a31b019d9"
+  },
   "demo-feature-showcase.webp": {
     "hash": "50de3e2941c9c9d84c45f1513d6f4af9",
     "outputHash": "18c553571923d00922af849b75269aa9",

@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { useEffect, useState, useMemo, useRef } from "react";
 import { RotateCcw } from "lucide-react";
 import { ChromeIconButton } from "../../shared/ui/chrome-icon-button";
@@ -68,6 +70,7 @@ export function HomesteadScreen({
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
+  const i18n = useGameTranslation();
   const liveProgress = useMemo(
     () => ({
       gold: liveGold,
@@ -96,7 +99,7 @@ export function HomesteadScreen({
     sequence: number;
     viewEpoch: number;
   } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | { item: string; action: HomesteadNodeModel["action"] } | null>(null);
   const pending = useRef(false);
   const submittedLevels = useRef(new Map<string, number>());
   const mounted = useRef(true);
@@ -140,7 +143,7 @@ export function HomesteadScreen({
             : onCompleteResearch(item.data.id);
     if (!accepted) {
       pending.current = false;
-      setError(`Could not ${node.action.toLowerCase()} ${node.title}. Materials were not spent.`);
+      setError({ item: node.title, action: node.action });
       return;
     }
     submittedLevels.current.set(node.id, node.level);
@@ -165,7 +168,7 @@ export function HomesteadScreen({
     )
       return;
     soundedSequence.current = purchaseState.sequence;
-    playUISound(purchaseState.node.companion ? "bond" : "talentUnlock");
+    playUISound(purchaseState.node.companion ? "bond" : "homesteadBuild");
   }, [purchaseState, purchasedLevel]);
 
   const hasPurchases = [constructedBuildings, plantedFarms, completedResearch, bondedCompanions].some((levels) =>
@@ -212,12 +215,12 @@ export function HomesteadScreen({
     <PageLayout>
       <ScreenShell maxWidthClass="max-w-[calc(88*var(--content-rem,1rem))]" className="relative">
         <ScreenHeaderRow
-          title="Homestead"
+          title={i18n.text("ui.homestead-screen.1", "Homestead")}
           onBack={onBack}
           onMenu={onMenu}
           trailing={
             <ChromeIconButton
-              aria-label="Reset Homestead"
+              aria-label={i18n.text("ui.homestead-screen.2", "Reset Homestead")}
               disabled={
                 !hasPurchases ||
                 resetSnapshot !== null ||
@@ -306,9 +309,12 @@ export function HomesteadScreen({
         </div>
         <ConfirmationDialog
           open={showResetConfirm}
-          title="Reset Homestead"
-          description="This will reset all Homestead upgrades and Companion bonds and refund all spent materials."
-          confirmLabel="Reset"
+          title={i18n.text("ui.homestead-screen.3", "Reset Homestead")}
+          description={i18n.text(
+            "ui.homestead-screen.4",
+            "This will reset all Homestead upgrades and Companion bonds and refund all spent materials.",
+          )}
+          confirmLabel={i18n.text("ui.homestead-screen.5", "Reset")}
           tone="default"
           dimBackground={false}
           onConfirm={resetHomestead}
@@ -316,7 +322,19 @@ export function HomesteadScreen({
         />
         {error && (
           <p role="alert" className="absolute inset-x-0 top-full mt-2 text-center text-sm text-destructive">
-            {error}
+            {typeof error === "string"
+              ? i18n.displayText(error)
+              : error.action === "Build"
+                ? i18n.text("homestead.build-failed", "Could not build {{item}}. Materials were not spent.", {
+                    item: i18n.displayText(error.item),
+                  })
+                : error.action === "Upgrade"
+                  ? i18n.text("homestead.upgrade-failed", "Could not upgrade {{item}}. Materials were not spent.", {
+                      item: i18n.displayText(error.item),
+                    })
+                  : i18n.text("homestead.bond-failed", "Could not bond {{item}}. Materials were not spent.", {
+                      item: i18n.displayText(error.item),
+                    })}
           </p>
         )}
       </ScreenShell>

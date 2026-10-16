@@ -21,6 +21,7 @@ export interface AlchemyDesktopApi {
   readSaveSlot: (slot?: "recovery") => Promise<{ candidates: string[]; localReadFailed: boolean }>;
   writeSave: (data: string, slot?: "recovery") => Promise<boolean>;
   clearSave: () => Promise<boolean>;
+  steamGetGameLanguage?: () => Promise<string | null>;
   steamGetName: () => Promise<string | null>;
   steamSetRichPresence: (key: string, value: string) => Promise<boolean>;
   steamCloudRead: (slot?: "recovery") => Promise<string | null>;

@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { createSaveBackend } from "../../../../helpers/save-backend";
 import { afterEach, expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
@@ -61,20 +62,18 @@ it("End Run saves the committed ending and reaches its recap despite failed audi
   onClearBattlePresentation(cleared, session);
   onRunTeardown(fail("teardown failed"), session);
   onRunTeardown(cancelled, session);
-  try {
-    expect(() => controller.flow.handleAbandonRun()).not.toThrow();
-    await persistence.waitForWrites();
-    expect(readRunSession(session)).toMatchObject({ hasActiveRun: false, runRecap: { ending: "abandoned" } });
-    expect(cleared).toHaveBeenCalledOnce();
-    expect(cancelled).toHaveBeenCalledOnce();
-    expect(JSON.parse(bytes.get(SAVE_KEY)!)).toMatchObject({ activeRun: null });
-    expect(readActiveRunScreen(session)).toBe("game-over");
-    expect(errors.map((entry) => (entry.cause as Error)?.message)).toEqual(
-      expect.arrayContaining(["audio failed", "UI failed", "presentation failed", "teardown failed"]),
-    );
-  } finally {
-    releaseLog();
-  }
+  using _scopeCleanup = createCleanup(() => releaseLog());
+
+  expect(() => controller.flow.handleAbandonRun()).not.toThrow();
+  await persistence.waitForWrites();
+  expect(readRunSession(session)).toMatchObject({ hasActiveRun: false, runRecap: { ending: "abandoned" } });
+  expect(cleared).toHaveBeenCalledOnce();
+  expect(cancelled).toHaveBeenCalledOnce();
+  expect(JSON.parse(bytes.get(SAVE_KEY)!)).toMatchObject({ activeRun: null });
+  expect(readActiveRunScreen(session)).toBe("game-over");
+  expect(errors.map((entry) => (entry.cause as Error)?.message)).toEqual(
+    expect.arrayContaining(["audio failed", "UI failed", "presentation failed", "teardown failed"]),
+  );
 });
 
 it("defeat clears presentation and notifies teardown even if stopping sound or defeat feedback fails", async () => {

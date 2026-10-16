@@ -1,4 +1,5 @@
 import { deepFreeze } from "./store-utils";
+import { createCleanup } from "@/lib/cleanup";
 import type { GameSession } from "./game-session-types";
 import type { GameplayState } from "./gameplay-state";
 import { sessionRuntime } from "./session-runtime";
@@ -43,10 +44,10 @@ function createSessionGameplayStore(gameSession: GameSession) {
       };
       const gameplay = committedStore.subscribe(notify);
       const progress = runtime.progressCompletion.subscribe(notify);
-      return () => {
+      return createCleanup(() => {
         gameplay();
         progress();
-      };
+      });
     },
   };
   const guardReads = (store: typeof committedStore) => ({

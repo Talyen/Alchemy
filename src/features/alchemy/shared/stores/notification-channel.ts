@@ -1,3 +1,5 @@
+import { createCleanup } from "@/lib/cleanup";
+
 /** Synchronous publication in FIFO order, including changes triggered by observers. */
 export function createNotificationChannel<Args extends unknown[]>(
   onError: (error: unknown) => void,
@@ -10,9 +12,9 @@ export function createNotificationChannel<Args extends unknown[]>(
   return {
     subscribe(this: void, listener: Listener) {
       listeners.add(listener);
-      return () => {
+      return createCleanup(() => {
         listeners.delete(listener);
-      };
+      });
     },
     publish(this: void, ...args: Args) {
       if (!isActive()) return;

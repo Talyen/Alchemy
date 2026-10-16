@@ -1,3 +1,4 @@
+import { useGameTranslation } from "@/components/use-game-translation";
 import { type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
@@ -43,12 +44,14 @@ interface HoverBinding {
 }
 
 export function SelectableCard(props: SelectableCardProps) {
+  useGameTranslation();
   if (props.interactionKey !== undefined)
     return <KeyedSelectableCard {...props} interactionKey={props.interactionKey} />;
   return <QuietSelectableCard {...props} />;
 }
 
 function KeyedSelectableCard(props: SelectableCardBaseProps & { interactionKey: string }) {
+  useGameTranslation();
   const {
     isHovered,
     onHoverStart: baseHoverStart,
@@ -80,6 +83,7 @@ function KeyedSelectableCard(props: SelectableCardBaseProps & { interactionKey: 
 }
 
 function QuietSelectableCard(props: SelectableCardProps) {
+  useGameTranslation();
   return (
     <SelectableCardSurface
       {...props}
@@ -110,6 +114,7 @@ function SelectableCardSurface({
   shimmerActive: boolean;
   shimmerToken: number | undefined;
 }) {
+  const i18n = useGameTranslation();
   const buttonProps = {
     card,
     shineColor: disabled ? undefined : shineColor,
@@ -119,7 +124,9 @@ function SelectableCardSurface({
     onClick: () => {
       if (!disabled) onSelect();
     },
-    ariaLabel: `Select ${getCardDisplayTitle(card)}`,
+    ariaLabel: i18n.text("ui.selectable-card.msg1", "Select {{value0}}", {
+      value0: i18n.read(() => getCardDisplayTitle(card)),
+    }),
     selected: chrome === "corruption" ? false : isSelected,
     className: cn(
       widthClass ?? DEFAULT_WIDTH_BY_CHROME[chrome],

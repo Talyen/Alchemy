@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { CardInspectionView } from "@/features/alchemy/shared/types";
 import { sortInspectionCards } from "@/features/alchemy/shared/ui/inspection/card-inspection-sort";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
@@ -10,6 +10,8 @@ import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { makeTestCard } from "../../../../../fixtures/battle";
 import { installDisabledAnimationsForTests } from "../../../../../helpers/animation-test";
 import { installReadyArtworkForTests, waitForArtwork } from "../../../../../helpers/artwork-test";
+import { installCatalogs, localization } from "@/lib/localization/runtime";
+import catalogs from "@/lib/localization/locales/runtime.json";
 
 installDisabledAnimationsForTests();
 installReadyArtworkForTests();
@@ -47,6 +49,51 @@ const props = {
 };
 
 describe("card inspection", () => {
+  it("reorders translated titles using Spanish and Chinese collation without remounting or changing cards", async () => {
+    installCatalogs({
+      version: 1,
+      languages: ["en", "es", "zh-Hans"],
+      aliases: {},
+      messages: {
+        "test.first": ["First custom card", "ñandú", "阿"],
+        "test.second": ["Second custom card", "nube", "八"],
+      },
+    });
+    const cards = Object.freeze([
+      makeTestCard({ title: "First custom card", uid: 30 }),
+      makeTestCard({ title: "Second custom card", uid: 31 }),
+    ]);
+    const before = JSON.stringify(cards);
+    try {
+      render(<CardInspectionOverlay {...props} collections={[{ id: "deck", cards: [...cards] }]} />);
+      await waitForArtwork();
+      const close = screen.getByRole("button", { name: "Close card inspection" });
+      await waitFor(() => expect(document.activeElement).toBe(close));
+      const grid = screen.getByTestId("card-selection-grid");
+      const titles = () =>
+        within(grid)
+          .getAllByRole("img")
+          .map((image) => image.getAttribute("alt"));
+      expect(titles()).toEqual(["First custom card", "Second custom card"]);
+      await act(async () => {
+        await localization.changeLanguage("es");
+      });
+      expect(titles()).toEqual(["nube", "ñandú"]);
+      await act(async () => {
+        await localization.changeLanguage("zh-Hans");
+      });
+      expect(titles()).toEqual(["阿", "八"]);
+      expect(screen.getByTestId("card-selection-grid")).toBe(grid);
+      expect(document.activeElement).toBe(close);
+      expect(JSON.stringify(cards)).toBe(before);
+    } finally {
+      installCatalogs(catalogs);
+      await act(async () => {
+        await localization.changeLanguage("en");
+      });
+    }
+  });
+
   it("sorts copies without revealing input order or discarding card modifications", () => {
     const corrupted = { ...alpha, uid: 4, corrupted: true, descriptionLines: ["Deal 12 Physical damage"] };
     const mixed = makeTestCard({

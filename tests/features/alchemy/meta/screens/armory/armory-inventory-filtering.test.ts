@@ -1,3 +1,5 @@
+import { installCatalogs, localization } from "@/lib/localization/runtime";
+import catalogs from "@/lib/localization/locales/runtime.json";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_ARMORY_INVENTORY_FILTERS,
@@ -24,6 +26,17 @@ const filters = (patch: Partial<ArmoryInventoryFilters>): ArmoryInventoryFilters
 afterEach(() => vi.restoreAllMocks());
 
 describe("Armory inventory matching", () => {
+  it("accepts localized item names and effects while retaining English searches", async () => {
+    installCatalogs(catalogs);
+    await localization.changeLanguage("de");
+    try {
+      expect(matchesGearFilters(sword, filters({ search: "langschwert physisch" }))).toBe(true);
+      expect(matchesGearFilters(sword, filters({ search: "longsword physical" }))).toBe(true);
+    } finally {
+      await localization.changeLanguage("en");
+    }
+  });
+
   it("finds item names when a player types a straight apostrophe for an authored curly apostrophe", () => {
     const unique: GearInstance = { instanceId: "viper", definitionId: "vipers-courtesy", affixes: [] };
     expect(matchesGearFilters(unique, filters({ search: "viper's courtesy" }))).toBe(true);

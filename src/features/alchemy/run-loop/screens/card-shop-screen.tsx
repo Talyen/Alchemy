@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 
@@ -23,6 +25,7 @@ export function CardShopScreen({
   removePrice: number;
   onRemoveCard: (cardIndex: number) => boolean;
 }) {
+  const i18n = useGameTranslation();
   const [removeMode, setRemoveMode] = useState(false);
   const [removeError, setRemoveError] = useState("");
 
@@ -32,8 +35,8 @@ export function CardShopScreen({
         <div className="flex h-full min-h-0 w-full items-center justify-center px-5 py-7">
           {/* Bound the two-row fitting area in content units while keeping short-window controls reachable. */}
           <ScreenShell className="h-full max-h-[calc(70*var(--content-rem,1rem))] gap-6 overflow-hidden">
-            <ScreenHeaderRow title="Remove Card" />
-            {removeError && <p role="alert">{removeError}</p>}
+            <ScreenHeaderRow title={i18n.text("ui.card-shop-screen.1", "Remove Card")} />
+            {removeError && <p role="alert">{i18n.displayText(removeError)}</p>}
             <RemoveCardPanel
               runDeck={runDeck}
               gold={gold}
@@ -57,18 +60,22 @@ export function CardShopScreen({
         <ShopShelf
           {...shelf}
           kind="card"
-          title="Card Shop"
+          title={i18n.text("ui.card-shop-screen.2", "Card Shop")}
           gold={gold}
           isProgressSavePending={isProgressSavePending}
           extraServices={
             <ServiceButton
               icon={Trash2}
-              label="Remove Card"
+              label={i18n.text("ui.card-shop-screen.3", "Remove Card")}
               cost={removePrice}
               disabled={runDeck.length === 0 || gold < removePrice}
-              disabledMessage={runDeck.length === 0 ? "No Cards to Remove" : "Not Enough Gold"}
+              disabledMessage={
+                runDeck.length === 0
+                  ? i18n.text("shop.no-remove", "No Cards to Remove")
+                  : i18n.text("shop.not-enough-gold", "Not Enough Gold")
+              }
               used={removeUsed}
-              soldOutText="Remove Card - Sold Out"
+              soldOutText={i18n.text("ui.card-shop-screen.attr1", "Remove Card - Sold Out")}
               onClick={() => {
                 setRemoveMode(true);
               }}

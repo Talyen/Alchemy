@@ -1,3 +1,4 @@
+import { text, displayText } from "@/lib/localization/runtime";
 import type { BattleSnapshot, CombatTextEvent, CcState } from "@/lib/battle";
 import { isCcControlled, isStunFreezeBuildupBlocked } from "@/lib/battle";
 import {
@@ -77,12 +78,22 @@ export function getCombatTextLeadingIcon(event: CombatTextEvent) {
 export function getCombatTextAccessibleLabel(event: FloatingCombatText): string {
   const label = combatStatPresentation(event.stat)?.label ?? event.stat;
   if (event.kind === "notice") {
-    if (event.signal === "purge" || event.text === "Purged") return `Purged ${label}`;
-    if (event.signal === "cleanse") return `Cleansed ${label}`;
-    if (event.signal === "prepared") return event.text || `${label} prepared`;
-    return event.text || (event.stat === "deathsDoor" ? "Death's Door" : label);
+    if (event.signal === "purge" || event.text === "Purged")
+      return text("battle.purged", "Purged {{label}}", { label: displayText(label) });
+    if (event.signal === "cleanse") return text("battle.cleansed", "Cleansed {{label}}", { label: displayText(label) });
+    if (event.signal === "prepared")
+      return displayText(event.text) || text("battle.prepared", "{{label}} prepared", { label: displayText(label) });
+    return displayText(event.text || (event.stat === "deathsDoor" ? "Death's Door" : label));
   }
-  return `${label}: ${event.displayText}`;
+  return event.kind === "damage" && event.critical
+    ? text("battle.critical-label", "Critical {{label}}: {{amount}}", {
+        label: displayText(label),
+        amount: displayText(event.displayText),
+      })
+    : text("battle.stat-label", "{{label}}: {{amount}}", {
+        label: displayText(label),
+        amount: displayText(event.displayText),
+      });
 }
 
 function buildStatusChips(

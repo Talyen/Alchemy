@@ -106,22 +106,22 @@ const runtimes = new WeakMap<GameSession, SessionRuntime>();
 export function createSessionRuntime(options: GameSessionOptions = {}, allowPlatformStorage = false): GameSession {
   const runtime = createRuntime(options, allowPlatformStorage);
   let disposal: Promise<void> | undefined;
-  const session = {
-    dispose() {
-      disposal ??= (async () => {
-        const failures = runtime.lifetime.close();
-        runtime.progressCompletion.cancel();
-        runtime.lifecycle.dispose();
-        try {
-          await runtime.io.waitForPendingSaveWrites();
-        } finally {
-          runtime.io.setWritesDisabled(true);
-        }
-        if (failures.length) throw new AggregateError(failures, "Game session cleanup failed");
-      })();
-      return disposal;
-    },
-  } as GameSession;
+  function dispose() {
+    disposal ??= (async () => {
+      const failures = runtime.lifetime.close();
+      runtime.progressCompletion.cancel();
+      runtime.lifecycle.dispose();
+      try {
+        await runtime.io.waitForPendingSaveWrites();
+      } finally {
+        runtime.io.setWritesDisabled(true);
+      }
+      if (failures.length) throw new AggregateError(failures, "Game session cleanup failed");
+    })();
+    return disposal;
+  }
+  const session = { dispose } as GameSession;
+  Object.assign(session, { [Symbol.asyncDispose]: dispose });
   runtimes.set(session, runtime);
   return session;
 }

@@ -2,7 +2,6 @@ import { playBattleEvent, playCardSound } from "@/lib/audio";
 import { logError } from "@/lib/error-logger";
 import type { CombatTextEvent } from "@/lib/battle";
 import { selectCombatSound } from "./combat-sound-selection";
-import { COMPANION_SOUND_CARD_IDS } from "@/lib/game-constants";
 import type { CardRect } from "../../shared/types";
 
 export function logBattleError(context: string, err: unknown): void {
@@ -17,9 +16,51 @@ export {
   type BattleSceneLocalRect,
 } from "./presentation/scene-geometry";
 
-export function playCompanionSound(companionId: string) {
-  const soundCardId = COMPANION_SOUND_CARD_IDS[companionId];
-  return soundCardId ? playCardSound(soundCardId) : undefined;
+const OUTCOME_CARDS = new Set([
+  "maul",
+  "cinderbloom",
+  "sunburst",
+  "blessed-aegis",
+  "molten-bulwark",
+  "golden-plate",
+  "spiked-shield",
+  "pixie-dust",
+  "shield-bash",
+  "astral-arrow",
+  "holy-radiance",
+  "burning-blade",
+  "cauterize",
+  "bellows-blast",
+]);
+
+export function playResolvedCardSound(cardId: string | undefined, events: CombatTextEvent[], deathsDoor = false) {
+  if (deathsDoor) return playBattleEvent("deathsDoor");
+  let sound = selectCombatSound(events, true);
+  if (!sound && (!cardId || OUTCOME_CARDS.has(cardId))) sound = selectCombatSound(events, false);
+  if (sound === "hitCritical" && cardId === "slash") sound = "slashCritical";
+  if (sound === "hitCritical" && cardId === "stab") sound = "stabCritical";
+  if (cardId === "astral-arrow") {
+    const astral = {
+      hitBurn: "astralBurn",
+      hitFreeze: "astralFreeze",
+      hitPiercing: "astralPiercing",
+      hitBurnCritical: "astralBurnCritical",
+      hitFreezeCritical: "astralFreezeCritical",
+      hitPiercingCritical: "astralPiercingCritical",
+    } as const;
+    if (sound && Object.hasOwn(astral, sound)) sound = astral[sound as keyof typeof astral];
+  }
+  if (
+    cardId === "spiked-shield" &&
+    sound === "enemyHit" &&
+    events.some((event) => event.kind === "status" && event.stat === "thorns" && event.amount > 0)
+  )
+    sound = "thornsGain";
+  return sound ? playBattleEvent(sound) : cardId ? playCardSound(cardId) : undefined;
+}
+
+export function playCompanionSound(_companionId: string, events: CombatTextEvent[], deathsDoor = false) {
+  return playResolvedCardSound(undefined, events, deathsDoor);
 }
 
 export interface CombatTextPresenter {
@@ -44,8 +85,9 @@ export function presentCombatTexts(
 }
 
 export function playCombatTextSounds(combatTexts: CombatTextEvent[], focalSound?: string) {
-  const sound = selectCombatSound(combatTexts, focalSound !== undefined);
-  if (sound) playBattleEvent(sound, focalSound === undefined ? {} : { excludeSound: focalSound });
+  if (focalSound !== undefined) return;
+  const sound = selectCombatSound(combatTexts, false);
+  if (sound) playBattleEvent(sound);
 }
 
 export function centeredRectForSize(centerSource: CardRect, width: number, height: number): CardRect {

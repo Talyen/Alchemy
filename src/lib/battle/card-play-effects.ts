@@ -8,7 +8,7 @@ import { applyCardEffects } from "./effect-handlers";
 import { addPlayerStatusWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { isPotionCard, type BattleCard } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
-import { isPlayerDefeated } from "./battle-outcome";
+import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { processCompanionTurnStart } from "./companion";
 import { applyArmorReward } from "./status-player";
 import { getBattleRng, rollPercent } from "@/lib/rng";
@@ -132,7 +132,7 @@ export function resolvePaidCardEffects(
   let nextState = chained.state;
 
   const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
-  if (playTwice) {
+  if (playTwice && getBattleOutcome(nextState) === null) {
     nextState = applyCardEffects(nextState, card, combatTexts, {
       origin: "played-card",
       damageEffects: repeatedDamageEffects,
@@ -155,7 +155,7 @@ export function resolvePaidCardEffects(
 }
 
 export function applyTwinCasting(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
-  if (isPlayerDefeated(state) || state.gearEffects.elementalTwinCasting <= 0) return state;
+  if (getBattleOutcome(state) !== null || state.gearEffects.elementalTwinCasting <= 0) return state;
 
   const hasBurn = cardHasKeyword(card, "burn");
   const hasFreeze = cardHasKeyword(card, "freeze");

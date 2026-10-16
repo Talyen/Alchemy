@@ -4,7 +4,7 @@ import type { SaveBackend } from "@/lib/platform-save-backend";
 declare const gameSessionBrand: unique symbol;
 
 /** An independent career, including permanent progression and its current run. */
-export interface GameSession {
+export interface GameSession extends AsyncDisposable {
   readonly [gameSessionBrand]: true;
   dispose(): Promise<void>;
 }

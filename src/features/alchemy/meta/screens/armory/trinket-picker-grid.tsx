@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import type { CharacterId, TrinketEntry } from "@/lib/game-data";
@@ -40,6 +42,7 @@ export function TrinketPickerGrid({
   placeholderIndex?: number | null | undefined;
   hiddenArtworkIds?: ReadonlySet<string> | undefined;
 }) {
+  const i18n = useGameTranslation();
   const reducedMotion = useReducedMotion();
   const equippedBy = useMemo(() => {
     const byTrinket = new Map<string, CharacterId>();
@@ -65,7 +68,7 @@ export function TrinketPickerGrid({
       renderItem={(trinket) => {
         const reservedBy = reservedTrinkets[trinket.id];
         const isArtHidden = hiddenArtworkIds?.has(trinket.id) ?? false;
-        const reservationReason = reservedReasonFor(reservedBy ?? null);
+        const reservationReason = i18n.read(() => reservedReasonFor(reservedBy ?? null));
         const equippedCharacterId = equippedBy.get(trinket.id);
         return (
           <motion.div
@@ -85,11 +88,14 @@ export function TrinketPickerGrid({
                 chip={reservationReason ?? undefined}
                 interactiveChrome={editable && !reservedBy}
                 onClick={reservedBy ? undefined : editable ? () => onEquip(trinket.id) : () => onCombatLockedAttempt()}
-                ariaLabel={
+                ariaLabel={i18n.displayText(
                   reservationReason
-                    ? `${trinket.title}. ${reservationReason}`
-                    : formatTrinketEquipAriaLabel(trinket.title, equippedCharacterId)
-                }
+                    ? i18n.text("ui.trinket-picker-grid.d1", "{{value0}}. {{value1}}", {
+                        value0: i18n.displayText(trinket.title),
+                        value1: i18n.displayText(reservationReason),
+                      })
+                    : i18n.read(() => formatTrinketEquipAriaLabel(trinket.title, equippedCharacterId)),
+                )}
               >
                 {reservedBy ? <ReservedLock /> : null}
               </TrinketTile>

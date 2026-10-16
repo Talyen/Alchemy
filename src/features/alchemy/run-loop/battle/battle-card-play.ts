@@ -7,13 +7,13 @@ import {
   type BattleSnapshot,
 } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
-import { playCardSound, playBattleEvent, playUISound } from "@/lib/audio";
+import { playUISound } from "@/lib/audio";
 import { AUTOPLAY_PREVIEW_MS, CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { animateCardActivation } from "./card-transfer-animations";
 import { getCardRect, getHoverId } from "../../shared/utils";
-import { presentCombatTexts } from "./controller-utils";
+import { playResolvedCardSound, presentCombatTexts } from "./controller-utils";
 import { PLAYABLE_HAND_OPTIONS, getHandCardKey } from "./playable-hand";
 import { runBattleDraw } from "./draw-sequence";
 import { type createBattleSession } from "./battle-session";
@@ -171,8 +171,11 @@ export function createBattleCardPlay(
       getPresentation().telegraphCast("player");
     }
     animatePlayedCard(card, index, sourceRect, currentState.hand.length);
-    const focalSound = playCardSound(card.id);
-    if (!currentState.deathsDoorActive && played.state.deathsDoorActive) playBattleEvent("deathsDoor");
+    const focalSound = playResolvedCardSound(
+      card.id,
+      played.combatTexts,
+      !currentState.deathsDoorActive && played.state.deathsDoorActive,
+    );
     ctx.setHoveredCardId((current) => (current === getHoverId("hand", getHandCardKey(card, index)) ? null : current));
 
     runDrawSequenceAndFinalize(

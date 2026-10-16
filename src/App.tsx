@@ -1,3 +1,5 @@
+import { GameMessage } from "@/components/localization";
+import { useGameTranslation } from "@/components/use-game-translation";
 import { battlePresentation } from "@/app/battle-presentation";
 import { defaultGameSession } from "@/app/application-session";
 import { SaveWriteNotice } from "@/app/save-write-notice";
@@ -62,6 +64,7 @@ const OPTIONS_PREVIEW_PLASMA_PAIR = { primary: "#fbbf24", secondary: "#78350f" }
 type GameMenuState = ReturnType<typeof useGameMenuState>;
 
 function AppKeywordPlasmaBackground({ renderedScreen, intensity }: { renderedScreen: Screen; intensity: number }) {
+  useGameTranslation();
   const plasmaColorPair = useUiStore(
     (state) => state.plasmaInteraction?.colorPair ?? state.plasmaBaseline?.colorPair ?? null,
   );
@@ -98,6 +101,7 @@ function AppMainContent({
   tooltipBlocked: boolean;
   gameMenu: GameMenuState;
 }) {
+  const i18n = useGameTranslation();
   const { screen: controllerScreen } = run;
   const runPhase = useRunPhase(controllerScreen);
   const nav = useReturnToRunNavigation({ run, renderedScreen });
@@ -199,17 +203,21 @@ function AppMainContent({
           onBack={nav.screenBackHandler}
           deckInspection={deckInspection}
         >
-          {renderAlchemyScreenRoute({
-            screen: renderedScreen,
-            cardInspection: { canOpen: inspection.canOpen, onOpen: openCardInspection },
-            routeCommands: run.routeCommands,
-            onOpenBoards: nav.openBoardsFromOptions,
-            onClearSaveData: dev.clearSaveData,
-            onUnlockAllDevMode: dev.unlockAllDevMode,
-            gameMenuOpen: gameMenu.gameMenuOpen,
-            onOpenGameMenu: gameMenu.openGameMenu,
-            onBack: nav.screenBackHandler,
-          })}
+          {i18n.displayText(
+            i18n.read(() =>
+              renderAlchemyScreenRoute({
+                screen: renderedScreen,
+                cardInspection: { canOpen: inspection.canOpen, onOpen: openCardInspection },
+                routeCommands: run.routeCommands,
+                onOpenBoards: nav.openBoardsFromOptions,
+                onClearSaveData: dev.clearSaveData,
+                onUnlockAllDevMode: dev.unlockAllDevMode,
+                gameMenuOpen: gameMenu.gameMenuOpen,
+                onOpenGameMenu: gameMenu.openGameMenu,
+                onBack: nav.screenBackHandler,
+              }),
+            ),
+          )}
         </AppScreenChromeProvider>
       </CardDescriptionProvider>
     </div>
@@ -255,7 +263,7 @@ function AppMainContent({
           backgroundParticlesIntensity={backgroundParticlesIntensity}
         />
         <AppKeywordPlasmaBackground renderedScreen={renderedScreen} intensity={backgroundGlowIntensity} />
-        {content}
+        {i18n.displayText(content)}
         {showBattleCluster ? (
           <BattleCluster
             endTurn={{
@@ -307,6 +315,7 @@ function AppMainContent({
 }
 
 function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtualResolution> }) {
+  const i18n = useGameTranslation();
   const settings = useAppSettings();
   const vrStageRef = useRef<HTMLDivElement>(null);
   const { frameStyle, stageStyle, tooltipStyle, aspectMode, stagePixelRatio } = displayLayout;
@@ -335,7 +344,7 @@ function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtu
   const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(run.screen);
 
   return (
-    <ErrorBoundary label={screen}>
+    <ErrorBoundary label={i18n.displayText(screen)}>
       <SaveWriteNotice onRetry={run.retryProgressSave} />
       <div
         aria-busy={run.progressSave.kind !== "idle"}
@@ -370,6 +379,7 @@ function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtu
 }
 
 export default function App() {
+  useGameTranslation();
   const displayPreferences = useDeviceDisplayPreferences();
   const displayLayout = useVirtualResolution(false, displayPreferences);
   const { contentScale } = displayLayout;
@@ -402,6 +412,7 @@ export default function App() {
 }
 
 function DemoImportNotice() {
+  const i18n = useGameTranslation();
   const [visible, setVisible] = useState(true);
   if (!visible) return null;
   return (
@@ -409,10 +420,17 @@ function DemoImportNotice() {
       role="status"
       className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-border bg-background p-4 text-foreground"
     >
-      Your earned demo progress has been imported. Start a new adventure in the full game.
-      <Button variant="ghost" className="ml-4" onClick={() => setVisible(false)}>
-        Dismiss
-      </Button>
+      <GameMessage
+        id="ui.App.s1"
+        defaultValue="Your earned demo progress has been imported. Start a new adventure in the full game.<part0/>"
+        parts={{
+          part0: (
+            <Button variant="ghost" className="ml-4" onClick={() => setVisible(false)}>
+              {i18n.text("ui.App.2", "Dismiss")}
+            </Button>
+          ),
+        }}
+      />
     </div>
   );
 }

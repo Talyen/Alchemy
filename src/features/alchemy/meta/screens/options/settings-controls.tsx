@@ -1,3 +1,5 @@
+import { GameMessage } from "@/components/localization";
+import { useGameTranslation } from "@/components/use-game-translation";
 import { useSelectDismiss } from "../../../shared/ui/use-select-dismiss";
 import { useId, type ReactNode } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,6 +9,7 @@ import { controlLabelClass, controlDescriptionClass } from "@/features/alchemy/s
 import { cn } from "@/lib/utils";
 
 export function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
+  useGameTranslation();
   return (
     <section>
       <h2 className="options-settings-heading text-base font-semibold text-gold-pale">{title}</h2>
@@ -24,6 +27,7 @@ export function SettingsAction({
   description: string;
   children: ReactNode;
 }) {
+  useGameTranslation();
   return (
     <div className="options-settings-row options-settings-action">
       <div className="options-settings-label">
@@ -39,11 +43,12 @@ interface SettingsSelectProps<T extends string> {
   id: string;
   label: string;
   value: T;
-  options: ReadonlyArray<{ value: T; label: string }>;
+  options: ReadonlyArray<{ value: T; label: string; native?: boolean }>;
   onChange: (value: T) => void;
 }
 
 export function SettingsSelect<T extends string>({ id, label, value, options, onChange }: SettingsSelectProps<T>) {
+  const i18n = useGameTranslation();
   const selectDismiss = useSelectDismiss();
   return (
     <div className="options-settings-row">
@@ -64,7 +69,7 @@ export function SettingsSelect<T extends string>({ id, label, value, options, on
         <SelectContent>
           {options.map((option) => (
             <SelectItem key={option.value} value={option.value}>
-              {option.label}
+              {option.native ? <span>{option.label}</span> : i18n.displayText(option.label)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -88,6 +93,7 @@ export function SettingsSlider({
   max?: number;
   step?: number;
 }) {
+  useGameTranslation();
   return (
     <div className="options-settings-row">
       <p className={cn("options-settings-label", controlLabelClass)}>{label}</p>
@@ -102,7 +108,9 @@ export function SettingsSlider({
           aria-label={label}
           className="h-8 min-w-0 flex-1 cursor-pointer accent-primary"
         />
-        <p className="w-14 shrink-0 text-right text-lg font-semibold text-primary tabular-nums">{value}%</p>
+        <p className="w-16 shrink-0 text-right text-lg font-semibold whitespace-nowrap text-primary tabular-nums">
+          <GameMessage id="ui.settings-controls.s1" defaultValue="<part0/>%" parts={{ part0: value }} />
+        </p>
       </div>
     </div>
   );
@@ -117,6 +125,7 @@ export function SettingsToggle({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  useGameTranslation();
   const id = useId();
   return (
     <div className="options-settings-row options-settings-toggle">

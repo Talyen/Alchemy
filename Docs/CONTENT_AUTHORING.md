@@ -38,6 +38,8 @@ Strong Spirits and Alchemist mixing render their scaled Potion effects through
 `createEffectDescription` through `effect-metadata.ts`; add Potion wording in
 `effect-description.ts` rather than changing numeric text in the mixer.
 
+Player-facing text changes follow [Localization](./LOCALIZATION.md), including generated content wording and AI translation review. Keep mechanics and semantic magnitude/keyword bindings independent from translated text.
+
 Structured descriptions live in `card-description-model.ts`. Each line declares
 its `effect`, `keyword`, or `consume` role. Numeric parts use `cardMagnitude`
 with an effect index, optional nested path, kind, and numeric field; shared values

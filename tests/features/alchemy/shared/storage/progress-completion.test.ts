@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
 import { createSaveBackend } from "../../../../helpers/save-backend";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
@@ -157,35 +158,32 @@ it("an explicit checkpoint defers completion even without an autosave owner", as
 });
 
 it("acknowledges a snapshot through another adapter for the same session", async () => {
-  const session = createGameSession({
+  await using session = createGameSession({
     saveBackend: createSaveBackend({ writeSync: () => ({ ok: true }) }),
   });
   const reader = createSessionPersistence(session);
   const writer = createSessionPersistence(session);
   const release = reader.trackProgress(() => {});
-  try {
-    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 10)), undefined, session);
-    const feedback = vi.fn();
-    reader.afterProgressSaved(feedback);
-    expect(await writer.write(createDefaultSaveData())).toBe("failed");
-    expect(reader.readProgress().kind).toBe("saving");
-    expect(feedback).not.toHaveBeenCalled();
-    expect(guardProgressAction(session, () => true, false)()).toBe(false);
-    expect(await writer.writeOnExit(reader.snapshot())).toBe("saved");
-    expect(reader.readProgress().kind).toBe("idle");
-    expect(feedback).toHaveBeenCalledOnce();
-    expect(guardProgressAction(session, () => true, false)()).toBe(true);
-  } finally {
-    release();
-    await session.dispose();
-  }
+  using _scopeCleanup = createCleanup(() => release());
+
+  dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 10)), undefined, session);
+  const feedback = vi.fn();
+  reader.afterProgressSaved(feedback);
+  expect(await writer.write(createDefaultSaveData())).toBe("failed");
+  expect(reader.readProgress().kind).toBe("saving");
+  expect(feedback).not.toHaveBeenCalled();
+  expect(guardProgressAction(session, () => true, false)()).toBe(false);
+  expect(await writer.writeOnExit(reader.snapshot())).toBe("saved");
+  expect(reader.readProgress().kind).toBe("idle");
+  expect(feedback).toHaveBeenCalledOnce();
+  expect(guardProgressAction(session, () => true, false)()).toBe(true);
 });
 
 it("immediate Gear and run-end saves share failure, retry and completion with autosave", async () => {
   vi.spyOn(console, "error").mockImplementation(() => {});
   let fail = true;
   const writes: string[] = [];
-  const session = createGameSession({
+  await using session = createGameSession({
     saveBackend: createSaveBackend({
       write: async (_key, value) => {
         writes.push(value);
@@ -195,30 +193,27 @@ it("immediate Gear and run-end saves share failure, retry and completion with au
   });
   const persistence = createSessionPersistence(session);
   const release = persistence.trackProgress(() => {});
-  try {
-    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 30)), undefined, session);
-    const feedback = vi.fn();
-    persistence.afterProgressSaved(feedback);
-    flushSaveAfterGearMutation(session);
-    await persistence.waitForWrites();
-    expect(persistence.readProgress().kind).toBe("failed");
-    expect(feedback).not.toHaveBeenCalled();
-    fail = false;
-    flushSaveAfterRunEnd(session);
-    await persistence.waitForWrites();
-    expect(persistence.readProgress().kind).toBe("idle");
-    expect(feedback).toHaveBeenCalledOnce();
-    expect(JSON.parse(writes.at(-1)!).gold).toBe(30);
-  } finally {
-    release();
-    await session.dispose();
-  }
+  using _scopeCleanup = createCleanup(() => release());
+
+  dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 30)), undefined, session);
+  const feedback = vi.fn();
+  persistence.afterProgressSaved(feedback);
+  flushSaveAfterGearMutation(session);
+  await persistence.waitForWrites();
+  expect(persistence.readProgress().kind).toBe("failed");
+  expect(feedback).not.toHaveBeenCalled();
+  fail = false;
+  flushSaveAfterRunEnd(session);
+  await persistence.waitForWrites();
+  expect(persistence.readProgress().kind).toBe("idle");
+  expect(feedback).toHaveBeenCalledOnce();
+  expect(JSON.parse(writes.at(-1)!).gold).toBe(30);
 });
 
 it("a failing gameplay observer cannot suppress autosave, later observers, or command feedback", async () => {
   vi.spyOn(console, "error").mockImplementation(() => {});
   const writes: string[] = [];
-  const session = createGameSession({
+  await using session = createGameSession({
     saveBackend: createSaveBackend({ writes }),
   });
   const persistence = createSessionPersistence(session);
@@ -236,42 +231,41 @@ it("a failing gameplay observer cannot suppress autosave, later observers, or co
   const observed: number[] = [];
   const removeObserver = subscribeRunSessionCommits((revision) => observed.push(revision), session);
   const feedback = vi.fn();
-  try {
-    const previousRevision = readSessionRevision(session);
-    expect(
-      dispatchRunSessionCommand(
-        (draft) => {
-          setGold(draft, 37);
-          return acceptCommand("committed");
-        },
-        { afterCommit: feedback },
-        session,
-      ),
-    ).toBe("committed");
-    await saving;
-    expect(observed).toEqual([previousRevision + 1]);
-    expect(errors).toEqual([failure]);
-    expect(feedback).toHaveBeenCalledExactlyOnceWith("committed");
-    expect(writes).toHaveLength(1);
-    expect(JSON.parse(writes[0]!).gold).toBe(37);
-    expect(persistence.readProgress().kind).toBe("idle");
-    // The guard must also be released after observer failure.
-    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 38)), undefined, session);
-    await saving;
-    expect(JSON.parse(writes.at(-1)!).gold).toBe(38);
-  } finally {
+  using _scopeCleanup = createCleanup(() => {
     removeBroken();
     removeAutosave();
     removeObserver();
     removeSink();
     release();
-    await session.dispose();
-  }
+  });
+
+  const previousRevision = readSessionRevision(session);
+  expect(
+    dispatchRunSessionCommand(
+      (draft) => {
+        setGold(draft, 37);
+        return acceptCommand("committed");
+      },
+      { afterCommit: feedback },
+      session,
+    ),
+  ).toBe("committed");
+  await saving;
+  expect(observed).toEqual([previousRevision + 1]);
+  expect(errors).toEqual([failure]);
+  expect(feedback).toHaveBeenCalledExactlyOnceWith("committed");
+  expect(writes).toHaveLength(1);
+  expect(JSON.parse(writes[0]!).gold).toBe(37);
+  expect(persistence.readProgress().kind).toBe("idle");
+  // The guard must also be released after observer failure.
+  dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 38)), undefined, session);
+  await saving;
+  expect(JSON.parse(writes.at(-1)!).gold).toBe(38);
 });
 
 it("save-status observers see and checkpoint the newly committed gameplay revision", async () => {
   const writes: string[] = [];
-  const session = createGameSession({
+  await using session = createGameSession({
     saveBackend: createSaveBackend({ writes }),
   });
   const persistence = createSessionPersistence(session);
@@ -288,19 +282,18 @@ it("save-status observers see and checkpoint the newly committed gameplay revisi
     });
     saving = persistence.checkpoint();
   });
-  try {
-    const revision = readSessionRevision(session) + 1;
-    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 51)), undefined, session);
-    await saving;
-    expect(observed).toEqual([{ pending: revision, live: revision, gold: 51 }]);
-    expect(writes).toHaveLength(1);
-    expect(JSON.parse(writes[0]!).gold).toBe(51);
-    expect(persistence.readProgress().kind).toBe("idle");
-  } finally {
+  using _scopeCleanup = createCleanup(() => {
     unsubscribe();
     release();
-    await session.dispose();
-  }
+  });
+
+  const revision = readSessionRevision(session) + 1;
+  dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 51)), undefined, session);
+  await saving;
+  expect(observed).toEqual([{ pending: revision, live: revision, gold: 51 }]);
+  expect(writes).toHaveLength(1);
+  expect(JSON.parse(writes[0]!).gold).toBe(51);
+  expect(persistence.readProgress().kind).toBe("idle");
 });
 
 it.each(["write", "writeOnExit"] as const)(
@@ -308,7 +301,7 @@ it.each(["write", "writeOnExit"] as const)(
   async (method) => {
     const writing = deferred<{ ok: true }>();
     const writes: string[] = [];
-    const session = createGameSession({
+    await using session = createGameSession({
       saveBackend: createSaveBackend({
         write: async (_key, value) => {
           writes.push(value);
@@ -318,39 +311,36 @@ it.each(["write", "writeOnExit"] as const)(
     });
     const persistence = createSessionPersistence(session);
     const release = persistence.trackProgress(() => {});
-    try {
-      dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 70)), undefined, session);
-      const feedback = vi.fn();
-      persistence.afterProgressSaved(feedback);
-      const snapshot = persistence.snapshot();
-      snapshot.talentXP.armor = 999;
-      const write = persistence[method](snapshot);
-      // Restoring the caller's object cannot retroactively certify the submitted payload.
-      delete snapshot.talentXP.armor;
-      writing.resolve({ ok: true });
-      expect(await write).toBe("failed");
-      expect(writes).toEqual([]);
-      expect(persistence.readProgress().kind).toBe("saving");
-      expect(feedback).not.toHaveBeenCalled();
-      expect(guardProgressAction(session, () => true, false)()).toBe(false);
-      const intact = persistence.snapshot();
-      const recovery = persistence[method](intact);
-      intact.gold = 999;
-      expect(await recovery).toBe("saved");
-      expect(JSON.parse(writes.at(-1)!).gold).toBe(70);
-      expect(persistence.readProgress().kind).toBe("idle");
-      expect(feedback).toHaveBeenCalledOnce();
-    } finally {
-      release();
-      await session.dispose();
-    }
+    using _scopeCleanup = createCleanup(() => release());
+
+    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 70)), undefined, session);
+    const feedback = vi.fn();
+    persistence.afterProgressSaved(feedback);
+    const snapshot = persistence.snapshot();
+    snapshot.talentXP.armor = 999;
+    const write = persistence[method](snapshot);
+    // Restoring the caller's object cannot retroactively certify the submitted payload.
+    delete snapshot.talentXP.armor;
+    writing.resolve({ ok: true });
+    expect(await write).toBe("failed");
+    expect(writes).toEqual([]);
+    expect(persistence.readProgress().kind).toBe("saving");
+    expect(feedback).not.toHaveBeenCalled();
+    expect(guardProgressAction(session, () => true, false)()).toBe(false);
+    const intact = persistence.snapshot();
+    const recovery = persistence[method](intact);
+    intact.gold = 999;
+    expect(await recovery).toBe("saved");
+    expect(JSON.parse(writes.at(-1)!).gold).toBe(70);
+    expect(persistence.readProgress().kind).toBe("idle");
+    expect(feedback).toHaveBeenCalledOnce();
   },
 );
 
 it("an external payload cannot replace a queued gameplay checkpoint", async () => {
   const writing = deferred<{ ok: true }>();
   const writes: string[] = [];
-  const session = createGameSession({
+  await using session = createGameSession({
     saveBackend: createSaveBackend({
       write: async (_key, value) => {
         writes.push(value);
@@ -360,29 +350,26 @@ it("an external payload cannot replace a queued gameplay checkpoint", async () =
   });
   const persistence = createSessionPersistence(session);
   const release = persistence.trackProgress(() => {});
-  try {
-    const first = persistence.write(persistence.snapshot());
-    await Promise.resolve();
-    dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 70)), undefined, session);
-    const feedback = vi.fn();
-    persistence.afterProgressSaved(feedback);
-    const checkpoint = persistence.checkpoint();
-    const replacement = persistence.write(createDefaultSaveData());
-    writing.resolve({ ok: true });
-    expect(await first).toBe("saved");
-    expect(await checkpoint).toBe("saved");
-    expect(await replacement).toBe("failed");
-    expect(writes.map((value) => JSON.parse(value).gold)).toEqual([0, 70]);
-    expect(persistence.readProgress().kind).toBe("idle");
-    expect(feedback).toHaveBeenCalledOnce();
-    expect(guardProgressAction(session, () => true, false)()).toBe(true);
-    expect(await persistence.checkpoint()).toBe("saved");
-    expect(JSON.parse(writes.at(-1)!).gold).toBe(70);
-    expect(feedback).toHaveBeenCalledOnce();
-  } finally {
-    release();
-    await session.dispose();
-  }
+  using _scopeCleanup = createCleanup(() => release());
+
+  const first = persistence.write(persistence.snapshot());
+  await Promise.resolve();
+  dispatchRunSessionCommand((draft) => acceptCommand(setGold(draft, 70)), undefined, session);
+  const feedback = vi.fn();
+  persistence.afterProgressSaved(feedback);
+  const checkpoint = persistence.checkpoint();
+  const replacement = persistence.write(createDefaultSaveData());
+  writing.resolve({ ok: true });
+  expect(await first).toBe("saved");
+  expect(await checkpoint).toBe("saved");
+  expect(await replacement).toBe("failed");
+  expect(writes.map((value) => JSON.parse(value).gold)).toEqual([0, 70]);
+  expect(persistence.readProgress().kind).toBe("idle");
+  expect(feedback).toHaveBeenCalledOnce();
+  expect(guardProgressAction(session, () => true, false)()).toBe(true);
+  expect(await persistence.checkpoint()).toBe("saved");
+  expect(JSON.parse(writes.at(-1)!).gold).toBe(70);
+  expect(feedback).toHaveBeenCalledOnce();
 });
 
 it("autosave preserves its checkpoint when an external write is rejected", async () => {
@@ -461,57 +448,79 @@ it("retries a restored career after an older in-flight save completes and the re
 it("a new checkpoint at an acknowledged gameplay revision waits for its own settings snapshot", async () => {
   const writing = deferred<{ ok: true }>();
   let blocked = false;
-  const session = createGameSession({
+  await using session = createGameSession({
     saveBackend: createSaveBackend({
       write: async () => (blocked ? writing.promise : { ok: true }),
     }),
   });
   const persistence = createSessionPersistence(session);
-  try {
-    expect(await persistence.checkpoint()).toBe("saved");
-    blocked = true;
-    sessionRuntime(session).settings.getState().setMusicVolume(17);
-    const checkpoint = persistence.checkpoint();
-    const feedback = vi.fn();
-    persistence.afterProgressSaved(feedback);
-    expect(persistence.readProgress().kind).toBe("saving");
-    expect(feedback).not.toHaveBeenCalled();
-    writing.resolve({ ok: true });
-    expect(await checkpoint).toBe("saved");
-    expect(feedback).toHaveBeenCalledOnce();
-  } finally {
-    writing.resolve({ ok: true });
-    await session.dispose();
-  }
+  using _scopeCleanup = createCleanup(() => writing.resolve({ ok: true }));
+
+  expect(await persistence.checkpoint()).toBe("saved");
+  blocked = true;
+  sessionRuntime(session).settings.getState().setMusicVolume(17);
+  const checkpoint = persistence.checkpoint();
+  const feedback = vi.fn();
+  persistence.afterProgressSaved(feedback);
+  expect(persistence.readProgress().kind).toBe("saving");
+  expect(feedback).not.toHaveBeenCalled();
+  writing.resolve({ ok: true });
+  expect(await checkpoint).toBe("saved");
+  expect(feedback).toHaveBeenCalledOnce();
 });
 
 it("an older checkpoint cannot acknowledge a newer checkpoint with the same gameplay revision", async () => {
   const firstWrite = deferred<{ ok: true }>();
   const secondWrite = deferred<{ ok: true }>();
   let count = 0;
-  const session = createGameSession({
+  await using session = createGameSession({
     saveBackend: createSaveBackend({
       write: () => (++count === 1 ? firstWrite.promise : secondWrite.promise),
     }),
   });
   const persistence = createSessionPersistence(session);
-  try {
-    const first = persistence.checkpoint();
-    await Promise.resolve();
-    sessionRuntime(session).settings.getState().setMusicVolume(17);
-    const second = persistence.checkpoint();
-    const feedback = vi.fn();
-    persistence.afterProgressSaved(feedback);
-    firstWrite.resolve({ ok: true });
-    await first;
-    expect(persistence.readProgress().kind).toBe("saving");
-    expect(feedback).not.toHaveBeenCalled();
-    secondWrite.resolve({ ok: true });
-    expect(await second).toBe("saved");
-    expect(feedback).toHaveBeenCalledOnce();
-  } finally {
+  using _scopeCleanup = createCleanup(() => {
     firstWrite.resolve({ ok: true });
     secondWrite.resolve({ ok: true });
-    await session.dispose();
-  }
+  });
+
+  const first = persistence.checkpoint();
+  await Promise.resolve();
+  sessionRuntime(session).settings.getState().setMusicVolume(17);
+  const second = persistence.checkpoint();
+  const feedback = vi.fn();
+  persistence.afterProgressSaved(feedback);
+  firstWrite.resolve({ ok: true });
+  await first;
+  expect(persistence.readProgress().kind).toBe("saving");
+  expect(feedback).not.toHaveBeenCalled();
+  secondWrite.resolve({ ok: true });
+  expect(await second).toBe("saved");
+  expect(feedback).toHaveBeenCalledOnce();
+});
+
+it("holds remaining completion feedback when an earlier callback starts another checkpoint", async () => {
+  const secondWrite = deferred<{ ok: true }>();
+  let writes = 0;
+  await using session = createGameSession({
+    saveBackend: createSaveBackend({ write: async () => (++writes === 1 ? { ok: true } : secondWrite.promise) }),
+  });
+  const persistence = createSessionPersistence(session);
+  const events: string[] = [];
+  let next: Promise<unknown> = Promise.resolve();
+  using _scopeCleanup = createCleanup(() => secondWrite.resolve({ ok: true }));
+
+  const first = persistence.checkpoint();
+  persistence.afterProgressSaved(() => {
+    events.push("first");
+    next = persistence.checkpoint();
+    persistence.afterProgressSaved(() => events.push("nested"));
+  });
+  persistence.afterProgressSaved(() => events.push("second"));
+  expect(await first).toBe("saved");
+  expect(persistence.readProgress().kind).toBe("saving");
+  expect(events).toEqual(["first"]);
+  secondWrite.resolve({ ok: true });
+  await next;
+  expect(events).toEqual(["first", "second", "nested"]);
 });

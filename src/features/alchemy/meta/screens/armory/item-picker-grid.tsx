@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { keywordDefinitions, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { playUISound } from "@/lib/audio";
 import {
@@ -76,6 +78,7 @@ export function ItemPickerGrid({
   placeholderIndex?: number | null | undefined;
   hiddenArtworkIds?: ReadonlySet<string> | undefined;
 }) {
+  const i18n = useGameTranslation();
   const reducedMotion = useReducedMotion();
   const equippedBy = useMemo(() => {
     const byInstance = new Map<string, CharacterId>();
@@ -103,7 +106,7 @@ export function ItemPickerGrid({
       renderItem={(item) => {
         const reservedBy = Object.hasOwn(reservedGear, item.instanceId) ? reservedGear[item.instanceId] : undefined;
         const isArtHidden = hiddenArtworkIds?.has(item.instanceId) ?? false;
-        const reservationReason = reservedReasonFor(reservedBy ?? null);
+        const reservationReason = i18n.read(() => reservedReasonFor(reservedBy ?? null));
         const definition = gearDefinitions[item.definitionId];
         const title = getGearInstanceTitle(item);
         const equippedCharacterId = equippedBy.get(item.instanceId) ?? null;
@@ -112,14 +115,16 @@ export function ItemPickerGrid({
         const colorClass = keywordId ? keywordDefinitions[keywordId]?.colorClass : undefined;
         const loadoutLegal = definition ? isGearCompatibleWithLoadoutSlot(definition, slot, loadout, inventory) : false;
         const shineColor = getAstralShineColors(item);
-        const target = getArmoryItemInteraction({
-          instance: item,
-          salvageMode,
-          activeCurrencyId,
-          reservedBy,
-          editable,
-          surface: { kind: "inventory", loadoutLegal },
-        });
+        const target = i18n.read(() =>
+          getArmoryItemInteraction({
+            instance: item,
+            salvageMode,
+            activeCurrencyId,
+            reservedBy,
+            editable,
+            surface: { kind: "inventory", loadoutLegal },
+          }),
+        );
         const { salvageable, blockedReason, mode, targetAriaLabel } = target;
         const disabled = target.incompatible;
         const ariaLabel = targetAriaLabel ?? title;
@@ -136,17 +141,30 @@ export function ItemPickerGrid({
               data-gear-title={title}
               data-instance-id={item.instanceId}
               data-salvageable={salvageable ? "true" : undefined}
-              className={cn("relative", targetingRingClass(mode), disabled && "opacity-50")}
-              title={disabled ? "Incompatible with the current loadout" : undefined}
+              className={cn(
+                "relative",
+                i18n.read(() => targetingRingClass(mode)),
+                disabled && "opacity-50",
+              )}
+              title={i18n.displayText(
+                disabled ? i18n.text("ui.item-picker-grid.d1", "Incompatible with the current loadout") : undefined,
+              )}
             >
               <InteractiveArtTile
                 id={item.instanceId}
                 interactionKey="armory"
-                title={title}
+                title={i18n.displayText(title)}
                 art={definition?.art}
                 as="button"
                 interactive
-                ariaLabel={reservationReason ? `${title}. ${reservationReason}` : ariaLabel}
+                ariaLabel={i18n.displayText(
+                  reservationReason
+                    ? i18n.text("ui.item-picker-grid.d2", "{{value0}}. {{value1}}", {
+                        value0: i18n.displayText(title),
+                        value1: i18n.displayText(reservationReason),
+                      })
+                    : ariaLabel,
+                )}
                 ariaDisabled={target.ariaDisabled}
                 className={cn(cardSurfaceClass, collectionGridTileWidthClass, gearArtAspectClass)}
                 imageClassName={cn(gearArtFillClass, isArtHidden && "opacity-0")}

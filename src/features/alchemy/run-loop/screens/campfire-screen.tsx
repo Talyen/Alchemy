@@ -1,7 +1,11 @@
+import { GameMessage } from "@/components/localization";
+import { useGameTranslation } from "@/components/use-game-translation";
 import { useState } from "react";
+import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
-import { campfire } from "@/features/alchemy/shared/config/game-data-catalog";
+import { cn } from "@/lib/utils";
+import { campfire, keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { getCampfireRestHealth } from "@/lib/campfire-heal";
 import type { BattleCard } from "@/lib/game-data";
 import type { AlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
@@ -40,6 +44,7 @@ export function CampfireScreen({
   afterProgressSaved?: (feedback: () => void) => void;
   isProgressSavePending?: () => boolean;
 }) {
+  const i18n = useGameTranslation();
   const [brewing, setBrewing] = useState(false);
   const [rest, setRest] = useState<{ from: number; to: number; saved: boolean } | null>(null);
   const [error, setError] = useState("");
@@ -51,24 +56,36 @@ export function CampfireScreen({
   const restore = getCampfireRestHealth(playerHealth, maxHealth, healFraction, healingBonus) - playerHealth;
   const brewKind = getCampfireBrewKind(runDeck);
   return (
-    <TitledScreenShell title="Campfire">
+    <TitledScreenShell title={i18n.text("ui.campfire-screen.1", "Campfire")}>
       <div className="mt-6 flex flex-col items-center gap-6 text-center">
         {visit.completed ? (
           <>
             {visit.result ? (
               <>
                 <p>
-                  You received <strong>{visit.result.title}</strong>
+                  <GameMessage
+                    id="ui.campfire-screen.s1"
+                    defaultValue="You received <part0/>"
+                    parts={{ part0: <strong>{i18n.displayText(visit.result.title)}</strong> }}
+                  />
                 </p>
                 <SelectableCard card={visit.result} isSelected chrome="shop" onSelect={() => {}} />
               </>
             ) : (
               <>
                 {modifiers.includes("hidden-purse") && (
-                  <p role="status">{LABYRINTH_MODIFIER_CONFIG.hiddenPurseGold} Gold added to your purse.</p>
+                  <p role="status">
+                    <GameMessage
+                      id="ui.campfire-screen.s2"
+                      defaultValue="<part0/> Gold added to your purse."
+                      parts={{ part0: i18n.displayText(LABYRINTH_MODIFIER_CONFIG.hiddenPurseGold) }}
+                    />
+                  </p>
                 )}
                 {modifiers.includes("herbal-hearth") && (
-                  <p role="status">A random Potion was added to your run deck.</p>
+                  <p role="status">
+                    {i18n.text("ui.campfire-screen.4", "A random Potion was added to your run deck.")}
+                  </p>
                 )}
                 <HealthRestoreMeter
                   displayHealth={displayHealth}
@@ -77,7 +94,13 @@ export function CampfireScreen({
                 />
               </>
             )}
-            <Button onClick={onContinue}>{visit.result ? "Loot" : "Continue"}</Button>
+            <Button onClick={onContinue}>
+              {i18n.displayText(
+                visit.result
+                  ? i18n.text("ui.campfire-screen.d1", "Loot")
+                  : i18n.text("ui.campfire-screen.d2", "Continue"),
+              )}
+            </Button>
           </>
         ) : brewing ? (
           <>
@@ -95,29 +118,44 @@ export function CampfireScreen({
           <>
             <img
               src={campfire}
-              alt="Campfire"
+              alt={i18n.text("ui.campfire-screen.5", "Campfire")}
               decoding="async"
               className="w-full max-w-lg rounded-shell-panel object-contain"
             />
+            <HealthRestoreMeter displayHealth={playerHealth} maxHealth={maxHealth} progressHealth={playerHealth} />
             <div className="flex flex-wrap justify-center gap-4">
-              <Button
-                onClick={() => {
-                  if (isProgressSavePending()) return;
-                  const from = playerHealth;
-                  const to = playerHealth + restore;
-                  if (onRest()) {
-                    setRest({ from, to, saved: false });
-                    afterProgressSaved(() => setRest({ from, to, saved: true }));
-                  } else setError("This Campfire has already been used.");
-                }}
-              >
-                Rest
-              </Button>
-              <Button onClick={() => setBrewing(true)}>Brew Potion</Button>
+              <div className="flex flex-col items-center gap-2">
+                <Button
+                  aria-describedby="campfire-rest-recovery"
+                  onClick={() => {
+                    if (isProgressSavePending()) return;
+                    const from = playerHealth;
+                    const to = playerHealth + restore;
+                    if (onRest()) {
+                      setRest({ from, to, saved: false });
+                      afterProgressSaved(() => setRest({ from, to, saved: true }));
+                    } else setError("This Campfire has already been used.");
+                  }}
+                >
+                  {i18n.text("ui.campfire-screen.6", "Rest")}
+                </Button>
+                <p
+                  id="campfire-rest-recovery"
+                  className={cn(
+                    "flex items-center gap-1.5 font-semibold tabular-nums",
+                    keywordDefinitions.health.colorClass,
+                  )}
+                >
+                  <Heart aria-hidden="true" className="size-5 fill-current" />
+                  {i18n.displayText(restore)}
+                  <span className="sr-only">{i18n.text("ui.campfire-screen.7", " Health")}</span>
+                </p>
+              </div>
+              <Button onClick={() => setBrewing(true)}>{i18n.text("ui.campfire-screen.8", "Brew Potion")}</Button>
             </div>
           </>
         )}
-        {error && <p role="alert">{error}</p>}
+        {error && <p role="alert">{i18n.displayText(error)}</p>}
       </div>
     </TitledScreenShell>
   );

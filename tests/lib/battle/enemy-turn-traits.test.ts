@@ -8,7 +8,7 @@ import {
   processEnemyRegeneration,
   processEnemyTraits,
 } from "@/lib/battle/enemy-turn-traits";
-import { IRON_HIDE_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN, TRAIT_FREEZE_BONUS_PER_TURN } from "@/lib/game-constants";
+import { IRON_HIDE_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN } from "@/lib/game-constants";
 import { patchBattleState } from "../../fixtures/battle";
 
 describe("enemy turn trait coverage", () => {
@@ -90,16 +90,13 @@ describe("processEnemyTraits", () => {
     });
   });
 
-  it("builds Glacial Surge to its cap without removing a larger saved bonus", () => {
-    const state = patchBattleState({ currentEnemy: frostwarden, turn: 2, roomScalingMultiplier: 1 });
-    const result = processEnemyTraits(state, []);
-    expect(result.enemyStatuses.freezeBonus).toBe(TRAIT_FREEZE_BONUS_PER_TURN);
-    let next = result;
-    for (const turn of [4, 6, 8, 10]) next = processEnemyTraits({ ...next, turn }, []);
-    expect(next.enemyStatuses.freezeBonus).toBe(2);
-    const legacy = { ...next, enemyStatuses: { ...next.enemyStatuses, freezeBonus: 7 } };
-    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
-    expect(processEnemyTraits(legacy, texts).enemyStatuses.freezeBonus).toBe(7);
-    expect(texts).not.toContainEqual(expect.objectContaining({ stat: "freezeBonus" }));
+  it("keeps Glacial Surge passive across turns without publishing growing Freeze bonuses", () => {
+    const state = patchBattleState({ currentEnemy: frostwarden, roomScalingMultiplier: 1 });
+    const texts: Parameters<typeof processEnemyTraits>[1] = [];
+    for (const turn of [1, 2, 4, 20]) {
+      const next = { ...state, turn };
+      expect(processEnemyTraits(next, texts)).toBe(next);
+    }
+    expect(texts).toEqual([]);
   });
 });

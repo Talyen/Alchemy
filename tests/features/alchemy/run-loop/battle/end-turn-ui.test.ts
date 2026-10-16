@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import "../../../../helpers/mock-audio";
 import { selectBattle } from "@/features/alchemy/shared/stores/run-reads";
 import {
@@ -125,39 +126,35 @@ describe("End Turn execution and playback", () => {
     "playback completion or failure cannot alter the committed turn (failure=%s)",
     async (rejectDraw) => {
       vi.useFakeTimers();
-      try {
-        const { ui, ctx, releaseDiscard } = makeUi(rejectDraw);
-        ui.handleEndTurn(readBattle(defaultGameSession).battleState);
-        const resolved = readGameplayState(defaultGameSession);
-        releaseDiscard();
-        await vi.runAllTimersAsync();
-        expect(readGameplayState(defaultGameSession)).toBe(resolved);
-        expect(ctx.playback.cardPlayInProgress).toBe(false);
-        expect(battlePresentation.getState().displayedBattle).toBeNull();
-      } finally {
-        vi.useRealTimers();
-      }
+      using _scopeCleanup = createCleanup(() => vi.useRealTimers());
+
+      const { ui, ctx, releaseDiscard } = makeUi(rejectDraw);
+      ui.handleEndTurn(readBattle(defaultGameSession).battleState);
+      const resolved = readGameplayState(defaultGameSession);
+      releaseDiscard();
+      await vi.runAllTimersAsync();
+      expect(readGameplayState(defaultGameSession)).toBe(resolved);
+      expect(ctx.playback.cardPlayInProgress).toBe(false);
+      expect(battlePresentation.getState().displayedBattle).toBeNull();
     },
   );
 
   it("leaves an overlapping card draw visible and blocked when turn playback finishes", async () => {
     vi.useFakeTimers();
-    try {
-      let finishCardDraw = () => {};
-      const { ui, ctx, releaseDiscard } = makeUi(false, (context) => {
-        finishCardDraw = context.playback.beginDraw(context.playback.id, "card");
-        context.getPresentation().setHiddenHandCardKeys(() => ["drawing-card"]);
-      });
-      ui.handleEndTurn(readBattle(defaultGameSession).battleState);
-      releaseDiscard();
-      await vi.runAllTimersAsync();
-      expect(ctx.playback.pendingCardDraws).toBe(1);
-      expect(battlePresentation.getState().hiddenHandCardKeys).toEqual(["drawing-card"]);
-      expect(battlePresentation.getState().cardTransferInProgress).toBe(true);
-      finishCardDraw();
-    } finally {
-      vi.useRealTimers();
-    }
+    using _scopeCleanup = createCleanup(() => vi.useRealTimers());
+
+    let finishCardDraw = () => {};
+    const { ui, ctx, releaseDiscard } = makeUi(false, (context) => {
+      finishCardDraw = context.playback.beginDraw(context.playback.id, "card");
+      context.getPresentation().setHiddenHandCardKeys(() => ["drawing-card"]);
+    });
+    ui.handleEndTurn(readBattle(defaultGameSession).battleState);
+    releaseDiscard();
+    await vi.runAllTimersAsync();
+    expect(ctx.playback.pendingCardDraws).toBe(1);
+    expect(battlePresentation.getState().hiddenHandCardKeys).toEqual(["drawing-card"]);
+    expect(battlePresentation.getState().cardTransferInProgress).toBe(true);
+    finishCardDraw();
   });
 
   it("cancelling presentation on another screen leaves a playable result", async () => {

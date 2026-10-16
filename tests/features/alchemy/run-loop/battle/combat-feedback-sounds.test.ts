@@ -1,54 +1,48 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { playBattleEvent } from "@/lib/audio";
-import { playCombatTextSounds } from "@/features/alchemy/run-loop/battle/controller-utils";
+import { playBattleEvent, playCardSound } from "@/lib/audio";
+import { battleEventSounds } from "@/lib/audio/sound-registry";
+import {
+  playCombatTextSounds,
+  playResolvedCardSound,
+  playCompanionSound,
+} from "@/features/alchemy/run-loop/battle/controller-utils";
 import { selectCombatSound } from "@/features/alchemy/run-loop/battle/combat-sound-selection";
+import { mergeCombatText } from "@/lib/battle/combat-text-events";
 import type { CombatTextEvent } from "@/lib/battle";
 
 vi.mock("@/lib/audio", () => ({ playBattleEvent: vi.fn(), playCardSound: vi.fn() }));
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(playBattleEvent).mockImplementation((event) => battleEventSounds[event] ?? undefined);
+  vi.mocked(playCardSound).mockImplementation((card) => `${card}.ogg`);
+});
 
-describe("one focal cue and one resolved accent", () => {
-  it("suppresses routine damage, healing, Gold and statuses after an authored cue", () => {
-    playCombatTextSounds(
-      [
-        { target: "enemy", kind: "damage", stat: "physical", amount: 8 },
-        { target: "player", kind: "heal", stat: "health", amount: 3 },
-        { target: "player", kind: "status", stat: "gold", amount: 4 },
-        { target: "player", kind: "status", stat: "armor", amount: 5 },
-      ],
-      "focal.ogg",
-    );
-    expect(playBattleEvent).not.toHaveBeenCalled();
-    playCombatTextSounds(
-      [
-        { target: "enemy", kind: "damage", stat: "physical", amount: 8, critical: true },
-        { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" },
-        { target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" },
-      ],
-      "focal.ogg",
-    );
-    expect(playBattleEvent).toHaveBeenCalledExactlyOnceWith("critHit", { excludeSound: "focal.ogg" });
+describe("one sound selected from committed action results", () => {
+  it("plays a typed critical once instead of layering a generic clash over a focal cue", () => {
+    const events: CombatTextEvent[] = [{ target: "enemy", kind: "damage", stat: "burn", amount: 8, critical: true }];
+    const sound = playResolvedCardSound("fireball", events);
+    playCombatTextSounds(events, sound);
+    expect(playBattleEvent).toHaveBeenCalledExactlyOnceWith("hitBurnCritical");
+    expect(playCardSound).not.toHaveBeenCalled();
+    const block: CombatTextEvent = { target: "player", kind: "status", stat: "block", amount: 20 };
+    expect(selectCombatSound([...events, block], false)).toBe("blockGain");
+    expect(selectCombatSound([...events, block], true)).toBeUndefined();
   });
 
-  it("uses fixed accent priority independently of text order, ignoring prepared and removed controls", () => {
+  it("gives actual control priority while ignoring prepared, removed, immune and prevented outcomes", () => {
     const events: CombatTextEvent[] = [
-      { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" },
-      { target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" },
-      { target: "enemy", kind: "notice", stat: "dodge", text: "Dodged" },
       { target: "enemy", kind: "damage", stat: "physical", amount: 3, critical: true },
-      { target: "enemy", kind: "notice", stat: "burn", text: "Wildfire" },
-      { target: "enemy", kind: "notice", stat: "physical", text: "Shatter · Critical" },
+      { target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" },
+      { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" },
     ];
-    for (const expected of ["shatter", "wildfire", "critHit", "dodge", "freezeProc", "stunProc"]) {
-      expect(selectCombatSound(events, true)).toBe(expected);
-      expect(selectCombatSound([...events].reverse(), true)).toBe(expected);
-      events.pop();
-    }
+    expect(selectCombatSound(events, true)).toBe("freezeProc");
+    expect(selectCombatSound([...events].reverse(), true)).toBe("freezeProc");
     expect(
       selectCombatSound(
         [
           { target: "player", kind: "notice", stat: "freeze", signal: "cleanse", text: "" },
           { target: "player", kind: "notice", stat: "stun", signal: "prepared", text: "" },
+          { target: "enemy", kind: "notice", stat: "freeze", signal: "immune", text: "" },
           { target: "enemy", kind: "damage", stat: "physical", amount: 0, critical: true },
           { target: "enemy", kind: "damage", stat: "physical", amount: 9, critical: true, impact: false },
         ],
@@ -57,27 +51,117 @@ describe("one focal cue and one resolved accent", () => {
     ).toBeUndefined();
   });
 
-  it("compares only damage magnitudes, uses periodic Poison, and keeps resource units separate", () => {
+  it("compares summed damage, actual healing and Block without counting resource units or stripping", () => {
     const events: CombatTextEvent[] = [
-      { target: "enemy", kind: "damage", stat: "burn", amount: 3, periodic: true },
-      { target: "enemy", kind: "damage", stat: "poison", amount: 5, periodic: true },
+      { target: "enemy", kind: "damage", stat: "poison", amount: 3, periodic: true },
+      { target: "enemy", kind: "damage", stat: "poison", amount: 2, periodic: true },
       { target: "player", kind: "status", stat: "mana", amount: 99 },
-      { target: "player", kind: "heal", stat: "health", amount: 100 },
+      { target: "player", kind: "heal", stat: "health", amount: 4 },
       { target: "enemy", kind: "damage", stat: "armor", amount: 300, impact: false },
     ];
     expect(selectCombatSound(events, false)).toBe("poisonTick");
-    events[0] = { target: "enemy", kind: "damage", stat: "burn", amount: 5, periodic: true };
-    expect(selectCombatSound([...events].reverse(), false)).toBe("burnTick");
-    expect(selectCombatSound(events.slice(2), false)).toBe("playerHeal");
+    expect(selectCombatSound([...events, { target: "player", kind: "heal", stat: "health", amount: 2 }], false)).toBe(
+      "playerHeal",
+    );
+    expect(selectCombatSound([...events, { target: "player", kind: "status", stat: "block", amount: 6 }], false)).toBe(
+      "blockGain",
+    );
     expect(selectCombatSound(events.slice(2), true)).toBeUndefined();
-
     const gain: CombatTextEvent = { target: "player", kind: "status", stat: "armor", amount: 3 };
     const strip: CombatTextEvent = { target: "enemy", kind: "damage", stat: "armor", amount: 1, impact: false };
-    expect(selectCombatSound([gain], false)).toBe("armorGain");
     expect(selectCombatSound([strip], false)).toBeUndefined();
-    // Silent stripping must not swallow the standalone gain cue during Armor theft.
     expect(selectCombatSound([gain, strip], false)).toBe("armorGain");
-    expect(selectCombatSound([strip, gain], false)).toBe("armorGain");
-    expect(selectCombatSound([gain, strip], true)).toBeUndefined();
+  });
+
+  it("uses resolved packet facts instead of overkill, blocked criticals, costs or stripped Block", () => {
+    const heal: CombatTextEvent = { target: "player", kind: "heal", stat: "health", amount: 3 };
+    const critical: CombatTextEvent = {
+      target: "enemy",
+      kind: "damage",
+      stat: "burn",
+      amount: 99,
+      healthLost: 0,
+      critical: true,
+    };
+    expect(selectCombatSound([critical, heal], false)).toBe("playerHeal");
+    expect(selectCombatSound([{ ...critical, healthLost: 2 }, heal], false)).toBe("playerHeal");
+    expect(
+      selectCombatSound(
+        [
+          { target: "player", kind: "damage", stat: "block", amount: 1, absorbedDamage: 5 },
+          { target: "player", kind: "damage", stat: "block", amount: 100, impact: false },
+          heal,
+        ],
+        false,
+      ),
+    ).toBe("blockAbsorb");
+    expect(
+      selectCombatSound([{ target: "player", kind: "damage", stat: "health", amount: 40, impact: false }, heal], false),
+    ).toBe("playerHeal");
+    const sound = playResolvedCardSound("fireball", [{ ...critical, healthLost: 2 }], true);
+    playCombatTextSounds([critical], sound);
+    expect(playBattleEvent).toHaveBeenCalledExactlyOnceWith("deathsDoor");
+  });
+
+  it("preserves resolved totals while keeping actual periodic ticks separate from direct hits", () => {
+    const events: CombatTextEvent[] = [];
+    mergeCombatText(events, { target: "enemy", kind: "damage", stat: "poison", amount: 90, healthLost: 2 });
+    mergeCombatText(events, {
+      target: "enemy",
+      kind: "damage",
+      stat: "poison",
+      amount: 1,
+      healthLost: 1,
+      critical: true,
+    });
+    mergeCombatText(events, { target: "enemy", kind: "damage", stat: "poison", amount: 1, periodic: true });
+    expect(events).toHaveLength(2);
+    expect(selectCombatSound(events, false)).toBe("hitPiercingCritical");
+    expect(selectCombatSound([...events, { target: "player", kind: "heal", stat: "health", amount: 4 }], false)).toBe(
+      "playerHeal",
+    );
+    for (const packets of [
+      [
+        { target: "player", kind: "damage", stat: "block", amount: 3 },
+        { target: "player", kind: "damage", stat: "block", amount: 1, absorbedDamage: 2 },
+      ],
+      [
+        { target: "player", kind: "damage", stat: "block", amount: 1, absorbedDamage: 2 },
+        { target: "player", kind: "damage", stat: "block", amount: 3 },
+      ],
+    ] satisfies CombatTextEvent[][]) {
+      const combined: CombatTextEvent[] = [];
+      for (const packet of packets) mergeCombatText(combined, packet);
+      expect(combined).toEqual([{ target: "player", kind: "damage", stat: "block", amount: 4, absorbedDamage: 5 }]);
+      expect(
+        selectCombatSound([...combined, { target: "player", kind: "heal", stat: "health", amount: 4 }], false),
+      ).toBe("blockAbsorb");
+    }
+  });
+
+  it("retains authored action identity but chooses actual branches and companion turn outcomes", () => {
+    const hit: CombatTextEvent = { target: "enemy", kind: "damage", stat: "physical", amount: 3 };
+    expect(playResolvedCardSound("slash", [hit])).toBe("slash.ogg");
+    expect(playCardSound).toHaveBeenCalledExactlyOnceWith("slash");
+    expect(playResolvedCardSound("slash", [{ ...hit, critical: true }])).toBe(battleEventSounds.slashCritical);
+    expect(playBattleEvent).toHaveBeenLastCalledWith("slashCritical");
+    expect(playResolvedCardSound("cinderbloom", [{ ...hit, stat: "poison" }])).toBe(battleEventSounds.hitPiercing);
+    expect(playBattleEvent).toHaveBeenLastCalledWith("hitPiercing");
+    expect(
+      playResolvedCardSound("molten-bulwark", [
+        { ...hit, stat: "burn" },
+        { target: "player", kind: "status", stat: "block", amount: 4 },
+      ]),
+    ).toBe(battleEventSounds.blockGain);
+    expect(playBattleEvent).toHaveBeenLastCalledWith("blockGain");
+    expect(playResolvedCardSound("astral-arrow", [{ ...hit, stat: "freeze" }])).toBe(battleEventSounds.astralFreeze);
+    expect(playBattleEvent).toHaveBeenLastCalledWith("astralFreeze");
+    expect(playResolvedCardSound("astral-arrow", [{ ...hit, stat: "poison", critical: true }])).toBe(
+      battleEventSounds.astralPiercingCritical,
+    );
+    expect(playBattleEvent).toHaveBeenLastCalledWith("astralPiercingCritical");
+    playCompanionSound("wolf", [{ ...hit, stat: "bleed" }]);
+    expect(playBattleEvent).toHaveBeenLastCalledWith("hitPiercing");
+    expect(playCardSound).toHaveBeenCalledTimes(1);
   });
 });

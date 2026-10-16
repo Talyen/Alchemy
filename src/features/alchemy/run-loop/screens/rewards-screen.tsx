@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { type ReactNode, useMemo, useState } from "react";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { getCardKeywords } from "@/lib/game-data";
@@ -35,6 +37,7 @@ function RewardChoiceItems({
   disabled: boolean;
   onClaimReward: (id: string) => void;
 }) {
+  const i18n = useGameTranslation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   function claim(id: string) {
     if (disabled) return;
@@ -52,7 +55,7 @@ function RewardChoiceItems({
         )}
         data-reward-selected={selectedId === id || undefined}
       >
-        {child}
+        {i18n.displayText(child)}
       </div>
     );
   }
@@ -62,52 +65,62 @@ function RewardChoiceItems({
     case "gear":
       return rewardState.choices.map((instance) => {
         const choiceId = getRewardChoiceId(instance);
-        return frame(
-          choiceId,
-          <GearTile
-            instance={instance}
-            interactionKey="reward"
-            as="button"
-            ariaDisabled={disabled}
-            selected={selectedId === choiceId}
-            hoverKeywordShine
-            onClick={() => claim(choiceId)}
-            ariaLabel={`Select ${getGearInstanceTitle(instance)}`}
-          />,
+        return i18n.read(() =>
+          frame(
+            choiceId,
+            <GearTile
+              instance={instance}
+              interactionKey="reward"
+              as="button"
+              ariaDisabled={disabled}
+              selected={selectedId === choiceId}
+              hoverKeywordShine
+              onClick={() => claim(choiceId)}
+              ariaLabel={i18n.text("ui.rewards-screen.1", "Select {{value0}}", {
+                value0: i18n.displayText(getGearInstanceTitle(instance)),
+              })}
+            />,
+          ),
         );
       });
     case "boon":
     case "trinket":
       return rewardState.choices.map((trinket) => {
         const choiceId = getRewardChoiceId(trinket);
-        return frame(
-          choiceId,
-          <TrinketTile
-            trinket={trinket}
-            interactionKey="reward"
-            as="button"
-            ariaDisabled={disabled}
-            selected={selectedId === choiceId}
-            hoverKeywordShine
-            temporary={rewardState.rewardType === "boon"}
-            onClick={() => claim(choiceId)}
-            ariaLabel={`Select ${trinket.title}`}
-          />,
+        return i18n.read(() =>
+          frame(
+            choiceId,
+            <TrinketTile
+              trinket={trinket}
+              interactionKey="reward"
+              as="button"
+              ariaDisabled={disabled}
+              selected={selectedId === choiceId}
+              hoverKeywordShine
+              temporary={rewardState.rewardType === "boon"}
+              onClick={() => claim(choiceId)}
+              ariaLabel={i18n.text("ui.rewards-screen.2", "Select {{value0}}", {
+                value0: i18n.displayText(trinket.title),
+              })}
+            />,
+          ),
         );
       });
     case "card":
       return rewardState.choices.map((card) => {
         const choiceId = getRewardChoiceId(card);
-        return frame(
-          choiceId,
-          <SelectableCard
-            card={card}
-            isSelected={selectedId === choiceId}
-            disabled={disabled}
-            shineColor={getCardInspectionShineColors(card)}
-            onSelect={() => claim(choiceId)}
-            interactionKey="reward"
-          />,
+        return i18n.read(() =>
+          frame(
+            choiceId,
+            <SelectableCard
+              card={card}
+              isSelected={selectedId === choiceId}
+              disabled={disabled}
+              shineColor={getCardInspectionShineColors(card)}
+              onSelect={() => claim(choiceId)}
+              interactionKey="reward"
+            />,
+          ),
         );
       });
   }
@@ -133,6 +146,7 @@ function RewardsFound({
   rewardGold: number;
   rewardMaterials: Partial<Record<MaterialId, number>>;
 }) {
+  useGameTranslation();
   const hasRewards = rewardGold > 0 || MATERIAL_IDS.some((mat) => (rewardMaterials[mat] ?? 0) > 0);
   // Reserve one pill-row height in both branches so gold/materials vs none
   // cannot move the choices or Skip footer. Matches ResourcePill md min-h.
@@ -163,28 +177,32 @@ export function RewardsScreen({
   onSkip,
   onClaimReward,
   claimInFlight = false,
+  rewardMaterials = rewardState.materials,
 }: {
   rewardState: RewardState;
   onSkip: () => void;
   onClaimReward: (id: string) => void;
   claimInFlight?: boolean;
+  rewardMaterials?: Partial<Record<MaterialId, number>>;
 }) {
+  const i18n = useGameTranslation();
   const rewardChoices = rewardState.choices;
   const rewardGold = rewardState.gold;
-  const rewardMaterials = rewardState.materials;
 
   const claimLocked = claimInFlight || rewardChoices.length === 0;
   const skipDisabled = claimInFlight;
   const showSkip = rewardState.rewardType === "card" || rewardChoices.length === 0;
 
   return (
-    <TitledScreenShell title="Victory" maxWidthClass="max-w-6xl">
+    <TitledScreenShell title={i18n.text("ui.rewards-screen.3", "Victory")} maxWidthClass="max-w-6xl">
       <RewardPlasmaController rewardState={rewardState} />
       <FadeSlot
         swapKey={`${rewardState.rewardType}:${rewardChoices.map((item) => getRewardChoiceId(item)).join("-")}`}
         className="flex flex-col"
       >
-        <h2 className={cn("mt-3 text-center font-sans", sectionTitleClass)}>Choose a Reward</h2>
+        <h2 className={cn("mt-3 text-center font-sans", sectionTitleClass)}>
+          {i18n.text("ui.rewards-screen.4", "Choose a Reward")}
+        </h2>
         <div className="mt-4 flex flex-col items-center gap-8">
           {/* Reserve one tile row (collection width 17.2868rem at 3/4 aspect) so
               1-2 choice, empty, and 3-choice states share the same height. */}
@@ -198,7 +216,7 @@ export function RewardsScreen({
         <div className="mt-5 flex min-h-16 justify-center">
           {showSkip ? (
             <Button variant="outline" size="lg" className="min-w-56" disabled={skipDisabled} onClick={onSkip}>
-              Skip
+              {i18n.text("ui.rewards-screen.5", "Skip")}
             </Button>
           ) : (
             <div aria-hidden="true" className="h-16" />

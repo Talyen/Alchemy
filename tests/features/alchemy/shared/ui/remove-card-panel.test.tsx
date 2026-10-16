@@ -1,22 +1,13 @@
+import { makeTestCard } from "../../../../fixtures/cards";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { RemoveCardPanel } from "@/features/alchemy/shared/ui/remove-card-panel";
-import type { BattleCard } from "@/lib/game-data";
 
 vi.mock("@/features/alchemy/shared/ui/cards/selectable-card", () => import("../../../../helpers/shop-screen-ui-mocks"));
 
-const runDeck = [
-  {
-    id: "card-1",
-    title: "Card One",
-    descriptionLines: ["A card."],
-    art: "card",
-    cost: 1,
-    effects: [],
-  } as BattleCard,
-];
+const runDeck = [makeTestCard({ id: "card-1", title: "Card One", descriptionLines: ["A card."], art: "card" })];
 
 describe("RemoveCardPanel", () => {
   afterEach(() => {

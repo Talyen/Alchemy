@@ -1,3 +1,4 @@
+import { makeTestCard } from "../../../../fixtures/cards";
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import {
@@ -306,14 +307,11 @@ it("reset preserves talentXP and unlockedTalents while clearing run state", () =
 });
 
 it("talent XP accumulation through run end awards card XP to runTalentXP then merges into permanent talentXP and points", () => {
-  const card: BattleCard = {
+  const card: BattleCard = makeTestCard({
     id: "slash",
     title: "Slash",
-    descriptionLines: [""],
-    art: "",
-    cost: 1,
     effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-  };
+  });
   setRunProgress({ selectedDifficulty: "difficulty-1" });
 
   for (let i = 0; i < 20; i++) {

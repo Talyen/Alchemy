@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+import { text as gameText } from "@/lib/localization/runtime";
 import { useId, type ComponentType, type ReactNode, type RefObject } from "react";
 import { AlertTriangle } from "lucide-react";
 import { ESCAPE_PRIORITY } from "@/app/escape-stack";
@@ -43,7 +45,7 @@ export function ConfirmationDialog({
   title,
   description,
   confirmLabel,
-  cancelLabel = "Cancel",
+  cancelLabel = gameText("ui.dialogs.default-cancelLabel", "Cancel"),
   tone = "danger",
   dimBackground = true,
   dismissOnBackdrop = true,
@@ -70,6 +72,7 @@ export function ConfirmationDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  useGameTranslation();
   const titleId = useId();
   const descriptionId = useId();
   return (

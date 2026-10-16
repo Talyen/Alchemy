@@ -1,3 +1,5 @@
+import { GameMessage } from "@/components/localization";
+import { useGameTranslation } from "@/components/use-game-translation";
 import { type ReactNode } from "react";
 import { Skull, Sparkles } from "lucide-react";
 import type { KeywordId } from "@/lib/game-data";
@@ -37,6 +39,7 @@ function StatusChipShell({
   tooltip: ReactNode;
   plasmaColorPair?: PlasmaColorPair | null;
 }) {
+  useGameTranslation();
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLButtonElement>();
 
@@ -74,6 +77,7 @@ function StatusTooltip({
   valueColorClass?: string;
   description: ReactNode;
 }) {
+  useGameTranslation();
   return (
     <>
       <div className="flex items-center justify-between gap-3">
@@ -97,6 +101,7 @@ function StatusTooltip({
 }
 
 export function StatusIcon({ chip }: { chip: StatusChip }) {
+  const i18n = useGameTranslation();
   const haste = chip.id === "haste";
   const phoenix = chip.id === "phoenixFeather";
   const augment = augmentDefinitions[chip.id as keyof typeof augmentDefinitions];
@@ -115,13 +120,20 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
         : getPlasmaColorPair([kw]);
   return (
     <StatusChipShell
-      ariaLabel={phoenix || hideValue ? definition.label : `${definition.label} ${chip.value}`}
+      ariaLabel={i18n.displayText(
+        phoenix || hideValue
+          ? definition.label
+          : i18n.text("ui.status-icons.d1", "{{value0}} {{value1}}", {
+              value0: i18n.displayText(definition.label),
+              value1: i18n.displayText(chip.value),
+            }),
+      )}
       icon={<Icon className={cn(STATUS_ICON_CLASS, definition.colorClass)} />}
       tooltip={
         <StatusTooltip
           labelNode={
             special ? (
-              <TooltipHeader className="mb-0">{definition.label}</TooltipHeader>
+              <TooltipHeader className="mb-0">{i18n.displayText(definition.label)}</TooltipHeader>
             ) : (
               <KeywordTag keywordId={kw} className="text-sm sm:text-base" />
             )
@@ -129,9 +141,11 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
           value={chip.value}
           hideValue={hideValue}
           valueColorClass={definition.colorClass}
-          description={
-            haste ? definition.description : renderColoredKeywords(chip.description ?? definition.description)
-          }
+          description={i18n.displayText(
+            haste
+              ? definition.description
+              : i18n.read(() => renderColoredKeywords(chip.description ?? definition.description)),
+          )}
         />
       }
       plasmaColorPair={plasmaColorPair}
@@ -147,32 +161,49 @@ const HASTE_STATUS = {
 };
 
 export function DeathsDoorStatusIcon({ remainingTurns }: { remainingTurns?: number | null }) {
+  const i18n = useGameTranslation();
   return (
     <StatusChipShell
-      ariaLabel={
+      ariaLabel={i18n.displayText(
         remainingTurns == null
-          ? "Death's Door"
-          : `Death's Door: ${remainingTurns} protected ${remainingTurns === 1 ? "turn" : "turns"} remaining`
-      }
+          ? i18n.text("ui.status-icons.d2", "Death's Door")
+          : i18n.text("battle.deaths-door-status", "Death's Door: {{count}} protected turns remaining", {
+              count: remainingTurns,
+            }),
+      )}
       buttonClassName="rounded-full bg-red-950/70 text-red-200 ring-1 ring-red-400/60"
       icon={<Skull className={STATUS_ICON_CLASS} />}
       tooltip={
         <>
-          <TooltipHeader>Death's Door</TooltipHeader>
+          <TooltipHeader>{i18n.text("ui.status-icons.1", "Death's Door")}</TooltipHeader>
           <TooltipBody>
             {remainingTurns != null && (
               <p>
-                {remainingTurns} protected {remainingTurns === 1 ? "turn" : "turns"} remaining.
+                {i18n.text("battle.deaths-door-remaining", "{{count}} protected turns remaining.", {
+                  count: remainingTurns,
+                })}
               </p>
             )}
-            <p>Fatal damage leaves you at 1 Health while protected. Healing does not end protection.</p>
-            <p>Once protection expires, fatal damage can defeat you. Death's Door triggers once per combat.</p>
+            <p>
+              {i18n.text(
+                "ui.status-icons.4",
+                "Fatal damage leaves you at 1 Health while protected. Healing does not end protection.",
+              )}
+            </p>
+            <p>
+              {i18n.text(
+                "ui.status-icons.5",
+                "Once protection expires, fatal damage can defeat you. Death's Door triggers once per combat.",
+              )}
+            </p>
           </TooltipBody>
           <TooltipBody className="italic">
             <p>
-              Because I could not stop for Death,
-              <br />
-              He kindly stopped for me
+              <GameMessage
+                id="ui.status-icons.s2"
+                defaultValue="Because I could not stop for Death,<part0/>He kindly stopped for me"
+                parts={{ part0: <br /> }}
+              />
             </p>
           </TooltipBody>
         </>

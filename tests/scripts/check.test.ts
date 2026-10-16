@@ -67,7 +67,11 @@ describe("full source-aware completion gate", () => {
       },
     );
     expect(code).toBe(0);
-    expect(calls).toEqual(["changed-path verification", "documentation format"]);
+    expect(calls).toEqual([
+      "localization freshness and contracts",
+      "changed-path verification",
+      "documentation format",
+    ]);
   });
 
   it("runs static checks plus build and smoke for runtime changes", async () => {
@@ -81,6 +85,7 @@ describe("full source-aware completion gate", () => {
     });
     expect(code).toBe(0);
     expect(calls).toEqual([
+      "localization freshness and contracts",
       "changed-path verification",
       "CI static checks",
       "web build",
@@ -163,7 +168,7 @@ describe("full source-aware completion gate", () => {
       captureDigest: () => ({ head: "abc", hash: "same" }),
     });
     expect(code).toBe(0);
-    expect(calls).toEqual(["changed-path verification", "CI static checks"]);
+    expect(calls).toEqual(["localization freshness and contracts", "changed-path verification", "CI static checks"]);
   });
 
   it("lets static checks own docs:check on executable changes only", async () => {
@@ -226,7 +231,7 @@ describe("full source-aware completion gate", () => {
     expect(detail).toContain("static failure detail");
     expect(detail).toContain("# Verification failure: CI static checks");
     expect(record.summary).toBe("Check failed at CI static checks.");
-    expect(record.commandExposures.map((entry) => entry.key)).toEqual(["verification", "ci-static"]);
+    expect(record.commandExposures.map((entry) => entry.key)).toEqual(["localization", "verification", "ci-static"]);
   });
 
   it("rejects ambiguous path selections", () => {

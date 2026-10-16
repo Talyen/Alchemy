@@ -99,6 +99,7 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
       <EnemyInspectionOverlay
         open={enemyInspectionOpen && canInspectEnemy}
         entry={battleScreenData.battleState.currentEnemy}
+        battleState={battleScreenData.battleState}
         enemyDescriptionContext={battleScreenData.battleState}
         modifiers={battleScreenData.activeLabyrinthModifiers}
         onClose={() => setEnemyInspectionOpen(false)}
@@ -132,6 +133,7 @@ function RewardsScreenRoute({ routeCommands }: RunLoopRouteCtx) {
     <RewardsScreen
       rewardState={r.rewardState}
       claimInFlight={r.rewardClaimInFlight}
+      rewardMaterials={r.rewardMaterials}
       onSkip={commands.skip}
       onClaimReward={commands.claimChoice}
     />

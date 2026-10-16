@@ -57,19 +57,18 @@ function affixFor(aspect: GearAffixAspect) {
 export const offensiveAffix = affixFor("offensive");
 export const defensiveAffix = affixFor("defensive");
 
-export function uniqueAffix<const Id extends string>(
-  id: Id,
-  name: string,
-  aspect: GearAffixAspect,
-  keywordId: KeywordId,
-  secondaryKeywordId?: KeywordId,
-) {
-  const define = affixFor(aspect)(id, name, keywordId, secondaryKeywordId);
-  return <const Effect extends string>(effectKey: Effect, descriptionTemplate: string, rollValue = 1) => ({
-    ...define(effectKey, rollRange(rollValue, rollValue, rollValue, rollValue), descriptionTemplate),
-    uniqueOnly: true,
-  });
+function uniqueAffixFor(aspect: GearAffixAspect) {
+  return <const Id extends string>(id: Id, name: string, keywordId: KeywordId, secondaryKeywordId?: KeywordId) => {
+    const define = affixFor(aspect)(id, name, keywordId, secondaryKeywordId);
+    return <const Effect extends string>(effectKey: Effect, descriptionTemplate: string, rollValue = 1) => ({
+      ...define(effectKey, rollRange(rollValue, rollValue, rollValue, rollValue), descriptionTemplate),
+      uniqueOnly: true,
+    });
+  };
 }
+
+export const offensiveUnique = uniqueAffixFor("offensive");
+export const defensiveUnique = uniqueAffixFor("defensive");
 
 export function resistAffix<const T extends string, const E extends string>(
   id: T,

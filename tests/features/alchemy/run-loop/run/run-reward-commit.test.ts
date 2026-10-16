@@ -113,15 +113,12 @@ it("rolls back a reward, act advancement and RNG if next-offer construction fail
     },
   });
   const before = readGameplayState(defaultGameSession);
-  const sample = vi.spyOn(destinationFlow, "createInitialDestinationResult").mockImplementationOnce(() => {
+  using _sample = vi.spyOn(destinationFlow, "createInitialDestinationResult").mockImplementationOnce(() => {
     throw new Error("offer failed");
   });
-  try {
-    expect(() => claimRunReward(card.id, defaultGameSession)).toThrow("offer failed");
-    expect(readGameplayState(defaultGameSession)).toBe(before);
-  } finally {
-    sample.mockRestore();
-  }
+
+  expect(() => claimRunReward(card.id, defaultGameSession)).toThrow("offer failed");
+  expect(readGameplayState(defaultGameSession)).toBe(before);
 });
 
 it.each([false, true])(

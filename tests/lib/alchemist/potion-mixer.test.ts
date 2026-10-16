@@ -1,3 +1,4 @@
+import { makeTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { createMixedPotion, tryCreateMixedPotion, applyMixToDeck, doublePotionPotency } from "@/lib/alchemist";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
@@ -7,7 +8,7 @@ import { validateCardDescriptionParity } from "@/lib/content-validation/card-par
 import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
 
 function makePotion(overrides: Partial<BattleCard> = {}): BattleCard {
-  return {
+  return makeTestCard({
     id: "health-potion",
     title: "Health Potion",
     descriptionLines: ["Restore 5 Health", "Consume"],
@@ -16,7 +17,7 @@ function makePotion(overrides: Partial<BattleCard> = {}): BattleCard {
     consume: true,
     effects: [{ kind: "heal", amount: 5 }],
     ...overrides,
-  };
+  });
 }
 
 const healPotion = makePotion();

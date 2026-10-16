@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import { Layers } from "lucide-react";
 import { ChromeIconButton } from "./chrome-icon-button";
 
@@ -8,10 +10,11 @@ export interface DeckInspectButtonProps {
 }
 
 export function DeckInspectButton({ count, disabled, onOpen }: DeckInspectButtonProps) {
-  const label = `View Deck · ${count} cards`;
+  const i18n = useGameTranslation();
+  const label = i18n.text("deck.inspect", "View Deck · {{count}} cards", { count: count });
   return (
     <ChromeIconButton
-      aria-label={label}
+      aria-label={i18n.displayText(label)}
       aria-disabled={disabled}
       aria-haspopup="dialog"
       onClick={(event) => {

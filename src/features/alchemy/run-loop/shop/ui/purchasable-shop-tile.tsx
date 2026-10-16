@@ -1,3 +1,5 @@
+import { useGameTranslation } from "@/components/use-game-translation";
+
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -14,16 +16,17 @@ export function ShopPriceChip({
   purchased: boolean;
   purchaseState: ShopPurchaseState;
 }) {
+  const i18n = useGameTranslation();
   const { canAfford } = purchaseState;
 
   return (
     <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 w-max -translate-x-1/2 select-none">
       {purchased ? (
         <span className="inline-flex items-center justify-center text-xl leading-none font-semibold text-muted-foreground drop-shadow-[0_0_2px_rgba(0,0,0,0.95)] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
-          Purchased
+          {i18n.text("ui.purchasable-shop-tile.1", "Purchased")}
         </span>
       ) : (
-        <DisabledTooltip show={!canAfford} message="Not Enough Gold">
+        <DisabledTooltip show={!canAfford} message={i18n.text("ui.purchasable-shop-tile.2", "Not Enough Gold")}>
           <div
             className={cn(
               "pointer-events-auto inline-flex items-center justify-center gap-1.5 text-xl leading-none font-semibold tabular-nums",
@@ -43,6 +46,7 @@ export function ShopPriceChip({
 }
 
 export function PurchasableShopTile({ media, purchased }: { media: ReactNode; purchased: boolean }) {
+  useGameTranslation();
   return (
     <div className={cn("relative flex flex-col items-center text-center", purchased && "opacity-50")}>{media}</div>
   );

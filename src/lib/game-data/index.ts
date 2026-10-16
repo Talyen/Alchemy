@@ -8,7 +8,6 @@ export * from "./compendium";
 export * from "./difficulties";
 export * from "./effects";
 export * from "./enemy-abilities";
-export * from "./gear-art.generated";
 export * from "./keywords";
 export * from "./reward-selection";
 export type { TalentEffectManifest } from "./talent-effect-manifest";
@@ -26,3 +25,5 @@ export {
   getCardDescription,
 } from "./effect-metadata";
 export * from "./card-description-model";
+
+export { buildDescriptionMessage, type DescriptionMessage, type DescriptionMessageValue } from "./description-message";

@@ -173,7 +173,7 @@ it.each(["deck", "discard"] as const)("takeRandomCardFromDeck preserves the %s i
     deck: pile === "deck" ? cards : [],
     discard: pile === "discard" ? cards : [],
     nextCardUid: 40,
-    uniqueGear: { returningFlightUid: 1, lastArcheryUid: 2 },
+    uniqueGear: { returningFlightUids: [1], lastArcheryUid: 2 },
     rng,
   });
   Object.freeze(state.deck);
@@ -185,7 +185,7 @@ it.each(["deck", "discard"] as const)("takeRandomCardFromDeck preserves the %s i
   expect(result.nextCardUid).toBe(41);
   expect(result.deck.map((card) => card.id)).toEqual(pile === "deck" ? ["b", "c"] : ["c", "a"]);
   expect(result.discard).toEqual([]);
-  expect(result.uniqueGear.returningFlightUid).toBe(pile === "deck" ? 40 : 1);
+  expect(result.uniqueGear.returningFlightUids).toEqual([pile === "deck" ? 40 : 1]);
   expect(result.uniqueGear.lastArcheryUid).toBe(pile === "discard" ? 40 : 2);
   expect(rng).toHaveBeenCalledTimes(pile === "deck" ? 1 : 3);
   expect(cards.map((card) => card.id)).toEqual(["a", "b", "c"]);

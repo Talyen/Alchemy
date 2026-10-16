@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { logError } from "@/lib/error-logger";
 import {
@@ -108,44 +109,41 @@ describe("useErrorLogStore", () => {
   it("coalesces a burst into the latest snapshot and flushes it once before pagehide", () => {
     vi.useFakeTimers();
     const write = vi.spyOn(Storage.prototype, "setItem");
-    try {
-      useErrorLogStore.getState().pushError({ message: "first", source: "storage" });
-      useErrorLogStore.getState().pushError({ message: "second", source: "storage" });
-      const [first, second] = useErrorLogStore.getState().errors;
-      expect(first!.id).not.toBe(second!.id);
-      useErrorLogStore.getState().markReviewed(first!.id);
-      vi.advanceTimersByTime(499);
-      expect(write).not.toHaveBeenCalled();
-
-      window.dispatchEvent(new Event("pagehide"));
-      expect(parsePersistedErrorLog(localStorage.getItem(STORAGE_KEY))).toEqual(useErrorLogStore.getState().errors);
-      expect(useErrorLogStore.getState().errors.map((error) => error.reviewed)).toEqual([true, false]);
-      vi.advanceTimersByTime(500);
-      flushPersistedErrorLog();
-      expect(write).toHaveBeenCalledTimes(1);
-
-      useErrorLogStore.getState().clearErrors();
-      vi.advanceTimersByTime(500);
-      expect(localStorage.getItem(STORAGE_KEY)).toBe("[]");
-      expect(write).toHaveBeenCalledTimes(2);
-    } finally {
+    using _scopeCleanup = createCleanup(() => {
       write.mockRestore();
       vi.useRealTimers();
-    }
+    });
+
+    useErrorLogStore.getState().pushError({ message: "first", source: "storage" });
+    useErrorLogStore.getState().pushError({ message: "second", source: "storage" });
+    const [first, second] = useErrorLogStore.getState().errors;
+    expect(first!.id).not.toBe(second!.id);
+    useErrorLogStore.getState().markReviewed(first!.id);
+    vi.advanceTimersByTime(499);
+    expect(write).not.toHaveBeenCalled();
+
+    window.dispatchEvent(new Event("pagehide"));
+    expect(parsePersistedErrorLog(localStorage.getItem(STORAGE_KEY))).toEqual(useErrorLogStore.getState().errors);
+    expect(useErrorLogStore.getState().errors.map((error) => error.reviewed)).toEqual([true, false]);
+    vi.advanceTimersByTime(500);
+    flushPersistedErrorLog();
+    expect(write).toHaveBeenCalledTimes(1);
+
+    useErrorLogStore.getState().clearErrors();
+    vi.advanceTimersByTime(500);
+    expect(localStorage.getItem(STORAGE_KEY)).toBe("[]");
+    expect(write).toHaveBeenCalledTimes(2);
   });
 });
 
 it("boots and flushes safely when browser privacy settings deny access to the storage getter", async () => {
-  const storage = vi.spyOn(window, "localStorage", "get").mockImplementation(() => {
+  using _storage = vi.spyOn(window, "localStorage", "get").mockImplementation(() => {
     throw new DOMException("Storage denied", "SecurityError");
   });
-  try {
-    vi.resetModules();
-    const fresh = await import("@/features/alchemy/shared/stores/error-log-store");
-    expect(fresh.useErrorLogStore.getState().errors).toEqual([]);
-    useErrorLogStore.getState().pushError({ message: "denied storage", source: "other" });
-    expect(flushPersistedErrorLog).not.toThrow();
-  } finally {
-    storage.mockRestore();
-  }
+
+  vi.resetModules();
+  const fresh = await import("@/features/alchemy/shared/stores/error-log-store");
+  expect(fresh.useErrorLogStore.getState().errors).toEqual([]);
+  useErrorLogStore.getState().pushError({ message: "denied storage", source: "other" });
+  expect(flushPersistedErrorLog).not.toThrow();
 });

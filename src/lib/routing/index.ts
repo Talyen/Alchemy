@@ -18,5 +18,5 @@ export {
 export { filterValidDestinations, filterValidDestinationRounds } from "./destination-validation";
 export { getAvailableDestinations } from "./destination-availability";
 export { getRunPhase, isRunLoopScreen, isRunResumeScreen, SCREEN_PHASE, type RunPhase } from "./run-screen-router";
-export { getSteamRichPresenceLabel } from "./run-phase-presence";
+export { getSteamRichPresenceToken } from "./run-phase-presence";
 export { REWARD_ROUTES, type RewardRoute } from "./reward-routes";

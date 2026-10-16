@@ -1,3 +1,4 @@
+import { createCleanup } from "@/lib/cleanup";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 const asar = createRequire(import.meta.url)("@electron/asar");
@@ -52,23 +53,21 @@ async function ensureFakeWinUnpacked(edition: "full" | "demo" = "full") {
   mkdirSync(contentRoot, { recursive: true });
   writeFileSync(join(contentRoot, `${selected.productName}.exe`), "");
   const staging = mkdtempSync(join(tmpdir(), "alchemy-upload-test-"));
-  try {
-    mkdirSync(join(staging, selected.rendererDirectory));
-    mkdirSync(join(contentRoot, "resources"));
-    writeFileSync(join(staging, selected.rendererDirectory, "edition.json"), JSON.stringify({ edition }));
-    writeFileSync(
-      join(staging, "package.json"),
-      JSON.stringify({
-        gameEdition: edition,
-        steamAppId: edition === "demo" ? "43" : "42",
-        steamDepotId: edition === "demo" ? "8" : "7",
-        fullGameSteamAppId: "42",
-      }),
-    );
-    await asar.createPackage(staging, join(contentRoot, "resources/app.asar"));
-  } finally {
-    rmSync(staging, { recursive: true, force: true });
-  }
+  using _scopeCleanup = createCleanup(() => rmSync(staging, { recursive: true, force: true }));
+
+  mkdirSync(join(staging, selected.rendererDirectory));
+  mkdirSync(join(contentRoot, "resources"));
+  writeFileSync(join(staging, selected.rendererDirectory, "edition.json"), JSON.stringify({ edition }));
+  writeFileSync(
+    join(staging, "package.json"),
+    JSON.stringify({
+      gameEdition: edition,
+      steamAppId: edition === "demo" ? "43" : "42",
+      steamDepotId: edition === "demo" ? "8" : "7",
+      fullGameSteamAppId: "42",
+    }),
+  );
+  await asar.createPackage(staging, join(contentRoot, "resources/app.asar"));
 }
 
 afterEach(() => {

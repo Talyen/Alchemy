@@ -75,8 +75,13 @@ export class SaveStorage {
       const recoveryCandidates = recovery.ok ? recovery.candidates : [];
       const selection = selectSaveCandidates(primaryCandidates, recoveryCandidates);
       this.writeKeys = selection.writeSlots.map((slot) => (slot === "primary" ? SAVE_KEY : SAVE_RECOVERY_KEY));
-      if (!primary.ok || primary.localReadFailed === true)
-        this.writeKeys = this.writeKeys.filter((key) => key === SAVE_RECOVERY_KEY);
+      const primaryUnreadable = !primary.ok || primary.localReadFailed === true || primary.cloudReadFailed === true;
+      const recoveryUnreadable = !recovery.ok || recovery.localReadFailed === true || recovery.cloudReadFailed === true;
+      if (primaryUnreadable) this.writeKeys = this.writeKeys.filter((key) => key === SAVE_RECOVERY_KEY);
+      // If both sources are unavailable, recovery remains the last-resort lane.
+      // Otherwise preserve unreadable recovery data, including after primary write failure.
+      if (recoveryUnreadable && !primaryUnreadable)
+        this.writeKeys = this.writeKeys.filter((key) => key !== SAVE_RECOVERY_KEY);
       let loaded = selection.state;
 
       if (primaryCandidates.length === 0 && recoveryCandidates.length === 0) {

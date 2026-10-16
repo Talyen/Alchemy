@@ -164,7 +164,9 @@ export class ProgressCompletion {
     if (this.deliveringCompletions || this.preparingCompletions) return;
     this.deliveringCompletions = true;
     try {
-      while (this.readyCompletions.length && this.isActive()) {
+      // A ready callback can start a new checkpoint. Keep the remaining
+      // acknowledged feedback queued until the current save gate opens again.
+      while (this.readyCompletions.length && this.isActive() && this.state.kind === "idle") {
         const completion = this.readyCompletions.shift()!;
         if (completion.epoch !== this.epoch) continue;
         try {

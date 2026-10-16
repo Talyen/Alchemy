@@ -278,6 +278,14 @@ preferences keep their existing unanimated appearance without color-animation
 frames. Availability belongs to the renderer lifecycle; failures are logged,
 not shown in a player-facing dialog.
 
+Renderer construction owns rollback until it returns its disposer. Canvas setup
+failure cancels scheduled frames and releases installed observers/listeners; plasma
+setup also releases allocated shaders, buffers, and programs. Disposal is
+idempotent and attempts all renderer cleanup even when a wake adapter fails.
+Context replacement revokes the old renderer before invoking host callbacks.
+Startup, teardown, and availability observer failures are logged independently;
+a failed startup retains the static fallback and can retry on context restoration.
+
 Hover and leave update the plasma color target immediately. The displayed colors
 use a critically damped transition that retains momentum when retargeted.
 Object highlights remain immediate.

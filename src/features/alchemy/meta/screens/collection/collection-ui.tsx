@@ -1,3 +1,4 @@
+import { useGameTranslation } from "@/components/use-game-translation";
 import { PaginationControls } from "../../../shared/ui/navigation";
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import {
@@ -38,17 +39,21 @@ export function CollectionGrid({
   onEnemyActivate?: (enemyId: string, trigger: HTMLButtonElement) => void;
   inspectionOpen?: boolean;
 }) {
-  const pageItems = getCollectionPageItems({
-    collectionTab,
-    discoveredCardIds,
-    encounteredEnemyIds,
-    discoveredTrinketIds,
-    discoveredUniqueIds,
-    finishedRunCharacters,
-    bondedCompanions,
-    page,
-    pageSize,
-  });
+  const i18n = useGameTranslation();
+
+  const pageItems = i18n.read(() =>
+    getCollectionPageItems({
+      collectionTab,
+      discoveredCardIds,
+      encounteredEnemyIds,
+      discoveredTrinketIds,
+      discoveredUniqueIds,
+      finishedRunCharacters,
+      bondedCompanions,
+      page,
+      pageSize,
+    }),
+  );
 
   const referenceWidth =
     collectionTab === "bestiary" ? COLLECTION_BESTIARY_REFERENCE_WIDTH : COLLECTION_CARD_REFERENCE_WIDTH;

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { getBattleCompanionDamageModifiers } from "@/lib/battle";
+import { getBattleCompanionDamageModifiers, getBattleDamageInspectionCard } from "@/lib/battle";
+import type { BattleCard } from "@/lib/game-data";
 import type { BattleScreenState } from "./types";
 
 export function useBattleDescriptionContext(state: BattleScreenState) {
@@ -29,9 +30,10 @@ export function useBattleDescriptionContext(state: BattleScreenState) {
 
   return useMemo(
     () => ({
+      inspectBattleCard: (card: BattleCard) => getBattleDamageInspectionCard(card, state),
       companionBondLevels: state.talentEffects.companionBondLevels,
       companionDamageModifiers,
     }),
-    [state.talentEffects.companionBondLevels, companionDamageModifiers],
+    [state, companionDamageModifiers],
   );
 }

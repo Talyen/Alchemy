@@ -1,3 +1,6 @@
+import { text as gameText, displayText } from "@/lib/localization/runtime";
+import { GameMessage } from "@/components/localization";
+import { useGameTranslation } from "@/components/use-game-translation";
 import { memo, useId, useMemo, useState } from "react";
 import { Swords } from "lucide-react";
 
@@ -41,7 +44,9 @@ import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 function getDifficultyBonusLabel(difficultyId: DifficultyId): string {
   const multiplier = getDifficultyXPMultiplier(difficultyId);
   if (multiplier <= 1) return "";
-  return `${String(Math.round((multiplier - 1) * 100))}% Bonus XP`;
+  return gameText("ui.difficulty-select-screen.msg1", "{{value0}}% Bonus XP", {
+    value0: displayText(String(Math.round((multiplier - 1) * 100))),
+  });
 }
 
 const LOCKED_DIFFICULTY_MESSAGE = "Clear previous Difficulty to unlock";
@@ -63,9 +68,13 @@ const DifficultyCard = memo(function DifficultyCard({
   isSelected: boolean;
   onSelect: (id: DifficultyId) => void;
 }) {
-  const bonusLine = getDifficultyBonusLabel(difficultyId);
+  const i18n = useGameTranslation();
+  const bonusLine = i18n.read(() => getDifficultyBonusLabel(difficultyId));
   const fullDescription = bonusLine ? `${description}\n${bonusLine}` : description;
-  const renderedDescription = useMemo(() => renderMultilineTokenizedDescription(fullDescription), [fullDescription]);
+  const renderedDescription = useMemo(
+    () => i18n.read(() => renderMultilineTokenizedDescription(fullDescription)),
+    [fullDescription, i18n],
+  );
   const showUnlockedArt = !locked;
   const diffArt = difficultyArt[difficultyId] ?? difficultyArt["difficulty-3"] ?? "";
   const unlockHintId = useId();
@@ -120,7 +129,7 @@ const DifficultyCard = memo(function DifficultyCard({
             />
             {completed && (
               <div className="absolute top-2 right-2 rounded-md bg-emerald-600/90 px-2 py-0.5 text-xs font-bold tracking-wide text-emerald-100 uppercase">
-                Completed
+                {i18n.text("ui.difficulty-select-screen.1", "Completed")}
               </div>
             )}
           </Surface>
@@ -133,24 +142,26 @@ const DifficultyCard = memo(function DifficultyCard({
               className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover", "grayscale")}
             />
             <div className="absolute inset-0 flex items-center justify-center rounded-shell-panel bg-black/60">
-              <span className="text-sm font-bold tracking-wider text-muted-foreground uppercase">Locked</span>
+              <span className="text-sm font-bold tracking-wider text-muted-foreground uppercase">
+                {i18n.text("ui.difficulty-select-screen.2", "Locked")}
+              </span>
             </div>
           </div>
         )}
         <p className={cn("font-sans", sectionTitleClass, locked && "text-muted-foreground")}>{name}</p>
         <div className="flex min-h-[calc(4.5*var(--content-rem,1rem))] w-full flex-col justify-center">
-          <div className={cn("w-full text-center", bodyTextClass)}>{renderedDescription}</div>
+          <div className={cn("w-full text-center", bodyTextClass)}>{i18n.displayText(renderedDescription)}</div>
         </div>
       </button>
 
       {locked && (
         <>
           <span id={unlockHintId} className="sr-only">
-            {LOCKED_DIFFICULTY_MESSAGE}
+            {i18n.displayText(LOCKED_DIFFICULTY_MESSAGE)}
           </span>
           <PortaledTooltip triggerRef={triggerRef} visible={visible}>
             <TooltipBody>
-              <p>{renderUnlockMessage(LOCKED_DIFFICULTY_MESSAGE)}</p>
+              <p>{i18n.displayText(i18n.read(() => renderUnlockMessage(LOCKED_DIFFICULTY_MESSAGE)))}</p>
             </TooltipBody>
           </PortaledTooltip>
         </>
@@ -174,6 +185,7 @@ export function DifficultySelectScreen({
   onBack: () => void;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
+  const i18n = useGameTranslation();
   const [selectedDifficultyId, setSelectedDifficultyId] = useState<DifficultyId | null>(selectedDifficulty);
 
   const config = difficultyConfigs[characterId];
@@ -195,7 +207,7 @@ export function DifficultySelectScreen({
 
   return (
     <TitledScreenShell
-      title={config.headerTitle}
+      title={i18n.displayText(config.headerTitle)}
       maxWidthClass={chooserHeroPaddedRowShellWidthClass}
       onBack={onBack}
       onMenu={onMenu}
@@ -217,12 +229,12 @@ export function DifficultySelectScreen({
           >
             <img
               src={art}
-              alt={char.name}
+              alt={i18n.displayText(char.name)}
               decoding="async"
               className={cn(cardSurfaceClass, "h-full w-full rounded-shell-panel object-cover")}
             />
           </Surface>
-          <p className={cn("font-sans", sectionTitleClass)}>{char.name}</p>
+          <p className={cn("font-sans", sectionTitleClass)}>{i18n.displayText(char.name)}</p>
           <div className="flex flex-wrap justify-center gap-1">
             {char.keywords.map((kw) => (
               <KeywordTag key={kw} keywordId={kw} pill showTooltip />
@@ -240,8 +252,8 @@ export function DifficultySelectScreen({
           <DifficultyCard
             key={d.id}
             difficultyId={d.id}
-            name={d.name}
-            description={d.description}
+            name={i18n.displayText(d.name)}
+            description={i18n.displayText(d.description)}
             completed={completedDifficulties.includes(d.id)}
             locked={!isDifficultyUnlocked(d.id, completedDifficulties)}
             isSelected={selectedDifficultyId === d.id}
@@ -252,8 +264,11 @@ export function DifficultySelectScreen({
 
       <div className="mt-6 flex justify-center">
         <Button size="lg" variant="primary" className="min-w-56" disabled={!canPlay} onClick={handlePlay}>
-          <Swords className="h-4 w-4" />
-          Play
+          <GameMessage
+            id="ui.difficulty-select-screen.s1"
+            defaultValue="<part0/>Play"
+            parts={{ part0: <Swords className="h-4 w-4" /> }}
+          />
         </Button>
       </div>
     </TitledScreenShell>

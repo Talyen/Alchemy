@@ -308,13 +308,21 @@ describe("run architecture type contracts", () => {
       "handleCardClick" | "handleCharacterSelect" | "continueFromRunEnd"
     >;
 
+    expectTypeOf<
+      Extract<
+        keyof ReturnType<typeof useAlchemyRunController>["routeCommands"]["battle"],
+        "startBattle" | "startBossBattle" | "startBossById" | "presentBattleStart" | "cancelBattle"
+      >
+    >().toEqualTypeOf<never>();
     expectTypeOf<RunLoopCrossPhaseKeys>().toEqualTypeOf<never>();
     expectTypeOf<MetaCrossPhaseKeys>().toEqualTypeOf<never>();
   });
 
   it("keeps screen data contracts exact and screen-specific", () => {
     expectTypeOf<keyof RunScreenDataByScreen["shop"]>().toEqualTypeOf<"gold" | "runDeck" | "shopState">();
-    expectTypeOf<keyof RunScreenDataByScreen["rewards"]>().toEqualTypeOf<"rewardState" | "rewardClaimInFlight">();
+    expectTypeOf<keyof RunScreenDataByScreen["rewards"]>().toEqualTypeOf<
+      "rewardState" | "rewardClaimInFlight" | "rewardMaterials"
+    >();
     expectTypeOf<RunScreenDataByScreen["shop"]["runDeck"]>().toEqualTypeOf<BattleCard[]>();
   });
 });

@@ -5,9 +5,19 @@ export function capitalizeWord(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-export function formatLargeAmount(amount: number): string {
-  if (!Number.isFinite(amount)) return "0";
-  return amount >= 100000 ? `${(amount / 1000).toFixed(1)}k` : amount.toLocaleString();
+const amountFormatters = new Map<string, Intl.NumberFormat>();
+
+export function formatLargeAmount(amount: number, locale = "en"): string {
+  const value = Number.isFinite(amount) ? amount : 0;
+  const language = locale === "en-XA" ? "en" : locale;
+  const compact = Math.abs(value) >= 100000;
+  const key = `${language}:${compact}`;
+  let formatter = amountFormatters.get(key);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(language, compact ? { notation: "compact", maximumFractionDigits: 1 } : {});
+    amountFormatters.set(key, formatter);
+  }
+  return formatter.format(value);
 }
 
 export function isValidDeckIndex(index: number, deckLength: number): boolean {

@@ -86,6 +86,8 @@ Receipts expire after one hour. Reused results retain their original run ID and 
 
 Set `ALCHEMY_VERIFY_FRESH=1` for fresh local observations, including nondeterminism investigations and benchmark comparisons. Actual outcomes still replace or invalidate receipts. [Cache implementation details](./scripts/VERIFICATION.md#verification-cache) document input identity and the cost threshold.
 
+The default local check also runs the offline [localization freshness gate](./Docs/LOCALIZATION.md#agent-workflow). Agents update translations in the same task as English text edits; checks and builds never invoke a translation service.
+
 ## Test value and coverage strategy
 
 Add permanent tests for high-value protection by default. Add low- or medium-value tests only as rare exceptions with a concrete justification. Judge value by the failure detected, its consequence, assertion strength, distinct protection, diagnostic usefulness, runtime, and upkeep. Test counts and coverage percentages are not improvement targets; existing configured gates still apply.

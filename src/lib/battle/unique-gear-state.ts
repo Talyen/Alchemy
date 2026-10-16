@@ -9,7 +9,7 @@ export interface UniqueGearBattleState {
   wardbreakerPurgeUsed: boolean;
   finalSparkUsed: boolean;
   lastArcheryUid: number | null;
-  returningFlightUid: number | null;
+  returningFlightUids: number[];
   archeryEchoes: BattleCard[];
 }
 
@@ -23,23 +23,22 @@ export function createUniqueGearBattleState(): UniqueGearBattleState {
     wardbreakerPurgeUsed: false,
     finalSparkUsed: false,
     lastArcheryUid: null,
-    returningFlightUid: null,
+    returningFlightUids: [],
     archeryEchoes: [],
   };
 }
 
 type PerTurnUniqueGearReset = Pick<
   UniqueGearBattleState,
-  "wrenflightActive" | "wardbreakerPurgeUsed" | "finalSparkUsed" | "lastArcheryUid" | "returningFlightUid"
+  "wrenflightActive" | "wardbreakerPurgeUsed" | "finalSparkUsed" | "lastArcheryUid"
 >;
 
 // The only unique-gear fields that reset each player turn. Everything else
-// persists for the combat or is consumed explicitly where it is used
-// archeryEchoes), so add new per-turn fields here — not at the reset site.
+// persists for the combat or is consumed explicitly where it is used,
+// so add new per-turn fields here — not at the reset site.
 export const PER_TURN_UNIQUE_GEAR_RESET: PerTurnUniqueGearReset = {
   wrenflightActive: false,
   wardbreakerPurgeUsed: false,
   finalSparkUsed: false,
   lastArcheryUid: null,
-  returningFlightUid: null,
 };

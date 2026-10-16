@@ -35,8 +35,8 @@ it("revokes both the current observer snapshot and queued reentrant publications
 it.each(["gameplay", "settings", "progress", "presentation"] as const)(
   "disposal during %s notification revokes the remaining observer snapshot",
   async (source) => {
-    const session = createGameSession();
-    const other = createGameSession();
+    await using session = createGameSession();
+    await using other = createGameSession();
     const runtime = sessionRuntime(session);
     const persistence = createSessionPersistence(session);
     const presentation = createBattlePresentationStore(session);
@@ -55,26 +55,23 @@ it.each(["gameplay", "settings", "progress", "presentation"] as const)(
     subscribe(stale);
     const otherObserver = vi.fn();
     subscribeRunSessionCommits(otherObserver, other);
-    try {
-      if (source === "presentation") presentation.getState().setCardTransferInProgress(true);
-      else if (source === "gameplay")
-        dispatchRunSessionCommand((transaction) => acceptCommand(setGold(transaction, 10)), undefined, session);
-      else if (source === "settings") runtime.settings.getState().setMusicVolume(7);
-      else runtime.progressCompletion.mark(1);
-      expect(disposal).toBeDefined();
-      await disposal;
-      expect(stale).not.toHaveBeenCalled();
-      dispatchRunSessionCommand((transaction) => acceptCommand(setGold(transaction, 20)), undefined, other);
-      expect(otherObserver).toHaveBeenCalledOnce();
-    } finally {
-      await Promise.all([session.dispose(), other.dispose()]);
-    }
+
+    if (source === "presentation") presentation.getState().setCardTransferInProgress(true);
+    else if (source === "gameplay")
+      dispatchRunSessionCommand((transaction) => acceptCommand(setGold(transaction, 10)), undefined, session);
+    else if (source === "settings") runtime.settings.getState().setMusicVolume(7);
+    else runtime.progressCompletion.mark(1);
+    expect(disposal).toBeDefined();
+    await disposal;
+    expect(stale).not.toHaveBeenCalled();
+    dispatchRunSessionCommand((transaction) => acceptCommand(setGold(transaction, 20)), undefined, other);
+    expect(otherObserver).toHaveBeenCalledOnce();
   },
 );
 
 it("disposal during restore stops later lifecycle listeners and presentation clearing", async () => {
   const clearBattleUi = vi.fn();
-  const session = createGameSession({ feedback: { clearBattleUi } });
+  await using session = createGameSession({ feedback: { clearBattleUi } });
   const runtime = sessionRuntime(session);
   const stale = vi.fn();
   let disposal: Promise<void> | undefined;
@@ -82,20 +79,17 @@ it("disposal during restore stops later lifecycle listeners and presentation cle
     disposal = session.dispose();
   });
   runtime.lifecycle.onRestore(stale);
-  try {
-    runtime.progressCompletion.replace();
-    expect(disposal).toBeDefined();
-    await disposal;
-    expect(stale).not.toHaveBeenCalled();
-    expect(clearBattleUi).not.toHaveBeenCalled();
-  } finally {
-    await session.dispose();
-  }
+
+  runtime.progressCompletion.replace();
+  expect(disposal).toBeDefined();
+  await disposal;
+  expect(stale).not.toHaveBeenCalled();
+  expect(clearBattleUi).not.toHaveBeenCalled();
 });
 
 it("disposal during a save failure stops later status observers while submitted IO drains", async () => {
-  const logged = vi.spyOn(console, "error").mockImplementation(() => {});
-  const session = createGameSession({
+  using _logged = vi.spyOn(console, "error").mockImplementation(() => {});
+  await using session = createGameSession({
     saveBackend: {
       readCandidates: async () => ({ ok: true, candidates: [] }),
       write: async () => ({ ok: false, error: "disk full" }),
@@ -110,37 +104,30 @@ it("disposal during a save failure stops later status observers while submitted 
     disposal = session.dispose();
   });
   persistence.subscribeFailure(stale);
-  try {
-    expect(await persistence.write(persistence.snapshot())).toBe("skipped");
-    expect(disposal).toBeDefined();
-    await disposal;
-    expect(stale).not.toHaveBeenCalled();
-  } finally {
-    await session.dispose();
-    logged.mockRestore();
-  }
+
+  expect(await persistence.write(persistence.snapshot())).toBe("skipped");
+  expect(disposal).toBeDefined();
+  await disposal;
+  expect(stale).not.toHaveBeenCalled();
 });
 
 it("revokes post-commit effects when a publication observer disposes the session", async () => {
-  const session = createGameSession();
+  await using session = createGameSession();
   const effect = vi.fn();
   let disposal: Promise<void> | undefined;
   subscribeRunSessionCommits(() => {
     disposal = session.dispose();
   }, session);
-  try {
-    const result = dispatchRunSessionCommand(
-      (tx) => {
-        setGold(tx, 10);
-        return acceptCommand(17);
-      },
-      { afterCommit: effect },
-      session,
-    );
-    expect(result).toBe(17);
-    await disposal;
-    expect(effect).not.toHaveBeenCalled();
-  } finally {
-    await session.dispose();
-  }
+
+  const result = dispatchRunSessionCommand(
+    (tx) => {
+      setGold(tx, 10);
+      return acceptCommand(17);
+    },
+    { afterCommit: effect },
+    session,
+  );
+  expect(result).toBe(17);
+  await disposal;
+  expect(effect).not.toHaveBeenCalled();
 });

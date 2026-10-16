@@ -1,8 +1,8 @@
+import { makeTestCard } from "../../../../fixtures/cards";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { CardShopScreen } from "@/features/alchemy/run-loop/screens/card-shop-screen";
-import type { BattleCard } from "@/lib/game-data";
 import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 import { installShopScreenIntersectionObserver } from "../../../../helpers/shop-screen-ui-mocks";
@@ -25,14 +25,12 @@ vi.mock(
   () => import("../../../../helpers/shop-screen-ui-mocks"),
 );
 
-const deckCard = {
+const deckCard = makeTestCard({
   id: "strike-1",
   title: "Strike",
   descriptionLines: ["Deal 6 damage."],
   art: "strike",
-  cost: 1,
-  effects: [],
-} as BattleCard;
+});
 
 describe("CardShopScreen remove mode", () => {
   installDisabledAnimationsForTests();

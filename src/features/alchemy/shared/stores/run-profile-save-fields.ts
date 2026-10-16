@@ -9,6 +9,7 @@ export const RUN_PROFILE_SAVE_KEYS = [
   "talentXP",
   "unlockedTalents",
   "materialInventory",
+  "starterHomesteadGrantResolved",
   "constructedBuildings",
   "plantedFarms",
   "completedResearch",
