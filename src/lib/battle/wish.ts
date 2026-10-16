@@ -166,9 +166,14 @@ export function applyWishEffect(
     combatTexts,
     (current) => {
       const eligibility = current;
-      let next = applyWishGoldTriggers(processEncounterTraitWish(current), combatTexts);
-      next = applyWishHealthAndStatusTriggers(next, combatTexts, eligibility);
-      next = applyWishDrawTriggers(next, combatTexts);
+      const settle = (next: BattleState) =>
+        reactions.kind === "each-step" ? reactions.settle(next, combatTexts) : next;
+      let next = settle(applyWishGoldTriggers(processEncounterTraitWish(current), combatTexts));
+      if (getBattleOutcome(next) === "defeat") return next;
+      next = settle(applyWishHealthAndStatusTriggers(next, combatTexts, eligibility));
+      if (getBattleOutcome(next) === "defeat") return next;
+      next = settle(applyWishDrawTriggers(next, combatTexts));
+      if (getBattleOutcome(next) === "defeat") return next;
       if (eligibility.hand.length === 0 && next.gearEffects.nextCardDiscountOnEmptyHandWish > 0) {
         next = {
           ...next,
@@ -178,7 +183,8 @@ export function applyWishEffect(
           },
         };
       }
-      next = applyWishBurnTrigger(next, combatTexts, eligibility);
+      next = settle(applyWishBurnTrigger(next, combatTexts, eligibility));
+      if (getBattleOutcome(next) === "defeat") return next;
       if (next.gearEffects.freezeOnWish > 0) {
         next = resolveFollowUpHit(
           next,
@@ -186,6 +192,8 @@ export function applyWishEffect(
           combatTexts,
         );
       }
+      next = settle(next);
+      if (getBattleOutcome(next) === "defeat") return next;
       next = applyWishManaTrigger(next, combatTexts, eligibility);
       next = applyWishTrinketTrigger(next, combatTexts);
       return applyWishDesperateTrigger(next, combatTexts, eligibility);

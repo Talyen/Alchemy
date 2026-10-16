@@ -43,7 +43,11 @@ function applyPlagueDoctorMask(state: BattleState, combatTexts: CombatTextEvent[
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "poison", amount: removed, impact: false });
   }
   const reduced = { ...state, playerStatuses: { ...state.playerStatuses, poison } };
-  const cleansed = poison === 0 ? applyCleanseHeals(reduced, combatTexts) : reduced;
+  const cleansed = resolvePendingBattleReactions(
+    poison === 0 ? applyCleanseHeals(reduced, combatTexts) : reduced,
+    combatTexts,
+  );
+  if (getBattleOutcome(cleansed) !== null) return cleansed;
   return resolvePendingBattleReactions(
     resolveSecondaryAction(cleansed, "delayed-card", (current) =>
       resolveFollowUpHit(
