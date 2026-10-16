@@ -1,4 +1,9 @@
 import { rollBattleChance } from "./chance-roll";
+import {
+  resolveLuckyCloverReward,
+  resolveNatureGoldReward,
+  resolveNatureManaReward,
+} from "./resource-reward-resolution";
 import { FREE_CARD_SENTINEL } from "../game-constants";
 import { drawFromState, applyDrawResult } from "./draw";
 import { addGoldWithCombatText, gainManaWithCombatText } from "./player-rewards";
@@ -63,24 +68,18 @@ export function applyCrowdControlTriggerBonuses(
   return nextState;
 }
 
+const resourceRewardPort = { chance: rollBattleChance, mana: gainManaWithCombatText, gold: addGoldWithCombatText };
+
 export function applyLuckyCloverGold(state: BattleState, healthDamage: number, combatTexts: CombatTextEvent[]) {
-  if (state.trinketEffects.luckyCloverGoldChance <= 0 || healthDamage <= 0) return state;
-  if (rollBattleChance(state.trinketEffects.luckyCloverGoldChance, state)) {
-    return addGoldWithCombatText(state, healthDamage, combatTexts);
-  }
-  return state;
+  return resolveLuckyCloverReward(state, healthDamage, combatTexts, resourceRewardPort);
 }
 
 export function applyNatureManaRefund(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
-  if (damage <= 0 || state.gearEffects.manaOnNatureDamageChance <= 0) return state;
-  return rollBattleChance(state.gearEffects.manaOnNatureDamageChance, state)
-    ? gainManaWithCombatText(state, 1, combatTexts)
-    : state;
+  return resolveNatureManaReward(state, damage, combatTexts, resourceRewardPort);
 }
 
 export function applyNatureGoldReward(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
-  if (damage <= 0 || !rollBattleChance(state.talentEffects.goldOnNatureDamageChance, state)) return state;
-  return addGoldWithCombatText(state, damage, combatTexts);
+  return resolveNatureGoldReward(state, damage, combatTexts, resourceRewardPort);
 }
 
 export function applyEmberforgedPayout(

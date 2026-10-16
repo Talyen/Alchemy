@@ -18,6 +18,22 @@ New custom mechanics extend the canonical description rendering in `effect-metad
 
 Snapshot semantics: normal card play freezes `manaAtStart` pre-payment and `enemyFreezeSkipTurnsAtStart` pre-play (`card-play.ts`); companion pulses snapshot inside their action scope; pending-turn and unique-repeat pulses snapshot per-pulse. `convertCurrentMana` reads the frozen `manaAtStart`. Conditional Mana restoration and Gold use distinct checks documented under [Ordering and semantics](#ordering-and-semantics). Crowd control has three call sites (hero `enemy-status` stun/freeze, `multiply-enemy-status` freeze/stun triggers, enemy-side player CC) — see `status-handlers.ts` and `enemy-turn-attack.ts`. Card bonus eligibility is centralized in `action-context.ts` and `combat-flags.ts`; secondary actions never mask or restore gameplay flags. `battle-sequence.ts` owns step settlement and fatal cutoffs.
 
+## Resource reward ownership
+
+`battle/player-resource-resolution.ts` owns the ordered Health, Mana, Gold, Forge,
+Armor, Block, and Cleanse recipes. Live combat and damage inspection instantiate
+that same interpreter. Its ports supply chance outcomes, healing reactions, and
+Holy draws; live combat retains seeded rolls, while inspection admits only
+guaranteed procs and never samples a pile or consumes RNG. Unknown draws remain
+outside the deterministic projection.
+
+`battle/resource-reward-resolution.ts` owns Leech restoration facts and riders,
+Nature resource payouts, Cutpurse Gold, and Bloodfire's Leech eligibility. Both
+execution and inspection use these rules. Inspection carries earned resources
+between damage packets, including Gold, so later ingredients use the resulting
+purse, Mana, Block, and Health. Rendering still owns damage ranges, presentation
+copies, and nonrandom attack projection; it must not execute the displayed card.
+
 ## Ordering and semantics
 
 - `player-status` with `convertCurrentMana` interprets the value as **block per mana** (`manaAtStart * convertCurrentMana`), zeroes mana, and respects `manaAtStart` snapshot from `CardEffectResolutionContext` (frozen before any effect mutates `state.mana`). `perManaCrystal` uses live `maxMana`. A defined zero coefficient yields zero gain; Mana conversion still spends Mana.

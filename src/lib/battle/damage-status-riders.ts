@@ -1,4 +1,5 @@
 import { rollBattleChance } from "./chance-roll";
+import { burnBleedLeechAmount, resolveBleedGoldReward } from "./resource-reward-resolution";
 import type { BattleCardEffect } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
 import { addEnemyStatus } from "./status-state";
@@ -53,9 +54,8 @@ function applyGearBurnBleedMirrorLeech(
       mergeCombatText(combatTexts, { target: "enemy", kind: "multiply", stat: mirrorTarget, amount: added });
     }
   }
-  if (!alreadyBurningAndBleeding) return nextState;
-  const healAmount = Math.max(1, halveRounded(actualDamage));
-  return applyScaledLeechHealing(nextState, healAmount, combatTexts);
+  const healAmount = burnBleedLeechAmount(state, actualDamage, alreadyBurningAndBleeding);
+  return healAmount > 0 ? applyScaledLeechHealing(nextState, healAmount, combatTexts) : nextState;
 }
 
 function applyBurnStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -154,10 +154,7 @@ function applyBleedStatusRider(
     combatTexts,
     state.enemyStatuses.burn > 0 && state.enemyStatuses.bleed > 0,
   );
-  if (bleedAmount > 0 && nextState.trinketEffects.cutpurseGoldOnBleed > 0) {
-    nextState = addGoldWithCombatText(nextState, nextState.trinketEffects.cutpurseGoldOnBleed, combatTexts);
-  }
-  return nextState;
+  return resolveBleedGoldReward(nextState, bleedAmount, combatTexts, { gold: addGoldWithCombatText });
 }
 
 function applyStunStatusRider(
