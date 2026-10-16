@@ -1,92 +1,26 @@
 import { defaultCompanionBondLevels } from "../companions";
+import { talentRows } from "./talent-rows";
+import { isAdditiveBonus, type TalentBonus, type HealthThresholdBonus } from "./talent-builder";
 
-interface HealthThresholdBonus {
-  threshold: number;
-  amount: number;
-}
+type AuthoredBonuses = (typeof talentRows)[number]["effects"];
+type KeysOfUnion<T> = T extends unknown ? keyof T : never;
+type BonusAt<T, K> = T extends unknown ? (K extends keyof T ? T[K] : never) : never;
+type ManifestValue<T> = T extends null
+  ? null
+  : T extends number | { kind: "add" }
+    ? number
+    : T extends boolean
+      ? boolean
+      : T extends HealthThresholdBonus[]
+        ? HealthThresholdBonus[]
+        : T extends HealthThresholdBonus
+          ? HealthThresholdBonus | null
+          : Record<string, number>;
+type TalentBonusKey = KeysOfUnion<AuthoredBonuses>;
 
-export const DEFAULT_TALENT_EFFECTS = {
-  // Resource scaling has one percentage value per bonus.
-  armorLowHealthBonusPercent: 0,
-  partingCutDamagePercent: 0,
-  blockHolyDamagePercent: 0,
-  blockStunDamagePercent: 0,
-  forgeBurnDamagePercent: 0,
-  forgeHolyDamagePercent: 0,
-  forgeBlockPercent: 0,
-  forgeBleedDamagePercent: 0,
-  forgeLowHealthBonusChance: 0,
-  armorPhysicalDamagePercent: 0,
-  physicalDoubledBelowQuarterHealth: false,
-
-  cleanseCcOnDodge: false,
-  burnOnDodgeBurning: 0,
-  consumeDetonatesBurnChance: 0,
-  drawNatureCardAtCombatStart: false,
-  drawOnArcheryVsStunned: 0,
-  archeryCritOnCrowdControl: false,
-  forgeOnPhysicalVsFrozen: 0,
-  forgeOnPhysicalVsFrozenChance: 0,
-  cleanseBelowHealthPercent: 0,
-  leechCardDamageVsLowHealthPercent: 0,
-  armorOnBlockCardChance: 0,
-  armorOnBlockCard: 0,
-  armorOnPhysicalDamageChance: 0,
-  armorDoubleChance: 0,
-  armorCleanseChance: 0,
-  drawHolyOnBlockChance: 0,
-  holyBlockChance: 0,
-  archeryDamageWithoutBlock: 0,
-  archerySecondCardDamage: 0,
-  bleedUnwoundedBonusPercent: 0,
-  companionActsOnCard: false,
-  forgeOnConsume: 0,
-  forgeOnConsumeChance: 0,
-  drawOnConsume: 0,
-  drawOnConsumeChance: 0,
-  nextHolyFreeOnCleanse: false,
-  poisonCardPlayTwiceChance: 0,
-  goldOnPoisonedKill: 0,
-  // Rotgut now adds this amount to Potion Poison packets, not Consume follow-ups.
-  poisonDamageOnConsume: 0,
-  bleedPoisonDamageChance: 0,
-  bleedPoisonDamageTakenPercent: 0,
-  drawOnBleedDamageChance: 0,
-  holyBurnDamageChance: 0,
-  archeryBleedDamageChance: 0,
-
-  holyReflectionBlockLostPercent: 0,
-  forgeOnBurnCard: 0,
-  forgeOnBurnCardChance: 0,
-  burnCardPlayTwiceChance: 0,
-  leechHealingBonus: 0,
-  companionNextAttackOnPhysical: 0,
-  afflictionLeechBonusPercent: 0,
-  manaAfterEmptyTurn: 0,
-  leechGoldChance: 0,
-  manaOnLeechToFull: 0,
-  drawOnDodge: 0,
-  wishCardPlayTwiceChance: 0,
-  wishDrawChance: 0,
-  declinedWishCardChance: 0,
-  companionVictoryGold: 0,
-  armorStealOnLeechCard: 0,
-  cleanseOnCardOverheal: false,
-  natureCardPlayTwiceChance: 0,
-  armorOnNatureDamageChance: 0,
-  thornsOnNatureDamageChance: 0,
-  healOnNatureDamageChance: 0,
-  drawOnThaw: 0,
-
-  dodgeChance: 0,
-  healOnDodge: 0,
-  forgeOnDodge: 0,
-  thornsOnDodge: 0,
-  cleanseStacksOnDodge: 0,
-  nextAttackPhysicalOnDodge: 0,
-  dodgeChanceOnHostileDamage: 0,
-  armorOnDodge: 0,
-
+// Only Homestead-only fields and nonzero defaults need explicit
+// registration. Ordinary Talent fields derive their neutral value from the row.
+const additionalDefaults = {
   flatPhysicalDamage: 0,
   flatHolyDamage: 0,
   physicalDamageReduction: 0,
@@ -97,178 +31,44 @@ export const DEFAULT_TALENT_EFFECTS = {
   homesteadPotionBonus: 0,
   homesteadFreeManaChance: 0,
   homesteadForgeBurnPercent: 0,
-
-  physicalStunChance: 0,
-  physicalBleedChance: 0,
-  physicalDetonatesBleed: false,
-  physicalDoubledBelowHalfHealth: false,
-  blockToPhysicalDamageMultiplier: 0,
-  forgeToPhysicalDamageMultiplier: 0,
-  physicalCritOnDodge: false,
-
-  stunThresholdReduction: 0,
-  drawOnStun: 0,
-  nextCardFreeOnStun: false,
-  stunDurationExtension: 0,
-  stunDoubleDamage: false,
-  stunCardPlayTwiceChance: 0,
-  blockOnStun: 0,
-  forgeOnStun: 0,
-  forgeOnStunChance: 0,
-  stunStripArmor: false,
-  manaOnStun: 0,
-
   startBlock: 0,
   startThorns: 0,
-  blockPreventsStun: false,
-  blockAbsorbPhysicalBonus: 0,
-  blockDepletedHeal: 0,
-
-  startForge: 0,
-  forgeBurningBonusChance: 0,
-  forgeBonusChance: 0,
-  forgeOnBlockDepleted: 0,
-  physicalStripArmorByForge: false,
-
-  armorMitigatesBurn: false,
-  startArmor: 0,
-  armorMitigatesBleed: false,
-  armorBreakBlock: 0,
-
-  healthThresholdBlockOnce: null as HealthThresholdBonus | null,
-  healthRestorePerCombat: 0,
-  leechCleanseChance: 0,
-  startHealth: 0,
   healMultiplier: 1,
-  consumeHealMultiplier: 0,
-  healthThresholdArmor: [] as HealthThresholdBonus[],
-  overhealToBlockRatio: 0,
-  healOnStatusCleanse: 0,
-  deathsDoorExtension: 0,
-  dodgeChanceBelowHalfHealth: 0,
   burnDamageReduction: 0,
   freezeDamageReduction: 0,
-
-  firstBurnCardFree: false,
-  burnRemovesEnemyArmor: false,
-  burnPreventDecayChance: 0,
-  receiveHalfBurnDamage: false,
   flatBurnDamage: 0,
-  burnOnWish: 0,
-  consumeDamageBonusPercent: 0,
-  burnStunChance: 0,
-  healOnConsume: 0,
-  goldOnConsume: 0,
-  goldOnConsumeChance: 0,
-  cardHealMultipliers: {} as Record<string, number>,
-
-  shopCardDiscount: 0,
-  shopFreeRefreshChance: 0,
-  goldOnDodge: 0,
-  potionDiscount: 0,
   potionPotency: 1,
-  mixedPotionPotency: 0,
-  removeCardDiscount: 0,
-  enemyGoldDropBonus: 0,
-  goldOnWish: 0,
-  goldOnWishChance: 0,
-  goldOnNatureDamageChance: 0,
-  goldOnArmorGainChance: 0,
-  mixPotionDiscount: 0,
   companionBondLevels: { ...defaultCompanionBondLevels },
-
-  holyLifestealPercent: 0,
-  holyGoldPercent: 0,
-  receiveHalfHolyDamage: false,
-  holyWishChance: 0,
-  holyVsBurnMultiplier: 0,
-  holyGoldChance: 0,
-
-  wishUndiscoveredCards: false,
-  healthOnWish: 0,
-  removeHarmfulStatusOnWish: false,
   wishExtraChoiceChance: 0,
-  wishCardRefundsMana: false,
-  wishTrinketChoice: false,
-  wishBlockBelowHealthPct: 0,
-  wishBlockAmount: 0,
-  wishCardsUpgraded: false,
-  startMana: 0,
-  wellspringKeepMana: 0,
-  manaBulwarkActive: false,
-  manaShellActive: false,
-  burnDamagePerMana: 0,
-  freezeDamagePerMana: 0,
-  burnDamageOnManaCrystalLoss: 0,
-  companionManaChance: 0,
-  healthPerMana: 0,
-
   runMaxHealthBonus: 0,
-
   poisonDamageReduction: 0,
-  poisonDamageBonusVsPoisoned: 0,
-  poisonGainChance: 0,
-  receiveHalfPoisonDamage: false,
-  poisonHalvesHealing: false,
-  poisonStunChance: 0,
-  poisonStripArmorByDamage: false,
-  poisonLeechChance: 0,
-  poisonBleedDamageChance: 0,
-  poisonPreventsEnemyDodge: false,
-
-  companionDamage: 0,
-  companionLeechChance: 0,
-  drawOnCompanionCard: 0,
-  companionDoubledVsLowHealth: false,
-  companionAttackOnBlockDepletedBelowHalf: false,
-  companionStunChance: 0,
-  companionAttacksOnDodge: false,
-
-  freezeThresholdReduction: 0,
-  freezeDamageBonusVsFrozen: 0,
-  freezeCardPlayTwiceChance: 0,
-  blockOnFreeze: 0,
-  freezeStripArmor: false,
-  companionVsFrozenBonus: 0,
-  freezePreventsPoisonDecay: false,
-  freezeStripBlock: false,
-  receiveHalfFreezeDamage: false,
   flatFreezeDamage: 0,
-
   flatArrowDamage: 0,
-  archeryDoubledVsHighHealth: false,
-  archeryArmorPiercing: 0,
-  archeryDoubledVsLowHealth: false,
-  goldOnArcheryKill: 0,
-  nextArcheryCardFreeOnDodge: false,
-
   flatNatureDamage: 0,
-  naturePoisonChance: 0,
-  natureBleedChance: 0,
-  natureStunChance: 0,
-  nextNatureCardFreeOnDodge: false,
-
-  bleedLeechChance: 0,
   bleedDesperateMultiplier: 1,
-  bleedHalveArmorChance: 0,
-  blockHalvesBleedDamage: false,
-  blockHalvesPoisonDamage: false,
-  dodgeBlockAmount: 0,
-  receiveHalfBleedDamage: false,
-  bleedHalvesEnemyHealing: false,
-
-  leechDesperateMultiplier: 0,
-  manaOnLeechChance: 0,
-  natureLeechChance: 0,
 };
 
-export type TalentEffectManifest = typeof DEFAULT_TALENT_EFFECTS;
+export type TalentEffectManifest = {
+  [K in TalentBonusKey]: ManifestValue<BonusAt<AuthoredBonuses, K>>;
+} & Omit<typeof additionalDefaults, TalentBonusKey>;
+
+function neutralBonus(value: TalentBonus): unknown {
+  if (value === null) return null;
+  if (typeof value === "number" || isAdditiveBonus(value)) return 0;
+  if (typeof value === "boolean") return false;
+  if (Array.isArray(value)) return [];
+  return "threshold" in value && "amount" in value ? null : {};
+}
+
+export const DEFAULT_TALENT_EFFECTS = {
+  ...Object.fromEntries(
+    talentRows.flatMap((talent) =>
+      Object.entries<TalentBonus>(talent.effects).map(([field, value]) => [field, neutralBonus(value)]),
+    ),
+  ),
+  ...additionalDefaults,
+} as TalentEffectManifest;
 
 export function createEmptyTalentEffectManifest(): TalentEffectManifest {
-  return {
-    ...DEFAULT_TALENT_EFFECTS,
-    companionBondLevels: { ...DEFAULT_TALENT_EFFECTS.companionBondLevels },
-    healthThresholdArmor: [...DEFAULT_TALENT_EFFECTS.healthThresholdArmor],
-    cardHealMultipliers: { ...DEFAULT_TALENT_EFFECTS.cardHealMultipliers },
-  };
+  return structuredClone(DEFAULT_TALENT_EFFECTS);
 }

@@ -148,18 +148,18 @@ Run `npm run content:audit` before handing off (companion record checks, summon-
 
 Behavioral contracts: [Talent manifests and progression](./TALENT_RULES.md#talent-manifests-and-progression). Read the applicable combat rule when adding a new mechanic.
 
-Use `addEffect` for stackable numeric bonuses, including the same bonus written by two keywords. Use `setEffect` for flags, identity multipliers (defaults that are not zero, e.g. `healMultiplier`), and exclusive thresholds. Array fields (e.g. `healthThresholdArmor`) concatenate on `set`.
+Define talents in the ordered `src/lib/game-data/talents/talent-rows.ts` catalog. Each keyword builder fixes the keyword; the first call declares saved ID and name, and the second supplies icon, description, and typed bonus fields. Preserve row order because offers and progression use it.
 
-Put talent-owned magnitudes on the talent ops (not only in `game-constants`) so descriptions and combat stay in lockstep. Talent and keyword descriptions omit periods, as enforced by content typography validation.
+Numeric and boolean fields set their authored values; arrays concatenate. Wrap a stackable numeric bonus in `add(amount)`, including when two keywords write the same bonus. Keep talent-owned magnitudes beside their descriptions. Talent and keyword descriptions omit periods, as enforced by content typography validation.
 
-1. If the talent needs a new battle bonus, add its default in `src/lib/game-data/talents/manifest-defaults.ts`; `TalentEffectManifest` derives from those defaults and `talent-effect-manifest.ts` re-exports it.
-2. Define the talent (`id`, `keywordId`, name, description, effects, and Lucide `icon` name) in the matching keyword module under `src/lib/game-data/talents/pools/`; `talent-pool-definitions.ts` assembles `talentPool` in its historical order and the talent barrel exposes it. Register the icon in `src/features/alchemy/shared/config/talent-icons.ts`.
+1. Ordinary bonus field types and neutral manifest defaults derive from the catalog. Register only Homestead-only fields and nonzero defaults (such as `healMultiplier: 1`) in `talents/manifest-defaults.ts`. Numeric fields start at zero, flags at false, arrays and dictionaries empty, and threshold rewards at null. `talent-effect-manifest.ts` re-exports the derived type.
+2. Add the talent row and register its Lucide icon in `src/features/alchemy/shared/config/talent-icons.ts`. `talent-pool-definitions.ts` owns the derived ID and keyword indexes; the talent barrel exposes the catalog.
 3. Keyword portrait art (new keyword or replacement art) — [Asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art) (`scripts/assets/talent-assets.mjs` + `talentArt` in `src/lib/game-data/assets.ts`)
 4. XP is keyword-based — `src/lib/game-data/talents/progression.ts` — no per-talent XP hook unless the keyword is new
 
 Talent trees accept any count ≥ 1 in rows of 1/2/3/4, with overflow in its own row.
 
-`tests/lib/game-data/talent-effect-invariants.test.ts` must stay green: every manifest field is written by a talent or homestead key (or an explicit unused allowlist), and non-boolean `set` fields have a single writer unless they are arrays. New talent mechanics need focused gameplay tests that demonstrate their conditions and player-facing outcomes. There is no automatic scan proving that every authored field has a consumer; catalog wiring checks do not establish reachability or correct combat behavior. Talent descriptions are free text with no numeric parity lint (typography lint still applies — run `npm run content:audit`) — keep them in lockstep with effects by hand.
+`tests/lib/game-data/talent-effect-invariants.test.ts` must stay green: every manifest field is written by a talent or homestead key (or an explicit unused allowlist), and exclusive non-boolean fields have a single writer unless they are arrays. New talent mechanics need focused gameplay tests that demonstrate their conditions and player-facing outcomes. There is no automatic scan proving that every authored field has a consumer; catalog wiring checks do not establish reachability or correct combat behavior. Talent descriptions are free text with no numeric parity lint (typography lint still applies — run `npm run content:audit`) — keep them in lockstep with effects by hand.
 
 Add a `talentArt` entry when art is ready; missing-art and keyboard behavior follow [UI component conventions](./UI.md#component-conventions).
 

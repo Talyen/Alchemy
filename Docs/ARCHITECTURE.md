@@ -258,7 +258,7 @@ explicit capabilities (for example command-bound RNG), rather than data to copy.
 
 `GameplayState` in `gameplay-state.ts` defines the [aggregate regions](./RUN_STATE.md#run-state). Read, write, command, and screen contracts are listed in the [capability reference](./RUN_STATE.md#session-capability-ports); persistence types are in the [codec contract](./RUN_STATE.md#persistence-api).
 
-Run-progress contracts and the exhaustive `ACTIVE_RUN_PROGRESS_KEYS` projection live in `lib/active-run-session/run-progress.ts`, independently of save validation. `lib/validation` owns saved-run parsing and recovery; its schemas check the domain contracts. Initial progress and permanent fields, `generateRunSeed`, and `pickActiveRunView` live in `run-state-init.ts`; `run-domain-types.ts` defines session, battle, and run-data fields. `profile-store-types.ts` owns its domain (completion buckets derived from the character registry); `gear-state-defaults.ts` owns the initial gear state. Fresh-run snapshots live in `shared/run-flow/run-start.ts`. Shared numeric manifest defaults use `createNumericManifest` from `manifest-utils.ts`.
+Run-progress contracts and the exhaustive `ACTIVE_RUN_PROGRESS_KEYS` projection live in `lib/active-run-session/run-progress.ts`, independently of save validation. `lib/validation` owns saved-run parsing and recovery; its schemas check the domain contracts. Initial progress and permanent fields, `generateRunSeed`, and `pickActiveRunView` live in `run-state-init.ts`; `run-domain-types.ts` defines session, battle, and run-data fields. `profile-store-types.ts` owns its domain (completion buckets derived from the character registry); `gear-state-defaults.ts` owns the initial gear state. Fresh-run snapshots live in `shared/run-flow/run-start.ts`. Shared numeric manifest defaults use `createNumericManifest` from `manifest-utils.ts`. Talent IDs, presentation, and bonuses share the ordered `talents/talent-rows.ts` catalog. Its authored bonus shapes derive `TalentEffectManifest` and neutral defaults; `manifest-defaults.ts` registers only Homestead-only fields and special defaults. Numeric additions use explicit `add(amount)` values, while ordinary values set and arrays concatenate.
 
 ## Import boundaries
 
@@ -276,6 +276,21 @@ Enforced in `oxlint.config.ts` (composition in `lint/fragments.js` + `lint/bound
 - `meta` ↛ `run-loop` / `run-setup`
 
 ## Boot and loading
+
+`app/alchemy-bootstrap.ts` owns one bootstrap operation per GameSession, including
+platform configuration, the development wipe, load/recovery selection, and restore.
+React adapters subscribe to its result; Strict Mode replay and shell remounts share
+pending work and retain completed readiness without restoring over newer progress.
+Closing the session revokes continuations before another persistence operation or
+restore can start. Independent sessions bootstrap independently.
+
+Image preload pipelines borrow deduplicated fetch/decode work from `lib/preload/image.ts`.
+Each pipeline owns cancellation across its batches, frame yields, and progress
+callbacks. Unmount cancels both essential and deferred art work. Cache reset revokes
+all existing pipelines before releasing their images, so suspended producers cannot
+refill the cache afterward. Cancelling one borrower preserves another borrower's
+fetch; the last departure aborts readiness and releases the source immediately.
+Completed entries retain the bounded cache policy.
 
 - **Shell preload / autosave:** App warms `essentialGameArt` before reveal and starts the remaining per-item Gear art as soon as that essential preload settles; autosave and chrome read needed fields through capability modules. Sound warming follows the [audio runtime contract](./AUDIO.md#runtime-contract); it does not gate startup on successful playback or decoding.
 

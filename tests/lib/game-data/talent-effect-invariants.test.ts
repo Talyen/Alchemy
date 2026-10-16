@@ -1,3 +1,4 @@
+import { isAdditiveBonus } from "@/lib/game-data/talents/talent-builder";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { describe, expect, it } from "vitest";
 import {
@@ -10,7 +11,7 @@ describe("talent effect invariants", () => {
   it("keeps only fields granted by current Talents, Homestead tiers, or Companion Bonds", () => {
     const granted = new Set<string>(["companionBondLevels"]);
     for (const talent of talentPool) {
-      for (const effect of talent.effects ?? []) granted.add(effect.field);
+      for (const field of Object.keys(talent.effects ?? {})) granted.add(field);
     }
     for (const item of [...buildings, ...farmPlots, ...researchUpgrades]) {
       for (const tier of item.tiers) {
@@ -24,9 +25,9 @@ describe("talent effect invariants", () => {
     const writers = new Map<string, string[]>();
     for (const talent of talentPool) {
       if (isTalentPlaceholder(talent)) continue;
-      for (const effect of talent.effects ?? []) {
-        if (effect.kind !== "set" || typeof effect.value === "boolean" || Array.isArray(effect.value)) continue;
-        writers.set(effect.field, [...(writers.get(effect.field) ?? []), talent.id]);
+      for (const [field, value] of Object.entries(talent.effects ?? {})) {
+        if (typeof value === "boolean" || Array.isArray(value) || isAdditiveBonus(value)) continue;
+        writers.set(field, [...(writers.get(field) ?? []), talent.id]);
       }
     }
 

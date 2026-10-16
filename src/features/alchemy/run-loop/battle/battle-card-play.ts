@@ -48,8 +48,9 @@ export function createBattleCardPlay(
     sessionNum: number,
     errorContext: string,
   ) {
+    if (!ctx.playback.isCurrent(sessionNum)) return;
+    if (!ctx.playback.finishing && !ctx.playback.beginAction(sessionNum)) return;
     const finishDraw = ctx.playback.beginDraw(sessionNum, "card");
-    ctx.playback.beginAction();
     void runBattleDraw({
       oldHand,
       newState,
@@ -161,7 +162,9 @@ export function createBattleCardPlay(
     }
     getPresentation().setDisplayedBattle(null);
     session.checkBattleEnd(played.state, sessionNum);
-    ctx.playback.beginAction();
+    if (!ctx.playback.isCurrent(sessionNum)) return true;
+    // Victory grace permits the accepted card feedback while finishing.
+    if (!ctx.playback.finishing && !ctx.playback.beginAction(sessionNum)) return true;
     if (isAttackCard(card)) {
       getPresentation().telegraphAttack("player");
     } else {

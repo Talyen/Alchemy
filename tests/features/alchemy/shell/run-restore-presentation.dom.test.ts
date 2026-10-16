@@ -93,7 +93,7 @@ it.each(["restore", "wipe"] as const)("replaces mounted battle playback before %
     ),
   );
   const playback = context.result.current.playback;
-  playback.beginAction();
+  playback.beginAction(playback.id);
   const scope = playback.capture(playback.id);
   const oldSignal = playback.signal;
   const lateOutcome = vi.fn();

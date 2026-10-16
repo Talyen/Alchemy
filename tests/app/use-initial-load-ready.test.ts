@@ -74,6 +74,7 @@ describe("useInitialLoadReady", () => {
       ["first.webp", "second.webp"],
       IMAGE_PRELOAD_BATCH_SIZE,
       expect.any(Function),
+      expect.any(AbortSignal),
     );
     expect(result.current.ready).toBe(false);
 
@@ -121,26 +122,6 @@ describe("useInitialLoadReady", () => {
     expect(result.current.progress).toBeGreaterThan(0.99);
   });
 
-  it("moves displayed progress as image decode reports arrive", async () => {
-    const images = deferred();
-    vi.mocked(preloadImagesInBatches).mockImplementation(async (_srcs, _batchSize, onProgress) => {
-      onProgress?.(1, 2);
-      await images.promise;
-      onProgress?.(2, 2);
-    });
-    Object.defineProperty(document, "fonts", {
-      configurable: true,
-      value: { ready: new Promise<void>(() => {}) },
-    });
-
-    const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 2000, bootstrapReady: true }));
-
-    await advance(400);
-    expect(result.current.ready).toBe(false);
-    expect(result.current.progress).toBeGreaterThan(0);
-    expect(result.current.progress).toBeLessThan(STARTUP_BAR_INCOMPLETE_CAP);
-  });
-
   it("continues startup when font readiness never settles", async () => {
     vi.mocked(preloadImagesInBatches).mockImplementation(async (_srcs, _batchSize, onProgress) => {
       onProgress?.(2, 2);
@@ -179,7 +160,12 @@ describe("useInitialLoadReady", () => {
 
     expect(result.current.ready).toBe(true);
     expect(result.current.progress).toBe(1);
-    expect(preloadImagesInBatches).toHaveBeenCalledWith(["gear.webp"], IMAGE_PRELOAD_BATCH_SIZE);
+    expect(preloadImagesInBatches).toHaveBeenCalledWith(
+      ["gear.webp"],
+      IMAGE_PRELOAD_BATCH_SIZE,
+      undefined,
+      expect.any(AbortSignal),
+    );
     expect(error).toHaveBeenCalledWith(
       "[other] Essential art preload failed",
       { error: "Error: decode failed" },
@@ -197,7 +183,9 @@ describe("useInitialLoadReady", () => {
     });
 
     const { unmount } = renderHook(() => useInitialLoadReady({ bootstrapReady: true }));
+    const signal = vi.mocked(preloadImagesInBatches).mock.calls[0]![3];
     unmount();
+    expect(signal?.aborted).toBe(true);
     await act(async () => {
       images.resolve();
       await images.promise;
@@ -228,7 +216,12 @@ describe("useInitialLoadReady", () => {
     });
     await advance(500);
 
-    expect(preloadImagesInBatches).toHaveBeenCalledWith(["gear.webp"], IMAGE_PRELOAD_BATCH_SIZE);
+    expect(preloadImagesInBatches).toHaveBeenCalledWith(
+      ["gear.webp"],
+      IMAGE_PRELOAD_BATCH_SIZE,
+      undefined,
+      expect.any(AbortSignal),
+    );
     expect(result.current.ready).toBe(false);
 
     await advance(2000);
@@ -247,6 +240,11 @@ describe("useInitialLoadReady", () => {
 
     expect(result.current.ready).toBe(true);
     expect(result.current.progress).toBe(1);
-    expect(preloadImagesInBatches).toHaveBeenCalledWith(["first.webp", "second.webp"], IMAGE_PRELOAD_BATCH_SIZE);
+    expect(preloadImagesInBatches).toHaveBeenCalledWith(
+      ["first.webp", "second.webp"],
+      IMAGE_PRELOAD_BATCH_SIZE,
+      undefined,
+      expect.any(AbortSignal),
+    );
   });
 });

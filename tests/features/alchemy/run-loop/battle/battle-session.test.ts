@@ -109,7 +109,7 @@ describe("createBattleSession", () => {
 
   it("keeps the current session active during victory grace after the battle flag clears", () => {
     const { session, playback } = makeSession();
-    playback.finish();
+    playback.finish(playback.id);
     mutateGameplayForTest((draft) => {
       setHasActiveBattle(draft, false);
       setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
@@ -119,7 +119,7 @@ describe("createBattleSession", () => {
 
   it("rejects a stale session id even during victory grace", () => {
     const { session, playback } = makeSession();
-    playback.finish();
+    playback.finish(playback.id);
     mutateGameplayForTest((draft) => {
       setHasActiveBattle(draft, false);
       setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
@@ -139,12 +139,12 @@ describe("createBattleSession", () => {
   });
 
   it("resetBattleSession releases marks from the previous battle session", () => {
-    const { session } = makeSession();
+    const { session, playback } = makeSession();
     const name = battleStageMarkName("draw-end");
     performance.clearMarks(name);
     markBattleStage("draw-end");
     markBattleStage("draw-end");
-    session.clearAllBattleTimeouts();
+    session.clearAllBattleTimeouts(playback.id);
     expect(performance.getEntriesByName(name, "mark")).toHaveLength(2);
     session.resetBattleSession();
     expect(performance.getEntriesByName(name, "mark")).toHaveLength(0);
@@ -180,7 +180,7 @@ describe("createBattleSession", () => {
 
   it("runIfSessionActive succeeds during victory grace when hasActiveBattle is false", () => {
     const { session, playback } = makeSession();
-    playback.finish();
+    playback.finish(playback.id);
     mutateGameplayForTest((draft) => {
       setHasActiveBattle(draft, false);
       setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
@@ -196,7 +196,7 @@ describe("createBattleSession", () => {
   it("runIfSessionActive skips stale sessions without side effects", () => {
     const { session, playback } = makeSession();
     playback.restart();
-    playback.beginAction();
+    playback.beginAction(playback.id);
     const onComplete = vi.fn();
 
     const result = session.runIfSessionActive(1, onComplete, undefined);
@@ -212,13 +212,13 @@ describe("createBattleSession", () => {
     const oldSignal = playback.signal;
     const cancel = vi.fn();
     playback.registerCancel(cancel);
-    playback.beginAction();
+    playback.beginAction(playback.id);
     session.reconcile("menu", true);
     expect(oldSignal.aborted).toBe(true);
     expect(cancel).toHaveBeenCalledOnce();
     expect(playback.canAcceptInput()).toBe(false);
     session.reconcile("battle", true);
-    playback.beginAction();
+    playback.beginAction(playback.id);
     playback.completeAction(generation);
     expect(playback.cardPlayInProgress).toBe(true);
     expect(playback.canAcceptInput()).toBe(false);
@@ -230,7 +230,7 @@ describe("createBattleSession", () => {
     const { session, playback, onBattleVictory } = makeSession();
     const scheduleAutoEndTurn = vi.fn();
     playback.bind({ scheduleAutoEndTurn, clearAutoEndTurn: vi.fn() });
-    playback.beginAction();
+    playback.beginAction(playback.id);
     session.handleVictoryDefeat("victory");
     playback.completeAction(playback.id);
     playback.scheduleAutoEndTurn(defaultBattleState());

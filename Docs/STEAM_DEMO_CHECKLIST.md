@@ -60,7 +60,7 @@ Use [game rules](./GAME_RULES.md), [run state](./RUN_STATE.md), and
 - [ ] Resume current-format battles, pending/claimed rewards, destinations and special visits on an unseeded page or relaunched isolated app. Acknowledged progress, purchases and choices survive.
 - [ ] Verify progression/Options persistence, primary/recovery acknowledgement and failed writes. Both-slot failure shows Couldn’t save; Retry saves the original outcome once. Cloud-only failure does not imply local progress loss.
 - [ ] Verify menu, Options/Back, keyboard focus recovery and cancellation of automatic playback while the menu is open.
-- [ ] Quit opens no store/browser destination. Check the existing best-effort shutdown behavior separately from already acknowledged progress.
+- [ ] Quit opens no store/browser destination. Verify that native shutdown drains admitted file writes under the [write acknowledgement contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#write-acknowledgement); distinguish those writes from unfinished renderer work and already acknowledged progress.
 - [ ] Verify offline startup, Options and local saves without Steam, using isolated profiles.
 - [ ] Run affected current-save, future-save protection and source-preserving demo-import checks under the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 - [ ] **EXTERNAL:** Verify real overlay/custom chord/controller paths and shared-Cloud transfer under [physical Steam acceptance](#physical-steam-acceptance-evidence). Preserve the native-binding blocker in [Steam demo](./STEAM_DEMO.md#input-and-release-evidence).
