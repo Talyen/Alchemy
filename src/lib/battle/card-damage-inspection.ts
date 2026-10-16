@@ -1,3 +1,4 @@
+import { createCardUtilityHandlers, applyCardUtilityEffect } from "./card-utility-resolution";
 import { createPlayerResourceResolver } from "./player-resource-resolution";
 import {
   DAMAGE_TYPES,
@@ -21,7 +22,7 @@ import { computeCardPayment } from "./card-cost-rules";
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import { consumeAttackPacketFlags } from "./damage";
 import { computeBaseDamage } from "./player-damage-base";
-import { computeCardAttackPower, computeCardDamageToEnemy } from "./damage-calc";
+import { computeCardAttackPower, computeCardDamageToEnemy, computeTalentDamageToEnemy } from "./damage-calc";
 import { prepareEnemyAbilityDamage } from "./enemy-ability-damage";
 import { prepareEnemyDamage, calculateBlockAndArmorMitigation } from "./enemy-damage-mitigation";
 import { getEncounterEnemyAbility } from "./enemy-description";
@@ -41,7 +42,6 @@ import { hasEnemyTrait, hasEncounterBenefit } from "./encounter-trait-state";
 import { resolveSecondaryAction } from "./action-context";
 import {
   BATTLE_CONFIG,
-  MIN_MAX_MANA_FLOOR,
   STUN_THRESHOLD_FRACTION,
   FREEZE_THRESHOLD_FRACTION,
   MIN_CC_THRESHOLD_FRACTION,
@@ -56,7 +56,6 @@ import {
 import { scaleReceivedPlayerDamage } from "./damage-modifiers";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { projectEnemyDotDamage } from "./dot-resolve";
-import { gainMana } from "./resource-state";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { decayEnemyArmor, reduceEnemyArmor, applySunderingArmorRemoval } from "./enemy-mitigation-state";
 import { computeLeechHeal, leechHealingAmount, scaleLeechBase } from "./damage-rider-leech";
@@ -641,6 +640,55 @@ export function getBattleDamageInspectionCard(
     };
   }
 
+  const utilityHandlers = createCardUtilityHandlers({
+    heal: (current, amount, _texts, cardHealing) => projectHealing(current, amount, cardHealing),
+    mana: (current, amount, _texts, allowOverflow) =>
+      playerResources.gainManaWithCombatText(current, amount, [], { allowOverflow }),
+    manaHealing: projectManaHealing,
+    healthCost: (current, amount) =>
+      projectHealthThresholds(
+        applyPlayerCombatDamage(current, amount, "self", "health", { ignoreMitigation: true }),
+        current.playerHealth,
+      ),
+    crystalLoss: projectCrystalLoss,
+    status: (current, effect) =>
+      effect.status === "forge" || effect.status === "block" || effect.status === "armor"
+        ? grantPlayerStatus(current, effect.status, effect.amount)
+        : playerResources.addPlayerStatusWithCombatText(current, effect.status, effect.amount, [], {
+            skipFightPacing: true,
+          }),
+    // A random status is unknown; do not choose one during inspection.
+    chooseStatus: () => undefined,
+    cleanse: projectCleanse,
+    cleanseStatus: (current, status) =>
+      current.playerStatuses[status] > 0 ? projectCleanseRewards(setPlayerStatus(current, status, 0), 1) : current,
+    gold: projectGold,
+    summon: (current) => {
+      current = grantPlayerStatus(current, "block", current.gearEffects.blockOnCompanionSummon);
+      return hasEncounterBenefit(current, "eager-pack") ? projectCompanionUtility(current, 2) : current;
+    },
+  });
+
+  function projectCrystalLoss(current: BattleState, amount: number): BattleState {
+    const hit = computeTalentDamageToEnemy(current, "burn", amount, "talent-fixed");
+    const damage = hit.remainingDamage;
+    if (damage <= 0) return hit.state;
+    let next = decayEnemyArmor(damageEnemyHealth(hit.state, damage).state);
+    next = projectBuildup(next, "burn", damage);
+    if (next.talentEffects.burnRemovesEnemyArmor) next = reduceEnemyArmor(next, damage);
+    next = projectLeechBase(
+      next,
+      burnBleedLeechAmount(current, damage, current.enemyStatuses.burn > 0 && current.enemyStatuses.bleed > 0),
+    );
+    if (current.gearEffects.elementalDamageManaChance >= 100) next = projectMana(next, 1, true);
+    next = processEncounterTraitHealthThreshold(current.enemyHealth, next, []);
+    if (current.enemyStatuses.burn === 0) {
+      const forge = current.gearEffects.forgeOnBurnVsUnburnedChances.filter((chance) => chance >= 100).length;
+      next = grantPlayerStatus(next, "forge", forge);
+    }
+    return next;
+  }
+
   function projectCompanionUtility(current: BattleState, actions: number): BattleState {
     for (let action = 0; action < actions; action++) {
       if (!current.activeCompanion || getBattleOutcome(current) !== null) break;
@@ -651,17 +699,27 @@ export function getBattleDamageInspectionCard(
       );
       for (const effect of effects) {
         if (getBattleOutcome(current) !== null) break;
-        if (effect.kind === "heal") current = projectHealing(current, effect.amount);
-        if (effect.kind === "gain-gold") current = projectGold(current, effect.amount);
-        if (effect.kind === "remove-harmful-status")
-          current = projectCleanse(current, effect.removeAll ? Infinity : (effect.amount ?? 0));
-        if (effect.kind === "restore-mana") {
-          const before = current.mana;
-          current = gainMana(current, paceCombatMagnitude(current, effect.amount, "player"), effect.allowOverflow);
-          current = projectManaHealing(current, current.mana - before);
-        }
-        if (effect.kind === "player-status" && effect.status === "block")
-          current = grantPlayerStatus(current, "block", effect.amount);
+        current =
+          applyCardUtilityEffect(
+            utilityHandlers,
+            current,
+            {
+              id: `companion-${current.activeCompanion!.id}`,
+              title: "",
+              art: "",
+              descriptionLines: [],
+              cost: 0,
+              effects,
+            },
+            effect,
+            1,
+            [],
+            {
+              origin: "companion",
+              manaAtStart: current.mana,
+              enemyFreezeSkipTurnsAtStart: current.enemyCC.freezeSkipTurns,
+            },
+          ) ?? current;
         current = projectRetaliation(current);
       }
     }
@@ -673,15 +731,21 @@ export function getBattleDamageInspectionCard(
     effects: readonly BattleCardEffect[],
     initial: BattleState,
     forgeTriggers = new Set<string>(),
-  ): BattleCardEffect[] {
+  ): { effects: BattleCardEffect[]; state: BattleState } {
     let current = initial;
-    return effects.flatMap((effect): BattleCardEffect | BattleCardEffect[] => {
+    const projected = effects.flatMap((effect): BattleCardEffect | BattleCardEffect[] => {
       if (effect.kind === "chance") {
-        return {
-          ...effect,
-          successEffects: project(effect.successEffects, current, new Set(forgeTriggers)),
-          failureEffects: project(effect.failureEffects, current, new Set(forgeTriggers)),
-        };
+        const successTriggers = new Set(forgeTriggers);
+        const failureTriggers = new Set(forgeTriggers);
+        const success = project(effect.successEffects, current, successTriggers);
+        const failure = project(effect.failureEffects, current, failureTriggers);
+        const certain = effect.probability === 1 ? success : effect.probability === 0 ? failure : null;
+        if (certain) {
+          current = certain.state;
+          const triggers = effect.probability === 1 ? successTriggers : failureTriggers;
+          for (const trigger of triggers) forgeTriggers.add(trigger);
+        }
+        return { ...effect, successEffects: success.effects, failureEffects: failure.effects };
       }
       // Future turns have unknown resources and pacing: retain their authored values.
       if (effect.kind === "repeat-over-turns") return effect;
@@ -807,86 +871,25 @@ export function getBattleDamageInspectionCard(
         current = projectCompanionUtility(current, applyPotionMultiplier(effect.amount, potionMult));
       if (!enemy && effect.kind === "wish" && (!effect.companionIfAbsent || !current.activeCompanion))
         current = projectWish(current, applyPotionMultiplier(effect.amount, potionMult));
-      if (!enemy && effect.kind === "next-hit-poison")
-        current = { ...current, flags: { ...current.flags, nextHitPoison: true } };
-      if (effect.kind === "player-status" && !effect.statusPool) {
-        let amount =
-          effect.perManaCrystal !== undefined
-            ? effect.perManaCrystal * current.maxMana
-            : effect.convertCurrentMana !== undefined
-              ? snapshot.mana * effect.convertCurrentMana
-              : effect.amount;
-        amount = applyPotionMultiplier(amount, potionMult);
-        if (enemy && ["forge", "block", "armor"].includes(effect.status)) {
-          const status = effect.status as "forge" | "block" | "armor";
-          current = addEnemyMitigationWithCombatText(
-            current,
-            status,
-            Math.round(effect.amount * current.roomScalingMultiplier),
-            [],
-          );
-        } else if (!enemy) {
-          if (effect.convertCurrentMana !== undefined) current = { ...current, mana: 0 };
+      if (!enemy) {
+        // Critical power is deliberately excluded from inspection. Leech and other
+        // armed utility effects still change guaranteed facts before later hits.
+        if (effect.kind !== "next-hit-crit")
           current =
-            effect.status === "forge" || effect.status === "block" || effect.status === "armor"
-              ? grantPlayerStatus(current, effect.status, amount)
-              : addPlayerStatus(current, effect.status, amount);
-        }
+            applyCardUtilityEffect(utilityHandlers, current, card, effect, potionMult, [], {
+              origin: "played-card",
+              manaAtStart: snapshot.mana,
+              enemyFreezeSkipTurnsAtStart: snapshot.enemyCC.freezeSkipTurns,
+            }) ?? current;
       }
-      if (!enemy && effect.kind === "remove-harmful-status")
-        current = projectCleanse(
+      if (enemy && effect.kind === "player-status" && ["forge", "block", "armor"].includes(effect.status)) {
+        current = addEnemyMitigationWithCombatText(
           current,
-          effect.removeAll ? Infinity : applyPotionMultiplier(effect.amount ?? 0, potionMult),
+          effect.status as "forge" | "block" | "armor",
+          Math.round(effect.amount * current.roomScalingMultiplier),
+          [],
         );
-      if (!enemy && effect.kind === "remove-player-status" && current.playerStatuses[effect.status] > 0)
-        current = projectCleanseRewards(setPlayerStatus(current, effect.status, 0), 1);
-      if (!enemy && effect.kind === "remove-enemy-armor") {
-        const amount = effect.halve
-          ? current.enemyMitigation.armor - halveRounded(current.enemyMitigation.armor)
-          : effect.removeAll
-            ? current.enemyMitigation.armor
-            : applyPotionMultiplier(effect.amount ?? 0, potionMult);
-        current = reduceEnemyArmor(current, amount);
       }
-      if (!enemy && effect.kind === "lose-max-mana") {
-        const maxMana = Math.max(MIN_MAX_MANA_FLOOR, current.maxMana - effect.amount);
-        if (maxMana < current.maxMana) current = { ...current, maxMana, mana: Math.min(current.mana, maxMana) };
-      }
-      if (!enemy && effect.kind === "lose-mana")
-        current = { ...current, mana: Math.max(0, current.mana - effect.amount) };
-      if (!enemy && effect.kind === "restore-mana" && !effect.ifEnemyFrozen) {
-        const previousMana = current.mana;
-        current = gainMana(
-          current,
-          paceCombatMagnitude(current, applyPotionMultiplier(effect.amount, potionMult), "player"),
-          effect.allowOverflow,
-        );
-        current = projectManaHealing(current, current.mana - previousMana);
-      }
-      if (!enemy && effect.kind === "heal") {
-        const potionBonus =
-          isPotionCard(card) && effect.amount > 0 ? (current.talentEffects.homesteadPotionBonus ?? 0) : 0;
-        const cardMultiplier = 1 + (current.talentEffects.cardHealMultipliers[card.id] ?? 0);
-        const consumeBonus = card.consume
-          ? current.talentEffects.consumeHealMultiplier + current.gearEffects.consumeHealBonusPercent / 100
-          : 0;
-        const amount = Math.round(
-          (Math.round(applyPotionMultiplier(effect.amount, potionMult) * cardMultiplier) + potionBonus) *
-            (1 + consumeBonus),
-        );
-        current = projectHealing(current, amount, true);
-      }
-      if (!enemy && effect.kind === "lose-health") {
-        const previousHealth = current.playerHealth;
-        current = applyPlayerCombatDamage(current, effect.amount, "self", "health", { ignoreMitigation: true });
-        current = projectHealthThresholds(current, previousHealth);
-      }
-      if (!enemy && effect.kind === "gain-max-mana") {
-        current = { ...current, mana: current.mana + effect.amount, maxMana: current.maxMana + effect.amount };
-        current = projectManaHealing(current, effect.amount);
-      }
-      if (!enemy && effect.kind === "gain-gold" && (!effect.ifEnemyStunned || current.enemyCC.stunSkipTurns > 0))
-        current = projectGold(current, applyPotionMultiplier(effect.amount, potionMult));
       if (enemy && effect.kind === "heal")
         current = applyEnemyHealingWithCombatText(
           current,
@@ -906,9 +909,10 @@ export function getBattleDamageInspectionCard(
       if (!enemy) current = projectRetaliation(current);
       return effect;
     });
+    return { effects: projected, state: current };
   }
 
-  const effects = project(card.effects, state);
+  const effects = project(card.effects, state).effects;
   // No offensive packets: preserve custom utility and summon descriptions verbatim.
   if (!effects.some((effect) => ["damage", "random-damage", "chance"].includes(effect.kind))) return presentation;
   const { description: _description, ...base } = presentation;
