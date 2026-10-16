@@ -17,9 +17,32 @@ it("numeric bounds keeps invalid volume/opacity inputs bounded and rejects rever
   expect(() => clamp(5, 10, 0)).toThrow();
 });
 
-it("formatLargeAmount maps non-finite amounts to zero", () => {
+it("formatLargeAmount maps non-finite amounts to zero and defaults to English", () => {
   expect(formatLargeAmount(Number.NaN)).toBe("0");
   expect(formatLargeAmount(Number.POSITIVE_INFINITY)).toBe("0");
+  expect(formatLargeAmount(Number.NEGATIVE_INFINITY, "de")).toBe("0");
+  expect(formatLargeAmount(12345.6)).toBe("12,345.6");
+});
+
+it.each([
+  ["en", "12,345.6", "123.5K"],
+  ["de", "12.345,6", "123.456,7"],
+  ["zh-Hans", "12,345.6", "12.3万"],
+  ["ru", "12\u00a0345,6", "123,5\u00a0тыс."],
+  ["es", "12.345,6", "123,5\u00a0mil"],
+  ["pt-BR", "12.345,6", "123,5\u00a0mil"],
+  ["en-XA", "12,345.6", "123.5K"],
+])("formats resource amounts for %s independently of the host locale", (locale, standard, compact) => {
+  expect(formatLargeAmount(12345.6, locale)).toBe(standard);
+  expect(formatLargeAmount(123456.7, locale)).toBe(compact);
+  expect(formatLargeAmount(-123456.7, locale)).toBe(`-${compact}`);
+});
+
+it("keeps the compact threshold and supports the full safe resource range", () => {
+  expect(formatLargeAmount(99999, "en")).toBe("99,999");
+  expect(formatLargeAmount(100000, "en")).toBe("100K");
+  expect(formatLargeAmount(100000000, "zh-Hans")).toBe("1亿");
+  expect(formatLargeAmount(Number.MAX_SAFE_INTEGER, "zh-Hans")).toBe("9007.2万亿");
 });
 
 describe("createInstanceId", () => {

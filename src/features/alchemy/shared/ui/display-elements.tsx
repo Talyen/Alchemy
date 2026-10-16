@@ -27,7 +27,7 @@ export function CurrencyAmount({
         alt={i18n.displayText(suffix ? "" : i18n.text("ui.display-elements.d1", "Gold"))}
       />
       <span className={cn("tabular-nums", className)}>
-        {i18n.displayText(formatLargeAmount(amount))}
+        {formatLargeAmount(amount, i18n.locale)}
         {suffix}
       </span>
     </>
@@ -88,7 +88,7 @@ export function GoldDisplay({
       data-testid={testId}
     >
       <HomesteadResourceArtwork resource="gold" size="md" alt="" />
-      <span>{i18n.displayText(formatLargeAmount(gold))}</span>
+      <span>{formatLargeAmount(gold, i18n.locale)}</span>
     </div>
   );
 }

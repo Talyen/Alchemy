@@ -1,5 +1,5 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { act, render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { act, render, screen, fireEvent, cleanup, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import catalogs from "@/lib/localization/locales/runtime.json";
 import { installCatalogs, localization, text, pseudolocalize } from "@/lib/localization/runtime";
@@ -14,6 +14,9 @@ import { displayText } from "@/lib/localization/runtime";
 import { GameMessage } from "@/components/localization";
 import { DemoCompletionScreen } from "@/features/alchemy/run-loop/screens/demo-completion-screen";
 import languages from "@/lib/localization/locales/languages.json";
+import { CurrencyAmount, GoldDisplay } from "@/features/alchemy/shared/ui/display-elements";
+import { ResourcePill } from "@/features/alchemy/shared/ui/material-icons";
+import { HomesteadWallet } from "@/features/alchemy/meta/screens/homestead/resource-wallet";
 
 beforeAll(() => installCatalogs(catalogs));
 afterEach(async () => {
@@ -26,6 +29,50 @@ afterEach(async () => {
 });
 
 describe("localized game presentation", () => {
+  it("refreshes every resource display in place when the game language changes", async () => {
+    const gold = 123456.7;
+    const inventory = Object.freeze({ wood: 12, stone: 0, iron: 0, food: 0, herbs: 0, hide: 0, gems: 0 });
+    render(
+      <>
+        <div data-testid="currency">
+          <CurrencyAmount amount={gold} />
+        </div>
+        <GoldDisplay gold={gold} />
+        <div data-testid="pill">
+          <ResourcePill resource="gold" amount={gold} showsIncreasePrefix />
+        </div>
+        <div data-testid="wallet">
+          <HomesteadWallet gold={gold} inventory={inventory} />
+        </div>
+      </>,
+    );
+    const currency = screen.getByTestId("currency");
+    const display = screen.getByTestId("run-gold");
+    const pill = screen.getByTestId("pill");
+    const wallet = screen.getByTestId("wallet");
+    for (const [locale, expected] of [
+      ["en", "123.5K"],
+      ["de", "123.456,7"],
+      ["zh-Hans", "12.3万"],
+      ["ru", "123,5\u00a0тыс."],
+      ["es", "123,5\u00a0mil"],
+      ["pt-BR", "123,5\u00a0mil"],
+      ["en-XA", "123.5K"],
+    ] as const) {
+      await act(async () => {
+        await localization.changeLanguage(locale);
+      });
+      for (const container of [currency, display, wallet])
+        expect(within(container).getByText(expected, { exact: true, normalizer: (value) => value })).toBeTruthy();
+      expect(within(pill).getByTitle(`+${expected}`, { normalizer: (value) => value })).toHaveProperty(
+        "textContent",
+        `+${expected}`,
+      );
+      expect(screen.getByTestId("run-gold")).toBe(display);
+    }
+    expect(inventory.wood).toBe(12);
+  });
+
   it("switches promo artwork in place for every shipped language and keeps the focused action", async () => {
     const onMainMenu = vi.fn();
     render(<DemoCompletionScreen onMainMenu={onMainMenu} />);

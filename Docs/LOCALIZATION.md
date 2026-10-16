@@ -31,6 +31,12 @@ and children through, so a German `Stab` (staff) cannot be translated a second
 time as the English attack name. It never changes catalog data, gameplay IDs or comparisons. Language
 switches do not remount the application or dispatch gameplay commands.
 
+Resource amounts use `formatLargeAmount(amount, i18n.locale)` at presentation
+boundaries. Separators and compact units follow the selected game language, with
+compaction starting at 100,000 and expanded English using English formatting.
+Inspection sorts translated card titles with the selected language's collator;
+equal titles keep a fixed tie-break order without changing saved card order.
+
 English messages are extracted from explicit UI calls, content fields, and the
 registered card/Gear catalogs. Existing content text has source-derived lookup
 keys; use descriptive explicit IDs for new UI messages and preserve them when
@@ -95,8 +101,8 @@ quality; AI semantic review remains part of completing the task.
 Expanded English is a developer-only layout tool. Chinese and Russian use bundled
 Noto Sans SC and Noto Sans variable font subsets with their OFL licenses. The
 subsets retain variable weights, hinting and layout features, Latin characters,
-punctuation, symbols, and every required Chinese/Cyrillic catalog glyph and native
-language label. The offline gate reads the actual bundled character maps and
+punctuation, symbols, abbreviations for large amounts, and every required
+Chinese/Cyrillic catalog glyph and native language label. The offline gate reads the actual bundled character maps and
 rejects missing glyphs; adding an uncovered character blocks integration
 until the fonts are regenerated. Native
 language names use the same fallbacks even before selecting those languages.

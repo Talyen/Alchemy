@@ -408,15 +408,27 @@ for (const locale of acceptanceLocales) {
     });
 
     test("Homestead and crafting spend once with localized targets", async ({ page }) => {
-      await new HomesteadPage(page).goto({ materialInventory: { stone: 16, iron: 33 }, constructedBuildings: {} });
+      await new HomesteadPage(page).goto({
+        gold: 1234567,
+        materialInventory: { stone: 16, iron: 33, wood: 123456789 },
+        constructedBuildings: {},
+      });
       await localizedCheckpoint(page, locale, async (fresh) => {
         await fresh.getByRole("button", { name: label("Homestead"), exact: true }).click();
+        const amounts = new Intl.NumberFormat(locale === "en-XA" ? "en" : locale, {
+          notation: "compact",
+          maximumFractionDigits: 1,
+        });
+        const wallet = fresh.locator("dl[aria-label]");
+        await expect(wallet).toContainText(amounts.format(1234567));
+        await expect(wallet).toContainText(amounts.format(123456789));
         const tile = fresh
           .getByRole("button")
           .filter({ has: fresh.getByRole("img", { name: label("Blacksmith"), exact: true }) });
         await tile.click();
         await expect.poll(async () => (await readSavedGame(fresh)).constructedBuildings["blacksmiths-forge"]).toBe(1);
-        expect((await readSavedGame(fresh)).materialInventory).toMatchObject({ stone: 12, iron: 22 });
+        expect((await readSavedGame(fresh)).materialInventory).toMatchObject({ stone: 12, iron: 22, wood: 123456789 });
+        expect((await readSavedGame(fresh)).gold).toBe(1234567);
         await tile.hover();
         const expectedBenefit = label(
           "Physical damage is increased by 1\nBurn damage is increased by 10% of your Forge",

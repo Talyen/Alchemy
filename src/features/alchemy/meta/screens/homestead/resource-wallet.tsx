@@ -22,7 +22,7 @@ export function HomesteadWallet({ gold, inventory }: { gold: number; inventory: 
             </span>
           </dt>
           <dd className="font-medium text-foreground/80 tabular-nums">
-            {i18n.displayText(formatLargeAmount(resource === "gold" ? gold : inventory[resource]))}
+            {formatLargeAmount(resource === "gold" ? gold : inventory[resource], i18n.locale)}
           </dd>
         </div>
       ))}

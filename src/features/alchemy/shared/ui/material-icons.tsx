@@ -116,7 +116,7 @@ export function ResourcePill({
 }) {
   const i18n = useGameTranslation();
   const displayTitle = title ?? RESOURCE_LABELS[resource] ?? resource;
-  const formattedAmount = formatLargeAmount(amount);
+  const formattedAmount = formatLargeAmount(amount, i18n.locale);
   const displayedValue = showsIncreasePrefix ? `+${formattedAmount}` : formattedAmount;
   const large = size === "lg";
 
@@ -148,10 +148,10 @@ export function ResourcePill({
           {i18n.displayText(displayTitle)}
         </span>
         <span
-          title={i18n.displayText(displayedValue)}
+          title={displayedValue}
           className={cn("truncate font-bold text-foreground tabular-nums", large ? "text-xl" : "text-lg")}
         >
-          {i18n.displayText(displayedValue)}
+          {displayedValue}
         </span>
       </div>
     </div>

@@ -60,8 +60,10 @@ export const FONT_REQUIREMENTS = [
   },
 ];
 export function requiredFontText(catalogs, languages, requirement) {
+  const amounts = new Intl.NumberFormat(requirement.locale, { notation: "compact", maximumFractionDigits: 1 });
   const text =
     Object.values(catalogs[requirement.locale] ?? {}).join("\n") +
+    Array.from({ length: 11 }, (_, index) => amounts.format(10 ** (index + 5))).join("") +
     Object.values(languages)
       .map(({ name }) => name)
       .join("");

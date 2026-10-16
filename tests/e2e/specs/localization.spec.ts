@@ -137,7 +137,7 @@ for (const locale of acceptanceLocales) {
 }
 
 for (const [locale, family, phrase] of [
-  ["zh-Hans", "Alchemy Chinese", "造成伤害，获得格挡。简体中文"],
+  ["zh-Hans", "Alchemy Chinese", "造成伤害，获得格挡。简体中文，万亿"],
   ["ru", "Alchemy Cyrillic", "Здоровье, броня, оглушение"],
 ] as const) {
   test(`${locale} uses a bundled font for its script`, async ({ page }) => {
