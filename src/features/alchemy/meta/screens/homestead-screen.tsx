@@ -168,7 +168,7 @@ export function HomesteadScreen({
     )
       return;
     soundedSequence.current = purchaseState.sequence;
-    playUISound(purchaseState.node.companion ? "bond" : "talentUnlock");
+    playUISound(purchaseState.node.companion ? "bond" : "homesteadBuild");
   }, [purchaseState, purchasedLevel]);
 
   const hasPurchases = [constructedBuildings, plantedFarms, completedResearch, bondedCompanions].some((levels) =>

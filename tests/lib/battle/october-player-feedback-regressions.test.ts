@@ -31,7 +31,7 @@ describe("player outcomes and rule help", () => {
     const notice = texts.find((event) => event.kind === "notice" && event.stat === "stun");
     expect(notice).toMatchObject({ signal: "immune" });
     expect(selectCombatSound(notice ? [notice] : [], false)).toBeUndefined();
-    expect(selectCombatSound(texts, false)).toBe("critHit");
+    expect(selectCombatSound(texts, false)).toBe("hitStunCritical");
 
     const preventedTexts: CombatTextEvent[] = [];
     const prevented = resolveEnemyAttackHit(

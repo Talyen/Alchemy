@@ -159,7 +159,8 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
       kind: "damage",
       stat: effect.damageType,
       amount: modifiedDamage,
-      ...(facts.critical ? { critical: true } : {}),
+      ...(facts.healthDamage !== modifiedDamage ? { healthLost: facts.healthDamage } : {}),
+      ...(facts.critical && facts.healthDamage > 0 ? { critical: true } : {}),
     });
   }
 

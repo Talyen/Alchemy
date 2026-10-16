@@ -116,7 +116,13 @@ export function calculateBlockAndArmorMitigation(
         : Math.min(state.playerStatuses.block, Math.round(blockAbsorb / blockMultiplier));
   remainingDamage -= blockAbsorb;
   if (blockSpent > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockSpent });
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "damage",
+      stat: "block",
+      amount: blockSpent,
+      ...(blockAbsorb !== blockSpent ? { absorbedDamage: blockAbsorb } : {}),
+    });
   }
   const remainingBlock = Math.max(0, state.playerStatuses.block - blockSpent);
   const extraPhysicalBlock =
@@ -129,7 +135,13 @@ export function calculateBlockAndArmorMitigation(
       : 0;
   const totalExtraBlock = Math.max(extraPhysicalBlock, extraPoisonBlock);
   if (totalExtraBlock > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: totalExtraBlock });
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "damage",
+      stat: "block",
+      amount: totalExtraBlock,
+      impact: false,
+    });
   }
   const actualDamage = computeMitigatedDamage(
     state,

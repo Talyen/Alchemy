@@ -33,6 +33,7 @@ export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: Comba
       event.kind !== "notice" &&
       nextEvent.kind !== "notice" &&
       event.impact === nextEvent.impact &&
+      !!event.periodic === !!nextEvent.periodic &&
       event.additive !== false &&
       nextEvent.additive !== false &&
       Math.sign(event.amount) === Math.sign(nextEvent.amount)
@@ -40,7 +41,12 @@ export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: Comba
   });
   if (!existing) combatTexts.push(nextEvent);
   else if (existing.kind !== "notice" && nextEvent.kind !== "notice") {
+    const previousAmount = existing.amount;
     existing.amount += nextEvent.amount;
+    if (existing.healthLost !== undefined || nextEvent.healthLost !== undefined)
+      existing.healthLost = (existing.healthLost ?? previousAmount) + (nextEvent.healthLost ?? nextEvent.amount);
+    if (existing.absorbedDamage !== undefined || nextEvent.absorbedDamage !== undefined)
+      existing.absorbedDamage = (existing.absorbedDamage ?? 0) + (nextEvent.absorbedDamage ?? 0);
     if (nextEvent.critical) existing.critical = true;
     if (nextEvent.periodic) existing.periodic = true;
   }

@@ -35,6 +35,12 @@ advances gameplay RNG.
 
 Operational rules for `src/lib/battle/` that deviate from typical CCG assumptions. Term definitions: [Domain Glossary](./GLOSSARY.md#domain-glossary). Tests: `tests/lib/battle/`.
 
+Combat feedback retains displayed amounts separately from optional resolved
+`healthLost` and `absorbedDamage` packet facts. Audio uses those facts for cue
+strength; they do not feed combat calculations. Direct and periodic packets remain
+separate when text events merge. Health costs and stripped Block are non-impact
+feedback. See [audio selection](./AUDIO.md#battle-sound-focus).
+
 ### Direct player hit resolution
 
 `player-hit-core.ts` names the source of each direct player-to-enemy hit. `hit-resolution.ts`

@@ -1,6 +1,7 @@
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
+import { battleEventSounds } from "@/lib/audio/sound-registry";
 import * as controllerUtils from "@/features/alchemy/run-loop/battle/controller-utils";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { computeTalentEffects } from "@/lib/game-data";
@@ -192,7 +193,7 @@ describe("createBattleInit", () => {
     });
 
     expect(feedback).toHaveBeenCalled();
-    expect(feedback.mock.calls[0]?.[2]).toBe("efx-int-mutt-growl-42-b-ef1caab1-0-2443.ogg");
+    expect(feedback.mock.calls[0]?.[2]).toBe(battleEventSounds.enemyHit);
     const texts = feedback.mock.calls[0]?.[1] ?? [];
     expect(texts.some((ct) => ct.kind === "damage" && ct.target === "enemy")).toBe(true);
   });

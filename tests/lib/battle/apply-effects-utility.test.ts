@@ -105,7 +105,7 @@ describe("applyEffectByKind (utility effects)", () => {
     const result = applyEffectByKind(state, card, effect, 1, texts);
     expect(result.playerHealth).toBe(15);
     expect(result.playerStatuses.bleed).toBe(0);
-    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "health", amount: 5 });
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "health", amount: 5, impact: false });
   });
 
   it("wish queues options for selection", () => {

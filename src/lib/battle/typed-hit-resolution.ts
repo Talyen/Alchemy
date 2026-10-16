@@ -45,7 +45,8 @@ export function resolveTypedEnemyHit(
       kind: "damage",
       stat: effect.damageType,
       amount: resolvedDamage,
-      ...(facts.critical ? { critical: true } : {}),
+      ...(facts.healthDamage !== resolvedDamage ? { healthLost: facts.healthDamage } : {}),
+      ...(facts.critical && facts.healthDamage > 0 ? { critical: true } : {}),
     });
   }
   // Shared closer: thresholds then kill payouts (same as other hit paths).

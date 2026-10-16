@@ -141,6 +141,7 @@ export function dealSelfDamage(
       kind: "damage",
       stat: statLabel,
       amount: healthLost,
+      impact: false,
     });
   }
   return {

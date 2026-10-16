@@ -11,7 +11,7 @@ export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps, gameSessi
   function handleCorruptCard(cardIndex: number) {
     const activity = readRunSession(gameSession).activity;
     if (activity.kind !== "corruption" || readActivityData(activity, "corruption")) return;
-    if (corruptRunCard(cardIndex, gameSession)) sessionFeedback(gameSession).playUISound("musicBoxMystery");
+    if (corruptRunCard(cardIndex, gameSession)) sessionFeedback(gameSession).playUISound("corrupt");
   }
 
   return { handleCorruptCard, handleCorruptionExit: deps.leaveVisit };
