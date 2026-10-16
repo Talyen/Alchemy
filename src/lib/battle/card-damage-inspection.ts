@@ -22,22 +22,32 @@ import { consumeAttackPacketFlags } from "./damage";
 import { computeBaseDamage } from "./player-damage-base";
 import { computeCardAttackPower, computeCardDamageToEnemy } from "./damage-calc";
 import { prepareEnemyAbilityDamage } from "./enemy-ability-damage";
-import { prepareEnemyDamage } from "./enemy-damage-mitigation";
+import { prepareEnemyDamage, calculateBlockAndArmorMitigation } from "./enemy-damage-mitigation";
 import { getEncounterEnemyAbility } from "./enemy-description";
 import { paceCombatMagnitude } from "./fight-pacing";
-import { addPlayerStatus, blockAmountWithForge, setPlayerStatus, setEnemyStatus } from "./status-state";
+import { addEnemyStatus, addPlayerStatus, blockAmountWithForge, setPlayerStatus, setEnemyStatus } from "./status-state";
 import {
   resolvePlayerHealing,
   applyPlayerCombatDamage,
   mitigatePlayerCombatDamage,
   playerHealthLostToDamage,
+  damageEnemyHealth,
 } from "./health-state";
 import { isPlayerDefeated } from "./battle-outcome";
-import { hasEncounterBenefit } from "./encounter-trait-state";
+import { hasEnemyTrait, hasEncounterBenefit } from "./encounter-trait-state";
 import { resolveSecondaryAction } from "./action-context";
-import { BATTLE_CONFIG, MIN_MAX_MANA_FLOOR } from "../game-constants";
+import {
+  BATTLE_CONFIG,
+  MIN_MAX_MANA_FLOOR,
+  STUN_THRESHOLD_FRACTION,
+  FREEZE_THRESHOLD_FRACTION,
+  MIN_CC_THRESHOLD_FRACTION,
+  BLEED_STATUS_MULTIPLIER,
+} from "../game-constants";
 import { armorMitigatesElementalDamage, reduceDamageByMana } from "./status-helpers";
 import { scaleReceivedPlayerDamage } from "./damage-modifiers";
+import { tryTriggerEnemyCc } from "./status-cc";
+import { projectEnemyDotDamage } from "./dot-resolve";
 import { gainMana, scaleGoldReward } from "./resource-state";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { decayEnemyArmor, reduceEnemyArmor } from "./enemy-mitigation-state";
@@ -166,6 +176,7 @@ export function getBattleDamageInspectionCard(
     if (amount <= 0) return current;
     const healing = resolvePlayerHealing(current, paceCombatMagnitude(current, amount, "player"), cardHealing);
     let healed = healing.state;
+    if (healing.restored > 0 && hasEnemyTrait(healed, "blood-countess")) healed = projectEnemyHealthLoss(healed, 1);
     if (healing.restored > 0 && current.gearEffects.healCleanseChance >= 100) healed = projectCleanse(healed, 1);
     if (cardHealing && healing.overflow > 0 && current.talentEffects.cleanseOnCardOverheal)
       healed = projectCleanse(healed, 1);
@@ -214,6 +225,7 @@ export function getBattleDamageInspectionCard(
     if (base <= 0) return current;
     const healing = resolvePlayerHealing(current, leechHealingAmount(current, scaleLeechBase(current, base)));
     let healed = healing.state;
+    if (healing.restored > 0 && hasEnemyTrait(healed, "blood-countess")) healed = projectEnemyHealthLoss(healed, 1);
     if (
       (healing.restored > 0 && current.gearEffects.healCleanseChance >= 100) ||
       (cardHealing && healing.overflow > 0 && current.talentEffects.cleanseOnCardOverheal)
@@ -224,7 +236,158 @@ export function getBattleDamageInspectionCard(
       healed = gainMana(healed, paceCombatMagnitude(healed, current.talentEffects.manaOnLeechToFull, "player"));
       healed = projectManaHealing(healed, healed.mana - previousMana);
     }
+    if (
+      healing.restored > 0 &&
+      current.playerHealth * 2 < current.playerMaxHealth &&
+      current.gearEffects.stunOnLeechBelowHalfHealth > 0
+    ) {
+      healed = resolveSecondaryAction(healed, "reward", (secondary) => {
+        const effect = {
+          kind: "damage" as const,
+          damageType: "stun" as const,
+          amount: current.gearEffects.stunOnLeechBelowHalfHealth,
+        };
+        const resolved = computeCardDamageToEnemy(secondary, effect, undefined, undefined, "prepared-only");
+        let hit = projectEnemyHealthLoss(resolved.nextState, resolved.modifiedDamage);
+        hit = addEnemyStatus(hit, "stun", resolved.modifiedDamage);
+        return projectCc(hit, "stun", secondary.enemyHealth, Math.min(secondary.enemyHealth, resolved.modifiedDamage));
+      });
+    }
     return healed;
+  }
+
+  function projectBuildup(
+    current: BattleState,
+    status: Parameters<typeof addEnemyStatus>[1],
+    amount: number,
+    attackBuildup = true,
+  ): BattleState {
+    if (status !== "poison") return addEnemyStatus(current, status, amount, { attackBuildup });
+    const next = setEnemyStatus(current, status, current.enemyStatuses[status] + amount);
+    return amount > 0 && next.gearEffects.poisonArmorShredChance >= 100 ? reduceEnemyArmor(next, 1) : next;
+  }
+
+  function projectMana(current: BattleState, amount: number, unpaced = false): BattleState {
+    const gained = gainMana(current, unpaced ? amount : paceCombatMagnitude(current, amount, "player"));
+    return projectManaHealing(gained, gained.mana - current.mana);
+  }
+
+  function projectEnemyHealthLoss(current: BattleState, amount: number): BattleState {
+    if (amount <= 0 || current.enemyHealth <= 0 || isPlayerDefeated(current)) return current;
+    const hit = damageEnemyHealth(current, amount);
+    return processEncounterTraitHealthThreshold(hit.previousHealth, decayEnemyArmor(hit.state), []);
+  }
+
+  function projectCc(current: BattleState, stat: "freeze" | "stun", previousHealth: number, damage = 0): BattleState {
+    const talents = current.talentEffects;
+    const reduction = stat === "freeze" ? talents.freezeThresholdReduction : talents.stunThresholdReduction;
+    const triggered = tryTriggerEnemyCc({
+      preHitHealth: previousHealth,
+      nextState: current,
+      stat,
+      stackValue: current.enemyStatuses[stat],
+      thresholdFraction: Math.max(
+        MIN_CC_THRESHOLD_FRACTION,
+        (stat === "freeze" ? FREEZE_THRESHOLD_FRACTION : STUN_THRESHOLD_FRACTION) - reduction,
+      ),
+      ccCooldown: current.enemyCC.cooldown,
+      skipDuration:
+        BATTLE_CONFIG.BASE_CC_DURATION +
+        (stat === "freeze" ? current.trinketEffects.freezeDurationExtension : talents.stunDurationExtension),
+      setupHealthDamage: damage,
+      combatTexts: [],
+    });
+    if (!triggered || triggered.kind === "immune") return triggered?.state ?? current;
+    let next = triggered.state;
+    if (talents.archeryCritOnCrowdControl) next = { ...next, flags: { ...next.flags, hawkEyeReady: true } };
+    if (stat === "freeze") {
+      next = grantPlayerStatus(next, "block", talents.blockOnFreeze);
+      if (talents.freezeStripArmor) next = { ...next, enemyMitigation: { ...next.enemyMitigation, armor: 0 } };
+      if (talents.freezeStripBlock) next = { ...next, enemyMitigation: { ...next.enemyMitigation, block: 0 } };
+      if (next.gearEffects.freezeGrantsBlockAndMana > 0 && current.mana === 0)
+        next = projectMana(next, halveRounded(next.playerStatuses.block), true);
+    } else {
+      if (current.playerStatuses.block === 0)
+        next = grantPlayerStatus(next, "block", talents.blockOnStun + current.gearEffects.blockOnStun);
+      const forge =
+        (talents.forgeOnStunChance >= 100 ? talents.forgeOnStun : 0) +
+        current.gearEffects.forgeOnStunChances.filter((chance) => chance >= 100).length;
+      next = grantPlayerStatus(next, "forge", forge);
+      if (talents.stunStripArmor) next = { ...next, enemyMitigation: { ...next.enemyMitigation, armor: 0 } };
+      if (current.mana === 0) next = projectMana(next, talents.manaOnStun + current.gearEffects.manaOnStun);
+    }
+    return next;
+  }
+
+  function projectRetaliation(current: BattleState): BattleState {
+    if (!current.flags.pendingCinderSkinReaction) return current;
+    let next = { ...current, flags: { ...current.flags, pendingCinderSkinReaction: false } };
+    if (next.enemyHealth <= 0 || isPlayerDefeated(next)) return next;
+    const effect = {
+      kind: "damage" as const,
+      damageType: "burn" as const,
+      amount: Math.round(next.roomScalingMultiplier),
+    };
+    const prepared = prepareEnemyDamage(next, effect);
+    const mitigation = calculateBlockAndArmorMitigation(next, effect, prepared.incomingDamage, [], {});
+    next = applyPlayerCombatDamage(next, mitigation.actualDamage, "hostile", "burn", { ignoreMitigation: true });
+    next = {
+      ...next,
+      playerStatuses: { ...next.playerStatuses, block: Math.max(0, next.playerStatuses.block - mitigation.blockSpent) },
+    };
+    next = addPlayerStatus(next, "burn", mitigation.actualDamage);
+    if (mitigation.actualDamage > 0 && next.playerStatuses.armor > 0 && !hasEncounterBenefit(next, "ironclad"))
+      next = {
+        ...next,
+        playerStatuses: {
+          ...next.playerStatuses,
+          armor: Math.max(0, next.playerStatuses.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
+        },
+      };
+    if (current.playerStatuses.armor > 0 && next.playerStatuses.armor === 0 && !isPlayerDefeated(next))
+      next = grantPlayerStatus(next, "block", current.talentEffects.armorBreakBlock);
+    next = projectHealthThresholds(next, current.playerHealth);
+    if (
+      current.playerStatuses.block > 0 &&
+      mitigation.blockSpent >= current.playerStatuses.block &&
+      !isPlayerDefeated(next)
+    ) {
+      next = projectHealing(next, current.talentEffects.blockDepletedHeal + current.gearEffects.blockDepletedHeal);
+      next = addPlayerStatus(
+        next,
+        "thorns",
+        paceCombatMagnitude(next, current.gearEffects.thornsOnBlockDepleted, "player"),
+      );
+    }
+    return next;
+  }
+
+  function projectWish(current: BattleState, amount: number): BattleState {
+    for (let index = 0; index < Math.max(0, Math.round(amount)); index++) {
+      if (isPlayerDefeated(current)) break;
+      const eligibility = current;
+      const talents = current.talentEffects;
+      const gear = current.gearEffects;
+      current = projectGold(
+        current,
+        talents.goldOnWishChance <= 0 || talents.goldOnWishChance >= 100 ? talents.goldOnWish : 0,
+      );
+      current = projectGold(current, current.trinketEffects.wishingWellGoldOnWish);
+      current = projectHealing(
+        current,
+        talents.healthOnWish + (eligibility.playerHealth * 2 < eligibility.playerMaxHealth ? gear.healthOnWish : 0),
+      );
+      if (talents.removeHarmfulStatusOnWish) current = projectCleanse(current, 1);
+      current = grantPlayerStatus(current, "block", gear.blockOnWish);
+      if (eligibility.mana === 0) current = projectMana(current, gear.manaOnWish);
+      if (
+        talents.wishBlockBelowHealthPct > 0 &&
+        eligibility.playerHealth * 100 < eligibility.playerMaxHealth * talents.wishBlockBelowHealthPct
+      )
+        current = grantPlayerStatus(current, "block", talents.wishBlockAmount);
+      current = projectRetaliation(current);
+    }
+    return current;
   }
 
   function attack(
@@ -324,16 +487,34 @@ export function getBattleDamageInspectionCard(
     const damage = resolved.modifiedDamage;
     const healthDamage = Math.min(current.enemyHealth, damage);
     if (damage > 0) {
-      after = { ...after, enemyHealth: Math.max(0, after.enemyHealth - damage) };
+      after = damageEnemyHealth(after, damage).state;
       after = decayEnemyArmor(after);
       const type = consumed.packet.damageType;
       if (type === "burn" || type === "poison" || type === "bleed") {
-        after = setEnemyStatus(after, type, after.enemyStatuses[type] + damage);
+        after = projectBuildup(after, type, type === "bleed" ? damage * BLEED_STATUS_MULTIPLIER : damage);
         if (
           (type === "burn" && after.talentEffects.burnRemovesEnemyArmor) ||
           (type === "poison" && after.talentEffects.poisonStripArmorByDamage)
         )
           after = reduceEnemyArmor(after, damage);
+      }
+      if (type === "freeze" || type === "stun") {
+        after = addEnemyStatus(after, type, damage);
+        if (type === "freeze" && after.gearEffects.freezeGrantsBlockAndMana > 0 && current.playerStatuses.block === 0)
+          after = grantPlayerStatus(after, "block", damage);
+        after = projectCc(after, type, current.enemyHealth, healthDamage);
+      }
+      for (const status of ["burn", "bleed"] as const) {
+        if (
+          (status === "burn" &&
+            (consumed.packet.detonateAllBurn ||
+              (consumed.packet.detonateIfEnemyBurning && current.enemyStatuses.burn > 0))) ||
+          (status === "bleed" && consumed.packet.detonateAllBleed)
+        ) {
+          const detonated = projectEnemyDotDamage(after, status);
+          after = setEnemyStatus(after, status, 0);
+          after = projectEnemyHealthLoss(after, detonated);
+        }
       }
       const explicitLeech = consumed.packet.lifesteal === true;
       const physicalLeech =
@@ -365,6 +546,18 @@ export function getBattleDamageInspectionCard(
         after = projectLeech(after, healthDamage);
     }
     after = processEncounterTraitHealthThreshold(current.enemyHealth, after, []);
+    if (
+      damage > 0 &&
+      after.enemyHealth > 0 &&
+      consumed.packet.damageType !== "physical" &&
+      consumed.physicalBonus > 0
+    ) {
+      after = resolveSecondaryAction(after, "reward", (secondary) => {
+        const packet = { kind: "damage" as const, damageType: "physical" as const, amount: consumed.physicalBonus };
+        const hit = computeCardDamageToEnemy(secondary, packet, undefined, undefined, "prepared-only");
+        return projectEnemyHealthLoss(hit.nextState, hit.modifiedDamage);
+      });
+    }
     if (shatterDamage > 0 && after.enemyHealth > 0 && !isPlayerDefeated(after)) {
       const previousHealth = after.enemyHealth;
       after = decayEnemyArmor({ ...after, enemyHealth: Math.max(0, previousHealth - shatterDamage) });
@@ -372,7 +565,7 @@ export function getBattleDamageInspectionCard(
     }
     return {
       effect: flatAttack(consumed.packet, power.damage + armorBonus),
-      state: after,
+      state: projectRetaliation(after),
       ...(followUp ? { followUp } : {}),
     };
   }
@@ -430,6 +623,7 @@ export function getBattleDamageInspectionCard(
           "enemyMitigation",
           "uniqueGear",
           "reactions",
+          "enemyCC",
         ] as const) {
           const shared = Object.entries(first.state[field]).every(([key, value]) =>
             outcomes.every((outcome) => (outcome.state[field] as Record<string, unknown>)[key] === value),
@@ -500,6 +694,19 @@ export function getBattleDamageInspectionCard(
           stacks > 0 ? converted.effect : flatAttack(converted.effect, 0),
         ];
       }
+      if (!enemy && effect.kind === "multiply-enemy-status") {
+        const before = current;
+        current = projectBuildup(
+          current,
+          effect.status,
+          Math.round(current.enemyStatuses[effect.status] * (effect.factor - 1)),
+          false,
+        );
+        if (effect.status === "freeze" || effect.status === "stun")
+          current = projectCc(current, effect.status, before.enemyHealth);
+      }
+      if (!enemy && effect.kind === "wish" && (!effect.companionIfAbsent || !current.activeCompanion))
+        current = projectWish(current, applyPotionMultiplier(effect.amount, potionMult));
       if (!enemy && effect.kind === "next-hit-poison")
         current = { ...current, flags: { ...current.flags, nextHitPoison: true } };
       if (effect.kind === "player-status" && !effect.statusPool) {
@@ -596,6 +803,7 @@ export function getBattleDamageInspectionCard(
         !effect.removeAll
       )
         return { ...effect, amount: Math.round(effect.amount * initial.roomScalingMultiplier) };
+      if (!enemy) current = projectRetaliation(current);
       return effect;
     });
   }
