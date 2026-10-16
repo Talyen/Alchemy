@@ -278,6 +278,17 @@ the legacy `uniqueRepeatActive` field, remain readable.
 sequences, enemy abilities, status ticks, and Wish rewards. An explicit reaction
 boundary selects settlement after each step or in the enclosing hit. Card Wishes
 settle between Wishes; triggered Holy Wishes settle with their enclosing hit.
+`wish-rewards.ts` owns Wish eligibility, resource rewards, damage, and reaction
+boundaries for live combat and damage inspection. Hosts supply seeded rolls and
+execution or guaranteed, nonrandom projections; neither host assembles the stage
+order. Wish option sampling and selection remain in `wish.ts`.
+`companion-resolution.ts` likewise owns Companion action scope, Bond scaling,
+captured damage facts, reward order, and fatal cutoffs. `companion-effects.ts`
+binds live execution; inspection supplies guaranteed outcomes without sampling
+cards or random damage types. Alternative damage types advance only shared facts.
+This lets later card packets see known kills, crowd control, healing, and Mana
+from earlier Wish and Companion actions without consuming the live RNG stream.
+
 Pending Cinder Skin and Emberwake settlement remains in `enemy-attack-damage.ts`,
 using the existing damage path. Hit-specific preconditions and depth-first ordering
 remain unchanged.

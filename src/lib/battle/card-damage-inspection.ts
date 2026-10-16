@@ -1,7 +1,10 @@
+import { resolveCompanionAction, type CompanionResolutionPort } from "./companion-resolution";
+import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
+import { resolveWishRewards } from "./wish-rewards";
+import type { FollowUpHitRequest } from "./player-hit-core";
 import { createPlayerResourceResolver } from "./player-resource-resolution";
 import {
   DAMAGE_TYPES,
-  getModifiedCompanionEffects,
   carryCardDescriptionMarks,
   getCardDescription,
   getCardEffect,
@@ -21,11 +24,10 @@ import { computeCardPayment } from "./card-cost-rules";
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import { consumeAttackPacketFlags } from "./damage";
 import { computeBaseDamage } from "./player-damage-base";
-import { computeCardAttackPower, computeCardDamageToEnemy } from "./damage-calc";
+import { computeCardAttackPower, computeCardDamageToEnemy, computeTalentDamageToEnemy } from "./damage-calc";
 import { prepareEnemyAbilityDamage } from "./enemy-ability-damage";
 import { prepareEnemyDamage, calculateBlockAndArmorMitigation } from "./enemy-damage-mitigation";
 import { getEncounterEnemyAbility } from "./enemy-description";
-import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 import { gearFrozenDamageMultiplier } from "./scaled-damage";
 import { paceCombatDamage, paceCombatMagnitude } from "./fight-pacing";
 import { addEnemyStatus, addPlayerStatus, setPlayerStatus, setEnemyStatus } from "./status-state";
@@ -66,7 +68,7 @@ import {
 } from "./encounter-trait-health-threshold";
 import { purgeEnemyBenefits } from "./enemy-purge";
 import { applyShatter, canShatter, getPostHitReactionPayoffs, consumeReactionOpportunity } from "./elemental-reactions";
-import type { BattleSnapshot, BattleState } from "./types";
+import type { BattleSnapshot, BattleState, CombatTextEvent } from "./types";
 import {
   resolveLeechResourceRewards,
   resolveNatureManaReward,
@@ -345,9 +347,26 @@ export function getBattleDamageInspectionCard(
   }
 
   function projectRetaliation(current: BattleState): BattleState {
-    if (!current.flags.pendingCinderSkinReaction) return current;
-    const ready = { ...current, flags: { ...current.flags, pendingCinderSkinReaction: false } };
-    return projectHostileHit(ready, "burn", Math.round(ready.roomScalingMultiplier));
+    while (current.flags.pendingCinderSkinReaction || current.flags.pendingEmberwakeDamage) {
+      if (current.flags.pendingCinderSkinReaction) {
+        current = projectHostileHit(
+          { ...current, flags: { ...current.flags, pendingCinderSkinReaction: false } },
+          "burn",
+          Math.round(current.roomScalingMultiplier),
+        );
+      }
+      if (current.flags.pendingEmberwakeDamage) {
+        current = projectFollowUpHit(
+          { ...current, flags: { ...current.flags, pendingEmberwakeDamage: false } },
+          {
+            source: "player-follow-up",
+            damageType: "burn",
+            amount: current.gearEffects.burnOnDeathsDoorEntry,
+          },
+        );
+      }
+    }
+    return current;
   }
 
   function projectHostileHit(current: BattleState, type: "burn" | "nature", amount: number): BattleState {
@@ -389,31 +408,79 @@ export function getBattleDamageInspectionCard(
   }
 
   function projectWish(current: BattleState, amount: number): BattleState {
-    for (let index = 0; index < Math.max(0, Math.round(amount)); index++) {
-      if (isPlayerDefeated(current)) break;
-      const eligibility = current;
-      const talents = current.talentEffects;
-      const gear = current.gearEffects;
-      current = projectGold(
-        current,
-        talents.goldOnWishChance <= 0 || talents.goldOnWishChance >= 100 ? talents.goldOnWish : 0,
-      );
-      current = projectGold(current, current.trinketEffects.wishingWellGoldOnWish);
-      current = projectHealing(
-        current,
-        talents.healthOnWish + (eligibility.playerHealth * 2 < eligibility.playerMaxHealth ? gear.healthOnWish : 0),
-      );
-      if (talents.removeHarmfulStatusOnWish) current = projectCleanse(current, 1);
-      current = grantPlayerStatus(current, "block", gear.blockOnWish);
-      if (eligibility.mana === 0) current = projectMana(current, gear.manaOnWish);
-      if (
-        talents.wishBlockBelowHealthPct > 0 &&
-        eligibility.playerHealth * 100 < eligibility.playerMaxHealth * talents.wishBlockBelowHealthPct
-      )
-        current = grantPlayerStatus(current, "block", talents.wishBlockAmount);
-      current = projectRetaliation(current);
+    return resolveWishRewards(
+      current,
+      Math.max(0, Math.round(amount)),
+      [],
+      {
+        chance: (chance) => chance >= 100,
+        gold: projectGold,
+        heal: (next, value) => projectHealing(next, value),
+        cleanse: projectCleanse,
+        block: (next, value) => grantPlayerStatus(next, "block", value),
+        mana: (next, value) => projectMana(next, value, true),
+        // The identity of drawn cards is unknown until live resolution.
+        draw: (next) => next,
+        forge: (next, value) => grantPlayerStatus(next, "forge", value),
+        armor: (next, value) => grantPlayerStatus(next, "armor", value),
+        hit: projectFollowUpHit,
+        burningEnemyHit: (next, value) => projectScaledBurn(next, value),
+      },
+      { kind: "each-step", settle: projectRetaliation },
+    );
+  }
+
+  function projectResolvedHit(
+    current: BattleState,
+    before: BattleState,
+    type: DamageEffect["damageType"],
+    damage: number,
+  ): BattleState {
+    if (damage <= 0) return current;
+    const hit = damageEnemyHealth(current, damage);
+    let next = decayEnemyArmor(hit.state);
+    if (type === "burn" || type === "poison" || type === "bleed")
+      next = projectBuildup(next, type, type === "bleed" ? damage * BLEED_STATUS_MULTIPLIER : damage);
+    if (type === "freeze" || type === "stun") {
+      next = projectBuildup(next, type, damage);
+      next = projectCc(next, type, before.enemyHealth, hit.healthDamage);
     }
-    return current;
+    return processEncounterTraitHealthThreshold(before.enemyHealth, next, []);
+  }
+
+  function projectFollowUpHit(current: BattleState, request: FollowUpHitRequest): BattleState {
+    if (request.amount <= 0 || current.enemyHealth <= 0 || isPlayerDefeated(current)) return current;
+    return resolveSecondaryAction(current, "reward", (next) => {
+      if (request.source !== "player-follow-up") {
+        const hit = computeTalentDamageToEnemy(next, request.damageType, request.amount, request.source);
+        return projectResolvedHit(hit.state, next, request.damageType, hit.remainingDamage);
+      }
+      const hit = computeCardDamageToEnemy(
+        next,
+        { kind: "damage", damageType: request.damageType, amount: request.amount },
+        undefined,
+        undefined,
+        "prepared-only",
+      );
+      return projectResolvedHit(hit.nextState, next, request.damageType, hit.modifiedDamage);
+    });
+  }
+
+  function projectScaledBurn(current: BattleState, amount: number): BattleState {
+    const damage = Math.max(
+      0,
+      Math.round(
+        paceCombatDamage(current, amount + getEnemyDamageVulnerabilityBonus(current), "player") *
+          getEnemyDamageMultiplier(current, "burn") *
+          gearFrozenDamageMultiplier(current),
+      ),
+    );
+    const absorbed = Math.min(current.enemyMitigation.block, damage);
+    const next = applySunderingArmorRemoval(
+      { ...current, enemyMitigation: { ...current.enemyMitigation, block: current.enemyMitigation.block - absorbed } },
+      "burn",
+    );
+    return projectResolvedHit(next, current, "burn", damage - absorbed);
   }
 
   function attack(
@@ -641,29 +708,96 @@ export function getBattleDamageInspectionCard(
     };
   }
 
+  const companionPort: CompanionResolutionPort = {
+    chance: (chance) => chance >= 100,
+    afterAction: (next) => projectRetaliation(next),
+    forge: (next, amount) => grantPlayerStatus(next, "forge", amount),
+    heal: (next, amount) => projectHealing(next, amount),
+    stun: (next, amount) => projectFollowUpHit(next, { source: "talent-derived", damageType: "stun", amount }),
+    leech: (next, damage) => projectLeech(next, damage),
+    mana: (next, amount) => projectMana(next, amount),
+    settle: projectRetaliation,
+  };
+
   function projectCompanionUtility(current: BattleState, actions: number): BattleState {
     for (let action = 0; action < actions; action++) {
-      if (!current.activeCompanion || getBattleOutcome(current) !== null) break;
-      const effects = getModifiedCompanionEffects(
-        current.activeCompanion,
-        current.talentEffects.companionBondLevels?.[current.activeCompanion.id] ?? 0,
-        getBattleCompanionDamageModifiers(current),
-      );
-      for (const effect of effects) {
-        if (getBattleOutcome(current) !== null) break;
-        if (effect.kind === "heal") current = projectHealing(current, effect.amount);
-        if (effect.kind === "gain-gold") current = projectGold(current, effect.amount);
-        if (effect.kind === "remove-harmful-status")
-          current = projectCleanse(current, effect.removeAll ? Infinity : (effect.amount ?? 0));
-        if (effect.kind === "restore-mana") {
-          const before = current.mana;
-          current = gainMana(current, paceCombatMagnitude(current, effect.amount, "player"), effect.allowOverflow);
-          current = projectManaHealing(current, current.mana - before);
-        }
-        if (effect.kind === "player-status" && effect.status === "block")
-          current = grantPlayerStatus(current, "block", effect.amount);
-        current = projectRetaliation(current);
+      current = resolveCompanionAction(current, [], projectCompanionEffects, companionPort);
+    }
+    return current;
+  }
+
+  function projectCompanionEffects(
+    current: BattleState,
+    companionCard: BattleCard,
+    _texts: CombatTextEvent[],
+    context?: CardEffectResolutionContext,
+  ): BattleState {
+    for (const effect of companionCard.effects) {
+      if (getBattleOutcome(current) !== null) break;
+      if (effect.kind === "damage") {
+        const types = effect.damageTypePool?.length ? effect.damageTypePool : [effect.damageType];
+        const bonus = context?.companionAttackBonus?.amount ?? 0;
+        if (context?.companionAttackBonus) context.companionAttackBonus.amount = 0;
+        const outcomes = types.map((damageType) => {
+          const hit = computeCardDamageToEnemy(
+            current,
+            { ...effect, damageType },
+            companionCard,
+            {
+              ...context,
+              manaAtStart: context?.manaAtStart ?? current.mana,
+              enemyFreezeSkipTurnsAtStart: context?.enemyFreezeSkipTurnsAtStart ?? current.enemyCC.freezeSkipTurns,
+              baseDamageBonus: bonus,
+            },
+            "prepared-only",
+          );
+          return {
+            state: projectResolvedHit(hit.nextState, current, damageType, hit.modifiedDamage),
+            healthDamage: Math.min(current.enemyHealth, hit.modifiedDamage),
+          };
+        });
+        context?.damageEffects?.push(effect);
+        if (outcomes.every((outcome) => outcome.healthDamage === outcomes[0]!.healthDamage))
+          context?.onDamageDealt?.(outcomes[0]!.healthDamage);
+        current = mergeKnownOutcomes(
+          current,
+          outcomes.map((outcome) => outcome.state),
+        );
       }
+      if (effect.kind === "heal") current = projectHealing(current, effect.amount);
+      if (effect.kind === "gain-gold") current = projectGold(current, effect.amount);
+      if (effect.kind === "remove-harmful-status")
+        current = projectCleanse(current, effect.removeAll ? Infinity : (effect.amount ?? 0));
+      if (effect.kind === "restore-mana")
+        current = playerResources.gainManaWithCombatText(current, effect.amount, [], {
+          allowOverflow: effect.allowOverflow ?? false,
+        });
+      if (effect.kind === "player-status" && effect.status === "block")
+        current = grantPlayerStatus(current, "block", effect.amount);
+      current = projectRetaliation(current);
+    }
+    return current;
+  }
+
+  function mergeKnownOutcomes(current: BattleState, outcomes: BattleState[]): BattleState {
+    const first = outcomes[0]!;
+    if (outcomes.length === 1) return first;
+    for (const field of ["mana", "gold", "playerHealth", "enemyHealth"] as const) {
+      if (outcomes.every((outcome) => outcome[field] === first[field])) current = { ...current, [field]: first[field] };
+    }
+    for (const field of [
+      "flags",
+      "playerStatuses",
+      "enemyStatuses",
+      "enemyMitigation",
+      "uniqueGear",
+      "reactions",
+      "enemyCC",
+    ] as const) {
+      const shared = Object.entries(first[field]).every(([key, value]) =>
+        outcomes.every((outcome) => (outcome[field] as Record<string, unknown>)[key] === value),
+      );
+      if (shared) current = { ...current, [field]: first[field] };
     }
     return current;
   }
@@ -710,24 +844,10 @@ export function getBattleDamageInspectionCard(
         }
         // Retain only facts shared by every possible packet. In particular,
         // a range's first endpoint cannot choose later Health or buildup.
-        for (const field of ["mana", "gold", "playerHealth", "enemyHealth"] as const) {
-          if (outcomes.every((outcome) => outcome.state[field] === first.state[field]))
-            current = { ...current, [field]: first.state[field] };
-        }
-        for (const field of [
-          "flags",
-          "playerStatuses",
-          "enemyStatuses",
-          "enemyMitigation",
-          "uniqueGear",
-          "reactions",
-          "enemyCC",
-        ] as const) {
-          const shared = Object.entries(first.state[field]).every(([key, value]) =>
-            outcomes.every((outcome) => (outcome.state[field] as Record<string, unknown>)[key] === value),
-          );
-          if (shared) current = { ...current, [field]: first.state[field] };
-        }
+        current = mergeKnownOutcomes(
+          current,
+          outcomes.map((outcome) => outcome.state),
+        );
         const summarize = (packets: DamageEffect[]): BattleCardEffect => {
           const firstPacket = packets[0]!;
           const uniqueTypes = [...new Set(packets.map((packet) => packet.damageType))];
@@ -807,8 +927,11 @@ export function getBattleDamageInspectionCard(
         current = projectCompanionUtility(current, applyPotionMultiplier(effect.amount, potionMult));
       if (!enemy && effect.kind === "wish" && (!effect.companionIfAbsent || !current.activeCompanion))
         current = projectWish(current, applyPotionMultiplier(effect.amount, potionMult));
-      if (!enemy && effect.kind === "next-hit-poison")
-        current = { ...current, flags: { ...current.flags, nextHitPoison: true } };
+      if (!enemy && (effect.kind === "next-hit-poison" || effect.kind === "next-hit-leech"))
+        current = {
+          ...current,
+          flags: { ...current.flags, [effect.kind === "next-hit-poison" ? "nextHitPoison" : "nextHitLeech"]: true },
+        };
       if (effect.kind === "player-status" && !effect.statusPool) {
         let amount =
           effect.perManaCrystal !== undefined
