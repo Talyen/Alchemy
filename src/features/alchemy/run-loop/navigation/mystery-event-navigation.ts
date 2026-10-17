@@ -22,9 +22,8 @@ export function createMysteryEventNavigation(
   function handleMysteryChoice(choice: MysteryChoice) {
     const sounds = chooseMysteryOption(choice, gameSession);
     if (sounds === null) return false;
-    for (const sound of sounds) {
-      if (sound === "gain") sessionFeedback(gameSession).playGoldGain();
-      else sessionFeedback(gameSession).playGoldSpend();
+    for (const _sound of sounds) {
+      sessionFeedback(gameSession).playGoldGain();
     }
     return true;
   }

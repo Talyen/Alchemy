@@ -124,14 +124,7 @@ export function claimRunReward(choiceId: string | null, gameSession: GameSession
       let runEnded = false;
       let battleStarted: ReturnType<typeof initializeBattle> = null;
       if (result.route !== REWARD_ROUTES.COMPANION_REWARD) {
-        if (
-          !isWildwood &&
-          (result.route === REWARD_ROUTES.LABYRINTH_VICTORY || result.route === REWARD_ROUTES.WILDWOOD_VICTORY)
-        ) {
-          settleRunVictory(draft);
-          runEnded = true;
-          nextScreen = ROUTE_SCREENS.RUN_VICTORY;
-        } else if (isWildwood) {
+        if (isWildwood) {
           if (canOfferWildwoodRemoval(draft.run.activeRun.runDeck.length)) {
             const removal =
               session.wildwoodDraft && enterWildwoodRemoval(snapshotTransactionValue(session.wildwoodDraft));

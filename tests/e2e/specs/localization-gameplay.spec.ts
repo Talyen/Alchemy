@@ -212,7 +212,6 @@ for (const locale of acceptanceLocales) {
           event,
           chosenChoice: null,
           cardChoices: null,
-          grantedTrinketIds: [],
           grantedGear: [],
           chosenCardId: null,
         }),

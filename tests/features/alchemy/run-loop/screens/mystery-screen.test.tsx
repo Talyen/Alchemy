@@ -27,7 +27,6 @@ describe("Mystery action feedback", () => {
   const props = {
     event,
     mysteryCardChoices: null,
-    mysteryGrantedTrinketIds: [],
     mysteryGrantedGearInstances: [],
     mysteryChosenCardId: null,
     mysteryChosenChoice: null,

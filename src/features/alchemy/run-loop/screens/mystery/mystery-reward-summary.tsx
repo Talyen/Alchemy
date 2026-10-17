@@ -1,4 +1,3 @@
-import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -78,12 +77,10 @@ function MysteryRewardEffectItem({
   effect,
   findCard,
   findTrinket,
-  grantedTrinketId,
   grantedGear,
   chosenCardId,
 }: {
   effect: MysteryEffect;
-  grantedTrinketId: string | undefined;
   grantedGear: GearInstance | undefined;
   chosenCardId: string | null;
 } & LookupProps) {
@@ -101,16 +98,6 @@ function MysteryRewardEffectItem({
       const boon = findTrinket(effect.trinketId);
       return boon ? <MysteryEquipmentRewardItem item={boon} /> : null;
     }
-    case "gainRandomTrinket": {
-      const boon = grantedTrinketId ? findTrinket(grantedTrinketId) : undefined;
-      const item = boon ?? grantedGear;
-      if (item) return <MysteryEquipmentRewardItem item={item} />;
-      return (
-        <p className={cn(controlLabelClass, "text-balance")}>
-          {i18n.text("ui.mystery-reward-summary.1", "Gained a random Boon for this run")}
-        </p>
-      );
-    }
     case "gainGeneratedGear":
     case "gainRandomGear": {
       const fallbackLabel =
@@ -119,23 +106,11 @@ function MysteryRewardEffectItem({
         return <p className={cn(controlLabelClass, "text-balance")}>{i18n.displayText(fallbackLabel)}</p>;
       return <MysteryEquipmentRewardItem item={grantedGear} />;
     }
-    case "loseGold":
-      return (
-        <div className="flex items-center justify-center gap-2 text-lg font-medium text-balance text-muted-foreground">
-          <GameMessage
-            id="ui.mystery-reward-summary.s1"
-            defaultValue="Lost <part0/>"
-            parts={{ part0: <MysteryEffectBadge effect={effect} /> }}
-          />
-        </div>
-      );
     case "gainGold":
     case "gainMaterial":
     case "gainXP":
-    case "removeCard":
       return null;
     case "healHealth":
-    case "damageHealth":
       return (
         <p className={bodyTextClass}>
           <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} />
@@ -148,7 +123,6 @@ export function MysteryRewardSummary({
   choice,
   findCard,
   findTrinket,
-  grantedTrinketIds,
   grantedGearInstances,
   chosenCardId,
   runTalentXP = {},
@@ -156,7 +130,6 @@ export function MysteryRewardSummary({
   onContinue,
 }: {
   choice: MysteryChoice;
-  grantedTrinketIds: string[];
   grantedGearInstances: GearInstance[];
   chosenCardId: string | null;
   runTalentXP?: TalentXP;
@@ -179,8 +152,8 @@ export function MysteryRewardSummary({
     const others = choice.effects.filter(
       (e) => e.kind !== "gainGold" && e.kind !== "gainMaterial" && e.kind !== "gainXP",
     );
-    return pairMysteryEffectsWithGrants(others, grantedTrinketIds, grantedGearInstances);
-  }, [choice.effects, grantedTrinketIds, grantedGearInstances]);
+    return pairMysteryEffectsWithGrants(others, grantedGearInstances);
+  }, [choice.effects, grantedGearInstances]);
 
   return (
     <div className="flex w-full flex-col items-center gap-6 text-center">
@@ -192,13 +165,12 @@ export function MysteryRewardSummary({
         size="lg"
       />
 
-      {resolvedOtherEffects.map(({ effect, grantedTrinketId, grantedGear }, i) => (
+      {resolvedOtherEffects.map(({ effect, grantedGear }, i) => (
         <div key={`${effect.kind}-${i}`}>
           <MysteryRewardEffectItem
             effect={effect}
             findCard={findCard}
             findTrinket={findTrinket}
-            grantedTrinketId={grantedTrinketId}
             grantedGear={grantedGear}
             chosenCardId={chosenCardId}
           />

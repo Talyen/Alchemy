@@ -286,7 +286,6 @@ it.each([
           event: findMysteryEvent("ancient-altar"),
           chosenChoice: null,
           cardChoices: null,
-          grantedTrinketIds: [],
           grantedGear: [],
           chosenCardId: null,
         })

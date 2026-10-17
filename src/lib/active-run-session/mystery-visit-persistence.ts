@@ -7,7 +7,6 @@ export interface HydratedMysteryVisit {
   mysteryEvent: MysteryEvent | null;
   mysteryChosenChoice: MysteryChoice | null;
   mysteryCardChoices: BattleCard[] | null;
-  mysteryGrantedTrinketIds: string[];
   mysteryGrantedGearInstances: GearInstance[];
   mysteryChosenCardId: string | null;
 }
@@ -17,7 +16,6 @@ export function emptyHydratedMysteryVisit(): HydratedMysteryVisit {
     mysteryEvent: null,
     mysteryChosenChoice: null,
     mysteryCardChoices: null,
-    mysteryGrantedTrinketIds: [],
     mysteryGrantedGearInstances: [],
     mysteryChosenCardId: null,
   };
@@ -30,7 +28,6 @@ export function serializeMysteryVisit(visit: HydratedMysteryVisit): PersistedMys
     event,
     chosenChoice: visit.mysteryChosenChoice,
     cardChoices: visit.mysteryCardChoices,
-    grantedTrinketIds: visit.mysteryGrantedTrinketIds,
     grantedGear: visit.mysteryGrantedGearInstances,
     chosenCardId: visit.mysteryChosenCardId,
   };
@@ -42,7 +39,6 @@ export function hydrateMysteryVisit(data: PersistedMysteryVisit | null): Hydrate
     mysteryEvent: data.event,
     mysteryChosenChoice: data.chosenChoice,
     mysteryCardChoices: data.cardChoices,
-    mysteryGrantedTrinketIds: data.grantedTrinketIds,
     mysteryGrantedGearInstances: data.grantedGear ?? [],
     mysteryChosenCardId: data.chosenCardId,
   };

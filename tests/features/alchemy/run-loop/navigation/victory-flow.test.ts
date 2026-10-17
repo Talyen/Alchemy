@@ -10,7 +10,6 @@ import {
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  computeVictoryRewardState,
   computeVictoryRewards,
   type VictoryRewardsInput,
   type VictoryRewardsResult,
@@ -168,60 +167,6 @@ describe("Fetch victory rewards", () => {
       testRng,
     );
     expect(absent.goldEarned).toBe(original.goldEarned);
-  });
-});
-
-describe("computeVictoryRewardState", () => {
-  const rewardInput = {
-    ...baseInput(),
-    goldPayout: 19,
-    materials: { ...emptyInventory(), wood: 2 },
-    destinations: ["Campfire"] as Destination[],
-  };
-
-  it("forwards ordinary reward amounts, materials, and destinations", () => {
-    const result = computeVictoryRewardState(rewardInput, () => 0.25);
-    expect(result.rewardType).toBe("card");
-    expect(result.gold).toBe(19);
-    expect(result.materials.wood).toBe(2);
-    expect(result.destinations).toEqual(["Campfire"]);
-  });
-
-  it("routes bosses to boss rewards and forwards permanent Trinket ownership", () => {
-    const unowned = trinketLibrary.slice(-2);
-    const result = computeVictoryRewardState(
-      {
-        ...rewardInput,
-        goldPayout: 22,
-        battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
-        ownedTrinketIds: trinketLibrary.slice(0, -2).map((entry) => entry.id),
-      },
-      () => 0.8,
-    );
-    expect(result.rewardType).toBe("trinket");
-    if (result.rewardType !== "trinket") throw new Error("expected permanent trinket reward");
-    expect(result.gold).toBe(22);
-    expect(result.choices.map((choice) => choice.id).sort()).toEqual(unowned.map((entry) => entry.id).sort());
-  });
-
-  it("excludes both run Boons and the equipped Trinket from elite Boon offers", () => {
-    const result = computeVictoryRewardState(
-      {
-        ...rewardInput,
-        battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
-        runBoons: trinketLibrary.slice(0, -3).map((entry) => entry.id),
-        equippedTrinketId: trinketLibrary.at(-3)!.id,
-      },
-      () => 0.8,
-    );
-    expect(result.rewardType).toBe("boon");
-    if (result.rewardType !== "boon") throw new Error("expected boon reward");
-    expect(result.choices.map((choice) => choice.id).sort()).toEqual(
-      trinketLibrary
-        .slice(-2)
-        .map((entry) => entry.id)
-        .sort(),
-    );
   });
 });
 
@@ -402,19 +347,16 @@ describe("computeVictoryRewards", () => {
     expect(result.rewardState.rewardType).toBe("trinket");
   });
 
-  it.each([
-    { modifier: "generous", expected: 23 },
-    { modifier: "wealthy", expected: 15 + LABYRINTH_REWARD_CONFIG.wealthyGoldBonus },
-  ] as const)("applies $modifier Gold to both settlement and rewards", ({ modifier, expected }) => {
+  it("applies generous Gold to both settlement and rewards", () => {
     const result = computeVictoryRewards(
       baseInput({
         contentSystemType: "labyrinth",
-        activeLabyrinthRewardModifiers: [modifier],
+        activeLabyrinthRewardModifiers: ["generous"],
       }),
       testRng,
     );
-    expect(result.goldEarned).toBe(expected);
-    expect(result.rewardState.gold).toBe(expected);
+    expect(result.goldEarned).toBe(23);
+    expect(result.rewardState.gold).toBe(23);
   });
 
   it("adds herbalist herbs after scavenger doubling in victory rewards", () => {
@@ -456,15 +398,24 @@ describe("computeVictoryRewards", () => {
     expect(result.playerHealth).toBe(30);
   });
 
-  it("awards boon rewards for elite combat victories", () => {
+  it("awards boon rewards for elite combat victories, excluding run Boons and equipped Trinket", () => {
     const result = computeVictoryRewards(
       baseInput({
         contentSystemType: "labyrinth",
         battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
+        runBoons: trinketLibrary.slice(0, -3).map((entry) => entry.id),
+        equippedTrinketId: trinketLibrary.at(-3)!.id,
       }),
       () => 0.8,
     );
     expect(result.rewardState.rewardType).toBe("boon");
+    if (result.rewardState.rewardType !== "boon") throw new Error("expected boon reward");
+    expect(result.rewardState.choices.map((choice) => choice.id).sort()).toEqual(
+      trinketLibrary
+        .slice(-2)
+        .map((entry) => entry.id)
+        .sort(),
+    );
   });
 
   it("offers a Campfire using the post-combat Vitality Health", () => {
@@ -497,10 +448,16 @@ describe("computeVictoryRewards", () => {
     expect(eligible).not.toContain("Boss Combat");
   });
 
-  it("skips campaign destination sampling for labyrinth victories", () => {
+  it.each([
+    { label: "labyrinth", overrides: { contentSystemType: "labyrinth" as const } },
+    {
+      label: "campaign boss",
+      overrides: { battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }) },
+    },
+  ])("skips campaign destination sampling for $label victories", ({ overrides }) => {
     vi.mocked(sampleDestinationChoices).mockClear();
     const destinationOfferState = { lastOfferedDestinations: [], roundsSinceOffered: {} };
-    const result = computeVictoryRewards(baseInput({ contentSystemType: "labyrinth", destinationOfferState }), testRng);
+    const result = computeVictoryRewards(baseInput({ ...overrides, destinationOfferState }), testRng);
     expect(sampleDestinationChoices).not.toHaveBeenCalled();
     expect(result.rewardState.destinations).toEqual([]);
     expect(result.destinationOfferState).toEqual(destinationOfferState);
@@ -579,7 +536,6 @@ describe("commitVictoryRewards", () => {
         gold: 15,
         eliteBonus: 0,
         generousBonus: 0,
-        wealthyBonus: 0,
         bossBonus: 0,
         talentGoldPerCombat: 0,
         goldMultiplier: 2,

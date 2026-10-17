@@ -25,7 +25,7 @@ it("keeps reward amounts and destinations visible exactly once in the choice pre
       effects={[
         { kind: "addCard", cardId: "mana-berries" },
         { kind: "gainMaterial", material: "herbs", amount: 2 },
-        { kind: "loseGold", amount: 7 },
+        { kind: "gainGold", amount: 7 },
         { kind: "gainTrinket", trinketId: "icy-heart" },
         { kind: "gainGeneratedGear", baseItemId: "sapphire-amulet", astral: true },
       ]}
@@ -34,7 +34,7 @@ it("keeps reward amounts and destinations visible exactly once in the choice pre
   expect(screen.getAllByText("Mana Berries")).toHaveLength(1);
   expect(container.textContent).toContain("Add Mana Berries to your deck");
   expect(container.textContent).toContain("Find 2 Herbs");
-  expect(container.textContent).toContain("Lose 7 Gold");
+  expect(container.textContent).toContain("Find 7 Gold");
   expect(container.textContent).toContain("Gain Icy Heart Boon");
   expect(container.textContent).toContain("Add Astral Sapphire Amulet to your Armory");
 });

@@ -1,6 +1,5 @@
 export const REWARD_ROUTES = {
   COMPANION_REWARD: "companion-reward",
-  LABYRINTH_VICTORY: "labyrinth-victory",
   LABYRINTH_MAP: "labyrinth-map",
   WILDWOOD_VICTORY: "wildwood-victory",
   ACT_COMPLETE: "act-complete",

@@ -2,7 +2,7 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MysteryEffect } from "@/lib/mystery";
 import { applyMysteryEffect, type MysteryEffectResult } from "@/features/alchemy/run-loop/navigation/mystery-flow";
-import { cardLibrary, getCardKeywords, trinketLibrary } from "@/lib/game-data";
+import { cardLibrary, getCardKeywords } from "@/lib/game-data";
 import * as cardPools from "@/lib/game-data/cards/card-pools";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import {
@@ -24,8 +24,6 @@ function apply(effect: MysteryEffect, rng: () => number = () => 0.5): MysteryEff
   });
   return result;
 }
-
-const slash = cardLibrary.find((card) => card.id === "slash")!;
 
 beforeEach(() => {
   resetAllTestStores();
@@ -69,24 +67,6 @@ describe("applyMysteryEffect", () => {
     expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(30);
   });
 
-  it("draws randomness only for chance healing and respects the probability boundary", () => {
-    setRunProgress({ runPlayerHealth: 20, runMaxHealth: 30 });
-    const rng = vi.fn(() => 0.5);
-    apply({ kind: "healHealth", amount: 3 }, rng);
-    expect(rng).not.toHaveBeenCalled();
-    apply({ kind: "healHealth", amount: 3, chance: 0.5 }, rng);
-    expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(23);
-    apply({ kind: "healHealth", amount: 3, chance: 0.51 }, rng);
-    expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(26);
-    expect(rng).toHaveBeenCalledTimes(2);
-  });
-
-  it("damageHealth never drops health below zero", () => {
-    setRunProgress({ runPlayerHealth: 2 });
-    apply({ kind: "damageHealth", amount: 3 });
-    expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(0);
-  });
-
   it("gainGold credits gold with the gain sound", () => {
     setRunProgress({ gold: 20 });
     const result = apply({ kind: "gainGold", amount: 10 });
@@ -108,72 +88,15 @@ describe("applyMysteryEffect", () => {
     expect(readRunProfile(defaultGameSession).gold).toBe(64);
   });
 
-  it("loseGold spends gold with the spend sound", () => {
-    setRunProgress({ gold: 20 });
-    const result = apply({ kind: "loseGold", amount: 5 });
-    expect(result.goldSound).toBe("spend");
-    expect(readRunProfile(defaultGameSession).gold).toBe(15);
-    expect(apply({ kind: "loseGold", amount: 0 }).goldSound).toBeUndefined();
-    expect(readRunProfile(defaultGameSession).gold).toBe(15);
-    apply({ kind: "loseGold", amount: 20 });
-    expect(readRunProfile(defaultGameSession).gold).toBe(0);
-    expect(apply({ kind: "loseGold", amount: 5 }).goldSound).toBeUndefined();
-  });
-
   it("gainXP awards run talent XP for the keyword", () => {
     apply({ kind: "gainXP", keyword: "nature", amount: 1 });
     expect(readActiveRun(defaultGameSession).runTalentXP.nature).toBeGreaterThanOrEqual(1);
-  });
-
-  it("removeCard removes one deck card at random without opening a picker", () => {
-    const second = cardLibrary.find((card) => card.id === "fireball")!;
-    setRunProgress({ runDeck: [slash, second] });
-    const rng = vi.fn(() => 0);
-    const result = apply({ kind: "removeCard" }, rng);
-    expect(result.followUp).toBeNull();
-    expect(readActiveRun(defaultGameSession).runDeck).toEqual([second]);
-    apply({ kind: "removeCard" }, rng);
-    expect(readActiveRun(defaultGameSession).runDeck).toEqual([]);
-    apply({ kind: "removeCard" }, rng);
-    expect(rng).toHaveBeenCalledTimes(2);
   });
 
   it("gainTrinket appends unowned trinkets exactly once", () => {
     apply({ kind: "gainTrinket", trinketId: "bone-charm" });
     apply({ kind: "gainTrinket", trinketId: "bone-charm" });
     expect(readActiveRun(defaultGameSession).runBoons).toEqual(["bone-charm"]);
-  });
-
-  it("gainRandomTrinket grants an unowned pick and records it", () => {
-    const result = apply({ kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] }, () => 0.5);
-    expect(result.followUp).toBeNull();
-    const granted = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryGrantedTrinketIds;
-    expect(granted).toHaveLength(1);
-    expect(["bone-charm", "sin-eaters-lantern"]).toContain(granted[0]);
-    expect(readActiveRun(defaultGameSession).runBoons).toEqual(granted);
-  });
-
-  it("gainRandomTrinket falls back outside fromIds when every candidate is owned", () => {
-    setRunProgress({ runBoons: ["bone-charm", "sin-eaters-lantern"] });
-    const result = apply({ kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] }, () => 0.5);
-    expect(result.followUp).toBeNull();
-    const granted = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryGrantedTrinketIds;
-    expect(granted).toHaveLength(1);
-    expect(["bone-charm", "sin-eaters-lantern"]).not.toContain(granted[0]);
-  });
-
-  it("gainRandomTrinket falls back to guaranteed-Astral gear when every trinket is owned", () => {
-    setRunProgress({ characterId: "knight", runBoons: trinketLibrary.map((entry) => entry.id) });
-    mutateRunForTest((draft) => setHasActiveRun(draft, true));
-
-    const result = apply({ kind: "gainRandomTrinket", fromIds: ["bone-charm"] }, () => 0.5);
-    expect(result.followUp).toBeNull();
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryGrantedTrinketIds).toEqual(
-      [],
-    );
-    const gear = readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryGrantedGearInstances;
-    expect(gear).toHaveLength(1);
-    expect(gear[0]?.definitionId).toMatch(/-astral$/);
   });
 
   it("uses shared depth eligibility for random Gear while honoring an already-promised Astral", () => {

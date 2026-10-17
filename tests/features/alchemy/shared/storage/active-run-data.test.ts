@@ -367,7 +367,6 @@ describe("encodeRunResumeSnapshot", () => {
             effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }],
           },
           mysteryCardChoices: null,
-          mysteryGrantedTrinketIds: [],
           mysteryGrantedGearInstances: [],
           mysteryChosenCardId: null,
         },

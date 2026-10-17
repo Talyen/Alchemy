@@ -28,7 +28,6 @@ test(
         },
         chosenChoice: null,
         cardChoices: null,
-        grantedTrinketIds: [],
         grantedGear: [],
         chosenCardId: null,
       }),

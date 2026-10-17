@@ -10,7 +10,6 @@ import {
   setMysteryChosenChoice,
   setMysteryEvent,
   setMysteryGrantedGearInstances,
-  setMysteryGrantedTrinketIds,
   setRewardState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
@@ -150,7 +149,6 @@ describe("run destination controller actions", () => {
         setMysteryCardChoices(draft, [
           { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] },
         ]);
-        setMysteryGrantedTrinketIds(draft, ["bone-charm"]);
         setMysteryGrantedGearInstances(draft, [
           { instanceId: "stale-gear", definitionId: "dagger-basic", affixes: [] },
         ]);

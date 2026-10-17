@@ -174,18 +174,9 @@ describe("reward flow orchestration", () => {
       );
     });
 
-    it("routes labyrinth non-boss rewards back to the labyrinth map", () => {
+    it.each(["elite", "boss"] as const)("routes labyrinth %s rewards back to the labyrinth map", (enemyType) => {
       const result = finalizeRewardState({
-        rewardState: stampedRewardState({}, { enemyType: "elite", contentSystem: "labyrinth" }),
-        companionRewardCards: null,
-      });
-
-      expect(result.route).toBe("labyrinth-map");
-    });
-
-    it("routes labyrinth boss rewards back to the map", () => {
-      const result = finalizeRewardState({
-        rewardState: stampedRewardState({}, { enemyType: "boss", contentSystem: "labyrinth" }),
+        rewardState: stampedRewardState({}, { enemyType, contentSystem: "labyrinth" }),
         companionRewardCards: null,
       });
 

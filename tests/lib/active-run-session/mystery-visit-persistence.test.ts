@@ -19,8 +19,8 @@ describe("Mystery visit resume", () => {
           effects: [
             { kind: "gainGold", amount: 40 },
             { kind: "gainXP", keyword: "holy", amount: 8 },
-            { kind: "healHealth", amount: 5, chance: 0 },
-            { kind: "gainRandomTrinket", fromIds: ["bone-charm"] },
+            { kind: "healHealth", amount: 5 },
+            { kind: "gainTrinket", trinketId: "bone-charm" },
             { kind: "gainGeneratedGear", baseItemId: "emerald-ring", astral: true },
             { kind: "chooseCard", tag: "archery" },
           ],
@@ -32,7 +32,6 @@ describe("Mystery visit resume", () => {
       mysteryEvent: event,
       mysteryChosenChoice: event.choices[0]!,
       mysteryCardChoices: null,
-      mysteryGrantedTrinketIds: ["bone-charm"],
       mysteryGrantedGearInstances: [{ instanceId: "claimed-gear", definitionId: "emerald-ring-basic", affixes: [] }],
       mysteryChosenCardId: card.id,
     };
@@ -62,8 +61,7 @@ describe("Mystery visit resume", () => {
                 label: "Browse",
                 effects: [
                   { kind: "chooseCard", tag: "" },
-                  { kind: "healHealth", amount: 5, chance: undefined },
-                  { kind: "gainRandomTrinket", fromIds: undefined },
+                  { kind: "healHealth", amount: 5 },
                   { kind: "gainGeneratedGear", baseItemId: "emerald-ring", astral: undefined },
                 ],
               },
@@ -71,7 +69,6 @@ describe("Mystery visit resume", () => {
           },
           chosenChoice: null,
           cardChoices: null,
-          grantedTrinketIds: [],
           grantedGear: [],
           chosenCardId: null,
         }),
@@ -81,7 +78,6 @@ describe("Mystery visit resume", () => {
     const effects = [
       { kind: "chooseCard" },
       { kind: "healHealth", amount: 5 },
-      { kind: "gainRandomTrinket" },
       { kind: "gainGeneratedGear", baseItemId: "emerald-ring" },
     ];
     expect(visit.mysteryEvent?.choices).toStrictEqual([{ label: "Browse", effects }]);

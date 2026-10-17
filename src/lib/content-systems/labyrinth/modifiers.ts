@@ -2,24 +2,13 @@ import { isLootEligible } from "@/lib/loot";
 import { pickRandom, shuffle } from "@/lib/rng";
 import type { LabyrinthNodeType } from "../types";
 import {
+  ENCOUNTER_TRAITS,
   eligibleEncounterTraitIds,
   type EncounterCombatTraitId,
   type EncounterRewardTraitId,
   type EncounterTraitId,
 } from "../encounter-traits";
 import { LABYRINTH_TRAITS } from "./trait-catalog";
-
-const LEGACY_LABYRINTH_TRAITS = new Set<EncounterTraitId>([
-  "septic",
-  "caustic",
-  "flesheater",
-  "thorns",
-  "insatiable",
-  "jealous",
-  "rooted",
-  "divine-aegis",
-  "wealthy",
-]);
 
 const INCOMPATIBLE_TRAITS: ReadonlyArray<readonly string[]> = [
   ["plated", "unbreakable", "iron-fortress"],
@@ -34,7 +23,7 @@ const INCOMPATIBLE_TRAITS: ReadonlyArray<readonly string[]> = [
 ];
 
 export function isLabyrinthTraitEligible(id: EncounterTraitId, type: LabyrinthNodeType): boolean {
-  if (LEGACY_LABYRINTH_TRAITS.has(id)) return false;
+  if (!ENCOUNTER_TRAITS[id].modes.includes("labyrinth")) return false;
   if (Object.hasOwn(LABYRINTH_TRAITS, id)) {
     return LABYRINTH_TRAITS[id as keyof typeof LABYRINTH_TRAITS].labyrinthNodes.includes(type);
   }

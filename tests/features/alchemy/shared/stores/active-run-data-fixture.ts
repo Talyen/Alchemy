@@ -12,7 +12,6 @@ export const ANCIENT_ALTAR_MYSTERY_VISIT: PersistedMysteryVisit = {
   event: findMysteryEvent("ancient-altar")!,
   chosenChoice: { label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] },
   cardChoices: null,
-  grantedTrinketIds: [],
   grantedGear: [],
   chosenCardId: null,
 };
