@@ -50,7 +50,7 @@ function createDefinition(
 }
 
 function buildVariantDefinitions(): Record<string, GearDefinition> {
-  const variants: Record<string, GearDefinition> = {};
+  const variants = Object.create(null) as Record<string, GearDefinition>;
 
   for (const baseItemId of Object.keys(gearBaseItems) as GearBaseItemId[]) {
     const baseItem = gearBaseItems[baseItemId];

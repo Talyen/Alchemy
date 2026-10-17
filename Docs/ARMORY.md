@@ -125,6 +125,7 @@ Homestead mutation timing remains unchanged.
   - `loadout-operations.ts` owns slot compatibility, equipment changes, and orphan repair.
   - `instance-normalization.ts` owns saved-instance repair; save schemas import it directly.
   - `equipped-effects.ts` owns per-item and equipped battle stat aggregation.
+  - `gear-effect-manifest.ts` owns `createEmptyGearEffectManifest()`. Each live manifest owns its chance arrays; defaults are comparison data, not a mutable battle or simulation manifest. Live equipment and simulation presets both accumulate affixes with `addAffixRollEffects`.
   - Save repair imports its rule owners directly, without depending on crafting.
 - **Aggregate** — `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec), `gear-actions.ts` (draft mutations including inventory salvage), and `gear-session-command.ts` (HP-sync wrapper)
 - **Screen** — Armory route (`meta-routes.tsx`) → `routeCommands.meta.armory` → `armory-screen.tsx`

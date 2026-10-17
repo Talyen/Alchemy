@@ -20,17 +20,16 @@ export type GearEffectManifest = {
   [K in (typeof GEAR_NUMERIC_EFFECT_KEYS)[number]]: number;
 } & { [K in GearChanceEffectKey]: number[] };
 
-export const defaultGearEffects: GearEffectManifest = {
-  ...createNumericManifest(GEAR_NUMERIC_EFFECT_KEYS),
-  forgeOnStunChances: [],
-  forgeOnBurnVsUnburnedChances: [],
-  forgeOnConsumeBurnCardChances: [],
-  forgeOnCompanionDamageVsBurningChances: [],
-};
+const numericDefaults = createNumericManifest(GEAR_NUMERIC_EFFECT_KEYS);
 
-export function mergeGearEffectManifests(base: GearEffectManifest, addition: GearEffectManifest): GearEffectManifest {
-  const merged = { ...base };
-  for (const key of GEAR_NUMERIC_EFFECT_KEYS) merged[key] += addition[key];
-  for (const key of GEAR_CHANCE_EFFECT_KEYS) merged[key] = [...base[key], ...addition[key]];
-  return merged;
+export function createEmptyGearEffectManifest(): GearEffectManifest {
+  return {
+    ...numericDefaults,
+    forgeOnStunChances: [],
+    forgeOnBurnVsUnburnedChances: [],
+    forgeOnConsumeBurnCardChances: [],
+    forgeOnCompanionDamageVsBurningChances: [],
+  };
 }
+
+export const defaultGearEffects = createEmptyGearEffectManifest();

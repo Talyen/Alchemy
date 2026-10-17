@@ -80,7 +80,7 @@ export const GearDefinitionContentSchema = z.object({
   id: NonEmptyStringSchema,
   displayName: NonEmptyStringSchema,
   baseItemId: NonEmptyStringSchema,
-  rarity: z.enum(GEAR_RARITIES).nullable(),
+  rarity: z.enum(GEAR_RARITIES),
   descriptionLines: z.array(z.string()),
   art: NonEmptyStringSchema,
   compatibleSlots: z.array(z.enum(GEAR_SLOTS)).min(1),

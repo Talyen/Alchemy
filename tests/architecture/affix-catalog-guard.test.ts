@@ -18,20 +18,23 @@ describe("affix catalog guard", () => {
   });
 
   it("requires unique display names for affixes", () => {
-    const seen = new Map<string, string>();
+    const idsByName = new Map<string, string[]>();
     for (const definition of Object.values(gearAffixCatalog)) {
-      const prev = seen.get(definition.name);
-      expect(prev, `duplicate affix name "${definition.name}" used by ${prev} and ${definition.id}`).toBeUndefined();
-      seen.set(definition.name, definition.id);
+      const ids = idsByName.get(definition.name) ?? [];
+      ids.push(definition.id);
+      idsByName.set(definition.name, ids);
     }
+    expect([...idsByName.entries()].filter(([, ids]) => ids.length > 1)).toEqual([]);
   });
 
   it("requires unique-only affixes to have fixed rolls at every rarity", () => {
-    for (const definition of Object.values(gearAffixCatalog)) {
-      if (!definition.uniqueOnly) continue;
-      for (const range of Object.values(definition.roll)) {
-        expect(range.min, `${definition.id} uniqueOnly should have fixed roll`).toBe(range.max);
-      }
-    }
+    expect(
+      Object.values(gearAffixCatalog)
+        .filter(
+          (definition) =>
+            definition.uniqueOnly && Object.values(definition.roll).some((range) => range.min !== range.max),
+        )
+        .map((definition) => definition.id),
+    ).toEqual([]);
   });
 });

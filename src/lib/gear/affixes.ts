@@ -1,7 +1,11 @@
 import type { GearAffixId } from "./affix-catalog";
 import { gearAffixCatalog, formatAffixDescription, type GearAffixDefinition } from "./affix-catalog";
 import type { GearEffectManifest } from "./gear-effect-manifest";
-import { defaultGearEffects, GEAR_CHANCE_EFFECT_KEYS, type GearChanceEffectKey } from "./gear-effect-manifest";
+import {
+  createEmptyGearEffectManifest,
+  GEAR_CHANCE_EFFECT_KEYS,
+  type GearChanceEffectKey,
+} from "./gear-effect-manifest";
 import { gearDefinitions } from "./definitions";
 import { getUniqueAffixView } from "./unique-catalog";
 import type { GearAffixRoll, GearInstance, GearRarity } from "./types";
@@ -20,7 +24,7 @@ function isGearAffixId(value: unknown): value is GearAffixId {
 function addAffixEffect(effects: GearEffectManifest, key: keyof GearEffectManifest, value: number): void {
   if ((GEAR_CHANCE_EFFECT_KEYS as readonly string[]).includes(key)) {
     const chanceKey = key as GearChanceEffectKey;
-    effects[chanceKey] = [...effects[chanceKey], value];
+    effects[chanceKey].push(value);
   } else {
     effects[key as Exclude<keyof GearEffectManifest, GearChanceEffectKey>] += value;
   }
@@ -30,7 +34,7 @@ export function effectsForAffixRolls(
   rawAffixes: readonly AffixRollInput[] | null | undefined,
   rarity?: GearRarity | null,
 ): GearEffectManifest {
-  const effects = { ...defaultGearEffects };
+  const effects = createEmptyGearEffectManifest();
   addAffixRollEffects(effects, rawAffixes, rarity);
   return effects;
 }

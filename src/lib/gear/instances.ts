@@ -42,7 +42,7 @@ export function createGearInstance(
   return {
     instanceId: createId(),
     definitionId: definition.id,
-    affixes,
+    affixes: definition.rarity === "unique" ? [] : affixes.map((roll) => ({ ...roll })),
   };
 }
 
@@ -51,7 +51,7 @@ export function createRolledGearInstance(
   rng: () => number,
   createId: () => string = createInstanceId,
 ): GearInstance {
-  const affixCount = rollAffixCount(definition.rarity ?? "basic", rng);
+  const affixCount = rollAffixCount(definition.rarity, rng);
   return createGearInstance(definition, rollAffixes(definition, affixCount, rng), createId);
 }
 
@@ -85,6 +85,6 @@ export function generateDevRandomGearInstance(
   const definition =
     gearDefinitions[gearDefinitionId(baseItem.id, fallbackRarity)] ??
     gearDefinitions[gearDefinitionId(baseItem.id, "basic")];
-  if (!definition?.rarity) throw new Error(`Missing gear definition for ${baseItem.id}`);
+  if (!definition) throw new Error(`Missing gear definition for ${baseItem.id}`);
   return createRolledGearInstance(definition, rng, createId);
 }
