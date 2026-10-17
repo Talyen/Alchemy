@@ -32,7 +32,7 @@ describe("encounter event regressions", () => {
     expect(played.enemyPhysicalDamageBonus).toBe(2);
   });
 
-  it("Dance of Blades feeds Insatiable when it consumes a Potion and does not reuse Follow-through", () => {
+  it("Dance of Blades feeds Insatiable when it consumes a Potion", () => {
     const state = battle("insatiable");
     const result = resolveEnemyAttackHit(
       {
@@ -47,7 +47,9 @@ describe("encounter event regressions", () => {
     ).state;
     expect(result.exhausted.map((card) => card.id)).toContain("health-potion");
     expect(result.enemyPhysicalDamageBonus).toBe(1);
+  });
 
+  it("automatic cards do not reuse Follow-through from the previous manual card", () => {
     const arrow = makeTestCard({
       tags: ["archery"],
       effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
@@ -127,7 +129,7 @@ describe("encounter event regressions", () => {
     expect(next.playerHealth).toBe(0);
   });
 
-  it("keeps Grounding and status resistance on Sundered Guard attacks that strip the last Block, and respects Saintfall prevention", () => {
+  it("keeps Block protections on the Sundered Guard hit that removes the last Block", () => {
     const sundered = patchBattleState({
       rng: () => 0.99,
       playerHealth: 30,
@@ -144,7 +146,9 @@ describe("encounter event regressions", () => {
       resolveEnemyAttackHit(sundered, { kind: "damage", damageType: "poison", amount: 4 }, [], { canDodge: true }).state
         .playerHealth,
     ).toBe(28);
+  });
 
+  it("fully prevented Saintfall retaliation does not grant Holy Block", () => {
     const saintfall = patchBattleState({
       rng: () => 0.5,
       playerHealth: 20,
@@ -161,7 +165,7 @@ describe("encounter event regressions", () => {
     expect(reflected.playerStatuses.block).toBe(0);
   });
 
-  it("preserves reentrant DoT/threshold state, opening-draw queue order, and skips post-kill Stun/Archery rolls", () => {
+  it("preserves Burn applied by an empty-draw Wish during detonation", () => {
     const dotState = regressionBattle({
       enemyHealth: 100,
       enemyMaxHealth: 100,
@@ -171,7 +175,9 @@ describe("encounter event regressions", () => {
     });
     const detonated = detonateEnemyStatuses(dotState, ["bleed", "burn"], []);
     expect(detonated.enemyStatuses.burn).toBe(3);
+  });
 
+  it("Poison follow-ups preserve newly granted Divine Aegis Armor", () => {
     const aegisState = regressionBattle({
       enemyHealth: 12,
       enemyMaxHealth: 20,
@@ -180,7 +186,9 @@ describe("encounter event regressions", () => {
       talentEffects: { poisonStunChance: 100 },
     });
     expect(tickEnemyStatuses(aegisState, []).enemyMitigation.armor).toBe(2);
+  });
 
+  it("opening draws stay behind previously queued cards", () => {
     const older = makeTestCard({ id: "older", uid: 7 });
     const drawState = regressionBattle({
       hand: Array.from({ length: MAX_HAND_SIZE }, (_, uid) => makeTestCard({ id: `hand-${uid}`, uid })),
@@ -189,7 +197,9 @@ describe("encounter event regressions", () => {
       nextCardUid: 8,
     });
     expect(drawOpeningHand(drawState).pendingHandCards.map((card) => card.id)).toEqual(["older", "draw-1", "draw-0"]);
+  });
 
+  it("lethal hits skip subsequent Stun and Archery rolls", () => {
     const lethalCard = makeTestCard({
       tags: ["archery"],
       effects: [{ kind: "damage", damageType: "poison", amount: 4 }],

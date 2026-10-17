@@ -58,7 +58,7 @@ describe("brewing content", () => {
     expect(offers.some((card) => ["health-potion", "stoneskin-potion", "panacea-potion"].includes(card.id))).toBe(true);
     expect(offers).toEqual(createCampfirePotionOffers(createSeededRng(23)));
   });
-  it("allows repeated strengthening and mixing after save hydration without re-adding replaced Panacea healing", () => {
+  it("allows repeated strengthening and mixing after save hydration", () => {
     const potion = strengthenPotion(cardById["health-potion"]!)!;
     expect(potion.descriptionLines).toEqual(["Restore 9 Health", "Consume"]);
     expect(potion.cost).toBe(cardById["health-potion"]!.cost);
@@ -84,7 +84,12 @@ describe("brewing content", () => {
     expect(strengthenPotion(manaPanacea)?.effects).toEqual([
       { kind: "remove-harmful-status", removeAll: true },
       { kind: "restore-mana", amount: 3 },
+      { kind: "heal", amount: 1 },
     ]);
+    const distilled = strengthenPotion(manaPanacea)!;
+    expect(distilled.descriptionLines).toContain("Restore 1 Health");
+    expect(strengthenPotion(distilled)?.effects.at(-1)).toEqual({ kind: "heal", amount: 2 });
+    expect(hydrateCard(BattleCardSchema.parse(distilled)).descriptionLines).toEqual(distilled.descriptionLines);
   });
   it("distills Companion actions on Potions and scales them with Potion potency", () => {
     const source = getTransmutationVariants(cardById["health-potion"]!, "companion", [cardById["wolf-companion"]!])[0]!
