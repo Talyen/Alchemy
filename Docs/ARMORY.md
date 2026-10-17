@@ -202,7 +202,7 @@ The keyword affixes use the same battle events as cards and talents. Bramblecall
 
 Cleanse, Purge, and Death's Door remain mechanics rather than Alchemy keywords; their new affixes use existing item affinities. Restorative rolls only after Health is actually restored, and Clearheaded and Solace reward each harmful status removed. Spellrending has a 25% chance at either rarity to Purge one enemy benefit at the start of each player turn, including the opening turn; it no longer reacts to Mana spending. Multiple copies add their chance, and no turn allowance is saved; Unraveling and Denouncing reward a successful Purge once, even if it removes multiple benefits. Emberwake deals a Burn follow-up only on Death's Door entry, Lastwatch raises Critical Hit chance only during its grace window, and Rekindled heals on surviving expiry. Ironbriar grants Thorns when Block remains after turn decay. Bristling checks Block after the incoming hit, and Spiteful heals only for the first Thorns retaliation each turn that removes enemy Health.
 
-Fateful uses Mana as its secondary affinity so its Wish draw effect can roll on ordinary Mana Gear. The affix catalog test checks that every ordinary affix is reachable on at least one Basic or Astral item.
+Fateful uses Mana as its secondary affinity so its Wish draw effect can roll on ordinary Mana Gear. Shared content validation checks that every ordinary affix is reachable on at least one Basic or Astral item.
 
 `src/lib/gear/affix-rows.ts` owns the ordered affix definitions. Typed builders
 preserve literal IDs and effect keys; `GearEffectManifest`, numeric defaults, and
@@ -210,8 +210,8 @@ preserve literal IDs and effect keys; `GearEffectManifest`, numeric defaults, an
 Forge chances is listed separately in `gear-effect-manifest.ts`; all other effects
 sum numerically. `affix-catalog.ts` adds visible tooltip keywords without becoming
 a dependency of manifest construction. Preserve row order when editing: seeded
-Gear generation depends on it. Catalog guards and content validation retain
-unique-ID, display-name, roll-range, and ordinary-affix reachability checks.
+Gear generation depends on it. Catalog construction rejects duplicate affix IDs;
+shared content validation owns display-name, roll-range, and ordinary-affix reachability checks.
 
 ## Persistence
 
@@ -235,19 +235,21 @@ Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/featur
 
 Gear rule coverage lives in `tests/lib/gear/` (`gear`, `generation`,
 `crafting`, `crafting-ids`, `salvage-yield`,
-`unique-catalog`, `gear-shine`, `definitions-art`, `affixes`,
+`unique-catalog`, `gear-shine`, `affixes`,
 `affix-pool`); aggregate and
 persistence contracts in `tests/features/alchemy/shared/stores/gear-*` and
 `tests/features/alchemy/shared/storage/gear-save.test.ts`; Armory interaction
 in `tests/features/alchemy/meta/screens/armory-screen*.test.tsx` and
-`tests/features/alchemy/meta/screens/armory/*.test.ts`; architecture guards in
-`tests/architecture/affix-catalog-guard.test.ts` (including pool capacity and
-ordinary-affix reachability); Unique battle behavior in
+`tests/features/alchemy/meta/screens/armory/*.test.ts`; catalog rejection checks in
+`tests/lib/content-validation/gear-validation.test.ts` and catalog-wide acceptance in
+`tests/lib/content-validation/content-validation.test.ts`; Unique battle behavior in
 `tests/lib/battle/unique-effects.test.ts`, `unique-damage-bonuses.test.ts`,
 `unique-card-repeats.test.ts`, `unique-card-opportunities.test.ts`,
 `enemy-attack-damage.test.ts`, `damage-forge.test.ts`, and `battle-effect-persistence.test.ts`.
-`src/lib/content-validation/validators-gear.ts` mirrors the catalog guards so
-`npm run content:audit` enforces the same invariants outside vitest. Use
+`src/lib/content-validation/validators-gear.ts` owns the catalog invariants for
+both the unit gate and `npm run content:audit`: pool capacity and reachability,
+distinct affix names, ordered roll ranges, fixed Unique signatures and distinct
+known supporting affixes, generated definitions, and missing-art fallbacks. Use
 CONTRIBUTING's [changed-path gate](../CONTRIBUTING.md#what-to-run-when-you-change) and
 [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) to select
 checks for the affected risks.

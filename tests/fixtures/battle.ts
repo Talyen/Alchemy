@@ -69,6 +69,7 @@ export function makeTestBattleState(patch: BattleStatePatch = {}): BattleState {
   };
   const state = { ...base, ...patch } as BattleState;
   for (const field of BATTLE_RECORD_FIELDS) {
+    if (!Object.hasOwn(patch, field)) continue;
     Object.assign(state, { [field]: { ...base[field], ...patch[field] } });
   }
   return state;

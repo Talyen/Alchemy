@@ -59,18 +59,19 @@ not spend its repeat opportunity.
 
 ## Verification ownership
 
-[Catalog tests](../tests/lib/gear/unique-catalog.test.ts) cover base-item coverage,
-exclusive signatures, fixed rolls, inventory repair, and independent generated
-instances. [Unique-effect tests](../tests/lib/battle/unique-effects.test.ts) and
+[Catalog tests](../tests/lib/gear/unique-catalog.test.ts) cover inventory repair,
+crafting restrictions, and salvage. [Shared content validation tests](../tests/lib/content-validation/gear-validation.test.ts)
+cover base-item coverage, exclusive signatures, fixed rolls, and distinct known
+supporting affixes. [Unique-effect tests](../tests/lib/battle/unique-effects.test.ts) and
 [damage bonus tests](../tests/lib/battle/unique-damage-bonuses.test.ts),
 [card repeat tests](../tests/lib/battle/unique-card-repeats.test.ts),
 [card opportunity tests](../tests/lib/battle/unique-card-opportunities.test.ts),
 and [combat persistence tests](../tests/lib/battle/battle-effect-persistence.test.ts)
 cover triggers, costs, damage repeats, delayed effects, resource preservation,
 Dodge, saves, and interactions. [Content audit](../src/lib/content-validation/validators-gear.ts)
-enforces the same catalog invariants outside vitest (one Unique per base,
-exclusive `uniqueOnly` signatures, three supporting affixes at unique-max),
-mirrored by the [architecture guards](../tests/architecture/). The combat-tuning
+enforces those catalog invariants outside vitest (one Unique per base,
+exclusive `uniqueOnly` signatures, three distinct supporting affixes at unique-max).
+The combat-tuning
 prose test in the catalog tests keeps `UNIQUE_GEAR_COMBAT` magnitudes in sync
 with signature descriptions. Missing battle-local fields follow the
 [save default contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#defaults-and-resume-normalization).
