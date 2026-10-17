@@ -2237,7 +2237,6 @@
   "ui.talent-tree.d1": {"text":"Desbloqueado","sourceHash":"b3e2f04d3ff5c5b40f12a1e974c4eabfd262931c346e5a8d7dcda5523180db1b","reviewed":true},
   "ui.talent-tree.d2": {"text":"Desbloqueando","sourceHash":"e9e32ae5fc713e519f5e1abe92ee83a08dc21e916c7a188f1a70231f03960472","reviewed":true},
   "ui.talent-tree.d3": {"text":"Disponível para desbloquear","sourceHash":"480f8698a253075435cd392ec0ed5514d9f844c2c3feb09cfa1e82e7976ccf04","reviewed":true},
-  "ui.talent-tree.d5": {"text":"Em breve","sourceHash":"87fed659d33f0e26d0e19ec7e057808e58fa98a659a588765911238f32cdf57f","reviewed":true},
   "ui.talents-screen.1": {"text":"Redefinir talentos","sourceHash":"bb369a0189b100a08072bb2cb443579e9c8741faa180da86e66c78245846a5e4","reviewed":true},
   "ui.talents-screen.3": {"text":"Redefinir talentos","sourceHash":"e3adbf5fcc31f03e4698cf8f26a137cf62b31b80ec992c4eaeb8463ecf77a230","reviewed":true},
   "ui.talents-screen.4": {"text":"Isso devolverá todos os seus pontos de talento.","sourceHash":"bf158d2027f7dc285bd1908f59e7424615c3e568f21f0966b3a5fb2897e3fe91","reviewed":true},

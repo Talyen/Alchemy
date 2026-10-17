@@ -83,8 +83,10 @@ export function selectRewardCards(
   rng: () => number,
   seedKeywords: KeywordId[] = [],
 ): BattleCard[] {
+  if (count <= 0) return [];
   const excludedIds = new Set(exclude.map((card) => card.id));
   const pool = allCards.filter((card) => !excludedIds.has(card.id));
+  if (pool.length === 0) return [];
   const hasCompanion = deckHasCompanionCard(deck);
   // A Companion-only Wish still offers all its choices when the deck already
   // contains summons; dampening belongs to mixed reward pools.
@@ -112,10 +114,9 @@ export function selectRewardCards(
 
   for (let i = 0; i < count; i++) {
     const chosenCard = pickOneCard(affinityPool, randomPool, selectedIds, rng);
-    if (chosenCard) {
-      selected.push(chosenCard);
-      selectedIds.add(chosenCard.id);
-    }
+    if (!chosenCard) break;
+    selected.push(chosenCard);
+    selectedIds.add(chosenCard.id);
   }
 
   // Ownership changes preference, not the number of promised choices.

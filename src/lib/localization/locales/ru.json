@@ -2237,7 +2237,6 @@
   "ui.talent-tree.d1": {"text":"Открыто","sourceHash":"d831823eaaa2661188d85e00a3b12f8135650cc3fe1df34f83778f9b14cd1f85","reviewed":true},
   "ui.talent-tree.d2": {"text":"Открывается","sourceHash":"59770a7681a00184b84fcf15bbc5f0044dd1f455d1f6b762b861a23668397488","reviewed":true},
   "ui.talent-tree.d3": {"text":"Можно открыть","sourceHash":"c8604aa59fc023f8ac6ca6a7c3c2f611cfa23d10723652ced946527635914ec8","reviewed":true},
-  "ui.talent-tree.d5": {"text":"Скоро","sourceHash":"07ad0d92331b1db447c4f09761863e4f7a846adf3dd00b87c916a207b8474382","reviewed":true},
   "ui.talents-screen.1": {"text":"Сбросить таланты","sourceHash":"cf2c7532c2a7b55a0bea3f098ff8b891707c1cad1e7c30cbbd7420fec86b6b49","reviewed":true},
   "ui.talents-screen.3": {"text":"Сбросить таланты","sourceHash":"071dc5f453f4516f7f7a862ceeccebf332365685ff0f576ad48b99e128339f0e","reviewed":true},
   "ui.talents-screen.4": {"text":"Это вернёт все ваши очки талантов.","sourceHash":"41cbb5f3655c24465100efea008b241421e578de623194c63df54aab74e5de24","reviewed":true},

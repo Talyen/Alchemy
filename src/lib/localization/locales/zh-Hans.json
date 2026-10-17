@@ -2237,7 +2237,6 @@
   "ui.talent-tree.d1": {"text":"已解锁","sourceHash":"525d8aea3db23fbaee3ead57a7957f5a75c067b24ce48b405d655b2d446547d0","reviewed":true},
   "ui.talent-tree.d2": {"text":"正在解锁","sourceHash":"853edd021f0b443ccb8555658e26a1a9bb4cfeb214be23b761e9357fb3fb2a42","reviewed":true},
   "ui.talent-tree.d3": {"text":"可解锁","sourceHash":"5e54a6719081e28a7eac1cde5d62db5406023f4c34b1caa2b2d68945049ef758","reviewed":true},
-  "ui.talent-tree.d5": {"text":"即将推出","sourceHash":"bd95a4d19248e5a4d00a71b5034e1f492006f4f198107d4e79754c8966ce396a","reviewed":true},
   "ui.talents-screen.1": {"text":"重置天赋","sourceHash":"51078e70c9d2ef1202ad94a3b473aa5b990e11ff7320debdfcbc305f52241e43","reviewed":true},
   "ui.talents-screen.3": {"text":"重置天赋","sourceHash":"f6aac38b620ce9107948a2c243c0009966f0a6a6aa4655fabe75183260a7dcd8","reviewed":true},
   "ui.talents-screen.4": {"text":"将返还全部天赋点。","sourceHash":"2b1679d0d234139a16804cae4bb7be46733c4533cfbf5f88321fcb6aa2b2a574","reviewed":true},

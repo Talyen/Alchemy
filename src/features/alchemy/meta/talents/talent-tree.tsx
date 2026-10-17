@@ -2,8 +2,6 @@ import { useGameTranslation } from "@/components/use-game-translation";
 
 import { createElement, memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
-import { Lock } from "lucide-react";
-
 import { ShineBorder } from "@/components/ui/shine-border";
 import {
   cardInteractiveGlowClass,
@@ -12,7 +10,7 @@ import {
   getTalentIcon,
 } from "@/features/alchemy/shared/config";
 import { TALENT_UNLOCK_ANIMATION_MS } from "@/lib/game-constants";
-import { keywordDefinitions, isTalentPlaceholder, TALENT_ROW_SIZES, chunkIntoRows } from "@/lib/game-data";
+import { keywordDefinitions, TALENT_ROW_SIZES, chunkIntoRows } from "@/lib/game-data";
 import type { TalentDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import { renderColoredKeywords } from "../../shared/ui/cards/card-description-ui";
@@ -51,18 +49,16 @@ const TalentCard = memo(function TalentCard({
   const def = keywordDefinitions[talent.keywordId];
   const shineColors = getKeywordShineColors(talent.keywordId);
   const accentColor = shineColors[0];
-  const isPlaceholder = isTalentPlaceholder(talent);
   const interactive = isAllocatable && canAfford && !isUnlocking;
   const showShine = interactive;
-  const Element = isPlaceholder ? "div" : "button";
   const isLockedLook = !isUnlocked && !interactive && !isUnlocking;
 
   const style = accentColor ? ({ "--talent-accent": accentColor } as CSSProperties) : undefined;
 
   return (
-    <Element
-      type={isPlaceholder ? undefined : "button"}
-      aria-disabled={isPlaceholder ? undefined : !interactive}
+    <button
+      type="button"
+      aria-disabled={!interactive}
       onClick={interactive ? () => onUnlock?.(talent.id) : undefined}
       onMouseEnter={() => {
         onHoverTalent?.(talent);
@@ -79,37 +75,33 @@ const TalentCard = memo(function TalentCard({
       className={cn(
         "talent-node relative h-[calc(10.5*var(--content-rem,1rem))] w-[calc(20.5*var(--content-rem,1rem))] shrink-0 rounded-lg bg-stone-900",
         showShine && "talent-card-available",
-        !isPlaceholder && cardInteractiveGlowClass,
-        !isPlaceholder && cardShineFrameClass,
+        cardInteractiveGlowClass,
+        cardShineFrameClass,
         isLockedLook && "talent-hover-scale-only",
         interactive && "cursor-pointer",
       )}
       style={style}
     >
-      {!isPlaceholder ? (
-        <span className="sr-only">
-          {i18n.displayText(
-            isUnlocked
-              ? i18n.text("ui.talent-tree.d1", "Unlocked")
-              : isUnlocking
-                ? i18n.text("ui.talent-tree.d2", "Unlocking")
-                : interactive
-                  ? i18n.text("ui.talent-tree.d3", "Available to unlock")
-                  : i18n.text("ui.talent-tree.d4", "Locked"),
-          )}
-        </span>
-      ) : null}
+      <span className="sr-only">
+        {i18n.displayText(
+          isUnlocked
+            ? i18n.text("ui.talent-tree.d1", "Unlocked")
+            : isUnlocking
+              ? i18n.text("ui.talent-tree.d2", "Unlocking")
+              : interactive
+                ? i18n.text("ui.talent-tree.d3", "Available to unlock")
+                : i18n.text("ui.talent-tree.d4", "Locked"),
+        )}
+      </span>
       <TalentUnlockBurst active={isUnlocking} colors={shineColors} />
       <div
         className={cn(
           "talent-card-face relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-lg border-2 px-5 py-4 text-center transition-all duration-300 ease-[var(--ease-out-expo)] outline-none select-none",
           isUnlocked || isUnlocking
             ? "talent-card-unlocked bg-stone-900"
-            : isPlaceholder
-              ? "talent-card-placeholder border-dashed border-border/30 bg-stone-950"
-              : interactive
-                ? "border-transparent bg-stone-950 shadow-[0_4px_14px_rgba(0,0,0,0.4)]"
-                : "border-border/30 bg-stone-950",
+            : interactive
+              ? "border-transparent bg-stone-950 shadow-[0_4px_14px_rgba(0,0,0,0.4)]"
+              : "border-border/30 bg-stone-950",
         )}
       >
         <div
@@ -119,35 +111,27 @@ const TalentCard = memo(function TalentCard({
           )}
         >
           <div className="flex items-center justify-center gap-2">
-            <span className={cn(isPlaceholder ? "text-muted-foreground" : def?.colorClass)}>
-              {i18n.displayText(
-                isPlaceholder
-                  ? createElement(Lock, { className: "h-7 w-7 sm:h-8 sm:w-8" })
-                  : createElement(getTalentIcon(talent), { className: "h-7 w-7 sm:h-8 sm:w-8" }),
-              )}
+            <span className={cn(def?.colorClass)}>
+              {i18n.displayText(createElement(getTalentIcon(talent), { className: "h-7 w-7 sm:h-8 sm:w-8" }))}
             </span>
             <span
               className={cn(
                 "max-w-[calc(15*var(--content-rem,1rem))] truncate text-xl font-bold sm:text-2xl",
-                isPlaceholder ? "text-muted-foreground" : def?.colorClass,
+                def?.colorClass,
               )}
             >
-              {i18n.displayText(
-                isPlaceholder ? i18n.text("ui.talent-tree.d5", "Coming Soon") : (talent.name ?? "Talent"),
-              )}
+              {i18n.displayText(talent.name ?? "Talent")}
             </span>
           </div>
-          {isPlaceholder ? null : (
-            <p className="mt-1 text-base leading-snug text-balance text-foreground/90 sm:text-lg">
-              {i18n.displayText(i18n.read(() => renderColoredKeywords(talent.description)))}
-            </p>
-          )}
+          <p className="mt-1 text-base leading-snug text-balance text-foreground/90 sm:text-lg">
+            {i18n.displayText(i18n.read(() => renderColoredKeywords(talent.description)))}
+          </p>
         </div>
       </div>
       {showShine ? (
         <ShineBorder shineColor={shineColors} borderWidth={2} duration={8} className="z-10 rounded-lg" />
       ) : null}
-    </Element>
+    </button>
   );
 });
 

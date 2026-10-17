@@ -14,19 +14,13 @@ export interface TalentDefinition {
       | TalentEffectManifest[K]
       | (TalentEffectManifest[K] extends number ? AdditiveTalentBonus : never);
   }>;
-
-  isPlaceholder?: boolean;
-}
-
-export function isTalentPlaceholder(talent: TalentDefinition): boolean {
-  return talent.isPlaceholder === true;
 }
 
 export function isUsableTalentForKeyword(
   talent: TalentDefinition | undefined,
   keywordId: KeywordId,
 ): talent is TalentDefinition {
-  return !!talent && !isTalentPlaceholder(talent) && talent.keywordId === keywordId;
+  return !!talent && talent.keywordId === keywordId;
 }
 
 export type UnlockedTalents = Partial<Record<KeywordId, string[]>>;

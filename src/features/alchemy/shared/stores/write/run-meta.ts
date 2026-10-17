@@ -3,7 +3,6 @@ import type { KeywordId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import {
   computeRunEndTalentXPSnapshot,
   getDifficultyXPMultiplier,
-  isTalentPlaceholder,
   mergeRunTalentXPIntoPermanent,
   talentPool,
   tryUnlockTalent,
@@ -36,7 +35,6 @@ export function unlockAllTalents(draft: GameplayDraft): void {
   const next: UnlockedTalents = {};
   const xp: TalentXP = {};
   for (const talent of talentPool) {
-    if (isTalentPlaceholder(talent)) continue;
     next[talent.keywordId] = [...(next[talent.keywordId] ?? []), talent.id];
   }
   for (const [keyword, ids] of Object.entries(next)) {

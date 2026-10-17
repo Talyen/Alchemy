@@ -9,7 +9,6 @@ import {
   computeTalentEffects,
   canUnlockTalent,
   tryUnlockTalent,
-  isTalentPlaceholder,
   getTalentTreeKeywordIds,
 } from "@/lib/game-data";
 
@@ -20,16 +19,16 @@ describe("talent row layout", () => {
       // Saved later purchases must not unlock an unfinished earlier row.
       const allIds = talents.map((talent) => talent.id);
       const partialRows = [0, 2, 6, 9].map((missing) => allIds.filter((_, index) => index !== missing));
+      const rows = [talents.slice(0, 1), talents.slice(1, 3), talents.slice(3, 6), talents.slice(6, 10)];
+      expect(getTalentRows(keyword), keyword).toEqual(rows);
       for (const purchased of [[], ...partialRows, allIds]) {
         const offers = getAllocatableTalentChoices(keyword, purchased);
-        const rows = getTalentRows(keyword).map((row) => row.filter((talent) => !isTalentPlaceholder(talent)));
         const expected = rows.find((row) => row.some((talent) => !purchased.includes(talent.id))) ?? [];
         expect(offers, keyword).toEqual(expected.filter((talent) => !purchased.includes(talent.id)));
-        for (const talent of talents) {
-          expect(canUnlockTalent(keyword, talent.id, { [keyword]: 100_000 }, { [keyword]: purchased }).ok).toBe(
-            offers.includes(talent),
-          );
-        }
+        const unlockable = talents.filter(
+          (talent) => canUnlockTalent(keyword, talent.id, { [keyword]: 100_000 }, { [keyword]: purchased }).ok,
+        );
+        expect(unlockable, `${keyword}: ${purchased.join(",")}`).toEqual(offers);
       }
     }
   });
@@ -40,8 +39,8 @@ describe("talent row layout", () => {
     const unlocked = talents.filter((talent) => talent !== missing).map((talent) => talent.id);
     const saved = [...unlocked, "unknown", unlocked[0]!];
     expect(getAllocatableTalentChoices("physical", saved)).toEqual([missing]);
-    expect(canUnlockTalent("physical", missing.id, { physical: 2000 }, { physical: unlocked })).toEqual({ ok: true });
-    expect(tryUnlockTalent("physical", missing.id, { physical: 2000 }, { physical: unlocked })).toEqual({
+    expect(canUnlockTalent("physical", missing.id, { physical: 2000 }, { physical: saved })).toEqual({ ok: true });
+    expect(tryUnlockTalent("physical", missing.id, { physical: 2000 }, { physical: saved })).toEqual({
       unlockedTalents: { physical: [...unlocked, missing.id] },
     });
     expect(getAllocatableTalentChoices("physical", [...unlocked, missing.id])).toEqual([]);
@@ -75,9 +74,13 @@ describe("computeTalentEffects", () => {
     expect(effects.healthThresholdArmor).toEqual([{ threshold: 50, amount: 3 }]);
   });
 
-  it("ignores talent ids saved under the wrong keyword", () => {
-    const effects = computeTalentEffects({ burn: ["physical-brute-force"] });
-    expect(effects.flatPhysicalDamage).toBe(0);
+  it("counts each valid purchase once across save repair and combat aggregation", () => {
+    const purchases = { armor: ["armor-mitigate-stun", "armor-mitigate-stun"], physical: ["physical-brute-force"] };
+    const saved = { ...purchases, burn: ["physical-brute-force", "unknown-talent"] };
+    const normalized = { ...purchases, armor: ["armor-mitigate-stun"] };
+    expect(normalizeUnlockedTalents(saved)).toEqual(normalized);
+    expect(computeTalentEffects(saved)).toEqual(computeTalentEffects(normalized));
+    expect(saved.armor).toHaveLength(2);
   });
 });
 

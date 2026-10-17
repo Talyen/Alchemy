@@ -2237,7 +2237,6 @@
   "ui.talent-tree.d1": {"text":"Freigeschaltet","sourceHash":"2b8ece1bc683d2bb024074bdd7e50827a4eb23d4a362315d5e5576bad0a7b418","reviewed":true},
   "ui.talent-tree.d2": {"text":"Wird freigeschaltet","sourceHash":"830d892ced1d052c35adce26b864f9603adfe7de8bcd166e380c9962dd4ca9ca","reviewed":true},
   "ui.talent-tree.d3": {"text":"Freischaltbar","sourceHash":"a0325ef54c7ded3c50b1d74e04fd61f024362b1f9aa72b73afed2eac6d0c57c6","reviewed":true},
-  "ui.talent-tree.d5": {"text":"Demnächst","sourceHash":"5da62329e7ebe832c6998e06cf3758c3351ab21b9929c12162f1f93cdc518d38","reviewed":true},
   "ui.talents-screen.1": {"text":"Talente zurücksetzen","sourceHash":"0f73c01cdfe832d1ecf469a867aa9afac2a83c600d5331ee3eca49dd557d0ce1","reviewed":true},
   "ui.talents-screen.3": {"text":"Talente zurücksetzen","sourceHash":"1c43ad3f4aacdd0cb3c756059bfda68dfef8e1faba79de409ee970746e14c3e6","reviewed":true},
   "ui.talents-screen.4": {"text":"Erstattet alle deine Talentpunkte.","sourceHash":"50a6a3af97a9351cee5d57ec022262eb3f823bf26aee3f8fedd37fab075d03ca","reviewed":true},

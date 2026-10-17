@@ -4594,7 +4594,6 @@
   "ui.talent-tree.d2": {"text":"Unlocking","context":"features/alchemy/meta/talents/talent-tree.tsx","terms":[]},
   "ui.talent-tree.d3": {"text":"Available to unlock","context":"features/alchemy/meta/talents/talent-tree.tsx","terms":[]},
   "ui.talent-tree.d4": {"text":"Locked","context":"features/alchemy/meta/talents/talent-tree.tsx","terms":[],"aliasOf":"ui.difficulty-select-screen.2"},
-  "ui.talent-tree.d5": {"text":"Coming Soon","context":"features/alchemy/meta/talents/talent-tree.tsx","terms":[]},
   "ui.talents-screen.1": {"text":"Reset talents","context":"features/alchemy/meta/screens/talents-screen.tsx","terms":[]},
   "ui.talents-screen.3": {"text":"Reset Talents","context":"features/alchemy/meta/screens/talents-screen.tsx","terms":[]},
   "ui.talents-screen.4": {"text":"This will refund all your talent points.","context":"features/alchemy/meta/screens/talents-screen.tsx","terms":[]},

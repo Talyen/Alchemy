@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { selectRewardCards } from "@/lib/game-data";
 import type { BattleCard } from "@/lib/game-data";
 import { createSeededRng } from "@/lib/rng";
@@ -62,14 +62,7 @@ describe("selectRewardCards", () => {
       count: 12,
       hasCompanion: false,
       ids: ["fox", "plain", "wolf", "strike-0", "strike-2", "strike-3", "heal"],
-      nextRandom: 0.24224883294664323,
-    },
-    {
-      seed: 123,
-      count: 0,
-      hasCompanion: true,
-      ids: [],
-      nextRandom: 0.18843599455431104,
+      nextRandom: 0.4560541172977537,
     },
   ])("preserves rewards and subsequent randomness for seed $seed", ({ seed, count, hasCompanion, ids, nextRandom }) => {
     const pool = [
@@ -89,6 +82,14 @@ describe("selectRewardCards", () => {
     expect(rng()).toBe(nextRandom);
     expect(rewards).not.toContainEqual(expect.objectContaining({ id: "strike-1" }));
     expect(new Set(rewards).size).toBe(rewards.length);
+  });
+
+  it("leaves gameplay randomness untouched when no reward can be selected", () => {
+    const pool = [physicalCard("strike"), companionCard("wolf")];
+    const rng = vi.fn(() => 0.5);
+    expect(selectRewardCards(pool, pool, 0, [], rng)).toEqual([]);
+    expect(selectRewardCards(pool, pool, 3, pool, rng)).toEqual([]);
+    expect(rng).not.toHaveBeenCalled();
   });
 
   it("uses seed keywords before a draft has any cards", () => {

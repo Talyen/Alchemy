@@ -22,6 +22,8 @@ describe("talent progression", () => {
     [60, 2, 60],
     [119, 2, 1],
     [120, 3, 80],
+    [2814749934878719, 16777215, 1],
+    [2814749934878720, 16777216, 335544340],
   ])("awards points only at the threshold for %i XP", (xp, points, remaining) => {
     expect(computeTalentPoints(xp)).toBe(points);
     expect(xpToNextPoint(xp)).toBe(remaining);
@@ -89,10 +91,12 @@ it("spends earned points exactly once and rejects the next eligible Talent until
     ok: false,
     reason: "no-unspent-points",
   });
-  expect(canUnlockTalent("physical", first.id, { physical: Number.NaN }, {})).toEqual({
-    ok: false,
-    reason: "no-unspent-points",
-  });
+  for (const invalid of [Number.NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+    expect(canUnlockTalent("physical", first.id, { physical: invalid }, {})).toEqual({
+      ok: false,
+      reason: "no-unspent-points",
+    });
+  }
   const result = tryUnlockTalent("physical", first.id, { physical: 20 }, {});
   if (!result.unlockedTalents) throw new Error("Expected an earned Talent point");
   expect(canUnlockTalent("physical", first.id, { physical: 20 }, result.unlockedTalents)).toEqual({
