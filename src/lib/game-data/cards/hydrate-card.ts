@@ -1,6 +1,5 @@
 import { isCompanionSummonCard } from "./card-pools";
 import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
-import { mapEffectChildren } from "../effect-tree";
 import type { BattleCard } from "../types";
 import { cardById } from "./library/cards";
 import { mapCardDescriptionReferences } from "../card-description-model";
@@ -9,15 +8,20 @@ import { TRANSMUTATION_PREFIXES } from "@/lib/game-constants/transmutation";
 export type SavedCard = BattleCard;
 
 function cloneEffect(effect: BattleCard["effects"][number]): BattleCard["effects"][number] {
+  if (effect.kind === "chance")
+    return {
+      ...effect,
+      successEffects: effect.successEffects.map(cloneEffect),
+      failureEffects: effect.failureEffects.map(cloneEffect),
+    };
+  if (effect.kind === "repeat-over-turns") return { ...effect, effects: effect.effects.map(cloneEffect) };
   if ((effect.kind === "damage" || effect.kind === "random-damage") && effect.damageTypePool) {
     return { ...effect, damageTypePool: [...effect.damageTypePool] };
   }
   if (effect.kind === "player-status" && effect.statusPool) {
     return { ...effect, statusPool: [...effect.statusPool] };
   }
-  // Wrappers already own a fresh object and cloned branches; leaves still need a copy.
-  const mapped = mapEffectChildren(effect, cloneEffect);
-  return mapped === effect ? { ...effect } : mapped;
+  return { ...effect };
 }
 
 function hydrateCost(saved: SavedCard, libraryCard: BattleCard): number {

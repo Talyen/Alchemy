@@ -22,19 +22,31 @@ export function visitBattleCardEffects(
   return false;
 }
 
-/** Map one level without changing branch grouping; callers own recursion and leaf behavior. */
+/** Map one level, reusing unchanged wrappers; callers own recursion and leaf behavior. */
 export function mapEffectChildren(
   effect: BattleCardEffect,
   map: (child: BattleCardEffect, index: number) => BattleCardEffect,
 ): BattleCardEffect {
   if (effect.kind === "chance") {
+    const successEffects = effect.successEffects.map(map);
+    const failureEffects = effect.failureEffects.map((child, index) =>
+      map(child, effect.successEffects.length + index),
+    );
+    if (
+      successEffects.every((child, index) => child === effect.successEffects[index]) &&
+      failureEffects.every((child, index) => child === effect.failureEffects[index])
+    )
+      return effect;
     return {
       ...effect,
-      successEffects: effect.successEffects.map(map),
-      failureEffects: effect.failureEffects.map((child, index) => map(child, effect.successEffects.length + index)),
+      successEffects,
+      failureEffects,
     };
   }
-  if (effect.kind === "repeat-over-turns") return { ...effect, effects: effect.effects.map(map) };
+  if (effect.kind === "repeat-over-turns") {
+    const effects = effect.effects.map(map);
+    return effects.every((child, index) => child === effect.effects[index]) ? effect : { ...effect, effects };
+  }
   return effect;
 }
 

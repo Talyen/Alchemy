@@ -101,6 +101,7 @@ it.each([
               { kind: "damage", damageType: "physical", damageTypePool: ["physical", "burn"], amount: 4 },
               { kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: ["holy", "freeze"] },
               { kind: "player-status", status: "block", statusPool: ["block", "forge"], amount: 5 },
+              { kind: "repeat-over-turns", remainingTurns: 1, effects: [] },
             ],
           },
         ],
@@ -119,6 +120,7 @@ it.each([
     Object.assign(effect, { amount: 99 });
     if ("damageTypePool" in effect) effect.damageTypePool!.push("nature");
     if (effect.kind === "player-status") effect.statusPool!.push("thorns");
+    if (effect.kind === "repeat-over-turns") effect.effects.push({ kind: "heal", amount: 1 });
   }
   wrapper.failureEffects.push({ kind: "heal", amount: 99 });
   result.descriptionLines.push("Changed");

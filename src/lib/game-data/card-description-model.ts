@@ -1,5 +1,4 @@
 import { buildDescriptionMessage } from "./description-message";
-import { effectChildren } from "./effect-tree";
 import type { BattleCard, BattleCardEffect } from "./types";
 
 export interface CardEffectAddress {
@@ -64,8 +63,14 @@ export function getCardEffect(
 ): BattleCardEffect | undefined {
   let effect = effects[address.effectIndex];
   for (const index of address.effectPath ?? []) {
-    if (!effect) return undefined;
-    effect = effectChildren(effect)[index];
+    if (!Number.isInteger(index) || index < 0) return undefined;
+    if (effect?.kind === "chance")
+      effect =
+        index < effect.successEffects.length
+          ? effect.successEffects[index]
+          : effect.failureEffects[index - effect.successEffects.length];
+    else if (effect?.kind === "repeat-over-turns") effect = effect.effects[index];
+    else return undefined;
   }
   return effect;
 }

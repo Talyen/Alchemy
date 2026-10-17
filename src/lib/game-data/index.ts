@@ -18,12 +18,7 @@ export * from "./types";
 
 export { areBattleCardEffectsEqual, effectChildren, mapEffectChildren, visitBattleCardEffects } from "./effect-tree";
 
-export {
-  canonicalCardDescriptionMatches,
-  createEffectDescription,
-  describeCardEffects,
-  getCardDescription,
-} from "./effect-metadata";
+export { createEffectDescription, describeCardEffects, getCardDescription } from "./effect-metadata";
 export * from "./card-description-model";
 
 export { buildDescriptionMessage, type DescriptionMessageValue } from "./description-message";

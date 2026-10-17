@@ -34,6 +34,7 @@ describe("visitBattleCardEffects", () => {
       failureEffects: [{ kind: "gain-gold", amount: 3 }],
     };
     const before = structuredClone(chance);
+    expect(mapEffectChildren(chance, (child) => child)).toBe(chance);
     expect(effectChildren(chance)).toEqual([...chance.successEffects, ...chance.failureEffects]);
     const mapped = mapEffectChildren(chance, (_child, index) => ({ kind: "gain-gold", amount: index + 1 }));
     expect(mapped).toEqual({

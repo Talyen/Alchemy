@@ -87,20 +87,3 @@ export function collectKeywordsFromBattleEffects(effects: readonly BattleCardEff
   });
   return [...keywords];
 }
-
-/** Exact canonical text needs no second number parser. Custom and saved wording still uses parity rules. */
-export function canonicalCardDescriptionMatches(card: BattleCard): boolean {
-  if (!card.effects.length) return false;
-  let expected: string[];
-  try {
-    expected = describeCardEffects(card.effects);
-  } catch {
-    return false;
-  }
-  if (card.tags) expected.push(...card.tags.map(capitalizeWord));
-  if (card.consume) expected.push("Consume");
-  return (
-    expected.length === card.descriptionLines.length &&
-    expected.every((line, index) => line === card.descriptionLines[index])
-  );
-}

@@ -1,5 +1,5 @@
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
-import { canonicalCardDescriptionMatches, cardMagnitude, type CardDescription } from "@/lib/game-data";
+import { cardMagnitude, type CardDescription } from "@/lib/game-data";
 import { effectsCard } from "@/lib/game-data/cards/card-builders";
 import { expect, it } from "vitest";
 
@@ -33,14 +33,12 @@ it("validates exact canonical text and still rejects edited amounts and omitted 
     ],
   });
   expect(card.descriptionLines).toEqual(["Restore 4 Health", "Draw a card", "Consume"]);
-  expect(canonicalCardDescriptionMatches(card)).toBe(true);
   expect(validateCardDescriptionParity(card)).toEqual([]);
   for (const descriptionLines of [
     ["Restore 9 Health", "Draw a card", "Consume"],
     ["Restore 4 Health", "Consume"],
   ]) {
     const changed = { ...card, descriptionLines };
-    expect(canonicalCardDescriptionMatches(changed)).toBe(false);
     expect(validateCardDescriptionParity(changed).some((issue) => issue.severity === "error")).toBe(true);
   }
 });
