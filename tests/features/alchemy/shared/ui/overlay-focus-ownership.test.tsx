@@ -56,6 +56,24 @@ async function settle() {
 }
 
 describe("overlay focus ownership", () => {
+  it("restores the opener when a dialog closes before its first ownership frame", async () => {
+    const content = (open: boolean) => (
+      <>
+        <button>View Deck</button>
+        {open && <Dialog name="Deck" />}
+      </>
+    );
+    const view = render(content(false));
+    const opener = screen.getByRole("button", { name: "View Deck" });
+    opener.focus();
+    view.rerender(content(true));
+    // Native inert content drops focus before the first animation frame.
+    opener.blur();
+    view.rerender(content(false));
+    await settle();
+    expect(document.activeElement).toBe(opener);
+  });
+
   it("keeps controller traversal in the most recently opened panel even when it is earlier in DOM order", async () => {
     const content = (front: boolean) => (
       <>

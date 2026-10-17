@@ -140,7 +140,9 @@ export function registerDialogFocus(panel: HTMLDivElement, returnTarget: HTMLEle
   return () => {
     const index = scopes.indexOf(scope);
     if (index < 0) return;
-    const wasOwner = owner === scope;
+    // A quick dismissal can precede the first ownership frame. The newest
+    // unclaimed panel still owns restoration after native inert drops focus.
+    const wasOwner = owner === scope || (!owner && scopes.at(-1) === scope);
     scopes.splice(index, 1);
     // Covered panels never restore their opener through the foreground panel.
     if (wasOwner) {
