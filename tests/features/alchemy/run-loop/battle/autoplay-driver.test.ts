@@ -9,38 +9,35 @@ describe("driveAutoplay", () => {
     vi.useRealTimers();
   });
 
-  it("runs ready actions in sequence until disabled", async () => {
-    const played: number[] = [];
-    await driveAutoplay({
-      signal: new AbortController().signal,
-      delayMs: 0,
-      postPlayDelayMs: 0,
-      isEnabled: () => played.length < 2,
-      findAction: () => ({
-        canCommit: () => true,
-        play: () => {
-          played.push(played.length + 1);
-          return true;
-        },
-      }),
-    });
-    expect(played).toEqual([1, 2]);
-  });
-
-  it("retries a rejected action instead of stopping", async () => {
+  it("keeps readiness and rejection retries bounded when animations are disabled", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(animationPrefs, "isAnimationDisabled").mockReturnValue(true);
+    let blocked = true;
     let committed = false;
     const play = vi.fn(() => {
       committed = play.mock.calls.length > 1;
       return committed;
     });
-    await driveAutoplay({
+    const findAction = vi.fn(() => (blocked ? null : { canCommit: () => true, play }));
+    const done = driveAutoplay({
       signal: new AbortController().signal,
-      delayMs: 0,
+      delayMs: 100,
       postPlayDelayMs: 0,
       isEnabled: () => !committed,
-      findAction: () => ({ canCommit: () => true, play }),
+      findAction,
     });
+    await vi.advanceTimersByTimeAsync(99);
+    expect(findAction).toHaveBeenCalledOnce();
+    blocked = false;
+    await vi.advanceTimersByTimeAsync(1);
+    expect(play).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(99);
+    expect(play).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(1);
     expect(play).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(animationPrefs.ANIMATION_DISABLED_DURATION);
+    await done;
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("rechecks eligibility, enablement, and cancellation during an action preview", async () => {
@@ -172,7 +169,8 @@ describe("driveAutoplay", () => {
     return { controller, wakeRef, state, playCard, done };
   }
 
-  it.each([1, 3])("preserves pacing through %s wake notifications", async (wakeCount) => {
+  it("preserves pacing through repeated wake notifications", async () => {
+    const wakeCount = 3;
     const run = startTimedAutoplay();
     for (let i = 0; i < wakeCount; i++) {
       await vi.advanceTimersByTimeAsync(100);

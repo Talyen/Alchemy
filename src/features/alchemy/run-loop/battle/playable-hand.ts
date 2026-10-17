@@ -32,15 +32,6 @@ function getPlayableHandCards(
   return playable;
 }
 
-function immediateSelfDamage(effects: readonly BattleCardEffect[]): number {
-  return effects.reduce((total, effect) => {
-    if (effect.kind === "lose-health" || effect.kind === "self-damage") return total + effect.amount;
-    if (effect.kind === "chance")
-      return total + Math.max(immediateSelfDamage(effect.successEffects), immediateSelfDamage(effect.failureEffects));
-    return total;
-  }, 0);
-}
-
 interface SelfCostOutcome {
   health: number;
   phoenixFeather: boolean;
@@ -81,8 +72,13 @@ function selfCostOutcomes(
 function hasPotentialLethalSelfCost(card: BattleCard, state: BattleSnapshot): boolean {
   // Feather revival ends Death's Door protection before any remaining costs.
   if (!state.deathsDoorUsed || (state.deathsDoorActive && state.playerStatuses.phoenixFeather <= 0)) return false;
-  const selfDamage = immediateSelfDamage(card.effects);
-  if (selfDamage >= 0 && selfDamage * 2 < state.playerHealth) return false;
+  const revivedHealth = Math.round(state.playerMaxHealth * CAMPFIRE_HEAL_FRACTION);
+  const first = selfCostOutcomes(
+    card.effects,
+    [{ health: state.playerHealth, phoenixFeather: state.playerStatuses.phoenixFeather > 0 }],
+    revivedHealth,
+  );
+  if (first.some((outcome) => outcome.health <= 0)) return true;
 
   const keywords = getCardKeywords(card);
   const mayRepeat =
@@ -96,11 +92,7 @@ function hasPotentialLethalSelfCost(card: BattleCard, state: BattleSnapshot): bo
       if (keyword === "wish") return state.talentEffects.wishCardPlayTwiceChance > 0;
       return false;
     });
-  if (state.playerStatuses.phoenixFeather <= 0) return selfDamage * (mayRepeat ? 2 : 1) >= state.playerHealth;
-  const revivedHealth = Math.round(state.playerMaxHealth * CAMPFIRE_HEAL_FRACTION);
-  const first = selfCostOutcomes(card.effects, [{ health: state.playerHealth, phoenixFeather: true }], revivedHealth);
-  const outcomes = mayRepeat ? selfCostOutcomes(card.effects, first, revivedHealth) : first;
-  return outcomes.some((outcome) => outcome.health <= 0);
+  return mayRepeat && selfCostOutcomes(card.effects, first, revivedHealth).some((outcome) => outcome.health <= 0);
 }
 
 /**

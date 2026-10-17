@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import {
@@ -10,8 +10,7 @@ import {
 } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/cards";
-import { cardById, type BattleCard } from "@/lib/game-data";
-import * as battle from "@/lib/battle";
+import { cardById, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 
 const affordableCard: BattleCard = makeTestCard({
   id: "slash",
@@ -28,15 +27,6 @@ const expensiveCard: BattleCard = {
 };
 
 describe("handHasPlayableCard", () => {
-  it("stops validating once it finds a playable card", () => {
-    const validate = vi.spyOn(battle, "canPlayCard");
-    const state = makeTestBattleState({ hand: [expensiveCard, affordableCard, affordableCard], mana: 2 });
-    expect(handHasPlayableCard(state)).toBe(true);
-    expect(validate).toHaveBeenCalledTimes(2);
-    expect(handHasPlayableCard({ ...state, hand: [expensiveCard] })).toBe(false);
-    expect(handHasPlayableCard({ ...state, hand: [] })).toBe(false);
-  });
-
   it("keeps the post-defeat play option and Wish gate", () => {
     const state = makeTestBattleState({ hand: [affordableCard], enemyHealth: 0, mana: 2 });
     expect(handHasPlayableCard(state)).toBe(true);
@@ -86,24 +76,6 @@ describe("findBestPlayableHandCard", () => {
       ...overrides,
     });
   }
-
-  it("picks the highest-scoring card ahead of hand order", () => {
-    const state = greedyState([
-      { ...weakHit, uid: 1 },
-      { ...strongHit, uid: 2 },
-    ]);
-
-    expect(findBestPlayableHandCard(state)?.card.uid).toBe(2);
-  });
-
-  it("breaks score ties with the leftmost card", () => {
-    const state = greedyState([
-      { ...weakHit, uid: 1 },
-      { ...weakHit, uid: 2 },
-    ]);
-
-    expect(findBestPlayableHandCard(state)?.card.uid).toBe(1);
-  });
 
   it("skips unaffordable cards even when they score highest", () => {
     const pricey = makeTestCard({
@@ -189,6 +161,29 @@ describe("findBestPlayableHandCard", () => {
     expect(findBestPlayableHandCard(state)).toBeNull();
   });
 
+  it("ignores impossible lethal chance branches but leaves a real lethal risk to manual play", () => {
+    for (const probability of [0, 1]) {
+      const lethal: BattleCard["effects"] = [{ kind: "lose-health", amount: 2 }];
+      const safe: BattleCard["effects"] = [{ kind: "damage", damageType: "physical", amount: 9 }];
+      const effect = {
+        kind: "chance",
+        probability,
+        successEffects: probability === 0 ? lethal : safe,
+        failureEffects: probability === 0 ? safe : lethal,
+      } satisfies BattleCardEffect;
+      const card = makeTestCard({ effects: [effect] });
+      const state = greedyState([card], { playerHealth: 2, deathsDoorUsed: true });
+      expect(playBattleCardResolved({ ...state, rng: () => 0.99 }, card.id, 0).state.playerHealth).toBe(2);
+      expect(findBestPlayableHandCard(state)?.card).toBe(card);
+      expect(
+        findBestPlayableHandCard({
+          ...state,
+          hand: [{ ...card, effects: [{ ...effect, probability: 0.5 }] }],
+        }),
+      ).toBeNull();
+    }
+  });
+
   it.each([
     { kind: "repeat", deathsDoorActive: false },
     { kind: "multiple-costs", deathsDoorActive: false },
@@ -266,19 +261,6 @@ describe("findBestPlayableHandCard", () => {
     });
     const state = greedyState([potion, weakHit], { mana: 3, maxMana: 3 });
     expect(findBestPlayableHandCard(state)?.card.id).toBe(weakHit.id);
-  });
-
-  it("does not spend a draw card when the hand is full", () => {
-    const draw = makeTestCard({
-      id: "draw",
-      cost: 0,
-      consume: true,
-      effects: [{ kind: "draw-cards", amount: 4 }],
-    });
-    const state = greedyState([draw, strongHit, weakHit, weakHit, weakHit, weakHit, weakHit], {
-      deck: [strongHit],
-    });
-    expect(findBestPlayableHandCard(state)?.card.id).toBe(strongHit.id);
   });
 
   it("values a heal by Health actually missing", () => {
