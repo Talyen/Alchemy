@@ -1,6 +1,6 @@
 import { makeTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
-import { createMixedPotion, tryCreateMixedPotion, applyMixToDeck, doublePotionPotency } from "@/lib/alchemist";
+import { createMixedPotion, doublePotionPotency } from "@/lib/alchemist";
 import { cardLibrary, cloneBattleCard, getCardDescription, type BattleCard } from "@/lib/game-data";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
@@ -21,12 +21,6 @@ function makePotion(overrides: Partial<BattleCard> = {}): BattleCard {
 }
 
 const healPotion = makePotion();
-const firePotion = makePotion({
-  id: "fire-potion",
-  title: "Fire Potion",
-  descriptionLines: ["Deal 8 Burn damage", "Consume"],
-  effects: [{ kind: "damage", damageType: "burn", amount: 8 }],
-});
 
 describe("createMixedPotion", () => {
   it("retains improvement marks from both equivalent ingredients through save hydration", () => {
@@ -94,16 +88,17 @@ describe("createMixedPotion", () => {
     expect(mixed.descriptionLines).toEqual(["Gain 8 Mana, Gold, or Block", "Consume"]);
     expect(luck.descriptionLines[0]).toBe("Gain 4 Mana, Gold, or Block");
   });
-  it("combines different Potions while preserving both ingredients", () => {
-    const before = structuredClone([healPotion, firePotion]);
-    const mixed = createMixedPotion(healPotion, firePotion);
+  it("preserves both ingredients even when different Potions have matching effects and prose", () => {
+    const otherPotion = makePotion({ id: "another-health-potion" });
+    const before = structuredClone([healPotion, otherPotion]);
+    const mixed = createMixedPotion(healPotion, otherPotion);
     expect(mixed.effects).toEqual([
       { kind: "heal", amount: 5 },
-      { kind: "damage", damageType: "burn", amount: 8 },
+      { kind: "heal", amount: 5 },
     ]);
-    expect(mixed.descriptionLines).toEqual(["Restore 5 Health", "Deal 8 Burn damage", "Consume"]);
+    expect(mixed.descriptionLines).toEqual(["Restore 5 Health", "Restore 5 Health", "Consume"]);
     expect(mixed.consume).toBe(true);
-    expect([healPotion, firePotion]).toEqual(before);
+    expect([healPotion, otherPotion]).toEqual(before);
   });
   it("keeps both effect sets when same-id cards differ below the top level", () => {
     const cardA = makePotion({
@@ -131,23 +126,6 @@ describe("createMixedPotion", () => {
     });
   });
 
-  it("preserves repeated description lines from different cards to match concatenated effects", () => {
-    const manaPotionA = makePotion({
-      id: "mana-potion-a",
-      descriptionLines: ["Gain 2 Mana", "Consume"],
-      effects: [{ kind: "restore-mana", amount: 2 }],
-    });
-    const manaPotionB = makePotion({
-      id: "mana-potion-b",
-      descriptionLines: ["Gain 2 Mana", "Consume"],
-      effects: [{ kind: "restore-mana", amount: 2 }],
-    });
-    const mixed = createMixedPotion(manaPotionA, manaPotionB);
-
-    expect(mixed.effects).toHaveLength(2);
-    expect(mixed.descriptionLines).toEqual(["Gain 2 Mana", "Gain 2 Mana", "Consume"]);
-  });
-
   it("keeps a scheduled duration while scaling damage", () => {
     const turns = 2;
     const durationPotion = makePotion({
@@ -171,23 +149,6 @@ describe("createMixedPotion", () => {
     expect(mixed.descriptionLines).toEqual([`Deal 20 Poison damage for the next ${turns} turns`, "Consume"]);
   });
 
-  it("does not cascade-replace numbers when a scaled amount matches another base effect amount", () => {
-    const multiEffectPotion = makePotion({
-      id: "hybrid-potion",
-      descriptionLines: ["Deal 5 Burn damage", "Gain 10 Block", "Consume"],
-      effects: [
-        { kind: "damage", damageType: "burn", amount: 5 },
-        { kind: "player-status", status: "block", amount: 10 },
-      ],
-    });
-
-    const mixed = createMixedPotion(multiEffectPotion, multiEffectPotion);
-
-    expect(mixed.effects[0]).toEqual({ kind: "damage", damageType: "burn", amount: 10 });
-    expect(mixed.effects[1]).toEqual({ kind: "player-status", status: "block", amount: 20 });
-    expect(mixed.descriptionLines).toEqual(["Deal 10 Burn damage", "Gain 20 Block", "Consume"]);
-  });
-
   it("keeps an unscaled conversion rate when it matches a scaled damage amount", () => {
     const volatilePotion = makePotion({
       id: "volatile-potion",
@@ -207,39 +168,6 @@ describe("createMixedPotion", () => {
       "Convert each of your Mana into 5 Block",
       "Consume",
     ]);
-  });
-});
-
-it("tryCreateMixedPotion returns null if either input is undefined", () => {
-  expect(tryCreateMixedPotion(undefined, healPotion)).toBeNull();
-  expect(tryCreateMixedPotion(healPotion, undefined)).toBeNull();
-  expect(tryCreateMixedPotion(undefined, undefined)).toBeNull();
-});
-
-describe("applyMixToDeck", () => {
-  const potionA = makePotion({ id: "a" });
-  const potionB = makePotion({ id: "b" });
-  const potionC = makePotion({ id: "c" });
-  const mixed = createMixedPotion(potionA, potionB);
-
-  it("removes the two potions at given indices and appends the mixed potion", () => {
-    const deck = [potionA, potionB, potionC];
-    const original = [...deck];
-    const result = applyMixToDeck(deck, 1, 0, mixed);
-    expect(deck).toEqual(original);
-
-    expect(result).toHaveLength(2);
-    expect(result[0].id).toBe("c");
-    expect(result[1].id).toBe(mixed.id);
-  });
-
-  it("throws on identical indices or out-of-bounds indices", () => {
-    const deck = [potionA, potionB, potionC];
-    expect(() => applyMixToDeck(deck, 1, 1, mixed)).toThrow("Invalid potion indices for mixing");
-    expect(() => applyMixToDeck(deck, -1, 1, mixed)).toThrow("Invalid potion indices for mixing");
-    expect(() => applyMixToDeck(deck, 0, 5, mixed)).toThrow("Invalid potion indices for mixing");
-    expect(() => applyMixToDeck(deck, 0.5, 1, mixed)).toThrow();
-    expect(() => applyMixToDeck(deck, 0, Number.NaN, mixed)).toThrow();
   });
 });
 

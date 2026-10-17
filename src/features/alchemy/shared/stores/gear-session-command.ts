@@ -203,14 +203,3 @@ export function salvageGearInTransaction(transaction: RunTransaction, instanceId
   }
   return result;
 }
-
-export function dispatchGearSalvageWithMaterialGrant(instanceId: string, gameSession: GameSession) {
-  return dispatchGameplayCommand(
-    (draft) => {
-      const result = salvageGearInTransaction(draft, instanceId);
-      return result ? acceptCommand(result) : rejectCommand("Gear cannot be salvaged", null);
-    },
-    undefined,
-    gameSession,
-  );
-}

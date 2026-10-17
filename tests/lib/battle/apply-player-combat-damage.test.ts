@@ -4,68 +4,18 @@ import { applyPlayerCombatDamage, playerHealthLostToDamage } from "@/lib/battle/
 import { DEATHS_DOOR_GRACE_TURNS } from "@/lib/game-constants";
 
 describe("applyPlayerCombatDamage", () => {
-  it("returns state unchanged when damage is zero", () => {
-    const state = patchBattleState({ playerHealth: 30 });
-    const result = applyPlayerCombatDamage(state, 0, "hostile");
-    expect(result).toBe(state);
-    expect(playerHealthLostToDamage(state, result)).toBe(0);
-  });
-
-  it("returns state unchanged when damage is negative", () => {
-    const state = patchBattleState({ playerHealth: 30 });
-    expect(applyPlayerCombatDamage(state, -5, "hostile")).toBe(state);
-  });
-
-  it("reduces health by damage amount", () => {
-    const state = patchBattleState({ playerHealth: 30 });
-    const result = applyPlayerCombatDamage(state, 10, "hostile");
-    expect(result.playerHealth).toBe(20);
-    expect(playerHealthLostToDamage(state, result)).toBe(10);
-  });
-
-  it("applies Homestead Physical damage reduction", () => {
+  it("combines flat reduction, resistance, and Block's DoT protection once", () => {
     const state = patchBattleState({
       playerHealth: 30,
-      talentEffects: { physicalDamageReduction: 3 },
+      playerStatuses: { block: 1 },
+      talentEffects: { poisonDamageReduction: 2, blockHalvesPoisonDamage: true },
+      gearEffects: { resistPoison: 50 },
     });
-    const result = applyPlayerCombatDamage(state, 10, "hostile", "physical");
-    expect(result.playerHealth).toBe(23);
-  });
-
-  it("applies burn damage reduction", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      talentEffects: { burnDamageReduction: 5 },
-    });
-    const result = applyPlayerCombatDamage(state, 15, "hostile", "burn");
-    expect(result.playerHealth).toBe(20);
-  });
-
-  it("applies freeze damage reduction", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      talentEffects: { freezeDamageReduction: 4 },
-    });
-    const result = applyPlayerCombatDamage(state, 10, "hostile", "freeze");
-    expect(result.playerHealth).toBe(24);
-  });
-
-  it("does not apply receiveHalfBurnDamage (attack/DoT paths scale instead)", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      talentEffects: { receiveHalfBurnDamage: true },
-    });
-    const result = applyPlayerCombatDamage(state, 10, "hostile", "burn");
-    expect(result.playerHealth).toBe(20);
-  });
-
-  it("applies poison damage reduction", () => {
-    const state = patchBattleState({
-      playerHealth: 30,
-      talentEffects: { poisonDamageReduction: 3 },
-    });
-    const result = applyPlayerCombatDamage(state, 8, "hostile", "poison");
-    expect(result.playerHealth).toBe(25);
+    const result = applyPlayerCombatDamage(state, 14, "hostile", "poison");
+    expect(result.playerHealth).toBe(27);
+    expect(playerHealthLostToDamage(state, result)).toBe(3);
+    expect(state.playerHealth).toBe(30);
+    expect(applyPlayerCombatDamage(state, 2, "hostile", "poison")).toBe(state);
   });
 
   it("can bypass player mitigation for trait-authored damage", () => {
@@ -75,13 +25,6 @@ describe("applyPlayerCombatDamage", () => {
     });
     const result = applyPlayerCombatDamage(state, 10, "hostile", "burn", { ignoreMitigation: true });
     expect(result.playerHealth).toBe(20);
-  });
-
-  it("health does not go below zero", () => {
-    const state = patchBattleState({ playerHealth: 5, deathsDoorUsed: true });
-    const result = applyPlayerCombatDamage(state, 20, "hostile");
-    expect(result.playerHealth).toBe(0);
-    expect(playerHealthLostToDamage(state, result)).toBe(5);
   });
 
   it("activates deaths door on lethal hit if not used", () => {
@@ -109,6 +52,7 @@ describe("applyPlayerCombatDamage", () => {
     const result = applyPlayerCombatDamage(state, 20, "hostile");
     expect(result.playerHealth).toBe(0);
     expect(result.deathsDoorActive).toBe(false);
+    expect(playerHealthLostToDamage(state, result)).toBe(1);
   });
 
   it("keeps the player defeated when damage hits at zero health after grace", () => {

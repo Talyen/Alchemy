@@ -174,6 +174,15 @@ describe("Transmutation alterations", () => {
     );
   });
 
+  it("converts unconditional Mana restoration while preserving a real Freeze condition", () => {
+    const source = card([{ kind: "restore-mana", amount: 2, ifEnemyFrozen: false }]);
+    expect(getTransmutationVariants(source, "gold", [source])[0]?.result.effects).toEqual([
+      { kind: "gain-gold", amount: 2 },
+    ]);
+    const conditional = card([{ kind: "restore-mana", amount: 2, ifEnemyFrozen: true }]);
+    expect(getTransmutationVariants(conditional, "gold", [conditional])).toEqual([]);
+  });
+
   it("converts positive resources and buffs but preserves Health costs and permanent Mana changes", () => {
     const source = card([
       { kind: "heal", amount: 8 },

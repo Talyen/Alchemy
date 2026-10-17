@@ -75,21 +75,11 @@ function convertibleSource(effect: BattleCardEffect): KeywordId | undefined {
 }
 
 function sourceReferences(effect: BattleCardEffect, source: KeywordId): boolean {
-  // Conditions and scaling references must not silently retain a replaced keyword.
-  if (
-    SOURCE_CONDITIONS[source]?.some(
-      (field) =>
-        (effect as Record<string, unknown>)[field] !== undefined &&
-        (effect as Record<string, unknown>)[field] !== false,
-    )
-  )
-    return true;
   if (
     effect.kind === "self-damage" ||
     ["lose-health", "lose-mana", "lose-max-mana", "gain-max-mana"].includes(effect.kind)
   )
     return false;
-  if (effect.kind === "chance" || effect.kind === "repeat-over-turns") return false;
   if (effect.kind === "damage")
     return (
       effect.damageType === source ||
@@ -114,7 +104,7 @@ function sourceReferences(effect: BattleCardEffect, source: KeywordId): boolean 
 
 function canConvertSource(effects: BattleCardEffect[], source: KeywordId): boolean {
   return !visitBattleCardEffects(effects, (effect) => {
-    if (!sourceReferences(effect, source)) return false;
+    // A conversion must not leave conditions or scaling tied to the replaced keyword.
     if (
       SOURCE_CONDITIONS[source]?.some(
         (field) =>
@@ -123,6 +113,7 @@ function canConvertSource(effects: BattleCardEffect[], source: KeywordId): boole
       )
     )
       return true;
+    if (!sourceReferences(effect, source)) return false;
     const convertible = convertibleSource(effect);
     return (
       convertible !== source &&
@@ -231,7 +222,7 @@ export function getTransmutationVariants(
         ),
       }));
   }
-  const effects = cloneBattleCard(card).effects;
+  const effects = [...card.effects];
   if (keyword === "archery" || keyword === "leech") {
     let damage = false;
     const infuseDamage = (effect: BattleCardEffect): BattleCardEffect => {
@@ -322,21 +313,21 @@ function cardSnapshotKey(card: BattleCard | null | undefined): string | undefine
 
 function matchingAlteration(
   choice: TransmutationChoice,
-  sourceKey: string | undefined,
+  key: string | undefined,
   sourceIndex?: number,
 ): TransmutationAlteration | undefined {
   return choice.alterations.find(
     (entry) =>
-      (sourceIndex === undefined || sourceIndex === entry.sourceIndex) && cardSnapshotKey(entry.source) === sourceKey,
+      (sourceIndex === undefined || sourceIndex === entry.sourceIndex) && cardSnapshotKey(entry.source) === key,
   );
 }
 
 export function getTransmutationOffers(visit: AlchemyVisit): BattleCard[] {
   const selection = visit.transmutation;
   if (!selection?.source || selection.sourceIndex === null) return [];
-  const sourceKey = cardSnapshotKey(selection.source);
+  const key = cardSnapshotKey(selection.source);
   return selection.choices.flatMap((choice) => {
-    const alteration = matchingAlteration(choice, sourceKey, selection.sourceIndex!);
+    const alteration = matchingAlteration(choice, key, selection.sourceIndex!);
     return alteration ? [alteration.result] : [];
   });
 }
@@ -348,11 +339,11 @@ export function canTransmuteCard(
   deck?: readonly BattleCard[],
 ): boolean {
   if (!isTransmutableCard(card)) return false;
-  const sourceKey = cardSnapshotKey(card);
+  const key = cardSnapshotKey(card);
   return choices.some((choice) => {
-    const alteration = matchingAlteration(choice, sourceKey, sourceIndex);
+    const alteration = matchingAlteration(choice, key, sourceIndex);
     return (
-      alteration &&
+      !!alteration &&
       (!deck ||
         getTransmutationVariants(card, choice.keyword, deck).some(
           (variant) => variant.sourceKeyword === alteration.sourceKeyword,

@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import { readGameplayState, subscribeGameplayCommits } from "@/features/alchemy/shared/stores/gameplay-state-reads";
-import { dispatchGearSalvageWithMaterialGrant } from "@/features/alchemy/shared/stores/gear-session-command";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { EMPTY_CRAFTING_CURRENCIES, computeSalvageYield, type GearInstance } from "@/lib/gear";
 import {
@@ -31,17 +30,6 @@ function recordingBackend() {
 }
 
 describe("Gear command boundary", () => {
-  it("cannot grant salvage payouts supplied by a caller without consuming an owned item", async () => {
-    await using session = createGameSession();
-
-    const before = readGameplayState(session);
-    const fabricated = () => ({
-      yieldedMaterials: { ...emptyInventory(), iron: 999 },
-      yieldedCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
-    });
-    expect(Reflect.apply(dispatchGearSalvageWithMaterialGrant, undefined, [fabricated, session])).toBeNull();
-    expect(readGameplayState(session)).toBe(before);
-  });
   it.each([false, true])("settles salvage and checkpoints the complete result with active run = %s", async (active) => {
     const { backend, writes } = recordingBackend();
     await using session = createGameSession({ saveBackend: backend });
@@ -57,6 +45,7 @@ describe("Gear command boundary", () => {
         mutateGearWithRunHealthSync(draft, {
           mutate: (gear) => {
             gear.addInstance(armor, "knight");
+            gear.addInstance({ ...armor, instanceId: "other-hero-armor" }, "rogue");
             gear.equip("knight", "body", armor);
           },
         });
@@ -70,6 +59,7 @@ describe("Gear command boundary", () => {
       session,
     );
     const before = readGameplayState(session);
+    const original = structuredClone(before);
     const observed: unknown[] = [];
     // Every observer must see item removal, payout, accounting and Health together.
     const unsubscribe = subscribeGameplayCommits(() => observed.push(readGameplayState(session)), session);
@@ -78,6 +68,8 @@ describe("Gear command boundary", () => {
     unsubscribe();
     expect(after.revision).toBe(before.revision + 1);
     expect(observed).toEqual([after]);
+    expect(before).toEqual(original);
+    expect(after.gear.inventories.rogue).toBe(before.gear.inventories.rogue);
     expect(after.gear.inventories.knight).toEqual([]);
     expect(after.gear.loadouts.knight.body).toBeNull();
     expect(after.runProfile.materialInventory).toEqual(yieldResult.materials);

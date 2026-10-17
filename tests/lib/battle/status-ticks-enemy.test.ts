@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { makeCombatTexts, patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 
@@ -96,19 +97,41 @@ describe("tickEnemyStatuses", () => {
   });
 
   it.each([
-    ["burn-resistance", "burn", 5],
-    ["burn-vulnerability", "burn", 13],
-    ["living-armor", "bleed", 8],
-  ] as const)("applies %s to periodic %s damage", (trait, stat, amount) => {
-    const { next, texts } = tick({
-      enemyHealth: 50,
-      enemyMaxHealth: 50,
-      enemyStatuses: { [stat]: 10 },
-      currentEnemy: { traits: [{ id: trait, title: trait, description: "" }] },
-    });
-    expect(next.enemyHealth).toBe(50 - amount);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat, amount, periodic: true });
-  });
+    { status: "burn", stacks: 40, trait: "burn-vulnerability", bonus: 25, frozen: 70, expected: 110 },
+    { status: "bleed", stacks: 8, trait: "living-armor", bonus: 20, frozen: 50, expected: 14 },
+  ] as const)(
+    "uses the same rounded $status damage for ticks and detonations",
+    ({ status, stacks, trait, bonus, frozen, expected }) => {
+      const state = patchBattleState({
+        playerHealth: 10,
+        enemyHealth: 1000,
+        enemyMaxHealth: 1000,
+        enemyStatuses: { bleed: 1, [status]: stacks },
+        enemyCC: { freezeSkipTurns: 1 },
+        currentEnemy: { traits: [{ id: trait, title: trait, description: "" }] },
+        gearEffects: {
+          frozenEnemyDamageBonusPercent: frozen,
+          burnDamageBonusToBleedingPercent: bonus,
+          sharedBurnBleedBonuses: status === "bleed" ? 1 : 0,
+        },
+        talentEffects: { bleedDesperateMultiplier: 1.25 },
+      });
+      const tickTexts = makeCombatTexts();
+      const detonationTexts = makeCombatTexts();
+      tickEnemyStatuses(state, tickTexts);
+      const detonated = detonateEnemyStatuses(state, [status], detonationTexts);
+      expect(tickTexts).toContainEqual({
+        target: "enemy",
+        kind: "damage",
+        stat: status,
+        amount: expected,
+        periodic: true,
+      });
+      expect(detonationTexts).toContainEqual({ target: "enemy", kind: "damage", stat: status, amount: expected });
+      expect(detonated.enemyHealth).toBe(1000 - expected);
+      expect(state.enemyStatuses[status]).toBe(stacks);
+    },
+  );
 });
 
 describe("DoT tick kills pay lethality payouts", () => {

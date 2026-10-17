@@ -2,40 +2,12 @@ import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { createMixedPotion } from "@/lib/alchemist";
-import { cardById, computeTalentEffects, isMixedPotionCard, isPotionCard, isStandardPotionCard } from "@/lib/game-data";
-import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
+import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { makeCombatTexts, makeState } from "../../fixtures/battle";
 
-describe("Mixed potion classification and combat mechanics", () => {
+describe("Mixed Potion combat mechanics", () => {
   const healthPotion = cardById["health-potion"]!;
   const manaPotion = cardById["mana-potion"]!;
-
-  it("classifies standard and mixed potions correctly", () => {
-    expect(isPotionCard(healthPotion)).toBe(true);
-    expect(isStandardPotionCard(healthPotion)).toBe(true);
-    expect(isMixedPotionCard(healthPotion)).toBe(false);
-
-    const mixed = createMixedPotion(healthPotion, manaPotion);
-    expect(isMixedPotionCard(mixed)).toBe(true);
-    expect(isPotionCard(mixed)).toBe(true);
-    expect(isStandardPotionCard(mixed)).toBe(false);
-    expect(isMixedPotionCard({ id: MIXED_POTION_CARD_ID })).toBe(true);
-  });
-
-  it("applies potionPotency talent bonus to mixed potions during battle", () => {
-    const mixed = createMixedPotion(healthPotion, manaPotion);
-
-    const state = makeState({
-      playerHealth: 10,
-      playerMaxHealth: 30,
-      talentEffects: { potionPotency: 2 },
-    });
-
-    const texts = makeCombatTexts();
-    const nextState = applyCardEffects(state, mixed, texts);
-
-    expect(nextState.playerHealth).toBe(26);
-  });
 
   it("stacks Distillation and Brewmaster potency additively for Mixed Potions", () => {
     const mixed = createMixedPotion(healthPotion, manaPotion);

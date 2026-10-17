@@ -1,7 +1,6 @@
 import { gearDefinitions } from "./definitions";
 import {
   createEmptyGearLoadouts,
-  normalizeExclusiveGearLoadouts,
   GEAR_CHARACTER_IDS,
   GEAR_SLOTS,
   type GearDefinition,
@@ -74,19 +73,27 @@ export function isGearCompatibleWithLoadoutSlot(
 export function pruneOrphanGearLoadouts(inventory: GearInstance[], loadouts: GearLoadouts): GearLoadouts {
   const definitionById = new Map(inventory.map((item) => [item.instanceId, gearDefinitions[item.definitionId]]));
   const next = createEmptyGearLoadouts();
+  const seen = new Set<string>();
 
   for (const characterId of GEAR_CHARACTER_IDS) {
     for (const slot of GEAR_SLOTS) {
       const instanceId = loadouts[characterId][slot];
       const definition = instanceId ? definitionById.get(instanceId) : undefined;
-      if (instanceId && definition && isGearCompatibleWithSlot(definition, slot)) next[characterId][slot] = instanceId;
+      if (instanceId && definition && !seen.has(instanceId) && isGearCompatibleWithSlot(definition, slot)) {
+        next[characterId][slot] = instanceId;
+        seen.add(instanceId);
+      }
     }
     const mainHand = definitionById.get(next[characterId]["main-hand"] ?? "");
     const offHand = definitionById.get(next[characterId]["off-hand"] ?? "");
-    if (resolveHandPair(mainHand, offHand) !== "compatible") next[characterId]["off-hand"] = null;
+    if (resolveHandPair(mainHand, offHand) !== "compatible") {
+      // Release rejected references so they cannot reserve another hero's item.
+      seen.delete(next[characterId]["off-hand"]!);
+      next[characterId]["off-hand"] = null;
+    }
   }
 
-  return normalizeExclusiveGearLoadouts(next);
+  return next;
 }
 
 export function equipGear(

@@ -113,15 +113,14 @@ export function projectEnemyDotDamage(
   const bonus = status === "poison" ? getPoisonBonusAgainstBleeding(state) : 0;
   const multiplier =
     getEnemyDamageMultiplier(state, status) *
+    (status === "burn" ? getBurnBonusToBleedingMultiplier(state) : 1) *
     gearFrozenDamageMultiplier(state) *
-    (status === "burn" || (status === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0)
-      ? getBurnBonusToBleedingMultiplier(state)
-      : 1) *
     (status === "bleed" || (status === "burn" && state.gearEffects.sharedBurnBleedBonuses > 0)
       ? getBleedLowHealthDamageMultiplier(state)
-      : 1);
-  // Projected ticks all use the same immutable battle inputs. Keep the
-  // multiplication order and per-tick rounding when reusing these factors.
+      : 1) *
+    (status === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0 ? getBurnBonusToBleedingMultiplier(state) : 1);
+  // Natural ticks and detonations share the live multiplication order.
+  // Remaining-tick projections freeze these inputs and round every tick.
   const poisonMultiplier = status === "poison" ? getPoisonDamageMultiplierAgainstBleeding(state) : 1;
   const poisonDecayMultiplier =
     status === "poison" && hasEncounterBenefit(state, "venomous") ? LABYRINTH_MODIFIER_CONFIG.half : 1;

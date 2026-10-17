@@ -31,18 +31,12 @@ import { prepareEnemyDamage, calculateBlockAndArmorMitigation } from "./enemy-da
 import { getEncounterEnemyAbility } from "./enemy-description";
 import { gearFrozenDamageMultiplier, prepareScaledEnemyHit } from "./scaled-damage";
 import { addEnemyStatus, addPlayerStatus, setPlayerStatus, setEnemyStatus } from "./status-state";
-import {
-  applyPlayerCombatDamage,
-  mitigatePlayerCombatDamage,
-  playerHealthLostToDamage,
-  damageEnemyHealth,
-} from "./health-state";
+import { applyPlayerCombatDamage, playerHealthLostToDamage, damageEnemyHealth } from "./health-state";
 import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { hasEnemyTrait, hasEncounterBenefit } from "./encounter-trait-state";
 import { resolveSecondaryAction } from "./action-context";
 import { BATTLE_CONFIG, BLEED_STATUS_MULTIPLIER } from "../game-constants";
-import { armorMitigatesElementalDamage, reduceDamageByMana, getEnemyDamageMultiplier } from "./status-helpers";
-import { scaleReceivedPlayerDamage } from "./damage-modifiers";
+import { mitigatePlayerStatusDamage, getEnemyDamageMultiplier } from "./status-helpers";
 import {
   resolveCrowdControlBonuses,
   resolveEnemyStun,
@@ -857,15 +851,7 @@ export function getBattleDamageInspectionCard(
         return projected;
       }
       if (!enemy && effect.kind === "self-damage") {
-        const incoming = scaleReceivedPlayerDamage(
-          reduceDamageByMana(current, effect.amount),
-          current.talentEffects,
-          effect.damageType,
-        );
-        const resisted = mitigatePlayerCombatDamage(current, incoming, effect.damageType);
-        const damage = armorMitigatesElementalDamage(current, effect.damageType)
-          ? Math.max(0, resisted - current.playerStatuses.armor)
-          : resisted;
+        const damage = mitigatePlayerStatusDamage(current, effect.amount, effect.damageType);
         const before = current;
         current = applyPlayerCombatDamage(current, damage, "self", effect.damageType, { ignoreMitigation: true });
         current = addPlayerStatus(current, effect.damageType, playerHealthLostToDamage(before, current));

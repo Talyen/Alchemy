@@ -44,13 +44,13 @@ async function waitForAutoplayRetry(
 
 /** Schedules ready actions; selection and playback eligibility belong to the caller. */
 export async function driveAutoplay(deps: DriveAutoplayDeps): Promise<void> {
-  const retryDelayMs = resolveGameDelay(deps.delayMs);
   const isActive = () => !deps.signal.aborted && deps.isEnabled();
   while (isActive()) {
     const action = deps.findAction();
     const playStartedAt = performance.now();
     if (!action || !(await action.play({ signal: deps.signal, canCommit: () => isActive() && action.canCommit() }))) {
-      await waitForAutoplayRetry(retryDelayMs, deps.signal, deps.wakeRef);
+      // Readiness polling is not animation pacing; keep it bounded in fast mode.
+      await waitForAutoplayRetry(deps.delayMs, deps.signal, deps.wakeRef);
       continue;
     }
     // Readiness notifications cannot shorten pacing. The next selection checks

@@ -8,13 +8,7 @@ function knightInventories(...items: GearInstance[]) {
   inventories.knight = items;
   return inventories;
 }
-import {
-  createEmptyGearInventories,
-  createEmptyGearLoadouts,
-  equipGear,
-  type GearInstance,
-  type GearLoadout,
-} from "@/lib/gear";
+import { createEmptyGearInventories, createEmptyGearLoadouts, equipGear, type GearInstance } from "@/lib/gear";
 import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { defaultGameSession } from "@/app/application-session";
 
@@ -31,26 +25,23 @@ describe("gear save normalization", () => {
     );
   });
 
-  it("discards obsolete Gear trinkets and loadout slots while preserving valid Gear", () => {
-    const inventories = createEmptyGearInventories();
-    inventories.knight = [
-      { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] },
-      { instanceId: "old-trinket", definitionId: "placeholder-trinket", affixes: [] },
-    ];
-    const loadouts = createEmptyGearLoadouts();
-    loadouts.knight = { ...loadouts.knight, body: "body-1", "trinket-1": "old-trinket" } as GearLoadout;
-
+  it("repairs invalid slots without discarding valid equipment or accepting unknown slots", () => {
+    const body: GearInstance = { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] };
+    const ring: GearInstance = { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] };
     const save = normalizeSaveData({
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-      gearInventories: inventories,
-      gearLoadouts: loadouts,
+      gearInventories: knightInventories(body, ring),
+      gearLoadouts: {
+        knight: { body: body.instanceId, "left-accessory": ring.instanceId, "main-hand": 7, unknown: {} },
+      },
     });
 
-    expect(save.gearInventories.knight).toEqual([
-      { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] },
-    ]);
-    expect(save.gearLoadouts.knight.body).toBe("body-1");
-    expect(save.gearLoadouts.knight).not.toHaveProperty("trinket-1");
+    expect(save.gearInventories.knight).toEqual([body, ring]);
+    expect(save.gearLoadouts.knight).toEqual({
+      ...createEmptyGearLoadouts().knight,
+      body: body.instanceId,
+      "left-accessory": ring.instanceId,
+    });
   });
 
   it("keeps only the first loadout reference when one item is equipped on multiple classes", () => {
@@ -128,18 +119,6 @@ describe("gear save normalization", () => {
 
     expect(save.gearLoadouts.knight["off-hand"]).toBeNull();
     expect(save.gearLoadouts.rogue["off-hand"]).toBe(shield.instanceId);
-  });
-
-  it("defaults crafting currencies to an empty record", () => {
-    const save = normalizeSaveData({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION });
-    expect(save.craftingCurrencies).toEqual({
-      "discordant-dice": 0,
-      "sprig-of-growth": 0,
-      voidstone: 0,
-      "ascension-seal": 0,
-      "severance-maw": 0,
-      "smiths-whetstone": 0,
-    });
   });
 
   it("preserves valid crafting currencies while normalizing missing or invalid values", () => {

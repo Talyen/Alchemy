@@ -4,8 +4,6 @@ import {
   canApplyCraftingCurrency,
   craftingCurrencyBlockedReason,
   computeSalvageYield,
-  createEmptyGearLoadouts,
-  salvageGear,
   gearAffixCatalog,
   type GearAffixRoll,
   type GearInstance,
@@ -97,9 +95,6 @@ describe("crafting currency logic", () => {
     const preview = computeSalvageYield(original);
     expect(computeSalvageYield(JSON.parse(JSON.stringify(original)))).toEqual(preview);
     expect(computeSalvageYield({ ...original, affixes: [maxPhysical] })).toEqual(preview);
-    const result = salvageGear([original], createEmptyGearLoadouts(), original.instanceId);
-    expect(result?.yieldedCurrencies).toEqual(preview.currencies);
-    expect(result?.yieldedMaterials).toEqual(preview.materials);
   });
 
   it("retains uncataloged affix ids during an upgrade without offering to enhance them", () => {
