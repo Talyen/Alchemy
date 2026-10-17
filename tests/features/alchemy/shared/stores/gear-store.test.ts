@@ -64,6 +64,9 @@ describe("gear-store", () => {
 
     expect(mutateGearForTest((gear) => gear.equipTrinket("knight", "bone-charm"))).toBe(true);
     expect(readGearState(defaultGameSession).equippedTrinkets.knight).toBe("bone-charm");
+    const equipped = readGearState(defaultGameSession);
+    expect(mutateGearForTest((gear) => gear.equipTrinket("knight", "bone-charm"))).toBe(false);
+    expect(readGearState(defaultGameSession)).toBe(equipped);
     expect(mutateGearForTest((gear) => gear.equipTrinket("rogue", "bone-charm"))).toBe(true);
     expect(readGearState(defaultGameSession).equippedTrinkets.knight).toBeNull();
     expect(readGearState(defaultGameSession).equippedTrinkets.rogue).toBe("bone-charm");

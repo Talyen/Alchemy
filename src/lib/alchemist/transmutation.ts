@@ -318,11 +318,12 @@ function matchingAlteration(
 }
 
 export function getTransmutationOffers(visit: AlchemyVisit): BattleCard[] {
-  const selection = visit.transmutation;
-  if (!selection?.source || selection.sourceIndex == null) return [];
-  const key = cardSnapshotKey(selection.source);
+  if (!selection) return [];
+  const { source, sourceIndex } = selection;
+  if (!source || sourceIndex == null) return [];
+  const key = cardSnapshotKey(source);
   return selection.choices.flatMap((choice) => {
-    const alteration = matchingAlteration(choice, key, selection.sourceIndex, selection.source.id);
+    const alteration = matchingAlteration(choice, key, sourceIndex, source.id);
     return alteration ? [alteration.result] : [];
   });
 }

@@ -72,6 +72,18 @@ describe("gear domain", () => {
     });
   });
 
+  it("ignores inherited definition names during effect aggregation and loadout repair", () => {
+    for (const definitionId of ["constructor", "toString", "__proto__"]) {
+      const unknown = { ...ring, definitionId };
+      const loadouts = createEmptyGearLoadouts();
+      loadouts.knight["left-accessory"] = unknown.instanceId;
+      expect(effectsForInstance(unknown)).toEqual(defaultGearEffects);
+      expect(computeGearManifest("knight", [unknown], loadouts)).toEqual(defaultGearEffects);
+      expect(pruneOrphanGearLoadouts([unknown], loadouts)).toEqual(createEmptyGearLoadouts());
+      expect(equipGear(loadouts, "ranger", "right-accessory", unknown, [unknown])).toBe(loadouts);
+    }
+  });
+
   it("aggregates affix effects by damage type", () => {
     const item: GearInstance = {
       instanceId: "gear-1",

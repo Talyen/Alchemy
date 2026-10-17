@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promoteUnreleasedSection } from "./lib/release/patch-notes-core.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
+import { defineScript, UsageError } from "./lib/script-run.mjs";
+import { parseKnownFlags } from "./lib/cli-args.mjs";
 import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -18,9 +19,12 @@ export async function promoteChangelog(rootDir = root) {
   console.log(wrote ? `Promoted CHANGELOG ## [Unreleased] to [${version}]` : "CHANGELOG.md already promoted");
 }
 
-if (isMainModule(import.meta.url)) {
-  promoteChangelog().catch((error) => {
-    console.error("Failed to promote CHANGELOG.md.", error);
-    process.exitCode = 1;
-  });
-}
+defineScript(import.meta.url, () => {
+  const { flags, rest } = parseKnownFlags(process.argv.slice(2), { help: { short: "h" } });
+  if (rest.length) throw new UsageError(`Unexpected changelog promotion arguments: ${rest.join(", ")}`);
+  if (flags.has("help")) {
+    console.log("Usage: node scripts/release-changelog.mjs (promote Unreleased to the current package version)");
+    return;
+  }
+  return promoteChangelog();
+});

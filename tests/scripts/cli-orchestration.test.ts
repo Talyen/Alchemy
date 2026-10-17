@@ -142,16 +142,19 @@ describe("CLI launch paths", () => {
 });
 
 describe("CLI validation before side effects", () => {
-  it.each(["dist-desktop.mjs", "steam-upload.mjs"])("%s help needs no package or release credentials", (script) => {
-    const result = probe(
-      script,
-      script === "dist-desktop.mjs" ? ["--build", "--help"] : ["--help"],
-      fixture(),
-      `fs.writeFileSync = fs.mkdirSync = cp.spawn = cp.spawnSync = () => { throw new Error('unexpected side effect'); };`,
-    );
-    expect(result.status, result.stderr).toBe(0);
-    expect(result.stdout).toContain("Usage:");
-  });
+  it.each(["dist-desktop.mjs", "steam-upload.mjs", "release-changelog.mjs", "sync-steam-appid.mjs"])(
+    "%s help needs no package or release credentials",
+    (script) => {
+      const result = probe(
+        script,
+        script === "dist-desktop.mjs" ? ["--build", "--help"] : ["--help"],
+        fixture(),
+        `fs.writeFileSync = fs.mkdirSync = cp.spawn = cp.spawnSync = () => { throw new Error('unexpected side effect'); };`,
+      );
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stdout).toContain("Usage:");
+    },
+  );
 
   it("rejects unsupported icon generation arguments before reading sources or writing icons", () => {
     const result = probe(

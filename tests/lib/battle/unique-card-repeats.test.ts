@@ -2,11 +2,9 @@ import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { addPlayerStatus } from "@/lib/battle/status-state";
 import { repeatUniqueCardDamage } from "@/lib/battle/unique-card-effects";
 import { describe, expect, it } from "vitest";
-import * as uniqueGearBattle from "../../fixtures/unique-gear-battle";
+import { battle, attack, play } from "../../fixtures/unique-gear-battle";
 
 describe("Unique Gear unique card repeats", () => {
-  const { battle, attack, play } = uniqueGearBattle;
-
   it("Everkeen repeats damage without repeating utility or preparing itself again", () => {
     const card = attack("physical", {
       effects: [
@@ -79,4 +77,34 @@ describe("Unique Gear unique card repeats", () => {
     expect(result.uniqueGear.everkeenReady).toBe(false);
     expect(result.flags.uniqueRepeatActive).toBe(false);
   });
+});
+
+it("Everkeen and Final Spark each repeat the paid card's captured damage once", () => {
+  const result = play(
+    battle({
+      mana: 2,
+      gearEffects: { forgeReadiesPhysicalRepeat: 1, lastManaElementalRepeat: 1 },
+      uniqueGear: { everkeenReady: true },
+    }),
+    attack("physical", { tags: ["freeze"] }),
+  );
+  expect(result.enemyHealth).toBe(970);
+  expect(result.mana).toBe(0);
+  expect(result.uniqueGear).toMatchObject({ everkeenReady: false, finalSparkUsed: true });
+});
+
+it("Wildheart makes one Nature card free and critical across all its hits", () => {
+  const card = attack("nature", {
+    effects: [
+      { kind: "damage", damageType: "nature", amount: 4 },
+      { kind: "damage", damageType: "nature", amount: 3 },
+    ],
+  });
+  const result = play(
+    battle({ mana: 0, gearEffects: { dodgeReadiesNatureCrit: 1 }, uniqueGear: { wildheartReady: true } }),
+    card,
+  );
+  expect(result.enemyHealth).toBe(986);
+  expect(result.mana).toBe(0);
+  expect(result.uniqueGear.wildheartReady).toBe(false);
 });

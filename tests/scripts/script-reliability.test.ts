@@ -123,25 +123,36 @@ describe("script execution reliability", () => {
     expect(result.output).toBe("龍✨\n龍✨");
   });
 
-  it("rejects unsupported sync arguments before rewriting changelog or version metadata", () => {
+  it("rejects unsupported generation arguments before rewriting release files", () => {
     const root = repository();
     fs.cpSync(path.join(ROOT, "scripts"), path.join(root, "scripts"), { recursive: true });
     fs.copyFileSync(path.join(ROOT, ".versionrc.json"), path.join(root, ".versionrc.json"));
+    fs.copyFileSync(path.join(ROOT, "game-edition.mjs"), path.join(root, "game-edition.mjs"));
     fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ version: "1.2.3" }));
     const changelog = path.join(root, "CHANGELOG.md");
     const metadata = path.join(root, "src/lib/validation/metadata.generated.ts");
+    const appId = path.join(root, "steam_appid.txt");
+    fs.mkdirSync(path.join(root, "steam"));
+    fs.writeFileSync(path.join(root, "steam/platforms.json"), JSON.stringify({ devAppId: 480 }));
     fs.mkdirSync(path.dirname(metadata), { recursive: true });
     fs.writeFileSync(changelog, "# Changelog\n\n## [Unreleased]\n\n_Stale._\n");
     fs.writeFileSync(metadata, "original metadata");
-    const before = [changelog, metadata].map((file) => fs.readFileSync(file, "utf8"));
-    for (const script of ["sync-changelog.mjs", "sync-version-metadata.mjs"]) {
+    fs.writeFileSync(appId, "original app ID");
+    const files = [changelog, metadata, appId];
+    const before = files.map((file) => fs.readFileSync(file, "utf8"));
+    for (const script of [
+      "sync-changelog.mjs",
+      "sync-version-metadata.mjs",
+      "release-changelog.mjs",
+      "sync-steam-appid.mjs",
+    ]) {
       for (const arg of ["--chek", "unexpected", "-x"]) {
         const result = spawnSync(process.execPath, [path.join(root, "scripts", script), arg], {
           cwd: root,
           encoding: "utf8",
         });
         expect(result.status, result.stderr).toBe(2);
-        expect([changelog, metadata].map((file) => fs.readFileSync(file, "utf8"))).toEqual(before);
+        expect(files.map((file) => fs.readFileSync(file, "utf8"))).toEqual(before);
       }
     }
   });
@@ -193,27 +204,34 @@ describe("script execution reliability", () => {
     expect(timeout.status).toBeNull();
   });
 
-  it.each(["-C", "--work-tree"])("backs up the selected checkout for %s without altering the caller", (option) => {
-    const caller = repository();
-    const target = repository();
-    fs.writeFileSync(path.join(target, "game.ts"), "target work");
-    const prelude =
-      option === "-C" ? ["-C", target, "-C", "."] : ["--git-dir", path.join(target, ".git"), "--work-tree", target];
-    const result = spawnSync(
-      process.execPath,
-      [path.join(ROOT, "scripts/git-safety-guard.mjs"), ...prelude, "reset", "--hard"],
-      {
-        cwd: caller,
-        encoding: "utf8",
-        env: { ...process.env, LEFTHOOK: "0" },
-      },
-    );
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain("blocked: destructive git command");
-    expect(git(target, "show", "stash@{0}:game.ts")).toBe("target work");
-    expect(git(caller, "stash", "list")).toBe("");
-    expect(fs.readFileSync(path.join(caller, "game.ts"), "utf8")).toBe("original");
-  });
+  it.each(["-C", "--work-tree", "--config-env"])(
+    "backs up the selected checkout for %s without altering the caller",
+    (option) => {
+      const caller = repository();
+      const target = repository();
+      fs.writeFileSync(path.join(target, "game.ts"), "target work");
+      const prelude =
+        option === "-C"
+          ? ["-C", target, "-C", "."]
+          : option === "--config-env"
+            ? ["-C", target, "--config-env", "review.marker=ALCHEMY_GIT_MARKER"]
+            : ["--git-dir", path.join(target, ".git"), "--work-tree", target];
+      const result = spawnSync(
+        process.execPath,
+        [path.join(ROOT, "scripts/git-safety-guard.mjs"), ...prelude, "reset", "--hard"],
+        {
+          cwd: caller,
+          encoding: "utf8",
+          env: { ...process.env, LEFTHOOK: "0", ALCHEMY_GIT_MARKER: "preserved" },
+        },
+      );
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("blocked: destructive git command");
+      expect(git(target, "show", "stash@{0}:game.ts")).toBe("target work");
+      expect(git(caller, "stash", "list")).toBe("");
+      expect(fs.readFileSync(path.join(caller, "game.ts"), "utf8")).toBe("original");
+    },
+  );
 
   it("preserves caller-supplied Git configuration when forwarding safe commands", () => {
     const result = spawnSync(
@@ -232,6 +250,42 @@ describe("script execution reliability", () => {
     );
     expect(result.status).toBe(0);
     expect(result.stdout.trim()).toBe("preserved");
+  });
+
+  it.each([["game.ts"], ["HEAD", "game.ts"]])(
+    "backs up checkout path restores without an explicit separator: %j",
+    (...operands) => {
+      const root = repository();
+      fs.writeFileSync(path.join(root, "game.ts"), "unsaved work");
+      const result = spawnSync(
+        process.execPath,
+        [path.join(ROOT, "scripts/git-safety-guard.mjs"), "checkout", ...operands],
+        {
+          cwd: root,
+          encoding: "utf8",
+          env: { ...process.env, LEFTHOOK: "0" },
+        },
+      );
+      expect(result.status, result.stderr).toBe(1);
+      expect(result.stderr).toContain("blocked: destructive git command");
+      expect(git(root, "show", "stash@{0}:game.ts")).toBe("unsaved work");
+    },
+  );
+
+  it("allows checkout of a branch that shares a tracked filename without stashing work", () => {
+    const root = repository();
+    fs.writeFileSync(path.join(root, "topic"), "tracked path");
+    commit(root);
+    git(root, "branch", "topic");
+    fs.writeFileSync(path.join(root, "game.ts"), "unsaved work");
+    const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/git-safety-guard.mjs"), "checkout", "topic"], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    expect(result.status, result.stderr).toBe(0);
+    expect(git(root, "branch", "--show-current")).toBe("topic");
+    expect(git(root, "stash", "list")).toBe("");
+    expect(fs.readFileSync(path.join(root, "game.ts"), "utf8")).toBe("unsaved work");
   });
 
   it.skipIf(process.platform === "win32")(

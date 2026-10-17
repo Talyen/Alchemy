@@ -4,7 +4,8 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { defineScript } from "./lib/script-run.mjs";
+import { defineScript, UsageError } from "./lib/script-run.mjs";
+import { parseKnownFlags } from "./lib/cli-args.mjs";
 import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -19,4 +20,12 @@ export async function syncSteamAppId({ rootDir = root } = {}) {
   return wrote;
 }
 
-defineScript(import.meta.url, () => syncSteamAppId());
+defineScript(import.meta.url, () => {
+  const { flags, rest } = parseKnownFlags(process.argv.slice(2), { help: { short: "h" } });
+  if (rest.length) throw new UsageError(`Unexpected App ID synchronization arguments: ${rest.join(", ")}`);
+  if (flags.has("help")) {
+    console.log("Usage: node scripts/sync-steam-appid.mjs (write the selected local Steam App ID)");
+    return;
+  }
+  return syncSteamAppId();
+});

@@ -2,7 +2,7 @@ import { addAffixRollEffects, effectsForAffixRolls, getGearInstanceAffixes } fro
 import { gearDefinitions } from "./definitions";
 import {
   GEAR_SLOTS,
-  defaultGearEffects,
+  createEmptyGearEffectManifest,
   type GearCharacterId,
   type GearEffectManifest,
   type GearInstance,
@@ -11,7 +11,7 @@ import {
 
 export function effectsForInstance(instance: GearInstance): GearEffectManifest {
   const definition = gearDefinitions[instance.definitionId];
-  if (!definition) return { ...defaultGearEffects };
+  if (!definition) return createEmptyGearEffectManifest();
   return effectsForAffixRolls(getGearInstanceAffixes(instance), definition.rarity);
 }
 
@@ -20,7 +20,7 @@ export function computeGearManifest(
   inventory: GearInstance[],
   loadouts: GearLoadouts,
 ): GearEffectManifest {
-  const manifest: GearEffectManifest = { ...defaultGearEffects };
+  const manifest: GearEffectManifest = createEmptyGearEffectManifest();
   const characterLoadout = loadouts[characterId];
   if (!characterLoadout) return manifest;
 

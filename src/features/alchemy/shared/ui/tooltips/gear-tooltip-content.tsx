@@ -23,9 +23,7 @@ export function GearTooltipContent({
   instance?: GearInstance | undefined;
 }) {
   const i18n = useGameTranslation();
-  const rarity = instance
-    ? (gearInstanceRarity(instance) ?? definition.rarity ?? "basic")
-    : (definition.rarity ?? "basic");
+  const rarity = instance ? (gearInstanceRarity(instance) ?? definition.rarity) : definition.rarity;
   const entries: ReturnType<typeof getGearInstanceTooltipEntries> = instance
     ? getGearInstanceTooltipEntries(instance)
     : definition.descriptionLines.map((text, index) => ({ key: `definition-${index}`, text }));

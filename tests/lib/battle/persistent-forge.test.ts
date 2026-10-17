@@ -8,7 +8,7 @@ import { battleSnapshot } from "@/lib/battle/battle-snapshot";
 import { purgeOnePlayerBenefit } from "@/lib/battle/player-purge";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { cardById, computeTalentEffects, enemyById } from "@/lib/game-data";
-import { effectsForAffixRolls, mergeGearEffectManifests } from "@/lib/gear";
+import { addAffixRollEffects, effectsForAffixRolls } from "@/lib/gear";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { createRunRngState, createRunStateRng } from "@/lib/rng";
 import { battle, attack, play } from "../../fixtures/unique-gear-battle";
@@ -49,13 +49,15 @@ describe("persistent Forge", () => {
   });
 
   it("retains duplicate affix probabilities and rolls copies independently in order", () => {
-    const one = effectsForAffixRolls([
+    const rolls = [
       { id: "forge-on-stun", value: 50 },
       { id: "forge-on-consume-burn", value: 25 },
       { id: "flat-physical", value: 3 },
       { id: "block-on-cleanse", value: 4 },
-    ]);
-    const two = mergeGearEffectManifests(one, one);
+    ] as const;
+    const one = effectsForAffixRolls(rolls);
+    const two = effectsForAffixRolls(rolls);
+    addAffixRollEffects(two, rolls);
     expect(one.forgeOnStunChances).toEqual([50]);
     expect(two.forgeOnStunChances).toEqual([50, 50]);
     expect(two.forgeOnConsumeBurnCardChances).toEqual([25, 25]);

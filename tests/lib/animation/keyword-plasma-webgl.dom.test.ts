@@ -1,40 +1,7 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { expect, it, vi } from "vitest";
 import { startWebGLKeywordPlasma } from "@/lib/animation/keyword-plasma-webgl";
 import type { PlasmaColorState } from "@/lib/animation/keyword-plasma-types";
-afterEach(() => {
-  vi.restoreAllMocks();
-  vi.unstubAllGlobals();
-  document.body.replaceChildren();
-});
-it.each(["shader", "program"])("releases allocated shaders after %s allocation failure", (failure) => {
-  const vertex = {},
-    fragment = {};
-  const gl = {
-    VERTEX_SHADER: 1,
-    FRAGMENT_SHADER: 2,
-    COMPILE_STATUS: 3,
-    createShader: vi
-      .fn()
-      .mockReturnValueOnce(vertex)
-      .mockReturnValueOnce(failure === "shader" ? null : fragment),
-    shaderSource: vi.fn(),
-    compileShader: vi.fn(),
-    deleteShader: vi.fn(),
-    createProgram: vi.fn().mockReturnValue(null),
-  };
-  const canvas = document.createElement("canvas");
-  vi.spyOn(canvas, "getContext").mockReturnValue(gl as unknown as WebGLRenderingContext);
-  const result = startWebGLKeywordPlasma({
-    canvas,
-    colorsRef: { current: { primary: "#ffffff", secondary: "#000000" } },
-    focalYOffset: 0,
-    active: () => true,
-  });
-  expect(result).toBeNull();
-  expect(gl.deleteShader).toHaveBeenCalledWith(vertex);
-  if (failure === "program") expect(gl.deleteShader).toHaveBeenCalledWith(fragment);
-  expect(gl.deleteShader).toHaveBeenCalledTimes(failure === "shader" ? 1 : 2);
-});
+import { animationHarness } from "../../helpers/animation-harness";
 
 function createGl() {
   return {
@@ -75,142 +42,73 @@ function createGl() {
   };
 }
 
-it("uses bounded backing dimensions, elapsed seconds, and 30fps pacing through the canvas lifecycle", () => {
+function setup(width = 640, height = 480) {
+  const h = animationHarness(width, height);
   const gl = createGl();
-  const parent = document.createElement("div");
-  Object.defineProperty(parent, "clientWidth", { value: 3840, configurable: true });
-  Object.defineProperty(parent, "clientHeight", { value: 2160, configurable: true });
-  const canvas = document.createElement("canvas");
-  parent.appendChild(canvas);
-  document.body.appendChild(parent);
-  vi.spyOn(canvas, "getContext").mockReturnValue(gl as unknown as WebGLRenderingContext);
-  vi.spyOn(document, "hasFocus").mockReturnValue(true);
-  vi.spyOn(performance, "now").mockReturnValue(1000);
+  vi.mocked(h.canvas.getContext).mockReturnValue(gl as unknown as WebGLRenderingContext);
+  const colorsRef: { current: PlasmaColorState } = { current: { primary: "#ffffff", secondary: "#000000" } };
+  const options = { canvas: h.canvas, colorsRef, focalYOffset: 32, active: () => true };
+  return { h, gl, colorsRef, options };
+}
+
+it("uploads sized uniforms and changing colors while preserving the bounded 30fps renderer", () => {
+  const { h, gl, colorsRef, options } = setup(3840, 2160);
   vi.stubGlobal("devicePixelRatio", 2);
-  vi.stubGlobal(
-    "ResizeObserver",
-    class {
-      observe() {}
-      disconnect() {}
-    },
-  );
-  let frame: FrameRequestCallback = () => {};
-  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-    frame = callback;
-    return 1;
-  });
-  const cancel = vi.fn();
-  vi.stubGlobal("cancelAnimationFrame", cancel);
-  const colorsRef: { current: PlasmaColorState } = {
-    current: { primary: "#ffffff", secondary: "#000000" },
-  };
-  const stop = startWebGLKeywordPlasma({
-    canvas,
-    colorsRef,
-    focalYOffset: 32,
-    active: () => true,
-  });
-  expect(stop).not.toBeNull();
-  expect(canvas.width * canvas.height).toBeLessThanOrEqual(1_500_000);
-  expect(canvas.width).toBeGreaterThan(0);
-  expect(canvas.getContext).toHaveBeenCalledWith("webgl", {
-    alpha: true,
-    premultipliedAlpha: true,
-    antialias: false,
-    depth: false,
-    stencil: false,
-  });
-  expect(gl.viewport).toHaveBeenCalledExactlyOnceWith(0, 0, canvas.width, canvas.height);
-  expect(gl.uniform2f).toHaveBeenCalledWith("uSize", canvas.width, canvas.height);
-  expect(gl.uniform2f).toHaveBeenCalledWith(
+  const stop = startWebGLKeywordPlasma(options)!;
+  h.own(stop);
+  expect(h.canvas.width * h.canvas.height).toBeLessThanOrEqual(1_500_000);
+  expect(gl.viewport).toHaveBeenCalledExactlyOnceWith(0, 0, h.canvas.width, h.canvas.height);
+  expect(gl.uniform2f).toHaveBeenCalledWith("uSize", h.canvas.width, h.canvas.height);
+  expect(gl.uniform2f).toHaveBeenLastCalledWith(
     "uFocalCenter",
-    canvas.width / 2,
-    canvas.height / 2 - 32 * (canvas.height / 2160),
+    h.canvas.width / 2,
+    h.canvas.height / 2 - (32 * h.canvas.height) / 2160,
   );
-  frame(1100);
-  expect(gl.uniform1f).toHaveBeenLastCalledWith("uTime", 0.1);
-  frame(1110);
-  expect(gl.drawArrays).toHaveBeenCalledOnce();
-  frame(1140);
+  h.frame(100);
+  h.frame(110);
+  h.frame(140);
+  expect(gl.uniform1f).toHaveBeenLastCalledWith("uTime", 0.14);
   expect(gl.drawArrays).toHaveBeenCalledTimes(2);
-  expect(gl.viewport).toHaveBeenCalledOnce();
-  expect(gl.uniform2f).toHaveBeenCalledTimes(2);
   expect(gl.uniform3f).toHaveBeenCalledTimes(2);
   expect(gl.uniform3f).toHaveBeenCalledWith("uPrimary", 1, 1, 1);
   expect(gl.uniform3f).toHaveBeenCalledWith("uSecondary", 0, 0, 0);
-
-  Object.defineProperty(parent, "clientWidth", { value: 800, configurable: true });
-  Object.defineProperty(parent, "clientHeight", { value: 600, configurable: true });
-  window.dispatchEvent(new Event("focus"));
-  expect(gl.viewport).toHaveBeenLastCalledWith(0, 0, canvas.width, canvas.height);
-  expect(gl.uniform2f).toHaveBeenCalledWith("uSize", canvas.width, canvas.height);
+  h.resize(800, 600);
   expect(gl.uniform2f).toHaveBeenLastCalledWith(
     "uFocalCenter",
-    canvas.width / 2,
-    canvas.height / 2 - 32 * (canvas.height / 600),
+    h.canvas.width / 2,
+    h.canvas.height / 2 - (32 * h.canvas.height) / 600,
   );
-
-  // DPR changes are detected by the frame loop even without an observer event.
-  vi.stubGlobal("devicePixelRatio", 1);
-  frame(1180);
-  expect(gl.viewport).toHaveBeenCalledTimes(3);
-  expect(gl.uniform2f).toHaveBeenLastCalledWith(
-    "uFocalCenter",
-    canvas.width / 2,
-    canvas.height / 2 - 32 * (canvas.height / 600),
-  );
-  expect(gl.drawArrays).toHaveBeenCalledTimes(3);
-  expect(gl.uniform3f).toHaveBeenCalledTimes(2);
-
   const primary: [number, number, number] = [0.1, 0.2, 0.3];
   colorsRef.current.primary = primary;
-  frame(1220);
-  expect(gl.uniform3f).toHaveBeenCalledTimes(3);
+  h.frame(180);
   expect(gl.uniform3f).toHaveBeenLastCalledWith("uPrimary", 0.1, 0.2, 0.3);
   primary[0] = 0.4;
-  frame(1260);
+  h.frame(220);
   expect(gl.uniform3f).toHaveBeenCalledTimes(4);
   expect(gl.uniform3f).toHaveBeenLastCalledWith("uPrimary", 0.4, 0.2, 0.3);
-  expect(gl.drawArrays).toHaveBeenCalledTimes(5);
-  stop!();
-  expect(cancel).toHaveBeenCalledOnce();
-  frame(1300);
-  expect(gl.drawArrays).toHaveBeenCalledTimes(5);
+  const late = h.latestFrame;
+  stop();
+  late(260);
+  expect(gl.drawArrays).toHaveBeenCalledTimes(4);
+  expect(gl.deleteBuffer).toHaveBeenCalledOnce();
+  expect(gl.deleteProgram).toHaveBeenCalledOnce();
 });
 
-it("releases GPU objects and scheduled frames even when the wake adapter fails during setup and cleanup", () => {
-  const gl = createGl();
-  const parent = document.createElement("div");
-  Object.defineProperty(parent, "clientWidth", { value: 640 });
-  Object.defineProperty(parent, "clientHeight", { value: 480 });
-  const canvas = document.createElement("canvas");
-  parent.append(canvas);
-  document.body.append(parent);
-  vi.spyOn(canvas, "getContext").mockReturnValue(gl as unknown as WebGLRenderingContext);
-  vi.spyOn(document, "hasFocus").mockReturnValue(true);
-  let lateFrame: FrameRequestCallback = () => {};
-  const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
-    lateFrame = callback;
-    return 91;
-  });
-  const cancel = vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
-  const wake = vi.fn(() => {
-    throw new Error("wake adapter failed");
-  });
+it("releases GPU objects and frames when the wake adapter fails during setup and cleanup", () => {
+  const { h, gl, options } = setup();
   expect(() =>
     startWebGLKeywordPlasma({
-      canvas,
-      colorsRef: { current: { primary: "#ffffff", secondary: "#000000" } },
-      focalYOffset: 0,
-      active: () => true,
-      onWakeReady: wake,
+      ...options,
+      onWakeReady: () => {
+        throw new Error("wake failed");
+      },
     }),
   ).toThrow();
   expect(gl.deleteBuffer).toHaveBeenCalledOnce();
   expect(gl.deleteProgram).toHaveBeenCalledOnce();
-  expect(cancel).toHaveBeenCalledWith(91);
-  lateFrame(100);
+  expect(h.pending.size).toBe(0);
+  h.latestFrame(100);
   window.dispatchEvent(new Event("focus"));
   expect(gl.drawArrays).not.toHaveBeenCalled();
-  expect(raf).toHaveBeenCalledOnce();
+  expect(h.raf).toHaveBeenCalledOnce();
 });

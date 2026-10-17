@@ -40,7 +40,7 @@ function loadLog({ since, rootDir = ROOT }) {
     },
   );
   if (result.status !== 0 || result.error) {
-    throw new Error(result.stderr || result.error?.message || "git log failed");
+    throw new Error(result.error?.message || result.stderr || "git log failed");
   }
   return result.stdout;
 }

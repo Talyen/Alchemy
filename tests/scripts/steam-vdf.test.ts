@@ -9,7 +9,7 @@ const sourceRoot = join(import.meta.dirname, "../..");
 const temporaryRoots: string[] = [];
 
 function createWorkspace() {
-  const workspaceRoot = mkdtempSync(join(tmpdir(), "alchemy-steam-vdf-"));
+  const workspaceRoot = mkdtempSync(join(tmpdir(), "alchemy-steam-vdf-$&-"));
   const steamRoot = join(workspaceRoot, "steam");
   mkdirSync(steamRoot);
   copyFileSync(join(sourceRoot, "steam", "app_build.vdf"), join(steamRoot, "app_build.vdf"));
@@ -54,6 +54,7 @@ describe("steam VDF substitution", () => {
     expect(depotVdf).toContain('"DepotID" "111"');
     expect(appVdf).not.toContain("${STEAM_APP_ID}");
     expect(appVdf).toContain(`"contentroot" "${contentRoot.replaceAll("\\", "/")}"`);
+    expect(appVdf).toContain(`"${depotPath.replaceAll("\\", "/")}"`);
     expect(appVdf).toContain('"setlive" ""');
     expect(appVdf).toMatch(/"buildoutput" ".*\/release-desktop"/);
     expect(appVdf).not.toContain("builder-debug.yml");

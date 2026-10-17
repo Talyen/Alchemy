@@ -12,7 +12,7 @@ import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { effectsForInstance, generateLootGearChoices, gearBaseItemList } from "@/lib/gear";
 import { gearAffixList } from "@/lib/gear/affix-catalog";
 import { effectsForAffixRolls } from "@/lib/gear/affixes";
-import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
+import { createEmptyGearEffectManifest } from "@/lib/gear/gear-effect-manifest";
 import { createRunStreamRng, sampleItems } from "@/lib/rng";
 import { buildClassSimDeck, cardMatchesAffinity, insertCardIntoDeck, removeCardIdFromDeck } from "./class-deck";
 import { companionIdsFromDeck, removeCompanionSummonFromDeck } from "./companion-deck";
@@ -306,11 +306,14 @@ function* gearGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
           return [
             {
               id: item.id,
-              scenario: { ...shared, gearEffects: instance ? effectsForInstance(instance) : defaultGearEffects },
+              scenario: {
+                ...shared,
+                gearEffects: instance ? effectsForInstance(instance) : createEmptyGearEffectManifest(),
+              },
             },
           ];
         });
-        yield { reference: { ...shared, gearEffects: defaultGearEffects }, variants };
+        yield { reference: { ...shared, gearEffects: createEmptyGearEffectManifest() }, variants };
       }
     }
   }
@@ -347,7 +350,7 @@ function* affixGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
             iterations: options.pairedIterations,
           };
           yield {
-            reference: { ...shared, gearEffects: defaultGearEffects },
+            reference: { ...shared, gearEffects: createEmptyGearEffectManifest() },
             variants: tierAffixes.map(({ id, gearEffects }) => ({ id, scenario: { ...shared, gearEffects } })),
           };
         }

@@ -1,6 +1,6 @@
 const DESTRUCTIVE = new Set(["reset", "checkout", "restore", "clean", "switch", "branch", "push"]);
 
-const GLOBAL_OPTIONS_WITH_VALUE = new Set(["-c", "--git-dir", "--work-tree", "--namespace", "-C"]);
+const GLOBAL_OPTIONS_WITH_VALUE = new Set(["-c", "--config-env", "--git-dir", "--work-tree", "--namespace", "-C"]);
 
 export function extractSubcommand(argv) {
   let i = 0;

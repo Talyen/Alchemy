@@ -89,7 +89,7 @@ export function equipPermanentTrinket(
   characterId: CharacterId,
   trinketId: string,
 ): boolean {
-  if (!gear.ownedTrinketIds.includes(trinketId)) return false;
+  if (!gear.ownedTrinketIds.includes(trinketId) || gear.equippedTrinkets[characterId] === trinketId) return false;
   for (const id of GEAR_CHARACTER_IDS) {
     if (gear.equippedTrinkets[id] === trinketId) gear.equippedTrinkets[id] = null;
   }
