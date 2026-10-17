@@ -8,7 +8,8 @@ import { saveEnvelopeFixture } from "./saves";
 // trinket boxes, and currency round-trips are covered in gear-save.test.ts
 // and save-data-schema.test.ts instead of here.
 export function currentSchemaCampaignSave() {
-  return saveEnvelopeFixture({
+  return {
+    ...saveEnvelopeFixture(),
     displayMode: "fullscreen",
     discoveredCardIds: ["slash", "block", "bash"],
     encounteredEnemyIds: ["goblin"],
@@ -57,7 +58,7 @@ export function currentSchemaCampaignSave() {
     completedResearch: { "leyline-energy": 1 },
     bondedCompanions: { wolf: 1 },
     completedDifficulties: { knight: ["difficulty-1"] },
-  });
+  };
 }
 
 export function currentSchemaMysterySave() {
