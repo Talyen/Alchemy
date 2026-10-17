@@ -45,7 +45,9 @@ it.each(["md", "lg"] as const)(
     vi.spyOn(window, "getComputedStyle").mockImplementation(
       (element) =>
         ({
-          width: `${(element.getAttribute("data-reward-resource") === "gold" ? goldWidth : pillWidth) * scale}px`,
+          width: element.isConnected
+            ? `${(element.getAttribute("data-reward-resource") === "gold" ? goldWidth : pillWidth) * scale}px`
+            : "0px",
           columnGap: `${12 * scale}px`,
         }) as CSSStyleDeclaration,
     );
