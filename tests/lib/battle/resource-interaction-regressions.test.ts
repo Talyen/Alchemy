@@ -19,6 +19,14 @@ describe("resource interactions", () => {
     expect(applyGearCcPhysicalDamage(protectedState, 4, []).enemyMitigation.armor).toBe(3);
   });
 
+  it("Stunning gear reports Block spent even when it absorbs the entire hit", () => {
+    const state = patchBattleState({ enemyMitigation: { block: 10 } });
+    const texts: CombatTextEvent[] = [];
+    const result = applyGearCcPhysicalDamage(state, 4, texts);
+    expect(result.enemyMitigation.block).toBe(6);
+    expect(texts).toContainEqual(expect.objectContaining({ target: "enemy", stat: "block", amount: 4 }));
+  });
+
   it("Profane Blood damage from healing decays enemy Armor", () => {
     const state = patchBattleState({
       playerHealth: 10,

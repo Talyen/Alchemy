@@ -35,7 +35,7 @@ function loadLog({ since, rootDir = ROOT }) {
     {
       cwd: rootDir,
       encoding: "utf8",
-      maxBuffer: 32 * 1024 * 1024,
+      maxBuffer: 64 * 1024 * 1024,
       env: { ...process.env, GIT_PAGER: "cat", GIT_TERMINAL_PROMPT: "0" },
     },
   );

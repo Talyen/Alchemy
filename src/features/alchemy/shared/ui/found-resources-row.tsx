@@ -54,7 +54,8 @@ export function FoundResourcesRow({
       // Layout widths exclude the stage transform; measuring every pill preserves natural sizing.
       const widths = pills.map((pill) => parseFloat(getComputedStyle(pill).width));
       if (widths.some((width) => !(width > 0))) return;
-      const gap = parseFloat(getComputedStyle(pills[0]!.parentElement!).columnGap) || 0;
+      const firstParent = pills[0]?.parentElement;
+      const gap = (firstParent && parseFloat(getComputedStyle(firstParent).columnGap)) || 0;
       const next = balancedRowSizes(widths, container.clientWidth, gap);
       setRowSizes((previous) =>
         previous.length === next.length && previous.every((count, index) => count === next[index]) ? previous : next,
@@ -71,12 +72,13 @@ export function FoundResourcesRow({
     });
     observer.observe(container);
     for (const pill of pills) observer.observe(pill);
-    observer.observe(pills[0]!.parentElement!);
+    const firstParent = pills[0]?.parentElement;
+    if (firstParent) observer.observe(firstParent);
     return () => {
       observer.disconnect();
       if (frame !== null) cancelAnimationFrame(frame);
     };
-  }, [container, gold, materials, size, rowSizes]);
+  }, [container, gold, materials, size]);
 
   if (resources.length === 0) return null;
   const sizes = rowSizes.reduce((sum, count) => sum + count, 0) === resources.length ? rowSizes : [resources.length];

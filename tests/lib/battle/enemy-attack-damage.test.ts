@@ -7,7 +7,8 @@ import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { dealSelfDamage } from "@/lib/battle/status-helpers";
 import { resolveTypedEnemyHit } from "@/lib/battle/typed-hit-resolution";
-import { describe, expect, it } from "vitest";
+import type { CombatTextEvent } from "@/lib/battle/types";
+import { describe, expect, it, vi } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
 import { makeTestCard as makeEnemyTestCard, makeTestCard } from "../../fixtures/cards";
 import * as talentBattle from "../../fixtures/talent-battle";
@@ -102,6 +103,46 @@ describe("enemy attack damage", () => {
     expect(result.dodged).toBe(true);
     expect(result.state.playerHealth).toBe(40);
     expect(result.healthAfterHit).toBe(40);
+  });
+
+  it("a zero-damage attack cannot trigger Dodge healing or spend RNG", () => {
+    const rng = vi.fn(() => 0);
+    const state = patchBattleState({
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      talentEffects: { healOnDodge: 1 },
+      rng,
+    });
+    const result = resolveEnemyAttackHit(state, { kind: "damage", damageType: "physical", amount: 0 }, [], {
+      canDodge: true,
+    });
+    expect(result.dodged).toBe(false);
+    expect(result.state.playerHealth).toBe(10);
+    expect(result.state.playerDodgeCount).toBe(state.playerDodgeCount);
+    expect(rng).not.toHaveBeenCalled();
+  });
+
+  it("pre-hit eligibility snapshot in resolveTypedEnemyHit preserves eligibility snapshot when applying damage status riders", () => {
+    const eligibility = patchBattleState({
+      playerStatuses: { block: 0 },
+      gearEffects: { freezeGrantsBlockAndMana: 1 },
+    });
+    const state = patchBattleState({
+      playerStatuses: { block: 5 },
+      gearEffects: { freezeGrantsBlockAndMana: 1 },
+      enemyHealth: 50,
+    });
+
+    const combatTexts: CombatTextEvent[] = [];
+    const result = resolveTypedEnemyHit(
+      state,
+      { kind: "damage", damageType: "freeze", amount: 4 },
+      4,
+      combatTexts,
+      eligibility,
+    );
+
+    expect(result.state.playerStatuses.block).toBe(5 + 4);
   });
 
   it("captures a player hit's Health loss before threshold healing", () => {

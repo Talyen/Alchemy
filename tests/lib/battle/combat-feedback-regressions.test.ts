@@ -99,4 +99,32 @@ describe("combat feedback regressions", () => {
     expect(surviving.flags.divineAegisTriggered).toBe(true);
     expect(surviving.enemyMitigation).toMatchObject({ armor: 2, block: 4 });
   });
+
+  it("does not dispatch follow-up burn hit when burnOnDodgeBurning is 0 against burning enemy", () => {
+    const state = regressionBattle({
+      enemyStatuses: { burn: 5 },
+      talentEffects: { burnOnDodgeBurning: 0 },
+      enemyHealth: 50,
+    });
+    const combatTexts: CombatTextEvent[] = [];
+    const next = applyDodgeTalentStatuses(state, combatTexts);
+
+    const burnHit = combatTexts.find((t) => t.stat === "burn" && t.kind === "damage");
+    expect(burnHit).toBeUndefined();
+    expect(next.enemyHealth).toBe(50);
+  });
+
+  it("dispatches follow-up burn hit when burnOnDodgeBurning > 0 against burning enemy", () => {
+    const state = regressionBattle({
+      enemyStatuses: { burn: 5 },
+      talentEffects: { burnOnDodgeBurning: 3 },
+      enemyHealth: 50,
+    });
+    const combatTexts: CombatTextEvent[] = [];
+    const next = applyDodgeTalentStatuses(state, combatTexts);
+
+    const burnHit = combatTexts.find((t) => t.stat === "burn" && t.kind === "damage");
+    expect(burnHit).toBeDefined();
+    expect(next.enemyHealth).toBeLessThan(50);
+  });
 });

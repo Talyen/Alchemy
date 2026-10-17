@@ -1,18 +1,27 @@
 import { expect, it } from "vitest";
 import { applyGearKillRewards } from "@/lib/battle/player-rewards";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { makeStateWithFailedRolls as makeState, dealDamage, makeTestCard, makeEffect } from "../../fixtures/battle";
+import {
+  makeStateWithFailedRolls as makeState,
+  dealDamage,
+  makeTestCard,
+  makeEffect,
+  patchBattleState,
+} from "../../fixtures/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
-import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
+import { applyDamageStatuses, applyPoisonTalentRiders, tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
+import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { addEnemyStatus } from "@/lib/battle/status-state";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { reduceDamageByMana } from "@/lib/battle/status-helpers";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { resolvePlayerCrowdControlTrigger } from "@/lib/battle/status-cc";
+import { cardById } from "@/lib/game-data";
+import { MAX_HAND_SIZE } from "@/lib/game-constants";
 
 it("kill rewards scale Gold, restore Health and include the Burn-specific reward", () => {
   const state = makeState({
@@ -163,4 +172,77 @@ it.each([0, 1])("Bloodember shares First Blood with Burn (existing Bleed: %s)", 
   expect(dealDamage(state, makeTestCard({ effects: [makeEffect("burn", 10)] })).enemyHealth).toBe(
     bleed === 0 ? 85 : 90,
   );
+});
+
+it.each(["stun", "freeze"] as const)("Iron Guard rewards Physical damage from %s gear", (status) => {
+  const state = patchBattleState({
+    rng: () => 0,
+    enemyHealth: 100,
+    enemyMaxHealth: 100,
+    enemyStatuses: { [status]: 100 },
+    talentEffects: { armorOnPhysicalDamageChance: 100 },
+    gearEffects: {
+      damageOnStunPhysical: status === "stun" ? 6 : 0,
+      damageOnFreezePhysical: status === "freeze" ? 6 : 0,
+    },
+  });
+  const next = status === "stun" ? resolveStunTrigger(state, []) : tryTriggerEnemyFreeze(state, state, []);
+  expect(next.enemyHealth).toBe(94);
+  expect(next.playerStatuses.armor).toBe(6);
+});
+
+it("Icy Heart damage decays enemy Armor", () => {
+  const state = patchBattleState({
+    enemyHealth: 100,
+    enemyMaxHealth: 100,
+    enemyMitigation: { armor: 3 },
+    trinketEffects: { frozenHeartDamage: 6 },
+  });
+  const next = tryTriggerEnemyFreeze(state, { ...state, enemyStatuses: { ...state.enemyStatuses, freeze: 100 } }, []);
+  expect(next.enemyHealth).toBe(97);
+  expect(next.enemyMitigation.armor).toBe(2);
+});
+
+it.each([0, MAX_HAND_SIZE])("Runic Quill reports its draw with %i cards already in hand", (handSize) => {
+  const card = { ...cardById["health-potion"]! };
+  const state = patchBattleState({
+    hand: Array.from({ length: handSize }, () => makeTestCard()),
+    deck: [makeTestCard()],
+    trinketEffects: { runicQuillDrawOnConsume: 1 },
+  });
+  const texts: CombatTextEvent[] = [];
+  const next = handlePostPlayCardDestination(state, card, { combatTexts: texts });
+  expect(next.hand.length + next.pendingHandCards.length).toBe(handSize + 1);
+  expect(texts).toContainEqual({ target: "player", kind: "status", stat: "draw", amount: 1 });
+});
+
+it("does not grant armorOnConsume when playing a summon-companion card", () => {
+  const summonCard = makeTestCard({
+    effects: [{ kind: "summon-companion", companionId: "wolf" }],
+  });
+  const state = patchBattleState({
+    playerStatuses: { armor: 0 },
+    gearEffects: { armorOnConsume: 3 },
+  });
+  const next = handlePostPlayCardDestination(state, summonCard, {
+    triggerConsumeRiders: true,
+    combatTexts: [],
+  });
+  expect(next.playerStatuses.armor).toBe(0);
+});
+
+it("grants armorOnConsume when playing an ordinary consume card", () => {
+  const regularCard = makeTestCard({
+    consume: true,
+    effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+  });
+  const state = patchBattleState({
+    playerStatuses: { armor: 0 },
+    gearEffects: { armorOnConsume: 3 },
+  });
+  const next = handlePostPlayCardDestination(state, regularCard, {
+    triggerConsumeRiders: true,
+    combatTexts: [],
+  });
+  expect(next.playerStatuses.armor).toBe(3);
 });

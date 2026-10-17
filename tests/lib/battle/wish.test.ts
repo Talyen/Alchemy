@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyEmergencyWish, buildWishOptions, applyWishEffect, chooseWishCard } from "@/lib/battle/wish";
+import { SIMPLE_HANDLERS } from "@/lib/battle/effect-handlers/simple-handlers";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { seededRng } from "../../fixtures/rng";
 import { patchBattleState } from "../../fixtures/battle";
@@ -393,4 +394,25 @@ describe("new wish talents", () => {
     const result = applyWishEffect(state, card, 1, []);
     expect(result.enemyHealth).toBe(27);
   });
+
+  it.each([0, 0.4, 1, 2])(
+    "scaled empty draws only grants an emergency Wish for a positive resolved draw at multiplier %s",
+    (multiplier) => {
+      const state = patchBattleState({ deck: [], discard: [], hand: [] });
+      const next = SIMPLE_HANDLERS["random-draw"](
+        state,
+        makeTestCard(),
+        { kind: "random-draw", minAmount: 1, maxAmount: 1 },
+        multiplier,
+        [],
+      );
+      if (Math.round(multiplier) > 0) {
+        expect(next.wishOptions?.length).toBeGreaterThan(0);
+        expect(next.wishQueue).toEqual([]);
+      } else {
+        expect(next.wishOptions).toBeNull();
+        expect(next.wishQueue).toEqual([]);
+      }
+    },
+  );
 });

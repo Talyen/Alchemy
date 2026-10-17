@@ -1,9 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { cardById, companionLibrary } from "@/lib/game-data";
-import { makeState as makeSharedState, makeTestCard, slashDeck, type BattleStatePatch } from "../../fixtures/battle";
+import {
+  makeState as makeSharedState,
+  makeTestCard,
+  patchBattleState,
+  slashDeck,
+  type BattleStatePatch,
+} from "../../fixtures/battle";
 
 function makeState(overrides: BattleStatePatch = {}) {
   return makeSharedState({ mana: 5, maxMana: 5, ...overrides });
@@ -165,6 +171,71 @@ it("permits explicit victory-grace plays and still pays and discards", () => {
   expect(result).toMatchObject({ hand: [], discard: [card], mana: 2 });
 });
 
+it("Hawk Eye crits the next packet when the first packet of a card Freezes", () => {
+  const card = makeTestCard({
+    effects: [
+      { kind: "damage", damageType: "freeze", amount: 30 },
+      { kind: "damage", damageType: "physical", amount: 4 },
+    ],
+  });
+  const state = patchBattleState({
+    hand: [card],
+    enemyHealth: 100,
+    enemyMaxHealth: 100,
+    enemyStatuses: { freeze: 25 },
+    talentEffects: { archeryCritOnCrowdControl: true },
+    rng: () => 0.99,
+  });
+  const next = playBattleCardResolved(state, card.id, 0).state;
+  expect(next.enemyCC.freezeSkipTurns).toBeGreaterThan(0);
+  expect(next.enemyHealth).toBe(54); // Freeze 30, Critical Physical 8, Shatter 8.
+  expect(next.reactions).toMatchObject({ shatterDamage: 0, frostfireDamage: 8 });
+  expect(next.flags.hawkEyeReady).toBe(false);
+});
+
+it("a repeated Mana conversion cannot spend the same Mana twice", () => {
+  const card = makeTestCard({
+    effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 }],
+  });
+  const state = patchBattleState({ hand: [card], mana: 3, flags: { playNextCardTwice: true }, rng: () => 0.99 });
+  const next = playBattleCardResolved(state, card.id, 0).state;
+  expect(next.mana).toBe(0);
+  expect(next.playerStatuses.block).toBe(9);
+});
+
+it("Hawk Eye stays armed through full mitigation and is spent on the next damaging packet", () => {
+  const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] });
+  const state = patchBattleState({
+    hand: [card],
+    enemyHealth: 100,
+    enemyMaxHealth: 100,
+    enemyMitigation: { block: 8 },
+    flags: { hawkEyeReady: true },
+    talentEffects: { archeryCritOnCrowdControl: true },
+    rng: () => 0.99,
+  });
+  const blocked = playBattleCardResolved(state, card.id, 0).state;
+  expect(blocked.enemyHealth).toBe(100);
+  expect(blocked.flags.hawkEyeReady).toBe(true);
+  const hit = playBattleCardResolved({ ...blocked, hand: [card] }, card.id, 0).state;
+  expect(hit.enemyHealth).toBe(92);
+  expect(hit.flags.hawkEyeReady).toBe(false);
+});
+
+it("Distillation does not boost a Potion whose Consume was removed", () => {
+  const card = { ...cardById["health-potion"]!, consume: false };
+  const state = patchBattleState({
+    hand: [card],
+    playerHealth: 5,
+    playerMaxHealth: 30,
+    talentEffects: { potionPotency: 1.1 },
+    rng: () => 0.99,
+  });
+  const next = playBattleCardResolved(state, card.id, 0).state;
+  expect(next.playerHealth).toBe(13);
+  expect(next.discard).toHaveLength(1);
+});
+
 it("rejects an ineffective cleanse without spending, but allows a mixed-purpose cleanse", () => {
   const card = makeTestCard({ effects: [{ kind: "remove-harmful-status", amount: 1 }] });
   const state = makeState({ hand: [card] });
@@ -174,6 +245,15 @@ it("rejects an ineffective cleanse without spending, but allows a mixed-purpose 
   const result = playBattleCardResolved(makeState({ hand: [healing], playerHealth: 20 }), healing.id, 0).state;
   expect(result.playerHealth).toBe(24);
   expect(result.hand).toEqual([]);
+});
+
+it("a weakened zero-Cleanse card cannot spend Mana against a harmful status", () => {
+  const card = makeTestCard({ cost: 1, effects: [{ kind: "remove-harmful-status", amount: 0 }] });
+  const rng = vi.fn(() => 0.99);
+  const state = patchBattleState({ hand: [card], playerStatuses: { poison: 2 }, rng });
+  expect(canPlayCard(state, card, 0)).toBe(false);
+  expect(playBattleCardResolved(state, card.id, 0).state).toBe(state);
+  expect(rng).not.toHaveBeenCalled();
 });
 
 describe("reusable evasion", () => {

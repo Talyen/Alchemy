@@ -25,7 +25,7 @@ import type {
 } from "@/lib/active-run-session/alchemy-visits";
 import { pickRandom } from "@/lib/rng";
 
-const DAMAGE_KEYWORDS = TRANSMUTATION_KEYWORD_GROUPS[0]!;
+const DAMAGE_KEYWORDS = TRANSMUTATION_KEYWORD_GROUPS[0];
 const BUFF_KEYWORDS: readonly KeywordId[] = ["block", "armor", "forge", "thorns"];
 const RESOURCE_KINDS = { health: "heal", mana: "restore-mana", gold: "gain-gold" } as const;
 const SOURCE_CONDITIONS: Partial<Record<KeywordId, readonly string[]>> = {
@@ -168,7 +168,7 @@ function finishAlteration(
   );
   const description = carryCardDescriptionMarks(previous, createEffectDescription(effects));
   for (const tag of result.tags ?? [])
-    description.push({ role: "keyword", parts: [tag[0]!.toUpperCase() + tag.slice(1)] });
+    description.push({ role: "keyword", parts: [tag.charAt(0).toUpperCase() + tag.slice(1)] });
   if (result.consume) description.push({ role: "consume", parts: ["Consume"] });
   return cloneBattleCard(withCardDescription(result, description));
 }
@@ -318,10 +318,9 @@ function matchingAlteration(
 }
 
 export function getTransmutationOffers(visit: AlchemyVisit): BattleCard[] {
-  const selection = visit.transmutation;
   if (!selection) return [];
   const { source, sourceIndex } = selection;
-  if (!source || sourceIndex === null) return [];
+  if (!source || sourceIndex == null) return [];
   const key = cardSnapshotKey(source);
   return selection.choices.flatMap((choice) => {
     const alteration = matchingAlteration(choice, key, sourceIndex, source.id);

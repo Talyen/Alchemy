@@ -25,6 +25,7 @@ const STAR_DIRECTIONS = Array.from({ length: 8 }, (_, index) => {
   const angle = (index * Math.PI) / 4 - Math.PI / 2;
   return { cos: Math.cos(angle), sin: Math.sin(angle) };
 });
+const FRAME_DIRECTIONS = new Float64Array(12);
 
 export interface CombatantStatusPalette {
   primary: string;
@@ -80,7 +81,8 @@ function drawStar(
   const sin = Math.sin(rotation);
   ctx.beginPath();
   for (let i = 0; i < spikes * 2; i++) {
-    const direction = STAR_DIRECTIONS[i]!;
+    const direction = STAR_DIRECTIONS[i];
+    if (!direction) continue;
     const radius = i % 2 === 0 ? size : size * 0.38;
     const px = x + (direction.cos * cos - direction.sin * sin) * radius;
     const py = y + (direction.sin * cos + direction.cos * sin) * radius;
@@ -134,8 +136,8 @@ function drawSnowflake(
 
   ctx.beginPath();
   for (let petal = 0; petal < petals; petal++) {
-    const cos = directions[petal * 2]!;
-    const sin = directions[petal * 2 + 1]!;
+    const cos = directions[petal * 2] ?? 0;
+    const sin = directions[petal * 2 + 1] ?? 0;
     const midX = centerX + cos * radius * 0.55;
     const midY = centerY + sin * radius * 0.55;
     const arm = radius * 0.22;
@@ -165,7 +167,7 @@ function drawSwirlingStars(
   const angleBase = progress * Math.PI * 2;
 
   for (let index = 0; index < COMBATANT_STATUS_STAR_COUNT; index++) {
-    const noise = STAR_NOISE[index]!;
+    const noise = STAR_NOISE[index] ?? 0;
     const angle = angleBase + (index / COMBATANT_STATUS_STAR_COUNT) * Math.PI * 2 + noise * 0.35;
     const radial = radius * (0.85 + noise * 0.3);
     const x = centerX + Math.cos(angle) * radial;
@@ -209,9 +211,11 @@ function drawIceCrystals(
 
   // Reuse each petal's exact direction for both drawing passes. Double precision
   // keeps coordinates unchanged; one frame-local buffer serves every crystal.
-  const directions = new Float64Array(12);
+  const directions = FRAME_DIRECTIONS;
   for (let index = 0; index < COMBATANT_STATUS_FLAKE_COUNT; index++) {
-    const { along, insetNoise, delay } = FLAKE_NOISE[index]!;
+    const flake = FLAKE_NOISE[index];
+    if (!flake) continue;
+    const { along, insetNoise, delay } = flake;
     const edge = index % 4;
     const flakeAppear = clamp01((encroach - delay) / 0.28);
     if (flakeAppear <= 0.02) continue;

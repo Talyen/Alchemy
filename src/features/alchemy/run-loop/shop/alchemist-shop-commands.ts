@@ -90,9 +90,9 @@ export function createAlchemistShopCommands(gameSession: GameSession) {
       if (indexA === indexB || !isValidDeckIndex(indexA, deck.length) || !isValidDeckIndex(indexB, deck.length)) {
         return null;
       }
-      const cardA = deck[indexA]!;
-      const cardB = deck[indexB]!;
-      if (!isBrewablePotion(cardA) || !isBrewablePotion(cardB)) return null;
+      const cardA = deck[indexA];
+      const cardB = deck[indexB];
+      if (!cardA || !cardB || !isBrewablePotion(cardA) || !isBrewablePotion(cardB)) return null;
       const potion = tryCreateMixedPotion(cardA, cardB);
       return potion ? { potion, deck: applyMixToDeck(deck, indexA, indexB, potion) } : null;
     });
@@ -100,8 +100,9 @@ export function createAlchemistShopCommands(gameSession: GameSession) {
 
   function strengthenPotion(index: number): BattleCard | null {
     return brewPotion((deck) => {
-      if (!isValidDeckIndex(index, deck.length)) return null;
-      const potion = prepareStrengthenedPotion(deck[index]!);
+      const target = deck[index];
+      if (!target || !isValidDeckIndex(index, deck.length)) return null;
+      const potion = prepareStrengthenedPotion(target);
       return potion ? { potion, deck: deck.map((card, i) => (i === index ? potion : card)) } : null;
     });
   }

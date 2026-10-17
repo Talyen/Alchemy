@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { applyEnemyDotDamage, detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
+import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { BATTLE_CONFIG } from "@/lib/game-constants";
-import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
+import { makeCombatTexts as makeTexts, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("applyEnemyDotDamage", () => {
   it("pays burn-defeat gear before stack decay so a lethal last stack still counts", () => {
@@ -202,5 +204,84 @@ describe("remaining-tick detonation", () => {
     expect(next.flags.secondWindTriggered).toBe(true);
     expect(next.enemyHealth).toBeGreaterThan(2);
     expect(next.playerHealth).toBe(20);
+  });
+
+  it.each(["tick", "detonation"] as const)("Cutpurse Knife pays for a Bleed %s", (source) => {
+    const state = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyStatuses: { bleed: 4 },
+      trinketEffects: { cutpurseGoldOnBleed: 1 },
+      rng: () => 0.99,
+    });
+    const next = source === "tick" ? tickEnemyStatuses(state, []) : detonateEnemyStatuses(state, ["bleed"], []);
+    expect(next.enemyHealth).toBe(96);
+    expect(next.gold).toBe(state.gold + 1);
+  });
+
+  it.each([
+    { health: 20, bleed: 0, healed: 5 },
+    { health: 6, bleed: 0, healed: 3 },
+    { health: 6, bleed: 4, healed: 1 },
+  ])(
+    "Blackfletch's Poison Leech caps healing at Poison Health loss: $health Health, $bleed Bleed",
+    ({ health, bleed, healed }) => {
+      const card = makeTestCard({
+        tags: ["archery"],
+        effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
+      });
+      const state = patchBattleState({
+        hand: [card],
+        playerHealth: 5,
+        playerMaxHealth: 30,
+        enemyHealth: health,
+        enemyMaxHealth: 100,
+        enemyStatuses: { poison: 4, bleed },
+        gearEffects: { archeryDetonateBleedPoison: 1 },
+        talentEffects: { poisonLeechChance: 100 },
+        rng: () => 0.99,
+      });
+      const next = playBattleCardResolved(state, card.id, 0).state;
+      expect(next.enemyStatuses.poison).toBe(0);
+      expect(next.playerHealth).toBe(5 + healed);
+    },
+  );
+
+  it("Blackfletch's Poison detonation can trigger Hemotoxin", () => {
+    const card = makeTestCard({ tags: ["archery"], effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
+    const state = patchBattleState({
+      hand: [card],
+      enemyHealth: 29,
+      enemyMaxHealth: 100,
+      enemyStatuses: { poison: 4 },
+      gearEffects: { archeryDetonateBleedPoison: 1 },
+      talentEffects: { poisonBleedDamageChance: 100 },
+      rng: () => 0.99,
+    });
+    const next = playBattleCardResolved(state, card.id, 0).state;
+    expect(next.enemyHealth).toBe(8);
+    expect(next.enemyStatuses.bleed).toBe(10);
+  });
+
+  it("a lethal Poison detonation does not fund later Bleed rewards", () => {
+    const draw = makeTestCard({ effects: [{ kind: "gain-gold", amount: 1 }] });
+    const state = patchBattleState({
+      deck: [draw],
+      playerHealth: 5,
+      playerMaxHealth: 30,
+      enemyHealth: 4,
+      enemyMaxHealth: 30,
+      enemyStatuses: { poison: 4, bleed: 4 },
+      pendingBleedLeechHealing: 4,
+      talentEffects: { drawOnBleedDamageChance: 100 },
+      trinketEffects: { cutpurseGoldOnBleed: 1 },
+      rng: () => 0.99,
+    });
+    const next = detonateEnemyStatuses(state, ["poison", "bleed"], []);
+    expect(next.enemyHealth).toBe(0);
+    expect(next.playerHealth).toBe(5);
+    expect(next.pendingBleedLeechHealing).toBe(0);
+    expect(next.hand).toHaveLength(0);
+    expect(next.gold).toBe(state.gold);
   });
 });

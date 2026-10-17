@@ -43,6 +43,19 @@ describe("Talent talent turn rewards", () => {
     expect(endPlayerTurn({ ...state, mana: 1 }).state.mana).toBe(3);
   });
 
+  it("Turn-end mana tracking forwarded in resolveHasteTurn preserves manaAtTurnEnd on haste turns so wellspringKeepMana awards bonus mana", () => {
+    const state = battle({
+      mana: 3,
+      maxMana: 3,
+      playerStatuses: { haste: 1 },
+      talentEffects: { wellspringKeepMana: 2 },
+    });
+    const resolution = endPlayerTurn(state);
+
+    expect(resolution.kind).toBe("haste");
+    expect(resolution.state.mana).toBe(3 + 2);
+  });
+
   it("Tailwind draws for repeated Dodges and retains those cards into the next hand", () => {
     const state = battle({
       currentEnemy: { abilityIds: ["slash", "ray-of-frost", "block"] },

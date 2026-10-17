@@ -225,8 +225,10 @@ function resourceChoices(
   )
     return [{ label: "Block", amount: effect.amount, reference: { ...address, kind: effect.kind, field: "amount" } }];
   if (effect.kind === "chance" && effect.successEffects.length === 1 && effect.failureEffects.length === 1) {
-    const success = resourceChoices(effect.successEffects[0]!, childAddress(address, 0));
-    const failure = resourceChoices(effect.failureEffects[0]!, childAddress(address, 1));
+    const successEffect = effect.successEffects[0];
+    const failureEffect = effect.failureEffects[0];
+    const success = successEffect && resourceChoices(successEffect, childAddress(address, 0));
+    const failure = failureEffect && resourceChoices(failureEffect, childAddress(address, 1));
     return success && failure ? [...success, ...failure] : null;
   }
   return null;
@@ -253,11 +255,12 @@ function chanceLines(
   )
     return [["Gain ", value(failure, childAddress(address, 1), "amount"), " Gold or Wish"]];
   const choices = resourceChoices(effect, address);
-  if (choices?.every((choice) => choice.amount === choices[0]!.amount))
+  const firstChoice = choices?.[0];
+  if (firstChoice && choices.every((choice) => choice.amount === firstChoice.amount))
     return [
       [
         "Gain ",
-        cardMagnitude(choices[0]!.reference, { shared: choices.slice(1).map((choice) => choice.reference) }),
+        cardMagnitude(firstChoice.reference, { shared: choices.slice(1).map((choice) => choice.reference) }),
         ` ${joinOptions(choices.map((choice) => choice.label))}`,
       ],
     ];
@@ -295,7 +298,8 @@ function describeEffects(
 ): EffectDescription {
   const lines: EffectDescription = [];
   for (let index = 0; index < effects.length; index++) {
-    const effect = effects[index]!;
+    const effect = effects[index];
+    if (!effect) continue;
     const next = effects[index + 1];
     const address = addressFor(index);
     if (effect.kind === "summon-companion") {
@@ -337,12 +341,14 @@ function describeEffects(
         index++;
         continue;
       }
+      const nextFirst = next.kind === "repeat-over-turns" ? next.effects[0] : undefined;
       if (
         repeated &&
         next.kind === "repeat-over-turns" &&
         next.remainingTurns === 1 &&
         next.effects.length === 1 &&
-        areBattleCardEffectsEqual(effect, next.effects[0]!)
+        nextFirst &&
+        areBattleCardEffectsEqual(effect, nextFirst)
       ) {
         lines.push([...shareLine(repeated, childAddress(addressFor(index + 1), 0)), " this turn and next"]);
         index++;
