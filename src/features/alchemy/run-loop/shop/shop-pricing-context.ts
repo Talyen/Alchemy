@@ -1,20 +1,14 @@
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { readEquippedTrinketId } from "@/features/alchemy/shared/stores/gear-store";
-import type { ShopSessionStateKey } from "@/features/alchemy/shared/stores/run-reads";
-import {
-  readActiveRun,
-  readRunProfile,
-  readRunSession,
-  readShopFirstPurchaseUsed,
-} from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { snapshotTransactionValue, type RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
+import { readActivityData } from "@/lib/active-run-session";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
 import { computeTalentEffects } from "@/lib/game-data";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import type { ShopBuyPriceContext } from "./shop-pricing";
-
-export type { ShopSessionStateKey };
+import type { ShopActivity } from "./shop-action-types";
 
 export function resolveReadShopEffects(gameSession: GameSession) {
   const profile = readRunProfile(gameSession);
@@ -41,10 +35,7 @@ export function resolveDraftShopModifiers(draft: RunTransaction): readonly Encou
   );
 }
 
-export function resolveReadShopPricingContext(
-  shopKey: ShopSessionStateKey,
-  gameSession: GameSession,
-): ShopBuyPriceContext {
+export function resolveReadShopPricingContext(activity: ShopActivity, gameSession: GameSession): ShopBuyPriceContext {
   const run = readActiveRun(gameSession);
   return {
     talentEffects: resolveReadShopEffects(gameSession).talentEffects,
@@ -53,7 +44,7 @@ export function resolveReadShopPricingContext(
       readRunSession(gameSession).activeLabyrinthRewardModifiers,
     ),
     runBoons: combineTrinketEffectIds(run.runBoons, readEquippedTrinketId(run.characterId, gameSession)),
-    firstPurchaseUsed: readShopFirstPurchaseUsed(shopKey, gameSession),
+    firstPurchaseUsed: readActivityData(readRunSession(gameSession).activity, activity).firstPurchaseUsed,
   };
 }
 

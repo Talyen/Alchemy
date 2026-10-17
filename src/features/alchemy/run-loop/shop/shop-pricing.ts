@@ -16,8 +16,7 @@ import { type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import { isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
 import { gearDefinitions, type GearInstance } from "@/lib/gear";
 import { computeTrinketManifest } from "@/lib/trinkets";
-
-export type ShopRefreshKind = "merchant" | "alchemist" | "trinket" | "equipment";
+import type { ShopActivity } from "./shop-action-types";
 
 export interface ShopBuyPriceContext {
   modifiers?: readonly EncounterRewardTraitId[];
@@ -75,15 +74,15 @@ export function getShopBuyPrice(...args: ShopBuyPriceArguments): number {
     : Math.max(0, price - computeTrinketManifest(context.runBoons).merchantsFavorDiscount);
 }
 
-const SHOP_REFRESH_POLICY: Record<ShopRefreshKind, { basePrice: number; freeTrait: EncounterRewardTraitId | null }> = {
-  merchant: { basePrice: SHOP_REFRESH_PRICE, freeTrait: null },
-  equipment: { basePrice: SHOP_REFRESH_PRICE, freeTrait: null },
-  trinket: { basePrice: SHOP_REFRESH_PRICE, freeTrait: "fresh-curios" },
+const SHOP_REFRESH_POLICY: Record<ShopActivity, { basePrice: number; freeTrait: EncounterRewardTraitId | null }> = {
+  shop: { basePrice: SHOP_REFRESH_PRICE, freeTrait: null },
+  "equipment-shop": { basePrice: SHOP_REFRESH_PRICE, freeTrait: null },
+  "trinket-shop": { basePrice: SHOP_REFRESH_PRICE, freeTrait: "fresh-curios" },
   alchemist: { basePrice: ALCHEMIST_REFRESH_PRICE, freeTrait: "fresh-batch" },
 };
 
 export function getShopRefreshPrice(
-  kind: ShopRefreshKind,
+  kind: ShopActivity,
   refreshesLeft: number,
   modifiers: readonly EncounterRewardTraitId[] = [],
 ): number {

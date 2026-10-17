@@ -13,7 +13,7 @@ export interface GenericShopScreenProps<T> {
   purchasedSlotKeys: string[];
   getSlotKey: (item: T, index: number) => string;
   getPrice: (item: T) => number;
-  onBuy: (item: T, slotKey: string) => boolean;
+  onBuy: (slotKey: string) => boolean;
   onRefresh: () => void;
   onContinue: () => void;
   isProgressSavePending?: () => boolean;
@@ -76,7 +76,7 @@ export function GenericShopScreen<T>({
             <Fragment key={slotKey}>
               {i18n.displayText(
                 renderItem(item, price, purchased, () => {
-                  if (!isProgressSavePending()) setFailedShelf(onBuy(item, slotKey) ? null : shelfKey);
+                  if (!isProgressSavePending()) setFailedShelf(onBuy(slotKey) ? null : shelfKey);
                 }),
               )}
             </Fragment>

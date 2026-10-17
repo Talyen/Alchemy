@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
@@ -102,16 +102,6 @@ describe("PurchasableGearItem", () => {
     expect(await screen.findByRole("tooltip")).toBeTruthy();
     await user.keyboard("{Enter}");
     expect(onBuy).not.toHaveBeenCalled();
-  });
-
-  it("disables purchase and triggers onBuy when clicked and affordable", () => {
-    const onBuy = vi.fn();
-    render(<PurchasableGearItem instance={testGearInstance} price={50} gold={100} purchased={false} onBuy={onBuy} />);
-
-    const button = screen.getByRole("button", { name: /Buy Longsword/ });
-    expect(button).not.toHaveProperty("disabled", true);
-    fireEvent.click(button);
-    expect(onBuy).toHaveBeenCalledTimes(1);
   });
 });
 

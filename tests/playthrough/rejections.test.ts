@@ -113,14 +113,14 @@ describe("retained headless rejection and persistence contracts", () => {
     const card = activity.data.cards[0]!;
     const key = cardSlotKeyOf(card, 0);
     mutateGameplayForTest((draft) => setGold(draft, 10000));
-    expect(shop.buyCard(card, key)).toBe(true);
+    expect(shop.buyCard(key)).toBe(true);
     const after = stateDigest(defaultGameSession);
-    expect(shop.buyCard(card, key)).toBe(false);
+    expect(shop.buyCard(key)).toBe(false);
     expect(stateDigest(defaultGameSession)).toBe(after);
     mutateGameplayForTest((draft) => setGold(draft, 0));
     const second = activity.data.cards[1]!;
     const poor = stateDigest(defaultGameSession);
-    expect(shop.buyCard(second, cardSlotKeyOf(second, 1))).toBe(false);
+    expect(shop.buyCard(cardSlotKeyOf(second, 1))).toBe(false);
     expect(stateDigest(defaultGameSession)).toBe(poor);
   });
 

@@ -214,7 +214,7 @@ it("retained shop capabilities cannot recreate a visit or expose a room-entry by
   const visit = readRunSession(game).activity;
   if (visit.kind !== "shop") throw new Error("Missing Card Shop");
   const card = visit.data.cards[0]!;
-  expect(shops.merchant.buyCard(card, shopItemSlotKey(card.id, 0))).toBe(true);
+  expect(shops.merchant.buyCard(shopItemSlotKey(card.id, 0))).toBe(true);
   const before = readGameplayState(game);
   // Older capability objects exposed this bypass and reset purchased slots for free.
   const initialize = Reflect.get(shops, "initialize") as ((kind: "merchant") => void) | undefined;

@@ -19,7 +19,6 @@ export function createTrinketShopCommands(gameSession: GameSession) {
       activity: "trinket-shop",
       itemsOf: (state) => state.trinkets,
       slotKeyOf: (item, index) => shopItemSlotKey(item.id, index),
-      idOf: (item) => item.id,
       priceOf: (_trinket, context) => getShopBuyPrice("trinket", null, context),
       isAvailable: (draft, offered) => !draft.gear.ownedTrinketIds.includes(offered.id),
       acquire: (draft, offered) => {

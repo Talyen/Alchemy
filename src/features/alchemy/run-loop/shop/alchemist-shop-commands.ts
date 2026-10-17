@@ -5,6 +5,8 @@ import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store"
 import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
+  deductGold,
+  readDraftGold,
   setAlchemistState,
   setRunDeck,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -29,7 +31,7 @@ import {
   resolveReadShopModifiers,
 } from "./shop-pricing-context";
 import { applyStrongSpiritsToPotions, resampleCardShopOfferings } from "./shop-state-init";
-import { commitShopService, runShopTransaction } from "./shop-transactions";
+import { runShopTransaction } from "./shop-transactions";
 
 export function createAlchemistShopCommands(gameSession: GameSession) {
   const { buy: buyPotion, getBuyPrice: getPotionBuyPrice } = createShopPurchaseActions(
@@ -37,7 +39,6 @@ export function createAlchemistShopCommands(gameSession: GameSession) {
       activity: "alchemist",
       itemsOf: (state) => state.potions,
       slotKeyOf: cardSlotKeyOf,
-      idOf: (item) => item.id,
       priceOf: (card, context) => getShopBuyPrice("alchemistPotion", card, context),
       acquire: appendCardToRunWithDiscovery,
     },
@@ -67,22 +68,16 @@ export function createAlchemistShopCommands(gameSession: GameSession) {
             homesteadEffects.mixPotionDiscount,
           );
           const state = readActivityData(snapshotTransactionValue(draft.session.activity), "alchemist");
-          const prepared = state.mixUsed ? null : prepare(snapshotTransactionValue(draft.run.activeRun.runDeck));
-          return commitShopService({
-            draft,
-            price,
-            guard: prepared !== null,
-            failureValue: null,
-            apply: () => {
-              if (!prepared) return null;
-              setAlchemistState(draft, (previous) => ({ ...previous, mixUsed: true }));
-              setRunDeck(draft, prepared.deck);
-              if (isMixedPotionCard(prepared.potion)) {
-                discoverCardIds(draft, [MIXED_POTION_CARD_ID]);
-              }
-              return prepared.potion;
-            },
-          });
+          if (state.mixUsed || readDraftGold(draft) < price) return { committed: false, price, value: null };
+          const prepared = prepare(snapshotTransactionValue(draft.run.activeRun.runDeck));
+          if (!prepared) return { committed: false, price, value: null };
+          deductGold(draft, price);
+          setAlchemistState(draft, (previous) => ({ ...previous, mixUsed: true }));
+          setRunDeck(draft, prepared.deck);
+          if (isMixedPotionCard(prepared.potion)) {
+            discoverCardIds(draft, [MIXED_POTION_CARD_ID]);
+          }
+          return { committed: true, price, value: prepared.potion };
         },
         "alchemistMix",
         gameSession,

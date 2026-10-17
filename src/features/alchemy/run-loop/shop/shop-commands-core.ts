@@ -1,4 +1,4 @@
-import { readRunSession, type ShopSessionStateKey } from "@/features/alchemy/shared/stores/run-reads";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { snapshotTransactionValue, type RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -10,8 +10,8 @@ import {
 import { readActivityData, type RunActivityData } from "@/lib/active-run-session";
 import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
-import type { ShopRefreshModifiers } from "./shop-action-types";
-import { getShopRefreshPrice, type ShopBuyPriceContext, type ShopRefreshKind } from "./shop-pricing";
+import type { ShopActivity, ShopRefreshModifiers } from "./shop-action-types";
+import { getShopRefreshPrice, type ShopBuyPriceContext } from "./shop-pricing";
 import {
   resolveDraftShopModifiers,
   resolveDraftShopEffects,
@@ -19,27 +19,13 @@ import {
   resolveReadShopModifiers,
   resolveReadShopPricingContext,
 } from "./shop-pricing-context";
-import { findShopOffering, shopItemSlotKey } from "./shop-slot-keys";
+import { shopItemSlotKey } from "./shop-slot-keys";
 import { runShopTransaction } from "./shop-transactions";
-
-type ShopActivity = Parameters<typeof runShopTransaction>[0];
-const REFRESH_KIND: Record<ShopActivity, ShopRefreshKind> = {
-  shop: "merchant",
-  alchemist: "alchemist",
-  "trinket-shop": "trinket",
-  "equipment-shop": "equipment",
-};
-const SHOP_STATE_KEY: Record<ShopActivity, ShopSessionStateKey> = {
-  shop: "shopState",
-  alchemist: "alchemistState",
-  "trinket-shop": "trinketShopState",
-  "equipment-shop": "equipmentShopState",
-};
 
 export function createGetRefreshPrice(activity: ShopActivity, gameSession: GameSession): () => number {
   return () =>
     getShopRefreshPrice(
-      REFRESH_KIND[activity],
+      activity,
       readActivityData(readRunSession(gameSession).activity, activity).refreshesLeft,
       resolveReadShopModifiers(gameSession),
     );
@@ -69,7 +55,7 @@ export function createShopRefreshAction<K extends ShopActivity>(
         if (guard && !guard(draft, state)) return { committed: false, price: 0, value: null };
         const modifiers = resolveDraftShopModifiers(draft);
         const { talentEffects } = resolveDraftShopEffects(draft);
-        const quotedPrice = getShopRefreshPrice(REFRESH_KIND[activity], state.refreshesLeft, modifiers);
+        const quotedPrice = getShopRefreshPrice(activity, state.refreshesLeft, modifiers);
         // Match the displayed affordability guard before consuming persisted RNG.
         if (state.refreshesLeft <= 0 || readDraftGold(draft) < quotedPrice) {
           return { committed: false, price: quotedPrice, value: null };
@@ -114,7 +100,6 @@ interface ShopPurchaseConfig<K extends ShopActivity> {
   activity: K;
   itemsOf: (state: RunActivityData[NoInfer<K>]) => ReadonlyArray<ShopItemByActivity[NoInfer<K>]>;
   slotKeyOf: (item: ShopItemByActivity[NoInfer<K>], index: number) => string;
-  idOf: (item: ShopItemByActivity[NoInfer<K>]) => string;
   priceOf: (item: ShopItemByActivity[NoInfer<K>], context: ShopBuyPriceContext) => number;
   isAvailable?: (draft: RunTransaction, offered: ShopItemByActivity[NoInfer<K>]) => boolean;
   acquire: (draft: RunTransaction, offered: ShopItemByActivity[NoInfer<K>]) => void;
@@ -124,22 +109,21 @@ export function createShopPurchaseActions<K extends ShopActivity>(
   config: ShopPurchaseConfig<K>,
   gameSession: GameSession,
 ): {
-  buy: (requested: ShopItemByActivity[K], slotKey: string) => boolean;
+  buy: (slotKey: string) => boolean;
   getBuyPrice: (item: ShopItemByActivity[K]) => number;
 } {
   const getBuyPrice = (item: ShopItemByActivity[K]) =>
-    config.priceOf(item, resolveReadShopPricingContext(SHOP_STATE_KEY[config.activity], gameSession));
+    config.priceOf(item, resolveReadShopPricingContext(config.activity, gameSession));
 
-  function buy(requested: ShopItemByActivity[K], slotKey: string): boolean {
+  function buy(slotKey: string): boolean {
     return runShopTransaction(
       config.activity,
       (draft) => {
         const state = readActivityData(snapshotTransactionValue(draft.session.activity), config.activity);
-        const offered = findShopOffering(config.itemsOf(state), slotKey, config.slotKeyOf);
-        if (!offered || config.idOf(offered) !== config.idOf(requested)) {
+        const offered = config.itemsOf(state).find((item, index) => config.slotKeyOf(item, index) === slotKey);
+        if (!offered) {
           return { committed: false, price: 0, value: undefined };
         }
-        // Price and acquire the live shelf item; callers may hold an older copy.
         const price = config.priceOf(offered, resolveDraftShopPricingContext(draft, state));
         if (
           (config.isAvailable && !config.isAvailable(draft, offered)) ||
