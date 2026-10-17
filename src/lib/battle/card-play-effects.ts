@@ -86,13 +86,22 @@ export function resolveCardEffectChain(
 }
 
 export function shouldElementalTalentRepeat(state: BattleState, card: BattleCard): boolean {
-  const chance =
-    (cardHasKeyword(card, "burn") ? state.talentEffects.burnCardPlayTwiceChance : 0) +
-    (cardHasKeyword(card, "freeze") ? state.talentEffects.freezeCardPlayTwiceChance : 0) +
-    (cardHasKeyword(card, "nature") ? state.talentEffects.natureCardPlayTwiceChance : 0) +
-    (cardHasKeyword(card, "poison") ? state.talentEffects.poisonCardPlayTwiceChance : 0) +
-    (cardHasKeyword(card, "stun") ? state.talentEffects.stunCardPlayTwiceChance : 0) +
-    (cardHasKeyword(card, "wish") ? state.talentEffects.wishCardPlayTwiceChance : 0);
+  const {
+    burnCardPlayTwiceChance,
+    freezeCardPlayTwiceChance,
+    natureCardPlayTwiceChance,
+    poisonCardPlayTwiceChance,
+    stunCardPlayTwiceChance,
+    wishCardPlayTwiceChance,
+  } = state.talentEffects;
+
+  let chance = 0;
+  if (burnCardPlayTwiceChance > 0 && cardHasKeyword(card, "burn")) chance += burnCardPlayTwiceChance;
+  if (freezeCardPlayTwiceChance > 0 && cardHasKeyword(card, "freeze")) chance += freezeCardPlayTwiceChance;
+  if (natureCardPlayTwiceChance > 0 && cardHasKeyword(card, "nature")) chance += natureCardPlayTwiceChance;
+  if (poisonCardPlayTwiceChance > 0 && cardHasKeyword(card, "poison")) chance += poisonCardPlayTwiceChance;
+  if (stunCardPlayTwiceChance > 0 && cardHasKeyword(card, "stun")) chance += stunCardPlayTwiceChance;
+  if (wishCardPlayTwiceChance > 0 && cardHasKeyword(card, "wish")) chance += wishCardPlayTwiceChance;
 
   return rollBattleChance(Math.min(100, chance), state);
 }

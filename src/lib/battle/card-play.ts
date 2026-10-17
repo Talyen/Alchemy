@@ -47,21 +47,30 @@ export interface CardPlayOptions {
 }
 
 function cleanseOnlyCardHasNoTargets(card: BattleCard, state: BattleSnapshot): boolean {
-  if (!card.effects.some((effect) => effect.kind === "remove-harmful-status" || effect.kind === "remove-player-status"))
-    return false;
-  const hasUsefulEffect = card.effects.some(
-    (effect) =>
-      effect.kind !== "remove-harmful-status" &&
-      effect.kind !== "remove-player-status" &&
-      effect.kind !== "self-damage",
-  );
-  if (hasUsefulEffect) return false;
-  return !card.effects.some((effect) =>
-    effect.kind === "remove-harmful-status"
-      ? (effect.removeAll === true || (effect.amount ?? 0) > 0) &&
+  let hasCleanse = false;
+  let hasCleanseTarget = false;
+
+  for (const effect of card.effects) {
+    if (effect.kind === "remove-harmful-status") {
+      hasCleanse = true;
+      if (
+        !hasCleanseTarget &&
+        (effect.removeAll === true || (effect.amount ?? 0) > 0) &&
         countRemovableHarmfulStatuses(state.playerStatuses) > 0
-      : effect.kind === "remove-player-status" && state.playerStatuses[effect.status] > 0,
-  );
+      ) {
+        hasCleanseTarget = true;
+      }
+    } else if (effect.kind === "remove-player-status") {
+      hasCleanse = true;
+      if (!hasCleanseTarget && state.playerStatuses[effect.status] > 0) {
+        hasCleanseTarget = true;
+      }
+    } else if (effect.kind !== "self-damage") {
+      return false;
+    }
+  }
+
+  return hasCleanse && !hasCleanseTarget;
 }
 
 function validateCardPlay(

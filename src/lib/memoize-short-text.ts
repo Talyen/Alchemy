@@ -3,8 +3,13 @@ export function memoizeShortText<T>(parse: (text: string) => T): (text: string) 
   const cache = new Map<string, T>();
   return (text) => {
     if (text.length > 1024) return parse(text);
-    const value = cache.has(text) ? cache.get(text)! : parse(text);
-    cache.delete(text);
+    const existing = cache.get(text);
+    if (existing !== undefined || cache.has(text)) {
+      cache.delete(text);
+      cache.set(text, existing as T);
+      return existing as T;
+    }
+    const value = parse(text);
     cache.set(text, value);
     if (cache.size > 256) cache.delete(cache.keys().next().value!);
     return value;

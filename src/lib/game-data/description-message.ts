@@ -2,7 +2,7 @@ import { materialLabels } from "../homestead/types";
 import { keywordAliasMap, keywordPattern, keywordAliases } from "../keyword-text";
 import type { KeywordId } from "./types";
 
-export interface DescriptionMessage {
+interface DescriptionMessage {
   id: string;
   template: string;
   slots: Record<string, { magnitudeId: string } | { keywordId: KeywordId } | { resourceId: string }>;
