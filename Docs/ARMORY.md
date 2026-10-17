@@ -30,7 +30,7 @@ contract and controller seams.
 - Permanent Trinkets are unique definition IDs in `ownedTrinketIds`, not generated `GearInstance` values; they have no rarity, affixes, crafting, or salvage.
 - `equippedTrinkets` maps each character to one owned Trinket at most. Equipping a shared Trinket moves it from any other character.
 - Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata. Placement presets in `base-items.ts` bind legal slots and hand rules together. One-handed melee weapons and wands may occupy `main-hand` or `off-hand`; two-handers and ranged weapons stay main-hand only (ranged pairs with a quiver off-hand).
-- `loadout-operations.ts` owns one private hand-pair resolver shared by slot validation, equipping, and saved-loadout repair. Equipping preserves the incoming hand by displacing a conflicting item; save repair preserves main-hand by clearing an invalid off-hand. Quiver requirements reject incompatible selections (including a shield beside a bow or a melee weapon beside a Quiver). Equipping body armor or accessories preserves valid hand pairs. The Armory grid checks legality through `isGearCompatibleWithLoadoutSlot`; `equipGear` applies the same resolution. `pruneOrphanGearLoadouts` repairs saved pairs and removes orphan references; removing, salvaging, or transferring a bow also unequips its unsupported Quiver without removing the Quiver from inventory.
+- `loadout-operations.ts` owns one private hand-pair resolver shared by slot validation, equipping, and saved-loadout repair. Equipping preserves the incoming hand by displacing a conflicting item; save repair preserves main-hand by clearing an invalid off-hand. Quiver requirements reject incompatible selections (including a shield beside a bow or a melee weapon beside a Quiver). Equipping body armor or accessories preserves valid hand pairs. The Armory grid checks legality through `isGearCompatibleWithLoadoutSlot`; `equipGear` applies the same resolution. `pruneOrphanGearLoadouts` removes orphan and duplicate references before validating each hero's hand pair; invalid off-hand references do not reserve another hero's equipment. Save parsing repairs each slot separately so a malformed slot cannot erase valid neighboring equipment; removing, salvaging, or transferring a bow also unequips its unsupported Quiver without removing the Quiver from inventory.
 - Gear slots are `main-hand`, `off-hand`, `body`, `left-accessory`, and `right-accessory`. Both Accessory slots accept Rings or Amulets. The Armory lays these out over `left-accessory | trinket | right-accessory`; the dedicated Trinket slot accepts only permanent Trinkets.
 - **Unique** is a third Gear rarity (alongside basic and astral). Each base item has exactly one named Unique with one exclusive signature and three fixed standard supporting affixes. Signature affixes supply the item's default ID and title; `unique-catalog.ts` keeps explicit overrides where item and affix identities differ. Supporting rolls always use the standard Unique/Astral maximum from the affix catalog; the signature has its own fixed magnitude. Generation, tooltips, manifests, and saved-item normalization share these canonical affixes, and saved Unique instances store no rolls at all — older saves carrying stored rolls converge on the catalog at load without changing identity, ownership, or Collection discovery. Crafting currencies cannot modify uniques. Unique salvage follows the crafting and homestead salvage definitions. Collection tracks discovered unique definition IDs independently of current inventory, so salvage does not hide an already-found unique.
 - Uniqueness is inventory-scoped: a unique definition is excluded from shops and rewards while any character still holds an instance. Salvaging it returns that definition to the drop pool. Reward and shop screens never offer the same unique twice, and never pair a unique with another item of the same base item.
@@ -125,8 +125,8 @@ Homestead mutation timing remains unchanged.
   - `loadout-operations.ts` owns slot compatibility, equipment changes, and orphan repair.
   - `instance-normalization.ts` owns saved-instance repair; save schemas import it directly.
   - `equipped-effects.ts` owns per-item and equipped battle stat aggregation.
-  - `operations.ts` owns inventory salvage. The Gear barrel retains the public API; save repair imports its rule owners directly, without depending on crafting.
-- **Aggregate** — `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec) and `gear-session-command.ts` (HP-sync wrapper)
+  - Save repair imports its rule owners directly, without depending on crafting.
+- **Aggregate** — `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec), `gear-actions.ts` (draft mutations including inventory salvage), and `gear-session-command.ts` (HP-sync wrapper)
 - **Screen** — Armory route (`meta-routes.tsx`) → `routeCommands.meta.armory` → `armory-screen.tsx`
 - **Battle** — `computeGearManifest` → `BattleState.gearEffects`; rebound on live meta mutation
 - **Persistence** — `subscribeAlchemyPersistence` / `buildAlchemySaveDataFromStores` + immediate `flushSaveAfterGearMutation` (fire-and-forget; autosave owns retry)
@@ -233,9 +233,9 @@ Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/featur
 ## Tests
 
 Gear rule coverage lives in `tests/lib/gear/` (`gear`, `generation`,
-`crafting`, `crafting-ids`, `crafting-assets`, `salvage-yield`,
+`crafting`, `crafting-ids`, `salvage-yield`,
 `unique-catalog`, `gear-shine`, `definitions-art`, `affixes`,
-`affix-pool`, `raw-assets`); aggregate and
+`affix-pool`); aggregate and
 persistence contracts in `tests/features/alchemy/shared/stores/gear-*` and
 `tests/features/alchemy/shared/storage/gear-save.test.ts`; Armory interaction
 in `tests/features/alchemy/meta/screens/armory-screen*.test.tsx` and

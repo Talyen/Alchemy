@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  computeSalvageYield,
   computeGearManifest,
   createEmptyGearLoadouts,
   defaultGearEffects,
@@ -8,14 +7,11 @@ import {
   equipGear,
   gearDefinitions,
   isGearCompatibleWithLoadoutSlot,
-  normalizeExclusiveGearLoadouts,
   normalizeGearInstance,
   pruneOrphanGearLoadouts,
-  salvageGear,
   unequipGear,
   type GearInstance,
 } from "@/lib/gear";
-import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeGearInstance } from "../../helpers/gear-fixtures";
 
 const ring: GearInstance = { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] };
@@ -134,36 +130,32 @@ describe("gear domain", () => {
     expect(effectsForInstance(normalized!).flatPhysicalDamage).toBe(1);
   });
 
-  it("salvages equipped gear once, retains other inventory, and repairs orphan loadout references", () => {
-    const other = makeGearInstance("dagger-basic", "other");
-    const inventory = [ring, other];
-    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, inventory);
-    loadouts.knight["off-hand"] = "missing";
-    const before = structuredClone(loadouts);
-    const result = salvageGear(inventory, loadouts, ring.instanceId)!;
-    expect(result.inventory).toEqual([other]);
-    expect(result.loadouts.knight).toEqual(createEmptyGearLoadouts().knight);
-    expect(result.yieldedCurrencies).toEqual(computeSalvageYield(ring).currencies);
-    expect(result.yieldedMaterials).toEqual({ ...emptyInventory(), gems: 3 });
-    expect(salvageGear(result.inventory, result.loadouts, ring.instanceId)).toBeNull();
-    expect(loadouts).toEqual(before);
-    expect(inventory).toEqual([ring, other]);
-  });
-
   it("repairs duplicate and missing saved references deterministically", () => {
     const loadouts = createEmptyGearLoadouts();
     loadouts.knight["left-accessory"] = ring.instanceId;
     loadouts.rogue["right-accessory"] = ring.instanceId;
     loadouts.knight.body = "missing";
-    const exclusive = normalizeExclusiveGearLoadouts(loadouts);
-    expect(exclusive.knight["left-accessory"]).toBe(ring.instanceId);
-    expect(exclusive.rogue["right-accessory"]).toBeNull();
     expect(pruneOrphanGearLoadouts([ring], loadouts)).toEqual({
       ...createEmptyGearLoadouts(),
       knight: { ...createEmptyGearLoadouts().knight, "left-accessory": ring.instanceId },
     });
     expect(pruneOrphanGearLoadouts([], loadouts)).toEqual(createEmptyGearLoadouts());
     expect(loadouts.rogue["right-accessory"]).toBe(ring.instanceId);
+  });
+
+  it("repairs duplicate bows before deciding whether each hero can keep a Quiver", () => {
+    const bow = makeGearInstance("shortbow-basic", "shared-bow");
+    const arrows = makeGearInstance("quiver-basic", "arrows");
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight["main-hand"] = bow.instanceId;
+    loadouts.ranger["main-hand"] = bow.instanceId;
+    loadouts.ranger["off-hand"] = arrows.instanceId;
+
+    const repaired = pruneOrphanGearLoadouts([bow, arrows], loadouts);
+    expect(repaired.knight["main-hand"]).toBe(bow.instanceId);
+    expect(repaired.ranger).toEqual(createEmptyGearLoadouts().ranger);
+    expect(pruneOrphanGearLoadouts([bow, arrows], repaired)).toEqual(repaired);
+    expect(loadouts.ranger["off-hand"]).toBe(arrows.instanceId);
   });
 
   it.each(["staff-basic", "longbow-basic"])("repairs an incompatible saved shield beside %s", (definitionId) => {
@@ -208,7 +200,7 @@ describe("gear domain", () => {
     const quiver: GearInstance = { instanceId: "quiver-1", definitionId: "quiver-basic", affixes: [] };
     const buckler: GearInstance = { instanceId: "buckler-1", definitionId: "leather-buckler-basic", affixes: [] };
 
-    it.each(["unequip", "salvage", "transfer", "restore"])(
+    it.each(["unequip", "transfer", "restore"])(
       "removes an unsupported Quiver when its bow leaves through %s",
       (action) => {
         const inventory = [longbow, quiver];
@@ -217,11 +209,9 @@ describe("gear domain", () => {
         const result =
           action === "unequip"
             ? unequipGear(equipped, "knight", "main-hand", inventory)
-            : action === "salvage"
-              ? salvageGear(inventory, equipped, longbow.instanceId)!.loadouts
-              : action === "transfer"
-                ? equipGear(equipped, "ranger", "main-hand", longbow, inventory)
-                : pruneOrphanGearLoadouts([quiver], equipped);
+            : action === "transfer"
+              ? equipGear(equipped, "ranger", "main-hand", longbow, inventory)
+              : pruneOrphanGearLoadouts([quiver], equipped);
         expect(result.knight["main-hand"]).toBeNull();
         expect(result.knight["off-hand"]).toBeNull();
         expect(equipped.knight["off-hand"]).toBe(quiver.instanceId);

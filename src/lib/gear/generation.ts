@@ -4,7 +4,6 @@ import { createInstanceId } from "@/lib/utils";
 import { gearBaseItemList } from "./base-items";
 import { gearDefinitionId, gearDefinitions } from "./definitions";
 import { createRolledGearInstance, generateUniqueGearInstance } from "./instances";
-import { getGearLootAvailability } from "./loot-availability";
 import type { GearInstance, GearRarity } from "./types";
 import { uniqueItemList } from "./unique-catalog";
 
@@ -58,13 +57,12 @@ function generateGearOfferings({
     if (eligibleBases.length === 0) break;
 
     const availableUniques = unownedUniques.filter((unique) => !reservedBases.has(unique.baseItemId));
-    const availability = getGearLootAvailability(
-      ownedUniqueIds,
-      eligibleBases.map((base) => base.id),
-    );
-    // Leave an ordinary base available to fill later slots on a narrow shelf.
-    availability.unique =
-      availableUniques.length > 0 && (index === count - 1 || !fillCount || repeatableBases.length > 1);
+    const availability: LootAvailability = {
+      basic: true,
+      astral: true,
+      // Leave an ordinary base available to fill later slots on a narrow shelf.
+      unique: availableUniques.length > 0 && (index === count - 1 || !fillCount || repeatableBases.length > 1),
+    };
     let rarity = rollTier(availability, index);
 
     if (rarity === "unique") {

@@ -28,8 +28,8 @@ import {
 import {
   dispatchGearMutationWithRunHealthSync,
   mutateGearWithRunHealthSync,
-  dispatchGearSalvageWithMaterialGrant,
 } from "@/features/alchemy/shared/stores/gear-session-command";
+import { salvageGear } from "@/features/alchemy/shared/stores/gear-commands";
 import { commitEndTurn, createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session";
@@ -189,7 +189,7 @@ describe("run architecture type contracts", () => {
 
   it("accepts only item identity for salvage, never a payout callback", () => {
     // @ts-expect-error -- the settlement owner resolves an item ID, not a supplied payout
-    dispatchGearSalvageWithMaterialGrant(() => null, defaultGameSession);
+    salvageGear(() => null, defaultGameSession);
   });
 
   it("rejects asynchronous results at every generic command entry point", () => {

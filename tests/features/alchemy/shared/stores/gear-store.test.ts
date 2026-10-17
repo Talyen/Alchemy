@@ -21,10 +21,8 @@ import {
   selectHasAnyOwnedGear,
 } from "@/features/alchemy/shared/stores/gear-store";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import {
-  dispatchGearMutationWithRunHealthSync,
-  dispatchGearSalvageWithMaterialGrant,
-} from "@/features/alchemy/shared/stores/gear-session-command";
+import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
+import { salvageGear } from "@/features/alchemy/shared/stores/gear-commands";
 import { defaultGameSession } from "@/app/application-session";
 
 describe("gear-store", () => {
@@ -92,7 +90,7 @@ describe("gear-store", () => {
     );
     expect(readProfileStore(defaultGameSession).discoveredUniqueIds).toEqual(["wardbreaker"]);
 
-    dispatchGearSalvageWithMaterialGrant(unique.instanceId, defaultGameSession);
+    expect(salvageGear(unique.instanceId, defaultGameSession)).toBe(true);
     expect(flattenGearInventories(readGearState(defaultGameSession).inventories)).toEqual([]);
     expect(readProfileStore(defaultGameSession).discoveredUniqueIds).toEqual(["wardbreaker"]);
     resetGearForTest();
