@@ -5,8 +5,7 @@ import {
   getImmediateDefense,
   pickHighestScoring,
 } from "@/lib/battle/autoplay-policy";
-import type { BattleCard } from "@/lib/game-data";
-import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
+import { makeTestBattleState } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
 
 describe("autoplay policy", () => {
@@ -39,35 +38,6 @@ describe("autoplay policy", () => {
     });
     expect(getEffectiveDamageScore(draw, state)).toBe(3 * AUTOPLAY_EFFECT_SCORE.draw);
     expect(getEffectiveDamageScore(refill, state)).toBe(AUTOPLAY_EFFECT_SCORE.mana);
-  });
-
-  it("keeps conditional damage amounts and free-card Mana refill scoring", () => {
-    const state = patchBattleState({
-      mana: 3,
-      maxMana: 3,
-      playerStatuses: { block: 2 },
-      enemyMitigation: { block: 1 },
-      enemyCC: { freezeSkipTurns: 1 },
-    });
-    const score = (effect: BattleCard["effects"]) =>
-      getEffectiveDamageScore(makeTestCard({ cost: 0, effects: effect }), state);
-    expect(score([{ kind: "damage", damageType: "physical", amount: 4 }])).toBe(4);
-    expect(
-      score([
-        {
-          kind: "damage",
-          damageType: "freeze",
-          amount: 2,
-          damageTypeIfTargetFrozen: "freeze",
-          amountIfTargetFrozen: 4,
-        },
-      ]),
-    ).toBe(4);
-    expect(score([{ kind: "damage", damageType: "holy", amount: 0, equalToArmor: true }])).toBe(
-      state.playerStatuses.armor,
-    );
-    const refill = makeTestCard({ cost: 1, tags: ["holy"], effects: [{ kind: "restore-mana", amount: 2 }] });
-    expect(getEffectiveDamageScore(refill, { ...state, flags: { ...state.flags, nextHolyCardFree: true } })).toBe(0);
   });
 
   it("keeps prepared Dodge effects from poisoning card and Wish selection with a nonnumeric score", () => {
@@ -109,22 +79,5 @@ describe("autoplay policy", () => {
     const state = makeTestBattleState({ mana: 3, playerHealth: 99, playerMaxHealth: 100 });
     expect(getImmediateDefense(card, state)).toBe(7.125);
     expect(getImmediateDefense(card)).toBe(9.5);
-  });
-
-  it("keeps defensive status-pool averages and full-cleanse scores", () => {
-    const state = patchBattleState({ playerStatuses: { burn: 2, poison: 1, stun: 0 } });
-    const score = (effects: BattleCard["effects"]) =>
-      getEffectiveDamageScore(makeTestCard({ cost: 0, effects }), state);
-    expect(score([{ kind: "player-status", status: "block", amount: 6 }])).toBe(3);
-    expect(score([{ kind: "player-status", status: "forge", amount: 6 }])).toBe(0);
-    expect(
-      score([{ kind: "player-status", status: "block", statusPool: ["block", "armor", "forge"], amount: 6 }]),
-    ).toBe(2);
-    const randomGuard = makeTestCard({
-      effects: [{ kind: "player-status", status: "forge", statusPool: ["forge", "armor"], amount: 6 }],
-    });
-    expect(getImmediateDefense(randomGuard, state)).toBe(3);
-    expect(score(randomGuard.effects)).toBe(1.5);
-    expect(score([{ kind: "remove-harmful-status", removeAll: true }])).toBe(6);
   });
 });

@@ -48,6 +48,7 @@ export function FoundResourcesRow({
 
   useLayoutEffect(() => {
     if (!container || typeof ResizeObserver === "undefined") return;
+    // Rebind after row changes move pills between parents and replace their elements.
     const pills = Array.from(container.querySelectorAll<HTMLElement>("[data-reward-resource]"));
     const update = () => {
       if (container.clientWidth <= 0 || pills.length === 0) return;
@@ -78,7 +79,7 @@ export function FoundResourcesRow({
       observer.disconnect();
       if (frame !== null) cancelAnimationFrame(frame);
     };
-  }, [container, gold, materials, size]);
+  }, [container, gold, materials, size, rowSizes]);
 
   if (resources.length === 0) return null;
   const sizes = rowSizes.reduce((sum, count) => sum + count, 0) === resources.length ? rowSizes : [resources.length];

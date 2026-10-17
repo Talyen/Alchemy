@@ -1,23 +1,39 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { driveAutoplay } from "@/features/alchemy/run-loop/battle/autoplay-driver";
 import * as animationPrefs from "@/lib/animation/animation-prefs";
-import { playableCard } from "./open-battle-fixture";
 
-describe("driveAutoplay", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-    vi.useRealTimers();
+function startAutoplay({ blocked = false, blockAfterPlay = false, postPlayDelayMs = 1000 } = {}) {
+  vi.useFakeTimers();
+  const controller = new AbortController();
+  const wakeRef: { current: (() => void) | null } = { current: null };
+  const state = { blocked };
+  const play = vi.fn(() => {
+    state.blocked = blockAfterPlay;
+    return true;
   });
+  const done = driveAutoplay({
+    signal: controller.signal,
+    delayMs: 100,
+    postPlayDelayMs,
+    wakeRef,
+    isEnabled: () => true,
+    findAction: () => (state.blocked ? null : { canCommit: () => !state.blocked, play }),
+  });
+  return { controller, wakeRef, state, play, done };
+}
 
-  it("keeps readiness and rejection retries bounded when animations are disabled", async () => {
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+});
+
+describe("autoplay scheduling", () => {
+  it("bounds readiness and rejection retries even with animations disabled", async () => {
     vi.useFakeTimers();
     vi.spyOn(animationPrefs, "isAnimationDisabled").mockReturnValue(true);
     let blocked = true;
     let committed = false;
-    const play = vi.fn(() => {
-      committed = play.mock.calls.length > 1;
-      return committed;
-    });
+    const play = vi.fn(() => (committed = play.mock.calls.length > 1));
     const findAction = vi.fn(() => (blocked ? null : { canCommit: () => true, play }));
     const done = driveAutoplay({
       signal: new AbortController().signal,
@@ -40,7 +56,7 @@ describe("driveAutoplay", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("rechecks eligibility, enablement, and cancellation during an action preview", async () => {
+  it("revokes preview permission on ineligibility, disablement, and cancellation", async () => {
     const controller = new AbortController();
     let enabled = true;
     let eligible = true;
@@ -69,157 +85,58 @@ describe("driveAutoplay", () => {
     });
   });
 
-  it("waits the post-play delay before playing the next card", async () => {
-    vi.useFakeTimers();
-    const playable = [
-      { ...playableCard, uid: 1 },
-      { ...playableCard, uid: 2 },
-    ];
-    const played: number[] = [];
-    const controller = new AbortController();
-
-    const done = driveAutoplay({
-      signal: controller.signal,
-      delayMs: 0,
-      postPlayDelayMs: 1000,
-      isEnabled: () => played.length < playable.length,
-      findAction: () => {
-        const card = playable.find((item) => !played.includes(item.uid));
-        return card
-          ? {
-              canCommit: () => true,
-              play: () => {
-                played.push(card.uid);
-                return true;
-              },
-            }
-          : null;
-      },
-    });
-
+  it("wakes readiness immediately without letting repeated wakes shorten pacing", async () => {
+    const run = startAutoplay({ blocked: true });
+    expect(run.play).not.toHaveBeenCalled();
+    run.state.blocked = false;
+    run.wakeRef.current?.();
     await vi.advanceTimersByTimeAsync(0);
-    expect(played).toEqual([1]);
-
-    await vi.advanceTimersByTimeAsync(999);
-    expect(played).toEqual([1]);
-
-    await vi.advanceTimersByTimeAsync(1);
-    expect(played).toEqual([1, 2]);
-
-    await vi.advanceTimersByTimeAsync(1000);
-    await done;
-  });
-
-  it("short-circuits a retry wait when wakeRef fires", async () => {
-    vi.useFakeTimers();
-    const wakeRef: { current: (() => void) | null } = { current: null };
-    let blocked = true;
-    const played: number[] = [];
-    const controller = new AbortController();
-
-    const done = driveAutoplay({
-      signal: controller.signal,
-      delayMs: 1000,
-      postPlayDelayMs: 0,
-      wakeRef,
-      isEnabled: () => played.length < 1,
-      findAction: () =>
-        blocked
-          ? null
-          : {
-              canCommit: () => !blocked,
-              play: () => {
-                played.push(1);
-                return true;
-              },
-            },
-    });
-
-    await vi.advanceTimersByTimeAsync(0);
-    expect(played).toEqual([]);
-    expect(wakeRef.current).toEqual(expect.any(Function));
-
-    blocked = false;
-    await Promise.resolve();
-    wakeRef.current?.();
-    await vi.advanceTimersByTimeAsync(0);
-
-    expect(played).toEqual([1]);
-    controller.abort();
-    await done;
-  });
-
-  function startTimedAutoplay(blockedAfterPlay = false) {
-    vi.useFakeTimers();
-    const controller = new AbortController();
-    const wakeRef: { current: (() => void) | null } = { current: null };
-    const state = { blocked: false };
-    const playCard = vi.fn(() => {
-      state.blocked = blockedAfterPlay;
-      return true;
-    });
-    const done = driveAutoplay({
-      signal: controller.signal,
-      delayMs: 100,
-      postPlayDelayMs: 1000,
-      wakeRef,
-      isEnabled: () => true,
-      findAction: () => (state.blocked ? null : { canCommit: () => !state.blocked, play: playCard }),
-    });
-    return { controller, wakeRef, state, playCard, done };
-  }
-
-  it("preserves pacing through repeated wake notifications", async () => {
-    const wakeCount = 3;
-    const run = startTimedAutoplay();
-    for (let i = 0; i < wakeCount; i++) {
+    expect(run.play).toHaveBeenCalledOnce();
+    for (let i = 0; i < 3; i++) {
       await vi.advanceTimersByTimeAsync(100);
       run.wakeRef.current?.();
-      await vi.advanceTimersByTimeAsync(0);
-      expect(run.playCard).toHaveBeenCalledOnce();
     }
-    await vi.advanceTimersByTimeAsync(999 - wakeCount * 100);
-    expect(run.playCard).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(699);
+    expect(run.play).toHaveBeenCalledOnce();
     await vi.advanceTimersByTimeAsync(1);
-    expect(run.playCard).toHaveBeenCalledTimes(2);
+    expect(run.play).toHaveBeenCalledTimes(2);
     run.controller.abort();
     await run.done;
   });
 
-  it.each([450, 1450])("counts a %s ms transfer toward the post-play delay", async (transferMs) => {
-    const run = startTimedAutoplay(true);
+  it.each([450, 1450])("counts a %s ms transfer toward pacing", async (transferMs) => {
+    const run = startAutoplay({ blockAfterPlay: true });
     await vi.advanceTimersByTimeAsync(transferMs);
-    expect(run.playCard).toHaveBeenCalledOnce();
+    expect(run.play).toHaveBeenCalledOnce();
     run.state.blocked = false;
     run.wakeRef.current?.();
     await vi.advanceTimersByTimeAsync(0);
     if (transferMs < 1000) {
       await vi.advanceTimersByTimeAsync(999 - transferMs);
-      expect(run.playCard).toHaveBeenCalledOnce();
+      expect(run.play).toHaveBeenCalledOnce();
       await vi.advanceTimersByTimeAsync(1);
     }
-    expect(run.playCard).toHaveBeenCalledTimes(2);
+    expect(run.play).toHaveBeenCalledTimes(2);
     run.controller.abort();
     await run.done;
   });
 
-  it("rechecks a blocker introduced during the pacing pause", async () => {
-    const run = startTimedAutoplay();
+  it("rechecks a blocker introduced during pacing", async () => {
+    const run = startAutoplay();
     await vi.advanceTimersByTimeAsync(250);
     run.state.blocked = true;
-    run.wakeRef.current?.();
     await vi.advanceTimersByTimeAsync(1000);
-    expect(run.playCard).toHaveBeenCalledOnce();
+    expect(run.play).toHaveBeenCalledOnce();
     run.state.blocked = false;
     run.wakeRef.current?.();
     await vi.advanceTimersByTimeAsync(0);
-    expect(run.playCard).toHaveBeenCalledTimes(2);
+    expect(run.play).toHaveBeenCalledTimes(2);
     run.controller.abort();
     await run.done;
   });
 
-  it.each([false, true])("cleans up an aborted wait (waiting for readiness: %s)", async (blocked) => {
-    const run = startTimedAutoplay(blocked);
+  it.each([false, true])("aborts cleanly while waiting for readiness=%s", async (blocked) => {
+    const run = startAutoplay({ blockAfterPlay: blocked });
     await vi.advanceTimersByTimeAsync(blocked ? 1025 : 25);
     expect(vi.getTimerCount()).toBe(1);
     if (blocked) expect(run.wakeRef.current).toEqual(expect.any(Function));
@@ -228,17 +145,17 @@ describe("driveAutoplay", () => {
     expect(run.wakeRef.current).toBeNull();
     expect(vi.getTimerCount()).toBe(0);
     await vi.advanceTimersByTimeAsync(2000);
-    expect(run.playCard).toHaveBeenCalledOnce();
+    expect(run.play).toHaveBeenCalledOnce();
   });
 
   it("preserves shortened pacing when animations are disabled", async () => {
     vi.spyOn(animationPrefs, "isAnimationDisabled").mockReturnValue(true);
-    const run = startTimedAutoplay();
+    const run = startAutoplay();
     run.wakeRef.current?.();
     await vi.advanceTimersByTimeAsync(0);
-    expect(run.playCard).toHaveBeenCalledOnce();
+    expect(run.play).toHaveBeenCalledOnce();
     await vi.advanceTimersByTimeAsync(animationPrefs.ANIMATION_DISABLED_DURATION);
-    expect(run.playCard).toHaveBeenCalledTimes(2);
+    expect(run.play).toHaveBeenCalledTimes(2);
     run.controller.abort();
     await run.done;
   });

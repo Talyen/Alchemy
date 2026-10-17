@@ -26,7 +26,7 @@ import type {
 } from "@/lib/active-run-session/alchemy-visits";
 import { pickRandom } from "@/lib/rng";
 
-const DAMAGE_KEYWORDS = TRANSMUTATION_KEYWORD_GROUPS[0];
+const DAMAGE_KEYWORDS: readonly KeywordId[] = TRANSMUTATION_KEYWORD_GROUPS[0];
 const BUFF_KEYWORDS: readonly KeywordId[] = ["block", "armor", "forge", "thorns"];
 const RESOURCE_KINDS = { health: "heal", mana: "restore-mana", gold: "gain-gold" } as const;
 const SOURCE_CONDITIONS: Partial<Record<KeywordId, readonly string[]>> = {
