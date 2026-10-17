@@ -1,7 +1,7 @@
 import { makeTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { createMixedPotion, tryCreateMixedPotion, applyMixToDeck, doublePotionPotency } from "@/lib/alchemist";
-import { cardLibrary, type BattleCard } from "@/lib/game-data";
+import { cardLibrary, cloneBattleCard, getCardDescription, type BattleCard } from "@/lib/game-data";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
@@ -29,6 +29,29 @@ const firePotion = makePotion({
 });
 
 describe("createMixedPotion", () => {
+  it("retains improvement marks from both equivalent ingredients through save hydration", () => {
+    const distilled = cloneBattleCard(healPotion);
+    const corrupted = cloneBattleCard(healPotion);
+    for (const [ingredient, mark] of [
+      [distilled, "distilled"],
+      [corrupted, "corrupted"],
+    ] as const) {
+      ingredient.description = getCardDescription(ingredient);
+      for (const part of ingredient.description.flatMap((line) => line.parts))
+        if (typeof part !== "string") part[mark] = true;
+    }
+    for (const ingredients of [
+      [distilled, corrupted],
+      [corrupted, distilled],
+    ] as const) {
+      const mixed = hydrateCard(JSON.parse(JSON.stringify(createMixedPotion(...ingredients))) as BattleCard);
+      expect(mixed.effects).toEqual([{ kind: "heal", amount: 10 }]);
+      const magnitudes = getCardDescription(mixed).flatMap((line) =>
+        line.parts.filter((part) => typeof part !== "string"),
+      );
+      expect(magnitudes).toEqual([expect.objectContaining({ distilled: true, corrupted: true })]);
+    }
+  });
   it("scales alternate Potion outcomes together with the primary magnitude", () => {
     const potion = makePotion({
       effects: [

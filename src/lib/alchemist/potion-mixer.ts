@@ -73,7 +73,7 @@ function scalePotionEffect(effect: BattleCardEffect, multiplier: number): Battle
 }
 
 function scaledPotionParts(card: BattleCard, multiplier: number) {
-  const effects = card.effects.map((effect) => scalePotionEffect(effect, multiplier));
+  const effects = multiplier === 1 ? card.effects : card.effects.map((effect) => scalePotionEffect(effect, multiplier));
   return {
     effects,
     description: carryCardDescriptionMarks(getCardDescription(card), createEffectDescription(effects)),
@@ -104,6 +104,10 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | 
   // Describe ingredients separately: matching prose from different Potions
   // must not collapse into a single effect description.
   const parts = (sameCard ? [cardA] : [cardA, cardB]).map((card) => scaledPotionParts(card, sameCard ? 2 : 1));
+  if (sameCard) {
+    const part = parts[0]!;
+    part.description = carryCardDescriptionMarks(getCardDescription(cardB), part.description);
+  }
   // Reject before a command can spend Gold or replace either ingredient.
   if (parts.some((part) => part.effects.some((effect) => !BattleCardEffectSchema.safeParse(effect).success)))
     return null;
@@ -160,16 +164,15 @@ export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: numbe
 
 export function doublePotionPotency(card: BattleCard): BattleCard {
   const { effects, description } = scaledPotionParts(card, 2);
-  const markedDescription = carryCardDescriptionMarks(getCardDescription(card), description);
-  for (const tag of card.tags ?? []) markedDescription.push({ parts: [capitalizeWord(tag)], role: "keyword" });
-  if (card.consume) markedDescription.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
+  for (const tag of card.tags ?? []) description.push({ parts: [capitalizeWord(tag)], role: "keyword" });
+  if (card.consume) description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
   return cloneBattleCard(
     withCardDescription(
       {
         ...card,
         effects,
       },
-      markedDescription,
+      description,
     ),
   );
 }

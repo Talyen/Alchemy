@@ -277,8 +277,20 @@ export function getTransmutationVariants(
 }
 
 export function createTransmutationOffers(deck: readonly BattleCard[], rng: () => number): TransmutationChoice[] {
+  // Eligibility and selection share previews without consuming extra RNG or
+  // retaining cards beyond this visit's generation.
+  const variants = deck.map(() => new Map<KeywordId, ReturnType<typeof getTransmutationVariants>>());
+  function variantsFor(sourceIndex: number, keyword: KeywordId) {
+    const saved = variants[sourceIndex]!;
+    let result = saved.get(keyword);
+    if (!result) {
+      result = getTransmutationVariants(deck[sourceIndex]!, keyword, deck);
+      saved.set(keyword, result);
+    }
+    return result;
+  }
   const pools = TRANSMUTATION_KEYWORD_GROUPS.map((group) =>
-    group.filter((keyword) => deck.some((card) => getTransmutationVariants(card, keyword, deck).length > 0)),
+    group.filter((keyword) => deck.some((_card, index) => variantsFor(index, keyword).length > 0)),
   );
   const keywords: KeywordId[] = [];
   for (const pool of pools) {
@@ -294,7 +306,7 @@ export function createTransmutationOffers(deck: readonly BattleCard[], rng: () =
   return keywords.map((keyword) => ({
     keyword,
     alterations: deck.flatMap((source, sourceIndex) => {
-      const alteration = pickRandom(getTransmutationVariants(source, keyword, deck), rng);
+      const alteration = pickRandom(variantsFor(sourceIndex, keyword), rng);
       return alteration ? [{ ...alteration, source: cloneBattleCard(source), sourceIndex }] : [];
     }),
   }));
@@ -310,21 +322,21 @@ function cardSnapshotKey(card: BattleCard | null | undefined): string | undefine
 
 function matchingAlteration(
   choice: TransmutationChoice,
-  card: BattleCard,
+  sourceKey: string | undefined,
   sourceIndex?: number,
 ): TransmutationAlteration | undefined {
   return choice.alterations.find(
     (entry) =>
-      (sourceIndex === undefined || sourceIndex === entry.sourceIndex) &&
-      cardSnapshotKey(entry.source) === cardSnapshotKey(card),
+      (sourceIndex === undefined || sourceIndex === entry.sourceIndex) && cardSnapshotKey(entry.source) === sourceKey,
   );
 }
 
 export function getTransmutationOffers(visit: AlchemyVisit): BattleCard[] {
   const selection = visit.transmutation;
   if (!selection?.source || selection.sourceIndex === null) return [];
+  const sourceKey = cardSnapshotKey(selection.source);
   return selection.choices.flatMap((choice) => {
-    const alteration = matchingAlteration(choice, selection.source!, selection.sourceIndex!);
+    const alteration = matchingAlteration(choice, sourceKey, selection.sourceIndex!);
     return alteration ? [alteration.result] : [];
   });
 }
@@ -335,19 +347,18 @@ export function canTransmuteCard(
   sourceIndex?: number,
   deck?: readonly BattleCard[],
 ): boolean {
-  return (
-    isTransmutableCard(card) &&
-    choices.some((choice) => {
-      const alteration = matchingAlteration(choice, card, sourceIndex);
-      return (
-        alteration &&
-        (!deck ||
-          getTransmutationVariants(card, choice.keyword, deck).some(
-            (variant) => variant.sourceKeyword === alteration.sourceKeyword,
-          ))
-      );
-    })
-  );
+  if (!isTransmutableCard(card)) return false;
+  const sourceKey = cardSnapshotKey(card);
+  return choices.some((choice) => {
+    const alteration = matchingAlteration(choice, sourceKey, sourceIndex);
+    return (
+      alteration &&
+      (!deck ||
+        getTransmutationVariants(card, choice.keyword, deck).some(
+          (variant) => variant.sourceKeyword === alteration.sourceKeyword,
+        ))
+    );
+  });
 }
 
 export function isTransmutationSourceCurrent(visit: AlchemyVisit, deck: readonly BattleCard[]): boolean {
