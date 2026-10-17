@@ -157,7 +157,7 @@ describe("brewing content", () => {
   });
 });
 
-it("rejects brewing beyond saved-effect bounds before replacing ingredients or charging for Distill", () => {
+it("rejects unsupported Distill amounts but keeps valid ingredients when their combined amount exceeds the bound", () => {
   const effects: BattleCardEffect[] = [{ kind: "heal", amount: 999 }];
   const potion = withCardDescription(
     makeTestCard({ id: "health-potion", consume: true, effects }),
@@ -168,6 +168,8 @@ it("rejects brewing beyond saved-effect bounds before replacing ingredients or c
     { ...potion, effects: [{ kind: "heal", amount: 500 }] },
     createEffectDescription([{ kind: "heal", amount: 500 }]),
   );
-  expect(tryCreateMixedPotion(half, half)).toBeNull();
+  const mixed = tryCreateMixedPotion(half, half)!;
+  expect(mixed.effects).toEqual([...half.effects, ...half.effects]);
+  expect(hydrateCard(BattleCardSchema.parse(mixed))).toEqual(mixed);
   expect(BattleCardSchema.parse(potion).effects).toEqual(effects);
 });
