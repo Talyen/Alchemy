@@ -11,13 +11,7 @@ import { setAlchemyVisit, setRunDeck } from "@/features/alchemy/shared/stores/ru
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import { getCampfireBrewKind, isBrewablePotion, type BrewOperation } from "@/lib/alchemist/brewing";
-import {
-  getTransmutationOffers,
-  getTransmutationVariants,
-  canTransmuteCard,
-  isTransmutationSourceCurrent,
-  isTransmutableCard,
-} from "@/lib/alchemist/transmutation";
+import { getTransmutationOffers, canTransmuteCard, isTransmutationSourceCurrent } from "@/lib/alchemist/transmutation";
 import type { TransmutationSelectionCommand } from "@/lib/active-run-session/alchemy-visits";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { cloneBattleCard, type BattleCard } from "@/lib/game-data";
@@ -135,28 +129,24 @@ export function transmuteCard(sourceIndex: number, offerIndex: number, gameSessi
       const deck = draft.run.activeRun.runDeck;
       const original = deck[sourceIndex];
       const snapshot = snapshotTransactionValue(visit);
+      const selection = snapshot.transmutation;
       const offer = getTransmutationOffers(snapshot)[offerIndex];
       if (
-        visit.transmutation?.sourceIndex !== sourceIndex ||
-        visit.transmutation?.offerIndex !== offerIndex ||
+        !selection ||
+        selection.sourceIndex !== sourceIndex ||
+        selection.offerIndex !== offerIndex ||
         !isTransmutationSourceCurrent(snapshot, snapshotTransactionValue(deck)) ||
         !Number.isInteger(sourceIndex) ||
         !Number.isInteger(offerIndex) ||
         !original ||
         !offer ||
-        !isTransmutableCard(snapshotTransactionValue(original)) ||
         original.id !== offer.id ||
-        offer.transmuted !== visit.transmutation?.keyword ||
-        !getTransmutationVariants(
+        offer.transmuted !== selection.keyword ||
+        !canTransmuteCard(
+          selection.choices.filter((choice) => choice.keyword === offer.transmuted),
           snapshotTransactionValue(original),
-          offer.transmuted,
+          sourceIndex,
           snapshotTransactionValue(deck),
-        ).some(
-          (variant) =>
-            variant.sourceKeyword ===
-            snapshot.transmutation?.choices
-              .find((choice) => choice.keyword === offer.transmuted)
-              ?.alterations.find((alteration) => alteration.sourceIndex === sourceIndex)?.sourceKeyword,
         )
       )
         return rejectCommand("Alchemy action is unavailable", null);

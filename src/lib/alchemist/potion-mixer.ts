@@ -160,16 +160,15 @@ export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: numbe
 
 export function doublePotionPotency(card: BattleCard): BattleCard {
   const { effects, description } = scaledPotionParts(card, 2);
-  const markedDescription = carryCardDescriptionMarks(getCardDescription(card), description);
-  for (const tag of card.tags ?? []) markedDescription.push({ parts: [capitalizeWord(tag)], role: "keyword" });
-  if (card.consume) markedDescription.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
+  for (const tag of card.tags ?? []) description.push({ parts: [capitalizeWord(tag)], role: "keyword" });
+  if (card.consume) description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
   return cloneBattleCard(
     withCardDescription(
       {
         ...card,
         effects,
       },
-      markedDescription,
+      description,
     ),
   );
 }
