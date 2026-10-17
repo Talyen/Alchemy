@@ -553,16 +553,21 @@ export function getBattleDamageInspectionCard(
           after = grantPlayerStatus(after, "block", damage);
         after = projectCc(after, type, current.enemyHealth, healthDamage, current);
       }
-      for (const status of ["burn", "bleed"] as const) {
-        if (
-          (status === "burn" && consumed.packet.detonateAllBurn) ||
-          (status === "bleed" && consumed.packet.detonateAllBleed)
-        ) {
-          const detonated = projectEnemyDotDamage(after, status);
-          after = setEnemyStatus(after, status, 0);
-          after = projectEnemyHealthLoss(after, detonated);
-        }
+    }
+    // Detonation consumes existing buildup even when defenses absorb the hit.
+    for (const status of ["burn", "bleed"] as const) {
+      if (
+        after.enemyHealth > 0 &&
+        ((status === "burn" && consumed.packet.detonateAllBurn) ||
+          (status === "bleed" && consumed.packet.detonateAllBleed))
+      ) {
+        const detonated = projectEnemyDotDamage(after, status);
+        after = setEnemyStatus(after, status, 0);
+        after = projectEnemyHealthLoss(after, detonated);
       }
+    }
+    if (damage > 0) {
+      const type = consumed.packet.damageType;
       const explicitLeech = consumed.packet.lifesteal === true;
       const physicalLeech =
         type === "physical" &&
