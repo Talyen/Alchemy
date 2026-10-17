@@ -1,30 +1,34 @@
 import { expect, it, vi } from "vitest";
 import { animateParticleLoop } from "@/lib/animation/particle-loop";
+import { animationHarness } from "../../helpers/animation-harness";
 
-it("animateParticleLoop cancels the pending frame and does not call onComplete after stop", () => {
-  const rafCbs: FrameRequestCallback[] = [];
-  vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
-    rafCbs.push(cb);
-    return rafCbs.length;
+it.each(["cancel", "complete", "cancel-during-draw"] as const)("particle loop terminates once after %s", (mode) => {
+  const h = animationHarness();
+  const complete = vi.fn();
+  const step = vi.fn();
+  const draw = vi.fn(() => {
+    if (mode === "cancel-during-draw") stop();
   });
-  const cancelSpy = vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
-  const onComplete = vi.fn();
-  const ctx = { clearRect: vi.fn() } as unknown as CanvasRenderingContext2D;
-
-  const stop = animateParticleLoop({
-    ctx,
-    particles: [{ n: 1 }],
-    width: 10,
-    height: 10,
-    duration: 1000,
-    step: vi.fn(),
-    draw: vi.fn(),
-    onComplete,
-  });
-
-  expect(rafCbs).toHaveLength(1);
-  stop();
-  expect(cancelSpy).toHaveBeenCalledWith(1);
-  rafCbs[0]?.(performance.now() + 2000);
-  expect(onComplete).not.toHaveBeenCalled();
+  const stop = h.own(
+    animateParticleLoop({
+      ctx: h.ctx as unknown as CanvasRenderingContext2D,
+      particles: [{ n: 1 }],
+      width: 10,
+      height: 10,
+      duration: 100,
+      step,
+      draw,
+      onComplete: complete,
+    }),
+  );
+  const stale = h.latestFrame;
+  if (mode === "cancel") {
+    stop();
+    stop();
+  } else h.frame(mode === "complete" ? 100 : 10);
+  const draws = draw.mock.calls.length;
+  stale(200);
+  expect(draw).toHaveBeenCalledTimes(draws);
+  expect(complete).toHaveBeenCalledTimes(mode === "complete" ? 1 : 0);
+  expect(h.pending.size).toBe(0);
 });

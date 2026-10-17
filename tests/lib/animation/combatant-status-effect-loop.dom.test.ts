@@ -1,190 +1,46 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-
+import { expect, it, vi } from "vitest";
 import { startCombatantStatusEffectLoop } from "@/lib/animation/combatant-status-effect-loop";
+import { drawCombatantStatusEffect } from "@/lib/animation/combatant-status-effect";
+import { animationHarness } from "../../helpers/animation-harness";
 
-vi.mock("@/lib/animation/combatant-status-effect", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/animation/combatant-status-effect")>();
-  return {
-    ...actual,
-    drawCombatantStatusEffect: vi.fn(),
-  };
+vi.mock("@/lib/animation/combatant-status-effect", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/animation/combatant-status-effect")>()),
+  drawCombatantStatusEffect: vi.fn(),
+}));
+
+it("paints a static status without looping when animations are disabled", () => {
+  const h = animationHarness(48, 64);
+  localStorage.setItem("alchemy-disable-animations", "true");
+  const onFrame = vi.fn();
+  h.own(startCombatantStatusEffectLoop({ canvas: h.canvas, kind: "stun", onFrame }));
+  expect(h.ctx.fillRect).toHaveBeenCalledWith(0, 0, 48, 64);
+  expect(h.pending.size).toBe(0);
+  expect(onFrame).toHaveBeenCalledExactlyOnceWith({ progress: 0, wobbleDegrees: 0 });
 });
 
-function attachCanvas(): HTMLCanvasElement {
-  const parent = document.createElement("div");
-  Object.defineProperty(parent, "clientWidth", { value: 48, configurable: true });
-  Object.defineProperty(parent, "clientHeight", { value: 64, configurable: true });
-  const canvas = document.createElement("canvas");
-  const context = {
-    clearRect: vi.fn(),
-    setTransform: vi.fn(),
-    fillRect: vi.fn(),
-  } as unknown as CanvasRenderingContext2D;
-  vi.spyOn(canvas, "getContext").mockReturnValue(context);
-  parent.appendChild(canvas);
-  document.body.appendChild(parent);
-  return canvas;
-}
-
-function captureFrames(): FrameRequestCallback[] {
-  const frames: FrameRequestCallback[] = [];
-  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-    frames.push(callback);
-    return frames.length;
-  });
-  vi.stubGlobal("cancelAnimationFrame", vi.fn());
-  return frames;
-}
-
-describe("startCombatantStatusEffectLoop", () => {
-  afterEach(() => {
-    localStorage.removeItem("alchemy-disable-animations");
-    vi.restoreAllMocks();
-    vi.unstubAllGlobals();
-    document.body.replaceChildren();
-  });
-
-  it("paints once and does not loop when animations are disabled", () => {
-    localStorage.setItem("alchemy-disable-animations", "true");
-    const raf = vi.fn();
-    vi.stubGlobal("requestAnimationFrame", raf);
-    const onFrame = vi.fn();
-
-    const canvas = attachCanvas();
-    const stop = startCombatantStatusEffectLoop({
-      canvas,
-      kind: "stun",
-      onFrame,
-    });
-
-    expect(canvas.getContext("2d")!.fillRect).toHaveBeenCalledWith(0, 0, 48, 64);
-    expect(raf).not.toHaveBeenCalled();
-    expect(onFrame).toHaveBeenCalledWith({ progress: 0, wobbleDegrees: 0 });
-    stop();
-  });
-
-  it("reads size on resize notifications instead of every frame and preserves DPR changes", () => {
-    const frames = captureFrames();
-    let notifyResize = () => {};
-    vi.stubGlobal("devicePixelRatio", 1);
-    vi.stubGlobal(
-      "ResizeObserver",
-      class {
-        constructor(callback: () => void) {
-          notifyResize = callback;
-        }
-        observe() {}
-        disconnect() {}
-      },
-    );
-    const canvas = attachCanvas();
-    let width = 48;
-    const readWidth = vi.fn(() => width);
-    Object.defineProperty(canvas.parentElement!, "clientWidth", { get: readWidth, configurable: true });
-    const onFrame = vi.fn();
-    const stop = startCombatantStatusEffectLoop({ canvas, kind: "freeze", onFrame });
-    notifyResize();
-    for (let i = 0; i < 60; i++) frames.shift()!((i + 1) * 16.67);
-    expect(readWidth).toHaveBeenCalledTimes(2);
-    expect(onFrame).toHaveBeenCalledTimes(61);
-    width = 96;
-    notifyResize();
-    expect(canvas.width).toBe(96);
-    vi.stubGlobal("devicePixelRatio", 2);
-    frames.shift()!(1100);
-    expect(canvas.width).toBe(192);
-    expect(canvas.height).toBe(128);
-    stop();
-  });
-  it("continues tracking size when ResizeObserver is unavailable", () => {
-    const frames = captureFrames();
-    vi.stubGlobal("ResizeObserver", undefined);
-    vi.stubGlobal("devicePixelRatio", 1);
-    const canvas = attachCanvas();
-    const stop = startCombatantStatusEffectLoop({ canvas, kind: "stun", onFrame: vi.fn() });
-    Object.defineProperty(canvas.parentElement!, "clientWidth", { value: 120, configurable: true });
-    frames.shift()!(16.67);
-    expect(canvas.width).toBe(120);
-    stop();
-  });
-
-  it.each(["stun", "freeze"] as const)("resumes %s after zero-size mounting and collapse", (kind) => {
-    const pending = new Map<number, FrameRequestCallback>();
-    let nextId = 0;
-    let notifyResize = () => {};
-    vi.stubGlobal("devicePixelRatio", 1);
-    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-      pending.set(++nextId, callback);
-      return nextId;
-    });
-    vi.stubGlobal("cancelAnimationFrame", (id: number) => pending.delete(id));
-    const disconnect = vi.fn();
-    vi.stubGlobal(
-      "ResizeObserver",
-      class {
-        constructor(callback: () => void) {
-          notifyResize = callback;
-        }
-        observe() {}
-        disconnect = disconnect;
-      },
-    );
-    const canvas = attachCanvas();
-    let width = 0;
-    Object.defineProperty(canvas.parentElement!, "clientWidth", { get: () => width, configurable: true });
-    const onFrame = vi.fn();
-    const stop = startCombatantStatusEffectLoop({ canvas, kind, onFrame });
-    expect(pending.size).toBe(0);
-    expect(onFrame).not.toHaveBeenCalled();
-
-    width = 48;
-    notifyResize();
-    notifyResize();
-    expect(pending.size).toBe(1);
-    const advanceFrame = () => {
-      const [id, callback] = [...pending.entries()][0]!;
-      pending.delete(id);
-      callback(performance.now());
-    };
-    advanceFrame();
-    expect(onFrame).toHaveBeenCalledOnce();
-
-    width = 0;
-    notifyResize();
-    advanceFrame();
-    expect(pending.size).toBe(0);
-    expect(onFrame).toHaveBeenCalledOnce();
-    width = 48;
-    notifyResize();
-    advanceFrame();
-    expect(onFrame).toHaveBeenCalledTimes(2);
-
-    stop();
-    expect(disconnect).toHaveBeenCalledOnce();
-    width = 96;
-    notifyResize();
-    window.dispatchEvent(new Event("focus"));
-    expect(canvas.width).toBe(48);
-    expect(onFrame).toHaveBeenCalledTimes(2);
-    expect(pending.size).toBe(0);
-  });
-
-  it("refreshes dimensions on focus before resuming without ResizeObserver", () => {
-    vi.stubGlobal("ResizeObserver", undefined);
-    vi.stubGlobal("devicePixelRatio", 1);
-    const raf = vi.fn(() => 1);
-    vi.stubGlobal("requestAnimationFrame", raf);
-    vi.stubGlobal("cancelAnimationFrame", vi.fn());
-    const canvas = attachCanvas();
-    let width = 0;
-    Object.defineProperty(canvas.parentElement!, "clientWidth", { get: () => width, configurable: true });
-    const stop = startCombatantStatusEffectLoop({ canvas, kind: "stun", onFrame: vi.fn() });
-    expect(raf).not.toHaveBeenCalled();
-    width = 48;
-    window.dispatchEvent(new Event("focus"));
-    window.dispatchEvent(new Event("focus"));
-    expect(canvas.width).toBe(48);
-    expect(raf).toHaveBeenCalledOnce();
-    stop();
-  });
+it.each(["stun", "freeze"] as const)("resumes %s after collapse and revokes drawing on disposal", (kind) => {
+  const h = animationHarness(0, 0);
+  const onFrame = vi.fn();
+  const stop = h.own(startCombatantStatusEffectLoop({ canvas: h.canvas, kind, onFrame }));
+  expect(onFrame).not.toHaveBeenCalled();
+  h.resize(48, 64);
+  h.frame(16.67);
+  expect(drawCombatantStatusEffect).toHaveBeenLastCalledWith(
+    h.ctx,
+    48,
+    64,
+    kind,
+    expect.any(Number),
+    expect.any(Object),
+  );
+  h.resize(0, 0);
+  h.frame(33.34);
+  expect(onFrame).toHaveBeenCalledOnce();
+  h.resize(48, 64);
+  h.frame(50);
+  expect(onFrame).toHaveBeenCalledTimes(2);
+  stop();
+  h.resize(96, 64);
+  expect(h.canvas.width).toBe(48);
+  expect(h.pending.size).toBe(0);
 });

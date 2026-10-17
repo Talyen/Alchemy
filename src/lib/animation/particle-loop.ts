@@ -39,11 +39,14 @@ export function animateParticleLoop<T>({
     for (const p of particles) {
       step(p, dt);
     }
+    if (!running) return;
     draw(ctx, particles, progress);
+    if (!running) return;
 
     if (progress < 1) {
       rafId = requestAnimationFrame(frame);
     } else {
+      running = false;
       onComplete();
     }
   }

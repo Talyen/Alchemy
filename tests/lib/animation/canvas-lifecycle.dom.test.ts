@@ -1,245 +1,151 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { expect, it, vi } from "vitest";
 import { createCanvasLifecycle, resolveCanvasBackingScale } from "@/lib/animation/canvas-lifecycle";
+import { animationHarness } from "../../helpers/animation-harness";
 
-describe("resolveCanvasBackingScale", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("applies default scale capped between minScale and maxScale", () => {
-    vi.stubGlobal("devicePixelRatio", 1);
-    const scale = resolveCanvasBackingScale(800, 600);
-    expect(scale).toBe(1);
-
-    vi.stubGlobal("devicePixelRatio", 4);
-    const clampedScale = resolveCanvasBackingScale(800, 600, { maxScale: 2 });
-    expect(clampedScale).toBe(2);
-  });
-
-  it("limits scale when pixel count would exceed maxPixels", () => {
-    vi.stubGlobal("devicePixelRatio", 2);
-    const scale = resolveCanvasBackingScale(3840, 2160, { maxPixels: 1_500_000, scaleMultiplier: 0.5 });
-    expect(3840 * 2160 * scale * scale).toBeLessThanOrEqual(1_500_001);
-  });
+it("caps backing scale by DPR and the rendered-pixel budget", () => {
+  animationHarness();
+  expect(resolveCanvasBackingScale(800, 600)).toBe(1);
+  vi.stubGlobal("devicePixelRatio", 4);
+  expect(resolveCanvasBackingScale(800, 600)).toBe(2);
+  const scale = resolveCanvasBackingScale(3840, 2160, { maxPixels: 1_500_000 });
+  expect(3840 * 2160 * scale * scale).toBeLessThanOrEqual(1_500_001);
 });
 
-describe("createCanvasLifecycle", () => {
-  let parent: HTMLElement;
-  let canvas: HTMLCanvasElement;
+it("rolls back frames and observers if setup throws before returning its disposer", () => {
+  const h = animationHarness();
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {
+        throw new Error("observer failed");
+      }
+      disconnect = h.disconnect;
+    },
+  );
+  const onFrame = vi.fn();
+  expect(() => createCanvasLifecycle({ canvas: h.canvas, onFrame })).toThrow("observer failed");
+  expect(h.disconnect).toHaveBeenCalledOnce();
+  expect(h.pending.size).toBe(0);
+  h.latestFrame(100);
+  window.dispatchEvent(new Event("focus"));
+  expect(onFrame).not.toHaveBeenCalled();
+  expect(h.raf).toHaveBeenCalledOnce();
+});
 
-  beforeEach(() => {
-    localStorage.clear();
-    parent = document.createElement("div");
-    Object.defineProperty(parent, "clientWidth", { value: 640, configurable: true });
-    Object.defineProperty(parent, "clientHeight", { value: 480, configurable: true });
-    canvas = document.createElement("canvas");
-    parent.appendChild(canvas);
-    document.body.appendChild(parent);
-    vi.spyOn(document, "hasFocus").mockReturnValue(true);
-  });
+it("preserves the bitmap on unchanged sizes and repairs backing size, logical size, and DPR", () => {
+  const h = animationHarness();
+  vi.stubGlobal("ResizeObserver", undefined);
+  h.canvas.width = 640;
+  h.canvas.height = 480;
+  const width = vi.spyOn(h.canvas, "width", "set");
+  const height = vi.spyOn(h.canvas, "height", "set");
+  const onResize = vi.fn(),
+    onFrame = vi.fn();
+  const lifecycle = createCanvasLifecycle({ canvas: h.canvas, onResize, onFrame });
+  h.own(lifecycle.dispose);
+  h.frame(100);
+  h.frame(200);
+  window.dispatchEvent(new Event("focus"));
+  expect(onResize).toHaveBeenCalledExactlyOnceWith(640, 480, 1);
+  expect(width).not.toHaveBeenCalled();
+  expect(height).not.toHaveBeenCalled();
+  expect(h.canvas.style.width).toBe("640px");
+  h.resize(800, 480);
+  h.frame(300);
+  expect(onFrame).toHaveBeenLastCalledWith(300, expect.any(Number), 800, 480);
+  expect(lifecycle.logicalWidth).toBe(800);
+  vi.stubGlobal("devicePixelRatio", 2);
+  h.frame(400);
+  expect(onResize).toHaveBeenLastCalledWith(800, 480, 2);
+  expect(h.canvas.height).toBe(960);
+  h.canvas.width = 2;
+  h.frame(500);
+  expect(h.canvas.width).toBe(1600);
+  expect(onResize).toHaveBeenCalledTimes(4);
+});
 
-  afterEach(() => {
-    document.body.replaceChildren();
-    Object.defineProperty(document, "hidden", { value: false, configurable: true });
-    localStorage.clear();
-    vi.unstubAllGlobals();
-    vi.restoreAllMocks();
-  });
+it.each(["motion", "visibility", "OS-motion"])("parks and resumes frames after %s changes", (source) => {
+  const h = animationHarness();
+  const query = new EventTarget();
+  let reduced = false;
+  Object.defineProperty(query, "matches", { get: () => reduced });
+  vi.stubGlobal("matchMedia", () => query);
+  const onFrame = vi.fn();
+  const lifecycle = createCanvasLifecycle({ canvas: h.canvas, onFrame });
+  h.own(lifecycle.dispose);
+  const pause = (value: boolean) => {
+    if (source === "motion") localStorage.setItem("alchemy-disable-animations", String(value));
+    else if (source === "OS-motion") reduced = value;
+    else vi.spyOn(document, "hidden", "get").mockReturnValue(value);
+  };
+  const notify = () => {
+    if (source === "motion") window.dispatchEvent(new Event("storage"));
+    else if (source === "OS-motion") query.dispatchEvent(new Event("change"));
+    else document.dispatchEvent(new Event("visibilitychange"));
+  };
+  pause(true);
+  h.frame(100);
+  expect(onFrame).not.toHaveBeenCalled();
+  expect(h.pending.size).toBe(0);
+  pause(false);
+  notify();
+  h.frame(200);
+  expect(onFrame).toHaveBeenCalledExactlyOnceWith(200, expect.any(Number), 640, 480);
+  lifecycle.dispose();
+  notify();
+  expect(h.pending.size).toBe(0);
+});
 
-  it("rolls back scheduled frames and observers if setup fails before returning its disposer", () => {
-    let lateFrame: FrameRequestCallback = () => {};
-    const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
-      lateFrame = callback;
-      return 71;
-    });
-    const cancel = vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
-    const disconnect = vi.fn();
-    vi.stubGlobal(
-      "ResizeObserver",
-      class {
-        observe() {
-          throw new Error("observer failed");
-        }
-        disconnect = disconnect;
-      },
-    );
-    const onFrame = vi.fn();
-    expect(() => createCanvasLifecycle({ canvas, onFrame })).toThrow("observer failed");
-    expect(disconnect).toHaveBeenCalledOnce();
-    expect(cancel).toHaveBeenCalledWith(71);
-    lateFrame(100);
-    window.dispatchEvent(new Event("focus"));
-    expect(onFrame).not.toHaveBeenCalled();
-    expect(raf).toHaveBeenCalledOnce();
-  });
+it("revokes cancelled callbacks across focus changes and disposal without forking the frame loop", () => {
+  const h = animationHarness();
+  const onFrame = vi.fn(),
+    onResize = vi.fn();
+  const lifecycle = createCanvasLifecycle({ canvas: h.canvas, onFrame, onResize });
+  h.own(lifecycle.dispose);
+  const cancelled = h.latestFrame;
+  window.dispatchEvent(new Event("blur"));
+  window.dispatchEvent(new Event("focus"));
+  cancelled(100);
+  expect(onFrame).not.toHaveBeenCalled();
+  expect(h.pending.size).toBe(1);
+  h.frame(100);
+  expect(onFrame).toHaveBeenCalledOnce();
+  const late = h.latestFrame;
+  lifecycle.dispose();
+  lifecycle.dispose();
+  onResize.mockClear();
+  late(200);
+  h.notifyResize();
+  lifecycle.scheduleFrame();
+  window.dispatchEvent(new Event("focus"));
+  expect(h.pending.size).toBe(0);
+  expect(onResize).not.toHaveBeenCalled();
+  expect(h.disconnect).toHaveBeenCalledOnce();
+});
 
-  it("initializes logical dimensions without clearing an already-sized canvas", () => {
-    vi.stubGlobal("devicePixelRatio", 1);
-    canvas.width = 640;
-    canvas.height = 480;
-    const writeWidth = vi.spyOn(canvas, "width", "set");
-    const writeHeight = vi.spyOn(canvas, "height", "set");
-    const onResize = vi.fn();
-    const onFrame = vi.fn();
-    const lifecycle = createCanvasLifecycle({
-      canvas,
-      onResize,
-      onFrame,
-    });
+it("refreshes zero-sized mounts on focus without ResizeObserver", () => {
+  const h = animationHarness(0, 0);
+  vi.stubGlobal("ResizeObserver", undefined);
+  const lifecycle = createCanvasLifecycle({ canvas: h.canvas, onFrame: vi.fn() });
+  h.own(lifecycle.dispose);
+  expect(h.pending.size).toBe(0);
+  h.resize(48, 64);
+  window.dispatchEvent(new Event("focus"));
+  window.dispatchEvent(new Event("focus"));
+  expect(h.canvas.width).toBe(48);
+  expect(h.pending.size).toBe(1);
+});
 
-    expect(canvas.style.width).toBe("640px");
-    expect(canvas.style.height).toBe("480px");
-    expect(lifecycle.logicalWidth).toBe(640);
-    expect(lifecycle.logicalHeight).toBe(480);
-    expect(onResize).toHaveBeenCalledWith(640, 480, 1);
-    expect(writeWidth).not.toHaveBeenCalled();
-    expect(writeHeight).not.toHaveBeenCalled();
-    lifecycle.dispose();
-  });
-
-  it("skips repeated resize setup while observer-free frames continue, but responds to size and DPR changes", () => {
-    vi.stubGlobal("ResizeObserver", undefined);
-    vi.stubGlobal("devicePixelRatio", 1);
-    const frames: FrameRequestCallback[] = [];
-    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
-      frames.push(callback);
-      return frames.length;
-    });
-    const onResize = vi.fn();
-    const onFrame = vi.fn();
-    const lifecycle = createCanvasLifecycle({ canvas, onResize, onFrame });
-    const writeWidth = vi.spyOn(canvas, "width", "set");
-    const writeHeight = vi.spyOn(canvas, "height", "set");
-    frames.shift()!(100);
-    frames.shift()!(200);
-    window.dispatchEvent(new Event("focus"));
-    expect(onFrame).toHaveBeenCalledTimes(2);
-    expect(onResize).toHaveBeenCalledExactlyOnceWith(640, 480, 1);
-    expect(writeWidth).not.toHaveBeenCalled();
-    expect(writeHeight).not.toHaveBeenCalled();
-
-    Object.defineProperty(parent, "clientWidth", { value: 800, configurable: true });
-    frames.shift()!(300);
-    expect(onResize).toHaveBeenLastCalledWith(800, 480, 1);
-    expect(onFrame).toHaveBeenLastCalledWith(300, expect.any(Number), 800, 480);
-    expect(canvas.width).toBe(800);
-
-    vi.stubGlobal("devicePixelRatio", 2);
-    frames.shift()!(400);
-    expect(onResize).toHaveBeenLastCalledWith(800, 480, 2);
-    expect(canvas.width).toBe(1600);
-    expect(canvas.height).toBe(960);
-
-    // Canvas writes reset drawing state even when the requested size is unchanged.
-    canvas.width = 2;
-    frames.shift()!(500);
-    expect(canvas.width).toBe(1600);
-    expect(onResize).toHaveBeenCalledTimes(4);
-    lifecycle.dispose();
-  });
-
-  it.each(["motion", "visibility"])("stops queued frames and resumes after %s changes", (source) => {
-    const frames: FrameRequestCallback[] = [];
-    const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
-      frames.push(callback);
-      return frames.length;
-    });
-    const onFrame = vi.fn();
-    const lifecycle = createCanvasLifecycle({ canvas, onFrame });
-    const setPaused = (paused: boolean) => {
-      if (source === "motion") localStorage.setItem("alchemy-disable-animations", String(paused));
-      else Object.defineProperty(document, "hidden", { value: paused, configurable: true });
-    };
-    setPaused(true);
-    frames.shift()!(100);
-    expect(onFrame).not.toHaveBeenCalled();
-    expect(frames).toEqual([]);
-    setPaused(false);
-    const notification = () =>
-      source === "motion"
-        ? window.dispatchEvent(new Event("storage"))
-        : document.dispatchEvent(new Event("visibilitychange"));
-    notification();
-    frames.shift()!(200);
-    expect(onFrame).toHaveBeenCalledExactlyOnceWith(200, expect.any(Number), 640, 480);
-    lifecycle.dispose();
-    const callsAfterDispose = raf.mock.calls.length;
-    notification();
-    expect(raf).toHaveBeenCalledTimes(callsAfterDispose);
-  });
-
-  it("resumes after the OS reduced-motion preference is switched off", () => {
-    const query = new EventTarget();
-    let reduced = false;
-    Object.defineProperty(query, "matches", { get: () => reduced });
-    vi.stubGlobal(
-      "matchMedia",
-      vi.fn(() => query as MediaQueryList),
-    );
-    const frames: FrameRequestCallback[] = [];
-    const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
-      frames.push(callback);
-      return frames.length;
-    });
-    const onFrame = vi.fn();
-    const lifecycle = createCanvasLifecycle({ canvas, onFrame });
-    reduced = true;
-    frames.shift()!(100);
-    expect(onFrame).not.toHaveBeenCalled();
-    const callsBeforeResume = raf.mock.calls.length;
-    reduced = false;
-    query.dispatchEvent(new Event("change"));
-    expect(raf).toHaveBeenCalledTimes(callsBeforeResume + 1);
-    frames.shift()!(200);
-    expect(onFrame).toHaveBeenCalledOnce();
-    lifecycle.dispose();
-    const callsAfterDispose = raf.mock.calls.length;
-    query.dispatchEvent(new Event("change"));
-    expect(raf).toHaveBeenCalledTimes(callsAfterDispose);
-  });
-
-  it("cleans up listeners and cancels animation frames on dispose", () => {
-    vi.spyOn(window, "requestAnimationFrame").mockReturnValue(99);
-    const cancelRaf = vi.spyOn(window, "cancelAnimationFrame");
-    const onResize = vi.fn();
-    const lifecycle = createCanvasLifecycle({
-      canvas,
-      onFrame: vi.fn(),
-      onResize,
-    });
-
-    lifecycle.dispose();
-    lifecycle.dispose();
-    onResize.mockClear();
-    window.dispatchEvent(new Event("focus"));
-    window.dispatchEvent(new Event("blur"));
-    document.dispatchEvent(new Event("visibilitychange"));
-    lifecycle.scheduleFrame();
-    expect(onResize).not.toHaveBeenCalled();
-    expect(cancelRaf).toHaveBeenCalledExactlyOnceWith(99);
-  });
-
-  it.each([0, 2.2])("keeps 30 FPS effects paced with %s ms callback jitter and skips missed deadlines", (jitter) => {
-    const frames: FrameRequestCallback[] = [];
-    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
-      frames.push(callback);
-      return frames.length;
-    });
-    const draws: number[] = [];
-    const lifecycle = createCanvasLifecycle({ canvas, fpsLimit: 30, onFrame: (now) => draws.push(now) });
-    // Browser timestamps rounded to tenths alternate 33.3 / 33.4 ms for two vsyncs.
-    for (let index = 0; index <= 120; index++) {
-      frames.shift()!(1000 + Math.round((index * 1000) / 6) / 10 + (index % 4 === 2 ? jitter : 0));
-    }
-    expect(draws).toHaveLength(61);
-    const gaps = draws.slice(1).map((now, index) => now - draws[index]!);
-    expect(Math.min(...gaps)).toBeGreaterThan(31);
-    expect(Math.max(...gaps)).toBeLessThan(35.7);
-
-    frames.shift()!(4000);
-    frames.shift()!(4016.7);
-    frames.shift()!(4033.3);
-    expect(draws.slice(-3)).toEqual([3000, 4000, 4033.3]);
-    lifecycle.dispose();
-  });
+it.each([0, 2.2])("paces 30 FPS with %s ms callback jitter and skips missed deadlines", (jitter) => {
+  const h = animationHarness();
+  const draws: number[] = [];
+  h.own(createCanvasLifecycle({ canvas: h.canvas, fpsLimit: 30, onFrame: (now) => draws.push(now) }).dispose);
+  for (let index = 0; index <= 120; index++)
+    h.frame(1000 + Math.round((index * 1000) / 6) / 10 + (index % 4 === 2 ? jitter : 0));
+  expect(draws).toHaveLength(61);
+  const gaps = draws.slice(1).map((now, index) => now - draws[index]!);
+  expect(Math.min(...gaps)).toBeGreaterThan(31);
+  expect(Math.max(...gaps)).toBeLessThan(35.7);
+  for (const now of [4000, 4016.7, 4033.3]) h.frame(now);
+  expect(draws.slice(-3)).toEqual([3000, 4000, 4033.3]);
 });

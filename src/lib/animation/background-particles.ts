@@ -121,7 +121,6 @@ export function startBackgroundParticles(
   colors?: readonly string[],
   alphaMultiplier?: number,
   particleCount?: number,
-  onStop?: () => void,
 ): () => void {
   const canvas = canvasRef.current;
   if (!canvas) return () => {};
@@ -190,8 +189,5 @@ export function startBackgroundParticles(
     },
   });
 
-  return () => {
-    lifecycle.dispose();
-    onStop?.();
-  };
+  return lifecycle.dispose;
 }

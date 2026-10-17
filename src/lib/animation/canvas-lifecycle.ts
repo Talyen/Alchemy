@@ -60,6 +60,7 @@ export function createCanvasLifecycle({
   const document = globalThis.document;
   const window = globalThis.window;
   let animFrameId: number | null = null;
+  let frameVersion = 0;
   let lastTime = performance.now();
   let nextFrameAt: number | null = null;
   const minFrameIntervalMs = fpsLimit && fpsLimit > 0 ? 1000 / fpsLimit : 0;
@@ -127,7 +128,12 @@ export function createCanvasLifecycle({
 
   function scheduleFrame() {
     if (isPaused() || animFrameId !== null) return;
-    animFrameId = requestAnimationFrame(frame);
+    const version = ++frameVersion;
+    animFrameId = requestAnimationFrame((now) => {
+      // Cancellation may race an already queued callback after focus resumes.
+      if (version !== frameVersion || animFrameId === null) return;
+      frame(now);
+    });
   }
 
   function frame(now: number) {
