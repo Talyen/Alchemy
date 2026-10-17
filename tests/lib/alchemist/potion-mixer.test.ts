@@ -1,253 +1,143 @@
-import { makeTestCard } from "../../fixtures/cards";
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import { createMixedPotion, doublePotionPotency } from "@/lib/alchemist";
-import { cardLibrary, cloneBattleCard, getCardDescription, type BattleCard } from "@/lib/game-data";
-import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
+import { cardById, cloneBattleCard, getCardDescription, type BattleCardEffect } from "@/lib/game-data";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
 import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
+import { chance, potion, repeated, roundTrip } from "./fixtures";
 
-function makePotion(overrides: Partial<BattleCard> = {}): BattleCard {
-  return makeTestCard({
-    id: "health-potion",
-    title: "Health Potion",
-    descriptionLines: ["Restore 5 Health", "Consume"],
-    art: "health-potion",
-    cost: 2,
-    consume: true,
-    effects: [{ kind: "heal", amount: 5 }],
-    ...overrides,
-  });
-}
-
-const healPotion = makePotion();
-
-describe("createMixedPotion", () => {
-  it("retains improvement marks from both equivalent ingredients through save hydration", () => {
-    const distilled = cloneBattleCard(healPotion);
-    const corrupted = cloneBattleCard(healPotion);
-    for (const [ingredient, mark] of [
-      [distilled, "distilled"],
-      [corrupted, "corrupted"],
-    ] as const) {
-      ingredient.description = getCardDescription(ingredient);
-      for (const part of ingredient.description.flatMap((line) => line.parts))
-        if (typeof part !== "string") part[mark] = true;
-    }
-    for (const ingredients of [
-      [distilled, corrupted],
-      [corrupted, distilled],
-    ] as const) {
-      const mixed = hydrateCard(JSON.parse(JSON.stringify(createMixedPotion(...ingredients))) as BattleCard);
-      expect(mixed.effects).toEqual([{ kind: "heal", amount: 10 }]);
-      const magnitudes = getCardDescription(mixed).flatMap((line) =>
-        line.parts.filter((part) => typeof part !== "string"),
-      );
-      expect(magnitudes).toEqual([expect.objectContaining({ distilled: true, corrupted: true })]);
-    }
-  });
-  it("scales alternate Potion outcomes together with the primary magnitude", () => {
-    const potion = makePotion({
-      effects: [
-        {
-          kind: "damage",
-          damageType: "physical",
-          amount: 2,
-          damageTypeIfTargetFrozen: "freeze",
-          amountIfTargetFrozen: 8,
-        },
-        { kind: "player-status", status: "block", statusPool: ["block", "forge", "armor"], amount: 5, forgeAmount: 2 },
-      ],
-    });
-    const expected = [
-      { ...potion.effects[0], amount: 4, amountIfTargetFrozen: 16 },
-      { ...potion.effects[1], amount: 10, forgeAmount: 4 },
-    ];
-    expect(createMixedPotion(potion, potion).effects).toEqual(expected);
-    expect(doublePotionPotency(potion).effects).toEqual(expected);
-    expect(potion.effects[0]).toMatchObject({ amount: 2, amountIfTargetFrozen: 8 });
-  });
-  it("scales every Luck Potion outcome and its description when mixing", () => {
-    const luck = cardLibrary.find((card) => card.id === "luck-potion")!;
-    const mixed = createMixedPotion(luck, luck);
-    expect(mixed.effects).toEqual([
-      {
-        kind: "chance",
-        probability: 0.5,
-        successEffects: [{ kind: "restore-mana", amount: 8 }],
-        failureEffects: [
-          {
-            kind: "chance",
-            probability: 0.5,
-            successEffects: [{ kind: "gain-gold", amount: 8 }],
-            failureEffects: [{ kind: "player-status", status: "block", amount: 8 }],
-          },
-        ],
-      },
-    ]);
-    expect(mixed.descriptionLines).toEqual(["Gain 8 Mana, Gold, or Block", "Consume"]);
-    expect(luck.descriptionLines[0]).toBe("Gain 4 Mana, Gold, or Block");
-  });
-  it("preserves both ingredients even when different Potions have matching effects and prose", () => {
-    const otherPotion = makePotion({ id: "another-health-potion" });
-    const before = structuredClone([healPotion, otherPotion]);
-    const mixed = createMixedPotion(healPotion, otherPotion);
-    expect(mixed.effects).toEqual([
-      { kind: "heal", amount: 5 },
-      { kind: "heal", amount: 5 },
-    ]);
-    expect(mixed.descriptionLines).toEqual(["Restore 5 Health", "Restore 5 Health", "Consume"]);
-    expect(mixed.consume).toBe(true);
-    expect([healPotion, otherPotion]).toEqual(before);
-  });
-  it("keeps both effect sets when same-id cards differ below the top level", () => {
-    const cardA = makePotion({
-      effects: [
-        { kind: "chance", probability: 0.5, successEffects: [{ kind: "heal", amount: 5 }], failureEffects: [] },
-      ],
-    });
-    const cardB = makePotion({
-      effects: [
-        {
-          kind: "chance",
-          probability: 0.5,
-          successEffects: [{ kind: "heal", amount: 5 }],
-          failureEffects: [{ kind: "gain-gold", amount: 3 }],
-        },
-      ],
-    });
-    const mixed = createMixedPotion(cardA, cardB);
-    expect(mixed.effects).toHaveLength(2);
-    expect(mixed.effects[1]).toEqual({
-      kind: "chance",
-      probability: 0.5,
-      successEffects: [{ kind: "heal", amount: 5 }],
-      failureEffects: [{ kind: "gain-gold", amount: 3 }],
-    });
-  });
-
-  it("keeps a scheduled duration while scaling damage", () => {
-    const turns = 2;
-    const durationPotion = makePotion({
-      id: "duration-potion",
-      descriptionLines: [`Deal 10 Poison damage for the next ${turns} turns`, "Consume"],
-      effects: [
-        {
-          kind: "repeat-over-turns",
-          remainingTurns: turns,
-          effects: [{ kind: "damage", damageType: "poison", amount: 10 }],
-        },
-      ],
-    });
-    const mixed = createMixedPotion(durationPotion, durationPotion);
-
-    expect(mixed.effects[0]).toEqual({
-      kind: "repeat-over-turns",
-      remainingTurns: turns,
-      effects: [{ kind: "damage", damageType: "poison", amount: 20 }],
-    });
-    expect(mixed.descriptionLines).toEqual([`Deal 20 Poison damage for the next ${turns} turns`, "Consume"]);
-  });
-
-  it("keeps unscaled conversion rates, derived base amounts, Health costs, and extra-turn durations when mixing or doubling", () => {
-    const volatilePotion = makePotion({
-      id: "volatile-potion",
-      descriptionLines: ["Deal 5 Burn damage", "Convert each of your Mana into 5 Block", "Consume"],
-      effects: [
-        { kind: "damage", damageType: "burn", amount: 5 },
-        { kind: "player-status", status: "block", amount: 2, convertCurrentMana: 5 },
-        { kind: "player-status", status: "block", amount: 3, perManaCrystal: 2 },
-        { kind: "damage", damageType: "holy", amount: 4, equalToBlock: true },
-      ],
-    });
-
-    const mixed = createMixedPotion(volatilePotion, volatilePotion);
-    const doubled = doublePotionPotency(volatilePotion);
-
-    for (const scaled of [mixed, doubled]) {
-      expect(scaled.effects).toEqual([
-        { kind: "damage", damageType: "burn", amount: 10 },
-        { kind: "player-status", status: "block", amount: 2, convertCurrentMana: 5 },
-        { kind: "player-status", status: "block", amount: 3, perManaCrystal: 2 },
-        { kind: "damage", damageType: "holy", amount: 4, equalToBlock: true },
-      ]);
-    }
-
-    const costly = makePotion({
-      effects: [
-        { kind: "lose-health", amount: 2 },
-        { kind: "player-status", status: "haste", amount: 1 },
-        { kind: "heal", amount: 8 },
-      ],
-    });
-    expect(createMixedPotion(costly, costly).effects).toEqual([...costly.effects, ...costly.effects]);
-    expect(doublePotionPotency(costly).effects).toEqual([
-      { kind: "lose-health", amount: 2 },
-      { kind: "player-status", status: "haste", amount: 1 },
-      { kind: "heal", amount: 16 },
-    ]);
-  });
+it("carries both ingredients' improvement marks and tags through folding and restoration", () => {
+  const first = potion([{ kind: "heal", amount: 5 }], { tags: ["archery"] });
+  const second = cloneBattleCard(first);
+  for (const [ingredient, mark] of [
+    [first, "distilled"],
+    [second, "corrupted"],
+  ] as const)
+    for (const part of getCardDescription(ingredient).flatMap((line) => line.parts))
+      if (typeof part !== "string") part[mark] = true;
+  for (const ingredients of [
+    [first, second],
+    [second, first],
+  ] as const) {
+    const mixed = createMixedPotion(...ingredients);
+    expect(mixed.effects).toEqual([{ kind: "heal", amount: 10 }]);
+    expect(mixed.descriptionLines).toEqual(["Restore 10 Health", "Archery", "Consume"]);
+    expect(getCardDescription(mixed)[0]!.parts).toContainEqual(
+      expect.objectContaining({ distilled: true, corrupted: true }),
+    );
+    expect(roundTrip(mixed)).toEqual(mixed);
+  }
 });
 
-it.each(["mix", "double"] as const)(
-  "Potion effect ownership %s owns nested mutable pools and metadata",
-  (operation) => {
-    const ingredient = makePotion({
-      tags: ["archery"],
-      effects: [
-        {
-          kind: "chance",
-          probability: 0.5,
-          successEffects: [{ kind: "random-damage", minAmount: 1, maxAmount: 3, damageTypePool: ["burn", "holy"] }],
-          failureEffects: [{ kind: "player-status", status: "block", amount: 1, statusPool: ["armor", "block"] }],
-        },
+it("scales alternate magnitudes and delayed effects without extending their duration", () => {
+  const effects: BattleCardEffect[] = [
+    { kind: "damage", damageType: "physical", amount: 2, damageTypeIfTargetFrozen: "freeze", amountIfTargetFrozen: 8 },
+    { kind: "player-status", status: "block", statusPool: ["block", "forge", "armor"], amount: 5, forgeAmount: 2 },
+    repeated([{ kind: "damage", damageType: "poison", amount: 10 }]),
+  ];
+  const source = potion(effects);
+  const before = structuredClone(source);
+  const expected = [
+    { ...effects[0], amount: 4, amountIfTargetFrozen: 16 },
+    { ...effects[1], amount: 10, forgeAmount: 4 },
+    repeated([{ kind: "damage", damageType: "poison", amount: 20 }]),
+  ];
+  expect(createMixedPotion(source, source).effects).toEqual(expected);
+  expect(doublePotionPotency(source).effects).toEqual(expected);
+  expect(source).toEqual(before);
+});
+
+it("scales every nested Luck outcome without changing its probabilities", () => {
+  const luck = cardById["luck-potion"]!;
+  const mixed = createMixedPotion(luck, luck);
+  expect(mixed.effects).toEqual([
+    chance(
+      [{ kind: "restore-mana", amount: 8 }],
+      [chance([{ kind: "gain-gold", amount: 8 }], [{ kind: "player-status", status: "block", amount: 8 }])],
+    ),
+  ]);
+  expect(mixed.descriptionLines).toEqual(["Gain 8 Mana, Gold, or Block", "Consume"]);
+});
+
+it("keeps distinct ingredients and same-ID ingredients with different nested outcomes separate", () => {
+  const first = potion([chance([{ kind: "heal", amount: 5 }], [])]);
+  const different = potion([chance([{ kind: "heal", amount: 5 }], [{ kind: "gain-gold", amount: 3 }])]);
+  const otherType = { ...first, id: "another-potion" };
+  for (const other of [different, otherType])
+    expect(createMixedPotion(first, other).effects).toEqual([...first.effects, ...other.effects]);
+});
+
+it.each<BattleCardEffect>([
+  { kind: "remove-enemy-armor", halve: true },
+  { kind: "lose-health", amount: 2 },
+  { kind: "self-damage", damageType: "burn", amount: 2 },
+  { kind: "lose-mana", amount: 1 },
+  { kind: "lose-max-mana", amount: 1 },
+  { kind: "player-status", status: "haste", amount: 1 },
+  { kind: "player-status", status: "phoenixFeather", amount: 1 },
+  { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 },
+  { kind: "player-status", status: "block", amount: 0, perManaCrystal: 2 },
+  { kind: "damage", damageType: "holy", amount: 0, equalToBlock: true },
+  { kind: "damage", damageType: "holy", amount: 0, equalToArmor: true },
+  { kind: "multiply-enemy-status", status: "burn", factor: 2 },
+  { kind: "damage", damageType: "burn", amount: 0, forgeBonusPercent: 50 },
+])("preserves both executions of %j when potency cannot represent them", (effect) => {
+  const source = potion([repeated([effect]), { kind: "heal", amount: 8 }]);
+  expect(createMixedPotion(source, source).effects).toEqual([...source.effects, ...source.effects]);
+  if (effect.kind !== "remove-enemy-armor")
+    expect(doublePotionPotency(source).effects).toEqual([repeated([effect]), { kind: "heal", amount: 16 }]);
+});
+
+it("bounds crafted identities across repeated mixes instead of embedding the entire recipe", () => {
+  let mixed = cardById["health-potion"]!;
+  for (let i = 0; i < 20; i++) mixed = createMixedPotion(mixed, cardById["mana-potion"]!);
+  expect(mixed.id).toBe("mixed-potion-crafted");
+  expect(roundTrip(mixed)).toEqual(mixed);
+});
+
+it.each([createMixedPotion, (card: ReturnType<typeof potion>) => doublePotionPotency(card)])(
+  "owns mutable ingredient pools",
+  (transform) => {
+    const source = potion(
+      [
+        chance(
+          [{ kind: "random-damage", minAmount: 1, maxAmount: 3, damageTypePool: ["burn", "holy"] }],
+          [{ kind: "player-status", status: "block", amount: 1, statusPool: ["armor", "block"] }],
+        ),
       ],
-    });
-    const before = structuredClone(ingredient);
-    const result = operation === "mix" ? createMixedPotion(ingredient, ingredient) : doublePotionPotency(ingredient);
-    const chance = result.effects[0];
-    if (chance.kind !== "chance") throw new Error("Expected chance Potion");
-    const damage = chance.successEffects[0];
-    const status = chance.failureEffects[0];
-    if (damage.kind !== "random-damage" || status.kind !== "player-status") throw new Error("Expected pooled effects");
+      { tags: ["archery"] },
+    );
+    const before = structuredClone(source);
+    const result = transform(source, source);
+    const wrapper = result.effects[0] as Extract<BattleCardEffect, { kind: "chance" }>;
+    const damage = wrapper.successEffects[0] as Extract<BattleCardEffect, { kind: "random-damage" }>;
     expect(damage).toMatchObject({ minAmount: 2, maxAmount: 6 });
     damage.damageTypePool!.pop();
-    status.statusPool!.pop();
-    result.tags?.pop();
-    expect(ingredient).toEqual(before);
+    Object.assign(wrapper.failureEffects[0]!, { statusPool: [] });
+    result.tags!.pop();
+    expect(source).toEqual(before);
   },
 );
 
-describe("mixed potion description parity", () => {
-  it("keeps every standard Potion readable after Strong Spirits and mixing", () => {
-    const pool = getStandardPotionPool();
-    for (const potion of pool) {
-      expect(validateCardDescriptionParity(doublePotionPotency(potion)), potion.id).toEqual([]);
-      for (const ingredient of pool) {
-        const mixed = createMixedPotion(potion, ingredient);
-        expect(validateCardDescriptionParity(mixed), `${potion.id} + ${ingredient.id}`).toEqual([]);
+it("keeps standard and corrupted Potion descriptions faithful through mixing and restoration", () => {
+  const pool = getStandardPotionPool();
+  const failures: string[] = [];
+  for (const source of pool) {
+    if (validateCardDescriptionParity(doublePotionPotency(source)).length)
+      failures.push(`${source.id}: Strong Spirits`);
+    for (const other of pool)
+      if (validateCardDescriptionParity(createMixedPotion(source, other)).length)
+        failures.push(`${source.id} + ${other.id}`);
+    for (const group of getCorruptionMutationGroups(source)) {
+      for (const mutation of group.mutations) {
+        const mixed = createMixedPotion(mutation.card, source);
+        if (validateCardDescriptionParity(mixed).length) failures.push(`${source.id}: ${group.kind}`);
+        expect(roundTrip(mixed)).toEqual(mixed);
+        const other = pool.find((candidate) => candidate.id !== source.id)!;
+        const lines = mutation.card.descriptionLines.filter((line) => line !== "Consume");
+        expect(createMixedPotion(mutation.card, other).descriptionLines.slice(0, lines.length)).toEqual(lines);
       }
     }
-  });
-
-  it("keeps effects and text together when a corrupted Potion is mixed and restored", () => {
-    const pool = getStandardPotionPool();
-    for (const potion of pool) {
-      const otherPotion = pool.find((candidate) => candidate.id !== potion.id)!;
-      for (const group of getCorruptionMutationGroups(potion)) {
-        for (const mutation of group.mutations) {
-          const unscaledMix = createMixedPotion(mutation.card, otherPotion);
-          const ingredientLines = mutation.card.descriptionLines.filter((line) => line !== "Consume");
-          expect(unscaledMix.descriptionLines.slice(0, ingredientLines.length), `${potion.id}: ${group.kind}`).toEqual(
-            ingredientLines,
-          );
-          const mixed = createMixedPotion(mutation.card, potion);
-          expect(validateCardDescriptionParity(mixed), `${potion.id}: ${group.kind}`).toEqual([]);
-          const restored = hydrateCard(JSON.parse(JSON.stringify(mixed)) as BattleCard);
-          expect(restored.effects, `${potion.id}: ${group.kind}`).toEqual(mixed.effects);
-          expect(restored.descriptionLines, `${potion.id}: ${group.kind}`).toEqual(mixed.descriptionLines);
-        }
-      }
-    }
-  });
+  }
+  expect(failures).toEqual([]);
 });

@@ -47,7 +47,7 @@ export function cloneBattleCard(card: BattleCard): BattleCard {
 export function hydrateCard(savedCard: SavedCard): BattleCard {
   const libraryCard = Object.hasOwn(cardById, savedCard.id) ? cardById[savedCard.id] : undefined;
   if (!libraryCard) {
-    return savedCard;
+    return cloneBattleCard(savedCard);
   }
 
   const keepSavedContent =

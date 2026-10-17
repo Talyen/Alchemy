@@ -66,7 +66,8 @@ function potionParts(card: BattleCard, effects = card.effects) {
 
 function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | null {
   const tags = [...new Set([...(cardA.tags ?? []), ...(cardB.tags ?? [])])];
-  // Doubling amounts cannot represent a second Armor-halving operation.
+  // Folding must represent both executions. Costs, durations and derived
+  // magnitudes are deliberately unchanged by potency, so keep those packets.
   const sameCard =
     cardA.id === cardB.id &&
     cardA.effects.length === cardB.effects.length &&
@@ -75,11 +76,18 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | 
       cardA.effects,
       (effect) =>
         (effect.kind === "remove-enemy-armor" && effect.halve === true) ||
+        effect.kind === "multiply-enemy-status" ||
         effect.kind === "lose-health" ||
         effect.kind === "self-damage" ||
         effect.kind === "lose-mana" ||
         effect.kind === "lose-max-mana" ||
-        (effect.kind === "player-status" && (effect.status === "haste" || effect.status === "phoenixFeather")),
+        (effect.kind === "damage" &&
+          (effect.equalToBlock === true || effect.equalToArmor === true || effect.forgeBonusPercent !== undefined)) ||
+        (effect.kind === "player-status" &&
+          (effect.status === "haste" ||
+            effect.status === "phoenixFeather" ||
+            effect.convertCurrentMana !== undefined ||
+            effect.perManaCrystal !== undefined)),
     );
 
   const doubled = sameCard ? cardA.effects.map(doublePotionEffect) : null;
@@ -116,7 +124,7 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | 
   return cloneBattleCard(
     withCardDescription(
       {
-        id: `${MIXED_POTION_CARD_ID}-${cardA.id}-${cardA.uid ?? 0}-${cardB.id}-${cardB.uid ?? 0}`,
+        id: `${MIXED_POTION_CARD_ID}-crafted`,
         title: MIXED_POTION_TITLE,
         descriptionLines: [],
         art: mixedPotion,

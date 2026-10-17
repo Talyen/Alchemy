@@ -8,6 +8,7 @@ import {
   mapCardDescriptionReferences,
   type CardMagnitudeReference,
   isMixedPotionCard,
+  isCompanionSummonCard,
   mapEffectChildren,
   visitBattleCardEffects,
   withCardDescription,
@@ -318,6 +319,7 @@ function matchingAlteration(
 }
 
 export function getTransmutationOffers(visit: AlchemyVisit): BattleCard[] {
+  const selection = visit.transmutation;
   if (!selection) return [];
   const { source, sourceIndex } = selection;
   if (!source || sourceIndex == null) return [];
@@ -340,10 +342,9 @@ export function canTransmuteCard(
     const alteration = matchingAlteration(choice, key, sourceIndex, card.id);
     return (
       !!alteration &&
-      (!deck ||
-        getTransmutationVariants(card, choice.keyword, deck).some(
-          (variant) => variant.sourceKeyword === alteration.sourceKeyword,
-        ))
+      // The saved alteration already proves compatibility with this exact
+      // source. Only Companion additions depend on the rest of the live deck.
+      (!deck || choice.keyword !== "companion" || deck.some(isCompanionSummonCard))
     );
   });
 }
