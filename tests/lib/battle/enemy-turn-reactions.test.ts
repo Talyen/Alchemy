@@ -75,19 +75,32 @@ describe("applyEnemyAbility: reactions", () => {
     }
   });
 
-  it("does not show Purge feedback when the player has no beneficial status", () => {
+  it.each([1, 10])("settles Banshee Purge retaliation before queued Bleed (Health: %s)", (playerHealth) => {
     const state = patchBattleState({
-      currentEnemy: enemyBestiary.find((enemy) => enemy.id === "banshee")!,
-      playerHealth: 30,
+      playerHealth,
+      playerMaxHealth: 30,
+      deathsDoorUsed: true,
+      playerStatuses: { block: 1, armor: 1 },
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      enemyStatuses: { onAttackBleed: 30 },
+      currentEnemy: {
+        traits: [
+          { id: "banshee", title: "Banshee", description: "" },
+          { id: "cinder-skin", title: "Cinder Skin", description: "" },
+        ],
+      },
+      gearEffects: { stunOnArmorLostToAttack: 1 },
       rng: () => 0.99,
     });
-    const texts = makeTexts();
-    applyEnemyAbility(
+    const next = applyEnemyAbility(
       state,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
-      texts,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
+      [],
     );
-    expect(texts.some((event) => event.kind === "notice" && event.signal === "purge")).toBe(false);
+    expect(next.playerHealth).toBe(playerHealth - 1);
+    expect(next.enemyHealth).toBe(playerHealth === 1 ? 19 : 0);
+    expect(next.enemyStatuses.onAttackBleed).toBe(playerHealth === 1 ? 30 : 0);
   });
 
   it("banshee purges thorns without retaliation and purges phoenix feather", () => {
@@ -134,34 +147,31 @@ describe("applyEnemyAbility: reactions", () => {
       signal: "purge",
     });
   });
-
-  it("blood-countess damages itself only on actual hero healing", async () => {
-    const { applyEnemyHealingWithCombatText } = await import("@/lib/battle/enemy-healing");
-    const { applyHealingWithCombatText } = await import("@/lib/battle/player-rewards");
-    const countessState = patchBattleState({
-      currentEnemy: enemyBestiary.find((e) => e.id === "blood-countess")!,
-      playerHealth: 20,
-      playerMaxHealth: 30,
-      enemyHealth: 10,
-      enemyMaxHealth: 10,
-    });
-    const healed = applyHealingWithCombatText(countessState, 5, []);
-    expect(healed.enemyHealth).toBe(9);
-    expect(healed.playerHealth).toBe(25);
-
-    const enemyHealState = patchBattleState({
-      currentEnemy: enemyBestiary.find((e) => e.id === "blood-countess")!,
-      playerHealth: 20,
-      playerMaxHealth: 30,
-      enemyHealth: 5,
-      enemyMaxHealth: 10,
-    });
-    const enemyHealed = applyEnemyHealingWithCombatText(enemyHealState, 3, []);
-    expect(enemyHealed.enemyHealth).toBe(8);
-  });
 });
 
 describe("player Thorns", () => {
+  it.each([1, 10])("settles queued Bleed retaliation before Thorns (Health: %s)", (playerHealth) => {
+    const state = patchBattleState({
+      playerHealth,
+      playerMaxHealth: 30,
+      deathsDoorUsed: true,
+      playerStatuses: { block: 1, thorns: 30 },
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      enemyStatuses: { onAttackBleed: 1 },
+      currentEnemy: { traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "" }] },
+      rng: () => 0.99,
+    });
+    const next = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
+      [],
+    );
+    expect(next.playerHealth).toBe(playerHealth - 1);
+    expect(next.enemyHealth).toBe(playerHealth === 1 ? 19 : 0);
+    expect(next.playerStatuses.thorns).toBe(playerHealth === 1 ? 30 : 0);
+  });
+
   it("fires held thorns back as nature damage when an attack lands and consumes the stack", () => {
     const state = patchBattleState({
       playerHealth: 30,

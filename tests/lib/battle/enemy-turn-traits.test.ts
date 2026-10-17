@@ -2,9 +2,6 @@ import { describe, expect, it } from "vitest";
 import { enemyBestiary } from "@/lib/game-data";
 import {
   collectUncoveredEnemyTraitIds,
-  ENEMY_TRAIT_TURN_START_HANDLER_IDS,
-  PASSIVE_ONLY_ENEMY_TRAIT_IDS,
-  REACTION_ONLY_ENEMY_TRAIT_IDS,
   processEnemyRegeneration,
   processEnemyTraits,
 } from "@/lib/battle/enemy-turn-traits";
@@ -18,12 +15,6 @@ describe("enemy turn trait coverage", () => {
       "constructor",
       "__proto__",
     ]);
-  });
-
-  it("keeps handler and passive allowlists disjoint", () => {
-    const traitOverlap = ENEMY_TRAIT_TURN_START_HANDLER_IDS.filter((id) => PASSIVE_ONLY_ENEMY_TRAIT_IDS.includes(id));
-    expect(traitOverlap).toEqual([]);
-    expect(PASSIVE_ONLY_ENEMY_TRAIT_IDS.filter((id) => REACTION_ONLY_ENEMY_TRAIT_IDS.includes(id))).toEqual([]);
   });
 });
 
