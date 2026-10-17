@@ -206,7 +206,6 @@ describe("saved battle card recovery", () => {
         effects: [{ kind: "heal", amount: 9 }, { kind: "invalid" }],
         descriptionLines: ["Restore 9 Health", "Unknown action"],
         corrupted: true,
-        corruptedValuePositions: [{ lineIndex: 0, matchIndex: 8 }],
       };
       const healthy = withCardDescription(
         {
@@ -216,7 +215,6 @@ describe("saved battle card recovery", () => {
           effects: [{ kind: "heal", amount: 9 }],
           descriptionLines: ["Restore 9 Health"],
           corrupted: true,
-          corruptedValuePositions: [{ lineIndex: 0, matchIndex: 8 }],
         },
         [
           {

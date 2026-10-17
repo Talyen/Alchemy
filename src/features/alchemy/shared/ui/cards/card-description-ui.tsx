@@ -15,7 +15,6 @@ import { TooltipBody, TooltipChip } from "../tooltips/tooltip-panel";
 import { PortaledTooltip } from "../tooltips/portaled-tooltip";
 import { useHoverVisible } from "../use-hover-visible";
 
-import { getCorruptedValueOffsets, splitCorruptedNumericParts } from "./card-text";
 import { ShineText } from "../shine-text";
 
 export { renderColoredKeywords } from "../localized-description";
@@ -76,7 +75,7 @@ export function DescriptionLines({
   lines: string[];
   idPrefix: string;
   newLineIndices?: ReadonlySet<number> | undefined;
-  card?: Pick<BattleCard, "corruptedValuePositions"> & Partial<Pick<BattleCard, "effects" | "description">>;
+  card?: Pick<BattleCard, "effects" | "description">;
 }) {
   const i18n = useGameTranslation();
   const rendered =
@@ -85,29 +84,14 @@ export function DescriptionLines({
     // Context-aware summon lines can differ from the saved description. Only
     // use effect-bound marks when the exact canonical line still corresponds.
     const bound = rendered?.descriptionLines[lineIndex] === line ? rendered.localizedLines[lineIndex] : undefined;
-    const legacyParts =
-      !rendered && card?.corruptedValuePositions?.length
-        ? splitCorruptedNumericParts(line, 0, getCorruptedValueOffsets(card, lineIndex))
-        : undefined;
-    const message =
-      bound ??
-      buildDescriptionMessage(
-        legacyParts?.map((part, index) => ({
-          text: part.text,
-          ...(part.corrupted ? { magnitudeId: `legacy${index}` } : {}),
-        })) ?? [{ text: line }],
-      );
-    const marks = bound
-      ? new Map(
-          rendered?.magnitudes
+    const message = bound ?? buildDescriptionMessage([{ text: line }]);
+    const marks = new Map(
+      bound
+        ? rendered!.magnitudes
             .filter((entry) => entry.lineIndex === lineIndex)
-            .map((entry) => [entry.id, entry.magnitude]),
-        )
-      : new Map(
-          legacyParts?.flatMap((part, index) =>
-            part.corrupted ? [[`legacy${index}`, { corrupted: true }] as const] : [],
-          ),
-        );
+            .map((entry) => [entry.id, entry.magnitude])
+        : [],
+    );
     return (
       <div key={`${idPrefix}-${lineIndex}`} className={tooltipBodyLineClass}>
         {i18n.read(() => renderMessage(message, undefined, marks))}

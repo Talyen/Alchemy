@@ -17,7 +17,6 @@ const modifiedCard: BattleCard = {
   descriptionLines: ["Gain 9 Block", libraryCard.descriptionLines[1]!],
   corrupted: true,
   baseTitle: libraryCard.title,
-  corruptedValuePositions: [{ lineIndex: 0, matchIndex: 5 }],
 };
 
 describe("saved card content restoration", () => {
@@ -84,7 +83,6 @@ describe("saved card content restoration", () => {
     const restored = hydrateCard(BattleCardSchema.parse(saved));
     expect(restored.effects).toEqual(saved.effects);
     expect(restored.descriptionLines).toEqual(saved.descriptionLines);
-    expect(restored.corruptedValuePositions).toEqual(saved.corruptedValuePositions);
   });
 
   it("recovers incomplete typed cards without requiring another validation pass", () => {
@@ -153,7 +151,7 @@ it.each([
     ...cardById["slash"]!,
     tags: ["poison"],
     corrupted: true,
-    corruptedValuePositions: [{ lineIndex: 0, matchIndex: 5 }],
+
     effects: [
       {
         kind: "chance",
@@ -195,6 +193,6 @@ it.each([
   cloneChance.failureEffects.push({ kind: "heal", amount: 99 });
   clone.descriptionLines.push("Changed");
   clone.tags?.push("burn");
-  clone.corruptedValuePositions![0]!.lineIndex = 99;
+
   expect(source).toEqual(before);
 });

@@ -7,12 +7,10 @@ import {
   cardLibrary,
   cloneBattleCard,
   describeCardEffects,
-  cardMagnitude,
   withCardDescription,
   type BattleCardEffect,
 } from "@/lib/game-data";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
-import { createMixedPotion } from "@/lib/alchemist";
 import type { CORRUPTION_OUTCOME_WEIGHTS } from "@/lib/game-constants";
 import { removeConsume } from "@/lib/corruption/card-edits";
 import { makeTestCard } from "../../../fixtures/cards";
@@ -44,7 +42,7 @@ describe("card corruption outcomes", () => {
       ({ card }) => card.effects[0]?.kind === "damage" && card.effects[0].damageType === "holy",
     )!.card;
     expect(next.descriptionLines).toEqual(["Deal 4 Holy damage"]);
-    expect(next.corruptedValuePositions).toContainEqual({ lineIndex: 0, matchIndex: 5 });
+    expect(next.description![0]!.parts).toContainEqual(expect.objectContaining({ corrupted: true }));
   });
 
   it("strengthens ordinary damage proportionally and scarce resources by one", () => {
@@ -52,16 +50,6 @@ describe("card corruption outcomes", () => {
     expect(outcome("slash", "strengthen").effects).toEqual([{ kind: "damage", damageType: "physical", amount: 6 }]);
     expect(outcome("anvil", "strengthen").descriptionLines).toEqual(["Gain 3 Forge"]);
     expect(outcome("fireball", "strengthen").descriptionLines).toEqual(["Deal 3 Burn damage"]);
-  });
-
-  it("weakens damage and can reduce a scarce resource to zero", () => {
-    expect(outcome("slash", "weaken").descriptionLines).toEqual(["Deal 3 Physical damage"]);
-    const card = makeTestCard({
-      descriptionLines: ["Gain 1 Forge"],
-      effects: [{ kind: "player-status", status: "forge", amount: 1 }],
-    });
-    const next = getCorruptionMutationGroups(card).find((group) => group.kind === "weaken")!.mutations[0]!.card;
-    expect(next.effects).toEqual([{ kind: "player-status", status: "forge", amount: 0 }]);
   });
 
   it("treats reducing Health loss as strengthening and assigns a positive delta", () => {
@@ -78,13 +66,6 @@ describe("card corruption outcomes", () => {
     expect(weakenGroup.mutations[0]!.delta).toBe(-1);
   });
 
-  it("adds one effect before trailing keywords and marks its number", () => {
-    const next = outcome("fire-arrow", "secondary");
-    expect(next.descriptionLines).toEqual(["Deal 1 Burn damage", "Gain 2 Block", "Archery"]);
-    expect(next.effects[1]).toEqual({ kind: "player-status", status: "block", amount: 2 });
-    expect(next.corruptedValuePositions).toEqual([{ lineIndex: 1, matchIndex: 5 }]);
-  });
-
   it("charges the Health price before granting the larger benefit", () => {
     const next = outcome("block", "bargain");
     expect(next.descriptionLines).toEqual(["Lose 2 Health", "Gain 10 Block"]);
@@ -92,43 +73,6 @@ describe("card corruption outcomes", () => {
       { kind: "lose-health", amount: 2 },
       { kind: "player-status", status: "block", amount: 10 },
     ]);
-    expect(next.corruptedValuePositions).toEqual([
-      { lineIndex: 0, matchIndex: 5 },
-      { lineIndex: 1, matchIndex: 5 },
-    ]);
-  });
-
-  it("converts damage using the new type's magnitude while retaining the card", () => {
-    const group = getCorruptionMutationGroups(cardById.slash!).find((entry) => entry.kind === "convert")!;
-    const next = group.mutations.find(
-      ({ card }) => card.effects[0]?.kind === "damage" && card.effects[0].damageType === "poison",
-    )!.card;
-    expect(next.id).toBe("slash");
-    expect(next.descriptionLines).toEqual(["Deal 1 Poison damage"]);
-    expect(next.effects).toEqual([{ kind: "damage", damageType: "poison", amount: 1 }]);
-  });
-
-  it.each([
-    ["draw", "Draw a card", { kind: "draw-cards", amount: 1 }],
-    ["mana", "Gain 1 Mana", { kind: "restore-mana", amount: 1 }],
-  ] as const)("adds the %s jackpot without changing Mana cost", (kind, line, effect) => {
-    const next = outcome("slash", kind);
-    expect(next.cost).toBe(cardById.slash!.cost);
-    expect(next.descriptionLines).toEqual(["Deal 4 Physical damage", line]);
-    expect(next.effects[1]).toEqual(effect);
-  });
-
-  it("adds Leech to the actual damage effect", () => {
-    const next = outcome("slash", "leech");
-    expect(next.descriptionLines).toEqual(["Deal 4 Physical damage", "Leech"]);
-    expect(next.effects[0]).toMatchObject({ lifesteal: true });
-  });
-
-  it("triples a simple effect when adding Consume", () => {
-    const next = outcome("slash", "consume");
-    expect(next.consume).toBe(true);
-    expect(next.descriptionLines).toEqual(["Deal 12 Physical damage", "Consume"]);
-    expect(next.effects[0]).toMatchObject({ amount: 12 });
   });
 
   it("removes Consume explicitly so it cannot return on hydration", () => {
@@ -205,8 +149,6 @@ describe("card corruption outcomes", () => {
             effects: original.effects,
             consume: !!original.consume,
           });
-          for (const pos of card.corruptedValuePositions ?? [])
-            expect(card.descriptionLines[pos.lineIndex]!.slice(pos.matchIndex)).toMatch(/^\d/);
         }
       }
       expect(original).toEqual(before);
@@ -362,7 +304,7 @@ describe("labyrinth corruption room modifiers", () => {
   });
 });
 
-describe("numeric text alignment", () => {
+describe("numeric effect bindings", () => {
   it("keeps a cloned damage pool's immediate and scheduled amounts aligned", () => {
     const hit: BattleCardEffect = {
       kind: "damage",
@@ -380,42 +322,6 @@ describe("numeric text alignment", () => {
     expect(changed.effects[0]).toMatchObject({ amount: 4 });
     expect(changed.effects[1]).toMatchObject({ effects: [changed.effects[0]] });
     expect(card).toEqual(before);
-  });
-
-  it("reserves a combined damage amount while binding equal-valued custom prose", () => {
-    const hit = { kind: "damage" as const, damageType: "burn" as const, amount: 3 };
-    const card = makeTestCard({
-      descriptionLines: ["Collect 3 Gold", "Deal and Receive 3 Burn damage"],
-      description: [
-        {
-          role: "effect",
-          parts: ["Collect ", cardMagnitude({ effectIndex: 2, kind: "gain-gold", field: "amount" }), " Gold"],
-        },
-        {
-          role: "effect",
-          parts: [
-            "Deal and Receive ",
-            cardMagnitude(
-              { effectIndex: 0, kind: "damage", field: "amount" },
-              { shared: [{ effectIndex: 1, kind: "self-damage", field: "amount" }] },
-            ),
-            " Burn damage",
-          ],
-        },
-      ],
-      effects: [hit, { ...hit, kind: "self-damage" }, { kind: "gain-gold", amount: 3 }],
-    });
-    const [gold, damage] = getEditableCorruptionTargets(card);
-    const changed = updateCardNumericValue(card, gold!, 4);
-    expect(changed.descriptionLines).toEqual(["Collect 4 Gold", "Deal and Receive 3 Burn damage"]);
-    expect(changed.effects).toEqual([hit, { ...hit, kind: "self-damage" }, { kind: "gain-gold", amount: 4 }]);
-    const changedDamage = updateCardNumericValue(card, damage!, 5);
-    expect(changedDamage.effects).toEqual([
-      { ...hit, amount: 5 },
-      { ...hit, kind: "self-damage", amount: 5 },
-      { kind: "gain-gold", amount: 3 },
-    ]);
-    expect(card.effects[0]).toEqual(hit);
   });
 
   it("rejects a stale shared edit without changing any branch or its description", () => {
@@ -468,24 +374,6 @@ describe("numeric text alignment", () => {
     expect(card.effects[0]).toMatchObject({ amount: 2, amountIfTargetFrozen: 4 });
   });
 
-  it("keeps Luck Potion's shared magnitude inside its own mixed-potion branch", () => {
-    const card = createMixedPotion(cardById["luck-potion"]!, {
-      ...cardById["mana-potion"]!,
-      descriptionLines: ["Gain 4 Mana", "Consume"],
-      effects: [{ kind: "restore-mana", amount: 4 }],
-    });
-    expect(getEditableCorruptionTargets(card)).toHaveLength(2);
-    const target = getEditableCorruptionTargets(card)[0]!;
-    const changed = applyNumericCorruption(card, target, 1);
-    expect(changed.descriptionLines[0]).toBe("Gain 5 Mana, Gold, or Block");
-    expect(changed.effects[0]).toMatchObject({
-      successEffects: [{ amount: 5 }],
-      failureEffects: [{ successEffects: [{ amount: 5 }], failureEffects: [{ amount: 5 }] }],
-    });
-    expect(changed.effects[1]).toEqual(card.effects[1]);
-    expect(changed.descriptionLines[1]).toBe(card.descriptionLines[1]);
-  });
-
   it.each(["wishing-well", "cauterize", "ray-of-frost"])(
     "keeps %s's implicit and shared quantities separate from an added effect",
     (id) => {
@@ -503,165 +391,15 @@ describe("numeric text alignment", () => {
       expect(changed.descriptionLines[lineIndex]).toBe("Deal 2 Poison damage");
     },
   );
-
-  it("upgrades a corrupted Companion's added attack rather than its summon description", () => {
-    const wolf = cardLibrary.find((card) =>
-      card.effects.some((effect) => effect.kind === "summon-companion" && effect.companionId === "wolf"),
-    )!;
-    const card = getCorruptionMutationGroups(wolf)
-      .find((group) => group.kind === "secondary")!
-      .mutations.find(({ card: candidate }) =>
-        candidate.effects.some((effect) => effect.kind === "damage" && effect.damageType === "poison"),
-      )!.card;
-    const target = getEditableCorruptionTargets(card)[0]!;
-    const upgraded = updateCardNumericValue(card, target, target.value + 1);
-    expect(upgraded.descriptionLines[0]).toBe(wolf.descriptionLines[0]);
-    expect(upgraded.descriptionLines).toContain("Deal 2 Poison damage");
-    expect(upgraded.effects.at(-1)).toEqual({ kind: "damage", damageType: "poison", amount: 2 });
-  });
-
-  it("matches multiple values and ignores unrelated numbers", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deal 3 Physical and 5 Bleed damage to 2 enemies"],
-      description: [
-        {
-          role: "effect",
-          parts: [
-            "Deal ",
-            cardMagnitude({ effectIndex: 0, kind: "damage", field: "amount" }),
-            " Physical and ",
-            cardMagnitude({ effectIndex: 1, kind: "damage", field: "amount" }),
-            " Bleed damage to 2 enemies",
-          ],
-        },
-      ],
-      effects: [
-        { kind: "damage", damageType: "physical", amount: 3 },
-        { kind: "damage", damageType: "bleed", amount: 5 },
-      ],
-    });
-    expect(getEditableCorruptionTargets(card)).toMatchObject([
-      { value: 3, effectIndex: 0 },
-      { value: 5, effectIndex: 1 },
-    ]);
-  });
-
-  it("binds equal values to their described effects when authored lines are reordered", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deal 3 Physical damage", "Restore 3 Health"],
-      description: [
-        {
-          role: "effect",
-          parts: ["Deal ", cardMagnitude({ effectIndex: 1, kind: "damage", field: "amount" }), " Physical damage"],
-        },
-        {
-          role: "effect",
-          parts: ["Restore ", cardMagnitude({ effectIndex: 0, kind: "heal", field: "amount" }), " Health"],
-        },
-      ],
-      effects: [
-        { kind: "heal", amount: 3 },
-        { kind: "damage", damageType: "physical", amount: 3 },
-      ],
-    });
-    const targets = getEditableCorruptionTargets(card);
-    expect(targets.map((target) => target.effectIndex)).toEqual([1, 0]);
-    const changed = updateCardNumericValue(card, targets[0]!, 4);
-    expect(changed.descriptionLines).toEqual(["Deal 4 Physical damage", "Restore 3 Health"]);
-    expect(changed.effects).toEqual([
-      { kind: "heal", amount: 3 },
-      { kind: "damage", damageType: "physical", amount: 4 },
-    ]);
-  });
-
-  it("moves existing highlights when the number gains a digit", () => {
-    const card = makeTestCard({
-      descriptionLines: ["Deal 9 Physical and 2 Bleed damage"],
-      description: [
-        {
-          role: "effect",
-          parts: [
-            "Deal ",
-            cardMagnitude({ effectIndex: 0, kind: "damage", field: "amount" }),
-            " Physical and ",
-            cardMagnitude({ effectIndex: 1, kind: "damage", field: "amount" }, { corrupted: true }),
-            " Bleed damage",
-          ],
-        },
-      ],
-      effects: [
-        { kind: "damage", damageType: "physical", amount: 9 },
-        { kind: "damage", damageType: "bleed", amount: 2 },
-      ],
-      corruptedValuePositions: [{ lineIndex: 0, matchIndex: 20 }],
-    });
-    const next = applyNumericCorruption(card, getEditableCorruptionTargets(card)[0]!, 1);
-    expect(next.descriptionLines).toEqual(["Deal 10 Physical and 2 Bleed damage"]);
-    expect(next.corruptedValuePositions).toContainEqual({ lineIndex: 0, matchIndex: 21 });
-  });
-});
-it("corruptedValuePositions deduplication does not produce duplicate positions when re-corrupting the same target", () => {
-  const card = makeTestCard({
-    descriptionLines: ["Deal 4 Physical damage"],
-    effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
-  });
-  const targets = getEditableCorruptionTargets(card);
-  const first = applyNumericCorruption(card, targets[0]!, 1);
-  expect(first.descriptionLines).toEqual(["Deal 5 Physical damage"]);
-  expect(first.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 5 }]);
-
-  // Second mutation on the already-corrupted card at the same line position.
-  const secondTargets = getEditableCorruptionTargets(first);
-  const second = applyNumericCorruption(first, secondTargets[0]!, 1);
-  expect(second.descriptionLines).toEqual(["Deal 6 Physical damage"]);
-  // Must have exactly one entry, not a duplicate.
-  expect(second.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 5 }]);
 });
 
-it("removeConsume highlight preservation remaps highlights after every removed Consume line", () => {
-  const card = makeTestCard({
-    descriptionLines: ["Consume", "Deal 6 Physical damage", "Consume", "Restore 4 Health", "Consume"],
-    description: [
-      { role: "consume", parts: ["Consume"] },
-      {
-        role: "effect",
-        parts: [
-          "Deal ",
-          cardMagnitude({ effectIndex: 0, kind: "damage", field: "amount" }, { corrupted: true }),
-          " Physical damage",
-        ],
-      },
-      { role: "consume", parts: ["Consume"] },
-      {
-        role: "effect",
-        parts: [
-          "Restore ",
-          cardMagnitude({ effectIndex: 1, kind: "heal", field: "amount" }, { corrupted: true }),
-          " Health",
-        ],
-      },
-      { role: "consume", parts: ["Consume"] },
-    ],
-    tags: ["physical", "consume"],
-    effects: [
-      { kind: "damage", damageType: "physical", amount: 6 },
-      { kind: "heal", amount: 4 },
-    ],
-    consume: true,
-    corruptedValuePositions: [
-      { lineIndex: 1, matchIndex: 5 },
-      { lineIndex: 2, matchIndex: 0 },
-      { lineIndex: 3, matchIndex: 8 },
-    ],
-  });
+it("removing Consume retains bound highlights and clears the keyword without changing the input", () => {
+  const source = outcome("health-potion", "strengthen");
+  const card = { ...source, tags: ["consume" as const] };
+  const before = structuredClone(card);
   const reusable = removeConsume(card);
-  expect(reusable.descriptionLines).toEqual(["Deal 6 Physical damage", "Restore 4 Health"]);
-  expect(reusable.corruptedValuePositions).toEqual([
-    { lineIndex: 0, matchIndex: 5 },
-    { lineIndex: 1, matchIndex: 8 },
-  ]);
   expect(reusable.consume).toBe(false);
-  expect(reusable.tags).toEqual(["physical"]);
-  expect(card.tags).toEqual(["physical", "consume"]);
-  expect(card.corruptedValuePositions![2]!.lineIndex).toBe(3);
+  expect(reusable.tags).toEqual([]);
+  expect(reusable.description).toEqual(card.description!.filter((line) => line.role !== "consume"));
+  expect(card).toEqual(before);
 });

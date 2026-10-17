@@ -112,7 +112,7 @@ describe("damage inspection reactions", () => {
     const initial = patchBattleState({ flags: { nextHitPhysicalBonus: 4 } });
     const before = JSON.stringify({ initial, card });
     const preview = getBattleDamageInspectionCard(card, initial);
-    expect(preview.corruptedValuePositions?.map((position) => position.lineIndex)).toEqual([2]);
+    expect(preview.description![2]!.parts).toContainEqual(expect.objectContaining({ corrupted: true }));
     expect(JSON.stringify({ initial, card })).toBe(before);
   });
 });

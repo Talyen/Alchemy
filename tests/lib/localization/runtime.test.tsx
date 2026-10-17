@@ -147,8 +147,9 @@ describe("localized game presentation", () => {
     expect(screen.getByText("Physisch")).toBeTruthy();
     expect(JSON.stringify(loaded)).toBe(before);
     const copied = cloneBattleCard(loaded);
-    const slot = Object.values(copied.description![0]!.message!.slots).find((slot) => "magnitudeId" in slot)!;
-    if ("magnitudeId" in slot) slot.magnitudeId = "other";
+    const magnitude = copied.description![0]!.parts.find((part) => typeof part !== "string")!;
+    magnitude.references[0]!.effectIndex = 99;
+    magnitude.corrupted = false;
     expect(JSON.stringify(loaded)).toBe(before);
     installCatalogs(catalogs);
   });

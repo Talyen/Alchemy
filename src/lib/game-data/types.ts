@@ -109,7 +109,6 @@ export interface BattleCard {
   corrupted?: boolean;
   transmuted?: KeywordId;
 
-  corruptedValuePositions?: Array<{ lineIndex: number; matchIndex: number }>;
   baseTitle?: string;
 
   tags?: KeywordId[];

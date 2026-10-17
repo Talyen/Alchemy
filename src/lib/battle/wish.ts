@@ -31,10 +31,7 @@ import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./scaled-dama
 import { appendUniqueMany } from "@/lib/utils";
 
 export function upgradeWishCard(card: BattleCard): BattleCard {
-  const targets = getEditableCorruptionTargets(card).sort(
-    (a, b) => b.lineIndex - a.lineIndex || b.matchIndex - a.matchIndex,
-  );
-  return targets.reduce((next, target) => {
+  return getEditableCorruptionTargets(card).reduce((next, target) => {
     const effect = getCorruptionTargetEffect(next, target);
     // An upgrade must not raise a cost, including a shared Deal/Receive amount.
     if (!effect || target.affectsCost) return next;

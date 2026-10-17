@@ -11,7 +11,6 @@ type NumericEffectEdit = CardMagnitudeReference & { expectedValue: number; multi
 export interface CorruptionTarget extends NumericEffectAddress {
   id: string;
   lineIndex: number;
-  matchIndex: number;
   value: number;
   field: CardMagnitudeReference["field"];
   edits: readonly NumericEffectEdit[];
@@ -21,7 +20,7 @@ export interface CorruptionTarget extends NumericEffectAddress {
 export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget[] {
   const seen = new Set<string>();
   return renderCardDescription(card.effects, getCardDescription(card)).magnitudes.flatMap(
-    ({ id, magnitude, value, lineIndex, matchIndex }) => {
+    ({ id, magnitude, value, lineIndex }) => {
       const reference = magnitude.references[0]!;
       if (magnitude.editable === false || seen.has(id)) return [];
       // These are fixed rules even when their renderer spells out the quantity.
@@ -38,7 +37,6 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
         {
           id,
           lineIndex,
-          matchIndex,
           value,
           effectIndex: reference.effectIndex,
           ...(reference.effectPath ? { effectPath: reference.effectPath } : {}),

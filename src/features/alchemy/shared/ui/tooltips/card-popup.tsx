@@ -30,9 +30,7 @@ export function DetailPopup({
   descriptionLines: string[];
   descriptionNodes?: ReactNode[] | undefined;
   newLineIndices?: ReadonlySet<number> | undefined;
-  card?:
-    | (Pick<BattleCard, "corruptedValuePositions"> & Partial<Pick<BattleCard, "effects" | "description">>)
-    | undefined;
+  card?: Pick<BattleCard, "effects" | "description"> | undefined;
   triggerRef: RefObject<HTMLElement | null>;
   visible: boolean;
   padding?: number | undefined;

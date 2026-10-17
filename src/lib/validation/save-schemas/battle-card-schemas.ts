@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BattleCardEffectSchema, keywordDefinitions, renderCardDescription, type KeywordId } from "@/lib/game-data";
+import { BattleCardEffectSchema, keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { parseSavedCardDescription } from "./card-description-schema";
 import { recordNestedValidationWarnings, type ValidationError } from "./validation-utils";
 
@@ -48,32 +48,19 @@ export const BattleCardSchema = z
       .array(z.custom<KeywordId>((value) => typeof value === "string" && Object.hasOwn(keywordDefinitions, value)))
       .optional()
       .catch(undefined),
-    corruptedValuePositions: z
-      .array(
-        z
-          .object({
-            lineIndex: z.number().int().nonnegative().catch(0),
-            matchIndex: z.number().int().nonnegative().catch(0),
-          })
-          .nullable()
-          .catch(null),
-      )
-      .optional(),
     baseTitle: z.string().optional(),
     effects: z.array(z.unknown()).catch([]),
   })
   .transform((saved) => {
     const described = cloneSavedDescriptionLines(saved.descriptionLines);
     const effects = parseSavedEffectList(saved.effects);
-    const description = parseSavedCardDescription(saved.description, effects.values);
-    const rendered = description ? renderCardDescription(effects.values, description) : undefined;
-    const corruptedValuePositions = saved.corruptedValuePositions?.filter((position) => position !== null);
+    const bound = parseSavedCardDescription(saved.description, effects.values);
     const cost = Number.isInteger(saved.cost) && saved.cost >= 0 ? saved.cost : -1;
     const result = {
       id: saved.id,
       title: saved.title,
-      descriptionLines: rendered?.descriptionLines ?? described.values ?? [],
-      ...(description ? { description } : {}),
+      descriptionLines: bound?.rendered.descriptionLines ?? described.values ?? [],
+      ...(bound ? { description: bound.description } : {}),
       art: saved.art,
       cost,
       effects: effects.values,
@@ -83,18 +70,11 @@ export const BattleCardSchema = z
       ...(saved.transmuted !== undefined ? { transmuted: saved.transmuted } : {}),
       ...(saved.tags !== undefined ? { tags: saved.tags } : {}),
       ...(saved.baseTitle !== undefined ? { baseTitle: saved.baseTitle } : {}),
-      ...(rendered
-        ? rendered.corruptedValuePositions.length
-          ? { corruptedValuePositions: rendered.corruptedValuePositions }
-          : {}
-        : corruptedValuePositions && corruptedValuePositions.length > 0
-          ? { corruptedValuePositions }
-          : {}),
     };
     recordNestedValidationWarnings([
       ...described.errors,
       ...effects.errors,
-      ...(saved.description !== undefined && !description
+      ...(saved.description !== undefined && !bound
         ? [{ path: "description", message: "invalid effect bindings were discarded" }]
         : []),
     ]);

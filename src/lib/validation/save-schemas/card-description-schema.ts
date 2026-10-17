@@ -19,17 +19,6 @@ const referenceSchema = z.object({
 const descriptionSchema = z
   .array(
     z.object({
-      message: z
-        .object({
-          id: z.string(),
-          template: z.string(),
-          slots: z.record(
-            z.string(),
-            z.union([z.object({ magnitudeId: z.string() }), z.object({ keywordId: z.string() })]),
-          ),
-        })
-        .optional()
-        .catch(undefined),
       role: z.enum(["effect", "keyword", "consume"]),
       parts: z.array(
         z.union([
@@ -49,21 +38,14 @@ const descriptionSchema = z
   )
   .min(1);
 
-export function parseSavedCardDescription(
-  raw: unknown,
-  effects: readonly BattleCardEffect[],
-): CardDescription | undefined {
+export function parseSavedCardDescription(raw: unknown, effects: readonly BattleCardEffect[]) {
   const parsed = descriptionSchema.safeParse(raw);
   if (!parsed.success) return undefined;
   // Structural validation cannot correlate the discriminator with a referenced
   // field. The renderer also checks every actual effect kind, field and shared value.
   const description = parsed.data as CardDescription;
   try {
-    const rendered = renderCardDescription(effects, description);
-    return description.map((line, index) => {
-      const { values: _values, ...message } = rendered.localizedLines[index]!;
-      return { ...line, message };
-    });
+    return { description, rendered: renderCardDescription(effects, description) };
   } catch {
     return undefined;
   }
