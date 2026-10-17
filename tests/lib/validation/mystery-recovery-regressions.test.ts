@@ -13,7 +13,6 @@ function restoreMystery(effects: unknown[], fields: Record<string, unknown> = {}
           event: { id: "saved", title: "Saved", art: "", narrative: "", choices: [choice] },
           chosenChoice: choice,
           cardChoices: null,
-          grantedTrinketIds: [],
           grantedGear: [],
           chosenCardId: null,
           ...fields,
@@ -26,14 +25,8 @@ function restoreMystery(effects: unknown[], fields: Record<string, unknown> = {}
 
 describe("Mystery recovery", () => {
   it("repairs invalid signed Health effects before they can reverse the promised action", () => {
-    const visit = restoreMystery([
-      { kind: "healHealth", amount: -100 },
-      { kind: "damageHealth", amount: -100 },
-    ]);
-    expect(visit?.event.choices[0]!.effects).toEqual([
-      { kind: "healHealth", amount: 0 },
-      { kind: "damageHealth", amount: 0 },
-    ]);
+    const visit = restoreMystery([{ kind: "healHealth", amount: -100 }]);
+    expect(visit?.event.choices[0]!.effects).toEqual([{ kind: "healHealth", amount: 0 }]);
   });
 
   it("restores an unclaimed card reward when its saved offers are missing", () => {

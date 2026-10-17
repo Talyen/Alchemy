@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { trinketLibrary } from "@/lib/game-data";
 import { gearBaseItemList } from "@/lib/gear/base-items";
 import { findMysteryEvent, isMysteryLootEligible } from "@/lib/mystery";
-import { repairUnresolvedMysteryTrinkets, resolveMysteryEventTrinkets } from "@/lib/mystery/resolve-trinkets";
+import { resolveMysteryEventTrinkets } from "@/lib/mystery/resolve-trinkets";
 
 const eventWithTwoTrinkets = {
   id: "owned-set-test",
@@ -12,20 +12,10 @@ const eventWithTwoTrinkets = {
   choices: [
     {
       label: "A",
-      effects: [{ kind: "gainTrinket" as const, trinketId: "bone-charm" }, { kind: "gainRandomTrinket" as const }],
-    },
-  ],
-};
-
-const eventWithConstrainedRandomTrinket = {
-  id: "constrained-random-trinket-test",
-  title: "Constrained Random Trinket",
-  art: "test-art",
-  narrative: "Test",
-  choices: [
-    {
-      label: "A",
-      effects: [{ kind: "gainRandomTrinket" as const, fromIds: ["bone-charm", "sin-eaters-lantern"] }],
+      effects: [
+        { kind: "gainTrinket" as const, trinketId: "bone-charm" },
+        { kind: "gainTrinket" as const, trinketId: "sin-eaters-lantern" },
+      ],
     },
   ],
 };
@@ -75,34 +65,6 @@ describe("resolveMysteryEventTrinkets", () => {
     }
   });
 
-  it("reserves a kept preferred trinket so a later random grant cannot reuse it", () => {
-    const resolved = resolveMysteryEventTrinkets(eventWithTwoTrinkets, [], () => 0);
-    const ids = trinketIdsOn(resolved);
-    expect(ids).toHaveLength(2);
-    expect(ids[0]).toBe("bone-charm");
-    expect(ids[1]).not.toBe("bone-charm");
-  });
-
-  it("concretizes a random trinket from its pool when those ids are free", () => {
-    const resolved = resolveMysteryEventTrinkets(eventWithConstrainedRandomTrinket, [], () => 0);
-    const trinket = resolved.choices[0]?.effects.find((effect) => effect.kind === "gainTrinket");
-    expect(trinket?.kind).toBe("gainTrinket");
-    if (trinket?.kind !== "gainTrinket") return;
-    expect(["bone-charm", "sin-eaters-lantern"]).toContain(trinket.trinketId);
-  });
-
-  it("falls back to any unowned trinket when a random pool is already owned", () => {
-    const resolved = resolveMysteryEventTrinkets(
-      eventWithConstrainedRandomTrinket,
-      ["bone-charm", "sin-eaters-lantern"],
-      () => 0,
-    );
-    const trinket = resolved.choices[0]?.effects.find((effect) => effect.kind === "gainTrinket");
-    expect(trinket?.kind).toBe("gainTrinket");
-    if (trinket?.kind !== "gainTrinket") return;
-    expect(["bone-charm", "sin-eaters-lantern"]).not.toContain(trinket.trinketId);
-  });
-
   it("falls back to an astral gear drop instead of a duplicate when every trinket is owned", () => {
     const allOwned = trinketLibrary.map((entry) => entry.id);
     const rng = vi.fn(() => 0);
@@ -122,29 +84,6 @@ describe("resolveMysteryEventTrinkets", () => {
     const second = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, () => 0.9);
     expect(second.choices).toEqual(first.choices);
   });
-});
-
-describe("unresolved Mystery offer repair", () => {
-  it("resolves an unfinished random Boon before presenting the saved offer", () => {
-    const repaired = repairUnresolvedMysteryTrinkets(eventWithConstrainedRandomTrinket, [], () => 0);
-    const trinket = repaired.choices[0]?.effects.find((effect) => effect.kind === "gainTrinket");
-    expect(trinket?.kind).toBe("gainTrinket");
-    if (trinket?.kind !== "gainTrinket") return;
-    expect(["bone-charm", "sin-eaters-lantern"]).toContain(trinket.trinketId);
-  });
-});
-
-it("keeps the last unowned Boon available in mutually exclusive choices", () => {
-  const event = {
-    ...eventWithTwoTrinkets,
-    choices: [
-      { label: "A", effects: [{ kind: "gainRandomTrinket" as const }] },
-      { label: "B", effects: [{ kind: "gainRandomTrinket" as const }] },
-    ],
-  };
-  const owned = trinketLibrary.filter((entry) => entry.id !== "bone-charm").map((entry) => entry.id);
-  const resolved = resolveMysteryEventTrinkets(event, owned, () => 0);
-  expect(trinketIdsOn(resolved)).toEqual(["bone-charm", "bone-charm"]);
 });
 
 it("offers the same named trinket in every choice that names it", () => {
@@ -180,32 +119,4 @@ it("rejects repeated named Boons within a choice before Astral Gear unlocks", ()
     kind: "gainGeneratedGear",
     astral: true,
   });
-});
-
-it("reserves a later named Boon before rolling an earlier random grant", () => {
-  const event = {
-    ...eventWithTwoTrinkets,
-    choices: [
-      {
-        label: "A",
-        effects: [
-          { kind: "gainRandomTrinket" as const, fromIds: ["bone-charm"] },
-          { kind: "gainTrinket" as const, trinketId: "bone-charm" },
-        ],
-      },
-    ],
-  };
-  const owned = trinketLibrary
-    .filter((entry) => entry.id !== "bone-charm" && entry.id !== "sin-eaters-lantern")
-    .map((entry) => entry.id);
-  const early = { depth: 1, highestCompletedDifficulty: null };
-
-  expect(isMysteryLootEligible(event, early, owned)).toBe(true);
-  const rng = vi.fn(() => 0);
-  expect(resolveMysteryEventTrinkets(event, owned, rng).choices[0]?.effects).toEqual([
-    { kind: "gainTrinket", trinketId: "sin-eaters-lantern" },
-    { kind: "gainTrinket", trinketId: "bone-charm" },
-  ]);
-  expect(rng).toHaveBeenCalledOnce();
-  expect(isMysteryLootEligible(event, early, [...owned, "sin-eaters-lantern"])).toBe(false);
 });

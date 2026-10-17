@@ -36,7 +36,10 @@ describe("Labyrinth modifier catalog", () => {
       "divine-aegis",
     ] as const;
     expect(sanitizeEncounterTraitIds(legacy, "combat")).toEqual(legacy);
-    for (const id of [...legacy, "wealthy"] as const) expect(isLabyrinthTraitEligible(id, "combat")).toBe(false);
+    for (const id of legacy) {
+      expect(isLabyrinthTraitEligible(id, "combat")).toBe(false);
+      expect(eligibleEncounterTraitIds("labyrinth", "combat")).not.toContain(id);
+    }
     expect(eligibleEncounterTraitIds("wildwood", "combat")).toContain("septic");
     expect(eligibleEncounterTraitIds("wildwood", "combat")).not.toContain("unbreakable");
   });
@@ -87,7 +90,6 @@ describe("Labyrinth support rules", () => {
             { kind: "gainGold" as const, amount: 10 },
             { kind: "gainXP" as const, keyword: "holy" as const, amount: 8 },
             { kind: "gainMaterial" as const, material: "wood" as const, amount: 3 },
-            { kind: "damageHealth" as const, amount: 2 },
           ],
         },
       ],
@@ -101,14 +103,13 @@ describe("Labyrinth support rules", () => {
       { kind: "gainGold", amount: 20 },
       { kind: "gainXP", keyword: "holy", amount: 16 },
       { kind: "gainMaterial", material: "wood", amount: 6 },
-      { kind: "damageHealth", amount: 2 },
       { kind: "healHealth", amount: 5 },
     ]);
     expect(original).toEqual(before);
     expect(applyLabyrinthMysteryModifiers(original, ["bargain-bin"], 30)).toBe(original);
     expect(applyLabyrinthMysteryModifiers(original, ["restful-discovery"], 1).choices[0]?.effects.at(-1)).toEqual({
       kind: "healHealth",
-      amount: 0,
+      amount: 1,
     });
   });
 

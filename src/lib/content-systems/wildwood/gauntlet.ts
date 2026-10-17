@@ -153,7 +153,7 @@ export function canOfferWildwoodRemoval(deckSize: number): boolean {
 }
 
 export function enterWildwoodRemoval(state: WildwoodDraftState): WildwoodDraftState | null {
-  return state.phase === "reward" ? { ...state, phase: "removal" } : null;
+  return state.phase === "reward" ? { ...state, phase: "removal", currentRewardTraitIds: [] } : null;
 }
 
 export function removeWildwoodCard(

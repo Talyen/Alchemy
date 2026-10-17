@@ -41,7 +41,6 @@ export const ENCOUNTER_REWARD_TRAIT_KEYWORDS: Partial<Record<EncounterRewardTrai
   alchemist: ["consume"],
   scavenger: ["forge"],
   companion: ["companion"],
-  wealthy: ["gold"],
   herbalist: ["nature"],
   wellProvisioned: ["health"],
 };

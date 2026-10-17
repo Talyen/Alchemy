@@ -560,6 +560,15 @@ export function getBattleDamageInspectionCard(
         const forge = current.gearEffects.forgeOnBurnVsUnburnedChances.filter((chance) => chance >= 100).length;
         after = grantPlayerStatus(after, "forge", forge);
       }
+      if (
+        type === "physical" &&
+        after.talentEffects.physicalStripArmorByForge &&
+        current.playerStatuses.forge > 0 &&
+        !forgeTriggers.has("sunder")
+      ) {
+        forgeTriggers.add("sunder");
+        after = reduceEnemyArmor(after, Math.round(current.playerStatuses.forge * 0.5));
+      }
       const explicitLeech = consumed.packet.lifesteal === true;
       const physicalLeech =
         type === "physical" &&

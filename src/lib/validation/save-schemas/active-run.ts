@@ -34,15 +34,10 @@ const MysteryEffectSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("healHealth"),
     amount: z.number().int().nonnegative().catch(0),
-    chance: z.number().optional(),
   }),
-  z.object({ kind: z.literal("damageHealth"), amount: z.number().int().nonnegative().catch(0) }),
   z.object({ kind: z.literal("gainGold"), amount: z.number() }),
-  z.object({ kind: z.literal("loseGold"), amount: z.number() }),
   z.object({ kind: z.literal("gainXP"), keyword: KnownKeywordSchema, amount: z.number().int().nonnegative().catch(0) }),
-  z.object({ kind: z.literal("removeCard") }),
   z.object({ kind: z.literal("gainTrinket"), trinketId: z.string() }),
-  z.object({ kind: z.literal("gainRandomTrinket"), fromIds: z.array(z.string()).optional() }),
   z.object({ kind: z.literal("gainRandomGear") }),
   z.object({ kind: z.literal("gainGeneratedGear"), baseItemId: z.string(), astral: z.literal(true).optional() }),
   z.object({ kind: z.literal("gainMaterial"), material: MaterialIdSchema, amount: z.number() }),
@@ -74,7 +69,6 @@ const MysteryVisitObjectSchema = z.object({
   event: MysteryEventPersistSchema,
   chosenChoice: MysteryChoicePersistSchema.nullable().catch(null),
   cardChoices: savedCardArraySchema("mysteryVisit.cardChoices").nullable().catch(null),
-  grantedTrinketIds: z.array(z.string()).catch([]),
   grantedGear: GearInstanceArraySchema.catch([]),
   chosenCardId: z.string().nullable().catch(null),
 });

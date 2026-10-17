@@ -31,7 +31,7 @@ import {
 } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { computeCombatMaterialReward } from "@/lib/homestead/material-rewards";
-import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
+import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { LootProgress } from "@/lib/loot";
 import type { Destination } from "@/lib/routing";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
@@ -44,7 +44,6 @@ import {
   computeVictoryGold,
   getActiveRewardModifiersForContentSystem,
   getGenerousGoldBonus,
-  getWealthyGoldBonus,
   getWellProvisionedHealing,
 } from "./reward-math";
 
@@ -74,9 +73,7 @@ export interface VictoryRewardsInput {
 export interface VictoryRewardsResult {
   rewardState: RewardState;
   labyrinthRewardModifiers: EncounterRewardTraitId[];
-
   goldEarned: number;
-
   persistedGold: number;
   playerHealth: number;
   destinationOfferState: DestinationOfferState;
@@ -87,7 +84,6 @@ interface VictoryGoldRoll {
   eliteBonus: number;
   bossBonus: number;
   generousBonus: number;
-  wealthyBonus: number;
 }
 
 function victoryGoldPerCombat(talentEffects: TalentEffectManifest, battleState: BattleSnapshot): number {
@@ -112,62 +108,8 @@ function rollVictoryGold(
   const bossBonus =
     battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS ? Math.round(gold * BOSS_GOLD_BONUS_FRACTION) : 0;
   const generousBonus = getGenerousGoldBonus(labyrinthRewardModifiers, gold);
-  const wealthyBonus = getWealthyGoldBonus(labyrinthRewardModifiers);
 
-  return { gold, eliteBonus, bossBonus, generousBonus, wealthyBonus };
-}
-
-export function computeVictoryRewardState(
-  input: Pick<
-    VictoryRewardsInput,
-    | "lootProgress"
-    | "runDeck"
-    | "runBoons"
-    | "equippedTrinketId"
-    | "ownedTrinketIds"
-    | "ownedUniqueIds"
-    | "createInstanceId"
-    | "battleState"
-    | "rollBossEnemyId"
-  > & {
-    goldPayout: number;
-    materials: MaterialInventory;
-    destinations: Destination[];
-    gearAstralChanceBonus?: number;
-    labyrinthRewardModifiers?: readonly EncounterRewardTraitId[];
-  },
-  rng: () => number,
-): RewardState {
-  const gearAstralChanceBonus = input.gearAstralChanceBonus ?? 0;
-  const activeTrinketEffectIds = combineTrinketEffectIds(input.runBoons, input.equippedTrinketId ?? null);
-  // Offer construction consumes the settled payout; it must not re-sum bonuses.
-  const sharedFlowInput = {
-    lootProgress: input.lootProgress,
-    goldPayout: input.goldPayout,
-    materials: input.materials,
-    rng,
-    createInstanceId: input.createInstanceId,
-    excludedBoonIds: activeTrinketEffectIds,
-    ownedTrinketIds: input.ownedTrinketIds ?? [],
-    ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
-    gearAstralChanceBonus,
-    rewardModifiers: input.labyrinthRewardModifiers ?? [],
-  };
-
-  if (input.battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS) {
-    return createBossRewardStateFromFlow(sharedFlowInput);
-  }
-
-  return withSelectedBossForDestinations(
-    input.destinations,
-    createCombatRewardStateFromFlow({
-      ...sharedFlowInput,
-      battleState: input.battleState,
-      runDeck: input.runDeck,
-      destinations: input.destinations,
-    }),
-    input.rollBossEnemyId,
-  );
+  return { gold, eliteBonus, bossBonus, generousBonus };
 }
 
 function computeVictorySettlement(
@@ -215,8 +157,12 @@ function prepareVictoryDestinations(
   persistedGold: number,
   destinationRng: () => number,
 ) {
-  if (input.contentSystemType === CONTENT_SYSTEMS.LABYRINTH)
+  if (
+    input.contentSystemType !== CONTENT_SYSTEMS.CAMPAIGN ||
+    input.battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS
+  ) {
     return { choices: [] as Destination[], offerState: input.destinationOfferState };
+  }
   const eligibleDestinations = resolveAvailableDestinations({
     ...input.destinationEligibility,
     runPlayerHealth: playerHealth,
@@ -245,64 +191,47 @@ export function computeVictoryRewards(
     labyrinthRewardModifiers,
     rng,
   );
-  const commonResult = {
-    labyrinthRewardModifiers,
-    goldEarned: settlement.goldResult.earnedBeforeMultiplier,
-    persistedGold: settlement.goldResult.persistedGold,
-    playerHealth: settlement.playerHealth,
-  };
   const goldPayout = settlement.goldResult.persistedGold - input.purseGold;
-  if (input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
-    return {
-      ...commonResult,
-      rewardState: {
-        ...createWildwoodRewardState({
-          runDeck: input.runDeck,
-          createInstanceId: input.createInstanceId,
-          rng,
-          lootProgress: input.lootProgress,
-          gearAstralChanceBonus: input.homesteadEffects.gearAstralChanceBonus,
-          excludedBoonIds: activeTrinketEffectIds,
-          ownedTrinketIds: input.ownedTrinketIds ?? [],
-          ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
-        }),
-        gold: goldPayout,
-        materials: settlement.materials,
-      },
-      destinationOfferState: input.destinationOfferState,
-    };
-  }
-
   const sampled = prepareVictoryDestinations(
     input,
     settlement.playerHealth,
     settlement.goldResult.persistedGold,
     destinationRng,
   );
-  const destinations = sampled.choices;
-
-  const rewardState = computeVictoryRewardState(
-    {
-      lootProgress: input.lootProgress,
-      createInstanceId: input.createInstanceId,
-      runDeck: input.runDeck,
-      runBoons: input.runBoons,
-      equippedTrinketId: input.equippedTrinketId ?? null,
-      ownedTrinketIds: input.ownedTrinketIds ?? [],
-      ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
-      battleState: input.battleState,
-      goldPayout,
-      materials: settlement.materials,
-      destinations,
-      rollBossEnemyId: input.rollBossEnemyId,
-      gearAstralChanceBonus: input.homesteadEffects.gearAstralChanceBonus,
-      labyrinthRewardModifiers,
-    },
+  const sharedFlowInput = {
+    lootProgress: input.lootProgress,
+    goldPayout,
+    materials: settlement.materials,
     rng,
-  );
+    createInstanceId: input.createInstanceId,
+    excludedBoonIds: activeTrinketEffectIds,
+    ownedTrinketIds: input.ownedTrinketIds ?? [],
+    ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
+    gearAstralChanceBonus: input.homesteadEffects.gearAstralChanceBonus,
+    rewardModifiers: labyrinthRewardModifiers,
+  };
+
+  const rewardState =
+    input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD
+      ? createWildwoodRewardState({ ...sharedFlowInput, runDeck: input.runDeck })
+      : input.battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS
+        ? createBossRewardStateFromFlow(sharedFlowInput)
+        : withSelectedBossForDestinations(
+            sampled.choices,
+            createCombatRewardStateFromFlow({
+              ...sharedFlowInput,
+              battleState: input.battleState,
+              runDeck: input.runDeck,
+              destinations: sampled.choices,
+            }),
+            input.rollBossEnemyId,
+          );
 
   return {
-    ...commonResult,
+    labyrinthRewardModifiers,
+    goldEarned: settlement.goldResult.earnedBeforeMultiplier,
+    persistedGold: settlement.goldResult.persistedGold,
+    playerHealth: settlement.playerHealth,
     rewardState,
     destinationOfferState: sampled.offerState,
   };

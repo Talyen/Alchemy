@@ -10,12 +10,11 @@ describe("victory reward settlement", () => {
       gold: 10,
       eliteBonus: 3,
       generousBonus: 4,
-      wealthyBonus: 12,
       bossBonus: 5,
       talentGoldPerCombat: 2,
       goldMultiplier: 1.5,
     });
-    expect(computeVictoryGold(input)).toEqual({ earnedBeforeMultiplier: 53, persistedGold: 130 });
+    expect(computeVictoryGold(input)).toEqual({ earnedBeforeMultiplier: 41, persistedGold: 112 });
     expect(input.battleState.gold).toBe(65);
     expect(input.purseGold).toBe(50);
   });
@@ -28,7 +27,6 @@ describe("victory reward settlement", () => {
       gold: 10,
       eliteBonus: 0,
       generousBonus: 0,
-      wealthyBonus: 0,
       bossBonus: 0,
       talentGoldPerCombat: 2,
       goldMultiplier: 1.5,
@@ -48,7 +46,6 @@ describe("victory reward settlement", () => {
         gold: 3,
         eliteBonus: 0,
         generousBonus: 0,
-        wealthyBonus: 0,
         bossBonus: 0,
         talentGoldPerCombat: 0,
         goldMultiplier: 2,

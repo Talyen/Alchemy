@@ -16,7 +16,7 @@ function setup(linked: boolean) {
     shaderSource: vi.fn(),
     compileShader: vi.fn(),
     getShaderParameter: vi.fn(),
-    createProgram: vi.fn(() => program),
+    createProgram: vi.fn<() => object | null>(() => program),
     attachShader: vi.fn((_program: unknown, shader: unknown) => attached.add(shader)),
     linkProgram: vi.fn(() => events.push("link")),
     detachShader: vi.fn((_program: unknown, shader: unknown) => {
@@ -66,4 +66,12 @@ describe("createWebGLProgram", () => {
     expect(deleted).toEqual(new Set(stage === "compile" ? [vertex] : [vertex, fragment]));
     if (stage === "link") expect(gl.deleteProgram).toHaveBeenCalledWith(program);
   });
+});
+
+it.each(["shader", "program"])("releases shaders after %s allocation failure", (failure) => {
+  const { gl, vertex, fragment, deleted } = setup(true);
+  if (failure === "shader") gl.createShader.mockReset().mockReturnValueOnce(vertex).mockReturnValueOnce(null);
+  else gl.createProgram.mockReturnValue(null);
+  expect(createWebGLProgram(gl as unknown as WebGLRenderingContext, "vertex", "fragment")).toBeNull();
+  expect(deleted).toEqual(new Set(failure === "shader" ? [vertex] : [vertex, fragment]));
 });

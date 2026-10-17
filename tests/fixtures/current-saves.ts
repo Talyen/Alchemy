@@ -77,7 +77,6 @@ export function currentSchemaMysterySave() {
         },
         chosenChoice: null,
         cardChoices: null,
-        grantedTrinketIds: [],
         grantedGear: [],
         chosenCardId: null,
       }),

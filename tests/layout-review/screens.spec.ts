@@ -353,7 +353,6 @@ test("additional pickers tooltips and end states", async () => {
       },
       chosenChoice: choice,
       cardChoices: [makeCard(), makeCard({ id: "meteor" }), makeCard({ id: "blessed-aegis" })],
-      grantedTrinketIds: [],
       grantedGear: [],
       chosenCardId: null,
     }),

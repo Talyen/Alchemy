@@ -97,7 +97,6 @@ export const RUN_SCREEN_SELECTORS = {
     return {
       mysteryEvent: visit.mysteryEvent,
       mysteryCardChoices: visit.mysteryCardChoices,
-      mysteryGrantedTrinketIds: visit.mysteryGrantedTrinketIds,
       mysteryGrantedGearInstances: visit.mysteryGrantedGearInstances,
       mysteryChosenCardId: visit.mysteryChosenCardId,
       mysteryChosenChoice: visit.mysteryChosenChoice,

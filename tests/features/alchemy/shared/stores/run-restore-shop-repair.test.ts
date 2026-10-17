@@ -296,17 +296,18 @@ describe("run restore shop offering repair", () => {
     expect(readActiveRunScreen(defaultGameSession)).toBe("trinket-shop");
   });
 
-  it("leaves an exhausted restored Trinket Shop as a sold-out shelf", () => {
+  it("leaves an exhausted restored Trinket Shop as a sold-out shelf with zero refreshes", () => {
     mutateGearForTest((gear) => {
-      gear.addTrinket(ownedTrinket.id);
-      gear.addTrinket(otherTrinket.id);
+      for (const trinket of trinketLibrary) {
+        gear.addTrinket(trinket.id);
+      }
     });
 
     restoreRun(
       makeActiveRunData({
         activity: savedActivityFixture("trinket-shop", {
           trinketIds: [ownedTrinket.id, otherTrinket.id],
-          refreshesLeft: 0,
+          refreshesLeft: 1,
           freeRefreshUsed: false,
           firstPurchaseUsed: true,
           purchasedSlotKeys: [shopItemSlotKey(ownedTrinket.id, 0)],

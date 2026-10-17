@@ -32,7 +32,6 @@ describe("parseActiveRun", () => {
           event: findMysteryEvent("ancient-altar")!,
           chosenChoice: null,
           cardChoices: [damaged],
-          grantedTrinketIds: [],
           grantedGear: [],
           chosenCardId: null,
         }),

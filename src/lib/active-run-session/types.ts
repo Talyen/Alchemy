@@ -35,7 +35,6 @@ export interface PersistedMysteryVisit {
   event: MysteryEvent;
   chosenChoice: MysteryChoice | null;
   cardChoices: BattleCard[] | null;
-  grantedTrinketIds: string[];
   grantedGear: GearInstance[];
   chosenCardId: string | null;
 }
