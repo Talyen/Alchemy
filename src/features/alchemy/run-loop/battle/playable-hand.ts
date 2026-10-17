@@ -2,11 +2,10 @@ import {
   canPlayCard,
   getEffectiveDamageScore,
   getImmediateDefense,
-  pickHighestScoring,
   type BattleSnapshot,
   type CardPlayOptions,
 } from "@/lib/battle";
-import { getCardKeywords, type BattleCard } from "@/lib/game-data";
+import { getCardKeywords, visitBattleCardEffects, type BattleCard } from "@/lib/game-data";
 import type { BattleCardEffect } from "@/lib/game-data";
 import { CAMPFIRE_HEAL_FRACTION, HALF_DIVISOR } from "@/lib/game-constants";
 
@@ -15,21 +14,6 @@ export { PLAYABLE_HAND_OPTIONS };
 
 export function handHasPlayableCard(state: BattleSnapshot, options: CardPlayOptions = PLAYABLE_HAND_OPTIONS): boolean {
   return state.hand.some((card, index) => card && canPlayCard(state, card, index, options));
-}
-
-function getPlayableHandCards(
-  state: BattleSnapshot,
-  options: CardPlayOptions = PLAYABLE_HAND_OPTIONS,
-): Array<{ card: BattleCard; index: number }> {
-  const playable: Array<{ card: BattleCard; index: number }> = [];
-  for (let index = 0; index < state.hand.length; index++) {
-    const card = state.hand[index];
-    if (!card) continue;
-    if (canPlayCard(state, card, index, options)) {
-      playable.push({ card, index });
-    }
-  }
-  return playable;
 }
 
 interface SelfCostOutcome {
@@ -72,6 +56,8 @@ function selfCostOutcomes(
 function hasPotentialLethalSelfCost(card: BattleCard, state: BattleSnapshot): boolean {
   // Feather revival ends Death's Door protection before any remaining costs.
   if (!state.deathsDoorUsed || (state.deathsDoorActive && state.playerStatuses.phoenixFeather <= 0)) return false;
+  if (!visitBattleCardEffects(card.effects, (effect) => effect.kind === "lose-health" || effect.kind === "self-damage"))
+    return false;
   const revivedHealth = Math.round(state.playerMaxHealth * CAMPFIRE_HEAL_FRACTION);
   const first = selfCostOutcomes(
     card.effects,
@@ -105,26 +91,43 @@ export function findBestPlayableHandCard(
   state: BattleSnapshot,
   options: CardPlayOptions = PLAYABLE_HAND_OPTIONS,
 ): { card: BattleCard; index: number } | null {
-  // Leave potentially lethal card costs to manual play, including costs after
-  // an attack and self-damage that defenses might mitigate.
-  const playable = getPlayableHandCards(state, options).filter(({ card }) => !hasPotentialLethalSelfCost(card, state));
-  const defensive =
-    state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR
-      ? playable.filter(({ card }) => getImmediateDefense(card, state) > 0)
-      : [];
-  return pickHighestScoring(defensive.length ? defensive : playable, (card) => getEffectiveDamageScore(card, state));
+  let best: { card: BattleCard; index: number } | null = null;
+  let bestScore = -Infinity;
+  let hasDefense = false;
+  const seekDefense = state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR;
+  for (let index = 0; index < state.hand.length; index++) {
+    const card = state.hand[index];
+    if (!card) continue;
+    if (!canPlayCard(state, card, index, options) || hasPotentialLethalSelfCost(card, state)) continue;
+    const defensive = seekDefense && getImmediateDefense(card, state) > 0;
+    if (hasDefense && !defensive) continue;
+    const score = getEffectiveDamageScore(card, state);
+    if (!best || (defensive && !hasDefense) || score > bestScore) {
+      best = { card, index };
+      bestScore = score;
+      hasDefense = defensive;
+    }
+  }
+  return best;
 }
 
-/** Greedy Wish pick: highest effective-damage score wins, ties go to the earliest option. */
+/** Prefer safe Wish choices, retaining offer order on equal scores. */
 export function findBestWishChoice(state: BattleSnapshot): BattleCard | null {
-  const options = state.wishOptions;
-  if (!options || options.length === 0) return null;
-  const pairs = options.flatMap((card, index) => (card ? [{ card, index }] : []));
-  const safePairs = pairs.filter(({ card }) => !hasPotentialLethalSelfCost(card, state));
-  return (
-    pickHighestScoring(safePairs.length ? safePairs : pairs, (card) => getEffectiveDamageScore(card, state))?.card ??
-    null
-  );
+  let best: BattleCard | null = null;
+  let bestScore = -Infinity;
+  let hasSafeChoice = false;
+  for (const card of state.wishOptions ?? []) {
+    if (!card) continue;
+    const safe = !hasPotentialLethalSelfCost(card, state);
+    if (hasSafeChoice && !safe) continue;
+    const score = getEffectiveDamageScore(card, state);
+    if (!best || (safe && !hasSafeChoice) || score > bestScore) {
+      best = card;
+      bestScore = score;
+      hasSafeChoice = safe;
+    }
+  }
+  return best;
 }
 
 export function getHandCardKey(card: BattleCard, index?: number): string {
@@ -167,5 +170,11 @@ export function handHasHiddenCard(
 }
 
 export function getPlayableHandCardKeys(battleState: BattleSnapshot): Set<string> {
-  return new Set(getPlayableHandCards(battleState).map(({ card, index }) => getHandCardKey(card, index)));
+  const keys = new Set<string>();
+  for (let index = 0; index < battleState.hand.length; index++) {
+    const card = battleState.hand[index];
+    if (!card) continue;
+    if (canPlayCard(battleState, card, index, PLAYABLE_HAND_OPTIONS)) keys.add(getHandCardKey(card, index));
+  }
+  return keys;
 }
