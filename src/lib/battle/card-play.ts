@@ -12,7 +12,7 @@ import { finishUniqueCardDamage, prepareUniqueCardPlay } from "./unique-card-eff
 import { computeCardPayment } from "./card-cost-rules";
 import { countRemovableHarmfulStatuses } from "./status-player";
 import { isCcControlled } from "./status-cc";
-import { applyResonantChimeTrinket, resolvePaidCardEffects, shouldElementalTalentRepeat } from "./card-play-effects";
+import { applyResonantChimeTrinket, resolveCardEffectChain, shouldElementalTalentRepeat } from "./card-play-effects";
 import { cardHasKeyword } from "./card-classification";
 import { gainManaWithCombatText } from "./player-rewards";
 import { handlePostPlayCardDestination } from "./card-consume";
@@ -145,7 +145,7 @@ export function playBattleCardResolved(
   const costState = freeMana ? state : consumeCardDiscounts(state, payment);
 
   const existingPlayTwice = readCombatFlag(costState, "playNextCardTwice");
-  const playTwice = existingPlayTwice || shouldElementalTalentRepeat(costState, card, existingPlayTwice);
+  const playTwice = existingPlayTwice || shouldElementalTalentRepeat(costState, card);
   const prepared = prepareUniqueCardPlay(costState, card, effectiveCost);
   const paymentState = {
     ...prepared.state,
@@ -161,13 +161,13 @@ export function playBattleCardResolved(
     cardsPlayedThisTurn: paymentState.cardsPlayedThisTurn + 1,
     mana: Math.max(0, paymentState.mana - effectiveCost),
   };
-  const played = resolvePaidCardEffects(deliverPendingHandCards(stripped), card, combatTexts, {
+  const played = resolveCardEffectChain(deliverPendingHandCards(stripped), card, combatTexts, {
     eligibility: state,
+    playedCard: true,
     playTwice,
     guaranteedCrit: prepared.critical,
     damageEffects: prepared.damageEffects,
     manaAtStart: paymentState.mana,
-    hadNoThornsOnPlay: state.playerStatuses.thorns === 0,
   });
   let nextState = finishUniqueCardDamage(played.state, card, prepared, combatTexts);
   nextState = processEncounterTraitCardAction(nextState, card, combatTexts, played.attackAttempted);
