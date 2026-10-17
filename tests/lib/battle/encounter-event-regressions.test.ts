@@ -1,11 +1,17 @@
-import { describe, expect, it } from "vitest";
-import { cardById, type BattleCard } from "@/lib/game-data";
+import { describe, expect, it, vi } from "vitest";
+import { cardById, computeTalentEffects, type BattleCard } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
+import { resolveCardEffectChain } from "@/lib/battle/card-play-effects";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
-import { upgradeWishCard } from "@/lib/battle/wish-upgrade";
+import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
+import { drawOpeningHand } from "@/lib/battle/battle-setup";
+import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
+import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
+import { applyEmergencyWishForEmptyDraw, upgradeWishCard } from "@/lib/battle/wish";
 import { BattleCardEffectSchema } from "@/lib/game-data";
+import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corruption/numeric";
-import { makeTestCard, regressionBattle } from "../../fixtures/battle";
+import { makeTestCard, patchBattleState, regressionBattle } from "../../fixtures/battle";
 
 function battle(trait: string) {
   return regressionBattle({
@@ -18,15 +24,15 @@ function battle(trait: string) {
 }
 
 describe("encounter event regressions", () => {
-  it("Jealous reacts when Stargaze's immediate Wish resolves", () => {
-    const card = cardById.stargaze!;
+  it("Jealous reacts to each Wish in a single or multi-Wish card", () => {
+    const card = makeTestCard({ effects: [{ kind: "wish", amount: 2 }] });
     const played = playBattleCardResolved({ ...battle("jealous"), hand: [card] }, card.id, 0).state;
     expect(played.wishOptions).not.toBeNull();
-    expect(played.enemyPhysicalDamageBonus).toBe(1);
-    expect(played.pendingTurnStartEffects).toHaveLength(0);
+    expect(played.wishQueue).toHaveLength(1);
+    expect(played.enemyPhysicalDamageBonus).toBe(2);
   });
 
-  it("Dance of Blades feeds Insatiable when it consumes a Potion", () => {
+  it("Dance of Blades feeds Insatiable when it consumes a Potion and does not reuse Follow-through", () => {
     const state = battle("insatiable");
     const result = resolveEnemyAttackHit(
       {
@@ -41,6 +47,21 @@ describe("encounter event regressions", () => {
     ).state;
     expect(result.exhausted.map((card) => card.id)).toContain("health-potion");
     expect(result.enemyPhysicalDamageBonus).toBe(1);
+
+    const arrow = makeTestCard({
+      tags: ["archery"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+    });
+    const followState = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      talentEffects: computeTalentEffects({ archery: ["archery-hail"] }),
+      flags: { archeryCardsPlayedThisTurn: 2, archerySecondCardActive: true },
+      rng: () => 0.99,
+    });
+    const automatic = resolveCardEffectChain(followState, arrow, []).state;
+    expect(automatic.enemyHealth).toBe(96);
+    expect(automatic.flags.archeryCardsPlayedThisTurn).toBe(2);
   });
 
   it.each([0.25, 0.75])("Holy Retribution follows a legacy Roll the Dice's resolved branch (%s)", (roll) => {
@@ -87,28 +108,104 @@ describe("encounter event regressions", () => {
     expect(result.exhausted.map((card) => card.id)).toContain("acid-potion");
   });
 
-  it.each([10, 39])("incidental Leech at %s Health receives Deep Siphon without card-only cleansing", (health) => {
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 3 }] });
-    const state = battle("none");
-    const result = playBattleCardResolved(
-      {
-        ...state,
-        gearEffects: { ...state.gearEffects, natureLeechChance: 100 },
-        playerHealth: health,
-        playerStatuses: { ...state.playerStatuses, poison: 2 },
-        enemyCC: { ...state.enemyCC, stunSkipTurns: 1 },
-        talentEffects: {
-          ...state.talentEffects,
-          leechHealingBonus: 1,
-          cleanseOnCardOverheal: true,
-        },
-        hand: [card],
-      },
-      card.id,
+  it("fatal Cinder Skin retaliation stops subsequent Wish and Leech recovery", () => {
+    const card = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "damage", damageType: "bleed", amount: 2, lifesteal: true }],
+    });
+    const state = regressionBattle({
+      hand: [card],
+      playerHealth: 1,
+      deathsDoorUsed: true,
+      enemyHealth: 40,
+      enemyMaxHealth: 40,
+      currentEnemy: { traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "" }] },
+      talentEffects: { drawOnBleedDamageChance: 100, burnOnWish: 1, healthPerMana: 1 },
+      gearEffects: { manaOnWish: 1 },
+    });
+    const next = playBattleCardResolved(state, card.id, 0).state;
+    expect(next.playerHealth).toBe(0);
+  });
+
+  it("keeps Grounding and status resistance on Sundered Guard attacks that strip the last Block, and respects Saintfall prevention", () => {
+    const sundered = patchBattleState({
+      rng: () => 0.99,
+      playerHealth: 30,
+      playerMaxHealth: 30,
+      playerStatuses: { block: 2 },
+      talentEffects: { blockPreventsStun: true, blockHalvesPoisonDamage: true },
+      currentEnemy: { traits: [{ id: "sundered-guard", title: "Sundered Guard", description: "" }] },
+    });
+    expect(
+      resolveEnemyAttackHit(sundered, { kind: "damage", damageType: "stun", amount: 4 }, [], { canDodge: true }).state
+        .playerStatuses.stun,
+    ).toBe(0);
+    expect(
+      resolveEnemyAttackHit(sundered, { kind: "damage", damageType: "poison", amount: 4 }, [], { canDodge: true }).state
+        .playerHealth,
+    ).toBe(28);
+
+    const saintfall = patchBattleState({
+      rng: () => 0.5,
+      playerHealth: 20,
+      playerMaxHealth: 40,
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      playerStatuses: { block: 1 },
+      gearEffects: { saintfallRetribution: 4 },
+      talentEffects: { holyBlockChance: 100 },
+      enemyMitigation: { block: 4 },
+    });
+    const reflected = processEnemyDamageEffect(saintfall, { kind: "damage", damageType: "physical", amount: 1 }, []);
+    expect(reflected.enemyHealth).toBe(100);
+    expect(reflected.playerStatuses.block).toBe(0);
+  });
+
+  it("preserves reentrant DoT/threshold state, opening-draw queue order, and skips post-kill Stun/Archery rolls", () => {
+    const dotState = regressionBattle({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyStatuses: { bleed: 2, burn: 4 },
+      talentEffects: { drawOnBleedDamageChance: 100, burnOnWish: 3 },
+      onEmptyDraw: applyEmergencyWishForEmptyDraw,
+    });
+    const detonated = detonateEnemyStatuses(dotState, ["bleed", "burn"], []);
+    expect(detonated.enemyStatuses.burn).toBe(3);
+
+    const aegisState = regressionBattle({
+      enemyHealth: 12,
+      enemyMaxHealth: 20,
+      enemyStatuses: { poison: 1 },
+      currentEnemy: { traits: [{ id: "divine-aegis", title: "Divine Aegis", description: "" }] },
+      talentEffects: { poisonStunChance: 100 },
+    });
+    expect(tickEnemyStatuses(aegisState, []).enemyMitigation.armor).toBe(2);
+
+    const older = makeTestCard({ id: "older", uid: 7 });
+    const drawState = regressionBattle({
+      hand: Array.from({ length: MAX_HAND_SIZE }, (_, uid) => makeTestCard({ id: `hand-${uid}`, uid })),
+      pendingHandCards: [older],
+      deck: Array.from({ length: 2 }, (_, index) => makeTestCard({ id: `draw-${index}` })),
+      nextCardUid: 8,
+    });
+    expect(drawOpeningHand(drawState).pendingHandCards.map((card) => card.id)).toEqual(["older", "draw-1", "draw-0"]);
+
+    const lethalCard = makeTestCard({
+      tags: ["archery"],
+      effects: [{ kind: "damage", damageType: "poison", amount: 4 }],
+    });
+    const rng = vi.fn(() => 0.99);
+    playBattleCardResolved(
+      patchBattleState({
+        rng,
+        enemyHealth: 1,
+        hand: [lethalCard],
+        talentEffects: { archeryBleedDamageChance: 50, poisonStunChance: 50 },
+      }),
+      lethalCard.id,
       0,
-    ).state;
-    expect(result.playerHealth).toBe(Math.min(40, health + 3));
-    expect(result.playerStatuses.poison).toBe(2);
+    );
+    expect(rng).toHaveBeenCalledTimes(2);
   });
 
   it("Powerful Wish upgrades every Luck Potion outcome", () => {

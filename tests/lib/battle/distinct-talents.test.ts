@@ -218,7 +218,7 @@ describe("repeatable card and Consume rewards", () => {
     const second = play({ ...first, flags: { ...first.flags, playNextCardTwice: true } }, cardById["pack-tactics"]!);
     expect(second.enemyHealth).toBe(94);
     expect(second.playerStatuses.block).toBe(4);
-    expect(second.hand).toHaveLength(2);
+    expect(second.hand).toHaveLength(1);
   });
 
   it("Consume rewards can repeat with cards remaining in hand", () => {

@@ -1,5 +1,4 @@
 import { getBattleOutcome } from "./battle-outcome";
-import { upgradeWishCard } from "./wish-upgrade";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { rollBattleChance } from "./chance-roll";
 import type { ReactionBoundary } from "./battle-sequence";
@@ -9,6 +8,8 @@ import { hasEncounterBenefit } from "./encounter-trait-state";
 import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
+import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corruption";
+import { getCorruptionTargetEffect } from "@/lib/corruption/numeric";
 import { addCardToHandOrQueue, applyDrawResult, drawFromState } from "./draw";
 import type { BattleState, CombatTextEvent } from "./types";
 import {
@@ -26,9 +27,20 @@ import {
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { getBattleRng, pickRandom } from "@/lib/rng";
 import { WISH_CHOICE_COUNT } from "../game-constants";
-import { dealEnemyScaledDamage } from "./scaled-damage";
-import { gearFrozenDamageMultiplier } from "./scaled-damage";
+import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./scaled-damage";
 import { appendUniqueMany } from "@/lib/utils";
+
+export function upgradeWishCard(card: BattleCard): BattleCard {
+  const targets = getEditableCorruptionTargets(card).sort(
+    (a, b) => b.lineIndex - a.lineIndex || b.matchIndex - a.matchIndex,
+  );
+  return targets.reduce((next, target) => {
+    const effect = getCorruptionTargetEffect(next, target);
+    // An upgrade must not raise a cost, including a shared Deal/Receive amount.
+    if (!effect || target.affectsCost) return next;
+    return updateCardNumericValue(next, target, target.value + 1);
+  }, card);
+}
 
 export function buildWishOptions(
   state: BattleState,

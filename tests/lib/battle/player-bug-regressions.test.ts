@@ -44,7 +44,7 @@ describe("player combat regressions", () => {
       const card = { ...cardById[id]!, uid: 1 };
       const state = patchBattleState({
         hand: [card],
-        deck: [makeTestCard({ id: "draw-a" }), makeTestCard({ id: "draw-b" })],
+        deck: [makeTestCard({ id: "slash", uid: 10 }), makeTestCard({ id: "block", uid: 11 })],
         enemyHealth: 100,
         enemyMaxHealth: 100,
         mana: 5,

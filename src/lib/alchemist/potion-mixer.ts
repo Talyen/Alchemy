@@ -21,13 +21,18 @@ import {
 } from "../game-data";
 
 function doublePotionEffect(effect: BattleCardEffect): BattleCardEffect {
-  // Doubling changes rewards, never ingredient costs or status durations.
+  // Doubling changes rewards, never ingredient costs, status durations, or derived/conversion base amounts.
   if (
     effect.kind === "lose-health" ||
     effect.kind === "self-damage" ||
     effect.kind === "lose-mana" ||
     effect.kind === "lose-max-mana" ||
-    (effect.kind === "player-status" && (effect.status === "haste" || effect.status === "phoenixFeather"))
+    (effect.kind === "damage" && (effect.equalToBlock === true || effect.equalToArmor === true)) ||
+    (effect.kind === "player-status" &&
+      (effect.status === "haste" ||
+        effect.status === "phoenixFeather" ||
+        effect.convertCurrentMana !== undefined ||
+        effect.perManaCrystal !== undefined))
   )
     return effect;
   if (effect.kind === "random-draw" || effect.kind === "random-damage") {

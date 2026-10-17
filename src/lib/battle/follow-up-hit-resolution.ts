@@ -23,7 +23,7 @@ import {
   applyThunderstoneLeech,
 } from "./damage-rider-leech";
 import { resolveTypedEnemyHit } from "./typed-hit-resolution";
-import { resolveStunFollowUpHit } from "./stun-follow-up-hit";
+import { resolveStunFollowUpHit } from "./status-stun-core";
 import { type BattleState, type CombatTextEvent } from "./types";
 import type { FollowUpHitRequest } from "./player-hit-core";
 

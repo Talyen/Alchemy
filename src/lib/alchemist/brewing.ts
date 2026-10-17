@@ -74,18 +74,8 @@ function strengthenEffect(effect: BattleCardEffect): BattleCardEffect {
 export function strengthenPotion(card: BattleCard): BattleCard | null {
   if (!isBrewablePotion(card)) return null;
   const effects = card.effects.map(strengthenEffect);
-  if (
-    effects.some((effect) => effect.kind === "remove-harmful-status" && effect.removeAll) &&
-    !effects.some((effect) => effect.kind === "heal")
-  ) {
-    effects.push({ kind: "heal", amount: POTION_DISTILL_BONUS });
-  }
   if (effects.some((effect) => !BattleCardEffectSchema.safeParse(effect).success)) return null;
-  if (
-    effects.length === card.effects.length &&
-    effects.every((effect, index) => areBattleCardEffectsEqual(effect, card.effects[index]!))
-  )
-    return null;
+  if (effects.every((effect, index) => areBattleCardEffectsEqual(effect, card.effects[index]!))) return null;
   const description = carryCardDescriptionMarks(getCardDescription(card), createEffectDescription(effects)).map(
     (line) => ({
       ...line,
@@ -96,10 +86,7 @@ export function strengthenPotion(card: BattleCard): BattleCard | null {
           const after = getCardEffect(effects, reference);
           const beforeValue = (before as Record<string, unknown> | undefined)?.[reference.field];
           const afterValue = (after as Record<string, unknown> | undefined)?.[reference.field];
-          return (
-            typeof afterValue === "number" &&
-            (beforeValue === undefined || (typeof beforeValue === "number" && afterValue > beforeValue))
-          );
+          return typeof beforeValue === "number" && typeof afterValue === "number" && afterValue > beforeValue;
         });
         return increased ? { ...part, distilled: true } : part;
       }),

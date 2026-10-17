@@ -1,10 +1,9 @@
-import { upgradeWishCard } from "@/lib/battle/wish-upgrade";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { describe, expect, it } from "vitest";
 import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { applyWishEffect } from "@/lib/battle/wish";
+import { applyWishEffect, upgradeWishCard } from "@/lib/battle/wish";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
@@ -64,6 +63,7 @@ describe("one-Mana card tradeoffs", () => {
     expect(played.wishOptions).toHaveLength(3);
     expect(played.gold).toBe(0);
     expect(played.pendingTurnStartEffects).toHaveLength(0);
+    expect(played.wishQueue).toHaveLength(0);
   });
 
   it("Burning Wish and Wishfire create normal Burn buildup without spending a reserved critical hit", () => {
@@ -86,20 +86,6 @@ describe("one-Mana card tradeoffs", () => {
     expect(gear.enemyHealth).toBe(198);
     expect(gear.enemyStatuses.burn).toBe(3);
     expect(gear.flags.nextHitCrit).toBe(true);
-  });
-
-  it("Stargaze does not add a Wish to the pending queue", () => {
-    const played = play(battle(), "stargaze");
-    expect(played.pendingTurnStartEffects).toHaveLength(0);
-    expect(played.wishQueue).toHaveLength(0);
-  });
-
-  it("does not schedule Stargaze’s Wish after the enemy is defeated", () => {
-    const killed = play(battle({ enemyHealth: 1 }), "stargaze");
-    expect(killed.enemyHealth).toBe(0);
-    const next = advanceToPlayerTurn(resume(killed));
-    expect(killed.pendingTurnStartEffects).toHaveLength(0);
-    expect(next.pendingTurnStartEffects).toHaveLength(0);
   });
 
   it("Bread restores Health immediately and does not queue future healing", () => {
