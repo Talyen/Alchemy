@@ -8,7 +8,7 @@ import {
   type BattleCardEffect,
 } from "@/lib/game-data";
 import { halveRounded, scalePercent } from "./amount-helpers";
-import { computeEffectiveCost } from "./card-cost-rules";
+import { computeCardPayment } from "./card-cost-rules";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 
 const SCORED_ENEMY_STATUSES = new Set(["burn", "poison", "bleed", "stun", "freeze"]);
@@ -217,10 +217,18 @@ export function getImmediateDefense(card: BattleCard, state?: BattleSnapshot): n
 }
 
 export function getEffectiveDamageScore(card: BattleCard, state: BattleSnapshot): number {
-  const cost = computeEffectiveCost(state, card).effectiveCost;
+  const { effectiveCost, blockCost } = computeCardPayment(state, card);
+  const paid =
+    blockCost > 0
+      ? {
+          ...state,
+          playerStatuses: { ...state.playerStatuses, block: Math.max(0, state.playerStatuses.block - blockCost) },
+        }
+      : state;
+  const manaAfterPayment = Math.max(0, state.mana - effectiveCost);
   return (
-    scoreEffects(card.effects, state, Math.max(0, state.maxMana - Math.max(0, state.mana - cost))) +
-    scoreAvailableReactions(card, { ...state, mana: Math.max(0, state.mana - cost) })
+    scoreEffects(card.effects, paid, Math.max(0, state.maxMana - manaAfterPayment)) +
+    scoreAvailableReactions(card, { ...paid, mana: manaAfterPayment })
   );
 }
 
