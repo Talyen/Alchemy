@@ -98,14 +98,18 @@ export function KeywordPlasmaBackground({
       let settled = true;
       for (const [color, target, speed] of channels) {
         for (let channel = 0; channel < 3; channel++) {
-          const offset = color[channel]! - target[channel]!;
-          const momentum = speed[channel]! + COLOR_SPRING_RATE * offset;
-          const next = target[channel]! + (offset + momentum * dt) * decay;
+          const c = color[channel] ?? 0;
+          const t = target[channel] ?? 0;
+          const s = speed[channel] ?? 0;
+          const offset = c - t;
+          const momentum = s + COLOR_SPRING_RATE * offset;
+          const next = t + (offset + momentum * dt) * decay;
           color[channel] = clamp01(next);
-          speed[channel] = next === color[channel] ? (speed[channel]! - COLOR_SPRING_RATE * momentum * dt) * decay : 0;
+          const nextSpeed = next === color[channel] ? (s - COLOR_SPRING_RATE * momentum * dt) * decay : 0;
+          speed[channel] = nextSpeed;
           if (
-            Math.abs(color[channel]! - target[channel]!) > COLOR_SETTLE_EPSILON ||
-            Math.abs(speed[channel]!) > COLOR_SETTLE_EPSILON * COLOR_SPRING_RATE
+            Math.abs((color[channel] ?? 0) - t) > COLOR_SETTLE_EPSILON ||
+            Math.abs(nextSpeed) > COLOR_SETTLE_EPSILON * COLOR_SPRING_RATE
           ) {
             settled = false;
           }

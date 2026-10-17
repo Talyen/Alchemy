@@ -1,10 +1,10 @@
 import type { KeywordId } from "@/lib/game-data";
 
-export const TRANSMUTATION_KEYWORD_GROUPS: ReadonlyArray<readonly KeywordId[]> = [
+export const TRANSMUTATION_KEYWORD_GROUPS = [
   ["physical", "holy", "nature", "burn", "poison", "bleed", "freeze", "stun"],
   ["block", "armor", "forge", "thorns", "health", "leech"],
   ["mana", "gold", "wish", "archery", "consume", "dodge", "companion"],
-];
+] as const satisfies ReadonlyArray<readonly KeywordId[]>;
 
 export const TRANSMUTATION_PREFIXES: Record<KeywordId, string> = {
   physical: "Brutal",

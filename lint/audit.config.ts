@@ -4,6 +4,10 @@ import config from "../oxlint.config.ts";
 // Advisory complexity warnings do not change the normal every-push policy.
 export default defineConfig({
   ...config,
+  options: {
+    ...config.options,
+    reportUnusedDisableDirectives: "off",
+  },
   overrides: [
     ...config.overrides,
     {

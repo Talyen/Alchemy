@@ -58,9 +58,11 @@ describe("resolveStunTrigger", () => {
       deck: [card, card, card],
       talentEffects: { drawOnStun: 2 },
     });
-    const result = resolveStunTrigger(state);
+    const texts = makeTexts();
+    const result = resolveStunTrigger(state, texts);
     expect(result.hand).toHaveLength(2);
     expect(result.deck).toHaveLength(1);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "draw", amount: 2 });
   });
 
   it("sets nextCardCostReduction with nextCardFreeOnStun", () => {

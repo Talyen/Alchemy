@@ -178,4 +178,28 @@ describe("applyEnemyAbility: status", () => {
     expect(result.playerCC.freezeSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "freeze", text: "Frozen" });
   });
+
+  it("CC immunity feedback on cooldown for multiply-enemy-status emits Immune to Freeze notice when enemy status multiplier is blocked by player CC cooldown", () => {
+    const state = patchBattleState({
+      playerStatuses: { freeze: 10 },
+      playerCC: { cooldown: 2, stunSkipTurns: 0, freezeSkipTurns: 0 },
+      currentEnemy: { abilityIds: ["chill-spike"] },
+    });
+    const abilityCard = makeEnemyTestCard({
+      id: "chill-spike",
+      title: "Chill Spike",
+      effects: [{ kind: "multiply-enemy-status", status: "freeze", factor: 2 }],
+    });
+    const combatTexts = makeTexts();
+    const next = applyEnemyAbility(state, abilityCard, combatTexts);
+
+    expect(next.playerStatuses.freeze).toBe(10);
+    expect(combatTexts).toContainEqual({
+      target: "player",
+      kind: "notice",
+      stat: "freeze",
+      signal: "immune",
+      text: "Immune to Freeze",
+    });
+  });
 });

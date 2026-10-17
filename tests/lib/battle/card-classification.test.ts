@@ -7,7 +7,7 @@ import {
   isAttackCard,
   isNatureCard,
 } from "@/lib/battle/card-classification";
-import type { BattleCardEffect } from "@/lib/game-data";
+import { DAMAGE_TYPES, getCardKeywords, type BattleCardEffect } from "@/lib/game-data";
 import { makeTestCard } from "../../fixtures/cards";
 
 describe("card classification", () => {
@@ -62,6 +62,14 @@ describe("card classification", () => {
     expect(cardHasDamageType(card, "physical")).toBe(true);
     expect(cardHasDamageType(card, "bleed")).toBe(true);
     expect(cardHasDamageType(card, "freeze")).toBe(false);
+  });
+
+  it("unrestricted Random damage advertises every type the resolver can roll", () => {
+    const card = makeTestCard({ effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 3 }] });
+    for (const type of DAMAGE_TYPES) {
+      expect(cardHasDamageType(card, type), type).toBe(true);
+      expect(getCardKeywords(card), type).toContain(type);
+    }
   });
 
   it("recognizes cleanse damage inside delayed and failed chance branches", () => {

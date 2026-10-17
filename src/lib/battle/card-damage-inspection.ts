@@ -716,8 +716,9 @@ export function getBattleDamageInspectionCard(
           };
         });
         context?.damageEffects?.push(effect);
-        if (outcomes.every((outcome) => outcome.healthDamage === outcomes[0]!.healthDamage))
-          context?.onDamageDealt?.(outcomes[0]!.healthDamage);
+        const firstOutcome = outcomes[0];
+        if (firstOutcome && outcomes.every((outcome) => outcome.healthDamage === firstOutcome.healthDamage))
+          context?.onDamageDealt?.(firstOutcome.healthDamage);
         current = mergeKnownOutcomes(
           current,
           outcomes.map((outcome) => outcome.state),
@@ -730,7 +731,8 @@ export function getBattleDamageInspectionCard(
   }
 
   function mergeKnownOutcomes(current: BattleState, outcomes: BattleState[]): BattleState {
-    const first = outcomes[0]!;
+    const first = outcomes[0];
+    if (!first) return current;
     if (outcomes.length === 1) return first;
     for (const field of ["mana", "gold", "playerHealth", "enemyHealth"] as const) {
       if (outcomes.every((outcome) => outcome[field] === first[field])) current = { ...current, [field]: first[field] };
@@ -794,9 +796,11 @@ export function getBattleDamageInspectionCard(
             };
           }),
         );
-        const first = outcomes[0]!;
-        for (const trigger of first.forgeTriggers) {
-          if (outcomes.every((outcome) => outcome.forgeTriggers.has(trigger))) forgeTriggers.add(trigger);
+        const first = outcomes[0];
+        if (first) {
+          for (const trigger of first.forgeTriggers) {
+            if (outcomes.every((outcome) => outcome.forgeTriggers.has(trigger))) forgeTriggers.add(trigger);
+          }
         }
         // Retain only facts shared by every possible packet. In particular,
         // a range's first endpoint cannot choose later Health or buildup.
@@ -805,7 +809,8 @@ export function getBattleDamageInspectionCard(
           outcomes.map((outcome) => outcome.state),
         );
         const summarize = (packets: DamageEffect[]): BattleCardEffect => {
-          const firstPacket = packets[0]!;
+          const firstPacket = packets[0];
+          if (!firstPacket) return { kind: "damage", damageType: "physical", amount: 0 };
           const uniqueTypes = [...new Set(packets.map((packet) => packet.damageType))];
           if (packets.every((packet) => packet.amount === firstPacket.amount))
             return { ...firstPacket, ...(uniqueTypes.length > 1 ? { damageTypePool: uniqueTypes } : {}) };
@@ -817,8 +822,9 @@ export function getBattleDamageInspectionCard(
             ...(firstPacket.lifesteal ? { lifesteal: true } : {}),
           };
         };
-        const projected = [summarize(outcomes.map((outcome) => outcome.effect))];
-        projectedSources.set(projected[0]!, effect);
+        const primaryProjected = summarize(outcomes.map((outcome) => outcome.effect));
+        const projected = [primaryProjected];
+        projectedSources.set(primaryProjected, effect);
         if (outcomes.some((outcome) => outcome.followUp))
           projected.push(
             summarize(

@@ -8,6 +8,7 @@ import { resolveDeathsDoorGraceExpiry } from "@/lib/battle/player-turn-transitio
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { applyPlayerCombatDamage } from "@/lib/battle/health-state";
 import { applyPurgeGearRewards, purgeEnemyBenefits } from "@/lib/battle/enemy-purge";
+import { processEncounterTraitCardAction } from "@/lib/battle/encounter-trait-events";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { effectsForAffixRolls, gearAffixCatalog } from "@/lib/gear";
@@ -200,6 +201,19 @@ it("ported Purge affix rewards rewards a successful Purge once even when it remo
   expect(empty.removed).toBe(0);
   expect(emptyTexts).toEqual([]);
   expect(applyPurgeGearRewards(empty.state, empty.removed, []).enemyHealth).toBe(28);
+});
+
+it("Purge disarms the enemy's ready Thorns retaliation", () => {
+  const card = makeTestCard();
+  const state = patchBattleState({
+    enemyStatuses: { thorns: 1 },
+    flags: { legacyEnemyThornsReady: true },
+    currentEnemy: { traits: [{ id: "thorns", title: "Thorns", description: "" }] },
+    rng: () => 0.99,
+  });
+  const purged = purgeEnemyBenefits(state, 1, []).state;
+  expect(purged.flags.legacyEnemyThornsReady).toBe(false);
+  expect(processEncounterTraitCardAction(purged, card, [], true).playerHealth).toBe(state.playerHealth);
 });
 
 describe("Spellrending turn-start Purge", () => {
