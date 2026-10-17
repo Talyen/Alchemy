@@ -80,7 +80,7 @@ describe("brewing content", () => {
       { kind: "remove-harmful-status", removeAll: true },
       { kind: "heal", amount: 3 },
     ]);
-    const manaPanacea = getTransmutationVariants(cardById["panacea-potion"]!, "mana")[0]!.result;
+    const manaPanacea = getTransmutationVariants(cardById["panacea-potion"]!, "mana", [])[0]!.result;
     expect(strengthenPotion(manaPanacea)?.effects).toEqual([
       { kind: "remove-harmful-status", removeAll: true },
       { kind: "restore-mana", amount: 3 },

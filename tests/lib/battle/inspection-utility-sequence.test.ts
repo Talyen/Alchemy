@@ -123,7 +123,6 @@ describe("damage inspection follows utility effect execution", () => {
       {
         enemyMitigation: { armor: 8 },
         gearEffects: { armorIncreasesStun: 1, manaOnWish: 2 },
-        talentEffects: { stunDamageBonus: 0 },
       },
       [6],
     );

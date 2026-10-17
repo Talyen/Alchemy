@@ -99,7 +99,7 @@ export function resolveStunFollowUpHit(
     const hit = applyHitHealth(afterMods, modifiedDamage, current, critical);
     const decayed = decayArmorAfterDamage(hit.state, modifiedDamage, "enemy", combatTexts);
     emitEnemyBuildupImmunity(decayed, "stun", modifiedDamage, combatTexts);
-    let nextState = resolveStunTriggerCore(
+    const nextState = resolveStunTriggerCore(
       addEnemyStatus(decayed, "stun", modifiedDamage),
       combatTexts,
       hit.facts.previousHealth,
