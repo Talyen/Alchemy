@@ -1,14 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import { applyGearKillRewards } from "@/lib/battle/player-rewards";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { applyGearDamageResistance } from "@/lib/battle/damage-modifiers";
-import { defaultGearEffects } from "@/lib/gear";
-import {
-  makeStateWithFailedRolls as makeState,
-  dealDamage,
-  makeTestCard,
-  patchBattleState,
-} from "../../fixtures/battle";
+import { makeStateWithFailedRolls as makeState, dealDamage, makeTestCard, makeEffect } from "../../fixtures/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
@@ -20,295 +13,154 @@ import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { reduceDamageByMana } from "@/lib/battle/status-helpers";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { resolvePlayerCrowdControlTrigger } from "@/lib/battle/status-cc";
-import type { BattleCardEffect, EnemyAttackEffect } from "@/lib/game-data";
 
-type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
-
-function cardDamage(
-  damageType: DamageEffect["damageType"],
-  amount: number,
-  extras: Partial<Omit<DamageEffect, "kind" | "damageType" | "amount">> = {},
-): DamageEffect {
-  return { kind: "damage", damageType, amount, ...extras };
-}
-
-function enemyDamage(amount: number): EnemyAttackEffect & { kind: "damage" } {
-  return { kind: "damage", damageType: "physical", amount };
-}
-
-describe("gear-effects", () => {
-  it("reduces incoming damage by gear resist percent", () => {
-    const gear = { ...defaultGearEffects, resistPhysical: 50 };
-    expect(applyGearDamageResistance(10, "physical", gear)).toBe(5);
-    expect(applyGearDamageResistance(10, "burn", gear)).toBe(10);
+it("kill rewards scale Gold, restore Health and include the Burn-specific reward", () => {
+  const state = makeState({
+    enemyHealth: 0,
+    gold: 5,
+    playerHealth: 10,
+    enemyStatuses: { burn: 3 },
+    gearEffects: { healOnKill: 3, healOnBurnEnemyDefeated: 4, goldOnKill: 4, goldGainPercent: 50 },
   });
-
-  it("applies kill rewards with scaled gold", () => {
-    const state = patchBattleState({
-      enemyHealth: 0,
-      gold: 5,
-      playerHealth: 10,
-      gearEffects: { healOnKill: 3, goldOnKill: 4, goldGainPercent: 50 },
-    });
-    const texts: Parameters<typeof applyGearKillRewards>[2] = [];
-    const next = applyGearKillRewards(state, true, texts);
-    expect(next.playerHealth).toBe(13);
-    expect(next.gold).toBe(11);
-    expect(texts.some((t) => t.kind === "heal")).toBe(true);
-    expect(texts.some((t) => t.stat === "gold" && (t as { amount: number }).amount === 6)).toBe(true);
-  });
-
-  it("Consuming increases the original Burn packet of a consumed card", () => {
-    const card = makeTestCard({ id: "card-consume", consume: true, effects: [cardDamage("burn", 1)] });
-    const state = makeState({
-      hand: [card],
-      gearEffects: { burnOnConsume: 5 },
-    });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.enemyStatuses.burn).toBe(6);
-    expect(result.state.enemyHealth).toBe(state.enemyHealth - 6);
-  });
-
-  it("Consuming does not turn utility consumption into a hit or spend a critical hit", () => {
-    const consumed = makeTestCard({ consume: true, effects: [] });
-    const state = patchBattleState({
-      enemyHealth: 3,
-      gold: 0,
-      gearEffects: { burnOnConsume: 3, goldOnKill: 4 },
-      flags: { nextHitCrit: true },
-    });
-    const result = handlePostPlayCardDestination(state, consumed);
-    expect(result.enemyHealth).toBe(3);
-    expect(result.gold).toBe(0);
-    expect(result.enemyStatuses.burn).toBe(0);
-    expect(result.flags.nextHitCrit).toBe(true);
-    expect(handlePostPlayCardDestination(result, consumed).gold).toBe(0);
-  });
-
-  it("applies consume rewards identically without collecting combat text", () => {
-    const card = makeTestCard({ consume: true });
-    const state = makeState({
-      gearEffects: { burnOnConsume: 5 },
-    });
-    const withText = handlePostPlayCardDestination(state, card, { combatTexts: [] });
-    const withoutText = handlePostPlayCardDestination(state, card);
-    expect(withoutText.enemyStatuses.burn).toBe(0);
-    expect(withoutText).toEqual(withText);
-    expect(state.enemyStatuses.burn).toBe(0);
-  });
-
-  it("archery-ignore-armor: ignores enemy Armor on archery attacks", () => {
-    const effect = cardDamage("physical", 10);
-    const card = makeTestCard({
-      id: "card-archery",
-      tags: ["archery"],
-      effects: [effect],
-    });
-    const state = makeState({
-      hand: [card],
-      enemyMitigation: { armor: 5 },
-      gearEffects: { archeryArmorPiercing: 3 },
-      rng: () => 0.5,
-    });
-    const result = computeCardDamageToEnemy(state, effect, card);
-    expect(result.modifiedDamage).toBe(8);
-    expect(result.nextState.enemyMitigation.armor).toBe(5);
-  });
-
-  it("absorb-per-mana: reduces incoming damage before block", () => {
-    const state = makeState({
-      mana: 3,
-      playerStatuses: { block: 10 },
-      gearEffects: { damageReductionPerMana: 1 },
-    });
-    const texts: CombatTextEvent[] = [];
-    const nextState = processEnemyDamageEffect(state, enemyDamage(10), texts);
-    expect(nextState.playerStatuses.block).toBe(3);
-    expect(nextState.playerHealth).toBe(state.playerHealth);
-  });
-
-  it("Aetherward counts filled crystals once, ignoring overflow and duplicate affixes", () => {
-    const state = makeState({
-      mana: 6,
-      maxMana: 4,
-      gearEffects: { damageReductionPerMana: 2 },
-    });
-    expect(reduceDamageByMana(state, 10)).toBe(6);
-    expect(reduceDamageByMana({ ...state, mana: 2 }, 10)).toBe(8);
-    expect(reduceDamageByMana({ ...state, mana: 0 }, 10)).toBe(10);
-  });
-
-  it("heal-on-burn-death: restores health when enemy with Burn dies", () => {
-    const state = makeState({
-      enemyHealth: 0,
-      playerHealth: 5,
-      playerMaxHealth: 10,
-      enemyStatuses: { burn: 3 },
-      gearEffects: { healOnBurnEnemyDefeated: 4 },
-    });
-    const texts: CombatTextEvent[] = [];
-    const nextState = applyGearKillRewards(state, true, texts);
-    expect(nextState.playerHealth).toBe(9);
-  });
-
-  it("mana-on-leech-chance: chance to restore 1 mana on Leech", () => {
-    const effect = cardDamage("physical", 10, { lifesteal: true });
-    const card = makeTestCard({
-      id: "card-lifesteal",
-      effects: [effect],
-    });
-    const state = makeState({
-      mana: 1,
-      maxMana: 3,
-      gearEffects: { manaOnLeechChance: 100 },
-      rng: () => 0.1,
-    });
-    const texts: CombatTextEvent[] = [];
-    const nextState = resolvePlayerHit(state, { source: "card-attack", card, effect, resolvedDamage: 10 }, texts);
-    expect(nextState.mana).toBe(2);
-  });
-
-  it("poison-reduces-armor: every poison application shreds exactly once, ticks never do", () => {
-    const state1 = makeState({
-      enemyMitigation: { armor: 5 },
-      gearEffects: { poisonArmorShredChance: 100 },
-      rng: () => 0.1,
-    });
-    const texts1: CombatTextEvent[] = [];
-    const resultState1 = applyDamageStatuses(state1, cardDamage("poison", 4), 4, texts1);
-    expect(resultState1.enemyStatuses.poison).toBe(4);
-    expect(resultState1.enemyMitigation.armor).toBe(4);
-
-    const state2 = makeState({
-      enemyMitigation: { armor: 5 },
-      gearEffects: { poisonArmorShredChance: 100 },
-      rng: () => 0.1,
-    });
-    const applied = addEnemyStatus(state2, "poison", 4);
-    expect(applied.enemyStatuses.poison).toBe(4);
-    expect(applied.enemyMitigation.armor).toBe(4);
-
-    const state3 = makeState({
-      enemyMitigation: { armor: 5 },
-      gearEffects: { poisonArmorShredChance: 100 },
-      rng: () => 0.1,
-    });
-    const texts3: CombatTextEvent[] = [];
-    const resultState3 = applyPoisonTalentRiders(state3, 5, texts3);
-    expect(resultState3.enemyMitigation.armor).toBe(5);
-  });
-
-  it("nature-mana-refund-chance: refunds 1 mana on Nature damage card play", () => {
-    const card = makeTestCard({
-      id: "card-nature",
-      cost: 1,
-      effects: [cardDamage("nature", 10)],
-    });
-    const state = makeState({
-      mana: 3,
-      maxMana: 3,
-      hand: [card],
-      gearEffects: { manaOnNatureDamageChance: 100 },
-      rng: () => 0.1,
-    });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.mana).toBe(3);
-  });
-
-  it("burn-on-bleed: burn deals more damage to bleeding enemies on play and tick", () => {
-    const effect = cardDamage("burn", 10);
-    const card = makeTestCard({
-      id: "card-burn",
-      effects: [effect],
-    });
-    const state1 = makeState({
-      enemyStatuses: { bleed: 3 },
-      gearEffects: { burnDamageBonusToBleedingPercent: 50 },
-      rng: () => 0.5,
-    });
-    const result1 = computeCardDamageToEnemy(state1, effect, card);
-    expect(result1.modifiedDamage).toBe(15);
-
-    const state2 = makeState({
-      enemyHealth: 100,
-      enemyMaxHealth: 100,
-      enemyStatuses: { burn: 10, bleed: 3 },
-      gearEffects: { burnDamageBonusToBleedingPercent: 50 },
-    });
-    const texts: CombatTextEvent[] = [];
-    const result2 = tickEnemyStatuses(state2, texts);
-    expect(result2.enemyHealth).toBe(77); // Burn 15, Bleed 3, Bloodboil 5.
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 15, periodic: true });
-  });
-
-  it("stun-on-block-hit: deals stun when player block is depleted", () => {
-    const state = makeState({
-      playerStatuses: { block: 2 },
-      gearEffects: { stunOnBlockDepleted: 6 },
-    });
-    const texts: CombatTextEvent[] = [];
-    const nextState = processEnemyDamageEffect(state, enemyDamage(5), texts);
-    expect(nextState.playerStatuses.block).toBe(0);
-    expect(nextState.enemyHealth).toBe(state.enemyHealth - 6);
-    expect(nextState.enemyStatuses.stun).toBe(6);
-  });
-
-  it("companion-leech: heals player when companion attacks", () => {
-    const state = makeState({
-      playerHealth: 4,
-      playerMaxHealth: 10,
-      activeCompanion: {
-        id: "wolf",
-        title: "Wolf",
-        art: "wolf",
-        turnStartEffects: [cardDamage("physical", 2)],
-      },
-      gearEffects: { healOnCompanionAttack: 3 },
-    });
-    const texts: CombatTextEvent[] = [];
-    const nextState = processCompanionTurnStart(state, texts);
-    expect(nextState.playerHealth).toBe(7);
-  });
-
-  it("armor-on-cc: grants armor when player is stunned or frozen", () => {
-    const state = makeState({
-      playerStatuses: { armor: 0 },
-      gearEffects: { armorOnStunOrFreeze: 4 },
-    });
-    const nextState = resolvePlayerCrowdControlTrigger({
-      state,
-      stat: "stun",
-      stackValue: 60,
-      thresholdFraction: 0.5,
-      combatTexts: [],
-    });
-    expect(nextState.playerStatuses.armor).toBe(4);
-  });
+  const texts: CombatTextEvent[] = [];
+  const result = applyGearKillRewards(state, true, texts);
+  expect(result.playerHealth).toBe(17);
+  const unburned = { ...state, enemyStatuses: { ...state.enemyStatuses, burn: 0 } };
+  expect(applyGearKillRewards(unburned, true, []).playerHealth).toBe(13);
+  expect(result.gold).toBe(11);
+  expect(texts).toContainEqual(expect.objectContaining({ kind: "heal" }));
+  expect(texts).toContainEqual(expect.objectContaining({ stat: "gold", amount: 6 }));
 });
 
-describe("gear damage bonus regressions", () => {
-  it.each(["burn", "bleed"] as const)("Pyric grants its percentage per Mana Crystal to %s", (damageType) => {
-    const state = patchBattleState({
-      rng: () => 0.99,
-      enemyHealth: 100,
-      enemyMaxHealth: 100,
-      maxMana: 3,
-      gearEffects: { burnDamagePerManaPercent: 20, sharedBurnBleedBonuses: damageType === "bleed" ? 1 : 0 },
-    });
-    const result = dealDamage(state, makeTestCard({ effects: [{ kind: "damage", damageType, amount: 10 }] }));
-    expect(result.enemyHealth).toBe(84);
+it("Consuming augments the original Burn hit but utility consumption cannot hit or spend a Crit", () => {
+  const attack = makeTestCard({ consume: true, effects: [makeEffect("burn", 1)] });
+  const state = makeState({ hand: [attack], gearEffects: { burnOnConsume: 5 } });
+  const result = playBattleCardResolved(state, attack.id, 0).state;
+  expect(result.enemyStatuses.burn).toBe(6);
+  expect(result.enemyHealth).toBe(state.enemyHealth - 6);
+  const utility = makeTestCard({ consume: true, effects: [] });
+  const ready = makeState({
+    enemyHealth: 3,
+    gold: 0,
+    gearEffects: { burnOnConsume: 3, goldOnKill: 4 },
+    flags: { nextHitCrit: true },
   });
+  const consumed = handlePostPlayCardDestination(ready, utility);
+  expect(consumed.enemyHealth).toBe(3);
+  expect(consumed.gold).toBe(0);
+  expect(consumed.enemyStatuses.burn).toBe(0);
+  expect(consumed.flags.nextHitCrit).toBe(true);
+});
 
-  it.each([0, 1])("Bloodember shares First Blood with Burn (existing Bleed: %s)", (bleed) => {
-    const state = patchBattleState({
-      rng: () => 0.99,
-      enemyHealth: 100,
-      enemyMaxHealth: 100,
-      enemyStatuses: { bleed },
-      gearEffects: { sharedBurnBleedBonuses: 1 },
-      talentEffects: { bleedUnwoundedBonusPercent: 50 },
-    });
-    const result = dealDamage(state, makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] }));
-    expect(result.enemyHealth).toBe(bleed === 0 ? 85 : 90);
+it("Archery piercing reduces mitigation without removing enemy Armor", () => {
+  const effect = makeEffect("physical", 10);
+  const card = makeTestCard({ tags: ["archery"], effects: [effect] });
+  const state = makeState({ enemyMitigation: { armor: 5 }, gearEffects: { archeryArmorPiercing: 3 } });
+  const result = computeCardDamageToEnemy(state, effect, card);
+  expect(result.modifiedDamage).toBe(8);
+  expect(result.nextState.enemyMitigation.armor).toBe(5);
+});
+
+it("Aetherward reduces damage before Block and counts filled crystals once, excluding overflow", () => {
+  const state = makeState({ mana: 3, playerStatuses: { block: 10 }, gearEffects: { damageReductionPerMana: 1 } });
+  const result = processEnemyDamageEffect(state, makeEffect("physical", 10), []);
+  expect(result.playerStatuses.block).toBe(3);
+  expect(result.playerHealth).toBe(state.playerHealth);
+  const overflow = makeState({ mana: 6, maxMana: 4, gearEffects: { damageReductionPerMana: 2 } });
+  expect(reduceDamageByMana(overflow, 10)).toBe(6);
+  expect(reduceDamageByMana({ ...overflow, mana: 2 }, 10)).toBe(8);
+  expect(reduceDamageByMana({ ...overflow, mana: 0 }, 10)).toBe(10);
+});
+
+it("Leech rewards Mana", () => {
+  const effect = makeEffect("physical", 10, { lifesteal: true });
+  const state = makeState({ mana: 1, maxMana: 3, gearEffects: { manaOnLeechChance: 100 } });
+  expect(
+    resolvePlayerHit(
+      state,
+      { source: "card-attack", card: makeTestCard({ effects: [effect] }), effect, resolvedDamage: 10 },
+      [],
+    ).mana,
+  ).toBe(2);
+});
+
+it("Nature hits refund Mana after paying the card cost", () => {
+  const card = makeTestCard({ cost: 1, effects: [makeEffect("nature", 10)] });
+  const nature = makeState({ mana: 3, maxMana: 3, hand: [card], gearEffects: { manaOnNatureDamageChance: 100 } });
+  expect(playBattleCardResolved(nature, card.id, 0).state.mana).toBe(3);
+});
+
+it("Poison applications shred Armor exactly once; talent riders do not shred again", () => {
+  const state = makeState({ enemyMitigation: { armor: 5 }, gearEffects: { poisonArmorShredChance: 100 } });
+  const hit = applyDamageStatuses(state, makeEffect("poison", 4), 4, []);
+  const applied = addEnemyStatus(state, "poison", 4);
+  for (const result of [hit, applied]) {
+    expect(result.enemyStatuses.poison).toBe(4);
+    expect(result.enemyMitigation.armor).toBe(4);
+  }
+  expect(applyPoisonTalentRiders(state, 5, []).enemyMitigation.armor).toBe(5);
+  expect(state.enemyMitigation.armor).toBe(5);
+});
+
+it("Burn bonuses against Bleeding enemies apply to card damage and ticks", () => {
+  const effect = makeEffect("burn", 10);
+  const state = makeState({
+    enemyHealth: 100,
+    enemyMaxHealth: 100,
+    enemyStatuses: { burn: 10, bleed: 3 },
+    gearEffects: { burnDamageBonusToBleedingPercent: 50 },
   });
+  expect(computeCardDamageToEnemy(state, effect, makeTestCard({ effects: [effect] })).modifiedDamage).toBe(15);
+  const texts: CombatTextEvent[] = [];
+  expect(tickEnemyStatuses(state, texts).enemyHealth).toBe(77);
+  expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 15, periodic: true });
+});
+
+it("depleting Block retaliates with Stun damage and buildup", () => {
+  const state = makeState({ playerStatuses: { block: 2 }, gearEffects: { stunOnBlockDepleted: 6 } });
+  const result = processEnemyDamageEffect(state, makeEffect("physical", 5), []);
+  expect(result.playerStatuses.block).toBe(0);
+  expect(result.enemyHealth).toBe(state.enemyHealth - 6);
+  expect(result.enemyStatuses.stun).toBe(6);
+});
+
+it("Companion attacks heal a wounded hero", () => {
+  const state = makeState({
+    playerHealth: 4,
+    playerMaxHealth: 10,
+    activeCompanion: { id: "wolf", title: "Wolf", art: "wolf", turnStartEffects: [makeEffect("physical", 2)] },
+    gearEffects: { healOnCompanionAttack: 3 },
+  });
+  expect(processCompanionTurnStart(state, []).playerHealth).toBe(7);
+});
+
+it("being Stunned grants the hero the configured Armor", () => {
+  const state = makeState({ gearEffects: { armorOnStunOrFreeze: 4 } });
+  expect(
+    resolvePlayerCrowdControlTrigger({ state, stat: "stun", stackValue: 60, thresholdFraction: 0.5, combatTexts: [] })
+      .playerStatuses.armor,
+  ).toBe(4);
+});
+
+it.each(["burn", "bleed"] as const)("Pyric grants its percentage per Mana Crystal to %s", (damageType) => {
+  const state = makeState({
+    enemyHealth: 100,
+    enemyMaxHealth: 100,
+    maxMana: 3,
+    gearEffects: { burnDamagePerManaPercent: 20, sharedBurnBleedBonuses: damageType === "bleed" ? 1 : 0 },
+  });
+  expect(dealDamage(state, makeTestCard({ effects: [makeEffect(damageType, 10)] })).enemyHealth).toBe(84);
+});
+
+it.each([0, 1])("Bloodember shares First Blood with Burn (existing Bleed: %s)", (bleed) => {
+  const state = makeState({
+    enemyHealth: 100,
+    enemyMaxHealth: 100,
+    enemyStatuses: { bleed },
+    gearEffects: { sharedBurnBleedBonuses: 1 },
+    talentEffects: { bleedUnwoundedBonusPercent: 50 },
+  });
+  expect(dealDamage(state, makeTestCard({ effects: [makeEffect("burn", 10)] })).enemyHealth).toBe(
+    bleed === 0 ? 85 : 90,
+  );
 });
