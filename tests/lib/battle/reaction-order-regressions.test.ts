@@ -118,9 +118,9 @@ describe("card and turn reaction ordering", () => {
   });
 
   it.each([0, 100])(
-    "Cauterize decays Armor only after positive mitigated self-damage (resistance %s)",
+    "typed self-damage decays Armor only after positive mitigated damage (resistance %s)",
     (resistBurn) => {
-      const card = cardById.cauterize!;
+      const card = makeTestCard({ effects: [{ kind: "self-damage", damageType: "burn", amount: 1 }] });
       const result = playBattleCardResolved(
         battle({
           hand: [card],

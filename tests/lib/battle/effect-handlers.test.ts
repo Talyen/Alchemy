@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { applyCardEffects, applyEffectByKind, EFFECT_APPLY_BY_KIND } from "@/lib/battle/effect-handlers/registry";
 import { cardById } from "@/lib/game-data";
+import { effectsCard } from "@/lib/game-data/cards/card-builders";
 import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corruption/numeric";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
@@ -40,11 +41,15 @@ describe("applyPlayerStatusEffectHandler", () => {
   it.each([3, 0])(
     "scales the start-of-card Mana by %i and spends live Mana even for a zero factor",
     (convertCurrentMana) => {
-      const original = cardById["mana-shield"]!;
+      const original = effectsCard({
+        id: "test-mana-conversion",
+        art: "",
+        effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 }],
+      });
       const target = getEditableCorruptionTargets(original).find((entry) => entry.field === "convertCurrentMana")!;
       const card = applyNumericCorruption(original, target, convertCurrentMana - target.value);
       const effect = card.effects[0]!;
-      if (effect.kind !== "player-status") throw new Error("Expected Mana Shield's status effect");
+      if (effect.kind !== "player-status") throw new Error("Expected Mana conversion's status effect");
       const state = patchBattleState({ mana: 4, maxMana: 5 });
       const texts: CombatTextEvent[] = [];
       const result = EFFECT_APPLY_BY_KIND["player-status"](state, card, effect, 2, texts, {

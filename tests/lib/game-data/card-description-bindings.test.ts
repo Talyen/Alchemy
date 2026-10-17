@@ -63,19 +63,28 @@ describe("card description bindings", () => {
   });
 
   it("Powerful Wish upgrades repeated hits and skips shared Health costs after wording changes", () => {
-    const card = withCardDescription(cardById.cauterize!, [
-      {
-        role: "effect",
-        parts: [
-          "Trade ",
-          cardMagnitude(
-            { kind: "damage", effectIndex: 1, field: "amount" },
-            { shared: [{ kind: "self-damage", effectIndex: 2, field: "amount" }] },
-          ),
-          " Burn",
+    const card = withCardDescription(
+      makeTestCard({
+        effects: [
+          { kind: "remove-harmful-status", amount: 1 },
+          { kind: "damage", damageType: "burn", amount: 1 },
+          { kind: "self-damage", damageType: "burn", amount: 1 },
         ],
-      },
-    ]);
+      }),
+      [
+        {
+          role: "effect",
+          parts: [
+            "Trade ",
+            cardMagnitude(
+              { kind: "damage", effectIndex: 1, field: "amount" },
+              { shared: [{ kind: "self-damage", effectIndex: 2, field: "amount" }] },
+            ),
+            " Burn",
+          ],
+        },
+      ],
+    );
     expect(getEditableCorruptionTargets(card)[0]).toMatchObject({
       affectsCost: true,
       edits: [{ kind: "damage" }, { kind: "self-damage" }],

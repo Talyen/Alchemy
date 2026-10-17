@@ -324,22 +324,6 @@ describe("thematic card effects", () => {
     expect(nature.enemyStatuses.burn).toBe(0);
   });
 
-  it("corruption keeps Cauterize's combined Burn costs paired", () => {
-    const card = cardById.cauterize!;
-    const targets = getEditableCorruptionTargets(card);
-    expect(targets).toHaveLength(1);
-    const changed = applyNumericCorruption(card, targets[0]!, 1);
-    expect(changed.descriptionLines).toContain("Deal and Receive 2 Burn damage");
-    expect(changed.effects).toEqual(
-      expect.arrayContaining([
-        { kind: "damage", damageType: "burn", amount: 2 },
-        { kind: "self-damage", damageType: "burn", amount: 2 },
-      ]),
-    );
-    expect(changed.effects).toEqual(expect.arrayContaining([{ kind: "remove-harmful-status", amount: 1 }]));
-    expect(validateCardDescriptionParity(changed)).toEqual([]);
-  });
-
   it("Cleanse remains playable for its healing effect without a harmful status", () => {
     const result = play("cleanse", { playerHealth: 10, playerMaxHealth: 20 });
     expect(result.playerHealth).toBe(12);

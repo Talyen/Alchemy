@@ -23,13 +23,12 @@ describe("card costs and turn-start effects", () => {
     expect(result.playerHealth).toBe(12);
   });
 
-  it("Cauterize respects Burn resistance and adds no resisted Burn buildup", () => {
+  it("Cauterize cleanses without damaging or Burning the hero", () => {
     const card = cardById.cauterize!;
     const state = patchBattleState({
       hand: [card],
       playerHealth: 10,
       playerStatuses: { poison: 3 },
-      gearEffects: { resistBurn: 100 },
     });
     const result = playBattleCardResolved(state, card.id, 0).state;
     expect(result.playerHealth).toBe(10);
