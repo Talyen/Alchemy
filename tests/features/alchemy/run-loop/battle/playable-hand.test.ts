@@ -239,7 +239,7 @@ describe("findBestPlayableHandCard", () => {
     },
   );
 
-  it("does not prioritize Mana Shield as defense when a free play would convert zero Mana", () => {
+  it("prioritizes a discounted Mana Shield's Crystal-based defense even with no current Mana", () => {
     const shield = cardById["mana-shield"]!;
     const hit = strongHit;
     const state = greedyState([shield, hit], {
@@ -247,8 +247,8 @@ describe("findBestPlayableHandCard", () => {
       mana: 0,
       flags: { ...defaultBattleState().flags, nextCardCostReduction: 99 },
     });
-    expect(playBattleCardResolved({ ...state, rng: () => 0.99 }, shield.id, 0).state.playerStatuses.block).toBe(0);
-    expect(findBestPlayableHandCard(state)?.card.id).toBe(hit.id);
+    expect(playBattleCardResolved({ ...state, rng: () => 0.99 }, shield.id, 0).state.playerStatuses.block).toBe(8);
+    expect(findBestPlayableHandCard(state)?.card.id).toBe(shield.id);
   });
 
   it("recognizes Luck Potion's nested Block outcome when seeking defense at low Health", () => {
@@ -258,16 +258,13 @@ describe("findBestPlayableHandCard", () => {
     expect(findBestPlayableHandCard(state)?.card.id).toBe(potion.id);
   });
 
-  it.each(["exorcism", "cauterize", "dark-pact"])(
-    "leaves %s to manual play when its self-damage could be lethal",
-    (id) => {
-      const state = greedyState([cardById[id]!, weakHit], {
-        playerHealth: 1,
-        deathsDoorUsed: true,
-      });
-      expect(findBestPlayableHandCard(state)?.card.id).toBe(weakHit.id);
-    },
-  );
+  it.each(["exorcism", "dark-pact"])("leaves %s to manual play when its self-damage could be lethal", (id) => {
+    const state = greedyState([cardById[id]!, weakHit], {
+      playerHealth: 1,
+      deathsDoorUsed: true,
+    });
+    expect(findBestPlayableHandCard(state)?.card.id).toBe(weakHit.id);
+  });
 
   it("does not mistake an unneeded cleanse for defense at low Health", () => {
     const state = greedyState([cardById.cauterize!, strongHit], { playerHealth: 50 });

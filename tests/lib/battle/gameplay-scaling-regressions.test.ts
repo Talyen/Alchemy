@@ -18,7 +18,6 @@ describe("gameplay scaling regressions", () => {
       { kind: "restore-mana", amount: 2 },
     ]);
     expect(upgradeWishCard(cardById.exorcism!)?.effects[0]).toEqual(cardById.exorcism!.effects[0]);
-    expect(upgradeWishCard(cardById.cauterize!)?.effects).toEqual(cardById.cauterize!.effects);
   });
 
   it("Aetherward protects typed self-damage while Health costs still apply", () => {

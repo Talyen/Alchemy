@@ -6,7 +6,7 @@ import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { purgeOnePlayerBenefit } from "@/lib/battle/player-purge";
 import { selectCombatSound } from "@/features/alchemy/run-loop/battle/combat-sound-selection";
-import { getCombatImpactVisual, getCombatTextLeadingIcon } from "@/features/alchemy/shared/utils/battle";
+import { getCombatTextLeadingIcon } from "@/features/alchemy/shared/utils/battle";
 import type { CombatTextEvent } from "@/lib/battle";
 import { patchBattleState } from "../../fixtures/battle";
 
@@ -53,15 +53,17 @@ describe("status multiplication and resource feedback", () => {
     expect(prevented.playerStatuses.block).toBe(0);
   });
 
-  it("Mana Shield reports only the remaining Mana it converts without a damage impact", () => {
+  it("Mana Shield leaves Mana for a follow-up attack while showing its Block grant", () => {
     const card = cardById["mana-shield"]!;
-    const state = patchBattleState({ mana: 4, hand: [card] });
+    const attack = cardById.slash!;
+    const state = patchBattleState({ mana: 4, maxMana: 5, hand: [card, attack], rng: () => 0.99 });
     const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.mana).toBe(0);
-    expect(result.state.playerStatuses.block).toBe(12);
-    const spent = { target: "player", kind: "damage", stat: "mana", amount: 4 - card.cost, impact: false } as const;
-    expect(result.combatTexts).toContainEqual(spent);
-    expect(getCombatImpactVisual(spent)).toBeNull();
+    expect(result.state.mana).toBe(3);
+    expect(result.state.playerStatuses.block).toBe(10);
+    expect(result.combatTexts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 10 });
+    const next = playBattleCardResolved(result.state, attack.id, 0).state;
+    expect(next.mana).toBe(2);
+    expect(next.enemyHealth).toBeLessThan(state.enemyHealth);
   });
 });
 

@@ -47,7 +47,7 @@ export const defenseCards: BattleCard[] = [
 
   cardBuilders.effectsCard({
     id: "mana-shield",
-    effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 }],
+    effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 2 }],
   }),
   cardBuilders.effectsCard({
     id: "prayer",
