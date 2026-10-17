@@ -104,7 +104,7 @@ const HITCH_GAP_MS = 50;
 const MAX_HITCH_EVENTS = 20;
 
 export function phaseAtTime(phaseMarks: Array<{ time: number; phase: string }>, timeMs: number): string {
-  let phase = phaseMarks[0]?.phase ?? "idle";
+  let phase = "idle";
   for (const mark of phaseMarks) {
     if (mark.time <= timeMs) phase = mark.phase;
     else break;
@@ -131,7 +131,7 @@ export function extractHitchEvents(
       }
     } else if (item && typeof item === "object") {
       const { startTime, duration } = item;
-      if (Number.isFinite(duration) && duration >= minGapMs) {
+      if (Number.isFinite(startTime) && startTime >= 0 && Number.isFinite(duration) && duration >= minGapMs) {
         hitches.push({
           timeMs: startTime,
           gapMs: duration,
@@ -143,7 +143,7 @@ export function extractHitchEvents(
   return hitches.sort((a, b) => b.gapMs - a.gapMs).slice(0, MAX_HITCH_EVENTS);
 }
 
-export function percentile(sortedAscending: number[], p: number): number {
+function percentile(sortedAscending: number[], p: number): number {
   if (sortedAscending.length === 0) return 0;
   if (sortedAscending.length === 1) return sortedAscending[0]!;
   const clamped = Math.min(100, Math.max(0, p));
@@ -155,13 +155,13 @@ export function percentile(sortedAscending: number[], p: number): number {
   return sortedAscending[lower]! * (1 - weight) + sortedAscending[upper]! * weight;
 }
 
-export function mean(values: number[]): number {
+function mean(values: number[]): number {
   if (values.length === 0) return 0;
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 /** 1% low FPS = 1000 / mean(slowest 1% of frame times). */
-export function lowFps(frameTimesAscending: number[], percent: number): number {
+function lowFps(frameTimesAscending: number[], percent: number): number {
   if (frameTimesAscending.length === 0) return 0;
   const count = Math.max(1, Math.ceil(frameTimesAscending.length * (percent / 100)));
   const slowest = frameTimesAscending.slice(-count);
@@ -170,9 +170,9 @@ export function lowFps(frameTimesAscending: number[], percent: number): number {
 }
 
 function extractValidGaps(sample: FrameSampleRaw): FrameGapSample[] {
-  if (sample.frameGaps && sample.frameGaps.length > 0) {
+  if (sample.frameGaps !== undefined) {
     return sample.frameGaps.filter(
-      (g) => Number.isFinite(g.duration) && g.duration > 0 && Number.isFinite(g.startTime),
+      (g) => Number.isFinite(g.duration) && g.duration > 0 && Number.isFinite(g.startTime) && g.startTime >= 0,
     );
   }
   if (sample.frameTimes && sample.frameTimes.length > 0) {
@@ -189,39 +189,46 @@ function extractValidGaps(sample: FrameSampleRaw): FrameGapSample[] {
   return [];
 }
 
+function sampleInvalidReason(sample: FrameSampleRaw, frameCount: number, minFrames: number): string | undefined {
+  if (frameCount === 0) return "no frame samples";
+  if (!Number.isFinite(sample.durationMs) || sample.durationMs <= 0) return "invalid measurement duration";
+  if (frameCount < minFrames) return `insufficient frames (${frameCount} < ${minFrames})`;
+  return undefined;
+}
+
+function sampleLongTasks(sample: FrameSampleRaw): LongTaskSample[] {
+  return (sample.longTasks ?? [])
+    .filter((t) => Number.isFinite(t.startTime) && t.startTime >= 0 && Number.isFinite(t.duration) && t.duration >= 50)
+    .map((t) => ({ ...t, phase: phaseAtTime(sample.phaseMarks, t.startTime) }));
+}
+
+function sampleHitches(sample: FrameSampleRaw, frameGaps: FrameGapSample[]): HitchEvent[] {
+  return sample.hitchEvents !== undefined
+    ? sample.hitchEvents
+        .filter(
+          (h) => Number.isFinite(h.timeMs) && h.timeMs >= 0 && Number.isFinite(h.gapMs) && h.gapMs >= HITCH_GAP_MS,
+        )
+        .map((h) => ({ ...h, phase: phaseAtTime(sample.phaseMarks, h.timeMs) }))
+        .sort((a, b) => b.gapMs - a.gapMs)
+        .slice(0, MAX_HITCH_EVENTS)
+    : extractHitchEvents(frameGaps, sample.phaseMarks, HITCH_GAP_MS);
+}
+
 export function computeMetrics(sample: FrameSampleRaw, options: { minFrames?: number } = {}): FrameMetrics {
   const minFrames = options.minFrames ?? MIN_FRAMES_DEFAULT;
   const frameGaps = extractValidGaps(sample);
   const frameTimes = frameGaps.map((g) => g.duration);
   const sorted = [...frameTimes].sort((a, b) => a - b);
-  const longTasks = (sample.longTasks ?? [])
-    .filter((t) => Number.isFinite(t.duration) && t.duration >= 50)
-    .map((t) => ({
-      ...t,
-      phase: phaseAtTime(sample.phaseMarks, t.startTime),
-    }));
-  const hitchEvents =
-    sample.hitchEvents !== undefined
-      ? sample.hitchEvents.map((h) => ({
-          ...h,
-          phase: phaseAtTime(sample.phaseMarks, h.timeMs),
-        }))
-      : extractHitchEvents(frameGaps, sample.phaseMarks, HITCH_GAP_MS);
-
+  const longTasks = sampleLongTasks(sample).sort((a, b) => b.duration - a.duration);
+  const hitchEvents = sampleHitches(sample, frameGaps);
   if (frameTimes.length === 0) {
-    return emptyMetrics(sample.durationMs, "no frame samples");
+    return emptyMetrics(Number.isFinite(sample.durationMs) ? Math.max(0, sample.durationMs) : 0, "no frame samples");
   }
-  if (frameTimes.length < minFrames) {
-    return {
-      ...buildMetrics(sorted, frameTimes, longTasks, hitchEvents, sample.durationMs),
-      valid: false,
-      invalidReason: `insufficient frames (${frameTimes.length} < ${minFrames})`,
-    };
-  }
-
+  const invalidReason = sampleInvalidReason(sample, frameTimes.length, minFrames);
   return {
     ...buildMetrics(sorted, frameTimes, longTasks, hitchEvents, sample.durationMs),
-    valid: true,
+    valid: invalidReason === undefined,
+    ...(invalidReason ? { invalidReason } : {}),
   };
 }
 
@@ -265,7 +272,7 @@ function buildMetrics(
   const stallsOver100ms = frameTimes.filter((t) => t >= 100).length;
   const worstFrameGaps = [...sorted].reverse().slice(0, 10);
   const sampledDuration = frameTimes.reduce((sum, d) => sum + d, 0);
-  const measuredDuration = durationMs > 0 ? durationMs : sampledDuration;
+  const measuredDuration = Number.isFinite(durationMs) && durationMs > 0 ? durationMs : sampledDuration;
   const averageFps = sampledDuration > 0 ? (frameTimes.length / sampledDuration) * 1000 : 0;
 
   return {
@@ -304,27 +311,31 @@ export function aggregateRawSamples(samples: FrameSampleRaw[], options: { minFra
   const pooledLongTasks: LongTaskSample[] = [];
   const pooledPhaseMarks: Array<{ time: number; phase: string }> = [];
   const pooledHitches: HitchEvent[] = [];
-  const pooledInputEvents: InputEventSample[] = [];
+  const minFrames = options.minFrames ?? MIN_FRAMES_DEFAULT;
+  let invalidRun: string | undefined;
 
-  for (const s of samples) {
+  for (const [index, s] of samples.entries()) {
     const rawGaps = extractValidGaps(s);
+    const reason = sampleInvalidReason(s, rawGaps.length, minFrames);
+    if (reason) invalidRun ??= `run ${index + 1}: ${reason}`;
     for (const gap of rawGaps) {
       pooledFrameGaps.push({ startTime: gap.startTime + timeOffset, duration: gap.duration });
     }
-    for (const task of s.longTasks ?? []) {
+    for (const task of sampleLongTasks(s)) {
       pooledLongTasks.push({ ...task, startTime: task.startTime + timeOffset });
     }
+    pooledPhaseMarks.push({ time: timeOffset, phase: "idle" });
     for (const mark of s.phaseMarks ?? []) {
       pooledPhaseMarks.push({ time: mark.time + timeOffset, phase: mark.phase });
     }
-    for (const input of s.inputEvents ?? []) {
-      pooledInputEvents.push({ ...input, startTime: input.startTime + timeOffset });
-    }
-    const hitches = s.hitchEvents ?? extractHitchEvents(rawGaps, s.phaseMarks ?? [], HITCH_GAP_MS);
+    const hitches = sampleHitches(s, rawGaps);
     for (const hitch of hitches) {
       pooledHitches.push({ ...hitch, timeMs: hitch.timeMs + timeOffset });
     }
-    const runDuration = s.durationMs > 0 ? s.durationMs : rawGaps.reduce((sum, g) => sum + g.duration, 0);
+    const runDuration =
+      Number.isFinite(s.durationMs) && s.durationMs > 0
+        ? s.durationMs
+        : rawGaps.reduce((sum, gap) => sum + gap.duration, 0);
     timeOffset += runDuration;
   }
 
@@ -334,13 +345,12 @@ export function aggregateRawSamples(samples: FrameSampleRaw[], options: { minFra
     durationMs: timeOffset,
     phaseMarks: pooledPhaseMarks,
     hitchEvents: pooledHitches.sort((a, b) => b.gapMs - a.gapMs).slice(0, MAX_HITCH_EVENTS),
-    inputEvents: pooledInputEvents,
   };
-  const minFrames = options.minFrames ?? MIN_FRAMES_DEFAULT * Math.max(1, samples.length);
-  return computeMetrics(pooled, { minFrames });
+  const metrics = computeMetrics(pooled, { minFrames: minFrames * samples.length });
+  return invalidRun ? { ...metrics, valid: false, invalidReason: invalidRun } : metrics;
 }
 
-export function classifyContinuous(metrics: FrameMetrics): TargetCheck[] {
+function classifyContinuous(metrics: FrameMetrics): TargetCheck[] {
   return [
     check("p95", "p95 frame time (ms)", metrics.p95FrameTime, 18, "<="),
     check("p99", "p99 frame time (ms)", metrics.p99FrameTime, 20, "<="),
@@ -355,7 +365,7 @@ export function classifyContinuous(metrics: FrameMetrics): TargetCheck[] {
   ];
 }
 
-export function classifyTransition(metrics: FrameMetrics): TargetCheck[] {
+function classifyTransition(metrics: FrameMetrics): TargetCheck[] {
   const durationSec = Math.max(metrics.durationMs / 1000, 1);
   const hitchBudget = Math.max(1, Math.ceil(durationSec / 30));
   return [
@@ -372,7 +382,8 @@ export function classifyTransition(metrics: FrameMetrics): TargetCheck[] {
 }
 
 export function classifyTargets(metrics: FrameMetrics, profile: TargetProfile): TargetCheck[] {
-  return profile === "continuous" ? classifyContinuous(metrics) : classifyTransition(metrics);
+  const targets = profile === "continuous" ? classifyContinuous(metrics) : classifyTransition(metrics);
+  return metrics.valid ? targets : targets.map((target) => ({ ...target, band: "red" }));
 }
 
 function check(id: string, label: string, actual: number, target: number, comparator: "<=" | ">="): TargetCheck {

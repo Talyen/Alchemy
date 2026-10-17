@@ -3,7 +3,7 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 import type { FrameMetrics, InputEventSample, LongAnimationFrameSample, TargetCheck, TargetProfile } from "./metrics";
 import type { TraceInsight } from "./trace-insights";
-import { renderComparisonTable, type MetricDelta } from "./compare";
+import { renderComparisonTable, type MetricDelta } from "./compare-model.mjs";
 import type { JourneyAction } from "./journey-types";
 import type { SegmentResult } from "./journey-segments";
 

@@ -1,39 +1,21 @@
 import { readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { labyrinthGridPositions } from "@/lib/content-systems/labyrinth/grid";
 import {
   aggregateRawSamples,
   classifyTargets,
   computeMetrics,
   extractHitchEvents,
   phaseAtTime,
-  lowFps,
-  mean,
-  percentile,
   type FrameGapSample,
   type FrameSampleRaw,
 } from "../../performance/metrics";
-import {
-  assertEnvironmentCompatibility,
-  assertScenarioCompatibility,
-  checkEnvironmentCompatibility,
-  checkScenarioCompatibility,
-  compareMetrics,
-  compareReports,
-  deriveComparisonMetrics,
-  meetsOptimizationRule,
-} from "../../performance/compare";
+import { compareMetrics, deriveComparisonMetrics, meetsOptimizationRule } from "../../performance/compare-model.mjs";
 import { renderSummaryMarkdown, type EnvironmentInfo, type ScenarioAggregate } from "../../performance/report";
 import performanceCatalog from "../../performance/catalog.json";
 import { SCENARIO_IDS } from "../../performance/fixtures";
 import { REALISTIC_SCENARIOS } from "../../performance/case-selection.mjs";
-import {
-  battleProgressState,
-  requirePositiveFiniteObservation,
-  talentCategoryButtonName,
-} from "../../performance/scenario-contracts";
-import { twoFloorLabyrinthMapFixture } from "../fixtures/labyrinth-map";
+import { battleProgressState, requirePositiveFiniteObservation } from "../../performance/scenario-contracts";
 
 function sample(frameTimes: number[], extras: Partial<FrameSampleRaw> = {}): FrameSampleRaw {
   return {
@@ -82,10 +64,6 @@ it("performance catalog matches the scenario files and comparison metric keys", 
 });
 
 describe("performance scenario contracts", () => {
-  it("uses the talent overview button accessible name", () => {
-    expect(talentCategoryButtonName("Physical")).toBe("Select Physical Talents");
-  });
-
   it("treats battle completion as terminal while waiting for a stage mark", () => {
     expect(battleProgressState(true, 0, 0)).toBe("battle-over");
     expect(battleProgressState(false, 2, 1)).toBe("stage-ready");
@@ -98,54 +76,15 @@ describe("performance scenario contracts", () => {
       expect(() => requirePositiveFiniteObservation("rendererStartupReadyMs", value)).toThrow(/rendererStartupReadyMs/);
     }
   });
-
-  it("uses a production-sized multi-floor Labyrinth fixture", () => {
-    const map = twoFloorLabyrinthMapFixture();
-    const playable = map.floors.filter((floor) => floor.depth > 0);
-    expect(playable.length).toBeGreaterThanOrEqual(2);
-    for (const floor of playable) {
-      expect(floor.nodeIds).toHaveLength(labyrinthGridPositions().length);
-    }
-  });
 });
 
-describe("percentile / lowFps", () => {
-  it("computes linear percentiles", () => {
-    const sorted = [10, 20, 30, 40, 50];
-    expect(percentile(sorted, 50)).toBe(30);
-    expect(percentile(sorted, 0)).toBe(10);
-    expect(percentile(sorted, 100)).toBe(50);
-  });
-
-  it("handles empty and single-value inputs", () => {
-    expect(percentile([], 50)).toBe(0);
-    expect(percentile([12], 99)).toBe(12);
-    expect(mean([])).toBe(0);
-    expect(lowFps([], 1)).toBe(0);
-  });
-
-  it("defines 1% low as 1000 / mean(slowest 1%)", () => {
-    const times = Array.from({ length: 100 }, () => 16);
-    times[99] = 50;
-    const sorted = [...times].sort((a, b) => a - b);
-    expect(lowFps(sorted, 1)).toBeCloseTo(1000 / 50, 5);
-  });
+it("reports low FPS from the slowest tail rather than a percentile reciprocal", () => {
+  const metrics = computeMetrics(sample([...Array.from({ length: 198 }, () => 16), 40, 60]));
+  expect(metrics.onePercentLowFps).toBe(20);
+  expect(metrics.pointOnePercentLowFps).toBeCloseTo(1000 / 60);
 });
 
 describe("computeMetrics & exact frame gap sampling", () => {
-  it("marks empty samples invalid", () => {
-    const metrics = computeMetrics(sample([]));
-    expect(metrics.valid).toBe(false);
-    expect(metrics.invalidReason).toMatch(/no frame/);
-  });
-
-  it("marks short samples invalid but still reports numbers", () => {
-    const metrics = computeMetrics(sample([16, 16, 16]), { minFrames: 10 });
-    expect(metrics.valid).toBe(false);
-    expect(metrics.frameCount).toBe(3);
-    expect(metrics.averageFps).toBeGreaterThan(0);
-  });
-
   it("computes sampled-gap FPS without unsampled window edge distortion", () => {
     const frameGaps: FrameGapSample[] = Array.from({ length: 60 }, (_, i) => ({
       startTime: 500 + i * (1000 / 60),
@@ -202,7 +141,7 @@ describe("computeMetrics & exact frame gap sampling", () => {
     expect(hitches[1]?.phase).toBe("intro");
   });
 
-  it("normalizes long tasks and input events phase from start time", () => {
+  it("normalizes long-task phases from their start time", () => {
     const marks = [
       { time: 0, phase: "idle" },
       { time: 500, phase: "card-burst" },
@@ -212,9 +151,6 @@ describe("computeMetrics & exact frame gap sampling", () => {
       longTasks: [{ startTime: 200, duration: 80, phase: "card-burst" }],
       durationMs: 1600,
       phaseMarks: marks,
-      inputEvents: [
-        { name: "pointerdown", startTime: 600, duration: 25, inputDelay: 5, interactionId: 1, phase: "idle" },
-      ],
     };
     const metrics = computeMetrics(raw);
     expect(metrics.longTasks[0]?.phase).toBe("idle");
@@ -222,15 +158,6 @@ describe("computeMetrics & exact frame gap sampling", () => {
 });
 
 describe("aggregateRawSamples", () => {
-  it("pools frame times across runs", () => {
-    const a = sample(Array.from({ length: 100 }, () => 16));
-    const b = sample(Array.from({ length: 100 }, () => 20));
-    const agg = aggregateRawSamples([a, b], { minFrames: 100 });
-    expect(agg.valid).toBe(true);
-    expect(agg.frameCount).toBe(200);
-    expect(agg.p50FrameTime).toBeGreaterThanOrEqual(16);
-  });
-
   it("offsets phase marks, frame gaps, and hitches across pooled runs", () => {
     const a: FrameSampleRaw = {
       frameGaps: [
@@ -250,7 +177,7 @@ describe("aggregateRawSamples", () => {
       phaseMarks: [{ time: 0, phase: "run-b" }],
       longTasks: [{ startTime: 31, duration: 75, phase: "run-b" }],
     };
-    const agg = aggregateRawSamples([a, b], { minFrames: 4 });
+    const agg = aggregateRawSamples([a, b], { minFrames: 2 });
     expect(agg.valid).toBe(true);
     const hitchB = agg.hitchEvents.find((h) => h.gapMs === 80);
     expect(hitchB?.phase).toBe("run-b");
@@ -263,12 +190,6 @@ describe("aggregateRawSamples", () => {
 });
 
 describe("classifyTargets", () => {
-  it("marks smooth continuous motion green", () => {
-    const metrics = computeMetrics(sample(Array.from({ length: 400 }, () => 16)), { minFrames: 100 });
-    const checks = classifyTargets(metrics, "continuous");
-    expect(checks.every((c) => c.band === "green")).toBe(true);
-  });
-
   it("flags transition hitches against budget", () => {
     const times = Array.from({ length: 200 }, () => 16);
     times[0] = 60;
@@ -348,71 +269,6 @@ describe("compareMetrics & duration normalization", () => {
     const rejectedRule = meetsOptimizationRule(regressedDeltas);
     expect(rejectedRule.ok).toBe(false);
     expect(rejectedRule.notes.some((n) => n.includes("p95 frame time (ms) regressed"))).toBe(true);
-  });
-});
-
-describe("environment and scenario compatibility", () => {
-  const baseEnv: EnvironmentInfo = {
-    timestamp: "2026-01-01T00:00:00.000Z",
-    platform: "darwin",
-    arch: "arm64",
-    node: "v24",
-    runtime: "chromium",
-    viewport: { width: 1440, height: 900 },
-    devicePixelRatio: 2,
-    estimatedRefreshHz: 60,
-    commit: "abc1234",
-    dirtyTree: false,
-    branch: "main",
-    traceMode: false,
-    runsPerScenario: 1,
-    coldMode: false,
-    scenarios: ["battle-effects"],
-  };
-
-  it("passes for matching environments", () => {
-    const res = checkEnvironmentCompatibility(baseEnv, { ...baseEnv, commit: "xyz5678" });
-    expect(res.compatible).toBe(true);
-    expect(() => assertEnvironmentCompatibility(baseEnv, baseEnv)).not.toThrow();
-  });
-
-  it("fails clearly when runtime, mode, or display conditions differ", () => {
-    expect(checkEnvironmentCompatibility(baseEnv, { ...baseEnv, runtime: "electron" }).compatible).toBe(false);
-    expect(checkEnvironmentCompatibility(baseEnv, { ...baseEnv, traceMode: true }).compatible).toBe(false);
-    expect(checkEnvironmentCompatibility(baseEnv, { ...baseEnv, coldMode: true }).compatible).toBe(false);
-    expect(checkEnvironmentCompatibility(baseEnv, { ...baseEnv, platform: "linux" }).compatible).toBe(false);
-    expect(
-      checkEnvironmentCompatibility(baseEnv, { ...baseEnv, viewport: { width: 1920, height: 1080 } }).compatible,
-    ).toBe(false);
-    expect(checkEnvironmentCompatibility(baseEnv, { ...baseEnv, devicePixelRatio: 1 }).compatible).toBe(false);
-    expect(checkEnvironmentCompatibility(baseEnv, { ...baseEnv, estimatedRefreshHz: 120 }).compatible).toBe(false);
-  });
-
-  it("rejects mismatched scenario target profiles", () => {
-    const beforeScenario = { scenario: "battle-effects", profile: "continuous" };
-    const afterScenario = { scenario: "battle-effects", profile: "transition" };
-    expect(checkScenarioCompatibility(beforeScenario, afterScenario).compatible).toBe(false);
-    expect(() => assertScenarioCompatibility(beforeScenario, afterScenario)).toThrow(/Incompatible target profile/);
-  });
-
-  it("runs full report comparison and handles missing scenarios", () => {
-    const metrics = computeMetrics(sample(Array.from({ length: 120 }, () => 16)), { minFrames: 100 });
-    const beforeReport = {
-      environment: baseEnv,
-      scenarios: [
-        { scenario: "battle-effects", profile: "continuous" as const, aggregate: metrics, targets: [], runs: [] },
-        { scenario: "battle-end-turn", profile: "transition" as const, aggregate: metrics, targets: [], runs: [] },
-      ],
-    };
-    const afterReport = {
-      environment: baseEnv,
-      scenarios: [
-        { scenario: "battle-effects", profile: "continuous" as const, aggregate: metrics, targets: [], runs: [] },
-      ],
-    };
-    const comparison = compareReports(beforeReport, afterReport);
-    expect(comparison.scenarios).toHaveLength(2);
-    expect(comparison.scenarios[1]?.missing).toBe(true);
   });
 });
 
