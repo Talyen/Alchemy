@@ -220,6 +220,7 @@ export function resolveEnemyAttackHit(
   combatTexts: CombatTextEvent[],
   options: EnemyDamageOptions,
 ): EnemyDamageResult {
+  if (getBattleOutcome(state) !== null) return resolveEnemyDamageEffect(state, effect, combatTexts, options);
   const { canDodge = false, ...damageOptions } = options;
   if (canDodge && hasEnemyTrait(state, "ravenous")) effect = { ...effect, lifesteal: true };
   const preparedDamage = prepareEnemyDamage(state, effect, damageOptions);

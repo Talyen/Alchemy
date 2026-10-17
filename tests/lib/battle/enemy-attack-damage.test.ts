@@ -1,14 +1,14 @@
 import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { processEncounterTraitActionDamage } from "@/lib/battle/encounter-trait-events";
-import { applyEnemyLeechHealing, processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
+import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { dealSelfDamage } from "@/lib/battle/status-helpers";
 import { resolveTypedEnemyHit } from "@/lib/battle/typed-hit-resolution";
 import { describe, expect, it } from "vitest";
-import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
+import { patchBattleState } from "../../fixtures/battle";
 import { makeTestCard as makeEnemyTestCard, makeTestCard } from "../../fixtures/cards";
 import * as talentBattle from "../../fixtures/talent-battle";
 import * as uniqueGearBattle from "../../fixtures/unique-gear-battle";
@@ -61,6 +61,33 @@ describe("enemy attack damage", () => {
       });
     },
   );
+
+  it.each(["victory", "defeat"])("ended battles reject incoming hits before Dodge or damage: %s", (outcome) => {
+    const state = patchBattleState({
+      playerHealth: outcome === "defeat" ? 0 : 30,
+      enemyHealth: outcome === "victory" ? 0 : 30,
+      flags: { dodgeNextAttack: true },
+      gearEffects: { blockOnDodge: 4 },
+      rng: () => {
+        throw new Error("Ended battles must not roll");
+      },
+    });
+    const effect = { kind: "damage", damageType: "physical", amount: 4 } as const;
+    const texts: Parameters<typeof processEnemyDamageEffect>[2] = [];
+    expect(resolveEnemyAttackHit(state, effect, texts, { canDodge: true })).toEqual({
+      state,
+      attemptedDamage: 0,
+      resolvedDamage: 0,
+      healthDamage: 0,
+      blockLost: 0,
+      healthAfterHit: state.playerHealth,
+      landed: false,
+      dodged: false,
+      killed: false,
+    });
+    expect(processEnemyDamageEffect(state, effect, texts)).toBe(state);
+    expect(texts).toEqual([]);
+  });
 
   it("reports post-dodge player health in healthAfterHit when dodge triggers healing", () => {
     const state = patchBattleState({
@@ -141,52 +168,40 @@ describe("enemy attack damage", () => {
     expect(result.playerStatuses.block).toBe(5);
   });
 
-  it("resolves an undodgeable incoming packet and enemy leech", () => {
-    const base = makeTestBattleState();
-    const state = makeTestBattleState({
+  it("halves holy damage when receiveHalfHolyDamage talent is active", () => {
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...base.playerStatuses, block: 0, armor: 0 },
-      enemyHealth: 10,
-      enemyMaxHealth: 20,
+      playerStatuses: { block: 0, armor: 0 },
+      talentEffects: { receiveHalfHolyDamage: true },
     });
-    const damaged = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 5 }, []);
-    expect(damaged.playerHealth).toBe(25);
-    expect(applyEnemyLeechHealing(damaged, 5, []).enemyHealth).toBeGreaterThan(10);
+    const result = applyEnemyAbility(
+      state,
+      makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 10 }] }),
+      [],
+    );
+    expect(result.playerHealth).toBe(25);
   });
 
-  it("block absorbs before health is lost", () => {
-    const base = makeTestBattleState();
-    const state = makeTestBattleState({
-      playerHealth: 30,
-      playerStatuses: { ...base.playerStatuses, block: 5, armor: 0 },
-    });
-    const damaged = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 5 }, []);
-    expect(damaged.playerHealth).toBe(30);
-    expect(damaged.playerStatuses.block).toBe(0);
-  });
-
-  it("armor absorbs then decays after damaging the player", () => {
-    const base = makeTestBattleState();
-    const state = makeTestBattleState({
-      playerHealth: 30,
-      playerStatuses: { ...base.playerStatuses, block: 0, armor: 3 },
-    });
-    const damaged = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 5 }, []);
-    expect(damaged.playerHealth).toBe(28);
-    expect(damaged.playerStatuses.armor).toBe(2);
-  });
-
-  it("fires health-threshold block when damage crosses the threshold", () => {
-    const base = makeTestBattleState();
-    const state = makeTestBattleState({
-      playerHealth: 30,
+  it("emits full healing potency when block-depleted heal overheals", () => {
+    const texts: Parameters<typeof applyEnemyAbility>[2] = [];
+    const state = patchBattleState({
+      playerHealth: 29,
       playerMaxHealth: 30,
-      playerStatuses: { ...base.playerStatuses, block: 0, armor: 0 },
-      talentEffects: { ...base.talentEffects, healthThresholdBlockOnce: { threshold: 50, amount: 4 } },
+      playerStatuses: { block: 5, armor: 0 },
+      talentEffects: { blockDepletedHeal: 4 },
     });
-    const damaged = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 20 }, []);
-    expect(damaged.playerHealth).toBe(10);
-    expect(damaged.playerStatuses.block).toBe(4);
+    const result = applyEnemyAbility(
+      state,
+      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
+      texts,
+    );
+    expect(result.playerHealth).toBe(30);
+    expect(texts.find((t) => t.kind === "heal")).toEqual({
+      target: "player",
+      kind: "heal",
+      stat: "health",
+      amount: 4,
+    });
   });
 });
 

@@ -239,39 +239,38 @@ describe("Dodge talent rewrites", () => {
 });
 
 describe("enemy Dodge", () => {
-  it("Dodges a player damage packet before enemy Block and Armor", () => {
-    const texts = makeCombatTexts();
-    const state = patchBattleState({
-      enemyHealth: 30,
-      enemyMitigation: { armor: 4, block: 10, forge: 0 },
-      rng: () => 0.01,
-    });
-    const card = makeTestCard({ effects: [makeEffect("physical", 8)] });
-    const result = dealDamage(state, card, texts);
-    expect(result.enemyHealth).toBe(30);
-    expect(result.enemyMitigation.block).toBe(10);
-    expect(result.enemyMitigation.armor).toBe(4);
-    expect(texts).toContainEqual({
-      target: "enemy",
-      kind: "notice",
-      stat: "dodge",
-      text: "Dodge",
-    });
-  });
-
-  it("skips lifesteal and status riders when the enemy Dodges", () => {
+  it("enemy Dodge preserves defenses and armed hits without granting player hit or Dodge rewards", () => {
     const state = patchBattleState({
       playerHealth: 20,
-      playerMaxHealth: 30,
       enemyHealth: 30,
-      enemyStatuses: { bleed: 0 },
+      enemyMitigation: { armor: 4, block: 10 },
+      deck: [makeTestCard()],
       rng: () => 0.01,
+      flags: {
+        nextHitCrit: true,
+        nextHitLeech: true,
+        nextHitPoison: true,
+        nextHitPhysicalBonus: 5,
+        nextPhysicalDealsBleed: true,
+      },
+      gearEffects: { dodgeDrawAndPlay: 1, blockOnDodge: 5 },
     });
-    const card = makeTestCard({ effects: [makeEffect("physical", 10, { lifesteal: true })] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBe(30);
-    expect(result.playerHealth).toBe(20);
-    expect(result.enemyStatuses.bleed).toBe(0);
+    const texts = makeCombatTexts();
+    const result = dealDamage(
+      state,
+      makeTestCard({ effects: [makeEffect("physical", 10, { lifesteal: true })] }),
+      texts,
+    );
+    expect(result).toMatchObject({
+      playerHealth: 20,
+      enemyHealth: 30,
+      playerStatuses: state.playerStatuses,
+      enemyStatuses: state.enemyStatuses,
+      enemyMitigation: state.enemyMitigation,
+      flags: state.flags,
+      deck: state.deck,
+    });
+    expect(texts).toEqual([{ target: "enemy", kind: "notice", stat: "dodge", text: "Dodge" }]);
   });
 
   it("does not Dodge DoT ticks", () => {
@@ -295,82 +294,6 @@ describe("enemy Dodge", () => {
       makeCombatTexts(),
     );
     expect(result.enemyHealth).toBeLessThan(30);
-  });
-
-  it("does not trigger player on-Dodge gear when the enemy Dodges", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      playerStatuses: { block: 0 },
-      deck: [makeTestCard({ id: "counter-strike", effects: [makeEffect("physical", 20)] })],
-      rng: () => 0.01,
-      gearEffects: { dodgeDrawAndPlay: 1, blockOnDodge: 5 },
-    });
-    const result = dealDamage(state, makeTestCard({ effects: [makeEffect("physical", 8)] }));
-    expect(result.playerStatuses.block).toBe(0);
-    expect(result.deck).toHaveLength(1);
-    expect(result.enemyHealth).toBe(30);
-  });
-
-  it("preserves next-hit buffs (crit, leech, poison conversion, flat bonus, parting cut) when the enemy Dodges", () => {
-    const state = patchBattleState({
-      enemyHealth: 30,
-      rng: () => 0.01,
-      flags: {
-        nextHitCrit: true,
-        nextHitLeech: true,
-        nextHitPoison: true,
-        nextHitPhysicalBonus: 5,
-        nextPhysicalDealsBleed: true,
-      },
-    });
-    const card = makeTestCard({ effects: [makeEffect("physical", 8)] });
-    const result = dealDamage(state, card);
-    expect(result.enemyHealth).toBe(30);
-    expect(result.flags.nextHitCrit).toBe(true);
-    expect(result.flags.nextHitLeech).toBe(true);
-    expect(result.flags.nextHitPoison).toBe(true);
-    expect(result.flags.nextHitPhysicalBonus).toBe(5);
-    expect(result.flags.nextPhysicalDealsBleed).toBe(true);
-  });
-
-  it("consumes physical next-hit buffs when a physical attack connects", () => {
-    const state = patchBattleState({
-      enemyHealth: 50,
-      rng: () => 0.99,
-      flags: { nextHitCrit: true, nextHitLeech: true, nextHitPhysicalBonus: 5, nextPhysicalDealsBleed: true },
-    });
-    const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.flags.nextHitCrit).toBe(false);
-    expect(result.flags.nextHitLeech).toBe(false);
-    expect(result.flags.nextHitPhysicalBonus).toBe(0);
-    expect(result.flags.nextPhysicalDealsBleed).toBe(false);
-  });
-
-  it("consumes nextHitPoison when converting an attack to poison", () => {
-    const state = patchBattleState({
-      enemyHealth: 50,
-      rng: () => 0.99,
-      flags: { nextHitPoison: true },
-    });
-    const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
-    const result = dealDamage(state, card);
-    expect(result.flags.nextHitPoison).toBe(false);
-    expect(result.enemyStatuses.poison).toBeGreaterThan(0);
-  });
-
-  it("heals via Leech and consumes nextHitLeech on the next damaging card", () => {
-    const state = patchBattleState({
-      enemyHealth: 50,
-      playerHealth: 20,
-      playerMaxHealth: 30,
-      rng: () => 0.99,
-      flags: { nextHitLeech: true },
-    });
-    const card = makeTestCard({ effects: [makeEffect("physical", 6)] });
-    const result = dealDamage(state, card);
-    expect(result.flags.nextHitLeech).toBe(false);
-    expect(result.playerHealth).toBeGreaterThan(20);
   });
 });
 

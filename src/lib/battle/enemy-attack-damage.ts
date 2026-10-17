@@ -45,93 +45,13 @@ export interface EnemyDamageResult {
   killed: boolean;
 }
 
-type EnemyMitigationResult = ReturnType<typeof calculateBlockAndArmorMitigation>;
-
-interface EnemyHitFacts {
-  readonly before: BattleState;
-  readonly mitigation: EnemyMitigationResult;
-  readonly blockLost: number;
-  readonly outcome: Omit<EnemyDamageResult, "state">;
-}
-
-function applyEnemyHealthHit(
-  state: BattleState,
-  effect: EnemyAttackEffect & { kind: "damage" },
-  attemptedDamage: number,
-  mitigation: EnemyMitigationResult,
-  combatTexts: CombatTextEvent[],
-): { state: BattleState; facts: EnemyHitFacts } {
-  const { actualDamage, totalExtraBlock, blockSpent } = mitigation;
-  let attackState = state;
-  if (totalExtraBlock > 0) {
-    if (effect.damageType === "physical" && hasEnemyTrait(state, "ogre"))
-      attackState = recordEnemyAbilityActivation(attackState, "ogre");
-    if (effect.damageType === "poison" && hasEnemyTrait(state, "giant-snake"))
-      attackState = recordEnemyAbilityActivation(attackState, "giant-snake");
-  }
-  const damagedState = applyPlayerCombatDamage(
-    attackState,
-    actualDamage,
-    "hostile",
-    effect.damageType,
-    { ignoreMitigation: true },
-    combatTexts,
-  );
-  const blockLost = Math.min(blockSpent + totalExtraBlock, damagedState.playerStatuses.block);
-  const outcome = {
-    blockLost,
-    healthAfterHit: damagedState.playerHealth,
-    healthDamage: playerHealthLostToDamage(state, damagedState),
-    attemptedDamage,
-    resolvedDamage: actualDamage,
-    landed: attemptedDamage > 0,
-    dodged: false,
-    killed: !isPlayerDefeated(state) && isPlayerDefeated(damagedState),
-  };
-  const nextState: BattleState = {
-    ...damagedState,
-    playerStatuses: {
-      ...damagedState.playerStatuses,
-      block: Math.max(0, damagedState.playerStatuses.block - blockLost),
-    },
-  };
-
-  return { state: nextState, facts: { before: state, mitigation, blockLost, outcome } };
-}
-
-function applyEnemyHitLeech(
-  nextState: BattleState,
-  effect: EnemyAttackEffect & { kind: "damage" },
-  facts: EnemyHitFacts,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  const {
-    before: state,
-    outcome: { resolvedDamage: actualDamage, healthDamage },
-  } = facts;
-  if (effect.lifesteal && actualDamage > 0) {
-    const healthLost = hasEnemyTrait(state, "ravenous") ? healthDamage : actualDamage;
-    nextState = applyEnemyLeechHealing(nextState, healthLost, combatTexts);
-    if (effect.damageType === "bleed") {
-      nextState = {
-        ...nextState,
-        pendingEnemyBleedLeechHealing:
-          nextState.pendingEnemyBleedLeechHealing +
-          Math.max(0, nextState.playerStatuses.bleed - state.playerStatuses.bleed),
-      };
-    }
-  }
-
-  return nextState;
-}
-
 function resolveEnemyDamageEffectCore(
   state: BattleState,
   effect: EnemyAttackEffect & { kind: "damage" },
   combatTexts: CombatTextEvent[],
   options: EnemyDamageOptions = {},
 ): EnemyDamageResult {
-  if (state.playerHealth <= 0)
+  if (state.playerHealth <= 0 || state.enemyHealth <= 0)
     return {
       state,
       attemptedDamage: 0,
@@ -164,42 +84,70 @@ function resolveEnemyDamageEffectCore(
 
   const mitigation = calculateBlockAndArmorMitigation(hitState, effect, incomingDamage, combatTexts, options, state);
 
-  const hit = applyEnemyHealthHit(hitState, effect, attemptedDamage, mitigation, combatTexts);
-  const { facts } = hit;
-  const { blockLost, outcome } = facts;
+  let attackState = hitState;
+  if (mitigation.totalExtraBlock > 0) {
+    if (effect.damageType === "physical" && hasEnemyTrait(state, "ogre"))
+      attackState = recordEnemyAbilityActivation(attackState, "ogre");
+    if (effect.damageType === "poison" && hasEnemyTrait(state, "giant-snake"))
+      attackState = recordEnemyAbilityActivation(attackState, "giant-snake");
+  }
+  const damaged = applyPlayerCombatDamage(
+    attackState,
+    mitigation.actualDamage,
+    "hostile",
+    effect.damageType,
+    { ignoreMitigation: true },
+    combatTexts,
+  );
+  const blockLost = Math.min(mitigation.blockSpent + mitigation.totalExtraBlock, hitState.playerStatuses.block);
   const attackBlockLost = blockLost + preDamageBlockStrip;
   const isBlockDepleted = state.playerStatuses.block > 0 && attackBlockLost >= state.playerStatuses.block;
-  // Capture Health loss before threshold healing, then resolve retaliation only for survivors.
+  // Capture the hit before defensive rewards restore Health or refill Block.
+  const outcome = {
+    attemptedDamage,
+    resolvedDamage: mitigation.actualDamage,
+    healthDamage: playerHealthLostToDamage(state, damaged),
+    healthAfterHit: damaged.playerHealth,
+    blockLost: attackBlockLost,
+    landed: attemptedDamage > 0,
+    dodged: false,
+    killed: !isPlayerDefeated(state) && isPlayerDefeated(damaged),
+  };
   let nextState = applyPlayerDefensiveReactions(
-    hit.state,
+    { ...damaged, playerStatuses: { ...damaged.playerStatuses, block: hitState.playerStatuses.block - blockLost } },
     effect,
-    { ...facts, preDamageBlockStrip, attackBlockLost, isBlockDepleted },
+    { before: state, mitigation, isBlockDepleted },
     combatTexts,
     resolvePendingBattleReactions,
-    state,
   );
-
-  const fullOutcome = { ...outcome, blockLost: outcome.blockLost + preDamageBlockStrip };
-  if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...fullOutcome };
+  if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };
 
   nextState = resolvePlayerCrowdControlTriggers(nextState, combatTexts);
-
-  nextState = applyEnemyHitLeech(nextState, effect, facts, combatTexts);
+  if (effect.lifesteal && mitigation.actualDamage > 0) {
+    nextState = applyEnemyLeechHealing(
+      nextState,
+      hasEnemyTrait(state, "ravenous") ? outcome.healthDamage : mitigation.actualDamage,
+      combatTexts,
+    );
+    if (effect.damageType === "bleed") {
+      nextState = {
+        ...nextState,
+        pendingEnemyBleedLeechHealing:
+          nextState.pendingEnemyBleedLeechHealing +
+          Math.max(0, nextState.playerStatuses.bleed - state.playerStatuses.bleed),
+      };
+    }
+  }
 
   if (attackBlockLost > 0 && options.triggerBlockRetaliation) {
     nextState = applyBlockedAttackRetaliation(nextState, attackBlockLost, combatTexts, isBlockDepleted);
   }
 
-  if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...fullOutcome };
+  if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };
 
   if (!options.skipTraitReactions) {
     const traitSet = options.traitSet ?? getEnemyTraitSet(nextState);
-    if (
-      hasEnemyTrait(nextState, "earth-elemental", traitSet) &&
-      state.playerStatuses.block > 0 &&
-      attackBlockLost >= state.playerStatuses.block &&
-      nextState.playerHealth > 0
-    ) {
+    if (hasEnemyTrait(nextState, "earth-elemental", traitSet) && isBlockDepleted) {
       nextState = processEnemyDamageEffect(
         nextState,
         { kind: "damage", damageType: "physical", amount: scaleByRoomMultiplier(nextState, 1) },
@@ -209,7 +157,7 @@ function resolveEnemyDamageEffectCore(
     }
   }
 
-  return { state: nextState, ...fullOutcome };
+  return { state: nextState, ...outcome };
 }
 
 function resolvePendingCinderSkinReaction(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
