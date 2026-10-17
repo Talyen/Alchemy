@@ -210,21 +210,12 @@ export function dealDamageToEnemy(
     applyPartingCut,
     combatTexts,
   );
-  const attackKilledEnemy = result.enemyHealth <= 0;
-  if (attackKilledEnemy && card.tags?.includes("archery") && result.talentEffects.goldOnArcheryKill > 0) {
-    result = addGoldWithCombatText(result, result.talentEffects.goldOnArcheryKill, combatTexts);
-  }
   result = resolvePendingBattleReactions(applyEncounterThorns(result, combatTexts), combatTexts);
   for (const payoff of payoffs) {
     result = resolvePendingBattleReactions(applyElementalReactionDamage(result, payoff, combatTexts), combatTexts);
   }
   // Attribute the entire packet, including reaction kills, to its Archery card exactly once.
-  if (
-    !attackKilledEnemy &&
-    result.enemyHealth <= 0 &&
-    card.tags?.includes("archery") &&
-    result.talentEffects.goldOnArcheryKill > 0
-  ) {
+  if (result.enemyHealth <= 0 && card.tags?.includes("archery") && result.talentEffects.goldOnArcheryKill > 0) {
     result = addGoldWithCombatText(result, result.talentEffects.goldOnArcheryKill, combatTexts);
     result = resolvePendingBattleReactions(result, combatTexts);
   }

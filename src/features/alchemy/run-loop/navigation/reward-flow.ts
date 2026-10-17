@@ -112,6 +112,8 @@ export interface WildwoodRewardInput {
   rng: () => number;
   createInstanceId?: (() => string) | undefined;
   lootProgress: LootProgress;
+  goldPayout?: number;
+  materials?: MaterialInventory;
   gearAstralChanceBonus?: number;
   excludedBoonIds?: readonly string[];
   ownedTrinketIds?: readonly string[];
@@ -122,14 +124,17 @@ export function createWildwoodRewardState({
   runDeck,
   rng,
   lootProgress,
+  goldPayout = 0,
+  materials,
   gearAstralChanceBonus = 0,
   excludedBoonIds = [],
   ownedTrinketIds = [],
   ownedUniqueIds = new Set(),
   createInstanceId,
 }: WildwoodRewardInput): RewardState {
+  const empty = createEmptyRewardState();
   return {
-    ...createEmptyRewardState(),
+    ...empty,
     ...createRewardOffer({
       source: "wildwood",
       runDeck,
@@ -141,6 +146,8 @@ export function createWildwoodRewardState({
       ownedUniqueIds,
       createInstanceId,
     }),
+    gold: goldPayout,
+    materials: materials ?? empty.materials,
   };
 }
 

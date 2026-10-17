@@ -10,7 +10,7 @@ import {
 } from "@/lib/game-data";
 import type { TalentPreset } from "./simulator-types";
 
-export const META_ONLY_TALENT_FIELDS: ReadonlySet<keyof TalentEffectManifest> = new Set([
+const META_ONLY_TALENT_FIELDS: ReadonlySet<keyof TalentEffectManifest> = new Set([
   "shopCardDiscount",
   "shopFreeRefreshChance",
   "companionVictoryGold",

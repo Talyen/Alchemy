@@ -19,7 +19,6 @@ function useHeldMysteryVisit(r: RunScreenDataByScreen["mystery"]) {
         ? {
             event: r.mysteryEvent!,
             cardChoices: r.mysteryCardChoices,
-            grantedTrinketIds: r.mysteryGrantedTrinketIds,
             grantedGearInstances: r.mysteryGrantedGearInstances,
             chosenCardId: r.mysteryChosenCardId,
             chosenChoice: r.mysteryChosenChoice,
@@ -29,7 +28,6 @@ function useHeldMysteryVisit(r: RunScreenDataByScreen["mystery"]) {
       isMysteryActive,
       r.mysteryEvent,
       r.mysteryCardChoices,
-      r.mysteryGrantedTrinketIds,
       r.mysteryGrantedGearInstances,
       r.mysteryChosenCardId,
       r.mysteryChosenChoice,
@@ -96,7 +94,6 @@ export function MysteryScreenRoute({ routeCommands }: RunLoopRouteCtx) {
         return effect;
       }}
       mysteryCardChoices={heldVisit.cardChoices}
-      mysteryGrantedTrinketIds={heldVisit.grantedTrinketIds}
       mysteryGrantedGearInstances={heldVisit.grantedGearInstances}
       mysteryChosenCardId={heldVisit.chosenCardId}
       mysteryChosenChoice={heldVisit.chosenChoice}

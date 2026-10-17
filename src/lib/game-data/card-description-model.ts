@@ -1,4 +1,4 @@
-import { buildDescriptionMessage, type DescriptionMessage } from "./description-message";
+import { buildDescriptionMessage } from "./description-message";
 import { effectChildren } from "./effect-tree";
 import type { BattleCard, BattleCardEffect } from "./types";
 
@@ -44,7 +44,6 @@ export interface CardMagnitude {
 
 export type CardDescriptionPart = string | CardMagnitude;
 interface CardDescriptionLine {
-  message?: DescriptionMessage;
   parts: CardDescriptionPart[];
   role: "effect" | "keyword" | "consume";
 }
@@ -108,7 +107,6 @@ export interface RenderedCardMagnitude {
   magnitude: CardMagnitude;
   value: number;
   lineIndex: number;
-  matchIndex: number;
 }
 
 function referenceKey(reference: CardMagnitudeReference): string {
@@ -132,14 +130,6 @@ export function carryCardDescriptionMarks(previous: CardDescription, description
   }
   return description.map((line) => ({
     ...line,
-    ...(line.message
-      ? {
-          message: {
-            ...line.message,
-            slots: Object.fromEntries(Object.entries(line.message.slots).map(([name, slot]) => [name, { ...slot }])),
-          },
-        }
-      : {}),
     parts: line.parts.map((part) => {
       if (typeof part === "string") return part;
       const prior = identities.get(magnitudeSignature(part));
@@ -156,8 +146,7 @@ export function carryCardDescriptionMarks(previous: CardDescription, description
 export function renderCardDescription(effects: readonly BattleCardEffect[], description: CardDescription) {
   const magnitudes: RenderedCardMagnitude[] = [];
   const identities = new Map<string, string>();
-  const corruptedValuePositions: NonNullable<BattleCard["corruptedValuePositions"]> = [];
-  const localizedLines: Array<ReturnType<typeof buildDescriptionMessage>> = [];
+  const localizedParts: Array<Parameters<typeof buildDescriptionMessage>[0]> = [];
   const descriptionLines = description.map(({ parts }, lineIndex) => {
     const messageParts: Array<{ text: string; magnitudeId?: string }> = [];
     let line = "";
@@ -174,30 +163,30 @@ export function renderCardDescription(effects: readonly BattleCardEffect[], desc
       if (previous !== undefined && previous !== signature)
         throw new Error("Card magnitude identity references different effect fields");
       identities.set(part.id, signature);
-      const matchIndex = line.length;
       const text = formatMagnitude(value, part.format);
       messageParts.push({ text, magnitudeId: part.id });
-      magnitudes.push({ id: part.id, magnitude: part, value, lineIndex, matchIndex });
-      if (part.corrupted && /^\d/.test(text)) corruptedValuePositions.push({ lineIndex, matchIndex });
+      magnitudes.push({ id: part.id, magnitude: part, value, lineIndex });
       line += text;
     }
-    localizedLines.push(buildDescriptionMessage(messageParts));
+    localizedParts.push(messageParts);
     return line;
   });
-  return { descriptionLines, magnitudes, corruptedValuePositions, localizedLines };
+  let localizedLines: Array<ReturnType<typeof buildDescriptionMessage>> | undefined;
+  return {
+    descriptionLines,
+    magnitudes,
+    get localizedLines() {
+      return (localizedLines ??= localizedParts.map((parts) => buildDescriptionMessage(parts)));
+    },
+  };
 }
 
 export function withCardDescription(card: BattleCard, description: CardDescription): BattleCard {
   const rendered = renderCardDescription(card.effects, description);
-  const { corruptedValuePositions: _previous, ...rest } = card;
   return {
-    ...rest,
-    description: description.map((line, index) => {
-      const message = rendered.localizedLines[index]!;
-      return { ...line, message: { id: message.id, template: message.template, slots: message.slots } };
-    }),
+    ...card,
+    description: description.map((line) => ({ ...line })),
     descriptionLines: rendered.descriptionLines,
-    ...(rendered.corruptedValuePositions.length ? { corruptedValuePositions: rendered.corruptedValuePositions } : {}),
   };
 }
 
@@ -208,14 +197,6 @@ export function mapCardDescriptionReferences(
 ): CardDescription {
   return description.map((line) => ({
     ...line,
-    ...(line.message
-      ? {
-          message: {
-            ...line.message,
-            slots: Object.fromEntries(Object.entries(line.message.slots).map(([name, slot]) => [name, { ...slot }])),
-          },
-        }
-      : {}),
     parts: line.parts.map((part) =>
       typeof part === "string"
         ? part

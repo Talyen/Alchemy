@@ -154,7 +154,7 @@ interface NoticeCombatTextEvent {
   signal?: "prepared" | "cleanse" | "purge" | "immune";
 }
 
-export interface ReactionCombatTextEvent {
+interface ReactionCombatTextEvent {
   target: CombatTextTarget;
   kind: "notice";
   stat: CombatTextStat;

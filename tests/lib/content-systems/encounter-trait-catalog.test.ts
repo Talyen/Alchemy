@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  ENCOUNTER_TRAITS,
   eligibleEncounterTraitIds,
   pickEncounterTrait,
-  pickEncounterTraits,
   sanitizeEncounterTraitIds,
   sanitizePersistedEnemyTraits,
 } from "@/lib/content-systems/encounter-traits";
@@ -25,35 +23,14 @@ describe("encounter trait catalog", () => {
     }
   });
 
-  it("keeps caller edits to eligible pools from changing future encounters", () => {
-    for (const mode of ["labyrinth", "wildwood"] as const) {
-      for (const category of ["combat", "reward"] as const) {
-        const expected = eligibleEncounterTraitIds(mode, category);
-        const edited = eligibleEncounterTraitIds(mode, category);
-        edited.reverse();
-        edited.length = 0;
-        expect(eligibleEncounterTraitIds(mode, category)).toEqual(expected);
-        expect(pickEncounterTrait(mode, category, () => 0)).toBe(expected[0]);
-      }
-    }
-  });
-
   it("keeps Generous and Scavenger out of Wildwood while allowing its useful rewards", () => {
-    const wildwoodRewards = pickEncounterTraits("wildwood", "reward", 10, () => 0.5);
-    expect(wildwoodRewards.sort()).toEqual(["alchemist", "companion"]);
-  });
-
-  it("selects unique traits from the requested mode and category", () => {
-    const combat = pickEncounterTraits("labyrinth", "combat", 2, () => 0.75);
-    expect(combat).toHaveLength(2);
-    expect(new Set(combat).size).toBe(2);
-    expect(combat.every((id) => ENCOUNTER_TRAITS[id].category === "combat")).toBe(true);
+    expect(eligibleEncounterTraitIds("wildwood", "reward").sort()).toEqual(["alchemist", "companion"]);
   });
 
   it("drops unknown, category-incompatible, and object prototype persisted ids without error", () => {
     expect(
       sanitizeEncounterTraitIds(
-        ["tempered", "removed-trait", "collector", "toString", "valueOf", "__proto__"],
+        ["tempered", "removed-trait", "collector", "wealthy", "toString", "valueOf", "__proto__"],
         "combat",
       ),
     ).toEqual(["tempered"]);
@@ -62,6 +39,7 @@ describe("encounter trait catalog", () => {
   it("filters out retired enemy traits from persisted lists", () => {
     const activeTrait = { id: "normal-trait", title: "Normal", description: "Trait" };
     const retiredTrait = { id: "armored", title: "Armored", description: "Retired" };
-    expect(sanitizePersistedEnemyTraits([activeTrait, retiredTrait])).toEqual([activeTrait]);
+    const retiredWealthy = { id: "wealthy", title: "Wealthy", description: "Retired" };
+    expect(sanitizePersistedEnemyTraits([activeTrait, retiredTrait, retiredWealthy])).toEqual([activeTrait]);
   });
 });

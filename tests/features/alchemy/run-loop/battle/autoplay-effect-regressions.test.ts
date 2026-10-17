@@ -57,10 +57,11 @@ describe("autoplay effect regressions", () => {
     expect(playBattleCardResolved(state, pick.card.id, pick.index).state.flags.dodgeNextAttack).toBe(true);
   });
 
-  it("values both Wishes from Faustian Bargain instead of treating it as one Wish", () => {
-    const state = readyBattle({ hand: [cardById.wish!, cardById["faustian-bargain"]!] });
+  it("values multiple Wishes instead of treating them as one Wish", () => {
+    const card = makeTestCard({ id: "double-wish", effects: [{ kind: "wish", amount: 2 }] });
+    const state = readyBattle({ hand: [cardById.wish!, card] });
     const pick = findBestPlayableHandCard(state)!;
-    expect(pick.card.id).toBe("faustian-bargain");
+    expect(pick.card.id).toBe(card.id);
     const result = playBattleCardResolved(state, pick.card.id, pick.index).state;
     expect(result.wishOptions).not.toBeNull();
     expect(result.wishQueue).toHaveLength(1);

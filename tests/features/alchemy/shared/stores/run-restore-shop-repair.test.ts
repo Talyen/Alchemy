@@ -206,7 +206,6 @@ describe("saved battle card recovery", () => {
         effects: [{ kind: "heal", amount: 9 }, { kind: "invalid" }],
         descriptionLines: ["Restore 9 Health", "Unknown action"],
         corrupted: true,
-        corruptedValuePositions: [{ lineIndex: 0, matchIndex: 8 }],
       };
       const healthy = withCardDescription(
         {
@@ -216,7 +215,6 @@ describe("saved battle card recovery", () => {
           effects: [{ kind: "heal", amount: 9 }],
           descriptionLines: ["Restore 9 Health"],
           corrupted: true,
-          corruptedValuePositions: [{ lineIndex: 0, matchIndex: 8 }],
         },
         [
           {
@@ -298,17 +296,18 @@ describe("run restore shop offering repair", () => {
     expect(readActiveRunScreen(defaultGameSession)).toBe("trinket-shop");
   });
 
-  it("leaves an exhausted restored Trinket Shop as a sold-out shelf", () => {
+  it("leaves an exhausted restored Trinket Shop as a sold-out shelf with zero refreshes", () => {
     mutateGearForTest((gear) => {
-      gear.addTrinket(ownedTrinket.id);
-      gear.addTrinket(otherTrinket.id);
+      for (const trinket of trinketLibrary) {
+        gear.addTrinket(trinket.id);
+      }
     });
 
     restoreRun(
       makeActiveRunData({
         activity: savedActivityFixture("trinket-shop", {
           trinketIds: [ownedTrinket.id, otherTrinket.id],
-          refreshesLeft: 0,
+          refreshesLeft: 1,
           freeRefreshUsed: false,
           firstPurchaseUsed: true,
           purchasedSlotKeys: [shopItemSlotKey(ownedTrinket.id, 0)],

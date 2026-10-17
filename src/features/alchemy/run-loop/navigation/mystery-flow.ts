@@ -6,11 +6,8 @@ import {
   awardMaterialsDuringRun,
   awardMysteryXP,
   createDraftInstanceIdSource,
-  deductGold,
   setMysteryCardChoices,
   setMysteryGrantedGearInstances,
-  setMysteryGrantedTrinketIds,
-  setRunDeck,
   setRunPlayerHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
@@ -26,9 +23,8 @@ import { gearBaseItemList } from "@/lib/gear/base-items";
 import { computeMysteryMaterialReward } from "@/lib/homestead/material-rewards";
 import type { MaterialId } from "@/lib/homestead/types";
 import { resolveLootWeights } from "@/lib/loot";
-import { pickMysteryTrinketGrantId, type MysteryEffect } from "@/lib/mystery";
-import { pickRandom, rngInt } from "@/lib/rng";
-import { combineTrinketEffectIds } from "@/lib/trinkets";
+import type { MysteryEffect } from "@/lib/mystery";
+import { pickRandom } from "@/lib/rng";
 import {
   appendBoonToRunWithDiscovery,
   appendCardToRunWithDiscovery,
@@ -37,7 +33,7 @@ import {
 
 export interface MysteryEffectResult {
   followUp: "choose-card" | null;
-  goldSound?: "gain" | "spend";
+  goldSound?: "gain";
   goldAward?: number;
   materialAward?: { material: MaterialId; amount: number };
 }
@@ -75,23 +71,6 @@ function offerMysteryCardChoices(
     ),
   );
   return { followUp: "choose-card" };
-}
-
-function gainRandomMysteryTrinket(
-  effect: Extract<MysteryEffect, { kind: "gainRandomTrinket" }>,
-  context: MysteryEffectContext,
-) {
-  const run = context.draft.run.activeRun;
-  const owned = new Set(combineTrinketEffectIds(run.runBoons, context.draft.gear.equippedTrinkets[run.characterId]));
-  const trinketId = pickMysteryTrinketGrantId({ fromIds: effect.fromIds, owned, rng: context.rng });
-  if (!trinketId) {
-    // Every candidate is owned: fall back to guaranteed-Astral gear, matching
-    // the pre-resolution fallback in resolve-trinkets.ts for named grants.
-    return gainRandomMysteryGear(context, true);
-  }
-  appendBoonToRunWithDiscovery(context.draft, trinketId);
-  setMysteryGrantedTrinketIds(context.draft, (previous) => [...previous, trinketId]);
-  return { followUp: null };
 }
 
 function gainRandomMysteryGear(context: MysteryEffectContext, forceAstral = false) {
@@ -157,40 +136,22 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
       return offerMysteryCardChoices(effect, context);
     case "healHealth": {
       const maxHealth = context.draft.run.activeRun.runMaxHealth;
-      if (effect.chance !== undefined && context.rng() >= effect.chance) return { followUp: null };
       const healingBonus = effect.amount > 0 ? context.draft.runProfile.effects.homesteadHealing : 0;
       setRunPlayerHealth(context.draft, (health) => Math.min(maxHealth, health + effect.amount + healingBonus));
       return { followUp: null };
     }
-    case "damageHealth":
-      setRunPlayerHealth(context.draft, (health) => Math.max(0, health - effect.amount));
-      return { followUp: null };
     case "gainGold": {
       const before = context.draft.runProfile.gold;
       addGold(context.draft, effect.amount, context.draft.runProfile.effects.goldFindBonus);
       const goldAward = context.draft.runProfile.gold - before;
       return { followUp: null, goldAward, ...(goldAward > 0 ? { goldSound: "gain" } : {}) };
     }
-    case "loseGold": {
-      const before = context.draft.runProfile.gold;
-      deductGold(context.draft, effect.amount);
-      return { followUp: null, ...(context.draft.runProfile.gold < before ? { goldSound: "spend" } : {}) };
-    }
     case "gainXP":
       awardMysteryXP(context.draft, effect.keyword, effect.amount);
-      return { followUp: null };
-    case "removeCard":
-      setRunDeck(context.draft, (deck) => {
-        if (deck.length === 0) return deck;
-        const index = rngInt(context.rng, deck.length);
-        return deck.filter((_, i) => i !== index);
-      });
       return { followUp: null };
     case "gainTrinket":
       appendBoonToRunWithDiscovery(context.draft, effect.trinketId);
       return { followUp: null };
-    case "gainRandomTrinket":
-      return gainRandomMysteryTrinket(effect, context);
     case "gainRandomGear":
       return gainRandomMysteryGear(context);
     case "gainGeneratedGear":

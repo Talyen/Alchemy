@@ -67,12 +67,12 @@ function reconcile() {
   }
   if (restoreTarget) {
     const target = restoreTarget;
-    // A connected but temporarily unavailable opener retains its recovery
-    // request through screen preparation, rather than timing out after one frame.
+    // Preserve the opener through screen preparation. A completed action can
+    // disable its opener permanently, so recover to an available screen control.
     if (isFocusAvailable(target)) {
       restoreTarget = null;
       focusControl(target);
-    } else if (!target.isConnected && focusScreenStart()) {
+    } else if ((!target.isConnected || target.matches(":disabled")) && focusScreenStart()) {
       restoreTarget = null;
     }
   }
@@ -140,7 +140,9 @@ export function registerDialogFocus(panel: HTMLDivElement, returnTarget: HTMLEle
   return () => {
     const index = scopes.indexOf(scope);
     if (index < 0) return;
-    const wasOwner = owner === scope;
+    // A quick dismissal can precede the first ownership frame. The newest
+    // unclaimed panel still owns restoration after native inert drops focus.
+    const wasOwner = owner === scope || (!owner && scopes.at(-1) === scope);
     scopes.splice(index, 1);
     // Covered panels never restore their opener through the foreground panel.
     if (wasOwner) {

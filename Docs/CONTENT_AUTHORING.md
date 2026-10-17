@@ -50,8 +50,10 @@ custom Gold line uses `{ role: "effect", parts: ["Steal ",
 cardMagnitude({ effectIndex: 1, kind: "gain-gold", field: "amount" }), " Gold"] }`.
 Plain text is display-only and cannot create an editable magnitude. Corruption
 and Powerful Wish consume these references, never English wording or equal-value
-matching. Update cards through `withCardDescription` so strings and highlight
-offsets render from the same model; do not edit numeric prose independently.
+matching. Update cards through `withCardDescription` so strings render from the
+same model; highlights belong to magnitude identities, never character offsets.
+Localization messages are derived at display/extraction time and are not saved
+inside the structured description. Do not edit numeric prose independently.
 
 Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example).
 

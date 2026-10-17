@@ -7,7 +7,7 @@ import {
   type TalentEffectManifest,
 } from "@/lib/game-data";
 import { PERCENT_DENOMINATOR } from "../game-constants";
-import { scalePercent, scalePerMana } from "./amount-helpers";
+import { scalePercent } from "./amount-helpers";
 import { flatDamageBonus } from "./damage-modifiers";
 import {
   getEnemyDamageVulnerabilityBonus,
@@ -110,11 +110,11 @@ function applyDamageTypeModifiers(state: BattleState, damageType: DamageType, ra
       return amount + blockScaledDamage(state, state.talentEffects.blockStunDamagePercent);
     case "burn":
       if (state.talentEffects.burnDamagePerMana > 0)
-        amount += scalePerMana(state.mana, state.talentEffects.burnDamagePerMana, "percent");
+        amount += scalePercent(state.mana, state.talentEffects.burnDamagePerMana);
       return amount;
     case "freeze":
       if (state.talentEffects.freezeDamagePerMana > 0)
-        amount += scalePerMana(state.mana, state.talentEffects.freezeDamagePerMana, "percent");
+        amount += scalePercent(state.mana, state.talentEffects.freezeDamagePerMana);
       return amount;
     case "nature":
       return amount;

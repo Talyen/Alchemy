@@ -63,6 +63,9 @@ describe("autoplay policy", () => {
         },
       ]),
     ).toBe(4);
+    expect(score([{ kind: "damage", damageType: "holy", amount: 0, equalToArmor: true }])).toBe(
+      state.playerStatuses.armor,
+    );
     const refill = makeTestCard({ cost: 1, tags: ["holy"], effects: [{ kind: "restore-mana", amount: 2 }] });
     expect(getEffectiveDamageScore(refill, { ...state, flags: { ...state.flags, nextHolyCardFree: true } })).toBe(0);
   });

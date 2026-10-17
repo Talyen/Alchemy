@@ -7,8 +7,11 @@ import {
   type BattleCardEffect,
 } from "@/lib/game-data";
 import { createCampfirePotionOffers, strengthenPotion } from "@/lib/alchemist/brewing";
+import { getTransmutationVariants } from "@/lib/alchemist/transmutation";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
+import { applyCardEffects } from "@/lib/battle";
 import { makeTestCard } from "../../fixtures/cards";
+import { makeState } from "../../fixtures/battle";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { createSeededRng } from "@/lib/rng";
@@ -77,10 +80,29 @@ describe("brewing content", () => {
       { kind: "remove-harmful-status", removeAll: true },
       { kind: "heal", amount: 3 },
     ]);
-    expect(strengthenPotion(strengthenPotion(cardById["panacea-potion"]!)!)?.effects).toEqual([
+    const manaPanacea = getTransmutationVariants(cardById["panacea-potion"]!, "mana", [])[0]!.result;
+    expect(strengthenPotion(manaPanacea)?.effects).toEqual([
       { kind: "remove-harmful-status", removeAll: true },
-      { kind: "heal", amount: 4 },
+      { kind: "restore-mana", amount: 3 },
+      { kind: "heal", amount: 1 },
     ]);
+    const distilled = strengthenPotion(manaPanacea)!;
+    expect(distilled.descriptionLines).toContain("Restore 1 Health");
+    expect(strengthenPotion(distilled)?.effects.at(-1)).toEqual({ kind: "heal", amount: 2 });
+    expect(hydrateCard(BattleCardSchema.parse(distilled)).descriptionLines).toEqual(distilled.descriptionLines);
+  });
+  it("distills Companion actions on Potions and scales them with Potion potency", () => {
+    const source = getTransmutationVariants(cardById["health-potion"]!, "companion", [cardById["wolf-companion"]!])[0]!
+      .result;
+    expect(strengthenPotion(source)!.effects.at(-1)).toEqual({ kind: "companion-action", amount: 2 });
+    const potion = makeTestCard({
+      id: "health-potion",
+      consume: true,
+      effects: [{ kind: "companion-action", amount: 5 }],
+    });
+    const summon = applyCardEffects(makeState(), cardById["mana-moth-companion"]!, []);
+    const state = { ...summon, mana: 0, maxMana: 20, talentEffects: { ...summon.talentEffects, potionPotency: 1.2 } };
+    expect(applyCardEffects(state, potion, []).mana).toBe(6);
   });
   it("preserves nested chance probabilities and nonnumeric Acid effects", () => {
     const acid = strengthenPotion(cardById["acid-potion"]!)!;

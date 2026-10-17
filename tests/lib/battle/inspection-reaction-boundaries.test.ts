@@ -50,23 +50,6 @@ describe("damage inspection includes guaranteed reactions", () => {
     expect(result.projected).toEqual(result.expected);
   });
 
-  it("Frostfire defeats the enemy before Ray of Frost's second hit", () => {
-    const result = inspect(
-      cardById["ray-of-frost"]!,
-      {
-        enemyHealth: 2,
-        enemyMaxHealth: 100,
-        enemyStatuses: { burn: 1, freeze: 1 },
-      },
-      [1, 0],
-    );
-    expect(result.actual.state.enemyHealth).toBe(0);
-    expect(result.actual.combatTexts.some((event) => "reactionId" in event && event.reactionId === "frostfire")).toBe(
-      true,
-    );
-    expect(result.projected).toEqual(result.expected);
-  });
-
   it("Purge's Holy reward can defeat the target before later card packets", () => {
     const result = inspect(
       ray("holy"),

@@ -16,7 +16,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
 import type { MysteryChoice } from "@/lib/mystery";
-export function chooseMysteryOption(choice: MysteryChoice, gameSession: GameSession): Array<"gain" | "spend"> | null {
+export function chooseMysteryOption(choice: MysteryChoice, gameSession: GameSession): Array<"gain"> | null {
   const activity = readRunSession(gameSession).activity;
   // The choice object belongs to one resolved visit. A retained screen from an
   // earlier visit must not apply its effects to the current one.
@@ -31,7 +31,7 @@ export function chooseMysteryOption(choice: MysteryChoice, gameSession: GameSess
       const offeredChoice = visit.data.mysteryEvent?.choices[choiceIndex];
       if (!offeredChoice) return rejectCommand("Mystery choice is unavailable", null);
       const resolvedEffects = [...offeredChoice.effects];
-      const goldSounds: Array<"gain" | "spend"> = [];
+      const goldSounds: Array<"gain"> = [];
       const rng = createDraftRunRandomSource(draft, "events");
       for (const [index, effect] of offeredChoice.effects.entries()) {
         const healthBefore = draft.run.activeRun.runPlayerHealth;

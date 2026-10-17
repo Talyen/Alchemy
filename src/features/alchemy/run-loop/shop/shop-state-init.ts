@@ -155,9 +155,11 @@ export function createInitialAlchemistState(
 }
 
 export function createInitialTrinketShopState(rng: () => number, ownedIds: readonly string[] = []): TrinketShopState {
+  const trinkets = sampleTrinketShopOfferings(rng, ownedIds);
   return {
     ...emptyTrinketShopState(),
-    trinkets: sampleTrinketShopOfferings(rng, ownedIds),
+    trinkets,
+    refreshesLeft: trinkets.length > 0 ? 1 : 0,
   };
 }
 

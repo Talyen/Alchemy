@@ -32,7 +32,8 @@ describe("expanded corruption persistence", () => {
       expect(restored?.effects).toEqual(corruptedCard.effects);
       expect(restored?.descriptionLines).toEqual(corruptedCard.descriptionLines);
       expect(restored?.consume).toBe(corruptedCard.consume);
-      expect(restored?.corruptedValuePositions ?? []).toEqual(corruptedCard.corruptedValuePositions ?? []);
+      expect(restored?.description).toEqual(corruptedCard.description);
+
       expect(restored?.uid).toBe(42);
       expect(restored?.corrupted).toBe(true);
     }
@@ -46,7 +47,7 @@ describe("expanded corruption persistence", () => {
           expect(loaded.effects, `${original.id}: ${group.kind}`).toEqual(card.effects);
           expect(loaded.descriptionLines).toEqual(card.descriptionLines);
           expect(loaded.consume).toBe(card.consume);
-          expect(loaded.corruptedValuePositions ?? []).toEqual(card.corruptedValuePositions ?? []);
+          expect(loaded.description).toEqual(card.description);
         }
       }
     }

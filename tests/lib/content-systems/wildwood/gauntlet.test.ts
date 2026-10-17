@@ -133,8 +133,11 @@ describe("Wildwood phase transitions", () => {
     expect(victorious.phase).toBe("battle");
   });
 
-  it("enters removal only from reward and skip only from removal", () => {
-    expect(enterWildwoodRemoval(draftState({ phase: "reward" }))?.phase).toBe("removal");
+  it("enters removal only from reward, clears reward traits, and skips only from removal", () => {
+    expect(enterWildwoodRemoval(draftState({ phase: "reward", currentRewardTraitIds: ["alchemist"] }))).toMatchObject({
+      phase: "removal",
+      currentRewardTraitIds: [],
+    });
     expect(enterWildwoodRemoval(draftState({ phase: "battle" }))).toBeNull();
     expect(canSkipWildwoodRemoval(draftState({ phase: "removal" }))).toBe(true);
     expect(canSkipWildwoodRemoval(draftState({ phase: "reward" }))).toBe(false);

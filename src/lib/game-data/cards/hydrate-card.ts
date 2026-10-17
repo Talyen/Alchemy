@@ -41,9 +41,6 @@ export function cloneBattleCard(card: BattleCard): BattleCard {
         }
       : {}),
     ...(card.tags ? { tags: [...card.tags] } : {}),
-    ...(card.corruptedValuePositions
-      ? { corruptedValuePositions: card.corruptedValuePositions.map((position) => ({ ...position })) }
-      : {}),
   };
 }
 
@@ -84,9 +81,5 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
       }),
     ...(keepSavedContent && savedCard.tags && { tags: [...savedCard.tags] }),
     ...(keepSavedContent && savedCard.baseTitle !== undefined && { baseTitle: savedCard.baseTitle }),
-    ...(keepSavedContent &&
-      savedCard.corruptedValuePositions?.length && {
-        corruptedValuePositions: savedCard.corruptedValuePositions,
-      }),
   });
 }

@@ -15,18 +15,12 @@ import { FadeSlot } from "../../../shared/ui/use-fade";
 import { CardChoicePicker } from "./mystery-deck-pickers";
 import { MysteryRewardSummary } from "./mystery-reward-summary";
 import { MysteryEventIntro } from "./mystery-event-intro";
-import {
-  choiceHasDisplayableSummary,
-  choiceOffersCardSelection,
-  getPlasmaKeywordsForMysteryReward,
-  hasPositiveMysteryEffect,
-} from "./mystery-choice-utils";
+import { choiceOffersCardSelection, getPlasmaKeywordsForMysteryReward } from "./mystery-choice-utils";
 
 export function MysteryScreen({
   event,
   previewEffect,
   mysteryCardChoices,
-  mysteryGrantedTrinketIds,
   mysteryGrantedGearInstances,
   mysteryChosenCardId,
   mysteryChosenChoice,
@@ -41,7 +35,6 @@ export function MysteryScreen({
   event: MysteryEvent;
   previewEffect?: ((effect: MysteryEffect) => MysteryEffect) | undefined;
   mysteryCardChoices: BattleCard[] | null;
-  mysteryGrantedTrinketIds: string[];
   mysteryGrantedGearInstances: GearInstance[];
   mysteryChosenCardId: string | null;
   mysteryChosenChoice: MysteryChoice | null;
@@ -61,26 +54,22 @@ export function MysteryScreen({
       return;
     }
     setError("");
-    if (!choiceOffersCardSelection(choice) && hasPositiveMysteryEffect(choice.effects)) {
+    if (!choiceOffersCardSelection(choice) && choice.effects.length > 0) {
       playUISound("talentUnlock");
     }
   }
 
-  function handlePickerConfirm(confirm: () => boolean) {
-    if (!confirm()) {
+  function handleCardChoiceConfirm(cardId: string) {
+    if (!onChooseCard(cardId)) {
       setError("This choice is unavailable. Try again.");
       return;
     }
     setError("");
-    if (mysteryChosenChoice && choiceHasDisplayableSummary(mysteryChosenChoice)) {
-      if (hasPositiveMysteryEffect(mysteryChosenChoice.effects)) playUISound("talentUnlock");
+    if (mysteryChosenChoice && mysteryChosenChoice.effects.length > 0) {
+      playUISound("talentUnlock");
     } else {
       onContinue();
     }
-  }
-
-  function handleCardChoiceConfirm(cardId: string) {
-    handlePickerConfirm(() => onChooseCard(cardId));
   }
 
   const phase = mysteryCardChoices ? "cards" : mysteryChosenChoice ? "summary" : "intro";
@@ -91,18 +80,10 @@ export function MysteryScreen({
     return getPlasmaKeywordsForMysteryReward({
       choice: mysteryChosenChoice,
       findCard,
-      grantedTrinketIds: mysteryGrantedTrinketIds,
       grantedGearInstances: mysteryGrantedGearInstances,
       chosenCardId: mysteryChosenCardId,
     });
-  }, [
-    phase,
-    mysteryChosenChoice,
-    findCard,
-    mysteryGrantedTrinketIds,
-    mysteryGrantedGearInstances,
-    mysteryChosenCardId,
-  ]);
+  }, [phase, mysteryChosenChoice, findCard, mysteryGrantedGearInstances, mysteryChosenCardId]);
 
   return (
     <FadeSlot swapKey={`${event.id}:${phase}`} className="h-full w-full">
@@ -120,7 +101,6 @@ export function MysteryScreen({
               choice={mysteryChosenChoice}
               findCard={findCard}
               findTrinket={findTrinket}
-              grantedTrinketIds={mysteryGrantedTrinketIds}
               grantedGearInstances={mysteryGrantedGearInstances}
               chosenCardId={mysteryChosenCardId}
               runTalentXP={runTalentXP}

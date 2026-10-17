@@ -1,9 +1,8 @@
 import type { ActiveRunData, EquipmentShopState, TrinketShopState } from "@/lib/active-run-session";
 import { readActivityData, repairShopOfferings, shopItemSlotKey } from "@/lib/active-run-session";
+import { trinketLibrary } from "@/lib/game-data";
 import { gearDefinitions, getOwnedUniqueDefinitionIds } from "@/lib/gear";
-import { eventHasUnresolvedRandomTrinket, repairUnresolvedMysteryTrinkets } from "@/lib/mystery";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { snapshotReadonlyValue } from "./readonly-view";
 import { restoreActiveBattle } from "./battle-restore";
 import { gameplayDraftRuntime, type GameplayDraft } from "./gameplay-command";
@@ -12,7 +11,6 @@ import {
   abandonMysteryDestinationVisit,
   clearMysteryVisitState,
   clearTransientSession,
-  createDraftRunRandomSource,
   initializeActiveRun,
   initializeFromResumeSnapshot,
   rebindLiveRunMeta,
@@ -21,7 +19,6 @@ import {
   setActiveLabyrinthRewardModifiers,
   setCompanionRewardCards,
   setLabyrinthMap,
-  setMysteryEvent,
   setRewardState,
   setRunProgressActivity,
   setScreen,
@@ -37,7 +34,13 @@ function repairRestoredTrinketShop(state: TrinketShopState, ownedIds: readonly s
     (trinket) => !owned.has(trinket.id),
     (trinket, index) => shopItemSlotKey(trinket.id, index),
   );
-  return { ...state, trinkets: repaired.items, purchasedSlotKeys: repaired.purchasedSlotKeys };
+  const hasUnownedTrinket = trinketLibrary.some((trinket) => !owned.has(trinket.id));
+  return {
+    ...state,
+    trinkets: repaired.items,
+    purchasedSlotKeys: repaired.purchasedSlotKeys,
+    refreshesLeft: hasUnownedTrinket ? state.refreshesLeft : 0,
+  };
 }
 
 function repairRestoredEquipmentShop(
@@ -89,20 +92,6 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
   const resumeScreen = decoded.screen;
   if (resumeScreen) setScreen(draft, resumeScreen);
   const mysteryEvent = readActivityData(draft.session.activity, "mystery").mysteryEvent;
-  if (mysteryEvent && eventHasUnresolvedRandomTrinket(mysteryEvent)) {
-    const rng = createDraftRunRandomSource(draft, "events");
-    setMysteryEvent(
-      draft,
-      repairUnresolvedMysteryTrinkets(
-        mysteryEvent,
-        combineTrinketEffectIds(
-          draft.run.activeRun.runBoons,
-          draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
-        ),
-        rng,
-      ),
-    );
-  }
   if (resumeScreen === "mystery" && !mysteryEvent) {
     abandonMysteryDestinationVisit(draft);
     clearMysteryVisitState(draft);

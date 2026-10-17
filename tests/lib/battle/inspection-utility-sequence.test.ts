@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { getBattleDamageInspectionCard } from "@/lib/battle/card-damage-inspection";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { type BattleCardEffect } from "@/lib/game-data";
+import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
+import { cardById, type BattleCardEffect } from "@/lib/game-data";
 import { makeTestCard, patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 
 function compare(
@@ -48,6 +49,7 @@ describe("damage inspection follows utility effect execution", () => {
       [5],
     );
   });
+
   it("arms Leech before projecting healing and later low-Health damage", () => {
     compare(
       [
@@ -77,30 +79,17 @@ describe("damage inspection follows utility effect execution", () => {
   });
 
   it("settles Mana Crystal loss damage before the next hit", () => {
-    const effects: BattleCardEffect[] = [
-      { kind: "lose-max-mana", amount: 1 },
-      { kind: "damage", damageType: "physical", amount: 2, tripleIfEnemyNotBurning: true },
-    ];
-    const card = makeTestCard({ effects });
-    const rng = vi.fn(() => 0.99);
-    const initial = patchBattleState({
-      rng,
-      hand: [card],
-      mana: 3,
-      maxMana: 4,
-      enemyHealth: 100,
-      enemyMaxHealth: 100,
-      talentEffects: { burnDamageOnManaCrystalLoss: 4 },
-    });
-    const before = JSON.stringify(initial);
-    const preview = getBattleDamageInspectionCard(card, initial);
-    expect(rng).not.toHaveBeenCalled();
-    expect(JSON.stringify(initial)).toBe(before);
-    const actual = playBattleCardResolved(initial, card.id, 0);
-    expect(actual.state.enemyStatuses.burn).toBe(4);
-    expect(actual.state.enemyHealth).toBe(94);
-    expect(preview.effects.at(-1)).toMatchObject({ kind: "damage", amount: 2 });
+    compare(
+      [
+        { kind: "lose-max-mana", amount: 1 },
+        { kind: "damage", damageType: "physical", amount: 2, tripleIfEnemyNotBurning: true },
+      ],
+      { maxMana: 4, talentEffects: { burnDamageOnManaCrystalLoss: 4 } },
+      [2],
+      6,
+    );
   });
+
   it.each([false, true])("uses the summoned Companion for later actions and Eager Pack (enabled: %s)", (eagerPack) => {
     compare(
       [
@@ -111,5 +100,106 @@ describe("damage inspection follows utility effect execution", () => {
       { talentEffects: { burnDamagePerMana: 100 }, encounterBenefits: eagerPack ? ["eager-pack"] : [] },
       [eagerPack ? 6 : 4],
     );
+  });
+
+  it("projects Wish rewards, Sunder Armor removal, and self-damage thresholds before later attacks", () => {
+    compare(
+      [
+        { kind: "wish", amount: 1 },
+        { kind: "remove-enemy-armor", halve: true },
+        { kind: "damage", damageType: "stun", amount: 2, ignoreArmor: true },
+      ],
+      {
+        enemyMitigation: { armor: 8 },
+        gearEffects: { armorIncreasesStun: 1, manaOnWish: 2 },
+      },
+      [6],
+    );
+    // Sunder strips half of Forge as enemy Armor once per card after a Physical hit.
+    compare(
+      [
+        { kind: "damage", damageType: "physical", amount: 2 },
+        { kind: "damage", damageType: "physical", amount: 2 },
+        { kind: "damage", damageType: "stun", amount: 2, ignoreArmor: true },
+      ],
+      {
+        playerStatuses: { forge: 4 },
+        enemyMitigation: { armor: 5 },
+        talentEffects: { physicalStripArmorByForge: true },
+        gearEffects: { armorIncreasesStun: 1 },
+      },
+      [6, 6, 7],
+      12,
+    );
+    compare(
+      [
+        { kind: "lose-health", amount: 2 },
+        { kind: "damage", damageType: "physical", amount: 6 },
+      ],
+      {
+        playerHealth: 21,
+        playerMaxHealth: 40,
+        talentEffects: { healthThresholdArmor: [{ threshold: 50, amount: 3 }], armorPhysicalDamagePercent: 50 },
+      },
+      [8],
+    );
+  });
+
+  it("projects Exorcism self-damage reactions, fatal Health bargains, and Corruption marks", () => {
+    const exorcism = cardById.exorcism!;
+    const phoenixState = patchBattleState({
+      hand: [exorcism],
+      rng: () => 0.99,
+      playerHealth: 1,
+      playerMaxHealth: 40,
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      playerStatuses: { phoenixFeather: 1 },
+    });
+    expect(playBattleCardResolved(phoenixState, exorcism.id, 0).state.enemyHealth).toBe(99);
+    expect(getBattleDamageInspectionCard(exorcism, phoenixState).effects[2]).toMatchObject({
+      kind: "damage",
+      amount: 1,
+    });
+
+    const guardState = patchBattleState({
+      hand: [exorcism],
+      rng: () => 0.99,
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      playerStatuses: { armor: 1 },
+      gearEffects: { flatBlockGained: 2 },
+      talentEffects: { armorBreakBlock: 3, blockHolyDamagePercent: 10 },
+    });
+    expect(playBattleCardResolved(guardState, exorcism.id, 0).state.enemyHealth).toBe(98);
+    expect(getBattleDamageInspectionCard(exorcism, guardState).effects[2]).toMatchObject({
+      kind: "damage",
+      amount: 2,
+    });
+
+    const bargainSlash = getCorruptionMutationGroups(cardById.slash!).find((group) => group.kind === "bargain")!
+      .mutations[0]!.card;
+    const fatalState = patchBattleState({
+      hand: [bargainSlash],
+      rng: () => 0.99,
+      playerHealth: 1,
+      deathsDoorUsed: true,
+    });
+    expect(playBattleCardResolved(fatalState, bargainSlash.id, 0).state.enemyHealth).toBe(fatalState.enemyHealth);
+    expect(getBattleDamageInspectionCard(bargainSlash, fatalState).effects[1]).toMatchObject({
+      kind: "damage",
+      amount: 0,
+    });
+
+    const strengthenedTithe = getCorruptionMutationGroups(cardById.tithe!)
+      .find((group) => group.kind === "strengthen")!
+      .mutations.find(({ card }) =>
+        card.effects.some((effect) => effect.kind === "gain-gold" && effect.amount > 1),
+      )!.card;
+    const tithePreview = getBattleDamageInspectionCard(
+      strengthenedTithe,
+      patchBattleState({ flags: { nextHitPhysicalBonus: 4 } }),
+    );
+    expect(tithePreview.description![2]!.parts).toContainEqual(expect.objectContaining({ corrupted: true }));
   });
 });

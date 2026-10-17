@@ -10,5 +10,4 @@ export {
   isCompanionSummonCard,
   isMixedPotionCard,
   isPotionCard,
-  isStandardPotionCard,
 } from "./cards/card-pools";

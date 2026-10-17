@@ -230,8 +230,6 @@ export const setMysteryChosenChoice = defineMysteryVisitSetter("mysteryChosenCho
 
 export const setMysteryCardChoices = defineMysteryVisitSetter("mysteryCardChoices");
 
-export const setMysteryGrantedTrinketIds = defineMysteryVisitSetter("mysteryGrantedTrinketIds");
-
 export const setMysteryGrantedGearInstances = defineMysteryVisitSetter("mysteryGrantedGearInstances");
 
 export const setMysteryChosenCardId = defineMysteryVisitSetter("mysteryChosenCardId");

@@ -24,7 +24,6 @@ describe("parseActiveRun", () => {
         effects: [{ kind: "player-status", status: "block", amount: 9 }, { kind: "invalid" }],
         descriptionLines: ["Gain 9 Block", "Restore 2 Health"],
         corrupted: true,
-        corruptedValuePositions: [{ lineIndex: 0, matchIndex: 5 }],
       };
       const visits = [
         savedActivityFixture("shop", { cards: [damaged], refreshesLeft: 1, purchasedSlotKeys: [] }),
@@ -33,7 +32,6 @@ describe("parseActiveRun", () => {
           event: findMysteryEvent("ancient-altar")!,
           chosenChoice: null,
           cardChoices: [damaged],
-          grantedTrinketIds: [],
           grantedGear: [],
           chosenCardId: null,
         }),

@@ -12,7 +12,6 @@ const mysteryScreenData = vi.hoisted(() => ({
   current: {
     mysteryEvent: null as MysteryEvent | null,
     mysteryCardChoices: null as unknown,
-    mysteryGrantedTrinketIds: [] as string[],
     mysteryGrantedGearInstances: [] as unknown[],
     mysteryChosenCardId: null as string | null,
     mysteryChosenChoice: null as unknown,
@@ -62,7 +61,6 @@ afterEach(() => {
   mysteryScreenData.current = {
     mysteryEvent: null,
     mysteryCardChoices: null,
-    mysteryGrantedTrinketIds: [],
     mysteryGrantedGearInstances: [],
     mysteryChosenCardId: null,
     mysteryChosenChoice: null,

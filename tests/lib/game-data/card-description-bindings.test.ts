@@ -22,16 +22,18 @@ describe("card description bindings", () => {
     const reworded = withCardDescription(copy, copy.description!);
     const first = applyNumericCorruption(reworded, getEditableCorruptionTargets(reworded)[0]!, 1);
     const raw = JSON.parse(JSON.stringify(first));
-    // Derived strings and offsets may be stale; the persisted bindings own both.
+    // Saved display caches may be stale; effect bindings own the rendered content.
     raw.descriptionLines = [];
     raw.corruptedValuePositions = [{ lineIndex: 99, matchIndex: 99 }];
     const loaded = hydrateCard(BattleCardSchema.parse(raw));
     expect(loaded.descriptionLines).toEqual(["Deal 2 Freeze damage two times"]);
-    expect(loaded.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 5 }]);
+    expect(loaded).not.toHaveProperty("corruptedValuePositions");
+    expect(getCardDescription(loaded)[0]!.parts).toContainEqual(expect.objectContaining({ corrupted: true }));
+
     const changed = applyNumericCorruption(loaded, getEditableCorruptionTargets(loaded)[0]!, 1);
     expect(changed.descriptionLines).toEqual(["Deal 3 Freeze damage two times"]);
     expect(changed.effects.map((effect) => ("amount" in effect ? effect.amount : null))).toEqual([3, 3]);
-    expect(changed.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 5 }]);
+
     expect(original.descriptionLines).toEqual(["Deal 1 Freeze damage twice"]);
     expect(original.effects.map((effect) => ("amount" in effect ? effect.amount : null))).toEqual([1, 1]);
   });
@@ -127,10 +129,6 @@ describe("card description bindings", () => {
       "Gain 2 Mana",
       "Consume",
     ]);
-    expect(changed.corruptedValuePositions).toEqual([
-      { lineIndex: 0, matchIndex: 5 },
-      { lineIndex: 1, matchIndex: 5 },
-    ]);
   });
 
   it("drops malformed saved bindings while retaining the card's actual effects", () => {
@@ -180,8 +178,11 @@ describe("card description bindings", () => {
     const strengthened = strengthenPotion(corrupted)!;
     const loaded = hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(strengthened))));
     expect(loaded.effects[0]).toEqual({ kind: "heal", amount: 10 });
+    expect(getCardDescription(loaded)[0]!.parts).toContainEqual(
+      expect.objectContaining({ corrupted: true, distilled: true }),
+    );
     expect(loaded.descriptionLines).toEqual(["Restore 10 Health", "Consume"]);
-    expect(loaded.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 8 }]);
+
     expect(getEditableCorruptionTargets(loaded)[0]!.id).toBe(target.id);
   });
 });

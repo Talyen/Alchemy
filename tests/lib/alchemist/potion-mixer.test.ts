@@ -149,24 +149,42 @@ describe("createMixedPotion", () => {
     expect(mixed.descriptionLines).toEqual([`Deal 20 Poison damage for the next ${turns} turns`, "Consume"]);
   });
 
-  it("keeps an unscaled conversion rate when it matches a scaled damage amount", () => {
+  it("keeps unscaled conversion rates, derived base amounts, Health costs, and extra-turn durations when mixing or doubling", () => {
     const volatilePotion = makePotion({
       id: "volatile-potion",
       descriptionLines: ["Deal 5 Burn damage", "Convert each of your Mana into 5 Block", "Consume"],
       effects: [
         { kind: "damage", damageType: "burn", amount: 5 },
-        { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 },
+        { kind: "player-status", status: "block", amount: 2, convertCurrentMana: 5 },
+        { kind: "player-status", status: "block", amount: 3, perManaCrystal: 2 },
+        { kind: "damage", damageType: "holy", amount: 4, equalToBlock: true },
       ],
     });
 
     const mixed = createMixedPotion(volatilePotion, volatilePotion);
+    const doubled = doublePotionPotency(volatilePotion);
 
-    expect(mixed.effects[0]).toEqual({ kind: "damage", damageType: "burn", amount: 10 });
-    expect(mixed.effects[1]).toEqual({ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 });
-    expect(mixed.descriptionLines).toEqual([
-      "Deal 10 Burn damage",
-      "Convert each of your Mana into 5 Block",
-      "Consume",
+    for (const scaled of [mixed, doubled]) {
+      expect(scaled.effects).toEqual([
+        { kind: "damage", damageType: "burn", amount: 10 },
+        { kind: "player-status", status: "block", amount: 2, convertCurrentMana: 5 },
+        { kind: "player-status", status: "block", amount: 3, perManaCrystal: 2 },
+        { kind: "damage", damageType: "holy", amount: 4, equalToBlock: true },
+      ]);
+    }
+
+    const costly = makePotion({
+      effects: [
+        { kind: "lose-health", amount: 2 },
+        { kind: "player-status", status: "haste", amount: 1 },
+        { kind: "heal", amount: 8 },
+      ],
+    });
+    expect(createMixedPotion(costly, costly).effects).toEqual([...costly.effects, ...costly.effects]);
+    expect(doublePotionPotency(costly).effects).toEqual([
+      { kind: "lose-health", amount: 2 },
+      { kind: "player-status", status: "haste", amount: 1 },
+      { kind: "heal", amount: 16 },
     ]);
   });
 });

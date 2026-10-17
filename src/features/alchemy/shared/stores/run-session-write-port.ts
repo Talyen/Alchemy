@@ -76,7 +76,6 @@ export const setMysteryChosenCardId = transactionOperation(session.setMysteryCho
 export const setMysteryChosenChoice = transactionOperation(session.setMysteryChosenChoice);
 export const setMysteryEvent = transactionOperation(session.setMysteryEvent);
 export const setMysteryGrantedGearInstances = transactionOperation(session.setMysteryGrantedGearInstances);
-export const setMysteryGrantedTrinketIds = transactionOperation(session.setMysteryGrantedTrinketIds);
 export const setPendingCharacterId = transactionOperation(session.setPendingCharacterId);
 export const setPendingContentSystemType = transactionOperation(session.setPendingContentSystemType);
 export const setRewardState = transactionOperation(session.setRewardState);

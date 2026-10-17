@@ -18,7 +18,7 @@ import {
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
 import { findMysteryEvent, type MysteryChoice, type MysteryEffect } from "@/lib/mystery";
-import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
+import { playGoldGain, playUISound } from "@/lib/audio";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { emptyHydratedMysteryVisit, hydrateMysteryVisit, readActivityData } from "@/lib/active-run-session";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
@@ -105,9 +105,6 @@ describe("createMysteryEventNavigation", () => {
 
     expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryEvent).not.toBeNull();
     expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryCardChoices).toBeNull();
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryGrantedTrinketIds).toEqual(
-      [],
-    );
     expect(
       readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryGrantedGearInstances,
     ).toEqual([]);
@@ -142,19 +139,13 @@ describe("createMysteryEventNavigation", () => {
     const { nav } = createMysteryNav();
     const commits: number[] = [];
     vi.mocked(playGoldGain).mockImplementationOnce(() => {
-      expect(readRunProfile(defaultGameSession).gold).toBe(25);
-    });
-    vi.mocked(playGoldSpend).mockImplementationOnce(() => {
-      expect(readRunProfile(defaultGameSession).gold).toBe(25);
+      expect(readRunProfile(defaultGameSession).gold).toBe(30);
     });
 
     const choice = offerChoices([
       {
-        label: "Trade",
-        effects: [
-          { kind: "gainGold", amount: 10 },
-          { kind: "loseGold", amount: 5 },
-        ],
+        label: "Take",
+        effects: [{ kind: "gainGold", amount: 10 }],
       },
     ])[0]!;
     const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision), defaultGameSession);
@@ -164,7 +155,6 @@ describe("createMysteryEventNavigation", () => {
 
     expect(commits).toHaveLength(1);
     expect(playGoldGain).toHaveBeenCalledOnce();
-    expect(playGoldSpend).toHaveBeenCalledOnce();
   });
 
   it("handleMysteryChoice ignores a second call after the choice commits", () => {
@@ -219,7 +209,6 @@ describe("createMysteryEventNavigation", () => {
       event: findMysteryEvent("fairy-ring")!,
       chosenChoice: null,
       cardChoices: null,
-      grantedTrinketIds: [],
       grantedGear: [],
       chosenCardId: null,
     });
@@ -264,7 +253,6 @@ describe("createMysteryEventNavigation", () => {
 
     expect(readRunProfile(defaultGameSession).gold).toBe(20);
     expect(playGoldGain).not.toHaveBeenCalled();
-    expect(playGoldSpend).not.toHaveBeenCalled();
   });
 
   it("awards trailing material rewards even when choice triggers card selection", () => {

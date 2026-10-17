@@ -1,7 +1,7 @@
 import { LABYRINTH_TRAITS } from "./labyrinth/trait-catalog";
 import type { EnemyTrait } from "@/lib/game-data";
 import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
-import { pickRandom, sampleItems } from "@/lib/rng";
+import { pickRandom } from "@/lib/rng";
 import type { ContentSystemId } from "./content-system-ids";
 
 const RETIRED_ENCOUNTER_TRAIT_IDS = [
@@ -12,6 +12,7 @@ const RETIRED_ENCOUNTER_TRAIT_IDS = [
   "leeching",
   "null-field",
   "collector",
+  "wealthy",
 ] as const;
 
 const RETIRED_ENCOUNTER_TRAIT_ID_SET = new Set<string>(RETIRED_ENCOUNTER_TRAIT_IDS);
@@ -41,8 +42,12 @@ function defineEncounterTraits<const Catalog extends Record<string, EncounterTra
   };
 }
 
-function combat(label: string, description: string): EncounterTraitInput & { category: "combat" } {
-  return { category: "combat", label, description, modes: ["labyrinth", "wildwood"] };
+function combat(
+  label: string,
+  description: string,
+  modes: readonly EncounterMode[] = ["labyrinth", "wildwood"],
+): EncounterTraitInput & { category: "combat" } {
+  return { category: "combat", label, description, modes };
 }
 
 function reward(
@@ -59,28 +64,29 @@ export const ENCOUNTER_TRAITS = defineEncounterTraits({
   plated: combat("Plated", "Enemy gains 1 Armor each turn"),
   reinforced: combat("Reinforced", "Enemy gains 2 Block each turn"),
   braced: combat("Braced", "Enemy receives half Stun buildup"),
-  septic: combat("Septic", "Deals 1 Poison or Bleed damage each turn"),
-  caustic: combat("Caustic", "Deals 1 Poison damage and strips 1 Armor each turn"),
-  flesheater: combat("Flesheater", "Deals 1 Bleed damage each turn\nLeech"),
+  septic: combat("Septic", "Deals 1 Poison or Bleed damage each turn", ["wildwood"]),
+  caustic: combat("Caustic", "Deals 1 Poison damage and strips 1 Armor each turn", ["wildwood"]),
+  flesheater: combat("Flesheater", "Deals 1 Bleed damage each turn\nLeech", ["wildwood"]),
   combustible: combat("Scorching", "Enemy deals 1 Burn damage each turn"),
   chilling: combat("Chilling", "Enemy deals 1 Freeze damage each turn"),
-  thorns: combat("Thorns", "Gains 1 Thorns each turn; deals 1 Physical damage per attacking card while alive"),
+  thorns: combat("Thorns", "Gains 1 Thorns each turn; deals 1 Physical damage per attacking card while alive", [
+    "wildwood",
+  ]),
   zealot: combat("Zealot", "Enemy deals 2 Holy damage each turn"),
-  insatiable: combat("Insatiable", "Gains 1 Physical damage each time you Consume a card"),
-  jealous: combat("Jealous", "Gains 1 Physical damage each time you Wish"),
+  insatiable: combat("Insatiable", "Gains 1 Physical damage each time you Consume a card", ["wildwood"]),
+  jealous: combat("Jealous", "Gains 1 Physical damage each time you Wish", ["wildwood"]),
   concussive: combat("Concussive", "Enemy deals 1 Stun damage each turn"),
-  rooted: combat("Rooted", "Gains 1 Block when you play a Nature card"),
+  rooted: combat("Rooted", "Gains 1 Block when you play a Nature card", ["wildwood"]),
   overgrowth: combat("Overgrowth", "Enemy restores 1 Health each turn"),
   "holy-retribution": combat(
     "Holy Retribution",
     "Enemy deals 1 Holy damage when it survives your attack\nOnce per turn",
   ),
-  "divine-aegis": combat("Divine Aegis", "Gains 2 Armor and 4 Block the first time reaching 50% Health"),
+  "divine-aegis": combat("Divine Aegis", "Gains 2 Armor and 4 Block the first time reaching 50% Health", ["wildwood"]),
   generous: reward("Generous", "Gain 50% more Gold after victory", ["labyrinth"]),
   alchemist: reward("Alchemist", "Gain an extra random Potion to Consume after victory", ["labyrinth", "wildwood"]),
   scavenger: reward("Scavenger", "Gain twice the Materials after victory for your Forge", ["labyrinth"]),
   companion: reward("Companion", "Choose a free Companion card after victory", ["labyrinth", "wildwood"]),
-  wealthy: reward("Wealthy", `Gain ${LABYRINTH_REWARD_CONFIG.wealthyGoldBonus} bonus Gold`, ["labyrinth"]),
   herbalist: reward("Herbalist", `Gain ${LABYRINTH_REWARD_CONFIG.herbalistHerbBonus} bonus Nature Herbs`, [
     "labyrinth",
   ]),
@@ -134,15 +140,6 @@ export function sanitizeEncounterTraitIds(
   return [...new Set(values)].filter(
     (value): value is EncounterTraitId => isEncounterTraitId(value) && ENCOUNTER_TRAITS[value].category === category,
   );
-}
-
-export function pickEncounterTraits<Category extends EncounterTraitCategory>(
-  mode: EncounterMode,
-  category: Category,
-  count: number,
-  rng: () => number,
-): Array<EncounterTraitIdFor<Category>> {
-  return sampleItems(eligibleEncounterTraitIds(mode, category), count, rng);
 }
 
 export function pickEncounterTrait<Category extends EncounterTraitCategory>(

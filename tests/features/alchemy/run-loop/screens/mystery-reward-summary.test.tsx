@@ -17,7 +17,6 @@ const boneCharm: TrinketEntry = {
 
 function renderSummary(
   effects: MysteryChoice["effects"],
-  grantedTrinketIds: string[],
   grantedGearInstances: GearInstance[] = [],
   chosenCardId: string | null = null,
 ) {
@@ -26,7 +25,6 @@ function renderSummary(
       choice={{ label: "Explore the Crypt", effects }}
       findCard={() => undefined}
       findTrinket={(id) => (id === boneCharm.id ? boneCharm : undefined)}
-      grantedTrinketIds={grantedTrinketIds}
       grantedGearInstances={grantedGearInstances}
       chosenCardId={chosenCardId}
       onContinue={vi.fn()}
@@ -42,11 +40,10 @@ describe("MysteryRewardSummary", () => {
     const random: GearInstance = { instanceId: "random", definitionId: "leather-armor-basic", affixes: [] };
     renderSummary(
       [
-        { kind: "gainRandomTrinket" },
+        { kind: "gainTrinket", trinketId: boneCharm.id },
         { kind: "gainGeneratedGear", baseItemId: "emerald-ring" },
         { kind: "gainRandomGear" },
       ],
-      [boneCharm.id],
       [generated, random],
     );
     expect(screen.getAllByRole("img").map((image) => image.getAttribute("alt"))).toEqual([
@@ -58,8 +55,8 @@ describe("MysteryRewardSummary", () => {
     expect(screen.getByText(getGearInstanceTitle(random))).toBeTruthy();
   });
 
-  it("shows the trinket hover tooltip for gainRandomTrinket", () => {
-    renderSummary([{ kind: "gainRandomTrinket" }], [boneCharm.id]);
+  it("shows the trinket hover tooltip for gainTrinket", () => {
+    renderSummary([{ kind: "gainTrinket", trinketId: boneCharm.id }]);
 
     const img = screen.getByRole("img", { name: "Bone Charm" });
     const tileWrapper = img.parentElement?.parentElement;
@@ -69,21 +66,6 @@ describe("MysteryRewardSummary", () => {
     fireEvent.mouseEnter(tileWrapper!);
 
     expect(screen.getAllByText("Bone Charm")).toHaveLength(2);
-  });
-
-  it("falls back to random Boon text when the granted id is unavailable", () => {
-    renderSummary([{ kind: "gainRandomTrinket" }], []);
-
-    expect(screen.getByText("Gained a random Boon for this run")).toBeTruthy();
-    expect(screen.queryByText("Bone Charm")).toBeNull();
-  });
-
-  it("shows fallback gear for gainRandomTrinket when the trinket pool was exhausted", () => {
-    const instance: GearInstance = { instanceId: "mystery-gear", definitionId: "leather-armor-basic", affixes: [] };
-    renderSummary([{ kind: "gainRandomTrinket" }], [], [instance]);
-
-    expect(screen.queryByText("Gained a random Boon for this run")).toBeNull();
-    expect(screen.getByText(getGearInstanceTitle(instance))).toBeTruthy();
   });
 
   it("shows the chosen card tile and hover popup for chooseCard", () => {
@@ -98,7 +80,6 @@ describe("MysteryRewardSummary", () => {
         choice={{ label: "Browse", effects: [{ kind: "chooseCard" }] }}
         findCard={(id) => (id === slash.id ? slash : undefined)}
         findTrinket={() => undefined}
-        grantedTrinketIds={[]}
         grantedGearInstances={[]}
         chosenCardId="slash"
         onContinue={vi.fn()}
@@ -129,7 +110,6 @@ describe("MysteryRewardSummary", () => {
         }}
         findCard={() => undefined}
         findTrinket={() => undefined}
-        grantedTrinketIds={[]}
         grantedGearInstances={[]}
         chosenCardId={null}
         runTalentXP={{ burn: 8, freeze: 6 }}

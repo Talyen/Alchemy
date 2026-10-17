@@ -430,7 +430,6 @@ describe("session facade API", () => {
         event: findMysteryEvent("ancient-altar")!,
         chosenChoice: { label: "Browse", effects: [{ kind: "chooseCard" }] },
         cardChoices: [slash],
-        grantedTrinketIds: ["bone-charm"],
         grantedGear: [],
         chosenCardId: "slash",
       }),
@@ -444,9 +443,6 @@ describe("session facade API", () => {
     );
     expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryCardChoices).toEqual([
       slash,
-    ]);
-    expect(readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryGrantedTrinketIds).toEqual([
-      "bone-charm",
     ]);
     expect(
       readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryGrantedGearInstances,
@@ -483,7 +479,6 @@ describe("session facade API", () => {
         event: findMysteryEvent("overgrown-temple")!,
         chosenChoice: null,
         cardChoices: null,
-        grantedTrinketIds: [],
         grantedGear: [],
         chosenCardId: null,
       }),

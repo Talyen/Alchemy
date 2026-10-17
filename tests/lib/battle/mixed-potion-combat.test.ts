@@ -77,4 +77,15 @@ describe("Mixed Potion combat mechanics", () => {
 
     expect(result.state.enemyStatuses.poison).toBe(2);
   });
+
+  it("preserves nextHitCrit flag when triggering mortarPestlePoisonOnPotionUse", () => {
+    const state = makeState({
+      hand: [healthPotion],
+      flags: { nextHitCrit: true },
+      trinketEffects: { mortarPestlePoisonOnPotionUse: 2 },
+    });
+    const result = playBattleCardResolved(state, healthPotion.id, 0);
+    expect(result.state.flags.nextHitCrit).toBe(true);
+    expect(result.state.enemyStatuses.poison).toBe(2);
+  });
 });

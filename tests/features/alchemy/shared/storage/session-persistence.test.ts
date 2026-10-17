@@ -185,7 +185,6 @@ describe("session save restoration", () => {
       },
       chosenChoice: null,
       cardChoices: null,
-      grantedTrinketIds: [],
       grantedGear: [],
       chosenCardId: null,
     });

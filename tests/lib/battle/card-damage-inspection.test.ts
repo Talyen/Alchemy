@@ -225,4 +225,86 @@ describe("battle damage inspection", () => {
     const frost = getBattleDamageInspectionCard(card, state, "enemy");
     expect(frost.effects[0]).toMatchObject({ amount: (base.effects[0] as { amount: number }).amount + 1 });
   });
+
+  it("projects guaranteed hit reactions, Opening follow-ups, and target defeat across multi-packet cards", () => {
+    const fireball = cardById.fireball!;
+    const openingState = patchBattleState({
+      hand: [fireball],
+      rng: () => 0.99,
+      flags: { nextHitPhysicalBonus: 4 },
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+    });
+    expect(getBattleDamageInspectionCard(fireball, openingState).effects).toEqual([
+      { kind: "damage", damageType: "burn", amount: 2 },
+      { kind: "damage", damageType: "physical", amount: 4 },
+    ]);
+    expect(playBattleCardResolved(openingState, fireball.id, 0).state.enemyHealth).toBe(94);
+
+    // Guaranteed Emberforged Forge and Elemental Mana on an opening Burn hit scale subsequent packets.
+    const burnThenFollowUps = makeTestCard({
+      effects: [
+        { kind: "damage", damageType: "burn", amount: 2 },
+        { kind: "damage", damageType: "physical", amount: 2 },
+        { kind: "damage", damageType: "burn", amount: 2 },
+      ],
+    });
+    const emberState = patchBattleState({
+      hand: [burnThenFollowUps],
+      rng: () => 0.99,
+      mana: 1,
+      maxMana: 4,
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      gearEffects: { forgeOnBurnVsUnburnedChances: [100], elementalDamageManaChance: 100 },
+      talentEffects: { burnDamagePerMana: 100 },
+    });
+    const emberPreview = getBattleDamageInspectionCard(burnThenFollowUps, emberState);
+    const emberPlayed = playBattleCardResolved(emberState, burnThenFollowUps.id, 0);
+    expect(emberPreview.effects).toEqual([
+      { kind: "damage", damageType: "burn", amount: 2 },
+      { kind: "damage", damageType: "physical", amount: 3 },
+      { kind: "damage", damageType: "burn", amount: 3 },
+    ]);
+    expect(emberPlayed.state.enemyHealth).toBe(92);
+
+    // Frostfire reaction killing the target zeroes out later packets.
+    const ray = cardById["ray-of-frost"]!;
+    const frostfireState = patchBattleState({
+      hand: [ray],
+      rng: () => 0.99,
+      enemyHealth: 2,
+      enemyMaxHealth: 100,
+      enemyStatuses: { burn: 1, freeze: 1 },
+    });
+    expect(getBattleDamageInspectionCard(ray, frostfireState).effects).toMatchObject([{ amount: 1 }, { amount: 0 }]);
+    expect(playBattleCardResolved(frostfireState, ray.id, 0).state.enemyHealth).toBe(0);
+
+    // Detonation consumes existing buildup even when Block absorbs the direct hit.
+    for (const [id, status, detonateFlag] of [
+      ["combustion", "burn", { detonateAllBurn: true }],
+      ["hemorrhage", "bleed", { detonateAllBleed: true }],
+    ] as const) {
+      const detonateCard = makeTestCard({
+        id,
+        effects: [
+          { kind: "damage", damageType: status, amount: 2, ...detonateFlag },
+          { kind: "damage", damageType: "poison", amount: 3 },
+        ],
+      });
+      const detonateState = patchBattleState({
+        hand: [detonateCard],
+        rng: () => 0.99,
+        enemyHealth: 3,
+        enemyMaxHealth: 100,
+        enemyMitigation: { block: 10 },
+        enemyStatuses: { [status]: 4 },
+      });
+      expect(getBattleDamageInspectionCard(detonateCard, detonateState).effects).toMatchObject([
+        { amount: 2 },
+        { amount: 0 },
+      ]);
+      expect(playBattleCardResolved(detonateState, detonateCard.id, 0).state.enemyHealth).toBe(0);
+    }
+  });
 });

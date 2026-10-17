@@ -15,7 +15,6 @@ export function hydratePersistedMysteryVisit(
     event: { ...data.event, choices: data.event.choices.map(hydrateMysteryChoice) },
     chosenChoice: data.chosenChoice ? hydrateMysteryChoice(data.chosenChoice) : null,
     cardChoices: data.cardChoices?.map(hydrateCard) ?? null,
-    grantedTrinketIds: [...(data.grantedTrinketIds ?? [])],
     grantedGear: [...(data.grantedGear ?? [])],
     chosenCardId: data.chosenCardId ?? null,
   };
@@ -26,14 +25,6 @@ function hydrateMysteryChoice(choice: PersistedMysteryChoiceInput): MysteryChoic
     label: choice.label,
     effects: choice.effects.map((effect): MysteryEffect => {
       // Parsed optional fields may be explicitly undefined; live effects omit them.
-      if (effect.kind === "healHealth") {
-        const { chance, ...rest } = effect;
-        return chance === undefined ? rest : { ...rest, chance };
-      }
-      if (effect.kind === "gainRandomTrinket") {
-        const { fromIds, ...rest } = effect;
-        return fromIds === undefined ? rest : { ...rest, fromIds };
-      }
       if (effect.kind === "chooseCard")
         return effect.tag ? { kind: "chooseCard", tag: effect.tag as KeywordId } : { kind: "chooseCard" };
       if (effect.kind === "gainGeneratedGear")

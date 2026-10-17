@@ -12,7 +12,6 @@ interface VictoryGoldInput {
   gold: number;
   eliteBonus: number;
   generousBonus: number;
-  wealthyBonus: number;
   bossBonus: number;
   talentGoldPerCombat: number;
   goldMultiplier: number;
@@ -48,10 +47,6 @@ export function getGenerousGoldBonus(modifiers: EncounterRewardTraitId[], gold: 
   return modifiers.includes("generous") ? Math.round(gold * LABYRINTH_REWARD_CONFIG.generousGoldBonusFraction) : 0;
 }
 
-export function getWealthyGoldBonus(modifiers: EncounterRewardTraitId[]): number {
-  return modifiers.includes("wealthy") ? LABYRINTH_REWARD_CONFIG.wealthyGoldBonus : 0;
-}
-
 export function getWellProvisionedHealing(modifiers: EncounterRewardTraitId[], maxHealth: number): number {
   return modifiers.includes("wellProvisioned")
     ? Math.max(1, Math.round(maxHealth * LABYRINTH_REWARD_CONFIG.wellProvisionedHealFraction))
@@ -65,7 +60,6 @@ export function computeVictoryGold({
   gold,
   eliteBonus,
   generousBonus,
-  wealthyBonus,
   bossBonus,
   talentGoldPerCombat,
   goldMultiplier,
@@ -74,7 +68,7 @@ export function computeVictoryGold({
   // Clamp: battle gold below the purse (e.g. spent mid-combat accounting) earns
   // nothing instead of dragging the total negative — matching the Wildwood path.
   const inCombatGold = Math.max(0, battleState.gold - purseGold);
-  const rewardGold = gold + eliteBonus + bossBonus + generousBonus + wealthyBonus;
+  const rewardGold = gold + eliteBonus + bossBonus + generousBonus;
   const earnedBeforeMultiplier =
     inCombatGold + rewardGold + talentGoldPerCombat + computeTrinketManifest(runBoons).smugglersMapGoldBonus;
   const eligiblePayout = Math.round(rewardGold * goldMultiplier);
