@@ -67,12 +67,12 @@ function reconcile() {
   }
   if (restoreTarget) {
     const target = restoreTarget;
-    // A connected but temporarily unavailable opener retains its recovery
-    // request through screen preparation, rather than timing out after one frame.
+    // Preserve the opener through screen preparation. A completed action can
+    // disable its opener permanently, so recover to an available screen control.
     if (isFocusAvailable(target)) {
       restoreTarget = null;
       focusControl(target);
-    } else if (!target.isConnected && focusScreenStart()) {
+    } else if ((!target.isConnected || target.matches(":disabled")) && focusScreenStart()) {
       restoreTarget = null;
     }
   }
