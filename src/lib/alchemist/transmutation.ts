@@ -39,7 +39,7 @@ const SOURCE_CONDITIONS: Partial<Record<KeywordId, readonly string[]>> = {
   forge: ["forgeBonusPercent"],
 };
 
-export function isTransmutableCard(card: BattleCard): boolean {
+function isTransmutableCard(card: BattleCard): boolean {
   return !card.corrupted && !card.transmuted && !isMixedPotionCard(card);
 }
 

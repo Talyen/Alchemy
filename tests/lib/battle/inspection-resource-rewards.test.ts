@@ -205,6 +205,39 @@ describe("inspection follows guaranteed hit rewards", () => {
       [4],
     );
   });
+
+  it("retains shared Block when chance branches grant different Thorns", () => {
+    const block: BattleCardEffect = { kind: "player-status", status: "block", amount: 4 };
+    compare(
+      makeTestCard({
+        effects: [
+          {
+            kind: "chance",
+            probability: 0.5,
+            successEffects: [block, { kind: "player-status", status: "thorns", amount: 1 }],
+            failureEffects: [block, { kind: "player-status", status: "thorns", amount: 2 }],
+          },
+          { kind: "damage", damageType: "physical", amount: 0, equalToBlock: true },
+        ],
+      }),
+      {},
+      [4],
+    );
+  });
+
+  it("retains Mana Crystals granted by both chance branches before Burn scaling", () => {
+    const crystal: BattleCardEffect = { kind: "gain-max-mana", amount: 1 };
+    compare(
+      makeTestCard({
+        effects: [
+          { kind: "chance", probability: 0.5, successEffects: [crystal], failureEffects: [{ ...crystal }] },
+          { kind: "damage", damageType: "burn", amount: 4 },
+        ],
+      }),
+      { gearEffects: { burnDamagePerManaPercent: 100 } },
+      [48],
+    );
+  });
 });
 
 it("Rimeheart does not pace its already-paced Block a second time", () => {

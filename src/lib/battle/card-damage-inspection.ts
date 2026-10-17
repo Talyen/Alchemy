@@ -765,7 +765,7 @@ export function getBattleDamageInspectionCard(
     const first = outcomes[0];
     if (!first) return current;
     if (outcomes.length === 1) return first;
-    for (const field of ["mana", "gold", "playerHealth", "enemyHealth"] as const) {
+    for (const field of ["mana", "maxMana", "gold", "playerHealth", "enemyHealth"] as const) {
       if (outcomes.every((outcome) => outcome[field] === first[field])) current = { ...current, [field]: first[field] };
     }
     for (const field of [
@@ -777,10 +777,12 @@ export function getBattleDamageInspectionCard(
       "reactions",
       "enemyCC",
     ] as const) {
-      const shared = Object.entries(first[field]).every(([key, value]) =>
-        outcomes.every((outcome) => (outcome[field] as Record<string, unknown>)[key] === value),
+      const shared = Object.fromEntries(
+        Object.entries(first[field]).filter(([key, value]) =>
+          outcomes.every((outcome) => (outcome[field] as Record<string, unknown>)[key] === value),
+        ),
       );
-      if (shared) current = { ...current, [field]: first[field] };
+      current = { ...current, [field]: { ...current[field], ...shared } };
     }
     return current;
   }

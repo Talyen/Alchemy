@@ -212,12 +212,9 @@ export function createCanvasLifecycle({
   }
 
   try {
+    if (typeof ResizeObserver !== "undefined") ro = new ResizeObserver(resize);
     resize();
-
-    if (typeof ResizeObserver !== "undefined") {
-      ro = new ResizeObserver(resize);
-      ro.observe(parent);
-    }
+    ro?.observe(parent);
 
     motionQuery = window?.matchMedia?.("(prefers-reduced-motion: reduce)");
     motionQuery?.addEventListener("change", resume);

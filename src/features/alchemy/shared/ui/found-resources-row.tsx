@@ -56,7 +56,8 @@ export function FoundResourcesRow({
       const widths = pills.map((pill) => parseFloat(getComputedStyle(pill).width));
       if (widths.some((width) => !(width > 0))) return;
       const firstParent = pills[0]?.parentElement;
-      const gap = (firstParent && parseFloat(getComputedStyle(firstParent).columnGap)) || 0;
+      const measuredGap = firstParent ? parseFloat(getComputedStyle(firstParent).columnGap) : 0;
+      const gap = Number.isFinite(measuredGap) ? measuredGap : 0;
       const next = balancedRowSizes(widths, container.clientWidth, gap);
       setRowSizes((previous) =>
         previous.length === next.length && previous.every((count, index) => count === next[index]) ? previous : next,

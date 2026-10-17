@@ -10,7 +10,7 @@ export function readText(relativePath: string): string {
 let sourceFiles: string[] | undefined;
 
 export function listNonTestSourceFiles(): string[] {
-  return (sourceFiles ??= readdirSync(join(repoRoot, "src"), { recursive: true })
+  return (sourceFiles ??= readdirSync(join(repoRoot, "src"), { recursive: true, encoding: "utf8" })
     .filter((file) => /\.tsx?$/.test(file) && !file.includes(".test."))
     .map((file) => `src/${file.split(sep).join("/")}`)
     .sort());

@@ -27,11 +27,7 @@ const PRESENTATION: { [K in LeafEffectKind]: EffectPresentation<K> } = {
     ),
   "player-status": (effect) =>
     effectKeywords(
-      effect.statusPool
-        ? effect.statusPool
-        : effect.status !== "haste" && effect.status !== "phoenixFeather"
-          ? [effect.status]
-          : [],
+      effect.statusPool ?? (effect.status !== "haste" && effect.status !== "phoenixFeather" ? [effect.status] : []),
       effect.perManaCrystal !== undefined || effect.convertCurrentMana !== undefined ? ["mana"] : [],
     ),
   heal: () => ["health"],
