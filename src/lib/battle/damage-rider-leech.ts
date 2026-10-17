@@ -12,7 +12,7 @@ import {
 } from "./player-rewards";
 import { scaledGearLeechHeal } from "./scaled-damage";
 import { applyPercentBonus, scalePercent } from "./amount-helpers";
-import { resolveStunFollowUpHit } from "./stun-follow-up-hit";
+import { resolveStunFollowUpHit } from "./status-stun-core";
 import { HALF_DIVISOR, LEECH_HEAL_FRACTION, PERCENT_DENOMINATOR } from "../game-constants";
 
 export function computeLeechHeal(damageDealt: number): number {

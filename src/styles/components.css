@@ -101,12 +101,6 @@
       0 4px 16px rgba(0, 0, 0, 0.5);
   }
 
-  .talent-card-placeholder {
-    border-style: dashed;
-    border-color: var(--color-border);
-    background-clip: padding-box;
-  }
-
   .surface {
     transform: var(--card-base-transform, translate3d(0px, 0px, 0px));
     transition: transform 460ms var(--ease-out-expo);

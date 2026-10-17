@@ -7,7 +7,7 @@ import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { cardById } from "@/lib/game-data";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { createRunRngState, createRunStateRng, createRunStreamRng } from "@/lib/rng";
-import { parseActiveRun, SaveDataSchema } from "@/lib/validation";
+import { ActiveRunDataSchema, parseActiveRun, SaveDataSchema } from "@/lib/validation";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
 import { gridLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
@@ -33,9 +33,16 @@ describe("progress recovery regressions", () => {
     expect(state.data.lastSavedAt).toBe(20);
   });
 
-  it("retains valid keyword XP when a sibling XP value is unsafe", () => {
+  it("retains valid keyword XP and destination history when a sibling value exceeds the integer range", () => {
     const save = SaveDataSchema.parse(saveEnvelopeFixture({ talentXP: { physical: 18, holy: Number.MAX_VALUE } }));
     expect(save.talentXP).toEqual({ physical: 18 });
+    const restored = ActiveRunDataSchema.safeParse(
+      makeMinimalActiveRunInput({
+        destinationRoundsSinceOffered: { Campfire: 3, Mystery: Number.MAX_VALUE },
+      }),
+    );
+    expect(restored.success).toBe(true);
+    if (restored.success) expect(restored.data.destinationRoundsSinceOffered).toEqual({ Campfire: 3 });
   });
 
   it("repairs card presentation metadata without removing the playable card", () => {

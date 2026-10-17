@@ -34,6 +34,29 @@ function inspect(card: BattleCard, patch: BattleStatePatch, expected: number[]) 
 }
 
 describe("damage inspection includes guaranteed reactions", () => {
+  it.each([
+    ["combustion", "burn"],
+    ["hemorrhage", "bleed"],
+  ] as const)("%s detonates existing buildup even when Block prevents its direct hit", (id, status) => {
+    const card = getCorruptionMutationGroups(cardById[id]!)
+      .find((group) => group.kind === "secondary")!
+      .mutations.find(({ card }) =>
+        card.effects.some((effect) => effect.kind === "damage" && effect.damageType === "poison"),
+      )!.card;
+    const result = inspect(
+      card,
+      { enemyHealth: 3, enemyMaxHealth: 100, enemyMitigation: { block: 10 }, enemyStatuses: { [status]: 4 } },
+      [],
+    );
+    expect(result.actual.state.enemyHealth).toBe(0);
+    expect(
+      result.actual.combatTexts.some(
+        (text) => text.target === "enemy" && text.kind === "damage" && text.stat === "poison",
+      ),
+    ).toBe(false);
+    expect(result.projected.at(-1)).toBe(0);
+  });
+
   it("enemy Thorns can change Unrelenting before a second Physical hit", () => {
     const result = inspect(
       ray("physical"),

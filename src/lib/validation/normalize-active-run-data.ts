@@ -1,56 +1,19 @@
 import { repairShopOfferings } from "@/lib/active-run-session/shop-offering-repair";
 import { createCampfirePotionOffers } from "@/lib/alchemist/brewing";
-import type { BattleSnapshot } from "@/lib/battle";
 import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import {
-  cardById,
   characters,
   cloneBattleCard,
   getCardKeywords,
-  isMixedPotionCard,
   selectRewardCards,
   type BattleCard,
   type KeywordId,
 } from "@/lib/game-data";
 import { getOfferableCardPool, isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
 import { createRunStateRng, type RunRngState, type RunRngStream } from "@/lib/rng";
+import { filterLiveCards, isRecoverableCard } from "./normalize-persisted-battle-state";
 import type { ValidatedActiveRunData } from "./save-schemas/active-run";
 import type { PersistedBattleCard } from "./save-schemas/battle-card-schemas";
-
-// Deliberate removals are recorded in TOMBSTONED_CARD_IDS for explicit
-// fixtures; load drops every non-live id identically via this single check.
-function isRecoverableCard(card: Pick<BattleCard, "id" | "cost" | "effects" | "descriptionLines">): boolean {
-  if (Object.hasOwn(cardById, card.id)) return true;
-  return (
-    isMixedPotionCard(card) &&
-    Number.isInteger(card.cost) &&
-    card.cost >= 0 &&
-    card.effects.length > 0 &&
-    card.descriptionLines.length > 0
-  );
-}
-
-function filterLiveCards<T extends Pick<BattleCard, "id" | "cost" | "effects" | "descriptionLines">>(cards: T[]): T[] {
-  return cards.filter(isRecoverableCard);
-}
-
-function filterLiveBattleState(state: BattleSnapshot): BattleSnapshot {
-  let wishOptions = state.wishOptions ? filterLiveCards(state.wishOptions) : null;
-  const wishQueue = state.wishQueue.map((queue) => filterLiveCards(queue)).filter((queue) => queue.length > 0);
-  // An empty Wish prompt blocks card play. Advance to the next valid queued
-  // choice after malformed or removed cards are dropped, or close the prompt.
-  if (!wishOptions?.length) wishOptions = wishQueue.shift() ?? null;
-  return {
-    ...state,
-    deck: filterLiveCards(state.deck),
-    hand: filterLiveCards(state.hand),
-    pendingHandCards: filterLiveCards(state.pendingHandCards),
-    discard: filterLiveCards(state.discard),
-    exhausted: filterLiveCards(state.exhausted),
-    wishOptions,
-    wishQueue,
-  };
-}
 
 export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedActiveRunData {
   const runDeck = filterLiveCards(data.runDeck);
@@ -121,11 +84,11 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     activity = {
       ...activity,
       data: {
-        battleState: filterLiveBattleState({
+        battleState: {
           ...activity.data.battleState,
           contentSystemType: data.contentSystemType,
           encounterBenefits: data.contentSystemType === "labyrinth" ? activity.data.battleState.encounterBenefits : [],
-        }),
+        },
       },
     };
   if (activity.kind === "shop") {

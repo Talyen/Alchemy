@@ -112,4 +112,31 @@ describe("damage inspection follows utility effect execution", () => {
       [eagerPack ? 6 : 4],
     );
   });
+
+  it("projects Wish rewards, Armor removal, and self-damage thresholds before later attacks", () => {
+    compare(
+      [
+        { kind: "wish", amount: 1 },
+        { kind: "remove-enemy-armor", halve: true },
+        { kind: "damage", damageType: "stun", amount: 2, ignoreArmor: true },
+      ],
+      {
+        enemyMitigation: { armor: 8 },
+        gearEffects: { armorIncreasesStun: 1, manaOnWish: 2 },
+      },
+      [6],
+    );
+    compare(
+      [
+        { kind: "lose-health", amount: 2 },
+        { kind: "damage", damageType: "physical", amount: 6 },
+      ],
+      {
+        playerHealth: 21,
+        playerMaxHealth: 40,
+        talentEffects: { healthThresholdArmor: [{ threshold: 50, amount: 3 }], armorPhysicalDamagePercent: 50 },
+      },
+      [8],
+    );
+  });
 });

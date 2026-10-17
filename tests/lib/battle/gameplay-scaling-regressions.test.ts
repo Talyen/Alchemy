@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cardById } from "@/lib/game-data";
-import { upgradeWishCard } from "@/lib/battle/wish-upgrade";
+import { upgradeWishCard } from "@/lib/battle/wish";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { processArcheryEchoes } from "@/lib/battle/unique-card-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle/status-ticks";

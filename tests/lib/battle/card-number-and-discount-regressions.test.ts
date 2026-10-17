@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cardById, BattleCardEffectSchema } from "@/lib/game-data";
 import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corruption/numeric";
-import { upgradeWishCard } from "@/lib/battle/wish-upgrade";
+import { upgradeWishCard } from "@/lib/battle/wish";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { addCorruptionEffect } from "@/lib/corruption/card-edits";

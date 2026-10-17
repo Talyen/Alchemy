@@ -10,7 +10,7 @@ import {
   getTalentKeywordProgress,
   normalizeUnlockedTalents,
   computeRunEndTalentXPSnapshot,
-  mergeRunTalentXPIntoPermanent,
+  mergeTalentXPAwards,
 } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 
@@ -22,6 +22,8 @@ describe("talent progression", () => {
     [60, 2, 60],
     [119, 2, 1],
     [120, 3, 80],
+    [2814749934878719, 16777215, 1],
+    [2814749934878720, 16777216, 335544340],
   ])("awards points only at the threshold for %i XP", (xp, points, remaining) => {
     expect(computeTalentPoints(xp)).toBe(points);
     expect(xpToNextPoint(xp)).toBe(remaining);
@@ -70,8 +72,9 @@ describe("run-end talent XP", () => {
   it("settles exactly the rounded recap awards into permanent XP without losing other keywords", () => {
     const run = Object.freeze({ burn: 3, physical: 5 });
     const permanent = Object.freeze({ burn: 10, health: 20 });
-    expect(computeRunEndTalentXPSnapshot(run, 0.5)).toEqual({ burn: 2, physical: 3 });
-    expect(mergeRunTalentXPIntoPermanent(run, permanent, 0.5)).toEqual({ burn: 12, physical: 3, health: 20 });
+    const awards = Object.freeze(computeRunEndTalentXPSnapshot(run, 0.5));
+    expect(awards).toEqual({ burn: 2, physical: 3 });
+    expect(mergeTalentXPAwards(permanent, awards)).toEqual({ burn: 12, physical: 3, health: 20 });
     expect(run).toEqual({ burn: 3, physical: 5 });
     expect(permanent).toEqual({ burn: 10, health: 20 });
   });
@@ -79,7 +82,7 @@ describe("run-end talent XP", () => {
   it("ignores malformed entries in both the recap and permanent award", () => {
     const run = { burn: "bad", physical: 3 } as unknown as { burn: number; physical: number };
     expect(computeRunEndTalentXPSnapshot(run, 1)).toEqual({ physical: 3 });
-    expect(mergeRunTalentXPIntoPermanent(run, { burn: 10 }, 1)).toEqual({ burn: 10, physical: 3 });
+    expect(mergeTalentXPAwards({ burn: 10 }, computeRunEndTalentXPSnapshot(run, 1))).toEqual({ burn: 10, physical: 3 });
   });
 });
 
@@ -89,10 +92,12 @@ it("spends earned points exactly once and rejects the next eligible Talent until
     ok: false,
     reason: "no-unspent-points",
   });
-  expect(canUnlockTalent("physical", first.id, { physical: Number.NaN }, {})).toEqual({
-    ok: false,
-    reason: "no-unspent-points",
-  });
+  for (const invalid of [Number.NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+    expect(canUnlockTalent("physical", first.id, { physical: invalid }, {})).toEqual({
+      ok: false,
+      reason: "no-unspent-points",
+    });
+  }
   const result = tryUnlockTalent("physical", first.id, { physical: 20 }, {});
   if (!result.unlockedTalents) throw new Error("Expected an earned Talent point");
   expect(canUnlockTalent("physical", first.id, { physical: 20 }, result.unlockedTalents)).toEqual({

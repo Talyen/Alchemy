@@ -33,8 +33,12 @@ function applyTalentDrawTriggers(
     nextState = drawCardPlayReward(nextState, 1, combatTexts);
     if (isPlayerDefeated(nextState)) return nextState;
   }
-  if (keywords.includes("companion") && talents.drawOnCompanionCard > 0) {
-    nextState = drawCardPlayReward(nextState, talents.drawOnCompanionCard, combatTexts);
+  if (keywords.includes("companion") && talents.drawOnCompanionCard > 0 && !nextState.flags.huntersBondUsedThisTurn) {
+    nextState = drawCardPlayReward(
+      setFlag(nextState, "huntersBondUsedThisTurn", true),
+      talents.drawOnCompanionCard,
+      combatTexts,
+    );
   }
   return nextState;
 }

@@ -96,10 +96,10 @@ export const consumableCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "faustian-bargain",
-    consume: true,
     effects: [
       { kind: "lose-health", amount: 1 },
-      { kind: "wish", amount: 2 },
+      { kind: "restore-mana", amount: 1 },
+      { kind: "wish", amount: 1 },
     ],
   }),
   cardBuilders.effectsCard({

@@ -217,9 +217,11 @@ export const talentRows = [
   companion("companion-leech", "Leech Companion")("HeartPulse", "Companions have a 10% chance to Leech", {
     companionLeechChance: 10,
   }),
-  companion("companion-hunters-bond", "Hunter's Bond")("Link2", "When you play a Companion card, draw a card", {
-    drawOnCompanionCard: 1,
-  }),
+  companion("companion-hunters-bond", "Hunter's Bond")(
+    "Link2",
+    "The first Companion card you play each turn draws a card",
+    { drawOnCompanionCard: 1 },
+  ),
   companion("companion-predator-instinct", "Predator's Instinct")(
     "Eye",
     "Companions deal double damage against enemies below 30% Health",

@@ -19,8 +19,10 @@ export function xpThresholdForPoints(points: number): number {
 }
 
 export function computeTalentPoints(xp: number): number {
-  if (xp < XP_MIN_THRESHOLD) return 0;
-  return Math.floor((-1 + Math.sqrt(1 + XP_ROOT_DIVISOR * xp)) / 2);
+  if (!Number.isFinite(xp) || xp > Number.MAX_SAFE_INTEGER || xp < XP_MIN_THRESHOLD) return 0;
+  const points = Math.floor((-1 + Math.sqrt(1 + XP_ROOT_DIVISOR * xp)) / 2);
+  // The square root can round up one point before large, still-valid thresholds.
+  return xp < xpThresholdForPoints(points) ? points - 1 : points;
 }
 
 function computeTotalTalentPoints(talentXP: TalentXP): number {
@@ -55,9 +57,9 @@ export function computeRunEndTalentXPSnapshot(runTalentXP: TalentXP, multiplier:
   return next;
 }
 
-export function mergeRunTalentXPIntoPermanent(runTalentXP: TalentXP, talentXP: TalentXP, multiplier: number): TalentXP {
+export function mergeTalentXPAwards(talentXP: TalentXP, awards: TalentXP): TalentXP {
   const nextTalentXP = { ...talentXP };
-  for (const [kw, bonus] of Object.entries(computeRunEndTalentXPSnapshot(runTalentXP, multiplier))) {
+  for (const [kw, bonus] of Object.entries(awards)) {
     const keyword = kw as KeywordId;
     nextTalentXP[keyword] = Math.min(Number.MAX_SAFE_INTEGER, (nextTalentXP[keyword] ?? 0) + bonus);
   }

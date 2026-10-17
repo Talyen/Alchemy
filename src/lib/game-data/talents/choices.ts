@@ -1,7 +1,7 @@
 import { keywordDefinitions } from "../keywords";
 import type { KeywordId } from "../types";
 import { getTalentsForKeyword } from "./talent-pool-definitions";
-import { isTalentPlaceholder, type TalentDefinition } from "./types";
+import type { TalentDefinition } from "./types";
 
 export { getTalentsForKeyword } from "./talent-pool-definitions";
 
@@ -29,11 +29,7 @@ export function getTalentTreeKeywordIds(): KeywordId[] {
 }
 
 export function countImplementedTalents(keywordId: KeywordId): number {
-  let count = 0;
-  for (const talent of getTalentsForKeyword(keywordId)) {
-    if (!isTalentPlaceholder(talent)) count++;
-  }
-  return count;
+  return getTalentsForKeyword(keywordId).length;
 }
 
 export function getTalentRows(keywordId: KeywordId): TalentDefinition[][] {
@@ -43,7 +39,7 @@ export function getTalentRows(keywordId: KeywordId): TalentDefinition[][] {
 export function getAllocatableTalentChoices(keywordId: KeywordId, unlockedIds: string[]): TalentDefinition[] {
   const unlocked = new Set(unlockedIds);
   for (const row of getTalentRows(keywordId)) {
-    const missing = row.filter((talent) => !isTalentPlaceholder(talent) && !unlocked.has(talent.id));
+    const missing = row.filter((talent) => !unlocked.has(talent.id));
     if (missing.length) return missing;
   }
   return [];

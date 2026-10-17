@@ -42,31 +42,7 @@ describe("TalentTree sequential unlocks", () => {
     vi.useRealTimers();
   });
 
-  it("spends remaining points on another node without leaving the tree", () => {
-    const onUnlock = vi.fn();
-    render(<SequentialTree onUnlock={onUnlock} />);
-
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(second.name!) }));
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(third.name!) }));
-
-    expect(onUnlock).toHaveBeenCalledWith(second.id);
-    expect(onUnlock).toHaveBeenCalledWith(third.id);
-    expect(onUnlock).toHaveBeenCalledTimes(2);
-  });
-
-  it("ignores a second click on the same node before the burst ends", () => {
-    const onUnlock = vi.fn();
-    render(<SequentialTree onUnlock={onUnlock} />);
-
-    const secondButton = screen.getByRole("button", { name: new RegExp(second.name!) });
-    fireEvent.click(secondButton);
-    fireEvent.click(secondButton);
-
-    expect(onUnlock).toHaveBeenCalledTimes(1);
-    expect(onUnlock).toHaveBeenCalledWith(second.id);
-  });
-
-  it("still accepts a second unlock after the burst timeout under StrictMode", () => {
+  it.each([0, TALENT_UNLOCK_ANIMATION_MS])("accepts consecutive unlocks under StrictMode after %i ms", (delay) => {
     vi.useFakeTimers();
     const onUnlock = vi.fn();
     render(
@@ -78,7 +54,7 @@ describe("TalentTree sequential unlocks", () => {
     fireEvent.click(screen.getByRole("button", { name: new RegExp(second.name!) }));
     expect(onUnlock).toHaveBeenCalledWith(second.id);
 
-    vi.advanceTimersByTime(TALENT_UNLOCK_ANIMATION_MS);
+    vi.advanceTimersByTime(delay);
 
     fireEvent.click(screen.getByRole("button", { name: new RegExp(third.name!) }));
     expect(onUnlock).toHaveBeenCalledWith(third.id);

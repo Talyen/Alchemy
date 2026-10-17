@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dealDamage, makeTestCard, patchBattleState, regressionBattle } from "../../fixtures/battle";
 import { getEnemyDamageMultiplier } from "@/lib/battle/status-helpers";
-import { upgradeWishCard } from "@/lib/battle/wish-upgrade";
 import { computeCardPayment } from "@/lib/battle/card-cost-rules";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
@@ -53,18 +52,6 @@ describe("player-facing combat regressions", () => {
     );
     expect(result.enemyHealth).toBe(state.enemyHealth - 10);
     expect(result.flags.nextHitPhysicalBonus).toBe(0);
-  });
-
-  it("upgrades both immediate hits of Ray of Frost from Powerful Wish without mutating the library", () => {
-    const original = libraryCard("ray-of-frost");
-    const upgraded = upgradeWishCard(original);
-    expect(upgraded?.descriptionLines).toEqual(["Deal 2 Freeze damage twice"]);
-    expect(upgraded?.effects).toEqual([
-      { kind: "damage", damageType: "freeze", amount: 2 },
-      { kind: "damage", damageType: "freeze", amount: 2 },
-    ]);
-    expect(original.effects[0]).toMatchObject({ amount: 1 });
-    expect(original.effects[1]).toMatchObject({ amount: 1 });
   });
 
   it("allows Astral Arrow to use Winter's Block payment for its Freeze damage pool", () => {

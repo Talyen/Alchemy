@@ -2,7 +2,6 @@ import {
   computeTalentEffects,
   createEmptyTalentEffectManifest,
   getTalentsForKeyword,
-  isTalentPlaceholder,
   talentPool,
   type KeywordId,
   type TalentDefinition,
@@ -23,7 +22,6 @@ const META_ONLY_TALENT_FIELDS: ReadonlySet<keyof TalentEffectManifest> = new Set
 ]);
 
 export function isCombatTalent(talent: TalentDefinition): boolean {
-  if (isTalentPlaceholder(talent)) return false;
   return Object.keys(talent.effects ?? {}).some(
     (field) => !META_ONLY_TALENT_FIELDS.has(field as keyof TalentEffectManifest),
   );
@@ -45,7 +43,7 @@ const WILDCARD_TALENT_BUDGET: Record<TalentPreset, number> = {
 };
 
 export function talentsInTreeOrder(keywordId: KeywordId): TalentDefinition[] {
-  return getTalentsForKeyword(keywordId).filter((talent) => !isTalentPlaceholder(talent));
+  return getTalentsForKeyword(keywordId);
 }
 
 export function buildPresetUnlockedTalents(keywords: readonly KeywordId[], preset: TalentPreset): UnlockedTalents {

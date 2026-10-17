@@ -145,10 +145,6 @@ export function getBattleDamageInspectionCard(
       ? state.talentEffects.potionPotency + (isMixedPotionCard(card) ? state.talentEffects.mixedPotionPotency : 0)
       : 1;
 
-  function projectHealthThresholds(current: BattleState, previousHealth: number): BattleState {
-    return playerResources.checkHealthThresholds(previousHealth, current.playerHealth, current, []);
-  }
-
   // Only guaranteed utility reactions are projected. Random procs retain their
   // authored uncertainty and never borrow the live battle's random stream.
   function projectHealing(
@@ -164,26 +160,13 @@ export function getBattleDamageInspectionCard(
       : playerResources.applyHealingWithCombatText(current, amount, [], options);
   }
 
-  function projectManaHealing(current: BattleState, gained: number): BattleState {
-    return playerResources.applyHealOnManaGain(current, gained, []);
-  }
-
-  function projectCleanseRewards(current: BattleState, removed: number): BattleState {
-    return playerResources.applyCleanseHeals(current, [], removed);
-  }
-
-  function projectCleanse(current: BattleState, amount: number): BattleState {
-    return playerResources.removeHarmfulPlayerStatuses(current, amount, []);
-  }
-
-  function projectGold(current: BattleState, amount: number): BattleState {
-    return playerResources.addGoldWithCombatText(current, amount);
+  function projectMana(current: BattleState, amount: number, unpaced = false): BattleState {
+    return playerResources.gainManaWithCombatText(current, amount, [], { skipFightPacing: unpaced });
   }
 
   function projectLeech(current: BattleState, damage: number, cardHealing = false, percent?: number): BattleState {
     const base = percent === undefined ? computeLeechHeal(damage) : Math.round((damage * percent) / 100);
-    if (base <= 0) return current;
-    return projectLeechBase(current, base, cardHealing);
+    return base <= 0 ? current : projectLeechBase(current, base, cardHealing);
   }
 
   function projectLeechBase(current: BattleState, base: number, cardHealing = false): BattleState {
@@ -200,22 +183,14 @@ export function getBattleDamageInspectionCard(
   const resourceRewards: ResourceRewardPort = {
     chance: (chance) => chance >= 100,
     heal: (current, amount, _texts, cardHealing) => projectHealing(current, amount, cardHealing, true),
-    status: (current, status, amount, _texts, unpaced) => {
-      return playerResources.addPlayerStatusWithCombatText(current, status, amount, [], {
+    status: (current, status, amount, _texts, unpaced) =>
+      playerResources.addPlayerStatusWithCombatText(current, status, amount, [], {
         skipFightPacing: unpaced === true,
-      });
-    },
-    mana: (current, amount) => projectMana(current, amount),
-    gold: (current, amount) => projectGold(current, amount),
-    cleanse: (current, amount) => projectCleanse(current, amount),
-    stun: (current, amount) =>
-      resolveSecondaryAction(current, "reward", (secondary) => {
-        const effect = { kind: "damage" as const, damageType: "stun" as const, amount };
-        const resolved = computeCardDamageToEnemy(secondary, effect, undefined, undefined, "prepared-only");
-        let hit = projectEnemyHealthLoss(resolved.nextState, resolved.modifiedDamage);
-        hit = addEnemyStatus(hit, "stun", resolved.modifiedDamage);
-        return projectCc(hit, "stun", secondary.enemyHealth, Math.min(secondary.enemyHealth, resolved.modifiedDamage));
       }),
+    mana: (current, amount) => projectMana(current, amount),
+    gold: (current, amount) => playerResources.addGoldWithCombatText(current, amount),
+    cleanse: (current, amount) => playerResources.removeHarmfulPlayerStatuses(current, amount, []),
+    stun: (current, amount) => projectFollowUpHit(current, { source: "player-follow-up", damageType: "stun", amount }),
   };
 
   function projectBuildup(
@@ -227,10 +202,6 @@ export function getBattleDamageInspectionCard(
     if (status !== "poison") return addEnemyStatus(current, status, amount, { attackBuildup });
     const next = setEnemyStatus(current, status, current.enemyStatuses[status] + amount);
     return amount > 0 && next.gearEffects.poisonArmorShredChance >= 100 ? reduceEnemyArmor(next, 1) : next;
-  }
-
-  function projectMana(current: BattleState, amount: number, unpaced = false): BattleState {
-    return playerResources.gainManaWithCombatText(current, amount, [], { skipFightPacing: unpaced });
   }
 
   function projectEnemyHealthLoss(current: BattleState, amount: number): BattleState {
@@ -261,8 +232,7 @@ export function getBattleDamageInspectionCard(
       next = resolveLuckyCloverReward(next, hit.healthDamage, [], resourceRewards);
       next = resolveNatureGoldReward(next, hit.healthDamage, [], resourceRewards);
     }
-    next = processEncounterTraitHealthThreshold(current.enemyHealth, next, []);
-    return next;
+    return processEncounterTraitHealthThreshold(current.enemyHealth, next, []);
   }
 
   const crowdControlPort: CrowdControlResolutionPort = {
@@ -277,7 +247,7 @@ export function getBattleDamageInspectionCard(
       }),
     physical: (current, amount) => projectCcDamage(current, "physical", amount),
     thunderstone: (current) => projectCcDamage(current, "nature", current.trinketEffects.thunderstoneDamageOnStun),
-    gold: projectGold,
+    gold: (current, amount) => playerResources.addGoldWithCombatText(current, amount),
     mana: (current, amount) => projectMana(current, amount, true),
   };
 
@@ -339,7 +309,7 @@ export function getBattleDamageInspectionCard(
       };
     if (current.playerStatuses.armor > 0 && next.playerStatuses.armor === 0 && !isPlayerDefeated(next))
       next = grantPlayerStatus(next, "block", current.talentEffects.armorBreakBlock);
-    next = projectHealthThresholds(next, current.playerHealth);
+    next = playerResources.checkHealthThresholds(current.playerHealth, next.playerHealth, next, []);
     return playerResources.applyBlockDepletionRewards(
       current,
       next,
@@ -355,9 +325,9 @@ export function getBattleDamageInspectionCard(
       [],
       {
         chance: (chance) => chance >= 100,
-        gold: projectGold,
+        gold: (next, value) => playerResources.addGoldWithCombatText(next, value),
         heal: (next, value) => projectHealing(next, value),
-        cleanse: projectCleanse,
+        cleanse: (next, value) => playerResources.removeHarmfulPlayerStatuses(next, value, []),
         block: (next, value) => grantPlayerStatus(next, "block", value),
         mana: (next, value) => projectMana(next, value, true),
         // The identity of drawn cards is unknown until live resolution.
@@ -376,17 +346,38 @@ export function getBattleDamageInspectionCard(
     before: BattleState,
     type: DamageEffect["damageType"],
     damage: number,
+    isPlayerFollowUp = false,
   ): BattleState {
     if (damage <= 0) return current;
     const hit = damageEnemyHealth(current, damage);
     let next = decayEnemyArmor(hit.state);
-    if (type === "burn" || type === "poison" || type === "bleed")
+    if (type === "burn" || type === "poison" || type === "bleed") {
       next = projectBuildup(next, type, type === "bleed" ? damage * BLEED_STATUS_MULTIPLIER : damage);
+      if (type === "burn" && next.talentEffects.burnRemovesEnemyArmor) next = reduceEnemyArmor(next, damage);
+      if (type === "burn" || type === "bleed") {
+        next = projectLeechBase(
+          next,
+          burnBleedLeechAmount(before, damage, before.enemyStatuses.burn > 0 && before.enemyStatuses.bleed > 0),
+        );
+      }
+    }
     if (type === "freeze" || type === "stun") {
       next = projectBuildup(next, type, damage);
       next = projectCc(next, type, before.enemyHealth, hit.healthDamage, before);
     }
-    return processEncounterTraitHealthThreshold(before.enemyHealth, next, []);
+    if (
+      hit.healthDamage > 0 &&
+      next.mana < next.maxMana &&
+      next.gearEffects.elementalDamageManaChance >= 100 &&
+      (type === "burn" || type === "freeze" || type === "holy")
+    )
+      next = projectMana(next, 1, true);
+    next = processEncounterTraitHealthThreshold(before.enemyHealth, next, []);
+    if (type === "burn" && (!isPlayerFollowUp || hit.healthDamage > 0) && before.enemyStatuses.burn === 0) {
+      const forge = before.gearEffects.forgeOnBurnVsUnburnedChances.filter((chance) => chance >= 100).length;
+      next = grantPlayerStatus(next, "forge", forge);
+    }
+    return next;
   }
 
   function projectFollowUpHit(current: BattleState, request: FollowUpHitRequest): BattleState {
@@ -403,7 +394,7 @@ export function getBattleDamageInspectionCard(
         undefined,
         "prepared-only",
       );
-      return projectResolvedHit(hit.nextState, next, request.damageType, hit.modifiedDamage);
+      return projectResolvedHit(hit.nextState, next, request.damageType, hit.modifiedDamage, true);
     });
   }
 
@@ -505,11 +496,7 @@ export function getBattleDamageInspectionCard(
           after = resolveSecondaryAction(after, "reward", (secondary) => {
             const hit = computeCardDamageToEnemy(
               secondary,
-              {
-                kind: "damage",
-                damageType: "holy",
-                amount: secondary.gearEffects.holyOnPurge,
-              },
+              { kind: "damage", damageType: "holy", amount: secondary.gearEffects.holyOnPurge },
               undefined,
               undefined,
               "prepared-only",
@@ -553,15 +540,25 @@ export function getBattleDamageInspectionCard(
           after = grantPlayerStatus(after, "block", damage);
         after = projectCc(after, type, current.enemyHealth, healthDamage, current);
       }
-      for (const status of ["burn", "bleed"] as const) {
-        if (
-          (status === "burn" && consumed.packet.detonateAllBurn) ||
-          (status === "bleed" && consumed.packet.detonateAllBleed)
-        ) {
-          const detonated = projectEnemyDotDamage(after, status);
-          after = setEnemyStatus(after, status, 0);
-          after = projectEnemyHealthLoss(after, detonated);
-        }
+    }
+    // Detonation consumes existing buildup even when defenses absorb the hit.
+    for (const status of ["burn", "bleed"] as const) {
+      if (
+        after.enemyHealth > 0 &&
+        ((status === "burn" && consumed.packet.detonateAllBurn) ||
+          (status === "bleed" && consumed.packet.detonateAllBleed))
+      ) {
+        const detonated = projectEnemyDotDamage(after, status);
+        after = setEnemyStatus(after, status, 0);
+        after = projectEnemyHealthLoss(after, detonated);
+      }
+    }
+    if (damage > 0) {
+      const type = consumed.packet.damageType;
+      if (type === "burn" && current.enemyStatuses.burn === 0 && !forgeTriggers.has("emberforged")) {
+        forgeTriggers.add("emberforged");
+        const forge = current.gearEffects.forgeOnBurnVsUnburnedChances.filter((chance) => chance >= 100).length;
+        after = grantPlayerStatus(after, "forge", forge);
       }
       const explicitLeech = consumed.packet.lifesteal === true;
       const physicalLeech =
@@ -591,6 +588,13 @@ export function getBattleDamageInspectionCard(
         if (!explicitLeech && current.enemyStatuses.poison > 0 && after.gearEffects.natureLeechVsPoisoned > 0)
           after = projectLeech(after, healthDamage);
       }
+      if (
+        healthDamage > 0 &&
+        after.mana < after.maxMana &&
+        after.gearEffects.elementalDamageManaChance >= 100 &&
+        (type === "burn" || type === "freeze" || type === "holy")
+      )
+        after = projectMana(after, 1, true);
     }
     after = processEncounterTraitHealthThreshold(current.enemyHealth, after, []);
     const payoffs = getPostHitReactionPayoffs(current, after, consumed.packet.damageType, healthDamage);
@@ -600,10 +604,10 @@ export function getBattleDamageInspectionCard(
       consumed.packet.damageType !== "physical" &&
       consumed.physicalBonus > 0
     ) {
-      after = resolveSecondaryAction(after, "reward", (secondary) => {
-        const packet = { kind: "damage" as const, damageType: "physical" as const, amount: consumed.physicalBonus };
-        const hit = computeCardDamageToEnemy(secondary, packet, undefined, undefined, "prepared-only");
-        return projectEnemyHealthLoss(hit.nextState, hit.modifiedDamage);
+      after = projectFollowUpHit(after, {
+        source: "player-follow-up",
+        damageType: "physical",
+        amount: consumed.physicalBonus,
       });
     }
     if (getBattleOutcome(after) === null && after.enemyStatuses.thorns > 0) {
@@ -612,11 +616,7 @@ export function getBattleDamageInspectionCard(
       if (thorns > 0) after = projectHostileHit(setEnemyStatus(after, "thorns", legacy), "nature", thorns);
     }
     after = projectRetaliation(after);
-    if (shatterDamage > 0 && after.enemyHealth > 0 && !isPlayerDefeated(after)) {
-      const previousHealth = after.enemyHealth;
-      after = decayEnemyArmor({ ...after, enemyHealth: Math.max(0, previousHealth - shatterDamage) });
-      after = processEncounterTraitHealthThreshold(previousHealth, after, []);
-    }
+    after = projectEnemyHealthLoss(after, shatterDamage);
     for (const payoff of payoffs) {
       if (getBattleOutcome(after) !== null) break;
       after = projectRetaliation(projectEnemyHealthLoss(consumeReactionOpportunity(after, payoff.id), payoff.damage));
@@ -632,13 +632,13 @@ export function getBattleDamageInspectionCard(
     heal: (current, amount, _texts, cardHealing) => projectHealing(current, amount, cardHealing),
     mana: (current, amount, _texts, allowOverflow) =>
       playerResources.gainManaWithCombatText(current, amount, [], { allowOverflow }),
-    manaHealing: projectManaHealing,
-    healthCost: (current, amount) =>
-      projectHealthThresholds(
-        applyPlayerCombatDamage(current, amount, "self", "health", { ignoreMitigation: true }),
-        current.playerHealth,
-      ),
-    crystalLoss: projectCrystalLoss,
+    manaHealing: (current, gained) => playerResources.applyHealOnManaGain(current, gained, []),
+    healthCost: (current, amount) => {
+      const damaged = applyPlayerCombatDamage(current, amount, "self", "health", { ignoreMitigation: true });
+      return playerResources.checkHealthThresholds(current.playerHealth, damaged.playerHealth, damaged, []);
+    },
+    crystalLoss: (current, amount) =>
+      projectFollowUpHit(current, { source: "talent-fixed", damageType: "burn", amount }),
     status: (current, effect) =>
       effect.status === "forge" || effect.status === "block" || effect.status === "armor"
         ? grantPlayerStatus(current, effect.status, effect.amount)
@@ -647,35 +647,17 @@ export function getBattleDamageInspectionCard(
           }),
     // A random status is unknown; do not choose one during inspection.
     chooseStatus: () => undefined,
-    cleanse: projectCleanse,
+    cleanse: (current, amount) => playerResources.removeHarmfulPlayerStatuses(current, amount, []),
     cleanseStatus: (current, status) =>
-      current.playerStatuses[status] > 0 ? projectCleanseRewards(setPlayerStatus(current, status, 0), 1) : current,
-    gold: projectGold,
+      current.playerStatuses[status] > 0
+        ? playerResources.applyCleanseHeals(setPlayerStatus(current, status, 0), [], 1)
+        : current,
+    gold: (current, amount) => playerResources.addGoldWithCombatText(current, amount),
     summon: (current) => {
       current = grantPlayerStatus(current, "block", current.gearEffects.blockOnCompanionSummon);
       return hasEncounterBenefit(current, "eager-pack") ? projectCompanionUtility(current, 2) : current;
     },
   });
-
-  function projectCrystalLoss(current: BattleState, amount: number): BattleState {
-    const hit = computeTalentDamageToEnemy(current, "burn", amount, "talent-fixed");
-    const damage = hit.remainingDamage;
-    if (damage <= 0) return hit.state;
-    let next = decayEnemyArmor(damageEnemyHealth(hit.state, damage).state);
-    next = projectBuildup(next, "burn", damage);
-    if (next.talentEffects.burnRemovesEnemyArmor) next = reduceEnemyArmor(next, damage);
-    next = projectLeechBase(
-      next,
-      burnBleedLeechAmount(current, damage, current.enemyStatuses.burn > 0 && current.enemyStatuses.bleed > 0),
-    );
-    if (current.gearEffects.elementalDamageManaChance >= 100) next = projectMana(next, 1, true);
-    next = processEncounterTraitHealthThreshold(current.enemyHealth, next, []);
-    if (current.enemyStatuses.burn === 0) {
-      const forge = current.gearEffects.forgeOnBurnVsUnburnedChances.filter((chance) => chance >= 100).length;
-      next = grantPlayerStatus(next, "forge", forge);
-    }
-    return next;
-  }
 
   const companionPort: CompanionResolutionPort = {
     chance: (chance) => chance >= 100,
@@ -847,12 +829,12 @@ export function getBattleDamageInspectionCard(
           if (armor === 0 && !isPlayerDefeated(current))
             current = grantPlayerStatus(current, "block", current.talentEffects.armorBreakBlock);
         }
-        current = projectHealthThresholds(current, before.playerHealth);
+        current = playerResources.checkHealthThresholds(before.playerHealth, current.playerHealth, current, []);
       }
       if (!enemy && effect.kind === "cleanse-player-status-to-damage") {
         const stacks = current.playerStatuses[effect.status];
         current = setPlayerStatus(current, effect.status, 0);
-        if (stacks > 0) current = projectCleanseRewards(current, 1);
+        if (stacks > 0) current = playerResources.applyCleanseHeals(current, [], 1);
         const converted = attack(
           {
             kind: "damage",

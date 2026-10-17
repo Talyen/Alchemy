@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { cardById } from "@/lib/game-data";
+import { cardById, companionLibrary } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
+import { resolveCardEffectChain } from "@/lib/battle/card-play-effects";
+import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
+import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
@@ -36,14 +39,17 @@ describe("player combat regressions", () => {
   });
 
   it.each(["pack-tactics", "wolf-companion"])(
-    "Hunter's Bond draws once per %s play even with repeated effects",
+    "Hunter's Bond limits repeated, resumed and automatic %s plays to one draw each turn",
     (id) => {
       const card = { ...cardById[id]!, uid: 1 };
       const state = patchBattleState({
         hand: [card],
-        deck: [makeTestCard({ id: "draw-a" }), makeTestCard({ id: "draw-b" })],
+        deck: [makeTestCard({ id: "slash", uid: 10 }), makeTestCard({ id: "block", uid: 11 })],
         enemyHealth: 100,
         enemyMaxHealth: 100,
+        mana: 5,
+        maxMana: 5,
+        activeCompanion: companionLibrary.wolf,
         talentEffects: { drawOnCompanionCard: 1 },
         flags: { playNextCardTwice: true },
         rng: () => 0.99,
@@ -51,6 +57,29 @@ describe("player combat regressions", () => {
       const result = playBattleCardResolved(state, id, 0).state;
       expect(result.hand).toHaveLength(1);
       expect(result.deck).toHaveLength(1);
+      expect(state.flags.huntersBondUsedThisTurn).toBe(false);
+      const restored = {
+        ...PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(result))),
+        rng: () => 0.99,
+      };
+      const second = playBattleCardResolved(
+        { ...restored, hand: [...restored.hand, { ...card, uid: 2 }] },
+        id,
+        1,
+      ).state;
+      expect(second.hand).toHaveLength(1);
+      expect(second.deck).toHaveLength(1);
+      const automatic = resolveCardEffectChain(second, card, []).state;
+      expect(automatic.hand).toHaveLength(1);
+      expect(automatic.deck).toHaveLength(1);
+      const nextTurn = advanceToPlayerTurn(automatic);
+      const refreshed = playBattleCardResolved(
+        { ...nextTurn, hand: [card], deck: [makeTestCard({ id: "next-draw" })], discard: [] },
+        id,
+        0,
+      ).state;
+      expect(refreshed.hand).toEqual([expect.objectContaining({ id: "next-draw" })]);
+      expect(refreshed.deck).toEqual([]);
     },
   );
 

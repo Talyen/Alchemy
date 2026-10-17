@@ -30,6 +30,7 @@ function enemyWith(...ids: Array<keyof typeof ENCOUNTER_TRAITS>): BestiaryEntry 
 
 function card(overrides: Partial<BattleCard> = {}): BattleCard {
   return makeTestCard({
+    id: "slash",
     uid: 1,
     title: "Test Card",
     descriptionLines: [],

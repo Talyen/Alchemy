@@ -1,13 +1,13 @@
+import { normalizeUnlockedTalents } from "./compute";
 import type { KeywordId } from "../types";
 import { countImplementedTalents, getAllocatableTalentChoices } from "./choices";
 import { computeTalentPoints, type TalentXP } from "./progression";
 import { getTalentById } from "./talent-pool-definitions";
-import { isTalentPlaceholder, type UnlockedTalents } from "./types";
+import type { UnlockedTalents } from "./types";
 
 export type UnlockTalentFailureReason =
   | "unknown-talent"
   | "keyword-mismatch"
-  | "not-implemented"
   | "already-unlocked"
   | "no-unspent-points"
   | "not-eligible-choice";
@@ -23,9 +23,8 @@ export function canUnlockTalent(
   const talent = getTalentById(talentId);
   if (!talent) return { ok: false, reason: "unknown-talent" };
   if (talent.keywordId !== keywordId) return { ok: false, reason: "keyword-mismatch" };
-  if (isTalentPlaceholder(talent)) return { ok: false, reason: "not-implemented" };
 
-  const unlockedIds = unlockedTalents[keywordId] ?? [];
+  const unlockedIds = normalizeUnlockedTalents(unlockedTalents)[keywordId] ?? [];
   if (unlockedIds.includes(talentId)) return { ok: false, reason: "already-unlocked" };
 
   const points = Math.min(computeTalentPoints(talentXP[keywordId] ?? 0), countImplementedTalents(keywordId));
@@ -44,13 +43,14 @@ export function tryUnlockTalent(
   talentXP: TalentXP,
   unlockedTalents: UnlockedTalents,
 ): { unlockedTalents: UnlockedTalents } | { unlockedTalents: null; reason: UnlockTalentFailureReason } {
-  const result = canUnlockTalent(keywordId, talentId, talentXP, unlockedTalents);
+  const normalized = normalizeUnlockedTalents(unlockedTalents);
+  const result = canUnlockTalent(keywordId, talentId, talentXP, normalized);
   if (!result.ok) return { unlockedTalents: null, reason: result.reason };
 
   return {
     unlockedTalents: {
-      ...unlockedTalents,
-      [keywordId]: [...(unlockedTalents[keywordId] ?? []), talentId],
+      ...normalized,
+      [keywordId]: [...(normalized[keywordId] ?? []), talentId],
     },
   };
 }

@@ -12,11 +12,14 @@ import {
   type BattleSnapshot,
 } from "@/lib/battle";
 import {
+  cardById,
   findEnemyAbilityCard,
   enemyById,
   enemyBestiary,
   companionLibrary,
   isEnemyId,
+  isMixedPotionCard,
+  type BattleCard,
   type BestiaryEntry,
   type EnemyTrait,
   type TalentEffectManifest,
@@ -28,6 +31,25 @@ import {
   sanitizeEncounterTraitIds,
   sanitizePersistedEnemyTraits,
 } from "@/lib/content-systems/encounter-traits";
+
+// Deliberate removals are recorded in TOMBSTONED_CARD_IDS for explicit
+// fixtures; load drops every non-live id identically via this single check.
+export function isRecoverableCard(card: Pick<BattleCard, "id" | "cost" | "effects" | "descriptionLines">): boolean {
+  if (Object.hasOwn(cardById, card.id)) return true;
+  return (
+    isMixedPotionCard(card) &&
+    Number.isInteger(card.cost) &&
+    card.cost >= 0 &&
+    card.effects.length > 0 &&
+    card.descriptionLines.length > 0
+  );
+}
+
+export function filterLiveCards<T extends Pick<BattleCard, "id" | "cost" | "effects" | "descriptionLines">>(
+  cards: readonly T[],
+): T[] {
+  return cards.filter(isRecoverableCard);
+}
 
 function normalizeReactions(saved: unknown): BattleSnapshot["reactions"] {
   const reactions = createElementalReactionState();
@@ -244,15 +266,22 @@ function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapsho
 
 function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
   const piles = ["hand", "pendingHandCards", "deck", "discard", "exhausted"] as const;
+  const live = {
+    hand: filterLiveCards(state.hand),
+    pendingHandCards: filterLiveCards(state.pendingHandCards),
+    deck: filterLiveCards(state.deck),
+    discard: filterLiveCards(state.discard),
+    exhausted: filterLiveCards(state.exhausted),
+  };
   // Leave room for every repair and the next draw; oversized saved counters
   // otherwise stop advancing under floating-point arithmetic.
-  const maxRetainedUid = Number.MAX_SAFE_INTEGER - piles.reduce((total, pile) => total + state[pile].length, 0) - 2;
+  const maxRetainedUid = Number.MAX_SAFE_INTEGER - piles.reduce((total, pile) => total + live[pile].length, 0) - 2;
   const isUsableUid = (uid: number | undefined): uid is number =>
     Number.isSafeInteger(uid) && uid! >= 0 && uid! <= maxRetainedUid;
   const counts = new Map<number, number>();
   let highestCardUid = 0;
   for (const pile of piles) {
-    for (const card of state[pile]) {
+    for (const card of live[pile]) {
       if (isUsableUid(card.uid)) {
         counts.set(card.uid, (counts.get(card.uid) ?? 0) + 1);
         highestCardUid = Math.max(highestCardUid, card.uid);
@@ -264,9 +293,9 @@ function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
     highestCardUid + 1,
   );
   const used = new Set<number>();
-  const repaired = { ...state };
+  const repaired = { ...live };
   for (const pile of piles) {
-    repaired[pile] = state[pile].map((card) => {
+    repaired[pile] = live[pile].map((card) => {
       if (isUsableUid(card.uid) && !used.has(card.uid)) {
         used.add(card.uid);
         return card;
@@ -297,10 +326,11 @@ function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
 }
 
 function normalizeWishChoices(state: BattleSnapshot) {
-  const queue = state.wishQueue.filter((options) => options.length > 0);
-  if (state.wishOptions?.length) return { wishOptions: state.wishOptions, wishQueue: queue };
-  const [wishOptions = null, ...wishQueue] = queue;
-  return { wishOptions, wishQueue };
+  const wishOptions = state.wishOptions ? filterLiveCards(state.wishOptions) : null;
+  const wishQueue = state.wishQueue.map(filterLiveCards).filter((options) => options.length > 0);
+  if (wishOptions?.length) return { wishOptions, wishQueue };
+  const [nextWishOptions = null, ...remainingQueue] = wishQueue;
+  return { wishOptions: nextWishOptions, wishQueue: remainingQueue };
 }
 
 function normalizeSurvival(state: BattleSnapshot, saved: Partial<BattleSnapshot>, defaults: BattleSnapshot) {
