@@ -30,6 +30,8 @@ import {
 } from "@/lib/game-constants";
 import { cardById, trinketLibrary } from "@/lib/game-data";
 import { createMixedPotion } from "@/lib/alchemist";
+import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
+import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import type { GearInstance } from "@/lib/gear";
 import { gearDefinitions } from "@/lib/gear";
@@ -95,23 +97,23 @@ describe("alchemist shop actions", () => {
       expect(readActiveRun(defaultGameSession).runDeck.map((card) => card.id)).toEqual(["slash", "bash"]);
       expect(playUISound).not.toHaveBeenCalled();
     });
-    it("deducts gold, replaces two cards with mixed potion, marks mixUsed", () => {
+    it("mixes maximum-strength ingredients, charging once for a saveable Potion", () => {
+      const potion = makeCard({ id: "health-potion", effects: [{ kind: "heal", amount: 999 }] });
+      const sibling = cardById.slash!;
       setRunProgress({
         gold: 999,
-        runDeck: [
-          makeCard({ id: "health-potion", title: "Potion A" }),
-          makeCard({ id: "mana-potion", title: "Potion B" }),
-        ],
+        runDeck: [potion, sibling, potion],
       });
       setAlchemistState(createInitialAlchemistState());
       const actions = buildActions();
 
-      const result = actions.alchemist.mixPotions(0, 1);
+      const result = actions.alchemist.mixPotions(2, 0);
 
-      expect(result).not.toBeNull();
+      expect(result?.effects).toEqual([...potion.effects, ...potion.effects]);
+      expect(hydrateCard(BattleCardSchema.parse(result))).toEqual(result);
       expect(readRunProfile(defaultGameSession).gold).toBe(999 - ALCHEMIST_MIX_PRICE);
       expect(readActivityData(readRunSession(defaultGameSession).activity, "alchemist").mixUsed).toBe(true);
-      expect(readActiveRun(defaultGameSession).runDeck).toEqual([result]);
+      expect(readActiveRun(defaultGameSession).runDeck).toEqual([sibling, result]);
       expect(playUISound).toHaveBeenCalledWith("alchemistMix");
     });
 
@@ -176,9 +178,12 @@ describe("alchemist shop actions", () => {
     });
 
     it.each(["mix", "distill"] as const)(
-      "rejects unsavable %s results without spending Gold, ingredients, or the service",
+      "rejects unsupported %s effects without spending Gold, ingredients, or the service",
       (operation) => {
-        const potion = makeCard({ id: "health-potion", effects: [{ kind: "heal", amount: 999 }] });
+        const potion = makeCard({
+          id: "health-potion",
+          effects: [{ kind: "heal", amount: operation === "mix" ? 1000 : 999 }],
+        });
         setRunProgress({ gold: 999, runDeck: [potion, potion] });
         setAlchemistState(createInitialAlchemistState());
         const beforeRun = readActiveRun(defaultGameSession);

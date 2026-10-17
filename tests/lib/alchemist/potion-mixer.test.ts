@@ -1,6 +1,6 @@
 import { makeTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
-import { createMixedPotion, applyMixToDeck, doublePotionPotency } from "@/lib/alchemist";
+import { createMixedPotion, doublePotionPotency } from "@/lib/alchemist";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
@@ -145,33 +145,6 @@ describe("createMixedPotion", () => {
       "Convert each of your Mana into 5 Block",
       "Consume",
     ]);
-  });
-});
-
-describe("applyMixToDeck", () => {
-  const potionA = makePotion({ id: "a" });
-  const potionB = makePotion({ id: "b" });
-  const potionC = makePotion({ id: "c" });
-  const mixed = createMixedPotion(potionA, potionB);
-
-  it("removes the two potions at given indices and appends the mixed potion", () => {
-    const deck = [potionA, potionB, potionC];
-    const original = [...deck];
-    const result = applyMixToDeck(deck, 1, 0, mixed);
-    expect(deck).toEqual(original);
-
-    expect(result).toHaveLength(2);
-    expect(result[0].id).toBe("c");
-    expect(result[1].id).toBe(mixed.id);
-  });
-
-  it("throws on identical indices or out-of-bounds indices", () => {
-    const deck = [potionA, potionB, potionC];
-    expect(() => applyMixToDeck(deck, 1, 1, mixed)).toThrow("Invalid potion indices for mixing");
-    expect(() => applyMixToDeck(deck, -1, 1, mixed)).toThrow("Invalid potion indices for mixing");
-    expect(() => applyMixToDeck(deck, 0, 5, mixed)).toThrow("Invalid potion indices for mixing");
-    expect(() => applyMixToDeck(deck, 0.5, 1, mixed)).toThrow();
-    expect(() => applyMixToDeck(deck, 0, Number.NaN, mixed)).toThrow();
   });
 });
 

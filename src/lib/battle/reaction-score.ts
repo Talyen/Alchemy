@@ -95,6 +95,7 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
 
 /** Random-type cards can have many equivalent paths; merge them before the next effect. */
 function mergeProjections(paths: Projection[]): Projection[] {
+  if (paths.length < 2) return paths;
   const merged = new Map<string, Projection>();
   for (const path of paths) {
     const state = path.state;
@@ -173,20 +174,22 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
           };
           let next = [path];
           for (let i = 0; i < effect.amount; i++) {
-            next = next.flatMap((current) => {
-              let projected: Projection[] = [];
-              resolveSecondaryAction(current.state, "companion", (scoped) => {
-                projected = projectEffects([{ ...current, state: scoped }], companionCard, companionCard.effects);
-                return scoped;
-              });
-              return projected.map((result) => {
-                const { action: _action, ...unscoped } = result.state;
-                return {
-                  ...result,
-                  state: current.state.action ? { ...unscoped, action: current.state.action } : unscoped,
-                };
-              });
-            });
+            next = mergeProjections(
+              next.flatMap((current) => {
+                let projected: Projection[] = [];
+                resolveSecondaryAction(current.state, "companion", (scoped) => {
+                  projected = projectEffects([{ ...current, state: scoped }], companionCard, companionCard.effects);
+                  return scoped;
+                });
+                return projected.map((result) => {
+                  const { action: _action, ...unscoped } = result.state;
+                  return {
+                    ...result,
+                    state: current.state.action ? { ...unscoped, action: current.state.action } : unscoped,
+                  };
+                });
+              }),
+            );
           }
           return next;
         }
