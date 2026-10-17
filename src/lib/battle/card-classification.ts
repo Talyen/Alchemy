@@ -27,7 +27,6 @@ function classifyEffects(effects: readonly BattleCardEffect[]): EffectClassifica
     // whole tree, even when later effects target the other side.
     playTarget ??= effectTarget(effect);
     if (effect.kind === "damage") {
-      if (effect.damageTypeIfTargetHasBlock) damageTypes.add(effect.damageTypeIfTargetHasBlock);
       if (effect.damageTypeIfTargetFrozen) damageTypes.add(effect.damageTypeIfTargetFrozen);
       for (const type of effect.damageTypePool?.length ? effect.damageTypePool : [effect.damageType]) {
         damageTypes.add(type);
@@ -82,7 +81,6 @@ function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
   switch (effect.kind) {
     case "damage":
     case "random-damage":
-    case "enemy-status":
     case "remove-enemy-armor":
     case "multiply-enemy-status":
     case "cleanse-player-status-to-damage":

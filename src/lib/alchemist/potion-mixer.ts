@@ -44,7 +44,6 @@ function doublePotionEffect(effect: BattleCardEffect): BattleCardEffect {
         ...effect,
         amount,
         ...(effect.amountIfTargetFrozen !== undefined ? { amountIfTargetFrozen: effect.amountIfTargetFrozen * 2 } : {}),
-        ...(effect.blockDamageBonus !== undefined ? { blockDamageBonus: effect.blockDamageBonus * 2 } : {}),
       };
     if (effect.kind === "player-status" && effect.forgeAmount !== undefined)
       return { ...effect, amount, forgeAmount: effect.forgeAmount * 2 };

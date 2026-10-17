@@ -22,7 +22,7 @@ describe("computeCardDamageToEnemy", () => {
         flags: { nextHitCrit: source === "next-hit", nextPhysicalCrit: source === "physical" },
         rng,
       });
-      const context = { manaAtStart: 3, enemyFreezeSkipTurnsAtStart: 0, guaranteedCrit: source === "guaranteed" };
+      const context = { manaAtStart: 3, guaranteedCrit: source === "guaranteed" };
       const result = computeCardDamageToEnemy(state, physicalEffect, undefined, context);
       expect(result.modifiedDamage).toBe(physicalEffect.amount * CRIT_MULTIPLIER);
       expect(result.critical).toBe(true);

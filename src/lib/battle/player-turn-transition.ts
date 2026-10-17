@@ -90,7 +90,6 @@ function processPendingTurnStartEffects(state: BattleState, combatTexts: CombatT
       if (getBattleOutcome(current) !== null) break;
       current = applyCardEffects(current, { ...pulseCard, ...pulse.sourceCard, effects: pulse.effects }, combatTexts, {
         manaAtStart: current.mana,
-        enemyFreezeSkipTurnsAtStart: current.enemyCC.freezeSkipTurns,
         origin: "triggered-card",
       });
     }

@@ -18,7 +18,6 @@ describe("player rule help matches consequential combat behavior", () => {
     const hit = applyCardEffects(state, cardById["ray-of-frost"]!, texts, {
       origin: "played-card",
       manaAtStart: state.mana,
-      enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
     });
     expect(hit.enemyHealth).toBe(97);
     expect(texts.filter((event) => event.target === "enemy" && event.kind === "damage" && event.critical)).toHaveLength(
@@ -38,7 +37,6 @@ describe("player rule help matches consequential combat behavior", () => {
     const hit = applyCardEffects(state, cardById["ray-of-frost"]!, [], {
       origin: "played-card",
       manaAtStart: state.mana,
-      enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
     });
     expect(hit.enemyHealth).toBe(98);
     expect(hit.playerHealth).toBe(11);
@@ -58,7 +56,6 @@ describe("player rule help matches consequential combat behavior", () => {
     const hit = applyCardEffects(state, card, [], {
       origin: "played-card",
       manaAtStart: state.mana,
-      enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
     });
     expect(hit.enemyHealth).toBe(97);
     expect(hit.enemyStatuses.bleed).toBe(1);

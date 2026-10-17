@@ -189,14 +189,3 @@ it("applyCardEffects — remove-player-status triggers Sin-Eater's Lantern heal 
   expect(result.playerStatuses.burn).toBe(0);
   expect(result.playerHealth).toBe(21);
 });
-
-it("applyCardEffects — enemy-status (fixture) applies the full enemy status amount", () => {
-  const state = makeState({});
-  const card = makeTestCard({
-    effects: [{ kind: "enemy-status", status: "poison", amount: 4 }],
-  });
-  const texts: CombatTextEvent[] = [];
-  const result = applyCardEffects(state, card, texts);
-  expect(result.enemyStatuses.poison).toBe(4);
-  expect(texts).toEqual([{ target: "enemy", kind: "multiply", stat: "poison", amount: 4 }]);
-});

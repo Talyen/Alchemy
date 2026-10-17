@@ -11,9 +11,8 @@ import { halveRounded, scalePercent } from "./amount-helpers";
 import { computeCardPayment } from "./card-cost-rules";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 
-const SCORED_ENEMY_STATUSES = new Set(["burn", "poison", "bleed", "stun", "freeze"]);
 // Live autoplay scoring. Game-design owned: changing these weights changes
-// autoplay and Wish picks in real runs. The balance simulator re-exports this
+// autoplay and Wish picks in real runs. The balance simulator imports this
 // policy today so reports match the skill floor; if the simulator needs its own
 // tuning, fork a copy under src/lib/balance instead of editing these weights.
 export const AUTOPLAY_EFFECT_SCORE = {
@@ -38,17 +37,11 @@ function scoreEffects(effects: readonly BattleCardEffect[], state: BattleSnapsho
 function scoreDamageBase(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleSnapshot): number {
   if (effect.forgeBonusPercent !== undefined)
     return effect.amount + scalePercent(state.playerStatuses.forge, effect.forgeBonusPercent);
-  if (effect.equalToForge) return state.playerStatuses.forge;
   if (effect.equalToBlock) return scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? 100);
   if (effect.equalToArmor) return state.playerStatuses.armor;
-  // Type-only conditions cannot change this score. Ordinary attacks need no
-  // temporary resolved effect; amount-changing conditions keep the shared resolver.
-  if (effect.blockCost === undefined && !effect.damageTypeIfTargetFrozen) return effect.amount;
-  return resolveConditionalCardDamage(effect, {
-    actorBlock: state.playerStatuses.block,
-    targetBlock: state.enemyMitigation.block,
-    targetFrozen: state.enemyCC.freezeSkipTurns > 0,
-  }).effect.amount;
+  // Ordinary attacks need no temporary resolved effect.
+  if (!effect.damageTypeIfTargetFrozen) return effect.amount;
+  return resolveConditionalCardDamage(effect, state.enemyCC.freezeSkipTurns > 0).amount;
 }
 
 function scoreDamageEffect(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleSnapshot): number {
@@ -71,24 +64,27 @@ function playerStatusAmount(
   return effect.amount;
 }
 
+function playerStatusDefense(
+  effect: Extract<BattleCardEffect, { kind: "player-status" }>,
+  state?: BattleSnapshot,
+): number {
+  const amount = playerStatusAmount(effect, state);
+  if (!effect.statusPool) return effect.status === "block" || effect.status === "armor" ? amount : 0;
+  let defensive = 0;
+  for (const status of effect.statusPool) {
+    if (status === "block" || status === "armor") defensive += 1;
+  }
+  return (amount * defensive) / effect.statusPool.length;
+}
+
 function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: number): number {
   switch (effect.kind) {
     case "damage":
       return scoreDamageEffect(effect, state);
     case "random-damage":
       return (effect.minAmount + effect.maxAmount) / 2;
-    case "enemy-status":
-      return SCORED_ENEMY_STATUSES.has(effect.status) ? effect.amount : 0;
-    case "player-status": {
-      const amount = playerStatusAmount(effect, state);
-      const defense = amount * AUTOPLAY_EFFECT_SCORE.defense;
-      if (!effect.statusPool) return effect.status === "block" || effect.status === "armor" ? defense : 0;
-      let total = 0;
-      for (const status of effect.statusPool) {
-        if (status === "block" || status === "armor") total += defense;
-      }
-      return total / effect.statusPool.length;
-    }
+    case "player-status":
+      return playerStatusDefense(effect, state) * AUTOPLAY_EFFECT_SCORE.defense;
     case "heal":
       return Math.min(effect.amount, Math.max(0, state.playerMaxHealth - state.playerHealth));
     case "remove-harmful-status": {
@@ -190,9 +186,7 @@ function immediateDefenseFromEffects(effects: readonly BattleCardEffect[], state
         total +
         (state ? Math.min(effect.amount, Math.max(0, state.playerMaxHealth - state.playerHealth)) : effect.amount)
       );
-    if (effect.kind === "player-status" && (effect.status === "block" || effect.status === "armor")) {
-      return total + playerStatusAmount(effect, state);
-    }
+    if (effect.kind === "player-status") return total + playerStatusDefense(effect, state);
     if (effect.kind === "remove-harmful-status") {
       if (state && !harmfulPlayerStatusIds.some((status) => state.playerStatuses[status] > 0)) return total;
       // Stateless heuristic: a full cleanse counts nominally; fixed counts its amount.

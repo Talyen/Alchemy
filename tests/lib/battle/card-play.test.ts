@@ -96,29 +96,6 @@ describe("playBattleCardResolved", () => {
     expect(result.state.playerStatuses.block).toBe(15);
   });
 
-  it("restores Mana only when Ray of Frost causes a new Freeze", () => {
-    const card = makeTestCard({
-      id: "ray-of-frost",
-      cost: 1,
-      effects: [
-        { kind: "damage", damageType: "freeze", amount: 1 },
-        { kind: "damage", damageType: "freeze", amount: 1 },
-        { kind: "restore-mana", amount: 1, ifEnemyFrozen: true },
-      ],
-    });
-    const freshTarget = makeState({ mana: 1, enemyHealth: 4, enemyMaxHealth: 4, hand: [card] });
-    const alreadyFrozen = makeState({
-      mana: 1,
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0, cooldown: 2 },
-      hand: [card],
-    });
-
-    expect(playBattleCardResolved(freshTarget, card.id, 0).state.mana).toBe(1);
-    expect(playBattleCardResolved(alreadyFrozen, card.id, 0).state.mana).toBe(0);
-  });
-
   it("converts only the next actual damage effect to Poison", () => {
     const card = makeTestCard({
       id: "two-hits",

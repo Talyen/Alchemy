@@ -21,11 +21,7 @@ function unexpectedScoringRoll(): never {
 function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): Projection {
   const before = path.state;
   if (before.enemyHealth <= 0 || before.playerHealth <= 0) return path;
-  const selected = resolveConditionalCardDamage(effect, {
-    actorBlock: before.playerStatuses.block,
-    targetBlock: before.enemyMitigation.block,
-    targetFrozen: before.enemyCC.freezeSkipTurns > 0,
-  }).effect;
+  const selected = resolveConditionalCardDamage(effect, before.enemyCC.freezeSkipTurns > 0);
   const companion = before.action?.source === "companion";
   const companionBonus = companion ? before.flags.companionNextAttackBonus : 0;
   const attempted =
@@ -58,7 +54,6 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
     card,
     {
       manaAtStart: candidate.mana,
-      enemyFreezeSkipTurnsAtStart: candidate.enemyCC.freezeSkipTurns,
       origin: companion ? "companion" : "played-card",
       baseDamageBonus: companionBonus + (consumed.packet.damageType === "physical" ? consumed.physicalBonus : 0),
     },

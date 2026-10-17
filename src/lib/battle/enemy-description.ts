@@ -31,16 +31,12 @@ function scaleEffect(effect: EnemyAbilityEffect, context: EnemyDescriptionContex
         failureEffects: effect.failureEffects.map((e) => scaleEffect(e, context)),
       };
     case "damage": {
-      if (effect.equalToBlock || effect.equalToForge)
-        return { ...scaleEnemyAbilityDamage(context, effect, true), amount: effect.amount };
+      if (effect.equalToBlock) return { ...scaleEnemyAbilityDamage(context, effect, true), amount: effect.amount };
       const damage = (amount: number, damageType = effect.damageType) =>
         scaleEnemyAbilityDamage(context, { ...effect, amount, damageType }).amount;
       return {
         ...effect,
         ...scaleEnemyAbilityDamage(context, effect),
-        ...(effect.blockDamageBonus !== undefined
-          ? { blockDamageBonus: damage(effect.amount + effect.blockDamageBonus) - damage(effect.amount) }
-          : {}),
         ...(effect.amountIfTargetFrozen !== undefined
           ? { amountIfTargetFrozen: damage(effect.amountIfTargetFrozen, effect.damageTypeIfTargetFrozen) }
           : {}),
@@ -65,7 +61,6 @@ export function getEncounterEnemyAbility(card: EnemyAbilityCard, context: EnemyD
   const description = getCardDescription({ ...presentation, effects });
   // A damage-type alternative can receive different flat difficulty bonuses.
   for (const line of description) {
-    const seenAmounts = new Set<string>();
     line.parts = line.parts.map((part, index) => {
       if (typeof part === "string") return part;
       const reference = part.references[0];
@@ -79,12 +74,7 @@ export function getEncounterEnemyAbility(card: EnemyAbilityCard, context: EnemyD
         line.parts[index + 1] = " damage";
         return original.damageTypePool.map((type) => `${damage(type)} ${capitalizeWord(type)}`).join(" or ");
       }
-      if (!original.damageTypeIfTargetHasBlock) return part;
-      if (!seenAmounts.has(part.id)) {
-        seenAmounts.add(part.id);
-        return part;
-      }
-      return String(damage(original.damageTypeIfTargetHasBlock));
+      return part;
     });
   }
 

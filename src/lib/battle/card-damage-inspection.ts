@@ -425,37 +425,28 @@ export function getBattleDamageInspectionCard(
   ): { effect: DamageEffect; state: BattleState; followUp?: DamageEffect } {
     if (!enemy && (isPlayerDefeated(current) || current.enemyHealth <= 0))
       return { effect: flatAttack(effect, 0), state: current };
-    const selected = resolveConditionalCardDamage(effect, {
-      actorBlock: enemy ? current.enemyMitigation.block : current.playerStatuses.block,
-      targetBlock: enemy ? current.playerStatuses.block : current.enemyMitigation.block,
-      targetFrozen: (enemy ? current.playerCC : current.enemyCC).freezeSkipTurns > 0,
-    });
+    const selected = resolveConditionalCardDamage(
+      effect,
+      (enemy ? current.playerCC : current.enemyCC).freezeSkipTurns > 0,
+    );
     if (enemy) {
-      const spent = {
-        ...current,
-        enemyMitigation: { ...current.enemyMitigation, block: current.enemyMitigation.block - selected.blockSpent },
-      };
-      const prepared = prepareEnemyAbilityDamage(spent, selected.effect, current.flags.enemyBrawlerDamagePenalty);
-      const power = prepareEnemyDamage(spent, prepared.damage, {
+      const prepared = prepareEnemyAbilityDamage(current, selected, current.flags.enemyBrawlerDamagePenalty);
+      const power = prepareEnemyDamage(current, prepared.damage, {
         amountMultiplier: prepared.amountMultiplier,
         flatBonus: prepared.flatBonus,
         ignorePlayerMitigation: true,
       }).attemptedDamage;
       return {
-        effect: flatAttack(selected.effect, power),
+        effect: flatAttack(selected, power),
         state:
           prepared.banditBonus && power > 0
-            ? { ...spent, flags: { ...spent.flags, enemyFirstHitDoubleUsed: true } }
-            : spent,
+            ? { ...current, flags: { ...current.flags, enemyFirstHitDoubleUsed: true } }
+            : current,
       };
     }
-    const spent = {
-      ...current,
-      playerStatuses: { ...current.playerStatuses, block: current.playerStatuses.block - selected.blockSpent },
-    };
-    const consumed = consumeAttackPacketFlags(spent, {
-      ...selected.effect,
-      amount: applyPotionMultiplier(selected.effect.amount, potionMult),
+    const consumed = consumeAttackPacketFlags(current, {
+      ...selected,
+      amount: applyPotionMultiplier(selected.amount, potionMult),
     });
     const armorBonus =
       consumed.packet.damageType === "stun" && current.gearEffects.armorIncreasesStun > 0
@@ -463,7 +454,7 @@ export function getBattleDamageInspectionCard(
         : 0;
     const baseDamageBonus = consumed.packet.damageType === "physical" ? consumed.physicalBonus : 0;
     if (armorBonus <= 0 && computeBaseDamage(consumed.state, consumed.packet, { card, bonus: baseDamageBonus }) <= 0)
-      return { effect: flatAttack(consumed.packet, 0), state: spent };
+      return { effect: flatAttack(consumed.packet, 0), state: current };
     const shatter =
       consumed.packet.damageType === "physical" &&
       canShatter(consumed.state) &&
@@ -498,7 +489,6 @@ export function getBattleDamageInspectionCard(
       card,
       {
         manaAtStart: consumed.state.mana,
-        enemyFreezeSkipTurnsAtStart: consumed.state.enemyCC.freezeSkipTurns,
         origin: "played-card",
         baseDamageBonus,
         guaranteedCrit,
@@ -725,7 +715,6 @@ export function getBattleDamageInspectionCard(
             {
               ...context,
               manaAtStart: context?.manaAtStart ?? current.mana,
-              enemyFreezeSkipTurnsAtStart: context?.enemyFreezeSkipTurnsAtStart ?? current.enemyCC.freezeSkipTurns,
               baseDamageBonus: bonus,
             },
             "prepared-only",
@@ -903,7 +892,6 @@ export function getBattleDamageInspectionCard(
             applyCardUtilityEffect(utilityHandlers, current, card, effect, potionMult, [], {
               origin: "played-card",
               manaAtStart: snapshot.mana,
-              enemyFreezeSkipTurnsAtStart: snapshot.enemyCC.freezeSkipTurns,
             }) ?? current;
       }
       if (enemy && effect.kind === "player-status" && ["forge", "block", "armor"].includes(effect.status)) {

@@ -33,7 +33,6 @@ function base() {
 function hit(state: BattleState, card = attack("physical"), texts: CombatTextEvent[] = []) {
   return applyCardEffects(state, card, texts, {
     manaAtStart: state.mana,
-    enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
     origin: "played-card",
   });
 }
@@ -98,7 +97,6 @@ describe("CC reaction payoffs", () => {
       (current) =>
         applyCardEffects(current, attack("physical", 1), [], {
           manaAtStart: current.mana,
-          enemyFreezeSkipTurnsAtStart: 1,
           origin: "companion",
         }),
     );

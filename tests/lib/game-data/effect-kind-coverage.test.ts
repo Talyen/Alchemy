@@ -13,7 +13,6 @@ import { EFFECT_APPLY_BY_KIND } from "@/lib/battle/effect-handlers/registry";
 const MINIMAL_EFFECT_BY_KIND: Record<(typeof BATTLE_CARD_EFFECT_KINDS)[number], BattleCardEffect> = {
   damage: { kind: "damage", damageType: "physical", amount: 1 },
   "player-status": { kind: "player-status", status: "block", amount: 1 },
-  "enemy-status": { kind: "enemy-status", status: "burn", amount: 1 },
   heal: { kind: "heal", amount: 1 },
   "restore-mana": { kind: "restore-mana", amount: 1 },
   "lose-mana": { kind: "lose-mana", amount: 1 },

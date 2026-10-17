@@ -435,7 +435,7 @@ describe("thematic card effects", () => {
         kind: "damage",
         damageType: "burn",
         amount: 0,
-        equalToForge: true,
+        equalToBlock: true,
         equalToArmor: true,
       }).success,
     ).toBe(false);

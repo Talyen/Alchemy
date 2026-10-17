@@ -112,13 +112,4 @@ it("validates exact canonical text and still rejects edited amounts and omitted 
     expect(canonicalCardDescriptionMatches(changed)).toBe(false);
     expect(validateCardDescriptionParity(changed).some((issue) => issue.severity === "error")).toBe(true);
   }
-  expect(
-    canonicalCardDescriptionMatches(
-      effectsCard({
-        id: "conditional",
-        art: "",
-        effects: [{ kind: "restore-mana", amount: 2, ifEnemyFrozen: true }],
-      }),
-    ),
-  ).toBe(true);
 });

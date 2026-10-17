@@ -10,7 +10,6 @@ export interface CardEffectAddress {
 export const CARD_MAGNITUDE_FIELDS = [
   "amount",
   "forgeAmount",
-  "blockDamageBonus",
   "amountIfTargetFrozen",
   "minAmount",
   "maxAmount",

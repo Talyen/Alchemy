@@ -52,21 +52,17 @@ describe("autoplay policy", () => {
     const score = (effect: BattleCard["effects"]) =>
       getEffectiveDamageScore(makeTestCard({ cost: 0, effects: effect }), state);
     expect(score([{ kind: "damage", damageType: "physical", amount: 4 }])).toBe(4);
-    expect(score([{ kind: "damage", damageType: "physical", amount: 4, damageTypeIfTargetHasBlock: "holy" }])).toBe(4);
-    expect(score([{ kind: "damage", damageType: "physical", amount: 4, blockCost: 0, blockDamageBonus: 3 }])).toBe(7);
     expect(
       score([
         {
           kind: "damage",
-          damageType: "physical",
-          amount: 4,
-          blockCost: 2,
-          blockDamageBonus: 3,
+          damageType: "freeze",
+          amount: 2,
           damageTypeIfTargetFrozen: "freeze",
-          amountIfTargetFrozen: 0,
+          amountIfTargetFrozen: 4,
         },
       ]),
-    ).toBe(0);
+    ).toBe(4);
     const refill = makeTestCard({ cost: 1, tags: ["holy"], effects: [{ kind: "restore-mana", amount: 2 }] });
     expect(getEffectiveDamageScore(refill, { ...state, flags: { ...state.flags, nextHolyCardFree: true } })).toBe(0);
   });
@@ -121,6 +117,11 @@ describe("autoplay policy", () => {
     expect(
       score([{ kind: "player-status", status: "block", statusPool: ["block", "armor", "forge"], amount: 6 }]),
     ).toBe(2);
+    const randomGuard = makeTestCard({
+      effects: [{ kind: "player-status", status: "forge", statusPool: ["forge", "armor"], amount: 6 }],
+    });
+    expect(getImmediateDefense(randomGuard, state)).toBe(3);
+    expect(score(randomGuard.effects)).toBe(1.5);
     expect(score([{ kind: "remove-harmful-status", removeAll: true }])).toBe(6);
   });
 });

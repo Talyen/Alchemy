@@ -26,8 +26,8 @@ describe("card classification", () => {
                 kind: "damage",
                 damageType: "physical",
                 amount: 2,
-                damageTypeIfTargetHasBlock: "holy",
                 damageTypeIfTargetFrozen: "burn",
+                amountIfTargetFrozen: 4,
               },
             ],
           },
@@ -37,7 +37,7 @@ describe("card classification", () => {
       else expect(cardHasDamageType(card, "burn")).toBe(true);
       expect(isAttackCard(card)).toBe(true);
       expect(getBattleCardPlayTarget(card)).toBe("player");
-      for (const type of ["physical", "holy", "burn"]) expect(cardHasDamageType(card, type)).toBe(true);
+      for (const type of ["physical", "burn"]) expect(cardHasDamageType(card, type)).toBe(true);
       expect(cardHasDamageType(card, "freeze")).toBe(false);
     },
   );
@@ -88,7 +88,7 @@ describe("card classification", () => {
       tags: ["nature", "archery"],
       effects: [
         { kind: "self-damage", damageType: "burn", amount: 1 },
-        { kind: "enemy-status", status: "poison", amount: 1 },
+        { kind: "remove-player-status", status: "poison" },
         { kind: "player-status", status: "block", amount: 5 },
         {
           kind: "repeat-over-turns",
@@ -105,4 +105,39 @@ describe("card classification", () => {
     expect(cardHasKeyword(card, "missing")).toBe(false);
     expect(isNatureCard(card)).toBe(true);
   });
+});
+
+it("keeps the first nested target and refreshes it when the effects are replaced", () => {
+  const card = makeTestCard({
+    effects: [
+      {
+        kind: "repeat-over-turns",
+        remainingTurns: 1,
+        effects: [
+          { kind: "chance", probability: 0.5, successEffects: [], failureEffects: [] },
+          { kind: "heal", amount: 1 },
+        ],
+      },
+      { kind: "damage", damageType: "physical", amount: 2 },
+    ],
+  });
+  expect(getBattleCardPlayTarget(card)).toBe("player");
+  const costVariant = { ...card, cost: 0 };
+  card.effects = [{ kind: "damage", damageType: "physical", amount: 2 }];
+  expect(getBattleCardPlayTarget(card)).toBe("enemy");
+  expect(getBattleCardPlayTarget(costVariant)).toBe("player");
+});
+
+it("aims chance-card VFX from the failure branch when success has no target", () => {
+  const card = makeTestCard({
+    effects: [
+      {
+        kind: "chance",
+        probability: 0.5,
+        successEffects: [],
+        failureEffects: [{ kind: "damage", damageType: "physical", amount: 3 }],
+      },
+    ],
+  });
+  expect(getBattleCardPlayTarget(card)).toBe("enemy");
 });

@@ -8,7 +8,6 @@ import { tryTriggerEnemyFreeze } from "../damage-status-riders";
 import { resolveStunTrigger } from "../status-stun-resolve";
 import { dealDamageToEnemy } from "../damage";
 import type { EnemyStatusId } from "@/lib/game-data";
-import { resolveFollowUpHit } from "../follow-up-hit-resolution";
 
 function resolveEnemyStatusCcTrigger(
   preHitState: BattleState,
@@ -22,22 +21,6 @@ function resolveEnemyStatusCcTrigger(
 }
 
 export const STATUS_HANDLERS = {
-  "enemy-status": (state, _card, effect, potionMult, combatTexts) => {
-    const amount = applyPotionMultiplier(effect.amount, potionMult);
-    if (effect.status === "stun" || effect.status === "freeze") {
-      return resolveFollowUpHit(state, { source: "player-follow-up", damageType: effect.status, amount }, combatTexts);
-    }
-    const nextState = addEnemyStatus(state, effect.status, amount, { combatTexts });
-    const appliedAmount = nextState.enemyStatuses[effect.status] - state.enemyStatuses[effect.status];
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: effect.status === "burn" || effect.status === "poison" || effect.status === "bleed" ? "multiply" : "status",
-      stat: effect.status,
-      amount: appliedAmount,
-    });
-
-    return nextState;
-  },
   "multiply-enemy-status": (state, _card, effect, _potionMult, combatTexts) => {
     const current = state.enemyStatuses[effect.status];
     if (current <= 0) return state;

@@ -27,7 +27,6 @@ describe("Poison, Stun, and Wish Talent reworks", () => {
       computeCardDamageToEnemy(state, effect, undefined, {
         origin: "companion",
         manaAtStart: state.mana,
-        enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
       }).modifiedDamage,
     ).toBe(6);
     expect(
@@ -44,10 +43,6 @@ describe("Poison, Stun, and Wish Talent reworks", () => {
       talentEffects: { poisonDamageBonusVsPoisoned: 1, freezeDamageBonusVsFrozen: 1 },
       rng: () => 0.99,
     });
-    expect(
-      computeCardDamageToEnemy(state, { kind: "damage", damageType: "holy", amount: 0, equalToForge: true })
-        .modifiedDamage,
-    ).toBe(5);
     expect(
       computeCardDamageToEnemy(state, { kind: "damage", damageType: "holy", amount: 0, equalToBlock: true })
         .modifiedDamage,

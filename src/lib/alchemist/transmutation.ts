@@ -31,11 +31,11 @@ const RESOURCE_KINDS = { health: "heal", mana: "restore-mana", gold: "gain-gold"
 const SOURCE_CONDITIONS: Partial<Record<KeywordId, readonly string[]>> = {
   burn: ["tripleIfEnemyNotBurning", "detonateAllBurn"],
   bleed: ["doubleIfEnemyBleeding", "detonateAllBleed"],
-  freeze: ["damageTypeIfTargetFrozen", "ifEnemyFrozen"],
+  freeze: ["damageTypeIfTargetFrozen"],
   stun: ["ifEnemyStunned"],
-  block: ["equalToBlock", "equalToBlockPercent", "blockCost", "blockDamageBonus", "damageTypeIfTargetHasBlock"],
+  block: ["equalToBlock", "equalToBlockPercent"],
   armor: ["equalToArmor"],
-  forge: ["equalToForge", "forgeBonusPercent"],
+  forge: ["forgeBonusPercent"],
 };
 
 export function isTransmutableCard(card: BattleCard): boolean {
@@ -77,7 +77,6 @@ function sourceReferences(effect: BattleCardEffect, source: KeywordId): boolean 
     return (
       effect.damageType === source ||
       !!effect.damageTypePool?.some((type) => type === source) ||
-      effect.damageTypeIfTargetHasBlock === source ||
       effect.damageTypeIfTargetFrozen === source
     );
   if (effect.kind === "random-damage")

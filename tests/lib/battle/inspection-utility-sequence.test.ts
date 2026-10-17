@@ -59,22 +59,7 @@ describe("damage inspection follows utility effect execution", () => {
       [4, 2],
     );
   });
-  it.each([false, true])(
-    "restores conditional Mana only for Freeze newly applied by this card (existing: %s)",
-    (alreadyFrozen) => {
-      compare(
-        [
-          { kind: "damage", damageType: "freeze", amount: 50 },
-          { kind: "restore-mana", amount: 2, ifEnemyFrozen: true },
-          { kind: "damage", damageType: "burn", amount: 1 },
-        ],
-        { talentEffects: { burnDamagePerMana: 100 }, enemyCC: { freezeSkipTurns: alreadyFrozen ? 1 : 0 } },
-        [50, alreadyFrozen ? 3 : 5],
-        // Newly applied Freeze also enables 13 Shatter damage outside the displayed packets.
-        alreadyFrozen ? 53 : 68,
-      );
-    },
-  );
+
   it("carries Thunderstone's guaranteed Mana refund into the following hit", () => {
     compare(
       [

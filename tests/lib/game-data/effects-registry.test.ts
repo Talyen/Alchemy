@@ -11,7 +11,6 @@ describe("effect dispatch registry", () => {
     expect(BattleCardEffectSchema.safeParse({ kind: "remove-player-status", status: "onAttackBleed" }).success).toBe(
       false,
     );
-    expect(BattleCardEffectSchema.safeParse({ kind: "enemy-status", status: "thorns", amount: 2 }).success).toBe(true);
   });
   it("round-trips nested saved effects without stripping conditional fields or runtime empty branches", () => {
     const scheduled = {
@@ -24,7 +23,7 @@ describe("effect dispatch registry", () => {
           successEffects: [
             { kind: "damage", damageType: "physical", amount: 3, ignoreArmor: true, ignoreBlock: true },
             { kind: "player-status", status: "block", statusPool: ["block", "forge", "armor"], amount: 5 },
-            { kind: "restore-mana", amount: 1, ifEnemyFrozen: true, allowOverflow: true },
+            { kind: "restore-mana", amount: 1, allowOverflow: true },
           ],
           failureEffects: [],
         },
@@ -48,19 +47,26 @@ describe("effect dispatch registry", () => {
       { doubleIfEnemyBurning: true },
       { doubleIfEnemyNotBurning: true },
       { detonateIfEnemyBurning: true },
+      { equalToForge: true },
+      { blockCost: 1, blockDamageBonus: 2 },
+      { damageTypeIfTargetHasBlock: "holy" },
     ]) {
       expect(
         BattleCardEffectSchema.safeParse({ kind: "damage", damageType: "burn", amount: 2, ...retired }).success,
       ).toBe(false);
     }
     expect(BattleCardEffectSchema.safeParse({ kind: "buff-companion", amount: 1 }).success).toBe(false);
+    expect(BattleCardEffectSchema.safeParse({ kind: "enemy-status", status: "burn", amount: 1 }).success).toBe(false);
+    expect(BattleCardEffectSchema.safeParse({ kind: "restore-mana", amount: 1, ifEnemyFrozen: true }).success).toBe(
+      false,
+    );
   });
 
   it("rejects broken conditional damage inside saved chance branches", () => {
     const result = BattleCardEffectSchema.safeParse({
       kind: "chance",
       probability: 0.5,
-      successEffects: [{ kind: "damage", damageType: "physical", amount: 2, blockCost: 1 }],
+      successEffects: [{ kind: "damage", damageType: "physical", amount: 2, damageTypeIfTargetFrozen: "freeze" }],
       failureEffects: [],
     });
     expect(result.success).toBe(false);

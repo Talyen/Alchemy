@@ -38,11 +38,7 @@ function strengthenEffect(effect: BattleCardEffect): BattleCardEffect {
       effect.perManaCrystal !== undefined)
   )
     return effect;
-  if (
-    effect.kind === "damage" &&
-    (effect.equalToBlock === true || effect.equalToArmor === true || effect.equalToForge === true)
-  )
-    return effect;
+  if (effect.kind === "damage" && (effect.equalToBlock === true || effect.equalToArmor === true)) return effect;
   if (effect.kind === "damage") {
     // A doubled Frozen outcome shares the displayed base magnitude.
     const frozenIncrease =
@@ -54,9 +50,6 @@ function strengthenEffect(effect: BattleCardEffect): BattleCardEffect {
       amount: effect.amount + POTION_DISTILL_BONUS,
       ...(effect.amountIfTargetFrozen !== undefined
         ? { amountIfTargetFrozen: effect.amountIfTargetFrozen + frozenIncrease }
-        : {}),
-      ...(effect.blockDamageBonus !== undefined
-        ? { blockDamageBonus: effect.blockDamageBonus + POTION_DISTILL_BONUS }
         : {}),
     };
   }

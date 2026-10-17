@@ -35,7 +35,6 @@ export interface CardEffectChainOptions {
   guaranteedCrit?: boolean;
   damageEffects?: NonNullable<CardEffectResolutionContext["damageEffects"]>;
   manaAtStart?: number;
-  enemyFreezeSkipTurnsAtStart?: number;
   skipTalentRewards?: boolean;
 }
 
@@ -66,7 +65,6 @@ export function resolveCardEffectChain(
     origin: options.playedCard ? "played-card" : "triggered-card",
     damageEffects,
     manaAtStart: options.manaAtStart ?? reacted.mana,
-    enemyFreezeSkipTurnsAtStart: options.enemyFreezeSkipTurnsAtStart ?? reacted.enemyCC.freezeSkipTurns,
     ...(options.guaranteedCrit === undefined ? {} : { guaranteedCrit: options.guaranteedCrit }),
   });
   nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
@@ -96,7 +94,6 @@ interface PaidCardEffectsOptions {
   guaranteedCrit: boolean;
   damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]>;
   manaAtStart: number;
-  enemyFreezeSkipTurnsAtStart: number;
   hadNoThornsOnPlay: boolean;
 }
 
@@ -104,15 +101,7 @@ export function resolvePaidCardEffects(
   state: BattleState,
   card: BattleCard,
   combatTexts: CombatTextEvent[],
-  {
-    eligibility,
-    playTwice,
-    guaranteedCrit,
-    damageEffects,
-    manaAtStart,
-    enemyFreezeSkipTurnsAtStart,
-    hadNoThornsOnPlay,
-  }: PaidCardEffectsOptions,
+  { eligibility, playTwice, guaranteedCrit, damageEffects, manaAtStart, hadNoThornsOnPlay }: PaidCardEffectsOptions,
 ): {
   state: BattleState;
   attackAttempted: boolean;
@@ -124,7 +113,6 @@ export function resolvePaidCardEffects(
     guaranteedCrit,
     damageEffects,
     manaAtStart,
-    enemyFreezeSkipTurnsAtStart,
     // Paid plays use the conditions captured before payment reactions.
     // Resolve both copies before paying companion/nature rewards once.
     skipTalentRewards: true,
@@ -138,7 +126,6 @@ export function resolvePaidCardEffects(
       damageEffects: repeatedDamageEffects,
       guaranteedCrit,
       manaAtStart: nextState.mana,
-      enemyFreezeSkipTurnsAtStart: nextState.enemyCC.freezeSkipTurns,
     });
     nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
   }

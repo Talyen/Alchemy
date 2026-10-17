@@ -128,7 +128,6 @@ function ineffectiveEffectFeedback(effect: BattleCardEffect): CombatTextEvent | 
       return { target: "player", kind: "notice", stat: "cleanse", text: "Nothing to Cleanse" };
     case "damage":
       return { ...feedback, target: "enemy", kind: "damage", stat: effect.damageType };
-    case "enemy-status":
     case "multiply-enemy-status":
       return { ...feedback, target: "enemy", kind: "multiply", stat: effect.status };
     case "remove-enemy-armor":
@@ -170,7 +169,6 @@ export function applyCardEffects(
   combatTexts: CombatTextEvent[],
   context: CardEffectResolutionContext = {
     manaAtStart: state.mana,
-    enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
   },
 ): BattleState {
   // Earlier turn-start actions share the output rail, but cannot acknowledge

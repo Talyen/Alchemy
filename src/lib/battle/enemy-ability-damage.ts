@@ -16,7 +16,6 @@ import { scalePercent } from "./amount-helpers";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { scaleEnemyAbilityDamage } from "./battle-enemy-setup";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
-import { mergeCombatText } from "./combat-text-events";
 import { resolveEnemyAttackHit } from "./enemy-attack-hit";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
@@ -105,7 +104,6 @@ export function prepareEnemyAbilityDamage(
         Math.round(effect.amount * state.roomScalingMultiplier) +
         Math.round((state.enemyMitigation.forge * effect.forgeBonusPercent) / 100),
     };
-  if (effect.equalToForge) resourceEffect = { ...effect, amount: state.enemyMitigation.forge };
   if (effect.equalToBlock)
     resourceEffect = {
       ...effect,
@@ -114,7 +112,7 @@ export function prepareEnemyAbilityDamage(
   let damage = scaleEnemyAbilityDamage(
     state,
     resourceEffect,
-    effect.equalToForge === true || effect.equalToBlock === true || effect.forgeBonusPercent !== undefined,
+    effect.equalToBlock === true || effect.forgeBonusPercent !== undefined,
   );
   if (effect.doubleIfEnemyBleeding && state.playerStatuses.bleed > 0) damage = { ...damage, amount: damage.amount * 2 };
   if (trait("blood-cultist") && effect.damageType === "bleed" && state.playerStatuses.bleed > 0) {
@@ -130,27 +128,9 @@ export function applyAbilityDamage(
   context: EnemyAbilityContext,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  const selected = resolveConditionalCardDamage(effect, {
-    actorBlock: state.enemyMitigation.block,
-    targetBlock: state.playerStatuses.block,
-    targetFrozen: state.playerCC.freezeSkipTurns > 0,
-  });
-  effect = selected.effect;
+  effect = resolveConditionalCardDamage(effect, state.playerCC.freezeSkipTurns > 0);
   if (effect.damageTypePool) {
     effect = { ...effect, damageType: pickRandom(effect.damageTypePool, getBattleRng(state)) ?? effect.damageType };
-  }
-  if (selected.blockSpent > 0) {
-    state = {
-      ...state,
-      enemyMitigation: { ...state.enemyMitigation, block: state.enemyMitigation.block - selected.blockSpent },
-    };
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "damage",
-      stat: "block",
-      amount: selected.blockSpent,
-      impact: false,
-    });
   }
   const { damage, amountMultiplier, flatBonus, banditBonus, activatedTraits } = prepareEnemyAbilityDamage(
     state,

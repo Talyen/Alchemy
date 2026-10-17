@@ -94,27 +94,27 @@ describe("findBestPlayableHandCard", () => {
     expect(findBestPlayableHandCard(state)?.card.uid).toBe(2);
   });
 
-  it.each([
-    { amount: 0, equalToBlock: true },
-    { amount: 1, blockCost: 1, blockDamageBonus: 10 },
-  ])("scores Freeze damage after Winter's Credit spends its Block payment: %j", (damage) => {
-    const freeze = makeTestCard({
-      id: "block-funded-freeze",
-      cost: 2,
-      effects: [{ kind: "damage", damageType: "freeze", ...damage }],
-    });
-    const hit = { ...weakHit, cost: 0 };
-    const state = greedyState([freeze, hit], {
-      mana: 0,
-      playerStatuses: { ...defaultBattleState().playerStatuses, block: 6 },
-      gearEffects: { ...defaultBattleState().gearEffects, blockPaysFreezeMana: 1 },
-    });
-    const played = playBattleCardResolved({ ...state, rng: () => 0.99 }, freeze.id, 0).state;
-    expect(played.playerStatuses.block).toBe(0);
-    expect(played.enemyHealth).toBe(state.enemyHealth - damage.amount);
-    expect(findBestPlayableHandCard(state)?.card.id).toBe(hit.id);
-    expect(state.playerStatuses.block).toBe(6);
-  });
+  it.each([{ amount: 0, equalToBlock: true }])(
+    "scores Freeze damage after Winter's Credit spends its Block payment: %j",
+    (damage) => {
+      const freeze = makeTestCard({
+        id: "block-funded-freeze",
+        cost: 2,
+        effects: [{ kind: "damage", damageType: "freeze", ...damage }],
+      });
+      const hit = { ...weakHit, cost: 0 };
+      const state = greedyState([freeze, hit], {
+        mana: 0,
+        playerStatuses: { ...defaultBattleState().playerStatuses, block: 6 },
+        gearEffects: { ...defaultBattleState().gearEffects, blockPaysFreezeMana: 1 },
+      });
+      const played = playBattleCardResolved({ ...state, rng: () => 0.99 }, freeze.id, 0).state;
+      expect(played.playerStatuses.block).toBe(0);
+      expect(played.enemyHealth).toBe(state.enemyHealth - damage.amount);
+      expect(findBestPlayableHandCard(state)?.card.id).toBe(hit.id);
+      expect(state.playerStatuses.block).toBe(6);
+    },
+  );
 
   it("prefers damage at full health over a weaker guard", () => {
     const state = greedyState([
@@ -316,7 +316,7 @@ describe("findBestWishChoice", () => {
     });
     const ignite = makeTestCard({
       id: "ignite",
-      effects: [{ kind: "enemy-status", status: "burn", amount: 10 }],
+      effects: [{ kind: "damage", damageType: "burn", amount: 10 }],
     });
     const state = makeTestBattleState({ wishOptions: [slash, ignite] });
 

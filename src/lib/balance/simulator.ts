@@ -4,6 +4,10 @@ import {
   resolveBattleStart,
   defaultTalentEffects,
   getBattleOutcome,
+  getEffectiveDamageScore,
+  getImmediateDamage,
+  getImmediateDefense,
+  pickHighestScoring,
   type BattleSnapshot,
 } from "@/lib/battle";
 import {
@@ -23,7 +27,6 @@ import { createEmptyAnomalies, sampleAnomalies, type BattleAnomalies } from "./a
 import { companionIdsFromDeck } from "./companion-deck";
 import { buildSimCompanionBondLevels } from "./homestead-preset";
 import { resolveSimLoadout, type BalanceLoadoutMode } from "./loadout-preset";
-import { getEffectiveDamageScore, getImmediateDamage, getImmediateDefense, pickHighestScoring } from "./play-policy";
 import type {
   BalancePlayPolicy,
   BattleSimulationConfig,

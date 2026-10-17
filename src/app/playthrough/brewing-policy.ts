@@ -40,7 +40,6 @@ export function potionUtility(card: BattleCard): number {
       case "cleanse-player-status-to-damage":
       case "companion-action":
       case "dodge-next-attack":
-      case "enemy-status":
       case "lose-health":
       case "lose-mana":
       case "lose-max-mana":

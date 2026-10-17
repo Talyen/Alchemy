@@ -143,17 +143,17 @@ describe("active run field parsing and normalization", () => {
           {
             id: "ray-of-frost",
             title: "Ray of Frost",
-            descriptionLines: ["Deal 1 Freeze damage, twice", "If this Freezes the enemy, Gain 1 Mana"],
+            descriptionLines: ["Gain 1 Mana"],
             art: "",
             cost: 1,
-            effects: [{ kind: "restore-mana", amount: 1, ifEnemyFrozen: true }],
+            effects: [{ kind: "restore-mana", amount: 1 }],
           },
         ],
       }),
     );
 
     expect(result?.runDeck[0]?.effects[0]).toMatchObject({ tripleIfEnemyNotBurning: true });
-    expect(result?.runDeck[1]?.effects[0]).toMatchObject({ ifEnemyFrozen: true });
+    expect(result?.runDeck[1]?.effects[0]).toEqual({ kind: "restore-mana", amount: 1 });
   });
 
   it("defaults missing runObtainedItems to an empty list and drops invalid entries", () => {

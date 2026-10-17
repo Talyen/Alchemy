@@ -105,6 +105,11 @@ Companion buffing, Gold-scaled damage, double damage against Burning or fresh
 targets, and conditional Burn detonation. Current Pack Tactics, Tithe,
 Combustion, and Kindling keep their authored effects. Damage schemas reject
 unknown fields so retired selectors cannot silently become ordinary attacks.
+Unauthored Forge-equal damage, Block-spending damage, Block-dependent damage
+types, conditional Freeze Mana restoration, and direct enemy-status card effects
+are also retired. Mana restoration rejects unknown fields so a retired condition
+cannot silently become an unconditional reward. Current damage packets still
+apply status buildup; current Frozen alternatives and resource-scaled cards remain supported.
 Existing incomplete-card and battle repair handles these unsupported development
 snapshots; no historical conversion or save-version bump is required.
 
