@@ -108,18 +108,6 @@ export function slashDeck(count: number): BattleCard[] {
   return effectDeck("slash", "Slash", { kind: "damage", damageType: "physical", amount: 6 }, count);
 }
 
-export function blockDeck(count: number): BattleCard[] {
-  return effectDeck("block", "Block", { kind: "player-status", status: "block", amount: 5 }, count);
-}
-
-export function statusDeck(
-  status: "burn" | "poison" | "bleed" | "stun" | "freeze",
-  amount: number,
-  count: number,
-): BattleCard[] {
-  return effectDeck(status, status, { kind: "damage", damageType: status, amount }, count);
-}
-
 /**
  * Shared deterministic battle preset for regression tests.
  * Failing rolls (`rng: () => 0.99`) keep chance branches stable; callers
