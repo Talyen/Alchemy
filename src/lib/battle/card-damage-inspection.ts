@@ -20,7 +20,7 @@ import {
   type BattleCardEffect,
   type CardEffectAddress,
 } from "@/lib/game-data";
-import { applyPotionMultiplier } from "./amount-helpers";
+import { applyPotionMultiplier, halveRounded } from "./amount-helpers";
 import { computeCardPayment } from "./card-cost-rules";
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import { consumeAttackPacketFlags } from "./damage";
@@ -57,6 +57,10 @@ import type { BattleSnapshot, BattleState, CombatTextEvent } from "./types";
 import {
   resolveLeechResourceRewards,
   resolveNatureManaReward,
+  resolveNatureRestorationRewards,
+  resolvePoisonLeechRewards,
+  resolveHolyBlockReward,
+  resolveHolyGoldReward,
   resolveNatureGoldReward,
   resolveLuckyCloverReward,
   resolveBleedGoldReward,
@@ -354,6 +358,13 @@ export function getBattleDamageInspectionCard(
     if (type === "burn" || type === "poison" || type === "bleed") {
       next = projectBuildup(next, type, type === "bleed" ? damage * BLEED_STATUS_MULTIPLIER : damage);
       if (type === "burn" && next.talentEffects.burnRemovesEnemyArmor) next = reduceEnemyArmor(next, damage);
+      if (type === "poison") {
+        if (next.talentEffects.poisonStripArmorByDamage) next = reduceEnemyArmor(next, damage);
+        next = resolvePoisonLeechRewards(next, hit.healthDamage, [], {
+          chance: resourceRewards.chance,
+          leech: (current, amount) => projectLeech(current, amount),
+        });
+      }
       if (type === "burn" || type === "bleed") {
         next = projectLeechBase(
           next,
@@ -522,6 +533,13 @@ export function getBattleDamageInspectionCard(
           (type === "poison" && after.talentEffects.poisonStripArmorByDamage)
         )
           after = reduceEnemyArmor(after, damage);
+        if (type === "poison")
+          after = resolvePoisonLeechRewards(after, healthDamage, [], {
+            chance: resourceRewards.chance,
+            leech: (current, amount) => projectLeech(current, amount),
+          });
+        if (type === "bleed" && after.talentEffects.bleedHalveArmorChance >= 100)
+          after = reduceEnemyArmor(after, after.enemyMitigation.armor - halveRounded(after.enemyMitigation.armor));
         if (type === "burn" || type === "bleed") {
           after = projectLeechBase(
             after,
@@ -537,7 +555,7 @@ export function getBattleDamageInspectionCard(
       if (type === "freeze" || type === "stun") {
         after = addEnemyStatus(after, type, damage);
         if (type === "freeze" && after.gearEffects.freezeGrantsBlockAndMana > 0 && current.playerStatuses.block === 0)
-          after = grantPlayerStatus(after, "block", damage);
+          after = playerResources.applyBlockReward(after, damage, [], { skipFightPacing: true });
         after = projectCc(after, type, current.enemyHealth, healthDamage, current);
       }
     }
@@ -589,13 +607,26 @@ export function getBattleDamageInspectionCard(
         }
         if (healthDamage > 0 && current.playerStatuses.block === 0)
           after = grantPlayerStatus(after, "block", after.gearEffects.blockOnHolyHitWithoutBlock);
+        after = resolveHolyBlockReward(after, healthDamage, [], resourceRewards);
+        after = resolveHolyGoldReward(after, healthDamage, [], resourceRewards);
       }
       if (type === "nature") {
         after = resolveLuckyCloverReward(after, healthDamage, [], resourceRewards);
         after = resolveNatureGoldReward(after, healthDamage, [], resourceRewards);
         after = resolveNatureManaReward(after, damage, [], resourceRewards);
-        if (!explicitLeech && current.enemyStatuses.poison > 0 && after.gearEffects.natureLeechVsPoisoned > 0)
-          after = projectLeech(after, healthDamage);
+        after = resolveNatureRestorationRewards(
+          after,
+          { resolvedDamage: damage, healthDamage, eligibility: current },
+          [],
+          {
+            ...resourceRewards,
+            // Nature healing is ordinary healing; Leech keeps its own scaling and pacing.
+            heal: (current, amount) => projectHealing(current, amount),
+            armor: playerResources.applyArmorReward,
+            leech: (current, amount) => projectLeech(current, amount),
+          },
+          explicitLeech,
+        );
       }
       if (
         healthDamage > 0 &&
@@ -768,10 +799,10 @@ export function getBattleDamageInspectionCard(
         const success = project(effect.successEffects, current, successTriggers);
         const failure = project(effect.failureEffects, current, failureTriggers);
         const certain = effect.probability === 1 ? success : effect.probability === 0 ? failure : null;
-        if (certain) {
-          current = certain.state;
-          const triggers = effect.probability === 1 ? successTriggers : failureTriggers;
-          for (const trigger of triggers) forgeTriggers.add(trigger);
+        current = certain ? certain.state : mergeKnownOutcomes(current, [success.state, failure.state]);
+        const triggers = effect.probability === 0 ? failureTriggers : successTriggers;
+        for (const trigger of triggers) {
+          if (certain || failureTriggers.has(trigger)) forgeTriggers.add(trigger);
         }
         return { ...effect, successEffects: success.effects, failureEffects: failure.effects };
       }

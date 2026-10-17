@@ -169,18 +169,6 @@ export function tryTalentTypedHit(
   );
 }
 
-export function applyNatureLeech(
-  state: BattleState,
-  damage: number,
-  combatTexts: CombatTextEvent[],
-  guaranteed = false,
-) {
-  if (damage <= 0) return state;
-  const leechChance = state.talentEffects.natureLeechChance + state.gearEffects.natureLeechChance;
-  if (!guaranteed && (leechChance <= 0 || !rollBattleChance(leechChance, state))) return state;
-  return applyLeechHitHealing(state, damage, combatTexts);
-}
-
 type ConversionSource = "physical" | "bleed" | "nature" | "holy";
 type NumericTalentEffect = {
   [K in keyof TalentEffectManifest]: TalentEffectManifest[K] extends number ? K : never;

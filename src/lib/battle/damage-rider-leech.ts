@@ -1,6 +1,11 @@
 import { rollBattleChance } from "./chance-roll";
-import { resolveLeechResourceRewards, type ResourceRewardPort } from "./resource-reward-resolution";
-import { applyBlockReward, applyCardHealing, removeHarmfulPlayerStatuses } from "./status-player";
+import {
+  resolveLeechResourceRewards,
+  resolveHolyBlockReward,
+  resolveHolyGoldReward,
+  type ResourceRewardPort,
+} from "./resource-reward-resolution";
+import { applyCardHealing, removeHarmfulPlayerStatuses } from "./status-player";
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -117,16 +122,11 @@ export function applyHolyLifesteal(
 }
 
 export function applyHolyBlockChance(state: BattleState, healthDamage: number, combatTexts: CombatTextEvent[]) {
-  if (healthDamage <= 0 || !rollBattleChance(state.talentEffects.holyBlockChance, state)) return state;
-  return applyBlockReward(state, healthDamage, combatTexts, { skipFightPacing: true });
+  return resolveHolyBlockReward(state, healthDamage, combatTexts, leechRewardPort);
 }
 
 export function applyHolyTithe(state: BattleState, healthDamage: number, combatTexts: CombatTextEvent[]) {
-  if (healthDamage <= 0 || state.talentEffects.holyGoldChance <= 0) return state;
-  if (rollBattleChance(state.talentEffects.holyGoldChance, state)) {
-    return addGoldWithCombatText(state, healthDamage, combatTexts);
-  }
-  return state;
+  return resolveHolyGoldReward(state, healthDamage, combatTexts, leechRewardPort);
 }
 
 export function payPendingBleedLeech(

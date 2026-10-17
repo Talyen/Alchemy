@@ -1,6 +1,6 @@
 import { halveRounded } from "./amount-helpers";
 import { rollBattleChance } from "./chance-roll";
-import { burnBleedLeechAmount, resolveBleedGoldReward } from "./resource-reward-resolution";
+import { burnBleedLeechAmount, resolveBleedGoldReward, resolvePoisonLeechRewards } from "./resource-reward-resolution";
 import type { BattleCardEffect } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "./types";
 import { addEnemyStatus } from "./status-state";
@@ -91,14 +91,11 @@ export function applyPoisonTalentRiders(
   let nextState = state;
 
   if (damage > 0) {
-    const leechChances = [
-      state.trinketEffects.parasiticBloomLeechChance,
-      state.talentEffects.poisonLeechChance + state.gearEffects.poisonLeechChance,
-    ];
-    for (const chance of leechChances) {
-      if (!rollBattleChance(chance, nextState)) continue;
-      nextState = applyScaledLeechHealing(nextState, computeLeechHeal(damage), combatTexts, { afflicted: true });
-    }
+    nextState = resolvePoisonLeechRewards(nextState, damage, combatTexts, {
+      chance: rollBattleChance,
+      leech: (current, healthDamage, texts) =>
+        applyScaledLeechHealing(current, computeLeechHeal(healthDamage), texts, { afflicted: true }),
+    });
     if (
       allowPoisonBleedConversion &&
       onPoisonBleedConversion &&

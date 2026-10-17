@@ -3,6 +3,7 @@ import { HALF_DIVISOR } from "../game-constants";
 import { resolvePlayerHealing } from "./health-state";
 import { isPlayerDefeated } from "./battle-outcome";
 import type { BattleState, CombatTextEvent } from "./types";
+import type { HitFacts } from "./player-hit-core";
 
 /** Combat executes rolls and reactions; inspection supplies only guaranteed outcomes. */
 export interface ResourceRewardPort {
@@ -113,4 +114,74 @@ export function burnBleedLeechAmount(state: BattleState, damage: number, already
   return state.gearEffects.burnBleedMirrorAndLeech > 0 && damage > 0 && alreadyBurningAndBleeding
     ? Math.max(1, Math.round(damage / HALF_DIVISOR))
     : 0;
+}
+
+type LeechRewardPort = Pick<ResourceRewardPort, "chance"> & {
+  leech: (state: BattleState, damage: number, texts: CombatTextEvent[]) => BattleState;
+};
+
+export function resolvePoisonLeechRewards(
+  state: BattleState,
+  healthDamage: number,
+  texts: CombatTextEvent[],
+  port: LeechRewardPort,
+): BattleState {
+  if (healthDamage <= 0) return state;
+  let next = state;
+  for (const chance of [
+    state.trinketEffects.parasiticBloomLeechChance,
+    state.talentEffects.poisonLeechChance + state.gearEffects.poisonLeechChance,
+  ]) {
+    if (port.chance(chance, next)) next = port.leech(next, healthDamage, texts);
+  }
+  return next;
+}
+
+export function resolveNatureRestorationRewards(
+  state: BattleState,
+  facts: Pick<HitFacts, "resolvedDamage" | "healthDamage" | "eligibility">,
+  texts: CombatTextEvent[],
+  port: LeechRewardPort &
+    Pick<ResourceRewardPort, "status" | "heal"> & {
+      armor: (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
+    },
+  alreadyLeeches = false,
+): BattleState {
+  const { resolvedDamage: damage, healthDamage, eligibility } = facts;
+  if (damage <= 0) return state;
+  let next = state;
+  if (port.chance(state.talentEffects.armorOnNatureDamageChance, state)) next = port.armor(next, damage, texts);
+  if (port.chance(state.talentEffects.thornsOnNatureDamageChance, state))
+    next = port.status(next, "thorns", damage, texts);
+  if (port.chance(state.talentEffects.healOnNatureDamageChance, state)) next = port.heal(next, damage, texts, false);
+  const guaranteed =
+    !alreadyLeeches && state.gearEffects.natureLeechVsPoisoned > 0 && eligibility.enemyStatuses.poison > 0;
+  const chance = state.talentEffects.natureLeechChance + state.gearEffects.natureLeechChance;
+  if (guaranteed || (chance > 0 && port.chance(chance, next)))
+    next = port.leech(next, guaranteed ? healthDamage : damage, texts);
+  return next;
+}
+
+export function resolveHolyBlockReward(
+  state: BattleState,
+  healthDamage: number,
+  texts: CombatTextEvent[],
+  port: Pick<ResourceRewardPort, "chance" | "status">,
+): BattleState {
+  return healthDamage > 0 && port.chance(state.talentEffects.holyBlockChance, state)
+    ? port.status(state, "block", healthDamage, texts, true)
+    : state;
+}
+
+export function resolveHolyGoldReward(
+  state: BattleState,
+  healthDamage: number,
+  texts: CombatTextEvent[],
+  port: GoldRewardPort,
+): BattleState {
+  return healthDamage > 0 &&
+    state.talentEffects.holyGoldChance > 0 &&
+    port.chance(state.talentEffects.holyGoldChance, state)
+    ? port.gold(state, healthDamage, texts)
+    : state;
 }

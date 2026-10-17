@@ -113,12 +113,13 @@ retaining existing encounter exceptions. Selection and trait limits are owned by
 
 ## Tests
 
-- [`tests/lib/battle/apply-effects-*.test.ts`](../../../../tests/lib/battle/) — canonical apply-path coverage by concern (`apply-effects.test.ts`, `apply-effects-mana.test.ts`, `apply-effects-utility.test.ts`), plus focused `tests/lib/battle/` regression suites (card-play, damage, status, companion, wish, talents, gear, traits).
+- [`tests/lib/battle/apply-effects-*.test.ts`](../../../../tests/lib/battle/) — canonical apply-path coverage by concern (`apply-effects.test.ts`, `apply-effects-mana.test.ts`), plus focused `tests/lib/battle/` regression suites (card-play, damage, status, companion, wish, talents, gear, traits).
 - [`tests/lib/battle/effect-handlers.test.ts`](../../../../tests/lib/battle/effect-handlers.test.ts) — unknown-kind warn+return boundary (including inherited object keys), Death's Door, cleanse/multiply, `convertCurrentMana` Block-per-Mana semantics, `ifEnemyStunned` branches, prepared action flags, injected random damage rolls, and `repeat-over-turns`/`chance` queue/branch shapes.
 - [`tests/lib/game-data/effects-registry.test.ts`](../../../../tests/lib/game-data/effects-registry.test.ts) — schema refinements (conditional fields, bounds).
+- [`tests/lib/battle/inspection-resource-rewards.test.ts`](../../../../tests/lib/battle/inspection-resource-rewards.test.ts) — later packets include guaranteed resource rewards and shared chance outcomes; inspection agrees with real plays without mutating state or consuming RNG.
 - [`tests/lib/battle/inspection-utility-sequence.test.ts`](../../../../tests/lib/battle/inspection-utility-sequence.test.ts) — resource and flag ordering agrees with actual card plays without consuming RNG or mutating the inspected battle.
 - [`tests/types/battle-effect-handlers.test-d.ts`](../../../../tests/types/battle-effect-handlers.test-d.ts) — exhaustive typed registration and rejection of mismatched handlers and direct calls.
-- [`tests/lib/game-data/effect-kind-coverage.test.ts`](../../../../tests/lib/game-data/effect-kind-coverage.test.ts) — the single union ⇔ schema ⇔ handler ⇔ keyword-grouping contract for every kind.
+- [`tests/lib/game-data/effect-kind-coverage.test.ts`](../../../../tests/lib/game-data/effect-kind-coverage.test.ts) — exact registration of non-recursive effect kinds in battle dispatch.
 - [`tests/lib/game-data/descriptions-match-effects.test.ts`](../../../../tests/lib/game-data/descriptions-match-effects.test.ts) — the catalog-wide 1-Mana rule; catalog-wide parity lives in `tests/lib/content-validation/` (`content-validation.test.ts`, `parity-negative.test.ts`).
 - [`tests/lib/game-data/card-builders.test.ts`](../../../../tests/lib/game-data/card-builders.test.ts) — builder output (lines+effects+tags/consume) and the explicit-lines escape hatch.
 

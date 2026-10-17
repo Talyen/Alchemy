@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
-  addGoldWithCombatText,
   gainManaWithCombatText,
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
   payKillPayouts,
 } from "@/lib/battle/player-rewards";
+import { applyEffectByKind } from "@/lib/battle/effect-handlers/registry";
 import type { GearEffectManifest } from "@/lib/gear";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import type { BattleState } from "@/lib/battle/types";
 import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
-import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
+import { makeCombatTexts as makeTexts, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("applyHealingWithCombatText", () => {
   it("acknowledges the full heal and only the Block gained from allowed Overflow", () => {
@@ -79,15 +79,12 @@ describe("applyHealingWithCombatText", () => {
   });
 });
 
-it("addGoldWithCombatText scales gold using gear multiplier when present", () => {
-  const state = patchBattleState({
-    gold: 10,
-    gearEffects: { goldGainPercent: 50 },
-  });
+it("Gold effects scale potion potency and Gear once, with the actual reward in feedback", () => {
+  const state = patchBattleState({ gold: 10, gearEffects: { goldGainPercent: 50 } });
   const texts = makeTexts();
-  const nextState = addGoldWithCombatText(state, 10, texts);
-  expect(nextState.gold).toBe(25);
-  expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 15 }]);
+  const next = applyEffectByKind(state, makeTestCard(), { kind: "gain-gold", amount: 3 }, 2, texts);
+  expect(next.gold).toBe(19);
+  expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 9 }]);
 });
 
 function ccProcKillState(): BattleState {

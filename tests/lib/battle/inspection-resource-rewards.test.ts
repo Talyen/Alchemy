@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { cardById, type BattleCard, type KeywordId } from "@/lib/game-data";
+import { cardById, companionLibrary, type BattleCard, type BattleCardEffect, type KeywordId } from "@/lib/game-data";
 import { createMixedPotion } from "@/lib/alchemist";
 import { getTransmutationVariants } from "@/lib/alchemist/transmutation";
 import { getBattleDamageInspectionCard } from "@/lib/battle/card-damage-inspection";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
+import { makeTestCard, patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 
 function acid(keyword: KeywordId): BattleCard {
   const card = cardById["acid-potion"]!;
@@ -111,4 +111,129 @@ describe("inspection follows resource rewards between ingredients", () => {
       [2, 3],
     );
   });
+});
+
+describe("inspection follows guaranteed hit rewards", () => {
+  it.each<{
+    name: string;
+    effects: BattleCardEffect[];
+    patch: BattleStatePatch;
+    expected: number[];
+  }>([
+    {
+      name: "Thornskin Armor before an Armor-scaled attack",
+      effects: [
+        { kind: "damage", damageType: "nature", amount: 4 },
+        { kind: "damage", damageType: "physical", amount: 0, equalToArmor: true },
+      ],
+      patch: { talentEffects: { armorOnNatureDamageChance: 100 } },
+      expected: [4, 4],
+    },
+    {
+      name: "Photosynthesis before a low-Health Physical attack",
+      effects: [
+        { kind: "damage", damageType: "nature", amount: 4 },
+        { kind: "damage", damageType: "physical", amount: 3 },
+      ],
+      patch: { talentEffects: { healOnNatureDamageChance: 100, physicalDoubledBelowHalfHealth: true } },
+      expected: [4, 3],
+    },
+    {
+      name: "Verdant Cycle before a low-Health Physical attack",
+      effects: [
+        { kind: "damage", damageType: "nature", amount: 4 },
+        { kind: "damage", damageType: "physical", amount: 3 },
+      ],
+      patch: { talentEffects: { natureLeechChance: 100, physicalDoubledBelowHalfHealth: true } },
+      expected: [4, 3],
+    },
+    {
+      name: "Virulent Leech before a low-Health Physical attack",
+      effects: [
+        { kind: "damage", damageType: "poison", amount: 4 },
+        { kind: "damage", damageType: "physical", amount: 3 },
+      ],
+      patch: { talentEffects: { poisonLeechChance: 100, physicalDoubledBelowHalfHealth: true } },
+      expected: [4, 3],
+    },
+    {
+      name: "Faith Barrier before Block-scaled Physical damage",
+      effects: [
+        { kind: "damage", damageType: "holy", amount: 4 },
+        { kind: "damage", damageType: "physical", amount: 0, equalToBlock: true },
+      ],
+      patch: { talentEffects: { holyBlockChance: 100 } },
+      expected: [4, 4],
+    },
+    {
+      name: "Tithe healing before a low-Health Physical attack",
+      effects: [
+        { kind: "damage", damageType: "holy", amount: 4 },
+        { kind: "damage", damageType: "physical", amount: 3 },
+      ],
+      patch: {
+        talentEffects: { holyGoldChance: 100, physicalDoubledBelowHalfHealth: true },
+        gearEffects: { healOnCombatGoldGain: 2 },
+      },
+      expected: [4, 3],
+    },
+    {
+      name: "Flay before Kingbreaker damage",
+      effects: [
+        { kind: "damage", damageType: "bleed", amount: 2 },
+        { kind: "damage", damageType: "stun", amount: 2 },
+      ],
+      patch: {
+        enemyMitigation: { armor: 7 },
+        talentEffects: { bleedHalveArmorChance: 100 },
+        gearEffects: { armorIncreasesStun: 1 },
+      },
+      expected: [2, 5],
+    },
+  ])("$name", ({ effects, patch, expected }) => compare(makeTestCard({ effects }), patch, expected));
+
+  it("retains resources shared by both chance branches before the next attack", () => {
+    const grant: BattleCardEffect = { kind: "player-status", status: "block", amount: 4 };
+    compare(
+      makeTestCard({
+        effects: [
+          { kind: "chance", probability: 0.5, successEffects: [grant], failureEffects: [{ ...grant }] },
+          { kind: "damage", damageType: "physical", amount: 0, equalToBlock: true },
+        ],
+      }),
+      {},
+      [4],
+    );
+  });
+});
+
+it("Rimeheart does not pace its already-paced Block a second time", () => {
+  compare(
+    makeTestCard({
+      effects: [
+        { kind: "damage", damageType: "freeze", amount: 4 },
+        { kind: "damage", damageType: "physical", amount: 0, equalToBlock: true },
+      ],
+    }),
+    { appliesFightPacing: true, turn: 13, playerHealth: 40, gearEffects: { freezeGrantsBlockAndMana: 1 } },
+    [15, 54],
+  );
+});
+
+it("Lizard Scout's Caustic damage strips Armor before Kingbreaker damage", () => {
+  compare(
+    makeTestCard({
+      effects: [
+        { kind: "companion-action", amount: 1 },
+        { kind: "damage", damageType: "stun", amount: 2 },
+      ],
+    }),
+    {
+      activeCompanion: companionLibrary["lizard-scout"],
+      enemyMitigation: { armor: 7 },
+      talentEffects: { poisonStripArmorByDamage: true },
+      gearEffects: { armorIncreasesStun: 1 },
+    },
+    [7],
+  );
 });
