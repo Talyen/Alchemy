@@ -13,6 +13,17 @@ import { buildWishOptions } from "@/lib/battle/wish";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("card description bindings", () => {
+  it("owns the bindings of an updated card so later edits cannot change the source card", () => {
+    const source = cloneBattleCard(cardById["ray-of-frost"]!);
+    const before = structuredClone(source);
+    const updated = withCardDescription(source, getCardDescription(source));
+    const magnitude = updated.description![0]!.parts.find((part) => typeof part !== "string")!;
+    if (typeof magnitude === "string") throw new Error("Missing test magnitude");
+    magnitude.references[0]!.effectIndex = 99;
+    updated.description![0]!.parts.push("Changed");
+    expect(source).toEqual(before);
+  });
+
   it("keeps both Ray of Frost hits linked after wording changes, reload and another corruption", () => {
     const original = cardById["ray-of-frost"]!;
     const copy = cloneBattleCard(original);

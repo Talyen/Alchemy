@@ -185,7 +185,7 @@ export function withCardDescription(card: BattleCard, description: CardDescripti
   const rendered = renderCardDescription(card.effects, description);
   return {
     ...card,
-    description: description.map((line) => ({ ...line })),
+    description: mapCardDescriptionReferences(description, (reference) => reference),
     descriptionLines: rendered.descriptionLines,
   };
 }

@@ -24,7 +24,7 @@ function hasValuePositionDynamicImport(filePath: string): boolean {
 
 describe("asset loading contract", () => {
   it("has no value-position dynamic imports outside the startup allowlist", () => {
-    const paths = listNonTestSourceFiles("src");
+    const paths = listNonTestSourceFiles();
     const violations = paths.filter((filePath) => hasValuePositionDynamicImport(filePath));
     const unexpected = violations.filter(
       (filePath) => ![...DYNAMIC_STARTUP_ALLOWLIST].some((allowed) => filePath.startsWith(allowed)),
@@ -33,7 +33,7 @@ describe("asset loading contract", () => {
   });
 
   it("keeps URL globs eager and confined to the catalog owner", () => {
-    const globOwners = matchingFiles(listNonTestSourceFiles("src"), /import\.meta\.glob/u);
+    const globOwners = matchingFiles(listNonTestSourceFiles(), /import\.meta\.glob/u);
     expect(globOwners).toEqual(["src/lib/game-data/catalog-art.ts"]);
     const owner = readText(globOwners[0]!);
     expect(owner).toMatch(/eager:\s*true/u);
@@ -46,7 +46,7 @@ describe("asset loading contract", () => {
       "src/app/use-initial-load-ready.ts",
       "src/lib/content-validation/utils.ts",
     ]);
-    const referencing = matchingFiles(listNonTestSourceFiles("src"), /allGameArt/u);
+    const referencing = matchingFiles(listNonTestSourceFiles(), /allGameArt/u);
     expect(referencing.filter((filePath) => !allowed.has(filePath))).toEqual([]);
   });
 });

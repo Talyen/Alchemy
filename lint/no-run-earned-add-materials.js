@@ -1,31 +1,21 @@
 import { repoRelativePosix } from "./filename.js";
 
 const ALLOWED = new Set([
-  // Keep in sync with tests/scripts/oxlint-alchemy-plugin.test.ts, which pins
-  // the allowed owner. Moving an allowed call site means updating both.
-  // This is the stockpile-grant allowlist; the separate run-earned award-site
-  // list lives in src/features/alchemy/shared/stores/run-materials.ts
-  // (AWARD_MATERIALS_CALL_SITES, enforced by the run-materials award guard).
   "src/features/alchemy/shared/stores/run-session-write-port.ts",
   "src/features/alchemy/shared/stores/write/run-homestead.ts",
   "src/features/alchemy/shared/stores/gear-session-command.ts",
   "src/features/alchemy/shared/stores/write/run-end.ts",
 ]);
 
-function importedName(specifier) {
-  const imported = specifier.imported;
-  if (!imported) return "";
-  if (imported.type === "Identifier") return imported.name;
-  if (imported.type === "Literal" && typeof imported.value === "string") return imported.value;
-  return "";
+function name(node) {
+  return node?.type === "Identifier" ? node.name : node?.type === "Literal" ? node.value : undefined;
 }
 
-function isStockpileGrantCallee(node) {
-  if (node.type === "Identifier") return node.name === "addMaterialsToStockpile";
-  if (node.type === "MemberExpression" && !node.computed && node.property.type === "Identifier") {
-    return node.property.name === "addMaterialsToStockpile";
-  }
-  return false;
+function memberName(node) {
+  const property = node.property ?? node.key;
+  if (node.computed && property.type === "Identifier") return undefined;
+  if (property.type === "TemplateLiteral" && property.expressions.length === 0) return property.quasis[0].value.cooked;
+  return name(property);
 }
 
 /** @type {Parameters<import("oxlint/plugins-dev").RuleTester["run"]>[1]} */
@@ -38,30 +28,53 @@ export const noRunEarnedAddMaterials = {
     },
     schema: [],
     messages: {
+      tally: "Run-earned material and currency tallies may only be mutated through the run-session write port.",
       addMaterials:
         "Use awardMaterialsDuringRun() for run-earned materials. addMaterialsToStockpile() is only for homestead end-of-run bonuses and meta salvage.",
     },
   },
   create(context) {
     const relative = repoRelativePosix(context.filename);
-    if (ALLOWED.has(relative)) return {};
+    const stockpileOwner = ALLOWED.has(relative);
+    const tallyOwner =
+      relative.startsWith("src/features/alchemy/shared/stores/write/") ||
+      relative === "src/features/alchemy/shared/stores/run-session-write-port.ts";
     const report = (node) => context.report({ node, messageId: "addMaterials" });
+    function checkTallyWrite(node) {
+      if (tallyOwner) return;
+      let target = node.type === "AssignmentExpression" ? node.left : node.argument;
+      while (target?.type === "MemberExpression") {
+        const field = memberName(target);
+        if (field === "runMaterialsEarned" || field === "runCurrenciesEarned") {
+          context.report({ node, messageId: "tally" });
+          return;
+        }
+        target = target.object;
+      }
+    }
     return {
+      AssignmentExpression: checkTallyWrite,
+      UpdateExpression: checkTallyWrite,
+      UnaryExpression(node) {
+        if (node.operator === "delete") checkTallyWrite(node);
+      },
       ImportSpecifier(node) {
-        if (importedName(node) === "addMaterialsToStockpile") report(node);
+        if (!stockpileOwner && name(node.imported) === "addMaterialsToStockpile") report(node);
       },
       ExportSpecifier(node) {
-        const exported = node.exported;
-        const name =
-          exported?.type === "Identifier"
-            ? exported.name
-            : exported?.type === "Literal" && typeof exported.value === "string"
-              ? exported.value
-              : "";
-        if (name === "addMaterialsToStockpile") report(node);
+        if (!stockpileOwner && [name(node.local), name(node.exported)].includes("addMaterialsToStockpile"))
+          report(node);
+      },
+      MemberExpression(node) {
+        if (!stockpileOwner && memberName(node) === "addMaterialsToStockpile") report(node);
+      },
+      Property(node) {
+        if (!stockpileOwner && node.parent.type === "ObjectPattern" && memberName(node) === "addMaterialsToStockpile")
+          report(node);
       },
       CallExpression(node) {
-        if (isStockpileGrantCallee(node.callee)) report(node.callee);
+        if (!stockpileOwner && node.callee.type === "Identifier" && node.callee.name === "addMaterialsToStockpile")
+          report(node.callee);
       },
     };
   },

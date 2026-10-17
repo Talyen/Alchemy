@@ -246,7 +246,7 @@ it.each([
     .map((line) => JSON.parse(line));
   expect(commands[0].slice(1)).toEqual(["run", "check:bundle"]);
   const args = commands.find((command) => command.includes("--win"));
-  expect(args).toEqual(expect.arrayContaining(["--win", "--dir", "--x64"]));
+  expect(args).toEqual(expect.arrayContaining(["--win", "--dir", "--x64", "--publish", "never"]));
   const config = JSON.parse(readFileSync(join(root, "steam/build", `electron-${edition}.json`), "utf8"));
   expect(config.win.target).toEqual([{ target: "nsis", arch: ["x64"] }]);
   expect(config.files).toContain(`${edition === "demo" ? "dist-demo" : "dist"}/**/*`);

@@ -173,8 +173,8 @@ choice sampling. It returns a typed offer without run settlement fields;
 `reward-flow.ts` adds the reward state defaults, settled Gold, Materials, destinations,
 and post-claim routing.
 
-Single owners to know: `shared/stores/run-materials.ts` owns the run-earned Material grant
-site inventory and end-of-run Material totals across all three modes;
+Single owners to know: `shared/stores/write/run-progress.ts` owns run-earned Material
+and currency tallies; `alchemy/no-run-earned-add-materials` enforces their write boundary;
 `battle/playback-gate.ts` owns the shared Card, Wish, and auto-end-turn gate
 (`isBattlePlaybackBlocked`, `usePlaybackBlocked`). `use-battle-autoplay.ts` selects
 a ready action with its live commit guard; the React-free `autoplay-driver.ts`
