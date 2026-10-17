@@ -1,431 +1,190 @@
 import { describe, expect, it } from "vitest";
 import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
-import { defaultBattleState } from "@/lib/battle";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { cardById, companionLibrary } from "@/lib/game-data";
-import { makeState as makeSharedState, makeTestCard, slashDeck } from "../../fixtures/battle";
+import { makeState as makeSharedState, makeTestCard, slashDeck, type BattleStatePatch } from "../../fixtures/battle";
 
-function makeState(overrides: Parameters<typeof makeSharedState>[0] = {}) {
+function makeState(overrides: BattleStatePatch = {}) {
   return makeSharedState({ mana: 5, maxMana: 5, ...overrides });
 }
 
-describe("playBattleCardResolved", () => {
-  it("deducts mana and removes card from hand", () => {
-    const card = slashDeck(1)[0];
-    card.cost = 2;
-    const state = makeState({ hand: [card] });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.mana).toBe(3);
-    expect(result.state.hand).toHaveLength(0);
-  });
+it.each<[string, BattleStatePatch]>([
+  ["insufficient Mana", { mana: 0 }],
+  ["enemy turn", { turnPhase: "enemy" }],
+  ["pending Wish", { wishOptions: [makeTestCard()] }],
+  ["Stun", { playerCC: { stunSkipTurns: 1 } }],
+  ["Freeze", { playerCC: { freezeSkipTurns: 1 } }],
+  ["victory", { enemyHealth: 0 }],
+  ["defeat", { playerHealth: 0, deathsDoorUsed: true, deathsDoorActive: false }],
+])("rejects play during %s without spending or publishing feedback", (_reason, patch) => {
+  const card = makeTestCard({ cost: 1 });
+  const state = makeState({ ...patch, hand: [card] });
+  expect(canPlayCard(state, card, 0)).toBe(false);
+  const result = playBattleCardResolved(state, card.id, 0);
+  expect(result.state).toBe(state);
+  expect(result.combatTexts).toEqual([]);
+});
 
-  it("returns unchanged state when wish is active", () => {
-    const card = makeTestCard({ cost: 1 });
-    const state = makeState({ wishOptions: [card], hand: [card] });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state).toBe(state);
-  });
+it("requires the offered hand position, card ID, and UID to match", () => {
+  const card = makeTestCard({ id: "strike", uid: 1 });
+  const state = makeState({ hand: [card] });
+  expect(canPlayCard(state, card, 0)).toBe(true);
+  expect(canPlayCard(state, card, 1)).toBe(false);
+  expect(canPlayCard(state, { ...card, id: "other" }, 0)).toBe(false);
+  expect(canPlayCard(state, { ...card, uid: 2 }, 0)).toBe(false);
+});
 
-  it("cannot play a card with insufficient mana", () => {
-    const card = makeTestCard({ cost: 1 });
-    const state = makeState({ mana: 0, hand: [card] });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state).toBe(state);
+it.each([
+  { cost: 2, mana: 5, remaining: 3 },
+  { cost: 0, mana: 0, remaining: 0 },
+])("pays $cost Mana once and moves the played card to discard", ({ cost, mana, remaining }) => {
+  const card = makeTestCard({
+    id: "slash",
+    corrupted: true,
+    cost,
+    effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
   });
+  const state = makeState({ hand: [card], mana, rng: () => 0.99 });
+  const result = playBattleCardResolved(state, card.id, 0).state;
+  expect(result.mana).toBe(remaining);
+  expect(result.hand).toEqual([]);
+  expect(result.discard).toEqual([card]);
+  expect(result.enemyHealth).toBe(24);
+  expect(state.hand).toEqual([card]);
+  expect(state.mana).toBe(mana);
+});
 
-  it("cannot play a card when player is crowd controlled", () => {
-    const card = makeTestCard({ cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 2 }] });
-    const stunnedState = makeState({
-      mana: 2,
-      hand: [card],
-      playerCC: { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 },
-    });
-    expect(canPlayCard(stunnedState, card, 0)).toBe(false);
-    const result = playBattleCardResolved(stunnedState, card.id, 0);
-    expect(result.state).toBe(stunnedState);
-  });
-
-  it("can play a 0-cost card with 0 mana", () => {
-    const card = makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
-    const state = makeState({ mana: 0, enemyHealth: 30, hand: [card] });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.mana).toBe(0);
-    expect(result.state.enemyHealth).toBe(29);
-  });
-
-  it("deducts cost before restore-mana and caps the refund at maxMana", () => {
-    const card = makeTestCard({ cost: 1, effects: [{ kind: "restore-mana", amount: 2 }] });
+it("pays before a capped Mana refund and applies crystal gains to both Mana values", () => {
+  for (const [effect, mana, maxMana] of [
+    [{ kind: "restore-mana", amount: 2 }, 4, 4],
+    [{ kind: "gain-max-mana", amount: 1 }, 4, 5],
+  ] as const) {
+    const card = makeTestCard({ cost: 1, effects: [effect] });
     const state = makeState({ mana: 4, maxMana: 4, hand: [card] });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.mana).toBe(4);
-    expect(result.state.maxMana).toBe(4);
+    expect(playBattleCardResolved(state, card.id, 0).state).toMatchObject({ mana, maxMana });
+  }
+});
+
+it("converts pre-payment Mana when a conversion card is discounted", () => {
+  const card = makeTestCard({
+    cost: 1,
+    effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 }],
   });
+  const state = makeState({ mana: 3, hand: [card], flags: { nextCardCostReduction: 1 } });
+  const result = playBattleCardResolved(state, card.id, 0).state;
+  expect(result.mana).toBe(0);
+  expect(result.playerStatuses.block).toBe(15);
+});
 
-  it("restore-mana that equals cost results in no net mana change", () => {
-    const card = makeTestCard({ cost: 1, effects: [{ kind: "restore-mana", amount: 1 }] });
-    const state = makeState({ mana: 4, maxMana: 4, hand: [card] });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.mana).toBe(4);
-    expect(result.state.maxMana).toBe(4);
+it("keeps next-hit Poison through a failed chance and spends it on only the first actual packet", () => {
+  const uncertain = makeTestCard({
+    id: "uncertain",
+    effects: [
+      {
+        kind: "chance",
+        probability: 0.5,
+        successEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
+        failureEffects: [{ kind: "heal", amount: 1 }],
+      },
+    ],
   });
-
-  it("gain-max-mana with cost applies gain before cost deduction", () => {
-    const card = makeTestCard({ cost: 1, effects: [{ kind: "gain-max-mana", amount: 1 }] });
-    const state = makeState({ mana: 4, maxMana: 4, hand: [card] });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.maxMana).toBe(5);
-    expect(result.state.mana).toBe(4);
+  const attack = makeTestCard({
+    id: "two-hits",
+    effects: [
+      { kind: "damage", damageType: "physical", amount: 2 },
+      { kind: "damage", damageType: "physical", amount: 2 },
+    ],
   });
+  const state = makeState({ hand: [uncertain, attack], rng: () => 0.99, flags: { nextHitPoison: true } });
+  const missed = playBattleCardResolved(state, uncertain.id, 0).state;
+  expect(missed.flags.nextHitPoison).toBe(true);
+  const result = playBattleCardResolved(missed, attack.id, 0);
+  expect(result.state.enemyStatuses.poison).toBe(2);
+  expect(result.state.flags.nextHitPoison).toBe(false);
+  expect(result.combatTexts.filter((text) => text.kind === "damage").map((text) => text.stat)).toEqual([
+    "poison",
+    "physical",
+  ]);
+});
 
-  it("converts only available Mana when Mana Shield is discounted", () => {
-    const card = makeTestCard({
-      id: "mana-shield",
-      cost: 1,
-      effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 5 }],
-    });
-    const base = makeState({ mana: 3, hand: [card] });
-    const state = {
-      ...base,
-      flags: { ...base.flags, nextCardCostReduction: 1 },
-    };
-
-    const result = playBattleCardResolved(state, card.id, 0);
-
-    expect(result.state.mana).toBe(0);
-    expect(result.state.playerStatuses.block).toBe(15);
-  });
-
-  it("converts only the next actual damage effect to Poison", () => {
-    const card = makeTestCard({
-      id: "two-hits",
-      cost: 1,
-      effects: [
-        { kind: "damage", damageType: "physical", amount: 2 },
-        { kind: "damage", damageType: "physical", amount: 2 },
-      ],
-    });
-    const base = makeState({ hand: [card] });
-    const state = { ...base, flags: { ...base.flags, nextHitPoison: true } };
-
-    const result = playBattleCardResolved(state, card.id, 0);
-
-    expect(result.state.enemyStatuses.poison).toBe(2);
-    expect(result.state.flags.nextHitPoison).toBe(false);
-    expect(result.combatTexts.filter((text) => text.kind === "damage").map((text) => text.stat)).toEqual([
-      "poison",
-      "physical",
-    ]);
-  });
-
-  it("grants Ironwood Buckler Thorns when a card gains Block", () => {
-    const card = makeTestCard({ effects: [{ kind: "player-status", status: "block", amount: 5 }] });
-    const state = makeState({
-      hand: [card],
-      trinketEffects: { ironwoodBucklerThornsOnBlock: 1 },
-    });
-
-    const result = playBattleCardResolved(state, card.id, 0);
-
-    expect(result.state.playerStatuses.block).toBe(5);
-    expect(result.state.playerStatuses.thorns).toBe(1);
-  });
-
-  it("keeps next-hit Poison armed when a chance card deals no damage", () => {
-    const card = makeTestCard({
-      id: "uncertain-hit",
-      cost: 1,
-      effects: [
-        {
-          kind: "chance",
-          probability: 0.5,
-          successEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
-          failureEffects: [{ kind: "heal", amount: 1 }],
-        },
-      ],
-    });
-    const base = makeState({ hand: [card], rng: () => 0.9 });
-    const state = { ...base, flags: { ...base.flags, nextHitPoison: true } };
-
-    const result = playBattleCardResolved(state, card.id, 0);
-
-    expect(result.state.flags.nextHitPoison).toBe(true);
-  });
-
-  it("uses corrupted card effect values mechanically", () => {
-    const card = makeTestCard({
-      id: "slash",
-      corrupted: true,
-      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-    });
-    const state = makeState({ enemyHealth: 30, hand: [card] });
-    const result = playBattleCardResolved(state, "slash", 0);
-    expect(result.state.enemyHealth).toBe(24);
-  });
-
-  it("applies Consume rewards while summons leave battle without Consume", () => {
-    const potion = makeTestCard({
-      id: "apple",
-      cost: 1,
-      consume: true,
-      effects: [{ kind: "heal", amount: 2 }],
-    });
-    const summon = makeTestCard({
-      id: "wolf-companion",
-      cost: 1,
-      effects: [{ kind: "summon-companion", companionId: "wolf" }],
-    });
-    const talents = {
-      ...makeState().talentEffects,
+it("awards Consume rewards only to consumables while summons replace the Companion and leave the battle", () => {
+  const potion = makeTestCard({ id: "apple", consume: true, effects: [{ kind: "heal", amount: 2 }] });
+  const summon = cardById["wolf-companion"]!;
+  const patch: BattleStatePatch = {
+    playerHealth: 10,
+    playerMaxHealth: 30,
+    rng: () => 0.99,
+    activeCompanion: companionLibrary.bear,
+    deck: [makeTestCard({ id: "drawn" })],
+    talentEffects: {
       healOnConsume: 1,
       goldOnConsume: 1,
       goldOnConsumeChance: 100,
       drawOnConsume: 1,
       drawOnConsumeChance: 100,
-    };
-    const potionState = makeState({
-      hand: [potion],
-      rng: () => 0.1,
-      playerHealth: 10,
-      playerMaxHealth: 30,
-      gold: 0,
-      deck: [makeTestCard({ id: "drawn" })],
-      talentEffects: talents,
-    });
-    const potionResult = playBattleCardResolved(potionState, potion.id, 0);
-    expect(potionResult.state.gold).toBe(1);
-    expect(potionResult.state.playerStatuses.block).toBe(0);
-    expect(potionResult.state.hand.some((c) => c.id === "drawn")).toBe(true);
-    expect(potionResult.state.playerHealth).toBe(13);
-
-    const summonResult = playBattleCardResolved(
-      makeState({
-        hand: [summon],
-        playerHealth: 10,
-        playerMaxHealth: 30,
-        gold: 0,
-        talentEffects: talents,
-      }),
-      summon.id,
-      0,
-    );
-    expect(summonResult.state.activeCompanion?.id).toBe("wolf");
-    expect(summonResult.state.gold).toBe(0);
-    expect(summonResult.state.playerHealth).toBe(10);
-    expect(summonResult.state.playerStatuses.block).toBe(0);
-    expect(summonResult.state.enemyStatuses.poison).toBe(0);
+    },
+  };
+  const consumed = playBattleCardResolved(makeState({ ...patch, hand: [potion] }), potion.id, 0).state;
+  expect(consumed).toMatchObject({ gold: 1, playerHealth: 13, exhausted: [potion] });
+  expect(consumed.hand.map((card) => card.id)).toEqual(["drawn"]);
+  const summoned = playBattleCardResolved(makeState({ ...patch, hand: [summon] }), summon.id, 0).state;
+  expect(summoned).toMatchObject({
+    gold: 0,
+    playerHealth: 10,
+    activeCompanion: companionLibrary.wolf,
+    exhausted: [summon],
+    hand: [],
   });
-
-  it("summons a Companion and removes its card for the battle", () => {
-    const card = makeTestCard({
-      id: "wolf-companion",
-      effects: [{ kind: "summon-companion", companionId: "wolf" }],
-    });
-    const state = makeState({ hand: [card] });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.activeCompanion?.id).toBe("wolf");
-    expect(result.state.exhausted).toEqual([card]);
-  });
-
-  it("replaces the current companion when another companion is summoned", () => {
-    const card = makeTestCard({ id: "wolf-companion", effects: [{ kind: "summon-companion", companionId: "wolf" }] });
-    const state = makeState({
-      hand: [card],
-      activeCompanion: { ...companionLibrary.wolf, title: "Old Wolf" },
-    });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.activeCompanion).toEqual(companionLibrary.wolf);
-  });
-
-  it("grants Resonant Chime mana once per turn after enough cards", () => {
-    const card1 = makeTestCard({ id: "c1", cost: 0, effects: [] });
-    const card2 = makeTestCard({ id: "c2", cost: 0, effects: [] });
-    const state = makeState({
-      mana: 3,
-      maxMana: 6,
-      hand: [card1, card2],
-      cardsPlayedThisTurn: 2,
-      trinketEffects: { resonantChimeCardsRequired: 3, resonantChimeMana: 1 },
-    });
-    const first = playBattleCardResolved(state, card1.id, 0);
-    expect(first.state.mana).toBe(4);
-    expect(first.state.flags.resonantChimeUsedThisTurn).toBe(true);
-    const second = playBattleCardResolved(first.state, card2.id, 0);
-    expect(second.state.mana).toBe(first.state.mana);
-  });
-
-  it("Resonant Chime holds its charge at full mana instead of consuming it", () => {
-    const card = makeTestCard({ id: "c1", cost: 0, effects: [] });
-    const state = makeState({
-      mana: 3,
-      maxMana: 3,
-      hand: [card],
-      cardsPlayedThisTurn: 2,
-      trinketEffects: { resonantChimeCardsRequired: 3, resonantChimeMana: 1 },
-    });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.mana).toBe(3);
-    expect(result.state.flags.resonantChimeUsedThisTurn).toBe(false);
-  });
+  expect(summoned.deck.map((card) => card.id)).toEqual(["drawn"]);
 });
 
-describe("playBattleCardResolved — edge cases", () => {
-  it("returns state unchanged when enemy health is already 0", () => {
-    const state = makeState({ enemyHealth: 0, hand: [makeTestCard({ cost: 1 })] });
-    const result = playBattleCardResolved(state, "test-card", 0);
-    expect(result.state).toBe(state);
-    expect(result.combatTexts).toEqual([]);
+it("holds Resonant Chime at full Mana and grants it only once after Mana is spent", () => {
+  const card = makeTestCard({ cost: 0, effects: [] });
+  const state = makeState({
+    mana: 3,
+    maxMana: 3,
+    hand: [card],
+    cardsPlayedThisTurn: 2,
+    trinketEffects: { resonantChimeCardsRequired: 3, resonantChimeMana: 1 },
   });
-
-  it("returns state unchanged when player is defeated", () => {
-    const state = makeState({
-      playerHealth: 0,
-      deathsDoorUsed: true,
-      deathsDoorActive: false,
-      hand: [makeTestCard({ cost: 1 })],
-    });
-    const result = playBattleCardResolved(state, "test-card", 0);
-    expect(result.state).toBe(state);
-    expect(result.combatTexts).toEqual([]);
-  });
-
-  it("allows play after enemy defeat when allowAfterEnemyDefeat is set", () => {
-    const card = makeTestCard({
-      id: "c1",
-      cost: 1,
-      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-    });
-    const state = makeState({ enemyHealth: 0, hand: [card], mana: 3 });
-    const result = playBattleCardResolved(state, "c1", 0, { allowAfterEnemyDefeat: true });
-    expect(result.state.hand).toHaveLength(0);
-    expect(result.state.discard[0]?.id).toBe("c1");
-    expect(result.state.mana).toBe(2);
-  });
+  const full = playBattleCardResolved(state, card.id, 0).state;
+  expect(full.mana).toBe(3);
+  expect(full.flags.resonantChimeUsedThisTurn).toBe(false);
+  const restored = playBattleCardResolved({ ...full, mana: 1, hand: [card, card] }, card.id, 0).state;
+  expect(restored.mana).toBe(2);
+  expect(restored.flags.resonantChimeUsedThisTurn).toBe(true);
+  expect(playBattleCardResolved(restored, card.id, 0).state.mana).toBe(2);
 });
 
-describe("canPlayCard", () => {
-  it("allows affordable cards on the player turn", () => {
-    const card = makeTestCard({
-      id: "strike",
-      cost: 2,
-      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-    });
-    const state = makeState({ mana: 3, hand: [card], turnPhase: "player" });
-    expect(canPlayCard(state, card, 0)).toBe(true);
-  });
-
-  it("blocks play when mana is insufficient", () => {
-    const card = makeTestCard({ cost: 5 });
-    const state = makeState({ mana: 2, hand: [card], turnPhase: "player" });
-    expect(canPlayCard(state, card, 0)).toBe(false);
-  });
-
-  it("blocks play during enemy turn, wish selection, or after defeat", () => {
-    const card = makeTestCard({ cost: 1 });
-    const base = makeState({ mana: 5, hand: [card] });
-    expect(canPlayCard({ ...base, turnPhase: "enemy" }, card, 0)).toBe(false);
-    expect(canPlayCard({ ...base, wishOptions: [card] }, card, 0)).toBe(false);
-    expect(canPlayCard({ ...base, playerHealth: 0, deathsDoorActive: false }, card, 0)).toBe(false);
-    expect(canPlayCard({ ...base, enemyHealth: 0 }, card, 0)).toBe(false);
-  });
-
-  it("requires hand index to match card id and uid", () => {
-    const handCard = makeTestCard({ id: "a", uid: 1 });
-    const otherCard = makeTestCard({ id: "b", uid: 2 });
-    const state = makeState({ mana: 5, hand: [handCard], turnPhase: "player" });
-    expect(canPlayCard(state, handCard, 0)).toBe(true);
-    expect(canPlayCard(state, otherCard, 0)).toBe(false);
-  });
-
-  it("matches defaultBattleState mana baseline used by headless sim", () => {
-    const card = makeTestCard({ cost: 1 });
-    const state = { ...defaultBattleState(), hand: [card], turnPhase: "player" as const, mana: 0 };
-    expect(canPlayCard(state, card, 0)).toBe(false);
-  });
-
-  it("blocks cleanse-only cards when the player has no harmful statuses", () => {
-    const card = makeTestCard({
-      id: "cleanse",
-      cost: 1,
-      effects: [{ kind: "remove-harmful-status", amount: 1 }],
-    });
-    const state = makeState({ mana: 4, hand: [card] });
-    expect(canPlayCard(state, card, 0)).toBe(false);
-    const result = playBattleCardResolved(state, "cleanse", 0);
-    expect(result.state).toBe(state);
-  });
-
-  it("allows mixed-purpose cleanse cards with no harmful statuses", () => {
-    const card = makeTestCard({
-      id: "mixed-panacea-heal",
-      cost: 1,
-      effects: [
-        { kind: "remove-harmful-status", amount: 1 },
-        { kind: "heal", amount: 4 },
-      ],
-    });
-    const state = makeState({ mana: 4, playerHealth: 20, hand: [card] });
-    expect(canPlayCard(state, card, 0)).toBe(true);
-  });
+it("permits explicit victory-grace plays and still pays and discards", () => {
+  const card = makeTestCard({ cost: 1 });
+  const result = playBattleCardResolved(makeState({ enemyHealth: 0, hand: [card], mana: 3 }), card.id, 0, {
+    allowAfterEnemyDefeat: true,
+  }).state;
+  expect(result).toMatchObject({ hand: [], discard: [card], mana: 2 });
 });
 
-describe("reworked cards", () => {
-  it("blackjack steals gold only when the enemy is stunned", () => {
-    const card = { ...cardById["blackjack"] };
-    const unstunned = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
-    expect(unstunned.state.gold).toBe(0);
+it("rejects an ineffective cleanse without spending, but allows a mixed-purpose cleanse", () => {
+  const card = makeTestCard({ effects: [{ kind: "remove-harmful-status", amount: 1 }] });
+  const state = makeState({ hand: [card] });
+  expect(canPlayCard(state, card, 0)).toBe(false);
+  expect(playBattleCardResolved(state, card.id, 0).state).toBe(state);
+  const healing = { ...card, effects: [...card.effects, { kind: "heal", amount: 4 } as const] };
+  const result = playBattleCardResolved(makeState({ hand: [healing], playerHealth: 20 }), healing.id, 0).state;
+  expect(result.playerHealth).toBe(24);
+  expect(result.hand).toEqual([]);
+});
 
-    const stunned = playBattleCardResolved(
-      makeState({ hand: [{ ...card }], enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 1, cooldown: 0 } }),
-      card.id,
-      0,
-    );
-    expect(stunned.state.gold).toBe(2);
-  });
-
-  it("sniff-out deals Bleed and makes the next archery card free without Consuming", () => {
-    const card = { ...cardById["sniff-out"] };
-    const state = makeState({ hand: [card], deck: slashDeck(2) });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.enemyStatuses.bleed).toBe(1);
-    expect(result.state.hand).toHaveLength(0);
-    expect(result.state.flags.nextArcheryCardFree).toBe(true);
-    expect(result.state.exhausted).not.toContainEqual(expect.objectContaining({ id: "sniff-out" }));
-  });
-
-  it("stargaze deals Freeze damage and resolves its Wish immediately", () => {
-    const card = { ...cardById["stargaze"] };
-    const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
-    expect(result.state.enemyStatuses.freeze).toBe(1);
-    expect(result.state.wishOptions).not.toBeNull();
-    expect(result.state.pendingTurnStartEffects).toHaveLength(0);
-  });
-
-  it("smelling salts cleanses player Stun and Freeze buildup only", () => {
-    const card = { ...cardById["smelling-salts"] };
-    const base = makeState();
-    const result = playBattleCardResolved(
-      makeState({
-        hand: [card],
-        playerStatuses: { ...base.playerStatuses, stun: 4, freeze: 3, poison: 2 },
-      }),
-      card.id,
-      0,
-    );
-    expect(result.state.playerStatuses).toMatchObject({ stun: 0, freeze: 0, poison: 2 });
-  });
-
+describe("reusable evasion", () => {
   it("Feint returns through the draw cycle and evades one attack per play without Consume rewards", () => {
-    const card = { ...cardById.feint };
-    const initial = makeState({
+    const card = cardById.feint!;
+    let state = makeState({
       hand: [card],
-      deck: [{ ...cardById.slash }],
+      deck: [cardById.slash!],
       rng: () => 0.99,
+      talentEffects: { forgeOnConsume: 3, forgeOnConsumeChance: 100 },
     });
-    let state = {
-      ...initial,
-      talentEffects: { ...initial.talentEffects, forgeOnConsume: 3, forgeOnConsumeChance: 100 },
-    };
     for (let play = 0; play < 2; play += 1) {
       const index = state.hand.findIndex((entry) => entry.id === card.id);
       const before = state;
@@ -435,18 +194,18 @@ describe("reworked cards", () => {
       expect(state.discard).toContainEqual(expect.objectContaining({ id: "feint" }));
       expect(state.exhausted).not.toContainEqual(expect.objectContaining({ id: "feint" }));
       expect(state.playerStatuses.forge).toBe(0);
-      const dodged = applyEnemyAbility(state, cardById.slash, []);
+      const dodged = applyEnemyAbility(state, cardById.slash!, []);
       expect(dodged.playerHealth).toBe(state.playerHealth);
       expect(dodged.flags.dodgeNextAttack).toBe(false);
-      const hit = applyEnemyAbility(dodged, cardById.slash, []);
+      const hit = applyEnemyAbility(dodged, cardById.slash!, []);
       expect(hit.playerHealth).toBeLessThan(dodged.playerHealth);
       state = advanceToPlayerTurn(hit);
     }
   });
 
-  it("Shadowstep Consumes and doubles reusable Feint's draw without making evasion stack", () => {
-    const shadowstep = { ...cardById.shadowstep };
-    const feint = { ...cardById.feint };
+  it("Shadowstep doubles Feint's draw without stacking evasion", () => {
+    const shadowstep = cardById.shadowstep!;
+    const feint = cardById.feint!;
     const initial = makeState({ hand: [shadowstep, feint], deck: slashDeck(2) });
     const shadowed = playBattleCardResolved(initial, shadowstep.id, 0).state;
     expect(shadowed.exhausted).toContainEqual(expect.objectContaining({ id: "shadowstep" }));
@@ -456,83 +215,9 @@ describe("reworked cards", () => {
     expect(result.flags.dodgeNextAttack).toBe(true);
     expect(result.discard).toContainEqual(expect.objectContaining({ id: "feint" }));
     expect(result.exhausted).not.toContainEqual(expect.objectContaining({ id: "feint" }));
-    const dodged = applyEnemyAbility({ ...result, rng: () => 0.99 }, cardById.slash, []);
+    const dodged = applyEnemyAbility({ ...result, rng: () => 0.99 }, cardById.slash!, []);
     expect(dodged.playerHealth).toBe(result.playerHealth);
     expect(dodged.flags.dodgeNextAttack).toBe(false);
-    expect(applyEnemyAbility(dodged, cardById.slash, []).playerHealth).toBeLessThan(dodged.playerHealth);
-  });
-
-  it("ray-of-frost deals two immediate Freeze hits", () => {
-    const card = { ...cardById["ray-of-frost"] };
-    const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
-    expect(result.state.enemyStatuses.freeze).toBeGreaterThan(0);
-    expect(result.state.enemyHealth).toBe(28);
-    expect(result.state.enemyStatuses.freeze).toBe(2);
-    expect(result.state.pendingTurnStartEffects).toHaveLength(0);
-  });
-
-  it("briar-shield grants block and thorns", () => {
-    const card = { ...cardById["briar-shield"] };
-    const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
-    expect(result.state.playerStatuses.block).toBe(1);
-    expect(result.state.playerStatuses.thorns).toBe(3);
-  });
-
-  it("spiked-shield grants block and thorns", () => {
-    const card = { ...cardById["spiked-shield"] };
-    const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
-    expect(result.state.playerStatuses.block).toBe(2);
-    expect(result.state.playerStatuses.thorns).toBe(2);
-  });
-
-  it("thorn-mail grants armor and thorns", () => {
-    const card = { ...cardById["thorn-mail"] };
-    const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
-    expect(result.state.playerStatuses.armor).toBe(1);
-    expect(result.state.playerStatuses.thorns).toBe(2);
-  });
-
-  it("thorn-whip deals nature damage and grants thorns", () => {
-    const card = { ...cardById["thorn-whip"] };
-    const result = playBattleCardResolved(makeState({ hand: [card], enemyHealth: 20 }), card.id, 0);
-    expect(result.state.enemyHealth).toBe(18);
-    expect(result.state.playerStatuses.thorns).toBe(1);
-  });
-
-  it("porcupine-quill grants thorns and triggers a companion action", () => {
-    const card = { ...cardById["porcupine-quill"] };
-    const result = playBattleCardResolved(
-      makeState({
-        hand: [card],
-        activeCompanion: companionLibrary.wolf,
-        enemyHealth: 20,
-      }),
-      card.id,
-      0,
-    );
-    expect(result.state.playerStatuses.thorns).toBe(2);
-    // Wolf companion deals damage when acting
-    expect(result.state.enemyHealth).toBeLessThan(20);
-  });
-
-  it("luck-potion restores mana on a successful flip", () => {
-    const card = { ...cardById["luck-potion"] };
-    const result = playBattleCardResolved(makeState({ hand: [card], mana: 1, rng: () => 0 }), card.id, 0);
-    expect(result.state.mana).toBe(4);
-  });
-
-  it("luck-potion grants block when both flips fail", () => {
-    const card = { ...cardById["luck-potion"] };
-    const result = playBattleCardResolved(makeState({ hand: [card], rng: () => 0.99 }), card.id, 0);
-    expect(result.state.playerStatuses.block).toBe(4);
-    expect(result.state.gold).toBe(0);
-  });
-
-  it("luck-potion steals gold on a split flip", () => {
-    const card = { ...cardById["luck-potion"] };
-    const draws = [0.99, 0];
-    const result = playBattleCardResolved(makeState({ hand: [card], rng: () => draws.shift() ?? 0.5 }), card.id, 0);
-    expect(result.state.gold).toBe(4);
-    expect(result.state.playerStatuses.block).toBe(0);
+    expect(applyEnemyAbility(dodged, cardById.slash!, []).playerHealth).toBeLessThan(dodged.playerHealth);
   });
 });

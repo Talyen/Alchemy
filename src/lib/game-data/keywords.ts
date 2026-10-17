@@ -1,5 +1,5 @@
 import type { BattleCard, BattleCardEffect, CompanionDefinition, KeywordDefinition, KeywordId } from "./types";
-import { collectKeywordsFromBattleEffect } from "./effect-metadata";
+import { collectKeywordsFromBattleEffects } from "./effect-metadata";
 
 // Cost/title variants can share an immutable effect tree. Cache that tree,
 // while keeping Consume and tags on the card that actually requested it.
@@ -8,13 +8,7 @@ const EFFECT_KEYWORD_CACHE = new WeakMap<readonly BattleCardEffect[], readonly K
 function cachedEffectKeywords(effects: readonly BattleCardEffect[]): readonly KeywordId[] {
   const cached = EFFECT_KEYWORD_CACHE.get(effects);
   if (cached) return cached;
-  const keywords = new Set<KeywordId>();
-  for (const effect of effects) {
-    for (const keyword of collectKeywordsFromBattleEffect(effect)) {
-      keywords.add(keyword);
-    }
-  }
-  const result = [...keywords];
+  const result = collectKeywordsFromBattleEffects(effects);
   EFFECT_KEYWORD_CACHE.set(effects, result);
   return result;
 }

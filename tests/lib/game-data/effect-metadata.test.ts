@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectKeywordsFromBattleEffect, describeCardEffects } from "@/lib/game-data/effect-metadata";
+import { collectKeywordsFromBattleEffects, describeCardEffects } from "@/lib/game-data/effect-metadata";
 import { type BattleCardEffect } from "@/lib/game-data";
 
 describe("repeated effect descriptions", () => {
@@ -31,9 +31,9 @@ describe("repeated effect descriptions", () => {
   });
 });
 
-describe("collectKeywordsFromBattleEffect", () => {
+describe("collectKeywordsFromBattleEffects", () => {
   it("retains every nested outcome and conditional type in first-seen order without duplicate keywords", () => {
-    const effect: BattleCardEffect = {
+    const branch: BattleCardEffect = {
       kind: "chance",
       probability: 0.5,
       successEffects: [
@@ -58,8 +58,13 @@ describe("collectKeywordsFromBattleEffect", () => {
         { kind: "player-status", status: "haste", amount: 1 },
       ],
     };
+    const effect: BattleCardEffect = {
+      kind: "repeat-over-turns",
+      remainingTurns: 1,
+      effects: [branch, { kind: "heal", amount: 1 }],
+    };
     const before = structuredClone(effect);
-    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["burn", "leech", "holy", "health"]);
+    expect(collectKeywordsFromBattleEffects([effect])).toEqual(["burn", "leech", "holy", "health"]);
     expect(effect).toEqual(before);
   });
   it.each<BattleCardEffect>([
@@ -67,10 +72,10 @@ describe("collectKeywordsFromBattleEffect", () => {
     { kind: "player-status", status: "block", statusPool: ["block", "armor"], amount: 3 },
   ])("does not expose effect-owned pools through keyword results for $kind", (effect) => {
     const before = structuredClone(effect);
-    const expected = [...collectKeywordsFromBattleEffect(effect)];
-    collectKeywordsFromBattleEffect(effect).reverse().push("gold");
+    const expected = [...collectKeywordsFromBattleEffects([effect])];
+    collectKeywordsFromBattleEffects([effect]).reverse().push("gold");
     expect(effect).toEqual(before);
-    expect(collectKeywordsFromBattleEffect(effect)).toEqual(expected);
+    expect(collectKeywordsFromBattleEffects([effect])).toEqual(expected);
   });
 });
 
