@@ -160,7 +160,6 @@ export function dealDamageToEnemy(
   // Resolve magnitude and defenses before riders, follow-up hits, then reactions.
   const { nextState, modifiedDamage, critical } = computeCardDamageToEnemy(damageState, packet, card, {
     manaAtStart: damageState.mana,
-    enemyFreezeSkipTurnsAtStart: damageState.enemyCC.freezeSkipTurns,
     ...context,
     guaranteedCrit: context?.guaranteedCrit === true,
     baseDamageBonus,

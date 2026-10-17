@@ -10,13 +10,11 @@ export interface CardEffectAddress {
 export const CARD_MAGNITUDE_FIELDS = [
   "amount",
   "forgeAmount",
-  "blockDamageBonus",
   "amountIfTargetFrozen",
   "minAmount",
   "maxAmount",
   "perManaCrystal",
   "convertCurrentMana",
-  "equalToGoldPercent",
 ] as const;
 
 type NumericField<E> = {

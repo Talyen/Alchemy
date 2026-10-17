@@ -4,6 +4,8 @@ import { type GameSession } from "@/features/alchemy/shared/stores/game-session-
 import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
+  deductGold,
+  readDraftGold,
   setRunDeck,
   setShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -24,7 +26,7 @@ import {
   resolveReadShopModifiers,
 } from "./shop-pricing-context";
 import { merchantShopPool, resampleCardShopOfferings } from "./shop-state-init";
-import { commitShopService, runShopTransaction } from "./shop-transactions";
+import { runShopTransaction } from "./shop-transactions";
 
 export function createMerchantShopCommands(gameSession: GameSession) {
   const { buy: buyCard, getBuyPrice: getCardBuyPrice } = createShopPurchaseActions(
@@ -32,7 +34,6 @@ export function createMerchantShopCommands(gameSession: GameSession) {
       activity: "shop",
       itemsOf: (state) => state.cards,
       slotKeyOf: cardSlotKeyOf,
-      idOf: (item) => item.id,
       priceOf: (card, context) => getShopBuyPrice("merchantCard", card, context),
       acquire: appendCardToRunWithDiscovery,
     },
@@ -60,17 +61,13 @@ export function createMerchantShopCommands(gameSession: GameSession) {
           homesteadEffects.removeCardDiscount,
         );
         const run = draft.run.activeRun;
-        return commitShopService({
-          draft,
-          price,
-          guard: !state.removeUsed && isValidDeckIndex(index, run.runDeck.length),
-          failureValue: undefined,
-          apply: () => {
-            setRunDeck(draft, (previous) => previous.filter((_, cardIndex) => cardIndex !== index));
-            setShopState(draft, (previous) => ({ ...previous, removeUsed: true }));
-            return undefined;
-          },
-        });
+        if (state.removeUsed || !isValidDeckIndex(index, run.runDeck.length) || readDraftGold(draft) < price) {
+          return { committed: false, price, value: undefined };
+        }
+        deductGold(draft, price);
+        setRunDeck(draft, (previous) => previous.filter((_, cardIndex) => cardIndex !== index));
+        setShopState(draft, (previous) => ({ ...previous, removeUsed: true }));
+        return { committed: true, price, value: undefined };
       },
       "shopRemove",
       gameSession,

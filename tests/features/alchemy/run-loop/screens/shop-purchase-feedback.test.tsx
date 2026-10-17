@@ -29,7 +29,7 @@ it("clears purchase failures after a retry or shelf replacement", () => {
   const { rerender } = render(<GenericShopScreen {...props} />);
   const buy = screen.getByRole("button", { name: "Buy Health Potion" });
   fireEvent.click(buy);
-  expect(onBuy).toHaveBeenCalledWith("Health Potion", "Health Potion:0");
+  expect(onBuy).toHaveBeenCalledWith("Health Potion:0");
   expect(screen.getByRole("alert").textContent).toMatch(/could not.*purchase/i);
   fireEvent.click(buy);
   expect(screen.queryByRole("alert")).toBeNull();

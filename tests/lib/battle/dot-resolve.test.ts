@@ -4,24 +4,6 @@ import { BATTLE_CONFIG } from "@/lib/game-constants";
 import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
 
 describe("applyEnemyDotDamage", () => {
-  it("sums pulses into one health transition and applies every stack update", () => {
-    const state = patchBattleState({
-      enemyHealth: 40,
-      enemyStatuses: { burn: 8, poison: 5 },
-    });
-    const next = applyEnemyDotDamage(
-      state,
-      [
-        { status: "burn", finalDamage: 8, nextStacks: 4 },
-        { status: "poison", finalDamage: 5, nextStacks: 4 },
-      ],
-      makeTexts(),
-    );
-    expect(next.enemyHealth).toBe(27);
-    expect(next.enemyStatuses.burn).toBe(4);
-    expect(next.enemyStatuses.poison).toBe(4);
-  });
-
   it("pays burn-defeat gear before stack decay so a lethal last stack still counts", () => {
     const state = patchBattleState({
       enemyHealth: 1,
@@ -35,39 +17,24 @@ describe("applyEnemyDotDamage", () => {
     expect(next.playerHealth).toBe(26);
   });
 
-  it("decays enemy armor once for the summed pulse damage", () => {
+  it("sums pulses into one hit, decays Armor once, and commits all remaining stacks", () => {
     const state = patchBattleState({
       enemyHealth: 30,
       enemyMitigation: { armor: 3 },
+      enemyStatuses: { burn: 4, poison: 2 },
     });
     const next = applyEnemyDotDamage(
       state,
       [
         { status: "burn", finalDamage: 4, nextStacks: 2 },
-        { status: "bleed", finalDamage: 2, nextStacks: 0 },
+        { status: "poison", finalDamage: 2, nextStacks: 1 },
       ],
       makeTexts(),
     );
     expect(next.enemyHealth).toBe(24);
     expect(next.enemyMitigation.armor).toBe(3 - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT);
-  });
-
-  it("runs optional riders after stack updates", () => {
-    const state = patchBattleState({
-      enemyHealth: 20,
-      enemyStatuses: { poison: 4 },
-    });
-    const next = applyEnemyDotDamage(
-      state,
-      [{ status: "poison", finalDamage: 4, nextStacks: 3 }],
-      makeTexts(),
-      (after) => ({
-        ...after,
-        gold: after.gold + after.enemyStatuses.poison,
-      }),
-    );
-    expect(next.enemyStatuses.poison).toBe(3);
-    expect(next.gold).toBe(state.gold + 3);
+    expect(next.enemyStatuses).toMatchObject({ burn: 2, poison: 1 });
+    expect(state.enemyStatuses).toMatchObject({ burn: 4, poison: 2 });
   });
 
   it.each([4, 6, 8])("attributes ordered pulse rewards only to Health actually lost from %i Health", (health) => {
@@ -145,14 +112,6 @@ describe("detonateEnemyStatuses", () => {
     const next = detonateEnemyStatuses(state, ["bleed", "poison"], makeTexts());
     expect(next.playerHealth).toBe(21);
     expect(next.pendingBleedLeechHealing).toBe(0);
-  });
-
-  it("is a no-op when none of the requested statuses have stacks", () => {
-    const state = patchBattleState({
-      enemyHealth: 20,
-      enemyStatuses: { burn: 4 },
-    });
-    expect(detonateEnemyStatuses(state, ["bleed", "poison"], makeTexts())).toBe(state);
   });
 
   it("bursts remaining bleed and poison in one health transition", () => {

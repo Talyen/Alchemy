@@ -28,9 +28,9 @@ describe("shop-pricing", () => {
   });
 
   it.each([
-    { kind: "merchant", basePrice: SHOP_REFRESH_PRICE, freeTrait: null },
-    { kind: "equipment", basePrice: SHOP_REFRESH_PRICE, freeTrait: null },
-    { kind: "trinket", basePrice: SHOP_REFRESH_PRICE, freeTrait: "fresh-curios" },
+    { kind: "shop", basePrice: SHOP_REFRESH_PRICE, freeTrait: null },
+    { kind: "equipment-shop", basePrice: SHOP_REFRESH_PRICE, freeTrait: null },
+    { kind: "trinket-shop", basePrice: SHOP_REFRESH_PRICE, freeTrait: "fresh-curios" },
     { kind: "alchemist", basePrice: ALCHEMIST_REFRESH_PRICE, freeTrait: "fresh-batch" },
   ] as const)("$kind refresh prices preserve traits and exhaustion", ({ kind, basePrice, freeTrait }) => {
     expect(getShopRefreshPrice(kind, 1)).toBe(basePrice);

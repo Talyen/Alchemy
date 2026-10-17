@@ -46,15 +46,6 @@ function createConditionalDamageLine(
     value(effect, address, "amount"),
     ` ${capitalizeWord(effect.damageType)} damage`,
   ];
-  if (effect.blockCost !== undefined)
-    return [...base, `; Spend ${effect.blockCost} Block for +`, value(effect, address, "blockDamageBonus"), " damage"];
-  if (effect.damageTypeIfTargetHasBlock)
-    return [
-      ...base,
-      ", or ",
-      value(effect, address, "amount"),
-      ` ${capitalizeWord(effect.damageTypeIfTargetHasBlock)} against enemies with Block`,
-    ];
   if (effect.damageTypeIfTargetFrozen)
     return [
       ...base,
@@ -78,15 +69,12 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
         ];
       }
       if (effect.equalToArmor) return [`Deal ${type} damage equal to your Armor`];
-      if (effect.equalToForge) return [`Deal ${type} damage equal to your Forge`];
       if (effect.forgeBonusPercent !== undefined)
         return [
           "Deal ",
           amount(),
           ` ${type} damage, increased by ${effect.forgeBonusPercent === 50 ? "half" : `${effect.forgeBonusPercent}% of`} your Forge`,
         ];
-      if (effect.equalToGoldPercent !== undefined)
-        return [`Deal ${type} damage equal to `, value(effect, address, "equalToGoldPercent"), "% of your Gold"];
       const conditional = createConditionalDamageLine(effect, address);
       if (conditional) return conditional;
       return [
@@ -129,11 +117,7 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
     case "heal":
       return ["Restore ", amount(), " Health"];
     case "restore-mana":
-      return [
-        effect.ifEnemyFrozen ? "If the enemy is Frozen, gain " : "Gain ",
-        amount(),
-        ` Mana${effect.allowOverflow ? ", allowing overflow" : ""}`,
-      ];
+      return ["Gain ", amount(), ` Mana${effect.allowOverflow ? ", allowing overflow" : ""}`];
     case "lose-mana":
       return ["Lose ", amount(), " Mana"];
     case "lose-max-mana":
@@ -187,9 +171,7 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
       return ["Your next Archery card is free"];
     case "dodge-next-attack":
       return ["Dodge the next attack"];
-    case "enemy-status":
     case "summon-companion":
-    case "buff-companion":
     case "chance":
     case "repeat-over-turns":
     case "cleanse-player-status-to-damage":
@@ -219,11 +201,9 @@ function damageLines(
     lines.push([
       `Ignores ${[effect.ignoreArmor ? "Armor" : "", effect.ignoreBlock ? "Block" : ""].filter(Boolean).join(" and ")}`,
     ]);
-  if (effect.doubleIfEnemyNotBurning) lines.push(["Doubled if enemy was not Burning"]);
-  if (effect.doubleIfEnemyBurning) lines.push(["Doubled if the enemy was already Burning"]);
   if (effect.doubleIfEnemyBleeding) lines.push(["Doubled if the enemy was already Bleeding"]);
   if (effect.tripleIfEnemyNotBurning) lines.push(["Tripled if enemy was not Burning"]);
-  if (effect.detonateAllBurn || effect.detonateIfEnemyBurning) lines.push(["Detonate all Burn"]);
+  if (effect.detonateAllBurn) lines.push(["Detonate all Burn"]);
   if (effect.detonateAllBleed) lines.push(["Detonate all Bleed"]);
   return lines;
 }
@@ -232,7 +212,7 @@ function resourceChoices(
   effect: BattleCardEffect,
   address: CardEffectAddress,
 ): Array<{ label: string; amount: number; reference: CardMagnitudeReference }> | null {
-  if (effect.kind === "restore-mana" && !effect.ifEnemyFrozen && !effect.allowOverflow)
+  if (effect.kind === "restore-mana" && !effect.allowOverflow)
     return [{ label: "Mana", amount: effect.amount, reference: { ...address, kind: effect.kind, field: "amount" } }];
   if (effect.kind === "gain-gold" && !effect.ifEnemyStunned)
     return [{ label: "Gold", amount: effect.amount, reference: { ...address, kind: effect.kind, field: "amount" } }];

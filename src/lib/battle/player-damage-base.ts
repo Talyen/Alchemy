@@ -66,18 +66,14 @@ function computeBaseRawAmount(
 ): number {
   const forgeBonus = getForgeBonusForDamage(state, effect.damageType);
 
-  // Forge replaces the base; the other resource attacks can also use Forge.
+  // Explicit Forge scaling replaces the usual Forge bonus.
   let amount: number;
   if (effect.forgeBonusPercent !== undefined) {
     amount = effect.amount + scalePercent(state.playerStatuses.forge, effect.forgeBonusPercent);
-  } else if (effect.equalToForge) {
-    amount = state.playerStatuses.forge;
   } else if (effect.equalToBlock) {
     amount = scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? PERCENT_DENOMINATOR) + forgeBonus;
   } else if (effect.equalToArmor) {
     amount = state.playerStatuses.armor + forgeBonus;
-  } else if (effect.equalToGoldPercent !== undefined) {
-    amount = scalePercent(state.gold, effect.equalToGoldPercent, PERCENT_DENOMINATOR) + forgeBonus;
   } else {
     amount = effect.amount + forgeBonus;
   }
@@ -155,8 +151,7 @@ export function computeBaseDamage(
     computeBaseRawAmount(state, effect, card) + bonus + poisonPotionBonus + consumeBurnBonus + potionBonus;
   const hasBlock = effect.equalToBlock === true;
   const hasArmor = effect.equalToArmor === true;
-  const hasGold = effect.equalToGoldPercent !== undefined;
-  const isEqualTo = hasBlock || hasArmor || hasGold || effect.equalToForge === true;
+  const isEqualTo = hasBlock || hasArmor;
   const vulnerabilityBonus = getEnemyDamageVulnerabilityBonus(state);
   if (isEqualTo) return Math.max(0, rawAmount + (rawAmount > 0 ? vulnerabilityBonus : 0));
   const sharedBonus =

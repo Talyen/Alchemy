@@ -108,7 +108,6 @@ export interface BattleCard {
   consume?: boolean;
   corrupted?: boolean;
   transmuted?: KeywordId;
-  transmutationRole?: "attack" | "defense" | "utility";
 
   corruptedValuePositions?: Array<{ lineIndex: number; matchIndex: number }>;
   baseTitle?: string;

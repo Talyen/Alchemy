@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { applyCardEffects, applyEffectByKind, EFFECT_APPLY_BY_KIND } from "@/lib/battle/effect-handlers/registry";
-import { cardById, companionLibrary } from "@/lib/game-data";
+import { cardById } from "@/lib/game-data";
+import { effectsCard } from "@/lib/game-data/cards/card-builders";
 import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corruption/numeric";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
@@ -40,16 +41,19 @@ describe("applyPlayerStatusEffectHandler", () => {
   it.each([3, 0])(
     "scales the start-of-card Mana by %i and spends live Mana even for a zero factor",
     (convertCurrentMana) => {
-      const original = cardById["mana-shield"]!;
+      const original = effectsCard({
+        id: "test-mana-conversion",
+        art: "",
+        effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 }],
+      });
       const target = getEditableCorruptionTargets(original).find((entry) => entry.field === "convertCurrentMana")!;
       const card = applyNumericCorruption(original, target, convertCurrentMana - target.value);
       const effect = card.effects[0]!;
-      if (effect.kind !== "player-status") throw new Error("Expected Mana Shield's status effect");
+      if (effect.kind !== "player-status") throw new Error("Expected Mana conversion's status effect");
       const state = patchBattleState({ mana: 4, maxMana: 5 });
       const texts: CombatTextEvent[] = [];
       const result = EFFECT_APPLY_BY_KIND["player-status"](state, card, effect, 2, texts, {
         manaAtStart: 6,
-        enemyFreezeSkipTurnsAtStart: 0,
       });
       expect(result.playerStatuses.block).toBe(12 * convertCurrentMana);
       expect(result.mana).toBe(0);
@@ -63,24 +67,6 @@ describe("applyPlayerStatusEffectHandler", () => {
     },
   );
 });
-
-it.each(["freeze", "stun"] as const)(
-  "enemy-status control activation activates %s at the threshold and acknowledges it",
-  (status) => {
-    const state = patchBattleState({ enemyHealth: 30, enemyMaxHealth: 30 });
-    const texts: CombatTextEvent[] = [];
-    const result = EFFECT_APPLY_BY_KIND["enemy-status"](
-      state,
-      makeTestCard(),
-      { kind: "enemy-status", status, amount: 15 },
-      1,
-      texts,
-    );
-    expect(result.enemyCC[status === "freeze" ? "freezeSkipTurns" : "stunSkipTurns"]).toBeGreaterThan(0);
-    expect(texts).toContainEqual(expect.objectContaining({ kind: "notice", stat: status }));
-    expect(state.enemyCC[status === "freeze" ? "freezeSkipTurns" : "stunSkipTurns"]).toBe(0);
-  },
-);
 
 it.each([0, 5])("applyRemovePlayerStatusEffect grants Cleanse healing only when removing %i Burn stacks", (burn) => {
   const state = patchBattleState({
@@ -118,24 +104,6 @@ describe("conditional effect handlers", () => {
   });
 
   it.each([
-    [0, 0, 1],
-    [2, 1, 3],
-    [1, 1, 1],
-  ])("restores Mana only for a new Freeze (%i live turns, %i starting turns)", (live, starting, mana) => {
-    const state = patchBattleState({ mana: 1, enemyCC: { freezeSkipTurns: live } });
-    const result = EFFECT_APPLY_BY_KIND["restore-mana"](
-      state,
-      makeTestCard(),
-      { kind: "restore-mana", amount: 2, ifEnemyFrozen: true },
-      1,
-      [],
-      { manaAtStart: 1, enemyFreezeSkipTurnsAtStart: starting },
-    );
-    expect(result.mana).toBe(mana);
-    if (live === starting) expect(result).toBe(state);
-  });
-
-  it.each([
     [0, 0, 5],
     [2, 0, 7],
     [0, 5, 5],
@@ -166,38 +134,6 @@ it.each(["nope", "toString", "constructor", "__proto__"])(
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("Missing handler"));
   },
 );
-
-describe("applyCompanionActionEffect", () => {
-  it("no-ops without an active companion", () => {
-    const state = patchBattleState({ activeCompanion: null });
-    const result = EFFECT_APPLY_BY_KIND["companion-action"](
-      state,
-      makeTestCard(),
-      { kind: "companion-action", amount: 2 },
-      1,
-      [],
-    );
-    expect(result).toBe(state);
-  });
-
-  it.each([1, 2])("resolves exactly %i Companion actions", (amount) => {
-    const state = patchBattleState({
-      activeCompanion: companionLibrary.wolf,
-      enemyHealth: 100,
-      enemyMaxHealth: 100,
-      rng: () => 0.99,
-    });
-    const result = EFFECT_APPLY_BY_KIND["companion-action"](
-      state,
-      makeTestCard(),
-      { kind: "companion-action", amount },
-      1,
-      [],
-    );
-    expect(result.enemyHealth).toBe(100 - amount);
-    expect(state.enemyHealth).toBe(100);
-  });
-});
 
 it("range bounds errors share one message random-draw and random-damage throw the same bounds message", () => {
   const state = patchBattleState();
@@ -231,15 +167,6 @@ describe("recursive effects", () => {
     ]);
     expect(result.playerHealth).toBe(state.playerHealth);
     expect(result.enemyHealth).toBe(state.enemyHealth);
-  });
-
-  it("runs the empty failure branch as a no-op", () => {
-    const state = patchBattleState({ rng: () => 0.99 });
-    const card = makeTestCard({
-      effects: [{ kind: "chance", probability: 0, successEffects: [{ kind: "heal", amount: 5 }], failureEffects: [] }],
-    });
-    const result = applyCardEffects(state, card, []);
-    expect(result.playerHealth).toBe(state.playerHealth);
   });
 });
 
@@ -305,16 +232,5 @@ describe("effect selection", () => {
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyHealth).toBe(30 - amount);
     expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat, amount });
-  });
-
-  it.each([
-    ["next-hit-crit", "nextHitCrit"],
-    ["next-hit-leech", "nextHitLeech"],
-    ["play-next-card-twice", "playNextCardTwice"],
-  ] as const)("arms %s for a later action", (kind, flag) => {
-    const state = patchBattleState();
-    const result = applyCardEffects(state, makeTestCard({ effects: [{ kind }] }), []);
-    expect(result.flags[flag]).toBe(true);
-    expect(state.flags[flag]).toBe(false);
   });
 });

@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle";
 import { makeState } from "../../fixtures/battle";
@@ -268,16 +269,30 @@ describe("Transmutation alterations", () => {
 
   it("keeps all catalog conversion values and added mechanics through validation and hydration without mutating definitions", () => {
     const before = cardLibrary.map(cloneBattleCard);
+    const sourceValues = new Map(cardLibrary.map((source) => [source, numericFields(source.effects)]));
     const reached = new Set<KeywordId>();
+    const examples: string[] = [];
+    let violations = 0;
+    function fail(scenario: string) {
+      violations++;
+      if (examples.length < 10) examples.push(scenario);
+    }
     for (const keyword of Object.keys(TRANSMUTATION_PREFIXES) as KeywordId[]) {
       for (const source of cardLibrary) {
         for (const { result } of getTransmutationVariants(source, keyword, cardLibrary)) {
           reached.add(keyword);
-          expect(numericFields(result.effects)).toMatchObject(numericFields(source.effects));
-          expect(hydrateCard(BattleCardSchema.parse(result))).toEqual(result);
+          const scenario = `${source.id} -> ${keyword}`;
+          const values = numericFields(result.effects);
+          if (!Object.entries(sourceValues.get(source)!).every(([path, value]) => values[path] === value))
+            fail(`${scenario}: changed an existing magnitude`);
+          const parsed = BattleCardSchema.safeParse(result);
+          if (!parsed.success) fail(`${scenario}: invalid saved card: ${parsed.error.message}`);
+          else if (!isDeepStrictEqual(hydrateCard(parsed.data), result))
+            fail(`${scenario}: hydration changed the card`);
         }
       }
     }
+    expect({ violations, examples }).toEqual({ violations: 0, examples: [] });
     expect(reached.size).toBe(21);
     expect(cardLibrary).toEqual(before);
   });

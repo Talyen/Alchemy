@@ -29,20 +29,13 @@ const DAMAGE_KEYWORDS = TRANSMUTATION_KEYWORD_GROUPS[0]!;
 const BUFF_KEYWORDS: readonly KeywordId[] = ["block", "armor", "forge", "thorns"];
 const RESOURCE_KINDS = { health: "heal", mana: "restore-mana", gold: "gain-gold" } as const;
 const SOURCE_CONDITIONS: Partial<Record<KeywordId, readonly string[]>> = {
-  burn: [
-    "doubleIfEnemyBurning",
-    "doubleIfEnemyNotBurning",
-    "tripleIfEnemyNotBurning",
-    "detonateAllBurn",
-    "detonateIfEnemyBurning",
-  ],
+  burn: ["tripleIfEnemyNotBurning", "detonateAllBurn"],
   bleed: ["doubleIfEnemyBleeding", "detonateAllBleed"],
-  freeze: ["damageTypeIfTargetFrozen", "ifEnemyFrozen"],
+  freeze: ["damageTypeIfTargetFrozen"],
   stun: ["ifEnemyStunned"],
-  block: ["equalToBlock", "equalToBlockPercent", "blockCost", "blockDamageBonus", "damageTypeIfTargetHasBlock"],
+  block: ["equalToBlock", "equalToBlockPercent"],
   armor: ["equalToArmor"],
-  forge: ["equalToForge", "forgeBonusPercent"],
-  gold: ["equalToGoldPercent"],
+  forge: ["forgeBonusPercent"],
 };
 
 export function isTransmutableCard(card: BattleCard): boolean {
@@ -75,26 +68,15 @@ function convertibleSource(effect: BattleCardEffect): KeywordId | undefined {
 }
 
 function sourceReferences(effect: BattleCardEffect, source: KeywordId): boolean {
-  // Conditions and scaling references must not silently retain a replaced keyword.
-  if (
-    SOURCE_CONDITIONS[source]?.some(
-      (field) =>
-        (effect as Record<string, unknown>)[field] !== undefined &&
-        (effect as Record<string, unknown>)[field] !== false,
-    )
-  )
-    return true;
   if (
     effect.kind === "self-damage" ||
     ["lose-health", "lose-mana", "lose-max-mana", "gain-max-mana"].includes(effect.kind)
   )
     return false;
-  if (effect.kind === "chance" || effect.kind === "repeat-over-turns") return false;
   if (effect.kind === "damage")
     return (
       effect.damageType === source ||
       !!effect.damageTypePool?.some((type) => type === source) ||
-      effect.damageTypeIfTargetHasBlock === source ||
       effect.damageTypeIfTargetFrozen === source
     );
   if (effect.kind === "random-damage")
@@ -114,7 +96,7 @@ function sourceReferences(effect: BattleCardEffect, source: KeywordId): boolean 
 
 function canConvertSource(effects: BattleCardEffect[], source: KeywordId): boolean {
   return !visitBattleCardEffects(effects, (effect) => {
-    if (!sourceReferences(effect, source)) return false;
+    // A conversion must not leave conditions or scaling tied to the replaced keyword.
     if (
       SOURCE_CONDITIONS[source]?.some(
         (field) =>
@@ -123,6 +105,7 @@ function canConvertSource(effects: BattleCardEffect[], source: KeywordId): boole
       )
     )
       return true;
+    if (!sourceReferences(effect, source)) return false;
     const convertible = convertibleSource(effect);
     return (
       convertible !== source &&
@@ -231,7 +214,7 @@ export function getTransmutationVariants(
         ),
       }));
   }
-  const effects = cloneBattleCard(card).effects;
+  const effects = [...card.effects];
   if (keyword === "archery" || keyword === "leech") {
     let damage = false;
     const infuseDamage = (effect: BattleCardEffect): BattleCardEffect => {
@@ -277,19 +260,20 @@ export function getTransmutationVariants(
 }
 
 export function createTransmutationOffers(deck: readonly BattleCard[], rng: () => number): TransmutationChoice[] {
-  const cached = new Map<BattleCard, Map<KeywordId, ReturnType<typeof getTransmutationVariants>>>();
-  const variantsFor = (card: BattleCard, keyword: KeywordId) => {
-    let variants = cached.get(card);
-    if (!variants) cached.set(card, (variants = new Map()));
-    let result = variants.get(keyword);
+  // Eligibility and selection share previews without consuming extra RNG or
+  // retaining cards beyond this visit's generation.
+  const variants = deck.map(() => new Map<KeywordId, ReturnType<typeof getTransmutationVariants>>());
+  function variantsFor(sourceIndex: number, keyword: KeywordId) {
+    const saved = variants[sourceIndex]!;
+    let result = saved.get(keyword);
     if (!result) {
-      result = getTransmutationVariants(card, keyword, deck);
-      variants.set(keyword, result);
+      result = getTransmutationVariants(deck[sourceIndex]!, keyword, deck);
+      saved.set(keyword, result);
     }
     return result;
-  };
+  }
   const pools = TRANSMUTATION_KEYWORD_GROUPS.map((group) =>
-    group.filter((keyword) => deck.some((card) => variantsFor(card, keyword).length > 0)),
+    group.filter((keyword) => deck.some((_card, index) => variantsFor(index, keyword).length > 0)),
   );
   const keywords: KeywordId[] = [];
   for (const pool of pools) {
@@ -305,7 +289,7 @@ export function createTransmutationOffers(deck: readonly BattleCard[], rng: () =
   return keywords.map((keyword) => ({
     keyword,
     alterations: deck.flatMap((source, sourceIndex) => {
-      const alteration = pickRandom(variantsFor(source, keyword), rng);
+      const alteration = pickRandom(variantsFor(sourceIndex, keyword), rng);
       return alteration ? [{ ...alteration, source: cloneBattleCard(source), sourceIndex }] : [];
     }),
   }));
@@ -321,21 +305,21 @@ function cardSnapshotKey(card: BattleCard | null | undefined): string | undefine
 
 function matchingAlteration(
   choice: TransmutationChoice,
-  sourceKey: string | undefined,
+  key: string | undefined,
   sourceIndex?: number,
 ): TransmutationAlteration | undefined {
   return choice.alterations.find(
     (entry) =>
-      (sourceIndex === undefined || sourceIndex === entry.sourceIndex) && cardSnapshotKey(entry.source) === sourceKey,
+      (sourceIndex === undefined || sourceIndex === entry.sourceIndex) && cardSnapshotKey(entry.source) === key,
   );
 }
 
 export function getTransmutationOffers(visit: AlchemyVisit): BattleCard[] {
   const selection = visit.transmutation;
   if (!selection?.source || selection.sourceIndex === null) return [];
-  const sourceKey = cardSnapshotKey(selection.source);
+  const key = cardSnapshotKey(selection.source);
   return selection.choices.flatMap((choice) => {
-    const alteration = matchingAlteration(choice, sourceKey, selection.sourceIndex!);
+    const alteration = matchingAlteration(choice, key, selection.sourceIndex!);
     return alteration ? [alteration.result] : [];
   });
 }
@@ -346,10 +330,10 @@ export function canTransmuteCard(
   sourceIndex?: number,
   deck?: readonly BattleCard[],
 ): boolean {
-  if (!isTransmutableCard(card) || choices.length === 0) return false;
-  const sourceKey = cardSnapshotKey(card);
+  if (!isTransmutableCard(card)) return false;
+  const key = cardSnapshotKey(card);
   return choices.some((choice) => {
-    const alteration = matchingAlteration(choice, sourceKey, sourceIndex);
+    const alteration = matchingAlteration(choice, key, sourceIndex);
     return (
       !!alteration &&
       (!deck ||

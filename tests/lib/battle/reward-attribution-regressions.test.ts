@@ -80,7 +80,6 @@ describe("reward attribution regressions", () => {
     const result = applyCardEffects(state, cardById["health-potion"]!, [], {
       origin: "played-card",
       manaAtStart: state.mana,
-      enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
     });
     expect(result.playerHealth).toBe(100);
     expect(result.enemyHealth).toBe(0);

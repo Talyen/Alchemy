@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createEmptyGearInventories, createEmptyGearLoadouts, equipGear, type GearInstance } from "@/lib/gear";
 import { mutateGearForTest, resetGearForTest } from "../../../../helpers/run-domain-store-test";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
-import { dispatchGearSalvageWithMaterialGrant } from "@/features/alchemy/shared/stores/gear-session-command";
+import { salvageGear } from "@/features/alchemy/shared/stores/gear-commands";
 import { defaultGameSession } from "@/app/application-session";
 
 const item: GearInstance = {
@@ -57,23 +57,19 @@ describe("gear crafting transactions", () => {
     },
   );
 
-  it("salvages equipped gear once, returns readable payouts, and preserves the other owner's inventory", () => {
-    initialize();
-    const before = readGearState(defaultGameSession);
-    const original = structuredClone(before);
-    const result = dispatchGearSalvageWithMaterialGrant(item.instanceId, defaultGameSession)!;
+  it("salvaging a bow unequips its Quiver without destroying the Quiver", () => {
+    const bow: GearInstance = { instanceId: "bow", definitionId: "shortbow-basic", affixes: [] };
+    const quiver: GearInstance = { instanceId: "arrows", definitionId: "quiver-basic", affixes: [] };
+    resetGearForTest();
+    const inventories = createEmptyGearInventories();
+    inventories.ranger = [bow, quiver];
+    const armed = equipGear(createEmptyGearLoadouts(), "ranger", "main-hand", bow, inventories.ranger);
+    const loadouts = equipGear(armed, "ranger", "off-hand", quiver, inventories.ranger);
+    mutateGearForTest((gear) => gear.initialize(inventories, loadouts));
+
+    expect(salvageGear(bow.instanceId, defaultGameSession)).toBe(true);
     const after = readGearState(defaultGameSession);
-    expect(after.inventories.knight).toEqual([]);
-    expect(after.inventories.rogue).toBe(before.inventories.rogue);
-    expect(after.loadouts.knight["main-hand"]).toBeNull();
-    expect(result.yieldedMaterials.iron).toBe(3);
-    for (const [currency, amount] of Object.entries(result.yieldedCurrencies)) {
-      expect(after.craftingCurrencies[currency as keyof typeof after.craftingCurrencies]).toBe(
-        before.craftingCurrencies[currency as keyof typeof before.craftingCurrencies] + amount,
-      );
-    }
-    expect(before).toEqual(original);
-    expect(dispatchGearSalvageWithMaterialGrant(item.instanceId, defaultGameSession)).toBeNull();
-    expect(readGearState(defaultGameSession)).toEqual(after);
+    expect(after.inventories.ranger).toEqual([quiver]);
+    expect(after.loadouts.ranger).toEqual(createEmptyGearLoadouts().ranger);
   });
 });

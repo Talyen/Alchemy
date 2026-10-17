@@ -136,7 +136,7 @@ describe("loot progression at run boundaries", () => {
     expect(offered).toHaveLength(3);
     restoreRun(snapshotRun(defaultGameSession), {}, {}, defaultGameSession);
     expect(readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets).toEqual(offered);
-    expect(shop.trinket.buy(offered[0], shopItemSlotKey(offered[0].id, 0))).toBe(true);
+    expect(shop.trinket.buy(shopItemSlotKey(offered[0].id, 0))).toBe(true);
     const gold = readRunProfile(defaultGameSession).gold;
     expect(shop.trinket.refresh()).toBe(false);
     expect(readRunProfile(defaultGameSession).gold).toBe(gold);

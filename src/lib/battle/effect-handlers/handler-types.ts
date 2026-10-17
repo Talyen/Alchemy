@@ -4,7 +4,6 @@ import type { BattleState, CombatTextEvent } from "../types";
 export interface CardEffectResolutionContext {
   forgeTriggers?: Set<string>;
   manaAtStart: number;
-  enemyFreezeSkipTurnsAtStart: number;
   origin?: "played-card" | "triggered-card" | "companion";
   // Coordinated Strike applies to one Companion attack, including a dodged attempt.
   companionAttackBonus?: { amount: number };
@@ -27,10 +26,6 @@ export type EffectHandler<K extends BattleCardEffectKind = BattleCardEffectKind>
   combatTexts: CombatTextEvent[],
   context?: CardEffectResolutionContext,
 ) => BattleState;
-
-export function ccDeepenedSinceStart(current: number, atStart: number | undefined): boolean {
-  return current > (atStart ?? current);
-}
 
 /** Table keys determine the effect type; recursive effects belong to orchestration. */
 export type EffectHandlers = {

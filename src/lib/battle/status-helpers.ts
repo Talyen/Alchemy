@@ -112,6 +112,13 @@ export function reduceDamageByMana(
   return Math.max(0, amount - fullCrystals);
 }
 
+/** Status ticks and typed self-damage share mitigation; Health costs bypass it. */
+export function mitigatePlayerStatusDamage(state: BattleState, damage: number, status: EnemyStatusDamageId): number {
+  const scaled = scaleReceivedPlayerDamage(reduceDamageByMana(state, damage), state.talentEffects, status);
+  const resisted = mitigatePlayerCombatDamage(state, scaled, status);
+  return armorMitigatesElementalDamage(state, status) ? Math.max(0, resisted - state.playerStatuses.armor) : resisted;
+}
+
 export function dealSelfDamage(
   state: BattleState,
   amount: number,
@@ -119,13 +126,7 @@ export function dealSelfDamage(
   combatTexts: CombatTextEvent[],
 ): { state: BattleState; healthLost: number; healthAfterDamage: number } {
   const healthCost = statLabel === "health";
-  const scaled = healthCost
-    ? amount
-    : scaleReceivedPlayerDamage(reduceDamageByMana(state, amount), state.talentEffects, statLabel);
-  const resisted = healthCost ? scaled : mitigatePlayerCombatDamage(state, scaled, statLabel);
-  const resolvedDamage = armorMitigatesElementalDamage(state, statLabel)
-    ? Math.max(0, resisted - state.playerStatuses.armor)
-    : resisted;
+  const resolvedDamage = healthCost ? amount : mitigatePlayerStatusDamage(state, amount, statLabel);
   const postDamage = applyPlayerCombatDamage(
     state,
     resolvedDamage,

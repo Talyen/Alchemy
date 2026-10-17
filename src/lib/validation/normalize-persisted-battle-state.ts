@@ -236,7 +236,6 @@ function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapsho
     enemyHealth: Math.min(clampNonNegative(state.enemyHealth, defaults.enemyHealth), enemyMaxHealth),
     enemyRegeneration: clampNonNegative(state.enemyRegeneration, defaults.enemyRegeneration),
     enemyPhysicalDamageBonus: clampNonNegative(state.enemyPhysicalDamageBonus, defaults.enemyPhysicalDamageBonus),
-    companionDamageBuff: clampNonNegative(state.companionDamageBuff, defaults.companionDamageBuff),
     gold: toSafeNonNegativeInt(state.gold) ?? defaults.gold,
     mana: clampNonNegative(state.mana, defaults.mana),
     maxMana: Math.max(MIN_MAX_MANA_FLOOR, clampNonNegative(state.maxMana, defaults.maxMana)),
@@ -327,15 +326,18 @@ function normalizeSurvival(state: BattleSnapshot, saved: Partial<BattleSnapshot>
 }
 
 export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): BattleSnapshot {
-  // Current Forge has no threshold reactions; discard the obsolete queue at load.
-  const { pendingForgeThresholds: _retiredForgeQueue, ...current } = saved as Partial<BattleSnapshot> & {
-    pendingForgeThresholds?: unknown;
-  };
-  saved = current;
-  const defaults = defaultBattleState();
+  // Defaults own the persisted shape; retired fields and runtime dependencies
+  // must not survive merely because the wire schema tolerates unknown keys.
+  const defaults = battleSnapshot(defaultBattleState());
+  saved = Object.fromEntries(
+    Object.keys(defaults)
+      .filter((key) => Object.hasOwn(saved, key))
+      .map((key) => [key, saved[key as keyof BattleSnapshot]]),
+  );
   const currentEnemy = normalizeEnemy(saved.currentEnemy, defaults.currentEnemy);
   const merged: BattleSnapshot = {
-    ...battleSnapshot({ ...defaults, ...saved }),
+    ...defaults,
+    ...saved,
     encounterBenefits:
       saved.contentSystemType === "labyrinth" && Array.isArray(saved.encounterBenefits)
         ? sanitizeEncounterTraitIds(saved.encounterBenefits, "reward")
@@ -366,8 +368,6 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
   };
   merged.reactions = expireCcReactions(merged).reactions;
   if (merged.enemyStatuses.bleed <= 0) merged.reactions.consecrated = false;
-  // battleMetrics is runtime-only telemetry; never persisted.
-  delete merged.battleMetrics;
   // Glacial Surge is now a native flat bonus; saved growth must not stack with it.
   if (currentEnemy.traits.some((trait) => trait.id === "glacial-shell")) merged.enemyStatuses.freezeBonus = 0;
   const companion = merged.activeCompanion;

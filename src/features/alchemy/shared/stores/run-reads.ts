@@ -1,5 +1,5 @@
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { isActiveRunActivity, readActivityData, runActivityScreen } from "@/lib/active-run-session";
+import { isActiveRunActivity, runActivityScreen } from "@/lib/active-run-session";
 import {
   battleSnapshot,
   defaultBattleState,
@@ -13,17 +13,6 @@ import type { RunSessionFields } from "./run-domain-types";
 import type { PermanentProgressFields } from "./run-state-init";
 import { pickActiveRunView, type ActiveRunReadView } from "./run-state-init";
 import { deepFreeze } from "./store-utils";
-
-export type ShopSessionStateKey = "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState";
-
-// Single source mapping the shop pricing context's state keys to their run
-// activity visits, so the two vocabularies cannot drift apart.
-const SHOP_VISIT_BY_STATE_KEY = {
-  shopState: "shop",
-  alchemistState: "alchemist",
-  trinketShopState: "trinket-shop",
-  equipmentShopState: "equipment-shop",
-} as const satisfies Record<ShopSessionStateKey, "shop" | "alchemist" | "trinket-shop" | "equipment-shop">;
 
 export type { ActiveRunReadView } from "./run-state-init";
 export type RunProfileReadView = Readonly<PermanentProgressFields>;
@@ -50,10 +39,6 @@ export function readRunProfile(gameSession: GameSession): RunProfileReadView {
 export function readRunSession(gameSession: GameSession): RunSessionReadView {
   const session = readGameplayState(gameSession).session;
   return { ...session, hasActiveRun: isActiveRunActivity(session.activity) };
-}
-export function readShopFirstPurchaseUsed(shop: ShopSessionStateKey, gameSession: GameSession): boolean {
-  return readActivityData(readGameplayState(gameSession).session.activity, SHOP_VISIT_BY_STATE_KEY[shop])
-    .firstPurchaseUsed;
 }
 export function readBattle(gameSession: GameSession): BattleReadView {
   return selectBattle(readGameplayState(gameSession));

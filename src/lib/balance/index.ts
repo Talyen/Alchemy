@@ -7,7 +7,6 @@ export * from "./talent-preset";
 export * from "./loadout-preset";
 export * from "./gear-preset";
 export * from "./homestead-preset";
-export * from "./play-policy";
 export * from "./report-rankings";
 export type * from "./report-model";
 export * from "./report-layout";

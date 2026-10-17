@@ -205,7 +205,8 @@ refresh allowance or progression overrides. Retained capabilities do not need to
 `shop-commands-core.ts` owns shared purchase actions and live price helpers.
 Each shop supplies typed shelf selection, item identity, pricing, and acquisition
 rules; the shared purchase owner uses that pricing rule for both displayed quotes
-and commits, validating and acquiring the live shelf item inside the transaction.
+and commits. Purchase commands accept only a slot key, resolving, pricing, and
+acquiring the live shelf item inside the transaction.
 Pure shelf samplers live in `shop-state-init.ts`. `run-loop/run/room-visit-initialization.ts`
 owns transaction-only initialization for shops, Campfire, Transmutation, and Mystery.
 Only `room-entry-commands.ts` may import that owner (Oxlint and import-boundary gates enforce this).

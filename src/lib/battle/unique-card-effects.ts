@@ -18,7 +18,6 @@ export function repeatUniqueCardDamage(
     applyCardEffects(current, { ...card, effects: damageOnlyEffects(card.effects) }, combatTexts, {
       origin: "triggered-card",
       manaAtStart: current.mana,
-      enemyFreezeSkipTurnsAtStart: current.enemyCC.freezeSkipTurns,
       damageMultiplier: multiplier,
     }),
   );

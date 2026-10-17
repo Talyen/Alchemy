@@ -28,8 +28,10 @@ describe("gameplay bug regressions", () => {
     expect(next.flags.hawkEyeReady).toBe(false);
   });
 
-  it("a repeated Mana Shield cannot convert the same Mana twice", () => {
-    const card = cardById["mana-shield"]!;
+  it("a repeated Mana conversion cannot spend the same Mana twice", () => {
+    const card = makeTestCard({
+      effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 }],
+    });
     const state = patchBattleState({ hand: [card], mana: 3, flags: { playNextCardTwice: true }, rng: () => 0.99 });
     const next = playBattleCardResolved(state, card.id, 0).state;
     expect(next.mana).toBe(0);

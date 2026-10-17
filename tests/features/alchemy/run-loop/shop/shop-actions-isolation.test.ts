@@ -56,7 +56,7 @@ const shops = [
         readActivityData(readRunSession(defaultGameSession).activity, "shop").cards[0],
         "merchant card",
       );
-      return actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0));
+      return actions.merchant.buyCard(shopItemSlotKey(card.id, 0));
     },
     refresh: (actions: Actions) => actions.merchant.refresh(),
     read: () => readActivityData(readRunSession(defaultGameSession).activity, "shop"),
@@ -87,7 +87,7 @@ const shops = [
         readActivityData(readRunSession(defaultGameSession).activity, "alchemist").potions[0],
         "alchemist potion",
       );
-      return actions.alchemist.buyPotion(potion, shopItemSlotKey(potion.id, 0));
+      return actions.alchemist.buyPotion(shopItemSlotKey(potion.id, 0));
     },
     refresh: (actions: Actions) => actions.alchemist.refresh(),
     read: () => readActivityData(readRunSession(defaultGameSession).activity, "alchemist"),
@@ -118,7 +118,7 @@ const shops = [
         readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets[0],
         "trinket offering",
       );
-      return actions.trinket.buy(trinket, shopItemSlotKey(trinket.id, 0));
+      return actions.trinket.buy(shopItemSlotKey(trinket.id, 0));
     },
     refresh: (actions: Actions) => actions.trinket.refresh(),
     read: () => readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop"),
@@ -153,7 +153,7 @@ const shops = [
         readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear[0],
         "gear offering",
       );
-      return actions.equipment.buy(instance, instance.instanceId);
+      return actions.equipment.buy(instance.instanceId);
     },
     refresh: (actions: Actions) => actions.equipment.refresh(),
     read: () => readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop"),
@@ -320,7 +320,7 @@ describe("shop action isolation", () => {
     );
     setAlchemistState(createInitialAlchemistState());
     const actions = buildActions();
-    expect(actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0))).toBe(false);
+    expect(actions.merchant.buyCard(shopItemSlotKey(card.id, 0))).toBe(false);
     expect(actions.merchant.refresh()).toBe(false);
     expect(actions.merchant.removeCard(0)).toBe(false);
     expect(readRunProfile(defaultGameSession).gold).toBe(999);

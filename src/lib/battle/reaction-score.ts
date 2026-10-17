@@ -21,11 +21,7 @@ function unexpectedScoringRoll(): never {
 function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): Projection {
   const before = path.state;
   if (before.enemyHealth <= 0 || before.playerHealth <= 0) return path;
-  const selected = resolveConditionalCardDamage(effect, {
-    actorBlock: before.playerStatuses.block,
-    targetBlock: before.enemyMitigation.block,
-    targetFrozen: before.enemyCC.freezeSkipTurns > 0,
-  }).effect;
+  const selected = resolveConditionalCardDamage(effect, before.enemyCC.freezeSkipTurns > 0);
   const companion = before.action?.source === "companion";
   const companionBonus = companion ? before.flags.companionNextAttackBonus : 0;
   const attempted =
@@ -58,7 +54,6 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
     card,
     {
       manaAtStart: candidate.mana,
-      enemyFreezeSkipTurnsAtStart: candidate.enemyCC.freezeSkipTurns,
       origin: companion ? "companion" : "played-card",
       baseDamageBonus: companionBonus + (consumed.packet.damageType === "physical" ? consumed.physicalBonus : 0),
     },
@@ -77,8 +72,7 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
       },
     };
   }
-  if (selected.detonateAllBurn || (selected.detonateIfEnemyBurning && before.enemyStatuses.burn > 0))
-    state = setEnemyStatus(state, "burn", 0);
+  if (selected.detonateAllBurn) state = setEnemyStatus(state, "burn", 0);
   const payoffs = getPostHitReactionPayoffs(before, state, consumed.packet.damageType, healthDamage);
   let score = shatter ? before.enemyMitigation.block + before.enemyMitigation.armor : 0;
   if (shatter) payoffs.unshift({ id: "shatter", damage: before.reactions.shatterDamage });
@@ -95,6 +89,7 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
 
 /** Random-type cards can have many equivalent paths; merge them before the next effect. */
 function mergeProjections(paths: Projection[]): Projection[] {
+  if (paths.length < 2) return paths;
   const merged = new Map<string, Projection>();
   for (const path of paths) {
     const state = path.state;
@@ -173,20 +168,22 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
           };
           let next = [path];
           for (let i = 0; i < effect.amount; i++) {
-            next = next.flatMap((current) => {
-              let projected: Projection[] = [];
-              resolveSecondaryAction(current.state, "companion", (scoped) => {
-                projected = projectEffects([{ ...current, state: scoped }], companionCard, companionCard.effects);
-                return scoped;
-              });
-              return projected.map((result) => {
-                const { action: _action, ...unscoped } = result.state;
-                return {
-                  ...result,
-                  state: current.state.action ? { ...unscoped, action: current.state.action } : unscoped,
-                };
-              });
-            });
+            next = mergeProjections(
+              next.flatMap((current) => {
+                let projected: Projection[] = [];
+                resolveSecondaryAction(current.state, "companion", (scoped) => {
+                  projected = projectEffects([{ ...current, state: scoped }], companionCard, companionCard.effects);
+                  return scoped;
+                });
+                return projected.map((result) => {
+                  const { action: _action, ...unscoped } = result.state;
+                  return {
+                    ...result,
+                    state: current.state.action ? { ...unscoped, action: current.state.action } : unscoped,
+                  };
+                });
+              }),
+            );
           }
           return next;
         }

@@ -121,13 +121,7 @@ export function offerBrewingChoices(
     if (score > 0) beneficial++;
     if (buyPrice > profile.gold) return;
     affordable++;
-    offer(
-      "buy-potion",
-      card.id,
-      buyPrice + reserve > profile.gold ? -1 : score,
-      () => actions.buyPotion(card, key),
-      index,
-    );
+    offer("buy-potion", card.id, buyPrice + reserve > profile.gold ? -1 : score, () => actions.buyPotion(key), index);
   });
   opportunities.push({
     kind: "purchase",

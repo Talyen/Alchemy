@@ -34,7 +34,7 @@ describe("encounter enemy descriptions", () => {
       for (const card of cards) {
         const result = getEncounterEnemyAbility(card, ctx);
         card.effects.forEach((effect, index) => {
-          if (effect.kind === "damage" && !effect.equalToBlock && !effect.equalToForge)
+          if (effect.kind === "damage" && !effect.equalToBlock)
             expect(result.effects[index]).toMatchObject(scaleEnemyAbilityDamage(ctx, effect));
         });
       }
@@ -72,7 +72,7 @@ describe("encounter enemy descriptions", () => {
     expect(result.descriptionLines.join(" ")).toContain("5 Block");
   });
 
-  it("scales conditional alternatives independently, including type bonuses and block spending", () => {
+  it("scales conditional alternatives independently, including type bonuses", () => {
     const ctx: EnemyDescriptionContext = {
       ...context,
       difficultyModifiers: [{ kind: "increase-enemy-physical-damage", amount: 3 }],
@@ -92,23 +92,6 @@ describe("encounter enemy descriptions", () => {
     expect(conditional.effects[0]).toMatchObject({
       amount: scaleEnemyAbilityDamage(ctx, { kind: "damage", damageType: "physical", amount: 4 }).amount,
       amountIfTargetFrozen: scaleEnemyAbilityDamage(ctx, { kind: "damage", damageType: "freeze", amount: 8 }).amount,
-    });
-    const alternate = display(
-      [{ kind: "damage", damageType: "physical", amount: 4, damageTypeIfTargetHasBlock: "holy" }],
-      ctx,
-    );
-    expect(alternate.descriptionLines.join(" ")).toContain(
-      `or ${scaleEnemyAbilityDamage(ctx, { kind: "damage", damageType: "holy", amount: 4 }).amount} Holy`,
-    );
-    const spending = display(
-      [{ kind: "damage", damageType: "physical", amount: 4, blockCost: 2, blockDamageBonus: 3 }],
-      ctx,
-    );
-    expect(spending.effects[0]).toMatchObject({
-      blockCost: 2,
-      blockDamageBonus:
-        scaleEnemyAbilityDamage(ctx, { kind: "damage", damageType: "physical", amount: 7 }).amount -
-        scaleEnemyAbilityDamage(ctx, { kind: "damage", damageType: "physical", amount: 4 }).amount,
     });
   });
 

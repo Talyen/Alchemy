@@ -1,4 +1,3 @@
-import { TRANSMUTATION_ROLES } from "../transmutation-roles";
 import type { BattleCard } from "../../types";
 import { archeryCards } from "./archery";
 import { companionCards } from "./companions";
@@ -12,14 +11,7 @@ export const cardLibrary: BattleCard[] = [
   ...consumableCards,
   ...companionCards,
   ...defenseCards,
-].map(
-  (card): BattleCard => ({
-    ...card,
-    ...(Object.hasOwn(TRANSMUTATION_ROLES, card.id)
-      ? { transmutationRole: TRANSMUTATION_ROLES[card.id as keyof typeof TRANSMUTATION_ROLES] }
-      : {}),
-  }),
-);
+];
 
 export const cardById: Record<string, BattleCard> = Object.fromEntries(cardLibrary.map((card) => [card.id, card]));
 

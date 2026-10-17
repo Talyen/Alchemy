@@ -12,13 +12,9 @@ const ENEMY_DAMAGE_FIELDS = [
   "doubleIfEnemyBleeding",
   "equalToBlock",
   "equalToBlockPercent",
-  "equalToForge",
   "forgeBonusPercent",
   "ignoreArmor",
   "ignoreBlock",
-  "blockCost",
-  "blockDamageBonus",
-  "damageTypeIfTargetHasBlock",
   "damageTypeIfTargetFrozen",
   "amountIfTargetFrozen",
 ] as const satisfies ReadonlyArray<keyof Extract<BattleCardEffect, { kind: "damage" }>>;

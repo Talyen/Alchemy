@@ -1,8 +1,6 @@
 import type { EffectHandlers } from "./handler-types";
 import { resolveConditionalCardDamage } from "../conditional-card-damage";
-import { mergeCombatText } from "../combat-text-events";
-import { setPlayerStatus } from "../status-state";
-import { applyBlockDepletionRewards, checkHealthThresholds } from "../status-player";
+import { checkHealthThresholds } from "../status-player";
 import { DAMAGE_TYPES, harmfulPlayerStatusIds } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rngInt } from "@/lib/rng";
 import { applyPotionMultiplier } from "../amount-helpers";
@@ -10,32 +8,11 @@ import { dealDamageToEnemy } from "../damage";
 import { dealSelfDamage } from "../status-helpers";
 import { addPlayerStatus } from "../status-state";
 import { rangeBoundsError } from "./simple-handlers";
-import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { resolvePlayerCrowdControlTriggers } from "../status-cc";
 
 export const DAMAGE_HANDLERS = {
   damage: (state, card, effect, potionMult, combatTexts, context) => {
-    const selected = resolveConditionalCardDamage(effect, {
-      actorBlock: state.playerStatuses.block,
-      targetBlock: state.enemyMitigation.block,
-      targetFrozen: state.enemyCC.freezeSkipTurns > 0,
-    });
-    effect = selected.effect;
-    if (selected.blockSpent > 0) {
-      const beforeBlockSpend = state;
-      state = setPlayerStatus(state, "block", state.playerStatuses.block - selected.blockSpent);
-      state = resolvePendingBattleReactions(
-        applyBlockDepletionRewards(beforeBlockSpend, state, combatTexts),
-        combatTexts,
-      );
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "damage",
-        stat: "block",
-        amount: selected.blockSpent,
-        impact: false,
-      });
-    }
+    effect = resolveConditionalCardDamage(effect, state.enemyCC.freezeSkipTurns > 0);
     let damageType = effect.damageType;
     if (effect.damageTypePool && effect.damageTypePool.length > 0) {
       const picked = pickRandom(effect.damageTypePool, getBattleRng(state));

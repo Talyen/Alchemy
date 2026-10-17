@@ -16,6 +16,7 @@ beforeEach(() => {
 const originalRequestIdleCallback = typeof window !== "undefined" ? window.requestIdleCallback : undefined;
 
 afterEach(() => {
+  resetSoundPreloadCache();
   vi.useRealTimers();
   if (typeof window !== "undefined") {
     if (originalRequestIdleCallback === undefined)
@@ -102,13 +103,29 @@ describe("preloadSounds", () => {
     expect(warmed[1]?.src).toContain("b.");
     for (const element of warmed) {
       const source = element.src;
+      const lateError = element.onerror!;
       element.oncanplaythrough?.();
+      lateError();
       expect(element.oncanplaythrough).toBeNull();
       expect(element.onerror).toBeNull();
       expect(element.src).toBe(source);
       expect(element.load).not.toHaveBeenCalled();
     }
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("revokes aborted warmup callbacks before a replacement warmup starts", () => {
+    vi.useFakeTimers();
+    preloadSounds(["a.ogg"]);
+    const old = soundedFakeAudio()[0]!;
+    const lateError = old.onerror!;
+    resetSoundPreloadCache();
+    preloadSounds(["a.ogg"]);
+    const replacement = soundedFakeAudio().at(-1)!;
+    lateError();
+    expect(old.load).toHaveBeenCalledOnce();
+    expect(replacement.load).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(1);
   });
 
   it("skips names already warming", () => {

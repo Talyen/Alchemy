@@ -35,14 +35,12 @@ function companionAction(effect: BattleCardEffect): string | null {
       return success && failure ? `${success} or ${failure}` : null;
     }
     case "wish":
-    case "enemy-status":
     case "lose-mana":
     case "lose-max-mana":
     case "gain-max-mana":
     case "summon-companion":
     case "remove-player-status":
     case "self-damage":
-    case "buff-companion":
     case "companion-action":
     case "random-draw":
     case "lose-health":

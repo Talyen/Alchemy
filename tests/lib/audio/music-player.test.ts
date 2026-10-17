@@ -1,42 +1,14 @@
+import { createFakeAudioElement, type FakeAudioElement } from "../../helpers/fake-audio";
 import { createCleanup } from "@/lib/cleanup";
 import { expect, it, beforeEach, vi, afterEach } from "vitest";
 import { createMusicPlayer } from "@/lib/audio/music-player";
 import { computeMusicVolume, getBossMusicKey } from "@/lib/audio/music-catalog";
 import { MUSIC_KEYS, MUSIC_MASTER_GAIN } from "@/lib/game-constants";
 
-interface MockMusicElement {
-  src: string;
-  volume: number;
-  muted: boolean;
-  currentTime: number;
-  loop: boolean;
-  paused: boolean;
-  play: ReturnType<typeof vi.fn<() => Promise<void>>>;
-  pause: ReturnType<typeof vi.fn<() => void>>;
-  removeAttribute: ReturnType<typeof vi.fn<(name: string) => void>>;
-  load: ReturnType<typeof vi.fn<() => void>>;
-}
-
 function createHarness() {
-  const elements: MockMusicElement[] = [];
-  function createElement(file: string): MockMusicElement {
-    const element: MockMusicElement = {
-      src: file,
-      volume: 1,
-      muted: false,
-      currentTime: 0,
-      loop: false,
-      paused: true,
-      play: vi.fn(() => {
-        element.paused = false;
-        return Promise.resolve();
-      }),
-      pause: vi.fn(() => {
-        element.paused = true;
-      }),
-      removeAttribute: vi.fn(),
-      load: vi.fn(),
-    };
+  const elements: FakeAudioElement[] = [];
+  function createElement(file: string): FakeAudioElement {
+    const element = createFakeAudioElement(file);
     elements.push(element);
     return element;
   }
@@ -75,6 +47,68 @@ it("keeps music initialization failures nonfatal and retries on the next request
   expect(player.isMusicPaused()).toBe(true);
   player.playMusicImmediate(MUSIC_KEYS.MENU);
   expect(elements.at(-1)?.paused).toBe(false);
+});
+
+it("releases a partially initialized music source before retrying", () => {
+  const createElement = deps.createElement.getMockImplementation()!;
+  deps.createElement.mockImplementationOnce((file) => {
+    const element = createElement(file);
+    Object.defineProperty(element, "currentTime", {
+      set: () => {
+        throw new Error("seek failed");
+      },
+    });
+    return element;
+  });
+  player.playMusicImmediate(MUSIC_KEYS.BOSS_IRON_BEAR);
+  const failed = elements[0]!;
+  expect(failed.removeAttribute).toHaveBeenCalledWith("src");
+  expect(failed.load).toHaveBeenCalledOnce();
+  expect(player.readMusicPlayback()).toBeNull();
+  player.playMusicImmediate(MUSIC_KEYS.BOSS_IRON_BEAR);
+  expect(elements[1]).toMatchObject({ currentTime: 6, paused: false });
+});
+
+it.each(["pause", "reset", "replace", "retry", "invalidate"] as const)(
+  "ignores a play rejection after %s revokes the attempt",
+  async (action) => {
+    let reject!: (reason: Error) => void;
+    const createElement = deps.createElement.getMockImplementation()!;
+    deps.createElement.mockImplementationOnce((file) => {
+      const element = createElement(file);
+      element.play.mockImplementationOnce(
+        () =>
+          new Promise<void>((_, fail) => {
+            reject = fail;
+          }),
+      );
+      return element;
+    });
+    player.playMusicImmediate(MUSIC_KEYS.MENU);
+    if (action === "pause") player.pauseAllMusic();
+    if (action === "reset") player.reset();
+    if (action === "replace") player.playMusicImmediate(MUSIC_KEYS.BATTLE);
+    if (action === "retry") player.playMusic(MUSIC_KEYS.MENU);
+    if (action === "invalidate") player.invalidateCacheForKey(MUSIC_KEYS.MENU);
+    reject(new Error("late rejection"));
+    await Promise.resolve();
+    expect(deps.reportFailure).not.toHaveBeenCalled();
+  },
+);
+
+it("reports a current blocked attempt and allows the same preview to retry", async () => {
+  const createElement = deps.createElement.getMockImplementation()!;
+  deps.createElement.mockImplementationOnce((file) => {
+    const element = createElement(file);
+    element.play.mockRejectedValueOnce(new Error("blocked"));
+    return element;
+  });
+  player.previewBossMusic(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+  await Promise.resolve();
+  expect(deps.reportFailure).toHaveBeenCalledOnce();
+  player.previewBossMusic(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+  expect(elements[0]?.paused).toBe(false);
+  expect(elements).toHaveLength(1);
 });
 
 it("keeps synchronous music playback failures nonfatal and retries the cached track", () => {
@@ -196,6 +230,21 @@ it("starts a different track without waiting to fade out paused music", () => {
   expect(elements.at(-1)?.paused).toBe(false);
 });
 
+it("restores outgoing music after failed initialization and retries the destination", () => {
+  player.playMusicImmediate(MUSIC_KEYS.MENU);
+  const menu = elements[0]!;
+  deps.createElement.mockImplementationOnce(() => {
+    throw new Error("initialization failed");
+  });
+  player.playMusic(MUSIC_KEYS.BATTLE);
+  vi.advanceTimersByTime(400);
+  expect(menu).toMatchObject({ paused: false, volume: 0.5 * MUSIC_MASTER_GAIN });
+  player.playMusic(MUSIC_KEYS.BATTLE);
+  vi.advanceTimersByTime(3000);
+  expect(menu.paused).toBe(true);
+  expect(elements[1]).toMatchObject({ paused: false, volume: 0.5 * MUSIC_MASTER_GAIN });
+});
+
 it("dedupes a pending destination and lets an immediate switch cancel it", () => {
   player.playMusicImmediate(MUSIC_KEYS.MENU);
   player.playMusic(MUSIC_KEYS.BATTLE);
@@ -252,7 +301,7 @@ it("invalidating the outgoing track stops the transition and builds a fresh trac
   player.playMusic(MUSIC_KEYS.BATTLE);
   player.invalidateCacheForKey(MUSIC_KEYS.MENU);
   vi.advanceTimersByTime(3000);
-  expect(menu).toMatchObject({ paused: true, currentTime: 0 });
+  expect(menu.paused).toBe(true);
   expect(menu.removeAttribute).toHaveBeenCalledWith("src");
   expect(menu.load).toHaveBeenCalledOnce();
   expect(player.isMusicPaused()).toBe(true);
@@ -381,4 +430,52 @@ it("reports the active media clock through transitions, pause, loops, and invali
   expect(player.readMusicPlayback()?.audible).toBe(false);
   player.invalidateCacheForKey(MUSIC_KEYS.BOSS_BLIGHT_TREANT);
   expect(player.readMusicPlayback()).toBeNull();
+});
+
+it("retries a blocked outgoing track when its pending switch is reversed", async () => {
+  const createElement = deps.createElement.getMockImplementation()!;
+  deps.createElement.mockImplementationOnce((file) => {
+    const element = createElement(file);
+    element.play.mockRejectedValueOnce(new Error("blocked"));
+    return element;
+  });
+  player.playMusicImmediate(MUSIC_KEYS.MENU);
+  await Promise.resolve();
+  player.playMusic(MUSIC_KEYS.BATTLE);
+  player.playMusic(MUSIC_KEYS.MENU);
+  expect(elements[0]?.paused).toBe(false);
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+it("invalidates an unseekable track without letting it retain a media source", () => {
+  player.playMusicImmediate(MUSIC_KEYS.MENU);
+  const menu = elements[0]!;
+  Object.defineProperty(menu, "currentTime", {
+    set: () => {
+      throw new Error("seek unavailable");
+    },
+  });
+  expect(() => player.invalidateCacheForKey(MUSIC_KEYS.MENU)).not.toThrow();
+  expect(menu.removeAttribute).toHaveBeenCalledWith("src");
+  expect(menu.load).toHaveBeenCalledOnce();
+  player.playMusicImmediate(MUSIC_KEYS.MENU);
+  expect(elements[1]?.paused).toBe(false);
+});
+
+it("revokes playback and releases all cached sources even if one pause fails during reset", () => {
+  player.playMusicImmediate(MUSIC_KEYS.MENU);
+  player.playMusicImmediate(MUSIC_KEYS.BATTLE);
+  const battle = elements[1]!;
+  battle.pause.mockImplementationOnce(() => {
+    throw new Error("pause failed");
+  });
+  expect(() => player.reset()).not.toThrow();
+  expect(player.readMusicPlayback()).toBeNull();
+  for (const element of elements) {
+    expect(element.removeAttribute).toHaveBeenCalledWith("src");
+    expect(element.load).toHaveBeenCalledOnce();
+  }
+  expect(battle.pause).toHaveBeenCalledOnce();
+  player.playMusicImmediate(MUSIC_KEYS.BATTLE);
+  expect(elements[2]?.paused).toBe(false);
 });

@@ -1,11 +1,5 @@
 import { z } from "zod";
-import {
-  AmountSchema,
-  DamageTypeSchema,
-  EnemyStatusDamageIdSchema,
-  EnemyStatusIdSchema,
-  PositiveAmountSchema,
-} from "./shared-schemas";
+import { AmountSchema, DamageTypeSchema, EnemyStatusDamageIdSchema, PositiveAmountSchema } from "./shared-schemas";
 
 export const STATUS_EFFECT_DEFINITIONS = [
   z
@@ -36,11 +30,6 @@ export const STATUS_EFFECT_DEFINITIONS = [
     .refine((data) => !(data.perManaCrystal !== undefined && data.convertCurrentMana !== undefined), {
       message: "player-status cannot have both perManaCrystal and convertCurrentMana",
     }),
-  z.object({
-    kind: z.literal("enemy-status"),
-    status: EnemyStatusIdSchema,
-    amount: AmountSchema,
-  }),
   z
     .object({
       kind: z.literal("remove-harmful-status"),

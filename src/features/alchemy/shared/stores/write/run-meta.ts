@@ -3,7 +3,7 @@ import type { KeywordId, TalentXP, UnlockedTalents } from "@/lib/game-data";
 import {
   computeRunEndTalentXPSnapshot,
   getDifficultyXPMultiplier,
-  mergeRunTalentXPIntoPermanent,
+  mergeTalentXPAwards,
   talentPool,
   tryUnlockTalent,
   xpThresholdForPoints,
@@ -65,7 +65,7 @@ export function finalizeRunXP(draft: GameplayDraft): void {
   }
   const multiplier = getDifficultyXPMultiplier(draft.run.activeRun.selectedDifficulty);
   draft.session.runEndTalentXP = computeRunEndTalentXPSnapshot(runTalentXP, multiplier);
-  draft.runProfile.talentXP = mergeRunTalentXPIntoPermanent(runTalentXP, draft.runProfile.talentXP, multiplier);
+  draft.runProfile.talentXP = mergeTalentXPAwards(draft.runProfile.talentXP, draft.session.runEndTalentXP);
   resetRunXP(draft);
   rebindLiveRunMeta(draft);
 }

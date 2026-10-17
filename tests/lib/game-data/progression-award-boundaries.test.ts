@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addTalentXP, computeRunEndTalentXPSnapshot, mergeRunTalentXPIntoPermanent } from "@/lib/game-data";
+import { addTalentXP, computeRunEndTalentXPSnapshot, mergeTalentXPAwards } from "@/lib/game-data";
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import { MaterialInventorySchema, TalentXPSchema } from "@/lib/validation/save-schemas/schema-enums";
 
@@ -15,9 +15,7 @@ describe("progression award round trips", () => {
       physical: Number.MAX_SAFE_INTEGER,
     });
     expect(
-      TalentXPSchema.parse(
-        mergeRunTalentXPIntoPermanent({ physical: 10 }, { physical: Number.MAX_SAFE_INTEGER - 3 }, 1),
-      ),
+      TalentXPSchema.parse(mergeTalentXPAwards({ physical: Number.MAX_SAFE_INTEGER - 3 }, { physical: 10 })),
     ).toEqual({ physical: Number.MAX_SAFE_INTEGER });
   });
 

@@ -6,7 +6,11 @@
 export function releaseAudioElement(el: Pick<HTMLAudioElement, "pause" | "removeAttribute" | "load">): void {
   try {
     el.pause();
+  } catch {}
+  try {
     el.removeAttribute("src");
+  } catch {}
+  try {
     el.load();
   } catch {}
 }

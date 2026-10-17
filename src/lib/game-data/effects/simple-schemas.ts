@@ -12,7 +12,6 @@ export const SIMPLE_EFFECT_DEFINITIONS = [
     kind: z.literal("summon-companion"),
     companionId: CompanionIdSchema,
   }),
-  defineAmountEffect("buff-companion"),
   defineAmountEffect("companion-action"),
   defineRangedEffect("random-draw"),
   z.object({

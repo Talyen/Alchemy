@@ -29,7 +29,6 @@ function base(patch: BattleStatePatch = {}) {
 function hit(state: BattleState, type: DamageType, texts: CombatTextEvent[] = [], amount = 4) {
   return applyCardEffects(state, attack(type, amount), texts, {
     manaAtStart: state.mana,
-    enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
     origin: state.action?.source === "companion" ? "companion" : "played-card",
   });
 }

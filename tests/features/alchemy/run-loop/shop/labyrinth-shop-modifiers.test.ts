@@ -55,9 +55,9 @@ describe("Labyrinth shops", () => {
     const card = readActivityData(readRunSession(defaultGameSession).activity, "shop").cards[0]!;
     expect(actions.merchant.getCardBuyPrice(card)).toBe(15);
     const slot = shopItemSlotKey(card.id, 0);
-    expect(actions.merchant.buyCard(card, slot)).toBe(true);
+    expect(actions.merchant.buyCard(slot)).toBe(true);
     expect(readRunProfile(defaultGameSession).gold).toBe(485);
-    expect(actions.merchant.buyCard(card, slot)).toBe(false);
+    expect(actions.merchant.buyCard(slot)).toBe(false);
     expect(readRunProfile(defaultGameSession).gold).toBe(485);
   });
 
@@ -86,7 +86,7 @@ describe("Labyrinth shops", () => {
       readActivityData(readRunSession(defaultGameSession).activity, "alchemist"),
     );
     const offered = readActivityData(readRunSession(defaultGameSession).activity, "alchemist").potions[0]!;
-    expect(actions.alchemist.buyPotion(cardById[offered.id]!, shopItemSlotKey(offered.id, 0))).toBe(true);
+    expect(actions.alchemist.buyPotion(shopItemSlotKey(offered.id, 0))).toBe(true);
     const bought = readActiveRun(defaultGameSession).runDeck.at(-1)!;
     expect(bought.effects).toEqual(offered.effects);
     expect(hydrateCard(JSON.parse(JSON.stringify(bought))).effects).toEqual(offered.effects);
@@ -154,12 +154,12 @@ describe("Labyrinth shops", () => {
     initializeShopForTest("alchemist", defaultGameSession);
     const potion = readActivityData(readRunSession(defaultGameSession).activity, "alchemist").potions[0]!;
     expect(actions.alchemist.getPotionBuyPrice(potion)).toBe(15);
-    expect(actions.alchemist.buyPotion(potion, shopItemSlotKey(potion.id, 0))).toBe(true);
+    expect(actions.alchemist.buyPotion(shopItemSlotKey(potion.id, 0))).toBe(true);
     setRunSession({ activeLabyrinthRewardModifiers: ["collectors-favor"] });
     initializeShopForTest("trinket", defaultGameSession);
     const trinket = readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets[0]!;
     expect(actions.trinket.getBuyPrice(trinket)).toBe(75);
-    expect(actions.trinket.buy(trinket, shopItemSlotKey(trinket.id, 0))).toBe(true);
+    expect(actions.trinket.buy(shopItemSlotKey(trinket.id, 0))).toBe(true);
     expect(readRunProfile(defaultGameSession).gold).toBe(410);
   });
 

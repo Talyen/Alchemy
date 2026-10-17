@@ -43,12 +43,10 @@ describe("collectKeywordsFromBattleEffect", () => {
           effects: [
             {
               kind: "damage",
-              damageType: "physical",
+              damageType: "burn",
               amount: 2,
-              damageTypePool: ["burn", "holy"],
               lifesteal: true,
-              damageTypeIfTargetHasBlock: "nature",
-              damageTypeIfTargetFrozen: "burn",
+              damageTypeIfTargetFrozen: "holy",
               amountIfTargetFrozen: 4,
             },
           ],
@@ -61,7 +59,7 @@ describe("collectKeywordsFromBattleEffect", () => {
       ],
     };
     const before = structuredClone(effect);
-    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["burn", "holy", "leech", "nature", "health"]);
+    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["burn", "leech", "holy", "health"]);
     expect(effect).toEqual(before);
   });
   it.each<BattleCardEffect>([

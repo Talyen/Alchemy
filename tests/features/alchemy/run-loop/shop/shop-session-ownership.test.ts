@@ -40,14 +40,14 @@ describe("shop session ownership", () => {
         session,
       );
       expect(quote(first)).toBe(basePrice - 5);
-      expect(buy(first, shopItemSlotKey(first.id, 0))).toBe(true);
+      expect(buy(shopItemSlotKey(first.id, 0))).toBe(true);
       expect(readRunProfile(session).gold).toBe(500 - (basePrice - 5));
       expect(otherQuote(first)).toBe(basePrice);
       expect(readRunProfile(other).gold).toBe(500);
 
       dispatchRunSessionCommand((draft) => acceptCommand(applyTalentState(draft, {}, {})), undefined, session);
       expect(quote(second)).toBe(basePrice);
-      expect(buy(second, shopItemSlotKey(second.id, 1))).toBe(true);
+      expect(buy(shopItemSlotKey(second.id, 1))).toBe(true);
       expect(readRunProfile(session).gold).toBe(500 - (basePrice - 5) - basePrice);
     },
   );

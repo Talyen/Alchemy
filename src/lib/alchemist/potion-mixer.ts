@@ -20,22 +20,7 @@ import {
   visitBattleCardEffects,
 } from "../game-data";
 
-const MIXED_POTION_ERROR = "Two Potions are required";
-
-function areEffectsEquivalent(a: readonly BattleCardEffect[], b: readonly BattleCardEffect[]): boolean {
-  // Deep comparison: same-id cards can carry different payloads (nested
-  // chance/repeat trees, companion ids, conditional damage flags), and a
-  // shallow kind/amount check would merge them and silently drop cardB's
-  // distinct effects below.
-  return a.length === b.length && a.every((effect, index) => areBattleCardEffectsEqual(effect, b[index]!));
-}
-
-function scaledAmount(amount: number, multiplier: number): number {
-  // Single rounding point for combat magnitudes.
-  return Math.round(amount * multiplier);
-}
-
-function scalePotionEffect(effect: BattleCardEffect, multiplier: number): BattleCardEffect {
+function doublePotionEffect(effect: BattleCardEffect): BattleCardEffect {
   // Doubling changes rewards, never ingredient costs or status durations.
   if (
     effect.kind === "lose-health" ||
@@ -48,32 +33,26 @@ function scalePotionEffect(effect: BattleCardEffect, multiplier: number): Battle
   if (effect.kind === "random-draw" || effect.kind === "random-damage") {
     return {
       ...effect,
-      minAmount: scaledAmount(effect.minAmount, multiplier),
-      maxAmount: scaledAmount(effect.maxAmount, multiplier),
+      minAmount: effect.minAmount * 2,
+      maxAmount: effect.maxAmount * 2,
     };
   }
   if ("amount" in effect && typeof effect.amount === "number") {
-    const amount = scaledAmount(effect.amount, multiplier);
+    const amount = effect.amount * 2;
     if (effect.kind === "damage")
       return {
         ...effect,
         amount,
-        ...(effect.amountIfTargetFrozen !== undefined
-          ? { amountIfTargetFrozen: scaledAmount(effect.amountIfTargetFrozen, multiplier) }
-          : {}),
-        ...(effect.blockDamageBonus !== undefined
-          ? { blockDamageBonus: scaledAmount(effect.blockDamageBonus, multiplier) }
-          : {}),
+        ...(effect.amountIfTargetFrozen !== undefined ? { amountIfTargetFrozen: effect.amountIfTargetFrozen * 2 } : {}),
       };
     if (effect.kind === "player-status" && effect.forgeAmount !== undefined)
-      return { ...effect, amount, forgeAmount: scaledAmount(effect.forgeAmount, multiplier) };
+      return { ...effect, amount, forgeAmount: effect.forgeAmount * 2 };
     return { ...effect, amount };
   }
-  return mapEffectChildren(effect, (child) => scalePotionEffect(child, multiplier));
+  return mapEffectChildren(effect, doublePotionEffect);
 }
 
-function scaledPotionParts(card: BattleCard, multiplier: number) {
-  const effects = card.effects.map((effect) => scalePotionEffect(effect, multiplier));
+function potionParts(card: BattleCard, effects = card.effects) {
   return {
     effects,
     description: carryCardDescriptionMarks(getCardDescription(card), createEffectDescription(effects)),
@@ -81,15 +60,12 @@ function scaledPotionParts(card: BattleCard, multiplier: number) {
 }
 
 function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | null {
-  if (!cardA || !cardB) {
-    throw new Error(MIXED_POTION_ERROR);
-  }
-
   const tags = [...new Set([...(cardA.tags ?? []), ...(cardB.tags ?? [])])];
   // Doubling amounts cannot represent a second Armor-halving operation.
   const sameCard =
     cardA.id === cardB.id &&
-    areEffectsEquivalent(cardA.effects, cardB.effects) &&
+    cardA.effects.length === cardB.effects.length &&
+    cardA.effects.every((effect, index) => areBattleCardEffectsEqual(effect, cardB.effects[index]!)) &&
     !visitBattleCardEffects(
       cardA.effects,
       (effect) =>
@@ -101,12 +77,21 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | 
         (effect.kind === "player-status" && (effect.status === "haste" || effect.status === "phoenixFeather")),
     );
 
-  // Describe ingredients separately: matching prose from different Potions
-  // must not collapse into a single effect description.
-  const parts = (sameCard ? [cardA] : [cardA, cardB]).map((card) => scaledPotionParts(card, sameCard ? 2 : 1));
-  // Reject before a command can spend Gold or replace either ingredient.
-  if (parts.some((part) => part.effects.some((effect) => !BattleCardEffectSchema.safeParse(effect).success)))
+  const doubled = sameCard ? cardA.effects.map(doublePotionEffect) : null;
+  // Folding is optional: two valid ingredients must still mix when their
+  // doubled amounts exceed the saved-effect bounds. Keep both effect sets.
+  const combinedEffects = doubled?.every((effect) => BattleCardEffectSchema.safeParse(effect).success) ? doubled : null;
+  // Reject before generating descriptions or spending either ingredient.
+  if (
+    !combinedEffects &&
+    [cardA, cardB].some((card) => card.effects.some((effect) => !BattleCardEffectSchema.safeParse(effect).success))
+  )
     return null;
+  const parts = combinedEffects ? [potionParts(cardA, combinedEffects)] : [potionParts(cardA), potionParts(cardB)];
+  if (combinedEffects) {
+    const part = parts[0]!;
+    part.description = carryCardDescriptionMarks(getCardDescription(cardB), part.description);
+  }
 
   let effectOffset = 0;
   const description = parts.flatMap((part) => {
@@ -159,17 +144,16 @@ export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: numbe
 }
 
 export function doublePotionPotency(card: BattleCard): BattleCard {
-  const { effects, description } = scaledPotionParts(card, 2);
-  const markedDescription = carryCardDescriptionMarks(getCardDescription(card), description);
-  for (const tag of card.tags ?? []) markedDescription.push({ parts: [capitalizeWord(tag)], role: "keyword" });
-  if (card.consume) markedDescription.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
+  const { effects, description } = potionParts(card, card.effects.map(doublePotionEffect));
+  for (const tag of card.tags ?? []) description.push({ parts: [capitalizeWord(tag)], role: "keyword" });
+  if (card.consume) description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
   return cloneBattleCard(
     withCardDescription(
       {
         ...card,
         effects,
       },
-      markedDescription,
+      description,
     ),
   );
 }

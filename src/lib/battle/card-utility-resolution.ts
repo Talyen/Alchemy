@@ -11,7 +11,6 @@ import { writeCombatFlag } from "./action-context";
 import { reduceEnemyArmor } from "./enemy-mitigation-state";
 import { mergeCombatText } from "./combat-text-events";
 import {
-  ccDeepenedSinceStart,
   hasCardHealing,
   type EffectHandlers,
   type EffectHandler,
@@ -73,13 +72,7 @@ const FLAG_HANDLERS = {
 /** Execute utility rules once; live combat and inspection supply reaction policies. */
 export function createCardUtilityHandlers(port: CardUtilityPort) {
   const handlers = {
-    "restore-mana": (state, _card, effect, potionMult, combatTexts, context) => {
-      if (
-        effect.ifEnemyFrozen &&
-        !ccDeepenedSinceStart(state.enemyCC.freezeSkipTurns, context?.enemyFreezeSkipTurnsAtStart)
-      ) {
-        return state;
-      }
+    "restore-mana": (state, _card, effect, potionMult, combatTexts) => {
       return port.mana(
         state,
         applyPotionMultiplier(effect.amount, potionMult),
@@ -198,10 +191,6 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
       mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "companion", text: "" });
       const summoned = { ...state, activeCompanion: companionLibrary[effect.companionId] };
       return port.summon(summoned, combatTexts);
-    },
-    "buff-companion": (state, _card, effect, _potionMult, combatTexts) => {
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "companion", amount: effect.amount });
-      return { ...state, companionDamageBuff: state.companionDamageBuff + effect.amount };
     },
     "gain-gold": (state, _card, effect, potionMult, combatTexts) => {
       if (effect.ifEnemyStunned && state.enemyCC.stunSkipTurns <= 0) {

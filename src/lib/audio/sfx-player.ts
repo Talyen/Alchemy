@@ -16,12 +16,17 @@ interface SfxSettings {
 }
 
 interface SfxPlayerDependencies {
-  createElement: (name: string) => HTMLAudioElement | undefined;
+  createElement: (name: string) => SfxElement | undefined;
   readSettings: () => SfxSettings;
   now: () => number;
   schedule: (callback: () => void, delayMs: number) => ReturnType<typeof setTimeout>;
   cancel: (timer: ReturnType<typeof setTimeout>) => void;
 }
+
+type SfxElement = Pick<
+  HTMLAudioElement,
+  "volume" | "muted" | "onended" | "onerror" | "play" | "pause" | "removeAttribute" | "load"
+>;
 
 interface CooldownReservation {
   playedAt: number;
@@ -30,7 +35,7 @@ interface CooldownReservation {
 type CueState =
   | { phase: "ready" }
   | { phase: "pending"; timer: ReturnType<typeof setTimeout> }
-  | { phase: "playing"; element: HTMLAudioElement }
+  | { phase: "playing"; element: SfxElement }
   | { phase: "finished" };
 
 interface Cue {
@@ -96,7 +101,7 @@ export function createSfxPlayer(deps: SfxPlayerDependencies) {
         finish(cue);
         return;
       }
-      let element: HTMLAudioElement | undefined;
+      let element: SfxElement | undefined;
       try {
         element = deps.createElement(name);
       } catch {

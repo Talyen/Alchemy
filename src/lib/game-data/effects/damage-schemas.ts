@@ -3,7 +3,7 @@ import { AmountSchema, DamageTypeSchema, EnemyStatusDamageIdSchema, PositiveAmou
 
 export const DAMAGE_EFFECT_DEFINITIONS = [
   z
-    .object({
+    .strictObject({
       kind: z.literal("damage"),
       damageType: DamageTypeSchema,
       amount: AmountSchema,
@@ -11,51 +11,29 @@ export const DAMAGE_EFFECT_DEFINITIONS = [
       equalToBlock: z.boolean().optional(),
       equalToBlockPercent: z.number().int().min(1).max(100).optional(),
       equalToArmor: z.boolean().optional(),
-      equalToForge: z.boolean().optional(),
       forgeBonusPercent: z.number().int().min(1).max(100).optional(),
       ignoreArmor: z.boolean().optional(),
       ignoreBlock: z.boolean().optional(),
-      blockCost: PositiveAmountSchema.optional(),
-      blockDamageBonus: AmountSchema.optional(),
-      damageTypeIfTargetHasBlock: DamageTypeSchema.optional(),
       damageTypeIfTargetFrozen: DamageTypeSchema.optional(),
       amountIfTargetFrozen: AmountSchema.optional(),
-      equalToGoldPercent: z.number().int().min(0).max(100).optional(),
-      doubleIfEnemyBurning: z.boolean().optional(),
       doubleIfEnemyBleeding: z.boolean().optional(),
-      doubleIfEnemyNotBurning: z.boolean().optional(),
       tripleIfEnemyNotBurning: z.boolean().optional(),
       detonateAllBurn: z.boolean().optional(),
       detonateAllBleed: z.boolean().optional(),
-      detonateIfEnemyBurning: z.boolean().optional(),
       damageTypePool: z.array(DamageTypeSchema).min(2).optional(),
-    })
-    .refine((data) => (data.blockCost === undefined) === (data.blockDamageBonus === undefined), {
-      message: "Block payment requires both cost and damage bonus",
     })
     .refine((data) => (data.damageTypeIfTargetFrozen === undefined) === (data.amountIfTargetFrozen === undefined), {
       message: "Frozen alternative requires both damage type and amount",
     })
     .refine(
-      (data) => {
-        const conditions = [
-          data.blockCost !== undefined,
-          !!data.damageTypeIfTargetHasBlock,
-          !!data.damageTypeIfTargetFrozen,
-        ];
-        return (
-          conditions.filter(Boolean).length <= 1 &&
-          (!conditions.some(Boolean) ||
-            !(
-              data.damageTypePool !== undefined ||
-              data.equalToBlock === true ||
-              data.equalToArmor === true ||
-              data.equalToForge === true ||
-              data.forgeBonusPercent !== undefined ||
-              data.equalToGoldPercent !== undefined
-            ))
-        );
-      },
+      (data) =>
+        !data.damageTypeIfTargetFrozen ||
+        !(
+          data.damageTypePool !== undefined ||
+          data.equalToBlock === true ||
+          data.equalToArmor === true ||
+          data.forgeBonusPercent !== undefined
+        ),
       { message: "Conditional damage cannot combine with another damage selector" },
     )
     .refine((data) => data.equalToBlockPercent === undefined || data.equalToBlock === true, {
@@ -63,26 +41,12 @@ export const DAMAGE_EFFECT_DEFINITIONS = [
     })
     .refine(
       (data) =>
-        [
-          data.equalToBlock,
-          data.equalToArmor,
-          data.equalToForge,
-          data.forgeBonusPercent !== undefined,
-          data.equalToGoldPercent !== undefined,
-        ].filter(Boolean).length <= 1,
+        [data.equalToBlock, data.equalToArmor, data.forgeBonusPercent !== undefined].filter(Boolean).length <= 1,
       {
-        message: "damage effect must have at most one of equalToBlock/equalToArmor/equalToForge/equalToGoldPercent",
+        message: "damage effect must have at most one of equalToBlock/equalToArmor/forgeBonusPercent",
       },
-    )
-    .refine(
-      (data) =>
-        [data.doubleIfEnemyBurning, data.doubleIfEnemyNotBurning, data.tripleIfEnemyNotBurning].filter(Boolean)
-          .length <= 1,
-      { message: "damage effect must have at most one Burning damage multiplier" },
-    )
-    .refine((data) => !(data.detonateAllBurn && data.detonateIfEnemyBurning), {
-      message: "damage effect cannot have both detonateAllBurn and detonateIfEnemyBurning",
-    }),
+    ),
+
   z.object({
     kind: z.literal("self-damage"),
     damageType: EnemyStatusDamageIdSchema,

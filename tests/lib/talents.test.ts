@@ -10,7 +10,7 @@ import {
   getTalentKeywordProgress,
   normalizeUnlockedTalents,
   computeRunEndTalentXPSnapshot,
-  mergeRunTalentXPIntoPermanent,
+  mergeTalentXPAwards,
 } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 
@@ -72,8 +72,9 @@ describe("run-end talent XP", () => {
   it("settles exactly the rounded recap awards into permanent XP without losing other keywords", () => {
     const run = Object.freeze({ burn: 3, physical: 5 });
     const permanent = Object.freeze({ burn: 10, health: 20 });
-    expect(computeRunEndTalentXPSnapshot(run, 0.5)).toEqual({ burn: 2, physical: 3 });
-    expect(mergeRunTalentXPIntoPermanent(run, permanent, 0.5)).toEqual({ burn: 12, physical: 3, health: 20 });
+    const awards = Object.freeze(computeRunEndTalentXPSnapshot(run, 0.5));
+    expect(awards).toEqual({ burn: 2, physical: 3 });
+    expect(mergeTalentXPAwards(permanent, awards)).toEqual({ burn: 12, physical: 3, health: 20 });
     expect(run).toEqual({ burn: 3, physical: 5 });
     expect(permanent).toEqual({ burn: 10, health: 20 });
   });
@@ -81,7 +82,7 @@ describe("run-end talent XP", () => {
   it("ignores malformed entries in both the recap and permanent award", () => {
     const run = { burn: "bad", physical: 3 } as unknown as { burn: number; physical: number };
     expect(computeRunEndTalentXPSnapshot(run, 1)).toEqual({ physical: 3 });
-    expect(mergeRunTalentXPIntoPermanent(run, { burn: 10 }, 1)).toEqual({ burn: 10, physical: 3 });
+    expect(mergeTalentXPAwards({ burn: 10 }, computeRunEndTalentXPSnapshot(run, 1))).toEqual({ burn: 10, physical: 3 });
   });
 });
 

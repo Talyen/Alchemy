@@ -1,4 +1,4 @@
-import { CORRUPTION_MIN_VALUE, PERCENT_DENOMINATOR } from "@/lib/game-constants";
+import { CORRUPTION_MIN_VALUE } from "@/lib/game-constants";
 import {
   getCardDescription,
   mapEffectChildren,
@@ -15,7 +15,6 @@ export type { CorruptionTarget } from "./numeric-targets";
 
 export function updateCardNumericValue(card: BattleCard, target: CorruptionTarget, nextValue: number): BattleCard {
   if (!Number.isFinite(nextValue) || !target.edits.length) return card;
-  if (target.field === "equalToGoldPercent") nextValue = Math.min(PERCENT_DENOMINATOR, nextValue);
   if (nextValue === target.value) return card;
   const description = getCardDescription(card);
   let foundToken = false;
@@ -65,7 +64,6 @@ export function updateCardNumericValue(card: BattleCard, target: CorruptionTarge
 
 export function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delta: number): BattleCard {
   let nextValue = Math.max(CORRUPTION_MIN_VALUE, target.value + delta);
-  if (target.field === "equalToGoldPercent") nextValue = Math.min(PERCENT_DENOMINATOR, nextValue);
   const source = getCorruptionTargetEffect(card, target);
   if (source?.kind === "companion-action") nextValue = Math.max(1, nextValue);
   if (

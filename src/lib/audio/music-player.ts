@@ -48,6 +48,7 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
   const musicTracks = new Map<string, MusicTrackRecord>();
   let playback: MusicPlayback = { phase: "idle" };
   let bossPreviewKey: string | null = null;
+  let playAttempt: object | null = null;
 
   function cancelTransition(): void {
     if ("timer" in playback && playback.timer !== null) deps.cancel(playback.timer);
@@ -74,13 +75,15 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
   }
 
   function playElement(el: MusicElement): void {
+    const attempt = {};
+    playAttempt = attempt;
     if (!deps.canPlay()) {
       el.muted = true;
       el.pause();
       return;
     }
     const reportFailure = () => {
-      deps.reportFailure("Music playback blocked until user interaction");
+      if (playAttempt === attempt) deps.reportFailure("Music playback blocked until user interaction");
     };
     try {
       void Promise.resolve(el.play()).catch(reportFailure);
@@ -95,12 +98,13 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
     const catalog = MUSIC_CATALOG[key];
     const file = deps.selectFile(catalog?.files ?? []);
     if (!catalog || !file) return undefined;
-    let element: MusicElement;
+    let element: MusicElement | undefined;
     try {
       element = deps.createElement(file);
       element.loop = true;
       if (catalog.skipSeconds) element.currentTime = catalog.skipSeconds;
     } catch {
+      if (element) releaseAudioElement(element);
       deps.reportFailure("Music track could not be initialized");
       return undefined;
     }
@@ -209,6 +213,7 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
   }
 
   function pauseAllMusic(): void {
+    playAttempt = null;
     cancelTransition();
     bossPreviewKey = null;
     for (const { element } of musicTracks.values()) {
@@ -223,24 +228,29 @@ export function createMusicPlayer(deps: MusicPlayerDependencies) {
     const pending = playback.phase === "fading-out" && playback.destination === key;
     if (active || pending) {
       cancelTransition();
-      if (active) playback = { phase: "idle" };
-      else if (playback.phase !== "idle") applyTrackVolume(playback.track, 1);
+      if (active) {
+        playAttempt = null;
+        playback = { phase: "idle" };
+      } else if (playback.phase !== "idle") applyTrackVolume(playback.track, 1);
       bossPreviewKey = null;
     }
     const track = musicTracks.get(key);
     if (track) {
-      track.element.currentTime = 0;
-      releaseAudioElement(track.element);
       musicTracks.delete(key);
+      releaseAudioElement(track.element);
     }
   }
 
   /** Release this player's tracks and timers; subsequent requests start a fresh lifetime. */
   function reset(): void {
-    pauseAllMusic();
-    for (const { element } of musicTracks.values()) releaseAudioElement(element);
-    musicTracks.clear();
+    cancelTransition();
+    playAttempt = null;
+    bossPreviewKey = null;
     playback = { phase: "idle" };
+    for (const [key, { element }] of musicTracks) {
+      musicTracks.delete(key);
+      releaseAudioElement(element);
+    }
   }
 
   /**

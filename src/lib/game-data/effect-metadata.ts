@@ -3,29 +3,21 @@ import { effectChildren } from "./effect-tree";
 import { createEffectDescription } from "./effect-description";
 import { renderCardDescription, type CardDescription } from "./card-description-model";
 import { DAMAGE_TYPES } from "./types";
-import type { BattleCard, BattleCardEffect, EnemyStatusId, KeywordId } from "./types";
+import type { BattleCard, BattleCardEffect, KeywordId } from "./types";
 
 type EffectPresentation<K extends BattleCardEffect["kind"]> = (
   effect: Extract<BattleCardEffect, { kind: K }>,
 ) => KeywordId[];
-
-const ENEMY_STATUS_KEYWORDS: ReadonlySet<EnemyStatusId> = new Set(["burn", "poison", "bleed", "freeze", "stun"]);
-
-function isKeywordEnemyStatus(status: EnemyStatusId): status is Extract<EnemyStatusId, KeywordId> {
-  return ENEMY_STATUS_KEYWORDS.has(status);
-}
 
 const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } = {
   damage: (effect) =>
     dedupeKeywords(
       effect.damageTypePool?.length ? effect.damageTypePool : [effect.damageType],
       effect.lifesteal ? ["leech"] : [],
-      effect.damageTypeIfTargetHasBlock ? [effect.damageTypeIfTargetHasBlock] : [],
       effect.damageTypeIfTargetFrozen ? [effect.damageTypeIfTargetFrozen] : [],
-      effect.blockCost !== undefined || effect.equalToBlock ? ["block"] : [],
+      effect.equalToBlock ? ["block"] : [],
       effect.equalToArmor ? ["armor"] : [],
-      effect.equalToForge || effect.forgeBonusPercent !== undefined ? ["forge"] : [],
-      effect.equalToGoldPercent !== undefined ? ["gold"] : [],
+      effect.forgeBonusPercent !== undefined ? ["forge"] : [],
     ),
   "cleanse-player-status-to-damage": (effect) =>
     dedupeKeywords([effect.status, effect.damageType], effect.lifesteal ? ["leech"] : []),
@@ -44,7 +36,6 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
           : [],
       effect.perManaCrystal !== undefined || effect.convertCurrentMana !== undefined ? ["mana"] : [],
     ),
-  "enemy-status": (effect) => (isKeywordEnemyStatus(effect.status) ? [effect.status] : []),
   heal: () => ["health"],
   "restore-mana": () => ["mana"],
   "lose-mana": () => ["mana"],
@@ -53,7 +44,6 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
   "gain-gold": () => ["gold"],
   wish: (effect) => (effect.companionIfAbsent ? [] : ["wish"]),
   "summon-companion": () => ["companion"],
-  "buff-companion": () => ["companion"],
   "companion-action": () => ["companion"],
   "random-draw": () => [],
   "remove-harmful-status": () => [],

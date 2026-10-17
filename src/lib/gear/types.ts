@@ -106,29 +106,3 @@ export function normalizeEquippedTrinkets(value: Partial<EquippedTrinkets> | nul
   }
   return next;
 }
-
-export function normalizeGearLoadout(loadout: Partial<GearLoadout> | null | undefined): GearLoadout {
-  const next = createEmptyGearLoadout();
-  if (!loadout) return next;
-  for (const slot of GEAR_SLOTS) {
-    const value = loadout[slot];
-    if (value !== undefined) next[slot] = value;
-  }
-  return next;
-}
-
-export function normalizeExclusiveGearLoadouts(loadouts: GearLoadouts): GearLoadouts {
-  const seen = new Set<string>();
-  const next = createEmptyGearLoadouts();
-
-  for (const characterId of GEAR_CHARACTER_IDS) {
-    for (const slot of GEAR_SLOTS) {
-      const instanceId = loadouts[characterId][slot];
-      if (!instanceId || seen.has(instanceId)) continue;
-      seen.add(instanceId);
-      next[characterId][slot] = instanceId;
-    }
-  }
-
-  return next;
-}

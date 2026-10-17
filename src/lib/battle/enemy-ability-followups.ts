@@ -68,62 +68,62 @@ export function applyAbilityFollowups(
   if (getBattleOutcome(nextState) !== null) return nextState;
   if (context.landed && hasEnemyTrait(nextState, "banshee", context.traitSet)) {
     const purged = purgeOnePlayerBenefit(nextState, combatTexts);
-    if (purged.purged) nextState = recordEnemyAbilityActivation(purged.state, "banshee");
+    if (purged.purged)
+      nextState = resolvePendingBattleReactions(recordEnemyAbilityActivation(purged.state, "banshee"), combatTexts);
   }
+  if (getBattleOutcome(nextState) !== null) return nextState;
   if (nextState.enemyStatuses.onAttackBleed > 0) {
     const amount = nextState.enemyStatuses.onAttackBleed;
-    nextState = resolveFollowUpHit(
-      setEnemyStatus(nextState, "onAttackBleed", 0),
-      { source: "player-follow-up", damageType: "bleed", amount },
+    nextState = resolvePendingBattleReactions(
+      resolveFollowUpHit(
+        setEnemyStatus(nextState, "onAttackBleed", 0),
+        { source: "player-follow-up", damageType: "bleed", amount },
+        combatTexts,
+      ),
       combatTexts,
     );
   }
   if (getBattleOutcome(nextState) !== null) return nextState;
   // Purged Thorns stay purged: the retaliation check below sees zero stacks, so no Nature damage fires.
-  if (context.landed && nextState.playerStatuses.thorns > 0) {
-    const amount =
-      nextState.playerStatuses.thorns +
-      nextState.gearEffects.flatThornsDamage +
-      (nextState.playerStatuses.block > 0 ? nextState.gearEffects.thornsDamageWhileBlocked : 0);
-    let thornsHealthDamage = 0;
-    nextState = resolveSecondaryAction(setPlayerStatus(nextState, "thorns", 0), "retaliation", (current) =>
-      resolveFollowUpHit(
-        current,
-        {
-          source: "player-follow-up",
-          damageType: "nature",
-          amount,
-          onDamageDealt: (damage) => {
-            thornsHealthDamage = damage;
-          },
+  if (!context.landed || nextState.playerStatuses.thorns <= 0) return nextState;
+  const amount =
+    nextState.playerStatuses.thorns +
+    nextState.gearEffects.flatThornsDamage +
+    (nextState.playerStatuses.block > 0 ? nextState.gearEffects.thornsDamageWhileBlocked : 0);
+  let thornsHealthDamage = 0;
+  nextState = resolveSecondaryAction(setPlayerStatus(nextState, "thorns", 0), "retaliation", (current) =>
+    resolveFollowUpHit(
+      current,
+      {
+        source: "player-follow-up",
+        damageType: "nature",
+        amount,
+        onDamageDealt: (damage) => {
+          thornsHealthDamage = damage;
         },
-        combatTexts,
-      ),
+      },
+      combatTexts,
+    ),
+  );
+  nextState = resolvePendingBattleReactions(nextState, combatTexts);
+  if (getBattleOutcome(nextState) === "defeat" || thornsHealthDamage <= 0) return nextState;
+  if (nextState.gearEffects.armorOnThornsDamage > 0) {
+    nextState = applyArmorReward(nextState, nextState.gearEffects.armorOnThornsDamage, combatTexts);
+  }
+  if (nextState.gearEffects.healOnFirstThornsDamageEachTurn > 0 && !nextState.flags.spitefulHealedThisTurn) {
+    nextState = applyHealingWithCombatText(
+      nextState,
+      nextState.gearEffects.healOnFirstThornsDamageEachTurn,
+      combatTexts,
     );
-    nextState = resolvePendingBattleReactions(nextState, combatTexts);
-    if (getBattleOutcome(nextState) === "defeat") return nextState;
-    if (thornsHealthDamage > 0 && nextState.gearEffects.armorOnThornsDamage > 0) {
-      nextState = applyArmorReward(nextState, nextState.gearEffects.armorOnThornsDamage, combatTexts);
-    }
-    if (
-      thornsHealthDamage > 0 &&
-      nextState.gearEffects.healOnFirstThornsDamageEachTurn > 0 &&
-      !nextState.flags.spitefulHealedThisTurn
-    ) {
-      nextState = applyHealingWithCombatText(
-        nextState,
-        nextState.gearEffects.healOnFirstThornsDamageEachTurn,
-        combatTexts,
-      );
-      nextState = { ...nextState, flags: { ...nextState.flags, spitefulHealedThisTurn: true } };
-    }
-    if (thornsHealthDamage > 0 && nextState.gearEffects.poisonOnThornsDamage > 0) {
-      nextState = resolveFollowUpHit(
-        nextState,
-        { source: "player-follow-up", damageType: "poison", amount: nextState.gearEffects.poisonOnThornsDamage },
-        combatTexts,
-      );
-    }
+    nextState = { ...nextState, flags: { ...nextState.flags, spitefulHealedThisTurn: true } };
+  }
+  if (nextState.gearEffects.poisonOnThornsDamage > 0) {
+    nextState = resolveFollowUpHit(
+      nextState,
+      { source: "player-follow-up", damageType: "poison", amount: nextState.gearEffects.poisonOnThornsDamage },
+      combatTexts,
+    );
   }
   return nextState;
 }

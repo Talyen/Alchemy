@@ -31,18 +31,12 @@ import { prepareEnemyDamage, calculateBlockAndArmorMitigation } from "./enemy-da
 import { getEncounterEnemyAbility } from "./enemy-description";
 import { gearFrozenDamageMultiplier, prepareScaledEnemyHit } from "./scaled-damage";
 import { addEnemyStatus, addPlayerStatus, setPlayerStatus, setEnemyStatus } from "./status-state";
-import {
-  applyPlayerCombatDamage,
-  mitigatePlayerCombatDamage,
-  playerHealthLostToDamage,
-  damageEnemyHealth,
-} from "./health-state";
+import { applyPlayerCombatDamage, playerHealthLostToDamage, damageEnemyHealth } from "./health-state";
 import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { hasEnemyTrait, hasEncounterBenefit } from "./encounter-trait-state";
 import { resolveSecondaryAction } from "./action-context";
 import { BATTLE_CONFIG, BLEED_STATUS_MULTIPLIER } from "../game-constants";
-import { armorMitigatesElementalDamage, reduceDamageByMana, getEnemyDamageMultiplier } from "./status-helpers";
-import { scaleReceivedPlayerDamage } from "./damage-modifiers";
+import { mitigatePlayerStatusDamage, getEnemyDamageMultiplier } from "./status-helpers";
 import {
   resolveCrowdControlBonuses,
   resolveEnemyStun,
@@ -85,7 +79,6 @@ function flatAttack(effect: DamageEffect, amount: number): DamageEffect {
     ...(effect.ignoreArmor ? { ignoreArmor: true } : {}),
     ...(effect.ignoreBlock ? { ignoreBlock: true } : {}),
     ...(effect.detonateAllBurn ? { detonateAllBurn: true } : {}),
-    ...(effect.detonateIfEnemyBurning ? { detonateIfEnemyBurning: true } : {}),
     ...(effect.detonateAllBleed ? { detonateAllBleed: true } : {}),
   };
 }
@@ -432,37 +425,28 @@ export function getBattleDamageInspectionCard(
   ): { effect: DamageEffect; state: BattleState; followUp?: DamageEffect } {
     if (!enemy && (isPlayerDefeated(current) || current.enemyHealth <= 0))
       return { effect: flatAttack(effect, 0), state: current };
-    const selected = resolveConditionalCardDamage(effect, {
-      actorBlock: enemy ? current.enemyMitigation.block : current.playerStatuses.block,
-      targetBlock: enemy ? current.playerStatuses.block : current.enemyMitigation.block,
-      targetFrozen: (enemy ? current.playerCC : current.enemyCC).freezeSkipTurns > 0,
-    });
+    const selected = resolveConditionalCardDamage(
+      effect,
+      (enemy ? current.playerCC : current.enemyCC).freezeSkipTurns > 0,
+    );
     if (enemy) {
-      const spent = {
-        ...current,
-        enemyMitigation: { ...current.enemyMitigation, block: current.enemyMitigation.block - selected.blockSpent },
-      };
-      const prepared = prepareEnemyAbilityDamage(spent, selected.effect, current.flags.enemyBrawlerDamagePenalty);
-      const power = prepareEnemyDamage(spent, prepared.damage, {
+      const prepared = prepareEnemyAbilityDamage(current, selected, current.flags.enemyBrawlerDamagePenalty);
+      const power = prepareEnemyDamage(current, prepared.damage, {
         amountMultiplier: prepared.amountMultiplier,
         flatBonus: prepared.flatBonus,
         ignorePlayerMitigation: true,
       }).attemptedDamage;
       return {
-        effect: flatAttack(selected.effect, power),
+        effect: flatAttack(selected, power),
         state:
           prepared.banditBonus && power > 0
-            ? { ...spent, flags: { ...spent.flags, enemyFirstHitDoubleUsed: true } }
-            : spent,
+            ? { ...current, flags: { ...current.flags, enemyFirstHitDoubleUsed: true } }
+            : current,
       };
     }
-    const spent = {
-      ...current,
-      playerStatuses: { ...current.playerStatuses, block: current.playerStatuses.block - selected.blockSpent },
-    };
-    const consumed = consumeAttackPacketFlags(spent, {
-      ...selected.effect,
-      amount: applyPotionMultiplier(selected.effect.amount, potionMult),
+    const consumed = consumeAttackPacketFlags(current, {
+      ...selected,
+      amount: applyPotionMultiplier(selected.amount, potionMult),
     });
     const armorBonus =
       consumed.packet.damageType === "stun" && current.gearEffects.armorIncreasesStun > 0
@@ -470,7 +454,7 @@ export function getBattleDamageInspectionCard(
         : 0;
     const baseDamageBonus = consumed.packet.damageType === "physical" ? consumed.physicalBonus : 0;
     if (armorBonus <= 0 && computeBaseDamage(consumed.state, consumed.packet, { card, bonus: baseDamageBonus }) <= 0)
-      return { effect: flatAttack(consumed.packet, 0), state: spent };
+      return { effect: flatAttack(consumed.packet, 0), state: current };
     const shatter =
       consumed.packet.damageType === "physical" &&
       canShatter(consumed.state) &&
@@ -505,7 +489,6 @@ export function getBattleDamageInspectionCard(
       card,
       {
         manaAtStart: consumed.state.mana,
-        enemyFreezeSkipTurnsAtStart: consumed.state.enemyCC.freezeSkipTurns,
         origin: "played-card",
         baseDamageBonus,
         guaranteedCrit,
@@ -572,9 +555,7 @@ export function getBattleDamageInspectionCard(
       }
       for (const status of ["burn", "bleed"] as const) {
         if (
-          (status === "burn" &&
-            (consumed.packet.detonateAllBurn ||
-              (consumed.packet.detonateIfEnemyBurning && current.enemyStatuses.burn > 0))) ||
+          (status === "burn" && consumed.packet.detonateAllBurn) ||
           (status === "bleed" && consumed.packet.detonateAllBleed)
         ) {
           const detonated = projectEnemyDotDamage(after, status);
@@ -734,7 +715,6 @@ export function getBattleDamageInspectionCard(
             {
               ...context,
               manaAtStart: context?.manaAtStart ?? current.mana,
-              enemyFreezeSkipTurnsAtStart: context?.enemyFreezeSkipTurnsAtStart ?? current.enemyCC.freezeSkipTurns,
               baseDamageBonus: bonus,
             },
             "prepared-only",
@@ -857,15 +837,7 @@ export function getBattleDamageInspectionCard(
         return projected;
       }
       if (!enemy && effect.kind === "self-damage") {
-        const incoming = scaleReceivedPlayerDamage(
-          reduceDamageByMana(current, effect.amount),
-          current.talentEffects,
-          effect.damageType,
-        );
-        const resisted = mitigatePlayerCombatDamage(current, incoming, effect.damageType);
-        const damage = armorMitigatesElementalDamage(current, effect.damageType)
-          ? Math.max(0, resisted - current.playerStatuses.armor)
-          : resisted;
+        const damage = mitigatePlayerStatusDamage(current, effect.amount, effect.damageType);
         const before = current;
         current = applyPlayerCombatDamage(current, damage, "self", effect.damageType, { ignoreMitigation: true });
         current = addPlayerStatus(current, effect.damageType, playerHealthLostToDamage(before, current));
@@ -920,7 +892,6 @@ export function getBattleDamageInspectionCard(
             applyCardUtilityEffect(utilityHandlers, current, card, effect, potionMult, [], {
               origin: "played-card",
               manaAtStart: snapshot.mana,
-              enemyFreezeSkipTurnsAtStart: snapshot.enemyCC.freezeSkipTurns,
             }) ?? current;
       }
       if (enemy && effect.kind === "player-status" && ["forge", "block", "armor"].includes(effect.status)) {

@@ -22,7 +22,6 @@ it("settles an Obsidian Hammer kill before paying the parent Leech without addin
   const texts: CombatTextEvent[] = [];
   const result = applyCardEffects(state, card, texts, {
     manaAtStart: state.mana,
-    enemyFreezeSkipTurnsAtStart: 0,
     origin: "played-card",
   });
   expect(result).toMatchObject({

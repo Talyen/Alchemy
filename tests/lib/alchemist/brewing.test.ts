@@ -17,7 +17,6 @@ describe("brewing content", () => {
     { kind: "player-status", status: "block", amount: 0, perManaCrystal: 2 },
     { kind: "damage", damageType: "holy", amount: 0, equalToBlock: true },
     { kind: "damage", damageType: "holy", amount: 0, equalToArmor: true },
-    { kind: "damage", damageType: "burn", amount: 0, equalToForge: true },
   ])("rejects distilling an unused base amount in %j", (effect) => {
     const card = makeTestCard({ id: "health-potion", effects: [effect] });
     expect(strengthenPotion(card)).toBeNull();
@@ -33,7 +32,6 @@ describe("brewing content", () => {
         damageTypeIfTargetFrozen: "freeze",
         amountIfTargetFrozen: 8,
       },
-      { kind: "damage", damageType: "physical", amount: 3, blockCost: 2, blockDamageBonus: 4 },
       { kind: "player-status", status: "block", statusPool: ["block", "forge", "armor"], amount: 5, forgeAmount: 2 },
       { kind: "damage", damageType: "freeze", amount: 2, damageTypeIfTargetFrozen: "freeze", amountIfTargetFrozen: 4 },
     ];
@@ -41,9 +39,8 @@ describe("brewing content", () => {
     const strengthened = strengthenPotion(card)!;
     expect(strengthened.effects).toEqual([
       { ...effects[0], amount: 3, amountIfTargetFrozen: 9 },
-      { ...effects[1], amount: 4, blockDamageBonus: 5 },
-      { ...effects[2], amount: 6, forgeAmount: 3 },
-      { ...effects[3], amount: 3, amountIfTargetFrozen: 6 },
+      { ...effects[1], amount: 6, forgeAmount: 3 },
+      { ...effects[2], amount: 3, amountIfTargetFrozen: 6 },
     ]);
     const magnitudes = getCardDescription(strengthened).flatMap((line) =>
       line.parts.filter((part) => typeof part !== "string"),
@@ -112,7 +109,7 @@ describe("brewing content", () => {
     const protectedEffects = [
       { kind: "player-status" as const, status: "haste" as const, amount: 1 },
       { kind: "player-status" as const, status: "block" as const, amount: 2, convertCurrentMana: 3 },
-      { kind: "damage" as const, damageType: "holy" as const, amount: 50, equalToGoldPercent: 50 },
+      { kind: "damage" as const, damageType: "holy" as const, amount: 0, equalToBlock: true },
     ];
     const card = makeTestCard({
       id: "health-potion",
@@ -157,7 +154,7 @@ describe("brewing content", () => {
   });
 });
 
-it("rejects brewing beyond saved-effect bounds before replacing ingredients or charging for Distill", () => {
+it("rejects unsupported Distill amounts but keeps valid ingredients when their combined amount exceeds the bound", () => {
   const effects: BattleCardEffect[] = [{ kind: "heal", amount: 999 }];
   const potion = withCardDescription(
     makeTestCard({ id: "health-potion", consume: true, effects }),
@@ -168,6 +165,8 @@ it("rejects brewing beyond saved-effect bounds before replacing ingredients or c
     { ...potion, effects: [{ kind: "heal", amount: 500 }] },
     createEffectDescription([{ kind: "heal", amount: 500 }]),
   );
-  expect(tryCreateMixedPotion(half, half)).toBeNull();
+  const mixed = tryCreateMixedPotion(half, half)!;
+  expect(mixed.effects).toEqual([...half.effects, ...half.effects]);
+  expect(hydrateCard(BattleCardSchema.parse(mixed))).toEqual(mixed);
   expect(BattleCardSchema.parse(potion).effects).toEqual(effects);
 });

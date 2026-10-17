@@ -37,6 +37,10 @@ describe("saved card content restoration", () => {
   });
 
   it.each([
+    [
+      "unsupported damage selector",
+      { effects: [{ kind: "damage", damageType: "holy", amount: 2, retiredSelector: true }] },
+    ],
     ["one invalid effect", { effects: [modifiedCard.effects[0], { kind: "missing-effect" }] }],
     [
       "invalid nested effect",

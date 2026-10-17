@@ -36,10 +36,10 @@ import { GearInstanceArraySchema } from "./gear-schemas";
 import {
   createEmptyGearInventories,
   createEmptyGearLoadouts,
+  createEmptyGearLoadout,
   createEmptyEquippedTrinkets,
   GEAR_CHARACTER_IDS,
   flattenGearInventories,
-  normalizeGearLoadout,
   type GearInventories,
   type GearLoadouts,
   type EquippedTrinkets,
@@ -72,12 +72,16 @@ const GearInventoriesSchema = z
     return unique;
   });
 const GearLoadoutSchema = z
-  .record(z.string(), z.union([z.string(), z.null()]))
-  .catch({})
-  .transform((raw) => normalizeGearLoadout(raw));
-const emptyGearLoadouts = createEmptyGearLoadouts();
+  .object({
+    "main-hand": z.string().nullable().catch(null),
+    "off-hand": z.string().nullable().catch(null),
+    body: z.string().nullable().catch(null),
+    "left-accessory": z.string().nullable().catch(null),
+    "right-accessory": z.string().nullable().catch(null),
+  })
+  .catch(createEmptyGearLoadout);
 const GearLoadoutsSchema = z
-  .object(characterShape((id) => GearLoadoutSchema.catch(emptyGearLoadouts[id as keyof typeof emptyGearLoadouts])))
+  .object(characterShape(() => GearLoadoutSchema))
   .transform((loadouts) => loadouts as GearLoadouts);
 const EquippedTrinketsSchema = z
   .object(characterShape(() => z.string().nullable().catch(null)))

@@ -108,19 +108,6 @@ describe("gameplay five bugs regressions", () => {
       const score = getEffectiveDamageScore(armorDamageCard, state);
       expect(score).toBe(12);
     });
-
-    it("scores equalToGoldPercent damage according to player Gold", () => {
-      const state = patchBattleState({
-        gold: 50,
-      });
-      const goldDamageCard = makeTestCard({
-        cost: 1,
-        effects: [{ kind: "damage", damageType: "physical", amount: 0, equalToGoldPercent: 10 }],
-      });
-
-      const score = getEffectiveDamageScore(goldDamageCard, state);
-      expect(score).toBe(5);
-    });
   });
 
   describe("5. Enemy Conditional Flat Attack Trait Scaling", () => {

@@ -129,7 +129,7 @@ export const coreCards: BattleCard[] = [
     id: "sanctified-plate",
     effects: [
       { kind: "player-status", status: "armor", amount: 1 },
-      { kind: "damage", damageType: "holy", amount: 0, equalToArmor: true },
+      { kind: "damage", damageType: "holy", amount: 2 },
     ],
   }),
   cardBuilders.effectsCard({
@@ -165,7 +165,6 @@ export const coreCards: BattleCard[] = [
     effects: [
       { kind: "remove-harmful-status", amount: 1 },
       { kind: "damage", damageType: "burn", amount: 1 },
-      { kind: "self-damage", damageType: "burn", amount: 1 },
     ],
   }),
   cardBuilders.effectsCard({

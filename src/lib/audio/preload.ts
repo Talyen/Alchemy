@@ -11,22 +11,18 @@ const htmlPreloadTimers = new Map<HTMLAudioElement, ReturnType<typeof setTimeout
 let preloadAllSoundsStarted = false;
 let preloadGeneration = 0;
 
-function clearStallTimer(el: HTMLAudioElement): void {
+function finishPreloadElement(el: HTMLAudioElement): boolean {
   const timer = htmlPreloadTimers.get(el);
-  if (timer !== undefined) {
-    clearTimeout(timer);
-    htmlPreloadTimers.delete(el);
-  }
-}
-
-function finishPreloadElement(el: HTMLAudioElement): void {
-  clearStallTimer(el);
+  if (timer === undefined) return false;
+  clearTimeout(timer);
+  htmlPreloadTimers.delete(el);
   el.oncanplaythrough = null;
   el.onerror = null;
+  return true;
 }
 
 function abortPreloadElement(el: HTMLAudioElement) {
-  finishPreloadElement(el);
+  if (!finishPreloadElement(el)) return;
   // Shared with `stopAllSfx`: releasing the source plus load() frees the
   // element for collection instead of leaving a stalled fetch attached.
   releaseAudioElement(el);
@@ -54,9 +50,9 @@ export function preloadSounds(names: readonly string[] | string[]) {
     try {
       el = new Audio();
       const warming = el;
-      warming.preload = "auto";
       const stallTimer = setTimeout(() => abortPreloadElement(warming), STALLED_PRELOAD_TIMEOUT_MS);
       htmlPreloadTimers.set(warming, stallTimer);
+      warming.preload = "auto";
       warming.oncanplaythrough = () => finishPreloadElement(warming);
       warming.onerror = () => abortPreloadElement(warming);
       warming.src = getSoundUrl(name);

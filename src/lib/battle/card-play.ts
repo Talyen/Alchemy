@@ -167,7 +167,6 @@ export function playBattleCardResolved(
     guaranteedCrit: prepared.critical,
     damageEffects: prepared.damageEffects,
     manaAtStart: paymentState.mana,
-    enemyFreezeSkipTurnsAtStart: paymentState.enemyCC.freezeSkipTurns,
     hadNoThornsOnPlay: state.playerStatuses.thorns === 0,
   });
   let nextState = finishUniqueCardDamage(played.state, card, prepared, combatTexts);

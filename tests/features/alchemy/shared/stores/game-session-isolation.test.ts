@@ -272,10 +272,10 @@ describe("independent game sessions", () => {
       const price = shop.getCardBuyPrice(card);
       const gold = readRunProfile(a.session).gold;
       const deckSize = readActiveRun(a.session).runDeck.length;
-      expect(shop.buyCard(card, key)).toBe(true);
+      expect(shop.buyCard(key)).toBe(true);
       expect(readRunProfile(a.session).gold).toBe(gold - price);
       expect(readActiveRun(a.session).runDeck).toHaveLength(deckSize + 1);
-      expect(shop.buyCard(card, key)).toBe(false);
+      expect(shop.buyCard(key)).toBe(false);
       expect(stateDigest(b.session)).toBe(beforeB);
       expect(bCommits).not.toHaveBeenCalled();
 

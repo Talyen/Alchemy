@@ -14,19 +14,19 @@ for every action or change the intentional silent-content registrations below.
 
 ## Ownership
 
-| Concern                              | Owner                                                                                                                                                                             |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Playback host, cache, music, and SFX | `src/lib/audio/index.ts` (facade) + `host.ts`, `sfx.ts`, `music.ts`, `music-player.ts`, `state.ts`, `preload.ts`, `volume.ts`, `url.ts`, `element.ts`, `reset.ts`                 |
-| Player volume values and bounds      | Defaults in `src/lib/game-constants/settings.ts`, ranges in `src/lib/settings-values.ts`, live pct in `settings-store.ts`, runtime fraction in `src/lib/audio/state.ts`           |
-| Sound-to-content registration        | `src/lib/audio/sound-registry.ts` + `COMPANION_SOUND_CARD_IDS` in `src/lib/game-constants/audio.ts`                                                                               |
-| Screen ambience loops                | `src/lib/audio/ambience.ts`, screen mappings in `sound-registry.ts`, lifecycle in `useAppAudioEffects`                                                                            |
-| Single music catalog and boss map    | `src/lib/audio/music-catalog.ts` (`MUSIC_CATALOG`, boss lookup, volume curve)                                                                                                     |
-| Bestiary boss preview                | `src/lib/audio/music.ts` (`previewBossMusic`/`endBossPreview`), called by `collection-screen.tsx`                                                                                 |
-| App lifecycle wiring                 | `src/app/use-app-effects.ts` (`useAppAudioEffects`)                                                                                                                               |
-| Desktop capability                   | `src/lib/audio/host.ts` reads `src/lib/desktop-api.ts` (foreign Electron hosts stay silent)                                                                                       |
-| Authored files and optimized outputs | [WORKFLOWS-ASSETS.md](./WORKFLOWS-ASSETS.md#add-or-replace-sound)                                                                                                                 |
-| Playback test setup                  | `tests/helpers/audio-fixture.ts` (`installCleanAudio`) over `resetAudioRuntimeForTests()` in `src/lib/audio/reset.ts`; `tests/helpers/fake-audio.ts` only for mid-test stub swaps |
-| Asset/pipeline test                  | `tests/lib/audio/audio-assets.test.ts` (disk + `scripts/assets/*` validators; run on registry/asset/pipeline changes)                                                             |
+| Concern                              | Owner                                                                                                                                                                                 |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Playback host, cache, music, and SFX | `src/lib/audio/index.ts` (facade) + `host.ts`, `sfx.ts`, `music.ts`, `music-player.ts`, `state.ts`, `preload.ts`, `volume.ts`, `url.ts`, `element.ts`, `reset.ts`                     |
+| Player volume values and bounds      | Defaults in `src/lib/game-constants/settings.ts`, ranges in `src/lib/settings-values.ts`, live pct in `settings-store.ts`, runtime fraction in `src/lib/audio/state.ts`               |
+| Sound-to-content registration        | `src/lib/audio/sound-registry.ts` + `COMPANION_SOUND_CARD_IDS` in `src/lib/game-constants/audio.ts`                                                                                   |
+| Screen ambience loops                | `src/lib/audio/ambience.ts`, screen mappings in `sound-registry.ts`, lifecycle in `useAppAudioEffects`                                                                                |
+| Single music catalog and boss map    | `src/lib/audio/music-catalog.ts` (`MUSIC_CATALOG`, boss lookup, volume curve)                                                                                                         |
+| Bestiary boss preview                | `src/lib/audio/music.ts` (`previewBossMusic`/`endBossPreview`), called by `collection-screen.tsx`                                                                                     |
+| App lifecycle wiring                 | `src/app/use-app-effects.ts` (`useAppAudioEffects`)                                                                                                                                   |
+| Desktop capability                   | `src/lib/audio/host.ts` reads `src/lib/desktop-api.ts` (foreign Electron hosts stay silent)                                                                                           |
+| Authored files and optimized outputs | [WORKFLOWS-ASSETS.md](./WORKFLOWS-ASSETS.md#add-or-replace-sound)                                                                                                                     |
+| Playback test setup                  | `tests/helpers/fake-audio.ts` creates injected media for Node player tests; `tests/helpers/audio-fixture.ts` installs the shipping adapters and resets them for DOM integration tests |
+| Asset/pipeline test                  | `tests/lib/audio/audio-assets.test.ts` (disk + `scripts/assets/*` validators; run on registry/asset/pipeline changes)                                                                 |
 
 ## Local lyric alignment experiment
 
@@ -108,6 +108,10 @@ instance. Reset releases only that instance's media and timers. The catalog and
 volume curve live in `music-catalog.ts`, independent of browser initialization.
 Core lifecycle tests run in Node with injected media and scheduling; DOM suites
 protect the shipping adapter, settings, host recovery, and screen integration.
+Play attempts own their failure callbacks: pause, reset, invalidation, or a newer
+attempt revokes late failures. Failed track setup releases its partial media
+element. Invalidation releases the source without seeking a discarded track;
+reset revokes playback before releasing every cached source.
 
 - Starting a battle invalidates the upcoming enemy's battle music cache, even while the previous screen remains visible. It preserves menu playback until navigation selects the battle track. Invalidating the currently playing key forgets it entirely, so the next play builds a fresh track.
 - Invalidating either the playing track or the pending destination cancels the transition. Invalidating the playing track stops playback; invalidating only the destination restores the outgoing track to full gain. Unrelated cache invalidation leaves playback and its fade alone. A later explicit play can build the invalidated track afresh.
@@ -127,6 +131,11 @@ cancels timers, detaches handlers, and releases stopped media sources. Reset
 also disposes UI sounds and stingers. Cooldown reservations belong to the player;
 identity checks prevent an older failed play from clearing a newer reservation.
 Finished cues ignore late failure callbacks, including callbacks after reset.
+Core SFX scheduling, cooldown, and disposal tests use the injected Node player;
+the DOM adapter test protects cue routing, mute, and battle cleanup. Media release
+attempts pause, source removal, and reload independently so one failure cannot
+skip the remaining cleanup. Preload completion similarly revokes its handlers,
+including callbacks already queued before success or cancellation.
 
 - Successful shop refreshes and Potion mixes play their registered service sounds after the transaction commits, including free services. Card removal has no service cue; any paid Gold transaction still follows its separate spending feedback. Rejected services remain silent.
 - The first play of a sound has no cooldown; repeats inside `SFX_COOLDOWN_MS` are suppressed.

@@ -42,39 +42,43 @@ export function soundedFakeAudio(): FakeAudioElement[] {
   return createdFakeAudio.filter((element) => element.src !== "");
 }
 
+export function createFakeAudioElement(src = "", options: FakeAudioOptions = {}): FakeAudioElement {
+  const element: FakeAudioElement = {
+    src,
+    volume: 1,
+    muted: false,
+    preload: "",
+    currentTime: 0,
+    loop: false,
+    paused: true,
+    onended: null,
+    onerror: null,
+    oncanplaythrough: null,
+    play: vi.fn(() => {
+      if (options.rejectPlay) return Promise.reject(new Error("play rejected"));
+      element.paused = false;
+      return Promise.resolve();
+    }),
+    pause: vi.fn(() => {
+      element.paused = true;
+    }),
+    removeAttribute: vi.fn(),
+    load: vi.fn(),
+    canPlayType: vi.fn(() => options.canPlayTypeResult ?? "maybe"),
+  };
+  options.onCreate?.(element);
+  return element;
+}
+
 export function installFakeAudio(options: FakeAudioOptions = {}): void {
-  // Default to Vorbis support like production Chrome; pass "" explicitly to
-  // exercise the Safari MP3 fallback.
-  const { canPlayTypeResult = "maybe", rejectPlay = false, onCreate } = options;
   createdFakeAudio.length = 0;
   vi.stubGlobal(
     "Audio",
-    class implements FakeAudioElement {
-      src = "";
-      volume = 1;
-      muted = false;
-      preload = "";
-      currentTime = 0;
-      loop = false;
-      paused = true;
-      onended: (() => void) | null = null;
-      onerror: (() => void) | null = null;
-      oncanplaythrough: (() => void) | null = null;
-      play = vi.fn(() => {
-        if (rejectPlay) return Promise.reject(new Error("play rejected"));
-        this.paused = false;
-        return Promise.resolve();
-      });
-      pause = vi.fn(() => {
-        this.paused = true;
-      });
-      removeAttribute = vi.fn();
-      load = vi.fn();
-      canPlayType = vi.fn(() => canPlayTypeResult);
+    class {
       constructor(src?: string) {
-        this.src = src ?? "";
-        createdFakeAudio.push(this);
-        onCreate?.(this);
+        const element = createFakeAudioElement(src, options);
+        createdFakeAudio.push(element);
+        return element;
       }
     },
   );

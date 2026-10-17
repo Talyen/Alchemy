@@ -71,7 +71,6 @@ export function defaultBattleState(): BattleState {
     wishOptions: null,
     wishQueue: [],
     activeCompanion: null,
-    companionDamageBuff: 0,
     currentEnemy: {
       id: "skeleton",
       title: "Skeleton",

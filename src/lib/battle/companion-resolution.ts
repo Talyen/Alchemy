@@ -59,7 +59,6 @@ export function resolveCompanionAction(
     let afterEffects = port.afterAction(
       applyEffects(s, companionCard, combatTexts, {
         manaAtStart: s.mana,
-        enemyFreezeSkipTurnsAtStart: s.enemyCC.freezeSkipTurns,
         companionAttackBonus,
         origin: "companion",
         damageEffects,

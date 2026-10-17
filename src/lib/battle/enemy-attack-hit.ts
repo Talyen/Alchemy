@@ -62,7 +62,6 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
       damageEffects: repeatedDamageEffects,
       origin: "triggered-card",
       manaAtStart: nextState.mana,
-      enemyFreezeSkipTurnsAtStart: nextState.enemyCC.freezeSkipTurns,
     });
     nextState = applyMortarAndPestlePotionUse(nextState, drawn.card, combatTexts);
   }

@@ -235,7 +235,7 @@ export function offerRunChoices(
       activity.data.cards.forEach((card, index) => {
         const key = cardSlotKeyOf(card, index);
         if (!activity.data.purchasedSlotKeys.includes(key) && actions.getCardBuyPrice(card) <= profile.gold)
-          offer("buy-card", card.id, affinity(card) + 1, () => actions.buyCard(card, key), index);
+          offer("buy-card", card.id, affinity(card) + 1, () => actions.buyCard(key), index);
       });
       if (!activity.data.removeUsed && run.runDeck.length > 10 && actions.getRemoveCardPrice() <= profile.gold)
         run.runDeck.forEach((card, index) =>
@@ -260,7 +260,7 @@ export function offerRunChoices(
       activity.data.potions.forEach((card, index) => {
         const key = cardSlotKeyOf(card, index);
         if (!activity.data.purchasedSlotKeys.includes(key) && actions.getPotionBuyPrice(card) <= profile.gold)
-          offer("buy-potion", card.id, 1, () => actions.buyPotion(card, key), index);
+          offer("buy-potion", card.id, 1, () => actions.buyPotion(key), index);
       });
       offer("shop-continue", "continue", 0, () => flow.advanceToNextDestination(activity.kind));
       break;
@@ -270,7 +270,7 @@ export function offerRunChoices(
       activity.data.trinkets.forEach((trinket, index) => {
         const key = shopItemSlotKey(trinket.id, index);
         if (!activity.data.purchasedSlotKeys.includes(key) && actions.getBuyPrice(trinket) <= profile.gold)
-          offer("buy-trinket", trinket.id, 1, () => actions.buy(trinket, key), index);
+          offer("buy-trinket", trinket.id, 1, () => actions.buy(key), index);
       });
       offer("shop-continue", "continue", 0, () => flow.advanceToNextDestination(activity.kind));
       break;
@@ -280,7 +280,7 @@ export function offerRunChoices(
       activity.data.gear.forEach((gear, index) => {
         const key = gearSlotKeyOf(gear);
         if (!activity.data.purchasedSlotKeys.includes(key) && actions.getBuyPrice(gear) <= profile.gold)
-          offer("buy-gear", key, 1, () => actions.buy(gear, key), index);
+          offer("buy-gear", key, 1, () => actions.buy(key), index);
       });
       offer("shop-continue", "continue", 0, () => flow.advanceToNextDestination(activity.kind));
       break;

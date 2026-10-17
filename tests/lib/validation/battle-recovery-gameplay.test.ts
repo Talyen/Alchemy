@@ -34,6 +34,25 @@ function restore(patch: Record<string, unknown>) {
 const rng = () => 0.99;
 
 describe("playing recovered battles", () => {
+  it("drops undeclared battle fields while preserving live combat progress", () => {
+    const state = restore({
+      companionDamageBuff: 99,
+      pendingForgeThresholds: [5],
+      unknownReward: { gold: 100 },
+      battleMetrics: { enemyAttackActions: 7, enemyAbilityActivations: {} },
+      gold: 23,
+      turn: 4,
+      playerStatuses: { forge: 3 },
+    });
+    expect(state).not.toHaveProperty("companionDamageBuff");
+    expect(state).not.toHaveProperty("pendingForgeThresholds");
+    expect(state).not.toHaveProperty("unknownReward");
+    expect(state).not.toHaveProperty("battleMetrics");
+    expect(state).not.toHaveProperty("rng");
+    expect(state).toMatchObject({ gold: 23, turn: 4, playerStatuses: { forge: 3 } });
+    expect(playBattleCardResolved({ ...state, rng }, "slash", 0).state.enemyHealth).toBe(93);
+  });
+
   it("repairs broken pending material balances before reward settlement", () => {
     const missing = restore({ pendingMaterials: null });
     expect(missing.pendingMaterials).toEqual(emptyInventory());
@@ -112,7 +131,7 @@ describe("playing recovered battles", () => {
   });
 
   it("repairs combat magnitude fields before they enter attack arithmetic", () => {
-    const state = restore({ enemyPhysicalDamageBonus: "broken", companionDamageBuff: "broken" });
+    const state = restore({ enemyPhysicalDamageBonus: "broken" });
     const hit = processEnemyDamageEffect({ ...state, rng }, { kind: "damage", damageType: "physical", amount: 2 }, []);
     expect(hit.playerHealth).toBe(28);
     const companion = processCompanionTurnStart({ ...state, rng, activeCompanion: companionLibrary.skeleton }, []);
