@@ -31,6 +31,37 @@ function hasDirtyTree() {
   return result.stdout.length > 0;
 }
 
+function checkoutRestoresPaths() {
+  if (subcommand !== "checkout") return false;
+  const checkoutArgs = args.slice(subIndex + 1);
+  if (checkoutArgs.some((arg) => /^--pathspec-from-file(?:=|$)/u.test(arg) || arg === "--patch" || arg === "-p"))
+    return true;
+  if (checkoutArgs.some((arg) => /^-[^-]*[bB]/u.test(arg) || /^--orphan(?:=|$)/u.test(arg))) return false;
+  const operands = [];
+  for (let index = 0; index < checkoutArgs.length; index++) {
+    const arg = checkoutArgs[index];
+    if (arg === "--conflict") index++;
+    else if (!arg.startsWith("-")) operands.push(arg);
+  }
+  if (!operands.length) return false;
+  // A single operand can name a branch or a tracked path. Git prefers an
+  // existing revision, even when a tracked file has the same name.
+  const revision = spawnSync(realGit, [...prelude, "rev-parse", "--verify", "--quiet", `${operands[0]}^{commit}`], {
+    cwd: process.cwd(),
+    encoding: "utf8",
+  });
+  if (revision.status === 0) return operands.length > 1;
+  const files = spawnSync(realGit, [...prelude, "ls-files", "-z", "--", ...operands], {
+    cwd: process.cwd(),
+    encoding: "utf8",
+  });
+  if (files.status !== 0) {
+    console.error(`Could not inspect checkout paths; command blocked. ${files.error?.message ?? files.stderr}`);
+    process.exit(1);
+  }
+  return files.stdout.length > 0;
+}
+
 function stashBackup(cmd) {
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
   const msg = `auto-backup pre-${cmd} ${ts}`;
@@ -76,7 +107,7 @@ function execRealGit(realGit, gitArgs) {
 
 const realGit = findRealGit();
 
-if (!isDestructive(args)) {
+if (!isDestructive(args) && !checkoutRestoresPaths()) {
   execRealGit(realGit, args);
 }
 

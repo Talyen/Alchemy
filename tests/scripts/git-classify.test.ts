@@ -100,6 +100,7 @@ describe("git-classify", () => {
       ["--git-dir", ".git", "reset", "--hard"],
       ["--work-tree=/tmp", "checkout", "--", "."],
       ["--namespace", "alchemy", "restore"],
+      ["--config-env", "review.marker=ALCHEMY_GIT_MARKER", "reset", "--hard"],
       ["--no-pager", "reset", "--hard"],
       ["--", "reset", "--hard"],
     ]) {
