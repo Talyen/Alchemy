@@ -40,7 +40,7 @@ export function writeSteamBuildVdfs(root, env) {
     appPath,
     substituteSteamVdf(appTemplate, resolvedEnv).replace(
       '"steam/depot_build.vdf"',
-      `"${depotPath.replaceAll("\\", "/")}"`,
+      () => `"${depotPath.replaceAll("\\", "/")}"`,
     ),
     "utf8",
   );

@@ -215,6 +215,7 @@ runs `npm run check -- <combined changed paths>` (including both sides of rename
 both checkouts remain clean at the expected commits. It never pushes or switches
 checkout branches. Verification uses the merged task's shared Node command launcher
 so npm runs without shell interpretation on Windows too. Additional task-required tests remain the task owner's responsibility.
+An active bisect in either checkout also blocks integration before either branch advances.
 
 Resolve understood merge conflicts in the task worktree, commit the resolution,
 and retry; ambiguous conflicts or dirty `main` are blockers to report to the user.
@@ -252,7 +253,9 @@ dependency or conflict warrants a bounded chat exchange.
 `scripts/bin/git` shims destructive git through
 `git-safety-guard.mjs` (auto-stash backup); `setup-git-safety.mjs` installs the PATH hook.
 Inspection and backup must honor the caller's Git options and checkout; failed
-inspection blocks the operation. Git clean and push dry runs bypass backup so
+inspection blocks the operation. Checkout path restores are guarded with or without
+`--`; a single branch operand remains a branch switch even when a tracked file
+shares its name. Git clean and push dry runs bypass backup so
 inspection never stashes the working tree. Creation instructions return to the
 original checkout before worktree removal.
 

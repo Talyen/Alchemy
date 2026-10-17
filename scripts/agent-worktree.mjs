@@ -11,6 +11,14 @@ const currentFile = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(currentFile), "..");
 const WORKTREE_ROOT = path.join(root, ".worktrees");
 const UNCACHED_GIT_OPTIONS = ["-c", "core.untrackedCache=false", "-c", "core.fsmonitor=false"];
+const UNFINISHED_GIT_STATES = [
+  "MERGE_HEAD",
+  "CHERRY_PICK_HEAD",
+  "REVERT_HEAD",
+  "BISECT_START",
+  "rebase-merge",
+  "rebase-apply",
+];
 
 // Creation and recovery work from a copied single file in minimal checkouts.
 // Integration loads the merged task's command launcher only for verification.
@@ -53,7 +61,7 @@ export function removeIntegratedWorktree(main, task, branch, head) {
   )
     throw new Error("Task or main changed after integration");
   if (git("-C", task, "status", "--porcelain", "--untracked-files=all")) throw new Error("Unfinished work preserved");
-  for (const state of ["MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "BISECT_START", "rebase-merge", "rebase-apply"])
+  for (const state of UNFINISHED_GIT_STATES)
     if (fs.existsSync(git("-C", task, "rev-parse", "--path-format=absolute", "--git-path", state)))
       throw new Error("Unfinished Git operation preserved");
   if (/^160000 /m.test(git("-C", task, "ls-files", "--stage"))) throw new Error("Submodule worktree preserved");
@@ -205,13 +213,13 @@ export async function main(argv = process.argv.slice(2)) {
       throw error;
     });
     try {
-      const records = git(root, ["worktree", "list", "--porcelain"]).split("\n\n");
-      const mainRecord = records.find((record) => record.split("\n").includes("branch refs/heads/main"));
+      const records = git(root, ["worktree", "list", "--porcelain", "-z"], true).split("\0\0");
+      const mainRecord = records.find((record) => record.split("\0").includes("branch refs/heads/main"));
       if (!mainRecord) throw new Error("main must have a registered checkout; nothing integrated.");
-      const mainPath = mainRecord.split("\n")[0].slice("worktree ".length);
+      const mainPath = mainRecord.split("\0")[0].slice("worktree ".length);
       const taskPath = path.join(mainPath, ".worktrees", task);
-      const taskRecord = records.find((record) => record.split("\n").includes(`worktree ${taskPath}`));
-      if (!taskRecord?.split("\n").includes(`branch refs/heads/agent/${task}`)) {
+      const taskRecord = records.find((record) => record.split("\0").includes(`worktree ${taskPath}`));
+      if (!taskRecord?.split("\0").includes(`branch refs/heads/agent/${task}`)) {
         throw new Error("Task must be a registered worktree on its expected agent branch.");
       }
       const clean = (cwd, branch) => {
@@ -221,7 +229,7 @@ export async function main(argv = process.argv.slice(2)) {
         if (git(cwd, ["status", "--porcelain", "--untracked-files=all"])) {
           throw new Error(`Checkout has uncommitted work: ${cwd}; preserve it and retry later.`);
         }
-        for (const marker of ["MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply"]) {
+        for (const marker of UNFINISHED_GIT_STATES) {
           if (fs.existsSync(path.resolve(cwd, git(cwd, ["rev-parse", "--git-path", marker])))) {
             throw new Error(`Unfinished Git operation in ${cwd}; resolve it before integration.`);
           }
@@ -367,12 +375,12 @@ export async function main(argv = process.argv.slice(2)) {
     const branch = `agent/${task}`;
     const force = hasFlag("--force");
 
-    const list = runGit(["worktree", "list", "--porcelain"]);
+    const list = runGit(["worktree", "list", "--porcelain", "-z"]);
     if (list.status !== 0) {
       console.error("Could not inspect registered worktrees; nothing removed.");
       process.exit(list.status ?? 1);
     }
-    const isRegistered = (list.stdout ?? "").split("\n").includes(`worktree ${worktreePath}`);
+    const isRegistered = (list.stdout ?? "").split("\0").includes(`worktree ${worktreePath}`);
 
     if (isRegistered) {
       const args = ["worktree", "remove", worktreePath];
