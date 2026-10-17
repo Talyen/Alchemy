@@ -3,6 +3,7 @@ export const FLAG_DEFINITIONS = {
   obsidianHammerUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   layeredArmorUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   ironrootArmorUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
+  huntersBondUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   hawkEyeReady: { default: false as const, secondaryValue: null, lifetime: "until-consumed" },
   killRewardsPaid: { default: false as const, secondaryValue: null, lifetime: "combat" },
   nextHolyCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },

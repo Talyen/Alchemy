@@ -178,7 +178,7 @@ it("awardCardXP awards and accumulates all resource-card keywords in run XP with
   awardCardXP(cardById["burning-blade"]!);
   awardCardXP(cardById["mana-shield"]!);
   awardCardXP(cardById["crystal-bulwark"]!);
-  expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({ burn: 1, forge: 1, block: 2, mana: 2 });
+  expect(readActiveRun(defaultGameSession).runTalentXP).toEqual({ burn: 1, forge: 1, block: 2, mana: 2, armor: 1 });
   expect(readRunProfile(defaultGameSession).talentXP).toEqual({});
 });
 

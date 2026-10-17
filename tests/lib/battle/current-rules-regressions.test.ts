@@ -3,11 +3,11 @@ import { cardById } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
-import { patchBattleState } from "../../fixtures/battle";
+import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("current gameplay rules", () => {
-  it("Jealous reacts to both Wishes in Faustian Bargain", () => {
-    const card = cardById["faustian-bargain"]!;
+  it("Jealous reacts to each Wish in a multi-Wish card", () => {
+    const card = makeTestCard({ effects: [{ kind: "wish", amount: 2 }] });
     const state = patchBattleState({
       hand: [card],
       playerHealth: 20,

@@ -51,14 +51,22 @@ describe("combat reward ordering", () => {
   });
 
   it.each([true, false])(
-    "Faustian Bargain only grants Wishes if its Health cost is survived (Death's Door spent: %s)",
+    "Faustian Bargain only grants Mana and a Wish if its Health cost is survived (Death's Door spent: %s)",
     (deathsDoorUsed) => {
       const card = cardById["faustian-bargain"]!;
-      const state = patchBattleState({ hand: [card], playerHealth: 1, deathsDoorUsed });
+      const state = patchBattleState({
+        hand: [card],
+        mana: 1,
+        playerHealth: 1,
+        deathsDoorUsed,
+        talentEffects: { healOnConsume: 1 },
+      });
       const result = playBattleCardResolved(state, card.id, 0).state;
       expect(result.playerHealth).toBe(deathsDoorUsed ? 0 : 1);
       expect(result.wishOptions !== null).toBe(!deathsDoorUsed);
-      expect(result.exhausted).toContainEqual(card);
+      expect(result.mana).toBe(deathsDoorUsed ? 0 : 1);
+      expect(result.discard).toContainEqual(card);
+      expect(result.exhausted).toEqual([]);
     },
   );
 

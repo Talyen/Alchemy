@@ -33,7 +33,10 @@ export const defenseCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "crystal-bulwark",
-    effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 1 }],
+    effects: [
+      { kind: "player-status", status: "block", amount: 0, perManaCrystal: 1 },
+      { kind: "player-status", status: "armor", amount: 1 },
+    ],
   }),
   cardBuilders.effectsCard({
     id: "shadowstep",
