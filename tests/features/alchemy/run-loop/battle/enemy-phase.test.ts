@@ -36,15 +36,21 @@ describe("playTurnFrames", () => {
   });
 
   it("presents Dark Recovery earned at the next player turn", async () => {
+    vi.useFakeTimers();
+    using _scopeCleanup = createCleanup(() => vi.useRealTimers());
+
     const before = patchBattleState({ mana: 0, talentEffects: { manaAfterEmptyTurn: 1 }, rng: () => 0.99 });
     const turn = endPlayerTurn(before);
     const presentation = makePresentation();
-    await playTurnFrames(
+    const playPromise = playTurnFrames(
       [{ before: battleSnapshot(before), turn, companion: null }],
       3,
       makeDrawSequenceDeps({ isSessionActive: () => true }),
       presentation,
     );
+    await vi.runAllTimersAsync();
+    await playPromise;
+
     expect(turn.state.mana).toBe(turn.state.maxMana + 1);
     expect(presentation.showCombatTexts).toHaveBeenCalledWith(
       expect.arrayContaining([{ target: "player", kind: "status", stat: "mana", amount: 1 }]),
