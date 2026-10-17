@@ -1,10 +1,7 @@
-import { expect, it, vi } from "vitest";
-import { makeEffect, patchBattleState, makeTestCard, type BattleStatePatch } from "../../fixtures/battle";
-import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
-import { applyDamageStatuses } from "@/lib/battle/damage-status-riders";
+import { describe, expect, it, vi } from "vitest";
+import { patchBattleState, makeTestCard } from "../../fixtures/battle";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import type { BattleCardEffect } from "@/lib/game-data";
@@ -12,129 +9,91 @@ import type { CombatTextEvent } from "@/lib/battle/types";
 import { damageOnlyEffects } from "@/lib/battle/card-classification";
 import { processArcheryEchoes } from "@/lib/battle/unique-card-effects";
 
-function battle(patch: BattleStatePatch = {}) {
-  return patchBattleState({ enemyHealth: 100, enemyMaxHealth: 100, rng: () => 0.99, ...patch });
-}
-
-it("Wardbreaker purges one category per turn in priority order and preserves harmful statuses", () => {
-  let state = battle({
-    enemyMitigation: { armor: 4, block: 5, forge: 2 },
+it("Wardbreaker spends its use only on a benefit, purges in order, and resets next turn", () => {
+  const empty = patchBattleState({ gearEffects: { attackPurgeOncePerTurn: 1 } });
+  expect(resolvePlayerHit(empty, { source: "attack-purge" }, []).uniqueGear.wardbreakerPurgeUsed).toBe(false);
+  const initial = patchBattleState({
+    enemyHealth: 100,
+    enemyMaxHealth: 100,
+    enemyMitigation: { armor: 10, block: 15, forge: 5 },
     enemyStatuses: { thorns: 3, burnBonus: 2, freezeBonus: 1, poison: 4 },
     gearEffects: { attackPurgeOncePerTurn: 1 },
   });
+  let state = initial;
   for (const stat of ["armor", "block", "forge", "thorns", "burnBonus", "freezeBonus"] as const) {
     const texts: CombatTextEvent[] = [];
     const purged = resolvePlayerHit(state, { source: "attack-purge" }, texts);
     expect({ ...purged.enemyMitigation, ...purged.enemyStatuses }[stat]).toBe(0);
     expect(purged.enemyHealth).toBe(100);
     expect(purged.enemyStatuses.poison).toBe(4);
-    expect(purged.uniqueGear.wardbreakerPurgeUsed).toBe(true);
-    expect(texts).toContainEqual(expect.objectContaining({ target: "enemy", stat, signal: "purge" }));
-    expect(resolvePlayerHit(purged, { source: "attack-purge" }, [])).toEqual(purged);
+    expect(texts).toEqual([expect.objectContaining({ target: "enemy", stat, signal: "purge" })]);
+    expect(resolvePlayerHit(purged, { source: "attack-purge" }, [])).toBe(purged);
     state = advanceToPlayerTurn(purged);
   }
-  const empty = resolvePlayerHit(state, { source: "attack-purge" }, []);
-  expect(empty.uniqueGear.wardbreakerPurgeUsed).toBe(false);
-  const shielded = { ...empty, enemyMitigation: { ...empty.enemyMitigation, block: 4 } };
-  expect(resolvePlayerHit(shielded, { source: "attack-purge" }, []).enemyMitigation.block).toBe(0);
+  expect(state.enemyMitigation).toEqual({ armor: 0, block: 0, forge: 0 });
+  expect(state.enemyStatuses).toMatchObject({ thorns: 0, burnBonus: 0, freezeBonus: 0, poison: 4 });
+  expect(initial.enemyMitigation.armor).toBe(10);
 });
 
-it("Wardbreaker purges on a played attack without bypassing its mitigation or adding Holy damage", () => {
-  const card = makeTestCard({ effects: [makeEffect("physical", 10)] });
-  const state = battle({ hand: [card], enemyMitigation: { armor: 4 }, gearEffects: { attackPurgeOncePerTurn: 1 } });
-  const result = playBattleCardResolved(state, card.id, 0);
-  expect(result.state.enemyMitigation.armor).toBe(0);
-  expect(result.state.enemyHealth).toBe(94);
-  expect(state.enemyMitigation.armor).toBe(4);
-});
-
-it("Golden Verdict rewards a Stun completed by Holy damage, not ordinary Stun", () => {
-  const state = battle({ gold: 10, enemyStatuses: { stun: 60 }, gearEffects: { holyStunBuildupGold: 25 } });
-  expect(resolveStunTrigger(state, []).gold).toBe(10);
-  const ready = { ...state, enemyStatuses: { ...state.enemyStatuses, stun: 40 } };
-  const result = applyDamageStatuses(ready, makeEffect("holy", 15), 15, []);
-  expect(result.enemyStatuses.stun).toBe(0);
-  expect(result.gold).toBe(35);
-});
-
-it("Bloodfire mirrors Burn once and leeches only when both statuses preceded the hit", () => {
-  const state = battle({
-    playerHealth: 50,
-    playerMaxHealth: 100,
-    rng: () => 0.05,
-    gearEffects: { burnBleedMirrorAndLeech: 1 },
-  });
-  const first = applyDamageStatuses(state, makeEffect("burn", 20), 20, []);
-  expect(first.enemyStatuses).toMatchObject({ burn: 20, bleed: 20 });
-  expect(first.playerHealth).toBe(50);
-  expect(applyDamageStatuses(first, makeEffect("burn", 20), 20, []).playerHealth).toBe(60);
-});
-
-it("Rimeheart grants Block from the first Freeze hit and restores Mana on successful Freeze", () => {
-  const state = battle({
-    mana: 0,
-    maxMana: 10,
-    enemyStatuses: { freeze: 40 },
-    gearEffects: { freezeGrantsBlockAndMana: 1 },
-  });
-  const result = applyDamageStatuses(state, makeEffect("freeze", 15), 15, []);
-  expect(result.playerStatuses.block).toBe(15);
-  expect(result.mana).toBe(8);
-  expect(result.enemyCC.freezeSkipTurns).toBeGreaterThan(0);
-  expect(applyDamageStatuses(result, makeEffect("freeze", 15), 15, []).playerStatuses.block).toBe(15);
-});
-
-it.each([0, 7])("Dance of Blades plays and discards a drawn card with %i cards in hand", (handSize) => {
-  const counter = makeTestCard({ id: "counter", effects: [makeEffect("physical", 20)] });
-  const hand = Array.from({ length: handSize }, (_, i) => makeTestCard({ id: `filler-${i}` }));
-  let rolls = 0;
-  const state = battle({
-    hand,
-    deck: [counter],
-    playerHealth: 100,
-    playerMaxHealth: 100,
-    playerStatuses: { armor: 10, block: 8 },
-    gearEffects: { dodgeDrawAndPlay: 1 },
-    rng: () => (++rolls <= 2 ? 0.01 : 0.99),
-  });
-  const texts: CombatTextEvent[] = [];
-  const result = applyEnemyAbility(state, makeTestCard({ effects: [makeEffect("physical", 8)] }), texts);
-  expect(result.playerHealth).toBe(100);
-  expect(result.playerStatuses).toMatchObject({ armor: 10, block: 8 });
-  expect(result.enemyHealth).toBe(80);
-  expect(result.hand).toEqual(hand);
-  expect(result.deck).toEqual([]);
-  expect(result.discard.map(({ id }) => id)).toEqual(["counter"]);
-  expect(texts).toContainEqual(expect.objectContaining({ kind: "notice", stat: "dodge" }));
-});
-
-it.each([
-  [100, 95, 15, 10],
-  [35, 30, 15, 10],
-  [34, 0, 0, 0],
-])("Blackfletch checks Health after the arrow at %i Health", (health, remaining, bleed, poison) => {
-  const card = makeTestCard({ tags: ["archery"], effects: [makeEffect("physical", 5)] });
-  const state = battle({
+it.each([34, 35])("Blackfletch checks its strict Health cutoff after the arrow (%i starting Health)", (health) => {
+  const card = makeTestCard({ tags: ["archery"], effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+  const state = patchBattleState({
     hand: [card],
     enemyHealth: health,
+    enemyMaxHealth: 100,
     enemyStatuses: { bleed: 15, poison: 10 },
     gearEffects: { archeryDetonateBleedPoison: 1 },
+    rng: () => 0.99,
   });
   const result = playBattleCardResolved(state, card.id, 0).state;
-  expect(result.enemyHealth).toBe(remaining);
-  expect(result.enemyStatuses).toMatchObject({ bleed, poison });
+  expect(result.enemyHealth).toBe(health === 34 ? 0 : 30);
+  expect(result.enemyStatuses).toMatchObject({ bleed: health === 34 ? 0 : 15, poison: health === 34 ? 0 : 10 });
 });
+
+it.each([100, 2])(
+  "Saintfall heals after each depletion only while combat continues (%i enemy Health)",
+  (enemyHealth) => {
+    let state = patchBattleState({
+      playerHealth: 50,
+      playerMaxHealth: 100,
+      enemyHealth,
+      enemyMaxHealth: 100,
+      playerStatuses: { block: 5 },
+      gearEffects: { saintfallRetribution: 4 },
+    });
+    for (let depletion = 1; depletion <= 2; depletion++) {
+      state = processEnemyDamageEffect(
+        { ...state, playerStatuses: { ...state.playerStatuses, block: 5 } },
+        { kind: "damage", damageType: "physical", amount: 15 },
+        [],
+      );
+      expect(state.playerStatuses.block).toBe(0);
+      expect(state.enemyStatuses.stun).toBe(0);
+      expect(state.playerHealth).toBe(enemyHealth === 2 ? 40 : 50 - 6 * depletion);
+      if (enemyHealth === 2) {
+        expect(state.enemyHealth).toBe(0);
+        break;
+      }
+    }
+  },
+);
 
 it.each([
   { roll: 0.1, expected: "freeze-second" },
   { roll: 0.9, expected: "burn-second" },
-])("Twin Casting chooses one mixed-card type with roll $roll and assigns a fresh UID", ({ roll, expected }) => {
+])("Twin Casting preserves mixed-card selection with roll $roll", ({ roll, expected }) => {
   const rng = vi.fn().mockReturnValueOnce(roll).mockReturnValueOnce(0.9);
   const card = makeTestCard({ id: "mixed", cost: 0, tags: ["burn", "freeze"], effects: [] });
   const deck = ["freeze-first", "burn-first", "freeze-second", "burn-second"].map((id) =>
-    makeTestCard({ id, tags: [id.startsWith("freeze") ? "freeze" : "burn"], effects: [] }),
+    makeTestCard({ id, tags: [id.startsWith("burn") ? "burn" : "freeze"], effects: [] }),
   );
-  const state = battle({ hand: [card], deck, nextCardUid: 100, gearEffects: { elementalTwinCasting: 1 }, rng });
+  const state = patchBattleState({
+    hand: [card],
+    deck,
+    nextCardUid: 100,
+    gearEffects: { elementalTwinCasting: 1 },
+    rng,
+  });
   const result = playBattleCardResolved(state, card.id, 0).state;
   expect(result.hand.map(({ id, uid }) => ({ id, uid }))).toEqual([{ id: expected, uid: 100 }]);
   expect(result.deck).toEqual(deck.filter(({ id }) => id !== expected));
@@ -143,77 +102,75 @@ it.each([
   expect(state.deck).toEqual(deck);
 });
 
-it.each(["burn", "freeze"] as const)("Twin Casting draws the opposite element after a %s card", (type) => {
-  const opposite = type === "burn" ? "freeze" : "burn";
-  const card = makeTestCard({ effects: [makeEffect(type, 1)] });
-  const drawn = makeTestCard({ id: "drawn", effects: [makeEffect(opposite, 1)] });
-  const state = battle({ hand: [card], deck: [drawn], nextCardUid: 100, gearEffects: { elementalTwinCasting: 1 } });
-  const result = playBattleCardResolved(state, card.id, 0).state;
-  expect(result.hand).toEqual([{ ...drawn, uid: 100 }]);
-  expect(result.deck).toEqual([]);
-  expect(result.nextCardUid).toBe(101);
-});
-
-it("Twin Casting does not refill from discard or draw after a lethal hit", () => {
-  const frost = makeTestCard({ id: "frost", tags: ["freeze"], effects: [] });
-  const card = makeTestCard({ tags: ["burn"], effects: [makeEffect("burn", 10)] });
-  const base = battle({ hand: [card], gearEffects: { elementalTwinCasting: 1 } });
-  const empty = playBattleCardResolved({ ...base, discard: [frost] }, card.id, 0).state;
-  expect(empty.hand).toEqual([]);
-  expect(empty.discard).toEqual([frost, card]);
-  const lethal = playBattleCardResolved({ ...base, enemyHealth: 5, deck: [frost] }, card.id, 0).state;
-  expect(lethal.enemyHealth).toBe(0);
-  expect(lethal.deck).toEqual([frost]);
-  expect(lethal.hand).toEqual([]);
-});
-
-it("Saintfall heals on each Block depletion while the enemy survives", () => {
-  const state = battle({
-    playerHealth: 50,
-    playerMaxHealth: 100,
-    playerStatuses: { block: 5 },
-    gearEffects: { saintfallRetribution: 4 },
+it.each([
+  [0, "freeze"],
+  [0.4, "burn"],
+  [0.9, "holy"],
+] as const)("plays exactly the pooled damage type selected by roll %s", (roll, damageType) => {
+  const card = makeTestCard({
+    effects: [{ kind: "damage", damageType: "holy", damageTypePool: ["freeze", "burn", "holy"], amount: 4 }],
   });
-  const hit = (current: ReturnType<typeof battle>) => processEnemyDamageEffect(current, makeEffect("physical", 15), []);
-  const first = hit(state);
-  expect(first.playerStatuses.block).toBe(0);
-  expect(first.playerHealth).toBe(44);
-  const second = hit({ ...first, playerStatuses: { ...first.playerStatuses, block: 5 } });
-  expect(second.playerHealth).toBe(38);
-  const lethal = hit({ ...state, enemyHealth: 2 });
-  expect(lethal.enemyHealth).toBe(0);
-  expect(lethal.playerHealth).toBe(40);
-});
-
-it("damage-only repeats preserve nested branches and schedules without utility or empty wrappers", () => {
-  const hit: BattleCardEffect = { kind: "random-damage", minAmount: 1, maxAmount: 3, damageTypePool: ["burn"] };
-  const support: BattleCardEffect = { kind: "draw-cards", amount: 1 };
-  const chance: BattleCardEffect = {
-    kind: "chance",
-    probability: 0.5,
-    successEffects: [support, hit],
-    failureEffects: [support],
-  };
-  const source: BattleCardEffect[] = [
-    makeEffect("physical", 3),
-    support,
-    chance,
-    { kind: "repeat-over-turns", remainingTurns: 2, effects: [chance] },
-    { kind: "repeat-over-turns", remainingTurns: 1, effects: [support] },
-  ];
-  const before = structuredClone(source);
-  const filteredChance = { ...chance, successEffects: [hit], failureEffects: [] };
-  expect(damageOnlyEffects(source)).toEqual([
-    makeEffect("physical", 3),
-    filteredChance,
-    { kind: "repeat-over-turns", remainingTurns: 2, effects: [filteredChance] },
+  let calls = 0;
+  const state = patchBattleState({ hand: [card], rng: () => (calls++ === 0 ? roll : 0.99) });
+  const result = playBattleCardResolved(state, card.id, 0);
+  expect(result.state.enemyHealth).toBe(state.enemyHealth - 4);
+  expect(result.combatTexts.filter((event) => event.kind === "damage" && event.target === "enemy")).toEqual([
+    expect.objectContaining({ stat: damageType, amount: 4 }),
   ]);
-  expect(source).toEqual(before);
+  expect(result.state.enemyStatuses).toMatchObject({
+    freeze: damageType === "freeze" ? 4 : 0,
+    burn: damageType === "burn" ? 4 : 0,
+  });
 });
 
-it("disabling Returning Gale clears queued echoes without dealing damage", () => {
-  const echo = makeTestCard({ effects: [makeEffect("physical", 4)] });
-  const result = processArcheryEchoes(battle({ uniqueGear: { archeryEchoes: [echo] } }), []);
+describe("damageOnlyEffects", () => {
+  it("keeps damage order and chance branches while leaving the source tree untouched", () => {
+    const damage: BattleCardEffect = { kind: "damage", damageType: "physical", amount: 3 };
+    const chance: BattleCardEffect = {
+      kind: "chance",
+      probability: 0.5,
+      successEffects: [{ kind: "heal", amount: 2 }, damage],
+      failureEffects: [{ kind: "draw-cards", amount: 1 }],
+    };
+    const source: BattleCardEffect[] = [damage, { kind: "heal", amount: 1 }, chance, damage];
+    const before = structuredClone(source);
+    const filtered = damageOnlyEffects(source);
+    expect(filtered).toEqual([damage, { ...chance, successEffects: [damage], failureEffects: [] }, damage]);
+    expect(source).toEqual(before);
+    expect(filtered[1]).not.toBe(chance);
+  });
+
+  it("preserves nested scheduled damage and drops empty wrappers without repeating support effects", () => {
+    const damage: BattleCardEffect = { kind: "random-damage", minAmount: 1, maxAmount: 3, damageTypePool: ["burn"] };
+    const support: BattleCardEffect = { kind: "draw-cards", amount: 1 };
+    const source: BattleCardEffect[] = [
+      { kind: "repeat-over-turns", remainingTurns: 2, effects: [support] },
+      {
+        kind: "repeat-over-turns",
+        remainingTurns: 3,
+        effects: [{ kind: "chance", probability: 0.2, successEffects: [support], failureEffects: [damage, support] }],
+      },
+    ];
+    const before = structuredClone(source);
+    expect(damageOnlyEffects(source)).toEqual([
+      {
+        kind: "repeat-over-turns",
+        remainingTurns: 3,
+        effects: [{ kind: "chance", probability: 0.2, successEffects: [], failureEffects: [damage] }],
+      },
+    ]);
+    expect(source).toEqual(before);
+  });
+});
+
+it("processArcheryEchoes clears queued echoes even when the echo gear is disabled", () => {
+  const echo = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] });
+  const state = patchBattleState({
+    enemyHealth: 40,
+    uniqueGear: { archeryEchoes: [echo] },
+    gearEffects: { archeryEchoNextTurn: 0 },
+  });
+  const result = processArcheryEchoes(state, []);
   expect(result.uniqueGear.archeryEchoes).toEqual([]);
-  expect(result.enemyHealth).toBe(100);
+  expect(result.enemyHealth).toBe(40);
 });

@@ -35,11 +35,12 @@ function loadLog({ since, rootDir = ROOT }) {
     {
       cwd: rootDir,
       encoding: "utf8",
+      maxBuffer: 32 * 1024 * 1024,
       env: { ...process.env, GIT_PAGER: "cat", GIT_TERMINAL_PROMPT: "0" },
     },
   );
-  if (result.status !== 0) {
-    throw new Error(result.stderr || "git log failed");
+  if (result.status !== 0 || result.error) {
+    throw new Error(result.error?.message || result.stderr || "git log failed");
   }
   return result.stdout;
 }

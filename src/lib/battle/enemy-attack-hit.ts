@@ -13,16 +13,8 @@ import { takeRandomCardFromDeck, drawKeywordCard } from "./draw";
 import { tryDodgeEnemyAttackPacket } from "./dodge";
 import { applyDodgeTalentStatuses } from "./dodge-talent-rewards";
 import { applyArmorReward, applyBlockDepletionRewards, applyBlockReward } from "./status-player";
-import {
-  applyCardPlayTalentRewards,
-  applyMortarAndPestlePotionUse,
-  applyTwinCasting,
-  resolveCardEffectChain,
-  shouldElementalTalentRepeat,
-} from "./card-play-effects";
+import { resolveCardEffectChain, shouldElementalTalentRepeat } from "./card-play-effects";
 import { handlePostPlayCardDestination } from "./card-consume";
-import { applyCardEffects } from "./effect-handlers";
-import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import {
   prepareEnemyDamage,
   resolveEnemyDamageEffect,
@@ -53,27 +45,15 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
   };
 
   const playTwice = shouldElementalTalentRepeat(nextState, drawn.card);
-  const hadNoThornsOnPlay = nextState.playerStatuses.thorns === 0;
-  const chained = resolveCardEffectChain(nextState, drawn.card, combatTexts, { skipTalentRewards: playTwice });
+  const chained = resolveCardEffectChain(nextState, drawn.card, combatTexts, { playTwice });
   nextState = chained.state;
-  const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
-  if (playTwice && getBattleOutcome(nextState) === null) {
-    nextState = applyCardEffects(nextState, drawn.card, combatTexts, {
-      damageEffects: repeatedDamageEffects,
-      origin: "triggered-card",
-      manaAtStart: nextState.mana,
-    });
-    nextState = applyMortarAndPestlePotionUse(nextState, drawn.card, combatTexts);
-  }
-  if (playTwice) nextState = applyCardPlayTalentRewards(nextState, drawn.card, combatTexts, hadNoThornsOnPlay);
-  nextState = applyTwinCasting(nextState, drawn.card, combatTexts);
   nextState = processEncounterTraitCardAction(nextState, drawn.card, combatTexts, chained.attackAttempted);
   if (playTwice) {
     nextState = processEncounterTraitCardAction(
       nextState,
       { ...drawn.card, consume: false },
       combatTexts,
-      repeatedDamageEffects.length > 0,
+      chained.repeatAttackAttempted,
       { cardPlayed: false },
     );
   }

@@ -76,6 +76,9 @@ export function computeTalentDamageToEnemy(
 }
 
 export function computeReflectedHolyDamageToEnemy(state: BattleState, blockLost: number) {
+  if (blockLost <= 0 || state.talentEffects.holyReflectionBlockLostPercent <= 0) {
+    return { state, remainingDamage: 0 };
+  }
   const damage = Math.round(
     (blockLost * state.talentEffects.holyReflectionBlockLostPercent * getEnemyTraitDamageMultiplier(state, "holy")) /
       PERCENT_DENOMINATOR,

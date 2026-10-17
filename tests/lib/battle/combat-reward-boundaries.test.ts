@@ -10,14 +10,15 @@ import type { CombatTextEvent } from "@/lib/battle";
 describe("combat reward boundaries", () => {
   it("does not repeat an automatically played card after its first copy wins combat", () => {
     const card = { ...cardById["sunburst"]!, uid: 1 };
+    const freeze = cardById["ray-of-frost"]!;
     const state = regressionBattle({
-      deck: [card],
+      deck: [card, freeze],
       enemyHealth: 1,
       enemyMaxHealth: 100,
       playerHealth: 10,
       playerMaxHealth: 100,
       flags: { dodgeNextAttack: true },
-      gearEffects: { dodgeDrawAndPlay: 1 },
+      gearEffects: { dodgeDrawAndPlay: 1, elementalTwinCasting: 1 },
       talentEffects: { burnCardPlayTwiceChance: 100 },
       rng: () => 0.1,
     });
@@ -27,6 +28,8 @@ describe("combat reward boundaries", () => {
     expect(next.enemyHealth).toBe(0);
     expect(next.playerHealth).toBe(12);
     expect(next.discard).toHaveLength(1);
+    expect(next.deck).toEqual([freeze]);
+    expect(next.hand).toEqual([]);
   });
 
   it("settles a Companion's empty Bloodrush draw before its later Leech reward", () => {

@@ -16,7 +16,7 @@ import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { cardHasKeyword, isNatureCard } from "./card-classification";
 import { WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
-export function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
+function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
   if (isPlayerDefeated(state) || !isPotionCard(card) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0)
     return state;
   return resolvePendingBattleReactions(
@@ -29,19 +29,18 @@ export function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCa
   );
 }
 
-export interface CardEffectChainOptions {
+interface CardEffectChainOptions {
   eligibility?: BattleState;
   playedCard?: boolean;
   guaranteedCrit?: boolean;
   damageEffects?: NonNullable<CardEffectResolutionContext["damageEffects"]>;
   manaAtStart?: number;
-  skipTalentRewards?: boolean;
+  playTwice?: boolean;
 }
 
 // Shared core for playing a card's effects: talent pre-triggers, pending
 // reactions, the effect dispatch itself, potion use, and talent rewards.
-// Normal plays and dodge-drawn plays share these effect stages but have
-// different payment and repeat rules.
+// Payment, Unique Gear damage-only repeats, and card destination stay with callers.
 export function resolveCardEffectChain(
   state: BattleState,
   card: BattleCard,
@@ -50,10 +49,12 @@ export function resolveCardEffectChain(
 ): {
   state: BattleState;
   attackAttempted: boolean;
+  repeatAttackAttempted: boolean;
 } {
+  const hadNoThornsOnPlay = (options.eligibility ?? state).playerStatuses.thorns === 0;
   state = resolvePendingBattleReactions(state, combatTexts);
   if (isPlayerDefeated(state)) {
-    return { state, attackAttempted: false };
+    return { state, attackAttempted: false, repeatAttackAttempted: false };
   }
   const talentPlay = prepareTalentCardPlay(state, card, combatTexts, {
     countsAsPlayedCard: options.playedCard === true,
@@ -61,79 +62,22 @@ export function resolveCardEffectChain(
   });
   const reacted = resolvePendingBattleReactions(talentPlay, combatTexts);
   const damageEffects = options.damageEffects ?? [];
-  let nextState = applyCardEffects(reacted, card, combatTexts, {
-    origin: options.playedCard ? "played-card" : "triggered-card",
-    damageEffects,
-    manaAtStart: options.manaAtStart ?? reacted.mana,
-    ...(options.guaranteedCrit === undefined ? {} : { guaranteedCrit: options.guaranteedCrit }),
-  });
-  nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
-  if (!options.skipTalentRewards) {
-    nextState = applyCardPlayTalentRewards(nextState, card, combatTexts, state.playerStatuses.thorns === 0);
-  }
-  return { state: nextState, attackAttempted: damageEffects.length > 0 };
-}
-
-export function shouldElementalTalentRepeat(state: BattleState, card: BattleCard, alreadyRepeating = false): boolean {
-  if (alreadyRepeating) return false;
-
-  const chance =
-    (cardHasKeyword(card, "burn") ? state.talentEffects.burnCardPlayTwiceChance : 0) +
-    (cardHasKeyword(card, "freeze") ? state.talentEffects.freezeCardPlayTwiceChance : 0) +
-    (cardHasKeyword(card, "nature") ? state.talentEffects.natureCardPlayTwiceChance : 0) +
-    (cardHasKeyword(card, "poison") ? state.talentEffects.poisonCardPlayTwiceChance : 0) +
-    (cardHasKeyword(card, "stun") ? state.talentEffects.stunCardPlayTwiceChance : 0) +
-    (cardHasKeyword(card, "wish") ? state.talentEffects.wishCardPlayTwiceChance : 0);
-
-  return rollBattleChance(Math.min(100, chance), state);
-}
-
-interface PaidCardEffectsOptions {
-  eligibility: BattleState;
-  playTwice: boolean;
-  guaranteedCrit: boolean;
-  damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]>;
-  manaAtStart: number;
-  hadNoThornsOnPlay: boolean;
-}
-
-export function resolvePaidCardEffects(
-  state: BattleState,
-  card: BattleCard,
-  combatTexts: CombatTextEvent[],
-  { eligibility, playTwice, guaranteedCrit, damageEffects, manaAtStart, hadNoThornsOnPlay }: PaidCardEffectsOptions,
-): {
-  state: BattleState;
-  attackAttempted: boolean;
-  repeatAttackAttempted: boolean;
-} {
-  const chained = resolveCardEffectChain(state, card, combatTexts, {
-    eligibility,
-    playedCard: true,
-    guaranteedCrit,
-    damageEffects,
-    manaAtStart,
-    // Paid plays use the conditions captured before payment reactions.
-    // Resolve both copies before paying companion/nature rewards once.
-    skipTalentRewards: true,
-  });
-  let nextState = chained.state;
-
   const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
-  if (playTwice && getBattleOutcome(nextState) === null) {
+  let nextState = reacted;
+  for (let copy = 0; copy < (options.playTwice ? 2 : 1); copy++) {
+    // The first copy can be accepted during victory grace; repeats require a live fight.
+    if (copy > 0 && getBattleOutcome(nextState) !== null) break;
     nextState = applyCardEffects(nextState, card, combatTexts, {
-      origin: "played-card",
-      damageEffects: repeatedDamageEffects,
-      guaranteedCrit,
-      manaAtStart: nextState.mana,
+      origin: options.playedCard ? "played-card" : "triggered-card",
+      damageEffects: copy === 0 ? damageEffects : repeatedDamageEffects,
+      manaAtStart: copy === 0 ? (options.manaAtStart ?? reacted.mana) : nextState.mana,
+      ...(options.guaranteedCrit === undefined ? {} : { guaranteedCrit: options.guaranteedCrit }),
     });
     nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
   }
-
+  // A full-card repeat repeats effects and Potion use, but rewards the play once.
   nextState = applyCardPlayTalentRewards(nextState, card, combatTexts, hadNoThornsOnPlay);
-
   nextState = applyTwinCasting(nextState, card, combatTexts);
-
   return {
     state: nextState,
     attackAttempted: damageEffects.length > 0,
@@ -141,7 +85,28 @@ export function resolvePaidCardEffects(
   };
 }
 
-export function applyTwinCasting(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
+export function shouldElementalTalentRepeat(state: BattleState, card: BattleCard): boolean {
+  const {
+    burnCardPlayTwiceChance,
+    freezeCardPlayTwiceChance,
+    natureCardPlayTwiceChance,
+    poisonCardPlayTwiceChance,
+    stunCardPlayTwiceChance,
+    wishCardPlayTwiceChance,
+  } = state.talentEffects;
+
+  let chance = 0;
+  if (burnCardPlayTwiceChance > 0 && cardHasKeyword(card, "burn")) chance += burnCardPlayTwiceChance;
+  if (freezeCardPlayTwiceChance > 0 && cardHasKeyword(card, "freeze")) chance += freezeCardPlayTwiceChance;
+  if (natureCardPlayTwiceChance > 0 && cardHasKeyword(card, "nature")) chance += natureCardPlayTwiceChance;
+  if (poisonCardPlayTwiceChance > 0 && cardHasKeyword(card, "poison")) chance += poisonCardPlayTwiceChance;
+  if (stunCardPlayTwiceChance > 0 && cardHasKeyword(card, "stun")) chance += stunCardPlayTwiceChance;
+  if (wishCardPlayTwiceChance > 0 && cardHasKeyword(card, "wish")) chance += wishCardPlayTwiceChance;
+
+  return rollBattleChance(Math.min(100, chance), state);
+}
+
+function applyTwinCasting(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
   if (getBattleOutcome(state) !== null || state.gearEffects.elementalTwinCasting <= 0) return state;
 
   const hasBurn = cardHasKeyword(card, "burn");
@@ -174,7 +139,7 @@ export function applyResonantChimeTrinket(state: BattleState, combatTexts: Comba
   return state;
 }
 
-export function applyCardPlayTalentRewards(
+function applyCardPlayTalentRewards(
   state: BattleState,
   card: BattleCard,
   combatTexts: CombatTextEvent[],
