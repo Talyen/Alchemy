@@ -62,6 +62,21 @@ describe("enemy attack damage", () => {
     },
   );
 
+  it("reports post-dodge player health in healthAfterHit when dodge triggers healing", () => {
+    const state = patchBattleState({
+      playerHealth: 30,
+      playerMaxHealth: 100,
+      flags: { dodgeNextAttack: true },
+      talentEffects: { healOnDodge: 10 },
+    });
+    const result = resolveEnemyAttackHit(state, { kind: "damage", damageType: "physical", amount: 8 }, [], {
+      canDodge: true,
+    });
+    expect(result.dodged).toBe(true);
+    expect(result.state.playerHealth).toBe(40);
+    expect(result.healthAfterHit).toBe(40);
+  });
+
   it("captures a player hit's Health loss before threshold healing", () => {
     const state = patchBattleState({
       enemyHealth: 6,

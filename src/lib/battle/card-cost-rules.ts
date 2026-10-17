@@ -55,7 +55,7 @@ function computeStandardCost(state: CardCostState, card: BattleCard, discountedC
 
   const armedReduction = readCombatFlag(state, "nextCardCostReduction");
   result.effectiveCost = applyCostDiscount(discountedCost, armedReduction);
-  result.spentArmedDiscount = armedReduction > 0 && result.effectiveCost < discountedCost;
+  result.spentArmedDiscount = armedReduction > 0;
   return result;
 }
 
@@ -89,9 +89,7 @@ function resolveGearCostTriggers(
     card.uid !== undefined && gear.recoverLastArcheryCard > 0 && unique.returningFlightUids.includes(card.uid);
 
   const uniqueDiscounts: UniqueCostDiscounts = {};
-  if (card.cost > 0) {
-    if (physicalFree) uniqueDiscounts.knightsAnswerReady = false;
-  }
+  if (card.cost > 0 && physicalFree) uniqueDiscounts.knightsAnswerReady = false;
   if (card.uid !== undefined && unique.returningFlightUids.includes(card.uid))
     uniqueDiscounts.returningFlightUids = unique.returningFlightUids.filter((uid) => uid !== card.uid);
 

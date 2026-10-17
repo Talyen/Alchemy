@@ -18,11 +18,6 @@ export function applyPercentReduction(value: number, percent: number, denominato
   return Math.max(0, Math.round(value * (1 - percent / denominator)));
 }
 
-export function scalePerMana(maxMana: number, value: number, unit: "percent" | "half"): number {
-  const divisor = unit === "percent" ? PERCENT_DENOMINATOR : HALF_DIVISOR;
-  return Math.round((maxMana * value) / divisor);
-}
-
 export function halveRounded(value: number): number {
   return Math.round(value / HALF_DIVISOR);
 }

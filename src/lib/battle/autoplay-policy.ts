@@ -237,5 +237,5 @@ export function pickHighestScoring(
       bestScore = score;
     }
   }
-  return { card: best.card, index: best.index };
+  return best;
 }

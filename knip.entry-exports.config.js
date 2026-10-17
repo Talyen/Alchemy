@@ -11,5 +11,6 @@ export default {
     "src/app/playthrough/career.ts": ["exports"],
     "src/app/playthrough/report.ts": ["exports"],
     "src/lib/balance/materials-report.ts": ["exports"],
+    "src/lib/localization/catalog-format.d.mts": ["exports", "types"],
   },
 };
