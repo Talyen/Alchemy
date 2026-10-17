@@ -279,5 +279,32 @@ describe("battle damage inspection", () => {
     });
     expect(getBattleDamageInspectionCard(ray, frostfireState).effects).toMatchObject([{ amount: 1 }, { amount: 0 }]);
     expect(playBattleCardResolved(frostfireState, ray.id, 0).state.enemyHealth).toBe(0);
+
+    // Detonation consumes existing buildup even when Block absorbs the direct hit.
+    for (const [id, status, detonateFlag] of [
+      ["combustion", "burn", { detonateAllBurn: true }],
+      ["hemorrhage", "bleed", { detonateAllBleed: true }],
+    ] as const) {
+      const detonateCard = makeTestCard({
+        id,
+        effects: [
+          { kind: "damage", damageType: status, amount: 2, ...detonateFlag },
+          { kind: "damage", damageType: "poison", amount: 3 },
+        ],
+      });
+      const detonateState = patchBattleState({
+        hand: [detonateCard],
+        rng: () => 0.99,
+        enemyHealth: 3,
+        enemyMaxHealth: 100,
+        enemyMitigation: { block: 10 },
+        enemyStatuses: { [status]: 4 },
+      });
+      expect(getBattleDamageInspectionCard(detonateCard, detonateState).effects).toMatchObject([
+        { amount: 2 },
+        { amount: 0 },
+      ]);
+      expect(playBattleCardResolved(detonateState, detonateCard.id, 0).state.enemyHealth).toBe(0);
+    }
   });
 });

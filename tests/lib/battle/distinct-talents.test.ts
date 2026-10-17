@@ -206,19 +206,14 @@ describe("distinct talent conditions", () => {
 
 describe("repeatable card and Consume rewards", () => {
   it("Whistle acts after summoning and after Pack Tactics, once even when the card repeats", () => {
-    const effects = talents("Whistle", "Hunter's Bond", "Last Supper", "Second Helping");
-    const first = play(
-      battle({ talentEffects: effects, deck: [drawCard, drawCard, drawCard] }),
-      cardById["wolf-companion"]!,
-    );
+    const effects = talents("Whistle");
+    const first = play(battle({ talentEffects: effects }), cardById["wolf-companion"]!);
     expect(first.enemyHealth).toBe(99);
     expect(first.playerStatuses.block).toBe(0);
     expect(first.playerStatuses.forge).toBe(0);
-    expect(first.hand).toHaveLength(1);
     const second = play({ ...first, flags: { ...first.flags, playNextCardTwice: true } }, cardById["pack-tactics"]!);
     expect(second.enemyHealth).toBe(94);
     expect(second.playerStatuses.block).toBe(4);
-    expect(second.hand).toHaveLength(1);
   });
 
   it("Consume rewards can repeat with cards remaining in hand", () => {

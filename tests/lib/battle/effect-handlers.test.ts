@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { applyCardEffects, applyEffectByKind, EFFECT_APPLY_BY_KIND } from "@/lib/battle/effect-handlers/registry";
-import { cardById } from "@/lib/game-data";
 import { effectsCard } from "@/lib/game-data/cards/card-builders";
 import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corruption/numeric";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";

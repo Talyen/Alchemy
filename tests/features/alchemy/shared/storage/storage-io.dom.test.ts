@@ -78,8 +78,7 @@ describe("storage io", () => {
   it("warns when a card effect is corrupt but the rest of the save loads", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const campaign = currentSchemaCampaignSave();
-    const activeRun = campaign.activeRun as { runDeck: Array<Record<string, unknown>> } | null;
-    if (!activeRun) throw new Error("campaign fixture is missing activeRun");
+    const { activeRun } = campaign;
     mockStorage[SAVE_KEY] = JSON.stringify({
       ...campaign,
       activeRun: {
@@ -228,10 +227,7 @@ describe("storage io", () => {
   ])("preserves permanent progress and warns when the selected battle has a $label enemy", async ({ enemy }) => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const campaign = currentSchemaCampaignSave();
-    const activeRun = (campaign as Record<string, unknown>).activeRun;
-    if (!activeRun || typeof activeRun !== "object" || Array.isArray(activeRun)) {
-      throw new Error("campaign fixture is missing activeRun");
-    }
+    const { activeRun } = campaign;
     mockStorage[SAVE_KEY] = JSON.stringify({
       ...campaign,
       activeRun: {
