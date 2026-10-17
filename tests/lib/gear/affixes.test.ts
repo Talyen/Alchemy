@@ -32,6 +32,22 @@ describe("gear affixes", () => {
     ]);
   });
 
+  it("owns every chance list even when no affix has populated it", () => {
+    const empty = effectsForAffixRolls([]);
+    const populated = effectsForAffixRolls([{ id: "forge-on-stun", value: 25 }]);
+    const before = structuredClone(populated);
+    for (const key of [
+      "forgeOnStunChances",
+      "forgeOnBurnVsUnburnedChances",
+      "forgeOnConsumeBurnCardChances",
+      "forgeOnCompanionDamageVsBurningChances",
+    ] as const)
+      empty[key].push(100);
+    expect(populated).toEqual(before);
+    expect(effectsForAffixRolls([])).toEqual(defaultGearEffects);
+    expect(Object.values(defaultGearEffects).filter(Array.isArray).flat()).toEqual([]);
+  });
+
   describe("normalizeAffixRolls", () => {
     it("ignores inherited object keys when restoring rolls and aggregating effects", () => {
       const raw = [

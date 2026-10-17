@@ -24,7 +24,7 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import type { GearBaseItemId, GearSlotRule } from "./base-items";
 
 export type { GearEffectManifest } from "./gear-effect-manifest";
-export { defaultGearEffects, GEAR_EFFECT_KEYS } from "./gear-effect-manifest";
+export { defaultGearEffects, createEmptyGearEffectManifest, GEAR_EFFECT_KEYS } from "./gear-effect-manifest";
 
 export type { GearAffixId } from "./affix-catalog";
 import type { GearAffixId } from "./affix-catalog";
@@ -38,7 +38,7 @@ export interface GearDefinition {
   id: string;
   displayName: string;
   baseItemId: GearBaseItemId;
-  rarity: GearRarity | null;
+  rarity: GearRarity;
   descriptionLines: string[];
   art: string;
   compatibleSlots: GearSlot[];

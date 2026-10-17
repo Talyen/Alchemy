@@ -1,7 +1,7 @@
 import { characters, type CharacterId } from "@/lib/game-data";
 import { MAX_HEALTH_PER_TALENT_POINT } from "@/lib/game-constants";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import { defaultGearEffects, type GearEffectManifest } from "@/lib/gear/gear-effect-manifest";
+import { createEmptyGearEffectManifest, type GearEffectManifest } from "@/lib/gear/gear-effect-manifest";
 import { createSeededRng } from "@/lib/rng";
 import { buildTypicalGearEffects } from "./gear-preset";
 import { buildTypicalHomesteadEffects } from "./homestead-preset";
@@ -55,7 +55,7 @@ export function resolveSimLoadout(options: {
   const homesteadCombat = buildTypicalHomesteadEffects(typical ? options.preset : "early");
   const gearEffects =
     !typical || options.skipGear || options.preset === "early"
-      ? { ...defaultGearEffects }
+      ? createEmptyGearEffectManifest()
       : buildTypicalGearEffects(
           options.characterId,
           options.preset,

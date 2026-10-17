@@ -1,5 +1,5 @@
 import {
-  defaultGearEffects,
+  createEmptyGearEffectManifest,
   GEAR_NUMERIC_EFFECT_KEYS,
   GEAR_CHANCE_EFFECT_KEYS,
   type GearEffectManifest,
@@ -70,7 +70,7 @@ function normalizeReactions(saved: unknown): BattleSnapshot["reactions"] {
 }
 
 function normalizeGearEffects(saved: Partial<GearEffectManifest> | undefined): GearEffectManifest {
-  const result = { ...defaultGearEffects };
+  const result = createEmptyGearEffectManifest();
   for (const key of GEAR_NUMERIC_EFFECT_KEYS) result[key] = clampNonNegative(saved?.[key] ?? 0, 0);
   for (const key of GEAR_CHANCE_EFFECT_KEYS) {
     const values = saved?.[key];

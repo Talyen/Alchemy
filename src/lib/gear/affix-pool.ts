@@ -61,7 +61,7 @@ export function rollAffixes(definition: GearDefinition, count: number, rng: () =
   const effectiveCount = Math.min(count, pool.length);
   const selected: GearAffixRoll[] = [];
   const remaining = [...pool];
-  const rarity = definition.rarity ?? "basic";
+  const rarity = definition.rarity;
 
   for (let pick = 0; pick < effectiveCount; pick += 1) {
     const chosen = takeRandomItem(remaining, rng);

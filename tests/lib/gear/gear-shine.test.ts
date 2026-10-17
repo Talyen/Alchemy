@@ -26,3 +26,18 @@ it("shares protected canonical Unique affixes across inspection and combat reads
   expect(getUniqueAffixes("wardbreaker")).toEqual(expected);
   expect(getGearInstanceKeywordIds(second)).toEqual(keywords);
 });
+
+it("filters Gear by the same accepted affixes its tooltip and combat use", () => {
+  const item: GearInstance = {
+    instanceId: "filtered",
+    definitionId: "dagger-astral",
+    affixes: [
+      { id: "flat-physical", value: 0 },
+      { id: "flat-burn", value: NaN },
+      { id: "flat-freeze", value: -1 },
+      { id: "flat-poison", value: Infinity },
+      { id: "flat-holy", value: 3 },
+    ],
+  };
+  expect(getGearInstanceKeywordIds(item)).toEqual(["holy"]);
+});

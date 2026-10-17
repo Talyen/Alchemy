@@ -13,8 +13,7 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
 
   const instanceId = typeof raw.instanceId === "string" ? raw.instanceId : undefined;
   const definitionId = typeof raw.definitionId === "string" ? raw.definitionId : undefined;
-  const definition =
-    definitionId && Object.hasOwn(gearDefinitions, definitionId) ? gearDefinitions[definitionId] : undefined;
+  const definition = definitionId ? gearDefinitions[definitionId] : undefined;
   if (!instanceId || !definitionId || !definition) return null;
 
   // Unique affixes resolve canonically at read time; stored rolls are dropped
@@ -30,7 +29,7 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
       seen.add(roll.id);
       return true;
     })
-    .slice(0, GEAR_AFFIX_COUNT[definition.rarity ?? "basic"].max);
+    .slice(0, GEAR_AFFIX_COUNT[definition.rarity].max);
   return {
     instanceId,
     definitionId,

@@ -12,7 +12,7 @@ import {
 } from "@/lib/game-data";
 import { BASE_PLAYER_MANA, CARDS_PER_TURN, MAX_PLAYER_HEALTH } from "../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
-import { defaultGearEffects } from "@/lib/gear";
+import { createEmptyGearEffectManifest } from "@/lib/gear";
 import type { BattleState, EnemyMitigation } from "./types";
 import { EMPTY_ENEMY_MITIGATION } from "./enemy-mitigation-state";
 import { getBattleOutcome } from "./battle-outcome";
@@ -134,7 +134,7 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     talentEffects: battleTalents = defaultTalentEffects,
     discoveredCardIds: battleDiscovered = [],
     trinketIds: battleBoons = [],
-    gearEffects: battleGearEffects = defaultGearEffects,
+    gearEffects: battleGearEffects = createEmptyGearEffectManifest(),
     difficultyModifiers: battleDiffs = [],
     rng: optionsRng,
     contentSystemType: battleContentSystem = "campaign",

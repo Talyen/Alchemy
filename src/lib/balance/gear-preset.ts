@@ -1,13 +1,15 @@
 import { resolveLootWeights } from "@/lib/loot";
 import { characters, type CharacterId } from "@/lib/game-data";
 import {
-  effectsForInstance,
+  addAffixRollEffects,
+  getGearInstanceAffixes,
+  gearDefinitions,
   generateLootGearChoices,
   gearBaseItemList,
   type GearBaseItemDefinition,
   type GearSlot,
 } from "@/lib/gear";
-import { defaultGearEffects, mergeGearEffectManifests, type GearEffectManifest } from "@/lib/gear/gear-effect-manifest";
+import { createEmptyGearEffectManifest, type GearEffectManifest } from "@/lib/gear/gear-effect-manifest";
 import { pickRandom } from "@/lib/rng";
 import type { TalentPreset } from "./simulator-types";
 
@@ -45,7 +47,7 @@ export function buildTypicalGearEffects(
   astralChanceBonus = 0,
 ): GearEffectManifest {
   const slots = slotsForPreset(preset);
-  if (slots.length === 0) return { ...defaultGearEffects };
+  if (slots.length === 0) return createEmptyGearEffectManifest();
 
   const keywords = characters[characterId].keywords;
   const weights = resolveLootWeights({
@@ -53,7 +55,7 @@ export function buildTypicalGearEffects(
     progress: { depth: SIM_GEAR_ROLL_DEPTH, highestCompletedDifficulty: null },
     astralChanceBonus,
   });
-  let effects = { ...defaultGearEffects };
+  const effects = createEmptyGearEffectManifest();
   let rangedMainHand = false;
   let skipOffHand = false;
 
@@ -64,7 +66,7 @@ export function buildTypicalGearEffects(
     if (!chosen) continue;
     const instance = generateLootGearChoices(1, rng, weights, new Set(), [chosen.id])[0];
     if (!instance) continue;
-    effects = mergeGearEffectManifests(effects, effectsForInstance(instance));
+    addAffixRollEffects(effects, getGearInstanceAffixes(instance), gearDefinitions[instance.definitionId]!.rarity);
     if (slot === "main-hand") {
       rangedMainHand = chosen.slotRule === "ranged";
       skipOffHand = chosen.slotRule === "two-handed";

@@ -2,6 +2,7 @@ import { resolveLootWeights } from "@/lib/loot";
 import { describe, expect, it } from "vitest";
 import { GEAR_AFFIX_COUNT, GEAR_AFFIX_COUNT_MIN_WEIGHT } from "@/lib/game-constants";
 import {
+  createGearInstance,
   generateDevRandomGearInstance,
   generateGearInstanceForBaseItem,
   generateLootGearChoices,
@@ -17,6 +18,20 @@ import { createSeededRng } from "@/lib/rng";
 const weights = resolveLootWeights({ source: "equipment", progress: { depth: 24, highestCompletedDifficulty: null } });
 
 describe("gear generation", () => {
+  it("creates independently owned rolls and canonical empty Unique instances", () => {
+    const rolls = [{ id: "flat-physical" as const, value: 1 }];
+    const ordinary = createGearInstance(gearDefinitions["dagger-basic"]!, rolls, () => "ordinary");
+    const unique = createGearInstance(gearDefinitions[uniqueItemList[0]!.id]!, rolls, () => "unique");
+    rolls[0]!.value = 99;
+    rolls.pop();
+    expect(ordinary).toEqual({
+      instanceId: "ordinary",
+      definitionId: "dagger-basic",
+      affixes: [{ id: "flat-physical", value: 1 }],
+    });
+    expect(unique.affixes).toEqual([]);
+  });
+
   it.each([
     { fillCount: false, nextRandom: 0.19854954350739717 },
     { fillCount: true, nextRandom: 0.4058688203804195 },

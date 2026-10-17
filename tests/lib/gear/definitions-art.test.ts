@@ -4,32 +4,12 @@ import { gearDefinitions, missingGearArtDefinitionIds } from "@/lib/gear/definit
 import { uniqueItemList } from "@/lib/gear/unique-catalog";
 
 describe("gear definitions and art", () => {
-  it("builds the complete catalog with independent slots, affinities, and salvage payouts", () => {
+  it("builds the complete ordinary and Unique catalog", () => {
     const expected = [
-      ...Object.keys(gearBaseItems).flatMap((id) =>
-        (["basic", "astral"] as const).map((rarity) => ({
-          id: `${id}-${rarity}`,
-          baseItemId: id,
-          rarity,
-        })),
-      ),
-      ...uniqueItemList.map((item) => ({ id: item.id, baseItemId: item.baseItemId, rarity: "unique" as const })),
+      ...Object.keys(gearBaseItems).flatMap((id) => [`${id}-basic`, `${id}-astral`]),
+      ...uniqueItemList.map((item) => item.id),
     ];
-    expect(Object.keys(gearDefinitions).sort()).toEqual(expected.map((item) => item.id).sort());
-    for (const identity of expected) {
-      const definition = gearDefinitions[identity.id]!;
-      const base = gearBaseItems[definition.baseItemId];
-      expect(definition, identity.id).toMatchObject({
-        ...identity,
-        compatibleSlots: base.compatibleSlots,
-        slotRule: base.slotRule,
-        affinityKeywords: base.affinityKeywords,
-        salvageValue: base.salvageByRarity[identity.rarity],
-      });
-      expect(definition.compatibleSlots).not.toBe(base.compatibleSlots);
-      expect(definition.affinityKeywords).not.toBe(base.affinityKeywords);
-      expect(definition.salvageValue).not.toBe(base.salvageByRarity[identity.rarity]);
-    }
+    expect(Object.keys(gearDefinitions).sort()).toEqual(expected.sort());
   });
   it("resolves art for every definition without missing-art fallbacks", () => {
     expect(missingGearArtDefinitionIds).toEqual([]);

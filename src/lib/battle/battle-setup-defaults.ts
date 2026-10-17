@@ -4,7 +4,7 @@ import { BASE_ENEMY_HEALTH, MAX_PLAYER_HEALTH } from "../game-constants";
 import type { BattleState } from "./types";
 import { EMPTY_ENEMY_MITIGATION } from "./enemy-mitigation-state";
 import { defaultTrinketEffects } from "../trinkets";
-import { defaultGearEffects } from "@/lib/gear";
+import { createEmptyGearEffectManifest } from "@/lib/gear";
 import { placeholderRng } from "@/lib/rng";
 import { createElementalReactionState } from "./elemental-reaction-state";
 import { createInitialFlags } from "./combat-flags";
@@ -83,7 +83,7 @@ export function defaultBattleState(): BattleState {
     },
     talentEffects: createEmptyTalentEffectManifest(),
     trinketEffects: { ...defaultTrinketEffects },
-    gearEffects: { ...defaultGearEffects },
+    gearEffects: createEmptyGearEffectManifest(),
     flags: createInitialFlags(),
     reactions: createElementalReactionState(),
     uniqueGear: createUniqueGearBattleState(),

@@ -1,17 +1,16 @@
 import { capitalizeWord } from "@/lib/utils";
-import { effectChildren } from "./effect-tree";
+import { visitBattleCardEffects } from "./effect-tree";
 import { createEffectDescription } from "./effect-description";
 import { renderCardDescription, type CardDescription } from "./card-description-model";
 import { DAMAGE_TYPES } from "./types";
 import type { BattleCard, BattleCardEffect, KeywordId } from "./types";
 
-type EffectPresentation<K extends BattleCardEffect["kind"]> = (
-  effect: Extract<BattleCardEffect, { kind: K }>,
-) => KeywordId[];
+type LeafEffectKind = Exclude<BattleCardEffect["kind"], "chance" | "repeat-over-turns">;
+type EffectPresentation<K extends LeafEffectKind> = (effect: Extract<BattleCardEffect, { kind: K }>) => KeywordId[];
 
-const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } = {
+const PRESENTATION: { [K in LeafEffectKind]: EffectPresentation<K> } = {
   damage: (effect) =>
-    dedupeKeywords(
+    effectKeywords(
       effect.damageTypePool?.length ? effect.damageTypePool : [effect.damageType],
       effect.lifesteal ? ["leech"] : [],
       effect.damageTypeIfTargetFrozen ? [effect.damageTypeIfTargetFrozen] : [],
@@ -20,17 +19,16 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
       effect.forgeBonusPercent !== undefined ? ["forge"] : [],
     ),
   "cleanse-player-status-to-damage": (effect) =>
-    dedupeKeywords([effect.status, effect.damageType], effect.lifesteal ? ["leech"] : []),
+    effectKeywords([effect.status, effect.damageType], effect.lifesteal ? ["leech"] : []),
   "random-damage": (effect) =>
-    dedupeKeywords(
-      [...(effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES)],
+    effectKeywords(
+      effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES,
       effect.lifesteal ? ["leech"] : [],
     ),
-  chance: (effect) => [...new Set(effectChildren(effect).flatMap(collectKeywordsFromBattleEffect))],
   "player-status": (effect) =>
-    dedupeKeywords(
+    effectKeywords(
       effect.statusPool
-        ? [...effect.statusPool]
+        ? effect.statusPool
         : effect.status !== "haste" && effect.status !== "phoenixFeather"
           ? [effect.status]
           : [],
@@ -53,7 +51,6 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
   "multiply-enemy-status": (effect) => [effect.status],
   "remove-player-status": (effect) => [effect.status],
   "self-damage": (effect) => [effect.damageType],
-  "repeat-over-turns": (effect) => effect.effects.flatMap(collectKeywordsFromBattleEffect),
   "next-hit-crit": () => [],
   "next-hit-leech": () => ["leech"],
   "play-next-card-twice": () => [],
@@ -78,12 +75,17 @@ export function getCardDescription(card: BattleCard): CardDescription {
   return description;
 }
 
-function dedupeKeywords(...iterables: readonly KeywordId[][]): KeywordId[] {
-  return [...new Set(iterables.flat())];
+function effectKeywords(...iterables: ReadonlyArray<readonly KeywordId[]>): KeywordId[] {
+  return iterables.flat();
 }
 
-export function collectKeywordsFromBattleEffect(effect: BattleCardEffect): KeywordId[] {
-  return PRESENTATION[effect.kind](effect as never);
+export function collectKeywordsFromBattleEffects(effects: readonly BattleCardEffect[]): KeywordId[] {
+  const keywords = new Set<KeywordId>();
+  visitBattleCardEffects(effects, (entry) => {
+    if (entry.kind === "chance" || entry.kind === "repeat-over-turns") return;
+    for (const keyword of PRESENTATION[entry.kind](entry as never)) keywords.add(keyword);
+  });
+  return [...keywords];
 }
 
 /** Exact canonical text needs no second number parser. Custom and saved wording still uses parity rules. */
