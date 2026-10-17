@@ -37,7 +37,6 @@ export function potionUtility(card: BattleCard): number {
       case "random-draw":
       case "random-damage":
         return effect.minAmount + effect.maxAmount;
-      case "buff-companion":
       case "cleanse-player-status-to-damage":
       case "companion-action":
       case "dodge-next-attack":

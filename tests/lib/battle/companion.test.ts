@@ -281,7 +281,6 @@ it("Companion scaling integration applies every damage bonus once and preserves 
     enemyHealth: 100,
     enemyMaxHealth: 100,
     maxMana: 4,
-    companionDamageBuff: 1,
     enemyCC: { freezeSkipTurns: 1 },
     flags: { nextHitCrit: true },
     talentEffects: { companionDamage: 2, companionVsFrozenBonus: 4 },
@@ -289,14 +288,14 @@ it("Companion scaling integration applies every damage bonus once and preserves 
     trinketEffects: { companionDamageBonus: 2 },
   });
   expect(getBattleCompanionDamageModifiers(state)).toEqual({
-    damageBonus: 12,
+    damageBonus: 11,
     damageMultiplier: 1,
   });
   const texts = makeTexts();
   const result = processCompanionTurnStart(state, texts);
-  expect(result.enemyHealth).toBe(87);
-  expect(result.enemyStatuses.burn).toBe(13);
+  expect(result.enemyHealth).toBe(88);
+  expect(result.enemyStatuses.burn).toBe(12);
   expect(result.flags.nextHitCrit).toBe(true);
-  expect(texts).toContainEqual(expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 13 }));
+  expect(texts).toContainEqual(expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 12 }));
   expect(state.enemyStatuses.burn).toBe(0);
 });

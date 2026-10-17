@@ -79,7 +79,6 @@ function flatAttack(effect: DamageEffect, amount: number): DamageEffect {
     ...(effect.ignoreArmor ? { ignoreArmor: true } : {}),
     ...(effect.ignoreBlock ? { ignoreBlock: true } : {}),
     ...(effect.detonateAllBurn ? { detonateAllBurn: true } : {}),
-    ...(effect.detonateIfEnemyBurning ? { detonateIfEnemyBurning: true } : {}),
     ...(effect.detonateAllBleed ? { detonateAllBleed: true } : {}),
   };
 }
@@ -566,9 +565,7 @@ export function getBattleDamageInspectionCard(
       }
       for (const status of ["burn", "bleed"] as const) {
         if (
-          (status === "burn" &&
-            (consumed.packet.detonateAllBurn ||
-              (consumed.packet.detonateIfEnemyBurning && current.enemyStatuses.burn > 0))) ||
+          (status === "burn" && consumed.packet.detonateAllBurn) ||
           (status === "bleed" && consumed.packet.detonateAllBleed)
         ) {
           const detonated = projectEnemyDotDamage(after, status);

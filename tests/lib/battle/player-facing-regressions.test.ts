@@ -40,23 +40,20 @@ describe("player-facing combat regressions", () => {
     expect(result.enemyHealth).toBe(state.enemyHealth - (status === "stun" ? 6 : 4));
   });
 
-  it.each([{ equalToBlock: true }, { equalToArmor: true }, { equalToGoldPercent: 50 }])(
-    "adds Opening to resource-based attacks: %j",
-    (scaling) => {
-      const state = patchBattleState({
-        rng: () => 0.99,
-        playerStatuses: { block: 6, armor: 6 },
-        gold: 12,
-        flags: { nextHitPhysicalBonus: 4 },
-      });
-      const result = dealDamage(
-        state,
-        makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0, ...scaling }] }),
-      );
-      expect(result.enemyHealth).toBe(state.enemyHealth - 10);
-      expect(result.flags.nextHitPhysicalBonus).toBe(0);
-    },
-  );
+  it.each([{ equalToBlock: true }, { equalToArmor: true }])("adds Opening to resource-based attacks: %j", (scaling) => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      playerStatuses: { block: 6, armor: 6 },
+      gold: 12,
+      flags: { nextHitPhysicalBonus: 4 },
+    });
+    const result = dealDamage(
+      state,
+      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0, ...scaling }] }),
+    );
+    expect(result.enemyHealth).toBe(state.enemyHealth - 10);
+    expect(result.flags.nextHitPhysicalBonus).toBe(0);
+  });
 
   it("upgrades both immediate hits of Ray of Frost from Powerful Wish without mutating the library", () => {
     const original = libraryCard("ray-of-frost");

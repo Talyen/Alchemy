@@ -29,20 +29,13 @@ const DAMAGE_KEYWORDS = TRANSMUTATION_KEYWORD_GROUPS[0]!;
 const BUFF_KEYWORDS: readonly KeywordId[] = ["block", "armor", "forge", "thorns"];
 const RESOURCE_KINDS = { health: "heal", mana: "restore-mana", gold: "gain-gold" } as const;
 const SOURCE_CONDITIONS: Partial<Record<KeywordId, readonly string[]>> = {
-  burn: [
-    "doubleIfEnemyBurning",
-    "doubleIfEnemyNotBurning",
-    "tripleIfEnemyNotBurning",
-    "detonateAllBurn",
-    "detonateIfEnemyBurning",
-  ],
+  burn: ["tripleIfEnemyNotBurning", "detonateAllBurn"],
   bleed: ["doubleIfEnemyBleeding", "detonateAllBleed"],
   freeze: ["damageTypeIfTargetFrozen", "ifEnemyFrozen"],
   stun: ["ifEnemyStunned"],
   block: ["equalToBlock", "equalToBlockPercent", "blockCost", "blockDamageBonus", "damageTypeIfTargetHasBlock"],
   armor: ["equalToArmor"],
   forge: ["equalToForge", "forgeBonusPercent"],
-  gold: ["equalToGoldPercent"],
 };
 
 export function isTransmutableCard(card: BattleCard): boolean {

@@ -22,7 +22,6 @@ export const AUTOPLAY_EFFECT_SCORE = {
   draw: 2,
   mana: 2,
   summon: 6,
-  companionBuff: 2,
   criticalHit: 4,
   repeatCard: 5,
   wish: 3,
@@ -42,7 +41,6 @@ function scoreDamageBase(effect: Extract<BattleCardEffect, { kind: "damage" }>, 
   if (effect.equalToForge) return state.playerStatuses.forge;
   if (effect.equalToBlock) return scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? 100);
   if (effect.equalToArmor) return state.playerStatuses.armor;
-  if (effect.equalToGoldPercent !== undefined) return scalePercent(state.gold, effect.equalToGoldPercent);
   // Type-only conditions cannot change this score. Ordinary attacks need no
   // temporary resolved effect; amount-changing conditions keep the shared resolver.
   if (effect.blockCost === undefined && !effect.damageTypeIfTargetFrozen) return effect.amount;
@@ -57,9 +55,7 @@ function scoreDamageEffect(effect: Extract<BattleCardEffect, { kind: "damage" }>
   const burning = state.enemyStatuses.burn > 0;
   const bleeding = state.enemyStatuses.bleed > 0;
   const bonus =
-    Number(effect.doubleIfEnemyBurning === true && burning) +
     Number(effect.doubleIfEnemyBleeding === true && bleeding) +
-    Number(effect.doubleIfEnemyNotBurning === true && !burning) +
     (effect.tripleIfEnemyNotBurning === true && !burning ? 2 : 0);
   return scoreDamageBase(effect, state) * (1 + bonus);
 }
@@ -125,8 +121,6 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
       return effect.amount * AUTOPLAY_EFFECT_SCORE.mana;
     case "summon-companion":
       return AUTOPLAY_EFFECT_SCORE.summon;
-    case "buff-companion":
-      return effect.amount * AUTOPLAY_EFFECT_SCORE.companionBuff;
     case "companion-action":
       return state.activeCompanion
         ? effect.amount *

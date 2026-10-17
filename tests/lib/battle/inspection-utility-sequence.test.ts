@@ -90,24 +90,11 @@ describe("damage inspection follows utility effect execution", () => {
       56,
     );
   });
-  it("carries Thunderstone's guaranteed Gold reward into the following hit", () => {
-    compare(
-      [
-        { kind: "damage", damageType: "stun", amount: 50 },
-        { kind: "damage", damageType: "physical", amount: 0, equalToGoldPercent: 100 },
-      ],
-      {
-        gold: 0,
-        trinketEffects: { thunderstoneDamageOnStun: 2, luckyCloverGoldChance: 100 },
-      },
-      [50, 2],
-      54,
-    );
-  });
+
   it("settles Mana Crystal loss damage before the next hit", () => {
     const effects: BattleCardEffect[] = [
       { kind: "lose-max-mana", amount: 1 },
-      { kind: "damage", damageType: "physical", amount: 2, doubleIfEnemyBurning: true },
+      { kind: "damage", damageType: "physical", amount: 2, tripleIfEnemyNotBurning: true },
     ];
     const card = makeTestCard({ effects });
     const rng = vi.fn(() => 0.99);
@@ -126,8 +113,8 @@ describe("damage inspection follows utility effect execution", () => {
     expect(JSON.stringify(initial)).toBe(before);
     const actual = playBattleCardResolved(initial, card.id, 0);
     expect(actual.state.enemyStatuses.burn).toBe(4);
-    expect(actual.state.enemyHealth).toBe(92);
-    expect(preview.effects.at(-1)).toMatchObject({ kind: "damage", amount: 4 });
+    expect(actual.state.enemyHealth).toBe(94);
+    expect(preview.effects.at(-1)).toMatchObject({ kind: "damage", amount: 2 });
   });
   it.each([false, true])("uses the summoned Companion for later actions and Eager Pack (enabled: %s)", (eagerPack) => {
     compare(

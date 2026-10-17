@@ -75,7 +75,7 @@ export function applyCardHitReactions(
     onPoisonBleedConversion: (current, damage, texts) =>
       resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
   });
-  if (effect.detonateAllBurn || (effect.detonateIfEnemyBurning && enemyWasBurningBefore)) {
+  if (effect.detonateAllBurn) {
     nextState = detonateEnemyStatuses(nextState, ["burn"], combatTexts);
   }
   if (effect.detonateAllBleed) {

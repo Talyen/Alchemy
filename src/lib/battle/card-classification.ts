@@ -96,7 +96,6 @@ function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
     case "gain-gold":
     case "wish":
     case "summon-companion":
-    case "buff-companion":
     case "companion-action":
     case "random-draw":
     case "lose-health":

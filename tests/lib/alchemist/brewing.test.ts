@@ -112,7 +112,7 @@ describe("brewing content", () => {
     const protectedEffects = [
       { kind: "player-status" as const, status: "haste" as const, amount: 1 },
       { kind: "player-status" as const, status: "block" as const, amount: 2, convertCurrentMana: 3 },
-      { kind: "damage" as const, damageType: "holy" as const, amount: 50, equalToGoldPercent: 50 },
+      { kind: "damage" as const, damageType: "holy" as const, amount: 0, equalToBlock: true },
     ];
     const card = makeTestCard({
       id: "health-potion",

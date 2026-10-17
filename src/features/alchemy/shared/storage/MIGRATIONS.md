@@ -100,6 +100,14 @@ Choose the intended new-player default. Safe additive fields retain that default
 
 ## Content changes without a save bump
 
+Unauthored card mechanics no longer form part of the effect contract: combat-long
+Companion buffing, Gold-scaled damage, double damage against Burning or fresh
+targets, and conditional Burn detonation. Current Pack Tactics, Tithe,
+Combustion, and Kindling keep their authored effects. Damage schemas reject
+unknown fields so retired selectors cannot silently become ordinary attacks.
+Existing incomplete-card and battle repair handles these unsupported development
+snapshots; no historical conversion or save-version bump is required.
+
 Preserve valid current-run card effects, descriptions, and explicit Consume overrides together under the [supported baseline](#supported-baseline). Incomplete card content recovers from the live catalog. Gear/loadout ownership cleanup, native enemy Trait refresh, current catalog filtering, and safe manifest defaults remain current-data repair, not historical migrations. Stored Unique affix rolls are dropped at normalization in favor of the canonical catalog affixes; pre-release material renames (gems to crystal, then crystal to gems) and additions (stone, hide) resolve through schema defaults, not aliases or migrations. Persisted battle scalars and collections repair field-by-field to battle defaults, while enemy identity and display data come from the live catalog. A battle block without any card piles or a known enemy is a fragment, not a fight, and drops the combat session instead of fabricating one; the run remains playable and load reports a battle-repair warning. Battle telemetry is runtime-only and is never persisted.
 
 Unauthored card-play, Consume, and Wish rewards no longer declare manifest

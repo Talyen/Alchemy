@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BattleCardEffectSchema, cardById, companionLibrary, getCardKeywords, type BattleCard } from "@/lib/game-data";
+import { BattleCardEffectSchema, cardById, companionLibrary, getCardKeywords } from "@/lib/game-data";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
@@ -102,21 +102,6 @@ describe("thematic card effects", () => {
     const burning = play("kindling", { enemyStatuses: { burn: 1 } });
     expect(burning.enemyHealth).toBe(99);
     expect(burning.enemyStatuses.burn).toBe(2);
-  });
-
-  it("preserves legacy Combustion detonation semantics in complete saved cards", () => {
-    const legacy: BattleCard = {
-      ...cardById.combustion!,
-      descriptionLines: ["Deal 1 Burn damage", "If the enemy was already Burning, detonate all its Burn"],
-      effects: [{ kind: "damage", damageType: "burn", amount: 1, detonateIfEnemyBurning: true }],
-    };
-    const saved = hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(legacy))));
-    const freshTarget = applyCardEffects(battle(), saved, []);
-    expect(freshTarget.enemyHealth).toBe(99);
-    expect(freshTarget.enemyStatuses.burn).toBe(1);
-    const burningTarget = applyCardEffects(battle({ enemyStatuses: { burn: 3 } }), saved, []);
-    expect(burningTarget.enemyHealth).toBe(95);
-    expect(burningTarget.enemyStatuses.burn).toBe(0);
   });
 
   it("Fire Arrow no longer strips enemy Armor", () => {
@@ -387,12 +372,10 @@ describe("thematic card effects", () => {
     expect(getCardKeywords(packTactics)).not.toContain("wish");
     const utility = play("pack-tactics", { activeCompanion: companionLibrary["golden-retriever"] });
     expect(utility.gold).toBe(4);
-    expect(utility.companionDamageBuff).toBe(0);
     expect(utility.wishOptions).toBeNull();
     expect(utility.playerStatuses.block).toBe(2);
     const absent = play("pack-tactics");
     expect(absent.enemyHealth).toBe(100);
-    expect(absent.companionDamageBuff).toBe(0);
     expect(absent.playerStatuses.block).toBe(2);
     expect(absent.wishOptions).toHaveLength(3);
     expect(absent.wishOptions?.every((card) => card.effects.some((effect) => effect.kind === "summon-companion"))).toBe(
@@ -456,23 +439,6 @@ describe("thematic card effects", () => {
         equalToArmor: true,
       }).success,
     ).toBe(false);
-  });
-
-  it("preserves the old saved Pack Tactics effect and description as a complete unit", () => {
-    const legacy: BattleCard = {
-      ...cardById["pack-tactics"]!,
-      descriptionLines: ["Increase Companion damage by 1", "Deal 3 Nature damage"],
-      effects: [
-        { kind: "buff-companion", amount: 1 },
-        { kind: "damage", damageType: "nature", amount: 3 },
-      ],
-    };
-    const saved = hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(legacy))));
-    expect(saved.effects).toEqual(legacy.effects);
-    expect(saved.descriptionLines).toEqual(legacy.descriptionLines);
-    const result = applyCardEffects(battle(), saved, []);
-    expect(result.companionDamageBuff).toBe(1);
-    expect(result.enemyHealth).toBe(97);
   });
 
   it("Bellows Blast grants 1 Forge and deals 1 Burn damage", () => {

@@ -76,8 +76,6 @@ function computeBaseRawAmount(
     amount = scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? PERCENT_DENOMINATOR) + forgeBonus;
   } else if (effect.equalToArmor) {
     amount = state.playerStatuses.armor + forgeBonus;
-  } else if (effect.equalToGoldPercent !== undefined) {
-    amount = scalePercent(state.gold, effect.equalToGoldPercent, PERCENT_DENOMINATOR) + forgeBonus;
   } else {
     amount = effect.amount + forgeBonus;
   }
@@ -155,8 +153,7 @@ export function computeBaseDamage(
     computeBaseRawAmount(state, effect, card) + bonus + poisonPotionBonus + consumeBurnBonus + potionBonus;
   const hasBlock = effect.equalToBlock === true;
   const hasArmor = effect.equalToArmor === true;
-  const hasGold = effect.equalToGoldPercent !== undefined;
-  const isEqualTo = hasBlock || hasArmor || hasGold || effect.equalToForge === true;
+  const isEqualTo = hasBlock || hasArmor || effect.equalToForge === true;
   const vulnerabilityBonus = getEnemyDamageVulnerabilityBonus(state);
   if (isEqualTo) return Math.max(0, rawAmount + (rawAmount > 0 ? vulnerabilityBonus : 0));
   const sharedBonus =

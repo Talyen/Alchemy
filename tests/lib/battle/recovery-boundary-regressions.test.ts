@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { computeBaseDamage } from "@/lib/battle/player-damage-base";
 import { makeTestCard, regressionBattle } from "../../fixtures/battle";
 
 describe("recovery boundaries", () => {
@@ -20,9 +19,5 @@ describe("recovery boundaries", () => {
     });
     const next = playBattleCardResolved(state, card.id, 0).state;
     expect(next.playerHealth).toBe(0);
-  });
-  it("a zero-percent Gold attack cannot fall back to its authored base damage", () => {
-    const state = regressionBattle({ gold: 100 });
-    expect(computeBaseDamage(state, { kind: "damage", damageType: "holy", amount: 9, equalToGoldPercent: 0 })).toBe(0);
   });
 });

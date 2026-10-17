@@ -33,32 +33,27 @@ describe("effect dispatch registry", () => {
     expect(BattleCardEffectSchema.parse(scheduled)).toEqual(scheduled);
   });
 
-  it.each([
-    { doubleIfEnemyBurning: true, tripleIfEnemyNotBurning: true },
-    { doubleIfEnemyBurning: true, doubleIfEnemyNotBurning: true },
-    { doubleIfEnemyNotBurning: true, tripleIfEnemyNotBurning: true },
-    { detonateAllBurn: true, detonateIfEnemyBurning: true },
-    { equalToBlockPercent: 50 },
-    { equalToBlock: true, equalToArmor: true },
-  ])("rejects conflicting or incomplete damage selectors: %j", (flags) => {
-    expect(BattleCardEffectSchema.safeParse({ kind: "damage", damageType: "burn", amount: 1, ...flags }).success).toBe(
-      false,
-    );
-  });
+  it.each([{ equalToBlockPercent: 50 }, { equalToBlock: true, equalToArmor: true }])(
+    "rejects conflicting or incomplete damage selectors: %j",
+    (flags) => {
+      expect(
+        BattleCardEffectSchema.safeParse({ kind: "damage", damageType: "burn", amount: 1, ...flags }).success,
+      ).toBe(false);
+    },
+  );
 
-  it("preserves each independent Burning multiplier, including explicitly disabled alternatives", () => {
-    for (const flag of ["doubleIfEnemyBurning", "doubleIfEnemyNotBurning", "tripleIfEnemyNotBurning"] as const) {
-      const effect = {
-        kind: "damage",
-        damageType: "burn",
-        amount: 2,
-        doubleIfEnemyBurning: false,
-        doubleIfEnemyNotBurning: false,
-        tripleIfEnemyNotBurning: false,
-        [flag]: true,
-      };
-      expect(BattleCardEffectSchema.parse(effect), flag).toEqual(effect);
+  it("rejects retired effect mechanics instead of silently changing saved damage", () => {
+    for (const retired of [
+      { equalToGoldPercent: 50 },
+      { doubleIfEnemyBurning: true },
+      { doubleIfEnemyNotBurning: true },
+      { detonateIfEnemyBurning: true },
+    ]) {
+      expect(
+        BattleCardEffectSchema.safeParse({ kind: "damage", damageType: "burn", amount: 2, ...retired }).success,
+      ).toBe(false);
     }
+    expect(BattleCardEffectSchema.safeParse({ kind: "buff-companion", amount: 1 }).success).toBe(false);
   });
 
   it("rejects broken conditional damage inside saved chance branches", () => {

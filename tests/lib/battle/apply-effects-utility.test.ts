@@ -78,14 +78,6 @@ describe("applyEffectByKind (utility effects)", () => {
     expect(result.activeCompanion).toEqual(companionLibrary.wolf);
   });
 
-  it("buff-companion increases companionDamageBuff", () => {
-    const state = patchBattleState({ companionDamageBuff: 1 });
-    const card = makeTestCard({ effects: [{ kind: "buff-companion", amount: 2 }] });
-    const effect = { kind: "buff-companion" as const, amount: 2 };
-    const result = applyEffectByKind(state, card, effect, 1, makeTexts());
-    expect(result.companionDamageBuff).toBe(3);
-  });
-
   it("self-damage reduces health and applies status", () => {
     const state = patchBattleState({ playerHealth: 20 });
     const card = makeTestCard({ effects: [{ kind: "self-damage", damageType: "bleed", amount: 4 }] });

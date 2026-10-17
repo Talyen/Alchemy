@@ -25,7 +25,6 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
       effect.blockCost !== undefined || effect.equalToBlock ? ["block"] : [],
       effect.equalToArmor ? ["armor"] : [],
       effect.equalToForge || effect.forgeBonusPercent !== undefined ? ["forge"] : [],
-      effect.equalToGoldPercent !== undefined ? ["gold"] : [],
     ),
   "cleanse-player-status-to-damage": (effect) =>
     dedupeKeywords([effect.status, effect.damageType], effect.lifesteal ? ["leech"] : []),
@@ -53,7 +52,6 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
   "gain-gold": () => ["gold"],
   wish: (effect) => (effect.companionIfAbsent ? [] : ["wish"]),
   "summon-companion": () => ["companion"],
-  "buff-companion": () => ["companion"],
   "companion-action": () => ["companion"],
   "random-draw": () => [],
   "remove-harmful-status": () => [],

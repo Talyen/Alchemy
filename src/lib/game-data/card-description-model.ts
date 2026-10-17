@@ -16,7 +16,6 @@ export const CARD_MAGNITUDE_FIELDS = [
   "maxAmount",
   "perManaCrystal",
   "convertCurrentMana",
-  "equalToGoldPercent",
 ] as const;
 
 type NumericField<E> = {

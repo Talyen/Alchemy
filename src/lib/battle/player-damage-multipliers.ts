@@ -33,9 +33,7 @@ function computeEffectBonusMultiplier(
   state: BattleState,
 ): number {
   let bonus = 0;
-  if (effect.doubleIfEnemyBurning && state.enemyStatuses.burn > 0) bonus += 1;
   if (effect.doubleIfEnemyBleeding && state.enemyStatuses.bleed > 0) bonus += 1;
-  if (effect.doubleIfEnemyNotBurning && state.enemyStatuses.burn === 0) bonus += 1;
   if (effect.tripleIfEnemyNotBurning && state.enemyStatuses.burn === 0) bonus += 2;
   return bonus;
 }

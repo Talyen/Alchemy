@@ -149,7 +149,6 @@ function ineffectiveEffectFeedback(effect: BattleCardEffect): CombatTextEvent | 
     case "self-damage":
     case "random-damage":
     case "summon-companion":
-    case "buff-companion":
     case "random-draw":
     case "gain-gold":
     case "draw-cards":

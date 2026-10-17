@@ -3,7 +3,7 @@ import { AmountSchema, DamageTypeSchema, EnemyStatusDamageIdSchema, PositiveAmou
 
 export const DAMAGE_EFFECT_DEFINITIONS = [
   z
-    .object({
+    .strictObject({
       kind: z.literal("damage"),
       damageType: DamageTypeSchema,
       amount: AmountSchema,
@@ -20,14 +20,10 @@ export const DAMAGE_EFFECT_DEFINITIONS = [
       damageTypeIfTargetHasBlock: DamageTypeSchema.optional(),
       damageTypeIfTargetFrozen: DamageTypeSchema.optional(),
       amountIfTargetFrozen: AmountSchema.optional(),
-      equalToGoldPercent: z.number().int().min(0).max(100).optional(),
-      doubleIfEnemyBurning: z.boolean().optional(),
       doubleIfEnemyBleeding: z.boolean().optional(),
-      doubleIfEnemyNotBurning: z.boolean().optional(),
       tripleIfEnemyNotBurning: z.boolean().optional(),
       detonateAllBurn: z.boolean().optional(),
       detonateAllBleed: z.boolean().optional(),
-      detonateIfEnemyBurning: z.boolean().optional(),
       damageTypePool: z.array(DamageTypeSchema).min(2).optional(),
     })
     .refine((data) => (data.blockCost === undefined) === (data.blockDamageBonus === undefined), {
@@ -51,8 +47,7 @@ export const DAMAGE_EFFECT_DEFINITIONS = [
               data.equalToBlock === true ||
               data.equalToArmor === true ||
               data.equalToForge === true ||
-              data.forgeBonusPercent !== undefined ||
-              data.equalToGoldPercent !== undefined
+              data.forgeBonusPercent !== undefined
             ))
         );
       },
@@ -63,26 +58,13 @@ export const DAMAGE_EFFECT_DEFINITIONS = [
     })
     .refine(
       (data) =>
-        [
-          data.equalToBlock,
-          data.equalToArmor,
-          data.equalToForge,
-          data.forgeBonusPercent !== undefined,
-          data.equalToGoldPercent !== undefined,
-        ].filter(Boolean).length <= 1,
-      {
-        message: "damage effect must have at most one of equalToBlock/equalToArmor/equalToForge/equalToGoldPercent",
-      },
-    )
-    .refine(
-      (data) =>
-        [data.doubleIfEnemyBurning, data.doubleIfEnemyNotBurning, data.tripleIfEnemyNotBurning].filter(Boolean)
+        [data.equalToBlock, data.equalToArmor, data.equalToForge, data.forgeBonusPercent !== undefined].filter(Boolean)
           .length <= 1,
-      { message: "damage effect must have at most one Burning damage multiplier" },
-    )
-    .refine((data) => !(data.detonateAllBurn && data.detonateIfEnemyBurning), {
-      message: "damage effect cannot have both detonateAllBurn and detonateIfEnemyBurning",
-    }),
+      {
+        message: "damage effect must have at most one of equalToBlock/equalToArmor/equalToForge/forgeBonusPercent",
+      },
+    ),
+
   z.object({
     kind: z.literal("self-damage"),
     damageType: EnemyStatusDamageIdSchema,

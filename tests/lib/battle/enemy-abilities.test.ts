@@ -161,13 +161,7 @@ describe("enemy repertoire", () => {
       effects: [{ kind: "damage", damageType: "physical", amount: 3, lifesteal: true } as never],
     });
     expect(isEnemyAbilityCard(supported as never)).toBe(true);
-    for (const extra of [
-      { equalToArmor: true },
-      { equalToGoldPercent: 10 },
-      { doubleIfEnemyBurning: true },
-      { tripleIfEnemyNotBurning: true },
-      { detonateIfEnemyBurning: true },
-    ]) {
+    for (const extra of [{ equalToArmor: true }, { tripleIfEnemyNotBurning: true }]) {
       const card = makeTestCard({
         effects: [{ kind: "damage", damageType: "physical", amount: 3, ...extra } as never],
       });

@@ -89,7 +89,6 @@ export interface BattleSnapshot {
   wishOptions: BattleCard[] | null;
   wishQueue: BattleCard[][];
   activeCompanion: CompanionDefinition | null;
-  companionDamageBuff: number;
   currentEnemy: BestiaryEntry;
   talentEffects: TalentEffectManifest;
   trinketEffects: TrinketManifest;

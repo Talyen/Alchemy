@@ -40,10 +40,7 @@ function strengthenEffect(effect: BattleCardEffect): BattleCardEffect {
     return effect;
   if (
     effect.kind === "damage" &&
-    (effect.equalToBlock === true ||
-      effect.equalToArmor === true ||
-      effect.equalToForge === true ||
-      effect.equalToGoldPercent !== undefined)
+    (effect.equalToBlock === true || effect.equalToArmor === true || effect.equalToForge === true)
   )
     return effect;
   if (effect.kind === "damage") {

@@ -199,10 +199,6 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
       const summoned = { ...state, activeCompanion: companionLibrary[effect.companionId] };
       return port.summon(summoned, combatTexts);
     },
-    "buff-companion": (state, _card, effect, _potionMult, combatTexts) => {
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "companion", amount: effect.amount });
-      return { ...state, companionDamageBuff: state.companionDamageBuff + effect.amount };
-    },
     "gain-gold": (state, _card, effect, potionMult, combatTexts) => {
       if (effect.ifEnemyStunned && state.enemyCC.stunSkipTurns <= 0) {
         return state;

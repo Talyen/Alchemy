@@ -85,8 +85,6 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
           amount(),
           ` ${type} damage, increased by ${effect.forgeBonusPercent === 50 ? "half" : `${effect.forgeBonusPercent}% of`} your Forge`,
         ];
-      if (effect.equalToGoldPercent !== undefined)
-        return [`Deal ${type} damage equal to `, value(effect, address, "equalToGoldPercent"), "% of your Gold"];
       const conditional = createConditionalDamageLine(effect, address);
       if (conditional) return conditional;
       return [
@@ -189,7 +187,6 @@ function createEffectLine(effect: BattleCardEffect, address: CardEffectAddress):
       return ["Dodge the next attack"];
     case "enemy-status":
     case "summon-companion":
-    case "buff-companion":
     case "chance":
     case "repeat-over-turns":
     case "cleanse-player-status-to-damage":
@@ -219,11 +216,9 @@ function damageLines(
     lines.push([
       `Ignores ${[effect.ignoreArmor ? "Armor" : "", effect.ignoreBlock ? "Block" : ""].filter(Boolean).join(" and ")}`,
     ]);
-  if (effect.doubleIfEnemyNotBurning) lines.push(["Doubled if enemy was not Burning"]);
-  if (effect.doubleIfEnemyBurning) lines.push(["Doubled if the enemy was already Burning"]);
   if (effect.doubleIfEnemyBleeding) lines.push(["Doubled if the enemy was already Bleeding"]);
   if (effect.tripleIfEnemyNotBurning) lines.push(["Tripled if enemy was not Burning"]);
-  if (effect.detonateAllBurn || effect.detonateIfEnemyBurning) lines.push(["Detonate all Burn"]);
+  if (effect.detonateAllBurn) lines.push(["Detonate all Burn"]);
   if (effect.detonateAllBleed) lines.push(["Detonate all Bleed"]);
   return lines;
 }

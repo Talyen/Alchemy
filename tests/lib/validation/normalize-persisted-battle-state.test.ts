@@ -202,16 +202,6 @@ describe("normalizePersistedBattleState", () => {
     expect(normalizePersistedBattleState(normalized).talentEffects).toEqual(normalized.talentEffects);
   });
 
-  it("drops a retired Forge reaction queue without changing the current combat snapshot", () => {
-    const current = normalizePersistedBattleState({ ...defaultBattleState(), playerHealth: 17, gold: 25 });
-    const restored = normalizePersistedBattleState({
-      ...current,
-      pendingForgeThresholds: [{ previousForge: 0, nextForge: 5 }],
-    } as typeof current);
-    expect(restored).toEqual(current);
-    expect(Object.hasOwn(restored, "pendingForgeThresholds")).toBe(false);
-  });
-
   it("drops unsupported saved traits while keeping current encounter modifiers playable", () => {
     const defaults = defaultBattleState();
     const saved = {

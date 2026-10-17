@@ -42,7 +42,6 @@ function companionAction(effect: BattleCardEffect): string | null {
     case "summon-companion":
     case "remove-player-status":
     case "self-damage":
-    case "buff-companion":
     case "companion-action":
     case "random-draw":
     case "lose-health":
