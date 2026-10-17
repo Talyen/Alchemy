@@ -245,7 +245,7 @@ export function getTransmutationVariants(
       return [];
     return [{ sourceKeyword: null, result }];
   }
-  if (keyword === "consume")
+  if (keyword === "consume" && !isCompanionSummonCard(card))
     return [{ sourceKeyword: null, result: finishAlteration(card, keyword, effects, { consume: true }) }];
   if (getCardDescription(card).filter((line) => line.role === "effect").length >= CORRUPTION_MAX_EFFECT_LINES)
     return [];

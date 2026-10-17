@@ -124,6 +124,13 @@ it("requires a summon for a Companion addition", () => {
   );
 });
 
+it("does not offer Consume to summons that already leave the battle without Consume rewards", () => {
+  const summon = cardById["wolf-companion"]!;
+  expect(getTransmutationVariants(summon, "consume", [summon])).toEqual([]);
+  expect(getTransmutationVariants(describedCard([chance([summon.effects[0]!], [])]), "consume", [])).toEqual([]);
+  expect(getTransmutationVariants(cardById.slash!, "consume", [])).toHaveLength(1);
+});
+
 it("excludes existing destination keywords and repeat Transmutation or Corruption", () => {
   const slash = cardById.slash!;
   const burning = getTransmutationVariants(slash, "burn", [])[0]!.result;

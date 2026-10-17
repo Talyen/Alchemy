@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import { expect, it } from "vitest";
 import { createMixedPotion, doublePotionPotency } from "@/lib/alchemist";
 import { cardById, cloneBattleCard, getCardDescription, type BattleCardEffect } from "@/lib/game-data";
@@ -122,22 +123,30 @@ it.each([createMixedPotion, (card: ReturnType<typeof potion>) => doublePotionPot
 it("keeps standard and corrupted Potion descriptions faithful through mixing and restoration", () => {
   const pool = getStandardPotionPool();
   const failures: string[] = [];
+  let violations = 0;
+  function check(valid: boolean, scenario: string) {
+    if (valid) return;
+    violations++;
+    if (failures.length < 10) failures.push(scenario);
+  }
   for (const source of pool) {
-    if (validateCardDescriptionParity(doublePotionPotency(source)).length)
-      failures.push(`${source.id}: Strong Spirits`);
+    check(!validateCardDescriptionParity(doublePotionPotency(source)).length, `${source.id}: Strong Spirits`);
     for (const other of pool)
-      if (validateCardDescriptionParity(createMixedPotion(source, other)).length)
-        failures.push(`${source.id} + ${other.id}`);
+      check(!validateCardDescriptionParity(createMixedPotion(source, other)).length, `${source.id} + ${other.id}`);
+    const other = pool.find((candidate) => candidate.id !== source.id)!;
     for (const group of getCorruptionMutationGroups(source)) {
-      for (const mutation of group.mutations) {
+      for (const [index, mutation] of group.mutations.entries()) {
+        const scenario = `${source.id}: ${group.kind}[${index}]`;
         const mixed = createMixedPotion(mutation.card, source);
-        if (validateCardDescriptionParity(mixed).length) failures.push(`${source.id}: ${group.kind}`);
-        expect(roundTrip(mixed)).toEqual(mixed);
-        const other = pool.find((candidate) => candidate.id !== source.id)!;
+        check(!validateCardDescriptionParity(mixed).length, `${scenario}: parity`);
+        check(isDeepStrictEqual(roundTrip(mixed), mixed), `${scenario}: restoration`);
         const lines = mutation.card.descriptionLines.filter((line) => line !== "Consume");
-        expect(createMixedPotion(mutation.card, other).descriptionLines.slice(0, lines.length)).toEqual(lines);
+        check(
+          isDeepStrictEqual(createMixedPotion(mutation.card, other).descriptionLines.slice(0, lines.length), lines),
+          `${scenario}: ingredient description`,
+        );
       }
     }
   }
-  expect(failures).toEqual([]);
+  expect({ violations, failures }).toEqual({ violations: 0, failures: [] });
 });

@@ -21,7 +21,7 @@ import {
   setRunPlayerHealth,
   setRunActivityData,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { hydrateAlchemyPersistenceFields } from "@/features/alchemy/shared/storage";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { cardById, cloneBattleCard } from "@/lib/game-data";
@@ -301,7 +301,7 @@ describe("consumable preservation and paired evidence", () => {
     ).toBe(false);
   });
 
-  it("actually plays an attack after two defensive turns without sacrificing initial emergency defense", () => {
+  it("uses affordable emergency defense and still attacks with the remaining Mana", () => {
     const deck = cards("mana-shield", "caustic-jab", "poison-dagger", "predators-focus");
     start(deck);
     const base = createBattleState({
@@ -331,14 +331,13 @@ describe("consumable preservation and paired evidence", () => {
       const choices = actor.observe();
       return choices.reduce((selected, choice) => (choice.score > selected.score ? choice : selected));
     };
-    for (let turn = 0; turn < 2; turn++) {
-      const choice = best();
-      expect(choice.id).toBe("mana-shield");
-      expect(actor.observe()).toEqual(actor.observe());
-      actor.execute(choice);
-      expect(best().kind).toBe("end-turn");
-      actor.execute(best());
-    }
+    const choice = best();
+    expect(choice.id).toBe("mana-shield");
+    const before = stateDigest(session);
+    expect(actor.observe()).toEqual(actor.observe());
+    expect(stateDigest(session)).toBe(before);
+    actor.execute(choice);
+    expect(readBattle(session).battleState.mana).toBe(6);
     let attacked = false;
     for (let action = 0; action < 4 && !attacked; action++) {
       const choice = best();
@@ -348,6 +347,7 @@ describe("consumable preservation and paired evidence", () => {
       actor.execute(choice);
     }
     expect(attacked).toBe(true);
+    expect(readBattle(session).battleState.turn).toBe(base.turn);
   });
 
   it("allows only the explicit brewing treatment difference in paired comparisons", () => {

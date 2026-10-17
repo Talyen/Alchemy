@@ -109,7 +109,12 @@ export function createCanvasLifecycle({
     // repeat the same size. Reinitialize drawing state only when its inputs change.
     if (sizeChanged || backingChanged || scaleChanged) {
       lastBackingScale = scale;
-      onResize?.(nextWidth, nextHeight, scale);
+      try {
+        onResize?.(nextWidth, nextHeight, scale);
+      } catch (error) {
+        dispose();
+        throw error;
+      }
       scheduleFrame();
     }
   }
@@ -121,8 +126,7 @@ export function createCanvasLifecycle({
       shouldReduceMotion() ||
       document?.hidden ||
       (pauseOnBlur && document && !document.hasFocus()) ||
-      canvas.width < 2 ||
-      canvas.height < 2
+      (ro !== null && (lifecycle.logicalWidth === 0 || lifecycle.logicalHeight === 0))
     );
   }
 
@@ -132,7 +136,12 @@ export function createCanvasLifecycle({
     animFrameId = requestAnimationFrame((now) => {
       // Cancellation may race an already queued callback after focus resumes.
       if (version !== frameVersion || animFrameId === null) return;
-      frame(now);
+      try {
+        frame(now);
+      } catch (error) {
+        dispose();
+        throw error;
+      }
     });
   }
 
@@ -147,6 +156,15 @@ export function createCanvasLifecycle({
     const currentDpr = typeof devicePixelRatio !== "undefined" ? devicePixelRatio : 1;
     if (!ro || currentDpr !== lastDpr) {
       resize();
+    }
+    // Resize callbacks may dispose this lifetime or deactivate its owner.
+    if (isPaused()) return;
+    if (lifecycle.logicalWidth === 0 || lifecycle.logicalHeight === 0) {
+      // Without an observer, keep checking layout until the mount becomes visible.
+      lastTime = now;
+      nextFrameAt = null;
+      scheduleFrame();
+      return;
     }
 
     if (minFrameIntervalMs > 0) {

@@ -1,3 +1,4 @@
+import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { PotionComparison } from "./potion-comparison";
@@ -5,7 +6,7 @@ import { playUISound } from "@/lib/audio";
 import { useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
-import { isBrewablePotion, strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
+import { strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
 import { BattleCardButton } from "../../shared/ui/cards/card-button";
 import { collectionTileWidthClass } from "../../shared/config";
@@ -56,10 +57,12 @@ export function BrewPotionPanel({
   useCaptureEscapeCancel(onBack);
   const items =
     kind === "new"
-      ? offers.map((card, index) => ({ card, index }))
-      : sourceDeck
-          .map((card, index) => ({ card, index }))
-          .filter(({ card }) => isBrewablePotion(card) && (kind !== "strengthen" || strengthenPotion(card) !== null));
+      ? offers.map((card, index) => ({ card, index, preview: card }))
+      : sourceDeck.flatMap((card, index) => {
+          if (!isPotionCard(card)) return [];
+          const preview = kind === "strengthen" ? strengthenPotion(card) : null;
+          return kind === "strengthen" && !preview ? [] : [{ card, index, preview }];
+        });
   const a = selected[0] ?? -1;
   const b = selected[1] ?? -1;
   const operation: BrewOperation =
@@ -68,9 +71,7 @@ export function BrewPotionPanel({
     kind === "new"
       ? offers[a]
       : kind === "strengthen"
-        ? sourceDeck[a]
-          ? strengthenPotion(sourceDeck[a])
-          : null
+        ? items.find((item) => item.index === a)?.preview
         : a !== b
           ? tryCreateMixedPotion(sourceDeck[a], sourceDeck[b])
           : null;

@@ -1,5 +1,6 @@
+import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
-import { isBrewablePotion, strengthenPotion } from "@/lib/alchemist/brewing";
+import { strengthenPotion } from "@/lib/alchemist/brewing";
 import { getEffectiveDamageScore, type BattleSnapshot } from "@/lib/battle";
 import { harmfulPlayerStatusIds, mapEffectChildren, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 
@@ -66,7 +67,7 @@ export interface BrewCandidate {
 }
 
 export function brewCandidates(deck: readonly BattleCard[]): BrewCandidate[] {
-  const potions = deck.flatMap((card, index) => (isBrewablePotion(card) ? [{ card, index }] : []));
+  const potions = deck.flatMap((card, index) => (isPotionCard(card) ? [{ card, index }] : []));
   const candidates: BrewCandidate[] = [];
   for (const { card, index } of potions) {
     const result = strengthenPotion(card);
@@ -93,7 +94,7 @@ export function brewCandidates(deck: readonly BattleCard[]): BrewCandidate[] {
 }
 
 export function potionPurchaseScore(card: BattleCard, deck: readonly BattleCard[]): number {
-  const count = deck.filter(isBrewablePotion).length;
+  const count = deck.filter(isPotionCard).length;
   const value = potionUtility(card);
   const inferiorCopy = deck.some((owned) => owned.id === card.id && potionUtility(owned) > value);
   return count >= 4 || value <= 0 || inferiorCopy ? -1 : 1 + value / 10;

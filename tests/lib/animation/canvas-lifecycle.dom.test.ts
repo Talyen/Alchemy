@@ -123,18 +123,68 @@ it("revokes cancelled callbacks across focus changes and disposal without forkin
   expect(h.disconnect).toHaveBeenCalledOnce();
 });
 
-it("refreshes zero-sized mounts on focus without ResizeObserver", () => {
+it("parks drawing at zero size and resumes layout changes without ResizeObserver or a focus event", () => {
   const h = animationHarness(0, 0);
   vi.stubGlobal("ResizeObserver", undefined);
-  const lifecycle = createCanvasLifecycle({ canvas: h.canvas, onFrame: vi.fn() });
+  const onFrame = vi.fn();
+  const lifecycle = createCanvasLifecycle({ canvas: h.canvas, onFrame });
   h.own(lifecycle.dispose);
-  expect(h.pending.size).toBe(0);
+  h.frame(100);
+  expect(onFrame).not.toHaveBeenCalled();
   h.resize(48, 64);
-  window.dispatchEvent(new Event("focus"));
-  window.dispatchEvent(new Event("focus"));
+  h.frame(200);
   expect(h.canvas.width).toBe(48);
+  expect(onFrame).toHaveBeenLastCalledWith(200, expect.any(Number), 48, 64);
+  h.resize(0, 64);
+  h.frame(300);
+  expect(onFrame).toHaveBeenCalledOnce();
+  h.resize(72, 64);
+  h.frame(400);
+  expect(onFrame).toHaveBeenLastCalledWith(400, expect.any(Number), 72, 64);
   expect(h.pending.size).toBe(1);
 });
+
+it("does not draw after a resize callback disposes the lifetime", () => {
+  const h = animationHarness();
+  vi.stubGlobal("ResizeObserver", undefined);
+  const onFrame = vi.fn();
+  const lifecycle = createCanvasLifecycle({
+    canvas: h.canvas,
+    onFrame,
+    onResize: (width) => {
+      if (width === 800) lifecycle.dispose();
+    },
+  });
+  h.own(lifecycle.dispose);
+  h.resize(800, 480);
+  h.frame(100);
+  expect(onFrame).not.toHaveBeenCalled();
+  expect(h.pending.size).toBe(0);
+});
+
+it.each(["draw", "resize"])(
+  "releases the lifetime after a %s failure so focus cannot restart the broken effect",
+  (failure) => {
+    const h = animationHarness();
+    const onFrame = vi.fn(() => {
+      if (failure === "draw") throw new Error("callback failed");
+    });
+    const lifecycle = createCanvasLifecycle({
+      canvas: h.canvas,
+      onFrame,
+      onResize: (width) => {
+        if (failure === "resize" && width === 800) throw new Error("callback failed");
+      },
+    });
+    h.own(lifecycle.dispose);
+    expect(() => (failure === "draw" ? h.frame(100) : h.resize(800, 480))).toThrow("callback failed");
+    window.dispatchEvent(new Event("focus"));
+    h.notifyResize();
+    expect(onFrame).toHaveBeenCalledTimes(failure === "draw" ? 1 : 0);
+    expect(h.disconnect).toHaveBeenCalledOnce();
+    expect(h.pending.size).toBe(0);
+  },
+);
 
 it.each([0, 2.2])("paces 30 FPS with %s ms callback jitter and skips missed deadlines", (jitter) => {
   const h = animationHarness();

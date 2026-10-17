@@ -221,7 +221,8 @@ export const screenAmbienceSounds = {
 export type UISound = keyof typeof uiSounds;
 
 export function getCardSounds(cardId: string): readonly string[] {
-  return cardSounds[isMixedPotionCard({ id: cardId }) ? MIXED_POTION_CARD_ID : cardId] ?? [];
+  const key = isMixedPotionCard({ id: cardId }) ? MIXED_POTION_CARD_ID : cardId;
+  return Object.hasOwn(cardSounds, key) ? cardSounds[key]! : [];
 }
 
 export function allRegisteredSoundFiles(): string[] {

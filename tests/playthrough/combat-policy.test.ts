@@ -18,7 +18,7 @@ function snapshot(health = 23): BattleSnapshot {
     hand: [shield, attack],
     deck: [],
     discard: [],
-    mana: 7,
+    mana: 1,
     maxMana: 7,
     turn: 101,
     enemyHealth: 1242,
@@ -27,7 +27,7 @@ function snapshot(health = 23): BattleSnapshot {
 }
 
 describe("simulation combat policy", () => {
-  it("breaks the captured Mana Shield preference after two defensive turns while preserving live scoring", () => {
+  it("reserves the last Mana for an attack after two defensive turns while preserving live scoring", () => {
     const state = snapshot();
     expect(getEffectiveDamageScore(shield, state)).toBeGreaterThan(getEffectiveDamageScore(attack, state));
     const emergency = scoreCombatCards([shield, attack], state, "greedy-effective-damage", 0);
@@ -51,7 +51,7 @@ describe("simulation combat policy", () => {
 
   it("retains defense with spare Mana or no attack, and leaves random play unchanged", () => {
     const block = cloneBattleCard(cardById.block!);
-    const state = snapshot(86);
+    const state = { ...snapshot(86), mana: 7 };
     const spare = scoreCombatCards([block, attack], state, "greedy-effective-damage", 0);
     expect(spare[0]).toBe(getEffectiveDamageScore(block, state));
     const lastMana = scoreCombatCards([block, attack], { ...state, mana: 1 }, "greedy-effective-damage", 0);

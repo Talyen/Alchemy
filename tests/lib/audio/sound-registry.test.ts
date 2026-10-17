@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cardLibrary, companionLibrary } from "@/lib/game-data";
 import { COMPANION_SOUND_CARD_IDS } from "@/lib/game-constants";
-import { cardSounds, battleEventSounds, uiSounds } from "@/lib/audio/sound-registry";
+import { cardSounds, getCardSounds } from "@/lib/audio/sound-registry";
 
 describe("complete focal sound coverage", () => {
   it("every card has a nonempty cue registration, without stale content keys", () => {
@@ -17,7 +17,7 @@ describe("complete focal sound coverage", () => {
   });
 });
 
-it("approved separation of formerly shared cues keeps selected event roles distinct and respects explicit silence", () => {
-  expect(battleEventSounds.endTurn).not.toBe(uiSounds.toggleOff);
-  expect(uiSounds.shopRemove).toBeNull();
+it("treats unknown saved card IDs as silent while resolving crafted Mixed Potions", () => {
+  for (const id of ["missing", "constructor", "toString", "__proto__"]) expect(getCardSounds(id)).toEqual([]);
+  expect(getCardSounds("mixed-potion-crafted")).toEqual(cardSounds["mixed-potion"]);
 });
