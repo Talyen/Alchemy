@@ -1,3 +1,5 @@
+import { cardBack, discardPile as pileDiscardArt } from "@/lib/game-data";
+import { DISCARD_PILE_TOP_CARD_BOUNDS } from "@/lib/game-constants";
 import { memo, useMemo } from "react";
 import { motion, useAnimationFrame, useMotionValue } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -8,7 +10,6 @@ import type { BattlePresentationStore } from "../battle-presentation-store";
 import type { BattleRefs, CardTransfer } from "../../../shared/types";
 import { getCardTransferPose } from "./card-transfer-motion";
 import { defaultMeasureVisualCardRect, getCardRotation } from "./scene-geometry";
-import { BattleSceneArtwork } from "../../../shared/ui/battle-scene-artwork";
 import { Surface } from "../../../shared/ui/surface";
 import type { BattleSnapshot } from "@/lib/battle";
 import { getHandCardKey, getPlayableHandCardKeys } from "../playable-hand";
@@ -30,7 +31,9 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
   const reduced = useReducedMotionPreference();
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const scale = useMotionValue(transfer.fromScale);
+  const scaleX = useMotionValue(transfer.fromScale);
+  const scaleY = useMotionValue(transfer.fromScale);
+  const rotateY = useMotionValue(transfer.rotateY[0]);
   const rotate = useMotionValue(transfer.fromRotation);
   useAnimationFrame((elapsed) => {
     let current = transfer;
@@ -56,7 +59,9 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
     const pose = getCardTransferPose(current, reduced ? 1 : elapsed / (transfer.duration * 1000));
     x.set(pose.x);
     y.set(pose.y);
-    scale.set(pose.scale);
+    scaleX.set(pose.scaleX);
+    scaleY.set(pose.scaleY);
+    rotateY.set(pose.rotateY);
     rotate.set(pose.rotate);
   });
   return (
@@ -65,7 +70,7 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
       data-transfer-kind={transfer.kind}
       data-transfer-card-key={transfer.handCardKey}
       aria-hidden="true"
-      className="pointer-events-none absolute transform-gpu will-change-transform"
+      className="pointer-events-none absolute transform-gpu will-change-transform [backface-visibility:visible]"
       initial={false}
       style={{
         left: transfer.from.x,
@@ -74,7 +79,10 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
         height: transfer.from.height,
         x,
         y,
-        scale,
+        scaleX,
+        scaleY,
+        rotateY,
+        transformStyle: "preserve-3d",
         rotate,
         // Cascades depart right-to-left; insertion order would put each later
         // flight in front of the card that previously covered it in the hand.
@@ -84,11 +92,11 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
       <Surface
         className={cn(
           cardArtFrameClass,
-          "battle-scene-piece aspect-[3/4] h-full w-full",
+          "card-face absolute inset-0 aspect-[3/4] h-full w-full",
           unplayable && "hand-card-unplayable",
         )}
       >
-        <BattleSceneArtwork className="h-full w-full">
+        <div className="h-full w-full">
           <img
             src={transfer.card.art}
             alt=""
@@ -97,11 +105,39 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
             decoding="sync"
             className={cn("block h-full w-full", cardArtImageClass)}
           />
-        </BattleSceneArtwork>
+        </div>
       </Surface>
+      <div className="card-face-back absolute inset-0 overflow-hidden rounded-shell-hero">
+        {transfer.kind === "discard" ? (
+          <DiscardCardBack />
+        ) : (
+          <img src={cardBack} alt="" draggable={false} decoding="sync" className="h-full w-full object-cover" />
+        )}
+      </div>
     </motion.div>
   );
 });
+
+function DiscardCardBack() {
+  const crop = DISCARD_PILE_TOP_CARD_BOUNDS;
+  return (
+    <div data-discard-card-back className="relative h-full w-full overflow-hidden">
+      <img
+        src={pileDiscardArt}
+        alt=""
+        draggable={false}
+        decoding="sync"
+        className="absolute max-w-none"
+        style={{
+          width: `${100 / crop.width}%`,
+          height: `${100 / crop.height}%`,
+          left: `${(-100 * crop.x) / crop.width}%`,
+          top: `${(-100 * crop.y) / crop.height}%`,
+        }}
+      />
+    </div>
+  );
+}
 
 export function CardTransferLayer({
   presentation,

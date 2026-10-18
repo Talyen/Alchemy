@@ -22,7 +22,7 @@ function printHelp() {
   console.log(`Usage: node scripts/sync-generated.mjs [--check] [--art-only|--gear-only|--version-only]
   Default syncs the art registry + version metadata.
   Fine-grained syncs (npm run sync:art / sync:gear-art / sync:version forward here):
-    --art-only      Sync assets.generated.ts (Boards and Gear register eagerly from catalogs)
+    --art-only      Sync assets.generated.ts (Gear register eagerly from catalogs)
     --gear-only     Compatibility alias for --art-only
     --version-only  Sync metadata.generated.ts only`);
 }

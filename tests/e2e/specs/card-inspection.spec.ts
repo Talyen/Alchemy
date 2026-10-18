@@ -38,8 +38,8 @@ test("inspects the run deck and each battle pile without advancing combat", crit
   await page.keyboard.press("Escape");
   await expect(boonsOverlay).toHaveCount(0);
   const icon = page.getByRole("button", { name: "View Deck · 4 cards" });
-  await expect(page.getByTestId("draw-pile")).toHaveCount(0);
-  await expect(page.getByTestId("discard-pile")).toHaveCount(0);
+  await expect(page.getByTestId("draw-pile")).toHaveCount(1);
+  await expect(page.getByTestId("discard-pile")).toHaveCount(1);
   await icon.click();
   const dialog = page.getByRole("dialog", { name: "Deck", exact: true });
   await expect(dialog.getByRole("img")).toHaveCount(4);
@@ -58,6 +58,18 @@ test("inspects the run deck and each battle pile without advancing combat", crit
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
   await expect(icon).toBeFocused();
+  for (const [pile, tab, image] of [
+    ["draw", "Draw · 1 cards", "Block"],
+    ["discard", "Discard · 1 cards", "Anvil"],
+  ] as const) {
+    const opener = page.getByTestId(`${pile}-pile`).getByRole("button");
+    await opener.focus();
+    await page.keyboard.press("Enter");
+    await expect(dialog.getByRole("button", { name: tab, exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(dialog.getByRole("img", { name: image, exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(opener).toBeFocused();
+  }
   expect(await battle.enemyHealth()).toBe(health);
   await battle.playCardNamed("Slash");
   await icon.click();

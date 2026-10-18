@@ -118,6 +118,7 @@ it("owns transfer inputs and updater results without allowing prior state to be 
     fromRotation: 0,
     toRotation: 0,
     duration: 100,
+    rotateY: [180, 0],
   };
 
   const transfers = [transfer];

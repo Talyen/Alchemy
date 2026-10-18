@@ -1,8 +1,8 @@
 import type { KeywordId } from "./types";
 import type languages from "@/lib/localization/locales/languages.json";
 import * as assetRefs from "./assets.generated";
-import { boardArt, gearArtByDefinitionId } from "./catalog-art";
-export { boardArt, gearArtByDefinitionId } from "./catalog-art";
+import { gearArtByDefinitionId } from "./catalog-art";
+export { gearArtByDefinitionId } from "./catalog-art";
 
 export * from "./assets.generated";
 
@@ -89,14 +89,7 @@ export const mysteryEventArt: Record<string, string> = {
   "wisdom-tree": assetRefs.mysteryWisdomTree,
 };
 
-// Registered eagerly, decoded only when a board or thumbnail is displayed.
-export const onDemandBoardArt = new Set(Object.values(boardArt).flatMap((art) => [art.full, art.thumbnail]));
-
-export const allGameArt: string[] = [
-  ...Object.values(assetRefs),
-  ...Object.values(gearArtByDefinitionId),
-  ...onDemandBoardArt,
-];
+export const allGameArt: string[] = [...Object.values(assetRefs), ...Object.values(gearArtByDefinitionId)];
 
 const gearItemArt = new Set(
   Object.entries(gearArtByDefinitionId)
@@ -104,9 +97,7 @@ const gearItemArt = new Set(
     .map(([, src]) => src),
 );
 
-export const essentialGameArt: string[] = allGameArt.filter(
-  (src) => !gearItemArt.has(src) && !onDemandBoardArt.has(src),
-);
+export const essentialGameArt: string[] = allGameArt.filter((src) => !gearItemArt.has(src));
 
 export const gearSlotBackgroundArt = {
   body: gearArtByDefinitionId["slot-body"],

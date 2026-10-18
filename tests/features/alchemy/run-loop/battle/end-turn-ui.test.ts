@@ -179,14 +179,6 @@ describe("End Turn execution and playback", () => {
     expect(playBattleEvent).not.toHaveBeenCalled();
   });
 
-  it("blocks unconfirmed turn commits while the dialog owns input", () => {
-    const { ui } = makeUi();
-    battlePresentation.getState().setEndTurnConfirmationOpen(true);
-    const before = readGameplayState(defaultGameSession);
-    ui.handleEndTurn(readBattle(defaultGameSession).battleState);
-    expect(readGameplayState(defaultGameSession)).toBe(before);
-  });
-
   it("rejects End Turn while inspecting cards without advancing RNG", () => {
     const { ui } = makeUi();
     useUiStore.getState().setCardInspection("discard");

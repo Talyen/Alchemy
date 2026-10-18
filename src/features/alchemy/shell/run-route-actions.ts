@@ -1,4 +1,3 @@
-import { selectGameBoard, acknowledgeGameBoardReward } from "@/features/alchemy/shared/stores/board-commands";
 import {
   brewAtCampfire,
   transmuteCard,
@@ -32,8 +31,6 @@ import { bindSessionCapabilities, sessionFeedback } from "@/features/alchemy/sha
 
 export function createRunRouteActions(gameSession: GameSession) {
   return bindSessionCapabilities(gameSession, {
-    selectGameBoard: (selection: Parameters<typeof selectGameBoard>[0]) => selectGameBoard(selection, gameSession),
-    acknowledgeGameBoardReward: (id: string, equip: boolean) => acknowledgeGameBoardReward(id, equip, gameSession),
     clearCardHover: () => sessionFeedback(gameSession).clearCardHover(),
     purchaseTalent: (keyword: Parameters<typeof purchaseTalent>[0], talent: string) =>
       purchaseTalent(keyword, talent, gameSession),

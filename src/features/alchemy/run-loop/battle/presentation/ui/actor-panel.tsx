@@ -21,7 +21,6 @@ import {
 import type { CombatImpactCue, StatusChip } from "../../../../shared/types";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 import { Surface } from "../../../../shared/ui/surface";
-import { BattleSceneArtwork } from "../../../../shared/ui/battle-scene-artwork";
 import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
 import { usePlasmaInteraction } from "../../../../shared/ui/use-plasma-source";
 import { PortraitImpactVfx } from "./portrait-hurt-vfx";
@@ -120,7 +119,7 @@ export function ArtPanel({
   const artWrapClass = cn("relative overflow-visible", isBoss && side === "player" && "origin-bottom scale-[1.3]");
 
   return (
-    <div data-scene-region={side === "player" ? "left" : "right"} className="relative flex flex-col items-center gap-3">
+    <div className="relative flex flex-col items-center gap-3">
       <CombatantAttackLunge
         attackToken={attackToken}
         castToken={castToken}
@@ -294,7 +293,6 @@ function ActorArtFrame({
           clipContents={false}
           className={cn(
             "combatant-art relative",
-            !isDead && "battle-scene-piece",
             cardSurfaceClass,
             !isDead && cardHoverScaleClass,
             turnActive && !isDead && "combatant-turn-active",
@@ -323,15 +321,13 @@ function ActorArtFrame({
               imageClassName={side === "enemy" ? landscapeArtImageClass : cardArtImageClass}
             />
           ) : (
-            <BattleSceneArtwork>
-              <img
-                src={art}
-                alt={title}
-                className={cn("block w-full", side === "enemy" ? landscapeArtImageClass : cardArtImageClass)}
-                loading="eager"
-                decoding="async"
-              />
-            </BattleSceneArtwork>
+            <img
+              src={art}
+              alt={title}
+              className={cn("block w-full", side === "enemy" ? landscapeArtImageClass : cardArtImageClass)}
+              loading="eager"
+              decoding="async"
+            />
           )}
           {artOverlay}
           <PortraitImpactVfx pulse={pulse} showHealthFlash={!isDead && pulse?.healthLost === true} />
@@ -366,7 +362,6 @@ function ActorStatsPanel({
     <div
       className={cn(
         "relative rounded-shell-inner px-5 py-3.5 surface-muted",
-        !isDead && "battle-scene-panel",
         cardWidthClass,
         deathsDoorActive && "shadow-deaths-door-glow",
         isDead && "animate-frame-fade !bg-transparent",

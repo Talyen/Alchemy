@@ -32,7 +32,8 @@ it.each([
       refs={{
         endTurnButtonRef: { current: null },
         handCardRefs: { current: {} },
-        handDockRef: { current: null },
+        drawPileRef: { current: null },
+        discardPileRef: { current: null },
         battleSceneRef: { current: null },
         playerPanelRef: { current: null },
         enemyPanelRef: { current: null },

@@ -7,8 +7,7 @@ import { useInitialLoadReady } from "@/app/use-initial-load-ready";
 
 vi.mock("@/lib/game-data", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/game-data")>()),
-  allGameArt: ["first.webp", "second.webp", "gear.webp", "board-full.webp", "board-thumbnail.webp"],
-  onDemandBoardArt: new Set(["board-full.webp", "board-thumbnail.webp"]),
+  allGameArt: ["first.webp", "second.webp", "gear.webp"],
   essentialGameArt: ["first.webp", "second.webp"],
 }));
 

@@ -14,19 +14,27 @@ const transfer: CardTransfer = {
   toScale: 1,
   fromRotation: -47.8,
   toRotation: 4.2,
-  duration: 0.42,
+  duration: 0.5,
+  rotateY: [180, 0],
 };
 
-describe("bottom-edge card motion", () => {
+describe("corner-pile card motion", () => {
   it.each(["draw", "discard"] as const)("rotates %s continuously clockwise and lands exactly", (kind) => {
     let previous = transfer.fromRotation;
     for (let sample = 0; sample <= 60; sample++) {
       const pose = getCardTransferPose({ ...transfer, kind }, sample / 60);
       expect(pose.rotate).toBeGreaterThanOrEqual(previous);
-      expect(pose.scale).toBeGreaterThanOrEqual(0.94);
-      expect(pose.scale).toBeLessThanOrEqual(1);
+      expect(pose.scaleX).toBeGreaterThanOrEqual(0.94);
+      expect(pose.scaleX).toBeLessThanOrEqual(1);
       previous = pose.rotate;
     }
-    expect(getCardTransferPose({ ...transfer, kind }, 1)).toEqual({ x: 200, y: -370, scale: 1, rotate: 4.2 });
+    expect(getCardTransferPose({ ...transfer, kind }, 1)).toEqual({
+      x: 200,
+      y: -370,
+      scaleX: 1,
+      scaleY: 1,
+      rotate: 4.2,
+      rotateY: 0,
+    });
   });
 });

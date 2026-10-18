@@ -35,8 +35,6 @@ interface BattlePresentationStateWithActions extends CombatFeedbackState, Combat
   cardTransfers: CardTransfer[];
   hiddenHandCardKeys: HiddenHandCardKeys;
   cardTransferInProgress: boolean;
-  endTurnConfirmationOpen: boolean;
-  setEndTurnConfirmationOpen: (open: boolean) => void;
 
   spawnCardGhost: (ghost: Omit<CardGhost, "id">) => void;
   removeCardGhost: (id: string) => void;
@@ -60,7 +58,6 @@ type BattlePresentationState = Pick<
   | "cardTransfers"
   | "hiddenHandCardKeys"
   | "cardTransferInProgress"
-  | "endTurnConfirmationOpen"
 >;
 
 function createInitialState(): BattlePresentationState & CombatFeedbackState {
@@ -73,7 +70,6 @@ function createInitialState(): BattlePresentationState & CombatFeedbackState {
     cardTransfers: [],
     hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS,
     cardTransferInProgress: false,
-    endTurnConfirmationOpen: false,
   };
 }
 
@@ -122,7 +118,6 @@ export function createBattlePresentationStore(gameSession: GameSession): BattleP
     });
     const actions: Omit<BattlePresentationStateWithActions, keyof (BattlePresentationState & CombatFeedbackState)> = {
       ...feedback.actions,
-      setEndTurnConfirmationOpen: (endTurnConfirmationOpen) => set({ endTurnConfirmationOpen }),
       setManaDisplay: (mana, maxMana, animate) => {
         let changed = false;
         set((state) => {

@@ -71,28 +71,19 @@ once using the saved events stream. A resumed Labyrinth map clears stale pending
 room locks. Invalid or missing battle Gold falls back to valid purse Gold in both
 the battle and profile; a valid zero balance remains authoritative.
 
+## Retired cosmetic board fields
+
+Current-shape validation discards obsolete board ownership, selection, resolved
+background and pending reward fields. All other profile and active-run state is
+preserved, and new writes omit those fields. No schema-version increment or
+supported payload transformation is needed.
+
 ## Retired display aspect ratio
 
 The game always fills the viewport. `selectedAspectRatio` is no longer a settings
 or save field; current-shape normalization discards saved fixed ratios without
 changing profile progress or active-run state. New writes omit the field. This
 removal needs no supported payload transformation or schema-version increment.
-
-## Game Board profile fields
-
-Board fields use safe additive defaults without a schema-version increment.
-Missing fields unlock/equip the configured starter. Loading deduplicates owned IDs,
-drops unknown catalog IDs, and repairs a locked selection to the starter while
-preserving valid ownership. None forces a null background; Random preserves a valid
-saved resolved board without making a new random pick. Last-random and pending
-reward IDs must refer to owned boards.
-
-The profile codec persists ownership, selection, resolved board, previous random
-choice, and the pending reward receipt. These are cosmetic profile fields, separate
-from combat state and its RNG. Run settlement awards ownership and the reveal
-receipt atomically; acknowledgment clears only that receipt and optionally equips
-the board. After restart, Main Menu presents an unacknowledged receipt. Clear Save
-Data resets these fields to starter defaults; Reset Options leaves them intact.
 
 ## Progression gate fields
 

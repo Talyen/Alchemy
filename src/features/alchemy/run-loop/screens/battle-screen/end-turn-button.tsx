@@ -1,14 +1,10 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-
-import { useCallback, useLayoutEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
-import { CircleArrowRight } from "lucide-react";
+import { useSyncExternalStore, type RefObject } from "react";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
+import { Button } from "@/components/ui/button";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
-import { ChromeIconButton } from "@/features/alchemy/shared/ui/chrome-icon-button";
-import { ConfirmationDialog } from "@/features/alchemy/shared/ui/dialogs";
-import { PortaledTooltip } from "@/features/alchemy/shared/ui/tooltips/portaled-tooltip";
 import { isBattleInspectionOpen, useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
 import { isBattlePlaybackBlocked } from "../../battle/playback-gate";
@@ -42,34 +38,24 @@ export function BattleEndTurnButton({
   onEndTurn,
 }: BattleEndTurnButtonProps) {
   const i18n = useGameTranslation();
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
-  const [confirmationState, setConfirmationState] = useState<BattleSnapshot | null>(null);
-  const pendingConfirmation = useRef<BattleSnapshot | null>(null);
   const inspectionOpen = useUiStore(isBattleInspectionOpen);
-  const cardPlayInProgress = useSyncExternalStore(subscribePlayback, isCardPlayInProgress);
-  const savePending = useSyncExternalStore(subscribeProgressSave, isProgressSavePending);
-  const gate = useStore(
+  const playing = useSyncExternalStore(subscribePlayback, isCardPlayInProgress);
+  const saving = useSyncExternalStore(subscribeProgressSave, isProgressSavePending);
+  useStore(
     presentation,
     useShallow((state) => ({
       cardTransferInProgress: state.cardTransferInProgress,
       hiddenHandCardKeys: state.hiddenHandCardKeys,
-      endTurnConfirmationOpen: state.endTurnConfirmationOpen,
-      displayedBattle: state.displayedBattle,
       openingDrawPending: state.openingDrawPending,
     })),
   );
-
   function canEndTurn() {
-    const current = presentation.getState();
     return (
       !blocked &&
       !isProgressSavePending() &&
-      !current.openingDrawPending &&
+      !presentation.getState().openingDrawPending &&
       !isBattlePlaybackBlocked({
         ...readPlaybackPresentationGate(presentation),
-        // This control owns the pending confirmation; all other inputs honor it.
-        endTurnConfirmationOpen: false,
         battleState,
         hasActiveBattle,
         screen,
@@ -78,80 +64,19 @@ export function BattleEndTurnButton({
       })
     );
   }
-
-  const unavailable = cardPlayInProgress || savePending || inspectionOpen || gate.openingDrawPending || !canEndTurn();
-  const open =
-    gate.endTurnConfirmationOpen && confirmationState !== null && confirmationState === battleState && !unavailable;
-  const closeConfirmation = useCallback(() => {
-    pendingConfirmation.current = null;
-    setConfirmationState(null);
-    presentation.getState().setEndTurnConfirmationOpen(false);
-  }, [presentation]);
-
-  if (confirmationState !== null && !open) setConfirmationState(null);
-  useLayoutEffect(() => {
-    if (!open) {
-      pendingConfirmation.current = null;
-      presentation.getState().setEndTurnConfirmationOpen(false);
-    }
-  }, [open, presentation]);
-  useLayoutEffect(
-    () => () => {
-      pendingConfirmation.current = null;
-      presentation.getState().setEndTurnConfirmationOpen(false);
-    },
-    [presentation],
-  );
-
   return (
-    <>
-      <ChromeIconButton
-        ref={buttonRef}
-        aria-label={i18n.text("ui.end-turn-button.1", "End Turn")}
-        data-battle-end-turn
-        disabled={unavailable || gate.endTurnConfirmationOpen}
-        onClick={() => {
-          if (!canEndTurn() || presentation.getState().endTurnConfirmationOpen) return;
-          pendingConfirmation.current = battleState;
-          presentation.getState().setEndTurnConfirmationOpen(true);
-          setConfirmationState(battleState);
-          setHovered(false);
-        }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-      >
-        <CircleArrowRight className="h-6 w-6" aria-hidden="true" />
-      </ChromeIconButton>
-      <PortaledTooltip
-        triggerRef={buttonRef}
-        visible={!unavailable && !gate.endTurnConfirmationOpen && (hovered || focused)}
-        placement="below"
-        allowFlip={false}
-        horizontalInset={8}
-      >
-        {i18n.text("ui.end-turn-button.2", "End Turn")}
-      </PortaledTooltip>
-      <ConfirmationDialog
-        open={open}
-        title={i18n.text("ui.end-turn-button.3", "End turn?")}
-        description={i18n.displayText(
-          battleState.playerStatuses.haste > 0
-            ? i18n.text("ui.end-turn-button.d1", "Discard your hand and take another turn.")
-            : i18n.text("ui.end-turn-button.d2", "Discard your hand and let the enemy act."),
-        )}
-        confirmLabel={i18n.text("ui.end-turn-button.4", "End Turn")}
-        tone="default"
-        icon={CircleArrowRight}
-        returnFocusRef={buttonRef}
-        onCancel={closeConfirmation}
-        onConfirm={() => {
-          const expected = pendingConfirmation.current;
-          closeConfirmation();
-          if (expected === battleState && canEndTurn()) onEndTurn(expected);
-        }}
-      />
-    </>
+    <Button
+      ref={buttonRef}
+      variant="outline"
+      size="sm"
+      className="tracking-normal normal-case"
+      data-battle-end-turn
+      disabled={playing || saving || inspectionOpen || !canEndTurn()}
+      onClick={() => {
+        if (canEndTurn()) onEndTurn(battleState);
+      }}
+    >
+      {i18n.text("ui.end-turn-button.1", "End Turn")}
+    </Button>
   );
 }

@@ -101,8 +101,6 @@ export function CombatTextRail({
   const reducedMotion = useReducedMotion();
   const staticMotion = reducedMotion === true || isAnimationDisabled();
   const newestRef = useRef<HTMLDivElement>(null);
-  const railRef = useRef<HTMLDivElement>(null);
-  const [fitScale, setFitScale] = useState(1);
   const [positioned, setPositioned] = useState(false);
   const [newestHeight, setNewestHeight] = useState(0);
   const groups = new Map<
@@ -121,32 +119,10 @@ export function CombatTextRail({
   const newestId = visibleGroups.at(-1)?.id;
 
   useLayoutEffect(() => {
-    const rail = railRef.current;
-    if (!rail) return;
-    let readyFrame: number | null = null;
-    const fit = () => {
-      const layer = rail.parentElement?.parentElement;
-      if (!layer || layer.style.visibility !== "visible" || rail.offsetHeight <= 0) return;
-      const bounds = layer.getBoundingClientRect();
-      if (bounds.width <= 0 || bounds.height <= 0) return;
-      // Keep a rapid sequence readable inside the viewport, reserving its visible upward travel.
-      const available = bounds.top + bounds.height / 2 - 3 * Number.parseFloat(getComputedStyle(rail).fontSize) - 92;
-      const scale = Math.min(1, Math.max(0.1, available / rail.offsetHeight));
-      setFitScale((previous) => (Math.abs(scale - previous) < 0.001 ? previous : scale));
-      if (!positioned) {
-        if (readyFrame !== null) cancelAnimationFrame(readyFrame);
-        readyFrame = requestAnimationFrame(() => setPositioned(true));
-      }
-    };
-    fit();
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(fit);
-    observer?.observe(rail);
-    if (rail.parentElement?.parentElement) observer?.observe(rail.parentElement.parentElement);
-    return () => {
-      observer?.disconnect();
-      if (readyFrame !== null) cancelAnimationFrame(readyFrame);
-    };
-  }, [bursts, reactions, positioned]);
+    // Let the first numeric measurement settle before exposing its portrait anchor.
+    const frame = requestAnimationFrame(() => setPositioned(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   useLayoutEffect(() => {
     const newest = newestRef.current;
@@ -162,18 +138,19 @@ export function CombatTextRail({
   return (
     <div className="pointer-events-none absolute inset-0 z-30 w-full">
       <div
-        ref={railRef}
-        className="absolute inset-x-0 flex origin-bottom flex-col items-center gap-3 will-change-transform"
+        className="absolute inset-x-0 flex -translate-y-full flex-col items-center gap-3"
         style={{
           visibility: positioned ? "visible" : "hidden",
           top: "calc(50% - 3rem)",
-          transform: `translate3d(0, calc(-100% + ${(newestHeight * fitScale) / 2}px), 0) scale(${fitScale})`,
+          marginTop: newestHeight,
         }}
       >
         <AnimatePresence mode="popLayout">
           {visibleGroups.map((group) => (
             <motion.div
               key={group.id}
+              layout={staticMotion ? false : "position"}
+              transition={{ layout: { duration: 0.15, ease: "easeOut" } }}
               ref={group.id === newestId ? newestRef : undefined}
               data-testid="combat-text-burst"
               data-burst-id={group.id}
@@ -203,7 +180,6 @@ export function CombatTextRail({
 function CombatNumbers({ burst, staticMotion }: { burst: CombatTextBurst | undefined; staticMotion: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
-  const [fontSize, setFontSize] = useState<number | undefined>();
   let numericCount = 0;
   let noticeCount = 0;
   for (const entry of burst?.entries ?? []) {
@@ -211,20 +187,12 @@ function CombatNumbers({ burst, staticMotion }: { burst: CombatTextBurst | undef
     else numericCount += 1;
   }
   const rows = noticeCount + (numericCount > 3 ? Math.ceil(numericCount / 2) : numericCount);
-  // Reserve the first frame before font measurement, avoiding a zero-height jump.
+  // Reserve the numeric pop before measurement, avoiding a zero-height jump.
   const initialHeight = `calc(${rows * COMBAT_TEXT_BASE_SIZE_PX * 1.5 * FCT_POP_SCALE}px * var(--content-scale, 1) + ${Math.max(0, rows - 1) * 4 * FCT_POP_SCALE}px)`;
   useLayoutEffect(() => {
     const node = ref.current;
     if (!node || !burst) return;
     const measure = () => {
-      const parent = node.parentElement;
-      const width = parent?.clientWidth ?? 0;
-      if (parent && width > 0 && node.scrollWidth > 0) {
-        const base = Number.parseFloat(getComputedStyle(parent).fontSize);
-        const current = Number.parseFloat(getComputedStyle(node).fontSize);
-        const fitted = Math.min(base, ((current * width) / (node.scrollWidth * FCT_POP_SCALE)) * 0.98);
-        setFontSize((previous) => (previous !== undefined && Math.abs(previous - fitted) < 0.2 ? previous : fitted));
-      }
       setHeight((previous) => (previous === node.offsetHeight ? previous : node.offsetHeight));
     };
     measure();
@@ -251,10 +219,9 @@ function CombatNumbers({ burst, staticMotion }: { burst: CombatTextBurst | undef
           className={cn(
             "grid w-max justify-items-center gap-x-4 gap-y-1 font-bold tracking-wide",
             "transform-gpu will-change-transform [backface-visibility:hidden]",
-            "[filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]",
+            "[filter:drop-shadow(0_0_1px_rgb(0,0,0))_drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]",
             numericCount > 3 && "grid-cols-2",
           )}
-          style={{ fontSize: fontSize ?? "inherit" }}
           initial={staticMotion ? false : { opacity: 1, scale: 0.5 }}
           animate={staticMotion ? { opacity: 1, scale: 1 } : NUMERIC_ANIMATION}
         >

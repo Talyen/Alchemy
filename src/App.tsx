@@ -44,13 +44,6 @@ import {
 import { useAppSettings } from "@/features/alchemy/shared/stores/settings-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
-import { BattleBoardBackground } from "@/features/alchemy/shared/ui/battle-board-background";
-import {
-  useBattleSceneAppearance,
-  battleSceneCssVariables,
-} from "@/features/alchemy/shared/ui/use-battle-scene-appearance";
-import { boardArt } from "@/features/alchemy/shared/config/game-data-catalog";
-import { useActiveBoardId } from "@/features/alchemy/shared/stores/use-profile-store";
 import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";
 import { setModalRoot, setTooltipRoot } from "@/features/alchemy/shared/ui/portal-root";
 import { useArtworkReady } from "@/features/alchemy/shared/ui/use-artwork-ready";
@@ -127,10 +120,6 @@ function AppMainContent({
   );
 
   const showBattleCluster = renderedScreen === "battle";
-  const activeBoardId = useActiveBoardId();
-  const sceneAppearance = useBattleSceneAppearance(
-    showBattleCluster && activeBoardId ? boardArt[activeBoardId]?.thumbnail : undefined,
-  );
   const { isAutoplayEnabled, toggleAutoplayEnabled, boonInspectOpen, toggleBoonInspect, closeBoonInspect } =
     run.routeCommands.battle;
   const runBoons = useActiveRunBoons();
@@ -211,7 +200,6 @@ function AppMainContent({
                 screen: renderedScreen,
                 cardInspection: { canOpen: inspection.canOpen, onOpen: openCardInspection },
                 routeCommands: run.routeCommands,
-                onOpenBoards: nav.openBoardsFromOptions,
                 onClearSaveData: dev.clearSaveData,
                 onUnlockAllDevMode: dev.unlockAllDevMode,
                 gameMenuOpen: gameMenu.gameMenuOpen,
@@ -238,10 +226,8 @@ function AppMainContent({
         )}
         style={{
           ...stageStyle,
-          ...battleSceneCssVariables(sceneAppearance),
         }}
       >
-        {showBattleCluster ? <BattleBoardBackground boardId={activeBoardId} /> : null}
         <AppBackgroundParticles
           renderedScreen={renderedScreen}
           backgroundParticlesIntensity={backgroundParticlesIntensity}
@@ -250,16 +236,6 @@ function AppMainContent({
         {i18n.displayText(content)}
         {showBattleCluster ? (
           <BattleCluster
-            endTurn={{
-              presentation: run.routeCommands.battle.presentation,
-              screen: controllerScreen,
-              buttonRef: run.routeCommands.battle.refs.endTurnButtonRef,
-              onEndTurn: run.routeCommands.battle.handleEndTurn,
-              isCardPlayInProgress: run.routeCommands.battle.isCardPlayInProgress,
-              subscribePlayback: run.routeCommands.battle.subscribePlayback,
-              isProgressSavePending: run.routeCommands.battle.isProgressSavePending,
-              subscribeProgressSave: run.routeCommands.battle.subscribeProgressSave,
-            }}
             inert={inspection.open || !screenInteractive}
             deckInspection={deckInspection}
             isAutoplayEnabled={isAutoplayEnabled}

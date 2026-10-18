@@ -15,7 +15,6 @@ import { PortaledTooltip } from "../../../../shared/ui/tooltips/portaled-tooltip
 import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
 import { DescriptionLines } from "../../../../shared/ui/cards/card-description-ui";
 import { Surface } from "../../../../shared/ui/surface";
-import { BattleSceneArtwork } from "../../../../shared/ui/battle-scene-artwork";
 import { ArtTurnActiveBorder } from "./actor-panel-helpers";
 import { CombatantStatusEffectPresentation } from "./combatant-status-effect-presentation";
 import type { ActiveCcKeyword } from "@/lib/battle";
@@ -57,7 +56,6 @@ export function CompanionPanel({
       ref={triggerRef}
       className="companion-enter relative"
       data-testid="active-companion"
-      data-scene-region="left"
       aria-label={i18n.text("ui.companion-panel.1", "Active companion: {{value0}}", {
         value0: i18n.displayText(companion.title),
       })}
@@ -74,7 +72,7 @@ export function CompanionPanel({
           })}
           clipContents={false}
           className={cn(
-            "combatant-art battle-scene-piece relative",
+            "combatant-art relative",
             cardSurfaceClass,
             cardHoverScaleClass,
             turnActive && "combatant-turn-active",
@@ -89,15 +87,13 @@ export function CompanionPanel({
             active={turnActive}
             shineColor={resolvedShineColors}
           />
-          <BattleSceneArtwork>
-            <img
-              src={companion.art}
-              alt={i18n.displayText(companion.title)}
-              className="block aspect-[3/4] w-full rounded-shell-hero"
-              loading="eager"
-              decoding="async"
-            />
-          </BattleSceneArtwork>
+          <img
+            src={companion.art}
+            alt={i18n.displayText(companion.title)}
+            className="block aspect-[3/4] w-full rounded-shell-hero"
+            loading="eager"
+            decoding="async"
+          />
         </Surface>
       </CombatantStatusEffectPresentation>
       <PortaledTooltip

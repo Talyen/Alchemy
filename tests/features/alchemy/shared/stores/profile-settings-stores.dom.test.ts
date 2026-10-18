@@ -53,7 +53,7 @@ describe("profile store", () => {
     expect(readProfileStore(defaultGameSession)).toMatchObject({
       discoveredCardIds: ["card-a"],
       collectionTab: "bestiary",
-      collectionPages: { heroes: 0, cards: 0, bestiary: 2, trinkets: 0, uniques: 0, boards: 0 },
+      collectionPages: { heroes: 0, cards: 0, bestiary: 2, trinkets: 0, uniques: 0 },
     });
   });
 
@@ -78,10 +78,8 @@ describe("profile store", () => {
     expect(Object.keys(encoded).sort()).toEqual(Object.keys(profilePersistenceCodec.createDefault()).sort());
     encoded.discoveredCardIds.push("external");
     encoded.completedDifficulties.knight.push("difficulty-1");
-    encoded.boardSelection.kind = "none";
     expect(readProfileStore(defaultGameSession).discoveredCardIds).toEqual(["card-a"]);
     expect(readProfileStore(defaultGameSession).completedDifficulties.knight).toEqual([]);
-    expect(readProfileStore(defaultGameSession).boardSelection).toEqual({ kind: "board", boardId: "acorn" });
   });
 });
 

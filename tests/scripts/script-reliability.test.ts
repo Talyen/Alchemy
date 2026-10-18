@@ -594,10 +594,6 @@ describe("script execution reliability", () => {
   it("rejects unsupported optimizer arguments before preparing assets", () => {
     const root = fixture();
     fs.cpSync(path.join(ROOT, "scripts"), path.join(root, "scripts"), { recursive: true });
-    // The board manifest imports its source catalog before CLI argument parsing.
-    const catalogPath = path.join(root, "src/lib/boards/catalog.json");
-    fs.mkdirSync(path.dirname(catalogPath), { recursive: true });
-    fs.copyFileSync(path.join(ROOT, "src/lib/boards/catalog.json"), catalogPath);
     fs.symlinkSync(path.join(ROOT, "node_modules"), path.join(root, "node_modules"), "junction");
     for (const script of ["optimize-assets.mjs", "optimize-music.mjs", "optimize-sounds.mjs"]) {
       for (const arg of ["--chek", "unexpected"]) {

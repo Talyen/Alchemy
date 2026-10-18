@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { advanceStartupLoad, createStartupLoadState, type StartupLoadEvent } from "./startup-load-state";
 import { IMAGE_PRELOAD_BATCH_SIZE, FONT_PRELOAD_TIMEOUT_MS, INITIAL_LOAD_MIN_DURATION_MS } from "@/lib/game-constants";
 import { logError } from "@/lib/error-logger";
-import { allGameArt, essentialGameArt, onDemandBoardArt } from "@/lib/game-data";
+import { allGameArt, essentialGameArt } from "@/lib/game-data";
 import { preloadImagesInBatches } from "@/lib/preload/image";
 import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
 import { markStartupReady } from "@/lib/performance/startup-marks";
@@ -32,7 +32,7 @@ export function useInitialLoadReady({
     function preloadDeferredGearArt() {
       if (cancelled) return;
       const essential = new Set(essentialGameArt);
-      const deferred = allGameArt.filter((src) => !essential.has(src) && !onDemandBoardArt.has(src));
+      const deferred = allGameArt.filter((src) => !essential.has(src));
       if (deferred.length === 0) return;
       void preloadImagesInBatches(deferred, IMAGE_PRELOAD_BATCH_SIZE, undefined, loadLifetime.signal).catch(
         (error: unknown) => {

@@ -17,7 +17,6 @@ catalog-external tests are named inline. Named suites are verification entry poi
 ## Task index
 
 - **Raw asset / art** — [Asset workflow](./WORKFLOWS-ASSETS.md)
-- **Game Board** — [Board catalog, artwork, and registration](./WORKFLOWS-ASSETS.md#game-board-artwork)
 - **Save schema / migration** — [Persisted save data](./RUN_WORKFLOWS.md#change-persisted-save-data)
 - **Mid-run resume** — [Active run data](./RUN_WORKFLOWS.md#change-mid-run-resume-activerundata)
 - **Post-victory routing** — [REWARD_ROUTES](./RUN_WORKFLOWS.md#add-or-change-post-victory-routing-reward_routes)

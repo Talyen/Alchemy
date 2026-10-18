@@ -11,9 +11,9 @@ const handRect = { x: 100, y: 200, width: 80, height: 120 };
 function makeDeps(overrides: Partial<CardTransferAnimationDeps> = {}): CardTransferAnimationDeps {
   return {
     isSessionActive: () => true,
-    measureHandDock: () => dockRect,
+    measureDrawPile: () => dockRect,
+    measureDiscardPile: () => dockRect,
     measureHandCardRotation: () => null,
-    waitForDeparture: vi.fn(async () => true),
     measureHandCard: () => handRect,
     runCardTransfer: vi.fn(async () => {}),
     playTransferSound: vi.fn(),
@@ -31,8 +31,8 @@ function makeDeps(overrides: Partial<CardTransferAnimationDeps> = {}): CardTrans
 describe("animateDiscardedHand", () => {
   installImmediateRafForTests();
 
-  it("returns early when the hand dock is missing", async () => {
-    const deps = makeDeps({ measureHandDock: () => null });
+  it("returns early when the discard pile is missing", async () => {
+    const deps = makeDeps({ measureDiscardPile: () => null });
     await animateDiscardedHand(
       [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("slash", { uid: 2 })],
       1,
@@ -41,15 +41,16 @@ describe("animateDiscardedHand", () => {
     expect(deps.runCardTransfer).not.toHaveBeenCalled();
   });
 
-  it("conceals the full discarded card below the dock without distorting it", async () => {
+  it("lands the flipped card at the discard pile without leaving the hand artwork visible", async () => {
     const deps = makeDeps();
     await animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 })], 1, deps);
     const transfer = vi.mocked(deps.runCardTransfer).mock.calls[0]![0];
-    const centerY = transfer.to.y + handRect.height / 2;
-    expect(centerY - (Math.hypot(handRect.width, handRect.height) * transfer.toScale) / 2).toBeGreaterThan(
-      dockRect.y + dockRect.height,
-    );
-    expect(transfer.toRotation - transfer.fromRotation).toBe(52);
+    expect(transfer.to.x + handRect.width / 2).toBe(dockRect.x + dockRect.width / 2);
+    expect(transfer.to.y + handRect.height / 2).toBe(dockRect.y + dockRect.height / 2);
+    expect(transfer.toScale).toBe(dockRect.width / handRect.width);
+    expect(transfer.toScaleY).toBe(dockRect.height / handRect.height);
+    expect(transfer.rotateY).toEqual([0, 180]);
+    expect(deps.setHiddenHandCardKeys).toHaveBeenCalledOnce();
   });
 
   it("stops transferring when the session becomes inactive", async () => {
@@ -92,7 +93,7 @@ describe("animateDrawnHand", () => {
     const hand = [makeTestCardWithId("slash", { uid: 1 }), ...drawn];
 
     const pending = animateDrawnHand(drawn, hand, 1, deps);
-    await Promise.resolve();
+    await vi.waitFor(() => expect(deps.runCardTransfer).toHaveBeenCalledOnce());
     expect(deps.runCardTransfer).toHaveBeenCalledOnce();
     expect(hidden).toEqual(["slash-1", "block-2", "anvil-3"]);
     landing.resolve();

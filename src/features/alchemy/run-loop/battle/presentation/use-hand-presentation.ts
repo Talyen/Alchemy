@@ -47,20 +47,19 @@ export function readCardAnimationInProgress(store: BattlePresentationStore) {
 
 export type BattlePlaybackPresentationGate = Pick<
   BattlePresentationPort,
-  "cardTransferInProgress" | "hiddenHandCardKeys" | "endTurnConfirmationOpen"
+  "cardTransferInProgress" | "hiddenHandCardKeys"
 >;
 
 function pickPlaybackPresentationGate(
   cardTransferInProgress: boolean,
   hiddenHandCardKeys: BattlePlaybackPresentationGate["hiddenHandCardKeys"],
-  endTurnConfirmationOpen: boolean,
 ): BattlePlaybackPresentationGate {
-  return { cardTransferInProgress, hiddenHandCardKeys, endTurnConfirmationOpen };
+  return { cardTransferInProgress, hiddenHandCardKeys };
 }
 
 export function readPlaybackPresentationGate(store: BattlePresentationStore): BattlePlaybackPresentationGate {
-  const { cardTransferInProgress, hiddenHandCardKeys, endTurnConfirmationOpen } = store.getState();
-  return pickPlaybackPresentationGate(cardTransferInProgress, hiddenHandCardKeys, endTurnConfirmationOpen);
+  const { cardTransferInProgress, hiddenHandCardKeys } = store.getState();
+  return pickPlaybackPresentationGate(cardTransferInProgress, hiddenHandCardKeys);
 }
 
 export function useBattlePresentationGateRef(
@@ -74,21 +73,14 @@ export function useBattlePresentationGateRef(
   useEffect(() => {
     presentationGateRef.current = readPlaybackPresentationGate(store);
     return store.subscribe(
-      (state) =>
-        pickPlaybackPresentationGate(
-          state.cardTransferInProgress,
-          state.hiddenHandCardKeys,
-          state.endTurnConfirmationOpen,
-        ),
+      (state) => pickPlaybackPresentationGate(state.cardTransferInProgress, state.hiddenHandCardKeys),
       (gate) => {
         presentationGateRef.current = gate;
         onGateChangeRef?.current?.();
       },
       {
         equalityFn: (a, b) =>
-          a.cardTransferInProgress === b.cardTransferInProgress &&
-          a.hiddenHandCardKeys === b.hiddenHandCardKeys &&
-          a.endTurnConfirmationOpen === b.endTurnConfirmationOpen,
+          a.cardTransferInProgress === b.cardTransferInProgress && a.hiddenHandCardKeys === b.hiddenHandCardKeys,
       },
     );
   }, [store, onGateChangeRef]);

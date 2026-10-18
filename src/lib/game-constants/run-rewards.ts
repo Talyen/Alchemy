@@ -71,8 +71,6 @@ export const LAST_OFFERED_DESTINATION_WEIGHT = 3;
 export const DESTINATION_PITY_WEIGHT_PER_ROUND = 3;
 export const DESTINATION_PITY_WEIGHT_CAP = 30;
 
-export const BOARD_REWARD_ROOM_THRESHOLD = 5;
-
 export const DESTINATIONS_PER_ACT = 8;
 export const ACTS_PER_RUN = 3;
 export const DEFAULT_CAMPAIGN_DIFFICULTY_ID = "difficulty-1";

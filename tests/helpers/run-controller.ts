@@ -7,7 +7,6 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
   const fn = () => vi.fn();
   return {
     progress: { isPending: () => false, afterSaved: (feedback) => feedback() },
-    boards: { select: vi.fn(() => true), acknowledgeReward: vi.fn(() => true) },
     meta: {
       resumeRun: vi.fn(),
       goToScreen: fn(),

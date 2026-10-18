@@ -108,7 +108,7 @@ const HandCardItem = memo(function HandCardItem({
       data-hand-slot={cardKey}
       data-hovered={isHovered || undefined}
       data-hand-hidden={isHidden || undefined}
-      className="relative flex min-w-0 shrink basis-[calc(var(--hand-card-width)-2.5*var(--content-rem,1rem))] justify-center"
+      className="relative flex min-w-0 shrink basis-[calc(var(--hand-card-width)-3*var(--content-rem,1rem))] justify-center"
       style={{
         zIndex: visualHovered ? HAND_CARD_HOVER_Z_INDEX : HAND_CARD_BASE_Z_INDEX + index,
       }}
@@ -116,7 +116,6 @@ const HandCardItem = memo(function HandCardItem({
       <div className="flex shrink-0 justify-center">
         <CombatantStatusEffectPresentation keyword={ccKeyword}>
           <BattleCardButton
-            scenePiece
             card={card}
             hovered={visualHovered}
             suppressTooltip={isPreview && !isHovered}
@@ -257,6 +256,9 @@ export function BattleHand({
       }}
       data-testid="battle-hand"
       className={cn(battleHandContainerClass, "battle-hand")}
+      style={{
+        paddingBottom: `calc(${48 + Math.max(0, battleState.hand.length - 4) * 12}px * var(--content-scale, 1))`,
+      }}
     >
       {battleState.hand.map((card, index) => {
         const cardKey = getHandCardKey(card, index);

@@ -85,8 +85,6 @@ export class BattlePage {
       // The last card can finish combat while the turn control is settling.
       if (!(await this.isBattleOver())) throw error;
     });
-    const confirm = this.page.getByRole("dialog", { name: "End turn?", exact: true });
-    if (!(await this.isBattleOver())) await confirm.getByRole("button", { name: "End Turn", exact: true }).click();
 
     await expect(async () => {
       if (await this.isBattleOver()) return;

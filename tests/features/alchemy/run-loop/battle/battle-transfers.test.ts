@@ -26,7 +26,8 @@ function makeTransfers(respectGeneration = true, clock?: TimerClock) {
     playback,
     getPresentation: () => presentation,
     battleSceneRef: { current: null },
-    handDockRef: { current: null },
+    drawPileRef: { current: null },
+    discardPileRef: { current: null },
     handCardRefs: { current: {} },
     measureElementRect: () => ({ x: 0, y: 0, width: 100, height: 100 }),
     measureVisualCardRect: () => ({ x: 0, y: 0, width: 100, height: 100 }),
@@ -63,10 +64,9 @@ describe("battle transfer lifetime wiring", () => {
     },
   );
 
-  it("overlaps departures at 70 ms and waits for the final flight", async () => {
+  it("sequences flights right to left and waits for the final landing", async () => {
     vi.useFakeTimers();
     using _scopeCleanup = createCleanup(() => vi.useRealTimers());
-
     const transfers = makeTransfers();
     let finished = false;
     const pending = transfers
@@ -74,16 +74,13 @@ describe("battle transfer lifetime wiring", () => {
       .then(() => {
         finished = true;
       });
-    expect(transfers.readTransfers()).toHaveLength(1);
-    await vi.advanceTimersByTimeAsync(69);
-    expect(transfers.readTransfers()).toHaveLength(1);
+    expect(transfers.readTransfers().map((item) => item.card.id)).toEqual(["block"]);
+    await vi.advanceTimersByTimeAsync(619);
+    expect(transfers.readTransfers().map((item) => item.card.id)).toEqual(["block"]);
     await vi.advanceTimersByTimeAsync(1);
-    expect(transfers.readTransfers()).toHaveLength(2);
-    expect(transfers.readTransfers().map((transfer) => transfer.card.id)).toEqual(["block", "slash"]);
-    await vi.advanceTimersByTimeAsync(410);
-    expect(transfers.readTransfers()).toHaveLength(1);
+    expect(transfers.readTransfers().map((item) => item.card.id)).toEqual(["slash"]);
     expect(finished).toBe(false);
-    await vi.advanceTimersByTimeAsync(70);
+    await vi.advanceTimersByTimeAsync(620);
     await pending;
     expect(transfers.readTransfers()).toEqual([]);
     expect(transfers.playback.pendingTimers).toBe(0);

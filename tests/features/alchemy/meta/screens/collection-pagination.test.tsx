@@ -27,16 +27,12 @@ function CollectionHarness() {
     bestiary: 0,
     trinkets: 0,
     uniques: 0,
-    boards: 0,
   });
   return (
     <>
       <button onClick={() => setTab(collectionTab === "cards" ? "trinkets" : "cards")}>Switch tab</button>
       <button onClick={() => setPages((pages) => ({ ...pages, cards: 0 }))}>Reset page</button>
       <CollectionScreen
-        collectedBoardIds={["acorn"]}
-        boardSelection={{ kind: "board", boardId: "acorn" }}
-        onSelectBoard={() => true}
         collectionTab={collectionTab}
         collectionPages={collectionPages}
         onSelectTab={setTab}

@@ -24,21 +24,14 @@ export function rememberNonOptionsScreen(renderedScreen: Screen, previous: Scree
 
 export interface OptionsReturnState {
   optionsReturnScreen: Screen;
-  boardsFromOptions: boolean;
 }
 
 export function resolveNextOptionsReturnState(
   renderedScreen: Screen,
-  prev: { prevScreen: Screen; optionsReturnScreen: Screen; boardsFromOptions: boolean },
+  prev: { prevScreen: Screen; optionsReturnScreen: Screen },
 ): OptionsReturnState {
-  const boardsFromOptions = renderedScreen === ROUTE_SCREENS.COLLECTION && prev.boardsFromOptions;
-  const returningFromBoards = renderedScreen === ROUTE_SCREENS.OPTIONS && prev.boardsFromOptions;
-  if (boardsFromOptions || returningFromBoards) {
-    return { optionsReturnScreen: prev.optionsReturnScreen, boardsFromOptions };
-  }
   return {
     optionsReturnScreen: rememberNonOptionsScreen(renderedScreen, prev.optionsReturnScreen),
-    boardsFromOptions,
   };
 }
 

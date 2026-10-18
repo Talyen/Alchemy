@@ -109,7 +109,6 @@ export function createBattleEndTurnUi(
         battleState: currentState,
         hasActiveBattle: battle.hasActiveBattle,
         cardTransferInProgress: presentation.cardTransferInProgress,
-        endTurnConfirmationOpen: presentation.endTurnConfirmationOpen,
         hiddenHandCardKeys: presentation.hiddenHandCardKeys,
         cardPlayInProgress: ctx.playback.cardPlayInProgress,
         inspectionOpen: isBattleInspectionOpen(useUiStore.getState()),

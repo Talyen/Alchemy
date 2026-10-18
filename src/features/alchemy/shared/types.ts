@@ -37,6 +37,8 @@ export interface CardTransfer {
   to: CardRect;
   fromScale: number;
   toScale: number;
+  toScaleY?: number;
+  rotateY: readonly [number, number];
   fromRotation: number;
   toRotation: number;
   duration: number;
@@ -45,7 +47,8 @@ export interface CardTransfer {
 export interface BattleRefs {
   endTurnButtonRef: RefObject<HTMLButtonElement | null>;
   handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
-  handDockRef: RefObject<HTMLDivElement | null>;
+  drawPileRef: RefObject<HTMLDivElement | null>;
+  discardPileRef: RefObject<HTMLDivElement | null>;
   battleSceneRef: RefObject<HTMLDivElement | null>;
   playerPanelRef: RefObject<HTMLDivElement | null>;
   enemyPanelRef: RefObject<HTMLDivElement | null>;
@@ -84,7 +87,7 @@ export interface CombatImpactCue {
   recoil: boolean;
 }
 
-export type CollectionTab = "heroes" | "cards" | "bestiary" | "trinkets" | "uniques" | "boards";
+export type CollectionTab = "heroes" | "cards" | "bestiary" | "trinkets" | "uniques";
 
 export interface StatusChip {
   description?: string;

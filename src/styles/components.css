@@ -303,7 +303,6 @@
   }
 }
 
-/* The hand rests at the viewport edge; Mana follows the hero portrait. */
 .battle-hand-dock {
   position: relative;
   width: min(100%, calc(68 * var(--content-rem, 1rem)));
@@ -313,14 +312,17 @@
   width: 78%;
   margin-inline: auto;
 }
-.mana-dock {
+.battle-corner {
   position: absolute;
+  bottom: 0;
+  width: calc(var(--hand-card-width) * 0.8);
+}
+.mana-dock {
+  flex-shrink: 0;
+  position: relative;
   /* Half the former dock's dimensions keeps every crystal and effect at half size. */
   width: min(calc(27.2 * var(--content-rem, 1rem)), calc((100vw - 2.25 * var(--content-rem, 1rem)) * 0.4));
   aspect-ratio: 2165 / 333;
-  left: 50%;
-  bottom: 0;
-  transform: translate(-50%, 20%);
   z-index: 20;
   padding: 0;
   border: 0;

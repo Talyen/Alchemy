@@ -1,5 +1,4 @@
 import { displayText, localization } from "@/lib/localization/runtime";
-import { boardCatalog } from "@/lib/boards/catalog";
 import { getPagination } from "../../../shared/ui/pagination";
 import { COLLECTION_PAGE_SIZE, BESTIARY_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import {
@@ -40,9 +39,7 @@ function sortByTitle<T extends { title: string }>(entries: readonly T[]): T[] {
 
 // Each tab owns its ordered content, default capacity, and hidden copy together.
 // Catalog payloads stay available for decorative shine; discovery gates details.
-type CollectionArtTab = Exclude<CollectionTab, "boards">;
-
-const catalogs: Record<CollectionArtTab, { items: CatalogItem[]; pageSize: number; hiddenDescription: string }> = {
+const catalogs: Record<CollectionTab, { items: CatalogItem[]; pageSize: number; hiddenDescription: string }> = {
   heroes: {
     pageSize: COLLECTION_PAGE_SIZE,
     hiddenDescription: "",
@@ -109,10 +106,10 @@ const catalogs: Record<CollectionArtTab, { items: CatalogItem[]; pageSize: numbe
 };
 
 export function getCollectionLibraryLength(tab: CollectionTab): number {
-  return tab === "boards" ? boardCatalog.length : catalogs[tab].items.length;
+  return catalogs[tab].items.length;
 }
 
-export function getCollectionTotalPages(tab: CollectionTab, pageSize = tab === "boards" ? 6 : catalogs[tab].pageSize) {
+export function getCollectionTotalPages(tab: CollectionTab, pageSize = catalogs[tab].pageSize) {
   return getPagination(getCollectionLibraryLength(tab), 0, pageSize).totalPages;
 }
 
@@ -127,7 +124,7 @@ export function getCollectionPageItems({
   page,
   pageSize = catalogs[collectionTab].pageSize,
 }: {
-  collectionTab: CollectionArtTab;
+  collectionTab: CollectionTab;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];

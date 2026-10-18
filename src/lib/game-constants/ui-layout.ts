@@ -10,3 +10,10 @@ export const BATTLE_ACTOR_VIEWPORT_OFFSET = STAGE_HEIGHT * 0.05;
 export const COLLECTION_PAGE_SIZE = 8;
 export const BESTIARY_PAGE_SIZE = 6;
 export const TRINKET_PAGE_SIZE = 8;
+
+export const DISCARD_PILE_TOP_CARD_BOUNDS = {
+  x: 25 / 420,
+  y: 25 / 560,
+  width: 328 / 420,
+  height: 432 / 560,
+} as const;

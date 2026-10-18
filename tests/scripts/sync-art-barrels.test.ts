@@ -36,8 +36,6 @@ const validManifest = {
   "gear-slot-body.webp": "body",
   "gear-slot-accessory.webp": "accessory",
   "a.webp": "legacy",
-  "board-acorn.webp": "board",
-  "board-acorn-thumbnail.webp": "thumbnail",
 };
 
 async function setManifest(value: unknown) {
@@ -154,9 +152,8 @@ describe("art barrel synchronization", () => {
     expect(vi.mocked(readFile).mock.calls.filter(([file]) => file === manifestPath)).toHaveLength(1);
     const assets = await readFile(assetBarrel, "utf8");
     expect(assets.match(/optimized\/([^"\n]+)/g)).toEqual(["optimized/a.webp"]);
-    // Boards and Gear have one eager catalog registration, no parallel named exports.
+    // Gear has one eager catalog registration, no parallel named exports.
     expect(assets).not.toContain("gearSwordBasic");
-    expect(assets).not.toContain("boardAcorn");
     vi.mocked(writeFile).mockClear();
     await syncArtBarrels();
     await syncArtBarrels({ check: true });

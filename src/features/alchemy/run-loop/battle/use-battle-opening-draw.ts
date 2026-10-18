@@ -45,7 +45,7 @@ export function useBattleOpeningDraw({
   screen,
   playbackBound,
 }: {
-  ctx: BattleOpeningDrawContext & Pick<BattleControllerContext, "presentation" | "battleSceneRef" | "handDockRef">;
+  ctx: BattleOpeningDrawContext & Pick<BattleControllerContext, "presentation" | "battleSceneRef" | "drawPileRef">;
   transferDeps: Pick<ReturnType<typeof createBattleTransferDeps>, "getDrawSequenceDeps">;
   hasActiveBattle: boolean;
   screen: Screen;
@@ -53,7 +53,7 @@ export function useBattleOpeningDraw({
 }) {
   const openingDrawPending = useStore(ctx.presentation, (state) => state.openingDrawPending);
   const playOpeningDrawWhenReady = useCallback(() => {
-    if (!ctx.getPresentation().openingDrawPending || !ctx.battleSceneRef.current || !ctx.handDockRef.current) {
+    if (!ctx.getPresentation().openingDrawPending || !ctx.battleSceneRef.current || !ctx.drawPileRef.current) {
       return undefined;
     }
     void playBattleOpeningDraw(ctx, transferDeps).catch((error: unknown) => {

@@ -101,10 +101,6 @@ function useComposedRunController(gameSession: GameSession, presentation: Battle
         isPending: () => persistence.readProgress().kind !== "idle",
         afterSaved: persistence.afterProgressSaved,
       },
-      boards: {
-        select: guardProgressAction(gameSession, runActions.selectGameBoard, false),
-        acknowledgeReward: guardProgressAction(gameSession, runActions.acknowledgeGameBoardReward, false),
-      },
       meta: {
         resumeRun: nav.returnToBattle,
         goToScreen: nav.goToScreen,

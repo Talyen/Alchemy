@@ -100,20 +100,16 @@ export function useReturnToRunNavigation({
   const [navState, setNavState] = useState<{
     prevScreen: Screen;
     optionsReturnScreen: Screen;
-    boardsFromOptions: boolean;
   }>({
     prevScreen: renderedScreen,
     optionsReturnScreen: ROUTE_SCREENS.MENU,
-    boardsFromOptions: false,
   });
   let optionsReturnScreen = navState.optionsReturnScreen;
-  let boardsFromOptions = navState.boardsFromOptions;
   if (renderedScreen !== navState.prevScreen) {
     // Render-phase update (React-endorsed for derived state): the back target
     // must settle in the same commit that presents the new screen.
     const next = resolveNextOptionsReturnState(renderedScreen, navState);
     optionsReturnScreen = next.optionsReturnScreen;
-    boardsFromOptions = next.boardsFromOptions;
     setNavState({ prevScreen: renderedScreen, ...next });
   }
 
@@ -123,12 +119,6 @@ export function useReturnToRunNavigation({
     },
     [run],
   );
-
-  const openBoardsFromOptions = useCallback(() => {
-    setNavState((current) => ({ ...current, boardsFromOptions: true }));
-    run.routeCommands.meta.selectCollectionTab("boards");
-    run.goToScreen(ROUTE_SCREENS.COLLECTION);
-  }, [run]);
 
   const backFromOptions = useCallback(() => {
     const target = resolveOptionsBackTarget(optionsReturnScreen, hasActiveBattle, resumeKind != null);
@@ -145,7 +135,7 @@ export function useReturnToRunNavigation({
     run.goToScreen(ROUTE_SCREENS.MENU);
   }, [run]);
 
-  const defaultScreenBackHandler = resolveScreenBackHandler({
+  const screenBackHandler = resolveScreenBackHandler({
     renderedScreen,
     returnToRunTarget,
     returnToRun,
@@ -155,15 +145,10 @@ export function useReturnToRunNavigation({
     goToScreen: run.goToScreen,
   });
 
-  const screenBackHandler =
-    renderedScreen === ROUTE_SCREENS.COLLECTION && boardsFromOptions
-      ? () => run.goToScreen(ROUTE_SCREENS.OPTIONS)
-      : defaultScreenBackHandler;
   return {
     returnToRunScreen,
     optionsReturnScreen,
     navigateToMeta,
-    openBoardsFromOptions,
     backFromOptions,
     returnToRun,
     handleMainMenu,

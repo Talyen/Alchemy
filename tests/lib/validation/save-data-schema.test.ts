@@ -9,6 +9,25 @@ import { computeStartingMaxHealth } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 
 describe("SaveDataSchema", () => {
+  it("discards retired board fields without changing progress or the active battle", () => {
+    const current = SaveDataSchema.parse({
+      ...baseHomesteadSave,
+      activeRun: makeMinimalActiveRunInput({
+        activity: savedActivityFixture("battle", { battleState: defaultBattleState() }),
+      }),
+    });
+    const withCosmetics = {
+      ...current,
+      collectedBoardIds: ["acorn"],
+      boardSelection: { kind: "random" },
+      activeBoardId: "acorn",
+      lastRandomBoardId: "acorn",
+      pendingBoardRewardId: "acorn",
+    };
+    const restored = SaveDataSchema.parse(withCosmetics);
+    expect(restored).toEqual(current);
+    expect(JSON.parse(JSON.stringify(restored))).toEqual(JSON.parse(JSON.stringify(current)));
+  });
   it("parses a full homestead save fixture", () => {
     const result = SaveDataSchema.safeParse(baseHomesteadSave);
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);

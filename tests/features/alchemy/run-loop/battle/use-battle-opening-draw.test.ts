@@ -35,7 +35,8 @@ it("starts opening playback when its injected store becomes ready, even with the
     presentation,
     getPresentation: presentation.getState,
     battleSceneRef: { current: document.createElement("div") },
-    handDockRef: { current: document.createElement("div") },
+    drawPileRef: { current: document.createElement("div") },
+    discardPileRef: { current: document.createElement("div") },
   };
   battlePresentation.getState().setOpeningDrawPending(false);
   const { unmount } = renderHook(() =>

@@ -1,11 +1,10 @@
-import { boardAssets } from "./board-assets.mjs";
 import { cardAssets } from "./card-assets.mjs";
 import { contentAssets } from "./content-assets.mjs";
 import { coreAssets } from "./core-assets.mjs";
 import { talentAssets } from "./talent-assets.mjs";
 import { validateRegistryEntries } from "./registry-validation.mjs";
 
-export const staticAssets = [...coreAssets, ...boardAssets, ...cardAssets, ...contentAssets, ...talentAssets];
+export const staticAssets = [...coreAssets, ...cardAssets, ...contentAssets, ...talentAssets];
 
 export async function validateAssetRegistry(entries, { sourceDir } = {}) {
   for (const entry of entries) {

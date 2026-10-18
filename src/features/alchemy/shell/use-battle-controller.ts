@@ -153,7 +153,8 @@ export function useBattleController({
     () => ({
       endTurnButtonRef: ctx.endTurnButtonRef,
       handCardRefs: ctx.handCardRefs,
-      handDockRef: ctx.handDockRef,
+      drawPileRef: ctx.drawPileRef,
+      discardPileRef: ctx.discardPileRef,
       battleSceneRef: ctx.battleSceneRef,
       playerPanelRef: ctx.playerPanelRef,
       enemyPanelRef: ctx.enemyPanelRef,

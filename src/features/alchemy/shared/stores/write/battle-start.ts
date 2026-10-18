@@ -1,4 +1,3 @@
-import { resolveBattleBoard } from "./boards";
 import { enemyById, getBossById, getBossEnemy, getCurrentEnemy, isEnemyId } from "../../config";
 import { resolveBattleStart } from "@/lib/battle";
 import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
@@ -63,7 +62,6 @@ export function initializeBattle(draft: GameplayDraft, request: BattleStartReque
     },
     { rng: createDraftRunRandomSource(draft, "world") },
   );
-  resolveBattleBoard(draft);
   enterBattle(draft, opening.state);
   commitResolvedBattle(draft, { ...opening.state, gold: startingGold }, opening.state);
   if (run.contentSystemType !== "labyrinth" && draft.session.rewardFlow.claim.kind !== "destination") {

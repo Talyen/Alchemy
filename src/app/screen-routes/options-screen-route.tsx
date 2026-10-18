@@ -10,13 +10,7 @@ import type { OptionsRouteCtx } from "./route-ctx";
 
 const noop = (): void => {};
 
-function OptionsScreenRoute({
-  onClearSaveData,
-  onUnlockAllDevMode,
-  onBack,
-  onOpenGameMenu,
-  onOpenBoards,
-}: OptionsRouteCtx) {
+function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpenGameMenu }: OptionsRouteCtx) {
   const selectedLanguage = useSyncExternalStore(subscribeLanguage, languagePreference, languagePreference);
   const settings = useAppSettings();
   const actions = useSettingsActions();
@@ -35,7 +29,6 @@ function OptionsScreenRoute({
       onBack={onBack ?? noop}
       onMenu={onOpenGameMenu}
       display={{
-        onOpenBoards,
         languagePreference: selectedLanguage,
         onLanguageChange: setLanguagePreference,
         showDisplayMode: isDesktop(),

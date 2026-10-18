@@ -102,7 +102,8 @@ function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
     playback,
     endTurnButtonRef: { current: null },
     handCardRefs: { current: {} },
-    handDockRef: { current: null },
+    drawPileRef: { current: null },
+    discardPileRef: { current: null },
     playerPanelRef: { current: null },
     enemyPanelRef: { current: null },
     battleSceneRef: { current: null },
@@ -658,7 +659,7 @@ describe("createBattleCardPlay", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it.each(["disabled", "menu", "confirmation", "unmount"] as const)(
+  it.each(["disabled", "menu", "unmount"] as const)(
     "does not commit a previewed card after autoplay is interrupted: %s",
     async (interruption) => {
       vi.mocked(shouldReduceMotion).mockReturnValue(false);
@@ -668,7 +669,7 @@ describe("createBattleCardPlay", () => {
       givenBattle(initialState);
       const { ctx, handleAutoplayCard, handleAutoplayWish } = makeDeps();
       const gate = {
-        current: { hiddenHandCardKeys: [], cardTransferInProgress: false, endTurnConfirmationOpen: false },
+        current: { hiddenHandCardKeys: [], cardTransferInProgress: false },
       };
       const { rerender, unmount } = renderHook(
         ({ enabled, gameMenuOpen }) =>
@@ -693,10 +694,7 @@ describe("createBattleCardPlay", () => {
 
       expect(useUiStore.getState().autoplayPreviewCardId).toBe("hand-slash-7");
       if (interruption === "unmount") unmount();
-      else if (interruption === "confirmation") {
-        gate.current.endTurnConfirmationOpen = true;
-        battlePresentation.getState().setEndTurnConfirmationOpen(true);
-      } else rerender({ enabled: interruption !== "disabled", gameMenuOpen: interruption === "menu" });
+      else rerender({ enabled: interruption !== "disabled", gameMenuOpen: interruption === "menu" });
       await act(async () => {
         await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
       });
@@ -704,8 +702,6 @@ describe("createBattleCardPlay", () => {
       expect(awardCardXP).not.toHaveBeenCalled();
       expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
       if (interruption !== "unmount") {
-        gate.current.endTurnConfirmationOpen = false;
-        battlePresentation.getState().setEndTurnConfirmationOpen(false);
         rerender({ enabled: true, gameMenuOpen: false });
         await act(async () => {
           await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS + 50);

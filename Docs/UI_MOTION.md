@@ -138,18 +138,12 @@ without the description popup; reduced motion plays instantly with no preview.
 Cancelling or restarting the battle clears its pending autoplay preview immediately
 and prevents that preview from committing a card or Wish choice.
 
-Draws emerge face-up from below the viewport's bottom center and ease into the
-measured hand slot; discards return below the same edge. Both rotate 52 degrees
-clockwise along a shallow continuous curve, with uniform scaling between 94% and
-100%. There are no transfer backs or flips. Draws take 420ms and discards 360ms;
-departures overlap every 70ms, left-to-right for draws and right-to-left for
-discards. Sounds start with each departure. Tuning lives in `CARD_TRANSFER_CONFIG`.
-
-A single frame clock derives each flight's pose at the display frame rate.
-Draw landings follow the live card identity through hand reflow, including when
-another card is played during a draw. The bottom hand dock supplies the horizontal
-anchor and the full scene supplies the bottom edge. Gameplay remains committed
-independently of this presentation.
+Draws fly from the bottom-left Draw Pile into measured hand slots and flip from
+back to front. Discards leave right-to-left, flip onto the bottom-right Discard
+Pile, and scale to its top card. Both follow the earlier shallow curved path,
+with a 500ms base duration accelerated for larger batches. Flights run sequentially;
+each departure starts its sound. The live card identity follows hand reflow.
+Tuning lives in `CARD_TRANSFER_CONFIG`.
 
 Existing playback owns batch completion, input gates, hidden-card handoff,
 cancellation, and timers. A batch waits for its last flight rather than pausing

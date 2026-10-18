@@ -1,5 +1,5 @@
 import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
-import { useMemo, type MouseEvent } from "react";
+import { useMemo, type ReactNode, type MouseEvent } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { CombatTextLayer } from "../../battle/presentation/combat-text-layer";
@@ -19,6 +19,9 @@ import { getScreenParticleConfig } from "@/app/screen-particle-config";
 import { useSettingsStore } from "../../../shared/stores/settings-store";
 
 interface BattleScreenProps {
+  endTurn: ReactNode;
+  onInspectPile: (view: "draw" | "discard") => void;
+  inspectionAvailable: boolean;
   presentation: BattlePresentationStore;
   onInspectEnemy?: ((trigger: HTMLElement) => void) | undefined;
   enemyInspectionOpen?: boolean | undefined;
@@ -96,7 +99,7 @@ export function BattleScreen(props: BattleScreenProps) {
   const inspectUiOpen = boonInspectOpen && hasInspectableBoons(runBoons) && !battleState.wishOptions;
 
   return (
-    <div className="battle-tabletop relative h-full w-full overflow-clip">
+    <div className="relative h-full w-full overflow-clip">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {backgroundParticlesIntensity > 0 ? (
           <BackgroundParticles
@@ -127,6 +130,9 @@ export function BattleScreen(props: BattleScreenProps) {
         </PageLayout>
 
         <BattleBottomBar
+          endTurn={props.endTurn}
+          onInspectPile={props.onInspectPile}
+          inspectionAvailable={props.inspectionAvailable}
           presentation={presentation}
           view={view}
           refs={refs}

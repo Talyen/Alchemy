@@ -1,5 +1,4 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-import { BoardRewardScreen } from "@/features/alchemy/shared/ui/board-reward-screen";
 import { playUISound } from "@/lib/audio";
 import { IS_DEMO } from "@/lib/game-edition";
 import { openFullGameWishlist } from "@/lib/platform";
@@ -15,7 +14,6 @@ import {
   ArmoryScreen,
 } from "@/features/alchemy/meta/screens";
 import {
-  useBoards,
   useFinishedRunCharacters,
   useProfileCollectionSlice,
   useProfileDiscoverySlice,
@@ -30,25 +28,11 @@ import { useGearArmorySlice, useGearCombatRestrictions } from "@/features/alchem
 import type { MetaRouteCtx } from "./route-ctx";
 
 function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {
-  const i18n = useGameTranslation();
+  useGameTranslation();
   const commands = routeCommands.meta;
   const { hasUnspentTalents, hasAffordableHomestead } = useMenuBadges();
   const hasActiveRun = useHasActiveRun();
-  const { pendingBoardRewardId } = useBoards();
   const finishedRunCharacters = useFinishedRunCharacters();
-  if (pendingBoardRewardId)
-    return (
-      <BoardRewardScreen
-        boardId={pendingBoardRewardId}
-        continueLabel={i18n.text("ui.meta-routes.attr1", "Main Menu")}
-        onUseBoard={() => {
-          routeCommands.boards.acknowledgeReward(pendingBoardRewardId, true);
-        }}
-        onContinue={() => {
-          routeCommands.boards.acknowledgeReward(pendingBoardRewardId, false);
-        }}
-      />
-    );
   return (
     <MenuScreen
       {...(IS_DEMO && isDesktop() ? { onWishlist: openFullGameWishlist } : {})}
@@ -116,15 +100,12 @@ function CollectionScreenRoute({ routeCommands, onBack, onOpenGameMenu }: MetaRo
   useGameTranslation();
   const commands = routeCommands.meta;
   const profile = useProfileCollectionSlice();
-  const boards = useBoards();
   const bondedCompanions = useBondedCompanions();
   const finishedRunCharacters = useFinishedRunCharacters();
 
   return (
     <CollectionScreen
       {...profile}
-      {...boards}
-      onSelectBoard={routeCommands.boards.select}
       onSelectTab={commands.selectCollectionTab}
       onPageChange={commands.setCollectionPage}
       bondedCompanions={bondedCompanions}

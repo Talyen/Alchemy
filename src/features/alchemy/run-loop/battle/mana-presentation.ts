@@ -32,10 +32,10 @@ export interface ManaPresentation {
   hidden: number;
 }
 
-/** Coordinates refer to the frame artwork, not the dock's reserved side space. */
+/** Keep the visible row inside its corner pile while retaining crystal sizes. */
 function manaGemPosition(index: number, total: number): number {
   const count = Math.min(total, MANA_DOCK_VISIBLE_COUNT);
-  const spacing = Math.min(10.5, 56 / Math.max(1, count - 1));
+  const spacing = Math.min(10.5, 44 / Math.max(1, count - 1));
   return 50 + (index - (count - 1) / 2) * spacing;
 }
 

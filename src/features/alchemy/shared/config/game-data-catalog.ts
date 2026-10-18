@@ -1,5 +1,4 @@
 export {
-  boardArt,
   alchemistShopBg,
   manaDockFull,
   manaDockEmpty,

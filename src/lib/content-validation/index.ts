@@ -1,7 +1,5 @@
-import { boardCatalog, isBoardId, STARTER_BOARD_ID } from "@/lib/boards/catalog";
-import { boardArt } from "@/lib/game-data";
 import type { ContentValidationIssue, ContentValidationResult } from "./types";
-import { addDuplicateIssues, createCollector, type Collector } from "./utils";
+import { createCollector } from "./utils";
 import { validateTalents, validateKeywordsAndStatuses, validateEncounterTraits } from "./validators";
 import { validateCards, validateTrinkets } from "./validators-cards";
 import { validateEnemies, validateCompanions } from "./validators-enemies";
@@ -25,22 +23,6 @@ function sortIssues(issues: ContentValidationIssue[]): ContentValidationIssue[] 
   );
 }
 
-function validateBoards(collector: Collector): void {
-  addDuplicateIssues(
-    boardCatalog.map((board) => board.id),
-    "art",
-    "board ID",
-    collector,
-  );
-  if (!isBoardId(STARTER_BOARD_ID))
-    collector.error("art", STARTER_BOARD_ID, "Starter board is missing from the board catalog");
-  for (const board of boardCatalog) {
-    if (!board.title.trim()) collector.error("art", board.id, "Board title is empty");
-    if (!boardArt[board.id]?.full || !boardArt[board.id]?.thumbnail)
-      collector.error("art", board.id, "Board needs full art and a gallery thumbnail");
-  }
-}
-
 export function runContentValidation(): ContentValidationResult {
   const collector = createCollector();
   validateCards(collector);
@@ -52,7 +34,6 @@ export function runContentValidation(): ContentValidationResult {
   validateEncounterTraits(collector);
   validateGear(collector);
   validateTypography(collector);
-  validateBoards(collector);
 
   const issues = sortIssues(collector.issues);
   return {

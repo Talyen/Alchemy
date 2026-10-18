@@ -1,6 +1,6 @@
 import "../helpers/mock-audio";
 
-import { act, cleanup, fireEvent, renderHook } from "@testing-library/react";
+import { cleanup, fireEvent, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useReturnToRunNavigation } from "@/app/use-app-navigation";
 import { useAppKeyboardShortcuts } from "@/app/use-app-keyboard-shortcuts";
@@ -46,42 +46,4 @@ it.each(["button", "Escape"])("difficulty Back navigation %s returns Wildcard to
   if (input === "button") result.current.screenBackHandler?.();
   else fireEvent.keyDown(window, { key: "Escape" });
   expect(navigateTo).toHaveBeenCalledWith("draft-deck");
-});
-
-it("returns from Options Boards to Options and then to the original screen", () => {
-  const goToScreen = vi.fn();
-  const run = { routeCommands: createMockRouteCommands(), goToScreen, returnToBattle: vi.fn() };
-  const { result, rerender } = renderHook(({ renderedScreen }) => useReturnToRunNavigation({ run, renderedScreen }), {
-    initialProps: { renderedScreen: "menu" as import("@/lib/routing").Screen },
-  });
-  rerender({ renderedScreen: "options" });
-  act(() => result.current.openBoardsFromOptions());
-  rerender({ renderedScreen: "collection" });
-  result.current.screenBackHandler?.();
-  expect(goToScreen).toHaveBeenLastCalledWith("options");
-  rerender({ renderedScreen: "options" });
-  result.current.screenBackHandler?.();
-  expect(goToScreen).toHaveBeenLastCalledWith("menu");
-});
-
-it("leaves Collection normally after returning through its own Options Boards shortcut", () => {
-  const goToScreen = vi.fn();
-  const run = { routeCommands: createMockRouteCommands(), goToScreen, returnToBattle: vi.fn() };
-  const { result, rerender } = renderHook(({ renderedScreen }) => useReturnToRunNavigation({ run, renderedScreen }), {
-    initialProps: { renderedScreen: "collection" as import("@/lib/routing").Screen },
-  });
-  // Establish Collection as the original Options return target.
-  rerender({ renderedScreen: "menu" });
-  rerender({ renderedScreen: "collection" });
-  rerender({ renderedScreen: "options" });
-  act(() => result.current.openBoardsFromOptions());
-  rerender({ renderedScreen: "collection" });
-  result.current.screenBackHandler?.();
-  expect(goToScreen).toHaveBeenLastCalledWith("options");
-  rerender({ renderedScreen: "options" });
-  result.current.screenBackHandler?.();
-  expect(goToScreen).toHaveBeenLastCalledWith("collection");
-  rerender({ renderedScreen: "collection" });
-  result.current.screenBackHandler?.();
-  expect(goToScreen).toHaveBeenLastCalledWith("menu");
 });

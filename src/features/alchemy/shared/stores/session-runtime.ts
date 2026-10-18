@@ -30,12 +30,8 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
   const lifetime = createSessionLifetime();
   const sourceClock = bindRuntimeMethods(nativeClock, options.runtimeInputs?.clock);
   const clock = lifetime.ownClock(sourceClock);
-  const {
-    generateRunSeed,
-    cosmeticRandom,
-    createInstanceId: instanceIdSource,
-  } = bindRuntimeMethods(
-    { generateRunSeed: generateRandomRunSeed, cosmeticRandom: () => Math.random(), createInstanceId },
+  const { generateRunSeed, createInstanceId: instanceIdSource } = bindRuntimeMethods(
+    { generateRunSeed: generateRandomRunSeed, createInstanceId },
     options.runtimeInputs,
   );
   const settings = createSettingsStore(lifetime.isActive, lifetime.track);
@@ -87,7 +83,6 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     io,
     clock,
     generateRunSeed,
-    cosmeticRandom,
     createInstanceId: instanceIdSource,
     feedback,
     inCommand: false,

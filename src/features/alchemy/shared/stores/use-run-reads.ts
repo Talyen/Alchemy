@@ -91,10 +91,8 @@ export function useActiveRunBoons(): string[] {
 export function useBattleClusterState() {
   return useGameplayStateStore(
     useShallow((state) => {
-      const { battleState, hasActiveBattle } = selectBattle(state);
+      const { battleState } = selectBattle(state);
       return {
-        battleState,
-        hasActiveBattle,
         gold: battleState.gold,
         hasWishOptions: Boolean(battleState.wishOptions),
       };

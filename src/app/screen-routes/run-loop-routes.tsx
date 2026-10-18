@@ -1,3 +1,4 @@
+import { BattleEndTurnButton } from "@/features/alchemy/run-loop/screens/battle-screen/end-turn-button";
 import { TransmutationScreen } from "@/features/alchemy/run-loop/screens/transmutation-screen";
 import { labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
 import { useEffect, useRef } from "react";
@@ -81,6 +82,25 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
   return (
     <>
       <BattleScreen
+        endTurn={
+          <BattleEndTurnButton
+            battleState={inputBattleState}
+            hasActiveBattle={hasActiveBattle}
+            screen={commands.screen}
+            blocked={gameMenuOpen || commands.boonInspectOpen}
+            presentation={commands.presentation}
+            buttonRef={commands.refs.endTurnButtonRef}
+            onEndTurn={commands.handleEndTurn}
+            isCardPlayInProgress={commands.isCardPlayInProgress}
+            subscribePlayback={commands.subscribePlayback}
+            isProgressSavePending={commands.isProgressSavePending}
+            subscribeProgressSave={commands.subscribeProgressSave}
+          />
+        }
+        onInspectPile={(view) => {
+          if (canInspectEnemy && cardInspection?.canOpen) cardInspection.onOpen(view);
+        }}
+        inspectionAvailable={canInspectEnemy}
         presentation={commands.presentation}
         onInspectEnemy={inspectEnemy}
         enemyInspectionOpen={enemyInspectionOpen}

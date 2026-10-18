@@ -27,27 +27,6 @@ Selected files may be moved between folders or renamed within the configured lib
 
 Ordinary development and builds use committed outputs. `predev` and hosted CI run `npm run assets:check:outputs`; this deliberately does not establish raw-source freshness. CI neither downloads the library nor regenerates media. Prepared manifests retain independent source/settings hashes, selection fingerprints, and output hashes.
 
-## Game Board artwork
-
-To add or replace a board:
-
-1. Put its master under `2d Assets/Game Sources/Interface/Board Backgrounds` in the Asset Library.
-2. Add or update its `id`, `title`, and `sourceFilename` in `src/lib/boards/catalog.json`. Preserve existing IDs: ownership and selection use them in saves. Adding a library file alone does not register a board.
-3. Run `npm run assets:optimize:art` and `npm run sync:art`. The runtime derives full-image and thumbnail URLs from the catalog ID; no second map or named exports are needed.
-4. Run `npm run assets:check` and `npm run check:generated`, review the catalog, map, and generated diff, then follow the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change). For changes to selection, ownership, or rewards, use the existing `tests/features/alchemy/shared/stores/boards.test.ts` suite.
-
-`scripts/assets/board-assets.mjs` derives both outputs from that catalog and
-registers native 2752×1536 lossless WebP backgrounds and 640px, quality-90 gallery
-thumbnails in the existing art pipeline. Lossless encoding preserves decoded JPG
-pixels; it cannot restore information already lost in the original JPG.
-`lossless` participates in transform and selection fingerprints. Changing its value
-requires regeneration just like width or quality changes.
-
-`catalog-art.ts` derives `boardArt` from the board catalog and Gear art from prepared filenames using eager Vite URL imports. Missing board images fail during catalog construction. Board URLs
-are eagerly registered, but `onDemandBoardArt` excludes full art and thumbnails
-from both essential and deferred startup decoding. The gallery displays thumbnails;
-inspection, reward reveals, and battle display the full-resolution image.
-
 ## Art style and generation prompts
 
 Alchemy's visual identity is anchored by its **Master Action-Anime Art Style**.
@@ -117,7 +96,7 @@ Create a single game inventory icon. Square composition, genuinely transparent b
 5. Run `npm run check:generated` (fast art-barrel and build-version validation); review the generated diff.
 
 `npm run sync:generated` updates the art barrel and version metadata.
-`npm run sync:art` updates `src/lib/game-data/assets.generated.ts`; Boards and Gear
+`npm run sync:art` updates `src/lib/game-data/assets.generated.ts`; Gear
 use eager catalog registration in `catalog-art.ts` instead of generated exports.
 `npm run sync:gear-art` remains an alias for the same art sync.
 Card and enemy builders resolve conventional artwork from their IDs through
@@ -227,9 +206,9 @@ Optimized images and `src/lib/game-data/assets.generated.ts` are committed build
 
 - `characterArt`, `mysteryEventArt`, `talentArt`, `gearSlotBackgroundArt`, `craftingArt`, `difficultyArt` — typed maps built from `assetRefs` in `assets.ts` (`gearSlotBackgroundArt` derives from `gearArtByDefinitionId`).
 - `allGameArt` is the full static manifest; `essentialGameArt` selects startup-critical art. Preserve the [boot and loading contract](./ARCHITECTURE.md#boot-and-loading) when changing these sets. Bundle limits live in [Performance](./PERFORMANCE.md#eager-bundle-size).
-- `boardArt` and `gearArtByDefinitionId` — derive catalog identities from the eager registry in `catalog-art.ts`.
+- `gearArtByDefinitionId` — derive catalog identities from the eager registry in `catalog-art.ts`.
 
-The general art barrel provides explicit export names (`toAssetExportName`, wrapping `kebabToCamel`). Only `catalog-art.ts` uses a narrow `import.meta.glob` with `eager: true` and `import: "default"` for Board/Gear URLs. It replaces duplicate generated exports and maps while preserving the static Vite asset graph. Other consumers use the exported maps; lazy art imports remain unsupported.
+The general art barrel provides explicit export names (`toAssetExportName`, wrapping `kebabToCamel`). Only `catalog-art.ts` uses a narrow `import.meta.glob` with `eager: true` and `import: "default"` for Gear URLs. It replaces duplicate generated exports and maps while preserving the static Vite asset graph. Other consumers use the exported maps; lazy art imports remain unsupported.
 
 ## Skip mode and verification
 

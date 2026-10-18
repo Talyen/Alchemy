@@ -8,7 +8,6 @@ import type { BattlePresentationStore } from "../../battle-presentation-store";
 import { MANA_DOCK_VISIBLE_COUNT, projectMana, type ManaGemExit } from "../../mana-presentation";
 import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
 import { PortaledTooltip } from "../../../../shared/ui/tooltips/portaled-tooltip";
-import { BattleSceneArtwork } from "../../../../shared/ui/battle-scene-artwork";
 
 const SHARD_SHAPES = [
   "polygon(0 0, 50% 0, 50% 50%)",
@@ -120,7 +119,7 @@ export function ManaPanel({
         >
           <span key={`effect-${gem.token}`} className="mana-dock-gem-motion">
             <span className="mana-dock-socket" />
-            <BattleSceneArtwork className="mana-dock-empty" maskSource={manaDockEmpty}>
+            <div className="mana-dock-empty">
               <img
                 src={manaDockEmpty}
                 alt=""
@@ -128,8 +127,8 @@ export function ManaPanel({
                 decoding="async"
                 className="block h-full w-full object-contain"
               />
-            </BattleSceneArtwork>
-            <BattleSceneArtwork className="mana-dock-full" maskSource={manaDockFull}>
+            </div>
+            <div className="mana-dock-full">
               <img
                 src={manaDockFull}
                 alt=""
@@ -137,7 +136,7 @@ export function ManaPanel({
                 decoding="async"
                 className="block h-full w-full object-contain"
               />
-            </BattleSceneArtwork>
+            </div>
             <span className="mana-dock-glow" />
             <span className="mana-dock-glint" style={{ maskImage: `url(${manaDockFull})` }} />
           </span>

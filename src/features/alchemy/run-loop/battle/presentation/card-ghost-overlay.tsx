@@ -4,7 +4,6 @@ import { useStore } from "zustand";
 import type { BattlePresentationStore } from "../battle-presentation-store";
 
 import type { CardGhost, GhostStyle } from "../../../shared/types";
-import { BattleSceneArtwork } from "../../../shared/ui/battle-scene-artwork";
 import { Surface } from "../../../shared/ui/surface";
 import { cardArtFrameClass, cardArtImageClass } from "../../../shared/config/layout";
 
@@ -29,10 +28,10 @@ const CardGhostOverlay = memo(function CardGhostOverlay({ ghost, onDone }: { gho
         } as GhostStyle
       }
     >
-      <Surface className={cn(cardArtFrameClass, "battle-scene-piece aspect-[3/4] h-full w-full")}>
-        <BattleSceneArtwork className="h-full w-full">
+      <Surface className={cn(cardArtFrameClass, "aspect-[3/4] h-full w-full")}>
+        <div className="h-full w-full">
           <img src={ghost.art} alt="" decoding="async" className={cn("block h-full w-full", cardArtImageClass)} />
-        </BattleSceneArtwork>
+        </div>
       </Surface>
     </div>
   );

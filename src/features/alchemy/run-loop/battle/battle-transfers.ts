@@ -37,19 +37,6 @@ export function createBattleTransferDeps(
         playBattleEvent("drawTransfer", { volume: CARD_TRANSFER_CONFIG.soundVolume });
     }
 
-    function waitForDeparture(delayMs: number): Promise<boolean> {
-      return runPlaybackTask(
-        scope.registerCancel,
-        () => false,
-        (task) => {
-          task.schedule(
-            (callback) => scope.setGameTimeout(callback, delayMs),
-            () => task.complete(isActive()),
-          );
-        },
-      );
-    }
-
     function runCardTransfer(transfer: Omit<CardTransfer, "id">, onComplete?: () => void): Promise<void> {
       if (!isActive()) return Promise.resolve();
       return runPlaybackTask<void>(
@@ -86,14 +73,16 @@ export function createBattleTransferDeps(
 
     const cardTransferDeps: CardTransferAnimationDeps = {
       isSessionActive: (id) => id === session && isActive(),
-      measureHandDock: () => {
-        if (!isActive()) return null;
-        const dock = ctx.measureElementRect(ctx.handDockRef.current, scene());
-        const viewport = ctx.measureElementRect(scene(), scene());
-        return dock && viewport ? { ...dock, y: viewport.height - dock.height } : null;
-      },
+      measureDrawPile: () => (isActive() ? ctx.measureElementRect(ctx.drawPileRef.current, scene()) : null),
+      measureDiscardPile: () =>
+        isActive()
+          ? ctx.measureElementRect(
+              ctx.discardPileRef.current?.querySelector<HTMLElement>("[data-pile-top-card]") ??
+                ctx.discardPileRef.current,
+              scene(),
+            )
+          : null,
       measureHandCardRotation: (key) => (isActive() ? getCardRotation(ctx.handCardRefs.current[key] ?? null) : null),
-      waitForDeparture,
       measureHandCard: stableHandCardDeps.measureHandCard,
       runCardTransfer,
       playTransferSound,

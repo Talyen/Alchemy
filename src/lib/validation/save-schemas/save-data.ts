@@ -1,11 +1,4 @@
 import { z } from "zod";
-import {
-  BoardSelectionSchema,
-  CollectedBoardIdsSchema,
-  NullableBoardIdSchema,
-  ActiveBoardIdSchema,
-  normalizeBoardSave,
-} from "./board-schemas";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { hasHomesteadPurchases } from "@/lib/homestead/purchases";
 import { companionTierItems } from "@/lib/homestead/companions";
@@ -110,11 +103,6 @@ const SaveDataObjectSchema = z
     steamAccountId: z.string().regex(/^\d+$/u).nullable().catch(null),
     contentVersion: z.number().int().nonnegative().catch(CURRENT_CONTENT_VERSION),
     ...SettingsSaveFieldsSchema.shape,
-    collectedBoardIds: CollectedBoardIdsSchema,
-    boardSelection: BoardSelectionSchema,
-    activeBoardId: ActiveBoardIdSchema,
-    lastRandomBoardId: NullableBoardIdSchema,
-    pendingBoardRewardId: NullableBoardIdSchema,
     discoveredCardIds: deduplicatedStringArraySchema(),
     encounteredEnemyIds: deduplicatedStringArraySchema(),
     discoveredTrinketIds: deduplicatedStringArraySchema(),
@@ -145,7 +133,7 @@ const SaveDataObjectSchema = z
   .transform((save) => {
     const flatInventory = flattenGearInventories(save.gearInventories);
     return {
-      ...normalizeBoardSave(save),
+      ...save,
       autoplayEnabled: resolveAutoplayEnabled(save),
       starterHomesteadGrantResolved: save.starterHomesteadGrantResolved ?? hasHomesteadPurchases(save),
       gearLoadouts: pruneOrphanGearLoadouts(flatInventory, save.gearLoadouts),

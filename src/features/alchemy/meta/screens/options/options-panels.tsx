@@ -9,7 +9,6 @@ import { SettingsSelect, SettingsSlider, SettingsToggle, SettingsSection, Settin
 import type { SettingsActions, SettingsSaveFields } from "../../../shared/stores/settings-store";
 
 export interface DisplayOptionsProps {
-  onOpenBoards?: (() => void) | undefined;
   languagePreference: LanguagePreference;
   onLanguageChange: (value: LanguagePreference) => void;
   showDisplayMode: boolean;
@@ -56,14 +55,6 @@ export function DisplayOptionsPanel({
           options={LANGUAGE_OPTIONS}
           onChange={display.onLanguageChange}
         />
-        {display.onOpenBoards ? (
-          <SettingsAction
-            label={i18n.text("ui.options-panels.2", "Game Boards")}
-            description={i18n.text("ui.options-panels.3", "Battle background artwork")}
-          >
-            <Button onClick={display.onOpenBoards}>{i18n.text("ui.options-panels.4", "Browse Boards")}</Button>
-          </SettingsAction>
-        ) : null}
         {display.showDisplayMode ? (
           <SettingsSelect
             id="display-mode"

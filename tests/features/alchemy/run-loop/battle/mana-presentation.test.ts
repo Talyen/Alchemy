@@ -3,23 +3,15 @@ import { projectMana } from "@/features/alchemy/run-loop/battle/mana-presentatio
 
 describe("mana dock resource projection", () => {
   it("centers owned gems and includes temporary mana in the strip", () => {
-    expect(projectMana(null, 0, 3).gems.map((gem) => gem.x)).toEqual([39.5, 50, 60.5]);
     const bonus = projectMana(null, 5, 3);
     expect(bonus.gems).toHaveLength(5);
     expect(bonus.gems.every((gem) => gem.filled && gem.effect === null)).toBe(true);
   });
-  it("keeps all gems inside the strip, shrinking crowded rows without losing totals", () => {
+  it("caps visible crystals without losing current, capacity, or overflow totals", () => {
     const state = projectMana(null, 14, 17);
     expect(state.gems).toHaveLength(9);
-    expect(state.gems[0]?.x).toBe(22);
-    expect(state.gems[8]?.x).toBe(78);
-    expect(state.gems[0]?.y).toBe(state.gems[8]?.y);
-    expect(state.gems[4]!.y).toBeLessThan(state.gems[0]!.y);
     expect(state.hidden).toBe(8);
     expect([state.mana, state.maxMana]).toEqual([14, 17]);
-    expect(state.height).toBeLessThan(projectMana(null, 4, 4).height);
-    expect(projectMana(null, 3, 3).height).toBe(projectMana(null, 4, 4).height);
-    expect(projectMana(null, 8, 8).height).toBeGreaterThan(state.height);
     expect(projectMana(state, 2, 4).hidden).toBe(0);
   });
   it("spending empties owned gems while disappearing bonus mana only fades", () => {

@@ -26,7 +26,7 @@ export function CollectionGrid({
   onEnemyActivate,
   inspectionOpen = false,
 }: {
-  collectionTab: Exclude<CollectionTab, "boards">;
+  collectionTab: CollectionTab;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];

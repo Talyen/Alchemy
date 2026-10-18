@@ -50,7 +50,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       .poll(
         () =>
           page.evaluate(() => (window as Window & { openingFlyingCardSeen?: boolean }).openingFlyingCardSeen ?? false),
-        { timeout: 20_000, message: "the opening hand should emerge from below the viewport" },
+        { timeout: 20_000, message: "the opening hand should fly from Draw Pile" },
       )
       .toBe(true);
     await expect(battle.hand).toHaveCount(4, { timeout: 20_000 });
@@ -138,7 +138,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await expect(visibleCards).toHaveCount(4);
   });
 
-  test("discards overlap, rotate clockwise, and disappear below the viewport face-up", async ({ page }) => {
+  test("discards flip onto the visible pile sequentially and retain hand styling", async ({ page }) => {
     test.setTimeout(60_000);
     await startBattleWithDeck(
       page,
@@ -147,15 +147,6 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await waitForOpeningDeal(page);
     const battle = new BattlePage(page);
     const flight = page.evaluate(async () => {
-      const sourceLayers = new Map(
-        [...document.querySelectorAll<HTMLElement>("[data-hand-slot]")].map((slot) => [
-          slot.dataset.handSlot,
-          Number(getComputedStyle(slot).zIndex),
-        ]),
-      );
-      const source = [...document.querySelectorAll("[data-hand-slot] button")].at(-1)!;
-      const sourceMatrix = new DOMMatrixReadOnly(getComputedStyle(source).transform);
-      const sourceRotation = (Math.atan2(sourceMatrix.b, sourceMatrix.a) * 180) / Math.PI;
       const card = await new Promise<HTMLElement>((resolve) => {
         const observer = new MutationObserver(() => {
           const element = document.querySelector<HTMLElement>('[data-flying-card][data-transfer-kind="discard"]');
@@ -166,44 +157,38 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
         });
         observer.observe(document.body, { childList: true, subtree: true });
       });
-      const angles: number[] = [];
-      let overlapping = false;
-      let lastTop = 0;
-      let backs = false;
-      const changedLayers = new Set<string>();
+      let maximumFlights = 0;
+      const flips: number[] = [];
+      let landing = { x: 0, y: 0, width: 0, height: 0 };
       while (card.isConnected) {
-        const matrix = new DOMMatrixReadOnly(getComputedStyle(card).transform);
-        angles.push((Math.atan2(matrix.b, matrix.a) * 180) / Math.PI);
-        lastTop = card.getBoundingClientRect().top;
-        overlapping ||= document.querySelectorAll('[data-flying-card][data-transfer-kind="discard"]').length > 1;
-        document.querySelectorAll<HTMLElement>('[data-flying-card][data-transfer-kind="discard"]').forEach((flight) => {
-          const key = flight.dataset.transferCardKey;
-          if (Number(getComputedStyle(flight).zIndex) !== sourceLayers.get(key)) changedLayers.add(key ?? "missing");
-        });
-        backs ||= Boolean(card.querySelector(".card-face-back, [data-discard-card-back]"));
+        maximumFlights = Math.max(
+          maximumFlights,
+          document.querySelectorAll('[data-flying-card][data-transfer-kind="discard"]').length,
+        );
+        flips.push(Number(card.style.transform.match(/rotateY\(([-\d.]+)deg\)/)?.[1] ?? 0));
+        const r = card.getBoundingClientRect();
+        landing = { x: r.x, y: r.y, width: r.width, height: r.height };
         await new Promise(requestAnimationFrame);
       }
+      const pile = document.querySelector("[data-pile-top-card]")!.getBoundingClientRect();
       return {
-        sourceRotation,
-        angles,
-        overlapping,
-        lastTop,
-        viewportBottom: innerHeight,
-        backs,
-        changedLayers: [...changedLayers],
+        maximumFlights,
+        flips,
+        landing,
+        pile: { x: pile.x, y: pile.y, width: pile.width, height: pile.height },
+        backs: !!card.querySelector("[data-discard-card-back]"),
       };
     });
     const ending = battle.endTurn();
     const result = await flight;
-    expect(result.overlapping).toBe(true);
-    expect(result.backs).toBe(false);
-    expect(result.changedLayers, "discarded cards should retain the hand's overlap order").toEqual([]);
-    expect(result.angles.length).toBeGreaterThan(3);
-    expect(result.angles.at(-1)! - result.sourceRotation).toBeCloseTo(52, 0);
-    expect(result.angles.at(-1)! - result.angles[0]!).toBeGreaterThan(5);
-    for (let index = 1; index < result.angles.length; index++)
-      expect(result.angles[index]!).toBeGreaterThanOrEqual(result.angles[index - 1]! - 0.1);
-    expect(result.lastTop).toBeGreaterThanOrEqual(result.viewportBottom);
+    expect(result.maximumFlights).toBe(1);
+    expect(result.backs).toBe(true);
+    expect(result.flips.length).toBeGreaterThan(3);
+    expect(result.flips.at(-1)).toBeCloseTo(180, 0);
+    for (let i = 1; i < result.flips.length; i++)
+      expect(result.flips[i]!).toBeGreaterThanOrEqual(result.flips[i - 1]! - 0.1);
+    for (const key of ["x", "y", "width", "height"] as const)
+      expect(result.landing[key]).toBeCloseTo(result.pile[key], 0);
     await ending;
     await expect(page.locator('[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "]')).toHaveCount(4);
   });
@@ -259,10 +244,6 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await battle.playFirstCard();
     await expect(battle.endTurnBtn).toBeEnabled();
     await battle.endTurnBtn.click();
-    await page
-      .getByRole("dialog", { name: "End turn?", exact: true })
-      .getByRole("button", { name: "End Turn", exact: true })
-      .click();
 
     await expect
       .poll(() => page.evaluate(() => (window as Window & { discardColoredSeen?: boolean }).discardColoredSeen), {

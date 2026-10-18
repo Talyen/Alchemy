@@ -46,7 +46,8 @@ describe("CombatTextLayer geometry", () => {
       enemyPanelRef: { current: enemy },
       endTurnButtonRef: { current: null },
       handCardRefs: { current: {} },
-      handDockRef: { current: null },
+      drawPileRef: { current: null },
+      discardPileRef: { current: null },
     };
     resetBattlePresentationAndRun();
     mutateRunForTest((draft) => {

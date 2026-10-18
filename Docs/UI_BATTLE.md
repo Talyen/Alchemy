@@ -1,55 +1,13 @@
 # Battle UI
 
-## Shared tabletop appearance
+## Battle layout
 
-Battle artwork shares one automatic scene treatment. The stage samples the selected
-board thumbnail's central playing area once and caches the result by artwork URL.
-Extreme pixels are rejected, luminance outliers are trimmed, and the resulting tint
-has limited saturation and at most 6% opacity. Loading, missing boards, and sampling
-failures use neutral grounding; late samples cannot repaint a different board.
-No board, combatant, or card needs authored lighting metadata.
-
-Framed portraits and cards use consistent contact and cast shadows. Transparent
-Mana artwork use silhouette shadows. Raised hand cards crossfade an
-additional elevated shadow; card transfers, play ghosts, Companions, and
-death slices retain the same treatment. Shadow sizes follow content scaling.
-The fixed tabletop clips overflow without becoming a scroll container, so focusing
-partially concealed controls cannot shift the scene.
-
-`BattleSceneArtwork` contains artwork-only tint, isolated from frames, labels,
-Health, status icons, focus, keyword shine, and tooltips. Effects are scoped to
-the Battle tabletop so shared cards and inspection overlays retain their normal
-appearance elsewhere. Keep shadow filters on separate artwork wrappers so existing
-damage, crowd-control, hover, and Mana filters continue to compose. There are no
-continuous lighting updates, inferred board light directions, or asset variants.
-The same trimmed samples derive an artwork exposure factor of 0.94–1.03:
-factors below one paint up to 6% black, and above one paint up to 3% white.
-These washes preserve crisp ink lines without filtering transformed portraits.
-Directional shade stays at most 8%; regional values soften toward the whole board.
-Neutral fallback leaves exposure unchanged and disables directional shade.
-
-One cached sample also derives broad left, right, and lower ambient zones, each
-softened halfway toward the whole-board tint and bounded by the same color limits.
-Player and Companion assemblies inherit the left zone, enemies the right; cards inherit the lower zone, while Mana follows the hero portrait. Zones follow objects through attacks,
-death slices, and card flights so movement does not change their color. These are
-broad tabletop regions, not precise lighting coordinates or inferred light sources.
-
-Artwork uses a consistent upper-left tabletop light convention with broad, lightly
-softened diagonal shade planes. Rectangular artwork receives a faint upper edge
-highlight and lower edge shade, with tight contact and short cast shadows.
-Raised cards retain their softer elevated shadow. A static monochrome grain at
-2% source opacity finishes artwork and panel backgrounds only; information and
-semantic overlays remain outside it. The existing global noise is behind the game
-stage, rather than doubled over these pieces. Transparent artwork masks the
-finish to its silhouette and receives no rectangular inset edge.
-Health/status panels share the assembly's depth and a restrained background wash;
-the wash sits behind their information. Semantic borders, Death's Door, and focus
-remain independent. Transparent artwork keeps its alpha-following treatment.
-Filled Mana gems cast a faint blue spill behind the crystals inside the hero
-portrait; spending removes that spill. Only its opacity transitions, settling
-immediately with reduced motion.
-
-Shared conventions: [UI](./UI.md).
+Draw Pile anchors to the bottom-left corner; Discard Pile anchors to the
+bottom-right. Both open their matching tab in the shared card viewer. The hand
+uses its earlier centered fan and hover movement, with clearance for its rotated
+artwork. Mana crystals sit centered above Draw Pile, retaining their spending,
+refill, capacity, overflow, glint and blue spill effects. End Turn is an outline
+text button above Discard Pile and commits immediately after input gates pass.
 
 ## Battle feedback
 
@@ -96,8 +54,9 @@ Reaction names last 1,600 ms independently of numeric bursts. Pop from 90% to 10
 by 140 ms, settle to 100% by 240 ms, and fade from 1,250 to 1,600 ms.
 Names and numbers share the ordinary combat-feedback upward trajectory. Names
 remain at its final position until their independent lifetime ends. Reserve space for the numeric pop so
-numbers cannot cross names; older actions stack above newer ones. Fit dense rapid
-sequences within the viewport instead of placing announcements above the artwork.
+numbers cannot cross names; older actions stack above newer ones. Numeric feedback retains fixed sizing, even during dense rapid sequences. The
+newest group uses the earlier lower portrait anchor; older groups ease upward over
+150ms. Reaction names fit their columns independently.
 The existing shine sweeps once between 100 and 1,100 ms. Names
 use 1.25 times the numeric base size. One or two simultaneous names use one column;
 three or more use two. Names never wrap or truncate: fit their size to their
@@ -151,7 +110,7 @@ Mana spending dims only the affected crystals; restoration brightens them with
 a brief glint. Capacity gain introduces a gem; capacity loss removes
 it with a small shard burst. Temporary bonus Mana disappearing only fades, rather
 than shattering a capacity crystal. Unchanged gems retain their animation identity.
-The frame stays still, and all effects follow displayed battle frames without
+The Mana area stays still, and all effects follow displayed battle frames without
 gating accepted gameplay. Initial mount and resume settle without effect replay;
 reduced motion settles immediately, and presentation reset cancels pending exits.
 

@@ -6,7 +6,6 @@ export interface RenderAlchemyScreenProps {
   cardInspection?: { canOpen: boolean; onOpen: (view: CardInspectionView) => void } | undefined;
   screen: Screen;
   routeCommands: AlchemyRouteCommands;
-  onOpenBoards: () => void;
   onClearSaveData: () => void;
   onUnlockAllDevMode: () => void;
   gameMenuOpen: boolean;
@@ -20,10 +19,10 @@ interface PhaseRouteCtx<K extends keyof AlchemyRouteCommands> {
   onBack?: (() => void) | undefined;
 }
 
-export type MetaRouteCtx = PhaseRouteCtx<"meta" | "progress" | "boards">;
+export type MetaRouteCtx = PhaseRouteCtx<"meta" | "progress">;
 export type RunSetupRouteCtx = PhaseRouteCtx<"runSetup">;
 export type RunLoopRouteCtx = PhaseRouteCtx<"runLoop" | "progress">;
-export type RunEndRouteCtx = PhaseRouteCtx<"runEnd" | "boards" | "progress"> & Pick<RenderAlchemyScreenProps, "screen">;
+export type RunEndRouteCtx = PhaseRouteCtx<"runEnd"> & Pick<RenderAlchemyScreenProps, "screen">;
 
 export interface BattleRouteCtx extends PhaseRouteCtx<"battle"> {
   cardInspection?: RenderAlchemyScreenProps["cardInspection"];
@@ -32,5 +31,5 @@ export interface BattleRouteCtx extends PhaseRouteCtx<"battle"> {
 
 export type OptionsRouteCtx = Pick<
   RenderAlchemyScreenProps,
-  "onOpenBoards" | "onClearSaveData" | "onUnlockAllDevMode" | "onOpenGameMenu" | "onBack"
+  "onClearSaveData" | "onUnlockAllDevMode" | "onOpenGameMenu" | "onBack"
 >;

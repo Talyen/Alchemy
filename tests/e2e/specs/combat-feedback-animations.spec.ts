@@ -356,6 +356,7 @@ for (const reducedMotion of [false, true]) {
           let overflow = false;
           let overflowDetails = "";
           let overlap = false;
+          let numericSizingChanged = false;
           let smallestGlyphHeight = Infinity;
           let smallestGlyphDetails = "";
           while (!cancelled && performance.now() - started < 1750) {
@@ -371,6 +372,10 @@ for (const reducedMotion of [false, true]) {
               const numbers = [...document.querySelectorAll<HTMLElement>('[data-testid="combat-text"]')]
                 .filter((node) => Number(getComputedStyle(node.parentElement!).opacity) > 0.05)
                 .map((node) => node.getBoundingClientRect());
+              for (const number of document.querySelectorAll<HTMLElement>('[data-testid="combat-text"]')) {
+                const base = 37.8 * Number(getComputedStyle(number).getPropertyValue("--content-scale") || 1);
+                numericSizingChanged ||= Math.abs(Number.parseFloat(getComputedStyle(number).fontSize) - base) > 0.1;
+              }
               for (const name of names) {
                 const glyph = name.firstElementChild as HTMLElement;
                 const bounds = glyph.getBoundingClientRect();
@@ -421,6 +426,7 @@ for (const reducedMotion of [false, true]) {
             overflow,
             overflowDetails,
             overlap,
+            numericSizingChanged,
             smallestGlyphHeight,
             smallestGlyphDetails,
             remaining: document.querySelectorAll('[data-testid="reaction-text"]').length,
@@ -440,6 +446,7 @@ for (const reducedMotion of [false, true]) {
       expect(review.lastSeen).toBeLessThan(1750);
       expect(review.overflow, review.overflowDetails).toBe(false);
       expect(review.overlap).toBe(false);
+      expect(review.numericSizingChanged, "dense feedback must retain its original numeric size").toBe(false);
       expect(review.smallestGlyphHeight, review.smallestGlyphDetails).toBeGreaterThan(12);
       expect(review.remaining).toBe(0);
     },
