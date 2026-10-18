@@ -98,7 +98,8 @@ function createFreshRunRngState(generateSeed: () => number): RunRngState {
 
 // Explicit seed seam for new runs: crypto-random per run (persisted in
 // `rng` from here on, so every later draw is reproducible), injectable in
-// tests via the optional override. Gameplay never draws Math.random directly.
+// tests via `runtimeInputs.generateRunSeed` or the `generateSeed` parameter.
+// Gameplay never draws Math.random directly.
 let fallbackRunSeedCounter = 0;
 
 export function generateRandomRunSeed(): number {
