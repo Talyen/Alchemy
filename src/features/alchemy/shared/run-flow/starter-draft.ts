@@ -7,17 +7,6 @@ export function createStarterDraftChoices(draftedCards: BattleCard[], rng: () =>
   return selectRewardCards(draftedCards, getOfferableCardPool(), DRAFT_CHOICES, draftedCards, rng);
 }
 
-function isIncompleteStarterDraft(runDeckLength: number, starterDraftChoices: readonly BattleCard[] | null): boolean {
-  return Boolean(starterDraftChoices?.length) && runDeckLength < DRAFT_ROUNDS;
-}
-
-function isAwaitingStarterDraftConfirm(
-  runDeckLength: number,
-  starterDraftChoices: readonly BattleCard[] | null,
-): boolean {
-  return starterDraftChoices !== null && runDeckLength >= DRAFT_ROUNDS;
-}
-
 export function wildcardStarterResumeTarget(input: {
   characterId: CharacterId;
   contentSystemType: ContentSystemId;
@@ -27,10 +16,8 @@ export function wildcardStarterResumeTarget(input: {
 }): "draft-deck" | "difficulty-select" | null {
   if (input.characterId !== "wildcard") return null;
   if (input.contentSystemType === "wildwood") return null;
-  if (isIncompleteStarterDraft(input.runDeckLength, input.starterDraftChoices)) return "draft-deck";
-  if (isAwaitingStarterDraftConfirm(input.runDeckLength, input.starterDraftChoices)) {
-    return "draft-deck";
-  }
+  const choices = input.starterDraftChoices;
+  if (choices !== null && (input.runDeckLength >= DRAFT_ROUNDS || choices.length > 0)) return "draft-deck";
   if (
     input.contentSystemType === "campaign" &&
     input.selectedDifficulty == null &&

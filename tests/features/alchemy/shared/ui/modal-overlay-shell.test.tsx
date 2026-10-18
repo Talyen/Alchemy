@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { pushEscapeHandler, resetEscapeStackForTests } from "@/app/escape-stack";
 import { ModalOverlayShell } from "@/features/alchemy/shared/ui/modal-overlay-shell";
-import { setModalRoot } from "@/features/alchemy/shared/ui/modal-root";
+import { setModalRoot } from "@/features/alchemy/shared/ui/portal-root";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
 
 beforeEach(() => vi.useFakeTimers());

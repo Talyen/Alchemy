@@ -6,8 +6,17 @@ import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { bindSessionCapabilities, sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
-import { ROUTE_SCREENS } from "@/lib/routing";
-import type { RunFlowEngineDeps } from "./shell-types";
+import { ROUTE_SCREENS, type Screen, type ScreenTransitionOptions } from "@/lib/routing";
+import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
+
+/** Command deps for the framework-free flow engine (no display state). */
+export interface RunFlowEngineDeps {
+  navigateTo: (nextScreen: Screen, prepareNavigation?: () => void) => void;
+  resumeTo: (nextScreen: Screen, prepareNavigation?: () => void) => void;
+  transition: (nextScreen: Screen, options?: ScreenTransitionOptions) => void;
+  cancelPending: () => void;
+  battle: BattleStartCommands;
+}
 export function createRunFlowEngine(input: RunFlowEngineDeps, outcomeInput: RunOutcomes, gameSession: GameSession) {
   const {
     navigateTo: rawNavigateTo,
@@ -102,11 +111,7 @@ export function createRunFlowEngine(input: RunFlowEngineDeps, outcomeInput: RunO
     handleCorruptionExit: corruption.handleCorruptionExit,
     handleMysteryChoice: mystery.handleMysteryChoice,
     handleMysteryChooseCard: mystery.handleMysteryChooseCard,
-    // Intentional alias: continuing from a mystery returns to the run flow.
-    handleMysteryContinue: () => flowHandlers.advanceToNextDestination("mystery"),
     resetRunState,
-    // Intentional alias: leaving the run-end screen tears down to menu.
-    continueFromRunEnd: resetRunState,
     handleBattleVictory: flowHandlers.handleBattleVictory,
     handleBattleDefeat: flowHandlers.handleBattleDefeat,
   });

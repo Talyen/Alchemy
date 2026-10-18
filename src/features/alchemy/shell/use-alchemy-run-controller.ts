@@ -1,4 +1,3 @@
-import type { AlchemyRunCommands } from "./route-commands";
 import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
@@ -16,7 +15,7 @@ import { useScreenTransitions } from "./use-screen-transitions";
 
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
-function useComposedRunController(gameSession: GameSession, presentation: BattlePresentationStore) {
+export function useAlchemyRunController(gameSession: GameSession, presentation: BattlePresentationStore) {
   const protectVoid = useMemo(
     () =>
       <Args extends unknown[]>(action: (...args: Args) => void) =>
@@ -183,7 +182,7 @@ function useComposedRunController(gameSession: GameSession, presentation: Battle
         mystery: {
           handleChoice: guardProgressAction(gameSession, nav.handleMysteryChoice, false),
           handleChooseCard: guardProgressAction(gameSession, nav.handleMysteryChooseCard, false),
-          handleContinue: protectVoid(nav.handleMysteryContinue),
+          handleContinue: protectVoid(() => nav.advanceToNextDestination("mystery")),
         },
         transmutation: {
           select: guardProgressAction(gameSession, runActions.selectTransmutation, false),
@@ -197,7 +196,7 @@ function useComposedRunController(gameSession: GameSession, presentation: Battle
       },
       battle,
       runEnd: {
-        continueFromRunEnd: protectVoid(nav.continueFromRunEnd),
+        resetRunState: protectVoid(nav.resetRunState),
       },
     }),
     [nav, nodeRouting, labyrinth, shop, battle, runActions, persistence, gameSession, protectVoid],
@@ -217,8 +216,4 @@ function useComposedRunController(gameSession: GameSession, presentation: Battle
   };
 }
 
-export type ComposedRunCommands = ReturnType<typeof useComposedRunController>;
-
-export function useAlchemyRunController(...args: Parameters<typeof useComposedRunController>): AlchemyRunCommands {
-  return useComposedRunController(...args);
-}
+export type ComposedRunCommands = ReturnType<typeof useAlchemyRunController>;

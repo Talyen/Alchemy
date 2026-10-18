@@ -2,7 +2,7 @@ import { useGameTranslation } from "@/components/use-game-translation";
 
 import { useState, type KeyboardEvent, type ReactNode, type SyntheticEvent } from "react";
 import { createPortal } from "react-dom";
-import { useModalRoot } from "./modal-root";
+import { useModalRoot } from "./portal-root";
 import { ESCAPE_PRIORITY } from "@/app/escape-stack";
 import { cn } from "@/lib/utils";
 import { fadePhaseClass, useFadePresence, useHeldWhile } from "./use-fade";

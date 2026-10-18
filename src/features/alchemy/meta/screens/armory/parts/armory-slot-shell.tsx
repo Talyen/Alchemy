@@ -29,9 +29,9 @@ export function useArmorySlotHover(key: string) {
     shimmerToken: card.shimmerToken,
     wrapperRef: popup.wrapperRef,
     showPopup: popup.showPopup,
-    handleHoverStart: popup.handleHoverStart,
-    handleMouseLeave: popup.handleMouseLeave,
-    handleBlur: popup.handleBlur,
+    onMouseEnter: popup.onMouseEnter,
+    onMouseLeave: popup.onMouseLeave,
+    onBlur: popup.onBlurCapture,
   };
 }
 

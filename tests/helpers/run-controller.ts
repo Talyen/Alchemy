@@ -118,6 +118,6 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       toggleBoonInspect: fn(),
       closeBoonInspect: fn(),
     },
-    runEnd: { continueFromRunEnd: fn() },
+    runEnd: { resetRunState: fn() },
   };
 }

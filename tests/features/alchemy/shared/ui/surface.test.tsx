@@ -7,9 +7,9 @@ afterEach(() => cleanup());
 
 describe("Surface", () => {
   it("makes a div action focusable and activates it with pointer, Enter, and Space", async () => {
-    const onDivClick = vi.fn();
+    const onClick = vi.fn();
     render(
-      <Surface onDivClick={onDivClick} ariaLabel="Open">
+      <Surface onClick={onClick} ariaLabel="Open">
         content
       </Surface>,
     );
@@ -18,11 +18,11 @@ describe("Surface", () => {
     await user.tab();
     expect(document.activeElement).toBe(action);
     await user.keyboard("{Enter}");
-    expect(onDivClick).toHaveBeenCalledTimes(1);
+    expect(onClick).toHaveBeenCalledTimes(1);
     await user.keyboard(" ");
-    expect(onDivClick).toHaveBeenCalledTimes(2);
+    expect(onClick).toHaveBeenCalledTimes(2);
     await user.click(action);
-    expect(onDivClick).toHaveBeenCalledTimes(3);
+    expect(onClick).toHaveBeenCalledTimes(3);
   });
 
   it("uses native button activation and blocks it while disabled", async () => {
@@ -40,9 +40,9 @@ describe("Surface", () => {
   });
 
   it("prevents pointer and keyboard activation on a disabled div", async () => {
-    const onDivClick = vi.fn();
+    const onClick = vi.fn();
     const { container } = render(
-      <Surface disabled onDivClick={onDivClick} ariaLabel="Div disabled">
+      <Surface disabled onClick={onClick} ariaLabel="Div disabled">
         x
       </Surface>,
     );
@@ -53,6 +53,6 @@ describe("Surface", () => {
     el.tabIndex = 0;
     el.focus();
     await userEvent.keyboard("{Enter} ");
-    expect(onDivClick).not.toHaveBeenCalled();
+    expect(onClick).not.toHaveBeenCalled();
   });
 });

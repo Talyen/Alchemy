@@ -51,13 +51,13 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
     return pushEscapeHandler({
       id: "demo-completion",
       priority: ESCAPE_PRIORITY.SCREEN_OVERLAY,
-      onEscape: () => commands.continueFromRunEnd(),
+      onEscape: () => commands.resetRunState(),
     });
   }, [stage.kind, commands]);
   function continueAfterBoard() {
     // Keep the outgoing stage intact while saving and the menu fade finish.
     if (demoVictory) setStage({ kind: "demo-completion" });
-    else commands.continueFromRunEnd();
+    else commands.resetRunState();
   }
   function continueAfterRewards() {
     if (pendingBoardRewardId) setStage({ kind: "board", boardId: pendingBoardRewardId });
@@ -98,7 +98,7 @@ function RunEndScreenRoute({ screen, routeCommands }: RunEndRouteCtx) {
   if (stage.kind === "demo-completion" && demoVictory)
     return (
       <DemoCompletionScreen
-        onMainMenu={commands.continueFromRunEnd}
+        onMainMenu={commands.resetRunState}
         {...(isDesktop() ? { onWishlist: openFullGameWishlist } : {})}
       />
     );

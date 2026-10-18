@@ -7,7 +7,7 @@ import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 import { tooltipWidthClass } from "../../config";
 
 import { usePortaledTooltipPlacement, type PortaledTooltipPlacement } from "./portaled-tooltip-placement";
-import { getTooltipRoot } from "./tooltip-root";
+import { useTooltipRoot } from "../portal-root";
 import { TooltipPanel } from "./tooltip-panel";
 import { useFadePresence, useHeldWhile } from "../use-fade";
 import { usePlasmaInteraction } from "../use-plasma-source";
@@ -154,6 +154,7 @@ export function PortaledTooltip({
     };
   }, [triggerRef, tooltipId, visible]);
   usePlasmaInteraction(plasmaColorPair, visible);
+  const root = useTooltipRoot();
   const { mounted } = useFadePresence(visible, fadeOutMs);
   const { tooltipRef, placeBelow, tooltipSide, tooltipStyle } = usePortaledTooltipPlacement(
     triggerRef,
@@ -185,6 +186,6 @@ export function PortaledTooltip({
     >
       <TooltipContent visible={visible}>{children}</TooltipContent>
     </TooltipPanel>,
-    getTooltipRoot() ?? document.body,
+    root ?? document.body,
   );
 }

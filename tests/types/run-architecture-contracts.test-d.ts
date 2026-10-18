@@ -305,7 +305,7 @@ describe("run architecture type contracts", () => {
     >;
     type MetaCrossPhaseKeys = Extract<
       keyof RouteCommands["meta"],
-      "handleCardClick" | "handleCharacterSelect" | "continueFromRunEnd"
+      "handleCardClick" | "handleCharacterSelect" | "resetRunState"
     >;
 
     expectTypeOf<
