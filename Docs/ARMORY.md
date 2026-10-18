@@ -205,10 +205,10 @@ Cleanse, Purge, and Death's Door remain mechanics rather than Alchemy keywords; 
 Fateful uses Mana as its secondary affinity so its Wish draw effect can roll on ordinary Mana Gear. Shared content validation checks that every ordinary affix is reachable on at least one Basic or Astral item.
 
 `src/lib/gear/affix-rows.ts` owns the ordered affix definitions. Typed builders
-preserve literal IDs and effect keys; `GearEffectManifest`, numeric defaults, and
-`GEAR_EFFECT_KEYS` derive from those rows. Only the independent-roll policy for
-Forge chances is listed separately in `gear-effect-manifest.ts`; all other effects
-sum numerically. `affix-catalog.ts` adds visible tooltip keywords without becoming
+preserve literal IDs and effect keys; `GearEffectManifest`, numeric defaults,
+`GEAR_EFFECT_KEYS`, and the independent-roll chance keys (effect keys ending in
+`Chances`) all derive from those rows; all other effects sum numerically.
+`affix-catalog.ts` adds visible tooltip keywords without becoming
 a dependency of manifest construction. Preserve row order when editing: seeded
 Gear generation depends on it. Catalog construction rejects duplicate affix IDs;
 shared content validation owns display-name, roll-range, and ordinary-affix reachability checks.

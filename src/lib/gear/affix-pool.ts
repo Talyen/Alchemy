@@ -18,42 +18,14 @@ function requiredAspect(def: GearDefinition): GearAffixAspect | null {
     : "defensive";
 }
 
-interface CachedAffixPool {
-  aspect: GearAffixAspect | null;
-  affinityKeywords: readonly string[];
-  pool: readonly GearAffixDefinition[];
-}
-
-// Catalog definitions recur throughout reward generation and crafting previews.
-// Weak ownership also lets temporary definitions and their pools be collected.
-const eligibleAffixPoolCache = new WeakMap<GearDefinition, CachedAffixPool>();
-
 export function buildEligibleAffixPool(definition: GearDefinition): readonly GearAffixDefinition[] {
   const aspect = requiredAspect(definition);
-  const cached = eligibleAffixPoolCache.get(definition);
-  // Compare values rather than just array identity: callers can edit custom
-  // definitions in place. Stable lookups need no sorting or temporary arrays.
-  if (
-    cached &&
-    cached.aspect === aspect &&
-    cached.affinityKeywords.length === definition.affinityKeywords.length &&
-    cached.affinityKeywords.every((keyword, index) => keyword === definition.affinityKeywords[index])
-  )
-    return cached.pool;
-  const pool = Object.freeze(
-    gearAffixList.filter(
-      (affix) =>
-        !affix.uniqueOnly &&
-        (aspect === null || affix.aspect === aspect) &&
-        affixMatchesAffinity(affix, definition.affinityKeywords),
-    ),
+  return gearAffixList.filter(
+    (affix) =>
+      !affix.uniqueOnly &&
+      (aspect === null || affix.aspect === aspect) &&
+      affixMatchesAffinity(affix, definition.affinityKeywords),
   );
-  eligibleAffixPoolCache.set(definition, {
-    aspect,
-    affinityKeywords: [...definition.affinityKeywords],
-    pool,
-  });
-  return pool;
 }
 
 export function rollAffixes(definition: GearDefinition, count: number, rng: () => number): GearAffixRoll[] {

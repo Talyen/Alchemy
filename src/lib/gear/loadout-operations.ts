@@ -10,10 +10,6 @@ import {
   type GearSlot,
 } from "./types";
 
-function isGearCompatibleWithSlot(definition: GearDefinition, slot: GearSlot): boolean {
-  return definition.compatibleSlots.includes(slot);
-}
-
 function resolveEquippedDefinitionAt(
   inventory: GearInstance[],
   loadout: GearLoadouts[GearCharacterId],
@@ -52,7 +48,7 @@ function resolveLoadoutEquip(
   characterLoadout: GearLoadouts[GearCharacterId],
   inventory: GearInstance[],
 ): HandPairResolution {
-  if (!isGearCompatibleWithSlot(definition, slot)) return "reject";
+  if (!definition.compatibleSlots.includes(slot)) return "reject";
   if (slot !== "main-hand" && slot !== "off-hand") return "compatible";
   return resolveHandPair(
     slot === "main-hand" ? definition : resolveEquippedDefinitionAt(inventory, characterLoadout, "main-hand"),
@@ -79,7 +75,7 @@ export function pruneOrphanGearLoadouts(inventory: GearInstance[], loadouts: Gea
     for (const slot of GEAR_SLOTS) {
       const instanceId = loadouts[characterId][slot];
       const definition = instanceId ? definitionById.get(instanceId) : undefined;
-      if (instanceId && definition && !seen.has(instanceId) && isGearCompatibleWithSlot(definition, slot)) {
+      if (instanceId && definition && !seen.has(instanceId) && definition.compatibleSlots.includes(slot)) {
         next[characterId][slot] = instanceId;
         seen.add(instanceId);
       }

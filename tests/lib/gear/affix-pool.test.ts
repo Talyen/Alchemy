@@ -3,49 +3,32 @@ import { buildEligibleAffixPool, rollAffixes } from "@/lib/gear/affix-pool";
 import { gearDefinitions, type GearDefinition } from "@/lib/gear/definitions";
 import { createSeededRng } from "@/lib/rng";
 
-describe("eligible affix pool caching", () => {
-  it("reuses frozen pools without letting metadata unrelated to eligibility change seeded rolls", () => {
-    const definition: GearDefinition = {
-      ...gearDefinitions["dagger-basic"]!,
-      compatibleSlots: [...gearDefinitions["dagger-basic"]!.compatibleSlots],
-      affinityKeywords: [...gearDefinitions["dagger-basic"]!.affinityKeywords],
-    };
-    const pool = buildEligibleAffixPool(definition);
-    const rolls = rollAffixes(definition, 2, createSeededRng(17));
-    definition.displayName = "Renamed Dagger";
-    definition.baseItemId = "shortsword";
-    definition.compatibleSlots.reverse();
-    expect(buildEligibleAffixPool(definition)).toBe(pool);
-    expect(Object.isFrozen(pool)).toBe(true);
-    expect(rollAffixes(definition, 2, createSeededRng(17))).toEqual(rolls);
-    expect(rollAffixes({ ...definition }, 2, createSeededRng(17))).toEqual(rolls);
+describe("eligible affix pool", () => {
+  it("permits one aspect per equipment kind and both on shields and jewelry", () => {
+    const dagger = buildEligibleAffixPool(gearDefinitions["dagger-basic"]!);
+    const armor = buildEligibleAffixPool(gearDefinitions["leather-armor-basic"]!);
+    const shield = buildEligibleAffixPool(gearDefinitions["leather-buckler-basic"]!);
+    const ring = buildEligibleAffixPool(gearDefinitions["ruby-ring-basic"]!);
+    expect(dagger.length).toBeGreaterThan(0);
+    expect(dagger.every((affix) => affix.aspect === "offensive")).toBe(true);
+    expect(armor.every((affix) => affix.aspect === "defensive")).toBe(true);
+    expect(shield.some((affix) => affix.aspect === "offensive")).toBe(true);
+    expect(shield.some((affix) => affix.aspect === "defensive")).toBe(true);
+    expect(ring.some((affix) => affix.aspect === "offensive")).toBe(true);
+    expect(ring.some((affix) => affix.aspect === "defensive")).toBe(true);
   });
 
-  it("refreshes eligibility when custom definitions change in place", () => {
-    const definition: GearDefinition = {
-      ...gearDefinitions["dagger-basic"]!,
-      compatibleSlots: ["main-hand"],
-      affinityKeywords: ["dodge"],
-    };
-    const offensive = buildEligibleAffixPool(definition);
-    expect(offensive.map((affix) => affix.id)).toContain("dodge-riposte");
-    expect(offensive.every((affix) => affix.aspect === "offensive")).toBe(true);
-
-    definition.baseItemId = "leather-buckler";
-    const shield = buildEligibleAffixPool(definition);
-    expect(shield.map((affix) => affix.id)).toContain("dodge-block");
-
-    definition.baseItemId = "dagger";
-    definition.compatibleSlots = ["main-hand"];
-    definition.affinityKeywords[0] = "physical";
-    const physical = buildEligibleAffixPool(definition);
-    expect(physical.map((affix) => affix.id)).toContain("flat-physical");
-    expect(physical.map((affix) => affix.id)).not.toContain("dodge-riposte");
-
-    // Slot changes matter independently of the base item and affinity.
-    definition.compatibleSlots[0] = "body";
-    const defensive = buildEligibleAffixPool(definition);
-    expect(defensive).not.toBe(physical);
-    expect(defensive.every((affix) => affix.aspect === "defensive")).toBe(true);
+  it("rolls distinct eligible affixes without consuming randomness for zero picks", () => {
+    const definition: GearDefinition = gearDefinitions["dagger-basic"]!;
+    const pool = new Set(buildEligibleAffixPool(definition).map((affix) => affix.id));
+    const rolls = rollAffixes(definition, 2, createSeededRng(17));
+    expect(rolls).toHaveLength(2);
+    expect(new Set(rolls.map((roll) => roll.id)).size).toBe(2);
+    for (const roll of rolls) expect(pool.has(roll.id)).toBe(true);
+    expect(
+      rollAffixes(definition, 0, () => {
+        throw new Error("zero picks must not draw");
+      }),
+    ).toEqual([]);
   });
 });

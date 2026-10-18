@@ -2,7 +2,6 @@ import { useGameTranslation } from "@/components/use-game-translation";
 
 import {
   getGearDefinitionTextShineColors,
-  getGearDefinitionTitle,
   getGearInstanceTextShineColors,
   getGearInstanceTitle,
   type GearDefinition,
@@ -22,7 +21,7 @@ interface GearProps {
 
 export function GearItemTitle({ instance, definition, className }: GearProps) {
   const i18n = useGameTranslation();
-  const title = instance ? getGearInstanceTitle(instance) : definition ? getGearDefinitionTitle(definition) : "Gear";
+  const title = instance ? getGearInstanceTitle(instance) : definition ? definition.displayName : "Gear";
   const colors = instance
     ? getGearInstanceTextShineColors(instance)
     : definition

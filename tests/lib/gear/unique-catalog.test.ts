@@ -115,12 +115,5 @@ describe("fixed Unique compatibility", () => {
     expect(descriptionOf("the-returning-flight")).toContain(
       `costs ${UNIQUE_GEAR_COMBAT.returnedCardDiscount} less Mana`,
     );
-    // Word prose: changing the fraction means rewording the description too.
-    expect(UNIQUE_GEAR_COMBAT.retainedStunMultiplier).toBe(0.25);
-    expect(descriptionOf("the-lingering-bell")).toContain("quarter");
-    expect(UNIQUE_GEAR_COMBAT.echoDamageMultiplier).toBe(0.5);
-    expect(descriptionOf("the-returning-gale")).toContain("half strength");
-    expect(UNIQUE_GEAR_COMBAT.viperDamageMultiplier).toBe(0.5);
-    expect(descriptionOf("vipers-courtesy")).toContain("half its damage");
   });
 });

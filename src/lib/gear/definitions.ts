@@ -12,24 +12,15 @@ export function gearDefinitionId(baseItemId: string, rarity: GearRarity): string
   return `${baseItemId}-${rarity}`;
 }
 
-// Base ids whose art is missing from the generated barrel. Their definitions
-// are still built with fallback art so a content gap never silently shrinks
-// loot or saves at runtime; content-audit and the definitions tests fail
-// loudly instead (see validateGearDefinitions).
-export const missingGearArtDefinitionIds: string[] = [];
-
+// Art falls back across rarities so a missing barrel entry never silently
+// shrinks loot or saves at runtime; content validation fails loudly instead
+// when the generated mapping lacks the definition id.
 function resolveGearArt(id: string, baseItemId: GearBaseItemId, rarity: GearRarity): string | undefined {
   const primaryId = rarity === "unique" ? gearDefinitionId(baseItemId, "astral") : id;
   const fallbackId = gearDefinitionId(baseItemId, rarity === "basic" ? "astral" : "basic");
-  const art =
-    gearArtByDefinitionId[primaryId] ?? gearArtByDefinitionId[fallbackId] ?? Object.values(gearArtByDefinitionId)[0];
-  if (!art || art !== gearArtByDefinitionId[primaryId]) {
-    console.warn(
-      `Missing gear art for ${id} (base ${baseItemId}) - ${art ? "using fallback art" : "skipping definition"}`,
-    );
-    missingGearArtDefinitionIds.push(id);
-  }
-  return art;
+  return (
+    gearArtByDefinitionId[primaryId] ?? gearArtByDefinitionId[fallbackId] ?? Object.values(gearArtByDefinitionId)[0]
+  );
 }
 
 function createDefinition(
@@ -90,10 +81,6 @@ export type GearDefinitionId = keyof typeof gearDefinitions;
 export const GEAR_DEFINITION_IDS = Object.keys(gearDefinitions) as [GearDefinitionId, ...GearDefinitionId[]];
 
 export const gearDefinitionList = Object.values(gearDefinitions);
-
-export function getGearDefinitionTitle(definition: GearDefinition): string {
-  return definition.displayName;
-}
 
 export function getGearInstanceTitle(instance: GearInstance): string {
   return gearDefinitions[instance.definitionId]?.displayName ?? "Gear";

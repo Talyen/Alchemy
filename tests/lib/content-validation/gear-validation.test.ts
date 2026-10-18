@@ -12,7 +12,6 @@ vi.mock("@/lib/gear", async (importOriginal) => {
     gearDefinitions: structuredClone(actual.gearDefinitions),
     gearAffixCatalog: structuredClone(actual.gearAffixCatalog),
     uniqueItemList: structuredClone(actual.uniqueItemList),
-    missingGearArtDefinitionIds: [],
     buildEligibleAffixPool: vi.fn(actual.buildEligibleAffixPool),
   };
 });
@@ -30,7 +29,6 @@ beforeEach(() => {
   Object.assign(gear.gearAffixCatalog, structuredClone(original.affixes));
   gear.gearDefinitionList.splice(0, Infinity, ...structuredClone(original.definitionList));
   gear.uniqueItemList.splice(0, Infinity, ...structuredClone(original.uniques));
-  gear.missingGearArtDefinitionIds.length = 0;
   vi.mocked(gear.buildEligibleAffixPool).mockImplementation(buildEligibleAffixPool);
 });
 
@@ -120,11 +118,11 @@ it.each([
     message: "Missing generated gear definition for unique item",
   },
   {
-    requirement: "fallback art cannot conceal missing Unique artwork",
+    requirement: "generated definitions without barrel art cannot ship",
     damage: () => {
-      gear.missingGearArtDefinitionIds.push("wardbreaker");
+      gear.gearDefinitionList.push({ ...gear.gearDefinitionList[0]!, id: "test-no-art-mapping" });
     },
-    message: "Gear definition uses missing-art fallback",
+    message: "Missing generated gear art mapping",
   },
 ])("rejects damaged gear because $requirement", ({ damage, message }) => {
   damage();
