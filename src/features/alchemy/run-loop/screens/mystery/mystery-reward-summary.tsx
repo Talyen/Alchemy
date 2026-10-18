@@ -137,12 +137,14 @@ export function MysteryRewardSummary({
   onContinue: () => void;
 } & LookupProps) {
   const i18n = useGameTranslation();
-  const xpKeywords = new Set<Extract<MysteryEffect, { kind: "gainXP" }>["keyword"]>();
+  const xpGains = new Map<Extract<MysteryEffect, { kind: "gainXP" }>["keyword"], number>();
   let totalGold = 0;
   let hasResources = false;
   const mats: Partial<Record<MaterialId, number>> = {};
   for (const effect of choice.effects) {
-    if (effect.kind === "gainXP") xpKeywords.add(effect.keyword);
+    if (effect.kind === "gainXP") {
+      xpGains.set(effect.keyword, (xpGains.get(effect.keyword) ?? 0) + effect.amount);
+    }
     if (effect.kind === "gainGold") totalGold += effect.amount;
     if (effect.kind === "gainMaterial") mats[effect.material] = (mats[effect.material] ?? 0) + effect.amount;
     if (effect.kind === "gainGold" || effect.kind === "gainMaterial") hasResources = true;
@@ -158,8 +160,9 @@ export function MysteryRewardSummary({
   return (
     <div className="flex w-full flex-col items-center gap-6 text-center">
       <KeywordProgressGrid
-        entries={[...xpKeywords].map((kw) => ({
+        entries={[...xpGains].map(([kw, gainedXP]) => ({
           kw,
+          gainedXP,
           totalXP: (talentXP[kw] ?? 0) + (runTalentXP[kw] ?? 0),
         }))}
         size="lg"
