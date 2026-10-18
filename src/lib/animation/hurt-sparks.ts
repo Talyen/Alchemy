@@ -1,5 +1,4 @@
 import { animateParticleLoop } from "./particle-loop";
-import { pickRandomUnsafe } from "@/lib/rng";
 
 interface HurtSpark {
   x: number;
@@ -99,7 +98,7 @@ export function createHurtSparks(
       vy: Math.sin(outwardAngle) * speed,
       alpha: 1,
       size: minSize + Math.random() * sizeSpan,
-      color: pickRandomUnsafe(colors) ?? DEFAULT_HURT_SPARK_COLORS[0],
+      color: colors[Math.floor(Math.random() * colors.length)] ?? DEFAULT_HURT_SPARK_COLORS[0],
     });
   }
 

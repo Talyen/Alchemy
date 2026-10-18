@@ -1,5 +1,4 @@
 import { lerp } from "@/lib/math";
-import { pickRandomUnsafe } from "@/lib/rng";
 import { createCanvasLifecycle } from "./canvas-lifecycle";
 
 export type ParticleVariant = "embers" | "dust" | "hand_glow";
@@ -69,7 +68,7 @@ const MIN_PARTICLE_BACKING_SCALE = 0.25;
 
 function spawnParticle(width: number, height: number, config: BackgroundParticleConfig): BackgroundParticle {
   const alpha = lerp(config.minAlpha, config.maxAlpha, Math.random());
-  const rawColor = pickRandomUnsafe(config.colors);
+  const rawColor = config.colors[Math.floor(Math.random() * config.colors.length)];
   const y = config.spawnBottomWeight
     ? height - Math.random() * height * (1 - config.spawnBottomWeight)
     : Math.random() * height;

@@ -56,11 +56,11 @@ export function buildWishOptions(
   );
   const fullDeck = [...state.deck, ...state.hand, ...state.pendingHandCards, ...state.discard, ...state.exhausted];
   const discovered = new Set(state.discoveredCardIds);
+  const battleRng = getBattleRng(state);
   const undiscovered = state.talentEffects.wishUndiscoveredCards
     ? candidates.filter((candidate) => !discovered.has(candidate.id))
     : [];
-  const guaranteed =
-    undiscovered.length > 0 ? selectRewardCards(fullDeck, undiscovered, 1, [], getBattleRng(state)) : [];
+  const guaranteed = undiscovered.length > 0 ? selectRewardCards(fullDeck, undiscovered, 1, [], battleRng) : [];
   const selected = [
     ...guaranteed,
     // Selection cannot offer more cards than the eligible pool.
@@ -69,7 +69,7 @@ export function buildWishOptions(
       candidates,
       Math.min(baseCount, candidates.length) - guaranteed.length,
       guaranteed,
-      getBattleRng(state),
+      battleRng,
     ),
   ];
 

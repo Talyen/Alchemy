@@ -18,6 +18,7 @@ describe("new ordinary affix interactions", () => {
       runDeck: [makeTestCard()],
       currentEnemy: enemy,
       gearEffects: { ...defaultGearEffects, startThorns: 3, startArmor: 2, flatArmorGained: 1 },
+      rng: () => 0.5,
     });
     expect(battle.playerStatuses).toMatchObject({ thorns: 3, armor: 3 });
 
@@ -25,6 +26,7 @@ describe("new ordinary affix interactions", () => {
       runDeck: [makeTestCard()],
       currentEnemy: enemy,
       gearEffects: { ...defaultGearEffects, flatArmorGained: 1 },
+      rng: () => 0.5,
     });
     expect(noArmorSource.playerStatuses.armor).toBe(0);
 
@@ -33,6 +35,7 @@ describe("new ordinary affix interactions", () => {
       currentEnemy: enemy,
       talentEffects: { ...defaultTalentEffects, manaShellActive: true },
       gearEffects: { ...defaultGearEffects, flatArmorGained: 1 },
+      rng: () => 0.5,
     });
     expect(manaShell.playerStatuses.armor).toBe(manaShell.maxMana + 1);
   });

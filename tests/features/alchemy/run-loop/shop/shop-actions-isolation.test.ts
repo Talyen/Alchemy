@@ -280,8 +280,7 @@ describe("shop action isolation", () => {
 
   describe.each(shops)("$name RNG replay", (shop) => {
     it("replays init from the same RNG state", () => {
-      const rng = () => 0.25;
-      const rngState = createRunRngState(rng);
+      const rngState = createRunRngState(0x4000_0000);
       setRunProgress({ gold: 999, rng: rngState });
       shop.seed();
 
@@ -297,8 +296,7 @@ describe("shop action isolation", () => {
 
   describe.each(shops.filter((shop) => shop.replayRefresh))("$name RNG refresh replay", (shop) => {
     it("replays refresh from the same RNG state", () => {
-      const rng = () => 0.25;
-      const rngState = createRunRngState(rng);
+      const rngState = createRunRngState(0x4000_0000);
       setRunProgress({ gold: 999, rng: rngState });
       shop.seedRefresh();
       shop.refresh(buildActions());

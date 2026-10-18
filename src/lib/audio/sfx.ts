@@ -2,7 +2,6 @@ import { battleEventSounds, getCardSounds, stingerSounds, uiSounds, type UISound
 import { audioState } from "./state";
 import { getSoundUrl } from "./url";
 import { createSfxPlayer, type PlaySoundOptions } from "./sfx-player";
-import { pickRandomUnsafe } from "@/lib/rng";
 import { SFX_DEFEAT_VOLUME, SFX_SLICE_DEATH_VOLUME, SFX_UI_VOLUME, SFX_VICTORY_VOLUME } from "../game-constants";
 
 const player = createSfxPlayer({
@@ -26,7 +25,8 @@ export function stopAllSfx() {
 }
 
 export function playCardSound(cardId: string) {
-  const sound = pickRandomUnsafe(getCardSounds(cardId));
+  const sounds = getCardSounds(cardId);
+  const sound = sounds[Math.floor(Math.random() * sounds.length)];
   if (!sound) return;
   player.play(sound);
   return sound;

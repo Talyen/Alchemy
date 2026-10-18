@@ -13,7 +13,7 @@ import { makeTestCard } from "../../../../fixtures/battle";
 const skeleton = enemyBestiary.find((enemy) => enemy.id === "skeleton")!;
 
 function makeProductionBattleState() {
-  return createBattleState({ runDeck: [makeTestCard()], currentEnemy: skeleton });
+  return createBattleState({ runDeck: [makeTestCard()], currentEnemy: skeleton, rng: () => 0.5 });
 }
 
 describe("getPlayerStatusChips", () => {

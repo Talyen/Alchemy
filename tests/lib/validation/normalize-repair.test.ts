@@ -11,7 +11,7 @@ import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-genera
 import { findMysteryEvent } from "@/lib/mystery";
 
 function makeRng() {
-  return createRunRngState(() => 0.42);
+  return createRunRngState(1803886264);
 }
 
 describe("ActiveRunDataSchema empty-choice repair", () => {

@@ -7,7 +7,7 @@ export function resetBattlePresentationAndRun(): void {
   battlePresentation.getState().resetPresentation();
   resetRunBattleSlice();
   resetRunProgressSlice();
-  setRunProgress({ rng: createRunRngState(() => 0.5) });
+  setRunProgress({ rng: createRunRngState(0x8000_0000) });
 }
 
 export function installImmediateRafForTests(): void {
