@@ -14,8 +14,7 @@ import { cn } from "@/lib/utils";
 import { staticCardTransform, surfaceSelectedRingClass } from "../config/layout";
 import { ShimmerOverlay } from "./shimmer";
 
-interface SurfaceProps {
-  as?: "button" | "div";
+interface SurfaceBaseProps {
   children?: ReactNode;
   className?: string;
   shimmerActive?: boolean;
@@ -26,7 +25,6 @@ interface SurfaceProps {
   dragging?: boolean;
   baseTransform?: string | undefined;
   style?: CSSProperties;
-  onClick?: MouseEventHandler<HTMLElement> | undefined;
   onPointerDown?: ((e: PointerEvent<HTMLButtonElement>) => void) | undefined;
   onFocus?: () => void;
   onBlur?: () => void;
@@ -44,11 +42,15 @@ interface SurfaceProps {
   overlay?: ReactNode | undefined;
 }
 
+interface SurfaceProps<T extends "button" | "div"> extends SurfaceBaseProps {
+  as?: T;
+  onClick?: MouseEventHandler<T extends "button" ? HTMLButtonElement : HTMLDivElement> | undefined;
+}
+
 const CLIP_CONTENTS_CLASS = "surface-clip relative w-full overflow-hidden";
 
-export function Surface(props: SurfaceProps) {
+export function Surface<T extends "button" | "div" = "div">(props: SurfaceProps<T>) {
   const {
-    as: Component = "div",
     baseTransform,
     style,
     children,
@@ -59,7 +61,6 @@ export function Surface(props: SurfaceProps) {
     selected,
     disabled,
     dragging,
-    onClick,
     onPointerDown,
     onFocus,
     onBlur,
@@ -95,6 +96,7 @@ export function Surface(props: SurfaceProps) {
     ),
     style: surfaceStyle,
   };
+  const onClick: MouseEventHandler<HTMLElement> | undefined = props.onClick;
   const handleDivClick =
     onClick !== undefined
       ? (e: MouseEvent<HTMLDivElement>) => {
@@ -117,7 +119,7 @@ export function Surface(props: SurfaceProps) {
     </>
   );
 
-  if (Component === "button") {
+  if (props.as === "button") {
     return (
       <button
         {...sharedProps}

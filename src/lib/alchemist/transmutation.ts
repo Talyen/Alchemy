@@ -87,37 +87,25 @@ function convertibleSource(effect: BattleCardEffect): KeywordId | undefined {
 
 function sourceReferences(effect: BattleCardEffect, source: KeywordId): boolean {
   if (EXCLUDED_KINDS.has(effect.kind)) return false;
-  switch (effect.kind) {
-    case "damage":
-      return (
-        effect.damageType === source ||
-        !!effect.damageTypePool?.some((type) => type === source) ||
-        effect.damageTypeIfTargetFrozen === source
-      );
-    case "random-damage":
-      return (
-        DAMAGE_KEYWORDS.includes(source) &&
-        (!effect.damageTypePool || effect.damageTypePool.includes(source as DamageType))
-      );
-    case "player-status":
-      return effect.status === source || !!effect.statusPool?.some((status) => status === source);
-    case "heal":
-      return source === "health";
-    case "restore-mana":
-      return source === "mana";
-    case "gain-gold":
-      return source === "gold";
-    case "next-hit-poison":
-      return source === "poison";
-    case "chance":
-    case "repeat-over-turns":
-      return false;
-    default:
-      // Any other status or damage carrier (cleanses, armor removal, leech flags).
-      return (
-        ("status" in effect && effect.status === source) || ("damageType" in effect && effect.damageType === source)
-      );
-  }
+  if (effect.kind === "damage")
+    return (
+      effect.damageType === source ||
+      !!effect.damageTypePool?.some((type) => type === source) ||
+      effect.damageTypeIfTargetFrozen === source
+    );
+  if (effect.kind === "random-damage")
+    return (
+      DAMAGE_KEYWORDS.includes(source) &&
+      (!effect.damageTypePool || effect.damageTypePool.includes(source as DamageType))
+    );
+  if (effect.kind === "player-status")
+    return effect.status === source || !!effect.statusPool?.some((status) => status === source);
+  if (effect.kind === "heal") return source === "health";
+  if (effect.kind === "restore-mana") return source === "mana";
+  if (effect.kind === "gain-gold") return source === "gold";
+  if (effect.kind === "next-hit-poison") return source === "poison";
+  if ("status" in effect && effect.status === source) return true;
+  return "damageType" in effect && effect.damageType === source;
 }
 
 function canConvertSource(effects: BattleCardEffect[], source: KeywordId): boolean {

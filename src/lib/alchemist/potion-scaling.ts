@@ -35,7 +35,7 @@ export function isNonFoldingEffect(effect: BattleCardEffect): boolean {
  * Frozen outcome shares the displayed base magnitude, so a bonus applies
  * twice there to keep both lines consistent.
  */
-export function scalePotionEffect(effect: BattleCardEffect, scale: number | "double" = "double"): BattleCardEffect {
+function scalePotionEffect(effect: BattleCardEffect, scale: number | "double" = "double"): BattleCardEffect {
   if (isUnscalableEffect(effect)) return effect;
   if (effect.kind === "random-draw" || effect.kind === "random-damage") {
     const scaleValue = (value: number) => (scale === "double" ? value * 2 : value + scale);

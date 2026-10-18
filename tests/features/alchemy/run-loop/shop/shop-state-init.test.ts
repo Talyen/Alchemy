@@ -82,7 +82,7 @@ describe("shop-state-init", () => {
     expect(offerings).toHaveLength(TRINKET_SHOP_OFFERED);
     expect(offerings.map((entry) => entry.id)).not.toContain(owned.id);
 
-    const currentIds = trinketLibrary.slice(0, TRINKET_SHOP_OFFERED).map((entry) => entry.id);
+    const currentIds: string[] = trinketLibrary.slice(0, TRINKET_SHOP_OFFERED).map((entry) => entry.id);
     const refreshed = resampleTrinketShopOfferings(() => 0.5, lootProgress, [], currentIds);
     expect(refreshed).toHaveLength(TRINKET_SHOP_OFFERED);
     expect(refreshed.some((entry) => currentIds.includes(entry.id))).toBe(false);
@@ -96,7 +96,7 @@ describe("shop-state-init", () => {
         const novel = trinketLibrary[TRINKET_SHOP_OFFERED]!;
         const eligibleIds = new Set([...current.map((entry) => entry.id), novel.id]);
         return {
-          owned: trinketLibrary.filter((entry) => !eligibleIds.has(entry.id)).map((entry) => entry.id),
+          owned: trinketLibrary.filter((entry) => !eligibleIds.has(entry.id)).map((entry): string => entry.id),
           currentIds: current.map((entry) => entry.id),
           expectedLength: TRINKET_SHOP_OFFERED,
           expectedIds: [novel.id] as string[],
@@ -108,7 +108,7 @@ describe("shop-state-init", () => {
       setup: () => {
         const keep = trinketLibrary.slice(0, 2).map((entry) => entry.id);
         return {
-          owned: trinketLibrary.filter((entry) => !keep.includes(entry.id)).map((entry) => entry.id),
+          owned: trinketLibrary.filter((entry) => !keep.includes(entry.id)).map((entry): string => entry.id),
           currentIds: keep,
           expectedLength: keep.length,
           expectedIds: keep,
@@ -120,7 +120,7 @@ describe("shop-state-init", () => {
       setup: () => {
         const eligible = trinketLibrary.slice(0, TRINKET_SHOP_OFFERED).map((entry) => entry.id);
         return {
-          owned: trinketLibrary.filter((entry) => !eligible.includes(entry.id)).map((entry) => entry.id),
+          owned: trinketLibrary.filter((entry) => !eligible.includes(entry.id)).map((entry): string => entry.id),
           currentIds: eligible,
           expectedLength: TRINKET_SHOP_OFFERED,
           expectedIds: eligible,

@@ -1,3 +1,4 @@
+import type { AlchemyRunCommands } from "./route-commands";
 import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
@@ -15,7 +16,7 @@ import { useScreenTransitions } from "./use-screen-transitions";
 
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
-export function useAlchemyRunController(gameSession: GameSession, presentation: BattlePresentationStore) {
+function useComposedRunController(gameSession: GameSession, presentation: BattlePresentationStore) {
   const protectVoid = useMemo(
     () =>
       <Args extends unknown[]>(action: (...args: Args) => void) =>
@@ -216,4 +217,8 @@ export function useAlchemyRunController(gameSession: GameSession, presentation: 
   };
 }
 
-export type ComposedRunCommands = ReturnType<typeof useAlchemyRunController>;
+export type ComposedRunCommands = ReturnType<typeof useComposedRunController>;
+
+export function useAlchemyRunController(...args: Parameters<typeof useComposedRunController>): AlchemyRunCommands {
+  return useComposedRunController(...args);
+}
