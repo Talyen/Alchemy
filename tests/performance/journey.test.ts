@@ -182,3 +182,33 @@ it("varies legal combat decisions, prefers unseen actions, and replays card and 
     endTurnActions: 1,
   });
 });
+
+it("reports optional enemy turns when entered and never hides incomplete phase work", () => {
+  const raw: FrameSampleRaw = {
+    frameGaps: Array.from({ length: 30 }, (_, index) => ({ startTime: index * 10, duration: index === 16 ? 60 : 10 })),
+    frameTimes: [],
+    longTasks: [],
+    durationMs: 300,
+    phaseMarks: [{ time: 0, phase: "combat" }],
+  };
+  const requirements = [
+    { name: "combat", minActions: 1, minFrames: 10 },
+    { name: "enemy-turn", minActions: 1, minFrames: 10, optional: true },
+  ];
+  const play = { name: "play:Slash", segment: "combat", timeMs: 10 };
+  expect(measureSegments(raw, [play], requirements).map((segment) => segment.name)).toEqual(["combat"]);
+  const visited = {
+    ...raw,
+    phaseMarks: [
+      { time: 0, phase: "combat" },
+      { time: 100, phase: "enemy-turn" },
+      { time: 200, phase: "combat" },
+    ],
+  };
+  const endTurn = { name: "end-turn", segment: "enemy-turn", timeMs: 150 };
+  const segments = measureSegments(visited, [play, endTurn], requirements);
+  expect(segments[1]).toMatchObject({ name: "enemy-turn", actions: 1, valid: true });
+  expect(segments[1]!.metrics).toMatchObject({ frameCount: 10, hitchesOver50ms: 1 });
+  expect(measureSegments(visited, [play], requirements)[1]).toMatchObject({ valid: false, actions: 0 });
+  expect(measureSegments(raw, [play, endTurn], requirements)[1]).toMatchObject({ valid: false, actions: 1 });
+});

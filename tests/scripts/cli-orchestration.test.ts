@@ -118,6 +118,29 @@ describe("CLI launch paths", () => {
     ]);
   });
 
+  it("labels replay with its saved seed without generating a new discovery case", () => {
+    const directory = fixture();
+    const replayFile = path.join(directory, "replay.json");
+    fs.writeFileSync(replayFile, JSON.stringify({ version: 1, scenario: "seeded-discovery", seed: 24 }));
+    const result = probe(
+      "run-performance.mjs",
+      ["--skip-build", "--replay", replayFile, "--live"],
+      directory,
+      `const originalExists = fs.existsSync;
+       fs.existsSync = (file) => String(file) === ${JSON.stringify(path.join(ROOT, "dist/index.html"))} || originalExists(file);
+       const originalMkdir = fs.mkdirSync;
+       fs.mkdirSync = (file, options) => originalMkdir(String(file).replace(${JSON.stringify(path.join(ROOT, "reports/performance"))}, ${JSON.stringify(path.join(directory, "performance"))}), options);
+       const originalWrite = fs.writeFileSync;
+       fs.writeFileSync = (file, ...args) => originalWrite(String(file).replace(${JSON.stringify(path.join(ROOT, "reports/performance"))}, ${JSON.stringify(path.join(directory, "performance"))}), ...args);
+       cp.spawn = cp.spawnSync = (_command, args) => { console.log('LAUNCH ' + JSON.stringify(args)); throw new Error('subprocess intercepted'); };`,
+    );
+    expect(result.stderr).toContain("subprocess intercepted");
+    expect(result.stdout).toContain("Replay case: seeded-discovery seed=24");
+    expect(result.stdout).not.toContain("Discovery seed:");
+    expect(result.stdout).toContain("playwright.performance.config.ts");
+    expect(result.stdout).not.toContain("prepare-performance-cases.mjs");
+  });
+
   it.each(["run-playthrough.mjs", "prepare-performance-cases.mjs"])(
     "%s resolves its worker and input files independently of the caller directory",
     (script) => {

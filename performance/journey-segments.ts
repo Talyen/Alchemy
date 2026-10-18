@@ -55,24 +55,29 @@ export function measureSegments(
   actions: JourneyAction[],
   requirements: SegmentRequirement[],
 ): SegmentResult[] {
-  return requirements.map((requirement) => {
+  return requirements.flatMap((requirement) => {
+    const actionCount = actions.filter((action) => action.segment === requirement.name).length;
+    const entered = sample.phaseMarks.some((mark) => mark.phase === requirement.name);
+    if (requirement.optional && !entered && actionCount === 0) return [];
     const segmentSample = extractSegmentSample(sample, requirement.name);
     const metrics = computeMetrics(segmentSample, { minFrames: requirement.minFrames });
-    const actionCount = actions.filter((action) => action.segment === requirement.name).length;
     const valid = metrics.valid && actionCount >= requirement.minActions;
-    return {
-      name: requirement.name,
-      actions: actionCount,
-      inputEvents: segmentSample.inputEvents?.length ?? 0,
-      maxInputDelayMs: Math.max(0, ...(segmentSample.inputEvents ?? []).map((event) => event.inputDelay)),
-      longAnimationFrames: segmentSample.longAnimationFrames?.length ?? 0,
-      metrics,
-      valid,
-      ...(!valid
-        ? {
-            invalidReason: metrics.invalidReason ?? `insufficient actions (${actionCount} < ${requirement.minActions})`,
-          }
-        : {}),
-    };
+    return [
+      {
+        name: requirement.name,
+        actions: actionCount,
+        inputEvents: segmentSample.inputEvents?.length ?? 0,
+        maxInputDelayMs: Math.max(0, ...(segmentSample.inputEvents ?? []).map((event) => event.inputDelay)),
+        longAnimationFrames: segmentSample.longAnimationFrames?.length ?? 0,
+        metrics,
+        valid,
+        ...(!valid
+          ? {
+              invalidReason:
+                metrics.invalidReason ?? `insufficient actions (${actionCount} < ${requirement.minActions})`,
+            }
+          : {}),
+      },
+    ];
   });
 }

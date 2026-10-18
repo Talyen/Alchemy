@@ -27,6 +27,8 @@ export interface SegmentRequirement {
   name: string;
   minActions: number;
   minFrames: number;
+  /** Omit only when the phase was never entered and no action was recorded. */
+  optional?: boolean;
 }
 
 export function assertJourneyCase(value: unknown): asserts value is JourneyCase {

@@ -291,9 +291,12 @@ const SEGMENTS: Record<string, SegmentRequirement[]> = {
     { name: "enemy-turn", minActions: 1, minFrames: 20 },
     { name: "unique-armory", minActions: 3, minFrames: 20 },
   ],
-  // A legal random burst can win before an enemy turn. Fixed journeys retain
-  // the mandatory enemy-turn segment; discovery reports completed turns separately.
-  "seeded-discovery": [{ name: "combat", minActions: 1, minFrames: 45 }],
+  // A legal random burst can win before an enemy turn; any entered enemy phase
+  // still needs completed actions and frames rather than disappearing from the report.
+  "seeded-discovery": [
+    { name: "combat", minActions: 1, minFrames: 45 },
+    { name: "enemy-turn", minActions: 1, minFrames: 20, optional: true },
+  ],
   "labyrinth-journey": [
     { name: "explore", minActions: 2, minFrames: 8 },
     { name: "combat", minActions: 1, minFrames: 45 },

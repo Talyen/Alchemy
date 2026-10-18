@@ -284,8 +284,8 @@ export const test = base.extend<PerfFixtures>({
           if (measured) {
             const metrics = computeMetrics(sample, { minFrames });
             const segmentResults = segments ? measureSegments(sample, actions, segments) : undefined;
-            if (segments) {
-              for (const segment of segments) {
+            if (segmentResults) {
+              for (const segment of segmentResults) {
                 const samples = segmentSamples.get(segment.name) ?? [];
                 samples.push(extractSegmentSample(sample, segment.name));
                 segmentSamples.set(segment.name, samples);
@@ -387,31 +387,33 @@ export const test = base.extend<PerfFixtures>({
             : {}),
           ...(segments
             ? {
-                segments: segments.map((segment) => ({
-                  name: segment.name,
-                  actions: runResults.reduce(
-                    (sum, run) => sum + (run.segments?.find((item) => item.name === segment.name)?.actions ?? 0),
-                    0,
-                  ),
-                  inputEvents: runResults.reduce(
-                    (sum, run) => sum + (run.segments?.find((item) => item.name === segment.name)?.inputEvents ?? 0),
-                    0,
-                  ),
-                  maxInputDelayMs: Math.max(
-                    0,
-                    ...runResults.map(
-                      (run) => run.segments?.find((item) => item.name === segment.name)?.maxInputDelayMs ?? 0,
+                segments: segments
+                  .filter((segment) => segmentSamples.has(segment.name))
+                  .map((segment) => ({
+                    name: segment.name,
+                    actions: runResults.reduce(
+                      (sum, run) => sum + (run.segments?.find((item) => item.name === segment.name)?.actions ?? 0),
+                      0,
                     ),
-                  ),
-                  longAnimationFrames: runResults.reduce(
-                    (sum, run) =>
-                      sum + (run.segments?.find((item) => item.name === segment.name)?.longAnimationFrames ?? 0),
-                    0,
-                  ),
-                  aggregate: aggregateRawSamples(segmentSamples.get(segment.name) ?? [], {
-                    minFrames: segment.minFrames,
-                  }),
-                })),
+                    inputEvents: runResults.reduce(
+                      (sum, run) => sum + (run.segments?.find((item) => item.name === segment.name)?.inputEvents ?? 0),
+                      0,
+                    ),
+                    maxInputDelayMs: Math.max(
+                      0,
+                      ...runResults.map(
+                        (run) => run.segments?.find((item) => item.name === segment.name)?.maxInputDelayMs ?? 0,
+                      ),
+                    ),
+                    longAnimationFrames: runResults.reduce(
+                      (sum, run) =>
+                        sum + (run.segments?.find((item) => item.name === segment.name)?.longAnimationFrames ?? 0),
+                      0,
+                    ),
+                    aggregate: aggregateRawSamples(segmentSamples.get(segment.name) ?? [], {
+                      minFrames: segment.minFrames,
+                    }),
+                  })),
               }
             : {}),
         };
@@ -428,6 +430,7 @@ export const test = base.extend<PerfFixtures>({
 export { expect } from "@playwright/test";
 
 interface DisplayEnv {
+  viewport?: { width: number; height: number };
   devicePixelRatio?: number;
   estimatedRefreshHz?: number;
   browser?: string;
@@ -441,6 +444,7 @@ async function captureDisplayEnv(page: Page): Promise<void> {
   const displayEnv = await page.evaluate(() => {
     // Rough refresh estimate from a few rAF intervals.
     return new Promise<{
+      viewport: { width: number; height: number };
       devicePixelRatio: number;
       estimatedRefreshHz?: number;
       browser: string;
@@ -461,6 +465,7 @@ async function captureDisplayEnv(page: Page): Promise<void> {
             sorted.length % 2 === 0 ? (sorted[midpoint - 1]! + sorted[midpoint]!) / 2 : sorted[midpoint]!;
           estimatedRefreshHz = interval > 0 ? Math.round(1000 / interval) : undefined;
           resolve({
+            viewport: { width: window.innerWidth, height: window.innerHeight },
             devicePixelRatio: window.devicePixelRatio,
             estimatedRefreshHz,
             browser: navigator.userAgent,

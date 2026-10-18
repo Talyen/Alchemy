@@ -6,6 +6,8 @@ For harness failures, the [failure-first triage guide](./REFERENCE.md#failure-fi
 
 Use this when you are actively optimizing frame pacing and need repeatable numbers plus optional deep Chrome traces.
 
+Reports capture the actual renderer viewport, including native Electron window dimensions, rather than assuming the requested browser size.
+
 **Goal:** smooth locked **60 FPS** on a 60 Hz panel. Advisory bands and hitch/stall cutoffs are written for that; this harness does not measure sustained 120–144 FPS headroom (rAF is vsync-capped to the display).
 
 ## Quick start
@@ -62,7 +64,7 @@ The realistic journeys run normal animations and production cards with authored 
 
 Discovery samples reachable battle starts across both careers, balancing boss and ordinary encounter groups when both were reached. It does not fabricate battle decks, enemy stats, or combat effect manifests. The starting account gear, Trinket, and talents are fixture grants, not earned progression; `coverage.fixtureGrants` records their exact identities, affix rolls, placement, and talent allocation. Normal play reaches the battle checkpoint, and production battle setup computes the granted loadout effects. New discovery cases try up to six turns and eight legal card plays per turn, selecting reproducibly among cards and Wish choices and preferring choices not yet played in that measurement. Fixed journeys keep their existing control policy and turn limits. Older replay bundles retain their original three-turn limit.
 
-The summary separates **checkpoint inventory** from **measured actions** (played card labels, Wish choice labels, card plays, and end-turn actions). A card click counts only after its hand identity leaves the hand. Inventory is not evidence that a mechanic triggered: conditional effects, gear procs, status combinations, and enemy abilities still need direct evidence before claiming coverage. A random burst may legally win before an enemy turn; discovery accepts that outcome, while fixed battle journeys require the enemy-turn segment.
+The summary separates **checkpoint inventory** from **measured actions** (played card labels, Wish choice labels, card plays, and end-turn actions). A card click counts only after its hand identity leaves the hand. Inventory is not evidence that a mechanic triggered: conditional effects, gear procs, status combinations, and enemy abilities still need direct evidence before claiming coverage. A random burst may legally win before an enemy turn; discovery omits the enemy-turn segment only when the phase was never entered and no action was recorded. Entered phases must meet their action and frame requirements, so a stalled enemy turn cannot disappear from the report. Fixed battle journeys always require the enemy-turn segment.
 
 Case IDs, defaults, and diagnostics are maintained by the CLI and `performance/catalog.json`; use `npm run perf -- --help` for the current list. Fixed case comparisons require the same checkpoint hash, action path, segment names and action counts, in addition to the environment checks below. Seeded sweeps are exploratory; replay an interesting case for a controlled before/after comparison.
 

@@ -300,8 +300,9 @@ async function main() {
       : scenario === "memory-soak"
         ? ["meta-journey"]
         : [];
-  const discoverySeed = args.seed ?? randomInt(0x100000000);
-  if (prepared.includes("seeded-discovery")) console.log(`Discovery seed: ${discoverySeed}`);
+  const discoverySeed = replay?.seed ?? args.seed ?? randomInt(0x100000000);
+  if (replay) console.log(`Replay case: ${replay.scenario} seed=${replay.seed}`);
+  else if (prepared.includes("seeded-discovery")) console.log(`Discovery seed: ${discoverySeed}`);
   if (replay) {
     fs.writeFileSync(path.join(outDir, `${replay.scenario}.case.json`), JSON.stringify(replay, null, 2));
   } else {
