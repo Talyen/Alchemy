@@ -6,6 +6,7 @@ import { createCardUtilityHandlers, applyCardUtilityEffect } from "./card-utilit
 import { createPlayerResourceResolver } from "./player-resource-resolution";
 import {
   DAMAGE_TYPES,
+  cardHasKeyword,
   carryCardDescriptionMarks,
   getCardDescription,
   getCardEffect,
@@ -143,7 +144,7 @@ export function getBattleDamageInspectionCard(
     !enemy &&
     state.gearEffects.dodgeReadiesNatureCrit > 0 &&
     state.uniqueGear.wildheartReady &&
-    getCardKeywords(card).includes("nature");
+    cardHasKeyword(card, "nature");
   const potionMult =
     !enemy && isPotionCard(card) && card.consume
       ? state.talentEffects.potionPotency + (isMixedPotionCard(card) ? state.talentEffects.mixedPotionPotency : 0)

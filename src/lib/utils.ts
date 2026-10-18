@@ -25,6 +25,15 @@ export function formatLargeAmount(amount: number, locale = "en"): string {
   return formatter.format(value);
 }
 
+/** Deterministic JSON for digests and snapshot keys; object keys sort recursively. */
+export function stableJson(value: unknown): string {
+  return JSON.stringify(value, (_key, entry: unknown) =>
+    isRecord(entry)
+      ? Object.fromEntries(Object.entries(entry).sort(([left], [right]) => left.localeCompare(right)))
+      : entry,
+  );
+}
+
 export function isValidDeckIndex(index: number, deckLength: number): boolean {
   return Number.isInteger(index) && index >= 0 && index < deckLength;
 }

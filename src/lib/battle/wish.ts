@@ -55,8 +55,9 @@ export function buildWishOptions(
       (!companionOnly || candidate.effects.some((effect) => effect.kind === "summon-companion")),
   );
   const fullDeck = [...state.deck, ...state.hand, ...state.pendingHandCards, ...state.discard, ...state.exhausted];
+  const discovered = new Set(state.discoveredCardIds);
   const undiscovered = state.talentEffects.wishUndiscoveredCards
-    ? candidates.filter((candidate) => !state.discoveredCardIds.includes(candidate.id))
+    ? candidates.filter((candidate) => !discovered.has(candidate.id))
     : [];
   const guaranteed =
     undiscovered.length > 0 ? selectRewardCards(fullDeck, undiscovered, 1, [], getBattleRng(state)) : [];

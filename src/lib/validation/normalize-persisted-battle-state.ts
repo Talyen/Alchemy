@@ -105,6 +105,23 @@ function normalizeTrinketEffects(
   ) as BattleSnapshot["trinketEffects"];
 }
 
+function normalizeUniqueGear(
+  defaults: BattleSnapshot["uniqueGear"],
+  saved: Partial<BattleSnapshot["uniqueGear"]> | undefined,
+): BattleSnapshot["uniqueGear"] {
+  return Object.fromEntries(
+    Object.entries(defaults).map(([key, fallback]) => {
+      const value = saved?.[key as keyof typeof defaults];
+      // Collections keep their wire shape here; element repair belongs to the
+      // pile/uid pass (normalizeCardPiles) and the wire schema, which
+      // deliberately preserves echoes of any card id.
+      if (Array.isArray(fallback)) return [key, Array.isArray(value) ? value : fallback];
+      if (typeof fallback === "boolean") return [key, typeof value === "boolean" ? value : fallback];
+      return [key, typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : fallback];
+    }),
+  ) as BattleSnapshot["uniqueGear"];
+}
+
 function normalizeMagnitudeDictionary(saved: unknown): Record<string, number> {
   if (!saved || typeof saved !== "object" || Array.isArray(saved)) return {};
   return Object.fromEntries(
@@ -175,9 +192,12 @@ function normalizeCcState(
   defaults: BattleSnapshot["playerCC"],
   saved: Partial<BattleSnapshot["playerCC"]> | undefined,
 ) {
-  const merged = normalizeNonNegativeRecord(defaults, saved);
-  for (const key of ["stunSkipTurns", "freezeSkipTurns", "cooldown"] as const) {
-    if (!Number.isSafeInteger(merged[key])) merged[key] = defaults[key];
+  // Skip-turn counters must stay integers; a single strict pass replaces the
+  // previous record merge plus integer fixup loop with identical outcomes.
+  const merged = { ...defaults };
+  for (const key of Object.keys(defaults) as Array<keyof typeof defaults>) {
+    const value = saved?.[key];
+    if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) merged[key] = value;
   }
   return merged;
 }
@@ -378,18 +398,22 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
     talentEffects: normalizeTalentEffects(defaults.talentEffects, saved.talentEffects),
     flags: normalizeCombatFlags(defaults.flags, saved.flags),
     reactions: normalizeReactions(saved.reactions),
-    uniqueGear: Object.fromEntries(
-      Object.entries(defaults.uniqueGear).map(([key, value]) => [
-        key,
-        saved.uniqueGear?.[key as keyof typeof defaults.uniqueGear] ?? value,
-      ]),
-    ) as typeof defaults.uniqueGear,
+    uniqueGear: normalizeUniqueGear(defaults.uniqueGear, saved.uniqueGear),
     playerStatuses: normalizeNonNegativeRecord(defaults.playerStatuses, saved.playerStatuses),
     enemyStatuses: normalizeNonNegativeRecord(defaults.enemyStatuses, saved.enemyStatuses),
     playerCC: normalizeCcState(defaults.playerCC, saved.playerCC),
     enemyCC: normalizeCcState(defaults.enemyCC, saved.enemyCC),
     enemyMitigation: normalizeNonNegativeRecord(defaults.enemyMitigation, saved.enemyMitigation),
-    pendingTurnStartEffects: saved.pendingTurnStartEffects ?? defaults.pendingTurnStartEffects,
+    pendingTurnStartEffects: Array.isArray(saved.pendingTurnStartEffects)
+      ? saved.pendingTurnStartEffects.filter(
+          (pulse): pulse is BattleSnapshot["pendingTurnStartEffects"][number] =>
+            isRecord(pulse) &&
+            typeof pulse.remainingTurns === "number" &&
+            Number.isSafeInteger(pulse.remainingTurns) &&
+            pulse.remainingTurns >= 1 &&
+            Array.isArray(pulse.effects),
+        )
+      : defaults.pendingTurnStartEffects,
     pendingHandCards: saved.pendingHandCards ?? defaults.pendingHandCards,
     currentEnemy,
     lastEnemyAbilityId:

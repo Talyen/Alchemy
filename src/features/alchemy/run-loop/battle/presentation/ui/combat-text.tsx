@@ -26,22 +26,13 @@ const FCT_RISE_DISTANCE_PX = 240;
 const FCT_FADE_DURATION = 0.25;
 
 const FCT_ANIMATION_PROPS = (() => {
-  const popScale = FCT_POP_SCALE;
-  const holdScale = FCT_HOLD_SCALE;
-  const popDuration = FCT_POP_DURATION;
-  const holdDuration = FCT_HOLD_DURATION;
-  const shrinkDuration = FCT_SHRINK_DURATION;
-  const riseDuration = FCT_RISE_DURATION;
-  const riseDistance = FCT_RISE_DISTANCE_PX;
-  const fadeDuration = FCT_FADE_DURATION;
+  const tPopPeak = FCT_POP_DURATION * 0.75;
+  const tPopEnd = FCT_POP_DURATION;
+  const tHoldEnd = tPopEnd + FCT_HOLD_DURATION;
+  const totalDuration = tHoldEnd + FCT_RISE_DURATION;
 
-  const tPopPeak = popDuration * 0.75;
-  const tPopEnd = popDuration;
-  const tHoldEnd = tPopEnd + holdDuration;
-  const totalDuration = tHoldEnd + riseDuration;
-
-  const tShrinkEnd = Math.min(totalDuration, tHoldEnd + shrinkDuration);
-  const tFadeStart = Math.max(tHoldEnd, totalDuration - fadeDuration);
+  const tShrinkEnd = Math.min(totalDuration, tHoldEnd + FCT_SHRINK_DURATION);
+  const tFadeStart = Math.max(tHoldEnd, totalDuration - FCT_FADE_DURATION);
 
   const riseSteps = Array.from({ length: 11 }, (_, i) => tHoldEnd + (i / 10) * (totalDuration - tHoldEnd));
 
@@ -55,17 +46,17 @@ const FCT_ANIMATION_PROPS = (() => {
 
   const scaleAt = (t: number) => {
     if (t <= 0) return 0.5;
-    if (t <= tPopPeak) return lerp(0.5, popScale, t / tPopPeak);
-    if (t <= tPopEnd) return lerp(popScale, holdScale, (t - tPopPeak) / (tPopEnd - tPopPeak));
-    if (t <= tHoldEnd) return holdScale;
-    const shrinkProg = Math.min(1, (t - tHoldEnd) / shrinkDuration);
-    return lerp(holdScale, 1.0, shrinkProg);
+    if (t <= tPopPeak) return lerp(0.5, FCT_POP_SCALE, t / tPopPeak);
+    if (t <= tPopEnd) return lerp(FCT_POP_SCALE, FCT_HOLD_SCALE, (t - tPopPeak) / (tPopEnd - tPopPeak));
+    if (t <= tHoldEnd) return FCT_HOLD_SCALE;
+    const shrinkProg = Math.min(1, (t - tHoldEnd) / FCT_SHRINK_DURATION);
+    return lerp(FCT_HOLD_SCALE, 1.0, shrinkProg);
   };
 
   const yAt = (t: number) => {
     if (t <= tHoldEnd) return 0;
-    const riseProg = (t - tHoldEnd) / riseDuration;
-    return -riseDistance * getRiseEaseIn(riseProg);
+    const riseProg = (t - tHoldEnd) / FCT_RISE_DURATION;
+    return -FCT_RISE_DISTANCE_PX * getRiseEaseIn(riseProg);
   };
 
   const opacityAt = (t: number) => {
@@ -114,15 +105,19 @@ export function CombatTextRail({
   const [fitScale, setFitScale] = useState(1);
   const [positioned, setPositioned] = useState(false);
   const [newestHeight, setNewestHeight] = useState(0);
-  const groups: Array<{ id: string; firstShownAt: number; burst?: CombatTextBurst; reaction?: ReactionAnnouncement }> =
-    bursts.map((burst) => ({ id: burst.id, firstShownAt: burst.firstShownAt, burst }));
+  const groups = new Map<
+    string,
+    { id: string; firstShownAt: number; burst?: CombatTextBurst; reaction?: ReactionAnnouncement }
+  >();
+  for (const burst of bursts) groups.set(burst.id, { id: burst.id, firstShownAt: burst.firstShownAt, burst });
   for (const reaction of reactions) {
-    const group = groups.find((entry) => entry.id === reaction.burstId);
+    const group = groups.get(reaction.burstId);
     if (group) group.reaction = reaction;
-    else groups.push({ id: reaction.burstId, firstShownAt: reaction.firstShownAt, reaction });
+    else groups.set(reaction.burstId, { id: reaction.burstId, firstShownAt: reaction.firstShownAt, reaction });
   }
-  groups.sort((a, b) => a.firstShownAt - b.firstShownAt);
-  const visibleGroups = groups.slice(-COMBAT_TEXT_MAX_BURSTS_PER_RAIL);
+  const visibleGroups = [...groups.values()]
+    .sort((a, b) => a.firstShownAt - b.firstShownAt)
+    .slice(-COMBAT_TEXT_MAX_BURSTS_PER_RAIL);
   const newestId = visibleGroups.at(-1)?.id;
 
   useLayoutEffect(() => {
@@ -209,8 +204,12 @@ function CombatNumbers({ burst, staticMotion }: { burst: CombatTextBurst | undef
   const ref = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
   const [fontSize, setFontSize] = useState<number | undefined>();
-  const numericCount = burst?.entries.filter((entry) => entry.kind !== "notice").length ?? 0;
-  const noticeCount = (burst?.entries.length ?? 0) - numericCount;
+  let numericCount = 0;
+  let noticeCount = 0;
+  for (const entry of burst?.entries ?? []) {
+    if (entry.kind === "notice") noticeCount += 1;
+    else numericCount += 1;
+  }
   const rows = noticeCount + (numericCount > 3 ? Math.ceil(numericCount / 2) : numericCount);
   // Reserve the first frame before font measurement, avoiding a zero-height jump.
   const initialHeight = `calc(${rows * COMBAT_TEXT_BASE_SIZE_PX * 1.5 * FCT_POP_SCALE}px * var(--content-scale, 1) + ${Math.max(0, rows - 1) * 4 * FCT_POP_SCALE}px)`;
@@ -253,7 +252,7 @@ function CombatNumbers({ burst, staticMotion }: { burst: CombatTextBurst | undef
             "grid w-max justify-items-center gap-x-4 gap-y-1 font-bold tracking-wide",
             "transform-gpu will-change-transform [backface-visibility:hidden]",
             "[filter:drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]",
-            burst.entries.filter((entry) => entry.kind !== "notice").length > 3 && "grid-cols-2",
+            numericCount > 3 && "grid-cols-2",
           )}
           style={{ fontSize: fontSize ?? "inherit" }}
           initial={staticMotion ? false : { opacity: 1, scale: 0.5 }}
