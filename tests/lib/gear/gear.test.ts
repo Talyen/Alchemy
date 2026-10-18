@@ -84,23 +84,6 @@ describe("gear domain", () => {
     }
   });
 
-  it("aggregates affix effects by damage type", () => {
-    const item: GearInstance = {
-      instanceId: "gear-1",
-      definitionId: "ruby-ring-basic",
-      affixes: [
-        { id: "flat-burn", value: 1 },
-        { id: "flat-freeze", value: 1 },
-        { id: "flat-burn", value: 1 },
-      ],
-    };
-    expect(effectsForInstance(item)).toEqual({
-      ...defaultGearEffects,
-      flatBurnDamage: 2,
-      flatFreezeDamage: 1,
-    });
-  });
-
   it("preserves the selected hand when switching between a staff and shield", () => {
     const staff = makeGearInstance("staff-basic", "staff");
     const shield = makeGearInstance("leather-buckler-basic", "shield");

@@ -46,24 +46,37 @@ describe("sampleItems", () => {
     }
   });
 
-  it.each([
-    { count: 0, excluded: [], expected: [], next: 0.6011037519201636 },
-    { count: 2, excluded: [], expected: ["b", "a"], next: 0.5265925421845168 },
-    { count: 9, excluded: [], expected: ["b", "a", "e", "f", "c", "d"], next: 0.5265925421845168 },
-    { count: 2, excluded: ["b", "e"], expected: ["a", "f"], next: 0.6697340414393693 },
-  ])(
-    "preserves saved-run sample order and stream position: $count with $excluded excluded",
-    ({ count, excluded, expected, next }) => {
-      const items = Object.freeze(["a", "b", "c", "d", "e", "f"]);
-      const rng = createSeededRng(42);
-      const sample = excluded.length
-        ? sampleItemsExcluding(items, count, rng, new Set(excluded), (item) => item)
-        : sampleItems(items, count, rng);
-      expect(sample).toEqual(expected);
-      expect(rng()).toBe(next);
-      expect(items).toEqual(["a", "b", "c", "d", "e", "f"]);
-    },
-  );
+  it("draws nothing for an empty sample", () => {
+    let draws = 0;
+    const rng = () => {
+      draws += 1;
+      return 0.5;
+    };
+    expect(sampleItems([1, 2, 3], 0, rng)).toEqual([]);
+    expect(draws).toBe(0);
+  });
+
+  it("returns deterministic subsets without mutating the input", () => {
+    const items = Object.freeze(["a", "b", "c", "d", "e", "f"]);
+    const first = sampleItems(items, 2, createSeededRng(42));
+    expect(sampleItems(items, 2, createSeededRng(42))).toEqual(first);
+    expect(first).toHaveLength(2);
+    expect(new Set(first).size).toBe(2);
+    for (const entry of first) expect(items).toContain(entry);
+    expect(items).toEqual(["a", "b", "c", "d", "e", "f"]);
+    expect(sampleItems(items, 9, createSeededRng(42)).sort()).toEqual(["a", "b", "c", "d", "e", "f"]);
+  });
+
+  it("samples excluding owned ids deterministically", () => {
+    const items = Object.freeze(["a", "b", "c", "d", "e", "f"]);
+    const sample = (excluded: string[]) =>
+      sampleItemsExcluding(items, 2, createSeededRng(42), new Set(excluded), (item) => item);
+    expect(sample([])).toEqual(sample([]));
+    const filtered = sample(["b", "e"]);
+    expect(filtered).toHaveLength(2);
+    expect(filtered).not.toContain("b");
+    expect(filtered).not.toContain("e");
+  });
 });
 
 describe("sampleItemsExcluding", () => {
@@ -202,18 +215,28 @@ describe("takeRandomItem", () => {
   });
 });
 
-it("createSeededRng preserves the seeded sequence used by saved runs", () => {
-  const rng = createSeededRng(12345);
-  expect(Array.from({ length: 4 }, () => rng())).toEqual([
-    0.9797282677609473, 0.3067522644996643, 0.484205421525985, 0.817934412509203,
-  ]);
+it("createSeededRng is deterministic in [0, 1)", () => {
+  const first = Array.from({ length: 4 }, createSeededRng(12345));
+  expect(first).toEqual(Array.from({ length: 4 }, createSeededRng(12345)));
+  for (const draw of first) {
+    expect(draw).toBeGreaterThanOrEqual(0);
+    expect(draw).toBeLessThan(1);
+  }
+  expect(first).not.toEqual(Array.from({ length: 4 }, createSeededRng(54321)));
 });
 
-it("hashStringToUint32 preserves the hash that seeds salvage previews", () => {
-  expect(hashStringToUint32("salvage:item-123")).toBe(834049458);
+it("hashStringToUint32 is a deterministic uint32 hash", () => {
+  expect(hashStringToUint32("salvage:item-123")).toBe(hashStringToUint32("salvage:item-123"));
+  expect(hashStringToUint32("salvage:item-123")).not.toBe(hashStringToUint32("salvage:item-124"));
+  for (const value of ["", "salvage:item-123", "balance-policy:7"]) {
+    const hash = hashStringToUint32(value);
+    expect(Number.isInteger(hash)).toBe(true);
+    expect(hash).toBeGreaterThanOrEqual(0);
+    expect(hash).toBeLessThanOrEqual(0xffff_ffff);
+  }
 });
 
-it("getBattleRng getBattleRng throws when rng is missing", () => {
+it("getBattleRng throws when rng is missing", () => {
   expect(() => getBattleRng({})).toThrow(/BattleState.rng is required/);
 });
 

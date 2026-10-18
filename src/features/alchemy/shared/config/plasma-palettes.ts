@@ -15,7 +15,7 @@ import {
 import { gearDefinitions, getGearInstanceKeywordIds, getUniqueGearShineColors, type GearInstance } from "@/lib/gear";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
-import { extractKeywordIds } from "./keywords";
+import { extractKeywordIds } from "@/lib/keyword-text";
 import {
   getCompanionShineColors,
   getInspectionKeywordShineColors,

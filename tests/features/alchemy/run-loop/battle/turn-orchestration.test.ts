@@ -17,7 +17,7 @@ import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {
   resetRunDomainStore();
-  setRunProgress({ characterId: "knight", initialized: true, rng: createRunRngState(() => 0.5) });
+  setRunProgress({ characterId: "knight", initialized: true, rng: createRunRngState(0x8000_0000) });
   setRunSession({ hasActiveRun: true });
 });
 

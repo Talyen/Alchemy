@@ -3,7 +3,7 @@ import { advanceStartupLoad, createStartupLoadState, type StartupLoadEvent } fro
 import { IMAGE_PRELOAD_BATCH_SIZE, FONT_PRELOAD_TIMEOUT_MS, INITIAL_LOAD_MIN_DURATION_MS } from "@/lib/game-constants";
 import { logError } from "@/lib/error-logger";
 import { allGameArt, essentialGameArt, onDemandBoardArt } from "@/lib/game-data";
-import { preloadImagesInBatches } from "@/lib/image-preload";
+import { preloadImagesInBatches } from "@/lib/preload/image";
 import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
 import { markStartupReady } from "@/lib/performance/startup-marks";
 

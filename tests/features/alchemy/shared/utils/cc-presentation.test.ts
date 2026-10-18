@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getActiveCcKeyword, isCcControlled } from "@/features/alchemy/shared/utils/cc-presentation";
+import { getActiveCcKeyword, isCcControlled } from "@/lib/battle";
 import { defaultCcState } from "../../../../fixtures/default-battle-state";
 
 describe("cc-presentation", () => {

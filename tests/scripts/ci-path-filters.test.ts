@@ -100,7 +100,7 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["src/app/app-shell.ts", ["interactions", "runtime"], ["desktop_renderer"]],
   ["src/lib/battle/damage-calc.ts", ["runtime"], ["desktop_renderer"]],
   ["src/features/alchemy/run-loop/battle/battle-card-play.ts", ["interactions", "runtime"], ["desktop_renderer"]],
-  ["src/lib/image-preload.ts", ["interactions", "runtime"], ["desktop_renderer"]],
+  ["src/lib/preload/image.ts", ["interactions", "runtime"], ["desktop_renderer"]],
   ["src/lib/platform-save-backend.ts", ["interactions", "runtime", "save"], ["desktop_renderer"]],
   ["tests/interaction/battle.dom.test.tsx", ["interactions", "unit-test"], ["desktop_renderer"]],
   ["vite.config.ts", ["tooling"], ["desktop", "desktop_renderer"]],

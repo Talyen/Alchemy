@@ -10,4 +10,4 @@ export {
 } from "./battle";
 export { getCardRect } from "./dom";
 export { isAlchemyDevBuild, shouldSkipStartupLoadingGate } from "./dev-mode";
-export { getActiveCcKeyword, type ActiveCcKeyword } from "./cc-presentation";
+export { getActiveCcKeyword, type ActiveCcKeyword } from "@/lib/battle";

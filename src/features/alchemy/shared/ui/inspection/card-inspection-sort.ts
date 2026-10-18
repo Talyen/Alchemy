@@ -2,8 +2,6 @@ import type { BattleCard } from "@/lib/game-data";
 import { getCardDisplayTitle } from "../cards/card-description-ui";
 import { localization } from "@/lib/localization/runtime";
 
-const inspectionTieCollator = new Intl.Collator("en");
-
 const titleCollators = new Map<string, Intl.Collator>();
 
 function titleCollatorFor(language: string): Intl.Collator {
@@ -16,16 +14,22 @@ function titleCollatorFor(language: string): Intl.Collator {
   return collator;
 }
 
-function inspectionSortKey(card: BattleCard): string {
-  return JSON.stringify([
-    card.id,
-    card.cost,
-    card.effects,
-    card.descriptionLines,
-    card.corrupted,
-    card.transmuted,
-    card.uid,
-  ]);
+function compareInspectionTiebreak(a: BattleCard, b: BattleCard): number {
+  if (a.id !== b.id) return a.id < b.id ? -1 : 1;
+  if (a.cost !== b.cost) return a.cost - b.cost;
+  const aCorrupted = a.corrupted ? 1 : 0;
+  const bCorrupted = b.corrupted ? 1 : 0;
+  if (aCorrupted !== bCorrupted) return aCorrupted - bCorrupted;
+  const aTransmuted = a.transmuted ?? "";
+  const bTransmuted = b.transmuted ?? "";
+  if (aTransmuted !== bTransmuted) return aTransmuted < bTransmuted ? -1 : 1;
+  const aUid = a.uid ?? -1;
+  const bUid = b.uid ?? -1;
+  if (aUid !== bUid) return aUid - bUid;
+  if (a.effects.length !== b.effects.length) return a.effects.length - b.effects.length;
+  if (a.descriptionLines.length !== b.descriptionLines.length)
+    return a.descriptionLines.length - b.descriptionLines.length;
+  return 0;
 }
 
 export function sortInspectionCards(cards: readonly BattleCard[]): BattleCard[] {
@@ -35,15 +39,11 @@ export function sortInspectionCards(cards: readonly BattleCard[]): BattleCard[] 
     .map((card) => ({
       card,
       title: getCardDisplayTitle(card),
-      key: undefined as string | undefined,
     }))
     .sort((a, b) => {
       const titleOrder = titleCollator.compare(a.title, b.title);
       if (titleOrder) return titleOrder;
-      // Serialize effects and descriptions only for title ties, once per entry in this sort.
-      a.key ??= inspectionSortKey(a.card);
-      b.key ??= inspectionSortKey(b.card);
-      return inspectionTieCollator.compare(a.key, b.key);
+      return compareInspectionTiebreak(a.card, b.card);
     })
     .map((entry) => entry.card);
 }

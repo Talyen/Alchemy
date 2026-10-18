@@ -167,7 +167,7 @@ describe("createBattleInit", () => {
       roomsEncountered: 0,
       runPlayerHealth: 30,
       runMaxHealth: 30,
-      rng: createRunRngState(() => 42 / 0x1_0000_0000),
+      rng: createRunRngState(42),
     });
     makeInit().startBattle({
       enemyType: "normal",
@@ -185,7 +185,7 @@ describe("createBattleInit", () => {
       roomsEncountered: 0,
       runPlayerHealth: 30,
       runMaxHealth: 30,
-      rng: createRunRngState(() => 42 / 0x1_0000_0000),
+      rng: createRunRngState(42),
     });
     makeInit().startBattle({
       enemyType: "normal",

@@ -45,7 +45,7 @@ export {
 } from "@/lib/game-data";
 
 import { trinketById, type KeywordId } from "@/lib/game-data";
-import { extractKeywordIds } from "./keywords";
+import { extractKeywordIds } from "@/lib/keyword-text";
 
 export function getTrinketKeywords(trinketId: string): KeywordId[] {
   const trinket = trinketById[trinketId];

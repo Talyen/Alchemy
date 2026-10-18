@@ -5,7 +5,6 @@ import {
   gearDefinitionId,
   gearDefinitionList,
   gearDefinitions,
-  missingGearArtDefinitionIds,
   gearAffixCatalog,
   uniqueItemList,
   GEAR_RARITIES,
@@ -27,9 +26,10 @@ function validateBaseItems(collector: Collector): void {
 
 function validateGearDefinitions(collector: Collector): Set<string> {
   const reachableAffixes = new Set<string>();
-  for (const id of missingGearArtDefinitionIds)
-    collector.error("gear", id, "Gear definition uses missing-art fallback");
   for (const definition of gearDefinitionList) {
+    // Unique definitions intentionally reuse their base item's Astral art, so
+    // only ordinary definitions need a barrel entry of their own. A missing
+    // base entry is already an error on that base's own definition.
     if (definition.rarity !== "unique" && !gearArtByDefinitionId[definition.id])
       collector.error("gear", definition.id, "Missing generated gear art mapping");
     if (definition.rarity === "unique") continue;

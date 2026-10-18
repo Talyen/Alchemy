@@ -1,14 +1,14 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { vi } from "vitest";
-import { preloadImagesInBatches } from "@/lib/image-preload";
+import { preloadImagesInBatches } from "@/lib/preload/image";
 import { FONT_PRELOAD_TIMEOUT_MS } from "@/lib/game-constants";
 import { useInitialLoadReady } from "@/app/use-initial-load-ready";
 import { deferred } from "../helpers/deferred";
 import { defineSequenceFamily, requireProgress, type Scenario } from "./sequence";
 import { advance, installFrames } from "./timing";
 
-vi.mock("@/lib/image-preload", async (original) => ({
-  ...(await original<typeof import("@/lib/image-preload")>()),
+vi.mock("@/lib/preload/image", async (original) => ({
+  ...(await original<typeof import("@/lib/preload/image")>()),
   preloadImagesInBatches: vi.fn(),
 }));
 defineSequenceFamily("startup", () => {

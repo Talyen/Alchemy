@@ -21,7 +21,7 @@ import { computeTrinketManifest } from "../trinkets";
 import { applyDrawResult, drawCards, drawKeywordCard } from "./draw";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
 import { initializeEnemyState } from "./battle-enemy-setup";
-import { placeholderRng, shuffle, getBattleRng } from "@/lib/rng";
+import { shuffle, getBattleRng } from "@/lib/rng";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 
@@ -147,10 +147,10 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
 
   const trinketEffects = computeTrinketManifest(battleBoons);
 
-  if (!optionsRng && import.meta.env.PROD) {
-    throw new Error("createBattleStartState requires rng in production; placeholderRng is UI-only.");
+  if (!optionsRng) {
+    throw new Error("createBattleStartState requires rng; pass the battle execution context.");
   }
-  const activeRng = optionsRng ?? placeholderRng;
+  const activeRng = optionsRng;
   const deck = shuffle(runDeck, activeRng);
 
   const {

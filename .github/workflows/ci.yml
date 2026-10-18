@@ -131,7 +131,7 @@ jobs:
               - "src/features/alchemy/shared/ui/**"
               - "src/lib/animation/**"
               - "src/lib/battle/**"
-              - "src/lib/image-preload.ts"
+              - "src/lib/preload/image.ts"
               - "src/lib/platform-save-backend.ts"
               - "tests/electron/**"
               - "playwright.electron*"

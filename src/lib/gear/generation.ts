@@ -23,7 +23,7 @@ interface GenerateGearOfferingsOptions {
   ownedUniqueIds?: ReadonlySet<string>;
   fallbackUniqueToAstral?: boolean;
   fillCount?: boolean;
-  baseItemIds?: readonly string[];
+  baseItemIds?: readonly string[] | undefined;
   createId?: () => string;
 }
 
@@ -101,7 +101,7 @@ export function generateLootGearChoices(
     rng,
     rollTier: (available) => rollLootGearRarity(weights, rng, available),
     ownedUniqueIds,
-    ...(baseItemIds === undefined ? {} : { baseItemIds }),
+    baseItemIds,
     fillCount,
     createId,
   });
@@ -122,7 +122,7 @@ export function generateGearRewardChoicesForRarity(
     rollTier: () => rarity,
     ownedUniqueIds,
     fallbackUniqueToAstral: false,
-    ...(baseItemIds === undefined ? {} : { baseItemIds }),
+    baseItemIds,
     fillCount,
     createId,
   });
@@ -137,11 +137,8 @@ export function generateGearRewardChoicesForRarities(
   return generateGearOfferings({
     count: rarities.length,
     rng,
-    rollTier: (_available, index) => {
-      const rarity = rarities[index];
-      if (!rarity) throw new Error("generateGearRewardChoicesForRarities: rarity index out of range");
-      return rarity;
-    },
+    // count derives from rarities, so every index resolves a requested rarity.
+    rollTier: (_available, index) => rarities[index]!,
     ownedUniqueIds,
     createId,
   });

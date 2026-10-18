@@ -22,4 +22,10 @@ describe("battle chance rolls", () => {
     expect(rollBattleChance(100, { rng })).toBe(true);
     expect(rng).not.toHaveBeenCalled();
   });
+
+  it("rejects NaN chances without drawing", () => {
+    const rng = vi.fn(() => 0.5);
+    expect(() => rollBattleChance(NaN, { rng })).toThrow("rollBattleChance requires a number");
+    expect(rng).not.toHaveBeenCalled();
+  });
 });

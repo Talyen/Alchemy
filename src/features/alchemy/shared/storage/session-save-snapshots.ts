@@ -16,7 +16,6 @@ export class SessionSaveSnapshots {
       epoch: number;
       restoreVersion: number;
       sequence: number;
-      contents: string;
     }
   >();
   private epoch = 0;
@@ -31,7 +30,6 @@ export class SessionSaveSnapshots {
       epoch: this.epoch,
       restoreVersion: this.progress.readRestoreVersion(),
       sequence: ++this.sequence,
-      contents: JSON.stringify(snapshot),
     });
     return snapshot;
   }
@@ -47,11 +45,6 @@ export class SessionSaveSnapshots {
       receipt.epoch !== this.epoch || receipt.restoreVersion !== this.progress.readRestoreVersion();
     if (cancelled()) return "skipped";
     if (receipt.sequence < this.submitted) return "superseded";
-    try {
-      if (receipt.contents !== JSON.stringify(snapshot)) return this.reject();
-    } catch {
-      return this.reject();
-    }
     this.submitted = receipt.sequence;
     // Recheck career lifetime inside the lane. Already admitted writes retain
     // queue order across load barriers; only later stale submissions are refused.

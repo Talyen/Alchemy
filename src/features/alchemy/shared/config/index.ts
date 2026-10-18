@@ -1,5 +1,4 @@
 export * from "./enemies";
-export * from "./keywords";
 export * from "./labyrinth-map";
 export * from "./layout";
 export * from "./metadata";

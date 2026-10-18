@@ -66,7 +66,7 @@ const ROUTES = Object.freeze([
       "src/lib/animation/**",
       "src/lib/routing/**",
       "src/lib/platform-save-backend.ts",
-      "src/lib/image-preload.ts",
+      "src/lib/preload/image.ts",
       "tests/interaction/**",
       "scripts/run-interactions.mjs",
     ],

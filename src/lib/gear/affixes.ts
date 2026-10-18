@@ -21,8 +21,10 @@ function isGearAffixId(value: unknown): value is GearAffixId {
   return typeof value === "string" && Object.hasOwn(gearAffixCatalog, value);
 }
 
+const CHANCE_EFFECT_KEYS = new Set<string>(GEAR_CHANCE_EFFECT_KEYS);
+
 function addAffixEffect(effects: GearEffectManifest, key: keyof GearEffectManifest, value: number): void {
-  if ((GEAR_CHANCE_EFFECT_KEYS as readonly string[]).includes(key)) {
+  if (CHANCE_EFFECT_KEYS.has(key)) {
     const chanceKey = key as GearChanceEffectKey;
     effects[chanceKey].push(value);
   } else {
@@ -96,11 +98,19 @@ export function rollAffixValue(def: GearAffixDefinition, rarity: GearRarity, rng
   return range.min + rngInt(rng, span);
 }
 
+export interface GearAffixTooltipEntry {
+  key: string;
+  name: string;
+  text: string;
+  affixId: GearAffixId;
+  value: number;
+}
+
 export function getGearAffixTooltipEntries(
   affixes: readonly GearAffixRoll[],
   rarity?: GearRarity | null,
-): Array<{ key: string; name: string; text: string; affixId: GearAffixId; value: number }> {
-  const entries: ReturnType<typeof getGearAffixTooltipEntries> = [];
+): GearAffixTooltipEntry[] {
+  const entries: GearAffixTooltipEntry[] = [];
   forEachNormalizedAffixRoll(affixes, rarity, (definition, value) => {
     entries.push({
       key: `${definition.id}-${entries.length}`,

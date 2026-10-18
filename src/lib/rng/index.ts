@@ -61,16 +61,10 @@ export function createSeededRng(seed: number): Rng {
   };
 }
 
-export function createRunRngState(seedOrRng: number | Rng): RunRngState {
-  let seed: number;
-  if (typeof seedOrRng === "number") {
-    seed = Number.isFinite(seedOrRng) ? toUint32(Math.trunc(seedOrRng)) : 0;
-  } else {
-    const raw = seedOrRng();
-    seed = raw >= 0 && raw < 1 ? toUint32(Math.trunc(raw * UINT32_RANGE)) : 0;
-  }
+export function createRunRngState(seed: number): RunRngState {
+  if (!Number.isFinite(seed)) throw new Error("createRunRngState requires a finite seed");
   return {
-    seed,
+    seed: toUint32(Math.trunc(seed)),
     counters: {
       rewards: 0,
       destinations: 0,
@@ -81,18 +75,13 @@ export function createRunRngState(seedOrRng: number | Rng): RunRngState {
   };
 }
 
-export function nextRunRngValue(state: RunRngState, stream: RunRngStream): { value: number; nextCounter: number } {
+export function stepRunRng(state: RunRngState, stream: RunRngStream): number {
   const salt = getRunStreamSalt(stream);
   // The hash uses only 32 bits. Wrap the stored counter too, before floating-point
   // increments can stall, without changing any draw in the existing sequence.
   const nextCounter = toUint32((state.counters[stream] ?? 0) + 1);
-  return { value: runValueAtCounter(state.seed, salt, nextCounter), nextCounter };
-}
-
-export function stepRunRng(state: RunRngState, stream: RunRngStream): number {
-  const { value, nextCounter } = nextRunRngValue(state, stream);
   state.counters[stream] = nextCounter;
-  return value;
+  return runValueAtCounter(state.seed, salt, nextCounter);
 }
 
 export function createRunStateRng(state: RunRngState, stream: RunRngStream): Rng {
@@ -116,7 +105,11 @@ export function createRunStreamRng(seed: number, stream: RunRngStream = "world",
   };
 }
 
-export const placeholderRng: Rng = () => 0;
+/** Fail-fast stub for inactive battle states. Like the inspection and scoring
+ * seams, it throws on draw instead of returning a misleading constant. */
+export const placeholderRng: Rng = () => {
+  throw new Error("BattleState.rng is required for outcome rolls");
+};
 
 export function rollChance(probability: number, rng: Rng): boolean {
   if (Number.isNaN(probability)) throw new Error("rollChance requires a number");
@@ -126,7 +119,6 @@ export function rollChance(probability: number, rng: Rng): boolean {
 }
 
 export function rollPercent(chance: number, rng: Rng): boolean {
-  if (Number.isNaN(chance)) throw new Error("rollPercent requires a number");
   return rollChance(chance / 100, rng);
 }
 
@@ -208,10 +200,4 @@ export function takeRandomItem<T>(items: T[], rng: Rng): T | undefined {
   const index = rngInt(rng, items.length);
   const [removed] = items.splice(index, 1);
   return removed;
-}
-
-export function pickRandomUnsafe<T>(items: readonly T[]): T | undefined {
-  // Presentation-only helper (audio variation, canvas decoration). Gameplay and
-  // run outcomes must draw the persisted run streams or battle RNG instead.
-  return pickRandom(items, Math.random);
 }

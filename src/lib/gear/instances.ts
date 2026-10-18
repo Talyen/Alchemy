@@ -25,13 +25,10 @@ export function rollAffixCount(rarity: GearRarity, rng: () => number): number {
   if (range.max <= range.min) return range.min;
   const draw = rng();
   if (draw < GEAR_AFFIX_COUNT_MIN_WEIGHT) return range.min;
-  // Uniform across the remaining counts so wider future ranges can hit middles.
+  // One draw owns both decisions so the run RNG sequence never shifts. The
+  // fraction below is always below 1, so the floor can never reach range.max.
   const rest = range.max - range.min;
-  return (
-    range.min +
-    1 +
-    Math.min(rest - 1, Math.floor(((draw - GEAR_AFFIX_COUNT_MIN_WEIGHT) / (1 - GEAR_AFFIX_COUNT_MIN_WEIGHT)) * rest))
-  );
+  return range.min + 1 + Math.floor(((draw - GEAR_AFFIX_COUNT_MIN_WEIGHT) / (1 - GEAR_AFFIX_COUNT_MIN_WEIGHT)) * rest);
 }
 
 export function createGearInstance(
@@ -82,9 +79,7 @@ export function generateDevRandomGearInstance(
   const fallbackRarity = rarity === "unique" ? "astral" : rarity;
   const baseItem = pickRandom(gearBaseItemList, rng);
   if (!baseItem) throw new Error("gearBaseItemList is empty");
-  const definition =
-    gearDefinitions[gearDefinitionId(baseItem.id, fallbackRarity)] ??
-    gearDefinitions[gearDefinitionId(baseItem.id, "basic")];
+  const definition = gearDefinitions[gearDefinitionId(baseItem.id, fallbackRarity)];
   if (!definition) throw new Error(`Missing gear definition for ${baseItem.id}`);
   return createRolledGearInstance(definition, rng, createId);
 }

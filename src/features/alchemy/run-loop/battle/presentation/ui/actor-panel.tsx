@@ -33,7 +33,7 @@ import { useChangeToken } from "../../../../shared/ui/use-change-token";
 import { ActorTooltip, ArtDeathDoorBorder, ArtTurnActiveBorder, StatsDeathDoorBorder } from "./actor-panel-helpers";
 import { CombatantStatusEffectPresentation } from "./combatant-status-effect-presentation";
 import { CombatantAttackLunge } from "./combatant-attack-lunge";
-import type { ActiveCcKeyword } from "../../../../shared/utils/cc-presentation";
+import type { ActiveCcKeyword } from "@/lib/battle";
 
 interface ArtPanelProps {
   side: "player" | "enemy";

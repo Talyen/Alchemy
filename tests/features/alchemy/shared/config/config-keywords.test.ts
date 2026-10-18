@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { keywordDefinitions } from "@/lib/game-data";
-import { extractKeywordIds, keywordPattern } from "@/features/alchemy/shared/config/keywords";
+import { extractKeywordIds, keywordPattern } from "@/lib/keyword-text";
 
 it("keyword extraction cache reuses parsing without letting a caller change keyword order or membership", () => {
   const text = "Keyword cache ownership: Frozen, Mana Crystal, Freeze, Bleeding.";
