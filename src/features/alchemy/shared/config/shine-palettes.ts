@@ -63,12 +63,8 @@ export function getCardDisplayKeywords(card: BattleCard): KeywordId[] {
   return extractKeywordIds(card.descriptionLines.join(" "));
 }
 
-export function getCardKeywordShineColors(card: BattleCard): readonly string[] {
-  return getInspectionKeywordShineColors(getCardDisplayKeywords(card));
-}
-
 export function getCardInspectionShineColors(card: BattleCard): readonly string[] {
-  return getCardKeywordShineColors(card);
+  return getInspectionKeywordShineColors(getCardDisplayKeywords(card));
 }
 
 export function getCompanionShineColors(companion: CompanionDefinition): readonly string[] {

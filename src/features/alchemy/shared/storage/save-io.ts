@@ -59,8 +59,10 @@ export function createSaveIo(
   async function waitForPendingSaveWrites(): Promise<void> {
     // Drain the published outcomes as well as backend work. Transport completion
     // alone does not mean failure status and progress receipts have settled.
+    // A throwing validate/complete hook rejects its tracked write; waiting must
+    // still settle so one bad hook cannot fail autosave teardown or shutdown.
     do {
-      await Promise.all([...pendingWriteResults]);
+      await Promise.allSettled([...pendingWriteResults]);
       await storage.waitForPendingWrites();
     } while (pendingWriteResults.size > 0);
   }

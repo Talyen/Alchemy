@@ -278,7 +278,7 @@ function normalizeCardPiles(state: BattleSnapshot, defaults: BattleSnapshot) {
   // otherwise stop advancing under floating-point arithmetic.
   const maxRetainedUid = Number.MAX_SAFE_INTEGER - piles.reduce((total, pile) => total + live[pile].length, 0) - 2;
   const isUsableUid = (uid: number | undefined): uid is number =>
-    Number.isSafeInteger(uid) && uid! >= 0 && uid! <= maxRetainedUid;
+    typeof uid === "number" && Number.isSafeInteger(uid) && uid >= 0 && uid <= maxRetainedUid;
   const counts = new Map<number, number>();
   let highestCardUid = 0;
   for (const pile of piles) {

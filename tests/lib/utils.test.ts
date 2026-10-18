@@ -45,6 +45,52 @@ it("keeps the compact threshold and supports the full safe resource range", () =
   expect(formatLargeAmount(Number.MAX_SAFE_INTEGER, "zh-Hans")).toBe("9007.2万亿");
 });
 
+it("survives more locales than the formatter cache holds without dropping hot entries", () => {
+  const locales = [
+    "en",
+    "de",
+    "fr",
+    "es",
+    "it",
+    "pt-BR",
+    "ru",
+    "zh-Hans",
+    "zh-Hant",
+    "ja",
+    "ko",
+    "ar",
+    "hi",
+    "tr",
+    "pl",
+    "nl",
+    "sv",
+    "da",
+    "fi",
+    "no",
+    "cs",
+    "sk",
+    "hu",
+    "ro",
+    "el",
+    "he",
+    "th",
+    "vi",
+    "id",
+    "ms",
+    "uk",
+    "bg",
+    "hr",
+    "sr",
+    "en-XA",
+  ];
+  for (const locale of locales) {
+    expect(typeof formatLargeAmount(123456.7, locale)).toBe("string");
+    expect(typeof formatLargeAmount(12345.6, locale)).toBe("string");
+  }
+  expect(formatLargeAmount(12345.6, "en")).toBe("12,345.6");
+  expect(formatLargeAmount(123456.7, "en")).toBe("123.5K");
+});
+
 describe("createInstanceId", () => {
   afterEach(() => {
     vi.unstubAllGlobals();

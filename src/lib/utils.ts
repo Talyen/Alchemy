@@ -11,17 +11,26 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 const amountFormatters = new Map<string, Intl.NumberFormat>();
+// Locales are effectively bounded (a handful of supported languages), but the
+// locale argument is caller-controlled: cap the cache so adversarial or
+// synthetic locales cannot grow it without bound. Hits refresh recency so the
+// two hot entries (standard/compact per active locale) are never evicted.
+const MAX_CACHED_FORMATTERS = 32;
 
 export function formatLargeAmount(amount: number, locale = "en"): string {
   const value = Number.isFinite(amount) ? amount : 0;
   const language = locale === "en-XA" ? "en" : locale;
   const compact = Math.abs(value) >= 100000;
   const key = `${language}:${compact}`;
-  let formatter = amountFormatters.get(key);
-  if (!formatter) {
-    formatter = new Intl.NumberFormat(language, compact ? { notation: "compact", maximumFractionDigits: 1 } : {});
-    amountFormatters.set(key, formatter);
+  const cached = amountFormatters.get(key);
+  if (cached) {
+    amountFormatters.delete(key);
+    amountFormatters.set(key, cached);
+    return cached.format(value);
   }
+  const formatter = new Intl.NumberFormat(language, compact ? { notation: "compact", maximumFractionDigits: 1 } : {});
+  if (amountFormatters.size >= MAX_CACHED_FORMATTERS) amountFormatters.delete(amountFormatters.keys().next().value!);
+  amountFormatters.set(key, formatter);
   return formatter.format(value);
 }
 

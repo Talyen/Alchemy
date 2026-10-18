@@ -116,10 +116,15 @@ export function CombatTextRail({
   const [newestHeight, setNewestHeight] = useState(0);
   const groups: Array<{ id: string; firstShownAt: number; burst?: CombatTextBurst; reaction?: ReactionAnnouncement }> =
     bursts.map((burst) => ({ id: burst.id, firstShownAt: burst.firstShownAt, burst }));
+  const groupsById = new Map(groups.map((group) => [group.id, group] as const));
   for (const reaction of reactions) {
-    const group = groups.find((entry) => entry.id === reaction.burstId);
+    const group = groupsById.get(reaction.burstId);
     if (group) group.reaction = reaction;
-    else groups.push({ id: reaction.burstId, firstShownAt: reaction.firstShownAt, reaction });
+    else {
+      const created = { id: reaction.burstId, firstShownAt: reaction.firstShownAt, reaction };
+      groupsById.set(created.id, created);
+      groups.push(created);
+    }
   }
   groups.sort((a, b) => a.firstShownAt - b.firstShownAt);
   const visibleGroups = groups.slice(-COMBAT_TEXT_MAX_BURSTS_PER_RAIL);

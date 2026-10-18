@@ -29,10 +29,15 @@ export interface SaveLoadState {
   status: SaveLoadStatus;
 }
 
+function recordValues(value: unknown): unknown[] {
+  return isRecord(value) ? Object.values(value) : [];
+}
+
 function isEmptyGearLike(value: unknown): boolean {
-  if (!isRecord(value)) return false;
-  const entries = Object.values(value);
-  return entries.every((entry) => entry === undefined || (Array.isArray(entry) && entry.length === 0));
+  return (
+    isRecord(value) &&
+    recordValues(value).every((entry) => entry === undefined || (Array.isArray(entry) && entry.length === 0))
+  );
 }
 
 function isEmptyGearInventories(value: ParsedSaveData["gearInventories"]): boolean {
@@ -40,9 +45,8 @@ function isEmptyGearInventories(value: ParsedSaveData["gearInventories"]): boole
 }
 
 function sumInventoryValues(value: unknown): number {
-  if (!isRecord(value)) return 0;
   let total = 0;
-  for (const entry of Object.values(value)) {
+  for (const entry of recordValues(value)) {
     if (typeof entry === "number" && Number.isFinite(entry) && entry > 0) total += entry;
   }
   return total;

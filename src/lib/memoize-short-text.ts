@@ -3,11 +3,12 @@ export function memoizeShortText<T>(parse: (text: string) => T): (text: string) 
   const cache = new Map<string, T>();
   return (text) => {
     if (text.length > 1024) return parse(text);
-    const existing = cache.get(text);
-    if (existing !== undefined || cache.has(text)) {
+    if (cache.has(text)) {
+      // Refresh recency so live descriptions keep hot entries resident.
+      const existing = cache.get(text) as T;
       cache.delete(text);
-      cache.set(text, existing as T);
-      return existing as T;
+      cache.set(text, existing);
+      return existing;
     }
     const value = parse(text);
     cache.set(text, value);

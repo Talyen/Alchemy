@@ -9,7 +9,7 @@ import { BattleCardButton } from "@/features/alchemy/shared/ui/cards/card-button
 import { SelectableCard } from "@/features/alchemy/shared/ui/cards/selectable-card";
 import { cardById, type BattleCard } from "@/lib/game-data/index";
 import { strengthenPotion } from "@/lib/alchemist/brewing";
-import { getCardKeywordShineColors } from "@/features/alchemy/shared/config/shine-palettes";
+import { getCardInspectionShineColors } from "@/features/alchemy/shared/config/shine-palettes";
 import { CardTitle } from "@/features/alchemy/shared/ui/cards/card-description-ui";
 
 const card: BattleCard = makeTestCard({
@@ -87,7 +87,7 @@ describe("BattleCardButton", () => {
       render(
         <BattleCardButton
           card={battleCard}
-          shineColor={getCardKeywordShineColors(battleCard)}
+          shineColor={getCardInspectionShineColors(battleCard)}
           ariaLabel="Test Card"
           shimmerActive={false}
           shimmerToken={undefined}

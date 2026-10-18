@@ -24,7 +24,7 @@ import { CombatantStatusEffectPresentation } from "../../battle/presentation/ui/
 import { getCardDisplayTitle } from "../../../shared/ui/cards/card-description-ui";
 import {
   battleHandContainerClass,
-  getCardKeywordShineColors,
+  getCardInspectionShineColors,
   handCardWidthClass,
 } from "@/features/alchemy/shared/config";
 import type { BattleActionsProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
@@ -147,7 +147,7 @@ const HandCardItem = memo(function HandCardItem({
             tooltipPadding={HAND_HOVER_TOOLTIP_PADDING_PX}
             scaleOnHover={false}
             dragging={isHidden}
-            shineColor={getCardKeywordShineColors(card)}
+            shineColor={getCardInspectionShineColors(card)}
             wrapperClassName="flex shrink-0 justify-center"
             wrapperDataCardKey={cardKey}
           />

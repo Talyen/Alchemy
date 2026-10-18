@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getCardDisplayKeywords,
-  getCardKeywordShineColors,
+  getCardInspectionShineColors,
   getTrinketShineColors,
   getTrinketTextShineColors,
   SHINE_PALETTES,
@@ -19,8 +19,8 @@ describe("card display keywords", () => {
       keywordDefinitions.poison.shineColors[0],
       keywordDefinitions.physical.shineColors[0],
     ];
-    expect(getCardKeywordShineColors({ ...card, transmuted: "burn" })).toEqual(colors);
-    expect(getCardKeywordShineColors({ ...card, corrupted: true })).toEqual(colors);
+    expect(getCardInspectionShineColors({ ...card, transmuted: "burn" })).toEqual(colors);
+    expect(getCardInspectionShineColors({ ...card, corrupted: true })).toEqual(colors);
   });
   it("includes conditional and companion keywords visible in card descriptions", () => {
     const packTactics = cardLibrary.find((card) => card.id === "pack-tactics")!;

@@ -20,7 +20,7 @@ import {
   cardHoverScaleClass,
   cardSurfaceClass,
   getPlasmaColorPairForCard,
-  getCardKeywordShineColors,
+  getCardInspectionShineColors,
 } from "../../config/index";
 import { useCardDescriptionContext } from "@/features/alchemy/shared/context/card-description-context";
 import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "@/lib/game-data";
@@ -214,7 +214,7 @@ function CardButtonSurface({
   scenePiece = false,
 }: BattleCardButtonProps) {
   const i18n = useGameTranslation();
-  const colors = shineColor ?? (card.transmuted ? getCardKeywordShineColors(card) : undefined);
+  const colors = shineColor ?? (card.transmuted ? getCardInspectionShineColors(card) : undefined);
   const showShine = Boolean(hovered && !dragging && !disabled && colors?.length);
   const artwork = (
     <img

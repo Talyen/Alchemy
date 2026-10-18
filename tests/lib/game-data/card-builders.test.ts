@@ -1,7 +1,11 @@
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
-import { cardMagnitude, type CardDescription } from "@/lib/game-data";
+import { cardLibrary, cardMagnitude, type CardDescription } from "@/lib/game-data";
 import { effectsCard } from "@/lib/game-data/cards/card-builders";
 import { expect, it } from "vitest";
+
+it("keeps every catalog card at one Mana", () => {
+  for (const card of cardLibrary) expect(card.cost, card.id).toBe(1);
+});
 
 it("owns custom description lines so building or editing a variant cannot change another card", () => {
   const authored: CardDescription = [
