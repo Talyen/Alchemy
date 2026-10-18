@@ -70,6 +70,7 @@ export const chooserHeroPaddedTileClass =
 export const chooserHeroPaddedRowShellWidthClass = "max-w-[min(100%,calc(85.8*var(--content-rem,1rem)))]";
 
 export const cardSurfaceClass = "relative overflow-hidden rounded-shell-hero bg-black";
+export const cardArtFrameClass = `${cardSurfaceClass} card-art-frame border border-border/80`;
 
 export const cardInteractiveGlowClass = "card-interactive-glow";
 

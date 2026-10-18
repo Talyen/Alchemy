@@ -1,23 +1,28 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { motion, useAnimationFrame, useMotionValue } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
-import { cardSurfaceClass } from "@/features/alchemy/shared/config/layout";
+import { cardArtFrameClass, cardArtImageClass } from "@/features/alchemy/shared/config/layout";
 import { useStore } from "zustand";
 import type { BattlePresentationStore } from "../battle-presentation-store";
 import type { BattleRefs, CardTransfer } from "../../../shared/types";
 import { getCardTransferPose } from "./card-transfer-motion";
 import { defaultMeasureVisualCardRect, getCardRotation } from "./scene-geometry";
 import { BattleSceneArtwork } from "../../../shared/ui/battle-scene-artwork";
+import { Surface } from "../../../shared/ui/surface";
+import type { BattleSnapshot } from "@/lib/battle";
+import { getPlayableHandCardKeys } from "../playable-hand";
 
 type TransferRefs = Pick<BattleRefs, "handCardRefs" | "battleSceneRef">;
 
 const CardTransferOverlay = memo(function CardTransferOverlay({
   transfer,
   refs,
+  unplayable,
 }: {
   transfer: CardTransfer;
   refs: TransferRefs;
+  unplayable: boolean;
 }) {
   const reduced = useReducedMotionPreference();
   const x = useMotionValue(0);
@@ -70,15 +75,23 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
         rotate,
       }}
     >
-      <BattleSceneArtwork className="battle-scene-piece h-full w-full rounded-shell-hero">
-        <img
-          src={transfer.card.art}
-          alt=""
-          draggable={false}
-          decoding="async"
-          className={cn("h-full w-full border border-border/80 object-cover", cardSurfaceClass)}
-        />
-      </BattleSceneArtwork>
+      <Surface
+        className={cn(
+          cardArtFrameClass,
+          "battle-scene-piece aspect-[3/4] h-full w-full",
+          unplayable && "hand-card-unplayable",
+        )}
+      >
+        <BattleSceneArtwork className="h-full w-full">
+          <img
+            src={transfer.card.art}
+            alt=""
+            draggable={false}
+            decoding="async"
+            className={cn("block h-full w-full", cardArtImageClass)}
+          />
+        </BattleSceneArtwork>
+      </Surface>
     </motion.div>
   );
 });
@@ -86,15 +99,23 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
 export function CardTransferLayer({
   presentation,
   refs,
+  playabilityState,
 }: {
   presentation: BattlePresentationStore;
   refs: TransferRefs;
+  playabilityState: BattleSnapshot;
 }) {
   const cardTransfers = useStore(presentation, (s) => s.cardTransfers);
+  const playableHandCardKeys = useMemo(() => getPlayableHandCardKeys(playabilityState), [playabilityState]);
   return (
     <>
       {cardTransfers.map((transfer) => (
-        <CardTransferOverlay key={transfer.id} transfer={transfer} refs={refs} />
+        <CardTransferOverlay
+          key={transfer.id}
+          transfer={transfer}
+          refs={refs}
+          unplayable={!playableHandCardKeys.has(transfer.handCardKey)}
+        />
       ))}
     </>
   );
