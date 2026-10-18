@@ -47,17 +47,21 @@ describe("Labyrinth destination modifiers", () => {
     expect(getStandardPotionPool().map((card) => card.id)).toContain(readActiveRun(defaultGameSession).runDeck[0]!.id);
   });
 
-  it("Campfire selectors keep stable modifier references across renders", () => {
-    setRunProgress({ contentSystemType: "labyrinth" });
-    setRunSession({
-      activity: { kind: "campfire", data: emptyAlchemyVisit() },
-      activeLabyrinthRewardModifiers: ["deep-rest"],
-    });
-    const { result, rerender } = renderHook(() => useRunScreenData("campfire"));
-    const modifiers = result.current.modifiers;
-    rerender();
-    expect(result.current.modifiers).toBe(modifiers);
-  });
+  it.each(["campaign", "labyrinth"] as const)(
+    "%s Campfire selectors keep stable modifier references across renders",
+    (contentSystemType) => {
+      setRunProgress({ contentSystemType });
+      setRunSession({
+        activity: { kind: "campfire", data: emptyAlchemyVisit() },
+        activeLabyrinthRewardModifiers: ["deep-rest"],
+      });
+      const { result, rerender } = renderHook(() => useRunScreenData("campfire"));
+      const modifiers = result.current.modifiers;
+      expect(modifiers).toEqual(contentSystemType === "labyrinth" ? ["deep-rest"] : []);
+      rerender();
+      expect(result.current.modifiers).toBe(modifiers);
+    },
+  );
 
   it("Golden Omen presents and pays the doubled event reward once", () => {
     setRunProgress({ contentSystemType: "labyrinth", gold: 0 });

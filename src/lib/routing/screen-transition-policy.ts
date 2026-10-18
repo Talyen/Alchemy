@@ -125,7 +125,7 @@ function buildAllowedTransitions(): Record<Screen, readonly Screen[]> {
   for (const screen of ROUTE_SCREEN_VALUES) {
     if (!allowed[screen]) throw new Error(`Missing screen transition policy for: ${screen}`);
   }
-  return allowed as Record<Screen, readonly Screen[]>;
+  return allowed;
 }
 
 const ALLOWED_SCREEN_TRANSITIONS = buildAllowedTransitions();

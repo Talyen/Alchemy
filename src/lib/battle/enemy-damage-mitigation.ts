@@ -55,7 +55,7 @@ function computeMitigatedDamage(
     ? rawDamage
     : scaleReceivedPlayerDamage(rawDamage, state.talentEffects, effect.damageType);
   return mitigatePlayerCombatDamage(protectionState, scaledDamage, effect.damageType, {
-    ignoreMitigation: options.ignorePlayerMitigation,
+    ignoreMitigation: options.ignorePlayerMitigation === true,
   });
 }
 

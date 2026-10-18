@@ -5,6 +5,7 @@ import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { dealSelfDamage } from "@/lib/battle/status-helpers";
 import { resolveTypedEnemyHit } from "@/lib/battle/typed-hit-resolution";
 import type { CombatTextEvent } from "@/lib/battle/types";
+import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { describe, expect, it, vi } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
@@ -238,5 +239,68 @@ describe("enemy attack damage", () => {
       stat: "health",
       amount: 4,
     });
+  });
+});
+
+// These interactions need the full ability sequence: hit facts must survive
+// recovery, replacement defenses, and post-hit Purge reactions.
+describe("enemy hit reaction ordering", () => {
+  it("Stone Titan earns its Health-hit reward even when Phoenix Feather restores the hero", () => {
+    const state = patchBattleState({
+      playerHealth: 1,
+      playerMaxHealth: 40,
+      playerStatuses: { phoenixFeather: 1 },
+      currentEnemy: { traits: [{ id: "stone-titan", title: "Stone Titan", description: "" }] },
+    });
+    const result = applyEnemyAbility(state, cardById.bash!, []);
+    expect(result.playerStatuses.phoenixFeather).toBe(0);
+    expect(result.enemyMitigation.armor).toBe(state.enemyMitigation.armor + 1);
+  });
+
+  it("Crushing Force still triggers when a Health threshold replaces broken Block", () => {
+    const state = patchBattleState({
+      playerHealth: 21,
+      playerMaxHealth: 40,
+      playerStatuses: { block: 1 },
+      talentEffects: { healthThresholdBlockOnce: { threshold: 50, amount: 4 } },
+      currentEnemy: { traits: [{ id: "earth-elemental", title: "Crushing Force", description: "" }] },
+    });
+    const result = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 3 }, []);
+    expect(result.playerHealth).toBe(19);
+    expect(result.playerStatuses.block).toBe(3);
+  });
+
+  it("Crushing Force follows an attack whose Sundered Guard removes all Block", () => {
+    const state = patchBattleState({
+      playerHealth: 30,
+      playerMaxHealth: 40,
+      playerStatuses: { block: 2 },
+      currentEnemy: {
+        traits: [
+          { id: "earth-elemental", title: "Crushing Force", description: "" },
+          { id: "sundered-guard", title: "Sundered Guard", description: "" },
+        ],
+      },
+      rng: () => 0.99,
+    });
+    const result = applyEnemyAbility(state, cardById["slash"]!, []);
+    expect(result.playerHealth).toBe(25);
+    expect(result.playerStatuses.block).toBe(0);
+  });
+
+  it.each(["banshee", "unbinding-strike"])("Counterplate also retaliates when %s purges Armor", (trait) => {
+    const state = patchBattleState({
+      playerStatuses: { armor: 4 },
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      currentEnemy: { traits: [{ id: trait, title: trait, description: "" }] },
+      gearEffects: { stunOnArmorLostToAttack: 3 },
+      talentEffects: computeTalentEffects({ armor: ["armor-break-block"] }),
+      rng: () => 0.99,
+    });
+    const result = applyEnemyAbility(state, cardById["slash"]!, []);
+    expect(result.playerStatuses.armor).toBe(0);
+    expect(result.playerStatuses.block).toBe(3);
+    expect(result.enemyHealth).toBe(97);
   });
 });

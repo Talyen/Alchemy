@@ -176,7 +176,7 @@ describe("PersistedBattleStateSchema", () => {
     expect(result.playerCC).toMatchObject({ stunSkipTurns: 0, cooldown: 2 });
     expect(result.enemyCC.freezeSkipTurns).toBe(0);
     expect(result.enemyMitigation).toMatchObject({ block: 0, armor: 5 });
-    expect(Number.isFinite(scaleByRoomMultiplier({ ...result, rng: () => 0 }, 3))).toBe(true);
+    expect(Number.isFinite(scaleByRoomMultiplier(result, 3))).toBe(true);
   });
 
   it("accepts enemy turnPhase", () => {

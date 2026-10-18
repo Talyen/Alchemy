@@ -23,6 +23,7 @@ describe("Surface", () => {
     expect(onClick).toHaveBeenCalledTimes(2);
     await user.click(action);
     expect(onClick).toHaveBeenCalledTimes(3);
+    expect(onClick.mock.calls.every(([event]) => event.type === "click")).toBe(true);
   });
 
   it("uses native button activation and blocks it while disabled", async () => {

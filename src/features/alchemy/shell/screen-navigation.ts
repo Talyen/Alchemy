@@ -74,19 +74,20 @@ export function createScreenNavigation(
     const isCurrent = (request: number) => !disposed && revision === request;
     // Guard first (approved): a skipped move stays a silent no-op even on an
     // unusual edge; only unskipped moves validate against the policy table.
-    // The single revision check below covers both the guard and the read:
-    // neither runs async work, so any redirect they trigger still bumps the
-    // revision before we validate.
     if (options.guard && !options.guard()) return;
+    if (!isCurrent(entryRevision)) return;
     const previousScreen = readScreen();
     if (!isCurrent(entryRevision)) return;
     if (resume) assertRunResumeTransitionAllowed(previousScreen, screen);
     else assertScreenTransitionAllowed(previousScreen, screen);
     const requestedRevision = invalidatePending();
+    if (!isCurrent(requestedRevision)) return;
     options.prepare?.();
     if (!isCurrent(requestedRevision)) return;
     if (feedback && previousScreen !== screen) sessionFeedback(gameSession).playUISound(feedback);
+    if (!isCurrent(requestedRevision)) return;
     onPendingChange?.(true);
+    if (!isCurrent(requestedRevision)) return;
     const show = () => {
       if (disposed || requestedRevision !== revision) return;
       try {

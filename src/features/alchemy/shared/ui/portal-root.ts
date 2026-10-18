@@ -7,13 +7,13 @@ function notify() {
   for (const listener of listeners) listener();
 }
 
-export function setPortalRoot(name: string, element: HTMLElement | null) {
+function setPortalRoot(name: string, element: HTMLElement | null) {
   if (roots.get(name) === element) return;
   roots.set(name, element);
   notify();
 }
 
-export function getPortalRoot(name: string): HTMLElement | null {
+function getPortalRoot(name: string): HTMLElement | null {
   return roots.get(name) ?? null;
 }
 
@@ -24,7 +24,7 @@ function subscribe(listener: () => void) {
   };
 }
 
-export function usePortalRoot(name: string): HTMLElement | null {
+function usePortalRoot(name: string): HTMLElement | null {
   return useSyncExternalStore(subscribe, () => getPortalRoot(name));
 }
 
