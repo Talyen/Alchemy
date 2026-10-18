@@ -136,7 +136,10 @@ describe("preloadImage", () => {
     expect(mockImageInstances).toHaveLength(2);
     finishDecode();
     await old;
+    const concurrent = preloadImage(src);
+    expect(mockImageInstances).toHaveLength(2);
     mockImageInstances[1].onload();
+    await concurrent;
     await replacement;
     // The orphaned first fetch never cached; the replacement did.
     const warmed = mockImageInstances.length;
@@ -175,6 +178,15 @@ describe("preloadImage", () => {
 });
 
 describe("preloadImagesInBatches", () => {
+  it("does not start a batch whose owner already aborted", async () => {
+    const owner = new AbortController();
+    owner.abort();
+    const progress = vi.fn();
+    await preloadImagesInBatches([uniqueUrl()], 1, progress, owner.signal);
+    expect(mockImageInstances).toHaveLength(0);
+    expect(progress).not.toHaveBeenCalled();
+  });
+
   it("waits for a bounded batch and yields before starting the next", async () => {
     const frameCallbacks = installRafStub();
     const srcs = [uniqueUrl(), uniqueUrl(), uniqueUrl()];

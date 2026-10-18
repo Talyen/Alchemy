@@ -16,6 +16,7 @@ export class SessionSaveSnapshots {
       epoch: number;
       restoreVersion: number;
       sequence: number;
+      contents: string;
     }
   >();
   private epoch = 0;
@@ -30,6 +31,7 @@ export class SessionSaveSnapshots {
       epoch: this.epoch,
       restoreVersion: this.progress.readRestoreVersion(),
       sequence: ++this.sequence,
+      contents: JSON.stringify(snapshot),
     });
     return snapshot;
   }
@@ -44,6 +46,11 @@ export class SessionSaveSnapshots {
     const cancelled = () =>
       receipt.epoch !== this.epoch || receipt.restoreVersion !== this.progress.readRestoreVersion();
     if (cancelled()) return "skipped";
+    try {
+      if (receipt.contents !== JSON.stringify(snapshot)) return this.reject();
+    } catch {
+      return this.reject();
+    }
     if (receipt.sequence < this.submitted) return "superseded";
     this.submitted = receipt.sequence;
     // Recheck career lifetime inside the lane. Already admitted writes retain

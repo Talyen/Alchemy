@@ -74,9 +74,9 @@ export function preloadImage(src: string, signal?: AbortSignal): Promise<void> {
   image.src = src;
   const lifetime = new AbortController();
   const promise = waitForImage(image, lifetime.signal).then((loaded) => {
-    pendingLoads.delete(src);
     // A reset orphaned this fetch, or a later reset already replaced it.
     if (lifetime.signal.aborted || resetSignal !== epoch) return;
+    pendingLoads.delete(src);
     // Failed warmups must not keep fetching; visible artwork loads on its own element.
     if (!loaded) image.removeAttribute("src");
     else rememberReady(src, image);
@@ -97,7 +97,7 @@ export async function preloadImagesInBatches(
   signal?.addEventListener("abort", onStop, { once: true });
   epochSignal.addEventListener("abort", onStop);
   try {
-    if (stop.signal.aborted) return;
+    if (signal?.aborted || stop.signal.aborted) return;
     const batch = Number.isFinite(batchSize) && batchSize > 0 ? Math.max(1, Math.floor(batchSize)) : 4;
     const uniqueSrcs = Array.from(new Set(srcs.filter(Boolean)));
     const total = uniqueSrcs.length;
