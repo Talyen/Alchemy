@@ -78,7 +78,7 @@ export function TrinketTile({
   onHoverChange,
 }: TrinketTileProps) {
   const i18n = useGameTranslation();
-  const resolvedChip = chip ?? (temporary ? "Boon" : undefined);
+  const resolvedChip = chip ?? (temporary ? i18n.displayText("Boon") : undefined);
   return (
     <InteractiveArtTile
       id={trinket.id}

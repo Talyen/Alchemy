@@ -38,7 +38,7 @@ export function TransmutationScreen({
 }) {
   const i18n = useGameTranslation();
   const [page, setPage] = useState(0);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<"choice" | "alteration" | "">("");
   const [committedHere, setCommittedHere] = useState(false);
   const [resultSaved, setResultSaved] = useState(false);
   const [resultReady, setResultReady] = useState(false);
@@ -123,7 +123,7 @@ export function TransmutationScreen({
       setError("");
     } else {
       restoreFocus.current = false;
-      setError("This choice is no longer available.");
+      setError("choice");
     }
   }
 
@@ -146,7 +146,7 @@ export function TransmutationScreen({
       setCommittedHere(true);
     } else {
       committingRef.current = false;
-      setError("This alteration is no longer available.");
+      setError("alteration");
     }
   }
 
@@ -324,7 +324,15 @@ export function TransmutationScreen({
           </div>
         )}
         {(error || staleSource) && (
-          <p role="alert">{i18n.displayText(error || "Your deck changed. Choose a card again.")}</p>
+          <p role="alert">
+            {i18n.displayText(
+              error === "choice"
+                ? "This choice is no longer available."
+                : error === "alteration"
+                  ? "This alteration is no longer available."
+                  : "Your deck changed. Choose a card again.",
+            )}
+          </p>
         )}
       </div>
     </TitledScreenShell>

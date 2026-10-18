@@ -38,7 +38,7 @@ export function BrewPotionPanel({
   const i18n = useGameTranslation();
   const [selected, setSelected] = useState<number[]>([]);
   const [page, setPage] = useState(0);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<"deck" | "potion" | "brew" | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const confirmRef = useRef<HTMLButtonElement>(null);
   const [selectionDeck, setSelectionDeck] = useState(deck);
@@ -46,7 +46,7 @@ export function BrewPotionPanel({
     setSelectionDeck(deck);
     setSelected([]);
     setPage(0);
-    setError("Deck changed. Select again.");
+    setError("deck");
   }
   // An accepted brew changes the live deck before its saved result replaces this panel.
   const sourceDeck = submitted ? selectionDeck : deck;
@@ -79,12 +79,12 @@ export function BrewPotionPanel({
   function confirm(operation: BrewOperation) {
     if (submitted || isProgressSavePending()) return;
     if (onConfirm(operation)) setSubmitted(true);
-    else setError(kind === "new" ? "This Potion is no longer available." : "This brew is no longer available.");
+    else setError(kind === "new" ? "potion" : "brew");
   }
   function choose(index: number) {
     if (submitted || (kind === "new" && isProgressSavePending())) return;
     playUISound(selectionSound);
-    setError("");
+    setError(null);
     if (kind === "new") {
       confirm({ kind: "new", offerIndex: index });
       return;
@@ -166,7 +166,17 @@ export function BrewPotionPanel({
           />
         </p>
       )}
-      {error && <p role="alert">{i18n.displayText(error)}</p>}
+      {error && (
+        <p role="alert">
+          {i18n.displayText(
+            error === "deck"
+              ? "Deck changed. Select again."
+              : error === "potion"
+                ? "This Potion is no longer available."
+                : "This brew is no longer available.",
+          )}
+        </p>
+      )}
       <div className="flex justify-center gap-3">
         <Button variant="outline" onClick={onBack}>
           {i18n.text("ui.brew-potion-panel.6", "Back")}

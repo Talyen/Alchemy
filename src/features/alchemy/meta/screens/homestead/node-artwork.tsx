@@ -72,6 +72,7 @@ export function HomesteadNodeArtwork({
   const costLabel = materials
     .map((material) => `${node.cost![material]} ${i18n.displayText(materialLabels[material])}`)
     .join(", ");
+  const levelLabel = node.companion ? i18n.displayText(node.action) : i18n.text("ui.node-artwork.level", "Level");
   return (
     <>
       <Surface
@@ -187,7 +188,7 @@ export function HomesteadNodeArtwork({
             <span
               role="img"
               aria-label={i18n.text("ui.node-artwork.3", "{{value0}} {{value1}} of {{value2}}", {
-                value0: i18n.displayText(node.companion ? "Bond" : "Level"),
+                value0: levelLabel,
                 value1: i18n.displayText(node.level),
                 value2: i18n.displayText(node.maxLevel),
               })}

@@ -47,7 +47,7 @@ export function CampfireScreen({
   const i18n = useGameTranslation();
   const [brewing, setBrewing] = useState(false);
   const [rest, setRest] = useState<{ from: number; to: number; saved: boolean } | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(false);
   const { displayHealth, progressHealth } = useEasedHealth({
     from: rest?.from ?? playerHealth,
     to: rest?.to ?? playerHealth,
@@ -134,7 +134,7 @@ export function CampfireScreen({
                     if (onRest()) {
                       setRest({ from, to, saved: false });
                       afterProgressSaved(() => setRest({ from, to, saved: true }));
-                    } else setError("This Campfire has already been used.");
+                    } else setError(true);
                   }}
                 >
                   {i18n.text("ui.campfire-screen.6", "Rest")}
@@ -155,7 +155,7 @@ export function CampfireScreen({
             </div>
           </>
         )}
-        {error && <p role="alert">{i18n.displayText(error)}</p>}
+        {error && <p role="alert">{i18n.displayText("This Campfire has already been used.")}</p>}
       </div>
     </TitledScreenShell>
   );

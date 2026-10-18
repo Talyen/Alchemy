@@ -47,13 +47,13 @@ export function MysteryScreen({
   findTrinket: (id: string) => TrinketEntry | undefined;
 }) {
   const i18n = useGameTranslation();
-  const [error, setError] = useState("");
+  const [error, setError] = useState(false);
   function handlePick(choice: MysteryChoice) {
     if (!onChoose(choice)) {
-      setError("This choice is unavailable. Try again.");
+      setError(true);
       return;
     }
-    setError("");
+    setError(false);
     if (!choiceOffersCardSelection(choice) && choice.effects.length > 0) {
       playUISound("talentUnlock");
     }
@@ -61,10 +61,10 @@ export function MysteryScreen({
 
   function handleCardChoiceConfirm(cardId: string) {
     if (!onChooseCard(cardId)) {
-      setError("This choice is unavailable. Try again.");
+      setError(true);
       return;
     }
-    setError("");
+    setError(false);
     if (mysteryChosenChoice && mysteryChosenChoice.effects.length > 0) {
       playUISound("talentUnlock");
     } else {
@@ -91,7 +91,7 @@ export function MysteryScreen({
         <div className="mt-6 flex w-full flex-col">
           {error && (
             <p role="alert" className="mb-4 text-center">
-              {i18n.displayText(error)}
+              {i18n.displayText("This choice is unavailable. Try again.")}
             </p>
           )}
           {mysteryCardChoices ? (

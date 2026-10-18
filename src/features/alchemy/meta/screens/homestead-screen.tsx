@@ -180,7 +180,7 @@ export function HomesteadScreen({
     if (!onResetHomestead()) {
       pending.current = false;
       setShowResetConfirm(false);
-      setError("Could not reset Homestead. Nothing was changed.");
+      setError("reset");
       return;
     }
     setResetSnapshot(liveProgress);
@@ -323,7 +323,7 @@ export function HomesteadScreen({
         {error && (
           <p role="alert" className="absolute inset-x-0 top-full mt-2 text-center text-sm text-destructive">
             {typeof error === "string"
-              ? i18n.displayText(error)
+              ? i18n.displayText("Could not reset Homestead. Nothing was changed.")
               : error.action === "Build"
                 ? i18n.text("homestead.build-failed", "Could not build {{item}}. Materials were not spent.", {
                     item: i18n.displayText(error.item),
