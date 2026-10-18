@@ -16,18 +16,36 @@ export const NEUTRAL_BATTLE_SCENE_APPEARANCE: BattleSceneAppearance = {
 
 /** Input is the small, central playing-area crop, not the board's decorative frame. */
 export function deriveBattleSceneAppearance(pixels: ArrayLike<number>): BattleSceneAppearance {
-  const samples: Array<{ rgb: [number, number, number]; luminance: number }> = [];
+  return appearanceFromSamples(collectSceneSamples(pixels));
+}
+
+interface SceneSample {
+  rgb: [number, number, number];
+  luminance: number;
+}
+
+function collectSceneSamples(pixels: ArrayLike<number>): SceneSample[] {
+  const samples: SceneSample[] = [];
   for (let index = 0; index + 3 < pixels.length; index += 4) {
-    const rgb = [pixels[index]!, pixels[index + 1]!, pixels[index + 2]!] as [number, number, number];
-    if (pixels[index + 3]! < 128 || rgb.some((value) => !Number.isFinite(value) || value < 0 || value > 255)) continue;
-    const luminance = (rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722) / 255;
-    if (luminance > 0.04 && luminance < 0.94) samples.push({ rgb, luminance });
+    const sample = toSceneSample(pixels[index]!, pixels[index + 1]!, pixels[index + 2]!, pixels[index + 3]!);
+    if (sample) samples.push(sample);
   }
+  return samples;
+}
+
+function toSceneSample(r: number, g: number, b: number, a: number): SceneSample | null {
+  if (a < 128 || ![r, g, b].every((value) => Number.isFinite(value) && value >= 0 && value <= 255)) return null;
+  const luminance = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255;
+  if (luminance <= 0.04 || luminance >= 0.94) return null;
+  return { rgb: [r, g, b], luminance };
+}
+
+function appearanceFromSamples(samples: SceneSample[]): BattleSceneAppearance {
   if (!samples.length) return NEUTRAL_BATTLE_SCENE_APPEARANCE;
 
-  samples.sort((a, b) => a.luminance - b.luminance);
-  const trim = Math.floor(samples.length * 0.1);
-  const middle = samples.slice(trim, samples.length - trim);
+  const ordered = [...samples].sort((a, b) => a.luminance - b.luminance);
+  const trim = Math.floor(ordered.length * 0.1);
+  const middle = ordered.slice(trim, ordered.length - trim);
   const average = [0, 0, 0];
   let luminance = 0;
   for (const sample of middle) {
@@ -83,19 +101,11 @@ export function deriveBattleSceneLighting(
   ) {
     return NEUTRAL_BATTLE_SCENE_LIGHTING;
   }
-  const global = deriveBattleSceneAppearance(pixels);
-  const zones: Record<"left" | "right" | "lower", number[]> = { left: [], right: [], lower: [] };
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const index = (y * width + x) * 4;
-      const pixel = [pixels[index]!, pixels[index + 1]!, pixels[index + 2]!, pixels[index + 3]!];
-      if (x < width * 0.55 && y < height * 0.75) zones.left.push(...pixel);
-      if (x >= width * 0.45 && y < height * 0.75) zones.right.push(...pixel);
-      if (y >= height * 0.55) zones.lower.push(...pixel);
-    }
-  }
-  function region(input: number[]): BattleSceneAppearance {
-    const local = deriveBattleSceneAppearance(input);
+  const zones = collectZonedSceneSamples(pixels, width, height);
+  const global = appearanceFromSamples(zones.global);
+  if (global === NEUTRAL_BATTLE_SCENE_APPEARANCE) return NEUTRAL_BATTLE_SCENE_LIGHTING;
+  function region(samples: SceneSample[]): BattleSceneAppearance {
+    const local = appearanceFromSamples(samples);
     if (local === NEUTRAL_BATTLE_SCENE_APPEARANCE) return global;
     // Blend premultiplied tint so a neutral region cannot invent a hue.
     const opacity = (global.ambientOpacity + local.ambientOpacity) / 2;
@@ -113,5 +123,34 @@ export function deriveBattleSceneLighting(
       shadeOpacity: (global.shadeOpacity + local.shadeOpacity) / 2,
     };
   }
-  return { ...global, regions: { left: region(zones.left), right: region(zones.right), lower: region(zones.lower) } };
+  return {
+    ...global,
+    regions: { left: region(zones.left), right: region(zones.right), lower: region(zones.lower) },
+  };
+}
+
+/** One pass over the board crop buckets each kept sample into its soft zones. */
+function collectZonedSceneSamples(
+  pixels: ArrayLike<number>,
+  width: number,
+  height: number,
+): Record<"global" | "left" | "right" | "lower", SceneSample[]> {
+  const zones: Record<"global" | "left" | "right" | "lower", SceneSample[]> = {
+    global: [],
+    left: [],
+    right: [],
+    lower: [],
+  };
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const index = (y * width + x) * 4;
+      const sample = toSceneSample(pixels[index]!, pixels[index + 1]!, pixels[index + 2]!, pixels[index + 3]!);
+      if (!sample) continue;
+      zones.global.push(sample);
+      if (x < width * 0.55 && y < height * 0.75) zones.left.push(sample);
+      if (x >= width * 0.45 && y < height * 0.75) zones.right.push(sample);
+      if (y >= height * 0.55) zones.lower.push(sample);
+    }
+  }
+  return zones;
 }

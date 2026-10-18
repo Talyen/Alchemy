@@ -45,7 +45,10 @@ import { useAppSettings } from "@/features/alchemy/shared/stores/settings-store"
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
 import { BattleBoardBackground } from "@/features/alchemy/shared/ui/battle-board-background";
-import { useBattleSceneAppearance } from "@/features/alchemy/shared/ui/use-battle-scene-appearance";
+import {
+  useBattleSceneAppearance,
+  battleSceneCssVariables,
+} from "@/features/alchemy/shared/ui/use-battle-scene-appearance";
 import { boardArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { useActiveBoardId } from "@/features/alchemy/shared/stores/use-profile-store";
 import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";
@@ -234,28 +237,10 @@ function AppMainContent({
           "[container-type:size] absolute top-0 left-0 overflow-hidden bg-background",
           tooltipBlocked && "tooltips-disabled",
         )}
-        style={
-          {
-            ...stageStyle,
-            "--battle-scene-tint": `rgb(${sceneAppearance.ambientColor.join(" ")})`,
-            "--battle-scene-tint-opacity": sceneAppearance.ambientOpacity,
-            "--battle-scene-exposure": sceneAppearance.artworkExposure,
-            "--battle-scene-shade": sceneAppearance.shadeOpacity,
-            "--battle-scene-shadow-opacity": sceneAppearance.shadowOpacity,
-            "--battle-scene-left-tint": `rgb(${sceneAppearance.regions.left.ambientColor.join(" ")})`,
-            "--battle-scene-left-opacity": sceneAppearance.regions.left.ambientOpacity,
-            "--battle-scene-left-exposure": sceneAppearance.regions.left.artworkExposure,
-            "--battle-scene-left-shade": sceneAppearance.regions.left.shadeOpacity,
-            "--battle-scene-right-tint": `rgb(${sceneAppearance.regions.right.ambientColor.join(" ")})`,
-            "--battle-scene-right-opacity": sceneAppearance.regions.right.ambientOpacity,
-            "--battle-scene-right-exposure": sceneAppearance.regions.right.artworkExposure,
-            "--battle-scene-right-shade": sceneAppearance.regions.right.shadeOpacity,
-            "--battle-scene-lower-tint": `rgb(${sceneAppearance.regions.lower.ambientColor.join(" ")})`,
-            "--battle-scene-lower-opacity": sceneAppearance.regions.lower.ambientOpacity,
-            "--battle-scene-lower-exposure": sceneAppearance.regions.lower.artworkExposure,
-            "--battle-scene-lower-shade": sceneAppearance.regions.lower.shadeOpacity,
-          } as React.CSSProperties
-        }
+        style={{
+          ...stageStyle,
+          ...battleSceneCssVariables(sceneAppearance),
+        }}
       >
         {showBattleCluster ? <BattleBoardBackground boardId={activeBoardId} /> : null}
         <AppBackgroundParticles

@@ -13,9 +13,8 @@ import {
   type BattleCardEffect,
 } from "@/lib/game-data";
 import { POTION_DISTILL_BONUS, CAMPFIRE_POTION_OFFERS } from "@/lib/game-constants";
-import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import { shuffle } from "@/lib/rng";
-import { capitalizeWord } from "@/lib/utils";
+import { appendPotionTrailer } from "./potion-mixer";
 
 export type BrewOperation =
   | { kind: "new"; offerIndex: number }
@@ -103,8 +102,7 @@ export function strengthenPotion(card: BattleCard): BattleCard | null {
       }),
     }),
   );
-  for (const tag of card.tags ?? []) description.push({ parts: [capitalizeWord(tag)], role: "keyword" });
-  if (card.consume) description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
+  appendPotionTrailer(description, card.tags, card.consume === true);
   return cloneBattleCard(
     withCardDescription(
       {

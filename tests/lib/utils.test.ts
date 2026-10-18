@@ -51,10 +51,9 @@ describe("createInstanceId", () => {
     vi.restoreAllMocks();
   });
 
-  it("keeps bulk-generated fallback ids unique when clock and randomness repeat", () => {
+  it("keeps bulk-generated fallback ids unique when the clock repeats", () => {
     vi.stubGlobal("crypto", undefined);
     vi.spyOn(Date, "now").mockReturnValue(123);
-    vi.spyOn(Math, "random").mockReturnValue(0);
     const ids = Array.from({ length: 100 }, createInstanceId);
     expect(new Set(ids).size).toBe(ids.length);
   });

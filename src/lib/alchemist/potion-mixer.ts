@@ -5,7 +5,7 @@ import {
   MIXED_POTION_COST,
   MIXED_POTION_TITLE,
 } from "../game-constants";
-import type { BattleCard, BattleCardEffect } from "../game-data";
+import type { BattleCard, BattleCardEffect, CardDescription } from "../game-data";
 import {
   BattleCardEffectSchema,
   areBattleCardEffectsEqual,
@@ -55,6 +55,16 @@ function doublePotionEffect(effect: BattleCardEffect): BattleCardEffect {
     return { ...effect, amount };
   }
   return mapEffectChildren(effect, doublePotionEffect);
+}
+
+/** Shared keyword/consume trailer so mixed, doubled, and distilled potions read alike. */
+export function appendPotionTrailer(
+  description: CardDescription,
+  tags: readonly string[] | undefined,
+  consume: boolean,
+): void {
+  for (const tag of tags ?? []) description.push({ parts: [capitalizeWord(tag)], role: "keyword" });
+  if (consume) description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
 }
 
 function potionParts(card: BattleCard, effects = card.effects) {
@@ -119,8 +129,7 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | 
       `ingredient/${offset}`,
     );
   });
-  for (const tag of tags) description.push({ parts: [capitalizeWord(tag)], role: "keyword" });
-  description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
+  appendPotionTrailer(description, tags, true);
   return cloneBattleCard(
     withCardDescription(
       {
@@ -158,8 +167,7 @@ export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: numbe
 
 export function doublePotionPotency(card: BattleCard): BattleCard {
   const { effects, description } = potionParts(card, card.effects.map(doublePotionEffect));
-  for (const tag of card.tags ?? []) description.push({ parts: [capitalizeWord(tag)], role: "keyword" });
-  if (card.consume) description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
+  appendPotionTrailer(description, card.tags, card.consume === true);
   return cloneBattleCard(
     withCardDescription(
       {
