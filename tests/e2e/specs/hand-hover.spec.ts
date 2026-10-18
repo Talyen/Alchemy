@@ -238,6 +238,8 @@ for (const { width, height, gameSizePercent } of [
     const endTurn = await page.getByRole("button", { name: "End Turn", exact: true }).boundingBox();
     const draw = await page.getByTestId("draw-pile").boundingBox();
     const discard = await page.getByTestId("discard-pile").boundingBox();
+    expect(mana!.x).toBeGreaterThanOrEqual(0);
+    expect(mana!.x + mana!.width).toBeLessThanOrEqual(width);
     expect(mana!.x + mana!.width / 2).toBeCloseTo(draw!.x + draw!.width / 2, 0);
     expect(mana!.y + mana!.height).toBeLessThan(draw!.y);
     expect(endTurn!.x + endTurn!.width / 2).toBeCloseTo(discard!.x + discard!.width / 2, 0);

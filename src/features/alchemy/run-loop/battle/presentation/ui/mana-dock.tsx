@@ -97,61 +97,63 @@ export function ManaPanel({
       onFocusCapture={onFocusCapture}
       onBlurCapture={onBlurCapture}
     >
-      <div className="battle-mana-spill" aria-hidden="true">
+      <div className="mana-dock-art" aria-hidden="true">
+        <div className="battle-mana-spill" aria-hidden="true">
+          {state.gems.map((gem) => (
+            <span
+              key={gem.index}
+              data-filled={gem.filled}
+              style={{ left: `${gem.x}%`, top: `${gem.y}%`, height: `${state.height * 2.4}%` }}
+            />
+          ))}
+        </div>
         {state.gems.map((gem) => (
           <span
             key={gem.index}
+            className="mana-dock-gem"
+            style={{ left: `${gem.x}%`, top: `${gem.y}%`, height: `${state.height}%` }}
+            data-mana-index={gem.index}
             data-filled={gem.filled}
-            style={{ left: `${gem.x}%`, top: `${gem.y}%`, height: `${state.height * 2.4}%` }}
-          />
-        ))}
-      </div>
-      {state.gems.map((gem) => (
-        <span
-          key={gem.index}
-          className="mana-dock-gem"
-          style={{ left: `${gem.x}%`, top: `${gem.y}%`, height: `${state.height}%` }}
-          data-mana-index={gem.index}
-          data-filled={gem.filled}
-          data-effect={!reduced ? gem.effect : undefined}
-          data-effect-token={gem.token}
-          aria-hidden="true"
-        >
-          <span key={`effect-${gem.token}`} className="mana-dock-gem-motion">
-            <span className="mana-dock-socket" />
-            <div className="mana-dock-empty">
-              <img
-                src={manaDockEmpty}
-                alt=""
-                draggable={false}
-                decoding="async"
-                className="block h-full w-full object-contain"
-              />
-            </div>
-            <div className="mana-dock-full">
-              <img
-                src={manaDockFull}
-                alt=""
-                draggable={false}
-                decoding="async"
-                className="block h-full w-full object-contain"
-              />
-            </div>
-            <span className="mana-dock-glow" />
-            <span className="mana-dock-glint" style={{ maskImage: `url(${manaDockFull})` }} />
-          </span>
-          {gem.index === MANA_DOCK_VISIBLE_COUNT - 1 && state.hidden > 0 ? (
-            <span key={`overflow-${state.revision}`} className="mana-dock-overflow">
-              <GameMessage
-                id="ui.mana-dock.s1"
-                defaultValue="+<part0/>"
-                parts={{ part0: i18n.displayText(state.hidden) }}
-              />
+            data-effect={!reduced ? gem.effect : undefined}
+            data-effect-token={gem.token}
+            aria-hidden="true"
+          >
+            <span key={`effect-${gem.token}`} className="mana-dock-gem-motion">
+              <span className="mana-dock-socket" />
+              <div className="mana-dock-empty">
+                <img
+                  src={manaDockEmpty}
+                  alt=""
+                  draggable={false}
+                  decoding="async"
+                  className="block h-full w-full object-contain"
+                />
+              </div>
+              <div className="mana-dock-full">
+                <img
+                  src={manaDockFull}
+                  alt=""
+                  draggable={false}
+                  decoding="async"
+                  className="block h-full w-full object-contain"
+                />
+              </div>
+              <span className="mana-dock-glow" />
+              <span className="mana-dock-glint" style={{ maskImage: `url(${manaDockFull})` }} />
             </span>
-          ) : null}
-        </span>
-      ))}
-      {!reduced ? state.exits.map((exit) => <ManaExit key={exit.id} exit={exit} />) : null}
+            {gem.index === MANA_DOCK_VISIBLE_COUNT - 1 && state.hidden > 0 ? (
+              <span key={`overflow-${state.revision}`} className="mana-dock-overflow">
+                <GameMessage
+                  id="ui.mana-dock.s1"
+                  defaultValue="+<part0/>"
+                  parts={{ part0: i18n.displayText(state.hidden) }}
+                />
+              </span>
+            ) : null}
+          </span>
+        ))}
+        {!reduced ? state.exits.map((exit) => <ManaExit key={exit.id} exit={exit} />) : null}
+      </div>
       <PortaledTooltip triggerRef={triggerRef} visible={visible} width="w-auto" placement="above">
         <span className="font-semibold text-sky-400">
           <GameMessage

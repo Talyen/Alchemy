@@ -93,10 +93,6 @@ for (const locale of acceptanceLocales.filter((entry) => entry !== "en-XA")) {
           await expect(resumed.locator("[data-battle-end-turn]:not([disabled])").or(rewards.first())).toBeVisible();
           if (await rewards.first().isVisible()) break;
           await resumed.getByRole("button", { name: label("End Turn"), exact: true }).click();
-          await resumed
-            .getByRole("dialog")
-            .getByRole("button", { name: label("End Turn"), exact: true })
-            .click();
           await expect(resumed.locator("[data-battle-end-turn]:not([disabled])").or(rewards.first())).toBeVisible();
         }
         await rewards.first().click();

@@ -251,10 +251,6 @@ for (const locale of acceptanceLocales) {
       );
       await localizedCheckpoint(page, locale, async (fresh) => {
         await fresh.getByRole("button", { name: label("End Turn"), exact: true }).click();
-        await fresh
-          .getByRole("dialog")
-          .getByRole("button", { name: label("End Turn"), exact: true })
-          .click();
         await expect(fresh.getByRole("heading", { name: label("Journey’s End"), exact: true })).toBeVisible();
         await expect(fresh.getByText("+42", { exact: true })).toBeVisible();
         await reviewLayout(fresh, `${locale} defeat recap`);
