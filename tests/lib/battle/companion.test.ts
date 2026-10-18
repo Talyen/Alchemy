@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
+import { resolveCardEffectChain } from "@/lib/battle/card-play-effects";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { getBattleCompanionDamageModifiers } from "@/lib/battle/companion-scaling";
-import { companionLibrary, type CompanionId } from "@/lib/game-data";
+import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
+import { cardById, companionLibrary, type CompanionId } from "@/lib/game-data";
+import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
+import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { makeCombatTexts as makeTexts, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 function wolfBleedRng() {
@@ -298,4 +303,128 @@ it("Companion scaling integration applies every damage bonus once and preserves 
   expect(result.flags.nextHitCrit).toBe(true);
   expect(texts).toContainEqual(expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 12 }));
   expect(state.enemyStatuses.burn).toBe(0);
+});
+
+it("Eager Pack acknowledges an ineffective Wisp action after the summon notice", () => {
+  const card = cardById["will-o-wisp-companion"]!;
+  const state = patchBattleState({ hand: [card], encounterBenefits: ["eager-pack"], rng: () => 0.99 });
+  const result = playBattleCardResolved(state, card.id, 0);
+  expect(result.state.activeCompanion).toEqual(companionLibrary["will-o-wisp"]);
+  expect(result.state.playerStatuses).toEqual(state.playerStatuses);
+  expect(result.combatTexts).toEqual([
+    { target: "player", kind: "notice", stat: "companion", text: "" },
+    { target: "player", kind: "notice", stat: "cleanse", text: "Nothing to Cleanse" },
+  ]);
+});
+
+it("Kinbound rechecks Health after Companion damage and enemy Thorns", () => {
+  const state = patchBattleState({
+    rng: () => 0.99,
+    playerHealth: 16,
+    playerMaxHealth: 30,
+    activeCompanion: companionLibrary.wolf,
+    enemyStatuses: { thorns: 2 },
+    gearEffects: { healOnCompanionAttack: 2 },
+  });
+  const texts = makeTexts();
+  const next = processCompanionTurnStart(state, texts);
+  expect(next.enemyHealth).toBeLessThan(state.enemyHealth);
+  expect(next.playerHealth).toBe(16);
+  expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
+});
+
+it("Kinbound checks low Health before Bone Charm's kill healing", () => {
+  const state = patchBattleState({
+    activeCompanion: companionLibrary.skeleton,
+    playerHealth: 14,
+    playerMaxHealth: 30,
+    enemyHealth: 1,
+    gearEffects: { healOnCompanionAttack: 2 },
+    trinketEffects: { boneCharmHealOnKill: 3 },
+  });
+  const next = processCompanionTurnStart(state, []);
+  expect(next.enemyHealth).toBe(0);
+  expect(next.playerHealth).toBe(19);
+});
+
+it.each(["pack-tactics", "wolf-companion"])(
+  "Hunter's Bond limits repeated, resumed and automatic %s plays to one draw each turn",
+  (id) => {
+    const card = { ...cardById[id]!, uid: 1 };
+    const state = patchBattleState({
+      hand: [card],
+      deck: [makeTestCard({ id: "slash", uid: 10 }), makeTestCard({ id: "block", uid: 11 })],
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      mana: 5,
+      maxMana: 5,
+      activeCompanion: companionLibrary.wolf,
+      talentEffects: { drawOnCompanionCard: 1 },
+      flags: { playNextCardTwice: true },
+      rng: () => 0.99,
+    });
+    const result = playBattleCardResolved(state, id, 0).state;
+    expect(result.hand).toHaveLength(1);
+    expect(result.deck).toHaveLength(1);
+    expect(state.flags.huntersBondUsedThisTurn).toBe(false);
+    const restored = {
+      ...PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(result))),
+      rng: () => 0.99,
+    };
+    const second = playBattleCardResolved({ ...restored, hand: [...restored.hand, { ...card, uid: 2 }] }, id, 1).state;
+    expect(second.hand).toHaveLength(1);
+    expect(second.deck).toHaveLength(1);
+    const automatic = resolveCardEffectChain(second, card, []).state;
+    expect(automatic.hand).toHaveLength(1);
+    expect(automatic.deck).toHaveLength(1);
+    const nextTurn = advanceToPlayerTurn(automatic);
+    const refreshed = playBattleCardResolved(
+      { ...nextTurn, hand: [card], deck: [makeTestCard({ id: "next-draw" })], discard: [] },
+      id,
+      0,
+    ).state;
+    expect(refreshed.hand).toEqual([expect.objectContaining({ id: "next-draw" })]);
+    expect(refreshed.deck).toEqual([]);
+  },
+);
+
+it.each([0, 1])("Wellspring checks the %s Mana left before Mana Moth acts on Dodge", (mana) => {
+  const state = patchBattleState({
+    rng: () => 0.01,
+    mana,
+    activeCompanion: companionLibrary["mana-moth"],
+    talentEffects: { wellspringKeepMana: 1, companionAttacksOnDodge: true },
+  });
+  const result = endPlayerTurn(state).state;
+  expect(result.playerDodgeCount).toBe(1);
+  expect(result.mana).toBe(state.maxMana + mana);
+});
+
+it.each([
+  ["wolf", 0, 1, 4],
+  ["wolf", 0.99, 5, 4],
+  ["bear", 0.99, 5, 4],
+  ["phoenix", 0.99, 1, 4],
+] as const)("Companion %s uses ordinary damage-type Forge permissions (roll %s)", (id, roll, damage, forge) => {
+  let rngCalls = 0;
+  const state = patchBattleState({
+    activeCompanion: companionLibrary[id],
+    playerStatuses: { forge: 4 },
+    rng: () => (rngCalls++ === 0 ? roll : 0.99),
+  });
+  const result = processCompanionTurnStart(state, []);
+  expect(result.enemyHealth).toBe(state.enemyHealth - damage);
+  expect(result.playerStatuses.forge).toBe(forge);
+});
+
+it.each([0.01, 0.99])("Companion Forge is preserved on dodged or fully blocked hits (%s)", (roll) => {
+  const state = patchBattleState({
+    rng: () => roll,
+    activeCompanion: companionLibrary.bear,
+    playerStatuses: { forge: 4 },
+    enemyMitigation: { block: 100 },
+  });
+  const result = processCompanionTurnStart(state, []);
+  expect(result.enemyHealth).toBe(state.enemyHealth);
+  expect(result.playerStatuses.forge).toBe(4);
 });

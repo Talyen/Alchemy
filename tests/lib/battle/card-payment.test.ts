@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeCardPayment } from "@/lib/battle/card-cost-rules";
 import * as cardCostRules from "@/lib/battle/card-cost-rules";
+import { cardById } from "@/lib/game-data";
 import { patchBattleState, makeTestCard } from "../../fixtures/battle";
 
 describe("card payment", () => {
@@ -147,5 +148,16 @@ describe("card payment", () => {
     expect(state.flags.nextArcheryCardFree).toBe(true);
     expect(state.flags.encounterArcheryUsed).toBe(false);
     expect(rng).not.toHaveBeenCalled();
+  });
+
+  it("allows Astral Arrow to use Winter's Block payment for its Freeze damage pool", () => {
+    const card = cardById["astral-arrow"];
+    if (!card) throw new Error("Missing card astral-arrow");
+    const state = patchBattleState({
+      mana: 0,
+      playerStatuses: { block: 100 },
+      gearEffects: { blockPaysFreezeMana: 1 },
+    });
+    expect(computeCardPayment(state, card)).toMatchObject({ affordable: true });
   });
 });

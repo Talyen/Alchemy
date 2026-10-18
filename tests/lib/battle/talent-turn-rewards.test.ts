@@ -3,8 +3,10 @@ import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { advanceToPlayerTurn, reduceSkipTurns } from "@/lib/battle/player-turn-transition";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import { companionLibrary, computeTalentEffects } from "@/lib/game-data";
+import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { describe, expect, it } from "vitest";
-import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
+import { patchBattleState } from "../../fixtures/battle";
+import { makeTestCard as makeEnemyTestCard, makeTestCard } from "../../fixtures/cards";
 import * as talentBattle from "../../fixtures/talent-battle";
 
 describe("Talent talent turn rewards", () => {
@@ -124,5 +126,20 @@ describe("Talent talent turn rewards", () => {
     expect(after.enemyHealth).toBe(96);
     expect(after.flags.companionNextAttackBonus).toBe(0);
     expect(after.cardsPlayedThisTurn).toBe(0);
+  });
+
+  it("Mana Flare adds Burn buildup and decays enemy Armor", () => {
+    const state = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      maxMana: 4,
+      enemyMitigation: { armor: 3 },
+      talentEffects: { burnDamageOnManaCrystalLoss: 3 },
+    });
+    const card = makeTestCard({ effects: [{ kind: "lose-max-mana", amount: 1 }] });
+    const result = applyCardEffects(state, card, []);
+    expect(result.enemyHealth).toBe(97);
+    expect(result.enemyStatuses.burn).toBe(3);
+    expect(result.enemyMitigation.armor).toBe(2);
   });
 });

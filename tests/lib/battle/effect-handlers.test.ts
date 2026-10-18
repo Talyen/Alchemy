@@ -24,6 +24,18 @@ it("applySelfDamageEffect does not grant rider status when Death's Door absorbs 
   expect(result.deathsDoorActive).toBe(true);
 });
 
+it("self-inflicted Burn retains buildup through Phoenix Feather recovery", () => {
+  const card = makeTestCard({ effects: [{ kind: "self-damage", damageType: "burn", amount: 1 }] });
+  const state = patchBattleState({
+    playerHealth: 1,
+    playerMaxHealth: 40,
+    playerStatuses: { phoenixFeather: 1 },
+  });
+  const result = applyCardEffects(state, card, []);
+  expect(result.playerHealth).toBeGreaterThan(0);
+  expect(result.playerStatuses.burn).toBe(1);
+});
+
 describe("applyPlayerStatusEffectHandler", () => {
   it.each([2, 0])("uses perManaCrystal scaling %i instead of the fallback amount", (perManaCrystal) => {
     const state = patchBattleState({ maxMana: 5 });

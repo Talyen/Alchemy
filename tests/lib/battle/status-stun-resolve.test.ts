@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { applyScaledLeechHealing } from "@/lib/battle/damage-rider-leech";
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { addPlayerStatus } from "@/lib/battle/status-state";
@@ -290,5 +291,112 @@ describe("gear stun integration", () => {
     expect(next.enemyHealth).toBe(0);
     expect(next.playerHealth).toBe(14);
     expect(texts.some((t) => t.kind === "heal" && t.amount === 4)).toBe(true);
+  });
+
+  it("Lingering Bell cannot extend an active Stun or pay Stun rewards again after Health falls", () => {
+    const stunned = resolveStunTrigger(
+      patchBattleState({
+        enemyHealth: 40,
+        enemyMaxHealth: 40,
+        enemyStatuses: { stun: 20 },
+        gearEffects: { retainStunBuildup: 1 },
+        talentEffects: { manaOnStun: 1 },
+        mana: 0,
+      }),
+    );
+    const weakened = { ...stunned, enemyHealth: 8 };
+    const result = resolveStunTrigger(weakened);
+    expect(result.enemyCC).toEqual(stunned.enemyCC);
+    expect(result.enemyStatuses.stun).toBe(5);
+    expect(result.mana).toBe(stunned.mana);
+  });
+
+  it("Leech-triggered Stun pays Thunderstone's Rootmender healing and its Leech riders once", () => {
+    const state = patchBattleState({
+      playerHealth: 10,
+      playerMaxHealth: 40,
+      enemyHealth: 40,
+      enemyMaxHealth: 40,
+      mana: 0,
+      maxMana: 3,
+      enemyStatuses: { stun: 20, poison: 1 },
+      gearEffects: { natureLeechVsPoisoned: 1, stunOnLeechBelowHalfHealth: 2 },
+      trinketEffects: { thunderstoneDamageOnStun: 6 },
+      talentEffects: { manaOnLeechChance: 100 },
+    });
+    const next = applyScaledLeechHealing(state, 2, []);
+    expect(next.enemyHealth).toBe(30);
+    expect(next.playerHealth).toBe(15);
+    expect(next.mana).toBe(2);
+    expect(next.enemyCC.stunSkipTurns).toBe(1);
+  });
+
+  it("Rootmender grants Leech for Thunderstone damage against a Poisoned enemy", () => {
+    const state = patchBattleState({
+      playerHealth: 10,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyStatuses: { stun: 30, poison: 1 },
+      trinketEffects: { thunderstoneDamageOnStun: 6 },
+      gearEffects: { natureLeechVsPoisoned: 1 },
+    });
+    const next = resolveStunTrigger(state, []);
+    expect(next.enemyHealth).toBe(24);
+    expect(next.playerHealth).toBe(13);
+  });
+
+  it("Thunderstone cannot reward damage after Stun gear kills the enemy", () => {
+    const state = patchBattleState({
+      enemyHealth: 5,
+      enemyMaxHealth: 100,
+      enemyStatuses: { stun: 100 },
+      mana: 0,
+      gearEffects: { damageOnStunPhysical: 5, manaOnNatureDamageChance: 100 },
+      trinketEffects: { thunderstoneDamageOnStun: 6 },
+    });
+    const result = resolveStunTrigger(state, []);
+    expect(result.enemyHealth).toBe(0);
+    expect(result.mana).toBe(0);
+  });
+
+  it("Stunning proc damage spends enemy Block without granting rewards for absorbed damage and respects Armor", () => {
+    const state = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyMitigation: { block: 10, armor: 3 },
+      enemyStatuses: { stun: 100 },
+      gearEffects: { damageOnStunPhysical: 6 },
+      talentEffects: { armorOnPhysicalDamageChance: 100 },
+      rng: () => 0.99,
+    });
+    const result = resolveStunTrigger(state, []);
+    expect(result.enemyHealth).toBe(100);
+    expect(result.enemyMitigation).toMatchObject({ block: 4, armor: 3 });
+    expect(result.playerStatuses.armor).toBe(0);
+
+    const withLessBlock = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyMitigation: { block: 1, armor: 3 },
+      enemyStatuses: { stun: 100 },
+      gearEffects: { damageOnStunPhysical: 6 },
+    });
+    const afterArmor = resolveStunTrigger(withLessBlock, []);
+    expect(afterArmor.enemyHealth).toBe(98);
+    expect(afterArmor.enemyMitigation).toMatchObject({ block: 0, armor: 2 });
+  });
+
+  it("Thunderstone decays Armor on positive damage without Armor mitigation", () => {
+    const state = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyMitigation: { armor: 3 },
+      enemyStatuses: { stun: 100 },
+      trinketEffects: { thunderstoneDamageOnStun: 6 },
+      rng: () => 0.99,
+    });
+    const result = resolveStunTrigger(state, []);
+    expect(result.enemyHealth).toBe(94);
+    expect(result.enemyMitigation.armor).toBe(2);
   });
 });

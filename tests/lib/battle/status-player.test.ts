@@ -140,3 +140,13 @@ it.each([14, 15, 16])("low-health resource bonuses requires strictly below half 
   expect(armor.playerStatuses.armor).toBe(playerHealth < 15 ? 8 : 4);
   expect(forge.playerStatuses.forge).toBe(playerHealth < 15 ? 5 : 4);
 });
+
+it.each(["forge", "armor"] as const)("a weakened zero %s grant does not roll proc bonuses", (status) => {
+  const rng = vi.fn(() => 0);
+  const state = patchBattleState({
+    rng,
+    talentEffects: { forgeBonusChance: 10, armorDoubleChance: 10 },
+  });
+  applyPlayerStatusEffect(state, { kind: "player-status", status, amount: 0 }, []);
+  expect(rng).not.toHaveBeenCalled();
+});

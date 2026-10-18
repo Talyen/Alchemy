@@ -589,3 +589,37 @@ it("encounter trait health threshold shares the original crossing between Second
     expect(processEncounterTraitHealthThreshold(10, unchanged, [])).toBe(unchanged);
   }
 });
+
+it("stops trait pulses when healing from Flesheater defeats Blood Countess", () => {
+  const state = patchBattleState({
+    playerHealth: 10,
+    playerMaxHealth: 40,
+    enemyHealth: 1,
+    currentEnemy: {
+      traits: ["blood-countess", "flesheater", "toxic"].map((id) => ({ id, title: "", description: "" })),
+    },
+    talentEffects: { cleanseBelowHealthPercent: 25 },
+    trinketEffects: { sinEaterHealOnHarmfulStatusRemove: 6 },
+  });
+  const result = processEncounterTraitActionDamage(state, []);
+  expect(result.enemyHealth).toBe(0);
+  expect(result.playerHealth).toBe(15);
+  expect(result.playerStatuses.poison).toBe(0);
+});
+
+it("Flesheater earns immediate Leech when Last Resort cleanses its Bleed and heals the hero", () => {
+  const state = patchBattleState({
+    playerHealth: 10,
+    playerMaxHealth: 40,
+    enemyHealth: 20,
+    enemyMaxHealth: 40,
+    currentEnemy: { traits: [{ id: "flesheater", title: "Flesheater", description: "" }] },
+    talentEffects: { cleanseBelowHealthPercent: 25 },
+    trinketEffects: { sinEaterHealOnHarmfulStatusRemove: 6 },
+  });
+  const result = processEncounterTraitActionDamage(state, []);
+  expect(result.playerHealth).toBe(15);
+  expect(result.playerStatuses.bleed).toBe(0);
+  expect(result.pendingEnemyBleedLeechHealing).toBe(0);
+  expect(result.enemyHealth).toBe(21);
+});

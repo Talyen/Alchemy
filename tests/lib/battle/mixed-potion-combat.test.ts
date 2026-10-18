@@ -88,4 +88,15 @@ describe("Mixed Potion combat mechanics", () => {
     expect(result.state.flags.nextHitCrit).toBe(true);
     expect(result.state.enemyStatuses.poison).toBe(2);
   });
+
+  it("a Panacea and Mana Potion brew restores Health when there is nothing to cleanse", () => {
+    const card = createMixedPotion(cardById["panacea-potion"]!, cardById["mana-potion"]!);
+    const state = makeState({ hand: [card], mana: 4, maxMana: 3, playerHealth: 10, playerMaxHealth: 30 });
+    const result = playBattleCardResolved(state, card.id, 0);
+    expect(result.state.exhausted).toContainEqual(card);
+    expect(result.state.playerHealth).toBe(12);
+    expect(result.combatTexts).toContainEqual(
+      expect.objectContaining({ target: "player", kind: "heal", stat: "health", amount: 2 }),
+    );
+  });
 });

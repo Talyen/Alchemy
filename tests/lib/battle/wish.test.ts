@@ -1,12 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { applyEmergencyWish, buildWishOptions, applyWishEffect, chooseWishCard } from "@/lib/battle/wish";
+import {
+  applyEmergencyWish,
+  buildWishOptions,
+  applyWishEffect,
+  chooseWishCard,
+  upgradeWishCard,
+} from "@/lib/battle/wish";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
+import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { SIMPLE_HANDLERS } from "@/lib/battle/effect-handlers/simple-handlers";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { seededRng } from "../../fixtures/rng";
 import { patchBattleState } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
-import { cardById } from "@/lib/game-data";
+import { cardById, BattleCardEffectSchema } from "@/lib/game-data";
 
 describe("buildWishOptions", () => {
   it("returns shuffled options excluding the triggering card", () => {
@@ -415,4 +423,82 @@ describe("new wish talents", () => {
       }
     },
   );
+
+  it("Powerful Wish upgrades Tithe's fixed damage and Gold values", () => {
+    const tithe = upgradeWishCard(cardById.tithe!);
+    expect(tithe.descriptionLines).toEqual(["Deal 3 Holy damage", "Gain 2 Gold"]);
+    expect(tithe.effects).toEqual([
+      { kind: "damage", damageType: "holy", amount: 3 },
+      { kind: "gain-gold", amount: 2 },
+    ]);
+    expect(tithe.effects.every((effect) => BattleCardEffectSchema.safeParse(effect).success)).toBe(true);
+    const played = playBattleCardResolved(
+      patchBattleState({ hand: [tithe], gold: 100, enemyHealth: 100, enemyMaxHealth: 100, rng: () => 0.99 }),
+      tithe.id,
+      0,
+    ).state;
+    expect(played.enemyHealth).toBe(97);
+    expect(played.gold).toBe(102);
+  });
+
+  it("Wishfire adds Burn buildup and applies Melting Point to its Burn hit", () => {
+    const state = patchBattleState({
+      enemyStatuses: { burn: 1 },
+      enemyMitigation: { armor: 10 },
+      gearEffects: { burnOnWish: 2 },
+      talentEffects: { burnRemovesEnemyArmor: true },
+    });
+    const next = applyWishEffect(state, undefined, 1, []);
+    expect(next.enemyHealth).toBe(state.enemyHealth - 2);
+    expect(next.enemyStatuses.burn).toBe(3);
+    expect(next.enemyMitigation.armor).toBe(7);
+  });
+
+  it("Vital Wish cannot cancel Desperate Wish earned below half Health", () => {
+    const state = patchBattleState({
+      playerHealth: 19,
+      playerMaxHealth: 40,
+      talentEffects: { healthOnWish: 1, wishBlockBelowHealthPct: 50, wishBlockAmount: 2 },
+    });
+    const result = applyWishEffect(state, cardById.wish!, 1, []);
+    expect(result.playerHealth).toBe(20);
+    expect(result.playerStatuses.block).toBe(2);
+  });
+
+  it("a fatal Wish retaliation stops rewards from subsequent Wishes", () => {
+    const state = patchBattleState({
+      playerHealth: 1,
+      playerMaxHealth: 40,
+      deathsDoorUsed: true,
+      currentEnemy: { traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "" }] },
+      talentEffects: { burnOnWish: 1, goldOnWish: 1 },
+      rng: () => 0.99,
+    });
+    const result = applyCardEffects(state, makeTestCard({ effects: [{ kind: "wish", amount: 2 }] }), []);
+    expect(result.playerHealth).toBe(0);
+    expect(result.gold).toBe(state.gold + 1);
+    expect(result.enemyHealth).toBe(state.enemyHealth - 1);
+    expect(result.flags.pendingCinderSkinReaction).toBe(false);
+  });
+
+  it.each(["stun", "bleed"] as const)("opens an Emergency Wish after an empty %s reward draw", (damageType) => {
+    const card = damageType === "stun" ? cardById.bash! : cardById["predators-focus"]!;
+    const state = patchBattleState({
+      hand: [card],
+      deck: [],
+      discard: [],
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      enemyStatuses: { stun: damageType === "stun" ? 9 : 0 },
+      talentEffects: {
+        drawOnStun: damageType === "stun" ? 1 : 0,
+        drawOnBleedDamageChance: damageType === "bleed" ? 10 : 0,
+      },
+      rng: () => 0.09,
+    });
+    const result = playBattleCardResolved(state, card.id, 0).state;
+    if (damageType === "stun") expect(result.enemyCC.stunSkipTurns).toBeGreaterThan(0);
+    expect(result.wishOptions?.length).toBeGreaterThan(0);
+    expect(result).not.toHaveProperty("onEmptyDraw");
+  });
 });

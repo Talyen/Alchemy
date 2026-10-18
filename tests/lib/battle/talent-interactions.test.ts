@@ -277,4 +277,11 @@ describe("Deep Siphon", () => {
     );
     expect(next.playerHealth).toBe(16);
   });
+
+  it("Shield Slam and Weighted Guard stack in either purchase order", () => {
+    const first = computeTalentEffects({ block: ["block-to-physical"], physical: ["physical-shield-bash"] });
+    const second = computeTalentEffects({ physical: ["physical-shield-bash"], block: ["block-to-physical"] });
+    expect(first.blockToPhysicalDamageMultiplier).toBeCloseTo(0.6);
+    expect(second.blockToPhysicalDamageMultiplier).toBeCloseTo(0.6);
+  });
 });

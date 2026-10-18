@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
+import { applyDamageStatuses, applyPoisonTalentRiders, tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
@@ -239,5 +239,29 @@ describe("damage status riders", () => {
     const result = applyDamageStatuses(state, { kind: "damage", damageType: "freeze", amount: 6 }, 6, []);
     expect(result.enemyStatuses.freeze).toBe(6);
     expect(result.enemyCC.freezeSkipTurns).toBe(0);
+  });
+
+  it.each(["second-wind", "divine-aegis"])("Icy Heart triggers %s on crossing half Health", (id) => {
+    const state = patchBattleState({
+      enemyHealth: 54,
+      enemyMaxHealth: 100,
+      enemyStatuses: { freeze: 100 },
+      currentEnemy: { traits: [{ id, title: id, description: "" }] },
+      trinketEffects: { frozenHeartDamage: 6 },
+    });
+    const result = tryTriggerEnemyFreeze(state, state, []);
+    expect(id === "second-wind" ? result.flags.secondWindTriggered : result.flags.divineAegisTriggered).toBe(true);
+    expect(result.enemyHealth).toBe(id === "second-wind" ? 68 : 48);
+  });
+
+  it("Icy Heart receives the damage bonus against the enemy it just Froze", () => {
+    const state = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyStatuses: { freeze: 100 },
+      trinketEffects: { frozenHeartDamage: 6 },
+      gearEffects: { frozenEnemyDamageBonusPercent: 50 },
+    });
+    expect(tryTriggerEnemyFreeze(state, state, []).enemyHealth).toBe(91);
   });
 });

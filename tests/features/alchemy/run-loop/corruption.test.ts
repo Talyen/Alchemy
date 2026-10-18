@@ -12,7 +12,7 @@ import {
 } from "@/lib/game-data";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import type { CORRUPTION_OUTCOME_WEIGHTS } from "@/lib/game-constants";
-import { removeConsume } from "@/lib/corruption/card-edits";
+import { addCorruptionEffect, removeConsume } from "@/lib/corruption/card-edits";
 import { makeTestCard } from "../../../fixtures/cards";
 
 function makeRng(values: number[]): () => number {
@@ -391,6 +391,30 @@ describe("numeric effect bindings", () => {
       expect(changed.descriptionLines[lineIndex]).toBe("Deal 2 Poison damage");
     },
   );
+
+  it("updates the pooled damage amount on maul", () => {
+    const original = cardById.maul!;
+    const target = getEditableCorruptionTargets(original)[0]!;
+    const changed = applyNumericCorruption(original, target, 1);
+    expect(changed.descriptionLines[0]).toBe("Deal 4 Bleed or Stun damage");
+    expect(changed.effects[0]).toMatchObject({
+      kind: "damage",
+      amount: 4,
+      damageType: "bleed",
+      damageTypePool: ["bleed", "stun"],
+    });
+  });
+
+  it("keeps a shared conditional number separate from an equal-valued added effect", () => {
+    const original = cardById.maul!;
+    const card = addCorruptionEffect(original, { kind: "gain-gold", amount: 3 });
+    const targets = getEditableCorruptionTargets(card);
+    expect(targets).toHaveLength(2);
+    const changed = applyNumericCorruption(card, targets[1]!, 1);
+    expect(changed.effects[0]).toEqual(original.effects[0]);
+    expect(changed.effects[1]).toEqual({ kind: "gain-gold", amount: 4 });
+    expect(changed.descriptionLines[1]).toBe("Gain 4 Gold");
+  });
 });
 
 it("removing Consume retains bound highlights and clears the keyword without changing the input", () => {

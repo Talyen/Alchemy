@@ -1,9 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
+import { computeBaseDamage } from "@/lib/battle/player-damage-base";
+import { getEnemyDamageMultiplier } from "@/lib/battle/status-helpers";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { CRIT_MULTIPLIER } from "@/lib/game-constants";
 import type { BattleCardEffect } from "@/lib/game-data";
-import { dealDamage, makeCombatTexts, makeEffect, makeTestCard, patchBattleState } from "../../fixtures/battle";
+import {
+  dealDamage,
+  makeCombatTexts,
+  makeEffect,
+  makeTestCard,
+  patchBattleState,
+  type BattleStatePatch,
+} from "../../fixtures/battle";
 
 describe("computeCardDamageToEnemy", () => {
   const physicalEffect: Extract<BattleCardEffect, { kind: "damage" }> = {
@@ -194,5 +203,46 @@ describe("resolved card damage", () => {
     expect(sundered.enemyHealth).toBe(23);
     expect(sundered.enemyMitigation.armor).toBe(2);
     expect(dealDamage(state, makeTestCard({ effects: [makeEffect("burn", 10)] })).enemyHealth).toBe(20);
+  });
+
+  it.each<[string, BattleStatePatch]>([
+    ["Brittle Ice", { enemyCC: { freezeSkipTurns: 1 }, talentEffects: { freezeDamageBonusVsFrozen: 1 } }],
+    ["Corrosive", { enemyStatuses: { poison: 1 }, talentEffects: { poisonDamageBonusVsPoisoned: 1 } }],
+  ])("%s cannot turn zero damage into a hit", (_name, patch) => {
+    const state = patchBattleState(patch);
+    expect(computeBaseDamage(state, { kind: "damage", damageType: "nature", amount: 0 })).toBe(0);
+    expect(computeBaseDamage(state, { kind: "damage", damageType: "nature", amount: 1 })).toBe(2);
+    const bleeding = patchBattleState({
+      ...patch,
+      enemyStatuses: { ...patch.enemyStatuses, bleed: 1 },
+      talentEffects: { ...patch.talentEffects, bleedPoisonDamageTakenPercent: 50 },
+    });
+    expect(computeBaseDamage(bleeding, { kind: "damage", damageType: "poison", amount: 1 })).toBe(3);
+  });
+
+  it.each(["stun", "freeze"] as const)("keeps %s vulnerability talents against resistant enemies", (status) => {
+    const state = patchBattleState({
+      currentEnemy: { traits: [{ id: "burn-resistance", title: "Resistant", description: "" }] },
+      enemyCC: { stunSkipTurns: status === "stun" ? 1 : 0, freezeSkipTurns: status === "freeze" ? 1 : 0 },
+      talentEffects: { stunDoubleDamage: true, freezeDamageBonusVsFrozen: 1 },
+    });
+    expect(getEnemyDamageMultiplier(state, "burn")).toBe(status === "stun" ? 1 : 0.5);
+    const result = dealDamage(state, makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 6 }] }));
+    expect(result.enemyHealth).toBe(state.enemyHealth - (status === "stun" ? 6 : 4));
+  });
+
+  it.each([{ equalToBlock: true }, { equalToArmor: true }])("adds Opening to resource-based attacks: %j", (scaling) => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      playerStatuses: { block: 6, armor: 6 },
+      gold: 12,
+      flags: { nextHitPhysicalBonus: 4 },
+    });
+    const result = dealDamage(
+      state,
+      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0, ...scaling }] }),
+    );
+    expect(result.enemyHealth).toBe(state.enemyHealth - 10);
+    expect(result.flags.nextHitPhysicalBonus).toBe(0);
   });
 });

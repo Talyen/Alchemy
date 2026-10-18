@@ -10,6 +10,8 @@ import {
   takeRandomCardFromDeck,
 } from "@/lib/battle/draw";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
+import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
+import { cardById } from "@/lib/game-data";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "@/lib/game-constants";
 import { makeTestBattleState, makeTestCardWithId, patchBattleState, seededRng } from "../../fixtures/battle";
 
@@ -220,5 +222,25 @@ describe("player turn transition", () => {
     const result = advanceToPlayerTurn(state);
     expect(result.wishOptions).toHaveLength(3);
     expect(result.turnPhase).toBe("player");
+  });
+
+  it("keeps Returning Flight discount until a queued card's first playable turn", () => {
+    const arrow = (uid: number) => ({ ...cardById["bounty-shot"]!, uid, cost: 2 });
+    const state = patchBattleState({
+      hand: Array.from({ length: 7 }, (_, i) => arrow(i)),
+      discard: [arrow(12)],
+      nextCardUid: 20,
+      gearEffects: { recoverLastArcheryCard: 1 },
+      uniqueGear: { lastArcheryUid: 12 },
+      enemyCC: { stunSkipTurns: 2 },
+    });
+    const recovered = advanceToPlayerTurn(state);
+    expect(recovered.pendingHandCards).toHaveLength(1);
+    const next = endPlayerTurn(recovered).state;
+    const card = next.hand[0]!;
+    expect(computeEffectiveCost(next, card).effectiveCost).toBe(1);
+    const played = playBattleCardResolved({ ...next, mana: 1 }, card.id, 0).state;
+    expect(played.mana).toBe(0);
+    expect(played.uniqueGear.returningFlightUids).toEqual([]);
   });
 });

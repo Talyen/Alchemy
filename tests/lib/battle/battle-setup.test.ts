@@ -178,6 +178,48 @@ describe("createBattleState", () => {
       expect(result.maxMana).toBe(BASE_PLAYER_MANA + 1);
     });
   });
+
+  describe("opening resource gains", () => {
+    it("Last Stand strengthens opening Bulwark and Plated Armor", () => {
+      const state = createBattleStartState({
+        runDeck: [],
+        currentEnemy: skeleton,
+        playerHealth: 10,
+        maxHealth: 40,
+        talentEffects: computeTalentEffects({ armor: ["armor-start-combat", "armor-desperate-double"] }),
+        gearEffects: { ...defaultGearEffects, startArmor: 2, flatArmorGained: 1 },
+        rng: () => 0.99,
+      });
+      expect(state.playerStatuses.armor).toBe(6);
+    });
+
+    it("Desperate Forge strengthens opening Forge Mastery and Tempered Forge", () => {
+      const state = createBattleStartState({
+        runDeck: [],
+        currentEnemy: skeleton,
+        playerHealth: 10,
+        maxHealth: 40,
+        talentEffects: computeTalentEffects({ forge: ["forge-strength-1", "forge-strength-5"] }),
+        gearEffects: { ...defaultGearEffects, startForge: 2, forgeReadiesPhysicalRepeat: 1 },
+        rng: () => 0,
+      });
+      expect(state.playerStatuses.forge).toBe(4);
+      expect(state.uniqueGear.everkeenReady).toBe(true);
+    });
+
+    it("Tempered Guard and Ironwood Buckler reward Bastioned opening Block", () => {
+      const state = createBattleStartState({
+        runDeck: [],
+        currentEnemy: skeleton,
+        talentEffects: computeTalentEffects({ forge: ["forge-to-block"] }),
+        trinketIds: ["ironwood-buckler"],
+        gearEffects: { ...defaultGearEffects, startForge: 4, startBlock: 4, flatBlockGained: 1 },
+        rng: () => 0.99,
+      });
+      expect(state.playerStatuses.block).toBe(6);
+      expect(state.playerStatuses.thorns).toBe(1);
+    });
+  });
 });
 
 it("keeps every mutable default independent between battles", () => {

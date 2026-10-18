@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
+import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { cardById, companionLibrary } from "@/lib/game-data";
+import { cardById, companionLibrary, computeTalentEffects, describeCardEffects } from "@/lib/game-data";
 import {
   makeState as makeSharedState,
   makeTestCard,
@@ -299,5 +300,144 @@ describe("reusable evasion", () => {
     expect(dodged.playerHealth).toBe(result.playerHealth);
     expect(dodged.flags.dodgeNextAttack).toBe(false);
     expect(applyEnemyAbility(dodged, cardById.slash!, []).playerHealth).toBeLessThan(dodged.playerHealth);
+  });
+
+  it("Flashpoint preserves The Knight's Answer for the following paid Physical card", () => {
+    const slash = cardById.slash!;
+    const effects = [...slash.effects, { kind: "damage" as const, damageType: "burn" as const, amount: 1 }];
+    const corruptedSlash = { ...slash, effects, descriptionLines: describeCardEffects(effects), uid: 1 };
+    const ordinarySlash = { ...slash, uid: 2 };
+    const state = patchBattleState({
+      rng: () => 0.99,
+      mana: 0,
+      hand: [corruptedSlash, ordinarySlash],
+      talentEffects: { firstBurnCardFree: true },
+      gearEffects: { blockReadiesFreePhysical: 1 },
+      uniqueGear: { knightsAnswerReady: true },
+    });
+    const first = playBattleCardResolved(state, corruptedSlash.id, 0).state;
+    expect(first.flags.firstBurnCardFreeUsed).toBe(true);
+    expect(first.uniqueGear.knightsAnswerReady).toBe(true);
+    const second = playBattleCardResolved(first, ordinarySlash.id, 0).state;
+    expect(second.hand).toHaveLength(0);
+    expect(second.uniqueGear.knightsAnswerReady).toBe(false);
+    expect(second.mana).toBe(0);
+  });
+
+  it.each(["quickdraw", "burn talent", "knight"] as const)(
+    "a saved zero-cost card preserves the %s discount for the next paid card",
+    (source) => {
+      const card = cardById[source === "burn talent" ? "fireball" : "venom-arrow"]!;
+      const free = { ...card, cost: 0, uid: 1 };
+      const paid = { ...card, uid: 2 };
+      const state = patchBattleState({
+        rng: () => 0.99,
+        hand: [free, paid],
+        mana: 0,
+        enemyHealth: 100,
+        enemyMaxHealth: 100,
+        encounterBenefits: source === "quickdraw" ? ["quickdraw"] : [],
+        talentEffects: { firstBurnCardFree: source === "burn talent" },
+        gearEffects: { blockReadiesFreePhysical: source === "knight" ? 1 : 0 },
+        uniqueGear: { knightsAnswerReady: source === "knight" },
+      });
+      const first = playBattleCardResolved(state, free.id, 0).state;
+      const second = playBattleCardResolved(first, paid.id, 0).state;
+      expect(second.cardsPlayedThisTurn).toBe(2);
+      expect(second.mana).toBe(0);
+      expect(second.hand).toHaveLength(0);
+    },
+  );
+
+  it.each(["armed", "encounter"])("applies the %s Archery discount to Sniff Out", (kind) => {
+    const card = cardById["sniff-out"]!;
+    const state = patchBattleState({
+      hand: [card],
+      mana: 0,
+      enemyHealth: 100,
+      flags: { nextArcheryCardFree: kind === "armed" },
+      encounterBenefits: kind === "encounter" ? ["quickdraw"] : [],
+    });
+    const result = playBattleCardResolved(state, card.id, 0).state;
+    expect(result.exhausted.map((entry) => entry.id)).not.toContain(card.id);
+    expect(result.mana).toBe(0);
+    expect(result.enemyStatuses.bleed).toBe(1);
+    expect(result.flags.nextArcheryCardFree).toBe(true);
+    if (kind === "encounter") expect(result.flags.encounterArcheryUsed).toBe(true);
+  });
+
+  it("Lastlight checks Mana before Runic Quill grants an Emergency Wish", () => {
+    const card = makeTestCard({ consume: true });
+    const state = patchBattleState({
+      mana: 0,
+      gearEffects: { holyOnConsumeWithoutMana: 2 },
+      trinketEffects: { runicQuillDrawOnConsume: 1 },
+      talentEffects: { wishCardRefundsMana: true },
+    });
+    const next = handlePostPlayCardDestination(state, card);
+    expect(next.mana).toBe(0);
+    expect(next.wishOptions).not.toBeNull();
+    expect(next.enemyHealth).toBe(state.enemyHealth - 2);
+  });
+
+  it("fatal Emergency Wish retaliation stops later Thermal Vent rewards", () => {
+    const card = cardById["fire-arrow"]!;
+    const state = patchBattleState({
+      hand: [card],
+      playerHealth: 1,
+      deathsDoorUsed: true,
+      enemyCC: { stunSkipTurns: 1 },
+      currentEnemy: { traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "" }] },
+      talentEffects: { drawOnArcheryVsStunned: 1, burnOnWish: 1, forgeOnBurnCard: 3, forgeOnBurnCardChance: 10 },
+      rng: () => 0,
+    });
+    const next = playBattleCardResolved(state, card.id, 0).state;
+    expect(next.playerHealth).toBe(0);
+    expect(next.playerStatuses.forge).toBe(0);
+    expect(next.discard).toContainEqual(card);
+  });
+
+  it.each(["block", "armor"] as const)("Rupture requires damage through enemy %s", (defense) => {
+    const card = cardById.slash!;
+    const state = patchBattleState({
+      hand: [card],
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyMitigation: { [defense]: 10 },
+      enemyStatuses: { bleed: 8 },
+      talentEffects: { physicalDetonatesBleed: true },
+    });
+    const result = playBattleCardResolved(state, card.id, 0).state;
+    expect(result.enemyHealth).toBe(100);
+    expect(result.enemyStatuses.bleed).toBe(8);
+  });
+
+  it("Lastlight retaliation settles before Distilled and Arcane Mending can rescue the hero", () => {
+    const card = cardById["haste"]!;
+    const state = patchBattleState({
+      hand: [card],
+      playerHealth: 1,
+      playerMaxHealth: 40,
+      deathsDoorUsed: true,
+      mana: card.cost,
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      currentEnemy: { traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "" }] },
+      gearEffects: { holyOnConsumeWithoutMana: 1, manaOnPaidConsume: 1 },
+      talentEffects: computeTalentEffects({ mana: ["mana-arcane-mending"] }),
+      rng: () => 0.99,
+    });
+    const result = playBattleCardResolved(state, card.id, 0).state;
+    expect(result.exhausted).toContain(card);
+    expect(result.playerHealth).toBe(0);
+    expect(result.mana).toBe(0);
+  });
+
+  it("Smelling Salts cannot waste Mana when neither targeted buildup is present", () => {
+    const card = cardById["smelling-salts"]!;
+    const state = patchBattleState({ hand: [card], playerStatuses: { burn: 2 } });
+    expect(canPlayCard(state, card, 0)).toBe(false);
+    expect(playBattleCardResolved(state, card.id, 0).state).toBe(state);
+    expect(canPlayCard({ ...state, playerStatuses: { ...state.playerStatuses, stun: 1 } }, card, 0)).toBe(true);
   });
 });

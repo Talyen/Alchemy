@@ -220,4 +220,32 @@ describe("cleansed Bleed Leech", () => {
       expect(state.pendingEnemyBleedLeechHealing).toBe(4);
     },
   );
+
+  it("Emberwake retaliation resolves between player status ticks", () => {
+    const state = patchBattleState({
+      playerHealth: 2,
+      enemyHealth: 2,
+      playerStatuses: { burn: 3, poison: 3 },
+      gearEffects: { burnOnDeathsDoorEntry: 4 },
+      rng: () => 0.99,
+    });
+    const next = tickPlayerStatuses(state, []);
+    expect(next.enemyHealth).toBe(0);
+    expect(next.playerStatuses.poison).toBe(3);
+  });
+
+  it("pending enemy Bleed Leech survives Phoenix Feather recovery", () => {
+    const state = patchBattleState({
+      playerHealth: 1,
+      playerMaxHealth: 40,
+      playerStatuses: { bleed: 3, phoenixFeather: 1 },
+      pendingEnemyBleedLeechHealing: 3,
+      enemyHealth: 20,
+      enemyMaxHealth: 40,
+    });
+    const result = tickPlayerStatuses(state, []);
+    expect(result.playerStatuses.phoenixFeather).toBe(0);
+    expect(result.enemyHealth).toBe(21);
+    expect(result.pendingEnemyBleedLeechHealing).toBe(0);
+  });
 });

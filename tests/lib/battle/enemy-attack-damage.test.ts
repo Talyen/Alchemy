@@ -6,8 +6,10 @@ import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { dealSelfDamage } from "@/lib/battle/status-helpers";
+import { tickPlayerStatuses } from "@/lib/battle/status-ticks";
 import { resolveTypedEnemyHit } from "@/lib/battle/typed-hit-resolution";
 import type { CombatTextEvent } from "@/lib/battle/types";
+import { cardById, computeTalentEffects, getEnemyAbilityCard } from "@/lib/game-data";
 import { describe, expect, it, vi } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
 import { makeTestCard as makeEnemyTestCard, makeTestCard } from "../../fixtures/cards";
@@ -437,5 +439,149 @@ describe("Unique Gear enemy attack damage", () => {
     expect(result.enemyHealth).toBe(970);
     expect(result.mana).toBe(0);
     expect(result.uniqueGear.wildheartReady).toBe(false);
+  });
+
+  it.each(["armor", "block"] as const)("a lethal hit cannot retaliate through depleted %s", (defense) => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      playerHealth: 1,
+      deathsDoorUsed: true,
+      playerStatuses: { [defense]: 1 },
+      gearEffects: { stunOnArmorLostToAttack: 2, stunOnBlockDepleted: 2 },
+    });
+    const next = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 3 }, []);
+    expect(next.playerHealth).toBe(0);
+    expect(next.enemyHealth).toBe(state.enemyHealth);
+    expect(next.enemyStatuses.stun).toBe(0);
+  });
+
+  it("Phoenix Feather recovery does not hide the enemy hit's Health loss", () => {
+    const state = patchBattleState({ playerHealth: 2, playerMaxHealth: 30, playerStatuses: { phoenixFeather: 1 } });
+    const texts: CombatTextEvent[] = [];
+    const next = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 4 }, texts);
+    expect(next.playerHealth).toBe(9);
+    expect(next.playerStatuses.phoenixFeather).toBe(0);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "health", amount: 2 });
+  });
+
+  it.each(["attack", "Poison tick"] as const)("Steadfast Armor survives the triggering %s", (source) => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      playerHealth: 16,
+      playerMaxHealth: 30,
+      playerStatuses: { poison: source === "Poison tick" ? 2 : 0 },
+      talentEffects: { healthThresholdArmor: [{ threshold: 50, amount: 3 }] },
+      gearEffects: { stunOnArmorLostToAttack: 2 },
+    });
+    const next =
+      source === "attack"
+        ? processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 2 }, [])
+        : tickPlayerStatuses(state, []);
+    expect(next.playerHealth).toBe(14);
+    expect(next.playerStatuses.armor).toBe(3);
+    expect(next.enemyHealth).toBe(state.enemyHealth);
+  });
+
+  it("Last Resort cleanses and heals after a hit crosses its Health threshold", () => {
+    const state = patchBattleState({
+      playerHealth: 16,
+      playerMaxHealth: 30,
+      playerStatuses: { armor: 1, burn: 1, poison: 1 },
+      talentEffects: {
+        armorBreakBlock: 3,
+        healOnStatusCleanse: 2,
+        cleanseBelowHealthPercent: 25,
+      },
+      rng: () => 0,
+    });
+    const next = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 10 }, []);
+    expect(next.playerHealth).toBeGreaterThan(7);
+    expect(next.playerStatuses.burn).toBe(0);
+    expect(next.playerStatuses.poison).toBe(0);
+  });
+
+  it("Thorns retaliation preserves the next card's critical hit", () => {
+    const state = patchBattleState({
+      playerStatuses: { armor: 100, thorns: 3 },
+      flags: { nextHitCrit: true },
+      rng: () => 0.99,
+    });
+    const result = applyEnemyAbility(state, getEnemyAbilityCard("slash"), []);
+    expect(result.playerStatuses.thorns).toBe(0);
+    expect(result.enemyHealth).toBe(state.enemyHealth - 3);
+    expect(result.flags.nextHitCrit).toBe(true);
+  });
+
+  it("Stone Titan earns its Health-hit reward even when Phoenix Feather restores the hero", () => {
+    const state = patchBattleState({
+      playerHealth: 1,
+      playerMaxHealth: 40,
+      playerStatuses: { phoenixFeather: 1 },
+      currentEnemy: { traits: [{ id: "stone-titan", title: "Stone Titan", description: "" }] },
+    });
+    const result = applyEnemyAbility(state, cardById.bash!, []);
+    expect(result.playerStatuses.phoenixFeather).toBe(0);
+    expect(result.enemyMitigation.armor).toBe(state.enemyMitigation.armor + 1);
+  });
+
+  it("Crushing Force still triggers when a Health threshold replaces broken Block", () => {
+    const state = patchBattleState({
+      playerHealth: 21,
+      playerMaxHealth: 40,
+      playerStatuses: { block: 1 },
+      talentEffects: { healthThresholdBlockOnce: { threshold: 50, amount: 4 } },
+      currentEnemy: { traits: [{ id: "earth-elemental", title: "Crushing Force", description: "" }] },
+    });
+    const result = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 3 }, []);
+    expect(result.playerHealth).toBe(19);
+    expect(result.playerStatuses.block).toBe(3);
+  });
+
+  it("Crushing Force follows an attack whose Sundered Guard removes all Block", () => {
+    const state = patchBattleState({
+      playerHealth: 30,
+      playerMaxHealth: 40,
+      playerStatuses: { block: 2 },
+      currentEnemy: {
+        traits: [
+          { id: "earth-elemental", title: "Crushing Force", description: "" },
+          { id: "sundered-guard", title: "Sundered Guard", description: "" },
+        ],
+      },
+      rng: () => 0.99,
+    });
+    const result = applyEnemyAbility(state, cardById["slash"]!, []);
+    expect(result.playerHealth).toBe(25);
+    expect(result.playerStatuses.block).toBe(0);
+  });
+
+  it("Counterplate retaliates for Caustic Jab's explicit Armor removal", () => {
+    const state = patchBattleState({
+      playerStatuses: { armor: 2 },
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      gearEffects: { stunOnArmorLostToAttack: 3 },
+      rng: () => 0.99,
+    });
+    const result = applyEnemyAbility(state, cardById["caustic-jab"]!, []);
+    expect(result.playerStatuses.armor).toBe(0);
+    expect(result.enemyHealth).toBe(97);
+    expect(result.enemyStatuses.stun).toBe(3);
+  });
+
+  it.each(["banshee", "unbinding-strike"])("Counterplate also retaliates when %s purges Armor", (trait) => {
+    const state = patchBattleState({
+      playerStatuses: { armor: 4 },
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      currentEnemy: { traits: [{ id: trait, title: trait, description: "" }] },
+      gearEffects: { stunOnArmorLostToAttack: 3 },
+      talentEffects: computeTalentEffects({ armor: ["armor-break-block"] }),
+      rng: () => 0.99,
+    });
+    const result = applyEnemyAbility(state, cardById["slash"]!, []);
+    expect(result.playerStatuses.armor).toBe(0);
+    expect(result.playerStatuses.block).toBe(3);
+    expect(result.enemyHealth).toBe(97);
   });
 });
