@@ -9,7 +9,14 @@ defineScript(import.meta.url, async () => {
     const { runCareer } = await server.ssrLoadModule("/src/app/playthrough/career.ts");
     const { createCareerRuntime } = await server.ssrLoadModule("/src/app/playthrough/career-runtime.ts");
     const runtime = createCareerRuntime(request.config.seed, request.config.initialSave, request.runtimeInputs);
-    if (request.fixture) {
+    if (request.fixture === "performance-random-account-v1") {
+      const { createRandomPerformanceAccount } = await server.ssrLoadModule("/performance/random-account.ts");
+      request.config.initialSave = createRandomPerformanceAccount(
+        request.config.seed,
+        request.config.hero,
+        runtime.session,
+      );
+    } else if (request.fixture) {
       const { createPlaythroughFixture } = await server.ssrLoadModule("/src/app/playthrough/fixtures.ts");
       request.config.initialSave = createPlaythroughFixture(request.fixture, runtime.session);
     }

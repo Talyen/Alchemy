@@ -31,13 +31,15 @@ const config = {
   policy: selected.policy,
 };
 const fixture =
-  scenario === "trinket-journey"
-    ? "trinket-v1"
-    : scenario === "meta-journey"
-      ? "economy-v1"
-      : selected.hero !== "knight" || selected.mode !== "campaign" || selected.difficulty !== "difficulty-1"
-        ? "unlocked-v1"
-        : null;
+  scenario === "seeded-discovery"
+    ? "performance-random-account-v1"
+    : scenario === "trinket-journey"
+      ? "trinket-v1"
+      : scenario === "meta-journey"
+        ? "economy-v1"
+        : selected.hero !== "knight" || selected.mode !== "campaign" || selected.difficulty !== "difficulty-1"
+          ? "unlocked-v1"
+          : null;
 
 async function runWorker(label, checkpointAt) {
   const input = path.join(workDir, `${label}.input.json`);
@@ -92,6 +94,18 @@ const encounter = discovery.result.telemetry?.battleSnapshots?.find(
 );
 const coverage = {
   fixture,
+  ...(fixture === "performance-random-account-v1"
+    ? {
+        fixtureGrants: {
+          hero: selected.hero,
+          gear: discovery.result.initialSave.gearInventories[selected.hero],
+          loadout: discovery.result.initialSave.gearLoadouts[selected.hero],
+          trinket: discovery.result.initialSave.equippedTrinkets[selected.hero],
+          talents: discovery.result.initialSave.unlockedTalents,
+          talentXP: discovery.result.initialSave.talentXP,
+        },
+      }
+    : {}),
   encounter: encounter ? { run: encounter.run, room: encounter.room, boss: encounter.boss } : null,
   availableCardEffectKinds: effectKinds((activeRun?.runDeck ?? []).map((card) => card.effects)),
   cards: [...new Set((activeRun?.runDeck ?? []).map((card) => card.id))].sort(),
