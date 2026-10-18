@@ -3,11 +3,15 @@ import { useGameTranslation } from "@/components/use-game-translation";
 import { EnemyTraits } from "@/features/alchemy/shared/ui/enemy-traits";
 import { TraitBox } from "@/features/alchemy/shared/ui/trait-box";
 import { Button } from "@/components/ui/button";
-import { LABYRINTH_NODE_META } from "@/features/alchemy/shared/config";
+import { LABYRINTH_NODE_META } from "@/features/alchemy/shared/config/labyrinth-map";
 import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
-import { canDescendFromLabyrinthNode, canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
+import {
+  canDescendFromLabyrinthNode,
+  canEnterLabyrinthNode,
+  floorNodes,
+} from "@/lib/content-systems/labyrinth/map-state";
 import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
 
 interface Props {
@@ -25,7 +29,7 @@ export function LabyrinthNodeInspector({ node, map, onEnter, onDescend }: Props)
   const title = enemy?.title ?? category;
   const enterable = canEnterLabyrinthNode(map, node.id);
   const descend = canDescendFromLabyrinthNode(map, node.id);
-  const remaining = Object.values(map.nodes).filter((room) => room.floor === map.currentFloor && !room.cleared).length;
+  const remaining = floorNodes(map, map.currentFloor).filter((room) => !room.cleared).length;
 
   return (
     <aside

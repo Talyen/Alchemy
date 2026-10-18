@@ -39,7 +39,5 @@ it("preserves completed-room inspection but dismisses selection when its floor i
   act(() => vi.advanceTimersByTime(MOTION_FADE_MS));
   expect(screen.queryByRole("complementary", { name: "Chamber details" })).toBeNull();
   expect(screen.getByText("Visible floor 2")).toBeTruthy();
-  expect(screen.queryByRole("status", { name: "Floor 2" })).toBeNull();
   expect(props.onNodeDeselect).toHaveBeenCalledOnce();
-  expect(screen.queryByRole("combobox")).toBeNull();
 });

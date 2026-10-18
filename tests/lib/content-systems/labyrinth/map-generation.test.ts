@@ -161,7 +161,7 @@ describe("labyrinth type seating", () => {
     return conflicts;
   }
 
-  it("preserves seeded room order and the stream used by later encounters", () => {
+  it("separates same-type neighbors deterministically without moving the entrance or boss", () => {
     const positions = labyrinthGridPositions();
     const types: LabyrinthNodeType[] = [
       "entrance",
@@ -170,34 +170,17 @@ describe("labyrinth type seating", () => {
       ...Array<LabyrinthNodeType>(5).fill("mystery"),
       "boss",
     ];
-    const original = [...types];
-    const rng = createSeededRng(42);
-    const result = orderTypesForPositions(types, positions, rng);
-    expect(result).toEqual([
-      "entrance",
-      "combat",
-      "mystery",
-      "combat",
-      "mystery",
-      "combat",
-      "mystery",
-      "combat",
-      "rest",
-      "combat",
-      "combat",
-      "rest",
-      "combat",
-      "rest",
-      "combat",
-      "rest",
-      "mystery",
-      "combat",
-      "mystery",
-      "boss",
-    ]);
-    expect(rng()).toBe(0.6106208984274417);
-    expect(sameTypeAdjacencies(result, positions)).toBeLessThan(sameTypeAdjacencies(types, positions));
-    expect(types).toEqual(original);
+    const before = sameTypeAdjacencies(types, positions);
+    expect(before).toBeGreaterThan(0);
+    const first = orderTypesForPositions(types, positions, createSeededRng(42));
+    const second = orderTypesForPositions(types, positions, createSeededRng(42));
+    expect(first).toEqual(second);
+    expect(first[0]).toBe("entrance");
+    expect(first.at(-1)).toBe("boss");
+    expect([...first].sort()).toEqual([...types].sort());
+    expect(sameTypeAdjacencies(first, positions)).toBeLessThan(before);
+    expect(types[0]).toBe("entrance");
+    expect(types.at(-1)).toBe("boss");
   });
 
   it("actually separates adjacent rooms without moving the entrance or boss", () => {

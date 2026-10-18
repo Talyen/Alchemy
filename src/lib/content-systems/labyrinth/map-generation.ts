@@ -4,7 +4,7 @@ import { enemiesByType, enemyById, type EnemyType } from "@/lib/game-data";
 
 import type { LabyrinthFloor, LabyrinthGridPosition, LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
 import { LABYRINTH_SUPPORT_TYPES, labyrinthFloorId, labyrinthNodeId } from "./data";
-import { LABYRINTH_GRID, areGridNeighbors, gridKey, labyrinthGridPositions } from "./grid";
+import { LABYRINTH_GRID, gridKey, labyrinthGridPositions } from "./grid";
 import { getEnemyModifiersForNodeType, getRewardModifiersForNodeType } from "./modifiers";
 import { canDescendFromLabyrinthNode, floorNodes } from "./map-state";
 
@@ -28,7 +28,10 @@ function availableNodeType(type: LabyrinthNodeType, lootDepth: number): Labyrint
 }
 
 function plannedTypes(count: number, rng: () => number, lootDepth: number): LabyrinthNodeType[] {
-  const support = shuffle([...new Set(LABYRINTH_SUPPORT_TYPES.map((type) => availableNodeType(type, lootDepth)))], rng);
+  const eligibleSupports = LABYRINTH_SUPPORT_TYPES.filter(
+    (type) => type !== "trinket-shop" || isLootEligible("trinket", lootDepth),
+  );
+  const support = shuffle([...eligibleSupports], rng);
   const middle: LabyrinthNodeType[] = support.slice(0, Math.min(3, count - 2));
   const weighted: LabyrinthNodeType[] = [
     "combat",
@@ -54,24 +57,26 @@ function plannedTypes(count: number, rng: () => number, lootDepth: number): Laby
   return ["entrance", ...shuffle(middle, rng), "boss"];
 }
 
-function neighborSlots(positions: readonly LabyrinthGridPosition[], index: number): number[] {
-  const source = positions[index];
-  if (!source) return [];
-  const neighbors: number[] = [];
-  for (let other = 0; other < positions.length; other += 1) {
-    const target = positions[other];
-    if (other !== index && target && areGridNeighbors(source, target)) neighbors.push(other);
-  }
-  return neighbors;
-}
-
 export function orderTypesForPositions(
   types: readonly LabyrinthNodeType[],
   positions: readonly LabyrinthGridPosition[],
   rng: () => number,
 ): LabyrinthNodeType[] {
   if (types.length !== positions.length) return [...types];
-  const neighbors = positions.map((_, index) => neighborSlots(positions, index));
+  const indexByKey = new Map(positions.map((position, index) => [gridKey(position), index]));
+  const neighbors = positions.map((position) => {
+    const list: number[] = [];
+    for (const key of [
+      `${position.row + 1},${position.col}`,
+      `${position.row - 1},${position.col}`,
+      `${position.row},${position.col + 1}`,
+      `${position.row},${position.col - 1}`,
+    ]) {
+      const neighbor = indexByKey.get(key);
+      if (neighbor !== undefined) list.push(neighbor);
+    }
+    return list;
+  });
   const seated = [...types];
   const slots = shuffle(types.map((_, index) => index).slice(1, -1), rng);
   function conflictsAt(index: number): number {
@@ -95,8 +100,6 @@ export function orderTypesForPositions(
         const before = conflictsAt(first) + conflictsAt(second);
         seated[first] = secondType;
         seated[second] = firstType;
-        // Only edges touching these rooms can change. Their shared edge is
-        // counted twice in both sums, but swapping preserves its equality.
         if (conflictsAt(first) + conflictsAt(second) < before) {
           improved = true;
         } else {
@@ -133,7 +136,7 @@ function makeNode(input: {
         )
       : [],
     rewardModifiers: getRewardModifiersForNodeType(input.rng, type, input.lootDepth),
-    cleared: input.type === "entrance",
+    cleared: type === "entrance",
   };
   if (input.enemyId) node.enemyId = input.enemyId;
   return node;
@@ -172,13 +175,12 @@ function generateFloor(
   );
   const trinketShopIndex = types.indexOf("trinket-shop");
   if (trinketShopIndex >= 0 && !isLootEligible("trinket", lootDepthAt(positions[trinketShopIndex]!))) {
-    // Keep the planned support rooms distinct while moving this shop past its
-    // depth gate. Eligibility belongs to the room, not the floor's entrance.
     const eligibleSlots = positions.flatMap((position, index) =>
       index > 0 && index < positions.length - 1 && isLootEligible("trinket", lootDepthAt(position)) ? [index] : [],
     );
     const slot = pickRandom(eligibleSlots, rng);
     if (slot !== undefined) [types[trinketShopIndex], types[slot]] = [types[slot]!, types[trinketShopIndex]!];
+    else types[trinketShopIndex] = "equipment-shop";
   }
   const used = new Set(usedEnemies);
   const nodes = types.map((type, index) => {

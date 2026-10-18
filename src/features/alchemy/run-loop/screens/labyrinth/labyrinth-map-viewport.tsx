@@ -7,7 +7,7 @@ import { usePlasmaInteraction } from "@/features/alchemy/shared/ui/use-plasma-so
 import { layoutFloorNodes } from "./labyrinth-map-layout";
 import { LabyrinthNodeSeal } from "./labyrinth-node-seal";
 import { LabyrinthNodeInspector } from "./labyrinth-node-inspector";
-import { isNodeDiscovered } from "@/lib/content-systems/labyrinth/map-state";
+import { labyrinthFloorVisualStates } from "@/lib/content-systems/labyrinth/map-state";
 import { getLabyrinthNodePlasmaPair } from "./labyrinth-plasma";
 
 interface Props {
@@ -38,13 +38,15 @@ export function LabyrinthMapViewport({
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const nodesById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
+  const visuals = useMemo(() => labyrinthFloorVisualStates(map), [map]);
   const selectedNode = selectedNodeId ? (nodesById.get(selectedNodeId) ?? null) : null;
   const emphasizedId = hoveredNodeId ?? focusedNodeId;
   const emphasizedNode = useMemo(() => {
     if (!emphasizedId) return null;
     const candidate = nodesById.get(emphasizedId) ?? null;
-    return candidate && isNodeDiscovered(map, candidate.id) ? candidate : null;
-  }, [nodesById, emphasizedId, map]);
+    const visual = emphasizedId ? visuals.get(emphasizedId) : undefined;
+    return candidate && visual && visual !== "undiscovered" ? candidate : null;
+  }, [nodesById, emphasizedId, visuals]);
   const emphasizedPlasmaPair = useMemo(
     () => (emphasizedNode && emphasizedNode.id !== selectedNodeId ? getLabyrinthNodePlasmaPair(emphasizedNode) : null),
     [emphasizedNode, selectedNodeId],
@@ -153,7 +155,8 @@ export function LabyrinthMapViewport({
                   <LabyrinthNodeSeal
                     key={node.id}
                     node={node}
-                    map={map}
+                    visual={visuals.get(node.id) ?? "undiscovered"}
+                    current={node.id === map.currentNodeId}
                     heroArt={heroArt}
                     selected={selectedNodeId === node.id}
                     emphasized={selectedNodeId === node.id || hoveredNodeId === node.id || focusedNodeId === node.id}

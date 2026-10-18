@@ -3,7 +3,6 @@ import {
   ENCOUNTER_REWARD_TRAIT_KEYWORDS,
 } from "@/features/alchemy/shared/config/encounter-trait-presentation";
 import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";
-import { type KeywordId } from "@/lib/game-data";
 import type { LabyrinthNode } from "@/lib/content-systems/types";
 import {
   getPlasmaColorPair,
@@ -15,43 +14,21 @@ import { destinationMeta } from "@/features/alchemy/shared/config/metadata";
 import { LABYRINTH_TYPE_TO_DESTINATION } from "@/lib/content-systems/labyrinth/data";
 import { phoenixFeatherStatus } from "@/features/alchemy/shared/config/phoenix-feather-status";
 
-const LABYRINTH_TYPE_BASE_KEYWORDS: Record<LabyrinthNode["type"], KeywordId[]> = {
-  entrance: [],
-  combat: [],
-  elite: [],
-  boss: [],
-  rest: ["health"],
-  mystery: ["wish"],
-  corruption: ["consume"],
-  transmutation: ["wish"],
-  shop: ["gold"],
-  alchemist: ["poison"],
-  "trinket-shop": ["wish"],
-  "equipment-shop": ["forge"],
-};
-
-function collectEnemyKeywordIds(enemyId: string | undefined): KeywordId[] {
-  if (!enemyId || !isEnemyId(enemyId)) return [];
-  const enemy = enemyById[enemyId];
-  if (!enemy) return [];
-  return getPlasmaKeywordsForEnemy(enemy);
-}
-
-function getLabyrinthNodeKeywordIds(node: LabyrinthNode): KeywordId[] {
-  const base = LABYRINTH_TYPE_BASE_KEYWORDS[node.type] ?? [];
-  const enemyKeywords = collectEnemyKeywordIds(node.enemyId);
-  return [
+export function getLabyrinthNodePlasmaPair(node: LabyrinthNode): PlasmaColorPair | null {
+  if (node.type === "entrance") return null;
+  if (node.type !== "boss") {
+    return (
+      destinationMeta[LABYRINTH_TYPE_TO_DESTINATION[node.type]]?.plasmaColorPair ?? getPlasmaColorPair(["physical"])
+    );
+  }
+  const enemy = node.enemyId && isEnemyId(node.enemyId) ? enemyById[node.enemyId] : undefined;
+  const keywordIds = [
     ...new Set([
-      ...(enemyKeywords.length ? enemyKeywords : base),
+      ...(enemy ? getPlasmaKeywordsForEnemy(enemy) : []),
       ...(node.modifiers ?? []).flatMap((id) => ENCOUNTER_COMBAT_TRAIT_KEYWORDS[id] ?? []),
       ...(node.rewardModifiers ?? []).flatMap((id) => ENCOUNTER_REWARD_TRAIT_KEYWORDS[id] ?? []),
     ]),
   ];
-}
-
-export function getLabyrinthNodePlasmaPair(node: LabyrinthNode): PlasmaColorPair | null {
-  if (node.type === "entrance") return null;
-  const keywordIds = getLabyrinthNodeKeywordIds(node);
   const hasPhoenixNest = node.rewardModifiers?.includes("phoenix-nest") ?? false;
   const keywordPair =
     keywordIds.length > 0
@@ -63,9 +40,5 @@ export function getLabyrinthNodePlasmaPair(node: LabyrinthNode): PlasmaColorPair
     keywordPair && hasPhoenixNest && keywordIds.length === 1
       ? { ...keywordPair, secondary: phoenixFeatherStatus.shineColors[0] }
       : keywordPair;
-  if (node.type === "boss") return pair;
-  const dest = LABYRINTH_TYPE_TO_DESTINATION[node.type];
-  const meta = dest ? destinationMeta[dest] : undefined;
-  if (meta?.plasmaColorPair) return meta.plasmaColorPair;
   return pair;
 }
