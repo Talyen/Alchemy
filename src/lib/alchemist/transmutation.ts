@@ -24,8 +24,9 @@ import type {
   TransmutationChoice,
   TransmutationAlteration,
 } from "@/lib/active-run-session/alchemy-visits";
-import { pickRandom } from "@/lib/rng";
+import { pickRandom, takeRandomItem } from "@/lib/rng";
 import { stableJson } from "@/lib/utils";
+import { appendPotionTrailer } from "./potion-mixer";
 
 const DAMAGE_KEYWORDS: readonly KeywordId[] = TRANSMUTATION_KEYWORD_GROUPS[0];
 const BUFF_KEYWORDS: readonly KeywordId[] = ["block", "armor", "forge", "thorns"];
@@ -43,6 +44,7 @@ const ALLOWED_DAMAGE_FIELDS = new Set([
 ]);
 const ALLOWED_PLAYER_STATUS_FIELDS = new Set(["kind", "status", "amount"]);
 const ALLOWED_RESOURCE_FIELDS = new Set(["kind", "amount"]);
+const ALLOWED_RANDOM_DAMAGE_FIELDS = new Set(["kind", "minAmount", "maxAmount", "damageTypePool", "lifesteal"]);
 const EXCLUDED_KINDS = new Set(["self-damage", "lose-health", "lose-mana", "lose-max-mana", "gain-max-mana"]);
 
 const SOURCE_CONDITIONS: Partial<Record<KeywordId, readonly string[]>> = {
@@ -60,13 +62,7 @@ function isTransmutableCard(card: BattleCard): boolean {
 }
 
 function hasOnlyAllowedFields(obj: Record<string, unknown>, allowed: Set<string>): boolean {
-  for (const key in obj) {
-    if (!allowed.has(key)) {
-      const val = obj[key];
-      if (val !== false && val !== undefined) return false;
-    }
-  }
-  return true;
+  return Object.keys(obj).every((key) => allowed.has(key) || obj[key] === false || obj[key] === undefined);
 }
 
 function convertibleSource(effect: BattleCardEffect): KeywordId | undefined {
@@ -74,7 +70,10 @@ function convertibleSource(effect: BattleCardEffect): KeywordId | undefined {
   if (effect.kind === "damage") {
     if (hasOnlyAllowedFields(record, ALLOWED_DAMAGE_FIELDS)) return effect.damageType;
   }
-  if (effect.kind === "random-damage" && effect.damageTypePool) return effect.damageTypePool[0];
+  if (effect.kind === "random-damage" && effect.damageTypePool) {
+    if (hasOnlyAllowedFields(record, ALLOWED_RANDOM_DAMAGE_FIELDS)) return effect.damageTypePool[0];
+    return undefined;
+  }
   if (effect.kind === "player-status") {
     if (hasOnlyAllowedFields(record, ALLOWED_PLAYER_STATUS_FIELDS) && BUFF_KEYWORD_SET.has(effect.status)) {
       return effect.status as KeywordId;
@@ -88,25 +87,37 @@ function convertibleSource(effect: BattleCardEffect): KeywordId | undefined {
 
 function sourceReferences(effect: BattleCardEffect, source: KeywordId): boolean {
   if (EXCLUDED_KINDS.has(effect.kind)) return false;
-  if (effect.kind === "damage")
-    return (
-      effect.damageType === source ||
-      !!effect.damageTypePool?.some((type) => type === source) ||
-      effect.damageTypeIfTargetFrozen === source
-    );
-  if (effect.kind === "random-damage")
-    return (
-      DAMAGE_KEYWORDS.includes(source) &&
-      (!effect.damageTypePool || effect.damageTypePool.includes(source as DamageType))
-    );
-  if (effect.kind === "player-status")
-    return effect.status === source || !!effect.statusPool?.some((status) => status === source);
-  if (effect.kind === "heal") return source === "health";
-  if (effect.kind === "restore-mana") return source === "mana";
-  if (effect.kind === "gain-gold") return source === "gold";
-  if (effect.kind === "next-hit-poison") return source === "poison";
-  if ("status" in effect && effect.status === source) return true;
-  return "damageType" in effect && effect.damageType === source;
+  switch (effect.kind) {
+    case "damage":
+      return (
+        effect.damageType === source ||
+        !!effect.damageTypePool?.some((type) => type === source) ||
+        effect.damageTypeIfTargetFrozen === source
+      );
+    case "random-damage":
+      return (
+        DAMAGE_KEYWORDS.includes(source) &&
+        (!effect.damageTypePool || effect.damageTypePool.includes(source as DamageType))
+      );
+    case "player-status":
+      return effect.status === source || !!effect.statusPool?.some((status) => status === source);
+    case "heal":
+      return source === "health";
+    case "restore-mana":
+      return source === "mana";
+    case "gain-gold":
+      return source === "gold";
+    case "next-hit-poison":
+      return source === "poison";
+    case "chance":
+    case "repeat-over-turns":
+      return false;
+    default:
+      // Any other status or damage carrier (cleanses, armor removal, leech flags).
+      return (
+        ("status" in effect && effect.status === source) || ("damageType" in effect && effect.damageType === source)
+      );
+  }
 }
 
 function canConvertSource(effects: BattleCardEffect[], source: KeywordId): boolean {
@@ -135,20 +146,23 @@ function canConvertSource(effects: BattleCardEffect[], source: KeywordId): boole
 
 function convertEffect(effect: BattleCardEffect, source: KeywordId, destination: KeywordId): BattleCardEffect {
   const mapped = mapEffectChildren(effect, (child) => convertEffect(child, source, destination));
-  if (mapped.kind === "random-damage" && mapped.damageTypePool && DAMAGE_KEYWORDS.includes(destination))
+  if (
+    (mapped.kind === "damage" || mapped.kind === "random-damage") &&
+    mapped.damageTypePool &&
+    DAMAGE_KEYWORDS.includes(destination)
+  ) {
+    const damageTypePool = mapped.damageTypePool.map((type) => (type === source ? (destination as DamageType) : type));
+    if (mapped.kind === "random-damage") return { ...mapped, damageTypePool };
     return {
       ...mapped,
-      damageTypePool: mapped.damageTypePool.map((type) => (type === source ? (destination as DamageType) : type)),
+      damageType: mapped.damageType === source ? (destination as DamageType) : mapped.damageType,
+      damageTypePool,
     };
+  }
   if (mapped.kind === "damage" && DAMAGE_KEYWORDS.includes(destination)) {
     return {
       ...mapped,
       damageType: mapped.damageType === source ? (destination as DamageType) : mapped.damageType,
-      ...(mapped.damageTypePool
-        ? {
-            damageTypePool: mapped.damageTypePool.map((type) => (type === source ? (destination as DamageType) : type)),
-          }
-        : {}),
     };
   }
   if (mapped.kind === "player-status" && mapped.status === source && BUFF_KEYWORDS.includes(destination))
@@ -182,9 +196,7 @@ function finishAlteration(
       }) as CardMagnitudeReference,
   );
   const description = carryCardDescriptionMarks(previous, createEffectDescription(effects));
-  for (const tag of result.tags ?? [])
-    description.push({ role: "keyword", parts: [tag.charAt(0).toUpperCase() + tag.slice(1)] });
-  if (result.consume) description.push({ role: "consume", parts: ["Consume"] });
+  appendPotionTrailer(description, result.tags, result.consume === true);
   return cloneBattleCard(withCardDescription(result, description));
 }
 
@@ -298,9 +310,7 @@ export function createTransmutationOffers(deck: readonly BattleCard[], rng: () =
   const chosen = new Set(keywords);
   const remaining = pools.flat().filter((keyword) => !chosen.has(keyword));
   while (keywords.length < 3 && remaining.length) {
-    const keyword = pickRandom(remaining, rng)!;
-    keywords.push(keyword);
-    remaining.splice(remaining.indexOf(keyword), 1);
+    keywords.push(takeRandomItem(remaining, rng)!);
   }
   return keywords.map((keyword) => ({
     keyword,
@@ -311,16 +321,9 @@ export function createTransmutationOffers(deck: readonly BattleCard[], rng: () =
   }));
 }
 
-const cardSnapshotKeyCache = new WeakMap<object, string>();
-
-function cardSnapshotKey(card: BattleCard | null | undefined): string | undefined {
-  if (!card) return undefined;
-  let key = cardSnapshotKeyCache.get(card);
-  if (key === undefined) {
-    key = stableJson(card);
-    cardSnapshotKeyCache.set(card, key);
-  }
-  return key;
+/** Saved sources match live cards exactly; even a cost drift makes the preview stale. */
+function cardSnapshotKey(card: BattleCard): string {
+  return stableJson(card);
 }
 
 function matchingAlteration(
