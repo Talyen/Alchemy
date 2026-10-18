@@ -10,8 +10,6 @@ function defineTrinket<Id extends string, Effects extends Partial<TrinketManifes
 ) {
   return {
     entry: trinket(id, title, describe(effects), getCatalogArt(id), effects),
-    // Keep each formatter typed to its own authored effects; dispatch below
-    // accepts the common manifest shape for content validation.
     describe: (values: Partial<TrinketManifest>) => describe(values as Effects),
   };
 }

@@ -363,5 +363,5 @@ export function pickResolvedMysteryEvent(
   ownedTrinketIds: readonly string[],
   eligible?: (event: MysteryEvent) => boolean,
 ): MysteryEvent {
-  return resolveMysteryEventTrinkets(pickMysteryEvent(rng, eligible), ownedTrinketIds, rng);
+  return resolveMysteryEventTrinkets(pickMysteryEvent(rng, eligible), ownedTrinketIds);
 }

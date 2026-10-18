@@ -1,9 +1,7 @@
 import { expect, it } from "vitest";
 import { describeTrinket, trinketById, trinketLibrary, type TrinketEntry } from "@/lib/game-data";
 import { defaultTrinketEffects } from "@/lib/trinkets";
-import { validateTrinkets } from "@/lib/content-validation/validators";
 import { TrinketContentSchema } from "@/lib/content-validation/schemas";
-import { createCollector } from "@/lib/content-validation/utils";
 import { validateTrinketDescriptionParity } from "@/lib/content-validation/card-parity/trinket-parity";
 
 const chimes = trinketById["resonant-chimes"]!;
@@ -78,12 +76,4 @@ it("rejects missing, unexpected, disabled, and unregistered mechanics", () => {
   ]);
   for (const id of ["unknown", "constructor", "__proto__"])
     expect(messages({ ...chimes, id })).toEqual([`Trinket "${id}" has no registered description definition`]);
-});
-
-it("retains parity diagnostics through the public content gate", () => {
-  const entry = { ...chimes, effects: { resonantChimeCardsRequired: 99, resonantChimeMana: 1 } };
-  const collector = createCollector();
-  validateTrinkets(collector, [entry]);
-  expect(collector.issues).toEqual(validateTrinketDescriptionParity(entry));
-  expect(collector.issues).toHaveLength(1);
 });

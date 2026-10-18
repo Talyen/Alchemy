@@ -11,8 +11,12 @@ export function validateTrinketDescriptionParity(trinket: TrinketEntry): Content
     issues.push({ severity: "error", area: "trinkets", id: trinket.id, message });
   };
   const canonical = trinketById[trinket.id];
+  if (!canonical) {
+    addIssue(`Trinket "${trinket.id}" has no registered description definition`);
+    return issues;
+  }
   const expected = describeTrinket(trinket.id, trinket.effects);
-  if (!canonical || expected === null) {
+  if (expected === null) {
     addIssue(`Trinket "${trinket.id}" has no registered description definition`);
     return issues;
   }
