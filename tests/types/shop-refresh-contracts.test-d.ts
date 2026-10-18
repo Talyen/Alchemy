@@ -16,7 +16,7 @@ createShopActions(defaultGameSession);
 // @ts-expect-error -- shop progression must come from the bound session
 createShopActions(cachedEffects, defaultGameSession);
 // @ts-expect-error -- Gear sampling cannot override transaction-owned Homestead effects
-initializeShopVisit(draft, "equipment", 1);
+initializeShopVisit(draft, "equipment-shop", 1);
 
 createShopRefreshAction(
   {
@@ -44,6 +44,6 @@ setRunActivityData(draft, "shop", alchemistState);
 
 const shops = createShopActions(defaultGameSession);
 // @ts-expect-error -- room entry is the only visit creation capability
-shops.initialize("merchant");
+shops.initialize("shop");
 // @ts-expect-error -- retained shop commands cannot reroll a visit
 shops.merchant.initialize();

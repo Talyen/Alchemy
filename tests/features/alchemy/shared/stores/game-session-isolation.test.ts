@@ -264,7 +264,7 @@ describe("independent game sessions", () => {
       const beforeB = stateDigest(b.session);
       playReadyCard(a.session);
       const shop = a.controller.shop().merchant;
-      initializeShopForTest("merchant", a.session);
+      initializeShopForTest("shop", a.session);
       const visit = readRunSession(a.session).activity;
       if (visit.kind !== "shop") throw new Error("Card Shop did not initialize");
       const card = visit.data.cards[0]!;
@@ -286,7 +286,7 @@ describe("independent game sessions", () => {
       expect(bCommits).toHaveBeenCalled();
 
       for (const career of [a, b]) {
-        initializeShopForTest("equipment", career.session);
+        initializeShopForTest("equipment-shop", career.session);
         const equipment = readRunSession(career.session).activity;
         if (equipment.kind !== "equipment-shop") throw new Error("Equipment Shop did not initialize");
         expect(equipment.data.gear.length).toBeGreaterThan(0);

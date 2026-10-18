@@ -23,13 +23,7 @@ import {
   createShopPurchaseActions,
   createShopRefreshAction,
 } from "./shop-commands-core";
-import { computeMixPotionPrice, getShopBuyPrice } from "./shop-pricing";
-import {
-  resolveDraftShopEffects,
-  resolveDraftShopModifiers,
-  resolveReadShopEffects,
-  resolveReadShopModifiers,
-} from "./shop-pricing-context";
+import { computeMixPotionPrice, draftShopDiscounts, getShopBuyPrice, readShopDiscounts } from "./shop-pricing";
 import { applyStrongSpiritsToPotions, resampleCardShopOfferings } from "./shop-state-init";
 import { runShopTransaction } from "./shop-transactions";
 
@@ -39,50 +33,40 @@ export function createAlchemistShopCommands(gameSession: GameSession) {
       activity: "alchemist",
       itemsOf: (state) => state.potions,
       slotKeyOf: cardSlotKeyOf,
-      priceOf: (card, context) => getShopBuyPrice("alchemistPotion", card, context),
+      priceOf: (card, context) => getShopBuyPrice({ kind: "alchemistPotion", item: card, context }),
       acquire: appendCardToRunWithDiscovery,
     },
     gameSession,
   );
   const getMixPrice = () => {
-    const { talentEffects, homesteadEffects } = resolveReadShopEffects(gameSession);
-    return computeMixPotionPrice(
-      talentEffects,
-      resolveReadShopModifiers(gameSession),
-      homesteadEffects.mixPotionDiscount,
-    );
+    const { talentEffects, homesteadEffects, modifiers } = readShopDiscounts(gameSession);
+    return computeMixPotionPrice(talentEffects, modifiers, homesteadEffects.mixPotionDiscount);
   };
   const getRefreshPrice = createGetRefreshPrice("alchemist", gameSession);
 
   function brewPotion(
     prepare: (deck: BattleCard[]) => { potion: BattleCard; deck: BattleCard[] } | null,
   ): BattleCard | null {
-    return (
-      runShopTransaction(
-        "alchemist",
-        (draft) => {
-          const { talentEffects, homesteadEffects } = resolveDraftShopEffects(draft);
-          const price = computeMixPotionPrice(
-            talentEffects,
-            resolveDraftShopModifiers(draft),
-            homesteadEffects.mixPotionDiscount,
-          );
-          const state = readActivityData(snapshotTransactionValue(draft.session.activity), "alchemist");
-          if (state.mixUsed || readDraftGold(draft) < price) return { committed: false, price, value: null };
-          const prepared = prepare(snapshotTransactionValue(draft.run.activeRun.runDeck));
-          if (!prepared) return { committed: false, price, value: null };
-          deductGold(draft, price);
-          setAlchemistState(draft, (previous) => ({ ...previous, mixUsed: true }));
-          setRunDeck(draft, prepared.deck);
-          if (isMixedPotionCard(prepared.potion)) {
-            discoverCardIds(draft, [MIXED_POTION_CARD_ID]);
-          }
-          return { committed: true, price, value: prepared.potion };
-        },
-        "alchemistMix",
-        gameSession,
-      ).value ?? null
-    );
+    return runShopTransaction(
+      "alchemist",
+      (draft) => {
+        const { talentEffects, homesteadEffects, modifiers } = draftShopDiscounts(draft);
+        const price = computeMixPotionPrice(talentEffects, modifiers, homesteadEffects.mixPotionDiscount);
+        const state = readActivityData(snapshotTransactionValue(draft.session.activity), "alchemist");
+        if (state.mixUsed || readDraftGold(draft) < price) return { committed: false, price, value: null };
+        const prepared = prepare(snapshotTransactionValue(draft.run.activeRun.runDeck));
+        if (!prepared) return { committed: false, price, value: null };
+        deductGold(draft, price);
+        setAlchemistState(draft, (previous) => ({ ...previous, mixUsed: true }));
+        setRunDeck(draft, prepared.deck);
+        if (isMixedPotionCard(prepared.potion)) {
+          discoverCardIds(draft, [MIXED_POTION_CARD_ID]);
+        }
+        return { committed: true, price, value: prepared.potion };
+      },
+      "alchemistMix",
+      gameSession,
+    ).value;
   }
 
   function mixPotions(indexA: number, indexB: number): BattleCard | null {

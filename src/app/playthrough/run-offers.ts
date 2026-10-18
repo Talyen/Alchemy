@@ -2,7 +2,6 @@ import { selectTransmutation, transmuteCard } from "@/features/alchemy/run-loop/
 import { getTransmutationOffers, canTransmuteCard, isTransmutationSourceCurrent } from "@/lib/alchemist/transmutation";
 import { PLAYABLE_HAND_OPTIONS } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { cardSlotKeyOf, gearSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
-import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import {
   readActiveRun,
@@ -268,7 +267,7 @@ export function offerRunChoices(
     case "trinket-shop": {
       const actions = shop().trinket;
       activity.data.trinkets.forEach((trinket, index) => {
-        const key = shopItemSlotKey(trinket.id, index);
+        const key = cardSlotKeyOf(trinket, index);
         if (!activity.data.purchasedSlotKeys.includes(key) && actions.getBuyPrice(trinket) <= profile.gold)
           offer("buy-trinket", trinket.id, 1, () => actions.buy(key), index);
       });

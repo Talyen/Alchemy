@@ -14,6 +14,9 @@ export interface RefreshableShopFields {
   purchasedSlotKeys: string[];
 }
 
+/** Visit keys for the four Gold shops. Mirrors the shop entries of RunActivityData. */
+export type ShopActivity = "shop" | "alchemist" | "trinket-shop" | "equipment-shop";
+
 export type ShopState = RefreshableShopFields & {
   cards: BattleCard[];
   removeUsed: boolean;

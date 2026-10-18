@@ -107,7 +107,7 @@ describe("retained headless rejection and persistence contracts", () => {
   it("rejects repeated and unaffordable shop purchases without duplicate grants", () => {
     const controller = start();
     const shop = controller.shop().merchant;
-    initializeShopForTest("merchant", defaultGameSession);
+    initializeShopForTest("shop", defaultGameSession);
     const activity = readRunSession(defaultGameSession).activity;
     if (activity.kind !== "shop") throw new Error("Shop not initialized");
     const card = activity.data.cards[0]!;

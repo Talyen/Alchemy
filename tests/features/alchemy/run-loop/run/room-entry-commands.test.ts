@@ -1,4 +1,4 @@
-import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
+import { shopItemSlotKey } from "@/lib/active-run-session";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import "../../../../helpers/mock-audio";
 import { afterEach, expect, it, vi } from "vitest";

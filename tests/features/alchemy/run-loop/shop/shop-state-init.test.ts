@@ -76,61 +76,63 @@ describe("shop-state-init", () => {
     expect(refreshed.every((item) => gearDefinitions[item.definitionId]!.rarity === "astral")).toBe(true);
   });
 
-  it("restocks around owned trinkets instead of offering them", () => {
-    const owned = trinketLibrary[0];
-    expect(owned).toBeDefined();
-    const ownedId = owned!.id;
-    const offerings = resampleTrinketShopOfferings(() => 0, lootProgress, [ownedId]);
+  it("prefers unseen trinkets, excluding owned and current shelf offerings", () => {
+    const owned = trinketLibrary[0]!;
+    const offerings = resampleTrinketShopOfferings(() => 0, lootProgress, [owned.id]);
     expect(offerings).toHaveLength(TRINKET_SHOP_OFFERED);
-    expect(offerings.map((entry) => entry.id)).not.toContain(ownedId);
+    expect(offerings.map((entry) => entry.id)).not.toContain(owned.id);
+
+    const currentIds = trinketLibrary.slice(0, TRINKET_SHOP_OFFERED).map((entry) => entry.id);
+    const refreshed = resampleTrinketShopOfferings(() => 0.5, lootProgress, [], currentIds);
+    expect(refreshed).toHaveLength(TRINKET_SHOP_OFFERED);
+    expect(refreshed.some((entry) => currentIds.includes(entry.id))).toBe(false);
   });
 
-  it("excludes the current trinket shelf when enough alternatives remain", () => {
-    const currentIds: string[] = trinketLibrary.slice(0, TRINKET_SHOP_OFFERED).map((entry) => entry.id);
-    const offerings = resampleTrinketShopOfferings(() => 0.5, lootProgress, [], currentIds);
-
-    expect(offerings).toHaveLength(TRINKET_SHOP_OFFERED);
-    expect(offerings.some((entry) => currentIds.includes(entry.id))).toBe(false);
-  });
-
-  it("maximizes novel trinkets when the remaining pool is smaller than the shelf", () => {
-    const current = trinketLibrary.slice(0, TRINKET_SHOP_OFFERED);
-    const novel = trinketLibrary[TRINKET_SHOP_OFFERED]!;
-    const eligibleIds = new Set<string>([...current.map((entry) => entry.id), novel.id]);
-    const owned = trinketLibrary.filter((entry) => !eligibleIds.has(entry.id)).map((entry) => entry.id);
-    const offerings = resampleTrinketShopOfferings(
-      () => 0.5,
-      lootProgress,
-      owned,
-      current.map((entry) => entry.id),
-    );
-
-    expect(offerings).toHaveLength(TRINKET_SHOP_OFFERED);
-    expect(offerings.map((entry) => entry.id)).toContain(novel.id);
-  });
-
-  it("caps shelf at available count when almost all trinkets are owned, even with currentIds", () => {
-    const keep = trinketLibrary.slice(0, 2).map((entry) => entry.id);
-    const owned = trinketLibrary.filter((entry) => !keep.includes(entry.id)).map((entry) => entry.id);
-    const offerings = resampleTrinketShopOfferings(() => 0.5, lootProgress, owned, keep);
-
-    expect(offerings).toHaveLength(keep.length);
-    expect(offerings.map((entry) => entry.id).sort()).toEqual([...keep].sort());
-  });
-
-  it("reuses current shelf when no novel alternatives remain", () => {
-    const eligible = trinketLibrary.slice(0, TRINKET_SHOP_OFFERED);
-    const eligibleIds = new Set(eligible.map((entry) => entry.id));
-    const owned = trinketLibrary.filter((entry) => !eligibleIds.has(entry.id)).map((entry) => entry.id);
-    const offerings = resampleTrinketShopOfferings(
-      () => 0.5,
-      lootProgress,
-      owned,
-      eligible.map((entry) => entry.id),
-    );
-
-    expect(offerings).toHaveLength(TRINKET_SHOP_OFFERED);
-    expect(new Set(offerings.map((entry) => entry.id))).toEqual(eligibleIds);
+  it.each([
+    {
+      name: "tops up with the remaining novel trinket when the unseen pool is smaller than the shelf",
+      setup: () => {
+        const current = trinketLibrary.slice(0, TRINKET_SHOP_OFFERED);
+        const novel = trinketLibrary[TRINKET_SHOP_OFFERED]!;
+        const eligibleIds = new Set([...current.map((entry) => entry.id), novel.id]);
+        return {
+          owned: trinketLibrary.filter((entry) => !eligibleIds.has(entry.id)).map((entry) => entry.id),
+          currentIds: current.map((entry) => entry.id),
+          expectedLength: TRINKET_SHOP_OFFERED,
+          expectedIds: [novel.id] as string[],
+        };
+      },
+    },
+    {
+      name: "caps the shelf at the available count when almost all trinkets are owned",
+      setup: () => {
+        const keep = trinketLibrary.slice(0, 2).map((entry) => entry.id);
+        return {
+          owned: trinketLibrary.filter((entry) => !keep.includes(entry.id)).map((entry) => entry.id),
+          currentIds: keep,
+          expectedLength: keep.length,
+          expectedIds: keep,
+        };
+      },
+    },
+    {
+      name: "reuses the current shelf when no novel alternatives remain",
+      setup: () => {
+        const eligible = trinketLibrary.slice(0, TRINKET_SHOP_OFFERED).map((entry) => entry.id);
+        return {
+          owned: trinketLibrary.filter((entry) => !eligible.includes(entry.id)).map((entry) => entry.id),
+          currentIds: eligible,
+          expectedLength: TRINKET_SHOP_OFFERED,
+          expectedIds: eligible,
+        };
+      },
+    },
+  ])("$name", ({ setup }) => {
+    const { owned, currentIds, expectedLength, expectedIds } = setup();
+    const offerings = resampleTrinketShopOfferings(() => 0.5, lootProgress, owned, currentIds);
+    expect(offerings).toHaveLength(expectedLength);
+    expect(offerings.every((entry) => !owned.includes(entry.id))).toBe(true);
+    for (const id of expectedIds) expect(offerings.map((entry) => entry.id)).toContain(id);
   });
 
   it("round-trips trinket shop state through persistence helpers", () => {

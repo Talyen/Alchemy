@@ -2,7 +2,7 @@ import "../../../../helpers/mock-audio";
 import { initializeShopForTest } from "../../../../helpers/visit-initialization";
 
 import { describe, expect, it, vi } from "vitest";
-import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
+import { shopItemSlotKey } from "@/lib/active-run-session";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
@@ -62,13 +62,9 @@ const shops = [
     read: () => readActivityData(readRunSession(defaultGameSession).activity, "shop"),
     buyPrice: SHOP_CARD_PRICE as number | null,
     refreshPrice: SHOP_REFRESH_PRICE,
-    offeringIds: () =>
-      readActivityData(readRunSession(defaultGameSession).activity, "shop").cards.map((card) => card.id),
-
     replayIds: () => readActivityData(readRunSession(defaultGameSession).activity, "shop").cards.map((card) => card.id),
     restockDedup: true,
-    initialize: () => initializeShopForTest("merchant", defaultGameSession),
-    replayRefresh: true,
+    initialize: () => initializeShopForTest("shop", defaultGameSession),
   },
   {
     name: "alchemist",
@@ -93,13 +89,10 @@ const shops = [
     read: () => readActivityData(readRunSession(defaultGameSession).activity, "alchemist"),
     buyPrice: ALCHEMIST_POTION_PRICE as number | null,
     refreshPrice: ALCHEMIST_REFRESH_PRICE,
-    offeringIds: () =>
-      readActivityData(readRunSession(defaultGameSession).activity, "alchemist").potions.map((card) => card.id),
     replayIds: () =>
       readActivityData(readRunSession(defaultGameSession).activity, "alchemist").potions.map((card) => card.id),
     restockDedup: true,
     initialize: () => initializeShopForTest("alchemist", defaultGameSession),
-    replayRefresh: true,
   },
   {
     name: "trinket",
@@ -124,13 +117,10 @@ const shops = [
     read: () => readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop"),
     buyPrice: TRINKET_SHOP_TRINKET_PRICE as number | null,
     refreshPrice: SHOP_REFRESH_PRICE,
-    offeringIds: () =>
-      readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets.map((entry) => entry.id),
     replayIds: () =>
       readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets.map((entry) => entry.id),
     restockDedup: true,
-    initialize: () => initializeShopForTest("trinket", defaultGameSession),
-    replayRefresh: true,
+    initialize: () => initializeShopForTest("trinket-shop", defaultGameSession),
   },
   {
     name: "equipment",
@@ -159,17 +149,12 @@ const shops = [
     read: () => readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop"),
     buyPrice: null as number | null,
     refreshPrice: SHOP_REFRESH_PRICE,
-    offeringIds: () =>
-      readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear.map(
-        (item) => item.instanceId,
-      ),
     replayIds: () =>
       readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear.map(
         (item) => item.definitionId,
       ),
     restockDedup: false,
-    initialize: () => initializeShopForTest("equipment", defaultGameSession),
-    replayRefresh: true,
+    initialize: () => initializeShopForTest("equipment-shop", defaultGameSession),
   },
 ];
 
@@ -268,18 +253,18 @@ describe("shop action isolation", () => {
       setRunProgress({ gold: 999 });
       shop.seed();
       const actions = buildActions();
-      const beforeIds = shop.offeringIds();
+      const beforeIds = shop.replayIds();
 
       shop.refresh(actions);
 
-      const afterIds = shop.offeringIds();
+      const afterIds = shop.replayIds();
       const overlap = beforeIds.filter((id) => afterIds.includes(id));
       expect(overlap.length).toBeLessThan(beforeIds.length);
     });
   });
 
   describe.each(shops)("$name RNG replay", (shop) => {
-    it("replays init from the same RNG state", () => {
+    it("replays init and refresh from the same RNG state", () => {
       const rngState = createRunRngState(0x4000_0000);
       setRunProgress({ gold: 999, rng: rngState });
       shop.seed();
@@ -291,19 +276,14 @@ describe("shop action isolation", () => {
       setRunProgress({ rng: rngState });
       shop.initialize();
       expect(shop.replayIds()).toEqual(first);
-    });
-  });
 
-  describe.each(shops.filter((shop) => shop.replayRefresh))("$name RNG refresh replay", (shop) => {
-    it("replays refresh from the same RNG state", () => {
-      const rngState = createRunRngState(0x4000_0000);
-      setRunProgress({ gold: 999, rng: rngState });
       shop.seedRefresh();
+      setRunProgress({ gold: 999, rng: rngState });
       shop.refresh(buildActions());
       const refreshed = shop.replayIds();
 
       shop.seedRefresh();
-      setRunProgress({ rng: rngState });
+      setRunProgress({ gold: 999, rng: rngState });
       shop.refresh(buildActions());
       expect(shop.replayIds()).toEqual(refreshed);
     });

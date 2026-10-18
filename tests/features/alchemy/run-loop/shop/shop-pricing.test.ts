@@ -17,14 +17,26 @@ describe("shop-pricing", () => {
       runBoons: ["merchants-favor"],
       firstPurchaseUsed: false,
     };
-    expect(getShopBuyPrice("alchemistPotion", potion, context)).toBe(13);
-    expect(getShopBuyPrice("alchemistPotion", potion, { ...context, firstPurchaseUsed: true })).toBe(20);
-    expect(getShopBuyPrice("alchemistPotion", potion, { ...context, modifiers: ["happy-hour"] })).toBe(0);
-    expect(getShopBuyPrice("merchantCard", potion, context)).toBe(13);
-    expect(getShopBuyPrice("merchantCard", cardById["slash"]!, context)).toBe(18);
-    expect(getShopBuyPrice("trinket", null, context)).toBe(88);
-    expect(getShopBuyPrice("merchantCard", cardById["slash"]!, { ...context, modifiers: ["bargain-bin"] })).toBe(3);
-    expect(getShopBuyPrice("trinket", null, { ...context, modifiers: ["collectors-favor"] })).toBe(63);
+    expect(getShopBuyPrice({ kind: "alchemistPotion", item: potion, context })).toBe(13);
+    expect(
+      getShopBuyPrice({ kind: "alchemistPotion", item: potion, context: { ...context, firstPurchaseUsed: true } }),
+    ).toBe(20);
+    expect(
+      getShopBuyPrice({ kind: "alchemistPotion", item: potion, context: { ...context, modifiers: ["happy-hour"] } }),
+    ).toBe(0);
+    expect(getShopBuyPrice({ kind: "merchantCard", item: potion, context })).toBe(13);
+    expect(getShopBuyPrice({ kind: "merchantCard", item: cardById["slash"]!, context })).toBe(18);
+    expect(getShopBuyPrice({ kind: "trinket", item: null, context })).toBe(88);
+    expect(
+      getShopBuyPrice({
+        kind: "merchantCard",
+        item: cardById["slash"]!,
+        context: { ...context, modifiers: ["bargain-bin"] },
+      }),
+    ).toBe(3);
+    expect(
+      getShopBuyPrice({ kind: "trinket", item: null, context: { ...context, modifiers: ["collectors-favor"] } }),
+    ).toBe(63);
   });
 
   it.each([
@@ -53,7 +65,9 @@ describe("shop-pricing", () => {
       ["oathkeeper", EQUIPMENT_SHOP_UNIQUE_PRICE],
       ["missing-definition", EQUIPMENT_SHOP_BASIC_PRICE],
     ] as const) {
-      expect(getShopBuyPrice("gear", { instanceId: definitionId, definitionId, affixes: [] }, context)).toBe(price);
+      expect(
+        getShopBuyPrice({ kind: "gear", item: { instanceId: definitionId, definitionId, affixes: [] }, context }),
+      ).toBe(price);
     }
   });
 });

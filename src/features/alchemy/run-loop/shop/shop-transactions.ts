@@ -8,12 +8,12 @@ import {
 import { guardProgressAction, sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import type { BattleCard } from "@/lib/game-data";
 import { type playUISound } from "@/lib/audio";
-import type { ShopActivity } from "./shop-action-types";
+import type { ShopActivity } from "@/lib/active-run-session";
 
 export interface ShopTransactionResult {
   committed: boolean;
   price: number;
-  value: BattleCard | null | undefined;
+  value: BattleCard | null;
 }
 
 export function runShopTransaction(
@@ -36,7 +36,7 @@ export function runShopTransaction(
       ),
     null,
   )();
-  if (!result) return { committed: false, price: 0, value: undefined };
+  if (!result) return { committed: false, price: 0, value: null };
   if (result.committed && result.price > 0) sessionFeedback(gameSession).playGoldSpend();
   if (result.committed && successSound) sessionFeedback(gameSession).playUISound(successSound);
   return result;

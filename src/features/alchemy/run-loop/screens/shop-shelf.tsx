@@ -1,6 +1,6 @@
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
-import { shopItemSlotKey } from "../shop/shop-slot-keys";
+import { cardSlotKeyOf, gearSlotKeyOf } from "../shop/shop-commands-core";
 import { PurchasableCardItem, PurchasableGearItem, PurchasableTrinketItem } from "../shop/ui/purchasable-shop-item";
 import { GenericShopScreen, type GenericShopScreenProps } from "./generic-shop-screen";
 
@@ -26,7 +26,7 @@ export function ShopShelf(props: Props) {
       return (
         <GenericShopScreen
           {...props}
-          getSlotKey={(card, index) => shopItemSlotKey(card.id, index)}
+          getSlotKey={cardSlotKeyOf}
           renderItem={(card, price, purchased, onBuy) => (
             <PurchasableCardItem card={card} price={price} gold={props.gold} purchased={purchased} onBuy={onBuy} />
           )}
@@ -36,7 +36,7 @@ export function ShopShelf(props: Props) {
       return (
         <GenericShopScreen
           {...props}
-          getSlotKey={(gear) => gear.instanceId}
+          getSlotKey={gearSlotKeyOf}
           renderItem={(instance, price, purchased, onBuy) => (
             <PurchasableGearItem
               instance={instance}
@@ -52,7 +52,7 @@ export function ShopShelf(props: Props) {
       return (
         <GenericShopScreen
           {...props}
-          getSlotKey={(trinket, index) => shopItemSlotKey(trinket.id, index)}
+          getSlotKey={cardSlotKeyOf}
           renderItem={(trinket, price, purchased, onBuy) => (
             <PurchasableTrinketItem
               trinket={trinket}

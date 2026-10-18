@@ -48,7 +48,7 @@ describe("loot progression at run boundaries", () => {
     expect(progress().depth).toBe(4);
     const shop = actions();
     setRunProgress({ effects: { ...defaultHomesteadEffects, gearAstralChanceBonus: 1 } });
-    initializeShopForTest("equipment", defaultGameSession);
+    initializeShopForTest("equipment-shop", defaultGameSession);
     expect(
       readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear.every(
         (item) => gearDefinitions[item.definitionId].rarity === "astral",
@@ -79,7 +79,7 @@ describe("loot progression at run boundaries", () => {
     });
     expect(progress().depth).toBe(2);
     const shop = actions();
-    initializeShopForTest("equipment", defaultGameSession);
+    initializeShopForTest("equipment-shop", defaultGameSession);
     expect(shop.equipment.refresh()).toBe(true);
     expect(progress().depth).toBe(2);
     expect(
@@ -131,7 +131,7 @@ describe("loot progression at run boundaries", () => {
       draft.run.navigation.screen = "trinket-shop";
     });
     const shop = actions();
-    initializeShopForTest("trinket", defaultGameSession);
+    initializeShopForTest("trinket-shop", defaultGameSession);
     const offered = readActivityData(readRunSession(defaultGameSession).activity, "trinket-shop").trinkets;
     expect(offered).toHaveLength(3);
     restoreRun(snapshotRun(defaultGameSession), {}, {}, defaultGameSession);
@@ -162,7 +162,7 @@ describe("loot progression at run boundaries", () => {
       draft.run.navigation.screen = "equipment-shop";
     });
     const shop = actions();
-    initializeShopForTest("equipment", defaultGameSession);
+    initializeShopForTest("equipment-shop", defaultGameSession);
     const offered = readActivityData(readRunSession(defaultGameSession).activity, "equipment-shop").gear;
     const saved = snapshotRun(defaultGameSession);
     restoreRun(saved, {}, {}, defaultGameSession);

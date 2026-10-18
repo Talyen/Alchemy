@@ -86,36 +86,31 @@ describe("PurchasableCardItem", () => {
   });
 });
 
-describe("PurchasableGearItem", () => {
+describe.each([
+  {
+    name: "Gear",
+    mount: (onBuy: () => void) => (
+      <PurchasableGearItem instance={testGearInstance} price={50} gold={20} purchased={false} onBuy={onBuy} />
+    ),
+    label: /Buy Longsword/,
+  },
+  {
+    name: "Trinket",
+    mount: (onBuy: () => void) => (
+      <PurchasableTrinketItem trinket={testTrinket} price={50} gold={20} purchased={false} onBuy={onBuy} />
+    ),
+    label: /Buy Meteorite/,
+  },
+])("Purchasable$nameItem", ({ mount, label }) => {
   afterEach(() => {
     cleanup();
   });
 
-  it("keeps unaffordable Gear keyboard-inspectable while preventing purchases", async () => {
+  it("keeps an unaffordable item keyboard-inspectable while preventing purchases", async () => {
     const user = userEvent.setup();
     const onBuy = vi.fn();
-    render(<PurchasableGearItem instance={testGearInstance} price={50} gold={20} purchased={false} onBuy={onBuy} />);
-    const button = screen.getByRole("button", { name: /Buy Longsword/ });
-    await user.tab();
-    expect(document.activeElement).toBe(button);
-    expect(button.getAttribute("aria-disabled")).toBe("true");
-    expect(await screen.findByRole("tooltip")).toBeTruthy();
-    await user.keyboard("{Enter}");
-    expect(onBuy).not.toHaveBeenCalled();
-  });
-});
-
-describe("PurchasableTrinketItem", () => {
-  afterEach(() => {
-    cleanup();
-  });
-
-  it("keeps an unaffordable Trinket keyboard-inspectable while preventing purchases", async () => {
-    const user = userEvent.setup();
-    const onBuy = vi.fn();
-    render(<PurchasableTrinketItem trinket={testTrinket} price={50} gold={20} purchased={false} onBuy={onBuy} />);
-
-    const button = screen.getByRole("button", { name: /Buy Meteorite/ });
+    render(mount(onBuy));
+    const button = screen.getByRole("button", { name: label });
     await user.tab();
     expect(document.activeElement).toBe(button);
     expect(button.getAttribute("aria-disabled")).toBe("true");

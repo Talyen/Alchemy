@@ -62,16 +62,16 @@ function initializeRoom(
       return { screen, battle: null };
     }
     case DESTINATIONS.CARD_SHOP:
-      initializeShopVisit(draft, "merchant");
+      initializeShopVisit(draft, "shop");
       return { screen: ROUTE_SCREENS.SHOP, battle: null };
     case DESTINATIONS.ALCHEMIST_SHOP:
       initializeShopVisit(draft, "alchemist");
       return { screen: ROUTE_SCREENS.ALCHEMIST, battle: null };
     case DESTINATIONS.TRINKET_SHOP:
-      initializeShopVisit(draft, "trinket");
+      initializeShopVisit(draft, "trinket-shop");
       return { screen: ROUTE_SCREENS.TRINKET_SHOP, battle: null };
     case DESTINATIONS.GEAR_SHOP:
-      initializeShopVisit(draft, "equipment");
+      initializeShopVisit(draft, "equipment-shop");
       return { screen: ROUTE_SCREENS.EQUIPMENT_SHOP, battle: null };
     case DESTINATIONS.MYSTERY:
       beginMysteryVisitInTransaction(draft);

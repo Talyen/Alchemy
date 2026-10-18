@@ -3,7 +3,7 @@ import "../../../../helpers/mock-audio";
 import { initializeShopForTest } from "../../../../helpers/visit-initialization";
 
 import { describe, expect, it } from "vitest";
-import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
+import { shopItemSlotKey } from "@/lib/active-run-session";
 import { mutateGearForTest, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
@@ -397,7 +397,7 @@ describe("trinket shop actions", () => {
         for (const trinket of trinketLibrary.slice(buyLast ? 1 : 0)) gear.addTrinket(trinket.id);
       });
       const actions = buildActions();
-      initializeShopForTest("trinket", defaultGameSession);
+      initializeShopForTest("trinket-shop", defaultGameSession);
       if (buyLast) {
         const trinket = trinketLibrary[0]!;
         expect(actions.trinket.buy(shopItemSlotKey(trinket.id, 0))).toBe(true);

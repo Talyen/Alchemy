@@ -1,23 +1,20 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
-import type { ReactNode } from "react";
-
 import { cn } from "@/lib/utils";
+
 import { CurrencyAmount } from "../../../shared/ui/display-elements";
 import { DisabledTooltip } from "../../../shared/ui/tooltips/disabled-tooltip";
-import type { ShopPurchaseState } from "./purchasable-shop-helpers";
 
 export function ShopPriceChip({
   price,
   purchased,
-  purchaseState,
+  canAfford,
 }: {
   price: number;
   purchased: boolean;
-  purchaseState: ShopPurchaseState;
+  canAfford: boolean;
 }) {
   const i18n = useGameTranslation();
-  const { canAfford } = purchaseState;
 
   return (
     <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 w-max -translate-x-1/2 select-none">
@@ -42,12 +39,5 @@ export function ShopPriceChip({
         </DisabledTooltip>
       )}
     </div>
-  );
-}
-
-export function PurchasableShopTile({ media, purchased }: { media: ReactNode; purchased: boolean }) {
-  useGameTranslation();
-  return (
-    <div className={cn("relative flex flex-col items-center text-center", purchased && "opacity-50")}>{media}</div>
   );
 }

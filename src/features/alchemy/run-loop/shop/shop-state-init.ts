@@ -56,7 +56,9 @@ export function resampleCardShopOfferings(
   return [...novel, ...selectRewardCards(deck, pool, count - novel.length, novel, rng)];
 }
 
-function sampleTrinketShopOfferings(
+// Initial visits sample unconditionally: shop rooms only generate once their
+// loot is eligible, while refreshes re-check depth in case it changed.
+function sampleUnownedTrinkets(
   rng: () => number,
   ownedIds: readonly string[] = [],
   currentIds: readonly string[] = [],
@@ -80,7 +82,8 @@ export function resampleTrinketShopOfferings(
   ownedIds: readonly string[] = [],
   currentIds: readonly string[] = [],
 ): TrinketEntry[] {
-  return isLootEligible("trinket", lootProgress.depth) ? sampleTrinketShopOfferings(rng, ownedIds, currentIds) : [];
+  if (!isLootEligible("trinket", lootProgress.depth)) return [];
+  return sampleUnownedTrinkets(rng, ownedIds, currentIds);
 }
 
 export function resampleEquipmentShopOfferings(
@@ -153,7 +156,7 @@ export function createInitialAlchemistState(
 }
 
 export function createInitialTrinketShopState(rng: () => number, ownedIds: readonly string[] = []): TrinketShopState {
-  const trinkets = sampleTrinketShopOfferings(rng, ownedIds);
+  const trinkets = sampleUnownedTrinkets(rng, ownedIds);
   return {
     ...emptyTrinketShopState(),
     trinkets,

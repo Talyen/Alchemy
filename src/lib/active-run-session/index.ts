@@ -28,6 +28,7 @@ export type {
   AlchemistState,
   EquipmentShopState,
   RefreshableShopFields,
+  ShopActivity,
   ShopState,
   TrinketShopState,
 } from "./shop-session-types";

@@ -23,7 +23,7 @@ export function createEquipmentShopCommands(gameSession: GameSession) {
       activity: "equipment-shop",
       itemsOf: (state) => state.gear,
       slotKeyOf: gearSlotKeyOf,
-      priceOf: (instance, context) => getShopBuyPrice("gear", instance, context),
+      priceOf: (instance, context) => getShopBuyPrice({ kind: "gear", item: instance, context }),
       acquire: grantGearToRunWithRecord,
     },
     gameSession,

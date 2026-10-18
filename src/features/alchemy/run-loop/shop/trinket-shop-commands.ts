@@ -8,9 +8,13 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { trinketLibrary } from "@/lib/game-data";
 import { isLootEligible } from "@/lib/loot";
-import { createGetRefreshPrice, createShopPurchaseActions, createShopRefreshAction } from "./shop-commands-core";
+import {
+  cardSlotKeyOf,
+  createGetRefreshPrice,
+  createShopPurchaseActions,
+  createShopRefreshAction,
+} from "./shop-commands-core";
 import { getShopBuyPrice } from "./shop-pricing";
-import { shopItemSlotKey } from "./shop-slot-keys";
 import { resampleTrinketShopOfferings } from "./shop-state-init";
 
 export function createTrinketShopCommands(gameSession: GameSession) {
@@ -18,8 +22,8 @@ export function createTrinketShopCommands(gameSession: GameSession) {
     {
       activity: "trinket-shop",
       itemsOf: (state) => state.trinkets,
-      slotKeyOf: (item, index) => shopItemSlotKey(item.id, index),
-      priceOf: (_trinket, context) => getShopBuyPrice("trinket", null, context),
+      slotKeyOf: cardSlotKeyOf,
+      priceOf: (_trinket, context) => getShopBuyPrice({ kind: "trinket", item: null, context }),
       isAvailable: (draft, offered) => !draft.gear.ownedTrinketIds.includes(offered.id),
       acquire: (draft, offered) => {
         grantTrinketToRunWithRecord(draft, offered.id);

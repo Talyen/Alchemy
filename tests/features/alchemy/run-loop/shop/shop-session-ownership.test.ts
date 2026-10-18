@@ -1,7 +1,7 @@
 import { initializeShopForTest } from "../../../../helpers/visit-initialization";
 import { describe, expect, it } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
-import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
+import { shopItemSlotKey } from "@/lib/active-run-session";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
 import { completeResearch, constructBuilding } from "@/features/alchemy/shared/stores/meta-commands";
 import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
@@ -13,7 +13,7 @@ import { cardById } from "@/lib/game-data";
 import { ALCHEMIST_MIX_PRICE, ALCHEMIST_POTION_PRICE, SHOP_CARD_PRICE, SHOP_REMOVE_PRICE } from "@/lib/game-constants";
 
 describe("shop session ownership", () => {
-  it.each(["merchant", "alchemist"] as const)(
+  it.each(["shop", "alchemist"] as const)(
     "retained %s commands use current Talents after unlock and reset",
     async (kind) => {
       await using session = createGameSession({ initialSave: { ...createDefaultSaveData(), gold: 500 } });
@@ -23,15 +23,15 @@ describe("shop session ownership", () => {
       const otherActions = createShopActions(other);
       initializeShopForTest(kind, session);
       initializeShopForTest(kind, other);
-      const quote = kind === "merchant" ? actions.merchant.getCardBuyPrice : actions.alchemist.getPotionBuyPrice;
-      const buy = kind === "merchant" ? actions.merchant.buyCard : actions.alchemist.buyPotion;
+      const quote = kind === "shop" ? actions.merchant.getCardBuyPrice : actions.alchemist.getPotionBuyPrice;
+      const buy = kind === "shop" ? actions.merchant.buyCard : actions.alchemist.buyPotion;
       const otherQuote =
-        kind === "merchant" ? otherActions.merchant.getCardBuyPrice : otherActions.alchemist.getPotionBuyPrice;
+        kind === "shop" ? otherActions.merchant.getCardBuyPrice : otherActions.alchemist.getPotionBuyPrice;
       const cards =
-        kind === "merchant"
+        kind === "shop"
           ? readActivityData(readRunSession(session).activity, "shop").cards
           : readActivityData(readRunSession(session).activity, "alchemist").potions;
-      const basePrice = kind === "merchant" ? SHOP_CARD_PRICE : ALCHEMIST_POTION_PRICE;
+      const basePrice = kind === "shop" ? SHOP_CARD_PRICE : ALCHEMIST_POTION_PRICE;
       const first = cards[0]!;
       const second = cards[1]!;
       dispatchRunSessionCommand(
@@ -52,7 +52,7 @@ describe("shop session ownership", () => {
     },
   );
 
-  it.each(["merchant", "alchemist"] as const)(
+  it.each(["shop", "alchemist"] as const)(
     "retained %s services combine current Talent and Homestead discounts",
     async (kind) => {
       const initialSave = createDefaultSaveData();
@@ -67,26 +67,24 @@ describe("shop session ownership", () => {
         session,
       );
       initializeShopForTest(kind, session);
-      const quote = kind === "merchant" ? actions.merchant.getRemoveCardPrice : actions.alchemist.getMixPrice;
-      const basePrice = kind === "merchant" ? SHOP_REMOVE_PRICE : ALCHEMIST_MIX_PRICE;
+      const quote = kind === "shop" ? actions.merchant.getRemoveCardPrice : actions.alchemist.getMixPrice;
+      const basePrice = kind === "shop" ? SHOP_REMOVE_PRICE : ALCHEMIST_MIX_PRICE;
       expect(quote()).toBe(basePrice);
 
       expect(
-        kind === "merchant"
-          ? constructBuilding("library", session)
-          : completeResearch("botanical-distillation", session),
+        kind === "shop" ? constructBuilding("library", session) : completeResearch("botanical-distillation", session),
       ).toBe(true);
       dispatchRunSessionCommand(
         (draft) =>
           acceptCommand(
-            applyTalentState(draft, {}, { gold: [kind === "merchant" ? "gold-remove-discount" : "gold-mix-discount"] }),
+            applyTalentState(draft, {}, { gold: [kind === "shop" ? "gold-remove-discount" : "gold-mix-discount"] }),
           ),
         undefined,
         session,
       );
       expect(quote()).toBe(basePrice - 12);
       const useService = () =>
-        kind === "merchant" ? actions.merchant.removeCard(0) : actions.alchemist.strengthenPotion(0) !== null;
+        kind === "shop" ? actions.merchant.removeCard(0) : actions.alchemist.strengthenPotion(0) !== null;
       expect(useService()).toBe(true);
       expect(readRunProfile(session).gold).toBe(500 - (basePrice - 12));
       expect(useService()).toBe(false);

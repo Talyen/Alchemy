@@ -1,8 +1,11 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { Fragment, useState, type ReactNode } from "react";
-import { shopOfferingsSwapKey } from "../shop/shop-slot-keys";
 import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
+
+function shopOfferingsSwapKey(slotKeys: readonly string[], refreshesLeft: number): string {
+  return `${refreshesLeft}:${slotKeys.join("|")}`;
+}
 
 export interface GenericShopScreenProps<T> {
   title: string;

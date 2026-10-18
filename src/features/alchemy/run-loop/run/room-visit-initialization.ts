@@ -21,8 +21,8 @@ import {
   setRunActivityData,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
-import type { ShopKind } from "../shop/shop-action-types";
-import { resolveDraftShopModifiers } from "../shop/shop-pricing-context";
+import type { ShopActivity } from "@/lib/active-run-session";
+import { draftShopDiscounts } from "../shop/shop-pricing";
 import {
   createInitialShopState,
   createInitialAlchemistState,
@@ -30,11 +30,11 @@ import {
   createInitialEquipmentShopState,
 } from "../shop/shop-state-init";
 
-export function initializeShopVisit(draft: RunTransaction, kind: ShopKind): void {
+export function initializeShopVisit(draft: RunTransaction, kind: ShopActivity): void {
   const rng = createDraftRunRandomSource(draft, "shops");
-  const modifiers = resolveDraftShopModifiers(draft);
+  const modifiers = draftShopDiscounts(draft).modifiers;
   switch (kind) {
-    case "merchant":
+    case "shop":
       setRunActivityData(
         draft,
         "shop",
@@ -48,10 +48,10 @@ export function initializeShopVisit(draft: RunTransaction, kind: ShopKind): void
         createInitialAlchemistState(snapshotTransactionValue(draft.run.activeRun.runDeck), rng, modifiers),
       );
       break;
-    case "trinket":
+    case "trinket-shop":
       setRunActivityData(draft, "trinket-shop", createInitialTrinketShopState(rng, draft.gear.ownedTrinketIds));
       break;
-    case "equipment":
+    case "equipment-shop":
       setRunActivityData(
         draft,
         "equipment-shop",
