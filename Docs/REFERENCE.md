@@ -142,7 +142,7 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 - **Homestead data** — `src/lib/homestead/`
 - **In-run material grants** — [WORKFLOWS § Grant materials](./RUN_WORKFLOWS.md#grant-materials-during-a-run)
 - **UI placement, motion, and interaction** — [UI system](./UI.md)
-- **Image preload helper** — `src/lib/image-preload.ts`
+- **Image preload helper** — `src/lib/preload/image.ts`
 - **Potion mixing** — `src/lib/alchemist/potion-mixer.ts`
 - **Platform / Steam** — `src/lib/platform.ts`, `src/lib/desktop-api.ts`, `src/lib/platform-save-backend.ts`, `desktop/`
 - **Reward offer eligibility and sampling** — `src/features/alchemy/run-loop/navigation/reward-offers.ts`; `reward-flow.ts` assembles the settled reward state

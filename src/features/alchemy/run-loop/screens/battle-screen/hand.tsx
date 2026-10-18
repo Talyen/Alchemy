@@ -36,7 +36,7 @@ import { getElementCenterX, playHandSlotReflow } from "./hand-slot-reflow";
 import { useHandPresentation } from "../../battle/presentation/use-hand-presentation";
 import type { BattleSnapshot } from "@/lib/battle";
 import { focusControl } from "../../../shared/ui/focus-navigation";
-import { getActiveCcKeyword, type ActiveCcKeyword } from "../../../shared/utils/cc-presentation";
+import { getActiveCcKeyword, type ActiveCcKeyword } from "@/lib/battle";
 
 const HandCardItem = memo(function HandCardItem({
   card,

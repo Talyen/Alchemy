@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { preloadImagesInBatches } from "@/lib/image-preload";
+import { preloadImagesInBatches } from "@/lib/preload/image";
 import { FONT_PRELOAD_TIMEOUT_MS, IMAGE_PRELOAD_BATCH_SIZE, STARTUP_BAR_INCOMPLETE_CAP } from "@/lib/game-constants";
 import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
 import { useInitialLoadReady } from "@/app/use-initial-load-ready";
@@ -12,8 +12,8 @@ vi.mock("@/lib/game-data", async (importOriginal) => ({
   essentialGameArt: ["first.webp", "second.webp"],
 }));
 
-vi.mock("@/lib/image-preload", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/image-preload")>()),
+vi.mock("@/lib/preload/image", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/preload/image")>()),
   preloadImagesInBatches: vi.fn(),
 }));
 

@@ -21,7 +21,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { EnemyTrait } from "./game-data-catalog";
-import { extractKeywordIds } from "./keywords";
+import { extractKeywordIds } from "@/lib/keyword-text";
 import { keywordIcons } from "./metadata";
 
 const traitIcons: Record<string, LucideIcon> = {

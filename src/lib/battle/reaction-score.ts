@@ -1,4 +1,10 @@
-import { DAMAGE_TYPES, getModifiedCompanionEffects, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
+import {
+  DAMAGE_TYPES,
+  ENEMY_STATUS_DISPLAY_ORDER,
+  getModifiedCompanionEffects,
+  type BattleCard,
+  type BattleCardEffect,
+} from "@/lib/game-data";
 import { consumeAttackPacketFlags } from "./damage";
 import { computeCardAttackPower, computeCardDamageToEnemy } from "./damage-calc";
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
@@ -6,6 +12,7 @@ import { resolveSecondaryAction } from "./action-context";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 import { canShatter, consumeReactionOpportunity, getPostHitReactionPayoffs } from "./elemental-reactions";
 import { setEnemyStatus } from "./status-state";
+import { FLAG_DEFINITIONS } from "./combat-flags";
 import type { BattleSnapshot, BattleState } from "./types";
 
 type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
@@ -88,19 +95,32 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
 }
 
 /** Random-type cards can have many equivalent paths; merge them before the next effect. */
+const FLAG_KEY_ORDER = Object.keys(FLAG_DEFINITIONS);
+
+function projectionKey(state: BattleState): string {
+  const statuses = ENEMY_STATUS_DISPLAY_ORDER.map((key) => state.enemyStatuses[key]).join(",");
+  const flags = FLAG_KEY_ORDER.map((key) => {
+    const value = state.flags[key as keyof typeof state.flags];
+    return typeof value === "boolean" ? (value ? "1" : "0") : String(value);
+  }).join(",");
+  const reactions = [
+    state.reactions.shatterDamage,
+    state.reactions.frostfireDamage,
+    state.reactions.thunderclapDamage,
+    state.reactions.wildfirePendingTickDamage ?? "x",
+    state.reactions.wildfireLastTickTurn ?? "x",
+    state.reactions.wildfireDamage,
+    state.reactions.consecrated ? "1" : "0",
+  ].join(",");
+  const action = state.action ? `${state.action.source},${state.action.repeatActive ? "1" : "0"}` : "-";
+  return `${state.enemyHealth}|${state.enemyMitigation.armor},${state.enemyMitigation.forge},${state.enemyMitigation.block}|${statuses}|${reactions}|${flags}|${action}`;
+}
+
 function mergeProjections(paths: Projection[]): Projection[] {
   if (paths.length < 2) return paths;
   const merged = new Map<string, Projection>();
   for (const path of paths) {
-    const state = path.state;
-    const key = JSON.stringify([
-      state.enemyHealth,
-      state.enemyMitigation,
-      state.enemyStatuses,
-      state.reactions,
-      state.flags,
-      state.action,
-    ]);
+    const key = projectionKey(path.state);
     const prior = merged.get(key);
     if (!prior) merged.set(key, path);
     else {

@@ -93,5 +93,5 @@ function affectsArtwork(record: MutationRecord): boolean {
 }
 
 function sourceOf(image: HTMLImageElement): string {
-  return JSON.stringify([image.getAttribute("src"), image.getAttribute("srcset")]);
+  return `${image.getAttribute("src") ?? ""}\n${image.getAttribute("srcset") ?? ""}`;
 }

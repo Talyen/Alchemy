@@ -18,7 +18,7 @@ import { Surface } from "../../../../shared/ui/surface";
 import { BattleSceneArtwork } from "../../../../shared/ui/battle-scene-artwork";
 import { ArtTurnActiveBorder } from "./actor-panel-helpers";
 import { CombatantStatusEffectPresentation } from "./combatant-status-effect-presentation";
-import type { ActiveCcKeyword } from "../../../../shared/utils/cc-presentation";
+import type { ActiveCcKeyword } from "@/lib/battle";
 
 export function CompanionPanel({
   companion,

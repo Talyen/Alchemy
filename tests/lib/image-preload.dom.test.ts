@@ -38,7 +38,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const { preloadImage, preloadImagesInBatches, resetImagePreloadCache } = await import("@/lib/image-preload");
+const { preloadImage, preloadImagesInBatches, resetImagePreloadCache } = await import("@/lib/preload/image");
 
 describe("preloadImage", () => {
   it("warms the source and waits for decoding before settling", async () => {

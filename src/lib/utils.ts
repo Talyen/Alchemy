@@ -16,11 +16,12 @@ const amountFormatters = new Map<string, Intl.NumberFormat>();
 // synthetic locales cannot grow it without bound. Hits refresh recency so the
 // two hot entries (standard/compact per active locale) are never evicted.
 const MAX_CACHED_FORMATTERS = 32;
+const COMPACT_AMOUNT_THRESHOLD = 100_000;
 
 export function formatLargeAmount(amount: number, locale = "en"): string {
   const value = Number.isFinite(amount) ? amount : 0;
   const language = locale === "en-XA" ? "en" : locale;
-  const compact = Math.abs(value) >= 100000;
+  const compact = Math.abs(value) >= COMPACT_AMOUNT_THRESHOLD;
   const key = `${language}:${compact}`;
   const cached = amountFormatters.get(key);
   if (cached) {
@@ -38,7 +39,7 @@ export function formatLargeAmount(amount: number, locale = "en"): string {
 export function stableJson(value: unknown): string {
   return JSON.stringify(value, (_key, entry: unknown) =>
     isRecord(entry)
-      ? Object.fromEntries(Object.entries(entry).sort(([left], [right]) => left.localeCompare(right)))
+      ? Object.fromEntries(Object.entries(entry).sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0)))
       : entry,
   );
 }
