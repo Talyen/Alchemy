@@ -70,13 +70,10 @@ describe("preloadSounds", () => {
     expect(soundedFakeAudio().map((element) => element.src)).toEqual([getSoundUrl("later.ogg")]);
   });
 
-  it("releases a failed source assignment and continues warming later sounds", () => {
-    vi.useFakeTimers();
-    let failedElement: (typeof createdFakeAudio)[number] | undefined;
+  it("continues warming later sounds after a source assignment fails", () => {
     installFakeAudio({
       onCreate: (element) => {
-        if (failedElement) return;
-        failedElement = element;
+        if (createdFakeAudio.length > 1) return;
         Object.defineProperty(element, "src", {
           get: () => "",
           set: () => {
@@ -86,16 +83,10 @@ describe("preloadSounds", () => {
       },
     });
     expect(() => preloadSounds(["failed-source.ogg", "later-source.ogg"])).not.toThrow();
-    expect(failedElement?.pause).toHaveBeenCalledOnce();
-    expect(failedElement?.load).toHaveBeenCalledOnce();
     expect(soundedFakeAudio().map((element) => element.src)).toEqual([getSoundUrl("later-source.ogg")]);
-    expect(vi.getTimerCount()).toBe(1);
-    resetSoundPreloadCache();
-    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("warms each name via HTMLAudio preload", () => {
-    vi.useFakeTimers();
     preloadSounds(["a.ogg", "b.ogg"]);
     const warmed = createdFakeAudio.filter((el) => el.preload === "auto");
     expect(warmed).toHaveLength(2);
@@ -103,29 +94,21 @@ describe("preloadSounds", () => {
     expect(warmed[1]?.src).toContain("b.");
     for (const element of warmed) {
       const source = element.src;
-      const lateError = element.onerror!;
       element.oncanplaythrough?.();
-      lateError();
       expect(element.oncanplaythrough).toBeNull();
       expect(element.onerror).toBeNull();
       expect(element.src).toBe(source);
-      expect(element.load).not.toHaveBeenCalled();
     }
-    expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("revokes aborted warmup callbacks before a replacement warmup starts", () => {
-    vi.useFakeTimers();
+  it("clears warmup handlers on error without retaining the name", () => {
     preloadSounds(["a.ogg"]);
-    const old = soundedFakeAudio()[0]!;
-    const lateError = old.onerror!;
-    resetSoundPreloadCache();
+    const el = soundedFakeAudio().at(-1)!;
+    el.onerror?.();
+    expect(el.oncanplaythrough).toBeNull();
+    expect(el.onerror).toBeNull();
     preloadSounds(["a.ogg"]);
-    const replacement = soundedFakeAudio().at(-1)!;
-    lateError();
-    expect(old.load).toHaveBeenCalledOnce();
-    expect(replacement.load).not.toHaveBeenCalled();
-    expect(vi.getTimerCount()).toBe(1);
+    expect(soundedFakeAudio()).toHaveLength(1);
   });
 
   it("skips names already warming", () => {

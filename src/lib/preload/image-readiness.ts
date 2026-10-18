@@ -7,28 +7,27 @@ export function waitForImage(image: HTMLImageElement, signal?: AbortSignal): Pro
     const finish = (ready: boolean) => {
       if (settled) return;
       settled = true;
-      clearTimeout(timeout);
-      image.removeEventListener("load", decode);
-      image.removeEventListener("error", fail);
-      signal?.removeEventListener("abort", fail);
+      globalThis.clearTimeout(timeout);
+      image.removeEventListener("load", onLoad);
+      image.removeEventListener("error", onFail);
+      signal?.removeEventListener("abort", onFail);
       resolve(ready);
     };
-    const fail = () => finish(false);
-    const decode = () => {
+    const onFail = () => finish(false);
+    const onLoad = () => {
       if (settled) return;
-      image.removeEventListener("load", decode);
       try {
         if (typeof image.decode !== "function") finish(image.naturalWidth > 0);
-        else void image.decode().then(() => finish(true), fail);
+        else void image.decode().then(() => finish(true), onFail);
       } catch {
-        fail();
+        onFail();
       }
     };
-    const timeout = globalThis.setTimeout(fail, IMAGE_PRELOAD_TIMEOUT_MS);
-    image.addEventListener("load", decode);
-    image.addEventListener("error", fail);
-    signal?.addEventListener("abort", fail, { once: true });
-    if (signal?.aborted) fail();
-    else if (image.complete) decode();
+    const timeout = globalThis.setTimeout(onFail, IMAGE_PRELOAD_TIMEOUT_MS);
+    image.addEventListener("load", onLoad);
+    image.addEventListener("error", onFail);
+    signal?.addEventListener("abort", onFail, { once: true });
+    if (signal?.aborted) onFail();
+    else if (image.complete) onLoad();
   });
 }
