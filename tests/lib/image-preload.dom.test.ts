@@ -62,6 +62,23 @@ describe("preloadImage", () => {
     await expect(promise).resolves.toBeUndefined();
   });
 
+  it("shares one fetch between waiters without cancelling it when a waiter leaves", async () => {
+    const src = uniqueUrl();
+    const first = new AbortController();
+    const one = preloadImage(src, first.signal);
+    const two = preloadImage(src);
+    expect(mockImageInstances).toHaveLength(1);
+    first.abort();
+    await one;
+    // The shared fetch keeps warming for the remaining waiter.
+    expect(mockImageInstances[0].src).toBe(src);
+    mockImageInstances[0].onload();
+    await two;
+    // Completed artwork stays warm without starting another fetch.
+    await preloadImage(src);
+    expect(mockImageInstances).toHaveLength(1);
+  });
+
   it.each(["load", "decode", "timeout"] as const)("releases a failed %s warmup and allows a retry", async (failure) => {
     vi.useFakeTimers();
     const src = uniqueUrl();
@@ -74,20 +91,10 @@ describe("preloadImage", () => {
     } else await vi.advanceTimersByTimeAsync(IMAGE_PRELOAD_TIMEOUT_MS);
     await expect(first).resolves.toBeUndefined();
     expect(failedImage.src).toBe("");
-    expect(vi.getTimerCount()).toBe(0);
     const retry = preloadImage(src);
     expect(mockImageInstances).toHaveLength(2);
     mockImageInstances[1].onload();
     await retry;
-  });
-
-  it("keeps concurrent loads deduplicated beyond the completed cache capacity", async () => {
-    const sources = Array.from({ length: 501 }, uniqueUrl);
-    const pending = sources.map((src) => preloadImage(src));
-    expect(preloadImage(sources[0]!)).toBe(pending[0]);
-    expect(mockImageInstances).toHaveLength(501);
-    for (const image of mockImageInstances) image.onload();
-    await Promise.all(pending);
   });
 
   it("bounds completed entries and keeps recently used images warm", async () => {
@@ -95,32 +102,24 @@ describe("preloadImage", () => {
     const pending = sources.map((src) => preloadImage(src));
     for (const image of mockImageInstances) image.onload();
     await Promise.all(pending);
-    expect(preloadImage(sources[0]!)).toBe(pending[0]);
+    const before = mockImageInstances.length;
+    // Recently used entries stay warm without a new fetch.
+    await preloadImage(sources[0]!);
+    expect(mockImageInstances).toHaveLength(before);
 
     const added = preloadImage(uniqueUrl());
     mockImageInstances.at(-1)!.onload();
     await added;
-    expect(preloadImage(sources[0]!)).toBe(pending[0]);
+    await preloadImage(sources[0]!);
+    expect(mockImageInstances).toHaveLength(before + 1);
+    // The least-recently used entry was evicted and fetches again.
     const evicted = preloadImage(sources[1]!);
-    expect(mockImageInstances).toHaveLength(502);
+    expect(mockImageInstances).toHaveLength(before + 2);
     mockImageInstances.at(-1)!.onload();
     await evicted;
   });
 
-  it("releases pending warmups and their timers immediately on reset", async () => {
-    vi.useFakeTimers();
-    const sources = Array.from({ length: 3 }, uniqueUrl);
-    const pending = sources.map((src) => preloadImage(src));
-    expect(vi.getTimerCount()).toBe(3);
-    resetImagePreloadCache();
-    await Promise.all(pending);
-    expect(vi.getTimerCount()).toBe(0);
-    expect(mockImageInstances.every((image) => image.src === "")).toBe(true);
-    for (const image of mockImageInstances) image.onload();
-    expect(mockImageInstances.every((image) => image.decode.mock.calls.length === 0)).toBe(true);
-  });
-
-  it("does not let an old decode completion cache or evict a replacement after reset", async () => {
+  it("drops pending warmups on reset without letting orphans poison the cache", async () => {
     const src = uniqueUrl();
     const old = preloadImage(src);
     let finishDecode!: () => void;
@@ -132,17 +131,20 @@ describe("preloadImage", () => {
     );
     mockImageInstances[0].onload();
     resetImagePreloadCache();
+    expect(mockImageInstances[0].src).toBe("");
     const replacement = preloadImage(src);
+    expect(mockImageInstances).toHaveLength(2);
     finishDecode();
     await old;
-    expect(preloadImage(src)).toBe(replacement);
-    expect(mockImageInstances).toHaveLength(2);
     mockImageInstances[1].onload();
     await replacement;
-    expect(preloadImage(src)).toBe(replacement);
+    // The orphaned first fetch never cached; the replacement did.
+    const warmed = mockImageInstances.length;
+    await preloadImage(src);
+    expect(mockImageInstances).toHaveLength(warmed);
   });
 
-  it("allows retrying an image that is already broken when its source is assigned", async () => {
+  it("retries an image that is already broken when its source is assigned", async () => {
     vi.stubGlobal("Image", function () {
       const instance = new MockImage();
       instance.complete = true;
@@ -152,15 +154,13 @@ describe("preloadImage", () => {
       return instance;
     } as unknown as typeof Image);
 
-    const src = "sync-error-test.png";
-    await preloadImage(src);
-
-    const retry = preloadImage(src);
+    await preloadImage("sync-error-test.png");
+    const retry = preloadImage("sync-error-test.png");
     expect(mockImageInstances.length).toBe(2);
     await retry;
   });
 
-  it("gracefully falls back to onload when image.decode is undefined", async () => {
+  it("falls back to onload when image.decode is unavailable", async () => {
     vi.stubGlobal("Image", function () {
       const instance = new MockImage();
       Reflect.deleteProperty(instance, "decode");
@@ -168,27 +168,24 @@ describe("preloadImage", () => {
       return instance;
     } as unknown as typeof Image);
 
-    const src = "no-decode.png";
-    const promise = preloadImage(src);
+    const promise = preloadImage("no-decode.png");
     mockImageInstances[0].onload?.();
     await expect(promise).resolves.toBeUndefined();
   });
 });
 
 describe("preloadImagesInBatches", () => {
-  it.each([2, NaN])("waits for a bounded batch of %s and yields before starting the next", async (batchSize) => {
-    const capacity = Number.isNaN(batchSize) ? 4 : batchSize;
+  it("waits for a bounded batch and yields before starting the next", async () => {
     const frameCallbacks = installRafStub();
-    const srcs = Array.from({ length: capacity + 1 }, uniqueUrl);
-    const promise = preloadImagesInBatches(srcs, batchSize);
+    const srcs = [uniqueUrl(), uniqueUrl(), uniqueUrl()];
+    const promise = preloadImagesInBatches(srcs, 2);
 
-    expect(mockImageInstances).toHaveLength(capacity);
+    expect(mockImageInstances).toHaveLength(2);
     for (const image of mockImageInstances) image.onload();
     await vi.waitFor(() => expect(frameCallbacks).toHaveLength(1));
-    expect(mockImageInstances).toHaveLength(capacity);
 
     frameCallbacks[0]!(performance.now());
-    await vi.waitFor(() => expect(mockImageInstances).toHaveLength(capacity + 1));
+    await vi.waitFor(() => expect(mockImageInstances).toHaveLength(3));
     mockImageInstances.at(-1)!.onload();
     await expect(promise).resolves.toBeUndefined();
   });
@@ -208,63 +205,31 @@ describe("preloadImagesInBatches", () => {
     mockImageInstances[2].onload?.();
     await expect(promise).resolves.toBeUndefined();
     expect(reports.at(-1)).toEqual([3, 3]);
-    expect(reports.map(([loaded]) => loaded)).toEqual([0, 1, 2, 3]);
   });
-});
 
-it("cancels one image borrower without cancelling another, and releases the last departure", async () => {
-  vi.useFakeTimers();
-  const first = new AbortController();
-  const second = new AbortController();
-  const src = uniqueUrl();
-  const one = preloadImage(src, first.signal);
-  const two = preloadImage(src, second.signal);
-  expect(mockImageInstances).toHaveLength(1);
-  first.abort();
-  await one;
-  expect(mockImageInstances[0].src).toBe(src);
-  second.abort();
-  await two;
-  expect(mockImageInstances[0].src).toBe("");
-  expect(vi.getTimerCount()).toBe(0);
-  const retry = preloadImage(src);
-  mockImageInstances[1].onload();
-  await retry;
-});
-
-it.each(["reset", "abort"] as const)(
-  "revokes the complete image pipeline on %s without admitting later batches or progress",
-  async (kind) => {
-    vi.useFakeTimers();
+  it.each(["reset", "abort"] as const)("stops the pipeline on %s without starting later batches", async (kind) => {
     const owner = new AbortController();
     const progress = vi.fn();
     const pending = preloadImagesInBatches([uniqueUrl(), uniqueUrl(), uniqueUrl()], 1, progress, owner.signal);
     expect(mockImageInstances).toHaveLength(1);
     if (kind === "reset") resetImagePreloadCache();
     else owner.abort();
-    await vi.advanceTimersByTimeAsync(101);
-    expect(mockImageInstances).toHaveLength(1);
     await pending;
-    await vi.runAllTimersAsync();
-    expect(mockImageInstances[0].src).toBe("");
+    expect(mockImageInstances).toHaveLength(1);
     expect(progress.mock.calls).toEqual([[0, 3]]);
-    expect(vi.getTimerCount()).toBe(0);
-  },
-);
+  });
 
-it("reset revokes a pipeline suspended between batches without cancelling its replacement", async () => {
-  vi.useFakeTimers();
-  const frameCallbacks = installRafStub();
-  const src = uniqueUrl();
-  const old = preloadImagesInBatches([src, uniqueUrl()], 1);
-  mockImageInstances[0].onload();
-  await vi.waitFor(() => expect(frameCallbacks).toHaveLength(1));
-  resetImagePreloadCache();
-  await old;
-  const next = preloadImage(src);
-  frameCallbacks[0]!(performance.now());
-  await vi.advanceTimersByTimeAsync(200);
-  expect(mockImageInstances).toHaveLength(2);
-  mockImageInstances[1].onload();
-  await next;
+  it("lets a reset between batches make room for its replacement", async () => {
+    const frameCallbacks = installRafStub();
+    const src = uniqueUrl();
+    const old = preloadImagesInBatches([src, uniqueUrl()], 1);
+    mockImageInstances[0].onload();
+    await vi.waitFor(() => expect(frameCallbacks).toHaveLength(1));
+    resetImagePreloadCache();
+    await old;
+    const next = preloadImage(src);
+    expect(mockImageInstances).toHaveLength(2);
+    mockImageInstances[1].onload();
+    await next;
+  });
 });

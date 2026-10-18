@@ -1,103 +1,88 @@
 import { IMAGE_PRELOAD_BATCH_SIZE } from "../game-constants";
-import { batchedPreload, yieldToAnimationFrame } from "./batched";
+import { yieldToAnimationFrame } from "./batched";
 import { waitForImage } from "./image-readiness";
 
 interface PendingImageLoad {
   promise: Promise<void>;
   image: HTMLImageElement;
-  lifetime: AbortController;
-  consumers: number;
-  unscoped: boolean;
+  cancel: () => void;
 }
 
-interface CompletedImageLoad {
-  promise: Promise<void>;
-  image: HTMLImageElement;
-}
-
-const imageLoads = new Map<string, PendingImageLoad>();
-const loadedImages = new Map<string, CompletedImageLoad>();
+const pendingLoads = new Map<string, PendingImageLoad>();
+const readyImages = new Map<string, HTMLImageElement>();
 const MAX_IMAGE_CACHE_SIZE = 500;
-let cacheLifetime = new AbortController();
+let resetSignal = new AbortController();
 
 export function resetImagePreloadCache(): void {
-  const previous = cacheLifetime;
-  cacheLifetime = new AbortController();
+  const previous = resetSignal;
+  resetSignal = new AbortController();
   previous.abort();
-  for (const { image, lifetime } of imageLoads.values()) {
-    lifetime.abort();
+  for (const { image, cancel } of pendingLoads.values()) {
+    cancel();
     image.removeAttribute("src");
   }
-  for (const { image } of loadedImages.values()) {
-    image.removeAttribute("src");
-  }
-  imageLoads.clear();
-  loadedImages.clear();
+  pendingLoads.clear();
+  for (const image of readyImages.values()) image.removeAttribute("src");
+  readyImages.clear();
 }
 
-function borrowLoad(src: string, load: PendingImageLoad, signal?: AbortSignal): Promise<void> {
-  if (!signal) {
-    load.unscoped = true;
-    return load.promise;
+function rememberReady(src: string, image: HTMLImageElement): void {
+  if (readyImages.size >= MAX_IMAGE_CACHE_SIZE) {
+    const oldest = readyImages.keys().next().value;
+    if (oldest !== undefined) {
+      readyImages.get(oldest)?.removeAttribute("src");
+      readyImages.delete(oldest);
+    }
   }
-  load.consumers++;
+  readyImages.delete(src);
+  readyImages.set(src, image);
+}
+
+function waitForPending(pending: Promise<void>, signal?: AbortSignal): Promise<void> {
+  if (!signal) return pending;
+  if (signal.aborted) return Promise.resolve();
   return new Promise<void>((resolve) => {
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      signal.removeEventListener("abort", finish);
-      load.consumers--;
-      if (!load.unscoped && load.consumers === 0 && imageLoads.get(src) === load) {
-        imageLoads.delete(src);
-        load.lifetime.abort();
-        load.image.removeAttribute("src");
-      }
+    const cleanup = () => signal.removeEventListener("abort", onAbort);
+    const onAbort = () => {
+      cleanup();
       resolve();
     };
-    signal.addEventListener("abort", finish, { once: true });
-    void load.promise.then(finish);
-    if (signal.aborted) finish();
+    const done = () => {
+      cleanup();
+      resolve();
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+    void pending.then(done, done);
   });
 }
 
-/** Each cancellable consumer borrows the shared fetch; the last departure releases it. */
+/** Warm the shared image cache; aborting a waiter never cancels the shared fetch. */
 export function preloadImage(src: string, signal?: AbortSignal): Promise<void> {
-  if (signal?.aborted) return Promise.resolve();
-  if (!src) return Promise.resolve();
-  const pending = imageLoads.get(src);
-  if (pending) return borrowLoad(src, pending, signal);
-  const existing = loadedImages.get(src);
-  if (existing) {
-    loadedImages.delete(src);
-    loadedImages.set(src, existing);
-    return existing.promise;
+  if (!src || signal?.aborted) return Promise.resolve();
+  const ready = readyImages.get(src);
+  if (ready) {
+    readyImages.delete(src);
+    readyImages.set(src, ready);
+    return Promise.resolve();
   }
+  const pending = pendingLoads.get(src);
+  if (pending) return waitForPending(pending.promise, signal);
 
+  const epoch = resetSignal;
   const image = new Image();
   image.decoding = "async";
   image.src = src;
   const lifetime = new AbortController();
-  const promise = waitForImage(image, lifetime.signal).then((ready) => {
-    // Reset aborts the old lifetime before a replacement can start.
-    if (lifetime.signal.aborted) return;
-    // Failed or timed-out warmups should not keep fetching or decoding an
-    // orphaned image. Visible artwork has its own image element.
-    if (!ready) image.removeAttribute("src");
-    imageLoads.delete(src);
-    if (!ready) return;
-    if (loadedImages.size >= MAX_IMAGE_CACHE_SIZE) {
-      const firstKey = loadedImages.keys().next().value;
-      if (firstKey !== undefined) {
-        loadedImages.get(firstKey)?.image.removeAttribute("src");
-        loadedImages.delete(firstKey);
-      }
-    }
-    loadedImages.set(src, { promise, image });
+  const promise = waitForImage(image, lifetime.signal).then((loaded) => {
+    pendingLoads.delete(src);
+    // A reset orphaned this fetch, or a later reset already replaced it.
+    if (lifetime.signal.aborted || resetSignal !== epoch) return;
+    // Failed warmups must not keep fetching; visible artwork loads on its own element.
+    if (!loaded) image.removeAttribute("src");
+    else rememberReady(src, image);
   });
-  const load = { promise, image, lifetime, consumers: 0, unscoped: false };
-  imageLoads.set(src, load);
-  return borrowLoad(src, load, signal);
+  pendingLoads.set(src, { promise, image, cancel: () => lifetime.abort() });
+  return waitForPending(promise, signal);
 }
 
 export async function preloadImagesInBatches(
@@ -106,39 +91,34 @@ export async function preloadImagesInBatches(
   onProgress?: (loaded: number, total: number) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const lifetime = new AbortController();
-  const sources = signal ? [signal, cacheLifetime.signal] : [cacheLifetime.signal];
-  const cancel = () => lifetime.abort();
-  for (const source of sources) {
-    source.addEventListener("abort", cancel, { once: true });
-    if (source.aborted) cancel();
-  }
-  if (lifetime.signal.aborted) {
-    for (const source of sources) source.removeEventListener("abort", cancel);
-    return;
-  }
-  const uniqueSrcs = Array.from(new Set(srcs.filter(Boolean)));
-  const total = uniqueSrcs.length;
-  let loaded = 0;
+  const stop = new AbortController();
+  const onStop = () => stop.abort();
+  const epochSignal = resetSignal.signal;
+  signal?.addEventListener("abort", onStop, { once: true });
+  epochSignal.addEventListener("abort", onStop);
   try {
+    if (stop.signal.aborted) return;
+    const batch = Number.isFinite(batchSize) && batchSize > 0 ? Math.max(1, Math.floor(batchSize)) : 4;
+    const uniqueSrcs = Array.from(new Set(srcs.filter(Boolean)));
+    const total = uniqueSrcs.length;
+    let loaded = 0;
     onProgress?.(loaded, total);
-
-    await batchedPreload(
-      uniqueSrcs,
-      async (src) => {
-        await preloadImage(src, lifetime.signal);
-        if (lifetime.signal.aborted) return;
-        loaded += 1;
-        onProgress?.(loaded, total);
-      },
-      {
-        batchSize,
-        signal: lifetime.signal,
-        yieldBetweenBatches: () => yieldToAnimationFrame(lifetime.signal),
-      },
-    );
+    for (let index = 0; index < uniqueSrcs.length && !stop.signal.aborted; index += batch) {
+      const group = uniqueSrcs.slice(index, index + batch);
+      await Promise.all(
+        group.map((src) =>
+          preloadImage(src, stop.signal).then(() => {
+            if (stop.signal.aborted) return;
+            loaded += 1;
+            onProgress?.(loaded, total);
+          }),
+        ),
+      );
+      if (!stop.signal.aborted && index + batch < uniqueSrcs.length) await yieldToAnimationFrame(stop.signal);
+    }
   } finally {
-    lifetime.abort();
-    for (const source of sources) source.removeEventListener("abort", cancel);
+    stop.abort();
+    signal?.removeEventListener("abort", onStop);
+    epochSignal.removeEventListener("abort", onStop);
   }
 }

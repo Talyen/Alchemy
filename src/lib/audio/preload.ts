@@ -1,64 +1,41 @@
 import { allRegisteredSoundFiles, battleEventSounds, getCardSounds, uiSounds } from "./sound-registry";
 import { scheduleIdle } from "../preload";
 import { getSoundUrl, resetSoundUrlCache } from "./url";
-import { releaseAudioElement } from "./element";
 
 const IDLE_PRELOAD_TIMEOUT_MS = 5000;
-const STALLED_PRELOAD_TIMEOUT_MS = 30_000;
 
-const htmlPreloadStarted = new Set<string>();
-const htmlPreloadTimers = new Map<HTMLAudioElement, ReturnType<typeof setTimeout>>();
+const warmedSounds = new Set<string>();
 let preloadAllSoundsStarted = false;
 let preloadGeneration = 0;
 
-function finishPreloadElement(el: HTMLAudioElement): boolean {
-  const timer = htmlPreloadTimers.get(el);
-  if (timer === undefined) return false;
-  clearTimeout(timer);
-  htmlPreloadTimers.delete(el);
-  el.oncanplaythrough = null;
-  el.onerror = null;
-  return true;
-}
-
-function abortPreloadElement(el: HTMLAudioElement) {
-  if (!finishPreloadElement(el)) return;
-  // Shared with `stopAllSfx`: releasing the source plus load() frees the
-  // element for collection instead of leaving a stalled fetch attached.
-  releaseAudioElement(el);
-}
-
 export function resetSoundPreloadCache() {
   preloadGeneration += 1;
-  for (const el of Array.from(htmlPreloadTimers.keys())) {
-    abortPreloadElement(el);
-  }
-  htmlPreloadStarted.clear();
-  htmlPreloadTimers.clear();
+  warmedSounds.clear();
   preloadAllSoundsStarted = false;
   resetSoundUrlCache();
 }
 
-export function preloadSounds(names: readonly string[] | string[]) {
+export function preloadSounds(names: readonly string[]) {
   if (typeof Audio === "undefined") return;
   for (const name of names) {
-    if (htmlPreloadStarted.has(name)) continue;
+    if (warmedSounds.has(name)) continue;
     // Marked before warming so a failed name never retry-storms; a missed
     // warmup only costs a cold first play, never correctness.
-    htmlPreloadStarted.add(name);
-    let el: HTMLAudioElement | undefined;
+    warmedSounds.add(name);
     try {
-      el = new Audio();
-      const warming = el;
-      const stallTimer = setTimeout(() => abortPreloadElement(warming), STALLED_PRELOAD_TIMEOUT_MS);
-      htmlPreloadTimers.set(warming, stallTimer);
-      warming.preload = "auto";
-      warming.oncanplaythrough = () => finishPreloadElement(warming);
-      warming.onerror = () => abortPreloadElement(warming);
-      warming.src = getSoundUrl(name);
+      const el = new Audio();
+      el.preload = "auto";
+      el.oncanplaythrough = () => {
+        el.oncanplaythrough = null;
+        el.onerror = null;
+      };
+      el.onerror = () => {
+        el.oncanplaythrough = null;
+        el.onerror = null;
+      };
+      el.src = getSoundUrl(name);
     } catch {
       // Warmup is optional; one failed element must not abort app/battle startup.
-      if (el) abortPreloadElement(el);
     }
   }
 }
@@ -83,7 +60,7 @@ export function preloadAllSounds() {
   const urgentSounds = [...Object.values(uiSounds), battleEventSounds.drawTransfer];
   preloadSounds(urgentSounds.filter((name) => name !== null));
 
-  const pendingNames = allRegisteredSoundFiles().filter((name) => !htmlPreloadStarted.has(name));
+  const pendingNames = allRegisteredSoundFiles().filter((name) => !warmedSounds.has(name));
   if (pendingNames.length === 0) return;
 
   // Warming only assigns element sources; the browser fetches asynchronously,
