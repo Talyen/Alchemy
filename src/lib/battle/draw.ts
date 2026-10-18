@@ -109,11 +109,12 @@ export function takeRandomCardFromDeck(state: BattleState): {
   nextCardUid: number;
   uniqueGear: BattleState["uniqueGear"];
 } | null {
-  const refilled = refillDeck(state.deck, state.discard, getBattleRng(state));
+  const battleRng = getBattleRng(state);
+  const refilled = refillDeck(state.deck, state.discard, battleRng);
   if (!refilled || refilled.deck.length === 0) return null;
   // A reshuffle already returned an owned deck; copy only an existing pile.
   const deck = refilled.deck === state.deck ? [...refilled.deck] : refilled.deck;
-  const rawCard = takeRandomItem(deck, getBattleRng(state));
+  const rawCard = takeRandomItem(deck, battleRng);
   if (!rawCard) return null;
   return {
     card: { ...rawCard, uid: state.nextCardUid },
@@ -171,20 +172,21 @@ export function drawKeywordCard(
   options: { refillFromDiscard?: boolean; combatTexts?: CombatTextEvent[] } = {},
 ): BattleState {
   const ready = deliverPendingHandCards(state);
+  const readyRng = getBattleRng(ready);
   // Twin-casting only tutors from the deck itself; ordinary draws reshuffle.
   const refilled =
     options.refillFromDiscard === false
       ? ready.deck.length > 0
         ? { deck: ready.deck, discard: ready.discard }
         : null
-      : refillDeck(ready.deck, ready.discard, getBattleRng(ready));
+      : refillDeck(ready.deck, ready.discard, readyRng);
   if (!refilled) return ready;
   const indices: number[] = [];
   for (let index = 0; index < refilled.deck.length; index++) {
     if (cardHasKeyword(refilled.deck[index]!, keyword)) indices.push(index);
   }
   if (indices.length === 0) return { ...ready, deck: refilled.deck, discard: refilled.discard };
-  const sampled = indices[rngInt(getBattleRng(ready), indices.length)];
+  const sampled = indices[rngInt(readyRng, indices.length)];
   if (sampled === undefined) return { ...ready, deck: refilled.deck, discard: refilled.discard };
   const index = sampled;
   const deckCard = refilled.deck[index];

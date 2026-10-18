@@ -282,6 +282,7 @@ describe("consumable preservation and paired evidence", () => {
       runDeck: cards("health-potion"),
       currentEnemy: enemyById.skeleton!,
       playerHealth: 30,
+      rng: () => 0.5,
     });
     expect(shouldPreserveConsumable(cardById["health-potion"]!, state)).toBe(true);
     expect(shouldPreserveConsumable(cardById["panacea-potion"]!, state)).toBe(true);

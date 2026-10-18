@@ -71,7 +71,7 @@ describe("session write-port", () => {
 
 describe("progress write-port", () => {
   it("nextRunRandom advances per-stream counters independently within [0, 1)", () => {
-    setRunProgress({ rng: createRunRngState(() => 0.5) });
+    setRunProgress({ rng: createRunRngState(0x8000_0000) });
     const first = mutateGameplayForTest((draft) => nextRunRandom(draft, "rewards"));
     const second = mutateGameplayForTest((draft) => nextRunRandom(draft, "rewards"));
     expect(first).toBeGreaterThanOrEqual(0);

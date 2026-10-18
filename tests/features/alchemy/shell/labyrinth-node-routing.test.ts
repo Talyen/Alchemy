@@ -33,7 +33,7 @@ afterEach(() => {
 });
 
 function prepare(mode: "campaign" | "labyrinth", combat = false) {
-  setRunProgress({ contentSystemType: mode, runDeck: getStartingDeck("knight"), rng: createRunRngState(() => 42) });
+  setRunProgress({ contentSystemType: mode, runDeck: getStartingDeck("knight"), rng: createRunRngState(0) });
   const map = gridLabyrinthMapFixture();
   map.nodes[nodeId]!.type = combat ? "combat" : "shop";
   map.nodes[nodeId]!.rewardModifiers = ["bowyer"];
