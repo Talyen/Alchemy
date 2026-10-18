@@ -147,6 +147,12 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await waitForOpeningDeal(page);
     const battle = new BattlePage(page);
     const flight = page.evaluate(async () => {
+      const sourceLayers = new Map(
+        [...document.querySelectorAll<HTMLElement>("[data-hand-slot]")].map((slot) => [
+          slot.dataset.handSlot,
+          Number(getComputedStyle(slot).zIndex),
+        ]),
+      );
       const source = [...document.querySelectorAll("[data-hand-slot] button")].at(-1)!;
       const sourceMatrix = new DOMMatrixReadOnly(getComputedStyle(source).transform);
       const sourceRotation = (Math.atan2(sourceMatrix.b, sourceMatrix.a) * 180) / Math.PI;
@@ -164,20 +170,34 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       let overlapping = false;
       let lastTop = 0;
       let backs = false;
+      const changedLayers = new Set<string>();
       while (card.isConnected) {
         const matrix = new DOMMatrixReadOnly(getComputedStyle(card).transform);
         angles.push((Math.atan2(matrix.b, matrix.a) * 180) / Math.PI);
         lastTop = card.getBoundingClientRect().top;
         overlapping ||= document.querySelectorAll('[data-flying-card][data-transfer-kind="discard"]').length > 1;
+        document.querySelectorAll<HTMLElement>('[data-flying-card][data-transfer-kind="discard"]').forEach((flight) => {
+          const key = flight.dataset.transferCardKey;
+          if (Number(getComputedStyle(flight).zIndex) !== sourceLayers.get(key)) changedLayers.add(key ?? "missing");
+        });
         backs ||= Boolean(card.querySelector(".card-face-back, [data-discard-card-back]"));
         await new Promise(requestAnimationFrame);
       }
-      return { sourceRotation, angles, overlapping, lastTop, viewportBottom: innerHeight, backs };
+      return {
+        sourceRotation,
+        angles,
+        overlapping,
+        lastTop,
+        viewportBottom: innerHeight,
+        backs,
+        changedLayers: [...changedLayers],
+      };
     });
     const ending = battle.endTurn();
     const result = await flight;
     expect(result.overlapping).toBe(true);
     expect(result.backs).toBe(false);
+    expect(result.changedLayers, "discarded cards should retain the hand's overlap order").toEqual([]);
     expect(result.angles.length).toBeGreaterThan(3);
     expect(result.angles.at(-1)! - result.sourceRotation).toBeCloseTo(52, 0);
     expect(result.angles.at(-1)! - result.angles[0]!).toBeGreaterThan(5);

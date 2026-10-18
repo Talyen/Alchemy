@@ -11,7 +11,8 @@ import { defaultMeasureVisualCardRect, getCardRotation } from "./scene-geometry"
 import { BattleSceneArtwork } from "../../../shared/ui/battle-scene-artwork";
 import { Surface } from "../../../shared/ui/surface";
 import type { BattleSnapshot } from "@/lib/battle";
-import { getPlayableHandCardKeys } from "../playable-hand";
+import { getHandCardKey, getPlayableHandCardKeys } from "../playable-hand";
+import { HAND_CARD_BASE_Z_INDEX } from "@/lib/game-constants";
 
 type TransferRefs = Pick<BattleRefs, "handCardRefs" | "battleSceneRef">;
 
@@ -19,10 +20,12 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
   transfer,
   refs,
   unplayable,
+  handIndex,
 }: {
   transfer: CardTransfer;
   refs: TransferRefs;
   unplayable: boolean;
+  handIndex: number;
 }) {
   const reduced = useReducedMotionPreference();
   const x = useMotionValue(0);
@@ -62,7 +65,7 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
       data-transfer-kind={transfer.kind}
       data-transfer-card-key={transfer.handCardKey}
       aria-hidden="true"
-      className="pointer-events-none absolute z-[45] transform-gpu will-change-transform"
+      className="pointer-events-none absolute transform-gpu will-change-transform"
       initial={false}
       style={{
         left: transfer.from.x,
@@ -73,6 +76,9 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
         y,
         scale,
         rotate,
+        // Cascades depart right-to-left; insertion order would put each later
+        // flight in front of the card that previously covered it in the hand.
+        zIndex: HAND_CARD_BASE_Z_INDEX + handIndex,
       }}
     >
       <Surface
@@ -87,7 +93,8 @@ const CardTransferOverlay = memo(function CardTransferOverlay({
             src={transfer.card.art}
             alt=""
             draggable={false}
-            decoding="async"
+            // Replace already visible artwork in the same paint as the handoff.
+            decoding="sync"
             className={cn("block h-full w-full", cardArtImageClass)}
           />
         </BattleSceneArtwork>
@@ -115,6 +122,10 @@ export function CardTransferLayer({
           transfer={transfer}
           refs={refs}
           unplayable={!playableHandCardKeys.has(transfer.handCardKey)}
+          handIndex={Math.max(
+            0,
+            playabilityState.hand.findIndex((card, index) => getHandCardKey(card, index) === transfer.handCardKey),
+          )}
         />
       ))}
     </>
