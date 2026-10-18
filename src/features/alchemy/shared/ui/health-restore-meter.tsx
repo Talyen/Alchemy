@@ -2,7 +2,6 @@ import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { Progress } from "@/components/ui/progress";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
-import { battleCardWidthClass } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 
 export function HealthRestoreMeter({
@@ -16,7 +15,7 @@ export function HealthRestoreMeter({
 }) {
   const i18n = useGameTranslation();
   return (
-    <div className={cn("max-w-full rounded-shell-inner px-5 py-3.5 surface-muted", battleCardWidthClass)}>
+    <div className="w-full max-w-lg rounded-shell-inner px-5 py-3.5 surface-muted">
       <div className="flex items-center justify-between gap-3">
         <p className={cn("text-lg font-semibold", keywordDefinitions.health.colorClass)}>
           {i18n.text("ui.health-restore-meter.1", "Health")}

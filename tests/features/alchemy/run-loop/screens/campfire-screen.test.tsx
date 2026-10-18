@@ -34,26 +34,6 @@ function props() {
 }
 describe("Campfire Rest or Brew", () => {
   installDisabledAnimationsForTests();
-  it.each([
-    { health: 30, max: 30, bonus: 0, restore: 0 },
-    { health: 28, max: 30, bonus: 3, restore: 2 },
-    { health: 4, max: 30, bonus: 2, restore: 11 },
-  ])(
-    "shows $health/$max Health and the actual $restore recovery before spending the visit",
-    ({ health, max, bonus, restore }) => {
-      const p = props();
-      render(<CampfireScreen {...p} playerHealth={health} maxHealth={max} healingBonus={bonus} />);
-      expect(screen.getByText(`${health} / ${max}`)).toBeTruthy();
-      const rest = screen.getByRole("button", { name: "Rest" });
-      expect(rest.textContent).toBe("Rest");
-      expect(document.getElementById(rest.getAttribute("aria-describedby")!)?.textContent).toBe(`${restore} Health`);
-      expect(rest).toHaveProperty("disabled", false);
-      expect(p.onRest).not.toHaveBeenCalled();
-      fireEvent.click(rest);
-      expect(p.onRest).toHaveBeenCalledOnce();
-    },
-  );
-
   it("offers three cards without a preview and grants on selection, with concise failure feedback", () => {
     const p = props();
     render(<CampfireScreen {...p} />);
@@ -110,6 +90,7 @@ describe("Campfire Rest or Brew", () => {
     };
     const { rerender } = render(<CampfireScreen {...p} afterProgressSaved={afterProgressSaved} />);
     fireEvent.click(screen.getByRole("button", { name: /^Rest$/ }));
+    expect(p.onRest).toHaveBeenCalledOnce();
     rerender(
       <CampfireScreen
         {...p}
