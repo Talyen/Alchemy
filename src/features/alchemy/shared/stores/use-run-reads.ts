@@ -90,12 +90,15 @@ export function useActiveRunBoons(): string[] {
 
 export function useBattleClusterState() {
   return useGameplayStateStore(
-    useShallow((state) => ({
-      battleState: selectBattle(state).battleState,
-      hasActiveBattle: selectBattle(state).hasActiveBattle,
-      gold: selectBattle(state).battleState.gold,
-      hasWishOptions: Boolean(selectBattle(state).battleState.wishOptions),
-    })),
+    useShallow((state) => {
+      const { battleState, hasActiveBattle } = selectBattle(state);
+      return {
+        battleState,
+        hasActiveBattle,
+        gold: battleState.gold,
+        hasWishOptions: Boolean(battleState.wishOptions),
+      };
+    }),
   );
 }
 

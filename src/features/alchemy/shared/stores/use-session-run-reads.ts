@@ -14,18 +14,13 @@ export function useSessionHasActiveBattle(gameSession: GameSession): boolean {
 
 /** Quote reads refresh the commands without subscribing them to combat snapshots. */
 export function useRunControllerState(gameSession: GameSession) {
-  useSessionGameplayState(
-    gameSession,
-    useShallow((state) => state.runProfile.effects),
-  );
-  useSessionGameplayState(
-    gameSession,
-    useShallow((state) => state.runProfile.unlockedTalents),
-  );
-  return useSessionGameplayState(
+  const { screen } = useSessionGameplayState(
     gameSession,
     useShallow((state) => ({
       screen: state.run.navigation.screen,
+      effects: state.runProfile.effects,
+      unlockedTalents: state.runProfile.unlockedTalents,
     })),
   );
+  return { screen };
 }

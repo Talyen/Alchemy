@@ -49,9 +49,10 @@ function projectActivity(session: RunSessionFields): RunResumeProjection["activi
     case "idle":
       return { kind: "idle" };
     case "battle": {
-      const state = battleSnapshot(activity.data.battleState);
-      delete state.battleMetrics;
-      return { kind: "battle", data: { battleState: state } };
+      // Metrics are presentation diagnostics: strip them so combat telemetry
+      // cannot dirty the save or arm the progress gate.
+      const { battleMetrics: _metrics, ...persisted } = battleSnapshot(activity.data.battleState);
+      return { kind: "battle", data: { battleState: persisted } };
     }
     case "rewards": {
       const { choices: _choices, ...defaults } = createEmptyRewardState();

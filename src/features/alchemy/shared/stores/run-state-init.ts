@@ -134,6 +134,9 @@ function createFreshActiveRunFields(
 
 function createResumeActiveRunFields(activeRun: ActiveRunData, generateSeed: () => number): ActiveRunProgressFields {
   const empty = createEmptyActiveRunCollections();
+  // Detach every nested collection: the committed aggregate is frozen on
+  // publish, so retaining a caller-owned branch would freeze the caller's
+  // save (including nested battle and visit data).
   return {
     runHistory: (activeRun.runHistory ?? []).map((room) => ({ ...room })),
     runHistoryPartial: activeRun.runHistoryPartial ?? true,
@@ -152,10 +155,12 @@ function createResumeActiveRunFields(activeRun: ActiveRunData, generateSeed: () 
     encounteredRunEnemyIds: [...activeRun.encounteredRunEnemyIds],
     selectedDifficulty: activeRun.selectedDifficulty,
     contentSystemType: activeRun.contentSystemType,
-    rng: activeRun.rng ?? createFreshRunRngState(generateSeed),
-    runTalentXP: activeRun.runTalentXP ?? empty.runTalentXP,
-    runMaterialsEarned: activeRun.runMaterialsEarned ?? empty.runMaterialsEarned,
-    runCurrenciesEarned: activeRun.runCurrenciesEarned ?? empty.runCurrenciesEarned,
+    rng: activeRun.rng
+      ? { seed: activeRun.rng.seed, counters: { ...activeRun.rng.counters } }
+      : createFreshRunRngState(generateSeed),
+    runTalentXP: { ...(activeRun.runTalentXP ?? empty.runTalentXP) },
+    runMaterialsEarned: { ...(activeRun.runMaterialsEarned ?? empty.runMaterialsEarned) },
+    runCurrenciesEarned: { ...(activeRun.runCurrenciesEarned ?? empty.runCurrenciesEarned) },
     runObtainedItems: [...(activeRun.runObtainedItems ?? empty.runObtainedItems)],
   };
 }
