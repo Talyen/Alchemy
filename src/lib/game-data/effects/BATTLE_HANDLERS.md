@@ -120,8 +120,7 @@ retaining existing encounter exceptions. Selection and trait limits are owned by
 - [`tests/lib/battle/inspection-utility-sequence.test.ts`](../../../../tests/lib/battle/inspection-utility-sequence.test.ts) — resource and flag ordering agrees with actual card plays without consuming RNG or mutating the inspected battle.
 - [`tests/types/battle-effect-handlers.test-d.ts`](../../../../tests/types/battle-effect-handlers.test-d.ts) — exhaustive typed registration and rejection of mismatched handlers and direct calls.
 - [`tests/lib/game-data/effect-kind-coverage.test.ts`](../../../../tests/lib/game-data/effect-kind-coverage.test.ts) — exact registration of non-recursive effect kinds in battle dispatch.
-- [`tests/lib/game-data/descriptions-match-effects.test.ts`](../../../../tests/lib/game-data/descriptions-match-effects.test.ts) — the catalog-wide 1-Mana rule; catalog-wide parity lives in `tests/lib/content-validation/` (`content-validation.test.ts`, `parity-negative.test.ts`).
-- [`tests/lib/game-data/card-builders.test.ts`](../../../../tests/lib/game-data/card-builders.test.ts) — builder output (lines+effects+tags/consume) and the explicit-lines escape hatch.
+- [`tests/lib/game-data/card-builders.test.ts`](../../../../tests/lib/game-data/card-builders.test.ts) — builder output (lines+effects+tags/consume), the explicit-lines escape hatch, and the catalog-wide 1-Mana rule; catalog-wide parity lives in `tests/lib/content-validation/` (`content-validation.test.ts`, `parity-negative.test.ts`).
 
 ## Gear and trinket effects
 
