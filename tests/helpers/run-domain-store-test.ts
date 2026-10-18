@@ -13,7 +13,6 @@ import {
 import {
   createInitialActiveRunFields,
   createInitialPermanentFields,
-  setTestRunSeedOverride,
   ACTIVE_RUN_PROGRESS_KEYS,
   type ActiveRunProgressFields,
   type PermanentProgressFields,
@@ -148,9 +147,6 @@ export function resetGearForTest(): void {
 
 export function resetAllTestStores(): void {
   vi.clearAllMocks();
-  // The run-seed override is module-global: clear it so a seed set in one
-  // test file cannot leak into another.
-  setTestRunSeedOverride(null);
   resetRunDomainStore();
   resetTransientRunUi(defaultGameSession);
 }

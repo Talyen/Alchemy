@@ -8,7 +8,7 @@ import type { MaterialInventory as ProfileMaterialInventory } from "@/lib/homest
 import { createRunStateRng, stepRunRng, type Rng, type RunRngStream } from "@/lib/rng";
 import { bindDraftCapability, type GameplayDraft } from "../gameplay-command";
 import type { ActiveRunProgressFields } from "../run-state-init";
-import { defineDraftSetter } from "./write-field";
+import { defineDraftSetter } from "../transaction-internal";
 
 // ── Run progress ─────────────────────────────────────────────────────────────
 

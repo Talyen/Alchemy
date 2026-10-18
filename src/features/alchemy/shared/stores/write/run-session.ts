@@ -7,10 +7,11 @@ import {
   type RunProgressActivityKind,
 } from "@/lib/active-run-session";
 import { enterWildwoodReward } from "@/lib/content-systems/wildwood/gauntlet";
-import { DESTINATIONS, type Destination } from "@/lib/routing";
+import { DESTINATIONS, type Destination, type Screen } from "@/lib/routing";
 import type { GameplayDraft } from "../gameplay-command";
 import { createInitialSessionFields, type RunRewardFlow, type RunSessionFields } from "../run-domain-types";
-import { type FieldUpdate, defineDraftSetter } from "./write-field";
+import type { FieldUpdate } from "../transaction-internal";
+import { defineDraftSetter } from "../transaction-internal";
 import { setCompletedDestinations, setDestinationIndexInAct, setDestinationOfferState } from "./run-progress";
 
 // ── Session ──────────────────────────────────────────────────────────────────
@@ -49,6 +50,15 @@ export function setAlchemyVisit(
   data: RunActivityData["campfire"],
 ): void {
   draft.session.activity = { kind, data };
+}
+
+export function setScreen(draft: GameplayDraft, action: Screen | ((previous: Screen) => Screen)): void {
+  const screen = typeof action === "function" ? action(draft.run.navigation.screen) : action;
+  draft.run.navigation.screen = screen;
+}
+
+export function resetNavigation(draft: GameplayDraft): void {
+  draft.run.navigation.screen = "menu";
 }
 
 // ── Reward flow ──────────────────────────────────────────────────────────────

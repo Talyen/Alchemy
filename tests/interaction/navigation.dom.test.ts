@@ -10,7 +10,6 @@ import { createWildwoodGauntletFlow } from "@/features/alchemy/run-loop/run/wild
 import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { defaultGameSession } from "@/app/application-session";
 import { readRunSession, readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import { setTestRunSeedOverride } from "@/features/alchemy/shared/stores/run-state-init";
 import { createRunRngState } from "@/lib/rng";
 import { resetAllTestStores, setRunProgress } from "../helpers/run-domain-store-test";
 import { defineSequenceFamily, requireProgress } from "./sequence";
@@ -18,7 +17,6 @@ import { advance, installFrames } from "./timing";
 
 defineSequenceFamily("navigation", (seed) => {
   resetAllTestStores();
-  setTestRunSeedOverride(seed);
   installFrames();
   setRunProgress({ rng: createRunRngState(seed) });
   const mode = (["campaign", "labyrinth", "wildwood"] as const)[seed % 3]!;
@@ -143,7 +141,6 @@ defineSequenceFamily("navigation", (seed) => {
       mounted.unmount();
       await advance(2000);
       cleanup();
-      setTestRunSeedOverride(null);
       vi.unstubAllGlobals();
       vi.useRealTimers();
     },

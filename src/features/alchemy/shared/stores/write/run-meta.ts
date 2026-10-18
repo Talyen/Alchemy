@@ -13,7 +13,7 @@ import { createInitialProfileState, type ProfileStateFields } from "../profile-s
 import { createInitialPermanentFields } from "../run-state-init";
 import { rebindLiveRunMeta } from "./live-meta";
 import { resetRunXP } from "./run-progress";
-import { defineDraftSetter } from "./write-field";
+import { defineDraftSetter } from "../transaction-internal";
 
 // ── Meta (talents, XP merge, collection) ─────────────────────────────────────
 

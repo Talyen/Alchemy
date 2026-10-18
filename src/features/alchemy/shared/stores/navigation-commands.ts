@@ -2,7 +2,7 @@ import type { GameSession } from "./game-session-types";
 import { dispatchGameplayCommand } from "./gameplay-command";
 import { acceptCommand, rejectCommand } from "./run-session-command";
 import { resetUnlockedTalents, unlockAllTalents, unlockTalent } from "./write/run-meta";
-import { setScreen } from "./write/run-navigation";
+import { setScreen } from "./write/run-session";
 
 export function showRunScreen(screen: Parameters<typeof setScreen>[1], gameSession: GameSession) {
   dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, screen)), undefined, gameSession);

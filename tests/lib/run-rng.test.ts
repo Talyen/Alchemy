@@ -1,14 +1,9 @@
-import { createCleanup } from "@/lib/cleanup";
 import { setHasActiveRun, setRunProgressActivity } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createRunRngState, createRunStateRng, createRunStreamRng, nextRunRngValue, stepRunRng } from "@/lib/rng";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import {
-  createInitialActiveRunFields,
-  generateRunSeed,
-  setTestRunSeedOverride,
-} from "@/features/alchemy/shared/stores/run-state-init";
+import { createInitialActiveRunFields, generateRandomRunSeed } from "@/features/alchemy/shared/stores/run-state-init";
 import { mutateRunForTest, resetRunDomainStore, setRunProgress } from "../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
 
@@ -134,17 +129,13 @@ describe("run RNG", () => {
     expect(() => createRunStreamRng(7, "world", -1)).toThrow();
   });
 
-  it("seeds fresh runs deterministically under the test override", () => {
-    setTestRunSeedOverride(777);
-    using _scopeCleanup = createCleanup(() => setTestRunSeedOverride(null));
-
-    expect(createInitialActiveRunFields(null).rng.seed).toBe(777);
-    expect(createInitialActiveRunFields(null).rng.seed).toBe(777);
+  it("seeds fresh runs from the injected seed source", () => {
+    expect(createInitialActiveRunFields(null, "knight", () => 777).rng.seed).toBe(777);
+    expect(createInitialActiveRunFields(null, "knight", () => 777).rng.seed).toBe(777);
   });
 
-  it("generates uint32 seeds without an override", () => {
-    setTestRunSeedOverride(null);
-    for (const seed of [generateRunSeed(), generateRunSeed()]) {
+  it("generates uint32 seeds", () => {
+    for (const seed of [generateRandomRunSeed(), generateRandomRunSeed()]) {
       expect(Number.isInteger(seed)).toBe(true);
       expect(seed).toBeGreaterThanOrEqual(0);
       expect(seed).toBeLessThanOrEqual(0xffff_ffff);

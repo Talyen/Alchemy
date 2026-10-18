@@ -99,17 +99,7 @@ function createFreshRunRngState(generateSeed: () => number): RunRngState {
 // Explicit seed seam for new runs: crypto-random per run (persisted in
 // `rng` from here on, so every later draw is reproducible), injectable in
 // tests via the optional override. Gameplay never draws Math.random directly.
-let testRunSeedOverride: number | null = null;
 let fallbackRunSeedCounter = 0;
-
-export function setTestRunSeedOverride(seed: number | null): void {
-  testRunSeedOverride = seed;
-}
-
-export function generateRunSeed(): number {
-  if (testRunSeedOverride !== null) return testRunSeedOverride >>> 0;
-  return generateRandomRunSeed();
-}
 
 export function generateRandomRunSeed(): number {
   if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
@@ -122,7 +112,7 @@ export function generateRandomRunSeed(): number {
 
 function createFreshActiveRunFields(
   characterId: CharacterId,
-  generateSeed: () => number = generateRunSeed,
+  generateSeed: () => number = generateRandomRunSeed,
 ): ActiveRunProgressFields {
   return {
     characterId,
@@ -173,7 +163,7 @@ function createResumeActiveRunFields(activeRun: ActiveRunData, generateSeed: () 
 export function createInitialActiveRunFields(
   initialActiveRun: ActiveRunData | null,
   fallbackCharacterId: CharacterId = "knight",
-  generateSeed: () => number = generateRunSeed,
+  generateSeed: () => number = generateRandomRunSeed,
 ): ActiveRunProgressFields {
   if (!initialActiveRun) return createFreshActiveRunFields(fallbackCharacterId, generateSeed);
   return createResumeActiveRunFields(initialActiveRun, generateSeed);

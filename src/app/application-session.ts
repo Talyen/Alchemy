@@ -1,12 +1,12 @@
 import * as audio from "@/lib/audio";
-import { generateRunSeed } from "@/features/alchemy/shared/stores/run-state-init";
+import { generateRandomRunSeed } from "@/features/alchemy/shared/stores/run-state-init";
 import { createSessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 
 /** The shipping application owns one session; independent consumers create their own. */
 export const defaultGameSession = createSessionRuntime(
   {
-    runtimeInputs: { generateRunSeed },
+    runtimeInputs: { generateRunSeed: generateRandomRunSeed },
     feedback: {
       playUISound: (sound) => audio.playUISound(sound),
       playGoldGain: () => audio.playGoldGain(),

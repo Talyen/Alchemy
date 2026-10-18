@@ -1,7 +1,26 @@
 import { isDraft, type Immutable } from "immer";
 import { abortGameplayCommand, type GameplayDraft } from "./gameplay-command";
-import type { RunTransaction } from "./run-transaction";
+import type { RunTransaction } from "./run-session-command";
 import { createReadonlyView, ownTransactionInput } from "./readonly-view";
+
+/** Single generic behind every plain draft-field setter (session, reward flow,
+ * run progress, profile). Visit and mystery-visit setters keep bespoke
+ * factories in write/run-session.ts: they reshape the activity union rather
+ * than setting a field. */
+export type FieldUpdate<T> = T | ((previous: T) => T);
+
+function setField<T extends object, K extends keyof T>(target: T, field: K, action: FieldUpdate<T[K]>): void {
+  target[field] = typeof action === "function" ? (action as (previous: T[K]) => T[K])(target[field]) : action;
+}
+
+export function defineDraftSetter<Target extends object, K extends keyof Target>(
+  select: (draft: GameplayDraft) => Target,
+  field: K,
+) {
+  return (draft: GameplayDraft, action: FieldUpdate<Target[K]>): void => {
+    setField(select(draft), field, action);
+  };
+}
 
 const drafts = new WeakMap<object, GameplayDraft>();
 

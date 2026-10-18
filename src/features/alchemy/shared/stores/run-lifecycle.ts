@@ -1,7 +1,7 @@
 import type { UnstampedSaveData } from "../storage/types";
 import { hydrateGameplayPersistenceFields } from "./persistence-hydration";
 import { settleRunEnd } from "./write/run-end";
-import { setScreen } from "./write/run-navigation";
+import { setScreen } from "./write/run-session";
 import { buildAlchemySaveDataFromStores } from "../storage/persistence";
 import { saveAlchemySaveData } from "../storage/io";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
