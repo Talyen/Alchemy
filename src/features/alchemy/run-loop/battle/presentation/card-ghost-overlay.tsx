@@ -5,14 +5,15 @@ import type { BattlePresentationStore } from "../battle-presentation-store";
 
 import type { CardGhost, GhostStyle } from "../../../shared/types";
 import { BattleSceneArtwork } from "../../../shared/ui/battle-scene-artwork";
+import { Surface } from "../../../shared/ui/surface";
+import { cardArtFrameClass, cardArtImageClass } from "../../../shared/config/layout";
 
 const CardGhostOverlay = memo(function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: () => void }) {
   return (
     <div
       data-variant={ghost.variant}
-      className={cn(
-        "card-ghost-overlay battle-scene-piece pointer-events-none absolute z-[80] rounded-shell-hero bg-black",
-      )}
+      aria-hidden="true"
+      className="card-ghost-overlay pointer-events-none absolute z-[80]"
       onAnimationEnd={onDone}
       style={
         {
@@ -28,9 +29,11 @@ const CardGhostOverlay = memo(function CardGhostOverlay({ ghost, onDone }: { gho
         } as GhostStyle
       }
     >
-      <BattleSceneArtwork className="h-full w-full">
-        <img src={ghost.art} alt="" decoding="async" className="block h-full w-full object-cover" />
-      </BattleSceneArtwork>
+      <Surface className={cn(cardArtFrameClass, "battle-scene-piece aspect-[3/4] h-full w-full")}>
+        <BattleSceneArtwork className="h-full w-full">
+          <img src={ghost.art} alt="" decoding="async" className={cn("block h-full w-full", cardArtImageClass)} />
+        </BattleSceneArtwork>
+      </Surface>
     </div>
   );
 });

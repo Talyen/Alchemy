@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import {
   cardArtImageClass,
   cardHoverScaleClass,
-  cardSurfaceClass,
+  cardArtFrameClass,
   getPlasmaColorPairForCard,
   getCardInspectionShineColors,
 } from "../../config/index";
@@ -229,8 +229,8 @@ function CardButtonSurface({
     <Surface
       as="button"
       className={cn(
-        cardSurfaceClass,
-        "group card-art-frame border border-border/80",
+        cardArtFrameClass,
+        "group",
         scenePiece && "battle-scene-piece battle-scene-hand-piece",
         scenePiece && hovered && "battle-scene-hand-raised",
         scaleOnHover && cardHoverScaleClass,

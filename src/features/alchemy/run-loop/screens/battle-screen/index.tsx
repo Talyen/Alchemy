@@ -143,7 +143,7 @@ export function BattleScreen(props: BattleScreenProps) {
         <BattleBoonInspectOverlay open={inspectUiOpen} trinketIds={runBoons} onClose={onCloseBoonInspect} />
 
         <CardGhostLayer presentation={presentation} />
-        <CardTransferLayer presentation={presentation} refs={refs} />
+        <CardTransferLayer presentation={presentation} refs={refs} playabilityState={battleState} />
         <CombatTextLayer presentation={presentation} refs={refs} />
       </div>
     </div>
