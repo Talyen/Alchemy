@@ -80,6 +80,30 @@ describe("screen navigation", () => {
     expect(showScreen).toHaveBeenCalledExactlyOnceWith("menu");
     expect(onPendingChange).toHaveBeenLastCalledWith(false);
   });
+  it("does not prepare a superseded request when clearing pending state redirects", () => {
+    const showScreen = vi.fn();
+    let redirect = false;
+    const nav = createScreenNavigation(
+      {
+        readScreen: () => "battle",
+        showScreen,
+        onPendingChange: (pending) => {
+          if (!pending && redirect) {
+            redirect = false;
+            nav.transition("menu", { immediate: true });
+          }
+        },
+      },
+      defaultGameSession,
+    );
+    nav.navigateTo("rewards");
+    redirect = true;
+    const prepare = vi.fn();
+    nav.navigateTo("rewards", prepare);
+    vi.runAllTimers();
+    expect(prepare).not.toHaveBeenCalled();
+    expect(showScreen).toHaveBeenCalledExactlyOnceWith("menu");
+  });
   it("completes gameplay before delaying presentation, without a rendered-screen callback", () => {
     const nav = navigation();
     const prepare = vi.fn(() => expect(nav.showScreen).not.toHaveBeenCalled());

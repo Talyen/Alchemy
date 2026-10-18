@@ -3,6 +3,7 @@ import {
   type AriaAttributes,
   type KeyboardEvent,
   type MouseEvent,
+  type MouseEventHandler,
   type PointerEvent,
   type ReactNode,
   type Ref,
@@ -25,7 +26,7 @@ interface SurfaceProps {
   dragging?: boolean;
   baseTransform?: string | undefined;
   style?: CSSProperties;
-  onClick?: ((e: MouseEvent<HTMLElement>) => void) | undefined;
+  onClick?: MouseEventHandler<HTMLElement> | undefined;
   onPointerDown?: ((e: PointerEvent<HTMLButtonElement>) => void) | undefined;
   onFocus?: () => void;
   onBlur?: () => void;
@@ -103,7 +104,7 @@ export function Surface(props: SurfaceProps) {
   function handleDivKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (handleDivClick && (event.key === "Enter" || event.key === " ")) {
       event.preventDefault();
-      handleDivClick(event);
+      event.currentTarget.click();
     }
   }
   const body = (
