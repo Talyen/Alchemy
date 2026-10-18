@@ -266,7 +266,8 @@ describe("createBattleCardPlay", () => {
     expect(readBattle(defaultGameSession).battleState.mana).toBe(0);
     expect(battlePresentation.getState().cardRejection).toEqual({ cardKey: getHandCardKey(card, 0), mana: true });
     clickCard(handleCardClick, card, 0);
-    expect(playUISound).toHaveBeenCalledTimes(1);
+    expect(playUISound).toHaveBeenCalledExactlyOnceWith("error");
+    expect(battlePresentation.getState().playerAttackToken).toBe(0);
   });
 
   it("a stale autoplay preview cannot choose the same catalog card from the next queued Wish", async () => {
@@ -353,64 +354,6 @@ describe("createBattleCardPlay", () => {
     ).resolves.toBe(false);
     expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(state));
     expect(awardCardXP).not.toHaveBeenCalled();
-  });
-
-  it("rejects plays when mana is insufficient", () => {
-    const expensive = makeTestCard({
-      id: "meteor",
-      cost: 5,
-      effects: [{ kind: "damage", damageType: "burn", amount: 20 }],
-    });
-    const state = makeTestBattleState({
-      hand: [{ ...expensive, uid: 2 }],
-      mana: 1,
-    });
-    givenBattle(state);
-
-    const { ctx, awardCardXP, handleCardClick } = makeDeps();
-    clickCard(handleCardClick, { ...expensive, uid: 2 }, 0);
-
-    expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(state));
-    expect(ctx.playback.scheduleAutoEndTurn).not.toHaveBeenCalled();
-    expect(awardCardXP).not.toHaveBeenCalled();
-    expect(playUISound).toHaveBeenCalledWith("error");
-    expect(battlePresentation.getState().playerAttackToken).toBe(0);
-  });
-
-  it("rejects plays when the player is defeated", () => {
-    const slash = slashCard();
-    const state = makeTestBattleState({
-      hand: [{ ...slash, uid: 3 }],
-      mana: 3,
-      playerHealth: 0,
-      deathsDoorActive: false,
-    });
-    givenBattle(state);
-
-    const { handleCardClick } = makeDeps();
-    clickCard(handleCardClick, { ...slash, uid: 3 }, 0);
-
-    expect(readBattle(defaultGameSession).battleState.enemyHealth).toBe(state.enemyHealth);
-    expect(playUISound).toHaveBeenCalledWith("error");
-  });
-
-  it("plays visible cards while a card transfer is in progress", () => {
-    const slash = slashCard();
-    const state = makeTestBattleState({
-      hand: [{ ...slash, uid: 5 }],
-      mana: 3,
-      enemyHealth: 30,
-    });
-    givenBattle(state);
-    battlePresentation.getState().setCardTransferInProgress(true);
-
-    const { awardCardXP, handleCardClick } = makeDeps();
-    clickCard(handleCardClick, { ...slash, uid: 5 }, 0);
-
-    expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
-    expect(readBattle(defaultGameSession).battleState.mana).toBe(2);
-    expectAwardedCard(awardCardXP, "slash");
-    expect(playUISound).not.toHaveBeenCalled();
   });
 
   it("accepts rapid plays by identity and waits for all draws before settling the latest state", async () => {
@@ -644,38 +587,6 @@ describe("createBattleCardPlay", () => {
     expect(readBattle(defaultGameSession).battleState.hand).toHaveLength(0);
   });
 
-  it("autoplay wish commits the chosen wish option to hand", async () => {
-    const weak = makeTestCard({ id: "weak-wish" });
-    const strong = makeTestCard({ id: "strong-wish" });
-    givenBattle(makeTestBattleState({ hand: [], mana: 3, enemyHealth: 30, wishOptions: [weak, strong] }));
-
-    const { handleAutoplayWish } = makeDeps();
-
-    await expect(handleAutoplayWish(strong, autoplayControl, readBattle(defaultGameSession).battleState)).resolves.toBe(
-      true,
-    );
-    const next = readBattle(defaultGameSession).battleState;
-    expect(playUISound).toHaveBeenCalledWith("selection");
-    expect(next.wishOptions).toBeNull();
-    expect(next.hand.map((card) => card.id)).toEqual(["strong-wish"]);
-    expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
-  });
-
-  it("autoplay wish rejects an option that is no longer offered", async () => {
-    const offered = makeTestCard({ id: "offered-wish" });
-    const stale = makeTestCard({ id: "stale-wish" });
-    const initialState = makeTestBattleState({ hand: [], mana: 3, enemyHealth: 30, wishOptions: [offered] });
-    givenBattle(initialState);
-
-    const { handleAutoplayWish } = makeDeps();
-
-    await expect(handleAutoplayWish(stale, autoplayControl, readBattle(defaultGameSession).battleState)).resolves.toBe(
-      false,
-    );
-    expect(readBattle(defaultGameSession).battleState).toEqual(battleSnapshot(initialState));
-    expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
-  });
-
   it("flashes a hover preview before autoplaying a wish", async () => {
     vi.mocked(shouldReduceMotion).mockReturnValue(false);
     vi.useFakeTimers();
@@ -691,6 +602,8 @@ describe("createBattleCardPlay", () => {
     await expect(pending).resolves.toBe(true);
     expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
     expect(readBattle(defaultGameSession).battleState.wishOptions).toBeNull();
+    expect(readBattle(defaultGameSession).battleState.hand.map((card) => card.id)).toEqual([wish.id]);
+    expect(playUISound).toHaveBeenCalledWith("selection");
   });
 
   it.each(["restart", "cancel"] as const)(

@@ -51,7 +51,8 @@ export function validateEnemyTraitDescriptionParity(enemy: BestiaryEntry): Conte
   const issues: ContentValidationIssue[] = [];
   for (const trait of enemy.traits) {
     const description = trait.description.toLowerCase();
-    for (const requirement of TRAIT_REQUIRED_TERMS[trait.id] ?? []) {
+    const requirements = Object.hasOwn(TRAIT_REQUIRED_TERMS, trait.id) ? TRAIT_REQUIRED_TERMS[trait.id]! : [];
+    for (const requirement of requirements) {
       const alternatives = typeof requirement === "string" ? [requirement] : requirement;
       if (alternatives.some((term) => description.includes(term))) continue;
       issues.push({

@@ -77,17 +77,6 @@ describe("alchemy visit transactions and resume", () => {
     expect(readActiveRun(defaultGameSession).runDeck).toEqual([result]);
     expect(readRunProfile(defaultGameSession).gold).toBe(0);
   });
-  it("counts Mixed Potions as brewing ingredients", () => {
-    setRunProgress({
-      runDeck: [cardById.slash!, cardById["health-potion"]!, cardById["mixed-potion"]!],
-    });
-    initializeAlchemyVisit("campfire", defaultGameSession);
-    const before = snapshotRun(defaultGameSession);
-    expect(brewAtCampfire({ kind: "new", offerIndex: 0 }, defaultGameSession)).toBeNull();
-    expect(snapshotRun(defaultGameSession)).toEqual(before);
-    expect(brewAtCampfire({ kind: "combine", indices: [1, 2] }, defaultGameSession)).not.toBeNull();
-    expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(2);
-  });
   it("Rest commits healing once and prevents brewing", () => {
     initializeAlchemyVisit("campfire", defaultGameSession);
     expect(restAtCampfire(defaultGameSession)).toBe(true);

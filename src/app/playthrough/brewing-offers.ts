@@ -1,7 +1,8 @@
+import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { cardSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
-import { getCampfireBrewKind, isBrewablePotion } from "@/lib/alchemist/brewing";
+import { getCampfireBrewKind } from "@/lib/alchemist/brewing";
 import { brewCandidates, potionPurchaseScore, potionUtility } from "./brewing-policy";
 import type { OfferChoice } from "./choice-catalog";
 import type { createPlaythroughController } from "./controller";
@@ -149,7 +150,7 @@ export function offerBrewingChoices(
     );
   // A refresh also needs enough remaining Gold to buy the cheapest visible Potion.
   // This uses visible prices only; it never peeks at future shop RNG.
-  const hasPotionRoom = run.runDeck.filter(isBrewablePotion).length < 4;
+  const hasPotionRoom = run.runDeck.filter(isPotionCard).length < 4;
   const cheapest = Math.min(...activity.data.potions.map((card) => actions.getPotionBuyPrice(card)));
   const worthwhile =
     !usefulAvailable &&

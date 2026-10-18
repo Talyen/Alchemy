@@ -2,12 +2,22 @@ import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { createMixedPotion } from "@/lib/alchemist";
-import { cardById, computeTalentEffects } from "@/lib/game-data";
+import { cardById, computeTalentEffects, type BattleCard } from "@/lib/game-data";
 import { makeCombatTexts, makeState } from "../../fixtures/battle";
 
 describe("Mixed Potion combat mechanics", () => {
   const healthPotion = cardById["health-potion"]!;
   const manaPotion = cardById["mana-potion"]!;
+
+  it("executes both Mana-derived benefits when mixing identical ingredients", () => {
+    const ingredient: BattleCard = {
+      ...healthPotion,
+      effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 2 }],
+    };
+    const mixed = createMixedPotion(ingredient, ingredient);
+    const state = makeState({ mana: 3, maxMana: 3 });
+    expect(applyCardEffects(state, mixed, []).playerStatuses.block).toBe(12);
+  });
 
   it("stacks Distillation and Brewmaster potency additively for Mixed Potions", () => {
     const mixed = createMixedPotion(healthPotion, manaPotion);

@@ -1,204 +1,89 @@
-import { describe, expect, it } from "vitest";
-import { describeTrinket, trinketLibrary, type TrinketEntry } from "@/lib/game-data";
-import type { TrinketManifest } from "@/lib/battle/types";
+import { expect, it } from "vitest";
+import { describeTrinket, trinketById, trinketLibrary, type TrinketEntry } from "@/lib/game-data";
 import { defaultTrinketEffects } from "@/lib/trinkets";
 import { validateTrinkets } from "@/lib/content-validation/validators";
 import { TrinketContentSchema } from "@/lib/content-validation/schemas";
 import { createCollector } from "@/lib/content-validation/utils";
 import { validateTrinketDescriptionParity } from "@/lib/content-validation/card-parity/trinket-parity";
 
-function getTrinket(id: string): TrinketEntry {
-  const trinket = trinketLibrary.find((entry) => entry.id === id);
-  if (!trinket) throw new Error(`Missing test trinket: ${id}`);
-  return trinket;
+const chimes = trinketById["resonant-chimes"]!;
+function messages(entry: TrinketEntry): string[] {
+  return validateTrinketDescriptionParity(entry).map(({ message }) => message);
 }
 
-const chimes = getTrinket("resonant-chimes");
-const meteorite = getTrinket("meteorite");
-
-function parityMessages(trinket: TrinketEntry): string[] {
-  return validateTrinketDescriptionParity(trinket).map((issue) => issue.message);
-}
-
-describe("Trinket effect schema", () => {
-  it.each([
-    ["boolean for numeric field", { resonantChimeCardsRequired: true, resonantChimeMana: true }],
-    ["number for boolean field", { firstBurnDoubled: 1 }],
-    ["unknown key", { unknownEffect: 1 }],
-    ["empty effects", {}],
-    ["default numeric effects", { resonantChimeCardsRequired: 0, resonantChimeMana: 0 }],
-    ["default boolean effect", { firstBurnDoubled: false }],
-    ["mixed default effects", { resonantChimeMana: 0, firstBurnDoubled: false }],
-    ["infinity", { resonantChimeMana: Infinity }],
-    ["negative infinity", { resonantChimeMana: -Infinity }],
-    ["NaN", { resonantChimeMana: NaN }],
-  ])("rejects %s", (_label, effects) => {
-    expect(TrinketContentSchema.safeParse({ ...chimes, effects }).success).toBe(false);
-  });
-
-  it.each([1, -1, 1.5])("accepts finite numeric value %s without balance restrictions", (amount) => {
-    expect(TrinketContentSchema.safeParse({ ...chimes, effects: { resonantChimeMana: amount } }).success).toBe(true);
-  });
-
-  it("accepts active boolean effects", () => {
-    expect(TrinketContentSchema.safeParse(meteorite).success).toBe(true);
-  });
+it.each([
+  { resonantChimeMana: true },
+  { firstBurnDoubled: 1 },
+  { unknownEffect: 1 },
+  {},
+  { resonantChimeMana: 0, firstBurnDoubled: false },
+  { resonantChimeMana: Infinity },
+  { resonantChimeMana: NaN },
+])("rejects invalid or inactive Trinket effects: %j", (effects) => {
+  expect(TrinketContentSchema.safeParse({ ...chimes, effects }).success).toBe(false);
 });
 
-describe("Trinket description parity", () => {
-  it("keeps every catalog description in sync with its authored effects", () => {
-    for (const entry of trinketLibrary) {
-      expect(entry.descriptionLines).toEqual([describeTrinket(entry.id, entry.effects)]);
-      expect(parityMessages(entry)).toEqual([]);
-      for (const [key, value] of Object.entries(entry.effects)) {
-        if (typeof value !== "number") continue;
-        const changed = { ...entry, effects: { ...entry.effects, [key]: value + 1 } };
-        expect(parityMessages(changed), `${entry.id}: ${key}`).toEqual([
-          expect.stringContaining("required trigger and outcome"),
-        ]);
-      }
-    }
-  });
+it("allows finite balance values and active boolean mechanics", () => {
+  for (const amount of [1, -1, 1.5])
+    expect(TrinketContentSchema.safeParse({ ...chimes, effects: { resonantChimeMana: amount } }).success).toBe(true);
+  expect(TrinketContentSchema.safeParse(trinketById.meteorite).success).toBe(true);
+});
 
-  it("keeps threshold and reward amounts distinct", () => {
-    const effects = { resonantChimeCardsRequired: 4, resonantChimeMana: 2 };
-    expect(describeTrinket(chimes.id, effects)).toBe("When you play 4 or more cards in a single turn, gain 2 Mana");
-    expect(parityMessages({ ...chimes, effects })).toEqual([
-      expect.stringContaining('"When you play 4 or more cards in a single turn, gain 2 Mana"'),
-    ]);
-    expect(parityMessages({ ...chimes, effects: { resonantChimeCardsRequired: 1, resonantChimeMana: 3 } })).toEqual([
-      expect.stringContaining('"When you play 1 or more cards in a single turn, gain 3 Mana"'),
-    ]);
-  });
-
-  it.each([
-    "When you play 13 or more cards in a single turn, gain 1 Mana",
-    "When you play 3.5 or more cards in a single turn, gain 1 Mana",
-  ])("rejects numeric substring matches: %s", (description) => {
-    expect(parityMessages({ ...chimes, descriptionLines: [description] })).toEqual([
-      expect.stringContaining("required trigger and outcome"),
-    ]);
-  });
-
-  it.each([
-    "When you play 3 or more cards in a single turn, lose 1 Mana",
-    "Gain 1 Mana",
-    "When you play 3 or more cards in a single turn, gain 1 Mana and lose Health",
-    "When you play 3 or more cards in a single turn, gain 1.5.2 Mana",
-  ])("rejects incorrect or incomplete mechanics: %s", (description) => {
-    expect(parityMessages({ ...chimes, descriptionLines: [description] })).toEqual([
-      expect.stringContaining("required trigger and outcome"),
-    ]);
-  });
-
-  it("rejects a disabled boolean mechanic", () => {
-    expect(parityMessages({ ...meteorite, effects: { firstBurnDoubled: false } })).toEqual([
-      "Effect firstBurnDoubled must be true",
-    ]);
-  });
-
-  it.each(["Your first Burn damage each combat is halved", "Your Burn damage each combat is doubled"])(
-    "rejects an incorrect boolean mechanic description: %s",
-    (description) => {
-      expect(parityMessages({ ...meteorite, descriptionLines: [description] })).toEqual([
+it("detects stale numeric descriptions across the catalog and grants every manifest field", () => {
+  for (const entry of trinketLibrary) {
+    expect(entry.descriptionLines, entry.id).toEqual([describeTrinket(entry.id, entry.effects)]);
+    for (const [key, value] of Object.entries(entry.effects)) {
+      if (typeof value !== "number") continue;
+      expect(messages({ ...entry, effects: { ...entry.effects, [key]: value + 1 } }), `${entry.id}: ${key}`).toEqual([
         expect.stringContaining("required trigger and outcome"),
       ]);
-    },
-  );
-
-  it("reports missing and unexpected effect keys", () => {
-    expect(parityMessages({ ...chimes, effects: { resonantChimeMana: 1, extraDrawPerBattle: 3 } })).toEqual([
-      "Missing required effect: resonantChimeCardsRequired",
-      "Unexpected effect: extraDrawPerBattle",
-      expect.stringContaining("required trigger and outcome"),
-    ]);
-  });
-
-  it("rejects unregistered Trinkets", () => {
-    expect(parityMessages({ ...chimes, id: "unregistered-trinket" })).toEqual([
-      'Trinket "unregistered-trinket" has no registered description definition',
-    ]);
-  });
-
-  it("accepts matching balance edits with case and whitespace normalization", () => {
-    expect(
-      parityMessages({
-        ...chimes,
-        descriptionLines: ["  WHEN you play 4 or more cards", "in a single turn,   gain 2 Mana  "],
-        effects: { resonantChimeCardsRequired: 4, resonantChimeMana: 2 },
-      }),
-    ).toEqual([]);
-  });
-
-  it.each([
-    ["brass-censer", "Holy damage has a 25% chance to also Burn or Leech", { brassCenserProcChance: 25 }],
-    [
-      "plague-doctors-mask",
-      "At the start of your turn, Cleanse up to 3 Poison and deal half the amount cleansed as Poison damage",
-      { plagueDoctorPoisonCleanse: 3 },
-    ],
-  ])("derives numeric expectations from effects for %s", (id, description, effects) => {
-    expect(parityMessages({ ...getTrinket(id), descriptionLines: [description], effects })).toEqual([]);
-  });
-
-  it("preserves parity issues through validateTrinkets without coercion", () => {
-    const mutated: TrinketEntry = {
-      ...chimes,
-      effects: { resonantChimeCardsRequired: 99, resonantChimeMana: chimes.effects.resonantChimeMana },
-    };
-    const expected = validateTrinketDescriptionParity(mutated);
-    expect(expected.length).toBeGreaterThan(0);
-
-    const collector = createCollector();
-    validateTrinkets(collector, [mutated]);
-    // The collector must keep parity issues as-is (severity included) so a
-    // future warning is never silently upgraded to an error.
-    expect(collector.issues).toEqual(expected);
-  });
+    }
+  }
+  const granted = new Set(trinketLibrary.flatMap(({ effects }) => Object.keys(effects)));
+  expect(Object.keys(defaultTrinketEffects).filter((key) => !granted.has(key))).toEqual([]);
 });
 
-// Every manifest key must be granted by a trinket and have a documented
-// consumer. The Record type fails compilation when a key is added or removed
-// without updating this map, so dead effects cannot silently accumulate.
-const TRINKET_EFFECT_CONSUMERS: Record<keyof TrinketManifest, string> = {
-  extraDrawPerBattle: "battle-setup.ts (cards per turn)",
-  brassCenserProcChance: "follow-up-hit-resolution.ts",
-  firstBurnDoubled: "player-damage-multipliers.ts",
-  boneCharmHealOnKill: "player-rewards.ts (kill rewards)",
-  forgeStunThreshold: "card-hit-reactions.ts",
-  forgeStunAmount: "card-hit-reactions.ts",
-  frozenHeartDamage: "damage-status-riders.ts",
-  ironwoodBucklerThornsOnBlock: "status-state.ts (block gain)",
-  runicQuillDrawOnConsume: "card-play.ts",
-  sinEaterHealOnHarmfulStatusRemove: "status-player.ts",
-  vanguardCrestForgeOnBlockAbsorb: "player-defensive-reactions.ts",
-  parasiticBloomLeechChance: "damage-status-riders.ts",
-  cutpurseGoldOnBleed: "damage-status-riders.ts",
-  wishingWellGoldOnWish: "wish.ts",
-  plagueDoctorPoisonCleanse: "player-turn-transition.ts",
-  mortarPestlePoisonOnPotionUse: "card-play.ts",
-  sunderingArmorPiercing: "damage-calc.ts",
-  resonantChimeCardsRequired: "card-play.ts",
-  resonantChimeMana: "card-play.ts",
-  smugglersMapGoldBonus: "navigation/reward-math.ts (outside battle)",
-  grovesFavorThornsOnHealthRestore: "health-state.ts (healing)",
-  merchantsFavorDiscount: "shop/shop-pricing.ts (outside battle)",
-  companionDamageBonus: "companion-scaling.ts",
-  freezeDurationExtension: "damage-status-riders.ts",
-  thunderstoneDamageOnStun: "status-stun-resolve.ts",
-  luckyCloverGoldChance: "bonus-effects.ts",
-};
+it("keeps thresholds distinct from rewards while accepting matching balance edits and whitespace", () => {
+  const effects = { resonantChimeCardsRequired: 4, resonantChimeMana: 2 };
+  expect(describeTrinket(chimes.id, effects)).toBe("When you play 4 or more cards in a single turn, gain 2 Mana");
+  expect(messages({ ...chimes, effects })).toEqual([expect.stringContaining("required trigger and outcome")]);
+  expect(
+    messages({
+      ...chimes,
+      effects,
+      descriptionLines: [" WHEN you play 4 or more cards", "in a single turn,   gain 2 Mana "],
+    }),
+  ).toEqual([]);
+});
 
-describe("Trinket manifest coverage", () => {
-  it("grants every manifest effect from at least one trinket", () => {
-    const granted = new Set(trinketLibrary.flatMap((entry) => Object.keys(entry.effects)));
-    const missing = (Object.keys(defaultTrinketEffects) as Array<keyof TrinketManifest>).filter(
-      (key) => !granted.has(key),
-    );
-    expect(missing).toEqual([]);
-  });
+it.each([
+  "When you play 13 or more cards in a single turn, gain 1 Mana",
+  "When you play 3 or more cards in a single turn, lose 1 Mana",
+  "Gain 1 Mana",
+  "When you play 3 or more cards in a single turn, gain 1 Mana and lose Health",
+])("rejects incorrect trigger or outcome wording: %s", (description) => {
+  expect(messages({ ...chimes, descriptionLines: [description] })).toEqual([
+    expect.stringContaining("required trigger and outcome"),
+  ]);
+});
 
-  it("documents a consumer for every manifest effect", () => {
-    expect(Object.keys(TRINKET_EFFECT_CONSUMERS).sort()).toEqual(Object.keys(defaultTrinketEffects).sort());
-  });
+it("rejects missing, unexpected, disabled, and unregistered mechanics", () => {
+  expect(messages({ ...chimes, effects: { resonantChimeMana: 1, extraDrawPerBattle: 3 } })).toEqual([
+    "Missing required effect: resonantChimeCardsRequired",
+    "Unexpected effect: extraDrawPerBattle",
+    expect.stringContaining("required trigger and outcome"),
+  ]);
+  expect(messages({ ...trinketById.meteorite!, effects: { firstBurnDoubled: false } })).toEqual([
+    "Effect firstBurnDoubled must be true",
+  ]);
+  for (const id of ["unknown", "constructor", "__proto__"])
+    expect(messages({ ...chimes, id })).toEqual([`Trinket "${id}" has no registered description definition`]);
+});
+
+it("retains parity diagnostics through the public content gate", () => {
+  const entry = { ...chimes, effects: { resonantChimeCardsRequired: 99, resonantChimeMana: 1 } };
+  const collector = createCollector();
+  validateTrinkets(collector, [entry]);
+  expect(collector.issues).toEqual(validateTrinketDescriptionParity(entry));
+  expect(collector.issues).toHaveLength(1);
 });

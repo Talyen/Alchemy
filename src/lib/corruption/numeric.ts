@@ -1,5 +1,6 @@
 import { CORRUPTION_MIN_VALUE } from "@/lib/game-constants";
 import {
+  BattleCardEffectSchema,
   getCardDescription,
   mapEffectChildren,
   withCardDescription,
@@ -56,10 +57,12 @@ export function updateCardNumericValue(card: BattleCard, target: CorruptionTarge
     for (const edit of edits ?? []) (changed as Record<string, unknown>)[edit.field] = nextValue * edit.multiplier;
     return mapEffectChildren(changed, (child, index) => update(child, root, [...path, index]));
   }
-  return withCardDescription(
-    { ...card, effects: card.effects.map((effect, index) => update(effect, index)) },
-    description,
-  );
+  const effects = card.effects.map((effect, index) => update(effect, index));
+  if (
+    effects.some((effect, index) => effect !== card.effects[index] && !BattleCardEffectSchema.safeParse(effect).success)
+  )
+    return card;
+  return withCardDescription({ ...card, effects }, description);
 }
 
 export function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delta: number): BattleCard {

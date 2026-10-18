@@ -156,6 +156,7 @@ export function getCorruptionMutationGroups(
       });
   }
   for (const kind of ["strengthen", "weaken"] as const) {
+    if (kind === "weaken" && modifiers.includes("steady-sigil")) continue;
     const mutations = numericMutations(card, targets, kind === "strengthen");
     if (mutations.length) groups.push({ kind, weight: CORRUPTION_OUTCOME_WEIGHTS[kind], mutations });
   }
@@ -182,13 +183,11 @@ export function getCorruptionMutationGroups(
   }
   if (target && !card.consume) {
     if (roomForLine) {
-      add("bargain", [
-        addCorruptionEffect(
-          applyNumericCorruption(card, target, target.value),
-          { kind: "lose-health", amount: CORRUPTION_HEALTH_PRICE },
-          "first",
-        ),
-      ]);
+      const strengthened = applyNumericCorruption(card, target, target.value);
+      if (strengthened !== card)
+        add("bargain", [
+          addCorruptionEffect(strengthened, { kind: "lose-health", amount: CORRUPTION_HEALTH_PRICE }, "first"),
+        ]);
       const amount = CORRUPTION_JACKPOT_AMOUNT;
       add("draw", [addCorruptionEffect(card, { kind: "draw-cards", amount })]);
       add("mana", [addCorruptionEffect(card, { kind: "restore-mana", amount })]);
@@ -197,16 +196,9 @@ export function getCorruptionMutationGroups(
     if (effect && effect.kind === "damage" && !effect.lifesteal) {
       add("leech", [addCorruptionLine({ ...card, effects: [{ ...effect, lifesteal: true }] }, "Leech")]);
     }
-    add("consume", [
-      {
-        ...addCorruptionLine(
-          applyNumericCorruption(card, target, target.value * (CORRUPTION_CONSUME_MULTIPLIER - 1)),
-          "Consume",
-          "consume",
-        ),
-        consume: true,
-      },
-    ]);
+    const strengthened = applyNumericCorruption(card, target, target.value * (CORRUPTION_CONSUME_MULTIPLIER - 1));
+    if (strengthened !== card)
+      add("consume", [{ ...addCorruptionLine(strengthened, "Consume", "consume"), consume: true }]);
   }
   add("convert", conversionMutations(card, target));
   if (canRemoveConsume(card)) add("reusable", [removeConsume(card)]);

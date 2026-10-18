@@ -2,16 +2,18 @@ import type { PlayerStatusValues, EnemyStatusValues, TrinketManifest, CcState } 
 import { defaultBattleState } from "@/lib/battle";
 import { defaultTrinketEffects } from "@/lib/trinkets";
 
+const { playerStatuses, enemyStatuses, playerCC } = defaultBattleState();
+
 export function defaultPlayerStatusValues(overrides?: Partial<PlayerStatusValues>): PlayerStatusValues {
-  return { ...defaultBattleState().playerStatuses, ...overrides };
+  return { ...playerStatuses, ...overrides };
 }
 
 export function defaultEnemyStatusValues(overrides?: Partial<EnemyStatusValues>): EnemyStatusValues {
-  return { ...defaultBattleState().enemyStatuses, ...overrides };
+  return { ...enemyStatuses, ...overrides };
 }
 
 export function defaultCcState(overrides?: Partial<CcState>): CcState {
-  return { ...defaultBattleState().playerCC, ...overrides };
+  return { ...playerCC, ...overrides };
 }
 
 export function defaultTrinketManifest(overrides?: Partial<TrinketManifest>): TrinketManifest {

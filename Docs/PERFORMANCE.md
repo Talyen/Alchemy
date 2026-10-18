@@ -161,7 +161,9 @@ parity; report it as unverified when the necessary comparison is unavailable.
 Measure → identify failing scenario/phase → perf:trace that scenario → optimize → perf:compare before/after
 ```
 
-`perf:compare` derives duration-normalized rates for hitches, stalls, and long tasks (per 30 s) so runs of unequal duration are compared fairly. Material environment differences (runtime, trace mode, cold mode, platform, viewport, DPR, refresh rate, browser, target profile, runs per scenario) are rejected with clear compatibility errors.
+`perf:compare` derives duration-normalized rates for hitches, stalls, and long tasks (per 30 s) so runs of unequal duration are compared fairly. Both reports must contain usable environment metadata and valid, complete metrics. Material environment differences (runtime, trace mode, cold mode, platform, CPU architecture, viewport, DPR, refresh rate, browser, target profile, runs per scenario) are rejected with clear compatibility errors. Optional display and browser metadata must be present on both sides when present on either. Duplicate scenario names and invalid measured runs or journey segments reject comparison.
+
+Pooling preserves each run's minimum frame requirement and starts a new phase timeline for each run. An empty or short run cannot be hidden by a larger neighboring run. Invalid samples retain diagnostic numbers but receive red target bands; they never qualify as optimization evidence.
 
 ### Finding the work behind a slow frame
 
@@ -196,21 +198,21 @@ trace events fail capture. Screenshots are omitted to reduce trace overhead.
 
 ## Layout
 
-| Path                                                | Role                                               |
-| --------------------------------------------------- | -------------------------------------------------- |
-| `playwright.performance.config.ts`                  | Performance test runtime configuration             |
-| `performance/frame-sampler.ts`                      | In-page rAF / longtask / event collector           |
-| `performance/metrics.ts`                            | Pure aggregation, targets, and classification      |
-| `performance/report.ts`                             | Filesystem output and summary markdown             |
-| `performance/fixtures.ts`                           | Playwright fixtures: warm-up, runs, aggregates     |
-| `performance/compare-model.mjs` + `compare.ts`      | Before/after diff and compatibility gates          |
-| `performance/cdp-trace.ts` + `trace-insights.ts`    | Deep-trace capture and slow-frame evidence         |
-| `performance/battle-setup.ts` + `battle-helpers.ts` | Deterministic battle bootstrap and interactions    |
-| `performance/battle-art-diagnostics.ts`             | Art failure diagnostics (`MIN_PAINT_PX`)           |
-| `performance/scenario-data.ts`                      | Decks and inventories for scenarios                |
-| `performance/catalog.json`                          | Scenario and metric registry                       |
-| `scripts/run-performance.mjs`                       | CLI entry (`npm run perf`, `npm run perf:compare`) |
-| `tests/performance/`                                | Metrics, compare, and report unit tests (Node)     |
+| Path                                                    | Role                                               |
+| ------------------------------------------------------- | -------------------------------------------------- |
+| `playwright.performance.config.ts`                      | Performance test runtime configuration             |
+| `performance/frame-sampler.ts`                          | In-page rAF / longtask / event collector           |
+| `performance/metrics.ts`                                | Pure aggregation, targets, and classification      |
+| `performance/report.ts`                                 | Filesystem output and summary markdown             |
+| `performance/fixtures.ts`                               | Playwright fixtures: warm-up, runs, aggregates     |
+| `performance/compare-model.mjs` + `compare-model.d.mts` | Before/after diff and compatibility gates          |
+| `performance/cdp-trace.ts` + `trace-insights.ts`        | Deep-trace capture and slow-frame evidence         |
+| `performance/battle-setup.ts` + `battle-helpers.ts`     | Deterministic battle bootstrap and interactions    |
+| `performance/battle-art-diagnostics.ts`                 | Art failure diagnostics (`MIN_PAINT_PX`)           |
+| `performance/scenario-data.ts`                          | Decks and inventories for scenarios                |
+| `performance/catalog.json`                              | Scenario and metric registry                       |
+| `scripts/run-performance.mjs`                           | CLI entry (`npm run perf`, `npm run perf:compare`) |
+| `tests/performance/`                                    | Metrics, compare, and report unit tests (Node)     |
 
 Run metric and comparison unit tests with `npm run test:full -- tests/performance`.
 They also run in the full unit suite; `npm test` contains only fixed local smoke suites.

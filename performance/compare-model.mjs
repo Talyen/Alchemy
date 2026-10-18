@@ -12,52 +12,50 @@ export function checkEnvironmentCompatibility(beforeEnv, afterEnv) {
     return { compatible: false, errors };
   }
 
-  if (beforeEnv.runtime !== afterEnv.runtime) {
-    errors.push(`Incompatible runtime: "${beforeEnv.runtime}" vs "${afterEnv.runtime}".`);
+  for (const [label, env] of [
+    ["before", beforeEnv],
+    ["after", afterEnv],
+  ]) {
+    if (
+      !["chromium", "electron"].includes(env.runtime) ||
+      typeof env.platform !== "string" ||
+      !env.platform ||
+      typeof env.arch !== "string" ||
+      !env.arch ||
+      typeof env.traceMode !== "boolean" ||
+      typeof env.coldMode !== "boolean" ||
+      !Number.isInteger(env.runsPerScenario) ||
+      env.runsPerScenario < 1 ||
+      !Number.isFinite(env.viewport?.width) ||
+      env.viewport.width <= 0 ||
+      !Number.isFinite(env.viewport?.height) ||
+      env.viewport.height <= 0
+    )
+      errors.push(`Incomplete or invalid ${label} environment metadata.`);
+    for (const field of ["devicePixelRatio", "estimatedRefreshHz"]) {
+      if (env[field] !== undefined && (!Number.isFinite(env[field]) || env[field] <= 0))
+        errors.push(`Invalid ${label} ${field}.`);
+    }
   }
-  if (Boolean(beforeEnv.traceMode) !== Boolean(afterEnv.traceMode)) {
-    errors.push(`Incompatible trace mode: ${beforeEnv.traceMode} vs ${afterEnv.traceMode}.`);
-  }
-  if (Boolean(beforeEnv.coldMode) !== Boolean(afterEnv.coldMode)) {
-    errors.push(`Incompatible cold mode: ${beforeEnv.coldMode} vs ${afterEnv.coldMode}.`);
-  }
-  if (beforeEnv.platform !== afterEnv.platform) {
-    errors.push(`Incompatible platform: "${beforeEnv.platform}" vs "${afterEnv.platform}".`);
+  for (const field of [
+    "runtime",
+    "platform",
+    "arch",
+    "traceMode",
+    "coldMode",
+    "runsPerScenario",
+    "devicePixelRatio",
+    "estimatedRefreshHz",
+    "browser",
+  ]) {
+    if (beforeEnv[field] !== afterEnv[field])
+      errors.push(`Incompatible ${field}: "${beforeEnv[field]}" vs "${afterEnv[field]}".`);
   }
   if (
     beforeEnv.viewport?.width !== afterEnv.viewport?.width ||
     beforeEnv.viewport?.height !== afterEnv.viewport?.height
-  ) {
-    errors.push(
-      `Incompatible viewport: ${beforeEnv.viewport?.width}×${beforeEnv.viewport?.height} vs ${afterEnv.viewport?.width}×${afterEnv.viewport?.height}.`,
-    );
-  }
-  if (
-    beforeEnv.devicePixelRatio !== undefined &&
-    afterEnv.devicePixelRatio !== undefined &&
-    beforeEnv.devicePixelRatio !== afterEnv.devicePixelRatio
-  ) {
-    errors.push(`Incompatible device pixel ratio: ${beforeEnv.devicePixelRatio} vs ${afterEnv.devicePixelRatio}.`);
-  }
-  if (
-    beforeEnv.estimatedRefreshHz !== undefined &&
-    afterEnv.estimatedRefreshHz !== undefined &&
-    beforeEnv.estimatedRefreshHz !== afterEnv.estimatedRefreshHz
-  ) {
-    errors.push(
-      `Incompatible refresh estimate: ~${beforeEnv.estimatedRefreshHz} Hz vs ~${afterEnv.estimatedRefreshHz} Hz.`,
-    );
-  }
-  if (beforeEnv.browser !== undefined && afterEnv.browser !== undefined && beforeEnv.browser !== afterEnv.browser) {
-    errors.push(`Incompatible browser: "${beforeEnv.browser}" vs "${afterEnv.browser}".`);
-  }
-  if (
-    beforeEnv.runsPerScenario !== undefined &&
-    afterEnv.runsPerScenario !== undefined &&
-    beforeEnv.runsPerScenario !== afterEnv.runsPerScenario
-  ) {
-    errors.push(`Incompatible runs per scenario: ${beforeEnv.runsPerScenario} vs ${afterEnv.runsPerScenario}.`);
-  }
+  )
+    errors.push("Incompatible viewport.");
 
   return { compatible: errors.length === 0, errors };
 }
@@ -75,11 +73,12 @@ export function checkScenarioCompatibility(beforeScenario, afterScenario) {
     errors.push("Missing scenario data.");
     return { compatible: false, errors };
   }
-  if (beforeScenario.profile && afterScenario.profile && beforeScenario.profile !== afterScenario.profile) {
-    errors.push(
-      `Incompatible target profile for scenario "${beforeScenario.scenario}": "${beforeScenario.profile}" vs "${afterScenario.profile}".`,
-    );
-  }
+  if (beforeScenario.scenario !== afterScenario.scenario) errors.push("Different scenario identities.");
+  if (
+    !["continuous", "transition"].includes(beforeScenario.profile) ||
+    beforeScenario.profile !== afterScenario.profile
+  )
+    errors.push(`Incompatible target profile for scenario "${beforeScenario.scenario}".`);
   if (beforeScenario.caseIdentity !== afterScenario.caseIdentity) {
     errors.push(`Incompatible case checkpoint for scenario "${beforeScenario.scenario}".`);
   }
@@ -112,13 +111,22 @@ export function assertScenarioCompatibility(beforeScenario, afterScenario) {
   }
 }
 
+function assertComparableMetrics(metrics) {
+  if (
+    !metrics ||
+    metrics.valid !== true ||
+    !Number.isInteger(metrics.frameCount) ||
+    metrics.frameCount <= 0 ||
+    !Number.isFinite(metrics.durationMs) ||
+    metrics.durationMs <= 0 ||
+    COMPARE_KEYS.some(({ key }) => !Number.isFinite(metrics[key]) || metrics[key] < 0)
+  )
+    throw new Error(`Invalid performance metrics: ${metrics?.invalidReason ?? "missing or nonfinite measurements"}`);
+}
+
 export function deriveComparisonMetrics(metrics) {
-  if (!metrics) return metrics;
-  const durationSec = metrics.durationMs > 0 ? metrics.durationMs / 1000 : 0;
-  const ratePer30s = (count) => {
-    if (!Number.isFinite(count) || count === 0 || durationSec === 0) return count ?? 0;
-    return (count / durationSec) * 30;
-  };
+  assertComparableMetrics(metrics);
+  const ratePer30s = (count) => (count / metrics.durationMs) * 30_000;
 
   return {
     ...metrics,
@@ -149,8 +157,8 @@ export function compareMetrics(beforeMetrics, afterMetrics) {
   const aNorm = deriveComparisonMetrics(afterMetrics);
 
   return COMPARE_KEYS.map(({ key, label, higherIsBetter }) => {
-    const b = bNorm[key] ?? 0;
-    const a = aNorm[key] ?? 0;
+    const b = bNorm[key];
+    const a = aNorm[key];
     const delta = a - b;
     const percentChange = b === 0 ? null : (delta / b) * 100;
     let improved = null;
@@ -182,8 +190,10 @@ export function meetsOptimizationRule(deltas) {
   const regressions = [];
   for (const key of ["p95FrameTime", "p99FrameTime"]) {
     const d = deltas.find((x) => x.key === key);
-    if (d && d.percentChange !== null && d.improved === false && Math.abs(d.percentChange) > 5) {
-      regressions.push(`${d.label} regressed by ${Math.abs(d.percentChange).toFixed(1)}%`);
+    if (d?.improved === false && (d.before === 0 || Math.abs(d.percentChange) > 5)) {
+      regressions.push(
+        `${d.label} regressed by ${d.percentChange === null ? "an increase from zero" : `${Math.abs(d.percentChange).toFixed(1)}%`}`,
+      );
     }
   }
 
@@ -197,10 +207,28 @@ export function meetsOptimizationRule(deltas) {
 export function compareReports(beforeReport, afterReport) {
   assertEnvironmentCompatibility(beforeReport.environment, afterReport.environment);
 
-  const afterByName = new Map((afterReport.scenarios ?? []).map((s) => [s.scenario, s]));
+  for (const report of [beforeReport, afterReport]) {
+    if (
+      !Array.isArray(report.scenarios) ||
+      report.scenarios.length === 0 ||
+      new Set(report.scenarios.map(({ scenario }) => scenario)).size !== report.scenarios.length
+    )
+      throw new Error("Expected distinct performance scenarios in both reports.");
+    for (const scenario of report.scenarios) {
+      assertComparableMetrics(scenario.aggregate);
+      for (const segment of scenario.segments ?? []) assertComparableMetrics(segment.aggregate);
+      for (const run of scenario.runs ?? []) {
+        if (!run.measured) continue;
+        assertComparableMetrics(run.metrics);
+        if (run.segments?.some((segment) => !segment.valid))
+          throw new Error(`Invalid measured segment in ${scenario.scenario}.`);
+      }
+    }
+  }
+  const afterByName = new Map(afterReport.scenarios.map((s) => [s.scenario, s]));
   const results = [];
 
-  for (const b of beforeReport.scenarios ?? []) {
+  for (const b of beforeReport.scenarios) {
     const a = afterByName.get(b.scenario);
     if (!a) {
       results.push({

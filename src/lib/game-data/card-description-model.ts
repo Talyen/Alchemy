@@ -1,5 +1,4 @@
 import { buildDescriptionMessage } from "./description-message";
-import { effectChildren } from "./effect-tree";
 import type { BattleCard, BattleCardEffect } from "./types";
 
 export interface CardEffectAddress {
@@ -64,8 +63,14 @@ export function getCardEffect(
 ): BattleCardEffect | undefined {
   let effect = effects[address.effectIndex];
   for (const index of address.effectPath ?? []) {
-    if (!effect) return undefined;
-    effect = effectChildren(effect)[index];
+    if (!Number.isInteger(index) || index < 0) return undefined;
+    if (effect?.kind === "chance")
+      effect =
+        index < effect.successEffects.length
+          ? effect.successEffects[index]
+          : effect.failureEffects[index - effect.successEffects.length];
+    else if (effect?.kind === "repeat-over-turns") effect = effect.effects[index];
+    else return undefined;
   }
   return effect;
 }
@@ -146,13 +151,14 @@ export function carryCardDescriptionMarks(previous: CardDescription, description
 export function renderCardDescription(effects: readonly BattleCardEffect[], description: CardDescription) {
   const magnitudes: RenderedCardMagnitude[] = [];
   const identities = new Map<string, string>();
-  const localizedParts: Array<Parameters<typeof buildDescriptionMessage>[0]> = [];
+  type MessagePart = Parameters<typeof buildDescriptionMessage>[0][number];
+  const localizedParts: Array<Array<string | MessagePart>> = [];
   const descriptionLines = description.map(({ parts }, lineIndex) => {
-    const messageParts: Array<{ text: string; magnitudeId?: string }> = [];
+    const messageParts: Array<string | MessagePart> = [];
     let line = "";
     for (const part of parts) {
       if (typeof part === "string") {
-        messageParts.push({ text: part });
+        messageParts.push(part);
         line += part;
         continue;
       }
@@ -176,7 +182,9 @@ export function renderCardDescription(effects: readonly BattleCardEffect[], desc
     descriptionLines,
     magnitudes,
     get localizedLines() {
-      return (localizedLines ??= localizedParts.map((parts) => buildDescriptionMessage(parts)));
+      return (localizedLines ??= localizedParts.map((parts) =>
+        buildDescriptionMessage(parts.map((part) => (typeof part === "string" ? { text: part } : part))),
+      ));
     },
   };
 }
@@ -185,7 +193,7 @@ export function withCardDescription(card: BattleCard, description: CardDescripti
   const rendered = renderCardDescription(card.effects, description);
   return {
     ...card,
-    description: description.map((line) => ({ ...line })),
+    description: mapCardDescriptionReferences(description, (reference) => reference),
     descriptionLines: rendered.descriptionLines,
   };
 }

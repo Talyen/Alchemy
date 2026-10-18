@@ -1,3 +1,4 @@
+import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
@@ -10,7 +11,7 @@ import {
 import { setAlchemyVisit, setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
-import { getCampfireBrewKind, isBrewablePotion, type BrewOperation } from "@/lib/alchemist/brewing";
+import { getCampfireBrewKind, type BrewOperation } from "@/lib/alchemist/brewing";
 import { getTransmutationOffers, canTransmuteCard, isTransmutationSourceCurrent } from "@/lib/alchemist/transmutation";
 import type { TransmutationSelectionCommand } from "@/lib/active-run-session/alchemy-visits";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
@@ -38,8 +39,8 @@ export function brewAtCampfire(operation: BrewOperation, gameSession: GameSessio
         if (
           !deck[a] ||
           !deck[b] ||
-          !isBrewablePotion(snapshotTransactionValue(deck[a])) ||
-          !isBrewablePotion(snapshotTransactionValue(deck[b]))
+          !isPotionCard(snapshotTransactionValue(deck[a])) ||
+          !isPotionCard(snapshotTransactionValue(deck[b]))
         )
           return rejectCommand("Alchemy action is unavailable", null);
         result = tryCreateMixedPotion(snapshotTransactionValue(deck[a]), snapshotTransactionValue(deck[b]));

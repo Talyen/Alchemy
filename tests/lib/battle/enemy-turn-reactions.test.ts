@@ -71,7 +71,7 @@ describe("applyEnemyAbility: reactions", () => {
       );
       expect(result.playerStatuses[status]).toBe(0);
       expect(result.enemyHealth).toBe(state.enemyHealth);
-      expect(texts.filter((text) => text.signal === "purge")).toEqual([
+      expect(texts.filter((text) => text.kind === "notice" && text.signal === "purge")).toEqual([
         { target: "player", kind: "notice", stat: status, text: "Purged", signal: "purge" },
       ]);
       expect(state.playerStatuses[status]).toBe(3);

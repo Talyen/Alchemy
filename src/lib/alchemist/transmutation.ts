@@ -8,6 +8,7 @@ import {
   mapCardDescriptionReferences,
   type CardMagnitudeReference,
   isMixedPotionCard,
+  isCompanionSummonCard,
   mapEffectChildren,
   visitBattleCardEffects,
   withCardDescription,
@@ -25,7 +26,7 @@ import type {
 } from "@/lib/active-run-session/alchemy-visits";
 import { pickRandom } from "@/lib/rng";
 
-const DAMAGE_KEYWORDS = TRANSMUTATION_KEYWORD_GROUPS[0];
+const DAMAGE_KEYWORDS: readonly KeywordId[] = TRANSMUTATION_KEYWORD_GROUPS[0];
 const BUFF_KEYWORDS: readonly KeywordId[] = ["block", "armor", "forge", "thorns"];
 const BUFF_KEYWORD_SET = new Set<string>(BUFF_KEYWORDS);
 const RESOURCE_KINDS = { health: "heal", mana: "restore-mana", gold: "gain-gold" } as const;
@@ -53,7 +54,7 @@ const SOURCE_CONDITIONS: Partial<Record<KeywordId, readonly string[]>> = {
   forge: ["forgeBonusPercent"],
 };
 
-export function isTransmutableCard(card: BattleCard): boolean {
+function isTransmutableCard(card: BattleCard): boolean {
   return !card.corrupted && !card.transmuted && !isMixedPotionCard(card);
 }
 
@@ -257,7 +258,7 @@ export function getTransmutationVariants(
       return [];
     return [{ sourceKeyword: null, result }];
   }
-  if (keyword === "consume")
+  if (keyword === "consume" && !isCompanionSummonCard(card))
     return [{ sourceKeyword: null, result: finishAlteration(card, keyword, effects, { consume: true }) }];
   if (getCardDescription(card).filter((line) => line.role === "effect").length >= CORRUPTION_MAX_EFFECT_LINES)
     return [];
@@ -331,6 +332,7 @@ function matchingAlteration(
 }
 
 export function getTransmutationOffers(visit: AlchemyVisit): BattleCard[] {
+  const selection = visit.transmutation;
   if (!selection) return [];
   const { source, sourceIndex } = selection;
   if (!source || sourceIndex == null) return [];
@@ -353,10 +355,9 @@ export function canTransmuteCard(
     const alteration = matchingAlteration(choice, key, sourceIndex, card.id);
     return (
       !!alteration &&
-      (!deck ||
-        getTransmutationVariants(card, choice.keyword, deck).some(
-          (variant) => variant.sourceKeyword === alteration.sourceKeyword,
-        ))
+      // The saved alteration already proves compatibility with this exact
+      // source. Only Companion additions depend on the rest of the live deck.
+      (!deck || choice.keyword !== "companion" || deck.some(isCompanionSummonCard))
     );
   });
 }

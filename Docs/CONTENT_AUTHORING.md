@@ -205,7 +205,8 @@ Canonical card descriptions render through `effect-metadata.ts`. Extend that
 renderer when a mechanic needs a new clause; do not duplicate its amounts in
 library prose. The [parity checker](../src/lib/content-validation/card-parity/index.ts)
 compares authored mechanic lines with `describeCardEffects()`, allowing the
-Steal/Gain Gold alias and specialized validation for summons and Mixed Potions.
+Steal/Gain Gold alias and the Mixed Potion placeholder. Summon summaries and
+any additional effects are checked together against their generated descriptions.
 Corruption and Powerful Wish use [structured magnitude references](#add-a-new-card);
 rendered numeric positions identify highlights, never the effect to mutate.
 

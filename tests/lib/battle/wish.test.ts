@@ -18,16 +18,12 @@ import { cardById, BattleCardEffectSchema } from "@/lib/game-data";
 
 describe("buildWishOptions", () => {
   it("returns shuffled options excluding the triggering card", () => {
-    const card = makeTestCard({
-      id: "strike",
-      title: "Strike",
-      effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 4 }],
-    });
+    const card = cardById.wish!;
     const state = patchBattleState();
     const options = buildWishOptions(state, card);
     expect(options).toHaveLength(3);
-    expect(options.every((o) => o.id !== "strike")).toBe(true);
-    expect(options.every((o) => o.id && o.title)).toBe(true);
+    expect(options.every((option) => option.id !== card.id)).toBe(true);
+    expect(new Set(options.map((option) => option.id)).size).toBe(3);
   });
 
   it("returns only undiscovered cards when wishUndiscoveredCards is active", () => {
@@ -60,18 +56,15 @@ describe("buildWishOptions", () => {
     expect(first.every((card) => card.effects.some((effect) => effect.kind === "summon-companion"))).toBe(true);
   });
 
-  it("falls back to all cards when not enough undiscovered exist", () => {
-    const card = makeTestCard({ id: "strike", title: "Strike" });
+  it("falls back to discovered cards when every offerable card has been discovered", () => {
+    const card = cardById.wish!;
     const state = patchBattleState({
       talentEffects: { wishUndiscoveredCards: true },
-      discoveredCardIds: (() => {
-        const ids = [];
-        for (let i = 0; i < 200; i++) ids.push(`card-${i}`);
-        return ids;
-      })(),
+      discoveredCardIds: Object.keys(cardById),
     });
     const options = buildWishOptions(state, card);
     expect(options).toHaveLength(3);
+    expect(options.every((option) => option.id !== card.id && state.discoveredCardIds.includes(option.id))).toBe(true);
   });
 });
 
@@ -111,73 +104,19 @@ describe("applyWishEffect", () => {
     expect(result.wishQueue).toHaveLength(1);
   });
 
-  it.each<{
-    name: string;
-    talentGoldOnWish?: number;
-    trinketWishingWellGoldOnWish?: number;
-    gearGoldGainPercent?: number;
-    wishes: number;
-    expectedGold: number;
-    expectedGoldTextAmount?: number;
-  }>([
-    {
-      name: "awards goldOnWish per wish count",
-      talentGoldOnWish: 5,
-      wishes: 2,
-      expectedGold: 10,
-      expectedGoldTextAmount: 10,
-    },
-    {
-      name: "awards goldOnWish per wish",
-      talentGoldOnWish: 3,
-      wishes: 1,
-      expectedGold: 3,
-    },
-    {
-      name: "awards wishingWellGoldOnWish per wish",
-      trinketWishingWellGoldOnWish: 7,
-      wishes: 1,
-      expectedGold: 7,
-    },
-    {
-      name: "scales wishingWellGoldOnWish combat text with goldGainPercent",
-      trinketWishingWellGoldOnWish: 7,
-      gearGoldGainPercent: 50,
-      wishes: 1,
-      expectedGold: 11,
-      expectedGoldTextAmount: 11,
-    },
-  ])(
-    "$name",
-    ({
-      talentGoldOnWish,
-      trinketWishingWellGoldOnWish,
-      gearGoldGainPercent,
-      wishes,
-      expectedGold,
-      expectedGoldTextAmount,
-    }) => {
-      const base = patchBattleState();
-      const state = patchBattleState({
-        ...(talentGoldOnWish !== undefined
-          ? { talentEffects: { ...base.talentEffects, goldOnWish: talentGoldOnWish } }
-          : {}),
-        ...(trinketWishingWellGoldOnWish !== undefined
-          ? { trinketEffects: { ...base.trinketEffects, wishingWellGoldOnWish: trinketWishingWellGoldOnWish } }
-          : {}),
-        ...(gearGoldGainPercent !== undefined
-          ? { gearEffects: { ...base.gearEffects, goldGainPercent: gearGoldGainPercent } }
-          : {}),
-      });
-      const card = makeTestCard({ id: "strike", title: "Strike" });
-      const texts: CombatTextEvent[] = [];
-      const result = applyWishEffect(state, card, wishes, texts);
-      expect(result.gold).toBe(expectedGold);
-      if (expectedGoldTextAmount !== undefined) {
-        expect(texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: expectedGoldTextAmount }]);
-      }
-    },
-  );
+  it("scales combined Talent and Trinket Gold once for each Wish and reports the actual gain", () => {
+    const state = patchBattleState({
+      talentEffects: { goldOnWish: 2 },
+      trinketEffects: { wishingWellGoldOnWish: 3 },
+      gearEffects: { goldGainPercent: 50 },
+    });
+    const texts: CombatTextEvent[] = [];
+    const next = applyWishEffect(state, cardById.wish!, 2, texts);
+    expect(next.gold).toBe(16);
+    expect(texts.filter((text) => text.stat === "gold")).toEqual([
+      { target: "player", kind: "status", stat: "gold", amount: 16 },
+    ]);
+  });
 
   it("heals player with healthOnWish per wish", () => {
     const state = patchBattleState({
@@ -200,19 +139,6 @@ describe("applyWishEffect", () => {
     const result = applyWishEffect(state, card, 1, texts);
     expect(result.playerStatuses.burn).toBe(0);
     expect(result.playerStatuses.poison).toBe(3);
-  });
-
-  it("combines multiple gold bonuses from same wish", () => {
-    const state = patchBattleState({
-      talentEffects: {
-        goldOnWish: 8,
-      },
-      trinketEffects: { wishingWellGoldOnWish: 2 },
-    });
-    const card = makeTestCard({ id: "strike", title: "Strike" });
-    const texts: CombatTextEvent[] = [];
-    const result = applyWishEffect(state, card, 1, texts);
-    expect(result.gold).toBe(10);
   });
 
   it("applies per-wish effects for each wish count", () => {

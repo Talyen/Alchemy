@@ -13,6 +13,52 @@ import { buildWishOptions } from "@/lib/battle/wish";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("card description bindings", () => {
+  it("rejects numeric upgrades that would make a card unsaveable, including linked alternate values", () => {
+    const source = withCardDescription(
+      makeTestCard({
+        effects: [
+          {
+            kind: "damage",
+            damageType: "freeze",
+            amount: 499,
+            damageTypeIfTargetFrozen: "freeze",
+            amountIfTargetFrozen: 998,
+          },
+        ],
+      }),
+      [
+        {
+          role: "effect",
+          parts: [
+            cardMagnitude(
+              { kind: "damage", effectIndex: 0, field: "amount" },
+              { shared: [{ kind: "damage", effectIndex: 0, field: "amountIfTargetFrozen", multiplier: 2 }] },
+            ),
+          ],
+        },
+      ],
+    );
+    const before = structuredClone(source);
+    const target = getEditableCorruptionTargets(source)[0]!;
+    for (const value of [-1, 1.5, 500, Infinity]) expect(updateCardNumericValue(source, target, value)).toBe(source);
+    const updated = updateCardNumericValue(source, target, 498);
+    expect(updated.effects).toEqual([{ ...source.effects[0], amount: 498, amountIfTargetFrozen: 996 }]);
+    expect(BattleCardSchema.safeParse(updated).success).toBe(true);
+    expect(source).toEqual(before);
+    const ranged = makeTestCard({ effects: [{ kind: "random-damage", minAmount: 2, maxAmount: 4 }] });
+    expect(updateCardNumericValue(ranged, getEditableCorruptionTargets(ranged)[0]!, 5)).toBe(ranged);
+  });
+  it("owns the bindings of an updated card so later edits cannot change the source card", () => {
+    const source = cloneBattleCard(cardById["ray-of-frost"]!);
+    const before = structuredClone(source);
+    const updated = withCardDescription(source, getCardDescription(source));
+    const magnitude = updated.description![0]!.parts.find((part) => typeof part !== "string")!;
+    if (typeof magnitude === "string") throw new Error("Missing test magnitude");
+    magnitude.references[0]!.effectIndex = 99;
+    updated.description![0]!.parts.push("Changed");
+    expect(source).toEqual(before);
+  });
+
   it("keeps both Ray of Frost hits linked after wording changes, reload and another corruption", () => {
     const original = cardById["ray-of-frost"]!;
     const copy = cloneBattleCard(original);

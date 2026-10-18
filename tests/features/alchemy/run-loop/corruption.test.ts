@@ -27,6 +27,21 @@ function outcome(id: string, kind: keyof typeof CORRUPTION_OUTCOME_WEIGHTS) {
 }
 
 describe("card corruption outcomes", () => {
+  it("never adds a Health price or Consume when the promised upgrade exceeds supported values", () => {
+    for (const amount of [500, 999]) {
+      const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount }] });
+      const kinds = getCorruptionMutationGroups(card).map((group) => group.kind);
+      expect(kinds).not.toContain("bargain");
+      expect(kinds).not.toContain("consume");
+      expect(kinds).toContain("weaken");
+    }
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 499 }] });
+    const bargain = getCorruptionMutationGroups(card).find((group) => group.kind === "bargain")!;
+    expect(bargain.mutations[0]!.card.effects).toEqual([
+      { kind: "lose-health", amount: 2 },
+      { kind: "damage", damageType: "physical", amount: 998 },
+    ]);
+  });
   it("can add Block to an Armor card without adding duplicate Block to a Block card", () => {
     const secondaryEffects = (id: string) =>
       getCorruptionMutationGroups(cardById[id]!)

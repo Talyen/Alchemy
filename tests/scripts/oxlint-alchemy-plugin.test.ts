@@ -73,17 +73,41 @@ for (const { rule, file, denied, allowed } of cases) {
 
 tester.run("no-run-earned-add-materials", alchemyPlugin.rules["no-run-earned-add-materials"]!, {
   valid: [
-    "src/features/alchemy/shared/stores/write/run-end.ts",
-    "src/features/alchemy/shared/stores/write/run-homestead.ts",
-    "src/features/alchemy/shared/stores/run-session-write-port.ts",
-    "src/features/alchemy/shared/stores/gear-session-command.ts",
-  ].map((file) => ({ code: "addMaterialsToStockpile({});", filename: filename(file) })),
+    {
+      code: "draft.run.activeRun.runMaterialsEarned = {};",
+      filename: filename("src/features/alchemy/shared/stores/write/run-progress.ts"),
+    },
+    ...[
+      "src/features/alchemy/shared/stores/write/run-end.ts",
+      "src/features/alchemy/shared/stores/write/run-homestead.ts",
+      "src/features/alchemy/shared/stores/run-session-write-port.ts",
+      "src/features/alchemy/shared/stores/gear-session-command.ts",
+    ].map((file) => ({
+      code: 'addMaterialsToStockpile({}); const grant = port["addMaterialsToStockpile"];',
+      filename: filename(file),
+    })),
+  ],
   invalid: [
     {
       code: 'import { addMaterialsToStockpile } from "./port"; addMaterialsToStockpile({});',
       filename: filename("src/features/alchemy/run-loop/navigation/mystery-flow.ts"),
       errors: 2,
     },
+    ...[
+      'port["addMaterialsToStockpile"]({});',
+      "port[`addMaterialsToStockpile`]({});",
+      "const grant = port.addMaterialsToStockpile;",
+      "const { addMaterialsToStockpile: grant } = port;",
+      'export { addMaterialsToStockpile as grant } from "./port";',
+      "draft.run.activeRun.runMaterialsEarned = {};",
+      'draft.run.activeRun["runCurrenciesEarned"].voidstone += 1;',
+      "draft.run.activeRun.runMaterialsEarned.wood++;",
+      "delete draft.run.activeRun.runCurrenciesEarned.voidstone;",
+    ].map((code) => ({
+      code,
+      filename: filename("src/features/alchemy/run-loop/navigation/mystery-flow.ts"),
+      errors: 1,
+    })),
   ],
 });
 

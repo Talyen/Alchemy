@@ -1,3 +1,4 @@
+import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { useEffect, useRef, useState } from "react";
@@ -7,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { type BattleCard } from "@/lib/game-data";
 import { PotionComparison } from "./potion-comparison";
 import { BrewPotionPanel } from "./brew-potion-panel";
-import { isBrewablePotion, strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
+import { strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
 import { collectionTileWidthClass, getCardInspectionShineColors } from "@/features/alchemy/shared/config";
 
 import { BattleCardButton } from "../../shared/ui/cards/card-button";
@@ -45,7 +46,7 @@ export function AlchemistShopScreen({
     },
     [],
   );
-  const mixable = runDeck.filter(isBrewablePotion);
+  const mixable = runDeck.filter(isPotionCard);
   const mixDisabled = gold < mixPrice || mixable.length < 2;
   const strengthenDisabled = gold < mixPrice || !mixable.some((card) => strengthenPotion(card));
   const mixDisabledMessage = gold < mixPrice ? "Not Enough Gold" : "Two eligible Potions required";

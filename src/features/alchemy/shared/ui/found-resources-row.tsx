@@ -48,6 +48,7 @@ export function FoundResourcesRow({
 
   useLayoutEffect(() => {
     if (!container || typeof ResizeObserver === "undefined") return;
+    // Rebind after row changes move pills between parents and replace their elements.
     const pills = Array.from(container.querySelectorAll<HTMLElement>("[data-reward-resource]"));
     const update = () => {
       if (container.clientWidth <= 0 || pills.length === 0) return;
@@ -55,7 +56,8 @@ export function FoundResourcesRow({
       const widths = pills.map((pill) => parseFloat(getComputedStyle(pill).width));
       if (widths.some((width) => !(width > 0))) return;
       const firstParent = pills[0]?.parentElement;
-      const gap = (firstParent && parseFloat(getComputedStyle(firstParent).columnGap)) || 0;
+      const measuredGap = firstParent ? parseFloat(getComputedStyle(firstParent).columnGap) : 0;
+      const gap = Number.isFinite(measuredGap) ? measuredGap : 0;
       const next = balancedRowSizes(widths, container.clientWidth, gap);
       setRowSizes((previous) =>
         previous.length === next.length && previous.every((count, index) => count === next[index]) ? previous : next,
@@ -78,7 +80,7 @@ export function FoundResourcesRow({
       observer.disconnect();
       if (frame !== null) cancelAnimationFrame(frame);
     };
-  }, [container, gold, materials, size]);
+  }, [container, gold, materials, size, rowSizes]);
 
   if (resources.length === 0) return null;
   const sizes = rowSizes.reduce((sum, count) => sum + count, 0) === resources.length ? rowSizes : [resources.length];

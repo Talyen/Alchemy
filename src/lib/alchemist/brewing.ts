@@ -21,12 +21,10 @@ export type BrewOperation =
   | { kind: "new"; offerIndex: number }
   | { kind: "combine"; indices: [number, number] }
   | { kind: "strengthen"; index: number };
-export function isBrewablePotion(card: BattleCard): boolean {
-  return isPotionCard(card);
-}
-
 export function getCampfireBrewKind(deck: readonly BattleCard[]): "new" | "combine" {
-  return deck.filter(isBrewablePotion).length >= 2 ? "combine" : "new";
+  let potions = 0;
+  for (const card of deck) if (isPotionCard(card) && ++potions === 2) return "combine";
+  return "new";
 }
 
 function strengthenEffect(effect: BattleCardEffect): BattleCardEffect {
@@ -72,7 +70,7 @@ function strengthenEffect(effect: BattleCardEffect): BattleCardEffect {
 }
 
 export function strengthenPotion(card: BattleCard): BattleCard | null {
-  if (!isBrewablePotion(card)) return null;
+  if (!isPotionCard(card)) return null;
   const effects = card.effects.map(strengthenEffect);
   if (
     effects.some((effect) => effect.kind === "remove-harmful-status" && effect.removeAll) &&

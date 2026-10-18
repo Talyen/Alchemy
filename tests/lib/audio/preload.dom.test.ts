@@ -145,7 +145,7 @@ describe("preloadSounds", () => {
 
 describe("preloadBattleSounds", () => {
   it("warms the sound for crafted Mixed Potions in the hand", () => {
-    preloadBattleSounds(["mixed-potion-health-potion-0-mana-potion-0"]);
+    preloadBattleSounds(["constructor", "__proto__", "toString", "mixed-potion-health-potion-0-mana-potion-0"]);
     expect(createdFakeAudio.some((el) => el.src.includes("ice-in-water."))).toBe(true);
   });
 
@@ -202,10 +202,7 @@ describe("preloadAllSounds", () => {
     expect(createdFakeAudio).toHaveLength(started);
   });
 
-  it("preloads urgent sounds synchronously and the rest in one idle callback", async () => {
-    const AudioContextCtor = vi.fn();
-    vi.stubGlobal("AudioContext", AudioContextCtor);
-
+  it("preloads urgent sounds synchronously and the rest in exactly one idle callback across repeated requests", () => {
     const callbacks: IdleRequestCallback[] = [];
     window.requestIdleCallback = vi.fn((cb: IdleRequestCallback) => {
       callbacks.push(cb);
@@ -213,30 +210,17 @@ describe("preloadAllSounds", () => {
     });
 
     preloadAllSounds();
-    expect(AudioContextCtor).not.toHaveBeenCalled();
     const urgentCount = createdFakeAudio.length;
     expect(urgentCount).toBeGreaterThan(0);
-    expect(callbacks.length).toBe(1);
-
-    callbacks[0]!({ didTimeout: false, timeRemaining: () => 50 });
-    await vi.waitFor(() => expect(createdFakeAudio.length).toBeGreaterThan(urgentCount));
-    expect(callbacks.length).toBe(1);
-
-    expect(AudioContextCtor).not.toHaveBeenCalled();
-  });
-
-  it("is idempotent and does not schedule duplicate idle loops when called multiple times", () => {
-    const callbacks: IdleRequestCallback[] = [];
-    window.requestIdleCallback = vi.fn((cb: IdleRequestCallback) => {
-      callbacks.push(cb);
-      return callbacks.length;
-    });
-
     preloadAllSounds();
+    expect(createdFakeAudio).toHaveLength(urgentCount);
     expect(callbacks).toHaveLength(1);
 
-    // Second call should be a no-op:
+    callbacks[0]!({ didTimeout: false, timeRemaining: () => 50 });
+    const warmed = createdFakeAudio.length;
+    expect(warmed).toBeGreaterThan(urgentCount);
     preloadAllSounds();
+    expect(createdFakeAudio).toHaveLength(warmed);
     expect(callbacks).toHaveLength(1);
   });
 });

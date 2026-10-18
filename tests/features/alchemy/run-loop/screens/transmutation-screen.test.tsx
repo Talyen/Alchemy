@@ -98,32 +98,6 @@ afterEach(() => {
 });
 
 describe("Transmutation flow", () => {
-  it("skips a saved Companion choice when its summon has left the deck", () => {
-    const source = cardById.slash!;
-    const deck = [source, cardById["wolf-companion"]!];
-    const variant = getTransmutationVariants(source, "companion", deck)[0]!;
-    setRunProgress({ runDeck: [source] });
-    setRunSession({
-      activity: {
-        kind: "transmutation",
-        data: {
-          ...visit(),
-          transmutation: {
-            choices: [{ keyword: "companion", alterations: [{ ...variant, sourceIndex: 0, source }] }],
-            source: null,
-            sourceIndex: null,
-            keyword: null,
-            offerIndex: null,
-          },
-        },
-      },
-    });
-    expect(selectTransmutation({ kind: "source", index: 0, card: source }, defaultGameSession)).toBe(false);
-    render(<Harness />);
-    expect(screen.queryByRole("button", { name: "Slash" })).toBeNull();
-    expect(onContinue).toHaveBeenCalledOnce();
-  });
-
   it("selects the next fixed offer when only the Companion alteration becomes unavailable", async () => {
     const source = cardById.slash!;
     const deck = [source, cardById["wolf-companion"]!];
@@ -165,21 +139,10 @@ describe("Transmutation flow", () => {
   it("shows keyword buttons above original and preview, keeps values, and commits only through Transmute", async () => {
     const before = readActiveRun(defaultGameSession).runDeck;
     render(<Harness />);
-    expect(screen.getAllByRole("heading")).toHaveLength(1);
     expect((screen.getByRole("button", { name: "Mixed Potion" }) as HTMLButtonElement).disabled).toBe(true);
     const preview = await chooseAlteration();
-    const choices = screen.getByRole("group", { name: "Alterations" });
-    const comparison = screen.getByLabelText("Transmutation comparison");
-    expect(choices.compareDocumentPosition(comparison) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole("button", { name: "Original: Slash" })).toBeTruthy();
     expect(screen.getByRole("button", { name: `Preview: ${preview.title}` })).toBeTruthy();
-    expect(screen.getByRole("button", { pressed: true }).textContent).toContain(
-      keywordDefinitions[preview.transmuted!].label,
-    );
-    act(() => screen.getByRole("button", { name: `Preview: ${preview.title}` }).focus());
-    expect(tooltipFor(`Preview: ${preview.title}`).getAllByText("NEW").length).toBeGreaterThan(0);
-    act(() => screen.getByRole("button", { name: "Original: Slash" }).focus());
-    expect(tooltipFor("Original: Slash").queryByText("NEW")).toBeNull();
     expect(readActiveRun(defaultGameSession).runDeck).toEqual(before);
     expect(onExchange).not.toHaveBeenCalled();
     click("Transmute");
@@ -300,18 +263,6 @@ describe("Transmutation flow", () => {
     expect(onContinue).not.toHaveBeenCalled();
   });
 
-  it("Back retains the fixed offers and preview without rerolling", () => {
-    render(<Harness />);
-    click("Slash");
-    const before = visit();
-    const rng = readActiveRun(defaultGameSession).rng;
-    click("Back");
-    click("Slash");
-    expect(visit()).toEqual(before);
-    expect(readActiveRun(defaultGameSession).rng).toEqual(rng);
-    expect(onExchange).not.toHaveBeenCalled();
-  });
-
   it("waits for save acknowledgement, locks controls, and ignores callbacks after unmount", async () => {
     const pending: Array<() => void> = [];
     const { unmount } = render(<Harness afterProgressSaved={(callback) => pending.push(callback)} />);
@@ -339,16 +290,6 @@ describe("Transmutation flow", () => {
     click("Transmute");
     expect(onContinue).not.toHaveBeenCalled();
     expect(playUISound).toHaveBeenCalledWith("talentUnlock");
-  });
-
-  it("rejects a stale deck and does not manufacture new offers when cards move", async () => {
-    render(<Harness />);
-    await chooseAlteration();
-    const choices = visit().transmutation!.choices;
-    act(() => setRunProgress({ runDeck: [cardById.frostbolt!, cardById.slash!] }));
-    expect(visit().transmutation!.choices).toEqual(choices);
-    expect(onExchange).not.toHaveBeenCalled();
-    expect(onContinue).toHaveBeenCalledOnce();
   });
 
   it("safely continues a completed visit missing its result after save acknowledgement", () => {

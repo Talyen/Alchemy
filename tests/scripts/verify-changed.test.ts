@@ -105,7 +105,7 @@ describe("verification selection", () => {
       "unit-tooling",
     ]);
     expect(
-      resolveRoutePlan(["tests/architecture/rng-canonical-doors.test.ts"]).commands.map((command) => command.key),
+      resolveRoutePlan(["tests/architecture/asset-loading-contract.test.ts"]).commands.map((command) => command.key),
     ).toEqual(["unit-tooling"]);
   });
 

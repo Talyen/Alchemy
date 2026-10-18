@@ -12,10 +12,10 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
-import { isBrewablePotion, strengthenPotion as prepareStrengthenedPotion } from "@/lib/alchemist/brewing";
+import { strengthenPotion as prepareStrengthenedPotion } from "@/lib/alchemist/brewing";
 import { ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { isMixedPotionCard, type BattleCard } from "@/lib/game-data";
-import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
+import { getStandardPotionPool, isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { isValidDeckIndex } from "@/lib/utils";
 import {
   cardSlotKeyOf,
@@ -92,7 +92,7 @@ export function createAlchemistShopCommands(gameSession: GameSession) {
       }
       const cardA = deck[indexA];
       const cardB = deck[indexB];
-      if (!cardA || !cardB || !isBrewablePotion(cardA) || !isBrewablePotion(cardB)) return null;
+      if (!cardA || !cardB || !isPotionCard(cardA) || !isPotionCard(cardB)) return null;
       const potion = tryCreateMixedPotion(cardA, cardB);
       return potion ? { potion, deck: applyMixToDeck(deck, indexA, indexB, potion) } : null;
     });

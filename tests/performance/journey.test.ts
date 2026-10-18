@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { chooseCheckpointStep, selectCase } from "../../performance/case-selection.mjs";
-import { checkScenarioCompatibility } from "../../performance/compare";
+import { checkScenarioCompatibility } from "../../performance/compare-model.mjs";
 import { assertJourneyCase } from "../../performance/journey-types";
 import { measureSegments } from "../../performance/journey-segments";
 import type { FrameSampleRaw } from "../../performance/metrics";

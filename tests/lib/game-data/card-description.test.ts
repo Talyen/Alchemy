@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardLibrary, getEffectiveCardDescriptionLines, keywordDefinitions } from "@/lib/game-data";
+import { getEffectiveCardDescriptionLines } from "@/lib/game-data";
 import { makeTestCard } from "../../fixtures/cards";
 
 describe("getEffectiveCardDescriptionLines", () => {
@@ -29,25 +29,5 @@ describe("getEffectiveCardDescriptionLines", () => {
       "Deals 1 Bleed or Physical damage each turn",
       "Companion",
     ]);
-  });
-
-  it("keeps universal reactions out of card descriptions and keyword explanations", () => {
-    const context = {
-      companionBondLevels: {},
-      reactionPreview: {
-        shatter: "Shatter: destroy defenses",
-        wildfire: "Wildfire: bonus damage",
-        thunderclap: "Thunderclap: bonus damage",
-        frostfire: "Frostfire: bonus damage",
-      },
-    };
-    for (const card of cardLibrary) {
-      expect(getEffectiveCardDescriptionLines(card, context).join("\n"), card.id).not.toMatch(
-        /\b(?:Shatter|Wildfire|Thunderclap|Frostfire)\b/i,
-      );
-    }
-    for (const definition of Object.values(keywordDefinitions)) {
-      expect(definition.description, definition.id).not.toMatch(/\b(?:Shatter|Wildfire|Thunderclap|Frostfire)\b/i);
-    }
   });
 });

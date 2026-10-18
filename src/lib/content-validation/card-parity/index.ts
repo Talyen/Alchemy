@@ -1,8 +1,7 @@
-import { describeCardEffects, type BattleCard } from "@/lib/game-data";
+import { describeCardEffects, visitBattleCardEffects, type BattleCard } from "@/lib/game-data";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { capitalizeWord } from "@/lib/utils";
 import type { ContentValidationIssue } from "../types";
-import { flattenEffects } from "./helpers";
 
 export { TRAIT_REQUIRED_TERMS } from "./enemy-trait-parity";
 export { validateTrinketDescriptionParity } from "./trinket-parity";
@@ -22,11 +21,13 @@ function tagLinesFor(card: BattleCard): Set<string> {
 
 function checkTagWarnings(card: BattleCard): ContentValidationIssue[] {
   const warnings: ContentValidationIssue[] = [];
-  const flat = flattenEffects(card.effects);
-  if (
-    flat.some((effect) => effect.kind === "damage" && effect.lifesteal === true) &&
-    !card.descriptionLines.some((line) => line === "Leech")
-  )
+  let summon = false;
+  let leech = false;
+  visitBattleCardEffects(card.effects, (effect) => {
+    if (effect.kind === "summon-companion") summon = true;
+    if ("lifesteal" in effect && effect.lifesteal) leech = true;
+  });
+  if (leech && !card.descriptionLines.some((line) => /\bLeech\b/.test(line)))
     warnings.push(cardIssue("warning", card.id, "Lifesteal effect is missing Leech description line"));
   const hasArcheryTag = card.tags?.includes("archery") === true;
   const hasArcheryLine = card.descriptionLines.some((line) => line === "Archery");
@@ -42,16 +43,11 @@ function checkTagWarnings(card: BattleCard): ContentValidationIssue[] {
     );
   if (card.consume === true) {
     const hasConsume = card.descriptionLines.some((line) => line === "Consume");
-    const hasCompanion =
-      flat.some((effect) => effect.kind === "summon-companion") &&
-      card.descriptionLines.some((line) => line === "Companion");
+    const hasCompanion = summon && card.descriptionLines.some((line) => line === "Companion");
     if (!hasConsume && !hasCompanion)
       warnings.push(cardIssue("warning", card.id, "consume:true is missing Consume or Companion description line"));
   }
-  if (
-    flat.some((effect) => effect.kind === "summon-companion") &&
-    !card.descriptionLines.some((line) => line.includes("Companion"))
-  )
+  if (summon && !card.descriptionLines.some((line) => line.includes("Companion")))
     warnings.push(cardIssue("warning", card.id, "summon-companion effect is missing Companion description line"));
   return warnings;
 }
@@ -77,7 +73,7 @@ function diffMechanicLines(card: BattleCard, expectedMechanic: string[]): Conten
       issues.push(cardIssue("error", card.id, `missing expected description line "${expected}"`));
     } else if (expected === undefined && actual !== undefined) {
       issues.push(cardIssue("error", card.id, `"${actual}" has no matching effect`));
-    } else if (actual !== undefined && expected !== undefined && normalizeAlias(actual) !== expected) {
+    } else if (actual !== undefined && expected !== undefined && normalizeAlias(actual) !== normalizeAlias(expected)) {
       issues.push(cardIssue("error", card.id, `"${actual}" does not match expected "${expected}"`));
     }
   }
@@ -86,16 +82,12 @@ function diffMechanicLines(card: BattleCard, expectedMechanic: string[]): Conten
 
 export function validateCardDescriptionParity(card: BattleCard): ContentValidationIssue[] {
   const warnings = checkTagWarnings(card);
-  // Summon summaries describe the Companion's actions rather than this card's
-  // magnitude fields. Preserve tag-only validation, including added effects.
   if (card.id === MIXED_POTION_CARD_ID) return warnings;
-  if (flattenEffects(card.effects).some((effect) => effect.kind === "summon-companion")) return warnings;
   let expected: string[];
   try {
     expected = describeCardEffects(card.effects);
   } catch {
-    // Effect kinds without canonical phrasing (no catalog usage) stay lenient.
-    return warnings;
+    return [...warnings, cardIssue("error", card.id, "Cannot describe card effects")];
   }
   if (card.tags) expected.push(...card.tags.map(capitalizeWord));
   if (card.consume) expected.push("Consume");

@@ -274,6 +274,11 @@ of its prior and granted values. Nested scopes inherit repeat suppression and re
 `battleSnapshot` strips that metadata alongside RNG; saved flag names, including
 the legacy `uniqueRepeatActive` field, remain readable.
 
+`resource-reward-resolution.ts` owns Leech rewards and the resource reactions
+from Poison, Nature, and Holy hits. Combat supplies seeded chance checks and
+inspection supplies guaranteed outcomes; both preserve reward order and captured
+hit facts so later packets see the same known resources.
+
 `battle-sequence.ts` owns ordered step execution and defeat cutoffs for card
 sequences, enemy abilities, status ticks, and Wish rewards. An explicit reaction
 boundary selects settlement after each step or in the enclosing hit. Card Wishes
