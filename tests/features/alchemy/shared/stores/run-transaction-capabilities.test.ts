@@ -1,7 +1,7 @@
 import { createCleanup } from "@/lib/cleanup";
 import { initializeBattleForTest as initializeActiveBattle } from "../../../../helpers/run-domain-store-test";
 import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   acceptCommand,
@@ -14,12 +14,18 @@ import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gamepl
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
 import {
   addGold,
-  deductGold,
+  beginDestinationClaim,
+  beginRewardClaim,
+  cancelDestinationClaim,
   createDraftRunRandomSource,
+  deductGold,
+  setCompanionRewardCards,
   setGold,
   initializeBattle,
   setHasActiveRun,
+  setRewardState,
   setRunDeck,
+  releaseRewardClaim,
   setRunActivityData,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 
@@ -29,6 +35,8 @@ import {
 } from "@/features/alchemy/shared/stores/gear-session-command";
 import type { GearInstance } from "@/lib/gear";
 import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-types";
+import { createEmptyRewardState } from "@/lib/active-run-session";
+import { DESTINATIONS } from "@/lib/routing";
 import { getGoldMultiplier } from "@/lib/game-data";
 import { makeTestBattleState, makeTestCard } from "../../../../fixtures/battle";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
@@ -462,6 +470,53 @@ describe("feature transaction capabilities", () => {
       expect(effect).not.toHaveBeenCalled();
     },
   );
+});
+
+describe("reward claim gating", () => {
+  const transact = <T>(operate: (transaction: RunTransaction) => T): T =>
+    dispatchRunSessionCommand((transaction) => acceptCommand(operate(transaction)), undefined, defaultGameSession);
+
+  it("gates beginRewardClaim on one claim at a time so empty skips can finalize", () => {
+    const rewardCard = makeTestCard({
+      id: "fireball",
+      title: "Fireball",
+      cost: 3,
+      effects: [{ kind: "damage", damageType: "burn", amount: 8 }],
+    });
+
+    expect(transact(beginRewardClaim)).toBe(true);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim.kind).toBe("reward");
+    expect(transact(beginRewardClaim)).toBe(false);
+
+    transact(releaseRewardClaim);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim.kind).toBe("idle");
+
+    transact((transaction) => setCompanionRewardCards(transaction, [rewardCard]));
+    expect(transact(beginRewardClaim)).toBe(true);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim.kind).toBe("reward");
+    expect(transact(beginRewardClaim)).toBe(false);
+
+    transact(releaseRewardClaim);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim.kind).toBe("idle");
+  });
+
+  it("validates destination claims against offered destinations", () => {
+    expect(transact((transaction) => beginDestinationClaim(transaction, DESTINATIONS.MYSTERY))).toBe(false);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim).toEqual({ kind: "idle" });
+
+    transact((transaction) =>
+      setRewardState(transaction, { ...createEmptyRewardState([DESTINATIONS.MYSTERY]), gold: 30 }),
+    );
+    expect(transact((transaction) => beginDestinationClaim(transaction, DESTINATIONS.MYSTERY))).toBe(true);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim).toEqual({
+      kind: "destination",
+      destination: DESTINATIONS.MYSTERY,
+    });
+    expect(transact((transaction) => beginDestinationClaim(transaction, DESTINATIONS.CAMPFIRE))).toBe(false);
+
+    transact(cancelDestinationClaim);
+    expect(readRunSession(defaultGameSession).rewardFlow.claim).toEqual({ kind: "idle" });
+  });
 });
 
 it("rolls back a caught battle initialization failure instead of publishing partial progression", async () => {

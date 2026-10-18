@@ -1,27 +1,27 @@
 import type { GameSession } from "./game-session-types";
-import { dispatchGameplayCommand } from "./gameplay-command";
-import { acceptCommand, rejectCommand } from "./run-session-command";
-import { resetUnlockedTalents, unlockAllTalents, unlockTalent } from "./write/run-meta";
-import { setScreen } from "./write/run-session";
+import { acceptCommand, dispatchRunSessionCommand, rejectCommand } from "./run-session-command";
+import { resetUnlockedTalents, setScreen, unlockAllTalents, unlockTalent } from "./run-session-write-port";
 
 export function showRunScreen(screen: Parameters<typeof setScreen>[1], gameSession: GameSession) {
-  dispatchGameplayCommand((draft) => acceptCommand(setScreen(draft, screen)), undefined, gameSession);
+  dispatchRunSessionCommand((transaction) => acceptCommand(setScreen(transaction, screen)), undefined, gameSession);
 }
 export function purchaseTalent(
   keyword: Parameters<typeof unlockTalent>[1],
   talent: Parameters<typeof unlockTalent>[2],
   gameSession: GameSession,
 ) {
-  dispatchGameplayCommand(
-    (draft) =>
-      unlockTalent(draft, keyword, talent) ? acceptCommand() : rejectCommand("Talent cannot be unlocked", undefined),
+  dispatchRunSessionCommand(
+    (transaction) =>
+      unlockTalent(transaction, keyword, talent)
+        ? acceptCommand()
+        : rejectCommand("Talent cannot be unlocked", undefined),
     undefined,
     gameSession,
   );
 }
 export function resetTalentUnlocks(gameSession: GameSession) {
-  dispatchGameplayCommand((draft) => acceptCommand(resetUnlockedTalents(draft)), undefined, gameSession);
+  dispatchRunSessionCommand((transaction) => acceptCommand(resetUnlockedTalents(transaction)), undefined, gameSession);
 }
 export function unlockTalentsForDevelopment(gameSession: GameSession) {
-  dispatchGameplayCommand((draft) => acceptCommand(unlockAllTalents(draft)), undefined, gameSession);
+  dispatchRunSessionCommand((transaction) => acceptCommand(unlockAllTalents(transaction)), undefined, gameSession);
 }

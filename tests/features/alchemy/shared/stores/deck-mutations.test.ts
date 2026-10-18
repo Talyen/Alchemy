@@ -1,67 +1,50 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { makeTestCard } from "../../../../fixtures/battle";
+import { describe, expect, it } from "vitest";
+import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
+import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
+import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
-  appendCardToRunWithDiscovery,
   appendBoonToRunWithDiscovery,
+  appendCardToRunWithDiscovery,
 } from "@/features/alchemy/shared/stores/deck-mutations";
-import type { BattleCard } from "@/lib/game-data";
-import type { GameplayDraft } from "@/features/alchemy/shared/stores/gameplay-command";
+import { makeTestCard } from "../../../../fixtures/cards";
 
-const discoveryMocks = vi.hoisted(() => ({
-  discoverCardIds: vi.fn(),
-  discoverTrinketIds: vi.fn(),
-  setRunDeck: vi.fn(),
-  setRunBoons: vi.fn(),
-}));
-
-vi.mock("@/features/alchemy/shared/stores/run-session-write-port", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-session-write-port")>();
-  return { ...actual, setRunDeck: discoveryMocks.setRunDeck, setRunBoons: discoveryMocks.setRunBoons };
-});
-
-vi.mock("@/features/alchemy/shared/stores/profile-store", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/profile-store")>();
-  return {
-    ...actual,
-    discoverCardIds: discoveryMocks.discoverCardIds,
-    discoverTrinketIds: discoveryMocks.discoverTrinketIds,
-  };
-});
-
-beforeEach(() => {
-  discoveryMocks.discoverCardIds.mockClear();
-  discoveryMocks.discoverTrinketIds.mockClear();
-  discoveryMocks.setRunDeck.mockClear();
-  discoveryMocks.setRunBoons.mockClear();
-});
-
-describe("appendCardToRunWithDiscovery", () => {
-  it("appends card to deck and updates discovered IDs", () => {
+describe("run acquisition with discovery", () => {
+  it("appends cards to the deck and records each card id once", async () => {
+    await using session = createGameSession({ runtimeInputs: { generateRunSeed: () => 7 } });
     const card = makeTestCard();
-    const draft = {} as GameplayDraft;
-    appendCardToRunWithDiscovery(draft, card);
 
-    const deckUpdater = discoveryMocks.setRunDeck.mock.calls[0][1];
-    expect(deckUpdater([{ id: "stab" } as BattleCard])).toEqual([{ id: "stab" }, card]);
-    expect(discoveryMocks.discoverCardIds).toHaveBeenCalledWith(draft, [card.id]);
+    dispatchRunSessionCommand(
+      (transaction) => acceptCommand(appendCardToRunWithDiscovery(transaction, card)),
+      undefined,
+      session,
+    );
+    dispatchRunSessionCommand(
+      (transaction) => acceptCommand(appendCardToRunWithDiscovery(transaction, card)),
+      undefined,
+      session,
+    );
+
+    const state = readGameplayState(session);
+    expect(state.run.activeRun.runDeck.slice(-2)).toEqual([card, card]);
+    expect(state.profile.discoveredCardIds).toEqual([card.id]);
   });
 
-  it("discovers the same card id on each append", () => {
-    const card = makeTestCard();
-    const draft = {} as GameplayDraft;
-    appendCardToRunWithDiscovery(draft, card);
-    appendCardToRunWithDiscovery(draft, card);
+  it("appends a boon once and records its trinket id", async () => {
+    await using session = createGameSession({ runtimeInputs: { generateRunSeed: () => 7 } });
 
-    expect(discoveryMocks.discoverCardIds).toHaveBeenNthCalledWith(1, draft, [card.id]);
-    expect(discoveryMocks.discoverCardIds).toHaveBeenNthCalledWith(2, draft, [card.id]);
+    dispatchRunSessionCommand(
+      (transaction) => acceptCommand(appendBoonToRunWithDiscovery(transaction, "bone-charm")),
+      undefined,
+      session,
+    );
+    dispatchRunSessionCommand(
+      (transaction) => acceptCommand(appendBoonToRunWithDiscovery(transaction, "bone-charm")),
+      undefined,
+      session,
+    );
+
+    const state = readGameplayState(session);
+    expect(state.run.activeRun.runBoons).toEqual(["bone-charm"]);
+    expect(state.profile.discoveredTrinketIds).toContain("bone-charm");
   });
-});
-
-it("appendBoonToRunWithDiscovery appends boon and discovers it", () => {
-  const draft = {} as GameplayDraft;
-  appendBoonToRunWithDiscovery(draft, "bone-charm");
-
-  const boonUpdater = discoveryMocks.setRunBoons.mock.calls[0][1];
-  expect(boonUpdater([])).toEqual(["bone-charm"]);
-  expect(discoveryMocks.discoverTrinketIds).toHaveBeenCalledWith(draft, ["bone-charm"]);
 });
