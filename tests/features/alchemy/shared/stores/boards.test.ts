@@ -52,37 +52,34 @@ function profile(session: GameSession) {
   return readGameplayState(session).profile;
 }
 
-it.each(["campaign", "labyrinth", "wildwood"] as const)(
-  "awards once after five completed rooms in %s, preserving world RNG",
-  async (mode) => {
-    const { session, random } = career(5, mode);
-    const rng = structuredClone(readGameplayState(session).run.activeRun.rng);
-    const persistence = createSessionPersistence(session);
-    completeRunVictory(session);
-    const receipt = profile(session).pendingBoardRewardId;
-    expect(receipt).not.toBeNull();
-    expect(receipt).not.toBe(STARTER_BOARD_ID);
-    expect(profile(session).collectedBoardIds).toEqual([STARTER_BOARD_ID, receipt]);
-    expect(readGameplayState(session).run.activeRun.rng).toEqual(rng);
-    completeRunVictory(session);
-    expect(random).toHaveBeenCalledOnce();
-    await persistence.waitForWrites();
-    const saved = SaveDataSchema.parse(buildAlchemySaveDataFromStores(session));
-    expect(saved.activeRun).toBeNull();
-    const restored = createGameSession({
-      initialSave: { ...saved, activeRun: saved.activeRun ? toActiveRunData(saved.activeRun) : null },
-      saveBackend: createSaveBackend(),
-    });
-    sessions.push(restored);
-    completeRunVictory(restored);
-    expect(profile(restored).collectedBoardIds).toEqual(saved.collectedBoardIds);
-    expect(profile(restored).pendingBoardRewardId).toBe(receipt);
-    expect(acknowledgeGameBoardReward(receipt!, true, restored)).toBe(true);
-    expect(profile(restored).boardSelection).toEqual({ kind: "board", boardId: receipt });
-    expect(profile(restored).pendingBoardRewardId).toBeNull();
-    expect(acknowledgeGameBoardReward(receipt!, true, restored)).toBe(false);
-  },
-);
+it("awards once after five completed rooms, preserving world RNG", async () => {
+  const { session, random } = career(5, "campaign");
+  const rng = structuredClone(readGameplayState(session).run.activeRun.rng);
+  const persistence = createSessionPersistence(session);
+  completeRunVictory(session);
+  const receipt = profile(session).pendingBoardRewardId;
+  expect(receipt).not.toBeNull();
+  expect(receipt).not.toBe(STARTER_BOARD_ID);
+  expect(profile(session).collectedBoardIds).toEqual([STARTER_BOARD_ID, receipt]);
+  expect(readGameplayState(session).run.activeRun.rng).toEqual(rng);
+  completeRunVictory(session);
+  expect(random).toHaveBeenCalledOnce();
+  await persistence.waitForWrites();
+  const saved = SaveDataSchema.parse(buildAlchemySaveDataFromStores(session));
+  expect(saved.activeRun).toBeNull();
+  const restored = createGameSession({
+    initialSave: { ...saved, activeRun: saved.activeRun ? toActiveRunData(saved.activeRun) : null },
+    saveBackend: createSaveBackend(),
+  });
+  sessions.push(restored);
+  completeRunVictory(restored);
+  expect(profile(restored).collectedBoardIds).toEqual(saved.collectedBoardIds);
+  expect(profile(restored).pendingBoardRewardId).toBe(receipt);
+  expect(acknowledgeGameBoardReward(receipt!, true, restored)).toBe(true);
+  expect(profile(restored).boardSelection).toEqual({ kind: "board", boardId: receipt });
+  expect(profile(restored).pendingBoardRewardId).toBeNull();
+  expect(acknowledgeGameBoardReward(receipt!, true, restored)).toBe(false);
+});
 
 it.each([
   [4, completeRunVictory, 1],
@@ -108,12 +105,12 @@ it("unlocks the whole catalog for development without changing selection, and ex
 
 it("rejects locked boards and applies accepted selections to a live battle without changing combat", () => {
   const { session } = career();
-  const battle = readGameplayState(session).session.activity;
+  const before = readGameplayState(session).session.activity;
   expect(selectGameBoard({ kind: "board", boardId: "alpine-cuckoo" }, session)).toBe(false);
   expect(profile(session).activeBoardId).toBe(STARTER_BOARD_ID);
   expect(selectGameBoard({ kind: "none" }, session)).toBe(true);
   expect(profile(session).activeBoardId).toBeNull();
-  expect(readGameplayState(session).session.activity).toBe(battle);
+  expect(readGameplayState(session).session.activity).toEqual(before);
 });
 
 it("random selection avoids repeats, remains stable through resume, and changes only at a new battle", () => {

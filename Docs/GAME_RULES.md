@@ -20,7 +20,7 @@ entered but unfinished rooms do not. Voluntary abandonment awards none. Longer
 runs still award one board. A complete collection awards nothing further.
 
 `src/lib/boards/catalog.ts` owns the starter (`STARTER_BOARD_ID`, initially Acorn)
-and room threshold. Every career starts with that board unlocked and equipped.
+and `src/lib/game-constants/run-rewards.ts` owns the room threshold. Every career starts with that board unlocked and equipped.
 The explicit catalog in `src/lib/boards/catalog.json` selects available boards;
 new library files are not automatically adopted. Dev-only Unlock All grants all
 boards without changing the selection.

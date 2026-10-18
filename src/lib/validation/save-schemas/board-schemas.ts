@@ -16,7 +16,7 @@ export const CollectedBoardIdsSchema = z
     ...new Set([STARTER_BOARD_ID, ...ids.filter((id): id is string => typeof id === "string" && isBoardId(id))]),
   ]);
 export const NullableBoardIdSchema = BoardIdSchema.nullable().catch(null);
-export const ActiveBoardIdSchema = BoardIdSchema.nullable().catch(STARTER_BOARD_ID);
+export const ActiveBoardIdSchema = BoardIdSchema.nullable().catch(null);
 
 export function normalizeBoardSave<
   T extends {
@@ -27,9 +27,10 @@ export function normalizeBoardSave<
     pendingBoardRewardId: string | null;
   },
 >(save: T): T {
-  const owned = (id: string | null) => id !== null && save.collectedBoardIds.includes(id);
+  const owned = new Set(save.collectedBoardIds);
+  const isOwned = (id: string | null) => id !== null && owned.has(id);
   const boardSelection: BoardSelection =
-    save.boardSelection.kind === "board" && !owned(save.boardSelection.boardId)
+    save.boardSelection.kind === "board" && !isOwned(save.boardSelection.boardId)
       ? { kind: "board", boardId: STARTER_BOARD_ID }
       : save.boardSelection;
   return {
@@ -40,10 +41,10 @@ export function normalizeBoardSave<
         ? null
         : boardSelection.kind === "board"
           ? boardSelection.boardId
-          : owned(save.activeBoardId)
+          : isOwned(save.activeBoardId)
             ? save.activeBoardId
             : STARTER_BOARD_ID,
-    lastRandomBoardId: owned(save.lastRandomBoardId) ? save.lastRandomBoardId : null,
-    pendingBoardRewardId: owned(save.pendingBoardRewardId) ? save.pendingBoardRewardId : null,
+    lastRandomBoardId: isOwned(save.lastRandomBoardId) ? save.lastRandomBoardId : null,
+    pendingBoardRewardId: isOwned(save.pendingBoardRewardId) ? save.pendingBoardRewardId : null,
   };
 }

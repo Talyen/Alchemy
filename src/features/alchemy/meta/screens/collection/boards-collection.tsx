@@ -6,7 +6,8 @@ import { Lock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { boardArt } from "../../../shared/config/game-data-catalog";
-import { boardCatalog, BOARD_REWARD_ROOM_THRESHOLD, type BoardSelection } from "@/lib/boards/catalog";
+import { boardCatalog, type BoardSelection } from "@/lib/boards/catalog";
+import { BOARD_REWARD_ROOM_THRESHOLD } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 import type { CollectionTab } from "../../../shared/types";
 import {
@@ -33,6 +34,7 @@ const boardEntries: BoardEntry[] = [
   { kind: "random", title: "Random" },
   ...boardCatalog.map((board) => ({ kind: "board" as const, id: board.id, title: board.title })),
 ];
+const boardById = new Map(boardCatalog.map((board) => [board.id, board]));
 
 function BoardTile({
   entry,
@@ -205,9 +207,10 @@ export function BoardsCollection({
   });
   const [inspectedId, setInspectedId] = useState<string | null>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
-  const inspected = boardCatalog.find((board) => board.id === inspectedId);
+  const inspected = inspectedId === null ? undefined : boardById.get(inspectedId);
   const selectedId = boardSelection.kind === "board" ? boardSelection.boardId : null;
-  const owned = inspected ? collectedBoardIds.includes(inspected.id) : false;
+  const collectedSet = new Set(collectedBoardIds);
+  const owned = inspected ? collectedSet.has(inspected.id) : false;
   return (
     <PageLayout>
       <ScreenShell maxWidthClass={collectionShellWidthClass}>
@@ -230,7 +233,7 @@ export function BoardsCollection({
                 >
                   <BoardTile
                     entry={entry}
-                    owned={entry.kind !== "board" || collectedBoardIds.includes(entry.id)}
+                    owned={entry.kind !== "board" || collectedSet.has(entry.id)}
                     selected={entry.kind === "board" ? selectedId === entry.id : boardSelection.kind === entry.kind}
                     onActivate={(trigger) => {
                       if (entry.kind === "board") {
