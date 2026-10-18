@@ -1,5 +1,5 @@
 import { companionLibrary, enemyBestiary, ENEMY_TYPE_VALUES, findEnemyAbilityCard } from "@/lib/game-data";
-import { collectUncoveredEnemyTraitIds } from "@/lib/battle";
+import { collectUncoveredEnemyTraitIds } from "../content-systems/enemy-trait-coverage";
 import { validateEnemyTraitDescriptionParity } from "./card-parity/enemy-trait-parity";
 import { CompanionContentSchema, EnemyContentSchema } from "./schemas";
 import { validateLibraryBasics, type Collector } from "./utils";
@@ -14,8 +14,10 @@ export function validateEnemies(collector: Collector): void {
     idLabel: "enemy id",
   });
 
+  const coveredEnemyTypes = new Set(enemyBestiary.map((enemy) => enemy.enemyType));
+
   for (const enemyType of ENEMY_TYPE_VALUES) {
-    if (!enemyBestiary.some((enemy) => enemy.enemyType === enemyType)) {
+    if (!coveredEnemyTypes.has(enemyType)) {
       collector.error("enemies", enemyType, `Enemy pool is missing type: ${enemyType}`);
     }
   }

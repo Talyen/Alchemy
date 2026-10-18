@@ -10,7 +10,7 @@ import {
   trinketById,
   trinketLibrary,
 } from "@/lib/game-data";
-import { collectUncoveredEnemyTraitIds } from "@/lib/battle/enemy-turn-traits";
+import { collectUncoveredEnemyTraitIds } from "@/lib/content-systems/enemy-trait-coverage";
 
 describe("Compendium catalog contracts", () => {
   it("gives every enemy one to three unique supported native Traits", () => {

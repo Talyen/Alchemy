@@ -12,11 +12,11 @@ function cardIssue(severity: "error" | "warning", id: string, message: string): 
 
 // Tag-like lines carry no numeric mechanic and stay warnings-only, matching
 // the previous checker: a missing Leech/Archery/Consume/Companion line never
-// errors, it warns.
-function tagLinesFor(card: BattleCard): Set<string> {
-  const tags = new Set<string>(["Leech", "Consume", "Companion"]);
-  for (const tag of card.tags ?? []) tags.add(capitalizeWord(tag));
-  return tags;
+// errors, it warns. Mechanic comparison ignores them on both sides, so the
+// expected lines stay exactly what describeCardEffects returns.
+function isTagLine(card: BattleCard, line: string): boolean {
+  if (line === "Leech" || line === "Consume" || line === "Companion") return true;
+  return card.tags?.some((tag) => capitalizeWord(tag) === line) ?? false;
 }
 
 function checkTagWarnings(card: BattleCard): ContentValidationIssue[] {
@@ -55,15 +55,12 @@ function checkTagWarnings(card: BattleCard): ContentValidationIssue[] {
 // The catalog's Steal wording is a flavor alias for the canonical Gain gold
 // line. Player-visible text stays untouched; only the checker normalizes.
 function normalizeAlias(line: string): string {
-  if (line.startsWith("Steal ")) return `Gain ${line.slice("Steal ".length)}`;
-  if (line.startsWith("Steals ")) return `Gain ${line.slice("Steals ".length)}`;
-  return line;
+  return line.replace(/^Steals? /, "Gain ");
 }
 
 function diffMechanicLines(card: BattleCard, expectedMechanic: string[]): ContentValidationIssue[] {
-  const tags = tagLinesFor(card);
-  const actualMechanic = card.descriptionLines.filter((line) => !tags.has(line));
-  const expectedNormalized = expectedMechanic.filter((line) => !tags.has(line));
+  const actualMechanic = card.descriptionLines.filter((line) => !isTagLine(card, line));
+  const expectedNormalized = expectedMechanic.filter((line) => !isTagLine(card, line));
   const issues: ContentValidationIssue[] = [];
   const count = Math.max(actualMechanic.length, expectedNormalized.length);
   for (let index = 0; index < count; index += 1) {
@@ -89,7 +86,5 @@ export function validateCardDescriptionParity(card: BattleCard): ContentValidati
   } catch {
     return [...warnings, cardIssue("error", card.id, "Cannot describe card effects")];
   }
-  if (card.tags) expected.push(...card.tags.map(capitalizeWord));
-  if (card.consume) expected.push("Consume");
   return [...warnings, ...diffMechanicLines(card, expected)];
 }

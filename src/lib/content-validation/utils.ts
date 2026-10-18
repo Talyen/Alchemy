@@ -25,13 +25,13 @@ export function collectSchemaIssues<T>(
   value: unknown,
   area: ContentValidationArea,
   id: string,
-  add: (area: ContentValidationArea, id: string, message: string) => void,
+  collector: Collector,
 ): void {
   const parsed = schema.safeParse(value);
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
       const path = issue.path.length > 0 ? `${issue.path.join(".")}: ` : "";
-      add(area, id, `${path}${issue.message}`);
+      collector.error(area, id, `${path}${issue.message}`);
     }
   }
 }
@@ -40,7 +40,7 @@ export function addDuplicateIssues(
   values: readonly string[],
   area: ContentValidationArea,
   label: string,
-  add: (area: ContentValidationArea, id: string, message: string) => void,
+  collector: Collector,
 ): void {
   const seen = new Set<string>();
   const duplicates = new Set<string>();
@@ -49,26 +49,20 @@ export function addDuplicateIssues(
     seen.add(value);
   }
   for (const value of duplicates) {
-    add(area, value, `Duplicate ${label}: ${value}`);
+    collector.error(area, value, `Duplicate ${label}: ${value}`);
   }
 }
 
-function validateArt(
-  area: ContentValidationArea,
-  id: string,
-  art: string,
-  addError: (area: ContentValidationArea, id: string, message: string) => void,
-  addWarning: (area: ContentValidationArea, id: string, message: string) => void,
-): void {
+function validateArt(area: ContentValidationArea, id: string, art: string, collector: Collector): void {
   if (!art) {
-    addError(area, id, "Missing art reference");
+    collector.error(area, id, "Missing art reference");
     return;
   }
   if (!knownArt.has(art)) {
-    addError(area, id, "Art reference is not in the known optimized asset registries");
+    collector.error(area, id, "Art reference is not in the known optimized asset registries");
   }
   if (placeholderArt.has(art)) {
-    addWarning(area, id, "Uses placeholder art");
+    collector.warning(area, id, "Uses placeholder art");
   }
 }
 
@@ -91,18 +85,18 @@ export function validateLibraryBasics<T extends { id: string }>(
     items.map((item) => item.id),
     area,
     idLabel,
-    collector.error,
+    collector,
   );
   if (titleOf) {
     addDuplicateIssues(
       items.map((item) => titleOf(item)),
       area,
       "title",
-      collector.error,
+      collector,
     );
   }
   for (const item of items) {
-    collectSchemaIssues(schema, item, area, item.id, collector.error);
-    if (artOf) validateArt(area, item.id, artOf(item), collector.error, collector.warning);
+    collectSchemaIssues(schema, item, area, item.id, collector);
+    if (artOf) validateArt(area, item.id, artOf(item), collector);
   }
 }

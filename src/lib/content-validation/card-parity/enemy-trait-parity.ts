@@ -47,6 +47,24 @@ function damageMagnitudePhrase(multiplier: number): string {
   return `${percent}% ${multiplier < 1 ? "less" : "more"}`;
 }
 
+interface TraitDamageExpectation {
+  damageType: string;
+  magnitude: string;
+}
+
+// Grouped once so per-trait validation does not scan the whole rule table or
+// reformat the same magnitudes for every enemy.
+const DAMAGE_EXPECTATIONS_BY_TRAIT: ReadonlyMap<string, readonly TraitDamageExpectation[]> = (() => {
+  const grouped = new Map<string, TraitDamageExpectation[]>();
+  for (const rule of TRAIT_DAMAGE_RULES) {
+    const expectation = { damageType: rule.damageType, magnitude: damageMagnitudePhrase(rule.multiplier) };
+    const list = grouped.get(rule.traitId);
+    if (list) list.push(expectation);
+    else grouped.set(rule.traitId, [expectation]);
+  }
+  return grouped;
+})();
+
 export function validateEnemyTraitDescriptionParity(enemy: BestiaryEntry): ContentValidationIssue[] {
   const issues: ContentValidationIssue[] = [];
   for (const trait of enemy.traits) {
@@ -63,17 +81,19 @@ export function validateEnemyTraitDescriptionParity(enemy: BestiaryEntry): Conte
       });
     }
 
-    const lines = description.split("\n");
-    for (const rule of TRAIT_DAMAGE_RULES) {
-      if (rule.traitId !== trait.id) continue;
-      const magnitude = damageMagnitudePhrase(rule.multiplier);
-      if (lines.some((line) => line.includes(rule.damageType) && line.includes(magnitude))) continue;
-      issues.push({
-        severity: "error",
-        area: "enemies",
-        id: enemy.id,
-        message: `Trait "${trait.id}" description does not mention ${magnitude} ${rule.damageType} damage`,
-      });
+    const damageExpectations = DAMAGE_EXPECTATIONS_BY_TRAIT.get(trait.id) ?? [];
+    if (damageExpectations.length > 0) {
+      const lines = description.split("\n");
+      for (const expectation of damageExpectations) {
+        if (lines.some((line) => line.includes(expectation.damageType) && line.includes(expectation.magnitude)))
+          continue;
+        issues.push({
+          severity: "error",
+          area: "enemies",
+          id: enemy.id,
+          message: `Trait "${trait.id}" description does not mention ${expectation.magnitude} ${expectation.damageType} damage`,
+        });
+      }
     }
   }
   return issues;

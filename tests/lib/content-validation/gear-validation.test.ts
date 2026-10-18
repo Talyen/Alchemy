@@ -1,46 +1,53 @@
-import { beforeEach, expect, it, vi } from "vitest";
-import * as gear from "@/lib/gear";
-import { buildEligibleAffixPool } from "@/lib/gear/affix-pool";
+import { expect, it } from "vitest";
+import {
+  buildEligibleAffixPool,
+  gearAffixCatalog,
+  gearDefinitionList,
+  gearDefinitions,
+  uniqueItemList,
+  type GearAffixDefinition,
+  type GearAffixId,
+  type GearDefinition,
+  type UniqueItemDefinition,
+} from "@/lib/gear";
 import { createCollector } from "@/lib/content-validation/utils";
-import { validateGear } from "@/lib/content-validation/validators-gear";
+import { validateGear, type GearValidationData } from "@/lib/content-validation/validators-gear";
+import type { ContentValidationIssue } from "@/lib/content-validation/types";
 
-vi.mock("@/lib/gear", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/gear")>();
-  return {
-    ...actual,
-    gearDefinitionList: structuredClone(actual.gearDefinitionList),
-    gearDefinitions: structuredClone(actual.gearDefinitions),
-    gearAffixCatalog: structuredClone(actual.gearAffixCatalog),
-    uniqueItemList: structuredClone(actual.uniqueItemList),
-    buildEligibleAffixPool: vi.fn(actual.buildEligibleAffixPool),
+interface GearDamage {
+  definitions: Record<string, GearDefinition>;
+  definitionList: GearDefinition[];
+  affixCatalog: Record<string, GearAffixDefinition>;
+  uniques: UniqueItemDefinition[];
+}
+
+function collectGearIssues(
+  damage: (data: GearDamage) => void = () => {},
+  extra?: Pick<GearValidationData, "eligibleAffixesFor">,
+): ContentValidationIssue[] {
+  // Damaged clones keep the live catalogs untouched, so cases cannot leak
+  // into each other and no restore step exists to forget.
+  const data: GearDamage = {
+    definitions: structuredClone(gearDefinitions),
+    definitionList: structuredClone(gearDefinitionList),
+    affixCatalog: structuredClone(gearAffixCatalog),
+    uniques: structuredClone(uniqueItemList),
   };
-});
-
-const original = structuredClone({
-  definitions: gear.gearDefinitions,
-  definitionList: gear.gearDefinitionList,
-  affixes: gear.gearAffixCatalog,
-  uniques: gear.uniqueItemList,
-});
-
-beforeEach(() => {
-  for (const key of Object.keys(gear.gearDefinitions)) delete gear.gearDefinitions[key];
-  Object.assign(gear.gearDefinitions, structuredClone(original.definitions));
-  Object.assign(gear.gearAffixCatalog, structuredClone(original.affixes));
-  gear.gearDefinitionList.splice(0, Infinity, ...structuredClone(original.definitionList));
-  gear.uniqueItemList.splice(0, Infinity, ...structuredClone(original.uniques));
-  vi.mocked(gear.buildEligibleAffixPool).mockImplementation(buildEligibleAffixPool);
-});
+  damage(data);
+  const collector = createCollector();
+  validateGear(collector, { ...data, ...extra });
+  return collector.issues;
+}
 
 it("reports duplicate gear, invalid affix names and salvage, and unknown art through the shared content gate", () => {
-  const damaged = gear.gearDefinitionList[0]!;
-  damaged.art = "missing-art.webp";
-  damaged.salvageValue.wood = -1;
-  gear.gearDefinitionList.push(damaged);
-  gear.gearAffixCatalog["flat-physical"].name = "";
-  const collector = createCollector();
-  validateGear(collector);
-  expect(collector.issues).toEqual(
+  const issues = collectGearIssues((data) => {
+    const damaged = data.definitionList[0]!;
+    damaged.art = "missing-art.webp";
+    damaged.salvageValue.wood = -1;
+    data.definitionList.push(damaged);
+    data.affixCatalog["flat-physical"]!.name = "";
+  });
+  expect(issues).toEqual(
     expect.arrayContaining([
       expect.objectContaining({ id: "flat-physical", message: expect.stringContaining("name") }),
       expect.objectContaining({ message: expect.stringContaining("Duplicate gear definition id") }),
@@ -53,80 +60,77 @@ it("reports duplicate gear, invalid affix names and salvage, and unknown art thr
 it.each([
   {
     requirement: "ordinary affixes must be obtainable",
-    damage: () =>
-      vi
-        .mocked(gear.buildEligibleAffixPool)
-        .mockImplementation((definition) =>
-          buildEligibleAffixPool(definition).filter((affix) => affix.id !== "flat-physical"),
-        ),
+    damage: () => {},
+    extra: {
+      eligibleAffixesFor: (definition: GearDefinition) =>
+        buildEligibleAffixPool(definition).filter((affix) => affix.id !== "flat-physical"),
+    },
     message: "Ordinary affix is not reachable on Basic or Astral gear",
   },
   {
     requirement: "affix names distinguish different bonuses",
-    damage: () => {
-      gear.gearAffixCatalog["flat-burn"].name = gear.gearAffixCatalog["flat-physical"].name;
+    damage: (data: GearDamage) => {
+      data.affixCatalog["flat-burn"]!.name = data.affixCatalog["flat-physical"]!.name;
     },
     message: "Duplicate gear affix name: Ironbound",
   },
   {
     requirement: "Unique-only affixes have fixed rolls",
-    damage: () => {
-      gear.gearAffixCatalog.saintfall.roll.basic.max += 1;
+    damage: (data: GearDamage) => {
+      data.affixCatalog["saintfall"]!.roll.basic.max += 1;
     },
     message: "Unique-only affix must have fixed rolls at every rarity",
   },
   {
     requirement: "reversed roll ranges block shipping",
-    damage: () => {
-      gear.gearAffixCatalog["flat-physical"].roll.basic.min = 99;
+    damage: (data: GearDamage) => {
+      data.affixCatalog["flat-physical"]!.roll.basic.min = 99;
     },
     message: "basic roll min is greater than max",
   },
   {
     requirement: "Unique IDs cannot silently overwrite each other",
-    damage: () => {
-      gear.uniqueItemList[1]!.id = gear.uniqueItemList[0]!.id;
+    damage: (data: GearDamage) => {
+      data.uniques[1]!.id = data.uniques[0]!.id;
     },
     message: "Duplicate unique item id: wardbreaker",
   },
   {
     requirement: "supporting affixes must exist",
-    damage: () => {
-      gear.uniqueItemList[0]!.supportingAffixes[0].id = "constructor" as gear.GearAffixId;
+    damage: (data: GearDamage) => {
+      data.uniques[0]!.supportingAffixes[0]!.id = "constructor" as GearAffixId;
     },
     message: "Unknown supporting affix constructor",
   },
   {
     requirement: "a Unique has three distinct supporting bonuses",
-    damage: () => {
-      gear.uniqueItemList[0]!.supportingAffixes[1] = gear.uniqueItemList[0]!.supportingAffixes[0];
+    damage: (data: GearDamage) => {
+      data.uniques[0]!.supportingAffixes[1] = data.uniques[0]!.supportingAffixes[0]!;
     },
     message: "Duplicate supporting affix: flat-stun",
   },
   {
     requirement: "signature values match their fixed canonical rolls",
-    damage: () => {
-      gear.uniqueItemList[0]!.signatureAffix.value += 1;
+    damage: (data: GearDamage) => {
+      data.uniques[0]!.signatureAffix.value += 1;
     },
     message: "Signature wardbreaker-purge must roll the unique maximum (1)",
   },
   {
     requirement: "every Unique has a generated inventory definition",
-    damage: () => {
-      delete gear.gearDefinitions.wardbreaker;
+    damage: (data: GearDamage) => {
+      delete data.definitions.wardbreaker;
     },
     message: "Missing generated gear definition for unique item",
   },
   {
     requirement: "generated definitions without barrel art cannot ship",
-    damage: () => {
-      gear.gearDefinitionList.push({ ...gear.gearDefinitionList[0]!, id: "test-no-art-mapping" });
+    damage: (data: GearDamage) => {
+      data.definitionList.push({ ...data.definitionList[0]!, id: "test-no-art-mapping" });
     },
     message: "Missing generated gear art mapping",
   },
-])("rejects damaged gear because $requirement", ({ damage, message }) => {
-  damage();
-  const collector = createCollector();
-  validateGear(collector);
-  expect(collector.issues).toContainEqual(expect.objectContaining({ severity: "error", area: "gear", message }));
+])("rejects damaged gear because $requirement", ({ damage, extra, message }) => {
+  const issues = collectGearIssues(damage, extra);
+  expect(issues).toContainEqual(expect.objectContaining({ severity: "error", area: "gear", message }));
 });

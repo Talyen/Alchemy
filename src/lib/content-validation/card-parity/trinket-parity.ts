@@ -11,19 +11,25 @@ export function validateTrinketDescriptionParity(trinket: TrinketEntry): Content
     issues.push({ severity: "error", area: "trinkets", id: trinket.id, message });
   };
   const canonical = trinketById[trinket.id];
+  if (!canonical) {
+    addIssue(`Trinket "${trinket.id}" has no registered description definition`);
+    return issues;
+  }
   const expected = describeTrinket(trinket.id, trinket.effects);
-  if (!canonical || expected === null) {
+  if (expected === null) {
     addIssue(`Trinket "${trinket.id}" has no registered description definition`);
     return issues;
   }
 
-  for (const [key, value] of Object.entries(canonical.effects)) {
-    if (!Object.hasOwn(trinket.effects, key)) addIssue(`Missing required effect: ${key}`);
-    if (typeof value === "boolean" && trinket.effects[key as keyof typeof trinket.effects] !== value)
-      addIssue(`Effect ${key} must be ${String(value)}`);
-  }
-  for (const key of Object.keys(trinket.effects)) {
-    if (!Object.hasOwn(canonical.effects, key)) addIssue(`Unexpected effect: ${key}`);
+  // One pass over the union of effect keys keeps missing/unexpected/boolean
+  // reports together; a missing boolean key still reports both, as before.
+  const canonicalEffects = canonical.effects as Record<string, unknown>;
+  const entryEffects = trinket.effects as Record<string, unknown>;
+  for (const key of new Set([...Object.keys(canonicalEffects), ...Object.keys(entryEffects)])) {
+    if (!Object.hasOwn(entryEffects, key)) addIssue(`Missing required effect: ${key}`);
+    if (!Object.hasOwn(canonicalEffects, key)) addIssue(`Unexpected effect: ${key}`);
+    else if (typeof canonicalEffects[key] === "boolean" && entryEffects[key] !== canonicalEffects[key])
+      addIssue(`Effect ${key} must be ${String(canonicalEffects[key])}`);
   }
 
   if (normalizeProse(trinket.descriptionLines.join(" ")) !== normalizeProse(expected)) {

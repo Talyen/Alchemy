@@ -18,10 +18,10 @@ function validateCardOffers(card: BattleCard, offerableIds: Set<string>, collect
     collector.error("rewards", card.id, "Library card is missing from offerable card pool");
 }
 
-export function validateCards(collector: Collector): void {
+export function validateCards(collector: Collector, cards: readonly BattleCard[] = cardLibrary): void {
   validateLibraryBasics(collector, {
     area: "cards",
-    items: cardLibrary,
+    items: cards,
     schema: CardContentSchema,
     titleOf: (card) => card.title,
     artOf: (card) => card.art,
@@ -30,20 +30,20 @@ export function validateCards(collector: Collector): void {
 
   const companionIds = new Set(Object.keys(companionLibrary));
   const offerableIds = new Set(getOfferableCardPool().map((card) => card.id));
-  for (const card of cardLibrary) {
+  for (const card of cards) {
     for (const issue of validateCardDescriptionParity(card)) collector.issues.push(issue);
-    const chanceIssues: string[] = [];
+    // Empty failure branches are allowed for synthesized runtime bonuses,
+    // but never for authored cards. Counted separately so reference
+    // diagnostics stay first in the reported order.
+    let emptyChanceBranches = 0;
     visitBattleCardEffects(card.effects, (effect) => {
       if (effect.kind === "summon-companion" && !companionIds.has(effect.companionId)) {
         collector.error("cards", card.id, `References unknown companion: ${effect.companionId}`);
       }
-      // Empty failure branches are allowed for synthesized runtime bonuses,
-      // but never for authored cards. Keep these after reference diagnostics.
-      if (effect.kind === "chance" && effect.failureEffects.length === 0) {
-        chanceIssues.push("Authored chance effect has an empty failure branch");
-      }
+      if (effect.kind === "chance" && effect.failureEffects.length === 0) emptyChanceBranches += 1;
     });
-    for (const message of chanceIssues) collector.error("cards", card.id, message);
+    for (let index = 0; index < emptyChanceBranches; index += 1)
+      collector.error("cards", card.id, "Authored chance effect has an empty failure branch");
     validateCardOffers(card, offerableIds, collector);
     if (card.cost >= 5) collector.warning("balance", card.id, `Card cost ${card.cost} is unusually high`);
     if (card.effects.length === 0 && !card.excludeFromOfferPool)

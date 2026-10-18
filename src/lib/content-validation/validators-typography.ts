@@ -33,13 +33,12 @@ function checkTextTypography(
   id: string,
   label: string,
   text: string,
-  options?: { allowPeriod?: boolean; sliceLimit?: number },
+  allowPeriod = false,
 ): void {
   if (text.includes(EM_DASH)) {
-    const snippet = options?.sliceLimit ? text.slice(0, options.sliceLimit) : text;
-    collector.error(group, id, `${label} contains em dash — rewrite without —: "${snippet}"`);
+    collector.error(group, id, `${label} contains em dash — rewrite without —: "${text}"`);
   }
-  if (!options?.allowPeriod) {
+  if (!allowPeriod) {
     checkNoPeriod(collector, group, id, label, text);
   }
 }
@@ -48,12 +47,13 @@ function checkTextTypography(
 // and narrative may use periods. Exceptions: unique-rarity gear descriptions
 // (flavor text) and unique-only affix templates (checked separately below).
 export function validateTypography(collector: Collector): void {
-  const check = checkTextTypography.bind(null, collector);
+  const check = (group: ContentValidationArea, id: string, label: string, text: string, allowPeriod = false): void =>
+    checkTextTypography(collector, group, id, label, text, allowPeriod);
   for (const event of mysteryPool) {
-    check("rewards", event.id, "Mystery title", event.title, { allowPeriod: true });
-    check("rewards", event.id, "Mystery narrative", event.narrative, { allowPeriod: true, sliceLimit: 80 });
+    check("rewards", event.id, "Mystery title", event.title, true);
+    check("rewards", event.id, "Mystery narrative", event.narrative, true);
     for (const choice of event.choices) {
-      check("rewards", `${event.id}/${choice.label}`, "Mystery choice label", choice.label, { allowPeriod: true });
+      check("rewards", `${event.id}/${choice.label}`, "Mystery choice label", choice.label, true);
     }
   }
 
@@ -62,33 +62,33 @@ export function validateTypography(collector: Collector): void {
     ["trinkets", "Trinket", trinketLibrary],
   ] as const) {
     for (const entry of entries) {
-      check(area, entry.id, `${label} title`, entry.title, { allowPeriod: true });
+      check(area, entry.id, `${label} title`, entry.title, true);
       for (const line of entry.descriptionLines) check(area, entry.id, `${label} description`, line);
     }
   }
 
   for (const enemy of enemyBestiary) {
-    check("enemies", enemy.id, "Enemy title", enemy.title, { allowPeriod: true });
-    check("enemies", enemy.id, "Enemy subtitle", enemy.subtitle, { allowPeriod: true });
+    check("enemies", enemy.id, "Enemy title", enemy.title, true);
+    check("enemies", enemy.id, "Enemy subtitle", enemy.subtitle, true);
     for (const trait of enemy.traits) {
-      check("enemies", trait.id, "Enemy trait title", trait.title, { allowPeriod: true });
+      check("enemies", trait.id, "Enemy trait title", trait.title, true);
       check("enemies", trait.id, "Enemy trait description", trait.description);
     }
   }
 
   for (const [id, companion] of Object.entries(companionLibrary)) {
-    check("companions", id, "Companion title", companion.title, { allowPeriod: true });
+    check("companions", id, "Companion title", companion.title, true);
   }
 
   for (const definition of gearDefinitionList) {
     for (const line of definition.descriptionLines) {
-      check("gear", definition.id, "Gear description", line, { allowPeriod: definition.rarity === "unique" });
+      check("gear", definition.id, "Gear description", line, definition.rarity === "unique");
     }
   }
 
   for (const [id, character] of Object.entries(characters)) {
-    check("keywords", id, "Character name", character.name, { allowPeriod: true });
-    check("keywords", id, "Character role", character.role, { allowPeriod: true });
+    check("keywords", id, "Character name", character.name, true);
+    check("keywords", id, "Character role", character.role, true);
   }
 
   for (const talent of talentPool) {
@@ -96,16 +96,16 @@ export function validateTypography(collector: Collector): void {
   }
 
   for (const [id, definition] of Object.entries(keywordDefinitions)) {
-    check("keywords", id, "Keyword label", definition.label, { allowPeriod: true });
+    check("keywords", id, "Keyword label", definition.label, true);
     // The approved Forge tooltip is a full sentence; retain its terminal period.
     const description = id === "forge" ? definition.description.replace(/\.$/u, "") : definition.description;
     check("keywords", id, "Keyword description", description);
   }
 
   for (const [id, trait] of Object.entries(ENCOUNTER_TRAITS)) {
-    check("encounter-traits", id, "Encounter trait label", trait.label, { allowPeriod: true });
+    check("encounter-traits", id, "Encounter trait label", trait.label, true);
     check("encounter-traits", id, "Encounter trait description", trait.description);
-    check("encounter-traits", id, "Encounter trait enemy title", trait.enemyTrait.title, { allowPeriod: true });
+    check("encounter-traits", id, "Encounter trait enemy title", trait.enemyTrait.title, true);
     check("encounter-traits", id, "Encounter trait enemy description", trait.enemyTrait.description);
   }
   for (const affix of gearAffixList) {

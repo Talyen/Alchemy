@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { describeTrinket, trinketById, trinketLibrary, type TrinketEntry } from "@/lib/game-data";
 import { defaultTrinketEffects } from "@/lib/trinkets";
-import { validateTrinkets } from "@/lib/content-validation/validators";
+import { validateTrinkets } from "@/lib/content-validation/validators-cards";
 import { TrinketContentSchema } from "@/lib/content-validation/schemas";
 import { createCollector } from "@/lib/content-validation/utils";
 import { validateTrinketDescriptionParity } from "@/lib/content-validation/card-parity/trinket-parity";

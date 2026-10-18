@@ -8,25 +8,53 @@ import {
   gearAffixCatalog,
   uniqueItemList,
   GEAR_RARITIES,
+  type GearAffixDefinition,
+  type GearBaseItemDefinition,
+  type GearDefinition,
+  type UniqueItemDefinition,
 } from "@/lib/gear";
 import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
 import { GearDefinitionContentSchema, GearAffixContentSchema } from "./schemas";
 import { addDuplicateIssues, collectSchemaIssues, validateLibraryBasics } from "./utils";
 import type { Collector } from "./utils";
 
-function validateBaseItems(collector: Collector): void {
-  for (const baseItemId of Object.keys(gearBaseItems)) {
+// Injectable catalogs keep tests free of module mocks and global mutation:
+// production passes nothing and validates the live libraries.
+export interface GearValidationData {
+  readonly baseItems?: Record<string, GearBaseItemDefinition>;
+  readonly definitions?: Record<string, GearDefinition>;
+  readonly definitionList?: readonly GearDefinition[];
+  readonly affixCatalog?: Record<string, GearAffixDefinition>;
+  readonly uniques?: readonly UniqueItemDefinition[];
+  readonly eligibleAffixesFor?: (definition: GearDefinition) => readonly GearAffixDefinition[];
+}
+
+type ResolvedGearData = Required<GearValidationData>;
+
+function resolveGearData(data: GearValidationData): ResolvedGearData {
+  return {
+    baseItems: data.baseItems ?? gearBaseItems,
+    definitions: data.definitions ?? gearDefinitions,
+    definitionList: data.definitionList ?? gearDefinitionList,
+    affixCatalog: data.affixCatalog ?? gearAffixCatalog,
+    uniques: data.uniques ?? uniqueItemList,
+    eligibleAffixesFor: data.eligibleAffixesFor ?? buildEligibleAffixPool,
+  };
+}
+
+function validateBaseItems(collector: Collector, data: ResolvedGearData): void {
+  for (const baseItemId of Object.keys(data.baseItems)) {
     for (const rarity of ["basic", "astral"] as const) {
       const definitionId = gearDefinitionId(baseItemId, rarity);
-      if (!gearDefinitions[definitionId])
+      if (!data.definitions[definitionId])
         collector.error("gear", definitionId, "Missing generated gear definition for base item rarity");
     }
   }
 }
 
-function validateGearDefinitions(collector: Collector): Set<string> {
+function validateGearDefinitions(collector: Collector, data: ResolvedGearData): Set<string> {
   const reachableAffixes = new Set<string>();
-  for (const definition of gearDefinitionList) {
+  for (const definition of data.definitionList) {
     // Unique definitions intentionally reuse their base item's Astral art, so
     // only ordinary definitions need a barrel entry of their own. A missing
     // base entry is already an error on that base's own definition.
@@ -35,7 +63,7 @@ function validateGearDefinitions(collector: Collector): Set<string> {
     if (definition.rarity === "unique") continue;
 
     const minAffixes = GEAR_AFFIX_COUNT[definition.rarity].min;
-    const eligibleAffixes = buildEligibleAffixPool(definition);
+    const eligibleAffixes = data.eligibleAffixesFor(definition);
     for (const affix of eligibleAffixes) reachableAffixes.add(affix.id);
     if (eligibleAffixes.length < minAffixes)
       collector.error(
@@ -47,15 +75,20 @@ function validateGearDefinitions(collector: Collector): Set<string> {
   return reachableAffixes;
 }
 
-function validateGearAffixes(collector: Collector, reachableAffixes: ReadonlySet<string>): void {
+function validateGearAffixes(
+  collector: Collector,
+  data: ResolvedGearData,
+  reachableAffixes: ReadonlySet<string>,
+): void {
+  const affixes = Object.values(data.affixCatalog);
   addDuplicateIssues(
-    Object.values(gearAffixCatalog).map((affix) => affix.name),
+    affixes.map((affix) => affix.name),
     "gear",
     "gear affix name",
-    collector.error,
+    collector,
   );
-  for (const affix of Object.values(gearAffixCatalog)) {
-    collectSchemaIssues(GearAffixContentSchema, affix, "gear", affix.id, collector.error);
+  for (const affix of affixes) {
+    collectSchemaIssues(GearAffixContentSchema, affix, "gear", affix.id, collector);
     for (const rarity of GEAR_RARITIES) {
       const roll = affix.roll[rarity];
       if (roll.min > roll.max) collector.error("gear", affix.id, `${rarity} roll min is greater than max`);
@@ -67,18 +100,18 @@ function validateGearAffixes(collector: Collector, reachableAffixes: ReadonlySet
   }
 }
 
-function validateUniqueItems(collector: Collector): void {
+function validateUniqueItems(collector: Collector, data: ResolvedGearData): void {
   addDuplicateIssues(
-    uniqueItemList.map((unique) => unique.id),
+    data.uniques.map((unique) => unique.id),
     "gear",
     "unique item id",
-    collector.error,
+    collector,
   );
-  const baseItemIds = new Set(Object.keys(gearBaseItems));
+  const baseItemIds = new Set(Object.keys(data.baseItems));
   const seenBases = new Set<string>();
   const seenSignatures = new Set<string>();
-  for (const unique of uniqueItemList) {
-    if (!Object.hasOwn(gearDefinitions, unique.id))
+  for (const unique of data.uniques) {
+    if (!Object.hasOwn(data.definitions, unique.id))
       collector.error("gear", unique.id, "Missing generated gear definition for unique item");
     if (!baseItemIds.has(unique.baseItemId)) {
       collector.error("gear", unique.id, `Unique references unknown base item ${unique.baseItemId}`);
@@ -91,8 +124,10 @@ function validateUniqueItems(collector: Collector): void {
       collector.error("gear", unique.id, `Duplicate unique signature ${unique.signatureAffix.id}`);
     }
     seenSignatures.add(unique.signatureAffix.id);
-    const signature = Object.hasOwn(gearAffixCatalog, unique.signatureAffix.id)
-      ? gearAffixCatalog[unique.signatureAffix.id]
+    // Prototype-safe lookup: supporting ids come from content data and the
+    // suite probes dunder names like "constructor".
+    const signature = Object.hasOwn(data.affixCatalog, unique.signatureAffix.id)
+      ? data.affixCatalog[unique.signatureAffix.id]
       : undefined;
     if (!signature?.uniqueOnly) {
       collector.error("gear", unique.id, `Signature ${unique.signatureAffix.id} must be uniqueOnly`);
@@ -106,22 +141,20 @@ function validateUniqueItems(collector: Collector): void {
     if (unique.supportingAffixes.length !== 3) {
       collector.error("gear", unique.id, "Unique must have exactly three supporting affixes");
     }
-    addDuplicateIssues(
-      unique.supportingAffixes.map((affix) => affix.id),
-      "gear",
-      "supporting affix",
-      (_area, _id, message) => collector.error("gear", unique.id, message),
-    );
+    const supportingIds = unique.supportingAffixes.map((affix) => affix.id);
+    const duplicateSupporting = supportingIds.find((id, index) => supportingIds.indexOf(id) !== index);
+    if (duplicateSupporting !== undefined)
+      collector.error("gear", unique.id, `Duplicate supporting affix: ${duplicateSupporting}`);
     for (const supporting of unique.supportingAffixes) {
-      if (!Object.hasOwn(gearAffixCatalog, supporting.id)) {
+      const def = Object.hasOwn(data.affixCatalog, supporting.id) ? data.affixCatalog[supporting.id] : undefined;
+      if (!def) {
         collector.error("gear", unique.id, `Unknown supporting affix ${supporting.id}`);
         continue;
       }
-      const def = gearAffixCatalog[supporting.id];
-      if (def?.uniqueOnly) {
+      if (def.uniqueOnly) {
         collector.error("gear", unique.id, `Supporting affix ${supporting.id} must not be uniqueOnly`);
       }
-      if (def && supporting.value !== def.roll.unique.max) {
+      if (supporting.value !== def.roll.unique.max) {
         collector.error(
           "gear",
           unique.id,
@@ -137,24 +170,25 @@ function validateUniqueItems(collector: Collector): void {
   }
 }
 
-export function validateGear(collector: Collector): void {
-  const baseItems = Object.values(gearBaseItems);
+export function validateGear(collector: Collector, data: GearValidationData = {}): void {
+  const resolved = resolveGearData(data);
+  const baseItems = Object.values(resolved.baseItems);
   addDuplicateIssues(
     baseItems.map((item) => item.id),
     "gear",
     "gear base item id",
-    collector.error,
+    collector,
   );
   validateLibraryBasics(collector, {
     area: "gear",
-    items: gearDefinitionList,
+    items: resolved.definitionList,
     schema: GearDefinitionContentSchema,
     artOf: (definition) => definition.art,
     idLabel: "gear definition id",
   });
 
-  validateBaseItems(collector);
-  const reachableAffixes = validateGearDefinitions(collector);
-  validateGearAffixes(collector, reachableAffixes);
-  validateUniqueItems(collector);
+  validateBaseItems(collector, resolved);
+  const reachableAffixes = validateGearDefinitions(collector, resolved);
+  validateGearAffixes(collector, resolved, reachableAffixes);
+  validateUniqueItems(collector, resolved);
 }

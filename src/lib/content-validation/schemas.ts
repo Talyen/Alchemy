@@ -27,7 +27,7 @@ export const EnemyContentSchema = z.object({
   id: NonEmptyStringSchema,
   title: NonEmptyStringSchema,
   subtitle: NonEmptyStringSchema,
-  descriptionLines: z.array(z.string()),
+  descriptionLines: z.array(NonEmptyStringSchema),
   art: NonEmptyStringSchema,
   enemyType: z.enum(ENEMY_TYPE_VALUES),
   traits: z.array(
@@ -81,7 +81,7 @@ export const GearDefinitionContentSchema = z.object({
   displayName: NonEmptyStringSchema,
   baseItemId: NonEmptyStringSchema,
   rarity: z.enum(GEAR_RARITIES),
-  descriptionLines: z.array(z.string()),
+  descriptionLines: z.array(NonEmptyStringSchema),
   art: NonEmptyStringSchema,
   compatibleSlots: z.array(z.enum(GEAR_SLOTS)).min(1),
   slotRule: z.enum(["two-handed", "ranged", "quiver", "standard"]),

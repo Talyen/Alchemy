@@ -10,20 +10,18 @@ import { ENCOUNTER_TRAITS } from "../content-systems/encounter-traits";
 import { EncounterTraitContentSchema } from "./schemas";
 import { addDuplicateIssues, collectSchemaIssues, type Collector } from "./utils";
 
-export { validateTrinkets } from "./validators-cards";
+const KNOWN_KEYWORD_IDS = new Set(Object.keys(keywordDefinitions));
 
 export function validateTalents(collector: Collector): void {
   addDuplicateIssues(
     talentPool.map((talent) => talent.id),
     "talents",
     "talent id",
-    collector.error,
+    collector,
   );
 
-  const knownKeywords = new Set(Object.keys(keywordDefinitions));
-
   for (const talent of talentPool) {
-    if (!knownKeywords.has(talent.keywordId))
+    if (!KNOWN_KEYWORD_IDS.has(talent.keywordId))
       collector.error("talents", talent.id, `References unknown keyword: ${talent.keywordId}`);
   }
 }
@@ -50,11 +48,16 @@ export function validateKeywordsAndStatuses(collector: Collector): void {
   checkDuplicateDisplayOrder(collector);
 }
 
-export function validateEncounterTraits(collector: Collector): void {
+type EncounterTraitEntry = (typeof ENCOUNTER_TRAITS)[keyof typeof ENCOUNTER_TRAITS];
+
+export function validateEncounterTraits(
+  collector: Collector,
+  traits: Record<string, EncounterTraitEntry> = ENCOUNTER_TRAITS,
+): void {
   // ID lists derive from this catalog; schema validation owns shape and modes.
   // These cross-field checks protect the identity used to attach battle traits.
-  for (const [id, trait] of Object.entries(ENCOUNTER_TRAITS)) {
-    collectSchemaIssues(EncounterTraitContentSchema, trait, "encounter-traits", id, collector.error);
+  for (const [id, trait] of Object.entries(traits)) {
+    collectSchemaIssues(EncounterTraitContentSchema, trait, "encounter-traits", id, collector);
     if (trait.id !== id)
       collector.error("encounter-traits", id, `Encounter trait record key does not match id ${trait.id}`);
     if (trait.enemyTrait.id !== id)
