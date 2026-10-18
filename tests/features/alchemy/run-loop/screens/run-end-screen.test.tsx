@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RunEndScreen } from "@/features/alchemy/run-loop/screens/run-end-screen";
 import { getTalentTreeKeywordIds, keywordDefinitions } from "@/lib/game-data";
@@ -59,29 +59,18 @@ describe("RunEndScreen", () => {
     vi.unstubAllGlobals();
   });
 
-  it("shows keyword XP earned this run with Lv# label and keyword styling", () => {
+  it("shows each run XP award beside its progress within the current talent level", () => {
     renderRunEnd({
       runEndTalentXP: { physical: 12, burn: 3 },
-      talentXP: { physical: 20, burn: 3 },
+      talentXP: { physical: 30, burn: 3 },
     });
 
-    expect(screen.queryByText("+12 XP")).toBeNull();
-    expect(screen.queryByText("+3 XP")).toBeNull();
-    expect(screen.queryByText("8/10")).toBeNull();
-    expect(screen.queryByText("0/10")).toBeNull();
-
-    expect(screen.getByText("Physical").isConnected).toBe(true);
-    expect(screen.getByText("Burn").isConnected).toBe(true);
-
-    const physicalLv = screen
-      .getAllByText(/^Lv\d+$/)
-      .find((el) => el.className.includes(keywordDefinitions.physical.colorClass));
-    expect(physicalLv).toBeTruthy();
-
-    const burnLv = screen
-      .getAllByText(/^Lv\d+$/)
-      .find((el) => el.className.includes(keywordDefinitions.burn.colorClass));
-    expect(burnLv).toBeTruthy();
+    const physical = within(screen.getByRole("progressbar", { name: "Physical level 2 progress" }).parentElement!);
+    expect(physical.getByText("+12")).toBeTruthy();
+    expect(physical.getByText("10/40")).toBeTruthy();
+    const burn = within(screen.getByRole("progressbar", { name: "Burn level 1 progress" }).parentElement!);
+    expect(burn.getByText("+3")).toBeTruthy();
+    expect(burn.getByText("3/20")).toBeTruthy();
   });
 
   it.each(["defeat", "victory"] as const)(

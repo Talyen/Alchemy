@@ -1,5 +1,5 @@
 import { makeTestCard } from "../../../../fixtures/cards";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MysteryRewardSummary } from "@/features/alchemy/run-loop/screens/mystery/mystery-reward-summary";
@@ -96,7 +96,7 @@ describe("MysteryRewardSummary", () => {
     expect(screen.getByText(/damage/)).toBeTruthy();
   });
 
-  it("groups XP rewards by keyword and allows continuing", () => {
+  it("groups event XP gains separately from prior XP and shows progress after leveling up", () => {
     const onContinue = vi.fn();
     render(
       <MysteryRewardSummary
@@ -112,22 +112,20 @@ describe("MysteryRewardSummary", () => {
         findTrinket={() => undefined}
         grantedGearInstances={[]}
         chosenCardId={null}
-        runTalentXP={{ burn: 8, freeze: 6 }}
-        talentXP={{ burn: 0, freeze: 0 }}
+        runTalentXP={{ burn: 18, freeze: 6 }}
+        talentXP={{ burn: 30, freeze: 14 }}
         onContinue={onContinue}
       />,
     );
 
-    expect(screen.getByText("Burn")).toBeTruthy();
-    expect(screen.queryByText("+8 XP")).toBeNull();
-    expect(screen.queryByText("8/10")).toBeNull();
-    expect(screen.getByText("Freeze")).toBeTruthy();
-    expect(screen.queryByText("+6 XP")).toBeNull();
-    expect(screen.queryByText("6/10")).toBeNull();
+    const burn = within(screen.getByRole("progressbar", { name: "Burn level 2 progress" }).parentElement!);
+    expect(burn.getByText("+8")).toBeTruthy();
+    expect(burn.getByText("28/40")).toBeTruthy();
+    const freeze = within(screen.getByRole("progressbar", { name: "Freeze level 2 progress" }).parentElement!);
+    expect(freeze.getByText("+6")).toBeTruthy();
+    expect(freeze.getByText("0/40")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(onContinue).toHaveBeenCalledOnce();
-    const lvLabels = screen.getAllByText("Lv1");
-    expect(lvLabels).toHaveLength(2);
   });
 });

@@ -1,7 +1,7 @@
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { cn, formatLargeAmount } from "@/lib/utils";
 import {
   getTalentKeywordProgress,
   keywordDefinitions,
@@ -12,16 +12,18 @@ import { keywordIcons } from "@/features/alchemy/shared/config";
 export function KeywordProgressCard({
   kw,
   totalXP,
+  gainedXP,
   animate,
   size = "md",
 }: {
   kw: KeywordId;
   totalXP: number;
+  gainedXP: number;
   animate: boolean;
   size?: "md" | "lg";
 }) {
   const i18n = useGameTranslation();
-  const { displayLevel, progressPercent } = getTalentKeywordProgress(totalXP, 0);
+  const { displayLevel, progressPercent, xpForNext, xpRemaining } = getTalentKeywordProgress(totalXP, 0);
   const Icon = keywordIcons[kw];
   const def = keywordDefinitions[kw];
   const large = size === "lg";
@@ -56,6 +58,12 @@ export function KeywordProgressCard({
           backgroundColor: def?.shineColors?.[0] ?? undefined,
         }}
       />
+      <div className="mt-2 flex items-center justify-between gap-2 text-sm tabular-nums">
+        <span className={cn("font-semibold", def?.colorClass)}>+{formatLargeAmount(gainedXP, i18n.locale)}</span>
+        <span className="text-muted-foreground">
+          {formatLargeAmount(xpForNext - xpRemaining, i18n.locale)}/{formatLargeAmount(xpForNext, i18n.locale)}
+        </span>
+      </div>
     </div>
   );
 }

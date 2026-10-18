@@ -7,6 +7,7 @@ import { KeywordProgressCard } from "./keyword-progress-card";
 export interface KeywordProgressEntry {
   kw: KeywordId;
   totalXP: number;
+  gainedXP: number;
 }
 
 export function KeywordProgressGrid({
@@ -39,7 +40,7 @@ export function KeywordProgressGrid({
       className={cn("mx-auto grid w-full max-w-[calc(73*var(--content-rem,1rem))] justify-center gap-3", className)}
       style={{ gridTemplateColumns: `repeat(${largestRowSize * 2}, calc(6.625 * var(--content-rem, 1rem)))` }}
     >
-      {entries.map(({ kw, totalXP }, index) => {
+      {entries.map(({ kw, totalXP, gainedXP }, index) => {
         const inLargerRow = index < largerRowEntries;
         const rowSize = smallerRowSize + (inLargerRow ? 1 : 0);
         const rowIndex = inLargerRow
@@ -57,7 +58,7 @@ export function KeywordProgressGrid({
               gridColumn: `${largestRowSize - rowSize + columnIndex * 2 + 1} / span 2`,
             }}
           >
-            <KeywordProgressCard kw={kw} totalXP={totalXP} animate={animate} size={size} />
+            <KeywordProgressCard kw={kw} totalXP={totalXP} gainedXP={gainedXP} animate={animate} size={size} />
           </div>
         );
       })}

@@ -1,7 +1,7 @@
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { useState } from "react";
-import { Heart } from "lucide-react";
+import { FlaskConical, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { cn } from "@/lib/utils";
@@ -58,6 +58,14 @@ export function CampfireScreen({
   return (
     <TitledScreenShell title={i18n.text("ui.campfire-screen.1", "Campfire")}>
       <div className="mt-6 flex flex-col items-center gap-6 text-center">
+        {(visit.completed ? !visit.result : !brewing) && (
+          <img
+            src={campfire}
+            alt={i18n.text("ui.campfire-screen.5", "Campfire")}
+            decoding="async"
+            className="card-hover-scale w-full max-w-lg rounded-shell-panel object-contain"
+          />
+        )}
         {visit.completed ? (
           <>
             {visit.result ? (
@@ -94,7 +102,7 @@ export function CampfireScreen({
                 />
               </>
             )}
-            <Button onClick={onContinue}>
+            <Button className="card-hover-scale" onClick={onContinue}>
               {i18n.displayText(
                 visit.result
                   ? i18n.text("ui.campfire-screen.d1", "Loot")
@@ -116,42 +124,33 @@ export function CampfireScreen({
           </>
         ) : (
           <>
-            <img
-              src={campfire}
-              alt={i18n.text("ui.campfire-screen.5", "Campfire")}
-              decoding="async"
-              className="w-full max-w-lg rounded-shell-panel object-contain"
-            />
             <HealthRestoreMeter displayHealth={playerHealth} maxHealth={maxHealth} progressHealth={playerHealth} />
             <div className="flex flex-wrap justify-center gap-4">
-              <div className="flex flex-col items-center gap-2">
-                <Button
-                  aria-describedby="campfire-rest-recovery"
-                  onClick={() => {
-                    if (isProgressSavePending()) return;
-                    const from = playerHealth;
-                    const to = playerHealth + restore;
-                    if (onRest()) {
-                      setRest({ from, to, saved: false });
-                      afterProgressSaved(() => setRest({ from, to, saved: true }));
-                    } else setError(true);
-                  }}
-                >
-                  {i18n.text("ui.campfire-screen.6", "Rest")}
-                </Button>
-                <p
-                  id="campfire-rest-recovery"
-                  className={cn(
-                    "flex items-center gap-1.5 font-semibold tabular-nums",
-                    keywordDefinitions.health.colorClass,
-                  )}
-                >
-                  <Heart aria-hidden="true" className="size-5 fill-current" />
-                  {i18n.displayText(restore)}
-                  <span className="sr-only">{i18n.text("ui.campfire-screen.7", " Health")}</span>
-                </p>
-              </div>
-              <Button onClick={() => setBrewing(true)}>{i18n.text("ui.campfire-screen.8", "Brew Potion")}</Button>
+              <Button
+                variant="outline"
+                className={cn(
+                  "card-hover-scale min-w-40 bg-red-950 hover:bg-red-900 active:bg-red-950",
+                  "hover:border-red-400 hover:text-red-300",
+                  keywordDefinitions.health.colorClass,
+                  keywordDefinitions.health.borderClass,
+                )}
+                onClick={() => {
+                  if (isProgressSavePending()) return;
+                  const from = playerHealth;
+                  const to = playerHealth + restore;
+                  if (onRest()) {
+                    setRest({ from, to, saved: false });
+                    afterProgressSaved(() => setRest({ from, to, saved: true }));
+                  } else setError(true);
+                }}
+              >
+                <Heart aria-hidden="true" className="size-5 fill-current" />
+                {i18n.text("ui.campfire-screen.6", "Rest")}
+              </Button>
+              <Button variant="outline" className="card-hover-scale min-w-40" onClick={() => setBrewing(true)}>
+                <FlaskConical aria-hidden="true" className="size-5 text-primary" />
+                {i18n.text("ui.campfire-screen.8", "Brew Potion")}
+              </Button>
             </div>
           </>
         )}
