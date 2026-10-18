@@ -1,12 +1,9 @@
 import { normalizeAffixRolls } from "./affixes";
 import { gearAffixCatalog } from "./affix-catalog";
 import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
+import { isRecord } from "@/lib/utils";
 import { gearDefinitions } from "./definitions";
 import type { GearInstance } from "./types";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 export function normalizeGearInstance(raw: unknown): GearInstance | null {
   if (!isRecord(raw)) return null;

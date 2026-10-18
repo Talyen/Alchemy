@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { ErrorSource, LogEntry } from "@/lib/error-logger";
 import { ERROR_SOURCE_IDS, registerErrorSink } from "@/lib/error-logger";
-import { createInstanceId } from "@/lib/utils";
+import { createInstanceId, isRecord } from "@/lib/utils";
 import { isStorageUnavailable, tryLocalStorageGetItem, tryLocalStorageSetItem } from "@/lib/storage-environment";
 
 const MAX_ERRORS = 100;
@@ -33,10 +33,6 @@ export type ErrorLogStore = ErrorLogFields & ErrorLogActions;
 
 function capErrors(errors: LoggedError[]): LoggedError[] {
   return errors.slice(-MAX_ERRORS);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function normalizePersistedError(value: unknown): LoggedError | null {

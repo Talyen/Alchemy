@@ -5,6 +5,11 @@ export function capitalizeWord(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+/** True only for plain object records; arrays, null and primitives are rejected. */
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 const amountFormatters = new Map<string, Intl.NumberFormat>();
 
 export function formatLargeAmount(amount: number, locale = "en"): string {

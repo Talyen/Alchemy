@@ -27,7 +27,22 @@ import { pickRandom } from "@/lib/rng";
 
 const DAMAGE_KEYWORDS = TRANSMUTATION_KEYWORD_GROUPS[0];
 const BUFF_KEYWORDS: readonly KeywordId[] = ["block", "armor", "forge", "thorns"];
+const BUFF_KEYWORD_SET = new Set<string>(BUFF_KEYWORDS);
 const RESOURCE_KINDS = { health: "heal", mana: "restore-mana", gold: "gain-gold" } as const;
+const RESOURCE_KEYWORDS = Object.keys(RESOURCE_KINDS) as KeywordId[];
+const ALLOWED_DAMAGE_FIELDS = new Set([
+  "kind",
+  "damageType",
+  "amount",
+  "lifesteal",
+  "ignoreArmor",
+  "ignoreBlock",
+  "damageTypePool",
+]);
+const ALLOWED_PLAYER_STATUS_FIELDS = new Set(["kind", "status", "amount"]);
+const ALLOWED_RESOURCE_FIELDS = new Set(["kind", "amount"]);
+const EXCLUDED_KINDS = new Set(["self-damage", "lose-health", "lose-mana", "lose-max-mana", "gain-max-mana"]);
+
 const SOURCE_CONDITIONS: Partial<Record<KeywordId, readonly string[]>> = {
   burn: ["tripleIfEnemyNotBurning", "detonateAllBurn"],
   bleed: ["doubleIfEnemyBleeding", "detonateAllBleed"],
@@ -42,37 +57,35 @@ export function isTransmutableCard(card: BattleCard): boolean {
   return !card.corrupted && !card.transmuted && !isMixedPotionCard(card);
 }
 
+function hasOnlyAllowedFields(obj: Record<string, unknown>, allowed: Set<string>): boolean {
+  for (const key in obj) {
+    if (!allowed.has(key)) {
+      const val = obj[key];
+      if (val !== false && val !== undefined) return false;
+    }
+  }
+  return true;
+}
+
 function convertibleSource(effect: BattleCardEffect): KeywordId | undefined {
+  const record = effect as unknown as Record<string, unknown>;
   if (effect.kind === "damage") {
-    const fields = ["kind", "damageType", "amount", "lifesteal", "ignoreArmor", "ignoreBlock", "damageTypePool"];
-    if (Object.entries(effect).every(([key, value]) => fields.includes(key) || value === false || value === undefined))
-      return effect.damageType;
+    if (hasOnlyAllowedFields(record, ALLOWED_DAMAGE_FIELDS)) return effect.damageType;
   }
   if (effect.kind === "random-damage" && effect.damageTypePool) return effect.damageTypePool[0];
   if (effect.kind === "player-status") {
-    if (
-      Object.entries(effect).every(([key, value]) => ["kind", "status", "amount"].includes(key) || value === undefined)
-    )
-      return BUFF_KEYWORDS.find((keyword) => keyword === effect.status);
+    if (hasOnlyAllowedFields(record, ALLOWED_PLAYER_STATUS_FIELDS) && BUFF_KEYWORD_SET.has(effect.status)) {
+      return effect.status as KeywordId;
+    }
   }
-  for (const [keyword, kind] of Object.entries(RESOURCE_KINDS)) {
-    if (
-      effect.kind === kind &&
-      Object.entries(effect).every(
-        ([key, value]) => ["kind", "amount"].includes(key) || value === false || value === undefined,
-      )
-    )
-      return keyword as KeywordId;
-  }
+  if (effect.kind === "heal" && hasOnlyAllowedFields(record, ALLOWED_RESOURCE_FIELDS)) return "health";
+  if (effect.kind === "restore-mana" && hasOnlyAllowedFields(record, ALLOWED_RESOURCE_FIELDS)) return "mana";
+  if (effect.kind === "gain-gold" && hasOnlyAllowedFields(record, ALLOWED_RESOURCE_FIELDS)) return "gold";
   return undefined;
 }
 
 function sourceReferences(effect: BattleCardEffect, source: KeywordId): boolean {
-  if (
-    effect.kind === "self-damage" ||
-    ["lose-health", "lose-mana", "lose-max-mana", "gain-max-mana"].includes(effect.kind)
-  )
-    return false;
+  if (EXCLUDED_KINDS.has(effect.kind)) return false;
   if (effect.kind === "damage")
     return (
       effect.damageType === source ||
@@ -186,7 +199,7 @@ export function getTransmutationVariants(
     : BUFF_KEYWORDS.includes(keyword)
       ? BUFF_KEYWORDS
       : Object.hasOwn(RESOURCE_KINDS, keyword)
-        ? (Object.keys(RESOURCE_KINDS) as KeywordId[])
+        ? RESOURCE_KEYWORDS
         : null;
   if (family) {
     const sources = new Set<KeywordId>();

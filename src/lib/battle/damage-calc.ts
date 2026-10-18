@@ -124,6 +124,7 @@ function resolveDamageAfterMitigation(
   finalDamage: number,
   critical: boolean,
   physicalCritReady: boolean,
+  kingbreaker: boolean,
 ): { nextState: BattleState; modifiedDamage: number; critical: boolean } {
   const { state: stateAfterBlock, remainingDamage: damageAfterBlock } = applyBlockAbsorption(
     state,
@@ -133,7 +134,6 @@ function resolveDamageAfterMitigation(
   const critReady = readCombatFlag(stateAfterBlock, "nextHitCrit");
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
   const serpent = state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0 && card !== undefined;
-  const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
   let nextState = applySunderingArmorRemoval(stateAfterBlock, effect.damageType);
   // Ignoring Armor changes this hit's mitigation; only Sundering removes stacks.
   const ignoredArmor =
@@ -217,6 +217,7 @@ export function computeCardDamageToEnemy(
     finalDamage,
     criticalResult.critical,
     physicalCritReady,
+    kingbreaker,
   );
   return hawkEyeCritReady && result.modifiedDamage > 0
     ? { ...result, nextState: setFlag(result.nextState, "hawkEyeReady", false) }
