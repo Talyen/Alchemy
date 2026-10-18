@@ -19,7 +19,7 @@ function benefit(
     category: "reward",
     label,
     description,
-    ...(keyword ? { keyword } : {}),
+    keyword,
     modes: ["labyrinth"],
     labyrinthNodes: ["combat", "elite", "boss"],
   };
@@ -35,7 +35,7 @@ function enemy(
     category: "combat",
     label,
     description,
-    ...(keyword ? { keyword } : {}),
+    keyword,
     modes: ["labyrinth"],
     labyrinthNodes,
   };

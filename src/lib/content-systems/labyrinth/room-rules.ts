@@ -5,13 +5,11 @@ import type { ContentSystemId } from "../types";
 import type { EncounterRewardTraitId } from "../encounter-traits";
 import type { MysteryEvent } from "@/lib/mystery/types";
 
-const NO_LABYRINTH_BENEFITS: readonly EncounterRewardTraitId[] = [];
-
 export function activeLabyrinthBenefits(
   contentSystemType: ContentSystemId,
   modifiers: readonly EncounterRewardTraitId[],
 ): readonly EncounterRewardTraitId[] {
-  return contentSystemType === "labyrinth" ? modifiers : NO_LABYRINTH_BENEFITS;
+  return contentSystemType === "labyrinth" ? modifiers : [];
 }
 
 const MARKET_THEMES: Partial<Record<EncounterRewardTraitId, KeywordId>> = {

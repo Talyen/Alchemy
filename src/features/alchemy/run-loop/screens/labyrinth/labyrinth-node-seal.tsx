@@ -7,8 +7,7 @@ import { Surface } from "@/features/alchemy/shared/ui/surface";
 import { useInteractiveCard } from "@/features/alchemy/shared/ui/use-interactive-card";
 import { LABYRINTH_GRID } from "@/lib/content-systems/labyrinth/grid";
 import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
-import { labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
-import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
+import type { LabyrinthNode, LabyrinthNodeVisualState } from "@/lib/content-systems/types";
 import { LABYRINTH_NODE_META } from "@/features/alchemy/shared/config/labyrinth-map";
 import { enemyById, isEnemyId, labyrinthShroudedArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { hashStringToUint32 } from "@/lib/rng";
@@ -16,7 +15,8 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   node: LabyrinthNode;
-  map: LabyrinthMap;
+  visual: LabyrinthNodeVisualState;
+  current: boolean;
   heroArt: string;
   selected: boolean;
   emphasized: boolean;
@@ -31,7 +31,8 @@ interface Props {
 
 export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
   node,
-  map,
+  visual,
+  current,
   heroArt,
   selected,
   emphasized,
@@ -44,10 +45,8 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
   onFocus,
 }: Props) {
   const i18n = useGameTranslation();
-  const visual = labyrinthNodeVisualState(map, node.id);
   const discovered = visual !== "undiscovered";
-  const current = node.id === map.currentNodeId;
-  const colors = discovered ? SHINE_PALETTES.labyrinth[node.type] : SHINE_PALETTES.labyrinth.entrance;
+  const colors = SHINE_PALETTES.labyrinth[node.type];
   const art = current
     ? heroArt
     : discovered
@@ -112,7 +111,7 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
         shimmerToken={shimmerToken}
         shimmerRounded="rounded-shell-compact"
         overlay={
-          emphasized ? (
+          emphasized && discovered ? (
             <ShineBorder shineColor={colors} borderWidth={2} className="z-20 motion-reduce:animate-none" />
           ) : null
         }

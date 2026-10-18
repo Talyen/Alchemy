@@ -14,8 +14,6 @@ export function gridKey(position: LabyrinthGridPosition): string {
 export function isInLabyrinthGrid(position: LabyrinthGridPosition): boolean {
   const inset = position.row > 0 && position.row < LABYRINTH_GRID.rows - 1 ? LABYRINTH_GRID.sideColumns : 0;
   return (
-    Number.isInteger(position.row) &&
-    Number.isInteger(position.col) &&
     position.row >= 0 &&
     position.row < LABYRINTH_GRID.rows &&
     position.col >= -inset &&
@@ -25,11 +23,12 @@ export function isInLabyrinthGrid(position: LabyrinthGridPosition): boolean {
 
 export function labyrinthGridPositions(): LabyrinthGridPosition[] {
   const { rows, columns, sideColumns } = LABYRINTH_GRID;
-  return Array.from({ length: rows }, (_, row) =>
-    Array.from({ length: columns + 2 * sideColumns }, (_, index) => ({ row, col: index - sideColumns })),
-  )
-    .flat()
-    .filter(isInLabyrinthGrid);
+  const positions: LabyrinthGridPosition[] = [];
+  for (let row = 0; row < rows; row += 1) {
+    const inset = row > 0 && row < rows - 1 ? sideColumns : 0;
+    for (let col = 0 - inset; col < columns + inset; col += 1) positions.push({ row, col });
+  }
+  return positions;
 }
 
 export function areGridNeighbors(a: LabyrinthGridPosition, b: LabyrinthGridPosition): boolean {

@@ -1,7 +1,7 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { playUISound } from "@/lib/audio";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import { ScreenShell, ScreenHeaderRow } from "../../../shared/ui/layout-components";
@@ -36,6 +36,10 @@ export function LabyrinthMapScreen({
       ? (labyrinthMap.nodes[selectedNodeId] ?? null)
       : null;
   usePlasmaBaseline(selectedNode ? getLabyrinthNodePlasmaPair(selectedNode) : null);
+  const nodes = useMemo(
+    () => (labyrinthMap ? floorNodes(labyrinthMap, labyrinthMap.currentFloor) : []),
+    [labyrinthMap],
+  );
 
   useEffect(() => {
     if (selectedNodeId && !selectedNode) onNodeDeselect();
@@ -73,7 +77,7 @@ export function LabyrinthMapScreen({
               key={labyrinthMap.currentFloor}
               map={labyrinthMap}
               heroArt={heroArt}
-              nodes={floorNodes(labyrinthMap, labyrinthMap.currentFloor)}
+              nodes={nodes}
               selectedNodeId={selectedNode?.id ?? null}
               onSelect={(id) => {
                 onNodeSelect(id);
