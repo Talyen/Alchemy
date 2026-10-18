@@ -4,6 +4,18 @@ import { localization } from "@/lib/localization/runtime";
 
 const inspectionTieCollator = new Intl.Collator("en");
 
+const titleCollators = new Map<string, Intl.Collator>();
+
+function titleCollatorFor(language: string): Intl.Collator {
+  const locale = language === "en-XA" ? "en" : language;
+  let collator = titleCollators.get(locale);
+  if (!collator) {
+    collator = new Intl.Collator(locale);
+    titleCollators.set(locale, collator);
+  }
+  return collator;
+}
+
 function inspectionSortKey(card: BattleCard): string {
   return JSON.stringify([
     card.id,
@@ -18,7 +30,7 @@ function inspectionSortKey(card: BattleCard): string {
 
 export function sortInspectionCards(cards: readonly BattleCard[]): BattleCard[] {
   if (cards.length <= 1) return [...cards];
-  const titleCollator = new Intl.Collator(localization.language === "en-XA" ? "en" : localization.language);
+  const titleCollator = titleCollatorFor(localization.language);
   return cards
     .map((card) => ({
       card,

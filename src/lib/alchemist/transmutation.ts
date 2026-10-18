@@ -310,10 +310,18 @@ export function createTransmutationOffers(deck: readonly BattleCard[], rng: () =
   }));
 }
 
+const cardSnapshotKeyCache = new WeakMap<object, string>();
+
 function cardSnapshotKey(card: BattleCard | null | undefined): string | undefined {
-  return JSON.stringify(card, (_key, value: unknown) =>
-    isRecord(value) ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value,
-  );
+  if (!card) return undefined;
+  let key = cardSnapshotKeyCache.get(card);
+  if (key === undefined) {
+    key = JSON.stringify(card, (_key, value: unknown) =>
+      isRecord(value) ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value,
+    );
+    cardSnapshotKeyCache.set(card, key);
+  }
+  return key;
 }
 
 function matchingAlteration(

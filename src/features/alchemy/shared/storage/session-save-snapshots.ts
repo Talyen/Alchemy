@@ -46,12 +46,12 @@ export class SessionSaveSnapshots {
     const cancelled = () =>
       receipt.epoch !== this.epoch || receipt.restoreVersion !== this.progress.readRestoreVersion();
     if (cancelled()) return "skipped";
+    if (receipt.sequence < this.submitted) return "superseded";
     try {
       if (receipt.contents !== JSON.stringify(snapshot)) return this.reject();
     } catch {
       return this.reject();
     }
-    if (receipt.sequence < this.submitted) return "superseded";
     this.submitted = receipt.sequence;
     // Recheck career lifetime inside the lane. Already admitted writes retain
     // queue order across load barriers; only later stale submissions are refused.

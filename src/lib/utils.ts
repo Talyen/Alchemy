@@ -47,7 +47,7 @@ export function createInstanceId(): string {
   // Last-resort fallback for non-secure contexts without WebCrypto. The
   // monotonic counter keeps bulk generation within the same millisecond unique.
   fallbackInstanceCounter += 1;
-  return `id-${Date.now()}-${fallbackInstanceCounter}-${Math.random().toString(36).slice(2) || "0"}`;
+  return `id-${Date.now().toString(36)}-${fallbackInstanceCounter.toString(36)}`;
 }
 
 // No-op merges retain the original reference and its mutability contract.

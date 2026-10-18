@@ -134,4 +134,50 @@ describe("Gear command boundary", () => {
     expect(saved.gearInventories.knight[0]?.affixes).toEqual([]);
     expect(saved.craftingCurrencies.voidstone).toBe(0);
   });
+
+  it("draws crafting randomness from the persisted run stream without an explicit rng", async () => {
+    const setupCraftable = async () => {
+      const { backend } = recordingBackend();
+      const session = createGameSession({ saveBackend: backend, runtimeInputs: { generateRunSeed: () => 7 } });
+      const item: GearInstance = {
+        instanceId: "crafted-axe",
+        definitionId: "shortsword-basic",
+        affixes: [
+          { id: "flat-physical", value: 1 },
+          { id: "max-health", value: 7 },
+        ],
+      };
+      dispatchGameplayCommand(
+        (draft) => {
+          mutateGearWithRunHealthSync(draft, {
+            mutate: (gear) => {
+              gear.addInstance(item, "knight");
+              gear.addCurrencies({ "severance-maw": 1 });
+            },
+          });
+          return acceptCommand();
+        },
+        undefined,
+        session,
+      );
+      return { session, item };
+    };
+    const first = await setupCraftable();
+    const second = await setupCraftable();
+    try {
+      const before = readGameplayState(first.session).run.activeRun.rng.counters.rewards;
+      expect(applyCurrencyToGear("severance-maw", first.item.instanceId, undefined, first.session)).toBe(true);
+      expect(applyCurrencyToGear("severance-maw", second.item.instanceId, undefined, second.session)).toBe(true);
+      // Same seed replays the same removal instead of consulting Math.random.
+      expect(readGameplayState(first.session).gear.inventories.knight).toEqual(
+        readGameplayState(second.session).gear.inventories.knight,
+      );
+      const rewardsAfter = readGameplayState(first.session).run.activeRun.rng.counters.rewards;
+      expect(rewardsAfter).toBeGreaterThan(before);
+      expect(rewardsAfter).toBe(readGameplayState(second.session).run.activeRun.rng.counters.rewards);
+    } finally {
+      await first.session.dispose();
+      await second.session.dispose();
+    }
+  });
 });

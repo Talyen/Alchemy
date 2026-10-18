@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 
 import {
   deriveBattleSceneLighting,
   NEUTRAL_BATTLE_SCENE_LIGHTING,
+  type BattleSceneAppearance,
   type BattleSceneLighting,
 } from "@/lib/animation/battle-scene-appearance";
 import { waitForImage } from "@/lib/preload";
@@ -69,4 +71,27 @@ export function useBattleSceneAppearance(source: string | undefined): BattleScen
   }, [source]);
 
   return source && sample?.source === source ? sample.appearance : NEUTRAL_BATTLE_SCENE_LIGHTING;
+}
+
+function regionCssVariables(prefix: string, region: BattleSceneAppearance): Record<string, string | number> {
+  return {
+    [`${prefix}-tint`]: `rgb(${region.ambientColor.join(" ")})`,
+    [`${prefix}-opacity`]: region.ambientOpacity,
+    [`${prefix}-exposure`]: region.artworkExposure,
+    [`${prefix}-shade`]: region.shadeOpacity,
+  };
+}
+
+/** Stage CSS variables for the sampled board lighting; owned here with the sampler. */
+export function battleSceneCssVariables(appearance: BattleSceneLighting): CSSProperties {
+  return {
+    "--battle-scene-tint": `rgb(${appearance.ambientColor.join(" ")})`,
+    "--battle-scene-tint-opacity": appearance.ambientOpacity,
+    "--battle-scene-exposure": appearance.artworkExposure,
+    "--battle-scene-shade": appearance.shadeOpacity,
+    "--battle-scene-shadow-opacity": appearance.shadowOpacity,
+    ...regionCssVariables("--battle-scene-left", appearance.regions.left),
+    ...regionCssVariables("--battle-scene-right", appearance.regions.right),
+    ...regionCssVariables("--battle-scene-lower", appearance.regions.lower),
+  } as CSSProperties;
 }
