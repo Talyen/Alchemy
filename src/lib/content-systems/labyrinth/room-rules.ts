@@ -5,11 +5,14 @@ import type { ContentSystemId } from "../types";
 import type { EncounterRewardTraitId } from "../encounter-traits";
 import type { MysteryEvent } from "@/lib/mystery/types";
 
+// Route selectors compare this reference shallowly; fresh arrays trigger render loops.
+const NO_LABYRINTH_BENEFITS: readonly EncounterRewardTraitId[] = Object.freeze([]);
+
 export function activeLabyrinthBenefits(
   contentSystemType: ContentSystemId,
   modifiers: readonly EncounterRewardTraitId[],
 ): readonly EncounterRewardTraitId[] {
-  return contentSystemType === "labyrinth" ? modifiers : [];
+  return contentSystemType === "labyrinth" ? modifiers : NO_LABYRINTH_BENEFITS;
 }
 
 const MARKET_THEMES: Partial<Record<EncounterRewardTraitId, KeywordId>> = {
