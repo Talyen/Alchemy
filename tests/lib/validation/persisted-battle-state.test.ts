@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
-import { scaleByRoomMultiplier } from "@/lib/battle/enemy-turn-traits";
+import { scaleByRoomMultiplier } from "@/lib/battle/amount-helpers";
 import { canPlayCard } from "@/lib/battle";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { cardById, enemyById } from "@/lib/game-data";

@@ -1,7 +1,7 @@
 import { resolveSecondaryAction } from "./action-context";
 import { BRAWLER_PENALTY_MULTIPLIER, ENEMY_ABILITY_TRAIT_REWARD, VAMPIRE_BLOOD_SCENT_DAMAGE } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { recordEnemyAbilityHit, type EnemyAbilityContext } from "./enemy-ability-context";
+import { recordEnemyAbilityHit, type EnemyAbilityContext } from "./enemy-ability-damage";
 import { applyArmorReward, applyHealingWithCombatText } from "./player-rewards";
 import { resolveEnemyAttackHit } from "./enemy-attack-hit";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
@@ -28,7 +28,6 @@ export function applyAbilityFollowups(
       {
         canDodge: true,
         skipTraitReactions: true,
-        traitSet: context.traitSet,
         amountMultiplier: context.brawlerPenalty ? BRAWLER_PENALTY_MULTIPLIER : 1,
       },
     );
@@ -40,7 +39,7 @@ export function applyAbilityFollowups(
     ["giant-spider", "poison"],
   ] as const) {
     if (getBattleOutcome(nextState) !== null) return nextState;
-    if (context.healthDamage > 0 && hasEnemyTrait(nextState, traitId, context.traitSet)) {
+    if (context.healthDamage > 0 && hasEnemyTrait(nextState, traitId)) {
       nextState = applyPlayerStatusFromAttack(
         recordEnemyAbilityActivation(nextState, traitId),
         {
@@ -53,7 +52,7 @@ export function applyAbilityFollowups(
     }
   }
   if (getBattleOutcome(nextState) !== null) return nextState;
-  if (context.healthDamage > 0 && hasEnemyTrait(nextState, "winter-wolf", context.traitSet)) {
+  if (context.healthDamage > 0 && hasEnemyTrait(nextState, "winter-wolf")) {
     nextState = resolveEnemyAttackHit(
       recordEnemyAbilityActivation(nextState, "winter-wolf"),
       {
@@ -62,11 +61,11 @@ export function applyAbilityFollowups(
         amount: ENEMY_ABILITY_TRAIT_REWARD,
       },
       combatTexts,
-      { canDodge: false, traitSet: context.traitSet },
+      { canDodge: false },
     ).state;
   }
   if (getBattleOutcome(nextState) !== null) return nextState;
-  if (context.landed && hasEnemyTrait(nextState, "banshee", context.traitSet)) {
+  if (context.landed && hasEnemyTrait(nextState, "banshee")) {
     const purged = purgeOnePlayerBenefit(nextState, combatTexts);
     if (purged.purged)
       nextState = resolvePendingBattleReactions(recordEnemyAbilityActivation(purged.state, "banshee"), combatTexts);
@@ -84,8 +83,17 @@ export function applyAbilityFollowups(
     );
   }
   if (getBattleOutcome(nextState) !== null) return nextState;
+  return applyThornsRetaliation(nextState, context, combatTexts);
+}
+
+function applyThornsRetaliation(
+  state: BattleState,
+  context: EnemyAbilityContext,
+  combatTexts: CombatTextEvent[],
+): BattleState {
   // Purged Thorns stay purged: the retaliation check below sees zero stacks, so no Nature damage fires.
-  if (!context.landed || nextState.playerStatuses.thorns <= 0) return nextState;
+  if (!context.landed || state.playerStatuses.thorns <= 0) return state;
+  let nextState = state;
   const amount =
     nextState.playerStatuses.thorns +
     nextState.gearEffects.flatThornsDamage +

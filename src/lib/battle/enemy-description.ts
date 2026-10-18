@@ -112,19 +112,33 @@ const ROOM_SCALED_TRAITS = new Set([
   "bloodletter",
 ]);
 
+function scaleTraitNumbers(description: string, room: (amount: number) => number): string {
+  // Percentages are thresholds, not room-scaled magnitudes.
+  return description.replace(/\b\d+\b(?!%)/g, (value) => String(room(Number(value))));
+}
+
+const TRAIT_DESCRIPTION_SCALERS: Record<
+  string,
+  (description: string, room: (n: number) => number, context: EnemyDescriptionContext) => string
+> = {
+  "starting-block": (_description, room) => `Starts with ${room(ENEMY_STARTING_BLOCK)} Block`,
+  "living-armor": (description, room) =>
+    description.replace("with Armor", `with ${room(LIVING_ARMOR_STARTING_ARMOR)} Armor`),
+  regeneration: (_description, room, context) =>
+    `Restores ${room(context.currentEnemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION)} Health each turn`,
+  "stone-golem": (description, room) => description.replace("1 additional", `${room(1)} additional`),
+  thorns: (description, room) => description.replace("deals 1 Physical", `deals ${room(1)} Physical`),
+  "divine-aegis": (description, room) =>
+    description.replace("2 Armor and 4 Block", `${room(2)} Armor and ${room(4)} Block`),
+};
+
 export function getEncounterEnemyTrait(trait: EnemyTrait, context: EnemyDescriptionContext): EnemyTrait {
   const room = (amount: number) => Math.round(amount * context.roomScalingMultiplier);
-  let description = trait.description;
-  if (trait.id === "starting-block") description = `Starts with ${room(ENEMY_STARTING_BLOCK)} Block`;
-  else if (trait.id === "living-armor")
-    description = description.replace("with Armor", `with ${room(LIVING_ARMOR_STARTING_ARMOR)} Armor`);
-  else if (trait.id === "regeneration")
-    description = `Restores ${room(context.currentEnemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION)} Health each turn`;
-  else if (trait.id === "stone-golem") description = description.replace("1 additional", `${room(1)} additional`);
-  else if (trait.id === "thorns") description = description.replace("deals 1 Physical", `deals ${room(1)} Physical`);
-  else if (trait.id === "divine-aegis")
-    description = description.replace("2 Armor and 4 Block", `${room(2)} Armor and ${room(4)} Block`);
-  else if (ROOM_SCALED_TRAITS.has(trait.id))
-    description = description.replace(/\b\d+\b/g, (value) => String(room(Number(value))));
+  const scaler = TRAIT_DESCRIPTION_SCALERS[trait.id];
+  const description = scaler
+    ? scaler(trait.description, room, context)
+    : ROOM_SCALED_TRAITS.has(trait.id)
+      ? scaleTraitNumbers(trait.description, room)
+      : trait.description;
   return description === trait.description ? trait : { ...trait, description };
 }

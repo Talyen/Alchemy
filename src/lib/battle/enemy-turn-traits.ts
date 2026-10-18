@@ -1,23 +1,11 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
-import {
-  ENEMY_TURN_START_GAINS,
-  collectUncoveredEnemyTraitIds,
-  isEnemyTraitTurnStartCovered,
-} from "@/lib/content-systems/enemy-trait-coverage";
+import { ENEMY_TURN_START_GAINS, isEnemyTraitTurnStartCovered } from "@/lib/content-systems/enemy-trait-coverage";
 import { logError } from "../error-logger";
 import type { BattleState, CombatTextEvent } from "./types";
 import { addEnemyMitigation } from "./enemy-mitigation-state";
 import { hasEnemyTrait } from "./encounter-trait-state";
-
-// Re-exported so existing deep-path consumers keep working; new code should
-// import the coverage owner directly.
-export { collectUncoveredEnemyTraitIds };
-
-export function scaleByRoomMultiplier(state: BattleState, value: number): number {
-  return Math.round(value * state.roomScalingMultiplier);
-}
 
 export function processEnemyRegeneration(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (state.enemyRegeneration <= 0) return state;

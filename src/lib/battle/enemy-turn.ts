@@ -47,13 +47,6 @@ function finalizePlayerTurn(
   return { state: finalState, combatTexts, playerTurnSkipped: isCcControlled(finalState.playerCC) };
 }
 
-function processHasteEarlyTurn(state: BattleState): BattleState {
-  return {
-    ...state,
-    playerStatuses: { ...state.playerStatuses, haste: Math.max(0, state.playerStatuses.haste - 1) },
-  };
-}
-
 function beginEnemyPhase(state: BattleState): BattleState {
   return deliverPendingHandCards({
     ...state,
@@ -66,7 +59,10 @@ function beginEnemyPhase(state: BattleState): BattleState {
 
 function resolveHasteTurn(state: BattleState) {
   const combatTexts: CombatTextEvent[] = [];
-  const nextState = processHasteEarlyTurn(state);
+  const nextState = {
+    ...state,
+    playerStatuses: { ...state.playerStatuses, haste: Math.max(0, state.playerStatuses.haste - 1) },
+  };
   return {
     kind: "haste" as const,
     ...finalizePlayerTurn(nextState, combatTexts, { preserveBlock: true, manaAtTurnEnd: state.mana }),
@@ -76,17 +72,14 @@ function resolveHasteTurn(state: BattleState) {
   };
 }
 
-type EnemyPostTickMode = "attack" | "skip";
-
 function resolveEnemyPostTickResolution(
   state: BattleState,
   texts: CombatTextEvent[],
-  mode: EnemyPostTickMode,
+  skipped: boolean,
 ): { state: BattleState; afterAbilityState?: BattleState } {
-  let nextState = processEncounterTraitActionStart(state, texts);
-  nextState = processEnemyTraits(nextState, texts);
+  let nextState = processEnemyTraits(processEncounterTraitActionStart(state, texts), texts);
   let afterAbilityState: BattleState | undefined;
-  if (mode === "attack") {
+  if (!skipped) {
     nextState = processEnemyAbility(nextState, texts);
     afterAbilityState = nextState;
     if (getBattleOutcome(nextState) !== null) return { state: nextState, afterAbilityState };
@@ -94,17 +87,17 @@ function resolveEnemyPostTickResolution(
     nextState = reduceSkipTurns(nextState, texts);
   }
   nextState = tickPlayerStatuses(nextState, texts);
-  if (getBattleOutcome(nextState) !== null) {
-    return { state: nextState, ...(afterAbilityState ? { afterAbilityState } : {}) };
+  if (getBattleOutcome(nextState) !== null || isPlayerDefeated(nextState)) {
+    return afterAbilityState ? { state: nextState, afterAbilityState } : { state: nextState };
   }
-  if (mode === "attack" && !isPlayerDefeated(nextState)) {
+  if (!skipped) {
     nextState = processEncounterTraitActionDamage(nextState, texts);
+    if (isPlayerDefeated(nextState)) {
+      return afterAbilityState ? { state: nextState, afterAbilityState } : { state: nextState };
+    }
   }
-  if (isPlayerDefeated(nextState)) return { state: nextState, ...(afterAbilityState ? { afterAbilityState } : {}) };
-  nextState = resolveDeathsDoorGraceExpiry(nextState, texts);
-  nextState = processEnemyRegeneration(nextState, texts);
-  if (afterAbilityState === undefined) return { state: nextState };
-  return { state: nextState, afterAbilityState };
+  nextState = processEnemyRegeneration(resolveDeathsDoorGraceExpiry(nextState, texts), texts);
+  return afterAbilityState ? { state: nextState, afterAbilityState } : { state: nextState };
 }
 
 function resolveEnemyTurn(state: BattleState): Exclude<EndPlayerTurnResolution, { kind: "haste" }> {
@@ -129,11 +122,7 @@ function resolveEnemyTurn(state: BattleState): Exclude<EndPlayerTurnResolution, 
 
   // Status ticks can trigger control; choose the action only after ticking once.
   const skipped = skippedAtStart || isCcControlled(enemyTurnStartState.enemyCC);
-  const result = resolveEnemyPostTickResolution(
-    enemyTurnStartState,
-    enemyResolutionCombatTexts,
-    skipped ? "skip" : "attack",
-  );
+  const result = resolveEnemyPostTickResolution(enemyTurnStartState, enemyResolutionCombatTexts, skipped);
   // Playback consumes the phase batches, so next-turn rewards must also join
   // the final phase rather than existing only in the combined engine result.
   const finalized = finalizePlayerTurn(result.state, enemyResolutionCombatTexts, { manaAtTurnEnd: state.mana });

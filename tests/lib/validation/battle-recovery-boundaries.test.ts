@@ -4,8 +4,8 @@ import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persis
 import { applyCardEffects } from "@/lib/battle";
 import { cardById } from "@/lib/game-data";
 import { checkHealthThresholds } from "@/lib/battle/status-player";
-import { applyAbilityDamage } from "@/lib/battle/enemy-ability-damage";
-import { createEnemyAbilityContext } from "@/lib/battle/enemy-ability-context";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
+import { getEnemyAbilityCard } from "@/lib/game-data";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 
 const oversized = Number.MAX_VALUE;
@@ -82,12 +82,7 @@ describe("saved battle recovery boundaries", () => {
       difficultyModifiers: [{ kind: "enemy-damage-multiplier", amount: oversized }],
     });
     expect(state.difficultyModifiers).toEqual([]);
-    const result = applyAbilityDamage(
-      state,
-      { kind: "damage", damageType: "physical", amount: 6 },
-      createEnemyAbilityContext(state, true),
-      [],
-    );
+    const result = applyEnemyAbility(state, getEnemyAbilityCard("slash"), []);
     expect(result.playerHealth).toBeLessThan(50);
   });
 });

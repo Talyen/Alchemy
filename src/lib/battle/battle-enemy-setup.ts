@@ -26,18 +26,25 @@ function evaluateEnemyCurve(curve: { base: number; linear: number; quadratic: nu
   return curve.base + curve.linear * depth + curve.quadratic * depth * depth;
 }
 
+function overrideFor<T>(table: Record<string, T>, id: string): T | undefined {
+  return Object.hasOwn(table, id) ? table[id] : undefined;
+}
+
+function pressureMultiplier(
+  override: number | { base: number; linear: number; max: number } | undefined,
+  depth: number,
+): number {
+  if (typeof override === "number") return override;
+  if (!override) return 1;
+  return Math.min(override.max, override.base + override.linear * depth);
+}
+
 export function getEnemyAbilityPressure(state: Pick<BattleState, "roomScalingMultiplier" | "currentEnemy">): number {
   const depth = enemyProgressionDepth(state.roomScalingMultiplier);
-  const override = Object.hasOwn(ENEMY_PRESSURE_OVERRIDES, state.currentEnemy.id)
-    ? ENEMY_PRESSURE_OVERRIDES[state.currentEnemy.id]
-    : undefined;
+  const curve = ENEMY_BALANCE_BY_TYPE[state.currentEnemy.enemyType].pressure;
   return (
-    evaluateEnemyCurve(ENEMY_BALANCE_BY_TYPE[state.currentEnemy.enemyType].pressure, depth) *
-    (typeof override === "number"
-      ? override
-      : override
-        ? Math.min(override.max, override.base + override.linear * depth)
-        : 1)
+    evaluateEnemyCurve(curve, depth) *
+    pressureMultiplier(overrideFor(ENEMY_PRESSURE_OVERRIDES, state.currentEnemy.id), depth)
   );
 }
 
@@ -46,7 +53,7 @@ function scaleEnemyHealth(enemy: BestiaryEntry, roomMul: number): number {
     enemy.enemyType === "elite" ? ELITE_HP_MULTIPLIER : enemy.enemyType === "boss" ? BOSS_HEALTH_MULTIPLIER : 1;
   const baseHealth = Math.round(BASE_ENEMY_HEALTH * roomMul * hpTypeMul);
   const growth = evaluateEnemyCurve(ENEMY_BALANCE_BY_TYPE[enemy.enemyType].health, enemyProgressionDepth(roomMul));
-  const contentMultiplier = Object.hasOwn(ENEMY_HEALTH_OVERRIDES, enemy.id) ? ENEMY_HEALTH_OVERRIDES[enemy.id]! : 1;
+  const contentMultiplier = overrideFor(ENEMY_HEALTH_OVERRIDES, enemy.id) ?? 1;
   const bossHealthScale = enemy.enemyType === "boss" ? ENEMY_BOSS_HEALTH_SCALE : 1;
   return Math.round(baseHealth * growth * contentMultiplier * bossHealthScale);
 }

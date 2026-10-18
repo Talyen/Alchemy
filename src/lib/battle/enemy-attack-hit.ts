@@ -15,13 +15,8 @@ import { applyDodgeTalentStatuses } from "./dodge-talent-rewards";
 import { applyArmorReward, applyBlockDepletionRewards, applyBlockReward } from "./status-player";
 import { resolveCardEffectChain, shouldElementalTalentRepeat } from "./card-play-effects";
 import { handlePostPlayCardDestination } from "./card-consume";
-import {
-  prepareEnemyDamage,
-  resolveEnemyDamageEffect,
-  resolvePendingBattleReactions,
-  type EnemyDamageOptions,
-  type EnemyDamageResult,
-} from "./enemy-attack-damage";
+import { resolveEnemyDamageEffect, resolvePendingBattleReactions, type EnemyDamageResult } from "./enemy-attack-damage";
+import { prepareEnemyDamage, type EnemyDamageOptions } from "./enemy-damage-mitigation";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
 import { hasEnemyTrait } from "./encounter-trait-state";

@@ -3,7 +3,7 @@ import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
 import { computeLeechHeal } from "./damage-rider-leech";
-import { scaleByRoomMultiplier } from "./enemy-turn-traits";
+import { scaleByRoomMultiplier } from "./amount-helpers";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -12,13 +12,8 @@ import { isPlayerDefeated } from "./battle-outcome";
 import { getEnemyTraitSet, hasEnemyTrait } from "./encounter-trait-state";
 
 import { applyBlockedAttackRetaliation, applyPlayerDefensiveReactions } from "./player-defensive-reactions";
-import {
-  calculateBlockAndArmorMitigation,
-  prepareEnemyDamage,
-  type EnemyDamageOptions,
-} from "./enemy-damage-mitigation";
-
-export { prepareEnemyDamage, type EnemyDamageOptions } from "./enemy-damage-mitigation";
+import { calculateBlockAndArmorMitigation, prepareEnemyDamage } from "./enemy-damage-mitigation";
+import type { EnemyDamageOptions } from "./enemy-damage-mitigation";
 
 export function applyEnemyLeechHealing(
   state: BattleState,

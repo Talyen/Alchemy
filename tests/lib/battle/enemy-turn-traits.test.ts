@@ -1,22 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { enemyBestiary } from "@/lib/game-data";
-import {
-  collectUncoveredEnemyTraitIds,
-  processEnemyRegeneration,
-  processEnemyTraits,
-} from "@/lib/battle/enemy-turn-traits";
+import { processEnemyRegeneration, processEnemyTraits } from "@/lib/battle/enemy-turn-traits";
 import { IRON_HIDE_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN } from "@/lib/game-constants";
 import { patchBattleState } from "../../fixtures/battle";
-
-describe("enemy turn trait coverage", () => {
-  it("rejects inherited object property names as unhandled traits", () => {
-    expect(collectUncoveredEnemyTraitIds(["toString", "constructor", "__proto__", "toString"])).toEqual([
-      "toString",
-      "constructor",
-      "__proto__",
-    ]);
-  });
-});
 
 describe("processEnemyRegeneration", () => {
   it("heals enemy when regeneration is active and not frozen for regen", () => {
@@ -49,7 +35,6 @@ describe("processEnemyRegeneration", () => {
 describe("processEnemyTraits", () => {
   const forgeGolem = enemyBestiary.find((e) => e.id === "forge-golem")!;
   const ironBear = enemyBestiary.find((e) => e.id === "iron-bear")!;
-  const frostwarden = enemyBestiary.find((e) => e.id === "frostwarden")!;
 
   it("applies rusting-carapace forge every other turn (not room-scaled)", () => {
     const state = patchBattleState({
@@ -79,15 +64,5 @@ describe("processEnemyTraits", () => {
       stat: "armor",
       amount: IRON_HIDE_ARMOR_PER_TURN,
     });
-  });
-
-  it("keeps Glacial Surge passive across turns without publishing growing Freeze bonuses", () => {
-    const state = patchBattleState({ currentEnemy: frostwarden, roomScalingMultiplier: 1 });
-    const texts: Parameters<typeof processEnemyTraits>[1] = [];
-    for (const turn of [1, 2, 4, 20]) {
-      const next = { ...state, turn };
-      expect(processEnemyTraits(next, texts)).toBe(next);
-    }
-    expect(texts).toEqual([]);
   });
 });

@@ -1,4 +1,4 @@
-import { beneficialEnemyStatusIds } from "@/lib/game-data";
+import { beneficialEnemyStatusIds, type EnemyStatusId } from "@/lib/game-data";
 import { applyBlockReward } from "./status-player";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -13,6 +13,14 @@ export function applyTurnStartPurge(state: BattleState, combatTexts: CombatTextE
   return applyPurgeGearRewards(purged.state, purged.removed, combatTexts);
 }
 
+function nextPurgeTarget(state: BattleState): "armor" | "block" | "forge" | EnemyStatusId | undefined {
+  const mitigation = state.enemyMitigation;
+  if (mitigation.armor > 0) return "armor";
+  if (mitigation.block > 0) return "block";
+  if (mitigation.forge > 0) return "forge";
+  return beneficialEnemyStatusIds.find((candidate) => state.enemyStatuses[candidate] > 0);
+}
+
 export function purgeEnemyBenefits(
   state: BattleState,
   count: number,
@@ -21,15 +29,12 @@ export function purgeEnemyBenefits(
   let nextState = state;
   let removed = 0;
   while (removed < count && nextState.enemyHealth > 0) {
-    const mitigation = nextState.enemyMitigation;
-    const category =
-      mitigation.armor > 0 ? "armor" : mitigation.block > 0 ? "block" : mitigation.forge > 0 ? "forge" : null;
-    const status = beneficialEnemyStatusIds.find((candidate) => nextState.enemyStatuses[candidate] > 0);
-    const purged = category ?? status;
+    const purged = nextPurgeTarget(nextState);
     if (!purged) break;
-    nextState = category
-      ? { ...nextState, enemyMitigation: { ...mitigation, [category]: 0 } }
-      : setEnemyStatus(nextState, status!, 0);
+    nextState =
+      purged === "armor" || purged === "block" || purged === "forge"
+        ? { ...nextState, enemyMitigation: { ...nextState.enemyMitigation, [purged]: 0 } }
+        : setEnemyStatus(nextState, purged, 0);
     if (purged === "thorns") {
       nextState = { ...nextState, flags: { ...nextState.flags, legacyEnemyThornsReady: false } };
     }

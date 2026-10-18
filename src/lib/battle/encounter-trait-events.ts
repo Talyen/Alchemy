@@ -6,7 +6,7 @@ import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
 import { processEnemyDamageEffect, resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
-import { scaleByRoomMultiplier } from "./enemy-turn-traits";
+import { scaleByRoomMultiplier } from "./amount-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { SEPTIC_SPLIT_CHANCE_PERCENT } from "../game-constants";
 import { removePlayerArmor } from "./status-helpers";

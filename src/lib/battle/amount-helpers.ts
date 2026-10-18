@@ -1,4 +1,9 @@
 import { HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
+import type { BattleState } from "./types";
+
+export function scaleByRoomMultiplier(state: Pick<BattleState, "roomScalingMultiplier">, value: number): number {
+  return Math.round(value * state.roomScalingMultiplier);
+}
 
 export function applyPotionMultiplier(amount: number, potionMult: number): number {
   return potionMult === 1 ? amount : Math.round(amount * potionMult);

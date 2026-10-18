@@ -19,13 +19,6 @@ function applyEnemyAttackBonuses(state: BattleState, effect: EnemyAttackEffect &
   return effect.amount + forge + physicalBonus;
 }
 
-function blockAbsorptionMultiplier(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
-  if (effect.damageType === "physical" && state.talentEffects.blockAbsorbPhysicalBonus > 0) {
-    return 1 + state.talentEffects.blockAbsorbPhysicalBonus / PERCENT_DENOMINATOR;
-  }
-  return 1;
-}
-
 export interface EnemyDamageOptions {
   triggerBlockRetaliation?: boolean;
   amountMultiplier?: number;
@@ -47,8 +40,7 @@ function computeMitigatedDamage(
   state: BattleState,
   effect: EnemyAttackEffect & { kind: "damage" },
   remainingDamage: number,
-  ignorePlayerMitigation: boolean,
-  ignoreArmor: boolean,
+  options: Pick<EnemyDamageOptions, "ignorePlayerMitigation" | "ignoreArmor">,
   protectionState: BattleState,
 ) {
   const armorMitigatesDamage =
@@ -56,12 +48,14 @@ function computeMitigatedDamage(
     effect.damageType === "stun" ||
     armorMitigatesElementalDamage(state, effect.damageType);
   const rawDamage =
-    armorMitigatesDamage && !ignoreArmor ? Math.max(0, remainingDamage - state.playerStatuses.armor) : remainingDamage;
-  const scaledDamage = ignorePlayerMitigation
+    armorMitigatesDamage && !options.ignoreArmor
+      ? Math.max(0, remainingDamage - state.playerStatuses.armor)
+      : remainingDamage;
+  const scaledDamage = options.ignorePlayerMitigation
     ? rawDamage
     : scaleReceivedPlayerDamage(rawDamage, state.talentEffects, effect.damageType);
   return mitigatePlayerCombatDamage(protectionState, scaledDamage, effect.damageType, {
-    ignoreMitigation: ignorePlayerMitigation,
+    ignoreMitigation: options.ignorePlayerMitigation,
   });
 }
 
@@ -102,12 +96,16 @@ export function calculateBlockAndArmorMitigation(
   protectionState = state,
 ) {
   let remainingDamage = incomingDamage;
-  const blockMultiplier = blockAbsorptionMultiplier(state, effect);
+  const blockMultiplier =
+    effect.damageType === "physical" && state.talentEffects.blockAbsorbPhysicalBonus > 0
+      ? 1 + state.talentEffects.blockAbsorbPhysicalBonus / PERCENT_DENOMINATOR
+      : 1;
   const effectiveBlock =
     options.ignorePlayerMitigation || options.ignoreBlock
       ? 0
       : Math.round(state.playerStatuses.block * blockMultiplier);
   const blockAbsorb = Math.min(remainingDamage, effectiveBlock);
+  // Full absorption consumes all Block even when rounding understates the cost.
   const blockSpent =
     blockAbsorb <= 0
       ? 0
@@ -125,15 +123,16 @@ export function calculateBlockAndArmorMitigation(
     });
   }
   const remainingBlock = Math.max(0, state.playerStatuses.block - blockSpent);
-  const extraPhysicalBlock =
+  // Physical break and poison strip never co-occur (disjoint damage types).
+  const extraBreak =
     !options.ignoreBlock && effect.damageType === "physical" && (options.physicalBlockBreakMultiplier ?? 1) > 1
       ? Math.min(remainingBlock, Math.round(blockSpent * ((options.physicalBlockBreakMultiplier ?? 1) - 1)))
       : 0;
-  const extraPoisonBlock =
+  const extraStrip =
     !options.ignoreBlock && effect.damageType === "poison" && !options.ignorePlayerMitigation
       ? Math.min(remainingBlock, options.extraPoisonBlockStrip ?? 0)
       : 0;
-  const totalExtraBlock = Math.max(extraPhysicalBlock, extraPoisonBlock);
+  const totalExtraBlock = extraBreak + extraStrip;
   if (totalExtraBlock > 0) {
     mergeCombatText(combatTexts, {
       target: "player",
@@ -143,13 +142,6 @@ export function calculateBlockAndArmorMitigation(
       impact: false,
     });
   }
-  const actualDamage = computeMitigatedDamage(
-    state,
-    effect,
-    remainingDamage,
-    options.ignorePlayerMitigation === true,
-    options.ignoreArmor === true,
-    protectionState,
-  );
+  const actualDamage = computeMitigatedDamage(state, effect, remainingDamage, options, protectionState);
   return { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, actualDamage };
 }

@@ -4,7 +4,7 @@ import { resolveBattleSequence, type ReactionBoundary } from "./battle-sequence"
 import { getBattleOutcome } from "./battle-outcome";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { scaleByRoomMultiplier } from "./enemy-turn-traits";
+import { scaleByRoomMultiplier } from "./amount-helpers";
 import {
   HALF_DIVISOR,
   PERCENT_DENOMINATOR,

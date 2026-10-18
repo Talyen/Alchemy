@@ -1,7 +1,7 @@
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
-import { recordEnemyAbilityHit, type EnemyAbilityContext } from "./enemy-ability-context";
 import type { DamageType, EnemyAbilityDamageEffect } from "@/lib/game-data";
 import { getBattleRng, pickRandom } from "@/lib/rng";
+import { HALF_DIVISOR } from "../game-constants";
 import {
   BANDIT_FIRST_HIT_MULTIPLIER,
   BRAWLER_PENALTY_MULTIPLIER,
@@ -18,11 +18,39 @@ import { scaleEnemyAbilityDamage } from "./battle-enemy-setup";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { resolveEnemyAttackHit } from "./enemy-attack-hit";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
-import { scaleByRoomMultiplier } from "./enemy-turn-traits";
+import { scaleByRoomMultiplier } from "./amount-helpers";
 import type { BattleState, CombatTextEvent } from "./types";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import { getBattleOutcome } from "./battle-outcome";
 import { writeCombatFlag as setFlag } from "./action-context";
+
+/** Scratch facts shared by the ordered effects and follow-ups of one ability. */
+export interface EnemyAbilityContext {
+  readonly rewardedTraits: Set<string>;
+  readonly brawlerPenalty: boolean;
+  readonly vampireBonus: boolean;
+  landed: boolean;
+  healthDamage: number;
+}
+
+export function createEnemyAbilityContext(state: BattleState, damaging: boolean): EnemyAbilityContext {
+  return {
+    rewardedTraits: new Set(),
+    brawlerPenalty: damaging && state.flags.enemyBrawlerDamagePenalty,
+    vampireBonus:
+      damaging && hasEnemyTrait(state, "vampire") && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR,
+    landed: false,
+    healthDamage: 0,
+  };
+}
+
+export function recordEnemyAbilityHit(
+  context: EnemyAbilityContext,
+  hit: { landed: boolean; healthDamage: number },
+): void {
+  context.landed ||= hit.landed;
+  context.healthDamage += hit.healthDamage;
+}
 
 function applyHitRewards(
   state: BattleState,
@@ -33,7 +61,7 @@ function applyHitRewards(
   let nextState = state;
   const reward = (traitId: string, kind: "heal" | "block" | "armor" | "forge") => {
     if (
-      !hasEnemyTrait(nextState, traitId, context.traitSet) ||
+      !hasEnemyTrait(nextState, traitId) ||
       context.rewardedTraits.has(traitId) ||
       getBattleOutcome(nextState) !== null
     )
@@ -76,17 +104,21 @@ export function prepareEnemyAbilityDamage(
     amountMultiplier *= INQUISITOR_BURN_MULTIPLIER;
     record("inquisitor");
   }
-  if (trait("dire-wolf") && state.playerStatuses.bleed > 0) {
+  const flatTrait = trait("dire-wolf") && state.playerStatuses.bleed > 0 ? "dire-wolf" : null;
+  if (flatTrait) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
-    record("dire-wolf");
+    record(flatTrait);
   }
   if (trait("stone-golem") && state.enemyMitigation.block > 0) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("stone-golem");
   }
-  if (effect.damageType === "freeze" && (trait("frost-elemental") || trait("ice-wraith"))) {
+  if (effect.damageType === "freeze" && trait("frost-elemental")) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
-    record(trait("frost-elemental") ? "frost-elemental" : "ice-wraith");
+    record("frost-elemental");
+  } else if (effect.damageType === "freeze" && trait("ice-wraith")) {
+    flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
+    record("ice-wraith");
   }
   if (effect.damageType === "burn" && trait("pyromancer") && state.playerStatuses.burn === 0) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
@@ -139,14 +171,13 @@ export function applyAbilityDamage(
   );
   let nextState = state;
   for (const id of activatedTraits) nextState = recordEnemyAbilityActivation(nextState, id);
-  const trait = (id: string) => hasEnemyTrait(nextState, id, context.traitSet);
+  const trait = (id: string) => hasEnemyTrait(nextState, id);
   const result = resolveEnemyAttackHit(nextState, damage, combatTexts, {
     canDodge: true,
     ignoreArmor: effect.ignoreArmor === true,
     ignoreBlock: effect.ignoreBlock === true,
     amountMultiplier,
     flatBonus,
-    traitSet: context.traitSet,
     ...(trait("ogre") && effect.damageType === "physical"
       ? { physicalBlockBreakMultiplier: OGRE_BLOCK_BREAK_MULTIPLIER }
       : {}),
