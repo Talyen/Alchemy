@@ -34,6 +34,7 @@ export async function launchElectronApp(
   options: {
     packagedRenderer?: boolean;
     enableGpu?: boolean;
+    playerAudioHost?: boolean;
     background?: boolean;
     offscreen?: boolean;
     profile?: string;
@@ -43,6 +44,9 @@ export async function launchElectronApp(
     process.env.CI && !options.enableGpu
       ? [".", "--no-sandbox", "--disable-gpu", "--mute-audio"]
       : [".", "--mute-audio"];
+  // Profiling needs normal audio allocation; output stays muted at Chromium's
+  // device boundary. Functional automation keeps the app's silent-host policy.
+  if (options.playerAudioHost) args.push("--disable-blink-features=AutomationControlled");
 
   const ownsProfile = options.profile === undefined;
   const profile = options.profile ?? fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-electron-test-"));

@@ -47,6 +47,7 @@ it("performance catalog matches the scenario files and comparison metric keys", 
   const catalogScenarios = [
     ...performanceCatalog.metricScenarios,
     ...performanceCatalog.syntheticScenarios,
+    ...performanceCatalog.extremeScenarios,
     ...performanceCatalog.seededScenarios,
     ...performanceCatalog.diagnosticScenarios,
   ].sort();
@@ -305,6 +306,41 @@ it("renderSummaryMarkdown renders environment and target table", () => {
           targets: classifyTargets(metrics, "continuous"),
           observations: { rendererStartupReadyMs: 2400 },
           rawSamplePath: "/reports/battle-effects-1-sample.json",
+          memorySamples: [
+            {
+              elapsedMs: 0,
+              runtime: {
+                domNodes: 100,
+                images: 2,
+                canvases: 0,
+                audioElements: 0,
+                jsHeapUsedBytes: 10 * 1_048_576,
+                electronWorkingSetKB: 100 * 1024,
+              },
+            },
+            {
+              elapsedMs: 1000,
+              runtime: {
+                domNodes: 100,
+                images: 2,
+                canvases: 0,
+                audioElements: 0,
+                jsHeapUsedBytes: 30 * 1_048_576,
+                electronWorkingSetKB: 200 * 1024,
+              },
+            },
+            {
+              elapsedMs: 2000,
+              runtime: {
+                domNodes: 100,
+                images: 2,
+                canvases: 0,
+                audioElements: 0,
+                jsHeapUsedBytes: 12 * 1_048_576,
+                electronWorkingSetKB: 110 * 1024,
+              },
+            },
+          ],
           longAnimationFrameSupported: true,
           longAnimationFrames: [
             {
@@ -365,6 +401,8 @@ it("renderSummaryMarkdown renders environment and target table", () => {
   expect(md).toContain("abc123");
   expect(md).toContain("rendererStartupReadyMs");
   expect(md).toContain("[sample](/reports/battle-effects-1-sample.json)");
+  expect(md).toContain("| Renderer JS heap | 10.0 | 30.0 | 12.0 | 2.0 |");
+  expect(md).toContain("| Combined Electron working set | 100.0 | 200.0 | 110.0 | 10.0 |");
   expect(md).toContain("Slow-frame evidence — run 1");
   expect(md).toContain("play-card → damage-feedback");
   expect(md).toContain("Layout (style/layout): 60.0 ms — app.js");

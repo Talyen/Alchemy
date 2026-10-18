@@ -12,7 +12,14 @@ import { failOnRuntimeErrors } from "./errors";
 import type { ParsedSaveData } from "@/lib/validation";
 
 export function readSavedGame(page: Page): Promise<ParsedSaveData> {
-  return page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}"), SAVE_KEY);
+  return page.evaluate(async (key) => {
+    if (window.alchemyDesktop?.isDesktop) {
+      const slot = await window.alchemyDesktop.readSaveSlot();
+      if (slot.localReadFailed || !slot.candidates[0]) throw new Error("No acknowledged desktop save");
+      return JSON.parse(slot.candidates[0]);
+    }
+    return JSON.parse(localStorage.getItem(key) ?? "{}");
+  }, SAVE_KEY);
 }
 
 /** Page-level seed scripts rerun on reload; this page reads only the acknowledged save. */

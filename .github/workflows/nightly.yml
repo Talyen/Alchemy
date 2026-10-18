@@ -127,10 +127,13 @@ jobs:
         include:
           - slot: 0
             workload: campfire-brewing
+            extreme: inventory-200
           - slot: 1
             workload: transmutation-journey
+            extreme: combat-feedback-burst
           - slot: 2
             workload: crafting-journey
+            extreme: large-deck
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -164,6 +167,11 @@ jobs:
 
       - name: Profile non-combat transaction
         run: xvfb-run --auto-servernum -- npm run perf -- --scenario ${{ matrix.workload }} --electron --skip-build
+        env:
+          CI: true
+
+      - name: Profile extreme player workload
+        run: xvfb-run --auto-servernum -- npm run perf -- --scenario ${{ matrix.extreme }} --electron --skip-build
         env:
           CI: true
 

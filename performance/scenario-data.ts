@@ -6,6 +6,57 @@
  * Fake E2E ids (`spark`, `placeholder` art) leave cards blank and understate paint cost.
  */
 import type { GearInstance } from "@/lib/gear/types";
+import type { BattleCard } from "@/lib/game-data/types";
+
+/** Empty content asks hydrateCard to restore authored effects, cost and production art. */
+export function authoredCards(ids: string[]): BattleCard[] {
+  return ids.map((id, index) => ({
+    id,
+    uid: index + 1,
+    title: id,
+    art: "",
+    descriptionLines: [],
+    effects: [],
+    cost: 1,
+  }));
+}
+
+export function largeRunDeck(): BattleCard[] {
+  return authoredCards(
+    Array.from(
+      { length: 60 },
+      (_, index) => ["slash", "block", "ray-of-frost", "sunburst", "pixie-dust", "holy-radiance"][index % 6]!,
+    ),
+  );
+}
+
+/** Hoarded authored drops; catalog tests protect rarity, affinity and roll validity. */
+export function extremeArmoryInventory(): GearInstance[] {
+  const rolls: Record<string, GearInstance["affixes"]> = {
+    "leather-armor-basic": [{ id: "resist-physical", value: 10 }],
+    "ruby-ring-basic": [{ id: "flat-burn", value: 1 }],
+    "leather-buckler-basic": [{ id: "resist-physical", value: 10 }],
+    "shortsword-basic": [{ id: "flat-physical", value: 1 }],
+    "longbow-basic": [{ id: "archery-damage", value: 2 }],
+    "leather-armor-astral": [
+      { id: "resist-physical", value: 15 },
+      { id: "max-health", value: 9 },
+      { id: "health-per-turn", value: 1 },
+    ],
+    "plate-armor-basic": [{ id: "resist-physical", value: 10 }],
+    "dagger-basic": [{ id: "flat-poison", value: 1 }],
+    "mace-basic": [{ id: "flat-holy", value: 1 }],
+    "sapphire-ring-basic": [{ id: "flat-freeze", value: 1 }],
+    "longsword-basic": [{ id: "flat-physical", value: 1 }],
+    "staff-basic": [{ id: "flat-burn", value: 1 }],
+    "emerald-amulet-basic": [{ id: "flat-nature", value: 1 }],
+  };
+  return largeArmoryInventory(200).map((item) => {
+    const affixes = rolls[item.definitionId];
+    if (!affixes) throw new Error(`Missing extreme fixture rolls for ${item.definitionId}`);
+    return { ...item, affixes: affixes.map((affix) => ({ ...affix })) };
+  });
+}
 
 interface PerfCard {
   id: string;

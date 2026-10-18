@@ -18,6 +18,7 @@ export function checkEnvironmentCompatibility(beforeEnv, afterEnv) {
   ]) {
     if (
       !["chromium", "electron"].includes(env.runtime) ||
+      (env.audioHost !== undefined && env.audioHost !== "player") ||
       typeof env.platform !== "string" ||
       !env.platform ||
       typeof env.arch !== "string" ||
@@ -39,6 +40,7 @@ export function checkEnvironmentCompatibility(beforeEnv, afterEnv) {
   }
   for (const field of [
     "runtime",
+    "audioHost",
     "platform",
     "arch",
     "traceMode",

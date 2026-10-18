@@ -6,6 +6,7 @@ import type { TraceInsight } from "./trace-insights";
 import { renderComparisonTable, type MetricDelta } from "./compare-model.mjs";
 import type { JourneyAction } from "./journey-types";
 import type { SegmentResult } from "./journey-segments";
+import { memoryRange, type RuntimeSample } from "./runtime-sampling";
 
 export interface ScenarioRunResult {
   scenario: string;
@@ -22,6 +23,7 @@ export interface ScenarioRunResult {
   runtimeBefore?: RuntimeSnapshot;
   runtimeAfter?: RuntimeSnapshot;
   runtimeSamples?: Array<{ cycle: number; elapsedMs: number; runtime: RuntimeSnapshot }>;
+  memorySamples?: RuntimeSample[];
   inputEvents?: InputEventSample[];
   longAnimationFrames?: LongAnimationFrameSample[];
   longAnimationFrameSupported?: boolean;
@@ -43,7 +45,10 @@ export interface RuntimeSnapshot {
   retainedSfx?: number;
   overdueSfx?: number;
   ownedAnimations?: number;
+  sfxPlayAttempts?: number;
+  completedSfx?: number;
   electronWorkingSetKB?: number;
+  electronProcesses?: Array<{ pid: number; type: string; workingSetKB: number }>;
 }
 
 export interface ScenarioAggregate {
@@ -71,6 +76,7 @@ export interface EnvironmentInfo {
   arch: string;
   node: string;
   runtime: "chromium" | "electron";
+  audioHost?: "player";
   viewport: { width: number; height: number };
   devicePixelRatio?: number;
   estimatedRefreshHz?: number;
@@ -156,6 +162,9 @@ export function renderSummaryMarkdown(options: {
   lines.push("");
   lines.push(`- **Timestamp:** ${environment.timestamp}`);
   lines.push(`- **Runtime:** ${environment.runtime}`);
+  lines.push(
+    `- **Audio host:** ${environment.audioHost === "player" ? "normal playback; speaker output muted" : "unspecified"}`,
+  );
   lines.push(`- **Platform:** ${environment.platform} ${environment.arch}`);
   lines.push(`- **Commit:** \`${environment.commit}\`${environment.dirtyTree ? " (dirty tree)" : ""}`);
   lines.push(`- **Branch:** ${environment.branch}`);
@@ -341,6 +350,69 @@ export function renderSummaryMarkdown(options: {
       );
     }
     for (const run of agg.runs.filter((r) => r.measured)) {
+      if (run.memorySamples?.length || run.runtimeSamples?.length)
+        lines.push(
+          `Raw RAM and cycle samples (run ${run.runIndex}): [run](runs/${run.scenario}-${run.runIndex}.json).`,
+          "",
+        );
+      for (const [label, samples] of [
+        ["Periodic RAM samples", run.memorySamples],
+        ["Settled cycle samples", run.runtimeSamples],
+      ] as const) {
+        if (!samples?.length) continue;
+        lines.push(`### ${label} — run ${run.runIndex}`, "");
+        lines.push(`${samples.length} samples over ${fmt(samples.at(-1)!.elapsedMs / 1000, 1)} s.`, "");
+        lines.push("| Memory (MiB) | First | Sampled peak | Last | Change |", "| --- | ---: | ---: | ---: | ---: |");
+        const rows: Array<[string, (snapshot: RuntimeSnapshot) => number | undefined, number]> = [
+          ["Renderer JS heap", (snapshot) => snapshot.jsHeapUsedBytes, 1_048_576],
+          ["Combined Electron working set", (snapshot) => snapshot.electronWorkingSetKB, 1024],
+        ];
+        const types = new Set(
+          samples.flatMap(({ runtime }) => runtime.electronProcesses?.map((process) => process.type) ?? []),
+        );
+        for (const type of types)
+          rows.push([
+            `Electron ${type}`,
+            (snapshot) =>
+              snapshot.electronProcesses
+                ?.filter((process) => process.type === type)
+                .reduce((sum, process) => sum + process.workingSetKB, 0),
+            1024,
+          ]);
+        for (const [name, read, divisor] of rows) {
+          const range = memoryRange(samples, read);
+          lines.push(
+            range
+              ? `| ${name} | ${fmt(range.first / divisor, 1)} | ${fmt(range.peak / divisor, 1)} | ${fmt(range.last / divisor, 1)} | ${fmt((range.last - range.first) / divisor, 1)} |`
+              : `| ${name} | unavailable | unavailable | unavailable | unavailable |`,
+          );
+        }
+        lines.push(
+          "",
+          "Working sets include shared pages and are not unique physical RAM. Peaks are sampled; growth alone does not prove a leak. Raw samples retain process IDs and resource counts.",
+          "",
+        );
+        if (label === "Settled cycle samples") {
+          lines.push("| Settled resources | First | Peak | Last | Change |", "| --- | ---: | ---: | ---: | ---: |");
+          for (const key of [
+            "domNodes",
+            "images",
+            "canvases",
+            "audioElements",
+            "activeSfx",
+            "retainedSfx",
+            "overdueSfx",
+            "ownedAnimations",
+            "sfxPlayAttempts",
+            "completedSfx",
+          ] as const) {
+            const range = memoryRange(samples, (snapshot) => snapshot[key]);
+            if (range)
+              lines.push(`| ${key} | ${range.first} | ${range.peak} | ${range.last} | ${range.last - range.first} |`);
+          }
+          lines.push("");
+        }
+      }
       if (run.replayPath) lines.push(`Replay case and actions (run ${run.runIndex}): [bundle](${run.replayPath}).`, "");
       if (run.rawSamplePath)
         lines.push(

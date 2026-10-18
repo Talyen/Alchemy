@@ -25,8 +25,15 @@ const PERFORMANCE_CATALOG = JSON.parse(fs.readFileSync(path.join(root, "performa
 const METRIC_SCENARIOS = PERFORMANCE_CATALOG.metricScenarios;
 const SYNTHETIC_SCENARIOS = PERFORMANCE_CATALOG.syntheticScenarios;
 const SEEDED_SCENARIOS = PERFORMANCE_CATALOG.seededScenarios;
+const EXTREME_SCENARIOS = PERFORMANCE_CATALOG.extremeScenarios;
 const DIAG_SCENARIOS = PERFORMANCE_CATALOG.diagnosticScenarios;
-const SCENARIOS = [...METRIC_SCENARIOS, ...SYNTHETIC_SCENARIOS, ...SEEDED_SCENARIOS, ...DIAG_SCENARIOS];
+const SCENARIOS = [
+  ...METRIC_SCENARIOS,
+  ...SYNTHETIC_SCENARIOS,
+  ...SEEDED_SCENARIOS,
+  ...EXTREME_SCENARIOS,
+  ...DIAG_SCENARIOS,
+];
 const REALISTIC_CASE_IDS = new Set([
   ...METRIC_SCENARIOS.filter((id) => id !== "startup-first-use"),
   ...SEEDED_SCENARIOS,
@@ -76,8 +83,8 @@ export function parsePerformanceArgs(argv) {
   }
   if (args.runs !== null && (!Number.isSafeInteger(args.runs) || args.runs < 1))
     throw new Error("--runs must be a positive integer");
-  if (args.suite !== null && !["realistic", "synthetic", "seeded"].includes(args.suite))
-    throw new Error("--suite must be realistic, synthetic, or seeded");
+  if (args.suite !== null && !["realistic", "synthetic", "seeded", "extreme"].includes(args.suite))
+    throw new Error("--suite must be realistic, synthetic, seeded, or extreme");
   if (args.seed !== null && (!Number.isSafeInteger(args.seed) || args.seed < 0 || args.seed > 0xffffffff))
     throw new Error("--seed must be a uint32");
   if (args.scenario !== null && !SCENARIOS.includes(args.scenario))
@@ -116,7 +123,7 @@ Usage:
 Options:
   --scenario <id>   One of: ${SCENARIOS.join(", ")} (default: ${DEFAULT_SCENARIO})
   --all             Run the selected suite (realistic by default)
-  --suite <name>    realistic (--all default), synthetic, or seeded
+  --suite <name>    realistic (--all default), synthetic, seeded, or extreme
   --seed <uint32>   Replayable discovery seed (default: fresh random uint32)
   --replay <file>   Reuse a saved case and action log
   --runs <n>        Measured repetitions (default 1; warm-up still runs)
@@ -270,7 +277,13 @@ async function main() {
   }
 
   const selectedSuite =
-    args.suite === "synthetic" ? SYNTHETIC_SCENARIOS : args.suite === "seeded" ? SEEDED_SCENARIOS : METRIC_SCENARIOS;
+    args.suite === "extreme"
+      ? EXTREME_SCENARIOS
+      : args.suite === "synthetic"
+        ? SYNTHETIC_SCENARIOS
+        : args.suite === "seeded"
+          ? SEEDED_SCENARIOS
+          : METRIC_SCENARIOS;
   const replay = args.replay ? JSON.parse(fs.readFileSync(path.resolve(args.replay), "utf8")) : null;
   if (
     args.replay &&

@@ -33,6 +33,7 @@ import { STARTUP_READY_MARK } from "../src/lib/performance/marks";
 import { requirePositiveFiniteObservation } from "./scenario-contracts";
 import { extractSegmentSample, measureSegments } from "./journey-segments";
 import type { JourneyAction, JourneyCase, SegmentRequirement } from "./journey-types";
+import { startRuntimeSampling, type RuntimeSample } from "./runtime-sampling";
 
 // Literal tuple, not a JSON spread: a spread of catalog.json arrays widens
 // ScenarioId to string. Parity with catalog.json is asserted in
@@ -61,6 +62,9 @@ export const SCENARIO_IDS = [
   "shop-interactions",
   "startup-first-use",
   "memory-soak",
+  "inventory-200",
+  "combat-feedback-burst",
+  "large-deck",
   "battle-art-diag",
 ] as const;
 export type ScenarioId = (typeof SCENARIO_IDS)[number];
@@ -119,8 +123,9 @@ async function launchElectronPage(): Promise<Page> {
   const previewPort = previewPortFromEnv("PLAYWRIGHT_PERF_PORT", PERF_PREVIEW_PORT);
   process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT = String(previewPort);
   // Hidden test windows pause focus-gated canvas effects, understating render work.
-  electronApp = await launchElectronApp({ enableGpu: true, background: false });
+  electronApp = await launchElectronApp({ enableGpu: true, background: false, playerAudioHost: true });
   const page = await getElectronMainWindow(electronApp);
+  await expect.poll(() => page.evaluate(() => navigator.webdriver)).toBe(false);
   patchElectronGoto(page);
   await page.waitForFunction((mark) => performance.getEntriesByName(mark, "mark").length > 0, STARTUP_READY_MARK, {
     timeout: 30_000,
@@ -174,6 +179,7 @@ export const test = base.extend<PerfFixtures>({
       await electronApp?.close().catch(() => undefined);
       electronApp = null;
     } else {
+      await expect.poll(() => page.evaluate(() => navigator.webdriver)).toBe(false);
       await use(page);
     }
   },
@@ -237,6 +243,9 @@ export const test = base.extend<PerfFixtures>({
           }
 
           const runtimeBefore = measured ? await collectRuntimeSnapshot(activePage) : undefined;
+          const runtimeSampler = measured
+            ? await startRuntimeSampling(() => collectRuntimeSnapshot(activePage))
+            : undefined;
           if (measured) {
             await startFrameSampler(activePage);
           }
@@ -261,6 +270,12 @@ export const test = base.extend<PerfFixtures>({
             await interact(activePage, phase, recordAction);
           } catch (error) {
             interactionError = error;
+          }
+          let memorySamples: RuntimeSample[] | undefined;
+          try {
+            memorySamples = await runtimeSampler?.stop();
+          } catch (error) {
+            interactionError ??= error;
           }
 
           let sample: FrameSampleRaw = {
@@ -333,6 +348,7 @@ export const test = base.extend<PerfFixtures>({
                 : {}),
               ...(runtimeBefore ? { runtimeBefore } : {}),
               runtimeAfter,
+              ...(memorySamples ? { memorySamples } : {}),
               ...(collectRuntimeSamples ? { runtimeSamples: collectRuntimeSamples() } : {}),
               inputEvents: sample.inputEvents ?? [],
               longAnimationFrames: sample.longAnimationFrames ?? [],
@@ -518,16 +534,27 @@ export async function collectRuntimeSnapshot(page: Page): Promise<RuntimeSnapsho
             retainedSfx: number;
             overdueSfx: number;
             ownedAnimations: number;
+            sfxPlayAttempts: number;
+            completedSfx: number;
           };
         }
       ).__alchemyResourceProbe?.() ?? {}),
     };
   });
+  // CDP reports live V8 usage without performance.memory's bucketed estimates.
+  const session = await page.context().newCDPSession(page);
+  try {
+    const heap = await session.send("Runtime.getHeapUsage");
+    renderer.jsHeapUsedBytes = heap.usedSize;
+  } finally {
+    await session.detach();
+  }
   if (!isElectron || !electronApp) return renderer;
-  const electronWorkingSetKB = await electronApp
-    .evaluate(({ app }) => app.getAppMetrics().reduce((sum, metric) => sum + metric.memory.workingSetSize, 0))
-    .catch(() => undefined);
-  return { ...renderer, ...(electronWorkingSetKB !== undefined ? { electronWorkingSetKB } : {}) };
+  const electronProcesses = await electronApp.evaluate(({ app }) =>
+    app.getAppMetrics().map(({ pid, type, memory }) => ({ pid, type, workingSetKB: memory.workingSetSize })),
+  );
+  const electronWorkingSetKB = electronProcesses.reduce((sum, metric) => sum + metric.workingSetKB, 0);
+  return { ...renderer, electronWorkingSetKB, electronProcesses };
 }
 
 export function getRunsPerScenario(): number {
@@ -542,6 +569,7 @@ export function buildEnvironmentInfo(scenarios: string[]): EnvironmentInfo {
     arch: process.arch,
     node: process.version,
     runtime: isElectron ? "electron" : "chromium",
+    audioHost: "player",
     viewport: { width: PERF_VIEWPORT.width, height: PERF_VIEWPORT.height },
     ...readDisplayEnv(),
     ...git,

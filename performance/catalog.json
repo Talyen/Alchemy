@@ -26,6 +26,7 @@
     "armory-homestead",
     "shop-interactions"
   ],
+  "extremeScenarios": ["inventory-200", "combat-feedback-burst", "large-deck"],
   "diagnosticScenarios": ["memory-soak", "battle-art-diag"],
   "metrics": [
     { "key": "averageFps", "label": "Average FPS", "higherIsBetter": true },

@@ -4,6 +4,8 @@ import type { Page } from "@playwright/test";
 export async function installRuntimeResourceProbe(page: Page) {
   await page.addInitScript(() => {
     const live = new Map<HTMLMediaElement, { started: number; stopped?: number }>();
+    let sfxPlayAttempts = 0;
+    let completedSfx = 0;
     const originalRemove = HTMLMediaElement.prototype.removeAttribute;
     HTMLMediaElement.prototype.removeAttribute = function (name) {
       originalRemove.call(this, name);
@@ -12,6 +14,14 @@ export async function installRuntimeResourceProbe(page: Page) {
     const originalPlay = HTMLMediaElement.prototype.play;
     HTMLMediaElement.prototype.play = function () {
       if (!this.loop && this.src.includes("/sounds/")) {
+        sfxPlayAttempts++;
+        this.addEventListener(
+          "ended",
+          () => {
+            completedSfx++;
+          },
+          { once: true },
+        );
         live.set(this, { started: performance.now() });
         for (const event of ["ended", "error", "pause"])
           this.addEventListener(
@@ -36,9 +46,13 @@ export async function installRuntimeResourceProbe(page: Page) {
           retainedSfx: number;
           overdueSfx: number;
           ownedAnimations: number;
+          sfxPlayAttempts: number;
+          completedSfx: number;
         };
       }
     ).__alchemyResourceProbe = () => ({
+      sfxPlayAttempts,
+      completedSfx,
       activeSfx: [...live.keys()].filter((element) => !element.paused && !element.ended).length,
       retainedSfx: live.size,
       overdueSfx: [...live].filter(

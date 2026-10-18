@@ -81,7 +81,12 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
                 viewport: { ...PERF_VIEWPORT },
                 deviceScaleFactor: 1,
                 launchOptions: {
-                  args: ["--mute-audio", "--disable-background-timer-throttling", "--disable-renderer-backgrounding"],
+                  args: [
+                    "--mute-audio",
+                    "--disable-blink-features=AutomationControlled",
+                    "--disable-background-timer-throttling",
+                    "--disable-renderer-backgrounding",
+                  ],
                 },
               },
             },

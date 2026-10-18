@@ -153,22 +153,70 @@ Classification bands only — never CI gates. Compare only on the same machine, 
 
 The fixed suite covers Campaign, Labyrinth, Wildwood, rewards, shops, Campfire brewing, transmutation, Armory crafting and salvage, account screens, a battle with an equipped trinket and owned Unique in Armory, resume, and startup. Nightly discovery derives three seeds from the workflow run number: one per game mode, with each mode rotating through all eight heroes over eight workflow runs. Higher seed bits vary difficulty, reward policy, and the playthrough world. Each job retains its seed and replay artifacts; generated cases that cannot complete fail visibly rather than falling back to an easy fixture. `--seed` accepts any unsigned 32-bit seed locally. The older `battle-effects`, `battle-end-turn`, talents, collection, options, Labyrinth, Armory, and shop loops remain in the synthetic suite for isolated stress diagnosis. `startup-first-use` measures cold-start observations, not frame targets. `battle-art-diag` remains opt-in. Nightly also profiles one of the three fixed transaction journeys in each mode slot, covering Campfire brewing, transmutation, and crafting/salvage on every workflow run. Nightly runs one five-minute `memory-soak` in the existing discovery job, with at least 20 completed gameplay cycles; the manual soak defaults to thirty minutes.
 
+### Extreme player workloads and RAM
+
+`npm run perf -- --suite extreme --all --electron` profiles constructed stress
+fixtures separately from earned journey checkpoints. Reuse a current build with
+`--skip-build`. Nightly runs one extreme in each existing discovery slot:
+
+- `inventory-200`: 200 owned Basic/Astral drops with legal affix counts, affinities
+  and roll values; 20 cycles of typing a search, filtering, sorting, paging,
+  equipping and returning through the menu. The acknowledged native/browser save
+  must contain all 200 items. Armory renders a page, not 200 simultaneous tiles.
+- `large-deck`: a 60-card deck representing a long run, with authored effects and
+  art; 20 inspections traverse several pages, hover cards, close and reopen the
+  dialog. The UI must report 60 cards. Pagination bounds simultaneous rendering.
+- `combat-feedback-burst`: a full seven-card hand plus Burn, Poison and Bleed on
+  both actors. Normal card and end-turn controls resolve authored cards and status
+  ticks. A renderer observer must capture at least six concurrent numeric texts
+  and two bursts; an idle battle cannot satisfy the workload.
+
+Every measured scenario records RAM about once per second plus endpoints.
+V8's CDP heap reading supplies live renderer JS usage without the bucketed
+`performance.memory` estimate. Electron's process metrics supply working sets for
+the browser process, renderers, GPU and utilities, retaining process IDs in raw
+JSON. Reports show first, sampled peak, last and change for the heap, combined
+working set and each process type. Browser runs have no Electron RAM measurement;
+unavailable metrics are never reported as zero.
+
+Inventory/deck loops and the gameplay soak also retain snapshots at the same
+settled screen after each cycle. Use these to distinguish rising retention from
+temporary allocation and normal garbage collection. There are no reloads between
+measured cycles and no forced GC, playback suppression or animation shortcuts.
+Periodic samples and settled samples are reported separately; sampling stops and
+drains before teardown. Performance launches disable the automation host flag so
+the app creates normal music, ambience and SFX resources. Chromium mutes speaker
+output; playback and completion events still run. The soak requires completed
+SFX to increase during measurement, preventing silent-host runs from passing as
+audio cleanup evidence. Functional E2E retains its silent-host policy.
+Reports record this audio mode and reject comparisons against earlier reports
+that did not declare normal playback.
+These journeys protect real renderer allocation and
+cleanup behavior, which unit/DOM tests cannot measure.
+
+Combined working sets include shared pages, so they are not unique physical RAM.
+One-second sampling can miss short peaks. New art and gameplay can populate
+legitimate caches; growth alone does not prove a leak, and there is no arbitrary
+universal RAM limit. Investigate persistent growth after repeated identical
+cycles, retained action resources, or a large process-specific peak. Long sessions
+and target-device RAM budgets still need separate acceptance.
+
 ### Coverage gaps
 
 The registry describes measured journeys, not all game features. Preparing a save through the playthrough engine happens outside renderer measurement and does not cover the screens visited during generation.
 
-| Area                | Current measured coverage                                                                                               | Missing performance workload                                                                                                                                                         |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Combat              | Fixed battles plus seeded reachable encounters, card and Wish choices, enemy turns                                      | Guaranteed coverage of every effect, status interaction, companion, trinket, Unique proc, and boss mechanic; actual triggered-mechanic telemetry and dedicated automatic-turn pacing |
-| Run destinations    | Reward claim, destination selection, card purchase, transmutation, Labyrinth inspection, Wildwood draft                 | Alchemist Shop purchase/mixing/distilling, Mystery choices/deck pickers, Corruption, trinket/gear shop interactions, and Wildwood removal workloads                                  |
-| Campfire            | Reachable brewing selection, saved result and departure; conditional Rest in the memory soak                            | Dedicated rest/healing and guaranteed mixed-Potion selection workloads                                                                                                               |
-| Account progression | Armory equipment/inspection, currency targeting, crafting and salvage; Homestead and Talent navigation, Collection tabs | Every currency transformation, large inventory filtering/paging, Homestead purchases and bonds, Talent purchases, and large complete Collection inspection workloads                 |
-| Run lifecycle       | Startup and checkpoint resume; incidental end states in the soak                                                        | Measured mode/hero/difficulty selection, victory/defeat rewards, hero unlock, and demo completion journeys                                                                           |
-| Runtime             | Frame gaps, main-thread blocking, input timing, resource snapshots and gameplay soak                                    | Performance-specific renderer error assertions, hardware GPU present timing, physical audio quality, suspend/resume, Proton, and Steam Deck acceptance                               |
+| Area                | Current measured coverage                                                                                                                          | Missing performance workload                                                                                                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Combat              | Fixed battles plus seeded reachable encounters, card and Wish choices, enemy turns                                                                 | Guaranteed coverage of every effect, status interaction, companion, trinket, Unique proc, and boss mechanic; actual triggered-mechanic telemetry and dedicated automatic-turn pacing |
+| Run destinations    | Reward claim, destination selection, card purchase, transmutation, Labyrinth inspection, Wildwood draft                                            | Alchemist Shop purchase/mixing/distilling, Mystery choices/deck pickers, Corruption, trinket/gear shop interactions, and Wildwood removal workloads                                  |
+| Campfire            | Reachable brewing selection, saved result and departure; conditional Rest in the memory soak                                                       | Dedicated rest/healing and guaranteed mixed-Potion selection workloads                                                                                                               |
+| Account progression | Armory equipment/inspection, 200-item filtering/paging, currency targeting, crafting and salvage; Homestead and Talent navigation, Collection tabs | Every currency transformation, Homestead purchases and bonds, Talent purchases, and large complete Collection inspection workloads                                                   |
+| Run lifecycle       | Startup and checkpoint resume; incidental end states in the soak                                                                                   | Measured mode/hero/difficulty selection, victory/defeat rewards, hero unlock, and demo completion journeys                                                                           |
+| Runtime             | Frame gaps, main-thread blocking, input timing, resource snapshots and gameplay soak                                                               | Performance-specific renderer error assertions, hardware GPU present timing, physical audio quality, suspend/resume, Proton, and Steam Deck acceptance                               |
 
 The `campfire-brewing` and `transmutation-journey` cases capture reachable visits before selection. Their required segments measure selection, the saved result, and departure. `crafting-journey` captures an earned legal currency application between careers from the labeled `economy-v1` starting account. It records the exact currency and item identity, targets that item through normal Armory controls, requires currency consumption and a visible result, then salvages the item through its confirmation. These are short transactional journeys, not sustained stress loops; each runs once after warm-up. Replay bundles preserve the checkpoint and completed action path.
 
-Prioritize Alchemist Shop services, progression purchases, and large-inventory browsing next. Use reachable checkpoints and required completed-action/frame segments, as for existing journeys. Keep fixed replay cases for comparing optimizations; use discovery to find new cases, not as evidence that every mechanic is covered.
+Prioritize Alchemist Shop services, progression purchases, and complete Collection inspection next. Use reachable checkpoints and required completed-action/frame segments, as for existing journeys. Keep fixed replay cases for comparing optimizations; use discovery to find new cases, not as evidence that every mechanic is covered.
 
 Use `npm run perf -- --help` and `performance/catalog.json` for current scenario
 durations and minimum samples rather than maintaining a second defaults table.
@@ -266,8 +314,8 @@ are conditional on current ownership and combat reservations.
 the default measurement is thirty minutes. Setup warms meta routes and an initial
 gameplay cycle. Samples record cycle/time, renderer heap when available, Electron
 working set, DOM nodes, canvases, detached active and retained SFX, overdue SFX, and owned action
-animation elements. The probe observes actual media lifecycle without muting,
-shortening, or replacing playback. DOM audio-element count is separate from SFX
+animation elements. The probe observes actual media lifecycle without shortening
+or replacing playback; speaker output is muted by the launcher. DOM audio-element count is separate from SFX
 ownership and cannot establish that detached cues were released.
 
 Stalled controls, overdue finite-duration cues, and unreleased

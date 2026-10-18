@@ -203,6 +203,7 @@ test.describe("memory-soak", () => {
           await recordAction(`cycle:${cycles}`);
         }
         expect(cycles).toBeGreaterThanOrEqual(MIN_CYCLES);
+        expect(samples.at(-1)!.runtime.completedSfx ?? 0).toBeGreaterThan(samples[0]!.runtime.completedSfx ?? 0);
       },
     });
   });

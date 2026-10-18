@@ -58,6 +58,7 @@ it("requires usable baseline metadata even when both reports omit the same field
 it("rejects architecture, run-count, and partially missing display evidence", () => {
   for (const patch of [
     { runtime: "electron" as const },
+    { audioHost: "player" as const },
     { traceMode: true },
     { coldMode: true },
     { platform: "linux" },
