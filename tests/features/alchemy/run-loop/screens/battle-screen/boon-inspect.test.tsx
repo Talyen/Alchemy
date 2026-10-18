@@ -7,18 +7,12 @@ import { BattleBoonInspectOverlay } from "@/features/alchemy/run-loop/screens/ba
 import { uniqueRunBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
 import { installReadyArtworkForTests } from "../../../../../helpers/artwork-test";
 import { TRINKET_PAGE_SIZE } from "@/lib/game-constants";
-import { trinketLibrary, type TrinketEntry } from "@/lib/game-data";
-
-const library: TrinketEntry[] = [
-  { id: "alpha", title: "Alpha Charm", descriptionLines: ["Gain 1 Block."], art: "alpha-art", effects: {} },
-  { id: "beta", title: "Beta Stone", descriptionLines: ["Draw 1."], art: "beta-art", effects: {} },
-];
+import { trinketLibrary } from "@/lib/game-data";
 
 it("uniqueRunBoons keeps first-seen ids and skips duplicates and unknown entries", () => {
-  expect(uniqueRunBoons(["beta", "missing", "alpha", "beta", "alpha"], library).map((entry) => entry.id)).toEqual([
-    "beta",
-    "alpha",
-  ]);
+  expect(
+    uniqueRunBoons(["brass-censer", "missing", "meteorite", "brass-censer", "meteorite"]).map((entry) => entry.id),
+  ).toEqual(["brass-censer", "meteorite"]);
 });
 
 describe("BattleBoonInspectOverlay", () => {

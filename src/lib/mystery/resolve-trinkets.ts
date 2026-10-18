@@ -18,11 +18,7 @@ function resolveMysteryTrinketEffect(effect: MysteryEffect, owned: Set<string>, 
   return effect;
 }
 
-export function resolveMysteryEventTrinkets(
-  event: MysteryEvent,
-  ownedTrinketIds: readonly string[],
-  _rng?: () => number,
-): MysteryEvent {
+export function resolveMysteryEventTrinkets(event: MysteryEvent, ownedTrinketIds: readonly string[]): MysteryEvent {
   return {
     ...event,
     // Each choice resolves independently from the pre-event collection: the
@@ -48,18 +44,16 @@ export function isMysteryLootEligible(
 ): boolean {
   if (isLootEligible("astral", progress.depth)) return true;
   const owned = new Set(ownedTrinketIds);
-  const availableTrinkets = trinketLibrary.reduce((count, entry) => count + Number(!owned.has(entry.id)), 0);
+  const available = trinketLibrary.filter((entry) => !owned.has(entry.id)).length;
   return event.choices.every((choice) => {
-    const reserved = new Set(owned);
-    let remaining = availableTrinkets;
+    const seen = new Set<string>();
+    let needed = 0;
     for (const effect of choice.effects) {
-      if (effect.kind === "gainGeneratedGear" && effect.astral) return false;
-      if (effect.kind === "gainTrinket") {
-        if (reserved.has(effect.trinketId)) return false;
-        reserved.add(effect.trinketId);
-        remaining--;
-      }
+      if (effect.kind !== "gainTrinket") continue;
+      if (owned.has(effect.trinketId) || seen.has(effect.trinketId)) return false;
+      seen.add(effect.trinketId);
+      needed += 1;
     }
-    return remaining >= 0;
+    return needed <= available;
   });
 }

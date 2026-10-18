@@ -1,6 +1,6 @@
 import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
 import { applyRewardFindBonus } from "@/lib/homestead/material-rewards";
-import { computeTrinketManifest } from "@/lib/trinkets";
+import { getTrinketEffectValue } from "@/lib/trinkets";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
@@ -70,7 +70,7 @@ export function computeVictoryGold({
   const inCombatGold = Math.max(0, battleState.gold - purseGold);
   const rewardGold = gold + eliteBonus + bossBonus + generousBonus;
   const earnedBeforeMultiplier =
-    inCombatGold + rewardGold + talentGoldPerCombat + computeTrinketManifest(runBoons).smugglersMapGoldBonus;
+    inCombatGold + rewardGold + talentGoldPerCombat + getTrinketEffectValue(runBoons, "smugglersMapGoldBonus");
   const eligiblePayout = Math.round(rewardGold * goldMultiplier);
   const findBonus = applyRewardFindBonus(eligiblePayout, goldFindBonus) - eligiblePayout;
   return {

@@ -15,7 +15,7 @@ import {
 import { type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import { isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
 import { gearDefinitions, type GearInstance } from "@/lib/gear";
-import { computeTrinketManifest } from "@/lib/trinkets";
+import { getTrinketEffectValue } from "@/lib/trinkets";
 import type { ShopActivity } from "./shop-action-types";
 
 export interface ShopBuyPriceContext {
@@ -71,7 +71,7 @@ export function getShopBuyPrice(...args: ShopBuyPriceArguments): number {
   );
   return context.firstPurchaseUsed
     ? price
-    : Math.max(0, price - computeTrinketManifest(context.runBoons).merchantsFavorDiscount);
+    : Math.max(0, price - getTrinketEffectValue(context.runBoons, "merchantsFavorDiscount"));
 }
 
 const SHOP_REFRESH_POLICY: Record<ShopActivity, { basePrice: number; freeTrait: EncounterRewardTraitId | null }> = {

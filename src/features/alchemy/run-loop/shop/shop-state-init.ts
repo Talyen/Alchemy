@@ -65,15 +65,13 @@ function sampleTrinketShopOfferings(
   const available = trinketLibrary.filter((entry) => !owned.has(entry.id));
   const novel = sampleItemsExcluding(available, TRINKET_SHOP_OFFERED, rng, new Set(currentIds), (entry) => entry.id);
   if (novel.length >= TRINKET_SHOP_OFFERED) return novel;
-
-  const fallback = sampleItemsExcluding(
-    available,
-    TRINKET_SHOP_OFFERED - novel.length,
-    rng,
-    new Set(novel.map((entry) => entry.id)),
-    (entry) => entry.id,
-  );
-  return [...novel, ...fallback];
+  // Too few unseen offerings: top up from the same pool, keeping only the
+  // already-sampled novel picks excluded (current shelf items may return).
+  const novelIds = new Set(novel.map((entry) => entry.id));
+  return [
+    ...novel,
+    ...sampleItemsExcluding(available, TRINKET_SHOP_OFFERED - novel.length, rng, novelIds, (entry) => entry.id),
+  ];
 }
 
 export function resampleTrinketShopOfferings(

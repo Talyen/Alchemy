@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { trinketLibrary } from "@/lib/game-data";
 import { gearBaseItemList } from "@/lib/gear/base-items";
 import { findMysteryEvent, isMysteryLootEligible } from "@/lib/mystery";
@@ -30,7 +30,7 @@ describe("resolveMysteryEventTrinkets", () => {
   it("keeps the authored trinket when it is not owned", () => {
     const event = findMysteryEvent("enchanted-spring");
     expect(event).not.toBeNull();
-    const resolved = resolveMysteryEventTrinkets(event!, [], () => 0.1);
+    const resolved = resolveMysteryEventTrinkets(event!, []);
     const charm = resolved.choices.find((choice) => choice.label === "Take the Charm");
     expect(charm?.effects).toContainEqual({ kind: "gainTrinket", trinketId: "icy-heart" });
   });
@@ -38,7 +38,7 @@ describe("resolveMysteryEventTrinkets", () => {
   it("falls back to astral gear when the named trinket is already owned", () => {
     const event = findMysteryEvent("enchanted-spring");
     expect(event).not.toBeNull();
-    const resolved = resolveMysteryEventTrinkets(event!, ["icy-heart"], () => 0);
+    const resolved = resolveMysteryEventTrinkets(event!, ["icy-heart"]);
     const charm = resolved.choices.find((choice) => choice.label === "Take the Charm");
     const reward = charm?.effects.find(
       (effect) => effect.kind === "gainTrinket" || effect.kind === "gainGeneratedGear",
@@ -56,7 +56,7 @@ describe("resolveMysteryEventTrinkets", () => {
   it("resolves each choice from the same pre-event collection", () => {
     const event = findMysteryEvent("fairy-ring");
     expect(event).not.toBeNull();
-    const resolved = resolveMysteryEventTrinkets(event!, ["lucky-clover", "parasitic-bloom"], () => 0);
+    const resolved = resolveMysteryEventTrinkets(event!, ["lucky-clover", "parasitic-bloom"]);
     // Both named trinkets are owned, so each choice independently falls back
     // to astral gear instead of stealing random trinkets from the other.
     expect(trinketIdsOn(resolved)).toHaveLength(0);
@@ -67,21 +67,19 @@ describe("resolveMysteryEventTrinkets", () => {
 
   it("falls back to an astral gear drop instead of a duplicate when every trinket is owned", () => {
     const allOwned = trinketLibrary.map((entry) => entry.id);
-    const rng = vi.fn(() => 0);
-    const resolved = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, rng);
+    const resolved = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned);
     for (const effect of resolved.choices[0]!.effects) {
       expect(effect).toMatchObject({ kind: "gainGeneratedGear", astral: true });
       if (effect.kind !== "gainGeneratedGear") return;
       expect(gearBaseItemList.some((item) => item.id === effect.baseItemId)).toBe(true);
     }
     expect(trinketIdsOn(resolved)).toHaveLength(0);
-    expect(rng).not.toHaveBeenCalled();
   });
 
   it("derives the same fallback gear from the same slot across resolution passes", () => {
     const allOwned = trinketLibrary.map((entry) => entry.id);
-    const first = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, () => 0.5);
-    const second = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, () => 0.9);
+    const first = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned);
+    const second = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned);
     expect(second.choices).toEqual(first.choices);
   });
 });
@@ -94,7 +92,7 @@ it("offers the same named trinket in every choice that names it", () => {
       { label: "B", effects: [{ kind: "gainTrinket" as const, trinketId: "bone-charm" }] },
     ],
   };
-  const resolved = resolveMysteryEventTrinkets(event, [], () => 0);
+  const resolved = resolveMysteryEventTrinkets(event, []);
   expect(trinketIdsOn(resolved)).toEqual(["bone-charm", "bone-charm"]);
 });
 
@@ -115,7 +113,7 @@ it("rejects repeated named Boons within a choice before Astral Gear unlocks", ()
 
   expect(isMysteryLootEligible(event, early, [])).toBe(false);
   expect(isMysteryLootEligible(event, { ...early, depth: 4 }, [])).toBe(true);
-  expect(resolveMysteryEventTrinkets(event, [], () => 0).choices[0]?.effects[1]).toMatchObject({
+  expect(resolveMysteryEventTrinkets(event, []).choices[0]?.effects[1]).toMatchObject({
     kind: "gainGeneratedGear",
     astral: true,
   });

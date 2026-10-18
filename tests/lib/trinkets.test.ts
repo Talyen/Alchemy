@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { combineTrinketEffectIds, computeTrinketManifest, defaultTrinketEffects } from "@/lib/trinkets";
+import {
+  combineTrinketEffectIds,
+  computeTrinketManifest,
+  defaultTrinketEffects,
+  getTrinketEffectValue,
+} from "@/lib/trinkets";
 
 describe("Trinket manifests", () => {
   it("combines a boolean Boon and a numeric Boon without sharing mutable defaults", () => {
@@ -33,5 +38,13 @@ describe("Trinket manifests", () => {
     expect(computeTrinketManifest([ids[0]!, ids[0]!])).toEqual(boon);
     expect(combineTrinketEffectIds(ids, "meteorite")).toEqual(["brass-censer", "meteorite"]);
     expect(ids).toEqual(["brass-censer"]);
+  });
+
+  it("reads a single field without building the manifest", () => {
+    const ids = ["missing", "brass-censer", "constructor"];
+    expect(getTrinketEffectValue(ids, "brassCenserProcChance")).toBe(computeTrinketManifest(ids).brassCenserProcChance);
+    expect(getTrinketEffectValue(ids, "brassCenserProcChance")).toBe(20);
+    expect(getTrinketEffectValue([], "merchantsFavorDiscount")).toBe(0);
+    expect(getTrinketEffectValue(["merchants-favor"], "merchantsFavorDiscount")).toBe(7);
   });
 });
