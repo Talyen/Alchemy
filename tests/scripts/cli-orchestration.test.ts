@@ -42,6 +42,13 @@ function probe(script: string, args: string[], cwd: string, interception: string
 }
 
 describe("CLI launch paths", () => {
+  it("keeps discovery seeds fresh by default and preserves explicit uint32 replay seeds", () => {
+    expect(parsePerformanceArgs([]).seed).toBeNull();
+    expect(parsePerformanceArgs(["--suite", "seeded", "--seed", "0"]).seed).toBe(0);
+    expect(parsePerformanceArgs(["--seed", "4294967295"]).seed).toBe(0xffffffff);
+    expect(() => parsePerformanceArgs(["--seed", "4294967296"])).toThrow(/uint32/);
+  });
+
   it("verifies desktop artifacts from the checkout when called from another directory", () => {
     const result = probe(
       "verify-desktop-package.mjs",

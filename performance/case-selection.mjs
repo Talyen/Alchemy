@@ -14,6 +14,25 @@ const HEROES = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "
 const MODES = ["campaign", "labyrinth", "wildwood"];
 const POLICIES = ["archetype", "random", "minimalist"];
 
+// Separate decision labels keep checkpoint and UI choices independent of one another.
+export function chooseDiscoveryIndex(seed, label, count) {
+  if (!Number.isSafeInteger(count) || count < 1) throw new Error("Discovery choice requires candidates");
+  let hash = seed >>> 0;
+  for (const character of label) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619) >>> 0;
+  hash = Math.imul(hash ^ (hash >>> 16), 0x7feb352d);
+  hash = Math.imul(hash ^ (hash >>> 15), 0x846ca68b);
+  return ((hash ^ (hash >>> 16)) >>> 0) % count;
+}
+
+export function selectDiscoverySeed(cycle, slot) {
+  if (!Number.isSafeInteger(cycle) || cycle < 0 || !Number.isInteger(slot) || slot < 0 || slot >= MODES.length)
+    throw new Error("Discovery requires a nonnegative cycle and a mode slot from 0 to 2");
+  const combinations = HEROES.length * MODES.length;
+  const high = chooseDiscoveryIndex(cycle, `nightly:${cycle}:${slot}`, Math.floor(0x100000000 / combinations));
+  // Preserve one mode per slot and rotate through every hero in eight cycles.
+  return high * combinations + slot * HEROES.length + (((cycle % HEROES.length) + slot * 3) % HEROES.length);
+}
+
 export function selectCase(scenario, seed = 42) {
   if (!Number.isSafeInteger(seed) || seed < 0 || seed > 0xffffffff) throw new Error("Seed must be a uint32");
   if (scenario === "seeded-discovery") {
@@ -24,8 +43,9 @@ export function selectCase(scenario, seed = 42) {
       mode: MODES[Math.floor(seed / HEROES.length) % MODES.length],
       difficulty: `difficulty-${1 + (Math.floor(seed / (HEROES.length * MODES.length)) % 3)}`,
       policy: POLICIES[Math.floor(seed / (HEROES.length * MODES.length * 3)) % POLICIES.length],
-      checkpoint: "developed-battle",
+      checkpoint: "random-battle",
       exploratory: true,
+      discoveryVersion: 1,
     };
   }
   const fixed = {
@@ -49,6 +69,16 @@ export function chooseCheckpointStep(caseSpec, result) {
     result.telemetry?.battleSnapshots?.filter((snapshot) => snapshot.stage === "start" && snapshot.step > 0) ?? [];
   const action = (kind) => result.journal.find((entry) => entry.action.kind === kind && entry.step > 0);
   switch (caseSpec.checkpoint) {
+    case "random-battle": {
+      if (!battles.length) return undefined;
+      // Balance boss/non-boss discovery before sampling within the chosen group,
+      // so numerous early encounters do not drown out reachable bosses.
+      const groups = [battles.filter((battle) => !battle.boss), battles.filter((battle) => battle.boss)].filter(
+        (group) => group.length > 0,
+      );
+      const group = groups[chooseDiscoveryIndex(caseSpec.seed, "encounter-kind", groups.length)];
+      return group[chooseDiscoveryIndex(caseSpec.seed, "checkpoint", group.length)].step;
+    }
     case "first-battle":
       return battles[0]?.step;
     case "map":

@@ -7,14 +7,17 @@ export interface CaseSelection {
   policy: string;
   checkpoint: string;
   exploratory: boolean;
+  discoveryVersion?: 1;
 }
 
 export const REALISTIC_SCENARIOS: string[];
+export function chooseDiscoveryIndex(seed: number, label: string, count: number): number;
+export function selectDiscoverySeed(cycle: number, slot: number): number;
 export function selectCase(scenario: string, seed?: number): CaseSelection;
 export function chooseCheckpointStep(
   caseSpec: CaseSelection,
   result: {
-    telemetry?: { battleSnapshots?: Array<{ stage: string; step: number; run: number; room: number }> };
+    telemetry?: { battleSnapshots?: Array<{ stage: string; step: number; run: number; room: number; boss?: boolean }> };
     journal: Array<{ step: number; action: { kind: string } }>;
   },
 ): number | undefined;

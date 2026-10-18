@@ -1,6 +1,6 @@
 # Performance profiling
 
-FPS / hitch profiling for Alchemy. Fixed realistic journeys are for same-machine comparisons; a bounded seeded journey also runs nightly for discovery. Performance targets are advisory and are not push gates.
+FPS / hitch profiling for Alchemy. Seeded reachable battles provide discovery by default; fixed realistic journeys remain for same-machine comparisons. Nightly discovery spans all three modes. Performance targets are advisory and are not push gates.
 
 For harness failures, the [failure-first triage guide](./REFERENCE.md#failure-first-triage) helps locate evidence; open a known relevant trace or per-run artifact directly when useful.
 
@@ -14,6 +14,7 @@ Use this when you are actively optimizing frame pacing and need repeatable numbe
 npm run perf
 npm run perf -- --all
 npm run perf -- --suite synthetic --all
+npm run perf -- --suite seeded --electron
 npm run perf -- --suite seeded --seed 9 --electron
 npm run perf -- --replay reports/performance/<run>/replay/seeded-discovery.json --electron
 npm run perf:trace -- --scenario battle-effects
@@ -51,11 +52,15 @@ Short smoke / harness iteration (not for baselines):
 PERF_MEASURE_MS=8000 PERF_MIN_FRAMES=50 npm run perf -- --scenario battle-end-turn --skip-build
 ```
 
-The default is the fixed, realistic Campaign opening battle. `--all` runs the fixed realistic suite; `--suite synthetic --all` runs the earlier isolated stress loops. `--suite seeded --seed <uint32>` generates one reachable case from the balance playthrough engine. Every generated case includes a current-format save checkpoint and a coverage inventory. The generator uses a labeled unlocked account when the selected hero or mode requires it. The developed Campaign and account journeys use a second career, after earning talents and other progression.
+The default is one seeded reachable battle with a fresh recorded seed. Use `--scenario campaign-early` for the fixed Campaign opening battle. `--all` runs the fixed realistic suite; `--suite synthetic --all` runs the earlier isolated stress loops. `--suite seeded` generates one reachable case from the balance playthrough engine with a fresh random uint32 seed. The seed is printed before generation and retained in the case and replay bundle; pass `--seed <uint32>` to reproduce it. Every generated case includes a current-format save checkpoint, encounter provenance, and an inventory of available cards and declared card effect kinds. The generator uses a labeled unlocked account when the selected hero, mode, or difficulty requires it. The developed Campaign and account journeys use a second career, after earning talents and other progression.
 
 The trinket journey starts from the labeled `trinket-v1` account fixture, which grants equipped Companion's Collar and owned Oathkeeper alongside the economy fixture's resources. Its battle checkpoint is reached through normal play; these starting items are fixture grants, not earned loot. The coverage inventory records the starting fixture name.
 
 The realistic journeys run normal animations and production cards with authored costs and effects. Each measured run records actions, named segments, and a replay bundle under `replay/`. `--replay <bundle>` loads the same checkpoint and requires the same action sequence; divergence invalidates the run. The setup wall time is reported separately. Screen transitions, draft, combat, reward claims, shop purchases, account navigation, and resume have their own frame segments. Segment rows require completed actions and frames, so a skipped or stalled journey fails rather than reporting an easy FPS value.
+
+Discovery samples reachable battle starts across both careers, balancing boss and ordinary encounter groups when both were reached. It does not fabricate decks, enemy stats, or progression. New discovery cases try up to six turns and eight legal card plays per turn, selecting reproducibly among cards and Wish choices and preferring choices not yet played in that measurement. Fixed journeys keep their existing control policy and turn limits. Older replay bundles retain their original three-turn limit.
+
+The summary separates **checkpoint inventory** from **measured actions** (played card labels, Wish choice labels, card plays, and end-turn actions). A card click counts only after its hand identity leaves the hand. Inventory is not evidence that a mechanic triggered: conditional effects, gear procs, status combinations, and enemy abilities still need direct evidence before claiming coverage. A random burst may legally win before an enemy turn; discovery accepts that outcome, while fixed battle journeys require the enemy-turn segment.
 
 Case IDs, defaults, and diagnostics are maintained by the CLI and `performance/catalog.json`; use `npm run perf -- --help` for the current list. Fixed case comparisons require the same checkpoint hash, action path, segment names and action counts, in addition to the environment checks below. Seeded sweeps are exploratory; replay an interesting case for a controlled before/after comparison.
 
@@ -139,7 +144,22 @@ Classification bands only — never CI gates. Compare only on the same machine, 
 | ≥100 ms stalls    |         0 |
 | ≥50 ms long tasks | ≤1 / 30 s |
 
-The fixed suite covers Campaign, Labyrinth, Wildwood, rewards, shops, account screens, a battle with an equipped trinket and owned Unique in Armory, resume, and startup. Nightly discovery alternates two validated three-seed cohorts, each spanning all three game modes; `--seed` accepts other unsigned 32-bit seeds locally. The older `battle-effects`, `battle-end-turn`, talents, collection, options, Labyrinth, Armory, and shop loops remain in the synthetic suite for isolated stress diagnosis. `startup-first-use` measures cold-start observations, not frame targets. `battle-art-diag` remains opt-in. Nightly runs one five-minute `memory-soak` in the existing discovery job, with at least 20 completed gameplay cycles; the manual soak defaults to thirty minutes.
+The fixed suite covers Campaign, Labyrinth, Wildwood, rewards, shops, account screens, a battle with an equipped trinket and owned Unique in Armory, resume, and startup. Nightly discovery derives three seeds from the workflow run number: one per game mode, with each mode rotating through all eight heroes over eight workflow runs. Higher seed bits vary difficulty, reward policy, and the playthrough world. Each job retains its seed and replay artifacts; generated cases that cannot complete fail visibly rather than falling back to an easy fixture. `--seed` accepts any unsigned 32-bit seed locally. The older `battle-effects`, `battle-end-turn`, talents, collection, options, Labyrinth, Armory, and shop loops remain in the synthetic suite for isolated stress diagnosis. `startup-first-use` measures cold-start observations, not frame targets. `battle-art-diag` remains opt-in. Nightly runs one five-minute `memory-soak` in the existing discovery job, with at least 20 completed gameplay cycles; the manual soak defaults to thirty minutes.
+
+### Coverage gaps
+
+The registry describes measured journeys, not all game features. Preparing a save through the playthrough engine happens outside renderer measurement and does not cover the screens visited during generation.
+
+| Area                | Current measured coverage                                                                | Missing performance workload                                                                                                                               |
+| ------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Combat              | Fixed battles plus seeded reachable encounters, card and Wish choices, enemy turns       | Guaranteed coverage of every effect, status interaction, companion, trinket, Unique proc, and boss mechanic; actual triggered-mechanic telemetry           |
+| Run destinations    | Reward claim, destination selection, card purchase, Labyrinth inspection, Wildwood draft | Dedicated brewing, Alchemist Shop, transmutation, Mystery choices/deck pickers, Corruption, trinket/gear shop interactions, and Wildwood removal workloads |
+| Campfire            | Conditional Rest in the memory soak                                                      | Dedicated rest, healing, brewing, and transition frame segments                                                                                            |
+| Account progression | Armory equipment/inspection, Homestead and Talent navigation, Collection tabs            | Crafting, salvage/currency targeting, Homestead purchases and bonds, Talent purchases, and large complete Collection inspection workloads                  |
+| Run lifecycle       | Startup and checkpoint resume; incidental end states in the soak                         | Measured mode/hero/difficulty selection, victory/defeat rewards, hero unlock, and demo completion journeys                                                 |
+| Runtime             | Frame gaps, main-thread blocking, input timing, resource snapshots and gameplay soak     | Hardware GPU present timing, physical audio quality, suspend/resume, Proton, and Steam Deck acceptance                                                     |
+
+Prioritize dedicated brewing/transmutation and Armory crafting workloads next: each combines choice grids, previews, state changes, persistence, and animation that battle randomization cannot exercise. Use reachable checkpoints and required completed-action/frame segments, as for existing journeys. Keep fixed replay cases for comparing optimizations; use discovery to find new cases, not as evidence that every mechanic is covered.
 
 Use `npm run perf -- --help` and `performance/catalog.json` for current scenario
 durations and minimum samples rather than maintaining a second defaults table.

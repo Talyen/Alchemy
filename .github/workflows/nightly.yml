@@ -148,15 +148,7 @@ jobs:
       - name: Select rotating seed
         id: seed
         run: |
-          cohort=$(( 10#$(date -u +%V) % 2 ))
-          case "$cohort:${{ matrix.slot }}" in
-            0:0) seed=0 ;;
-            0:1) seed=9 ;;
-            0:2) seed=42 ;;
-            1:0) seed=25 ;;
-            1:1) seed=34 ;;
-            1:2) seed=16 ;;
-          esac
+          seed=$(node --input-type=module -e "import { selectDiscoverySeed } from './performance/case-selection.mjs'; console.log(selectDiscoverySeed(${{ github.run_number }}, ${{ matrix.slot }}));")
           echo "value=$seed" >> "$GITHUB_OUTPUT"
 
       - name: Run seeded journey

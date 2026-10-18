@@ -11,6 +11,7 @@ import { RewardPage } from "../../tests/pages/reward-page";
 import { ShopPage } from "../../tests/pages/shop-page";
 import { injectExactSave } from "../../tests/e2e/save-injection";
 import { waitForBattleReady } from "../battle-setup";
+import { createCombatChoices } from "../combat-choices";
 import { delay } from "../delay";
 import { expect, test, type ScenarioId } from "../fixtures";
 import { assertJourneyCase, type JourneyCase, type SegmentRequirement } from "../journey-types";
@@ -44,12 +45,19 @@ async function record(name: string, action: () => Promise<unknown>, recordAction
   await recordAction(name);
 }
 
-async function resolveWishChoices(page: Page, recordAction: RecordAction): Promise<void> {
+async function resolveWishChoices(
+  page: Page,
+  recordAction: RecordAction,
+  choices: ReturnType<typeof createCombatChoices>,
+): Promise<void> {
   const panel = page.locator(".wish-overlay-panel");
   for (let index = 0; index < 8 && (await panel.isVisible().catch(() => false)); index++) {
-    const choice = panel.getByRole("button", { name: /^Choose / }).first();
-    const label = await choice.getAttribute("aria-label");
-    await record(`wish:${label ?? index}`, () => choice.click(), recordAction);
+    const buttons = panel.getByRole("button", { name: /^Choose / });
+    const names = await buttons.evaluateAll((elements) =>
+      elements.map((element, index) => `wish:${element.getAttribute("aria-label") ?? index}`),
+    );
+    const selected = choices.choose(names);
+    await record(names[selected]!, () => buttons.nth(selected).click(), recordAction);
     await delay(350);
   }
   if (await panel.isVisible().catch(() => false)) throw new Error("Wish choices did not settle");
@@ -65,11 +73,12 @@ async function playRealCombat(
   const battle = new BattlePage(page);
   await battle.waitForOpeningHand();
   let actions = 0;
-  const expectedPlays = journeyCase.recordedActions?.filter((action) => action.name.startsWith("play:")) ?? [];
-  let expectedPlayIndex = 0;
+  const decisions = createCombatChoices(journeyCase);
+  const variedCombat = journeyCase.discoveryVersion === 1;
+  if (variedCombat) maxTurns = 6;
   for (let turn = 0; turn < maxTurns && !(await battle.isBattleOver()); turn++) {
     await phase("combat");
-    for (let cardIndex = 0; cardIndex < 3 && !(await battle.isBattleOver()); cardIndex++) {
+    for (let cardIndex = 0; cardIndex < (variedCombat ? 8 : 3) && !(await battle.isBattleOver()); cardIndex++) {
       const playable = battle.hand.filter({ visible: true });
       const count = await playable.count();
       const choices: Array<{ label: string; index: number }> = [];
@@ -80,31 +89,41 @@ async function playRealCombat(
         }
       }
       if (!choices.length) break;
-      const expected = expectedPlays[expectedPlayIndex++];
-      const choice = expected
-        ? choices.find((candidate) => expected.name === `play:${candidate.label}`)
-        : (choices.find((candidate) => /Block|Heal|Companion|Shield/.test(candidate.label)) ?? choices[0]);
-      if (!choice) throw new Error(`Replay card unavailable: ${expected?.name}`);
+      const names = choices.map((candidate) => `play:${candidate.label}`);
+      const preferred = choices.find((candidate) => /Block|Heal|Companion|Shield/.test(candidate.label)) ?? choices[0]!;
+      const choice = choices[decisions.choose(names, `play:${preferred.label}`)]!;
       const card = playable.nth(choice.index);
       if (cardIndex === 0) await card.hover();
       const mana = await battle.mana();
-      await record(`play:${choice.label}`, () => card.click(), recordAction);
+      const key = await card.locator("xpath=ancestor::*[@data-hand-slot]").getAttribute("data-hand-slot");
+      if (!key) throw new Error("Combat card lacks its hand identity");
+      await record(
+        `play:${choice.label}`,
+        async () => {
+          await card.click();
+          // Rejected/unaffordable clicks must not count as exercised cards.
+          await expect(page.locator(`[data-hand-slot=${JSON.stringify(key)}]`)).toHaveCount(0);
+        },
+        recordAction,
+      );
       if (journeyCase.scenario === "campaign-early" && actions === 0) {
         // This reachable starter checkpoint replaces the separate generated-case UI smoke.
         await expect.poll(() => battle.mana()).toBeLessThan(mana);
       }
       actions++;
       await delay(350);
-      await resolveWishChoices(page, recordAction);
+      await resolveWishChoices(page, recordAction, decisions);
     }
     if (await battle.isBattleOver()) break;
-    await resolveWishChoices(page, recordAction);
+    await resolveWishChoices(page, recordAction, decisions);
     await phase("enemy-turn");
     await record("end-turn", () => battle.endTurn(), recordAction);
     actions++;
     await delay(300);
   }
-  if (actions < 2) throw new Error("Journey combat ended before two player actions");
+  decisions.finish();
+  if (actions < (journeyCase.exploratory ? 1 : 2))
+    throw new Error("Journey combat ended before required player actions");
   await phase("combat");
   await delay(1200);
 }
@@ -272,10 +291,9 @@ const SEGMENTS: Record<string, SegmentRequirement[]> = {
     { name: "enemy-turn", minActions: 1, minFrames: 20 },
     { name: "unique-armory", minActions: 3, minFrames: 20 },
   ],
-  "seeded-discovery": [
-    { name: "combat", minActions: 1, minFrames: 45 },
-    { name: "enemy-turn", minActions: 1, minFrames: 20 },
-  ],
+  // A legal random burst can win before an enemy turn. Fixed journeys retain
+  // the mandatory enemy-turn segment; discovery reports completed turns separately.
+  "seeded-discovery": [{ name: "combat", minActions: 1, minFrames: 45 }],
   "labyrinth-journey": [
     { name: "explore", minActions: 2, minFrames: 8 },
     { name: "combat", minActions: 1, minFrames: 45 },

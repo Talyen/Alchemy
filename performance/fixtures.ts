@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { test as base, expect } from "@playwright/test";
+import { summarizeMeasuredCoverage } from "./journey-coverage";
 import type { ElectronApplication, Page } from "@playwright/test";
 import {
   aggregateRawSamples,
@@ -378,7 +379,10 @@ export const test = base.extend<PerfFixtures>({
             ? {
                 caseIdentity: journeyCase.saveHash,
                 exploratory: journeyCase.exploratory,
-                coverage: journeyCase.coverage,
+                coverage: {
+                  ...journeyCase.coverage,
+                  measured: summarizeMeasuredCoverage(runResults.flatMap((run) => run.actions ?? [])),
+                },
               }
             : {}),
           ...(segments

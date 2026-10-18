@@ -12,6 +12,7 @@ import { runTaskCommand } from "./lib/run-command.mjs";
  *   node scripts/run-performance.mjs --electron --scenario collection-tabs
  */
 import fs from "node:fs";
+import { randomInt } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeCurrentRun } from "./lib/verification/current-run.mjs";
@@ -37,8 +38,8 @@ export function parsePerformanceArgs(argv) {
     scenario: null,
     runs: null,
     all: false,
-    suite: "realistic",
-    seed: 42,
+    suite: null,
+    seed: null,
     replay: null,
     trace: false,
     electron: false,
@@ -75,9 +76,9 @@ export function parsePerformanceArgs(argv) {
   }
   if (args.runs !== null && (!Number.isSafeInteger(args.runs) || args.runs < 1))
     throw new Error("--runs must be a positive integer");
-  if (!["realistic", "synthetic", "seeded"].includes(args.suite))
+  if (args.suite !== null && !["realistic", "synthetic", "seeded"].includes(args.suite))
     throw new Error("--suite must be realistic, synthetic, or seeded");
-  if (!Number.isSafeInteger(args.seed) || args.seed < 0 || args.seed > 0xffffffff)
+  if (args.seed !== null && (!Number.isSafeInteger(args.seed) || args.seed < 0 || args.seed > 0xffffffff))
     throw new Error("--seed must be a uint32");
   if (args.scenario !== null && !SCENARIOS.includes(args.scenario))
     throw new Error(`Unknown scenario: ${args.scenario}`);
@@ -115,8 +116,8 @@ Usage:
 Options:
   --scenario <id>   One of: ${SCENARIOS.join(", ")} (default: ${DEFAULT_SCENARIO})
   --all             Run the selected suite (realistic by default)
-  --suite <name>    realistic (default), synthetic, or seeded
-  --seed <uint32>   Seed for one seeded discovery case (default 42)
+  --suite <name>    realistic (--all default), synthetic, or seeded
+  --seed <uint32>   Replayable discovery seed (default: fresh random uint32)
   --replay <file>   Reuse a saved case and action log
   --runs <n>        Measured repetitions (default 1; warm-up still runs)
   --trace           CDP deep-trace mode (targets not authoritative)
@@ -254,7 +255,7 @@ async function main() {
     process.exit(1);
   }
 
-  if (args.replay && (args.all || args.scenario || args.suite !== "realistic")) {
+  if (args.replay && (args.all || args.scenario || args.suite !== null)) {
     throw new Error("--replay selects its scenario and cannot be combined with --all, --scenario, or --suite");
   }
 
@@ -276,7 +277,8 @@ async function main() {
     (replay?.version !== 1 || (!REALISTIC_CASE_IDS.has(replay?.scenario) && replay?.scenario !== "memory-soak"))
   )
     throw new Error("Invalid replay bundle");
-  const scenario = replay?.scenario ?? (args.all ? null : (args.scenario ?? selectedSuite[0] ?? DEFAULT_SCENARIO));
+  const scenario =
+    replay?.scenario ?? (args.all ? null : (args.scenario ?? (args.suite ? selectedSuite[0] : DEFAULT_SCENARIO)));
 
   if (args.electron) {
     console.log("Ensuring Electron binary…");
@@ -298,13 +300,15 @@ async function main() {
       : scenario === "memory-soak"
         ? ["meta-journey"]
         : [];
+  const discoverySeed = args.seed ?? randomInt(0x100000000);
+  if (prepared.includes("seeded-discovery")) console.log(`Discovery seed: ${discoverySeed}`);
   if (replay) {
     fs.writeFileSync(path.join(outDir, `${replay.scenario}.case.json`), JSON.stringify(replay, null, 2));
   } else {
     for (const id of prepared) {
       const prepare = await runTaskCommand(
         "node",
-        ["scripts/prepare-performance-cases.mjs", outDir, id, String(args.seed)],
+        ["scripts/prepare-performance-cases.mjs", outDir, id, String(discoverySeed)],
         {
           cwd: root,
           label: `prepare ${id}`,

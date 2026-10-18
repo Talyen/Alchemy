@@ -35,7 +35,7 @@ const fixture =
     ? "trinket-v1"
     : scenario === "meta-journey"
       ? "economy-v1"
-      : selected.hero !== "knight" || selected.mode !== "campaign"
+      : selected.hero !== "knight" || selected.mode !== "campaign" || selected.difficulty !== "difficulty-1"
         ? "unlocked-v1"
         : null;
 
@@ -79,8 +79,21 @@ if (!initialSave || typeof initialSave !== "object") throw new Error("Checkpoint
 const activeRun = initialSave.activeRun;
 if (!activeRun && selected.checkpoint !== "late-run") throw new Error("Checkpoint has no active run");
 const battleState = activeRun?.activity?.kind === "battle" ? activeRun.activity.data.battleState : null;
+function effectKinds(value, kinds = new Set()) {
+  if (Array.isArray(value)) for (const item of value) effectKinds(item, kinds);
+  else if (value && typeof value === "object") {
+    if (typeof value.kind === "string") kinds.add(value.kind);
+    for (const nested of Object.values(value)) if (nested && typeof nested === "object") effectKinds(nested, kinds);
+  }
+  return [...kinds].sort();
+}
+const encounter = discovery.result.telemetry?.battleSnapshots?.find(
+  (battle) => battle.stage === "start" && battle.step === step,
+);
 const coverage = {
   fixture,
+  encounter: encounter ? { run: encounter.run, room: encounter.room, boss: encounter.boss } : null,
+  availableCardEffectKinds: effectKinds((activeRun?.runDeck ?? []).map((card) => card.effects)),
   cards: [...new Set((activeRun?.runDeck ?? []).map((card) => card.id))].sort(),
   enemy: battleState?.currentEnemy?.id ?? null,
   traits: (battleState?.currentEnemy?.traits ?? []).map((trait) => trait.id ?? trait),

@@ -1,1 +1,1 @@
-export function parsePerformanceArgs(argv: string[]): { runs: number | null };
+export function parsePerformanceArgs(argv: string[]): { runs: number | null; seed: number | null };

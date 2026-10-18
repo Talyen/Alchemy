@@ -183,7 +183,9 @@ export function renderSummaryMarkdown(options: {
     lines.push("");
     if (agg.caseIdentity) {
       lines.push(`- Case: \`${agg.caseIdentity}\`${agg.exploratory ? " (exploratory)" : " (fixed)"}`);
-      lines.push(`- Coverage: \`${JSON.stringify(agg.coverage ?? {})}\``);
+      const { measured, ...checkpoint } = agg.coverage ?? {};
+      lines.push(`- Checkpoint inventory (available, not necessarily exercised): \`${JSON.stringify(checkpoint)}\``);
+      if (measured) lines.push(`- Measured actions: \`${JSON.stringify(measured)}\``);
       lines.push("");
     }
     if (!agg.aggregate.valid) {

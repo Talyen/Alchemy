@@ -1,5 +1,5 @@
 {
-  "defaultScenario": "campaign-early",
+  "defaultScenario": "seeded-discovery",
   "metricScenarios": [
     "campaign-early",
     "campaign-developed",

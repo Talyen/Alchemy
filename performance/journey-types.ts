@@ -9,6 +9,7 @@ export interface JourneyCase {
   checkpoint: string;
   checkpointStep: number;
   exploratory: boolean;
+  discoveryVersion?: 1;
   saveHash: string;
   codeIdentity?: { commit: string; sourceHash: string };
   initialSave: Record<string, unknown>;
@@ -37,6 +38,7 @@ export function assertJourneyCase(value: unknown): asserts value is JourneyCase 
     !Number.isSafeInteger(candidate.seed) ||
     !candidate.initialSave ||
     typeof candidate.saveHash !== "string" ||
+    (candidate.discoveryVersion !== undefined && candidate.discoveryVersion !== 1) ||
     !Array.isArray(candidate.coverage?.cards)
   ) {
     throw new Error("Invalid performance journey case");
