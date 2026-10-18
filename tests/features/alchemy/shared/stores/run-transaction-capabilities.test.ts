@@ -473,7 +473,7 @@ describe("feature transaction capabilities", () => {
 });
 
 describe("reward claim gating", () => {
-  const transact = <T>(operate: (transaction: RunTransaction) => T): T =>
+  const transact = (operate: (transaction: RunTransaction) => boolean | void): boolean | void =>
     dispatchRunSessionCommand((transaction) => acceptCommand(operate(transaction)), undefined, defaultGameSession);
 
   it("gates beginRewardClaim on one claim at a time so empty skips can finalize", () => {
