@@ -1,20 +1,34 @@
-import { afterProgressSaved, bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { onRunRestored } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
+  afterProgressSaved,
+  bindSessionCapabilities,
   registerSessionCleanup,
   sessionClock,
   sessionFeedback,
 } from "@/features/alchemy/shared/stores/session-capabilities";
+import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { onRunRestored } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import type { UISound } from "@/lib/audio";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 import {
   assertRunResumeTransitionAllowed,
   assertScreenTransitionAllowed,
+  ROUTE_SCREENS,
   type Screen,
   type ScreenTransitionOptions,
 } from "@/lib/routing";
+
+// Screens whose committed route must wait for the saved activity to be
+// restorable after a crash, even when no prepare mutates state on the way.
+const SAVE_GATED_SCREENS: ReadonlySet<Screen> = new Set([
+  ROUTE_SCREENS.BATTLE,
+  ROUTE_SCREENS.REWARDS,
+  ROUTE_SCREENS.RUN_VICTORY,
+  ROUTE_SCREENS.GAME_OVER,
+  ROUTE_SCREENS.DESTINATION,
+  ROUTE_SCREENS.LABYRINTH_MAP,
+  ROUTE_SCREENS.WILDWOOD_REMOVAL,
+]);
 
 export interface ScreenNavigation {
   navigateTo: (screen: Screen, prepareNavigation?: () => void) => void;
@@ -60,20 +74,19 @@ export function createScreenNavigation(
     const isCurrent = (request: number) => !disposed && revision === request;
     // Guard first (approved): a skipped move stays a silent no-op even on an
     // unusual edge; only unskipped moves validate against the policy table.
+    // The single revision check below covers both the guard and the read:
+    // neither runs async work, so any redirect they trigger still bumps the
+    // revision before we validate.
     if (options.guard && !options.guard()) return;
-    if (!isCurrent(entryRevision)) return;
     const previousScreen = readScreen();
     if (!isCurrent(entryRevision)) return;
     if (resume) assertRunResumeTransitionAllowed(previousScreen, screen);
     else assertScreenTransitionAllowed(previousScreen, screen);
     const requestedRevision = invalidatePending();
-    if (!isCurrent(requestedRevision)) return;
     options.prepare?.();
     if (!isCurrent(requestedRevision)) return;
     if (feedback && previousScreen !== screen) sessionFeedback(gameSession).playUISound(feedback);
-    if (!isCurrent(requestedRevision)) return;
     onPendingChange?.(true);
-    if (!isCurrent(requestedRevision)) return;
     const show = () => {
       if (disposed || requestedRevision !== revision) return;
       try {
@@ -89,13 +102,7 @@ export function createScreenNavigation(
     };
     // Domain preparation may change the saved activity; do not present its
     // completed route until that activity can be restored after a crash.
-    if (
-      options.prepare ||
-      ["battle", "rewards", "run-victory", "game-over", "destination", "labyrinth-map", "wildwood-removal"].includes(
-        screen,
-      )
-    )
-      afterProgressSaved(gameSession, present);
+    if (options.prepare || SAVE_GATED_SCREENS.has(screen)) afterProgressSaved(gameSession, present);
     else present();
   }
 

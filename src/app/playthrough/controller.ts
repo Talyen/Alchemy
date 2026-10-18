@@ -1,4 +1,3 @@
-import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
 import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
@@ -22,15 +21,11 @@ export function createPlaythroughController(gameSession: GameSession) {
     },
     gameSession,
   );
-  const immediateTransition: typeof navigation.transition = (screen, options) =>
+  // Headless playthroughs never fade: every navigation commits immediately.
+  const transition: typeof navigation.transition = (screen, options) =>
     navigation.transition(screen, { ...options, immediate: true });
-  const { transition, navigateTo, resumeTo } = bindSessionCapabilities(gameSession, {
-    transition: immediateTransition,
-    navigateTo: (screen: Parameters<typeof navigation.navigateTo>[0], prepare?: () => void) =>
-      immediateTransition(screen, prepare ? { prepare } : {}),
-    resumeTo: (screen: Parameters<typeof navigation.resumeTo>[0], prepare?: () => void) =>
-      navigation.resumeTo(screen, prepare, true),
-  });
+  const navigateTo: typeof navigation.navigateTo = (screen, prepare) => transition(screen, prepare ? { prepare } : {});
+  const resumeTo: typeof navigation.resumeTo = (screen, prepare) => navigation.resumeTo(screen, prepare, true);
   const outcomes = createRunOutcomes(
     {
       actions: { navigateTo, transition, clearCardHover: () => {} },

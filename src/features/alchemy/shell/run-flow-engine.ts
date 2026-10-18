@@ -7,7 +7,6 @@ import { type GameSession } from "@/features/alchemy/shared/stores/game-session-
 import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { bindSessionCapabilities, sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { clearRunCardHover } from "./run-card-hover";
 import type { RunFlowEngineDeps } from "./shell-types";
 export function createRunFlowEngine(input: RunFlowEngineDeps, outcomeInput: RunOutcomes, gameSession: GameSession) {
   const {
@@ -18,18 +17,18 @@ export function createRunFlowEngine(input: RunFlowEngineDeps, outcomeInput: RunO
     battle,
   } = bindSessionCapabilities(gameSession, input);
   const outcomes = bindSessionCapabilities(gameSession, outcomeInput);
-  const clearCardHover = () => clearRunCardHover(gameSession);
+  const clearCardHover = () => sessionFeedback(gameSession).clearCardHover();
   // Universal hover rule (approved): every flow navigation clears card hover
   // unless explicitly opted out. Factories receive the wrapped navigate so
   // Wildwood resume, mystery, and content-system paths cannot leave tooltips.
-  const navigateTo: RunFlowEngineDeps["navigateTo"] = (nextScreen, prepareNavigation) => {
-    clearCardHover();
-    rawNavigateTo(nextScreen, prepareNavigation);
+  const withHoverCleared = <Args extends unknown[]>(navigate: (...args: Args) => void) => {
+    return (...args: Args) => {
+      clearCardHover();
+      navigate(...args);
+    };
   };
-  const resumeTo: RunFlowEngineDeps["resumeTo"] = (nextScreen, prepareNavigation) => {
-    clearCardHover();
-    rawResumeTo(nextScreen, prepareNavigation);
-  };
+  const navigateTo: RunFlowEngineDeps["navigateTo"] = withHoverCleared(rawNavigateTo);
+  const resumeTo: RunFlowEngineDeps["resumeTo"] = withHoverCleared(rawResumeTo);
   const wildwood = createWildwoodGauntletFlow(
     {
       navigateTo,

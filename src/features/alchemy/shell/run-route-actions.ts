@@ -28,14 +28,13 @@ import {
   resetTalentUnlocks,
   unlockTalentsForDevelopment,
 } from "@/features/alchemy/shared/stores/navigation-commands";
-import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
-import { clearRunCardHover } from "./run-card-hover";
+import { bindSessionCapabilities, sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
 
 export function createRunRouteActions(gameSession: GameSession) {
   return bindSessionCapabilities(gameSession, {
     selectGameBoard: (selection: Parameters<typeof selectGameBoard>[0]) => selectGameBoard(selection, gameSession),
     acknowledgeGameBoardReward: (id: string, equip: boolean) => acknowledgeGameBoardReward(id, equip, gameSession),
-    clearCardHover: () => clearRunCardHover(gameSession),
+    clearCardHover: () => sessionFeedback(gameSession).clearCardHover(),
     purchaseTalent: (keyword: Parameters<typeof purchaseTalent>[0], talent: string) =>
       purchaseTalent(keyword, talent, gameSession),
     resetTalentUnlocks: () => resetTalentUnlocks(gameSession),

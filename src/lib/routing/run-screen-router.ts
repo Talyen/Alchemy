@@ -1,35 +1,31 @@
-import type { Screen } from "./screens";
-import { ROUTE_SCREENS } from "./screens";
+import { ROUTE_SCREENS, ROUTE_SCREEN_VALUES, type Screen } from "./screens";
 
 export type RunPhase = "meta" | "runLoop" | "battle" | "runEnd";
 
-export const SCREEN_PHASE: Record<Screen, RunPhase> = {
-  [ROUTE_SCREENS.MENU]: "meta",
-  [ROUTE_SCREENS.GAME_MODE_SELECT]: "meta",
-  [ROUTE_SCREENS.CHARACTER_SELECT]: "meta",
-  [ROUTE_SCREENS.DIFFICULTY_SELECT]: "meta",
-  [ROUTE_SCREENS.DRAFT_DECK]: "meta",
-  [ROUTE_SCREENS.OPTIONS]: "meta",
-  [ROUTE_SCREENS.COLLECTION]: "meta",
-  [ROUTE_SCREENS.TALENTS]: "meta",
-  [ROUTE_SCREENS.HOMESTEAD]: "meta",
-  [ROUTE_SCREENS.ARMORY]: "meta",
-  [ROUTE_SCREENS.BATTLE]: "runLoop",
-  [ROUTE_SCREENS.REWARDS]: "runLoop",
-  [ROUTE_SCREENS.DESTINATION]: "runLoop",
-  [ROUTE_SCREENS.CAMPFIRE]: "runLoop",
-  [ROUTE_SCREENS.SHOP]: "runLoop",
-  [ROUTE_SCREENS.ALCHEMIST]: "runLoop",
-  [ROUTE_SCREENS.TRINKET_SHOP]: "runLoop",
-  [ROUTE_SCREENS.EQUIPMENT_SHOP]: "runLoop",
-  [ROUTE_SCREENS.MYSTERY]: "runLoop",
-  [ROUTE_SCREENS.CORRUPTION]: "runLoop",
-  [ROUTE_SCREENS.TRANSMUTATION]: "runLoop",
-  [ROUTE_SCREENS.LABYRINTH_MAP]: "runLoop",
-  [ROUTE_SCREENS.WILDWOOD_REMOVAL]: "runLoop",
-  [ROUTE_SCREENS.GAME_OVER]: "runEnd",
-  [ROUTE_SCREENS.RUN_VICTORY]: "runEnd",
-};
+const META_SCREENS: ReadonlySet<Screen> = new Set([
+  ROUTE_SCREENS.MENU,
+  ROUTE_SCREENS.GAME_MODE_SELECT,
+  ROUTE_SCREENS.CHARACTER_SELECT,
+  ROUTE_SCREENS.DIFFICULTY_SELECT,
+  ROUTE_SCREENS.DRAFT_DECK,
+  ROUTE_SCREENS.OPTIONS,
+  ROUTE_SCREENS.COLLECTION,
+  ROUTE_SCREENS.TALENTS,
+  ROUTE_SCREENS.HOMESTEAD,
+  ROUTE_SCREENS.ARMORY,
+]);
+
+const RUN_END_SCREENS: ReadonlySet<Screen> = new Set([ROUTE_SCREENS.GAME_OVER, ROUTE_SCREENS.RUN_VICTORY]);
+
+function phaseForScreen(screen: Screen): RunPhase {
+  if (META_SCREENS.has(screen)) return "meta";
+  if (RUN_END_SCREENS.has(screen)) return "runEnd";
+  return "runLoop";
+}
+
+export const SCREEN_PHASE: Record<Screen, RunPhase> = Object.fromEntries(
+  ROUTE_SCREEN_VALUES.map((screen) => [screen, phaseForScreen(screen)]),
+) as Record<Screen, RunPhase>;
 
 export function isRunLoopScreen(screen: Screen): boolean {
   return SCREEN_PHASE[screen] === "runLoop";

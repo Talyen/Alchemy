@@ -2,10 +2,13 @@ import { DESTINATIONS, type Destination } from "./destinations";
 
 const VALID_DESTINATIONS = new Set<string>(Object.values(DESTINATIONS));
 
+const LEGACY_DESTINATION_NAMES: Readonly<Record<string, Destination>> = {
+  "Merchant's Shop": DESTINATIONS.CARD_SHOP,
+  "Equipment Shop": DESTINATIONS.GEAR_SHOP,
+};
+
 function canonicalizeDestination(value: string): string {
-  if (value === "Merchant's Shop") return DESTINATIONS.CARD_SHOP;
-  if (value === "Equipment Shop") return DESTINATIONS.GEAR_SHOP;
-  return value;
+  return LEGACY_DESTINATION_NAMES[value] ?? value;
 }
 
 function isValidDestination(value: string): value is Destination {

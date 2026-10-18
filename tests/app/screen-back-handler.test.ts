@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   rememberNonOptionsScreen,
+  resolveNextOptionsReturnState,
   resolveOptionsBackTarget,
   resolveReturnToRunTarget,
   resolveScreenBackHandler,
@@ -103,5 +104,25 @@ describe("return-to-run navigation", () => {
       screen: "difficulty-select",
     });
     expect(resolveOptionsBackTarget("collection", false, false)).toEqual({ kind: "goToScreen", screen: "collection" });
+  });
+
+  it("preserves the Options return target across the Boards detour", () => {
+    const opened = resolveNextOptionsReturnState("collection", {
+      prevScreen: "options",
+      optionsReturnScreen: "menu",
+      boardsFromOptions: true,
+    });
+    expect(opened).toEqual({ optionsReturnScreen: "menu", boardsFromOptions: true });
+    const backAtOptions = resolveNextOptionsReturnState("options", {
+      prevScreen: "collection",
+      ...opened,
+    });
+    expect(backAtOptions).toEqual({ optionsReturnScreen: "menu", boardsFromOptions: false });
+    const backAtMenu = resolveNextOptionsReturnState("menu", {
+      prevScreen: "options",
+      ...backAtOptions,
+    });
+    expect(backAtMenu.optionsReturnScreen).toBe("menu");
+    expect(backAtMenu.boardsFromOptions).toBe(false);
   });
 });

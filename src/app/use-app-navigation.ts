@@ -1,7 +1,7 @@
 import { defaultGameSession } from "@/app/application-session";
 import { getDesktopApi } from "@/lib/desktop-api";
 import {
-  rememberNonOptionsScreen,
+  resolveNextOptionsReturnState,
   resolveOptionsBackTarget,
   resolveReturnToRunTarget,
   resolveScreenBackHandler,
@@ -16,7 +16,7 @@ import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands
 import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-fade";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
-import type { Screen } from "@/lib/routing";
+import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { useCallback, useEffect, useState } from "react";
 import { playUISound } from "@/lib/audio";
 
@@ -41,7 +41,7 @@ export function useGameMenuState() {
   useEffect(
     () =>
       getDesktopApi()?.onExternalFocusLost?.(() => {
-        if (readActiveRunScreen(defaultGameSession) === "battle") openGameMenu();
+        if (readActiveRunScreen(defaultGameSession) === ROUTE_SCREENS.BATTLE) openGameMenu();
       }),
     [openGameMenu],
   );
@@ -103,20 +103,18 @@ export function useReturnToRunNavigation({
     boardsFromOptions: boolean;
   }>({
     prevScreen: renderedScreen,
-    optionsReturnScreen: "menu",
+    optionsReturnScreen: ROUTE_SCREENS.MENU,
     boardsFromOptions: false,
   });
   let optionsReturnScreen = navState.optionsReturnScreen;
   let boardsFromOptions = navState.boardsFromOptions;
   if (renderedScreen !== navState.prevScreen) {
-    boardsFromOptions = renderedScreen === "collection" && navState.boardsFromOptions;
-    const returningFromBoards = renderedScreen === "options" && navState.boardsFromOptions;
-    const next =
-      boardsFromOptions || returningFromBoards
-        ? navState.optionsReturnScreen
-        : rememberNonOptionsScreen(renderedScreen, navState.optionsReturnScreen);
-    optionsReturnScreen = next;
-    setNavState({ prevScreen: renderedScreen, optionsReturnScreen: next, boardsFromOptions });
+    // Render-phase update (React-endorsed for derived state): the back target
+    // must settle in the same commit that presents the new screen.
+    const next = resolveNextOptionsReturnState(renderedScreen, navState);
+    optionsReturnScreen = next.optionsReturnScreen;
+    boardsFromOptions = next.boardsFromOptions;
+    setNavState({ prevScreen: renderedScreen, ...next });
   }
 
   const navigateToMeta = useCallback(
@@ -129,7 +127,7 @@ export function useReturnToRunNavigation({
   const openBoardsFromOptions = useCallback(() => {
     setNavState((current) => ({ ...current, boardsFromOptions: true }));
     run.routeCommands.meta.selectCollectionTab("boards");
-    run.goToScreen("collection");
+    run.goToScreen(ROUTE_SCREENS.COLLECTION);
   }, [run]);
 
   const backFromOptions = useCallback(() => {
@@ -144,7 +142,7 @@ export function useReturnToRunNavigation({
   }, [returnToRunTarget, run]);
 
   const handleMainMenu = useCallback(() => {
-    run.goToScreen("menu");
+    run.goToScreen(ROUTE_SCREENS.MENU);
   }, [run]);
 
   const defaultScreenBackHandler = resolveScreenBackHandler({
@@ -158,7 +156,9 @@ export function useReturnToRunNavigation({
   });
 
   const screenBackHandler =
-    renderedScreen === "collection" && boardsFromOptions ? () => run.goToScreen("options") : defaultScreenBackHandler;
+    renderedScreen === ROUTE_SCREENS.COLLECTION && boardsFromOptions
+      ? () => run.goToScreen(ROUTE_SCREENS.OPTIONS)
+      : defaultScreenBackHandler;
   return {
     returnToRunScreen,
     optionsReturnScreen,

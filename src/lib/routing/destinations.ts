@@ -27,15 +27,19 @@ export const SHOP_DESTINATIONS = [
   DESTINATIONS.GEAR_SHOP,
 ] as const satisfies readonly Destination[];
 
+const COMBAT_SET: ReadonlySet<Destination> = new Set(COMBAT_DESTINATIONS);
+const SHOP_SET: ReadonlySet<Destination> = new Set(SHOP_DESTINATIONS);
+
 export function isCombatDestination(destination: Destination): boolean {
-  return (COMBAT_DESTINATIONS as readonly Destination[]).includes(destination);
+  return COMBAT_SET.has(destination);
 }
 
 export function isShopDestination(destination: Destination): boolean {
-  return (SHOP_DESTINATIONS as readonly Destination[]).includes(destination);
+  return SHOP_SET.has(destination);
 }
 
 export function destinationLabel(destination: Destination): string {
   if (destination === DESTINATIONS.NORMAL_COMBAT) return "Combat";
-  return destination === DESTINATIONS.BOSS_COMBAT ? "Boss" : destination;
+  if (destination === DESTINATIONS.BOSS_COMBAT) return "Boss";
+  return destination;
 }

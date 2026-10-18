@@ -1,4 +1,11 @@
-import { isRunResumeScreen, type Screen } from "@/lib/routing";
+import { isRunResumeScreen, ROUTE_SCREENS, type Screen } from "@/lib/routing";
+
+const RUN_SHELL_META_SCREENS: ReadonlySet<Screen> = new Set([
+  ROUTE_SCREENS.COLLECTION,
+  ROUTE_SCREENS.HOMESTEAD,
+  ROUTE_SCREENS.TALENTS,
+  ROUTE_SCREENS.ARMORY,
+]);
 
 export function resolveReturnToRunTarget(
   returnToRunScreen: Screen | null,
@@ -6,13 +13,33 @@ export function resolveReturnToRunTarget(
   hasResumableRun = false,
 ): Screen | null {
   if (returnToRunScreen) return returnToRunScreen;
-  if (hasActiveBattle) return "battle";
-  if (hasResumableRun) return "destination";
+  if (hasActiveBattle) return ROUTE_SCREENS.BATTLE;
+  if (hasResumableRun) return ROUTE_SCREENS.DESTINATION;
   return null;
 }
 
 export function rememberNonOptionsScreen(renderedScreen: Screen, previous: Screen): Screen {
-  return renderedScreen === "options" ? previous : renderedScreen;
+  return renderedScreen === ROUTE_SCREENS.OPTIONS ? previous : renderedScreen;
+}
+
+export interface OptionsReturnState {
+  optionsReturnScreen: Screen;
+  boardsFromOptions: boolean;
+}
+
+export function resolveNextOptionsReturnState(
+  renderedScreen: Screen,
+  prev: { prevScreen: Screen; optionsReturnScreen: Screen; boardsFromOptions: boolean },
+): OptionsReturnState {
+  const boardsFromOptions = renderedScreen === ROUTE_SCREENS.COLLECTION && prev.boardsFromOptions;
+  const returningFromBoards = renderedScreen === ROUTE_SCREENS.OPTIONS && prev.boardsFromOptions;
+  if (boardsFromOptions || returningFromBoards) {
+    return { optionsReturnScreen: prev.optionsReturnScreen, boardsFromOptions };
+  }
+  return {
+    optionsReturnScreen: rememberNonOptionsScreen(renderedScreen, prev.optionsReturnScreen),
+    boardsFromOptions,
+  };
 }
 
 export function resolveOptionsBackTarget(
@@ -22,7 +49,8 @@ export function resolveOptionsBackTarget(
 ): { kind: "returnToRun" } | { kind: "goToScreen"; screen: Screen } {
   if (isRunResumeScreen(optionsReturnScreen)) {
     if (hasActiveBattle || hasResumableRun) return { kind: "returnToRun" };
-    if (optionsReturnScreen !== "difficulty-select") return { kind: "goToScreen", screen: "menu" };
+    if (optionsReturnScreen !== ROUTE_SCREENS.DIFFICULTY_SELECT)
+      return { kind: "goToScreen", screen: ROUTE_SCREENS.MENU };
   }
   return { kind: "goToScreen", screen: optionsReturnScreen };
 }
@@ -44,22 +72,17 @@ export function resolveScreenBackHandler({
   backFromDifficultySelect: () => void;
   goToScreen: (screen: Screen) => void;
 }): (() => void) | undefined {
-  if (renderedScreen === "options") return backFromOptions;
-  if (
-    renderedScreen === "collection" ||
-    renderedScreen === "homestead" ||
-    renderedScreen === "talents" ||
-    renderedScreen === "armory"
-  ) {
+  if (renderedScreen === ROUTE_SCREENS.OPTIONS) return backFromOptions;
+  if (RUN_SHELL_META_SCREENS.has(renderedScreen)) {
     return returnToRunTarget ? returnToRun : handleMainMenu;
   }
-  if (renderedScreen === "game-mode-select") {
+  if (renderedScreen === ROUTE_SCREENS.GAME_MODE_SELECT) {
     return handleMainMenu;
   }
-  if (renderedScreen === "character-select") {
-    return () => goToScreen("game-mode-select");
+  if (renderedScreen === ROUTE_SCREENS.CHARACTER_SELECT) {
+    return () => goToScreen(ROUTE_SCREENS.GAME_MODE_SELECT);
   }
-  if (renderedScreen === "difficulty-select") {
+  if (renderedScreen === ROUTE_SCREENS.DIFFICULTY_SELECT) {
     return backFromDifficultySelect;
   }
   return undefined;
