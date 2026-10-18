@@ -70,16 +70,8 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   );
   const { salvageable, blockedReason, mode, targetAriaLabel } = target;
   const ariaLabel = targetAriaLabel ?? SLOT_ARIA_LABELS[slot];
-  const {
-    isHovered,
-    shimmerActive,
-    shimmerToken,
-    wrapperRef,
-    showPopup,
-    handleHoverStart,
-    handleMouseLeave,
-    handleBlur,
-  } = useArmorySlotHover(slot);
+  const { isHovered, shimmerActive, shimmerToken, wrapperRef, showPopup, onMouseEnter, onMouseLeave, onBlur } =
+    useArmorySlotHover(slot);
   // Shine borders appear on hover/focus; the active slot keeps its shine as a selection marker.
   const showShine = Boolean(shineColors && (isHovered || selected));
 
@@ -93,8 +85,8 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         "relative",
         i18n.read(() => targetingRingClass(mode)),
       )}
-      onMouseEnter={handleHoverStart}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {instance && definition && showPopup ? (
         <PortaledTooltip
@@ -120,8 +112,8 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         selected={selected}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
-        onFocus={handleHoverStart}
-        onBlur={handleBlur}
+        onFocus={onMouseEnter}
+        onBlur={onBlur}
         className={armorySlotSurfaceClass(editable, showShine, selected)}
         onClick={() =>
           performArmoryItemAction(target.action, {

@@ -29,7 +29,7 @@ export function createCareerActor(
     const session = readRunSession(gameSession);
     const screen = readActiveRunScreen(gameSession);
     if (screen === "game-over" || screen === "run-victory") {
-      offer("continue-run-end", screen, 1, flow.continueFromRunEnd);
+      offer("continue-run-end", screen, 1, flow.resetRunState);
       return choices;
     }
     if (screen === "difficulty-select") {

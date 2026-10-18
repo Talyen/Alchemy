@@ -58,7 +58,7 @@ function mount(screen: "game-over" | "run-victory" = "run-victory") {
   const view = render(
     <Route
       screen={screen}
-      routeCommands={{ ...createMockRouteCommands(), runEnd: { continueFromRunEnd: leave } }}
+      routeCommands={{ ...createMockRouteCommands(), runEnd: { resetRunState: leave } }}
       onOpenGameMenu={vi.fn()}
     />,
   );
@@ -118,13 +118,13 @@ it.each([
     fireEvent.click(view.getByRole("button", { name: "Continue" }));
     if (unlocks.length) fireEvent.click(view.getByRole("button", { name: "Continue" }));
     expect(view.getByRole("heading", { name: "Board Collected" })).toBeTruthy();
-    expect(commands.runEnd.continueFromRunEnd).not.toHaveBeenCalled();
+    expect(commands.runEnd.resetRunState).not.toHaveBeenCalled();
     fireEvent.click(view.getByRole("button", { name: action }));
     expect(commands.boards.acknowledgeReward).toHaveBeenCalledExactlyOnceWith("alpine-cuckoo", equip);
     expect(view.getByRole("heading", { name: "Board Collected" })).toBeTruthy();
-    expect(commands.runEnd.continueFromRunEnd).not.toHaveBeenCalled();
+    expect(commands.runEnd.resetRunState).not.toHaveBeenCalled();
     act(() => saved());
-    expect(commands.runEnd.continueFromRunEnd).toHaveBeenCalledOnce();
+    expect(commands.runEnd.resetRunState).toHaveBeenCalledOnce();
     expect(view.getByRole("heading", { name: "Board Collected" })).toBeTruthy();
   },
 );
@@ -148,7 +148,7 @@ it("continues from a board reveal to demo completion without reopening the revea
   expect(view.getByRole("heading", { name: "Board Collected" })).toBeTruthy();
   fireEvent.click(view.getByRole("button", { name: "Continue" }));
   expect(view.getByRole("heading", { name: "Demo completion" })).toBeTruthy();
-  expect(commands.runEnd.continueFromRunEnd).not.toHaveBeenCalled();
+  expect(commands.runEnd.resetRunState).not.toHaveBeenCalled();
   fireEvent.click(view.getByRole("button", { name: "Main Menu" }));
-  expect(commands.runEnd.continueFromRunEnd).toHaveBeenCalledOnce();
+  expect(commands.runEnd.resetRunState).toHaveBeenCalledOnce();
 });

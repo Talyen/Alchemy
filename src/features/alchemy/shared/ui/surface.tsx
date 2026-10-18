@@ -6,7 +6,6 @@ import {
   type PointerEvent,
   type ReactNode,
   type Ref,
-  type SyntheticEvent,
 } from "react";
 
 import { cn } from "@/lib/utils";
@@ -26,8 +25,7 @@ interface SurfaceProps {
   dragging?: boolean;
   baseTransform?: string | undefined;
   style?: CSSProperties;
-  onClick?: ((e: MouseEvent<HTMLButtonElement>) => void) | undefined;
-  onDivClick?: ((e?: SyntheticEvent<HTMLDivElement>) => void) | undefined;
+  onClick?: ((e: MouseEvent<HTMLElement>) => void) | undefined;
   onPointerDown?: ((e: PointerEvent<HTMLButtonElement>) => void) | undefined;
   onFocus?: () => void;
   onBlur?: () => void;
@@ -61,7 +59,6 @@ export function Surface(props: SurfaceProps) {
     disabled,
     dragging,
     onClick,
-    onDivClick,
     onPointerDown,
     onFocus,
     onBlur,
@@ -97,11 +94,10 @@ export function Surface(props: SurfaceProps) {
     ),
     style: surfaceStyle,
   };
-  const divClick = onDivClick ?? onClick;
   const handleDivClick =
-    divClick !== undefined
-      ? (e?: SyntheticEvent<HTMLDivElement>) => {
-          if (!disabled) (divClick as (e?: SyntheticEvent<HTMLDivElement>) => void)(e);
+    onClick !== undefined
+      ? (e: MouseEvent<HTMLDivElement>) => {
+          if (!disabled) onClick(e);
         }
       : undefined;
   function handleDivKeyDown(event: KeyboardEvent<HTMLDivElement>) {

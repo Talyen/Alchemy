@@ -207,7 +207,8 @@ export function offerRunChoices(
         visit.mysteryCardChoices.forEach((card, index) =>
           offer("mystery-card", card.id, affinity(card), () => flow.handleMysteryChooseCard(card.id), index),
         );
-      else if (visit.mysteryChosenChoice) offer("mystery-continue", "continue", 1, flow.handleMysteryContinue);
+      else if (visit.mysteryChosenChoice)
+        offer("mystery-continue", "continue", 1, () => flow.advanceToNextDestination("mystery"));
       else
         visit.mysteryEvent?.choices.forEach((choice, index) =>
           offer(

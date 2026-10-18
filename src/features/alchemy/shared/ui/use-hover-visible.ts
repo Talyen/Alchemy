@@ -126,10 +126,6 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
     onMouseLeave: handleMouseLeave,
     onFocusCapture: handleFocus,
     onBlurCapture: handleBlur,
-    handleHoverStart,
-    handleMouseMove,
-    handleMouseLeave,
-    handleBlur,
     dismiss,
   };
 }

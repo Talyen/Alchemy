@@ -52,8 +52,7 @@ import {
 import { boardArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { useActiveBoardId } from "@/features/alchemy/shared/stores/use-profile-store";
 import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";
-import { setModalRoot } from "@/features/alchemy/shared/ui/modal-root";
-import { setTooltipRoot } from "@/features/alchemy/shared/ui/tooltips/tooltip-root";
+import { setModalRoot, setTooltipRoot } from "@/features/alchemy/shared/ui/portal-root";
 import { useArtworkReady } from "@/features/alchemy/shared/ui/use-artwork-ready";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";

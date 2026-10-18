@@ -1,8 +1,7 @@
-import { computeTalentEffects, type TalentEffectManifest } from "@/lib/game-data";
+import { computeStartingMaxHealth, computeTalentEffects, type TalentEffectManifest } from "@/lib/game-data";
 import { computeGearManifest, flattenGearInventories, type GearEffectManifest } from "@/lib/gear";
 import { combineTrinketEffectIds, computeTrinketManifest } from "@/lib/trinkets";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
-import { computeRunMaxHealth } from "../../run-flow/run-max-health";
 import type { GameplayDraft } from "../gameplay-command";
 import { syncBattleGoldFromPurse } from "./run-gold";
 
@@ -27,7 +26,8 @@ export function deriveCombatMeta(draft: GameplayDraft): CombatMeta {
 }
 
 function applyDerivedMaxHealth(draft: GameplayDraft, gearBonus: number): void {
-  const derived = computeRunMaxHealth(draft.runProfile.talentXP, gearBonus, draft.runProfile.effects.runMaxHealthBonus);
+  const derived =
+    computeStartingMaxHealth(draft.runProfile.talentXP) + gearBonus + draft.runProfile.effects.runMaxHealthBonus;
 
   const metaBaseline = draft.run.activeRun.runMetaMaxHealth;
   const combatBonus = Math.max(0, draft.run.activeRun.runMaxHealth - metaBaseline);

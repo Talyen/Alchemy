@@ -71,7 +71,7 @@ export function ManaPanel({
   // Keep unchanged animation keys while the layout effect commits the new display.
   const state =
     stored?.mana === mana && stored.maxMana === maxMana ? stored : projectMana(stored, mana, maxMana, !reduced);
-  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture, handleHoverStart } =
+  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
     useHoverVisible<HTMLButtonElement>();
 
   useLayoutEffect(() => {
@@ -86,7 +86,7 @@ export function ManaPanel({
         value0: mana,
         value1: maxMana,
       })}
-      onClick={handleHoverStart}
+      onClick={onMouseEnter}
       ref={triggerRef}
       className="mana-dock"
       data-testid="mana-panel"

@@ -288,13 +288,7 @@ function ActorArtFrame({
       <CombatantStatusEffectPresentation keyword={isDead ? null : ccKeyword}>
         <Surface
           surfaceRef={surfaceRef}
-          onDivClick={
-            onInspect && !isDead
-              ? (event) => {
-                  if (event) onInspect(event.currentTarget);
-                }
-              : undefined
-          }
+          onClick={onInspect && !isDead ? (event) => onInspect(event.currentTarget) : undefined}
           ariaLabel={i18n.text("ui.actor-panel.1", "Inspect {{value0}}", { value0: title })}
           testId={`battle-${side}-art-panel`}
           clipContents={false}

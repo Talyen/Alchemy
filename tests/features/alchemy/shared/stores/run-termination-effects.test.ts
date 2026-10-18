@@ -140,7 +140,7 @@ it.each(["abandoned", "death", "victory"] as const)(
     expect(save.activeRun).toBeNull();
     expect(save).not.toHaveProperty("runEndUnlockedCharacters");
 
-    controller.flow.continueFromRunEnd();
+    controller.flow.resetRunState();
     controller.flow.goToScreen("game-mode-select");
     controller.flow.beginCampaign();
     controller.flow.handleCharacterSelect("knight");

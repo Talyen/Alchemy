@@ -1,5 +1,6 @@
 import {
   cloneBattleCard,
+  computeStartingMaxHealth,
   getStartingDeck,
   type BattleCard,
   type CharacterId,
@@ -8,7 +9,6 @@ import {
 } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { Destination } from "@/lib/routing";
-import { computeRunMaxHealth } from "./run-max-health";
 
 export interface RunStartSnapshot {
   characterId: CharacterId;
@@ -44,7 +44,7 @@ export function createRunStartSnapshot({
   gearMaxHealthBonus = 0,
   homesteadMaxHealthBonus = 0,
 }: RunStartInput): RunStartSnapshot {
-  const runMaxHealth = computeRunMaxHealth(talentXP, gearMaxHealthBonus, homesteadMaxHealthBonus);
+  const runMaxHealth = computeStartingMaxHealth(talentXP) + gearMaxHealthBonus + homesteadMaxHealthBonus;
 
   return {
     characterId,

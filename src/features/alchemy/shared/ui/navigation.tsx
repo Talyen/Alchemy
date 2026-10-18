@@ -34,7 +34,7 @@ function PageArrow({
       className={cn(className, hidden && "pointer-events-none invisible")}
       variant="outline"
       size="icon"
-      disabled={hidden || (previous ? page === 0 : page >= totalPages - 1)}
+      disabled={previous ? page === 0 : page >= totalPages - 1}
       onClick={() => onPageChange(page + direction)}
     >
       <Icon className="h-5 w-5" />

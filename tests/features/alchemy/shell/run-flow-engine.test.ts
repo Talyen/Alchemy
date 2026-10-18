@@ -79,7 +79,7 @@ describe("createRunFlowEngine", () => {
     useUiStore.setState({ hoveredCardId: "card-1" });
     engine.beginCampaign();
     expect(useUiStore.getState().hoveredCardId).toBeNull();
-    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CHARACTER_SELECT, undefined);
+    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CHARACTER_SELECT);
   });
 
   it("a retained Corruption Leave action cannot replace a newer battle", () => {

@@ -78,7 +78,7 @@ export function InteractiveArtTile({
         onHoverChange(false);
       }
     : onHoverEnd;
-  const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useHoverVisible({
+  const { wrapperRef, showPopup, onMouseEnter, onMouseLeave, onBlurCapture } = useHoverVisible({
     holdMs: TOOLTIP_FADE_MS,
     focusWithinGuard: true,
     interactive,
@@ -101,8 +101,8 @@ export function InteractiveArtTile({
     <div
       ref={wrapperRef}
       className="relative"
-      onMouseEnter={interactive ? handleHoverStart : undefined}
-      onMouseLeave={interactive ? handleMouseLeave : undefined}
+      onMouseEnter={interactive ? onMouseEnter : undefined}
+      onMouseLeave={interactive ? onMouseLeave : undefined}
     >
       {/* oxlint-disable-next-line react-hooks/refs -- popup trigger uses mutable ref provided by useHoverVisible */}
       {interactive && popup && showPopup ? popup({ visible: isHovered, triggerRef: wrapperRef }) : null}
@@ -126,7 +126,7 @@ export function InteractiveArtTile({
         // Unavailable tiles may supply an explicit rejection handler; visual chrome
         // must not suppress that feedback. Purchase callers omit their action.
         onClick={interactive && !disabled ? onClick : undefined}
-        {...(interactive ? { onFocus: handleHoverStart, onBlur: handleBlur } : {})}
+        {...(interactive ? { onFocus: onMouseEnter, onBlur: onBlurCapture } : {})}
         ariaLabel={ariaLabel ?? title}
         {...(ariaDisabled !== undefined ? { ariaDisabled } : {})}
       >

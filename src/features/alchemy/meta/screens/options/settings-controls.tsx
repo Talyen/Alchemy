@@ -1,6 +1,8 @@
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
-import { useSelectDismiss } from "../../../shared/ui/use-select-dismiss";
+import { useModalEscapeDismiss } from "../../../shared/ui/use-modal-escape-dismiss";
+import { ESCAPE_PRIORITY } from "@/app/escape-stack";
+import { useState } from "react";
 import { useId, type ReactNode } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -49,14 +51,23 @@ interface SettingsSelectProps<T extends string> {
 
 export function SettingsSelect<T extends string>({ id, label, value, options, onChange }: SettingsSelectProps<T>) {
   const i18n = useGameTranslation();
-  const selectDismiss = useSelectDismiss();
+  const [open, setOpen] = useState(false);
+  // Radix listens below our window capture listener. Register its open state so
+  // Escape closes a select before it can dismiss the surrounding screen or dialog.
+  useModalEscapeDismiss({
+    active: open,
+    id: "select",
+    priority: ESCAPE_PRIORITY.SELECT,
+    onEscape: () => setOpen(false),
+  });
   return (
     <div className="options-settings-row">
       <label htmlFor={id} className={cn("options-settings-label", controlLabelClass)}>
         {label}
       </label>
       <Select
-        {...selectDismiss}
+        open={open}
+        onOpenChange={setOpen}
         value={value}
         onValueChange={(nextValue) => {
           onChange(nextValue as T);

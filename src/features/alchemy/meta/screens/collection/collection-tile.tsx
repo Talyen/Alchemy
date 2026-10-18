@@ -53,7 +53,7 @@ export const CollectionTile = memo(function CollectionTile({
     item.id,
   );
   const [flipped, setFlipped] = useState(false);
-  const { wrapperRef, showPopup, visible, handleHoverStart, handleMouseMove, handleMouseLeave, handleBlur, dismiss } =
+  const { wrapperRef, showPopup, visible, onMouseEnter, onMouseMove, onMouseLeave, onBlurCapture, dismiss } =
     useHoverVisible({
       holdMs: TOOLTIP_FADE_MS,
       focusWithinGuard: true,
@@ -71,16 +71,16 @@ export const CollectionTile = memo(function CollectionTile({
     <div
       ref={wrapperRef}
       className="relative flex h-full w-full justify-center"
-      onMouseEnter={handleHoverStart}
-      onMouseLeave={handleMouseLeave}
-      onMouseMove={handleMouseMove}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onMouseMove={onMouseMove}
     >
       {showPopup ? <CollectionTilePopup item={item} hovered={visible} triggerRef={wrapperRef} /> : null}
       <Surface
         as="button"
         ariaLabel={i18n.displayText(i18n.read(() => inspectAriaLabel(item)))}
-        onFocus={handleHoverStart}
-        onBlur={handleBlur}
+        onFocus={onMouseEnter}
+        onBlur={onBlurCapture}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
         overlay={

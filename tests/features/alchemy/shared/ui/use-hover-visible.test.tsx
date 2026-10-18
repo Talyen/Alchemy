@@ -24,10 +24,10 @@ describe("useHoverVisible", () => {
 
   it("keeps inspection visible until both pointer and keyboard focus leave", () => {
     function InspectionHover() {
-      const { wrapperRef, handleHoverStart, handleMouseLeave, handleBlur, visible } = useHoverVisible();
+      const { wrapperRef, onMouseEnter, onMouseLeave, onBlurCapture, visible } = useHoverVisible();
       return (
-        <div ref={wrapperRef} data-testid="wrapper" onMouseEnter={handleHoverStart} onMouseLeave={handleMouseLeave}>
-          <button onFocus={handleHoverStart} onBlur={handleBlur}>
+        <div ref={wrapperRef} data-testid="wrapper" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+          <button onFocus={onMouseEnter} onBlur={onBlurCapture}>
             Inspect
           </button>
           <span data-testid="visible">{String(visible)}</span>
