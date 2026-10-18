@@ -111,7 +111,7 @@ export async function waitForBattleReady(
   await expect(page.getByTestId("battle-scene")).toBeVisible({ timeout: timeoutMs });
   await expect(page.getByTestId("player-health")).toBeVisible({ timeout: timeoutMs });
   await expect(page.getByTestId("enemy-health")).toBeVisible({ timeout: timeoutMs });
-  await expect(page.getByRole("button", { name: "End Turn" })).toBeVisible({ timeout: timeoutMs });
+  await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: timeoutMs });
   await waitForHandPlayable(page, timeoutMs);
   await waitForBattleArtLoaded(page, timeoutMs, failedAssetRequests);
 }

@@ -7,6 +7,8 @@ import { BattlePage } from "../../tests/pages/battle-page";
 import { DestinationPage } from "../../tests/pages/destination-page";
 import { RewardPage } from "../../tests/pages/reward-page";
 import { injectExactSave } from "../../tests/e2e/save-injection";
+import { DESTINATIONS } from "../../src/lib/routing/destinations";
+import { waitForBattleReady } from "../battle-setup";
 import { assertJourneyCase } from "../journey-types";
 import type { ScenarioRunResult } from "../report";
 import { installRuntimeResourceProbe, requireSettledResources } from "../runtime-resources";
@@ -21,13 +23,21 @@ async function settleSave(page: Page) {
 }
 async function menu(page: Page) {
   const main = new MenuPage(page);
-  if (await page.getByRole("button", { name: "Play", exact: true }).isVisible()) return;
-  await page.getByRole("button", { name: "Open game menu", exact: true }).click();
-  await page.getByTestId("game-menu").getByRole("button", { name: "Main Menu", exact: true }).click();
+  const logo = page.getByRole("img", { name: "Alchemy logo", exact: true });
+  if (!(await logo.isVisible())) {
+    await page.getByRole("button", { name: "Open game menu", exact: true }).click();
+    await page.getByTestId("game-menu").getByRole("button", { name: "Main Menu", exact: true }).click();
+  }
   await main.expectMainMenu();
+  await expect.poll(() => logo.evaluate((element) => !element.closest("[inert]"))).toBe(true);
 }
 async function progress(page: Page) {
   const continuation = page.getByRole("button", { name: "Continue", exact: true });
+  const destination = new DestinationPage(page);
+  const destinations = Object.values(DESTINATIONS)
+    .filter((name) => name !== DESTINATIONS.MYSTERY)
+    .map((name) => destination.destinationButton(name))
+    .reduce((all, option) => all.or(option));
   if (await continuation.isVisible()) await continuation.click();
   else {
     await page.getByRole("button", { name: "Play", exact: true }).click();
@@ -40,11 +50,30 @@ async function progress(page: Page) {
       await page.getByRole("button", { name: "Play", exact: true }).click();
     }
   }
+  // Continue remains visible in the outgoing menu during its exit fade.
+  // Branch only after the resumed activity replaces it, or we can click it twice.
+  await expect(page.getByRole("img", { name: "Alchemy logo", exact: true })).toBeHidden();
   await expect(page.getByRole("button", { name: "Play", exact: true })).toHaveCount(0);
+  // The outgoing menu can unmount one frame before the activity mounts.
+  // Wait for a supported activity instead of guessing Destination in that gap.
+  await expect
+    .poll(
+      async () =>
+        (await page.getByTestId("battle-scene").isVisible()) ||
+        (await page.locator('[aria-label^="Select "]').first().isVisible()) ||
+        (await page.getByRole("button", { name: /^Buy / }).first().isVisible()) ||
+        (await page.getByRole("button", { name: "Rest", exact: true }).isVisible()) ||
+        (await page.getByRole("button", { name: "Leave", exact: true }).isVisible()) ||
+        (await continuation.isVisible()) ||
+        (await destinations.first().isVisible()) ||
+        (await page.getByRole("heading", { name: "Choose Destination", exact: true }).isVisible()),
+      { timeout: 15_000 },
+    )
+    .toBe(true);
   await settleSave(page);
   const battle = new BattlePage(page);
   if (await page.getByTestId("battle-scene").isVisible()) {
-    await battle.waitForOpeningHand();
+    await waitForBattleReady(page);
     const inspect = page.getByRole("button", { name: /^View Deck/ });
     await inspect.click();
     await expect(page.getByRole("dialog")).toBeVisible();
@@ -65,6 +94,13 @@ async function progress(page: Page) {
     }
     if (!(await battle.isBattleOver())) await battle.endTurn();
     await settleSave(page);
+  } else if (
+    (await page.getByRole("button", { name: "Leave", exact: true }).isVisible()) &&
+    !(await page.getByRole("button", { name: /^Buy / }).first().isVisible())
+  ) {
+    // Decline optional alterations through their normal exit. Mystery needs a
+    // separate choice policy, so the destination policy prefers other visits.
+    await page.getByRole("button", { name: "Leave", exact: true }).click();
   } else if (await page.locator('[aria-label^="Select "]').first().isVisible()) {
     await new RewardPage(page).claimFirstReward();
     await settleSave(page);
@@ -80,12 +116,8 @@ async function progress(page: Page) {
     await settleSave(page);
   } else if (await continuation.isVisible()) await continuation.click();
   else {
-    const destination = new DestinationPage(page);
     await destination.expectVisible();
-    const options = page.getByRole("button", {
-      name: /^(Card Shop|Gear Shop|Campfire|Combat|Elite Combat|Boss Combat)$/,
-    });
-    await options.first().click();
+    await destinations.first().click();
   }
   await settleSave(page);
 }

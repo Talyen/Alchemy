@@ -8,6 +8,12 @@ export function summarizeMeasuredCoverage(actions: readonly JourneyAction[]) {
     playedCardLabels: labels("play:"),
     wishChoiceLabels: labels("wish:"),
     cardPlays: actions.filter((a) => a.name.startsWith("play:")).length,
+    completedTransactions: actions
+      .filter(
+        ({ name }) =>
+          name === "brew-potion" || name === "transmute" || name.startsWith("craft:") || name.startsWith("salvage:"),
+      )
+      .map(({ name }) => name),
     endTurnActions: actions.filter((a) => a.name === "end-turn").length,
   };
 }

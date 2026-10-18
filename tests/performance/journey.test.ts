@@ -76,11 +76,20 @@ describe("reachable performance cases", () => {
       journal: [
         { step: 12, action: { kind: "reward" } },
         { step: 20, action: { kind: "buy-card" } },
+        { step: 30, action: { kind: "campfire" } },
+        { step: 35, action: { kind: "transmutation-source" } },
+        { step: 36, action: { kind: "transmutation-confirm" } },
+        { step: 55, action: { kind: "craft" } },
       ],
     };
     expect(chooseCheckpointStep(selectCase("campaign-developed"), result)).toBe(40);
     expect(chooseCheckpointStep(selectCase("reward-route"), result)).toBe(12);
     expect(chooseCheckpointStep(selectCase("shop-journey"), result)).toBe(20);
+    // Capture before selection/commit, rather than profiling an already completed visit.
+    expect(chooseCheckpointStep(selectCase("campfire-brewing"), result)).toBe(30);
+    expect(chooseCheckpointStep(selectCase("transmutation-journey"), result)).toBe(35);
+    expect(chooseCheckpointStep(selectCase("crafting-journey"), result)).toBe(55);
+    expect(chooseCheckpointStep(selectCase("crafting-journey"), { journal: [] })).toBeUndefined();
   });
 
   it("validates replay case shape and rejects mismatched checkpoints or actions", () => {
@@ -174,12 +183,25 @@ it("varies legal combat decisions, prefers unseen actions, and replays card and 
   expect(() => mismatch.choose(["play:Slash"])).toThrow(/unavailable/);
   expect(() => mismatch.choose(["wish:Choose Meteor"])).toThrow(/unavailable/);
   expect(
-    summarizeMeasuredCoverage([...recordedActions, { name: "end-turn", segment: "enemy-turn", timeMs: 2 }]),
+    summarizeMeasuredCoverage([
+      ...recordedActions,
+      { name: "end-turn", segment: "enemy-turn", timeMs: 2 },
+      ...[
+        "open-brewing",
+        "brew-potion",
+        "select-source:Bash",
+        "transmute",
+        "currency:voidstone",
+        "craft:voidstone:item-1",
+        "salvage:item-1",
+      ].map((name) => ({ name, segment: "transaction", timeMs: 3 })),
+    ]),
   ).toEqual({
     playedCardLabels: ["Poison", "Slash"],
     wishChoiceLabels: ["Choose Meteor"],
     cardPlays: 2,
     endTurnActions: 1,
+    completedTransactions: ["brew-potion", "transmute", "craft:voidstone:item-1", "salvage:item-1"],
   });
 });
 

@@ -6,6 +6,9 @@ export const REALISTIC_SCENARIOS = [
   "reward-route",
   "shop-journey",
   "meta-journey",
+  "campfire-brewing",
+  "transmutation-journey",
+  "crafting-journey",
   "trinket-journey",
   "resume-journey",
 ];
@@ -55,6 +58,9 @@ export function selectCase(scenario, seed = 42) {
     "wildwood-journey": [345, "ranger", "wildwood", "difficulty-1", "archetype", "draft"],
     "reward-route": [42, "knight", "campaign", "difficulty-1", "archetype", "reward"],
     "shop-journey": [42, "knight", "campaign", "difficulty-1", "archetype", "shop"],
+    "campfire-brewing": [42, "knight", "campaign", "difficulty-1", "archetype", "campfire"],
+    "transmutation-journey": [42, "knight", "campaign", "difficulty-1", "archetype", "transmutation"],
+    "crafting-journey": [42, "knight", "campaign", "difficulty-1", "archetype", "craft"],
     "meta-journey": [42, "knight", "campaign", "difficulty-1", "archetype", "late-run"],
     "trinket-journey": [1, "knight", "campaign", "difficulty-1", "random", "trinket-battle"],
     "resume-journey": [42, "knight", "campaign", "difficulty-1", "archetype", "developed-battle"],
@@ -93,6 +99,12 @@ export function chooseCheckpointStep(caseSpec, result) {
       return action("reward")?.step;
     case "shop":
       return action("buy-card")?.step;
+    case "campfire":
+      return action("campfire")?.step;
+    case "transmutation":
+      return action("transmutation-source")?.step;
+    case "craft":
+      return action("craft")?.step;
     case "draft":
       return action("draft")?.step ?? action("select-draft-card")?.step;
     case "late-run":

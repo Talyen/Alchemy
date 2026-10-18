@@ -214,11 +214,16 @@ export function compareReports(beforeReport, afterReport) {
       new Set(report.scenarios.map(({ scenario }) => scenario)).size !== report.scenarios.length
     )
       throw new Error("Expected distinct performance scenarios in both reports.");
+    const measured = new Set(report.scenarios.map(({ scenario }) => scenario));
+    const missing = (report.environment.scenarios ?? []).filter((scenario) => !measured.has(scenario));
+    if (missing.length)
+      throw new Error(`Incomplete performance report: missing measured scenarios: ${missing.join(", ")}`);
     for (const scenario of report.scenarios) {
       assertComparableMetrics(scenario.aggregate);
       for (const segment of scenario.segments ?? []) assertComparableMetrics(segment.aggregate);
       for (const run of scenario.runs ?? []) {
         if (!run.measured) continue;
+        if (run.notes?.length) throw new Error(`Failed measured run in ${scenario.scenario}: ${run.notes.join("; ")}`);
         assertComparableMetrics(run.metrics);
         if (run.segments?.some((segment) => !segment.valid))
           throw new Error(`Invalid measured segment in ${scenario.scenario}.`);

@@ -1,3 +1,4 @@
+import { createCareerActor } from "@/app/playthrough/actor";
 import { offerRunChoices } from "@/app/playthrough/run-offers";
 import { createChoiceCatalog } from "@/app/playthrough/choice-catalog";
 import {
@@ -95,6 +96,46 @@ describe("retained headless rejection and persistence contracts", () => {
     expect(readActiveRun(defaultGameSession).runDeck[0]?.id).toBe(before[0]!.id);
     expect(readActiveRun(defaultGameSession).runDeck[0]?.transmuted).toBeTruthy();
     expect(observe().map((choice) => choice.kind)).toEqual(["transmutation-exit"]);
+  });
+
+  it("resolves pending Wishes after a lethal turn before settling victory", () => {
+    start();
+    mutateGameplayForTest((draft) =>
+      setBattleState(draft, {
+        ...readBattle(defaultGameSession).battleState,
+        enemyHealth: 0,
+        turnPhase: "enemy",
+        wishOptions: [cardById.slash!],
+        wishQueue: [[cardById.block!]],
+      }),
+    );
+    const actor = createCareerActor(
+      {
+        seed: 143,
+        hero: "knight",
+        mode: "campaign",
+        difficulty: "difficulty-1",
+        runs: 1,
+        horizon: 4,
+        maxSteps: 100,
+        maxTurns: 100,
+        policy: "archetype",
+        combatPolicy: "greedy-effective-damage",
+      },
+      undefined,
+      defaultGameSession,
+    );
+    for (const id of ["slash", "block"]) {
+      const choices = actor.observe();
+      expect(choices.map((choice) => choice.kind)).toEqual(["wish"]);
+      expect(choices[0]?.id).toBe(id);
+      actor.execute(choices[0]!);
+      expect(readRunSession(defaultGameSession).activity.kind).toBe("battle");
+    }
+    const [settle] = actor.observe();
+    expect(settle?.kind).toBe("settle");
+    actor.execute(settle!);
+    expect(readRunSession(defaultGameSession).activity.kind).toBe("rewards");
   });
 
   it("rejects stale combat choices without consuming world RNG", () => {

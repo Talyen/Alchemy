@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { gearItemLocator, selectArmorySlot } from "../../tests/e2e/armory";
-import type { Page } from "@playwright/test";
+import { equipmentSlotLocator, gearItemLocator, selectArmorySlot } from "../../tests/e2e/armory";
+import type { GearSlot } from "../../src/lib/gear/types";
+import type { Locator, Page } from "@playwright/test";
 import { BattlePage } from "../../tests/pages/battle-page";
 import { DestinationPage } from "../../tests/pages/destination-page";
 import { HomesteadPage } from "../../tests/pages/homestead-page";
@@ -63,6 +64,19 @@ async function resolveWishChoices(
   if (await panel.isVisible().catch(() => false)) throw new Error("Wish choices did not settle");
 }
 
+async function waitForCombatDecision(page: Page, battle: BattlePage): Promise<void> {
+  await expect
+    .poll(
+      async () => {
+        if (await battle.isBattleOver()) return true;
+        if (await page.locator(".wish-overlay-panel").isVisible()) return true;
+        return battle.endTurnBtn.isEnabled().catch(() => false);
+      },
+      { timeout: 20_000 },
+    )
+    .toBe(true);
+}
+
 async function playRealCombat(
   page: Page,
   phase: Phase,
@@ -79,6 +93,11 @@ async function playRealCombat(
   for (let turn = 0; turn < maxTurns && !(await battle.isBattleOver()); turn++) {
     await phase("combat");
     for (let cardIndex = 0; cardIndex < (variedCombat ? 8 : 3) && !(await battle.isBattleOver()); cardIndex++) {
+      // A removed card can still be resolving damage, draws, or victory. Wait
+      // for a decision boundary before consuming the next replay choice.
+      await waitForCombatDecision(page, battle);
+      await resolveWishChoices(page, recordAction, decisions);
+      if (await battle.isBattleOver()) break;
       const playable = battle.hand.filter({ visible: true });
       const count = await playable.count();
       const choices: Array<{ label: string; index: number }> = [];
@@ -116,6 +135,8 @@ async function playRealCombat(
     }
     if (await battle.isBattleOver()) break;
     await resolveWishChoices(page, recordAction, decisions);
+    await waitForCombatDecision(page, battle);
+    if (await battle.isBattleOver()) break;
     await phase("enemy-turn");
     await record("end-turn", () => battle.endTurn(), recordAction);
     actions++;
@@ -277,7 +298,173 @@ async function uniqueArmoryRoute(page: Page, phase: Phase, recordAction: RecordA
   await delay(500);
 }
 
+async function campfireBrewingRoute(page: Page, phase: Phase, recordAction: RecordAction): Promise<void> {
+  await expect(page.getByRole("heading", { name: "Campfire", exact: true })).toBeVisible();
+  await phase("brew-selection");
+  await record(
+    "open-brewing",
+    () => page.getByRole("button", { name: "Brew Potion", exact: true }).click(),
+    recordAction,
+  );
+  const choices = page.getByRole("button", { name: /^Select / }).filter({ visible: true });
+  await expect(choices.first()).toBeEnabled();
+  const mixing = await page.getByRole("heading", { name: "Mix Potion", exact: true }).isVisible();
+  // The first reachable campfire may offer a new recipe or a pair of owned Potions.
+  if (mixing) {
+    await record("select-potion:0", () => choices.nth(0).click(), recordAction);
+    await record("select-potion:1", () => choices.nth(1).click(), recordAction);
+    await expect(page.getByLabel("Brew preview", { exact: true })).toBeVisible();
+  }
+  await delay(350);
+  await phase("brew-result");
+  await record(
+    "brew-potion",
+    async () => {
+      if (mixing) await page.getByRole("button", { name: "Mix", exact: true }).click();
+      else await choices.first().click();
+      await expect(page.getByRole("button", { name: "Loot", exact: true })).toBeVisible();
+    },
+    recordAction,
+  );
+  await delay(700);
+  await phase("destination");
+  await record("leave-campfire", () => page.getByRole("button", { name: "Loot", exact: true }).click(), recordAction);
+  await expect(page.getByRole("heading", { name: "Campfire", exact: true })).toBeHidden();
+  await delay(700);
+}
+
+async function transmutationRoute(page: Page, phase: Phase, recordAction: RecordAction): Promise<void> {
+  await phase("transmutation-selection");
+  const source = page
+    .getByRole("button", { name: /^Select / })
+    .filter({ visible: true })
+    .and(page.locator(':enabled:not([aria-disabled="true"])'))
+    .first();
+  await expect(source).toBeVisible();
+  await record(`select-source:${await source.getAttribute("aria-label")}`, () => source.click(), recordAction);
+  const alterations = page.getByRole("group", { name: "Alterations", exact: true });
+  const choice = alterations.getByRole("button").and(page.locator(':enabled:not([aria-disabled="true"])')).first();
+  await record(`select-alteration:${await choice.textContent()}`, () => choice.click(), recordAction);
+  await expect(page.getByLabel("Transmutation comparison", { exact: true })).toBeVisible();
+  await delay(350);
+  await phase("transmutation-result");
+  await record(
+    "transmute",
+    async () => {
+      await page.getByRole("button", { name: "Transmute", exact: true }).click();
+      await expect(page.getByRole("button", { name: "Continue", exact: true })).toBeEnabled();
+    },
+    recordAction,
+  );
+  await delay(700);
+  await phase("destination");
+  await record(
+    "leave-transmutation",
+    () => page.getByRole("button", { name: "Continue", exact: true }).click(),
+    recordAction,
+  );
+  await delay(700);
+}
+
+async function craftingRoute(
+  page: Page,
+  phase: Phase,
+  recordAction: RecordAction,
+  journeyCase: JourneyCase,
+): Promise<void> {
+  const crafting = journeyCase.coverage.crafting as { currencyId: string; instanceId: string } | undefined;
+  if (!crafting) throw new Error("Missing reachable crafting action");
+  await phase("crafting-browse");
+  await record("open-armory", () => page.getByRole("button", { name: "Armory", exact: true }).click(), recordAction);
+  await expect(page.getByRole("heading", { name: "Armory", exact: true })).toBeVisible();
+  const loadouts = journeyCase.initialSave.gearLoadouts as Record<string, Record<string, string | null>>;
+  const equipped = Object.entries(loadouts).flatMap(([hero, slots]) =>
+    Object.entries(slots)
+      .filter(([, id]) => id === crafting.instanceId)
+      .map(([slot]) => ({ hero, slot })),
+  )[0];
+  let target: Locator | undefined;
+  if (equipped) {
+    const heroName = equipped.hero.charAt(0).toUpperCase() + equipped.hero.slice(1);
+    await record(
+      `hero:${equipped.hero}`,
+      () => page.getByRole("button", { name: heroName, exact: true }).click(),
+      recordAction,
+    );
+    target = page.locator(`[data-testid="armory-equipment-slot"][data-slot="${equipped.slot}"]`).getByRole("button");
+  } else {
+    for (const slot of ["main-hand", "off-hand", "body", "left-accessory", "right-accessory"] as GearSlot[]) {
+      // Clicking an already selected equipment slot unequips its item.
+      if ((await equipmentSlotLocator(page, slot).getByRole("button").getAttribute("aria-pressed")) !== "true")
+        await record(`slot:${slot}`, () => selectArmorySlot(page, slot), recordAction);
+      for (let index = 0; index < 100; index++) {
+        const item = page.locator(
+          `[data-testid="armory-inventory-item"][data-instance-id=${JSON.stringify(crafting.instanceId)}]`,
+        );
+        if (await item.isVisible()) {
+          target = item.getByRole("button").first();
+          break;
+        }
+        const next = page.getByRole("button", { name: "Next page", exact: true });
+        if (!(await next.isVisible()) || !(await next.isEnabled())) break;
+        await record(`page:${slot}:${index + 1}`, () => next.click(), recordAction);
+      }
+      if (target) break;
+    }
+  }
+  if (!target) throw new Error("Crafting target not found in the reached inventory");
+  await record("inspect-crafting-target", () => target.hover(), recordAction);
+  await delay(350);
+  await phase("crafting");
+  const currency = page.locator(`[data-testid="armory-crafting-currency"][data-currency-id="${crafting.currencyId}"]`);
+  const before = Number(await currency.textContent());
+  await record(`currency:${crafting.currencyId}`, () => currency.click(), recordAction);
+  await expect(target).toHaveAttribute("aria-label", /^Apply /);
+  await record(
+    `craft:${crafting.currencyId}:${crafting.instanceId}`,
+    async () => {
+      await target.click();
+      await expect(page.getByTestId("armory-crafting-result")).toBeVisible();
+      await expect(currency).toHaveText(String(before - 1));
+    },
+    recordAction,
+  );
+  await delay(700);
+  await page.getByRole("button", { name: "Dismiss result", exact: true }).click();
+  await phase("salvage");
+  await page.getByTestId("armory-salvage-toggle").click();
+  await target.click();
+  const dialog = page.getByRole("dialog", { name: "Salvage", exact: true });
+  await expect(dialog).toBeVisible();
+  await record(
+    `salvage:${crafting.instanceId}`,
+    async () => {
+      await dialog.getByRole("button", { name: "Salvage", exact: true }).click();
+      await expect(dialog).toBeHidden();
+      if (equipped) await expect(target).not.toHaveAttribute("aria-label", /^Salvage /);
+      else await expect(target).toHaveCount(0);
+    },
+    recordAction,
+  );
+  await delay(700);
+}
+
 const SEGMENTS: Record<string, SegmentRequirement[]> = {
+  "campfire-brewing": [
+    { name: "brew-selection", minActions: 1, minFrames: 8 },
+    { name: "brew-result", minActions: 1, minFrames: 20 },
+    { name: "destination", minActions: 1, minFrames: 8 },
+  ],
+  "transmutation-journey": [
+    { name: "transmutation-selection", minActions: 2, minFrames: 8 },
+    { name: "transmutation-result", minActions: 1, minFrames: 20 },
+    { name: "destination", minActions: 1, minFrames: 8 },
+  ],
+  "crafting-journey": [
+    { name: "crafting-browse", minActions: 1, minFrames: 8 },
+    { name: "crafting", minActions: 2, minFrames: 20 },
+    { name: "salvage", minActions: 1, minFrames: 20 },
+  ],
   "campaign-early": [
     { name: "combat", minActions: 1, minFrames: 45 },
     { name: "enemy-turn", minActions: 1, minFrames: 20 },
@@ -348,7 +535,10 @@ for (const scenario of Object.keys(SEGMENTS)) {
           }
         },
         interact: async (page, phase, recordAction) => {
-          if (scenario === "labyrinth-journey") await labyrinthRoute(page, phase, recordAction, journeyCase);
+          if (scenario === "campfire-brewing") await campfireBrewingRoute(page, phase, recordAction);
+          else if (scenario === "transmutation-journey") await transmutationRoute(page, phase, recordAction);
+          else if (scenario === "crafting-journey") await craftingRoute(page, phase, recordAction, journeyCase);
+          else if (scenario === "labyrinth-journey") await labyrinthRoute(page, phase, recordAction, journeyCase);
           else if (scenario === "wildwood-journey") await wildwoodRoute(page, phase, recordAction, journeyCase);
           else if (scenario === "reward-route") await rewardRoute(page, phase, recordAction);
           else if (scenario === "shop-journey") await shopRoute(page, phase, recordAction);

@@ -342,6 +342,23 @@ it("renderSummaryMarkdown renders environment and target table", () => {
     },
   ];
   const md = renderSummaryMarkdown({ environment, aggregates });
+  expect(md).not.toContain("Incomplete scenario coverage");
+  const incomplete = renderSummaryMarkdown({
+    environment: { ...environment, scenarios: ["battle-effects", "failed-warmup"] },
+    aggregates,
+  });
+  expect(incomplete).toContain("Incomplete scenario coverage");
+  expect(incomplete).toContain("failed-warmup: no measured result");
+  expect(incomplete).toContain("cannot establish a performance improvement");
+  const failed = renderSummaryMarkdown({
+    environment,
+    aggregates: aggregates.map((aggregate) => ({
+      ...aggregate,
+      runs: aggregate.runs.map((run) => ({ ...run, notes: ["Replay action path diverged"] })),
+    })),
+  });
+  expect(failed).toContain("Failed measured runs");
+  expect(failed).toContain("These runs failed and cannot establish a performance improvement");
   expect(md).toContain("# Performance profile");
   expect(md).toContain("battle-effects");
   expect(md).toContain("GREEN");

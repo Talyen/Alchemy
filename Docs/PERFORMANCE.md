@@ -21,6 +21,9 @@ npm run perf -- --suite seeded --seed 9 --electron
 npm run perf -- --replay reports/performance/<run>/replay/seeded-discovery.json --electron
 npm run perf:trace -- --scenario battle-effects
 npm run perf -- --electron --scenario campaign-developed
+npm run perf -- --electron --scenario campfire-brewing
+npm run perf -- --electron --scenario transmutation-journey
+npm run perf -- --electron --scenario crafting-journey
 npm run perf -- --electron --cold --scenario startup-first-use
 npm run perf:compare -- reports/performance/<before> reports/performance/<after>
 npm run perf -- --help
@@ -60,7 +63,7 @@ Discovery starts from the labeled `performance-random-account-v1` fixture: the s
 
 The trinket journey starts from the labeled `trinket-v1` account fixture, which grants equipped Companion's Collar and owned Oathkeeper alongside the economy fixture's resources. Its battle checkpoint is reached through normal play; these starting items are fixture grants, not earned loot. The coverage inventory records the starting fixture name.
 
-The realistic journeys run normal animations and production cards with authored costs and effects. Each measured run records actions, named segments, and a replay bundle under `replay/`. `--replay <bundle>` loads the same checkpoint and requires the same action sequence; divergence invalidates the run. The setup wall time is reported separately. Screen transitions, draft, combat, reward claims, shop purchases, account navigation, and resume have their own frame segments. Segment rows require completed actions and frames, so a skipped or stalled journey fails rather than reporting an easy FPS value.
+The realistic journeys run normal animations and production cards with authored costs and effects. Generated checkpoints disable the Auto End Turn preference because the harness explicitly records manual end-turn actions; `coverage.controls` retains this choice. Automatic turns would race card selection and mislabel enemy work. Dedicated automatic-turn timing remains unmeasured. Each measured run records actions, named segments, and a replay bundle under `replay/`. `--replay <bundle>` loads the same checkpoint and requires the same action sequence; divergence invalidates the run. The setup wall time is reported separately. Screen transitions, draft, combat, reward claims, shop purchases, account navigation, and resume have their own frame segments. Segment rows require completed actions and frames, so a skipped or stalled journey fails rather than reporting an easy FPS value.
 
 Discovery samples reachable battle starts across both careers, balancing boss and ordinary encounter groups when both were reached. It does not fabricate battle decks, enemy stats, or combat effect manifests. The starting account gear, Trinket, and talents are fixture grants, not earned progression; `coverage.fixtureGrants` records their exact identities, affix rolls, placement, and talent allocation. Normal play reaches the battle checkpoint, and production battle setup computes the granted loadout effects. New discovery cases try up to six turns and eight legal card plays per turn, selecting reproducibly among cards and Wish choices and preferring choices not yet played in that measurement. Fixed journeys keep their existing control policy and turn limits. Older replay bundles retain their original three-turn limit.
 
@@ -95,7 +98,7 @@ The sampler waits for its first frame callback before scenario actions begin, so
 
 Average FPS is computed strictly across sampled frame gaps, avoiding distortion from unsampled window edges, while total measured duration is retained for rate budgets.
 
-Invalid runs (too few frames, empty samples, or missing/non-positive startup observations) **fail the harness**. Missing an advisory target does **not**.
+Invalid runs (too few frames, empty samples, or missing/non-positive startup observations) **fail the harness**. Setup or warm-up failures that produce no metrics are listed as incomplete scenario coverage in the summary. Measured interaction failures and replay divergence are also labeled as failures, even when their frame samples are long enough. Failed or incomplete reports cannot be compared as optimization evidence. Missing an advisory target does **not**.
 
 The `startup-first-use` report includes `rendererStartupReadyMs`; Electron runs also include
 `electronLaunchToReadyMs`. Use `--electron --cold` for the player-facing cold-start value.
@@ -148,22 +151,24 @@ Classification bands only — never CI gates. Compare only on the same machine, 
 | ≥100 ms stalls    |         0 |
 | ≥50 ms long tasks | ≤1 / 30 s |
 
-The fixed suite covers Campaign, Labyrinth, Wildwood, rewards, shops, account screens, a battle with an equipped trinket and owned Unique in Armory, resume, and startup. Nightly discovery derives three seeds from the workflow run number: one per game mode, with each mode rotating through all eight heroes over eight workflow runs. Higher seed bits vary difficulty, reward policy, and the playthrough world. Each job retains its seed and replay artifacts; generated cases that cannot complete fail visibly rather than falling back to an easy fixture. `--seed` accepts any unsigned 32-bit seed locally. The older `battle-effects`, `battle-end-turn`, talents, collection, options, Labyrinth, Armory, and shop loops remain in the synthetic suite for isolated stress diagnosis. `startup-first-use` measures cold-start observations, not frame targets. `battle-art-diag` remains opt-in. Nightly runs one five-minute `memory-soak` in the existing discovery job, with at least 20 completed gameplay cycles; the manual soak defaults to thirty minutes.
+The fixed suite covers Campaign, Labyrinth, Wildwood, rewards, shops, Campfire brewing, transmutation, Armory crafting and salvage, account screens, a battle with an equipped trinket and owned Unique in Armory, resume, and startup. Nightly discovery derives three seeds from the workflow run number: one per game mode, with each mode rotating through all eight heroes over eight workflow runs. Higher seed bits vary difficulty, reward policy, and the playthrough world. Each job retains its seed and replay artifacts; generated cases that cannot complete fail visibly rather than falling back to an easy fixture. `--seed` accepts any unsigned 32-bit seed locally. The older `battle-effects`, `battle-end-turn`, talents, collection, options, Labyrinth, Armory, and shop loops remain in the synthetic suite for isolated stress diagnosis. `startup-first-use` measures cold-start observations, not frame targets. `battle-art-diag` remains opt-in. Nightly also profiles one of the three fixed transaction journeys in each mode slot, covering Campfire brewing, transmutation, and crafting/salvage on every workflow run. Nightly runs one five-minute `memory-soak` in the existing discovery job, with at least 20 completed gameplay cycles; the manual soak defaults to thirty minutes.
 
 ### Coverage gaps
 
 The registry describes measured journeys, not all game features. Preparing a save through the playthrough engine happens outside renderer measurement and does not cover the screens visited during generation.
 
-| Area                | Current measured coverage                                                                | Missing performance workload                                                                                                                               |
-| ------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Combat              | Fixed battles plus seeded reachable encounters, card and Wish choices, enemy turns       | Guaranteed coverage of every effect, status interaction, companion, trinket, Unique proc, and boss mechanic; actual triggered-mechanic telemetry           |
-| Run destinations    | Reward claim, destination selection, card purchase, Labyrinth inspection, Wildwood draft | Dedicated brewing, Alchemist Shop, transmutation, Mystery choices/deck pickers, Corruption, trinket/gear shop interactions, and Wildwood removal workloads |
-| Campfire            | Conditional Rest in the memory soak                                                      | Dedicated rest, healing, brewing, and transition frame segments                                                                                            |
-| Account progression | Armory equipment/inspection, Homestead and Talent navigation, Collection tabs            | Crafting, salvage/currency targeting, Homestead purchases and bonds, Talent purchases, and large complete Collection inspection workloads                  |
-| Run lifecycle       | Startup and checkpoint resume; incidental end states in the soak                         | Measured mode/hero/difficulty selection, victory/defeat rewards, hero unlock, and demo completion journeys                                                 |
-| Runtime             | Frame gaps, main-thread blocking, input timing, resource snapshots and gameplay soak     | Hardware GPU present timing, physical audio quality, suspend/resume, Proton, and Steam Deck acceptance                                                     |
+| Area                | Current measured coverage                                                                                               | Missing performance workload                                                                                                                                                         |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Combat              | Fixed battles plus seeded reachable encounters, card and Wish choices, enemy turns                                      | Guaranteed coverage of every effect, status interaction, companion, trinket, Unique proc, and boss mechanic; actual triggered-mechanic telemetry and dedicated automatic-turn pacing |
+| Run destinations    | Reward claim, destination selection, card purchase, transmutation, Labyrinth inspection, Wildwood draft                 | Alchemist Shop purchase/mixing/distilling, Mystery choices/deck pickers, Corruption, trinket/gear shop interactions, and Wildwood removal workloads                                  |
+| Campfire            | Reachable brewing selection, saved result and departure; conditional Rest in the memory soak                            | Dedicated rest/healing and guaranteed mixed-Potion selection workloads                                                                                                               |
+| Account progression | Armory equipment/inspection, currency targeting, crafting and salvage; Homestead and Talent navigation, Collection tabs | Every currency transformation, large inventory filtering/paging, Homestead purchases and bonds, Talent purchases, and large complete Collection inspection workloads                 |
+| Run lifecycle       | Startup and checkpoint resume; incidental end states in the soak                                                        | Measured mode/hero/difficulty selection, victory/defeat rewards, hero unlock, and demo completion journeys                                                                           |
+| Runtime             | Frame gaps, main-thread blocking, input timing, resource snapshots and gameplay soak                                    | Performance-specific renderer error assertions, hardware GPU present timing, physical audio quality, suspend/resume, Proton, and Steam Deck acceptance                               |
 
-Prioritize dedicated brewing/transmutation and Armory crafting workloads next: each combines choice grids, previews, state changes, persistence, and animation that battle randomization cannot exercise. Use reachable checkpoints and required completed-action/frame segments, as for existing journeys. Keep fixed replay cases for comparing optimizations; use discovery to find new cases, not as evidence that every mechanic is covered.
+The `campfire-brewing` and `transmutation-journey` cases capture reachable visits before selection. Their required segments measure selection, the saved result, and departure. `crafting-journey` captures an earned legal currency application between careers from the labeled `economy-v1` starting account. It records the exact currency and item identity, targets that item through normal Armory controls, requires currency consumption and a visible result, then salvages the item through its confirmation. These are short transactional journeys, not sustained stress loops; each runs once after warm-up. Replay bundles preserve the checkpoint and completed action path.
+
+Prioritize Alchemist Shop services, progression purchases, and large-inventory browsing next. Use reachable checkpoints and required completed-action/frame segments, as for existing journeys. Keep fixed replay cases for comparing optimizations; use discovery to find new cases, not as evidence that every mechanic is covered.
 
 Use `npm run perf -- --help` and `performance/catalog.json` for current scenario
 durations and minimum samples rather than maintaining a second defaults table.
@@ -265,7 +270,7 @@ animation elements. The probe observes actual media lifecycle without muting,
 shortening, or replacing playback. DOM audio-element count is separate from SFX
 ownership and cannot establish that detached cues were released.
 
-Stalls, unexpected runtime errors, overdue finite-duration cues, and unreleased
+Stalled controls, overdue finite-duration cues, and unreleased
 card/Armory transfers fail the journey. A minimum cycle count prevents an idle
 renderer from passing the soak. Heap growth remains diagnostic because new gameplay
 content can legitimately populate caches; there is no invented memory threshold.

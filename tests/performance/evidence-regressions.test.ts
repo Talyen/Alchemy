@@ -75,6 +75,26 @@ it("rejects architecture, run-count, and partially missing display evidence", ()
 });
 
 it("rejects invalid or incomplete measurements before they can appear to improve performance", () => {
+  const incomplete = { ...report(), environment: { ...environment, scenarios: ["battle-effects", "failed-warmup"] } };
+  expect(() => compareReports(incomplete, report())).toThrow(/Incomplete performance report.*failed-warmup/);
+  expect(() => compareReports(report(), incomplete)).toThrow(/Incomplete performance report.*failed-warmup/);
+  const failed = report([
+    {
+      ...scenario(),
+      runs: [
+        {
+          scenario: "battle-effects",
+          runIndex: 1,
+          measured: true,
+          profile: "continuous",
+          metrics: metrics(),
+          targets: [],
+          notes: ["Replay action path diverged"],
+        },
+      ],
+    },
+  ]);
+  expect(() => compareReports(report(), failed)).toThrow(/Failed measured run/);
   const before = metrics();
   for (const patch of [
     { valid: false },

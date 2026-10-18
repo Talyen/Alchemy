@@ -64,7 +64,7 @@ export function offerRunChoices(
       const state = battle.read().battleState;
       const outcome = getBattleOutcome(state);
       if (outcome === "defeat") offer("settle", "defeat", 1, flow.handleBattleDefeat);
-      else if (outcome === "victory") offer("settle", "victory", 1, flow.handleBattleVictory);
+      else if (outcome === "victory" && !state.wishOptions) offer("settle", "victory", 1, flow.handleBattleVictory);
       else if (state.wishOptions?.length)
         state.wishOptions.forEach((card, index) =>
           offer(

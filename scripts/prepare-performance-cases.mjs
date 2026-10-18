@@ -21,7 +21,7 @@ const config = {
   runs:
     scenario === "trinket-journey"
       ? 3
-      : ["campaign-developed", "meta-journey", "seeded-discovery"].includes(scenario)
+      : ["campaign-developed", "meta-journey", "crafting-journey", "seeded-discovery"].includes(scenario)
         ? 2
         : 1,
   horizon: 4,
@@ -35,7 +35,7 @@ const fixture =
     ? "performance-random-account-v1"
     : scenario === "trinket-journey"
       ? "trinket-v1"
-      : scenario === "meta-journey"
+      : ["meta-journey", "crafting-journey"].includes(scenario)
         ? "economy-v1"
         : selected.hero !== "knight" || selected.mode !== "campaign" || selected.difficulty !== "difficulty-1"
           ? "unlocked-v1"
@@ -78,8 +78,11 @@ const checkpoint = await runWorker("checkpoint", step);
 const saved = JSON.parse(fs.readFileSync(`${checkpoint.output}.checkpoint`, "utf8"));
 const initialSave = JSON.parse(saved.bytes);
 if (!initialSave || typeof initialSave !== "object") throw new Error("Checkpoint has no save");
+// The harness explicitly ends turns. Automatic turns can race its next card
+// choice, move that card out from under the pointer, and mislabel enemy work.
+initialSave.autoEndTurn = false;
 const activeRun = initialSave.activeRun;
-if (!activeRun && selected.checkpoint !== "late-run") throw new Error("Checkpoint has no active run");
+if (!activeRun && !["late-run", "craft"].includes(selected.checkpoint)) throw new Error("Checkpoint has no active run");
 const battleState = activeRun?.activity?.kind === "battle" ? activeRun.activity.data.battleState : null;
 function effectKinds(value, kinds = new Set()) {
   if (Array.isArray(value)) for (const item of value) effectKinds(item, kinds);
@@ -92,8 +95,18 @@ function effectKinds(value, kinds = new Set()) {
 const encounter = discovery.result.telemetry?.battleSnapshots?.find(
   (battle) => battle.stage === "start" && battle.step === step,
 );
+const craftingAction =
+  selected.checkpoint === "craft" ? discovery.result.journal.find((entry) => entry.step === step)?.action : null;
+const [currencyId, ...instanceParts] = (craftingAction?.id ?? "").split(":");
+const instanceId = instanceParts.join(":");
+if (craftingAction && (!initialSave.craftingCurrencies?.[currencyId] || !instanceId || activeRun))
+  throw new Error("Crafting checkpoint must have available currency and no combat reservations");
 const coverage = {
+  ...(craftingAction
+    ? { crafting: { currencyId, instanceId }, craftingCurrencies: initialSave.craftingCurrencies }
+    : {}),
   fixture,
+  controls: { autoEndTurn: false },
   ...(fixture === "performance-random-account-v1"
     ? {
         fixtureGrants: {
@@ -131,12 +144,9 @@ if (scenario === "campaign-developed" && (coverage.talents.length === 0 || cover
 }
 if (
   scenario === "meta-journey" &&
-  (coverage.talents.length === 0 ||
-    coverage.gear.length === 0 ||
-    coverage.companions.length === 0 ||
-    coverage.boons.length === 0)
+  (coverage.talents.length === 0 || coverage.gear.length === 0 || coverage.companions.length === 0)
 ) {
-  throw new Error("Developed account checkpoint lacks talents, gear, companion bonds, or boons");
+  throw new Error("Developed account checkpoint lacks talents, gear, or companion bonds");
 }
 if (
   scenario === "trinket-journey" &&

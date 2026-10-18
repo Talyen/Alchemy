@@ -124,7 +124,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        slot: [0, 1, 2]
+        include:
+          - slot: 0
+            workload: campfire-brewing
+          - slot: 1
+            workload: transmutation-journey
+          - slot: 2
+            workload: crafting-journey
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -153,6 +159,11 @@ jobs:
 
       - name: Run seeded journey
         run: xvfb-run --auto-servernum -- npm run perf -- --suite seeded --seed ${{ steps.seed.outputs.value }} --electron --skip-build
+        env:
+          CI: true
+
+      - name: Profile non-combat transaction
+        run: xvfb-run --auto-servernum -- npm run perf -- --scenario ${{ matrix.workload }} --electron --skip-build
         env:
           CI: true
 

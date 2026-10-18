@@ -26,6 +26,9 @@ export async function waitForHandPlayable(page: Page, timeoutMs = 15_000): Promi
         return hand.first().evaluate((el) => {
           const button = el.closest("button") ?? el;
           if (button instanceof HTMLButtonElement && button.disabled) return false;
+          // Affordability can disable an individual card in a settled hand.
+          // The active screen boundary, rather than card cost, owns readiness.
+          if (button.closest('[inert], [aria-hidden="true"]')) return false;
           const style = getComputedStyle(button);
           const opacity = Number.parseFloat(style.opacity);
           return style.visibility !== "hidden" && opacity > 0.05;

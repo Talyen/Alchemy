@@ -45,6 +45,9 @@ export const SCENARIO_IDS = [
   "reward-route",
   "shop-journey",
   "meta-journey",
+  "campfire-brewing",
+  "transmutation-journey",
+  "crafting-journey",
   "trinket-journey",
   "resume-journey",
   "seeded-discovery",
@@ -338,9 +341,6 @@ export const test = base.extend<PerfFixtures>({
               ...(segmentResults ? { segments: segmentResults, actions, replayPath } : {}),
               observations: { setupDurationMs, ...observations },
             };
-            writeRunResult(result);
-            runResults.push(result);
-
             if (journeyCase?.recordedActions) {
               const expected = journeyCase.recordedActions.map(({ name, segment }) => ({ name, segment }));
               const actual = actions.map(({ name, segment }) => ({ name, segment }));
@@ -362,6 +362,9 @@ export const test = base.extend<PerfFixtures>({
                 }`,
               );
             }
+            if (runFailure && !result.notes?.length) result.notes = [runFailure.message];
+            writeRunResult(result);
+            runResults.push(result);
           }
           if (interactionError && !measured) throw interactionError;
           if (runFailure) break;

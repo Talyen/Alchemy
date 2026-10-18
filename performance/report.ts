@@ -17,6 +17,7 @@ export interface ScenarioRunResult {
   tracePath?: string;
   rawSamplePath?: string;
   traceInsight?: TraceInsight;
+  /** Failure diagnostics; measured runs with notes cannot establish an improvement. */
   notes?: string[];
   runtimeBefore?: RuntimeSnapshot;
   runtimeAfter?: RuntimeSnapshot;
@@ -175,6 +176,27 @@ export function renderSummaryMarkdown(options: {
 
   if (environment.traceMode) {
     lines.push("> Deep-trace mode adds overhead. Use these results for diagnosis, not for target classification.");
+    lines.push("");
+  }
+
+  const measuredScenarios = new Set(aggregates.map(({ scenario }) => scenario));
+  const missingScenarios = environment.scenarios.filter((scenario) => !measuredScenarios.has(scenario));
+  if (missingScenarios.length) {
+    lines.push("## Incomplete scenario coverage", "");
+    lines.push("> This report is incomplete and cannot establish a performance improvement.");
+    lines.push("");
+    for (const scenario of missingScenarios)
+      lines.push(`- ${escapeCell(scenario)}: no measured result; inspect runner.log for setup or warm-up failure.`);
+    lines.push("");
+  }
+
+  const failedRuns = aggregates.flatMap((agg) =>
+    agg.runs.filter((run) => run.measured && run.notes?.length).map((run) => `${agg.scenario} run ${run.runIndex}`),
+  );
+  if (failedRuns.length) {
+    lines.push("## Failed measured runs", "");
+    lines.push("> These runs failed and cannot establish a performance improvement.", "");
+    for (const run of failedRuns) lines.push(`- ${escapeCell(run)}`);
     lines.push("");
   }
 
