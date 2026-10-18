@@ -5,7 +5,7 @@ import {
   MIXED_POTION_COST,
   MIXED_POTION_TITLE,
 } from "../game-constants";
-import type { BattleCard, BattleCardEffect, CardDescription } from "../game-data";
+import type { BattleCard, CardDescription } from "../game-data";
 import {
   BattleCardEffectSchema,
   areBattleCardEffectsEqual,
@@ -15,47 +15,10 @@ import {
   getCardDescription,
   mapCardDescriptionReferences,
   withCardDescription,
-  mapEffectChildren,
   mixedPotion,
   visitBattleCardEffects,
 } from "../game-data";
-
-function doublePotionEffect(effect: BattleCardEffect): BattleCardEffect {
-  // Doubling changes rewards, never ingredient costs, status durations, or derived/conversion base amounts.
-  if (
-    effect.kind === "lose-health" ||
-    effect.kind === "self-damage" ||
-    effect.kind === "lose-mana" ||
-    effect.kind === "lose-max-mana" ||
-    (effect.kind === "damage" && (effect.equalToBlock === true || effect.equalToArmor === true)) ||
-    (effect.kind === "player-status" &&
-      (effect.status === "haste" ||
-        effect.status === "phoenixFeather" ||
-        effect.convertCurrentMana !== undefined ||
-        effect.perManaCrystal !== undefined))
-  )
-    return effect;
-  if (effect.kind === "random-draw" || effect.kind === "random-damage") {
-    return {
-      ...effect,
-      minAmount: effect.minAmount * 2,
-      maxAmount: effect.maxAmount * 2,
-    };
-  }
-  if ("amount" in effect && typeof effect.amount === "number") {
-    const amount = effect.amount * 2;
-    if (effect.kind === "damage")
-      return {
-        ...effect,
-        amount,
-        ...(effect.amountIfTargetFrozen !== undefined ? { amountIfTargetFrozen: effect.amountIfTargetFrozen * 2 } : {}),
-      };
-    if (effect.kind === "player-status" && effect.forgeAmount !== undefined)
-      return { ...effect, amount, forgeAmount: effect.forgeAmount * 2 };
-    return { ...effect, amount };
-  }
-  return mapEffectChildren(effect, doublePotionEffect);
-}
+import { doublePotionEffect, isNonFoldingEffect } from "./potion-scaling";
 
 /** Shared keyword/consume trailer so mixed, doubled, and distilled potions read alike. */
 export function appendPotionTrailer(
@@ -82,23 +45,7 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | 
     cardA.id === cardB.id &&
     cardA.effects.length === cardB.effects.length &&
     cardA.effects.every((effect, index) => areBattleCardEffectsEqual(effect, cardB.effects[index]!)) &&
-    !visitBattleCardEffects(
-      cardA.effects,
-      (effect) =>
-        (effect.kind === "remove-enemy-armor" && effect.halve === true) ||
-        effect.kind === "multiply-enemy-status" ||
-        effect.kind === "lose-health" ||
-        effect.kind === "self-damage" ||
-        effect.kind === "lose-mana" ||
-        effect.kind === "lose-max-mana" ||
-        (effect.kind === "damage" &&
-          (effect.equalToBlock === true || effect.equalToArmor === true || effect.forgeBonusPercent !== undefined)) ||
-        (effect.kind === "player-status" &&
-          (effect.status === "haste" ||
-            effect.status === "phoenixFeather" ||
-            effect.convertCurrentMana !== undefined ||
-            effect.perManaCrystal !== undefined)),
-    );
+    !visitBattleCardEffects(cardA.effects, isNonFoldingEffect);
 
   const doubled = sameCard ? cardA.effects.map(doublePotionEffect) : null;
   // Folding is optional: two valid ingredients must still mix when their
@@ -129,6 +76,7 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | 
       `ingredient/${offset}`,
     );
   });
+  const effects = parts.flatMap((part) => part.effects);
   appendPotionTrailer(description, tags, true);
   return cloneBattleCard(
     withCardDescription(
@@ -140,7 +88,7 @@ function prepareMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard | 
         cost: MIXED_POTION_COST,
         consume: true,
         ...(tags.length ? { tags } : {}),
-        effects: parts.flatMap((part) => part.effects),
+        effects,
       },
       description,
     ),
@@ -162,7 +110,8 @@ export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: numbe
   if (indexA === indexB || !isValidDeckIndex(indexA, deck.length) || !isValidDeckIndex(indexB, deck.length)) {
     throw new Error("Invalid potion indices for mixing");
   }
-  return [...deck.filter((_, index) => index !== indexA && index !== indexB), mixed];
+  const [first, second] = indexA < indexB ? [indexA, indexB] : [indexB, indexA];
+  return [...deck.slice(0, first), ...deck.slice(first + 1, second), ...deck.slice(second + 1), mixed];
 }
 
 export function doublePotionPotency(card: BattleCard): BattleCard {

@@ -4,7 +4,7 @@ import { applyCardEffects } from "@/lib/battle";
 import { makeState } from "../../fixtures/battle";
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 import { cardById, cardLibrary, cloneBattleCard, getCardKeywords, type KeywordId } from "@/lib/game-data";
-import { createTransmutationOffers, getTransmutationVariants } from "@/lib/alchemist/transmutation";
+import { createTransmutationOffers, canTransmuteCard, getTransmutationVariants } from "@/lib/alchemist/transmutation";
 import { TRANSMUTATION_KEYWORD_GROUPS, TRANSMUTATION_PREFIXES } from "@/lib/game-constants/transmutation";
 import { createSeededRng } from "@/lib/rng";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
@@ -159,6 +159,15 @@ it("rolls useful, reproducible keywords per bucket and fills missing buckets wit
   expect(new Set(fallback.map((choice) => choice.keyword)).size).toBe(3);
   expect(fallback.every((choice) => choice.alterations.length)).toBe(true);
   expect(createTransmutationOffers([{ ...cardById.slash!, corrupted: true }], createSeededRng(2))).toEqual([]);
+});
+
+it("matches saved sources across a save round-trip but rejects cost drift", () => {
+  const deck = [cardById.slash!, cardById.heal!, cardById.block!];
+  const choices = createTransmutationOffers(deck, createSeededRng(2));
+  expect(choices.length).toBeGreaterThan(0);
+  const reloaded = JSON.parse(JSON.stringify(choices)) as typeof choices;
+  expect(canTransmuteCard(reloaded, cardById.slash!, 0)).toBe(true);
+  expect(canTransmuteCard(reloaded, { ...cardById.slash!, cost: cardById.slash!.cost + 1 }, 0)).toBe(false);
 });
 
 it("preserves catalog magnitudes, mechanics and saved previews across all 21 keywords without mutating definitions", () => {

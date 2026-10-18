@@ -7,14 +7,15 @@ import {
   carryCardDescriptionMarks,
   getCardDescription,
   withCardDescription,
-  mapEffectChildren,
   getCardEffect,
   type BattleCard,
   type BattleCardEffect,
+  type CardDescription,
 } from "@/lib/game-data";
 import { POTION_DISTILL_BONUS, CAMPFIRE_POTION_OFFERS } from "@/lib/game-constants";
 import { shuffle } from "@/lib/rng";
 import { appendPotionTrailer } from "./potion-mixer";
+import { distillPotionEffect } from "./potion-scaling";
 
 export type BrewOperation =
   | { kind: "new"; offerIndex: number }
@@ -26,51 +27,34 @@ export function getCampfireBrewKind(deck: readonly BattleCard[]): "new" | "combi
   return "new";
 }
 
-function strengthenEffect(effect: BattleCardEffect): BattleCardEffect {
-  if (
-    effect.kind === "player-status" &&
-    (effect.status === "haste" ||
-      effect.status === "phoenixFeather" ||
-      effect.convertCurrentMana !== undefined ||
-      effect.perManaCrystal !== undefined)
-  )
-    return effect;
-  if (effect.kind === "damage" && (effect.equalToBlock === true || effect.equalToArmor === true)) return effect;
-  if (effect.kind === "damage") {
-    // A doubled Frozen outcome shares the displayed base magnitude.
-    const frozenIncrease =
-      effect.damageTypeIfTargetFrozen === effect.damageType && effect.amountIfTargetFrozen === effect.amount * 2
-        ? POTION_DISTILL_BONUS * 2
-        : POTION_DISTILL_BONUS;
-    return {
-      ...effect,
-      amount: effect.amount + POTION_DISTILL_BONUS,
-      ...(effect.amountIfTargetFrozen !== undefined
-        ? { amountIfTargetFrozen: effect.amountIfTargetFrozen + frozenIncrease }
-        : {}),
-    };
-  }
-  if (effect.kind === "player-status")
-    return {
-      ...effect,
-      amount: effect.amount + POTION_DISTILL_BONUS,
-      ...(effect.forgeAmount !== undefined ? { forgeAmount: effect.forgeAmount + POTION_DISTILL_BONUS } : {}),
-    };
-  if (
-    effect.kind === "heal" ||
-    effect.kind === "restore-mana" ||
-    effect.kind === "gain-gold" ||
-    effect.kind === "wish" ||
-    effect.kind === "companion-action"
-  ) {
-    return { ...effect, amount: effect.amount + POTION_DISTILL_BONUS };
-  }
-  return mapEffectChildren(effect, strengthenEffect);
+/** A distilled magnitude references a field whose value grew; mark exactly those. */
+function markDistilledMagnitudes(
+  description: CardDescription,
+  before: readonly BattleCardEffect[],
+  after: readonly BattleCardEffect[],
+) {
+  return description.map((line) => ({
+    ...line,
+    parts: line.parts.map((part) => {
+      if (typeof part === "string") return part;
+      const increased = part.references.some((reference) => {
+        const beforeValue = (getCardEffect(before, reference) as Record<string, unknown> | undefined)?.[
+          reference.field
+        ];
+        const afterValue = (getCardEffect(after, reference) as Record<string, unknown> | undefined)?.[reference.field];
+        return (
+          typeof afterValue === "number" &&
+          (beforeValue === undefined || (typeof beforeValue === "number" && afterValue > beforeValue))
+        );
+      });
+      return increased ? { ...part, distilled: true } : part;
+    }),
+  }));
 }
 
 export function strengthenPotion(card: BattleCard): BattleCard | null {
   if (!isPotionCard(card)) return null;
-  const effects = card.effects.map(strengthenEffect);
+  const effects = card.effects.map(distillPotionEffect);
   if (
     effects.some((effect) => effect.kind === "remove-harmful-status" && effect.removeAll) &&
     !effects.some((effect) => effect.kind === "heal")
@@ -83,24 +67,10 @@ export function strengthenPotion(card: BattleCard): BattleCard | null {
     effects.every((effect, index) => areBattleCardEffectsEqual(effect, card.effects[index]!))
   )
     return null;
-  const description = carryCardDescriptionMarks(getCardDescription(card), createEffectDescription(effects)).map(
-    (line) => ({
-      ...line,
-      parts: line.parts.map((part) => {
-        if (typeof part === "string") return part;
-        const increased = part.references.some((reference) => {
-          const before = getCardEffect(card.effects, reference);
-          const after = getCardEffect(effects, reference);
-          const beforeValue = (before as Record<string, unknown> | undefined)?.[reference.field];
-          const afterValue = (after as Record<string, unknown> | undefined)?.[reference.field];
-          return (
-            typeof afterValue === "number" &&
-            (beforeValue === undefined || (typeof beforeValue === "number" && afterValue > beforeValue))
-          );
-        });
-        return increased ? { ...part, distilled: true } : part;
-      }),
-    }),
+  const description = markDistilledMagnitudes(
+    carryCardDescriptionMarks(getCardDescription(card), createEffectDescription(effects)),
+    card.effects,
+    effects,
   );
   appendPotionTrailer(description, card.tags, card.consume === true);
   return cloneBattleCard(
@@ -113,10 +83,15 @@ export function strengthenPotion(card: BattleCard): BattleCard | null {
     ),
   );
 }
+
+const DEFENSIVE_POTION_IDS: ReadonlySet<string> = new Set(["health-potion", "stoneskin-potion", "panacea-potion"]);
+
 export function createCampfirePotionOffers(rng: () => number): BattleCard[] {
   const pool = shuffle(getStandardPotionPool(), rng);
-  const defensive = pool.find((card) => ["health-potion", "stoneskin-potion", "panacea-potion"].includes(card.id));
-  return (defensive ? [defensive, ...pool.filter((card) => card.id !== defensive.id)] : pool)
-    .slice(0, CAMPFIRE_POTION_OFFERS)
-    .map(cloneBattleCard);
+  const defensiveIndex = pool.findIndex((card) => DEFENSIVE_POTION_IDS.has(card.id));
+  const ordered =
+    defensiveIndex < 0
+      ? pool
+      : [pool[defensiveIndex]!, ...pool.slice(0, defensiveIndex), ...pool.slice(defensiveIndex + 1)];
+  return ordered.slice(0, CAMPFIRE_POTION_OFFERS).map(cloneBattleCard);
 }
