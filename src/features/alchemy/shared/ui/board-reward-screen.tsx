@@ -23,7 +23,7 @@ export function BoardRewardScreen({
   const i18n = useGameTranslation();
   const { ref: artworkRef, pending } = useArtworkReady(boardId);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const board = boardCatalog.find((entry) => entry.id === boardId);
+  const title = boardCatalog.find((entry) => entry.id === boardId)?.title ?? "Game Board";
   useLayoutEffect(() => {
     focusControl(buttonRef.current);
   }, [boardId]);
@@ -37,12 +37,12 @@ export function BoardRewardScreen({
         <div ref={artworkRef} data-artwork-pending={pending} className="w-full">
           <img
             src={boardArt[boardId]?.full}
-            alt={i18n.displayText(board?.title ?? "Game Board")}
+            alt={i18n.displayText(title)}
             decoding="async"
             className="max-h-[55vh] w-full rounded-shell-tooltip object-contain"
           />
         </div>
-        <h2 className="text-center font-sans text-3xl text-gold-pale">{i18n.displayText(board?.title)}</h2>
+        <h2 className="text-center font-sans text-3xl text-gold-pale">{i18n.displayText(title)}</h2>
         <div className="flex justify-center gap-4">
           <Button variant="primary" size="lg" onClick={onUseBoard}>
             {i18n.text("ui.board-reward-screen.2", "Use Board")}

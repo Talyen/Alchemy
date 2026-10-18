@@ -1,10 +1,5 @@
-import {
-  boardCatalog,
-  BOARD_REWARD_ROOM_THRESHOLD,
-  isBoardId,
-  pickCollectedBoard,
-  type BoardSelection,
-} from "@/lib/boards/catalog";
+import { boardCatalog, isBoardId, pickCollectedBoard, type BoardSelection } from "@/lib/boards/catalog";
+import { BOARD_REWARD_ROOM_THRESHOLD } from "@/lib/game-constants";
 import { gameplayDraftRuntime, type GameplayDraft } from "../gameplay-command";
 
 export function resolveBattleBoard(draft: GameplayDraft): void {
@@ -38,14 +33,13 @@ export function selectBoard(draft: GameplayDraft, selection: BoardSelection): bo
 }
 
 export function awardRunBoard(draft: GameplayDraft, ending: "victory" | "death" | "abandoned"): void {
-  if (
-    ending === "abandoned" ||
-    draft.run.activeRun.runHistory.filter((room) => room.completed).length < BOARD_REWARD_ROOM_THRESHOLD
-  )
-    return;
-  const uncollected = boardCatalog
-    .filter((board) => !draft.profile.collectedBoardIds.includes(board.id))
-    .map((board) => board.id);
+  if (ending === "abandoned") return;
+  let completed = 0;
+  for (const room of draft.run.activeRun.runHistory) if (room.completed) completed += 1;
+  if (completed < BOARD_REWARD_ROOM_THRESHOLD) return;
+  const collected = new Set(draft.profile.collectedBoardIds);
+  const uncollected: string[] = [];
+  for (const board of boardCatalog) if (!collected.has(board.id)) uncollected.push(board.id);
   const id = pickCollectedBoard(uncollected, null, gameplayDraftRuntime(draft).cosmeticRandom);
   if (!id) return;
   draft.profile.collectedBoardIds.push(id);

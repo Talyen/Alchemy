@@ -84,6 +84,17 @@ it("rejects an unsupported Distill but preserves both valid ingredients when fol
   expect(roundTrip(mixed)).toEqual(mixed);
 });
 
+it("distills random ranges like doubling does, without touching their bounds logic", () => {
+  const source = potion([
+    { kind: "random-damage", minAmount: 1, maxAmount: 3, damageTypePool: ["burn", "holy"] },
+    { kind: "random-draw", minAmount: 1, maxAmount: 6 },
+  ]);
+  expect(strengthenPotion(source)!.effects).toEqual([
+    { kind: "random-damage", minAmount: 2, maxAmount: 4, damageTypePool: ["burn", "holy"] },
+    { kind: "random-draw", minAmount: 2, maxAmount: 7 },
+  ]);
+});
+
 it("offers three distinct seeded Potions including recovery or defense", () => {
   const offers = createCampfirePotionOffers(createSeededRng(23));
   expect(new Set(offers.map((card) => card.id)).size).toBe(3);
