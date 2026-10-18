@@ -191,11 +191,7 @@ function applyFreezeStatusRider(
   if (actualDamage <= 0) return state;
   emitEnemyBuildupImmunity(state, "freeze", actualDamage, combatTexts);
   let nextState = addEnemyStatus(state, "freeze", actualDamage);
-  if (
-    nextState.gearEffects.freezeGrantsBlockAndMana > 0 &&
-    actualDamage > 0 &&
-    eligibility.playerStatuses.block === 0
-  ) {
+  if (nextState.gearEffects.freezeGrantsBlockAndMana > 0 && eligibility.playerStatuses.block === 0) {
     nextState = addPlayerStatusWithCombatText(nextState, "block", actualDamage, combatTexts, {
       skipFightPacing: true,
     });

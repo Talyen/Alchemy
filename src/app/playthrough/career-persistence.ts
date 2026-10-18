@@ -14,27 +14,18 @@ import {
 } from "@/features/alchemy/shared/stores/run-reads";
 import { createHash } from "node:crypto";
 import { performance } from "node:perf_hooks";
-import { isDeepStrictEqual } from "node:util";
 import { createAlchemyAutosaveLifecycle } from "../autosave-lifecycle";
-import { isRecord } from "@/lib/utils";
+import { stableJson } from "@/lib/utils";
 import type { CareerResult } from "./types";
 
 export function snapshotCareer(gameSession: GameSession) {
   return snapshotSessionSave(gameSession);
 }
 
-function canonicalJson(value: unknown): string {
-  return JSON.stringify(value, (_key, entry: unknown) =>
-    isRecord(entry)
-      ? Object.fromEntries(Object.entries(entry).sort(([left], [right]) => left.localeCompare(right)))
-      : entry,
-  );
-}
-
 export function stateDigest(gameSession: GameSession) {
   return createHash("sha256")
     .update(
-      canonicalJson({
+      stableJson({
         save: snapshotCareer(gameSession),
         screen: readActiveRunScreen(gameSession),
         claim: readRunSession(gameSession).rewardFlow.claim,
@@ -112,10 +103,7 @@ export async function createCareerPersistence(initialSave: UnstampedSaveData, ga
       if (!bytes) throw new Error("Invariant: production autosave was not acknowledged");
       const written = JSON.parse(bytes) as Record<string, unknown>;
       delete written.lastSavedAt;
-      if (
-        (autosaveAllowed() || !readHasActiveRun(gameSession)) &&
-        !isDeepStrictEqual(written, JSON.parse(JSON.stringify(save)))
-      )
+      if ((autosaveAllowed() || !readHasActiveRun(gameSession)) && stableJson(written) !== stableJson(save))
         throw new Error("Invariant: acknowledged persistence differs from gameplay snapshot");
       if (checkpoint?.at === step + 1) checkpoint.save(bytes);
       if (resumeAt === step + 1) {

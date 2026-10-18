@@ -2,7 +2,7 @@ import type { BoonRewardState, CardRewardState, GearRewardState, TrinketRewardSt
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import {
-  getCardKeywords,
+  cardHasKeyword,
   getOfferableCardPool,
   getStandardPotionPool,
   selectRewardCards,
@@ -64,7 +64,7 @@ export function getCompanionCardChoices(
   const companions =
     theme === "companion"
       ? getOfferableCardPool().filter((c) => c.effects?.some((e) => e.kind === "summon-companion"))
-      : getOfferableCardPool().filter((card) => getCardKeywords(card).includes(theme));
+      : getOfferableCardPool().filter((card) => cardHasKeyword(card, theme));
   return sampleItems(companions, LABYRINTH_REWARD_CONFIG.companionCardChoices, rng);
 }
 

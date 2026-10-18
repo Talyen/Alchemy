@@ -2,9 +2,9 @@ import { repairShopOfferings } from "@/lib/active-run-session/shop-offering-repa
 import { createCampfirePotionOffers } from "@/lib/alchemist/brewing";
 import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import {
+  cardHasKeyword,
   characters,
   cloneBattleCard,
-  getCardKeywords,
   selectRewardCards,
   type BattleCard,
   type KeywordId,
@@ -39,7 +39,7 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     const filtered = filterLiveCards(choices);
     if (filtered.length > 0 || !canPick) return filtered;
     const pool = getOfferableCardPool();
-    const tagged = keyword ? pool.filter((card) => getCardKeywords(card).includes(keyword)) : [];
+    const tagged = keyword ? pool.filter((card) => cardHasKeyword(card, keyword)) : [];
     return selectRewardCards(
       runDeck,
       tagged.length > 0 ? tagged : pool,

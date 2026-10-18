@@ -301,7 +301,7 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     healthAfterDamage = state.playerHealth,
   ): BattleState {
     const threshold = (state.playerMaxHealth * state.talentEffects.cleanseBelowHealthPercent) / PERCENT_DENOMINATOR;
-    return threshold > 0 && previousHealth >= threshold && healthAfterDamage < threshold && healthAfterDamage > 0
+    return threshold > 0 && healthAfterDamage > 0 && crossedBelow(previousHealth, healthAfterDamage, threshold)
       ? removeHarmfulPlayerStatuses(state, Infinity, combatTexts)
       : state;
   }

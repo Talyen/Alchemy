@@ -235,6 +235,29 @@ describe("normalizePersistedBattleState", () => {
     expect(normalized.encounterBenefits).toEqual(["generous"]);
   });
 
+  it("repairs malformed unique gear and scheduled effects while retaining valid live values", () => {
+    const defaults = defaultBattleState();
+    const normalized = normalizePersistedBattleState({
+      currentEnemy: enemyById.skeleton,
+      uniqueGear: {
+        ...defaults.uniqueGear,
+        everkeenReady: "yes",
+        lastArcheryUid: 2.5,
+        returningFlightUids: 7,
+        archeryEchoes: "echo",
+      } as unknown as typeof defaults.uniqueGear,
+      pendingTurnStartEffects: [
+        { remainingTurns: 2, effects: [{ kind: "damage", damageType: "burn", amount: 3 }] },
+        { remainingTurns: 0, effects: [] },
+        { remainingTurns: 1.5, effects: [] },
+        null,
+      ] as unknown as typeof defaults.pendingTurnStartEffects,
+    });
+    expect(normalized.uniqueGear).toEqual({ ...defaults.uniqueGear, lastArcheryUid: null });
+    expect(normalized.pendingTurnStartEffects).toHaveLength(1);
+    expect(normalizePersistedBattleState(normalized)).toEqual(normalized);
+  });
+
   it("repairs malformed modifiers, defenses and control counters while retaining valid live values", () => {
     const defaults = defaultBattleState();
     const normalized = normalizePersistedBattleState({

@@ -2,8 +2,8 @@ import {
   cloneBattleCard,
   createEffectDescription,
   carryCardDescriptionMarks,
+  cardHasKeyword,
   getCardDescription,
-  getCardKeywords,
   getCardEffect,
   mapCardDescriptionReferences,
   type CardMagnitudeReference,
@@ -25,7 +25,7 @@ import type {
   TransmutationAlteration,
 } from "@/lib/active-run-session/alchemy-visits";
 import { pickRandom } from "@/lib/rng";
-import { isRecord } from "@/lib/utils";
+import { stableJson } from "@/lib/utils";
 
 const DAMAGE_KEYWORDS: readonly KeywordId[] = TRANSMUTATION_KEYWORD_GROUPS[0];
 const BUFF_KEYWORDS: readonly KeywordId[] = ["block", "armor", "forge", "thorns"];
@@ -193,7 +193,7 @@ export function getTransmutationVariants(
   keyword: KeywordId,
   deck: readonly BattleCard[],
 ): Array<{ sourceKeyword: KeywordId | null; result: BattleCard }> {
-  if (!isTransmutableCard(card) || getCardKeywords(card).includes(keyword)) return [];
+  if (!isTransmutableCard(card) || cardHasKeyword(card, keyword)) return [];
   // Companion-only Wishes are omitted from affinity metadata but still grant Wish.
   if (keyword === "wish" && visitBattleCardEffects(card.effects, (effect) => effect.kind === "wish")) return [];
   const family = DAMAGE_KEYWORDS.includes(keyword)
@@ -295,7 +295,8 @@ export function createTransmutationOffers(deck: readonly BattleCard[], rng: () =
     const keyword = pickRandom(pool, rng);
     if (keyword) keywords.push(keyword);
   }
-  const remaining = pools.flat().filter((keyword) => !keywords.includes(keyword));
+  const chosen = new Set(keywords);
+  const remaining = pools.flat().filter((keyword) => !chosen.has(keyword));
   while (keywords.length < 3 && remaining.length) {
     const keyword = pickRandom(remaining, rng)!;
     keywords.push(keyword);
@@ -316,9 +317,7 @@ function cardSnapshotKey(card: BattleCard | null | undefined): string | undefine
   if (!card) return undefined;
   let key = cardSnapshotKeyCache.get(card);
   if (key === undefined) {
-    key = JSON.stringify(card, (_key, value: unknown) =>
-      isRecord(value) ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value,
-    );
+    key = stableJson(card);
     cardSnapshotKeyCache.set(card, key);
   }
   return key;

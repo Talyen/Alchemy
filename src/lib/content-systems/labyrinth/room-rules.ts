@@ -1,5 +1,5 @@
 import type { BattleCard, KeywordId } from "@/lib/game-data";
-import { getCardKeywords } from "@/lib/game-data";
+import { cardHasKeyword } from "@/lib/game-data";
 import { LABYRINTH_MODIFIER_CONFIG } from "@/lib/game-constants";
 import type { ContentSystemId } from "../types";
 import type { EncounterRewardTraitId } from "../encounter-traits";
@@ -30,7 +30,7 @@ const MYSTERY_REWARDS = [
 
 export function labyrinthCardShopPool(pool: BattleCard[], modifiers: readonly EncounterRewardTraitId[]): BattleCard[] {
   const theme = modifiers.map((id) => MARKET_THEMES[id]).find((value) => value !== undefined);
-  return theme ? pool.filter((card) => getCardKeywords(card).includes(theme)) : pool;
+  return theme ? pool.filter((card) => cardHasKeyword(card, theme)) : pool;
 }
 
 export function labyrinthCampfireHealing(baseFraction: number, modifiers: readonly EncounterRewardTraitId[]): number {

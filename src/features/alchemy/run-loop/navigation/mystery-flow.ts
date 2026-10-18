@@ -11,7 +11,7 @@ import {
   setRunPlayerHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
-import { cardById, getCardKeywords, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
+import { cardById, cardHasKeyword, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import {
   generateGearInstanceForBaseItem,
@@ -46,7 +46,7 @@ export interface MysteryEffectContext {
 function getMysteryCardChoicePool(tag?: KeywordId): BattleCard[] {
   const pool = getOfferableCardPool();
   if (!tag) return pool;
-  const tagged = pool.filter((card) => getCardKeywords(card).includes(tag));
+  const tagged = pool.filter((card) => cardHasKeyword(card, tag));
   if (tagged.length === 0) {
     if (import.meta.env.DEV) {
       console.warn(`[Mystery] chooseCard tag "${tag}" matched no offerable cards; using full pool`);
