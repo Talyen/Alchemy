@@ -16,6 +16,7 @@ import { createHash } from "node:crypto";
 import { performance } from "node:perf_hooks";
 import { isDeepStrictEqual } from "node:util";
 import { createAlchemyAutosaveLifecycle } from "../autosave-lifecycle";
+import { isRecord } from "@/lib/utils";
 import type { CareerResult } from "./types";
 
 export function snapshotCareer(gameSession: GameSession) {
@@ -24,7 +25,7 @@ export function snapshotCareer(gameSession: GameSession) {
 
 function canonicalJson(value: unknown): string {
   return JSON.stringify(value, (_key, entry: unknown) =>
-    entry && typeof entry === "object" && !Array.isArray(entry)
+    isRecord(entry)
       ? Object.fromEntries(Object.entries(entry).sort(([left], [right]) => left.localeCompare(right)))
       : entry,
   );

@@ -26,6 +26,7 @@ import {
 } from "@/lib/game-data";
 import { MAX_HAND_SIZE, MIN_MAX_MANA_FLOOR } from "@/lib/game-constants";
 import { toFiniteNonNegativeInt, toSafeNonNegativeInt } from "./save-schemas/validation-utils";
+import { isRecord } from "@/lib/utils";
 import {
   ENCOUNTER_TRAITS,
   sanitizeEncounterTraitIds,
@@ -53,8 +54,8 @@ export function filterLiveCards<T extends Pick<BattleCard, "id" | "cost" | "effe
 
 function normalizeReactions(saved: unknown): BattleSnapshot["reactions"] {
   const reactions = createElementalReactionState();
-  if (!saved || typeof saved !== "object" || Array.isArray(saved)) return reactions;
-  const record = saved as Record<string, unknown>;
+  if (!isRecord(saved)) return reactions;
+  const record = saved;
   for (const key of Object.keys(reactions) as Array<keyof typeof reactions>) {
     const value = Object.hasOwn(record, key) ? record[key] : undefined;
     if (key === "consecrated") {

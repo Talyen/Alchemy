@@ -1,13 +1,11 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import {
-  type CSSProperties,
   type MouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type Ref,
   type RefObject,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -43,10 +41,7 @@ interface BattleCardButtonBaseProps {
   baseTransform?: string;
   className?: string;
   wrapperClassName?: string;
-
-  wrapperStyle?: CSSProperties;
   wrapperDataCardKey?: string;
-  hoverLeaveDelayMs?: number | undefined;
   selected?: boolean;
   disabled?: boolean | undefined;
   ariaDisabled?: boolean | undefined;
@@ -72,18 +67,10 @@ export type BattleCardButtonProps = BattleCardButtonBaseProps &
 
 export function BattleCardButton(props: BattleCardButtonProps) {
   useGameTranslation();
-  const {
-    wrapperClassName,
-    wrapperStyle,
-    wrapperDataCardKey,
-    hoverLeaveDelayMs = 0,
-    dragging = false,
-    suppressTooltip = false,
-  } = props;
+  const { wrapperClassName, wrapperDataCardKey, dragging = false, suppressTooltip = false } = props;
   const inheritedDescriptionContext = useCardDescriptionContext();
   const descriptionContext = props.descriptionContext ?? inheritedDescriptionContext;
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const hoverEndTimerRef = useRef(0);
   const pointerInsideRef = useRef(false);
   const focusedRef = useRef(false);
   const [internalHovered, setInternalHovered] = useState(false);
@@ -91,19 +78,13 @@ export function BattleCardButton(props: BattleCardButtonProps) {
   const isControlledHover = props.onHoverStart !== undefined || props.onHoverEnd !== undefined;
   const hovered = isControlledHover ? (props.hovered ?? false) : internalHovered;
 
-  useEffect(() => {
-    return () => window.clearTimeout(hoverEndTimerRef.current);
-  }, []);
-
   function handleHoverStart() {
-    window.clearTimeout(hoverEndTimerRef.current);
     if (isControlledHover) props.onHoverStart?.();
     else setInternalHovered(true);
   }
 
   function handleHoverEnd() {
     if (pointerInsideRef.current || focusedRef.current) return;
-    window.clearTimeout(hoverEndTimerRef.current);
     if (isControlledHover) props.onHoverEnd?.();
     else setInternalHovered(false);
   }
@@ -114,12 +95,7 @@ export function BattleCardButton(props: BattleCardButtonProps) {
     if (wrapperDataCardKey && next instanceof Element && next.closest("[data-hand-card='true']")) {
       return;
     }
-    if (!wrapperDataCardKey || hoverLeaveDelayMs <= 0) {
-      handleHoverEnd();
-      return;
-    }
-    window.clearTimeout(hoverEndTimerRef.current);
-    hoverEndTimerRef.current = window.setTimeout(handleHoverEnd, hoverLeaveDelayMs);
+    handleHoverEnd();
   }
 
   return (
@@ -128,7 +104,6 @@ export function BattleCardButton(props: BattleCardButtonProps) {
       className={cn("relative", wrapperClassName, dragging && "pointer-events-none")}
       data-hand-card={wrapperDataCardKey ? "true" : undefined}
       data-hand-card-id={wrapperDataCardKey}
-      style={wrapperStyle}
       onMouseEnter={() => {
         pointerInsideRef.current = true;
         handleHoverStart();

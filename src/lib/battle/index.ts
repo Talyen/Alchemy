@@ -12,7 +12,6 @@ export { canPlayCard, type CardPlayOptions } from "./card-play";
 export { mergeCombatText } from "./combat-text-events";
 export { processCompanionTurnStart } from "./companion";
 export { getBattleCompanionDamageModifiers } from "./companion-scaling";
-export { drawCards } from "./draw";
 export { applyCardEffects } from "./effect-handlers";
 export { collectUncoveredEnemyTraitIds } from "./enemy-turn-traits";
 export { getActiveCcKeyword, isCcControlled, type ActiveCcKeyword } from "./status-cc";

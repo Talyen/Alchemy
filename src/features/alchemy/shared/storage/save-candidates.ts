@@ -10,6 +10,7 @@ import {
 } from "@/lib/validation";
 import { createDefaultSaveData } from "./defaults";
 import { logStorageFailure } from "@/lib/storage-logging";
+import { isRecord } from "@/lib/utils";
 import type { SaveData } from "./types";
 
 type SaveLoadStatus =
@@ -29,7 +30,7 @@ export interface SaveLoadState {
 }
 
 function isEmptyGearLike(value: unknown): boolean {
-  if (!isPlainObject(value)) return false;
+  if (!isRecord(value)) return false;
   const entries = Object.values(value);
   return entries.every((entry) => entry === undefined || (Array.isArray(entry) && entry.length === 0));
 }
@@ -38,12 +39,8 @@ function isEmptyGearInventories(value: ParsedSaveData["gearInventories"]): boole
   return Object.values(value).every((entry) => entry.length === 0);
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === "object" && !Array.isArray(value);
-}
-
 function sumInventoryValues(value: unknown): number {
-  if (!isPlainObject(value)) return 0;
+  if (!isRecord(value)) return 0;
   let total = 0;
   for (const entry of Object.values(value)) {
     if (typeof entry === "number" && Number.isFinite(entry) && entry > 0) total += entry;
@@ -56,7 +53,7 @@ function collectSaveRepairWarnings(raw: Record<string, unknown>, normalized: Par
   if (raw.activeRun && !normalized.activeRun) {
     warnings.push("active run could not be restored");
   }
-  const rawActiveRun = isPlainObject(raw.activeRun) ? raw.activeRun : undefined;
+  const rawActiveRun = isRecord(raw.activeRun) ? raw.activeRun : undefined;
   if (
     recordActivity(rawActiveRun).kind === "battle" &&
     normalized.activeRun &&
@@ -69,9 +66,9 @@ function collectSaveRepairWarnings(raw: Record<string, unknown>, normalized: Par
   // that override is not a repair.
   const rawActivity = recordActivity(rawActiveRun);
   const rawCombatCandidate = rawActivity.kind === "battle" ? rawActivity.data : undefined;
-  const rawCombat = isPlainObject(rawCombatCandidate) ? rawCombatCandidate : undefined;
+  const rawCombat = isRecord(rawCombatCandidate) ? rawCombatCandidate : undefined;
   const rawBattleCandidate = rawCombat?.battleState;
-  const rawBattle = isPlainObject(rawBattleCandidate) ? rawBattleCandidate : undefined;
+  const rawBattle = isRecord(rawBattleCandidate) ? rawBattleCandidate : undefined;
   const rawCombatGold = rawBattle?.gold;
   if (rawGold !== undefined && rawGold !== normalized.gold && !isCombatGoldOverride(rawCombatGold, normalized.gold)) {
     warnings.push(`Field "gold" was repaired (raw ${JSON.stringify(rawGold)} -> ${normalized.gold})`);
@@ -100,7 +97,7 @@ function collectSaveRepairWarnings(raw: Record<string, unknown>, normalized: Par
     if (
       original !== undefined &&
       sumInventoryValues(normalized[field]) === 0 &&
-      (sumInventoryValues(original) > 0 || !isPlainObject(original))
+      (sumInventoryValues(original) > 0 || !isRecord(original))
     ) {
       warnings.push(`${label} could not be fully restored`);
     }
@@ -109,7 +106,7 @@ function collectSaveRepairWarnings(raw: Record<string, unknown>, normalized: Par
 }
 
 function recordActivity(run: Record<string, unknown> | undefined): Record<string, unknown> {
-  return isPlainObject(run?.activity) ? run.activity : {};
+  return isRecord(run?.activity) ? run.activity : {};
 }
 
 export interface SaveCandidateSelection {
@@ -147,7 +144,7 @@ export function selectSaveCandidates(
         if (!future || savedAt > future.savedAt) future = { status: compatibility, savedAt };
         continue;
       }
-      if (!isPlainObject(parsed)) {
+      if (!isRecord(parsed)) {
         logStorageFailure("Save candidate root was not an object, trying next candidate");
         continue;
       }

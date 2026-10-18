@@ -9,9 +9,14 @@ import {
 import { useMemo, type RefObject } from "react";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { getEnemyAbilities, type BestiaryEntry } from "../../config/game-data-catalog";
+import type { CardDescriptionContext } from "@/lib/game-data";
 import { InspectionCardGrid, InspectionOverlayShell } from "./inspection-content";
 import { EnemyTraits } from "../enemy-traits";
 import { useHeldWhile } from "../use-fade";
+
+// Enemy ability previews must not inherit the player's card-description context.
+// A module constant keeps descendant memoization stable across re-renders.
+const EMPTY_DESCRIPTION_CONTEXT: CardDescriptionContext = {};
 
 interface EnemyInspectionProps {
   open: boolean;
@@ -61,7 +66,12 @@ function EnemyInspectionContent({
       </section>
       <section className="flex flex-col gap-3">
         <h3 className="font-sans text-xl font-semibold">{i18n.text("ui.enemy-inspection-overlay.2", "Abilities")}</h3>
-        <InspectionCardGrid cards={cards} descriptionContext={{}} resetKey={`${entry.id}:${open}`} sort={false} />
+        <InspectionCardGrid
+          cards={cards}
+          descriptionContext={EMPTY_DESCRIPTION_CONTEXT}
+          resetKey={`${entry.id}:${open}`}
+          sort={false}
+        />
       </section>
     </div>
   );

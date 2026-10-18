@@ -29,7 +29,6 @@ export function ArmoryPagedGrid<T>({
   placeholderIndex,
   noMatches,
 }: {
-  items: T[];
   testId: string;
   swapKey: string;
   fillerTestId?: string;

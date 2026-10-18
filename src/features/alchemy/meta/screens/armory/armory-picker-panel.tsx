@@ -20,8 +20,6 @@ interface ArmoryPickerPanelProps {
   reservedTrinkets: Record<string, CharacterId>;
   selectedSlot: ArmorySlot;
   characterId: CharacterId;
-  pickerItems: GearInstance[];
-  ownedTrinkets: TrinketEntry[];
   equippedTrinkets: EquippedTrinkets;
   loadout: GearLoadout;
   loadouts: GearLoadouts;
@@ -51,8 +49,6 @@ export function ArmoryPickerPanel({
   reservedTrinkets,
   selectedSlot,
   characterId,
-  pickerItems,
-  ownedTrinkets,
   equippedTrinkets,
   loadout,
   loadouts,
@@ -124,9 +120,7 @@ export function ArmoryPickerPanel({
         {selectedSlot === "trinket" ? (
           <TrinketPickerGrid
             reservedTrinkets={reservedTrinkets}
-            characterId={characterId}
             noMatches={totalCount > 0 && matchCount === 0}
-            trinkets={ownedTrinkets}
             equippedTrinkets={equippedTrinkets}
             editable={editable}
             onEquip={actions.onEquipTrinket}
@@ -139,7 +133,6 @@ export function ArmoryPickerPanel({
             reservedGear={reservedGear}
             slot={selectedSlot}
             noMatches={totalCount > 0 && matchCount === 0}
-            items={pickerItems}
             loadout={loadout}
             loadouts={loadouts}
             inventory={inventory}

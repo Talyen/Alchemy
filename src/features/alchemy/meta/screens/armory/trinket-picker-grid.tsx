@@ -12,7 +12,6 @@ import { ReservedLock } from "./parts/armory-item-chrome";
 
 export function TrinketPickerGrid({
   reservedTrinkets,
-  trinkets,
   equippedTrinkets,
   editable,
   onEquip,
@@ -27,8 +26,6 @@ export function TrinketPickerGrid({
   hiddenArtworkIds,
 }: {
   reservedTrinkets: Record<string, CharacterId>;
-  characterId: CharacterId;
-  trinkets: TrinketEntry[];
   equippedTrinkets: EquippedTrinkets;
   editable: boolean;
   onEquip: (trinketId: string) => void;
@@ -55,7 +52,6 @@ export function TrinketPickerGrid({
   return (
     <ArmoryPagedGrid
       noMatches={noMatches}
-      items={trinkets}
       page={page}
       totalPages={totalPages}
       onPageChange={onPageChange}

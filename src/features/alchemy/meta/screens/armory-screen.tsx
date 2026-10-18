@@ -311,8 +311,6 @@ export function ArmoryScreen({
                 reservedTrinkets={combatRestrictions.trinkets}
                 selectedSlot={selectedSlot}
                 characterId={characterId}
-                pickerItems={ordering.visibleGear}
-                ownedTrinkets={ordering.visibleTrinkets}
                 equippedTrinkets={equippedTrinkets}
                 loadout={loadout}
                 loadouts={loadouts}

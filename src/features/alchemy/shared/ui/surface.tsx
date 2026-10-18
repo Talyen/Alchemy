@@ -38,7 +38,6 @@ interface SurfaceProps {
   buttonRef?: Ref<HTMLButtonElement> | undefined;
   surfaceRef?: Ref<HTMLDivElement> | undefined;
   testId?: string;
-  dataCount?: number;
   onMouseEnter?: (e: MouseEvent<HTMLElement>) => void;
   onMouseLeave?: (e: MouseEvent<HTMLElement>) => void;
   clipContents?: boolean | undefined;
@@ -73,7 +72,6 @@ export function Surface(props: SurfaceProps) {
     buttonRef,
     surfaceRef,
     testId,
-    dataCount,
     onMouseEnter,
     onMouseLeave,
     clipContents = true,
@@ -144,8 +142,7 @@ export function Surface(props: SurfaceProps) {
     <div
       {...sharedProps}
       ref={surfaceRef}
-      data-count={dataCount}
-      aria-disabled={disabled ? "true" : undefined}
+      aria-disabled={disabled || ariaDisabled ? "true" : undefined}
       onClick={handleDivClick}
       onKeyDown={handleDivClick ? handleDivKeyDown : undefined}
       tabIndex={(handleDivClick || onFocus) && !disabled ? 0 : undefined}

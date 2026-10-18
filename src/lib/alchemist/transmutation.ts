@@ -25,6 +25,7 @@ import type {
   TransmutationAlteration,
 } from "@/lib/active-run-session/alchemy-visits";
 import { pickRandom } from "@/lib/rng";
+import { isRecord } from "@/lib/utils";
 
 const DAMAGE_KEYWORDS: readonly KeywordId[] = TRANSMUTATION_KEYWORD_GROUPS[0];
 const BUFF_KEYWORDS: readonly KeywordId[] = ["block", "armor", "forge", "thorns"];
@@ -311,9 +312,7 @@ export function createTransmutationOffers(deck: readonly BattleCard[], rng: () =
 
 function cardSnapshotKey(card: BattleCard | null | undefined): string | undefined {
   return JSON.stringify(card, (_key, value: unknown) =>
-    value && typeof value === "object" && !Array.isArray(value)
-      ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)))
-      : value,
+    isRecord(value) ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value,
   );
 }
 

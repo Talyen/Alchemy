@@ -34,7 +34,6 @@ import { targetingRingClass } from "./targeting-highlight";
 export function ItemPickerGrid({
   reservedGear,
   slot,
-  items,
   loadout,
   loadouts,
   inventory,
@@ -57,7 +56,6 @@ export function ItemPickerGrid({
 }: {
   reservedGear: Record<string, CharacterId>;
   slot: GearSlot;
-  items: GearInstance[];
   loadout: GearLoadout;
   loadouts: GearLoadouts;
   inventory: GearInstance[];
@@ -93,7 +91,6 @@ export function ItemPickerGrid({
   return (
     <ArmoryPagedGrid
       noMatches={noMatches}
-      items={items}
       page={page}
       totalPages={totalPages}
       onPageChange={onPageChange}

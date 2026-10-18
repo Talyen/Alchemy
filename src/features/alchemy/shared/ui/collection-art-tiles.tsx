@@ -45,7 +45,6 @@ export interface TrinketTileProps {
   ariaLabel?: string | undefined;
 
   chip?: string | null | undefined;
-  footerChip?: string | null | undefined;
 
   className?: string | undefined;
 
@@ -70,7 +69,6 @@ export function TrinketTile({
   onClick,
   ariaLabel,
   chip,
-  footerChip,
   className,
   imageClassName,
   shine = true,
@@ -80,7 +78,7 @@ export function TrinketTile({
   onHoverChange,
 }: TrinketTileProps) {
   const i18n = useGameTranslation();
-  const resolvedChip = (chip !== undefined ? chip : footerChip) ?? (temporary ? "Boon" : undefined);
+  const resolvedChip = chip ?? (temporary ? "Boon" : undefined);
   return (
     <InteractiveArtTile
       id={trinket.id}

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, type CSSProperties } from "react";
+import { useLayoutEffect, useState } from "react";
 import { clamp } from "@/lib/math";
 
 export function getGridCapacity(width: number, tileWidth: number, gap: number, maxColumns: number) {
@@ -52,9 +52,5 @@ export function useAdaptiveGrid(referenceTileWidth: number, initialColumns: numb
     columns,
     pageSize: columns * 2,
     referenceTileWidth,
-    gridStyle: {
-      gridTemplateColumns: `repeat(${columns}, minmax(0, calc(${referenceTileWidth}px * var(--content-scale, 1))))`,
-      justifyContent: "center",
-    } satisfies CSSProperties,
   };
 }
