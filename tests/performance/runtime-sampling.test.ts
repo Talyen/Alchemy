@@ -7,7 +7,9 @@ afterEach(() => vi.useRealTimers());
 it("drains an admitted sample before stop and never samples after teardown", async () => {
   vi.useFakeTimers();
   let release!: () => void;
-  const pending = new Promise<void>((resolve) => (release = resolve));
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
   const read = vi
     .fn()
     .mockResolvedValue(runtime)
