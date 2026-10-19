@@ -167,6 +167,15 @@ limits, repeated damage, Blackfletch detonation, and saved battle-local opportun
 
 ### Strategic card conditions
 
+Wildcard's six-pick starter draft in Campaign and Labyrinth offers a reusable
+attack, a different reusable defensive or healing card, and one flexible card
+on every pick. Offers exclude already drafted cards. Wildwood retains its
+separate draft rules.
+
+Fangs costs 1 Mana and always deals 2 Bleed damage with Leech. Thorn Whip costs
+1 Mana, deals 3 Nature damage, and grants 1 Thorns. Enemies using these cards
+share their effects, with the usual enemy scaling and traits.
+
 Rogue starts with Feint in place of Serrated Edge, retaining Steal, Blackjack,
 and Shadowstep. Feint costs 1 Mana, prepares a Dodge of the next attack packet,
 and draws two cards. It returns to the discard rather than Consuming, so it can

@@ -37,7 +37,7 @@ it.each([14, 15, 16])("low-health Leech bonuses requires strictly below half Hea
 });
 
 describe("card Leech resolution", () => {
-  it("Fangs retains Clean Slate eligibility for its deferred Bleed Leech", () => {
+  it.each([0.4, 0.99])("Fangs bypasses Armor and retains deferred Bleed Leech at RNG %s", (roll) => {
     const card = cardById.fangs!;
     const state = patchBattleState({
       hand: [card],
@@ -45,11 +45,14 @@ describe("card Leech resolution", () => {
       playerMaxHealth: 40,
       enemyHealth: 100,
       enemyMaxHealth: 100,
+      enemyMitigation: { armor: 9 },
       playerStatuses: { poison: 4 },
       talentEffects: { cleanseOnCardOverheal: true },
-      rng: () => 0.4,
+      rng: () => roll,
     });
     const hit = playBattleCardResolved(state, card.id, 0).state;
+    expect(hit.enemyHealth).toBe(98);
+    expect(hit.enemyStatuses.bleed).toBe(2);
     expect(hit.playerHealth).toBe(40);
     expect(hit.playerStatuses.poison).toBe(4);
     expect(hit.pendingCardBleedLeechHealing).toBe(2);

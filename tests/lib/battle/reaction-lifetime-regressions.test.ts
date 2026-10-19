@@ -83,7 +83,6 @@ describe("reaction lifetimes", () => {
   });
 
   it("Deep Siphon applies to a card's deferred Bleed Leech after save and resume", () => {
-    let rolls = 0;
     const fangs = cardById.fangs!;
     const state = patchBattleState({
       hand: [fangs],
@@ -93,7 +92,7 @@ describe("reaction lifetimes", () => {
       enemyMaxHealth: 100,
       gearEffects: { flatBleedDamage: 18 },
       talentEffects: { leechHealingBonus: 1 },
-      rng: () => (rolls++ === 0 ? 0 : 0.99),
+      rng: () => 0.99,
     });
     const hit = playBattleCardResolved(state, fangs.id, 0).state;
     expect(hit.enemyStatuses.bleed).toBe(20);

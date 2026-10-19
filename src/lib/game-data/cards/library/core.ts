@@ -30,9 +30,7 @@ export const coreCards: BattleCard[] = [
   cardBuilders.damageCard({ id: "fireball", damageType: "burn", amount: 2 }),
   cardBuilders.effectsCard({
     id: "fangs",
-    effects: [
-      { kind: "damage", damageType: "bleed", damageTypePool: ["bleed", "physical"], amount: 2, lifesteal: true },
-    ],
+    effects: [{ kind: "damage", damageType: "bleed", amount: 2, lifesteal: true }],
   }),
   cardBuilders.damageCard({ id: "frostbolt", damageType: "freeze", amount: 3 }),
   cardBuilders.playerStatusCard({ id: "anvil", status: "forge", amount: 2 }),
@@ -225,7 +223,7 @@ export const coreCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "thorn-whip",
     effects: [
-      { kind: "damage", damageType: "nature", amount: 2 },
+      { kind: "damage", damageType: "nature", amount: 3 },
       { kind: "player-status", status: "thorns", amount: 1 },
     ],
   }),

@@ -331,14 +331,15 @@ describe("enemy card effects", () => {
     }
   });
 
-  it("resolves Fangs as one pooled hit without creating a Bleed leech tick", () => {
+  it("enemy Fangs deals Bleed damage and Leeches its deferred tick", () => {
     const state = enemyState("vampire", { enemyHealth: 10, playerHealth: 49 });
     const hit = useAbility(state, "fangs");
-    expect(hit.pendingEnemyBleedLeechHealing).toBe(0);
-    expect(hit.playerStatuses.bleed).toBe(1);
+    expect(hit.pendingEnemyBleedLeechHealing).toBe(2);
+    expect(hit.playerStatuses.bleed).toBe(3);
     expect(hit.enemyHealth).toBe(11);
     const tick = tickPlayerStatuses(hit, []);
-    expect(tick.enemyHealth).toBe(11);
+    expect(tick.enemyHealth).toBe(12);
+    expect(tick.playerHealth).toBe(hit.playerHealth - 3);
     expect(tick.pendingEnemyBleedLeechHealing).toBe(0);
   });
 

@@ -5,20 +5,35 @@ import {
 } from "@/features/alchemy/shared/run-flow/starter-draft";
 import { makeTestCard } from "../../../../fixtures/battle";
 import { DRAFT_CHOICES, DRAFT_ROUNDS } from "@/lib/game-constants";
+import { getImmediateDamage, getImmediateDefense } from "@/lib/battle";
+import { createSeededRng } from "@/lib/rng";
+import type { BattleCard } from "@/lib/game-data";
 
 const drafted = Array.from({ length: DRAFT_ROUNDS }, (_, index) => makeTestCard({ id: `card-${index}` }));
 
-it("createStarterDraftChoices returns the standard number of distinct draft choices", () => {
-  let seed = 42;
-  const rng = () => {
-    seed = (seed * 9301 + 49297) % 233280;
-    return seed / 233280;
-  };
-  const choices = createStarterDraftChoices([], rng);
-  expect(choices).toHaveLength(DRAFT_CHOICES);
-  const uniqueIds = new Set(choices.map((c) => c.id));
-  expect(uniqueIds.size).toBe(DRAFT_CHOICES);
-});
+it.each([1, 7, 19, 42, 93, 142, 201, 300])(
+  "keeps attack and survival options available through all six seeded picks (%i)",
+  (seed) => {
+    const rng = createSeededRng(seed);
+    const replayRng = createSeededRng(seed);
+    const deck: BattleCard[] = [];
+    for (let round = 0; round < DRAFT_ROUNDS; round++) {
+      const before = [...deck];
+      const choices = createStarterDraftChoices(deck, rng);
+      expect(choices).toEqual(createStarterDraftChoices(deck, replayRng));
+      expect(deck).toEqual(before);
+      expect(choices).toHaveLength(DRAFT_CHOICES);
+      expect(new Set(choices.map((card) => card.id)).size).toBe(DRAFT_CHOICES);
+      expect(choices.every((card) => !deck.some((owned) => owned.id === card.id))).toBe(true);
+      expect(choices[0]!.consume).not.toBe(true);
+      expect(getImmediateDamage(choices[0]!)).toBeGreaterThan(0);
+      expect(choices[1]!.consume).not.toBe(true);
+      expect(getImmediateDefense(choices[1]!)).toBeGreaterThan(0);
+      deck.push(choices[(seed + round) % DRAFT_CHOICES]!);
+    }
+    expect(rng()).toBe(replayRng());
+  },
+);
 
 describe("wildcardStarterResumeTarget", () => {
   it("returns draft-deck for an incomplete campaign draft", () => {
