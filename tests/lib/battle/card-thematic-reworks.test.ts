@@ -188,10 +188,10 @@ describe("thematic card effects", () => {
     const utility = play("pack-tactics", { activeCompanion: companionLibrary["golden-retriever"] });
     expect(utility.gold).toBe(4);
     expect(utility.wishOptions).toBeNull();
-    expect(utility.playerStatuses.block).toBe(2);
+    expect(utility.playerStatuses.block).toBe(4);
     const absent = play("pack-tactics");
     expect(absent.enemyHealth).toBe(100);
-    expect(absent.playerStatuses.block).toBe(2);
+    expect(absent.playerStatuses.block).toBe(4);
     expect(absent.wishOptions).toHaveLength(3);
     expect(absent.wishOptions?.every((card) => card.effects.some((effect) => effect.kind === "summon-companion"))).toBe(
       true,
@@ -200,7 +200,7 @@ describe("thematic card effects", () => {
     expect(chooseWishCard(absent, chosen.id).hand.some((card) => card.id === chosen.id)).toBe(true);
     const lethal = play("pack-tactics", { activeCompanion: companionLibrary.wolf, enemyHealth: 1 });
     expect(lethal.enemyHealth).toBe(0);
-    expect(lethal.playerStatuses.block).toBe(2);
+    expect(lethal.playerStatuses.block).toBe(4);
     expect(lethal.wishOptions).toBeNull();
   });
 
@@ -236,7 +236,7 @@ describe("thematic card effects", () => {
       expect(changed.descriptionLines).toContain(line);
       expect(changed.effects).toEqual(expect.arrayContaining([expect.objectContaining(expected)]));
       if (id === "pack-tactics") {
-        expect(changed.effects).toContainEqual({ kind: "player-status", status: "block", amount: 2 });
+        expect(changed.effects).toContainEqual({ kind: "player-status", status: "block", amount: 4 });
       }
       expect(validateCardDescriptionParity(changed)).toEqual([]);
       expect(hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(changed))))).toMatchObject({

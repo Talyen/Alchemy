@@ -45,7 +45,7 @@ export const defenseCards: BattleCard[] = [
   }),
   cardBuilders.effectsCard({
     id: "feint",
-    effects: [{ kind: "dodge-next-attack" }, { kind: "draw-cards", amount: 1 }],
+    effects: [{ kind: "dodge-next-attack" }, { kind: "draw-cards", amount: 2 }],
   }),
 
   cardBuilders.effectsCard({

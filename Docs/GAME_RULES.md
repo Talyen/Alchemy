@@ -77,7 +77,7 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 - **Companion damage rewards** — Predator's Instinct doubles damage only strictly below 30% enemy Health, comparing against the unrounded threshold. Companion damage rewards use Health lost to its damage packets before enemy healing reactions; Second Wind cannot cancel those rewards, and utility actions cannot earn them through unrelated damage reactions.
 - **Companion card perks** — Whistle and Hunter's Bond use the card's Companion keyword, including Pack Tactics. Whistle makes the active Companion act after all effects of the card finish, including a newly summoned Companion. Whistle occurs once per card play, including automatic plays, never again for repeated or scheduled effects. Hunter's Bond draws only for the first Companion card played each turn. Both `getCardKeywords` and `cardHasKeyword` use the full content keywords, including utility effects.
 - **Companion Forge** — Companion attacks use ordinary damage-type Forge permissions and preserve player Forge.
-- **Pack Tactics** — makes the active Companion act twice, including utility actions. Without an active Companion, it opens a normal Wish whose options are restricted to Companion summon cards; the chosen card enters the hand. It then grants 2 Block. Ordinary Companion bonuses and reaction cutoffs apply, and card-play rewards occur once.
+- **Pack Tactics** — makes the active Companion act twice, including utility actions. Without an active Companion, it opens a normal Wish whose options are restricted to Companion summon cards; the chosen card enters the hand. It then grants 4 Block. Ordinary Companion bonuses and reaction cutoffs apply, and card-play rewards occur once.
 - **Wishing Potion** — costs 1 Mana and Consumes to Wish twice from the ordinary card pool, excluding the originating card as usual. It has no additional draw. Both Wishes trigger normal Wish bonuses; chosen cards enter the hand or its pending queue. Mixing and distilling can increase the Wish count.
 
 ### Enemy abilities and traits
@@ -169,10 +169,14 @@ limits, repeated damage, Blackfletch detonation, and saved battle-local opportun
 
 Rogue starts with Feint in place of Serrated Edge, retaining Steal, Blackjack,
 and Shadowstep. Feint costs 1 Mana, prepares a Dodge of the next attack packet,
-and draws one card. It returns to the discard rather than Consuming, so it can
+and draws two cards. It returns to the discard rather than Consuming, so it can
 provide recurring evasion; repeated plays do not stack Dodge charges. Shadowstep
 still Consumes and can double Feint's draw. Damage over time and undodgeable
 reactions retain their existing rules.
+
+Ranger starts with Sap Arrow in place of Bounty Shot. Its 2 Nature damage and
+Leech provide repeatable healing in exchange for Bounty Shot's Gold generation.
+Both cards cost 1 Mana and retain Archery; Bounty Shot remains in the offer pool.
 
 Shield Bash gains 2 Block, then deals Stun damage equal to half its live Block,
 rounded to the nearest whole number; it does not spend Block. Mana payment and

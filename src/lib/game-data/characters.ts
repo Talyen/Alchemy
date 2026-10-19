@@ -47,7 +47,7 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
       "pack-tactics",
       "lightning-arrow",
       "venom-arrow",
-      "bounty-shot",
+      "sap-arrow",
       "astral-arrow",
       "ice-shot",
     ]),

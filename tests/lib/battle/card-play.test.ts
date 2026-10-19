@@ -262,7 +262,7 @@ describe("reusable evasion", () => {
     const card = cardById.feint!;
     let state = makeState({
       hand: [card],
-      deck: [cardById.slash!],
+      deck: slashDeck(2),
       rng: () => 0.99,
       talentEffects: { forgeOnConsume: 3, forgeOnConsumeChance: 100 },
     });
@@ -271,7 +271,7 @@ describe("reusable evasion", () => {
       const before = state;
       state = playBattleCardResolved(state, card.id, index).state;
       expect(state.mana).toBe(before.mana - 1);
-      expect(state.hand.map((entry) => entry.id)).toEqual(["slash"]);
+      expect(state.hand.map((entry) => entry.id).sort()).toEqual(["slash-0", "slash-1"]);
       expect(state.discard).toContainEqual(expect.objectContaining({ id: "feint" }));
       expect(state.exhausted).not.toContainEqual(expect.objectContaining({ id: "feint" }));
       expect(state.playerStatuses.forge).toBe(0);
@@ -287,11 +287,11 @@ describe("reusable evasion", () => {
   it("Shadowstep doubles Feint's draw without stacking evasion", () => {
     const shadowstep = cardById.shadowstep!;
     const feint = cardById.feint!;
-    const initial = makeState({ hand: [shadowstep, feint], deck: slashDeck(2) });
+    const initial = makeState({ hand: [shadowstep, feint], deck: slashDeck(4) });
     const shadowed = playBattleCardResolved(initial, shadowstep.id, 0).state;
     expect(shadowed.exhausted).toContainEqual(expect.objectContaining({ id: "shadowstep" }));
     const result = playBattleCardResolved(shadowed, feint.id, 0).state;
-    expect(result.hand).toHaveLength(2);
+    expect(result.hand).toHaveLength(4);
     expect(result.flags.playNextCardTwice).toBe(false);
     expect(result.flags.dodgeNextAttack).toBe(true);
     expect(result.discard).toContainEqual(expect.objectContaining({ id: "feint" }));
