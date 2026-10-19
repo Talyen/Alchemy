@@ -145,6 +145,42 @@ describe("retained headless rejection and persistence contracts", () => {
     expect(stateDigest(defaultGameSession)).toBe(before);
   });
 
+  it("offers ending the turn when only a fatal Health bargain remains, without mutating observation", () => {
+    start();
+    mutateGameplayForTest((draft) =>
+      setBattleState(draft, {
+        ...readBattle(defaultGameSession).battleState,
+        hand: [cardById["faustian-bargain"]!],
+        mana: 1,
+        playerHealth: 1,
+        deathsDoorUsed: true,
+        deathsDoorActive: false,
+      }),
+    );
+    const actor = createCareerActor(
+      {
+        seed: 1,
+        hero: "warlock",
+        mode: "campaign",
+        difficulty: "difficulty-1",
+        runs: 1,
+        horizon: 4,
+        maxSteps: 100,
+        maxTurns: 100,
+        policy: "archetype",
+        combatPolicy: "greedy-effective-damage",
+        brewing: "on",
+      },
+      undefined,
+      defaultGameSession,
+    );
+    const before = stateDigest(defaultGameSession);
+    const choices = actor.observe();
+    expect(choices.reduce((best, choice) => (choice.score > best.score ? choice : best)).kind).toBe("end-turn");
+    expect(actor.observe()).toEqual(choices);
+    expect(stateDigest(defaultGameSession)).toBe(before);
+  });
+
   it("rejects repeated and unaffordable shop purchases without duplicate grants", () => {
     const controller = start();
     const shop = controller.shop().merchant;

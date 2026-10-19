@@ -4,6 +4,7 @@ export {
   getEffectiveDamageScore,
   getImmediateDamage,
   getImmediateDefense,
+  hasPotentialLethalSelfCost,
   pickHighestScoring,
 } from "./autoplay-policy";
 export { getBattleCardPlayTarget, isAttackCard } from "./card-classification";

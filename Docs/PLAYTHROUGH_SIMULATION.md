@@ -110,9 +110,17 @@ stock is never inspected. Random noncombat policy ignores these score rankings.
 Heuristic combat policies may end a turn rather than consume a card with no
 current direct benefit and no recognized active Consume reward. This preserves
 full-Health healing and unnecessary cleanses. Random-playable and legacy careers
-retain their dump-hand behavior. Modern heuristic policies prefer an available
-attack before pure defense that would spend all remaining Mana when at or above
-half Health. Initial emergency defense retains its priority. After two completed
+retain their dump-hand behavior.
+
+Modern heuristic policies prefer a safe card or end the turn rather than pay a
+potentially lethal Health cost. This uses live autoplay's conservative self-cost
+rule, including Death's Door, Phoenix Feather, chance branches, and repeated
+plays. It does not forecast healing or enemy damage. Random-playable and legacy
+careers keep their previous choices; recorded replay still follows its journal.
+
+Modern heuristic policies prefer an available attack before pure defense that
+would spend all remaining Mana when at or above half Health. Initial emergency
+defense retains its priority. After two completed
 turns without an attack card or enemy Health reduction, an available attack
 outranks such defense even below half Health. Defense with spare Mana, attack
 cards that also defend, and hands with no scored attack keep their existing

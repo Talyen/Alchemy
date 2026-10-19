@@ -3,6 +3,7 @@ import {
   getEffectiveDamageScore,
   getImmediateDamage,
   getImmediateDefense,
+  hasPotentialLethalSelfCost,
   isAttackCard,
   type BattleSnapshot,
 } from "@/lib/battle";
@@ -31,7 +32,12 @@ export function scoreCombatCards(
 ): number[] {
   const modern = defenseOnlyTurns !== undefined;
   const scores = cards.map((card) => {
-    if (modern && policy !== "random-playable" && shouldPreserveConsumable(card, state)) return -1;
+    if (
+      modern &&
+      policy !== "random-playable" &&
+      (hasPotentialLethalSelfCost(card, state) || shouldPreserveConsumable(card, state))
+    )
+      return -1;
     switch (policy) {
       case "random-playable":
         return 1;

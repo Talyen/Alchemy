@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createBattleState, getEffectiveDamageScore, type BattleSnapshot } from "@/lib/battle";
+import { createBattleState, getEffectiveDamageScore, resolveBattleCard, type BattleSnapshot } from "@/lib/battle";
 import { cardById, cloneBattleCard, enemyById } from "@/lib/game-data";
 import { createCombatProgress, scoreCombatCards } from "@/app/playthrough/combat-policy";
 
@@ -27,6 +27,29 @@ function snapshot(health = 23): BattleSnapshot {
 }
 
 describe("simulation combat policy", () => {
+  it.each(["greedy-effective-damage", "greedy-damage", "defensive-random"] as const)(
+    "%s declines the fatal Health bargains seen in Warlock career replays",
+    (policy) => {
+      for (const id of ["faustian-bargain", "dark-pact", "blood-offering"]) {
+        const card = cardById[id]!;
+        const state = {
+          ...snapshot(1),
+          hand: [card, attack],
+          deathsDoorUsed: true,
+          deathsDoorActive: false,
+        };
+        const played = resolveBattleCard(state, card.id, 0, { rng: () => 0.5 });
+        expect(played.state.playerHealth).toBe(0);
+        const scores = scoreCombatCards(state.hand, state, policy, 0);
+        expect(scores[0]).toBe(-1);
+        expect(scores[1]).toBeGreaterThan(scores[0]!);
+        expect(scoreCombatCards([card], { ...state, deathsDoorUsed: false }, policy, 0)[0]).toBeGreaterThanOrEqual(0);
+        expect(scoreCombatCards([card], state, policy)[0]).toBeGreaterThanOrEqual(0);
+        expect(scoreCombatCards([card], state, "random-playable", 0)).toEqual([1]);
+      }
+    },
+  );
+
   it("reserves the last Mana for an attack after two defensive turns while preserving live scoring", () => {
     const state = snapshot();
     expect(getEffectiveDamageScore(shield, state)).toBeGreaterThan(getEffectiveDamageScore(attack, state));

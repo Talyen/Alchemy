@@ -2,83 +2,18 @@ import {
   canPlayCard,
   getEffectiveDamageScore,
   getImmediateDefense,
+  hasPotentialLethalSelfCost,
   type BattleSnapshot,
   type CardPlayOptions,
 } from "@/lib/battle";
-import { getCardKeywords, visitBattleCardEffects, type BattleCard } from "@/lib/game-data";
-import type { BattleCardEffect } from "@/lib/game-data";
-import { CAMPFIRE_HEAL_FRACTION, HALF_DIVISOR } from "@/lib/game-constants";
+import type { BattleCard } from "@/lib/game-data";
+import { HALF_DIVISOR } from "@/lib/game-constants";
 
 import { PLAYABLE_HAND_OPTIONS } from "../../shared/config/battle-input";
 export { PLAYABLE_HAND_OPTIONS };
 
 export function handHasPlayableCard(state: BattleSnapshot, options: CardPlayOptions = PLAYABLE_HAND_OPTIONS): boolean {
   return state.hand.some((card, index) => card && canPlayCard(state, card, index, options));
-}
-
-interface SelfCostOutcome {
-  health: number;
-  phoenixFeather: boolean;
-}
-
-/** Conservatively ignore healing and mitigation, but spend death prevention once in effect order. */
-function selfCostOutcomes(
-  effects: readonly BattleCardEffect[],
-  outcomes: SelfCostOutcome[],
-  revivedHealth: number,
-): SelfCostOutcome[] {
-  for (const effect of effects) {
-    if (effect.kind === "lose-health" || effect.kind === "self-damage") {
-      outcomes = outcomes.map((outcome) => {
-        if (outcome.health <= 0 || effect.amount <= 0) return outcome;
-        if (effect.amount >= outcome.health && outcome.phoenixFeather) {
-          return { health: revivedHealth, phoenixFeather: false };
-        }
-        return { ...outcome, health: Math.max(0, outcome.health - effect.amount) };
-      });
-    } else if (effect.kind === "chance") {
-      const branches = [
-        ...(effect.probability > 0 ? selfCostOutcomes(effect.successEffects, outcomes, revivedHealth) : []),
-        ...(effect.probability < 1 ? selfCostOutcomes(effect.failureEffects, outcomes, revivedHealth) : []),
-      ];
-      // At most two meaningful worst cases: Feather retained or already spent.
-      outcomes = [false, true].flatMap((phoenixFeather) => {
-        const matching = branches.filter((outcome) => outcome.phoenixFeather === phoenixFeather);
-        return matching.length
-          ? [{ health: Math.min(...matching.map((outcome) => outcome.health)), phoenixFeather }]
-          : [];
-      });
-    }
-  }
-  return outcomes;
-}
-
-function hasPotentialLethalSelfCost(card: BattleCard, state: BattleSnapshot): boolean {
-  // Feather revival ends Death's Door protection before any remaining costs.
-  if (!state.deathsDoorUsed || (state.deathsDoorActive && state.playerStatuses.phoenixFeather <= 0)) return false;
-  if (!visitBattleCardEffects(card.effects, (effect) => effect.kind === "lose-health" || effect.kind === "self-damage"))
-    return false;
-  const revivedHealth = Math.round(state.playerMaxHealth * CAMPFIRE_HEAL_FRACTION);
-  const first = selfCostOutcomes(
-    card.effects,
-    [{ health: state.playerHealth, phoenixFeather: state.playerStatuses.phoenixFeather > 0 }],
-    revivedHealth,
-  );
-  if (first.some((outcome) => outcome.health <= 0)) return true;
-
-  const keywords = getCardKeywords(card);
-  const mayRepeat =
-    state.flags.playNextCardTwice ||
-    keywords.some((keyword) => {
-      if (keyword === "burn") return state.talentEffects.burnCardPlayTwiceChance > 0;
-      if (keyword === "freeze") return state.talentEffects.freezeCardPlayTwiceChance > 0;
-      if (keyword === "nature") return state.talentEffects.natureCardPlayTwiceChance > 0;
-      if (keyword === "poison") return state.talentEffects.poisonCardPlayTwiceChance > 0;
-      if (keyword === "stun") return state.talentEffects.stunCardPlayTwiceChance > 0;
-      if (keyword === "wish") return state.talentEffects.wishCardPlayTwiceChance > 0;
-      return false;
-    });
-  return mayRepeat && selfCostOutcomes(card.effects, first, revivedHealth).some((outcome) => outcome.health <= 0);
 }
 
 /**

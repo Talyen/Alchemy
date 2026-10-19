@@ -20,13 +20,13 @@ const config: CareerConfig = {
   combatPolicy: "greedy-effective-damage",
   brewing: "on",
 };
-function career(overrides: Partial<CareerConfig> = {}, fixture?: string, replay?: JournalEntry[]) {
+function career(overrides: Partial<CareerConfig> = {}, fixture?: string, replay?: JournalEntry[], timeout = 30000) {
   const prefix = resolve(directory, String(serial++));
   writeFileSync(`${prefix}.input`, JSON.stringify({ config: { ...config, ...overrides }, fixture, replay }));
   const child = spawnSync(
     process.execPath,
     ["scripts/run-playthrough-worker.mjs", `${prefix}.input`, `${prefix}.json`, `${prefix}.journal`],
-    { encoding: "utf8", timeout: 30000 },
+    { encoding: "utf8", timeout },
   );
   expect(child.status, child.stderr || child.error?.message).toBe(0);
   return JSON.parse(readFileSync(`${prefix}.json`, "utf8")) as CareerResult;
@@ -53,19 +53,20 @@ describe("headless production careers", () => {
 
   it("replays brewing in a fresh process and resumes immediately after a committed service", () => {
     const options: Partial<CareerConfig> = { hero: "alchemist", seed: 42, runs: 3, brewing: "on" };
-    const result = career(options, "unlocked-v1");
+    // This 2,500-action career can exceed 30 seconds before either replay starts.
+    const result = career(options, "unlocked-v1", undefined, 60000);
     expect(result.status, result.error).toBe("completed");
     const mix = result.journal.find((entry) => entry.action.kind === "mix" || entry.action.kind === "distill");
     expect(mix).toBeDefined();
-    const replay = career(options, "unlocked-v1", result.journal);
+    const replay = career(options, "unlocked-v1", result.journal, 60000);
     expect(replay.status, replay.error).toBe("completed");
     expect(replay.finalSave).toEqual(result.finalSave);
-    const resumed = career({ ...options, resumeAt: mix!.step + 1 }, "unlocked-v1");
+    const resumed = career({ ...options, resumeAt: mix!.step + 1 }, "unlocked-v1", undefined, 60000);
     expect(resumed.status, resumed.error).toBe("completed");
     expect(resumed.resumeChecks).toBe(1);
     expect(resumed.finalSave).toEqual(result.finalSave);
     expect(resumed.telemetry.brewing).toEqual(result.telemetry.brewing);
-  }, 90000);
+  }, 200000);
 
   it("resumes an acknowledged combat save in a fresh process", () => {
     const prefix = resolve(directory, `checkpoint-${serial++}`);
