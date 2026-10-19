@@ -8,21 +8,23 @@ describe("battle anomaly collection", () => {
     sampleAnomalies(
       makeTestBattleState(),
       [
-        { target: "enemy", kind: "heal", stat: "health", amount: 3 },
+        { target: "enemy", kind: "heal", stat: "health", amount: 300 },
         { target: "player", kind: "heal", stat: "health", amount: 9 },
         { target: "enemy", kind: "status", stat: "block", amount: 5 },
         { target: "enemy", kind: "status", stat: "armor", amount: 2 },
-        { target: "player", kind: "damage", stat: "block", amount: 4 },
+        { target: "player", kind: "damage", stat: "block", amount: 400 },
         { target: "player", kind: "damage", stat: "bleed", amount: 2 },
       ],
       anomalies,
     );
     expect(anomalies).toMatchObject({
-      enemyHealing: 3,
+      enemyHealing: 300,
       heroHealthDamage: 2,
       enemyBlockGranted: 5,
       enemyArmorGranted: 2,
       maxSingleHeal: 9,
+      maxSingleHitDamageToPlayer: 2,
+      maxSingleHitDamageToPlayerStat: "bleed",
     });
   });
 
@@ -58,6 +60,8 @@ describe("battle anomaly collection", () => {
       [
         { target: "enemy", kind: "damage", stat: "physical", amount: 25 },
         { target: "player", kind: "damage", stat: "burn", amount: 25 },
+        { target: "enemy", kind: "damage", stat: "armor", amount: 500, impact: false },
+        { target: "enemy", kind: "damage", stat: "block", amount: 500 },
         { target: "enemy", kind: "notice", stat: "physical", text: "Immune" },
       ],
       anomalies,

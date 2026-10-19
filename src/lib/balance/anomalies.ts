@@ -1,6 +1,7 @@
 import type { BattleSnapshot, CombatTextEvent } from "@/lib/battle";
 import type { TalentPreset } from "./simulator-types";
 import { createNumericManifest } from "@/lib/manifest-utils";
+import { DAMAGE_TYPES } from "@/lib/game-data";
 
 export interface BattleAnomalies {
   enemyHealing: number;
@@ -71,8 +72,8 @@ const STATUS_ANOMALY_METRICS = [
 
 export const ANOMALY_METRICS = [
   ...STATUS_ANOMALY_METRICS.map(({ key, label }) => ({ key, label })),
-  { key: "maxSingleHitDamageToEnemy", label: "Player→Enemy Dmg" },
-  { key: "maxSingleHitDamageToPlayer", label: "Enemy→Player Dmg" },
+  { key: "maxSingleHitDamageToEnemy", label: "Damage to Enemy Health" },
+  { key: "maxSingleHitDamageToPlayer", label: "Damage to Player Health" },
   { key: "maxSingleHeal", label: "Player Heal" },
 ] as const satisfies ReadonlyArray<{ key: NumericAnomalyKey; label: string }>;
 
@@ -104,6 +105,8 @@ export function createEmptyAnomalies(): BattleAnomalies {
   return { ...EMPTY_ANOMALIES };
 }
 
+const HEALTH_DAMAGE_STATS = new Set<string>([...DAMAGE_TYPES, "health"]);
+
 export function sampleAnomalies(
   state: BattleSnapshot,
   combatTexts: CombatTextEvent[],
@@ -118,15 +121,11 @@ export function sampleAnomalies(
     if (ct.kind === "heal" && ct.target === "enemy") anomalies.enemyHealing += ct.amount;
     if (ct.kind === "status" && ct.target === "enemy" && ct.stat === "block") anomalies.enemyBlockGranted += ct.amount;
     if (ct.kind === "status" && ct.target === "enemy" && ct.stat === "armor") anomalies.enemyArmorGranted += ct.amount;
-    if (
-      ct.kind === "damage" &&
-      ct.target === "player" &&
-      !["block", "armor", "forge", "thorns", "mana", "gold", "gems"].includes(ct.stat)
-    )
-      anomalies.heroHealthDamage += ct.amount;
+    const damagesHealth = ct.kind === "damage" && HEALTH_DAMAGE_STATS.has(ct.stat);
+    if (damagesHealth && ct.target === "player") anomalies.heroHealthDamage += ct.amount;
     if (ct.kind === "heal") {
-      anomalies.maxSingleHeal = Math.max(anomalies.maxSingleHeal, ct.amount);
-    } else if (ct.kind === "damage") {
+      if (ct.target === "player") anomalies.maxSingleHeal = Math.max(anomalies.maxSingleHeal, ct.amount);
+    } else if (damagesHealth) {
       const peak = ct.target === "enemy" ? "maxSingleHitDamageToEnemy" : "maxSingleHitDamageToPlayer";
       if (!(ct.amount > anomalies[peak])) continue;
       anomalies[peak] = ct.amount;

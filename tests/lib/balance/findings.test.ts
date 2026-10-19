@@ -263,20 +263,27 @@ describe("evaluateBalanceFindings", () => {
     ]);
   });
 
-  it("flags anomaly spikes over threshold and ignores values under it", () => {
+  it("flags a Stun spike without inventing a Burn cause and ignores values under threshold", () => {
     const model = emptyModel();
     model.anomalyMetrics = [
       { field: "Player→Enemy Dmg", values: { early: 10, mid: 10, late: 400 } },
       { field: "Player Heal", values: { early: 10, mid: 10, late: 10 } },
     ];
     model.anomalies = [
-      { field: "Player→Enemy Dmg", maxValue: 400, battles: 3, peakScenario: "wizard vs frost-elemental (Late)" },
+      {
+        field: "Player→Enemy Dmg",
+        maxValue: 400,
+        battles: 3,
+        peakScenario: "knight vs vampire (Late) · stun · Shield Bash",
+      },
     ];
 
     const result = evaluateBalanceFindings(model);
     const spike = result.findings.find((finding) => finding.scope === "anomaly" && finding.id === "Player→Enemy Dmg");
     expect(spike?.severity).toBe("watch");
     expect(spike?.tier).toBe("late");
+    expect(spike?.worstScenario).toBe("knight vs vampire (Late) · stun · Shield Bash");
+    expect(spike?.causeHint).toBeUndefined();
     expect(result.findings.some((finding) => finding.id === "Player Heal")).toBe(false);
   });
 

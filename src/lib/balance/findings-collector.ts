@@ -14,10 +14,6 @@ function collectAnomalies(model: BalanceReportModel): BalanceFinding[] {
       const threshold = ANOMALY_THRESHOLD_BY_PRESET[tier];
       if (value <= threshold) continue;
       const peak = model.anomalies.find((entry) => entry.field === row.field);
-      const burnHint =
-        row.field.includes("Burn") || row.field.includes("Player→Enemy")
-          ? "Burn stack application (e.g. Flaming Shield) can spike vs Burn-vulnerable enemies."
-          : undefined;
       findings.push(
         finding(
           {
@@ -26,7 +22,6 @@ function collectAnomalies(model: BalanceReportModel): BalanceFinding[] {
             title: row.field,
             tier,
             worstScenario: peak?.peakScenario ?? row.field,
-            ...(burnHint ? { causeHint: burnHint } : {}),
           },
           {
             severity: "watch",
