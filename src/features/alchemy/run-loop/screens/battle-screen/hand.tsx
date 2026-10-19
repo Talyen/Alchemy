@@ -32,7 +32,7 @@ import { useHandPointer } from "./use-hand-pointer";
 import { useBattleDescriptionContext } from "./use-battle-description-context";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { getHandCardKey } from "../../battle/playable-hand";
-import { getElementCenterX, playHandSlotReflow } from "./hand-slot-reflow";
+import { getElementCenterX, playHandSlotReflows, type HandSlotReflow } from "./hand-slot-reflow";
 import { useHandPresentation } from "../../battle/presentation/use-hand-presentation";
 import type { BattleSnapshot } from "@/lib/battle";
 import { focusControl } from "../../../shared/ui/focus-navigation";
@@ -45,6 +45,7 @@ const HandCardItem = memo(function HandCardItem({
   handWidthClass,
   stagePixelRatio,
   handCardRefs,
+  reflows,
   isInteractionEnabled,
   isVisuallyPlayable,
   isHidden,
@@ -59,6 +60,7 @@ const HandCardItem = memo(function HandCardItem({
   handWidthClass: string;
   stagePixelRatio: number;
   handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
+  reflows: RefObject<HandSlotReflow[]>;
   isInteractionEnabled: boolean;
   isVisuallyPlayable: boolean;
   isHidden: boolean;
@@ -79,7 +81,7 @@ const HandCardItem = memo(function HandCardItem({
   const slotRef = useRef<HTMLDivElement | null>(null);
   const prevCenterXRef = useRef<number | null>(null);
 
-  /* oxlint-disable react-hooks/immutability -- Writing to handCardRefs.current (a MutableRefObject) in useLayoutEffect and its cleanup is the correct imperative pattern for maintaining a live ref registry; MutableRefObject.current writes are explicitly safe inside effects. */
+  /* oxlint-disable react-hooks/immutability -- Layout effects maintain the live button registry and collect hand reflow measurements in mutable refs; neither operation publishes render state. */
   useLayoutEffect(() => {
     const el = elementRef.current;
     const currentRefs = handCardRefs.current;
@@ -98,9 +100,9 @@ const HandCardItem = memo(function HandCardItem({
     if (previousCenterX === null) return;
     const artwork = slot.firstElementChild;
     if (!(artwork instanceof HTMLElement)) return;
-    playHandSlotReflow(artwork, previousCenterX - centerX, HAND_REFLOW_MOTION_MS);
-  }, [cardKey, index, handLength]);
-  /* oxlint-enable react-hooks/immutability -- re-enable immutability checks after ref registry effects */
+    reflows.current.push({ artwork, deltaX: previousCenterX - centerX });
+  }, [cardKey, index, handLength, reflows]);
+  /* oxlint-enable react-hooks/immutability -- re-enable immutability checks after ref registry and reflow effects */
 
   return (
     <div
@@ -182,6 +184,11 @@ export function BattleHand({
   } = useHandPresentation(presentation, playabilityState);
   const keyboardActivation = useRef(false);
   const recovery = useRef<{ played: string; order: string[] } | null>(null);
+  const reflows = useRef<HandSlotReflow[]>([]);
+  // Child layout effects queue their measurements; commit the whole hand together.
+  useLayoutEffect(() => {
+    playHandSlotReflows(reflows.current.splice(0), HAND_REFLOW_MOTION_MS);
+  });
   const pointer = useHandPointer(battleState.hand, hiddenHandCardKeys, handCardRefs);
   const handWidthClass = handCardWidthClass;
   const descriptionContext = useBattleDescriptionContext(battleState);
@@ -271,6 +278,7 @@ export function BattleHand({
             handWidthClass={handWidthClass}
             stagePixelRatio={stagePixelRatio}
             handCardRefs={handCardRefs}
+            reflows={reflows}
             isInteractionEnabled={interactiveHandCardKeys.has(cardKey)}
             isVisuallyPlayable={visuallyPlayableHandCardKeys.has(cardKey)}
             isHidden={hiddenHandCardKeys.includes(cardKey)}
