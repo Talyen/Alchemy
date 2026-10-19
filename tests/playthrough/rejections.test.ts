@@ -17,7 +17,13 @@ import {
 import { talentPool, canUnlockTalent, cardById } from "@/lib/game-data";
 import { mutateGameplayForTest, resetAllTestStores } from "../helpers/run-domain-store-test";
 import { readBattle, readRunSession, readRunProfile, readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import { setGold, setMaterials, setRunDeck, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  setGold,
+  setMaterials,
+  setRunDeck,
+  setScreen,
+  setStarterDraftChoices,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { createPlaythroughController } from "@/app/playthrough/controller";
 import { commitCardPlay } from "@/features/alchemy/shared/stores/battle-commands";
@@ -52,6 +58,42 @@ function start() {
 }
 
 describe("retained headless rejection and persistence contracts", () => {
+  it("uses starter deck roles only for modern Wildcard drafts and keeps observation pure", () => {
+    hydrateAlchemyPersistenceFields(createPlaythroughFixture("unlocked-v1", defaultGameSession), defaultGameSession);
+    const controller = createPlaythroughController(defaultGameSession);
+    controller.flow.goToScreen("game-mode-select");
+    controller.flow.beginCampaign();
+    controller.flow.handleCharacterSelect("wildcard");
+    mutateGameplayForTest((draft) => {
+      setRunDeck(draft, [cardById["wolf-companion"]!, cardById["pack-tactics"]!]);
+      setStarterDraftChoices(draft, [cardById["fox-companion"]!, cardById["concussive-shot"]!]);
+    });
+    const config = {
+      seed: 2,
+      hero: "wildcard",
+      mode: "campaign",
+      difficulty: "difficulty-1",
+      runs: 1,
+      horizon: 4,
+      maxSteps: 100,
+      maxTurns: 100,
+      policy: "archetype",
+      combatPolicy: "greedy-effective-damage",
+    } as const;
+    const before = stateDigest(defaultGameSession);
+    const legacy = createCareerActor(config, undefined, defaultGameSession);
+    const modern = createCareerActor({ ...config, brewing: "on" }, undefined, defaultGameSession);
+    const best = (choices: ReturnType<typeof modern.observe>) =>
+      choices.reduce((chosen, choice) => (choice.score > chosen.score ? choice : chosen));
+    expect(best(legacy.observe()).id).toBe("fox-companion");
+    const picked = best(modern.observe());
+    expect(picked.id).toBe("concussive-shot");
+    expect(best(modern.observe())).toEqual(picked);
+    expect(stateDigest(defaultGameSession)).toBe(before);
+    modern.execute(picked);
+    expect(readActiveRun(defaultGameSession).runDeck.at(-1)?.id).toBe("concussive-shot");
+  });
+
   it("previews an alteration after source selection and commits only through confirmation", () => {
     const controller = start();
     mutateGameplayForTest((draft) => setRunDeck(draft, [cardById.slash!]));

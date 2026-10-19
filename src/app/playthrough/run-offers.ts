@@ -23,6 +23,7 @@ import { canDescendFromLabyrinthNode } from "@/lib/content-systems/labyrinth/map
 import { characters, type BattleCard } from "@/lib/game-data";
 import { offerBrewingChoices, type BrewingObservation } from "./brewing-offers";
 import { scoreCombatCards } from "./combat-policy";
+import { scoreStarterDraftCard } from "./draft-policy";
 import { brewCandidates } from "./brewing-policy";
 import { scoreArchetypeRemoval, scoreStrategyCard } from "./archetype-policy";
 import type { OfferChoice } from "./choice-catalog";
@@ -293,7 +294,9 @@ export function offerRunChoices(
           offer(
             "draft",
             card.id,
-            affinity(card),
+            config.brewing === undefined
+              ? affinity(card)
+              : scoreStarterDraftCard(config.policy, config.hero, card, run.runDeck),
             () => (wildwood ? flow.handleWildwoodDraftPick(card.id) : flow.handleStarterDraftPick(card.id)),
             index,
           ),
