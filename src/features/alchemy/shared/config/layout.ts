@@ -122,9 +122,10 @@ export const battleActorEnemyCellClass = "relative flex items-start justify-star
 // The previous inset scene lost 5.5 content rem to page and battle padding.
 // Retain that height cap so moving the dock does not enlarge hands or piles.
 export const battleBottomBarClass =
-  "[--hand-card-width:min(calc(16.5038*var(--content-rem,1rem)),calc((100cqh_-_5.5*var(--content-rem,1rem))*0.2445))] absolute inset-x-[calc(1.125*var(--content-rem,1rem))] bottom-[calc(1.125*var(--content-rem,1rem))] flex justify-center items-end";
+  "[--hand-card-width:min(calc(16.5038*var(--content-rem,1rem)),calc((100cqh_-_5.5*var(--content-rem,1rem))*0.2445))] absolute inset-x-[calc(1.125*var(--content-rem,1rem))] bottom-[calc(1.125*var(--content-rem,1rem))] flex justify-center items-end gap-[clamp(1.25cqw,3cqw,2.19cqw)]";
 
-export const battleBottomColumnClass = "flex flex-col items-center justify-end gap-4";
+export const battleBottomColumnClass =
+  "relative flex shrink-0 w-[calc(var(--hand-card-width)*0.8)] flex-col items-center justify-end gap-4";
 
 export const battleHandContainerClass =
   "flex min-w-0 items-end justify-center min-h-[calc((100cqh_-_5.5*var(--content-rem,1rem))*0.3337)] px-[calc(var(--hand-card-width)*0.32)] pt-10";
