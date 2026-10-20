@@ -1,5 +1,4 @@
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
-import type { KeywordId } from "@/lib/game-data";
 import type { MysteryChoice, MysteryEffect } from "@/lib/mystery";
 import type { PersistedMysteryVisit } from "@/lib/active-run-session/types";
 import type { ParsedActiveRunData } from "./save-schemas/active-run";
@@ -26,7 +25,7 @@ function hydrateMysteryChoice(choice: PersistedMysteryChoiceInput): MysteryChoic
     effects: choice.effects.map((effect): MysteryEffect => {
       // Parsed optional fields may be explicitly undefined; live effects omit them.
       if (effect.kind === "chooseCard")
-        return effect.tag ? { kind: "chooseCard", tag: effect.tag as KeywordId } : { kind: "chooseCard" };
+        return effect.tag ? { kind: "chooseCard", tag: effect.tag } : { kind: "chooseCard" };
       if (effect.kind === "gainGeneratedGear")
         return {
           kind: effect.kind,

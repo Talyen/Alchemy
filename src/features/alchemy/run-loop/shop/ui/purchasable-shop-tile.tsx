@@ -3,7 +3,6 @@ import { useGameTranslation } from "@/components/use-game-translation";
 import { cn } from "@/lib/utils";
 
 import { CurrencyAmount } from "../../../shared/ui/display-elements";
-import { DisabledTooltip } from "../../../shared/ui/tooltips/disabled-tooltip";
 
 export function ShopPriceChip({
   price,
@@ -23,20 +22,18 @@ export function ShopPriceChip({
           {i18n.text("ui.purchasable-shop-tile.1", "Purchased")}
         </span>
       ) : (
-        <DisabledTooltip show={!canAfford} message={i18n.text("ui.purchasable-shop-tile.2", "Not Enough Gold")}>
-          <div
-            className={cn(
-              "pointer-events-auto inline-flex items-center justify-center gap-1.5 text-xl leading-none font-semibold tabular-nums",
-              canAfford ? "text-gold-pale" : "text-muted-foreground",
-            )}
-          >
-            <CurrencyAmount
-              amount={price}
-              iconClassName="drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] drop-shadow-[0_0_2px_rgba(0,0,0,0.95)]"
-              className="whitespace-nowrap drop-shadow-[0_0_2px_rgba(0,0,0,0.95)] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]"
-            />
-          </div>
-        </DisabledTooltip>
+        <div
+          className={cn(
+            "pointer-events-auto inline-flex items-center justify-center gap-1.5 text-xl leading-none font-semibold tabular-nums",
+            canAfford ? "text-gold-pale" : "text-muted-foreground",
+          )}
+        >
+          <CurrencyAmount
+            amount={price}
+            iconClassName="drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] drop-shadow-[0_0_2px_rgba(0,0,0,0.95)]"
+            className="whitespace-nowrap drop-shadow-[0_0_2px_rgba(0,0,0,0.95)] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]"
+          />
+        </div>
       )}
     </div>
   );

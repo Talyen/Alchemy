@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { DESTINATIONS, filterValidDestinations, filterValidDestinationRounds } from "@/lib/routing";
 
 describe("saved destinations", () => {
-  it("repairs renamed shops and drops unknown destinations without losing route order", () => {
+  it("drops retired and unknown destinations without losing route order", () => {
     expect(filterValidDestinations(["Mystery", "Merchant's Shop", "Old Bazaar", "Equipment Shop", "Campfire"])).toEqual(
-      [DESTINATIONS.MYSTERY, DESTINATIONS.CARD_SHOP, DESTINATIONS.GEAR_SHOP, DESTINATIONS.CAMPFIRE],
+      [DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE],
     );
   });
 
@@ -19,10 +19,6 @@ describe("saved destinations", () => {
         Transmutation: -1,
         "Old Bazaar": 5,
       }),
-    ).toEqual({
-      [DESTINATIONS.CARD_SHOP]: 4,
-      [DESTINATIONS.GEAR_SHOP]: 2,
-      [DESTINATIONS.MYSTERY]: 0,
-    });
+    ).toEqual({ [DESTINATIONS.MYSTERY]: 0 });
   });
 });

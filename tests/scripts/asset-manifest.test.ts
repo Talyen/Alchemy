@@ -69,7 +69,7 @@ describe("asset manifest", () => {
     );
     const piles = ["draw-pile.webp", "discard-pile.webp", "card-back.webp"];
     const families = [
-      { targets: [...resources, "battle-mana-crystal.webp"], preset: ART_PRESETS.resource },
+      { targets: resources, preset: ART_PRESETS.resource },
       { targets: piles, preset: { ...ART_PRESETS.card, quality: ART_PRESETS.boon.quality } },
       { targets: ["mana-dock-full.webp", "mana-dock-empty.webp"], preset: ART_PRESETS.manaDockCrystal },
       { targets: ["mana-dock-frame.webp"], preset: ART_PRESETS.manaDock },

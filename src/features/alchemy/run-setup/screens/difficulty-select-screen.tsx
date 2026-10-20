@@ -264,11 +264,7 @@ export function DifficultySelectScreen({
 
       <div className="mt-6 flex justify-center">
         <Button size="lg" variant="primary" className="min-w-56" disabled={!canPlay} onClick={handlePlay}>
-          <GameMessage
-            id="ui.difficulty-select-screen.s1"
-            defaultValue="<part0/>Play"
-            parts={{ part0: <Swords className="h-4 w-4" /> }}
-          />
+          <GameMessage id="ui.difficulty-select-screen.s1" defaultValue="<part0/>Play" parts={{ part0: <Swords /> }} />
         </Button>
       </div>
     </TitledScreenShell>

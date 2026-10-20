@@ -1,3 +1,4 @@
+import { isFocusNavigationEnabled } from "./focus-input";
 import { focusableControls, focusControl, focusScreenStart, isFocusAvailable } from "./focus-eligibility";
 
 interface DialogFocusScope {
@@ -32,6 +33,7 @@ function initialControl(panel: HTMLDivElement): HTMLElement {
 }
 
 function focusScope(scope: DialogFocusScope, retainFocus = true) {
+  if (!isFocusNavigationEnabled()) return;
   const retained = retainFocus ? scope.lastFocused : null;
   const control =
     retained && scope.panel.contains(retained) && isFocusAvailable(retained) ? retained : initialControl(scope.panel);
@@ -47,6 +49,7 @@ function focusScope(scope: DialogFocusScope, retainFocus = true) {
 }
 
 function reconcile() {
+  if (!isFocusNavigationEnabled()) restoreTarget = null;
   const nextOwner = activeScope();
   const previousOwner = owner;
   // A closing panel retains restoration responsibility through its inert fade
@@ -105,10 +108,25 @@ function cancelRestore() {
   releaseListenersIfIdle();
 }
 
+function onKeyInput(event: KeyboardEvent) {
+  if (event.key === "Escape") cancelRestore();
+  else {
+    const scope = activeScope();
+    // Native Tab from an inert opener can leave Electron's document before the
+    // next frame. Enter the dialog immediately and prevent that window blur.
+    if (event.key === "Tab" && isFocusNavigationEnabled() && scope && !scope.panel.contains(document.activeElement))
+      trapDialogTab(scope.panel, event);
+    scheduleReconcile();
+  }
+}
+
 function ensureListeners() {
   if (observer) return;
   document.addEventListener("focusin", onFocus);
+  window.addEventListener("keydown", onKeyInput, true);
+  window.addEventListener("blur", cancelRestore);
   document.addEventListener("pointerdown", cancelRestore, true);
+  document.addEventListener("wheel", cancelRestore, { capture: true, passive: true });
   observer = new MutationObserver(scheduleReconcile);
   observer.observe(document.body, {
     subtree: true,
@@ -123,7 +141,10 @@ function releaseListenersIfIdle() {
   observer?.disconnect();
   observer = undefined;
   document.removeEventListener("focusin", onFocus);
+  window.removeEventListener("keydown", onKeyInput, true);
+  window.removeEventListener("blur", cancelRestore);
   document.removeEventListener("pointerdown", cancelRestore, true);
+  document.removeEventListener("wheel", cancelRestore, true);
   if (frame !== undefined) cancelAnimationFrame(frame);
   frame = undefined;
   owner = undefined;
@@ -144,9 +165,9 @@ export function registerDialogFocus(panel: HTMLDivElement, returnTarget: HTMLEle
     // unclaimed panel still owns restoration after native inert drops focus.
     const wasOwner = owner === scope || (!owner && scopes.at(-1) === scope);
     scopes.splice(index, 1);
+    if (wasOwner) owner = undefined;
     // Covered panels never restore their opener through the foreground panel.
-    if (wasOwner) {
-      owner = undefined;
+    if (wasOwner && isFocusNavigationEnabled()) {
       const next = activeScope();
       if (next) {
         owner = next;

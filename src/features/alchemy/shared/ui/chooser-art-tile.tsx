@@ -72,7 +72,7 @@ export function ChooserArtTile({
         shimmerRounded="rounded-shell-card"
         overlay={overlay}
         className={cn(
-          "group card-art-frame relative mx-auto block aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-shell-card border border-border/80 bg-black shadow-md focus:outline-none",
+          "group card-art-frame relative mx-auto block aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-shell-card border border-border/80 bg-black shadow-md focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary",
           widthClass,
           !disabled && cardInteractiveGlowClass,
           surfaceClassName,
@@ -87,9 +87,9 @@ export function ChooserArtTile({
         />
       </Surface>
       {trackTooltip ? renderTooltip(tooltipVisible) : null}
-      <div className="pointer-events-none flex items-center justify-center gap-2.5 pt-1 text-center select-none">
-        <Icon className={cn("h-5 w-5 shrink-0", accentClassName)} />
-        <span className={cn("font-sans text-lg font-bold tracking-wide sm:text-xl", accentClassName)}>{label}</span>
+      <div className="pointer-events-none flex items-center justify-center gap-2.5 pt-1 text-center font-sans text-lg font-bold tracking-wide select-none sm:text-xl">
+        <Icon className={cn("shrink-0", accentClassName)} />
+        <span className={accentClassName}>{label}</span>
       </div>
     </div>
   );

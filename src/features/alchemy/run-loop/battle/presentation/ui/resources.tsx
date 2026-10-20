@@ -36,9 +36,8 @@ export function PilePanel({
         className={cn(cardSurfaceClass, cardHoverScaleClass, "block w-full bg-transparent")}
         ariaLabel={i18n.text("battle.inspect-pile", "Inspect {{pile}} · {{count}} cards", { pile: label, count })}
         ariaDisabled={!inspectable}
-        onClick={(event) => {
+        onClick={() => {
           if (!inspectable) return;
-          event.currentTarget.focus();
           onInspect?.();
         }}
       >

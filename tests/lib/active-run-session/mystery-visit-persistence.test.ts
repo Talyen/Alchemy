@@ -85,6 +85,28 @@ describe("Mystery visit resume", () => {
     expect(visit.mysteryChosenCardId).toBeNull();
   });
 
+  it("drops an unknown chooseCard tag without losing the effect", () => {
+    const restored = parseActiveRun(
+      makeMinimalActiveRunInput({
+        activity: savedActivityFixture("mystery", {
+          event: {
+            id: "saved",
+            title: "Saved",
+            art: "",
+            narrative: "",
+            choices: [{ label: "Browse", effects: [{ kind: "chooseCard", tag: "not-a-keyword" }] }],
+          },
+          chosenChoice: null,
+          cardChoices: null,
+          grantedGear: [],
+          chosenCardId: null,
+        }),
+      }),
+    );
+    const visit = hydrateMysteryVisit(savedActivityData(restored!, "mystery"));
+    expect(visit.mysteryEvent?.choices).toStrictEqual([{ label: "Browse", effects: [{ kind: "chooseCard" }] }]);
+  });
+
   it("keeps an absent visit absent when saved and restores neutral live fields", () => {
     expect(serializeMysteryVisit(emptyHydratedMysteryVisit())).toBeNull();
     expect(hydrateMysteryVisit(null)).toEqual(emptyHydratedMysteryVisit());

@@ -1,3 +1,4 @@
+import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
 import userEvent from "@testing-library/user-event";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createRef } from "react";
@@ -5,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { ConfirmationDialog } from "@/features/alchemy/shared/ui/dialogs";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
+
+installFocusInputForTests(true);
 
 describe("ConfirmationDialog", () => {
   beforeEach(() => {

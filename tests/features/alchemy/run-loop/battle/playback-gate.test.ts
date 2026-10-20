@@ -10,6 +10,7 @@ it.each(["card", "wish"] as const)("blocks %s playback while another interaction
   for (const [reason, pending] of [
     ["play commit", { cardPlayInProgress: true }],
     ["inspection", { inspectionOpen: true }],
+    ["boons", { boonInspectOpen: true }],
     ["card transfer", { cardTransferInProgress: true }],
     ["game menu", { gameMenuOpen: true }],
   ] as const) {

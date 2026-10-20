@@ -5,6 +5,9 @@ import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { InteractiveArtTile } from "@/features/alchemy/shared/ui/interactive-art-tile";
 import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
 import userEvent from "@testing-library/user-event";
+import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
+
+installFocusInputForTests(true);
 
 function renderTile() {
   return render(

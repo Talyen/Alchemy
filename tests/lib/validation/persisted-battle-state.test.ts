@@ -108,6 +108,16 @@ describe("PersistedBattleStateSchema", () => {
     expect(result.currentEnemy.abilityIds).toEqual(["slash", "bash", "block"]);
   });
 
+  it("repairs mixed discovery entries and a non-boolean fight-pacing flag", () => {
+    const result = PersistedBattleStateSchema.parse({
+      ...validState(),
+      discoveredCardIds: ["slash", 42, null, "slash"],
+      appliesFightPacing: "false",
+    });
+    expect(result.discoveredCardIds).toEqual(["slash"]);
+    expect(result.appliesFightPacing).toBe(true);
+  });
+
   it("repairs non-array discovery and modifier lists to empty", () => {
     const result = PersistedBattleStateSchema.safeParse({
       ...validState(),

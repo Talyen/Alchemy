@@ -17,13 +17,12 @@ export function DeckInspectButton({ count, disabled, onOpen }: DeckInspectButton
       aria-label={i18n.displayText(label)}
       aria-disabled={disabled}
       aria-haspopup="dialog"
-      onClick={(event) => {
+      onClick={() => {
         if (disabled) return;
-        event.currentTarget.focus();
         onOpen();
       }}
     >
-      <PlayingCards className="h-6 w-6" />
+      <PlayingCards />
     </ChromeIconButton>
   );
 }

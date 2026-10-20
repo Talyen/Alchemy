@@ -29,8 +29,8 @@ corrections through their callbacks after commit, once per correction. Empty
 lists use page zero with one logical page and a minimum capacity of one.
 Offered choices remain content-owned, independent of browsing capacity.
 
-Activating a Bestiary portrait plays its registered boss music when available,
-including for undiscovered entries; it does not play an attack sound. Music loops until the
+Activating a discovered Bestiary portrait plays its registered boss music when
+available; undiscovered entries do not respond. It does not play an attack sound. Music loops until the
 Bestiary page or Collection tab changes, restoring menu music; leaving Collection
 uses the destination screen's music. Another supported boss switches the track;
 repeating the same boss does not restart it. Entries without a track leave music

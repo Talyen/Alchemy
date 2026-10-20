@@ -26,7 +26,7 @@ describe("Armory feedback", () => {
         result={null}
         after={undefined}
         onDismiss={onDismiss}
-        error
+        tone="error"
       />,
     );
     expect(screen.getByRole("alert").textContent).toBe("Equipment cannot be changed during Combat.");
@@ -37,5 +37,21 @@ describe("Armory feedback", () => {
     expect(screen.getByRole("alert")).toBe(alert);
     expect(alert.className).toBe(color);
     expect(alert.parentElement!.className.replace("screen-fade-out", "screen-fade-in")).toBe(frame);
+  });
+
+  it("announces a rejected craft as a warning instead of success", () => {
+    render(
+      <ArmoryFeedback
+        notice="Unique items cannot be crafted."
+        result={null}
+        after={undefined}
+        onDismiss={vi.fn()}
+        tone="warning"
+      />,
+    );
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toBe("Unique items cannot be crafted.");
+    expect(alert.className).toContain("text-warning");
+    expect(alert.parentElement!.className).toContain("border-warning/50");
   });
 });

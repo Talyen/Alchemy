@@ -4,6 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DifficultySelectScreen } from "@/features/alchemy/run-setup/screens/difficulty-select-screen";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
+
+installFocusInputForTests(true);
 
 describe("DifficultySelectScreen", () => {
   afterEach(() => {

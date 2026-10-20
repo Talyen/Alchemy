@@ -12,6 +12,10 @@ import { strengthenPotion } from "@/lib/alchemist/brewing";
 import { getCardInspectionShineColors } from "@/features/alchemy/shared/config/shine-palettes";
 import { CardTitle } from "@/features/alchemy/shared/ui/cards/card-description-ui";
 
+import { installFocusInputForTests } from "../../../../../helpers/focus-input-test";
+
+installFocusInputForTests(true);
+
 const card: BattleCard = makeTestCard({
   title: "Test Card",
   descriptionLines: ["Test description."],
@@ -33,6 +37,27 @@ function LiveInspection({ state }: { state: BattleSnapshot }) {
 }
 
 describe("BattleCardButton", () => {
+  it("does not keep a pointer-clicked card enlarged after the cursor leaves", () => {
+    render(<BattleCardButton card={card} ariaLabel="Inspect" shimmerActive={false} shimmerToken={undefined} />);
+    const button = screen.getByRole("button", { name: "Inspect" });
+    fireEvent.mouseEnter(button.parentElement!);
+    expect(button.getAttribute("data-hovered")).toBe("true");
+    fireEvent.pointerDown(button);
+    act(() => button.focus());
+    fireEvent.mouseLeave(button.parentElement!);
+    expect(document.activeElement).toBe(button);
+    expect(button.hasAttribute("data-hovered")).toBe(false);
+  });
+
+  it("clears keyboard-only card emphasis when the player scrolls", () => {
+    render(<BattleCardButton card={card} ariaLabel="Inspect" shimmerActive={false} shimmerToken={undefined} />);
+    const button = screen.getByRole("button", { name: "Inspect" });
+    act(() => button.focus());
+    expect(button.getAttribute("data-hovered")).toBe("true");
+    fireEvent.wheel(document.body);
+    expect(button.hasAttribute("data-hovered")).toBe(false);
+  });
+
   afterEach(cleanup);
 
   it("updates focused battle damage as resources change and keeps Collection values authored", () => {

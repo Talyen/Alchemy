@@ -53,9 +53,6 @@ export function LabyrinthMapScreen({
       onEscape: () => {
         const menu = document.querySelector("[data-testid=game-menu]");
         if (menu instanceof HTMLElement && !menu.closest(".pointer-events-none")) return false;
-        document
-          .querySelector<HTMLButtonElement>('[data-labyrinth-node] button[aria-pressed="true"]')
-          ?.focus({ preventScroll: true });
         onNodeDeselect();
         return true;
       },

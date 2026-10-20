@@ -1,3 +1,4 @@
+import { expectUnfocused } from "../e2e/focus-input";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -93,12 +94,12 @@ async function lastManaJourney(info: TestInfo, reducedMotion: boolean) {
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(enemy).toBeFocused();
+    await expectUnfocused(page);
     await controllerInput(page).activate(page.getByTestId("draw-pile").getByRole("button"));
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(page.getByTestId("draw-pile").getByRole("button")).toBeFocused();
+    await expectUnfocused(page);
     const health = await battle.playerHealth();
     await controllerInput(page).activate(battle.endTurnBtn);
     await expect.poll(() => battle.playerHealth()).toBeLessThan(health);
@@ -169,7 +170,7 @@ test(
 );
 
 test(
-  "Armory transfer interruption reveals the committed loadout and returns keyboard focus",
+  "Armory transfer interruption preserves the committed loadout and dismissal clears focus",
   { tag: "@interaction-nightly" },
   async ({}, info) => {
     await desktopJourney(info, async (page, app) => {
@@ -187,7 +188,7 @@ test(
       await page.getByRole("button", { name: "Search inventory", exact: true }).click();
       await page.getByRole("searchbox", { name: "Search inventory" }).fill("unlikely match");
       await page.keyboard.press("Escape");
-      await expect(page.getByRole("button", { name: "Search inventory", exact: true })).toBeFocused();
+      await expectUnfocused(page);
       const profile = await app.evaluate(({ app: host }) => host.getPath("userData"));
       await expect.poll(() => readSave(profile)?.gearLoadouts?.knight.body).toBe(bodyGear.instanceId);
       await equipmentSlotLocator(page, "body").click();

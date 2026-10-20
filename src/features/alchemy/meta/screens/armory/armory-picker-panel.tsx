@@ -97,7 +97,8 @@ export function ArmoryPickerPanel({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
+                  size="icon"
+                  className="h-11 w-11"
                   aria-label={i18n.displayText(
                     selectedSlot === "trinket"
                       ? i18n.text("ui.armory-picker-panel.d1", "Spawn random trinket")
@@ -111,7 +112,7 @@ export function ArmoryPickerPanel({
                     }
                   }}
                 >
-                  <Dices className="h-4 w-4" />
+                  <Dices />
                 </Button>
               </div>
             ) : null}

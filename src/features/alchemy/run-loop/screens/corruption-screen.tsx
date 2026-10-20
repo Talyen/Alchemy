@@ -6,7 +6,7 @@ import { Dices, MoveRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { corruptionAltar, type BattleCard } from "@/lib/game-data";
-import type { CorruptionResult } from "@/lib/corruption";
+import { canCorruptCard, type CorruptionResult } from "@/lib/corruption";
 import {
   SHINE_PALETTES,
   viewCardWidthClass,
@@ -38,7 +38,7 @@ function CorruptionDeckPicker({
 }) {
   const i18n = useGameTranslation();
   const corruptionOptions = useMemo(
-    () => runDeck.map((card, index) => ({ card, index })).filter(({ card }) => !card.corrupted && !card.transmuted),
+    () => runDeck.map((card, index) => ({ card, index })).filter(({ card }) => canCorruptCard(card)),
     [runDeck],
   );
 
@@ -188,7 +188,7 @@ export function CorruptionScreen({
     setSelectionNotice(selecting && !result ? "Your deck changed. Choose a card to corrupt again." : "");
   }
   const selectedCard = selectedIndex === null ? undefined : runDeck[selectedIndex];
-  const canConfirm = selectedCard !== undefined && !selectedCard.corrupted && !selectedCard.transmuted;
+  const canConfirm = selectedCard !== undefined && canCorruptCard(selectedCard);
 
   function cancelSelection() {
     setSelecting(false);
@@ -250,7 +250,7 @@ export function CorruptionScreen({
             </div>
           ) : (
             <CorruptionIntro
-              hasEligibleCards={runDeck.some((card) => !card.corrupted && !card.transmuted)}
+              hasEligibleCards={runDeck.some(canCorruptCard)}
               onBegin={() => {
                 setSelecting(true);
                 setPage(0);

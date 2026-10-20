@@ -25,6 +25,34 @@ test.describe("Stunned enemy turn presentation", { tag: [critical.tag, slow.tag]
 
     await expect(battle.endTurnBtn).toBeEnabled({ timeout: 5000 });
 
+    // Sample the hand through the whole discard → enemy badge → player badge
+    // transition. Polling only after the badge settles cannot see a one-frame
+    // flash (the regression this journey protects).
+    await page.evaluate(() => {
+      const testWindow = window as Window & { enemyTurnHandCounts?: number[] };
+      testWindow.enemyTurnHandCounts = [];
+      let lastCount: number | null = null;
+      const record = () => {
+        if (document.querySelector('[data-testid="turn-badge-player"]')?.getAttribute("data-active") === "true") return;
+        const count = document.querySelectorAll(
+          '[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "]',
+        ).length;
+        if (count !== lastCount) {
+          lastCount = count;
+          testWindow.enemyTurnHandCounts?.push(count);
+        }
+      };
+      const observer = new MutationObserver(record);
+      observer.observe(document, {
+        attributes: true,
+        attributeFilter: ["data-hand-hidden", "data-active"],
+        childList: true,
+        subtree: true,
+      });
+      (testWindow as Window & { enemyTurnHandObserver?: MutationObserver }).enemyTurnHandObserver = observer;
+      record();
+    });
+
     const sawDiscardFly = expect
       .poll(async () => flyingCards.count(), {
         timeout: 10_000,
@@ -43,6 +71,17 @@ test.describe("Stunned enemy turn presentation", { tag: [critical.tag, slow.tag]
       .toBe(0);
 
     await expect(yourTurn).toHaveAttribute("data-active", "true", { timeout: 20_000 });
+    const handCounts = await page.evaluate(() => {
+      const testWindow = window as Window & {
+        enemyTurnHandCounts?: number[];
+        enemyTurnHandObserver?: MutationObserver;
+      };
+      testWindow.enemyTurnHandObserver?.disconnect();
+      return testWindow.enemyTurnHandCounts ?? [];
+    });
+    const firstEmptySample = handCounts.indexOf(0);
+    expect(firstEmptySample).toBeGreaterThanOrEqual(0);
+    expect(handCounts.slice(firstEmptySample).every((count) => count === 0)).toBe(true);
     await expect(battle.endTurnBtn).toBeEnabled({ timeout: 20_000 });
     await battle.waitForOpeningHand();
   });

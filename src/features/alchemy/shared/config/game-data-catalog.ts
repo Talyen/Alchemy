@@ -58,7 +58,6 @@ export type {
   CharacterDefinition,
   CharacterId,
   CompanionDefinition,
-  CompanionId,
   DifficultyId,
   EnemyType,
   EnemyTrait,

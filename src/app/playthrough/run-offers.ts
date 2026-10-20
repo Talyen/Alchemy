@@ -18,6 +18,7 @@ import {
   type BattleSnapshot,
   type CombatTextEvent,
 } from "@/lib/battle";
+import { canCorruptCard } from "@/lib/corruption";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-generation";
 import { canDescendFromLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 import { characters, type BattleCard } from "@/lib/game-data";
@@ -226,8 +227,7 @@ export function offerRunChoices(
     case "corruption":
       if (!activity.data)
         run.runDeck.forEach((card, index) => {
-          if (!card.corrupted && !card.transmuted)
-            offer("corrupt", card.id, 1, () => flow.handleCorruptCard(index), index);
+          if (canCorruptCard(card)) offer("corrupt", card.id, 1, () => flow.handleCorruptCard(index), index);
         });
       offer("corruption-exit", "exit", 0, flow.handleCorruptionExit);
       break;

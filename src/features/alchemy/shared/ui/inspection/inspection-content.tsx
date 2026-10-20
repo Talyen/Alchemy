@@ -155,7 +155,7 @@ function InspectionPanel({
           data-dialog-initial-focus
           onClick={onClose}
         >
-          <X className="h-5 w-5" />
+          <X />
         </ChromeIconButton>
       </div>
       {children}

@@ -87,6 +87,7 @@ export const RunProgressSchema = z.object({
   runGoldEarned: z.number().int().nonnegative().nullable().catch(null),
   characterId: CharacterIdSchema,
   runDeck: savedCardArraySchema("runDeck"),
+  // Invalid Health uses the same sentinel as zero; normalization repairs it to the saved maximum.
   runPlayerHealth: z.number().int().nonnegative().catch(0),
   runMaxHealth: z.number().int().positive().catch(MAX_PLAYER_HEALTH),
   // A zero runMetaMaxHealth means "unset" and is rewritten to runMaxHealth in

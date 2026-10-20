@@ -55,15 +55,7 @@ export function KeywordTag({
       )}
     >
       {showIcon ? (
-        <Icon
-          strokeWidth={2.5}
-          className={cn(
-            "relative top-[0.15em] h-[1em] w-[1em] shrink-0",
-            pill && "top-0 h-3 w-3",
-            choice && "top-0 h-6 w-6",
-          )}
-          aria-hidden="true"
-        />
+        <Icon className={cn("relative top-[0.15em]", (pill || choice) && "top-0")} aria-hidden="true" />
       ) : null}
       {i18n.displayText(def.label)}
     </span>

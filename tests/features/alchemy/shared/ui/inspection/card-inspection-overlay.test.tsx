@@ -1,3 +1,4 @@
+import { installFocusInputForTests } from "../../../../../helpers/focus-input-test";
 import { sortInspectionCards } from "@/features/alchemy/shared/ui/inspection/card-inspection-sort";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -9,6 +10,8 @@ import { installDisabledAnimationsForTests } from "../../../../../helpers/animat
 import { installReadyArtworkForTests, waitForArtwork } from "../../../../../helpers/artwork-test";
 import { installCatalogs, localization } from "@/lib/localization/runtime";
 import catalogs from "@/lib/localization/locales/runtime.json";
+
+installFocusInputForTests(true);
 
 installDisabledAnimationsForTests();
 installReadyArtworkForTests();
@@ -159,7 +162,7 @@ describe("card inspection", () => {
     ).toEqual(["Beta"]);
   });
 
-  it("contains focus, supports every dismissal route, and restores the opener", async () => {
+  it("contains keyboard focus and dismisses without restoring focus after Escape", async () => {
     const opener = document.createElement("button");
     document.body.append(opener);
     opener.focus();
@@ -177,7 +180,7 @@ describe("card inspection", () => {
     fireEvent.click(close);
     expect(onClose).toHaveBeenCalledTimes(3);
     view.unmount();
-    expect(document.activeElement).toBe(opener);
+    expect(document.activeElement).toBe(document.body);
     opener.remove();
   });
 

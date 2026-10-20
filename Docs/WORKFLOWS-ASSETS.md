@@ -131,8 +131,8 @@ the [transfer motion contract](./UI_MOTION.md#battle-motion).
 mirrors; both retain transparent margins and a 3:4 canvas. Keep their source
 identities separate from the single-card master.
 The battle Mana display uses the separate full/empty crystal masters under
-`Interface/Mana Dock`, selected in `scripts/assets/core-assets.mjs`, inside the
-hero portrait. Its active outputs are `mana-dock-full.webp` and
+`Interface/Mana Dock`, selected in `scripts/assets/core-assets.mjs`, centered above
+Draw Pile. Its active outputs are `mana-dock-full.webp` and
 `mana-dock-empty.webp`; these are distinct from the playable Mana Crystals card
 artwork. The manifest also prepares `mana-dock-frame.webp`, which the current
 battle display does not render. Preserve alpha transparency and lossless

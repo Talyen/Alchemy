@@ -114,9 +114,6 @@ describe("enemy inspection presentation", () => {
       />,
     );
     await waitForArtwork();
-    await waitFor(() =>
-      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close enemy inspection" })),
-    );
     const dialog = screen.getByRole("dialog", { name: "Goblin" });
     expect(dialog.querySelector('[data-trait="starting-block"]')?.textContent).toContain("Starts with 5 Block");
     expect(dialog.querySelector('[data-trait="reinforced"]')?.textContent).toContain("gains 3 Block each turn");
@@ -143,9 +140,6 @@ describe("enemy inspection presentation", () => {
     });
     const { rerender } = render(<EnemyInspectionOverlay open entry={entry} battleState={state} onClose={() => {}} />);
     await waitForArtwork();
-    await waitFor(() =>
-      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close enemy inspection" })),
-    );
     const ability = screen.getByRole("button", { name: "Slash" });
     fireEvent.mouseEnter(ability.parentElement!);
     await waitFor(() =>
@@ -174,8 +168,6 @@ describe("enemy inspection presentation", () => {
     await waitForArtwork();
     const dialog = screen.getByRole("dialog", { name: "Inquisitor" });
     const close = within(dialog).getByRole("button", { name: "Close enemy inspection" });
-    // Wait for deferred dialog focus before hovering; that focus intentionally dismisses tooltips.
-    await waitFor(() => expect(document.activeElement).toBe(close));
     expect(dialog.querySelector('[data-trait="tempered"]')?.getAttribute("data-trait-variant")).toBe("default");
     expect(
       new Set([...dialog.querySelectorAll("[data-trait]")].map((node) => node.getAttribute("data-trait-variant"))),

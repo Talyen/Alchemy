@@ -286,18 +286,18 @@ describe("encodeRunResumeSnapshot", () => {
     expect(result.runTalentXP).toEqual(runTalentXP);
   });
 
-  it("remaps Merchant's Shop onto Card Shop when hydrating destination history", () => {
+  it("drops retired shop names when hydrating destination history", () => {
     const fields = createInitialActiveRunFields(
       makeActiveRunData({
         lastOfferedDestinations: ["Merchant's Shop"],
-        completedDestinations: ["Merchant's Shop"],
+        completedDestinations: ["Equipment Shop"],
         destinationRoundsSinceOffered: { "Merchant's Shop": 2 },
       }),
     );
 
-    expect(fields.lastOfferedDestinations).toEqual(["Card Shop"]);
-    expect(fields.completedDestinations).toEqual(["Card Shop"]);
-    expect(fields.destinationRoundsSinceOffered).toEqual({ "Card Shop": 2 });
+    expect(fields.lastOfferedDestinations).toEqual([]);
+    expect(fields.completedDestinations).toEqual([]);
+    expect(fields.destinationRoundsSinceOffered).toEqual({});
   });
 
   it("persists destination resume fields", () => {

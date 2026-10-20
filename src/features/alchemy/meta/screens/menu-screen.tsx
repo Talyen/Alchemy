@@ -1,7 +1,8 @@
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { UI_GOLD } from "@/lib/game-constants/ui-colors";
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
+import { useHoverVisible } from "../../shared/ui/use-hover-visible";
 import { BookOpen, Cog, Power, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -29,19 +30,17 @@ const OPTIONS_PLASMA_PAIR: PlasmaColorPair = { primary: "#a1a1aa", secondary: "#
 
 function MenuPlasmaHover({ colorPair, children }: { colorPair: PlasmaColorPair; children: ReactNode }) {
   useGameTranslation();
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
-  usePlasmaInteraction(colorPair, hovered || focused);
+  const { wrapperRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible();
+  usePlasmaInteraction(colorPair, visible);
 
   return (
     <div
       className="menu-nav-button"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onFocusCapture={() => setFocused(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
-      }}
+      ref={wrapperRef}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocusCapture={onFocusCapture}
+      onBlurCapture={onBlurCapture}
     >
       {children}
     </div>
@@ -92,7 +91,7 @@ export function MenuScreen({
         <GameMessage
           id="ui.menu-screen.s1"
           defaultValue="<part0/>Options"
-          parts={{ part0: <Cog className="h-7 w-7 text-zinc-400" /> }}
+          parts={{ part0: <Cog className="text-zinc-400" /> }}
         />
       </Button>
     </MenuPlasmaHover>
@@ -132,7 +131,7 @@ export function MenuScreen({
             className={MENU_NAV_BUTTON_CLASS}
             onClick={onPlay}
           >
-            <Swords className="h-7 w-7" />
+            <Swords />
             {i18n.displayText(
               hasActiveRun ? i18n.text("ui.menu-screen.d1", "Continue") : i18n.text("ui.menu-screen.d2", "Play"),
             )}
@@ -150,7 +149,7 @@ export function MenuScreen({
               <GameMessage
                 id="ui.menu-screen.s2"
                 defaultValue="<part0/>Collection"
-                parts={{ part0: <BookOpen className="h-7 w-7 text-gold-light" /> }}
+                parts={{ part0: <BookOpen className="text-gold-light" /> }}
               />
             </Button>
           </MenuPlasmaHover>
@@ -160,7 +159,7 @@ export function MenuScreen({
               message={i18n.displayText(getProgressionFeatureUnlockMessage("homestead"))}
               locked={isHomesteadLocked}
               onSelect={onHomestead}
-              icon={<TreePine className="h-7 w-7 text-emerald-400" />}
+              icon={<TreePine className="text-emerald-400" />}
               wrapperClassName={MENU_NAV_BUTTON_WRAPPER_CLASS}
               className={MENU_NAV_BUTTON_CLASS}
               size="lg"
@@ -181,7 +180,7 @@ export function MenuScreen({
               message={i18n.displayText(getProgressionFeatureUnlockMessage("talents"))}
               locked={isTalentsLocked}
               onSelect={onTalents}
-              icon={<WandSparkles className="h-7 w-7 text-violet-400" />}
+              icon={<WandSparkles className="text-violet-400" />}
               wrapperClassName={MENU_NAV_BUTTON_WRAPPER_CLASS}
               className={MENU_NAV_BUTTON_CLASS}
               size="lg"
@@ -205,7 +204,7 @@ export function MenuScreen({
               <GameMessage
                 id="ui.menu-screen.s3"
                 defaultValue="<part0/>Armory"
-                parts={{ part0: <Shield className="h-7 w-7 text-sky-300" /> }}
+                parts={{ part0: <Shield className="text-sky-300" /> }}
               />
             </Button>
           </MenuPlasmaHover>
@@ -223,7 +222,7 @@ export function MenuScreen({
                 <GameMessage
                   id="ui.menu-screen.s4"
                   defaultValue="<part0/>Quit"
-                  parts={{ part0: <Power className="h-7 w-7 text-rose-400" /> }}
+                  parts={{ part0: <Power className="text-rose-400" /> }}
                 />
               </Button>
             </div>

@@ -1,3 +1,4 @@
+import { isFocusNavigationEnabled } from "./focus-input";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?: {
@@ -56,6 +57,7 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
     (checkFocusWithin: boolean) => {
       if (
         checkFocusWithin &&
+        isFocusNavigationEnabled() &&
         (focusInside.current || (focusWithinGuard && wrapperRef.current?.matches(":focus-within")))
       )
         return;
@@ -66,15 +68,30 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
     [focusWithinGuard, interactive, isControlled, onHoverEnd],
   );
 
+  useEffect(() => {
+    if (!visible) return;
+    const onWheel = () => {
+      focusInside.current = false;
+      if (!pointerInside.current) doHide(false);
+    };
+    document.addEventListener("wheel", onWheel, { capture: true, passive: true });
+    return () => {
+      document.removeEventListener("wheel", onWheel, true);
+    };
+  }, [visible, doHide]);
+
   const handleHoverStart = useCallback(
     (event?: { type: string }) => {
-      if (event?.type === "focus") focusInside.current = true;
-      else pointerInside.current = true;
+      if (event?.type === "focus") {
+        if (!isFocusNavigationEnabled()) return;
+        focusInside.current = true;
+      } else pointerInside.current = true;
       if (!dismissed) doShow();
     },
     [dismissed, doShow],
   );
   const handleFocus = useCallback(() => {
+    if (!isFocusNavigationEnabled()) return;
     focusInside.current = true;
     if (!dismissed) doShow();
   }, [dismissed, doShow]);

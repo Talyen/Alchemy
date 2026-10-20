@@ -62,7 +62,6 @@ export default {
     // Testable save-load seams: evaluated via storage-io tests; platform dedup is public API.
     "src/features/alchemy/shared/storage/io.ts": ["exports", "types"],
     "src/lib/platform-save-backend.ts": ["exports", "types"],
-    "src/lib/validation/migration/content-steps.ts": ["exports"],
     // Documented forward pattern: new specs may call useFastBattle(page) instead of the void fixture.
     "tests/fixtures/e2e.ts": ["exports"],
   },

@@ -148,7 +148,7 @@ export function MysteryEventIntro({
 
       <FadeSlot swapKey={event.id} className="flex w-full flex-wrap justify-center gap-8">
         {event.choices.map((choice, i) => (
-          <div key={i} className="flex flex-col gap-6">
+          <div key={i} className="flex w-[calc(18*var(--content-rem,1rem))] max-w-full flex-col gap-6">
             <MysteryChoiceRewards
               interactionKey={`mystery-choice:${event.id}:${i}`}
               effects={previewEffect ? choice.effects.map(previewEffect) : choice.effects}

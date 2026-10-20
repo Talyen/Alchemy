@@ -42,7 +42,7 @@ const buttonVariants = cva(
         default: "h-14 px-6",
         sm: "h-11 px-4 text-sm tracking-widest uppercase",
         lg: "h-16 px-7 text-xl",
-        icon: "h-14 w-14",
+        icon: "h-14 w-14 text-2xl",
       },
     },
     defaultVariants: {

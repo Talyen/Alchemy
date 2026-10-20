@@ -1,3 +1,5 @@
+import { isFocusNavigationEnabled } from "./focus-input";
+
 /** Shared eligibility for recovery and dialog traversal; inspection-only controls remain tabbable. */
 export function isFocusAvailable(element: HTMLElement): boolean {
   return (
@@ -16,7 +18,7 @@ export function focusableControls(root: ParentNode): HTMLElement[] {
 }
 
 export function focusControl(element: HTMLElement | undefined | null): boolean {
-  if (!element || element === document.body || !isFocusAvailable(element)) return false;
+  if (!isFocusNavigationEnabled() || !element || element === document.body || !isFocusAvailable(element)) return false;
   element.focus({ preventScroll: true });
   if (document.activeElement !== element) return false;
   element.scrollIntoView({ block: "nearest", inline: "nearest" });

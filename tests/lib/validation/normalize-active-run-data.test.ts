@@ -85,6 +85,14 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(result.runMetaMaxHealth).toBe(30);
   });
 
+  it.each([{ runPlayerHealth: 0 }, { runPlayerHealth: -4 }, { runPlayerHealth: 2.5 }, { runPlayerHealth: undefined }])(
+    "repairs missing or invalid player health to maxHealth instead of resuming dead (%o)",
+    (overrides) => {
+      const result = parseActiveRunData({ runMaxHealth: 80, ...overrides });
+      expect(result.runPlayerHealth).toBe(80);
+    },
+  );
+
   it("strips labyrinth modifiers for campaign mode", () => {
     const result = parseActiveRunData({
       contentSystemType: "campaign",
@@ -122,6 +130,33 @@ describe("ActiveRunDataSchema normalize", () => {
       starterDraftChoices: [liveCard],
     });
     expect(result.starterDraftChoices).toBeNull();
+  });
+
+  it.each([
+    ["draft-deck", "draft", [], []],
+    ["battle", "battle", ["tempered"], ["alchemist"]],
+    ["rewards", "reward", [], ["alchemist"]],
+    ["wildwood-removal", "removal", [], []],
+  ] as const)("reconciles a saved %s activity with Wildwood phase %s", (kind, phase, combat, reward) => {
+    const activity =
+      kind === "battle"
+        ? savedActivityFixture("battle", { battleState: defaultBattleState() })
+        : savedActivityFixture(kind);
+    const result = parseActiveRunData({
+      contentSystemType: "wildwood",
+      runDeck: Array.from({ length: DRAFT_ROUNDS }, () => liveCard),
+      wildwoodDraft: makeWildwoodDraft({
+        phase: "battle",
+        currentCombatTraitIds: ["tempered"],
+        currentRewardTraitIds: ["alchemist"],
+      }),
+      activity,
+    });
+    expect(result.wildwoodDraft).toMatchObject({
+      phase,
+      currentCombatTraitIds: combat,
+      currentRewardTraitIds: reward,
+    });
   });
 
   it("filters tombstonedCard starter draft choices instead of nulling them on campaign runs", () => {

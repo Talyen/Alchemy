@@ -171,7 +171,8 @@ describe("card description bindings", () => {
     expect(changed.effects[2]).toEqual(mixed.effects[1]);
     expect(changed.descriptionLines).toEqual([
       "Lose 2 Health",
-      "Gain 6 Mana, Gold, or Block",
+      "50% chance: Gain 6 Mana",
+      "Otherwise: Gain 4 Gold or Block",
       "Gain 2 Mana",
       "Consume",
     ]);

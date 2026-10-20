@@ -17,13 +17,14 @@ interface PlaybackBlockedOptions {
   cardPlayInProgress: boolean;
   gameMenuOpen?: boolean;
   inspectionOpen?: boolean;
+  boonInspectOpen?: boolean;
 }
 
 function isPlaybackBlocked(options: PlaybackBlockedOptions, mode: PlaybackMode): boolean {
   const { battleState } = options;
   const outcome = getBattleOutcome(battleState);
   const finishingWish = mode === "wish" && outcome === "victory";
-  if (options.gameMenuOpen || options.inspectionOpen) return true;
+  if (options.gameMenuOpen || options.inspectionOpen || options.boonInspectOpen) return true;
   return (
     !options.hasActiveBattle ||
     options.screen !== "battle" ||
@@ -49,6 +50,7 @@ interface PlaybackBlockedSource {
   battleState: BattleSnapshot;
   hasActiveBattle: boolean;
   gameMenuOpen?: boolean;
+  boonInspectOpen?: boolean;
   isCardPlayInProgress?: (() => boolean) | undefined;
   isProgressSavePending?: (() => boolean) | undefined;
   presentationGateRef: RefObject<BattlePlaybackPresentationGate>;

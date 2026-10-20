@@ -12,6 +12,10 @@ import { mutateRunForTest, resetRunSessionSlice } from "../../../../helpers/run-
 import { defaultGameSession } from "@/app/application-session";
 import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 
+import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
+
+installFocusInputForTests(true);
+
 const testCard: BattleCard = makeTestCard({
   id: "slash",
   title: "Slash",

@@ -15,7 +15,6 @@ export { default as avatar } from "@/assets/optimized/avatar.webp";
 export { default as bandit } from "@/assets/optimized/bandit.webp";
 export { default as banshee } from "@/assets/optimized/banshee.webp";
 export { default as bash } from "@/assets/optimized/bash.webp";
-export { default as battleManaCrystal } from "@/assets/optimized/battle-mana-crystal.webp";
 export { default as bearCompanion } from "@/assets/optimized/bear-companion.webp";
 export { default as bellowsBlast } from "@/assets/optimized/bellows-blast.webp";
 export { default as blackjack } from "@/assets/optimized/blackjack.webp";

@@ -1,3 +1,4 @@
+import { installFocusInputForTests } from "../../../../../helpers/focus-input-test";
 import { createCleanup } from "@/lib/cleanup";
 import { makeTestCard } from "../../../../../fixtures/cards";
 import { createRef, type MouseEventHandler, type RefObject } from "react";
@@ -17,6 +18,8 @@ import { defaultBattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { audioState } from "@/lib/audio/state";
 import { getHandCardKey } from "@/features/alchemy/run-loop/battle/playable-hand";
+
+installFocusInputForTests(true);
 
 vi.mock("@/features/alchemy/shared/ui/cards/card-button", () => ({
   BattleCardButton: ({
@@ -109,7 +112,7 @@ describe("BattleHand", () => {
     battlePresentation.getState().resetPresentation();
   });
 
-  it.each(["none", "blur", "ArrowRight", "F7"])("respects input after playing a card (%s)", (interruption) => {
+  it.each(["none", "blur", "ArrowRight", "F7", "wheel"])("respects input after playing a card (%s)", (interruption) => {
     const endTurnButtonRef = createRef<HTMLButtonElement>();
     const refs = { handCardRefs: { current: {} }, endTurnButtonRef } as unknown as BattleRefsProps;
     const onCardClick = vi.fn();
@@ -147,7 +150,11 @@ describe("BattleHand", () => {
       fireEvent.blur(window);
       fireEvent.focus(window);
     }
-    if (interruption !== "none" && interruption !== "blur") {
+    if (interruption === "wheel") {
+      fireEvent.wheel(document.body);
+      fireEvent.keyDown(document.body, { key: "Tab" });
+    }
+    if (interruption !== "none" && interruption !== "blur" && interruption !== "wheel") {
       fireEvent.keyDown(card, { key: interruption });
     }
     rerender(tree([]));

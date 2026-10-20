@@ -11,6 +11,7 @@ import { cardInteractiveGlowClass, getTileWidthClass, getCardInspectionShineColo
 import { BattleCardButton } from "../../../shared/ui/cards/card-button";
 import { getCardDisplayTitle } from "../../../shared/ui/cards/card-description-ui";
 import { GearTile, TrinketTile } from "../../../shared/ui/collection-art-tiles";
+import { DisabledTooltip } from "../../../shared/ui/tooltips/disabled-tooltip";
 import { ShopPriceChip } from "./purchasable-shop-tile";
 
 interface BasePurchasableProps {
@@ -49,11 +50,17 @@ function PurchasableFrame({
   const canPurchase = !purchased && canAfford;
   return (
     <div className={cn("relative flex flex-col items-center text-center", purchased && "opacity-50")}>
-      {renderMedia({
-        canPurchase,
-        label: i18n.displayText(i18n.read(() => getShopItemAriaLabel(title, price, purchased, canAfford))),
-        chip: <ShopPriceChip price={price} purchased={purchased} canAfford={canAfford} />,
-      })}
+      <DisabledTooltip
+        show={!purchased && !canAfford}
+        focusable={false}
+        message={i18n.text("ui.purchasable-shop-tile.2", "Not Enough Gold")}
+      >
+        {renderMedia({
+          canPurchase,
+          label: i18n.displayText(i18n.read(() => getShopItemAriaLabel(title, price, purchased, canAfford))),
+          chip: <ShopPriceChip price={price} purchased={purchased} canAfford={canAfford} />,
+        })}
+      </DisabledTooltip>
     </div>
   );
 }

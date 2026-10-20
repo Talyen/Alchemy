@@ -114,7 +114,7 @@ Visible behavior: [UI battle feedback](./UI_BATTLE.md#battle-feedback) and [batt
 9. Wire the navigation trigger at the caller of `goToScreen("<name>")`. For run activities, also update the production-flow adapter and legal choices in `src/app/playthrough/` so headless careers can proceed. Review affected route mocks, save fixtures, and browser helpers against the new contracts; verify initialization and current-format resume with focused unit tests.
 10. Classify the route in `SCREEN_FAMILIES` in `tests/interaction/screen-coverage.ts` and update the [interaction screen map](../tests/interaction/README.md#screen-and-boundary-map) with its lifecycle family and retained protection. This exhaustive registration does not by itself prove action coverage; choose tests under the shared [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy).
 
-Boot restore/hydration sets a validated saved screen directly and intentionally bypasses the interactive transition table. Screen components subscribing to Zustand stores should select narrow slices or use `useShallow` to prevent render churn during high-frequency combat ticks.
+Restore/hydration bypasses the interactive transition table. Cold startup opens the main menu while preserving the validated saved activity; Continue resumes that activity through the resume policy. Screen components subscribing to Zustand stores should select narrow slices or use `useShallow` to prevent render churn during high-frequency combat ticks.
 
 ---
 
@@ -123,6 +123,10 @@ Boot restore/hydration sets a validated saved screen directly and intentionally 
 - **1. Add to `DESTINATIONS` const** — `src/lib/routing/destinations.ts`
 - **2. Add to destination pool / availability** — `src/lib/routing/destination-availability.ts`
 - **3. Offer construction (pure)** — `shared/run-flow/destination-flow.ts` — campaign start and run-loop progression pass offer history, boss ID, and command-bound RNG
+- **4. Add display metadata** — `destinationMeta` in `src/features/alchemy/shared/config/metadata.ts` supplies the label, description, and artwork used by destination choices
+- **5. Map room entry** — add the destination case in `src/features/alchemy/run-loop/run/room-entry-commands.ts` so entering the offered node opens an existing screen or activity
+- **6. Add a screen and route when needed** — follow [Adding a new screen](#adding-a-new-screen); reuse an existing screen when the destination shares its interaction
+- **7. Add localization and tests** — extract new labels, then cover offer rendering, availability, room entry, and current-format resume with focused tests
 
 ---
 

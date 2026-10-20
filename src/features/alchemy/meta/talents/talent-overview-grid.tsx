@@ -60,7 +60,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
         onClick={() => {
           onSelectKeyword(keywordId);
         }}
-        className="group relative flex cursor-pointer flex-col items-center focus:outline-none"
+        className="group relative flex cursor-pointer flex-col items-center focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
       >
         <Surface
           as="div"

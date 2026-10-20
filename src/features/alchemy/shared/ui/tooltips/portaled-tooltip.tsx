@@ -1,3 +1,4 @@
+import { isFocusNavigationEnabled } from "../focus-input";
 import { useId, useLayoutEffect, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
@@ -52,8 +53,10 @@ function useTooltipVisible(triggerRef: RefObject<HTMLElement | null>, requested:
       return Boolean(trigger?.isConnected && !trigger.closest('[inert], [hidden], [aria-hidden="true"]'));
     };
     let pointerPressed = false;
+    let pointerInside = false;
     const hasActiveFocus = () =>
       !pointerPressed &&
+      isFocusNavigationEnabled() &&
       isAvailable() &&
       document.hasFocus() &&
       document.activeElement?.matches(":focus-visible") &&
@@ -65,17 +68,25 @@ function useTooltipVisible(triggerRef: RefObject<HTMLElement | null>, requested:
       // Its own hover owner decides which card is active inside the hand.
       const boundary = trigger?.closest("[data-hand-slot]")?.parentElement ?? trigger;
       const inside = event.target instanceof Node && boundary?.contains(event.target);
+      pointerInside = Boolean(inside);
       // Preserve keyboard inspection without reviving a panel dismissed by blur or a click.
       if (!inside && event.type === "pointermove" && hasActiveFocus()) return;
       setSuppressed(!inside || !isAvailable());
     };
     const onFocus = (event: FocusEvent) => {
-      setSuppressed(!isAvailable() || !(event.target instanceof Node && triggerRef.current?.contains(event.target)));
+      setSuppressed(
+        (!isFocusNavigationEnabled() && !pointerInside) ||
+          !isAvailable() ||
+          !(event.target instanceof Node && triggerRef.current?.contains(event.target)),
+      );
     };
     const onKeyDown = () => {
       pointerPressed = false;
     };
-    const onBlur = () => setSuppressed(true);
+    const onBlur = () => {
+      pointerInside = false;
+      setSuppressed(true);
+    };
     const onPointerOut = (event: PointerEvent) => {
       if (event.relatedTarget === null && !hasActiveFocus()) onBlur();
     };
@@ -96,6 +107,7 @@ function useTooltipVisible(triggerRef: RefObject<HTMLElement | null>, requested:
     document.addEventListener("focusin", onFocus, true);
     document.addEventListener("keydown", onKeyDown, true);
     window.addEventListener("blur", onBlur);
+    document.addEventListener("wheel", onBlur, { capture: true, passive: true });
     return () => {
       observer.disconnect();
       document.removeEventListener("pointermove", onPointer, true);
@@ -104,6 +116,7 @@ function useTooltipVisible(triggerRef: RefObject<HTMLElement | null>, requested:
       document.removeEventListener("focusin", onFocus, true);
       document.removeEventListener("keydown", onKeyDown, true);
       window.removeEventListener("blur", onBlur);
+      document.removeEventListener("wheel", onBlur, true);
     };
   }, [triggerRef, requested]);
   return requested && !suppression.suppressed;

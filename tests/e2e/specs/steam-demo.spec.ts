@@ -128,10 +128,18 @@ test.describe("Steam demo edition", () => {
   });
 
   test("drops an Act 2 save while preserving permanent progression", async ({ page }) => {
-    await injectBossState(page, 2, { selectedDifficulty: "difficulty-1" });
+    await injectBossState(page, 2, {
+      selectedDifficulty: "difficulty-1",
+      gold: 777,
+      finishedRunCharacters: ["knight"],
+      discoveredCardIds: ["slash"],
+    });
     await page.goto("/");
-    await new MenuPage(page).expectMainMenuAfterColdStart();
+    const menu = new MenuPage(page);
+    await menu.expectMainMenuAfterColdStart();
     await expect(page.getByRole("button", { name: "Continue", exact: true })).toBeHidden();
+    await menu.openHomestead();
+    await expect(page.getByLabel("Resources").getByText("777", { exact: true })).toBeVisible();
   });
 
   test("fresh demo profile plays real starter cards and earns the three-hero chain", async ({ page }) => {

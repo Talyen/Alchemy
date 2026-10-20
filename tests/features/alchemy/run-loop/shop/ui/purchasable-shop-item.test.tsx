@@ -11,6 +11,9 @@ import {
 
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
+import { installFocusInputForTests } from "../../../../../helpers/focus-input-test";
+
+installFocusInputForTests(true);
 
 const card = {
   id: "strike-1",
@@ -114,7 +117,8 @@ describe.each([
     await user.tab();
     expect(document.activeElement).toBe(button);
     expect(button.getAttribute("aria-disabled")).toBe("true");
-    expect(await screen.findByRole("tooltip")).toBeTruthy();
+    expect(button.querySelector("[tabindex], [role='group']")).toBeNull();
+    expect(await screen.findByText(/Not Enough/u)).toBeTruthy();
     await user.keyboard("{Enter}");
     expect(onBuy).not.toHaveBeenCalled();
   });

@@ -432,7 +432,6 @@ export default defineConfig({
         "src/features/alchemy/shared/ui/use-fade.tsx",
         "src/features/alchemy/shared/ui/cards/card-description-ui.tsx",
         "src/features/alchemy/shared/ui/material-icons.tsx",
-        "src/features/alchemy/shared/ui/collection-ui.tsx",
         "src/features/alchemy/meta/screens/homestead/helpers.tsx",
         "src/features/alchemy/meta/screens/armory/paged-picker-grid.tsx",
         "src/features/alchemy/meta/screens/armory/armory-character-tabs.tsx",

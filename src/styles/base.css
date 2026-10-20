@@ -39,6 +39,14 @@ html:lang(zh-Hans) {
 }
 
 @layer base {
+  /* Match label cap height and semibold weight; artwork may override dimensions. */
+  .lucide {
+    width: 0.9em;
+    height: 0.9em;
+    flex-shrink: 0;
+    stroke-width: 2.5;
+  }
+
   * {
     --content-rem: calc(1rem * var(--content-scale, 1));
     border-color: var(--color-border);
@@ -104,3 +112,18 @@ html:lang(zh-Hans) {
     user-select: text;
   }
 }
+
+/* Neutral, consistent keyboard focus replaces the browser's blue outline. */
+:focus-visible {
+  --tw-ring-color: #d6d3ce;
+  outline: 2px solid #d6d3ce;
+  outline-offset: 3px;
+}
+
+html:not([data-focus-navigation="true"]) :focus {
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  outline: none;
+}
+
+@custom-variant focus-navigation (&:where(html[data-focus-navigation="true"] *));

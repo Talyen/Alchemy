@@ -146,11 +146,11 @@ export function CampfireScreen({
                   } else setError(true);
                 }}
               >
-                <Heart aria-hidden="true" className="size-5 fill-current" />
+                <Heart aria-hidden="true" className="fill-current" />
                 {i18n.text("ui.campfire-screen.6", "Rest")}
               </Button>
               <Button variant="outline" className="card-hover-scale min-w-40" onClick={() => setBrewing(true)}>
-                <FlaskConical aria-hidden="true" className="size-5 text-primary" />
+                <FlaskConical aria-hidden="true" className="text-primary" />
                 {i18n.text("ui.campfire-screen.8", "Brew Potion")}
               </Button>
             </div>

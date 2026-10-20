@@ -106,7 +106,7 @@ Readiness and saving use [Boot and loading](./ARCHITECTURE.md#boot-and-loading) 
 1. Check the guard, then validate the interactive edge against
    `ALLOWED_SCREEN_TRANSITIONS` in `src/lib/routing/screen-transition-policy.ts`.
    A guarded no-op stays silent, even on a disallowed edge. Resume uses its
-   separate validated resume policy; boot hydration sets its validated screen directly.
+   separate validated resume policy. Cold startup restores progress at the main menu; Continue opens the validated saved activity.
 2. Cancel the previous presentation request and run `prepare` synchronously.
    Domain commands commit gameplay and `session.activity` together. Navigation
    never infers an activity from the target screen or initializes a visit. A

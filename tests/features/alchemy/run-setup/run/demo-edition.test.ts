@@ -18,6 +18,10 @@ import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { defaultGameSession } from "@/app/application-session";
+import { SAVE_KEY } from "@/lib/game-constants";
+import { SaveStorage } from "@/features/alchemy/shared/storage/save-storage";
+import { createSaveBackend } from "../../../../helpers/save-backend";
+import { saveEnvelopeFixture } from "../../../../fixtures/saves";
 
 function deps() {
   return {
@@ -87,5 +91,29 @@ describe("demo command boundaries", () => {
     expect(readHasActiveRun(defaultGameSession)).toBe(false);
     expect(readProfileStore(defaultGameSession).finishedRunCharacters).toEqual([]);
     expect(isEditionRunAvailable({ ...snapshot, contentSystemType: "labyrinth" })).toBe(false);
+  });
+  it("drops an incompatible saved run without resetting the permanent profile", async () => {
+    createNewRunInitialization(deps(), defaultGameSession).initializeRunForDifficulty("knight", "difficulty-1");
+    const save = saveEnvelopeFixture({
+      gold: 777,
+      finishedRunCharacters: ["knight"],
+      discoveredCardIds: ["slash"],
+      activeRun: { ...snapshotRun(defaultGameSession), currentAct: 2 },
+    });
+    const storage = new SaveStorage(
+      createSaveBackend({
+        readCandidates: async (key) => ({
+          ok: true,
+          candidates: key === SAVE_KEY ? [JSON.stringify(save)] : [],
+        }),
+      }),
+    );
+    const loaded = await storage.load();
+    expect(loaded.data.activeRun).toBeNull();
+    expect(loaded.data).toMatchObject({
+      gold: 777,
+      finishedRunCharacters: ["knight"],
+      discoveredCardIds: ["slash"],
+    });
   });
 });

@@ -23,11 +23,11 @@ descriptions can use available width to fit; tooltips never scroll or truncate.
 - Drive hover through `useHoverVisible()` and `triggerRef`. Card/tile grids that track hover via `useInteractiveCard` pass its `isHovered`, `onHoverStart`, and `onHoverEnd` to the same hook, with `holdMs: TOOLTIP_FADE_MS` and `focusWithinGuard: true` to preserve the exit fade and keyboard inspection.
 - Use `placement="side-start"` or `"side-end"` for explicitly side-anchored panels.
 - Use `allowFlip={false}` when a layout owns a fixed side. Homestead places top-row tooltips below and bottom-row tooltips above, preserving that side as purchase feedback changes panel height. Other tooltips retain automatic flipping by default; horizontal bounds still apply to fixed vertical placement.
-- End Turn and dev-only Skip Combat tooltips stay below their toolbar icons. Use `horizontalInset={8}` for these edge controls so the standard wide content inset does not shift their labels away from their icons.
+- The dev-only Skip Combat tooltip stays below its toolbar icon. Use `horizontalInset={8}` for this edge control so the standard wide content inset does not shift its label away from the icon. End Turn is a bottom-bar text button without a tooltip.
 - Use `maxWidthFraction` for small-window bounds.
 - Tooltip entrance fades and moves away from the trigger; exit fades with a return movement. [Component styles](../src/styles/components.css) own the offsets and easing, with durations from [motion constants](../src/lib/game-constants/ui-motion.ts). CSS `@starting-style` supplies the first-render entrance, and transitions reverse smoothly on re-hover. Hover remains immediate for rapid inspection. Keep `--tooltip-exit-duration` in sync with `TOOLTIP_FADE_MS`.
 - Passive tooltip panels are `pointer-events-none`; nested interactive tooltips are unsupported.
-- `PortaledTooltip` also checks document-level pointer and focus input while requested open. Outside input, window blur, and leaving the window dismiss stale panels even when a trigger misses its leave/blur event. Pointer movement and exit preserve keyboard inspection while the trigger has visible keyboard focus in the active window; click-retained focus does not keep a tooltip open after pointer exit. Outside presses and window blur still dismiss it. Inert or hidden ancestors dismiss retained tooltip portals even without further input, including during modal exit. Returning to the window or reactivating an ancestor alone does not revive a dismissed panel; fresh pointer inspection or keyboard focus can reveal it again. Hand cards retain their geometry-selected preview across gaps inside the hand. Dismissal preserves the normal exit fade and removes the tooltip's accessibility association.
+- `PortaledTooltip` also checks document-level pointer and focus input while requested open. Outside input, window blur, and leaving the window dismiss stale panels even when a trigger misses its leave/blur event. Pointer movement and exit preserve keyboard inspection while the trigger has visible keyboard focus in the active window. Click-retained focus does not keep a tooltip open after pointer exit; the hover owner and focus-only visual effects use the same focus-navigation mode as automatic recovery. Outside presses, mouse-wheel scrolling, and window blur still dismiss it. Inert or hidden ancestors dismiss retained tooltip portals even without further input, including during modal exit. Returning to the window or reactivating an ancestor alone does not revive a dismissed panel; fresh pointer inspection or keyboard focus can reveal it again. Hand cards retain their geometry-selected preview across gaps inside the hand. Dismissal preserves the normal exit fade and removes the tooltip's accessibility association.
 - Tooltip panels expose `role="tooltip"`. `PortaledTooltip` associates its stable ID with the trigger and focused controls inside a trigger wrapper through `aria-describedby`, preserving other descriptions and removing only its own association when hidden or unmounted. Locked menu entries and unavailable shop services reveal their reasons on focus; hero keyword pills and the active Companion remain focusable for inspection. Tabs expose their selected state through `aria-pressed`.
 - `PortaledTooltip` retains the complete last visible content through fade-out, including descriptions computed only while hovered. Header and body enter and exit as one panel.
 - State-driven triggers mount the portal only while hovered; exit fades complete via the shared `TOOLTIP_FADE_MS` hold — do not add a second hold alongside `PortaledTooltip`.
@@ -55,9 +55,9 @@ uses only the fade; reduced motion omits the settle. Cards appear together, and
 populated panels retain content-based sizing without animated dimensions. Empty
 collections show a centered, muted collection icon in a 10rem-high content area with a
 20rem minimum panel width, bounded by the available viewport with overflow scrolling.
-The battle Deck viewer anchors its tab header near the top of the viewport and
-keeps a bounded shared width, so switching to a smaller or empty pile leaves
-Deck, Draw, and Discard in place. Outside battle, Deck retains content-based sizing.
+Battle opens only the clicked pile with a centered pile title and no collection tabs;
+its panel sizes to that pile within the viewport. Outside battle, Deck retains
+content-based sizing.
 Deck, Draw Pile, and Discard Pile use the stacked-cards icon; Boons uses the trophy icon.
 Each empty icon is exposed as an image labelled Empty Deck, Empty Draw Pile,
 Empty Discard Pile, or Empty Boons.
@@ -78,13 +78,13 @@ resetting pagination cannot change the closing panel. Reopening cancels removal 
 starts a fresh panel mount and artwork gate. Consumers retain action-specific guards
 such as Wish's single-selection latch and confirmation buttons' disabled state.
 `dialog-focus-owner.ts` owns the ordered interactive panel stack, focus containment,
-initial focus, recovery, and opener restoration. `useDialogFocus` registers a panel
+initial focus, recovery, and opener restoration during intentional keyboard navigation. `useDialogFocus` registers a panel
 with that owner; controller traversal uses the same active panel rather than portal
 DOM order. One shared focus listener and mutation observer serve the stack and are
 released when the last panel and pending restoration are gone.
 Dialog focus containment belongs to the most recently opened interactive panel.
 Opening the pause menu over a pending Wish suspends the Wish's focus trap;
-closing the menu restores focus to the choice. Inert and hidden panels do not reclaim focus. When a focused choice disappears or
+closing the menu through a keyboard action restores focus to the choice. Escape clears focus instead. Inert and hidden panels do not reclaim focus. When a focused choice disappears or
 becomes unavailable, focus recovers inside the active panel; removing a covered
 panel preserves the foreground selection.
 Confirmation focus containment pauses while the panel is inert; focus returns
@@ -107,7 +107,7 @@ controls within the screen or top dialog. Left/right adjust horizontal sliders;
 up/down leave them. Text editing and dropdowns keep their own arrow behavior.
 Tab/Shift+Tab remain keyboard traversal; Steam Input uses F7/Tab for bumpers
 to avoid the Steam overlay chord. Directional focus stops at layout edges.
-F7 counts as keyboard input for deferred screen-focus recovery while artwork is preparing.
+Tab, F7, and arrow navigation enable focus navigation through the shared `focus-input.ts` owner. Enter and Space activate an already focused control; they never enable focus navigation themselves. Escape clears focus and cancels automatic handoffs, including screen recovery, dialog entry/restoration, and delayed artwork readiness. Pointer presses, mouse-wheel scrolling, and window blur disable automatic handoffs. Navigation key repeats cannot re-enable focus after dismissal or pointer input; release and press a navigation key again to resume. Keyboard focus uses a neutral warm gray outline.
 Window switching (Alt+Tab or Command+Tab) does not traverse controls or arm deferred
 focus recovery. Window blur cancels pending screen and hand focus recovery without
 opening the game menu; existing focus stays in place on return. Steam overlay
@@ -115,24 +115,24 @@ activation still opens the battle pause menu.
 The controlled select state registers above dialogs in the Escape stack so it
 cannot accidentally navigate out of Options or Armory.
 
-[Screen focus](../src/app/use-screen-focus.ts) recovers after keyboard-driven screen
+[Screen focus](../src/app/use-screen-focus.ts) recovers after intentional focus navigation across screen
 readiness changes when the old focus is gone or unavailable. Pointer input cancels
 that behavior. Ready, visible controls are selected through
 [shared focus eligibility](../src/features/alchemy/shared/ui/focus-navigation.ts);
 inert, hidden, and natively disabled controls are excluded. Inspection-only
 aria-disabled controls can still be traversed and inspected. Recovery scrolls
 only as needed. Closing inspection does not trigger screen-focus recovery.
-Dialogs restore their opener or fall back to the active screen when a previously
+During focus navigation, dialogs restore their opener or fall back to the active screen when a previously
 focused opener disappeared. Opening a dialog with no control focused restores
 that unfocused state on close. Deferred restoration retains an opener through temporary screen preparation,
 including when it stays inert beyond the first recovery frame. Fresh pointer input
-or focus elsewhere cancels that pending restoration. Existing focus is respected when deferred recovery runs.
+or focus elsewhere cancels that pending restoration. Existing focus is respected when deferred recovery runs. Pointer-opened dialogs and pointer-selected results do not select a control automatically. Inventory search focuses its text field only when explicitly opened, not merely because a saved filter keeps it expanded.
 
 Battle hand recovery is local to the hand and uses stable card identities. After a
 keyboard play, focus goes to the next playable card in the prior visual order,
 then a preceding playable card, then a newly drawn playable card, and finally End
 Turn. Recovery waits for card transfer, activation animations, and player-turn readiness; Tab, Escape, or
-pointer input cancels pending hand recovery. Pointer plays do not move focus.
+pointer presses or mouse-wheel scrolling cancel pending hand recovery. Pointer plays do not move focus.
 Card previews remain visible when the cursor leaves a keyboard-focused card.
 Cards expose current play availability through aria-disabled while retaining
 inspection. Existing battle commands remain the authority for accepting plays.

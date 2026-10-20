@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
@@ -20,6 +20,7 @@ interface UseBattlePlaybackProps {
   battleState: BattleSnapshot;
   hasActiveBattle: boolean;
   gameMenuOpen: boolean;
+  boonInspectOpen?: boolean;
   isAutoplayEnabled: boolean;
   handleEndTurn: (expected: BattleSnapshot) => void;
   handleAutoplayCard: AutoplayCardHandler;
@@ -36,6 +37,7 @@ export function useBattlePlayback({
   battleState,
   hasActiveBattle,
   gameMenuOpen,
+  boonInspectOpen = false,
   isAutoplayEnabled,
   handleEndTurn,
   handleAutoplayCard,
@@ -70,6 +72,7 @@ export function useBattlePlayback({
     battleState,
     hasActiveBattle,
     gameMenuOpen,
+    boonInspectOpen,
     isCardPlayInProgress,
     isProgressSavePending,
     onEndTurn: handleEndTurn,
@@ -85,11 +88,20 @@ export function useBattlePlayback({
     isCardPlayInProgress,
     isProgressSavePending,
     gameMenuOpen,
+    boonInspectOpen,
     playCard: handleAutoplayCard,
     playWish: handleAutoplayWish,
     presentationGateRef,
     wakeRef: wakeAutoplayRef,
   });
+
+  // A timer that fired while Boons was open rechecks the gate and returns.
+  // Wake automation again when the overlay closes so it cannot stay stalled.
+  useEffect(() => {
+    if (boonInspectOpen) return;
+    scheduleAutoEndTurnRef.current();
+    wakeAutoplayRef.current?.();
+  }, [boonInspectOpen]);
 
   const bind = useMemo(
     () =>

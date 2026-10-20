@@ -12,6 +12,9 @@ import { LockedMenuItem } from "@/features/alchemy/shared/ui/locked-menu-item";
 import { TabBar } from "@/features/alchemy/shared/ui/tab-bar";
 import { PortaledTooltip } from "@/features/alchemy/shared/ui/tooltips/portaled-tooltip";
 import { useInteractiveCard } from "@/features/alchemy/shared/ui/use-interactive-card";
+import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
+
+installFocusInputForTests(true);
 
 beforeEach(() => useUiStore.getState().clearCardHover());
 afterEach(() => cleanup());

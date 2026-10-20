@@ -1,3 +1,4 @@
+import { isFocusNavigationEnabled } from "@/features/alchemy/shared/ui/focus-input";
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { memo } from "react";
@@ -100,6 +101,7 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
           onHover(null);
         }}
         onFocus={() => {
+          if (!isFocusNavigationEnabled()) return;
           onHoverStart();
           onFocus(node.id);
         }}

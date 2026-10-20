@@ -1,3 +1,4 @@
+import { isFocusNavigationEnabled } from "../focus-input";
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import {
@@ -7,6 +8,8 @@ import {
   type Ref,
   type RefObject,
   useMemo,
+  useCallback,
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -81,11 +84,24 @@ export function BattleCardButton(props: BattleCardButtonProps) {
     else setInternalHovered(true);
   }
 
-  function handleHoverEnd() {
-    if (pointerInsideRef.current || focusedRef.current) return;
-    if (isControlledHover) props.onHoverEnd?.();
+  const onHoverEnd = props.onHoverEnd;
+  const handleHoverEnd = useCallback(() => {
+    if (pointerInsideRef.current || (focusedRef.current && isFocusNavigationEnabled())) return;
+    if (isControlledHover) onHoverEnd?.();
     else setInternalHovered(false);
-  }
+  }, [isControlledHover, onHoverEnd]);
+
+  useEffect(() => {
+    if (!hovered) return;
+    const onWheel = () => {
+      focusedRef.current = false;
+      handleHoverEnd();
+    };
+    document.addEventListener("wheel", onWheel, { capture: true, passive: true });
+    return () => {
+      document.removeEventListener("wheel", onWheel, true);
+    };
+  }, [hovered, handleHoverEnd]);
 
   function handleHoverLeave(event: MouseEvent<HTMLDivElement>) {
     pointerInsideRef.current = false;
@@ -120,6 +136,7 @@ export function BattleCardButton(props: BattleCardButtonProps) {
         {...props}
         hovered={hovered}
         onHoverStart={() => {
+          if (!isFocusNavigationEnabled()) return;
           focusedRef.current = true;
           handleHoverStart();
         }}

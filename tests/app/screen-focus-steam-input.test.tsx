@@ -1,13 +1,15 @@
+import { useAppKeyboardShortcuts } from "@/app/use-app-keyboard-shortcuts";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { useScreenFocus } from "@/app/use-screen-focus";
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
-it.each(["bumper", "Alt+Tab", "blur", "blur after ready"])(
+it.each(["bumper", "Alt+Tab", "blur", "blur after ready", "Escape", "pointer", "wheel", "Enter", " "])(
   "handles %s during screen preparation without unintended focus",
   (input) => {
     const frames = new Map<number, FrameRequestCallback>();
@@ -23,6 +25,12 @@ it.each(["bumper", "Alt+Tab", "blur", "blur after ready"])(
     }
     const { rerender } = render(<PreparingScreen ready={false} />);
     fireEvent.keyDown(window, { key: "F7" });
+    if (["Escape", "Enter", " "].includes(input)) {
+      if (input !== "Escape") fireEvent.pointerDown(document.body);
+      fireEvent.keyDown(window, { key: input });
+    }
+    if (input === "pointer") fireEvent.pointerDown(document.body);
+    if (input === "wheel") fireEvent.wheel(document.body);
     if (input === "Alt+Tab") fireEvent.keyDown(window, { key: "Tab", altKey: true });
     if (input === "blur") {
       fireEvent.blur(window);
@@ -87,3 +95,59 @@ it.each([{ altKey: true }, { altKey: true, shiftKey: true }, { metaKey: true }])
     expect(activate).not.toHaveBeenCalled();
   },
 );
+
+it("does not turn text editing or dropdown arrows into focus navigation", () => {
+  function EditingScreen() {
+    useScreenFocus("options", true);
+    return (
+      <>
+        <input aria-label="Search" />
+        <select aria-label="Language">
+          <option>English</option>
+        </select>
+      </>
+    );
+  }
+  render(<EditingScreen />);
+  for (const control of [screen.getByRole("textbox"), screen.getByRole("combobox")]) {
+    control.focus();
+    fireEvent.keyDown(control, { key: "ArrowDown" });
+    expect(document.documentElement.dataset.focusNavigation).toBe("false");
+  }
+  fireEvent.keyDown(window, { key: "Tab", isComposing: true });
+  expect(document.documentElement.dataset.focusNavigation).toBe("false");
+  fireEvent.keyDown(window, { key: "Tab" });
+  expect(document.documentElement.dataset.focusNavigation).toBe("true");
+});
+
+it.each(["Escape", "pointer", "blur"])("does not restart navigation from held keys after %s", (input) => {
+  function NavigationScreen() {
+    useScreenFocus("collection", true);
+    useAppKeyboardShortcuts({
+      renderedScreen: "collection",
+      screenInteractive: true,
+      gameMenuOpen: false,
+      toggleGameMenu: () => {},
+    });
+    return (
+      <div data-screen-content>
+        <button>Back</button>
+      </div>
+    );
+  }
+  render(<NavigationScreen />);
+  const back = screen.getByRole("button", { name: "Back" });
+  vi.spyOn(back, "getClientRects").mockReturnValue([{}] as unknown as DOMRectList);
+  back.scrollIntoView = vi.fn();
+  fireEvent.keyDown(document.body, { key: "Tab" });
+  if (input === "Escape") fireEvent.keyDown(document.body, { key: "Escape" });
+  else if (input === "pointer") fireEvent.pointerDown(document.body);
+  else fireEvent.blur(window);
+  for (const key of ["Tab", "F7", "ArrowRight"]) {
+    expect(fireEvent.keyDown(document.body, { key, repeat: true })).toBe(false);
+    expect(document.activeElement).toBe(document.body);
+    expect(document.documentElement.dataset.focusNavigation).toBe("false");
+  }
+  fireEvent.keyDown(document.body, { key: "ArrowRight" });
+  expect(document.activeElement).toBe(back);
+});

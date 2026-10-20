@@ -11,6 +11,9 @@ import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { getEnemyStatusChips, getPlayerStatusChips } from "@/features/alchemy/shared/utils/battle";
 import { dealDamage, makeTestCard, patchBattleState } from "../../../../../../fixtures/battle";
+import { installFocusInputForTests } from "../../../../../../helpers/focus-input-test";
+
+installFocusInputForTests(true);
 
 describe("StatusIcon", () => {
   beforeAll(() => installCatalogs(catalogs));

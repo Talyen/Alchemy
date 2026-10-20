@@ -1,3 +1,4 @@
+import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -5,6 +6,8 @@ import { GameMenu } from "@/features/alchemy/shared/ui/game-menu";
 import { useState, type ComponentProps } from "react";
 import { useAppKeyboardShortcuts } from "@/app/use-app-keyboard-shortcuts";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
+
+installFocusInputForTests(true);
 
 const noop = () => {};
 const menuProps = {
@@ -45,39 +48,44 @@ describe("GameMenu", () => {
     vi.restoreAllMocks();
   });
 
-  it.each([false, true])("preserves focus through repeated Escape menu cycles with an opener: %s", async (focused) => {
-    const user = userEvent.setup();
-    function BattleWithMenu() {
-      const [open, setOpen] = useState(false);
-      useAppKeyboardShortcuts({
-        renderedScreen: "battle",
-        screenInteractive: true,
-        gameMenuOpen: open,
-        toggleGameMenu: () => setOpen((value) => !value),
-      });
-      return (
-        <>
-          <div data-screen-content="battle">
-            <button>Inspect enemy</button>
-            <button>End Turn</button>
-          </div>
-          <GameMenu {...menuProps} currentScreen="battle" isOpen={open} onClose={() => setOpen(false)} />
-        </>
-      );
-    }
-    render(<BattleWithMenu />);
-    const opener = screen.getByRole("button", { name: "End Turn" });
-    opener.scrollIntoView = vi.fn();
-    if (focused) opener.focus();
-    for (let cycle = 0; cycle < 2; cycle++) {
-      await user.keyboard("{Escape}");
-      const menu = screen.getByRole("dialog", { name: "Game menu" });
-      await waitFor(() => expect(menu.contains(document.activeElement)).toBe(true));
-      await user.keyboard("{Escape}");
-      await waitFor(() => expect(screen.queryByRole("dialog", { name: "Game menu" })).toBeNull());
-      await waitFor(() => expect(document.activeElement).toBe(focused ? opener : document.body));
-    }
-  });
+  it.each([false, true])(
+    "leaves focus inactive through repeated Escape menu cycles with an opener: %s",
+    async (focused) => {
+      const user = userEvent.setup();
+      function BattleWithMenu() {
+        const [open, setOpen] = useState(false);
+        useAppKeyboardShortcuts({
+          renderedScreen: "battle",
+          screenInteractive: true,
+          gameMenuOpen: open,
+          toggleGameMenu: () => setOpen((value) => !value),
+        });
+        return (
+          <>
+            <div data-screen-content="battle">
+              <button>Inspect enemy</button>
+              <button>End Turn</button>
+            </div>
+            <GameMenu {...menuProps} currentScreen="battle" isOpen={open} onClose={() => setOpen(false)} />
+          </>
+        );
+      }
+      render(<BattleWithMenu />);
+      const opener = screen.getByRole("button", { name: "End Turn" });
+      opener.scrollIntoView = vi.fn();
+      if (focused) opener.focus();
+      for (let cycle = 0; cycle < 2; cycle++) {
+        await user.keyboard("{Escape}");
+        const menu = screen.getByRole("dialog", { name: "Game menu" });
+        expect(document.activeElement).toBe(document.body);
+        await user.tab();
+        await waitFor(() => expect(menu.contains(document.activeElement)).toBe(true));
+        await user.keyboard("{Escape}");
+        await waitFor(() => expect(screen.queryByRole("dialog", { name: "Game menu" })).toBeNull());
+        await waitFor(() => expect(document.activeElement).toBe(document.body));
+      }
+    },
+  );
 
   it("keeps the hamburger panel anchored while fading out after close clears the rect", () => {
     const anchorRect = new DOMRect(900, 16, 40, 40);

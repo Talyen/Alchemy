@@ -222,10 +222,12 @@ export function BattleHand({
         cancel();
     };
     document.addEventListener("pointerdown", cancel, true);
+    document.addEventListener("wheel", cancel, { capture: true, passive: true });
     window.addEventListener("keydown", onKey, true);
     window.addEventListener("blur", cancel);
     return () => {
       document.removeEventListener("pointerdown", cancel, true);
+      document.removeEventListener("wheel", cancel, true);
       window.removeEventListener("keydown", onKey, true);
       window.removeEventListener("blur", cancel);
     };
