@@ -1,3 +1,4 @@
+import { installFocusInputForTests } from "../../../../../helpers/focus-input-test";
 import { createCleanup } from "@/lib/cleanup";
 import { makeTestCard } from "../../../../../fixtures/cards";
 import { createRef, type MouseEventHandler, type RefObject } from "react";
@@ -17,6 +18,8 @@ import { defaultBattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { audioState } from "@/lib/audio/state";
 import { getHandCardKey } from "@/features/alchemy/run-loop/battle/playable-hand";
+
+installFocusInputForTests(true);
 
 vi.mock("@/features/alchemy/shared/ui/cards/card-button", () => ({
   BattleCardButton: ({

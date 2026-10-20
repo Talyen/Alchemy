@@ -1,3 +1,4 @@
+import { enableFocusNavigation } from "@/features/alchemy/shared/ui/focus-input";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useDialogFocus } from "@/features/alchemy/shared/ui/use-dialog-focus";
@@ -31,6 +32,7 @@ function Dialog({
 const scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
 
 beforeEach(() => {
+  enableFocusNavigation();
   vi.useFakeTimers();
   HTMLElement.prototype.scrollIntoView = vi.fn();
   vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([
@@ -41,6 +43,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  delete document.documentElement.dataset.focusNavigation;
   vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();

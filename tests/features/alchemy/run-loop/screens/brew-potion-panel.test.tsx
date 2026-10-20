@@ -1,3 +1,4 @@
+import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrewPotionPanel } from "@/features/alchemy/run-loop/screens/brew-potion-panel";
@@ -6,6 +7,8 @@ import { strengthenPotion } from "@/lib/alchemist/brewing";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
+
+installFocusInputForTests(true);
 vi.mock("@/features/alchemy/shared/ui/cards/selectable-card", () => ({
   SelectableCard: ({ card, onSelect }: { card: BattleCard; onSelect: () => void }) => (
     <button onClick={onSelect}>Select {card.title}</button>
@@ -18,10 +21,13 @@ vi.mock(
 afterEach(() => {
   cleanup();
   resetEscapeStackForTests();
+  vi.restoreAllMocks();
 });
 describe("Brew selection safety", () => {
   installDisabledAnimationsForTests();
-  it("confirms a single Potion only through the Strengthen flow", () => {
+  it.each(["keyboard", "pointer"])("confirms a single Potion through the Strengthen flow (%s)", (input) => {
+    vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([{}] as unknown as DOMRectList);
+    HTMLElement.prototype.scrollIntoView = vi.fn();
     const onConfirm = vi.fn(() => null);
     render(
       <BrewPotionPanel
@@ -35,11 +41,14 @@ describe("Brew selection safety", () => {
     expect(screen.getByRole("button", { name: "Select Wishing Potion" })).toBeTruthy();
     const choice = screen.getByRole("button", { name: "Select Health Potion" });
     choice.focus();
+    if (input === "pointer") fireEvent.pointerDown(choice);
     fireEvent.click(choice);
     expect(screen.getByRole("button", { name: "Inspect brew result: Health Potion" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Original: Health Potion" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Select Health Potion" })).toBeNull();
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Distill" }));
+    expect(document.activeElement).toBe(
+      input === "keyboard" ? screen.getByRole("button", { name: "Distill" }) : document.body,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Choose Another Potion" }));
     expect(screen.queryByRole("button", { name: "Inspect brew result: Health Potion" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Select Mana Potion" }));

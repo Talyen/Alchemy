@@ -1,8 +1,9 @@
+import { focusControl } from "@/features/alchemy/shared/ui/focus-navigation";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { PotionComparison } from "./potion-comparison";
 import { playUISound } from "@/lib/audio";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard, isPotionCard } from "@/lib/game-data";
 import { strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
@@ -41,19 +42,17 @@ export function BrewPotionPanel({
   const [submitted, setSubmitted] = useState(false);
   const confirmRef = useRef<HTMLButtonElement>(null);
   const [selectionDeck, setSelectionDeck] = useState(deck);
-  useEffect(() => {
-    if (!submitted && selectionDeck !== deck) {
-      setSelectionDeck(deck);
-      setSelected([]);
-      setPage(0);
-      setError("deck");
-    }
-  }, [deck, selectionDeck, submitted]);
+  if (!submitted && selectionDeck !== deck) {
+    setSelectionDeck(deck);
+    setSelected([]);
+    setPage(0);
+    setError("deck");
+  }
   // An accepted brew changes the live deck before its saved result replaces this panel.
   const sourceDeck = submitted ? selectionDeck : deck;
   useLayoutEffect(() => {
     if (kind === "strengthen" && selected.length === 1 && document.activeElement === document.body)
-      confirmRef.current?.focus();
+      focusControl(confirmRef.current);
   }, [kind, selected]);
   useCaptureEscapeCancel(onBack);
   const items =

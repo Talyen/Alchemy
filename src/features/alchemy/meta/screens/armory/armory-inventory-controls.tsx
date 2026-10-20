@@ -68,6 +68,7 @@ export function ArmoryInventoryControls({
   const [menu, setMenu] = useState<"filter" | "sort" | null>(null);
   const [searchExpanded, setSearchExpanded] = useState(Boolean(filters.search));
   const searchRef = useRef<HTMLInputElement>(null);
+  const searchRequested = useRef(false);
   const searchTriggerRef = useRef<HTMLButtonElement>(null);
   const filterTriggerRef = useRef<HTMLButtonElement>(null);
   const sortTriggerRef = useRef<HTMLButtonElement>(null);
@@ -75,7 +76,10 @@ export function ArmoryInventoryControls({
   const closeSearch = () => {
     onFiltersChange({ ...filters, search: "" });
     setSearchExpanded(false);
-    focusControl(searchTriggerRef.current);
+    if (!focusControl(searchTriggerRef.current)) {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && active.closest(".armory-inventory-search-field")) active.blur();
+    }
   };
   useModalEscapeDismiss({
     active: searchExpanded && menu === null,
@@ -84,7 +88,10 @@ export function ArmoryInventoryControls({
     onEscape: closeSearch,
   });
   useEffect(() => {
-    if (searchExpanded) focusControl(searchRef.current);
+    if (searchExpanded && searchRequested.current) {
+      searchRequested.current = false;
+      searchRef.current?.focus({ preventScroll: true });
+    }
   }, [searchExpanded]);
   const dismissFilter = useCallback((restoreFocus: boolean) => {
     setMenu((current) => (current === "filter" ? null : current));
@@ -105,8 +112,11 @@ export function ArmoryInventoryControls({
           aria-expanded={searchExpanded}
           onClick={() => {
             setMenu(null);
-            if (searchExpanded) focusControl(searchRef.current);
-            else setSearchExpanded(true);
+            if (searchExpanded) searchRef.current?.focus({ preventScroll: true });
+            else {
+              searchRequested.current = true;
+              setSearchExpanded(true);
+            }
           }}
         >
           <Search aria-hidden="true" />

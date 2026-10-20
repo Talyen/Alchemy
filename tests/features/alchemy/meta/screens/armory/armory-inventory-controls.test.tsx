@@ -1,9 +1,12 @@
+import { installFocusInputForTests } from "../../../../../helpers/focus-input-test";
 import { useState } from "react";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ArmoryInventoryControls } from "@/features/alchemy/meta/screens/armory/armory-inventory-controls";
 import { DEFAULT_ARMORY_INVENTORY_FILTERS } from "@/features/alchemy/meta/screens/armory/armory-inventory-filtering";
+
+installFocusInputForTests(false);
 
 function Harness({ onSort = vi.fn(), isTrinket = false }) {
   const [filters, setFilters] = useState(DEFAULT_ARMORY_INVENTORY_FILTERS);
@@ -23,6 +26,19 @@ function Harness({ onSort = vi.fn(), isTrinket = false }) {
 }
 
 describe("Armory inventory toolbar", () => {
+  it("does not focus search merely because an existing filter keeps it expanded", () => {
+    render(
+      <ArmoryInventoryControls
+        filters={{ ...DEFAULT_ARMORY_INVENTORY_FILTERS, search: "sword" }}
+        isTrinket={false}
+        onFiltersChange={vi.fn()}
+        onSort={vi.fn()}
+        onBrowse={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("searchbox").getAttribute("value")).toBe("sword");
+    expect(document.activeElement).toBe(document.body);
+  });
   beforeEach(() => {
     vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([
       new DOMRect(0, 0, 44, 44),
@@ -33,7 +49,7 @@ describe("Armory inventory toolbar", () => {
     cleanup();
     vi.restoreAllMocks();
   });
-  it("clears and collapses search with focus restored, while clearing filters preserves search", async () => {
+  it("clears and collapses search without enabling focus, while clearing filters preserves search", async () => {
     const user = userEvent.setup();
     render(<Harness />);
     const searchTrigger = screen.getByRole("button", { name: "Search inventory" });
@@ -43,9 +59,7 @@ describe("Armory inventory toolbar", () => {
     await user.type(input, "longsword");
     await user.click(screen.getByRole("button", { name: "Filters" }));
     let filter = await screen.findByRole("dialog", { name: "Inventory filters" });
-    await waitFor(() =>
-      expect(document.activeElement).toBe(within(filter).getByRole("button", { name: "Close inventory filters" })),
-    );
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Filters" }));
     await user.click(within(filter).getByRole("button", { name: "Astral" }));
     await user.click(within(filter).getByRole("checkbox", { name: "Physical" }));
     expect(JSON.parse(screen.getByLabelText("Current criteria").textContent!)).toEqual({
@@ -61,17 +75,17 @@ describe("Armory inventory toolbar", () => {
     await user.click(within(filter).getByRole("button", { name: "Clear filters" }));
     expect(input.getAttribute("value")).toBe("longsword");
     await user.keyboard("{Escape}");
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Filters" }));
+    expect(document.activeElement).toBe(document.body);
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(filterTrigger.classList.contains("bg-muted")).toBe(false);
     await user.keyboard("{Escape}");
-    expect(document.activeElement).toBe(searchTrigger);
+    expect(document.activeElement).toBe(document.body);
     expect(searchTrigger.getAttribute("aria-expanded")).toBe("false");
     expect(JSON.parse(screen.getByLabelText("Current criteria").textContent!).search).toBe("");
     await user.click(searchTrigger);
     await user.type(input, "hatchet");
     await user.click(screen.getByRole("button", { name: "Close inventory search" }));
-    expect(document.activeElement).toBe(searchTrigger);
+    expect(document.activeElement).toBe(document.body);
     expect(JSON.parse(screen.getByLabelText("Current criteria").textContent!).search).toBe("");
   });
 
@@ -88,7 +102,7 @@ describe("Armory inventory toolbar", () => {
     await user.click(within(sort).getByRole("button", { name: "Base Type" }));
     expect(onSort).toHaveBeenCalledExactlyOnceWith("base-type");
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(document.activeElement).toBe(sortTrigger);
+    expect(document.activeElement).toBe(document.body);
     await user.click(sortTrigger);
     await screen.findByRole("dialog", { name: "Sort inventory" });
     await user.click(screen.getByRole("button", { name: "Outside inventory" }));
@@ -97,7 +111,7 @@ describe("Armory inventory toolbar", () => {
     await user.click(sortTrigger);
     await screen.findByRole("dialog", { name: "Sort inventory" });
     await user.keyboard("{Escape}");
-    expect(document.activeElement).toBe(sortTrigger);
+    expect(document.activeElement).toBe(document.body);
     expect(screen.queryByRole("dialog")).toBeNull();
     await user.click(sortTrigger);
     const reopened = await screen.findByRole("dialog", { name: "Sort inventory" });

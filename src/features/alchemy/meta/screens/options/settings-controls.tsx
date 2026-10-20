@@ -1,3 +1,4 @@
+import { isFocusNavigationEnabled } from "@/features/alchemy/shared/ui/focus-input";
 import type { LucideIcon } from "lucide-react";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
@@ -100,7 +101,11 @@ export function SettingsSelect<T extends string>({
         <SelectTrigger id={id} className="options-settings-control py-2">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent
+          onCloseAutoFocus={(event) => {
+            if (!isFocusNavigationEnabled()) event.preventDefault();
+          }}
+        >
           {options.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.native ? <span lang={option.value}>{option.label}</span> : i18n.displayText(option.label)}

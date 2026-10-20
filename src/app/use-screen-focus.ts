@@ -1,23 +1,20 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { focusScreenStart, isFocusAvailable } from "@/features/alchemy/shared/ui/focus-navigation";
 
-/** Recover only across screen readiness boundaries, and only after keyboard input. */
+import { isFocusNavigationEnabled, trackFocusInput } from "@/features/alchemy/shared/ui/focus-input";
+
+/** Recover only across screen readiness boundaries after intentional focus navigation. */
 export function useScreenFocus(screen: string, ready: boolean) {
-  const keyboard = useRef(false);
+  useEffect(trackFocusInput, []);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.altKey || event.ctrlKey || event.metaKey) {
-        keyboard.current = false;
         if (event.key === "Tab") {
           // OS window switching must not reach native traversal or dialog traps.
           event.preventDefault();
           event.stopPropagation();
           return;
         }
-      } else if (
-        ["Tab", "F7", "Enter", " ", "Escape", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)
-      ) {
-        keyboard.current = true;
       }
       // A held confirm must not activate the next card or newly entered screen.
       const editingText =
@@ -30,23 +27,16 @@ export function useScreenFocus(screen: string, ready: boolean) {
         event.stopPropagation();
       }
     };
-    const onPointer = () => {
-      keyboard.current = false;
-    };
     window.addEventListener("keydown", onKey, true);
-    document.addEventListener("pointerdown", onPointer, true);
-    window.addEventListener("blur", onPointer);
     return () => {
       window.removeEventListener("keydown", onKey, true);
-      document.removeEventListener("pointerdown", onPointer, true);
-      window.removeEventListener("blur", onPointer);
     };
   }, []);
 
   useLayoutEffect(() => {
-    if (!ready || !keyboard.current) return;
+    if (!ready || !isFocusNavigationEnabled()) return;
     const frame = requestAnimationFrame(() => {
-      if (!keyboard.current) return;
+      if (!isFocusNavigationEnabled()) return;
       const active = document.activeElement;
       if (active instanceof HTMLElement && active !== document.body && isFocusAvailable(active)) return;
       focusScreenStart();

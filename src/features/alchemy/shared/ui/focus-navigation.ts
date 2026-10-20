@@ -1,3 +1,4 @@
+import { enableFocusNavigation } from "./focus-input";
 import { focusableControls, focusControl, isFocusAvailable } from "./focus-eligibility";
 import { activeDialogFocusRoot } from "./dialog-focus-owner";
 
@@ -5,6 +6,7 @@ export { isFocusAvailable, focusableControls, focusControl, focusScreenStart } f
 
 /** Steam Input uses F7 so backward focus does not activate Steam's Shift+Tab overlay. */
 export function focusPreviousControl(): void {
+  enableFocusNavigation();
   const root = activeFocusRoot();
   const controls = focusableControls(root);
   const current = controls.indexOf(document.activeElement as HTMLElement);
@@ -38,6 +40,7 @@ export function focusInDirection(direction: FocusDirection): boolean {
       return false;
     if (current.matches('[role="slider"]') && (direction === "left" || direction === "right")) return false;
   }
+  enableFocusNavigation();
   const controls = focusableControls(activeFocusRoot());
   if (!(current instanceof HTMLElement) || !controls.includes(current)) {
     return focusControl(controls[0]);
