@@ -1,5 +1,8 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
+
+import catalogs from "@/lib/localization/locales/runtime.json";
+import { installCatalogs, localization } from "@/lib/localization/runtime";
 
 import { StatusIcon } from "@/features/alchemy/run-loop/battle/presentation/ui/status-icons";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
@@ -10,7 +13,11 @@ import { getEnemyStatusChips, getPlayerStatusChips } from "@/features/alchemy/sh
 import { dealDamage, makeTestCard, patchBattleState } from "../../../../../../fixtures/battle";
 
 describe("StatusIcon", () => {
-  afterEach(cleanup);
+  beforeAll(() => installCatalogs(catalogs));
+  afterEach(async () => {
+    cleanup();
+    await localization.changeLanguage("en");
+  });
 
   it.each(["stun", "freeze"] as const)("describes the full duration of an extended %s", async (status) => {
     const state = patchBattleState({
@@ -25,11 +32,30 @@ describe("StatusIcon", () => {
       (entry) => entry.id === (status === "stun" ? "stunned" : "frozen"),
     )!;
     expect(chip.value).toBe(2);
-    render(<StatusIcon chip={chip} />);
-    fireEvent.focus(screen.getByRole("button", { name: status === "stun" ? "Stunned" : "Frozen" }));
+    const { rerender } = render(<StatusIcon chip={chip} />);
+    const trigger = screen.getByRole("button", { name: status === "stun" ? "Stunned" : "Frozen" });
+    fireEvent.focus(trigger);
     await waitFor(() =>
-      expect(document.querySelector(".hover-popup-panel")?.textContent).toContain("Loses their next 2 turns."),
+      expect(document.querySelector(".hover-popup-panel")?.textContent).toContain(
+        `${status === "stun" ? "Stunned" : "Frozen"} combatants skip their next 2 turns.`,
+      ),
     );
+    await act(async () => {
+      await localization.changeLanguage("ru");
+    });
+    const keyword = status === "stun" ? "Оглушённые" : "Замороженные";
+    await waitFor(() =>
+      expect(document.querySelector(".hover-popup-panel")?.textContent).toContain(
+        `${keyword} бойцы пропускают следующие 2 хода.`,
+      ),
+    );
+    rerender(<StatusIcon chip={{ ...chip, value: 5 }} />);
+    await waitFor(() => {
+      const tooltip = document.querySelector(".hover-popup-panel");
+      expect(tooltip?.textContent).toContain(`${keyword} бойцы пропускают следующие 5 ходов.`);
+      expect(tooltip?.querySelector(".font-semibold")?.textContent).toBe(keyword);
+    });
+    expect(screen.getByRole("button")).toBe(trigger);
   });
 
   it("shows Riposte after a Dodge, preserves it through Holy damage, and spends it on Physical damage", async () => {
@@ -49,7 +75,7 @@ describe("StatusIcon", () => {
     fireEvent.focus(screen.getByRole("button", { name: "Riposte" }));
     await waitFor(() =>
       expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain(
-        "Your next Physical attack Critically Hits.",
+        "Riposte makes your next Physical attack a Critical Hit.",
       ),
     );
     const hit = dealDamage(holy, cardById.slash!);
@@ -68,7 +94,7 @@ describe("StatusIcon", () => {
     fireEvent.focus(screen.getByRole("button", { name: "Parting Cut" }));
     await waitFor(() => {
       expect(document.querySelector(".hover-popup-panel")?.textContent).toContain(
-        "Your next Physical hit deals half its damage as additional Bleed damage.",
+        "Your next Physical hit deals half its damage as extra Bleed damage.",
       );
     });
   });
@@ -93,8 +119,7 @@ describe("StatusIcon", () => {
 
     await waitFor(() => {
       const tooltip = document.querySelector<HTMLElement>(".hover-popup-panel[data-visible]");
-      expect(tooltip?.textContent).toContain("When hit, Consume Thorns to deal Nature damage");
-      expect(tooltip?.textContent).not.toContain("consume");
+      expect(tooltip?.textContent).toContain("Thorns are Consumed when hit, dealing Nature damage to the attacker.");
     });
     expect(screen.getByText("2")).toBeTruthy();
   });
@@ -103,7 +128,7 @@ describe("StatusIcon", () => {
     render(<StatusIcon chip={{ id: "haste", value: 3, hideValue: true }} />);
     fireEvent.focus(screen.getByRole("button", { name: "Haste 3" }));
     await waitFor(() => expect(screen.getByText("3")).toBeTruthy());
-    expect(screen.getByText("Skips the next enemy phase and grants another player turn.")).toBeTruthy();
+    expect(screen.getByText("Haste grants an extra turn before enemies act.")).toBeTruthy();
   });
 
   it("presents Phoenix Feather as a status without a numeric badge", async () => {
@@ -113,11 +138,28 @@ describe("StatusIcon", () => {
 
     await waitFor(() => {
       const tooltip = document.querySelector<HTMLElement>(".hover-popup-panel[data-visible]");
-      expect(tooltip?.textContent).toContain("The next time you would die, instead restore 30% Health");
+      expect(tooltip?.textContent).toContain("Phoenix Feather revives you once at 30% of max Health.");
     });
     expect(screen.queryByText("1")).toBeNull();
   });
 
-  // Badge-less one-shot and keyword-color variants duplicate the Control
-  // Immunity, Thorns, and Phoenix Feather cases above.
+  it("translates generated Incoming damage tooltips in place", async () => {
+    render(<StatusIcon chip={{ id: "pending-burn", value: 12 }} />);
+    const trigger = screen.getByRole("button", { name: "Incoming Burn 12" });
+    fireEvent.focus(trigger);
+    await waitFor(() =>
+      expect(document.querySelector(".hover-popup-panel")?.textContent).toContain(
+        "Burn damage hits this enemy at the start of your next turn.",
+      ),
+    );
+    await act(async () => {
+      await localization.changeLanguage("de");
+    });
+    expect(screen.getByRole("button", { name: "Eingehender Brandschaden 12" })).toBe(trigger);
+    await waitFor(() =>
+      expect(document.querySelector(".hover-popup-panel")?.textContent).toContain(
+        "Brandschaden trifft diesen Gegner zu Beginn deines nächsten Zuges.",
+      ),
+    );
+  });
 });

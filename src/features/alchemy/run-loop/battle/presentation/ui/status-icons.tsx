@@ -1,4 +1,3 @@
-import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { type ReactNode } from "react";
 import { Skull, Sparkles } from "lucide-react";
@@ -19,6 +18,7 @@ import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 import { augmentDefinitions } from "../../../../shared/augment-definitions";
 import type { StatusChip } from "../../../../shared/types";
 import { renderColoredKeywords } from "../../../../shared/ui/cards/card-description-ui";
+import { renderMessage } from "../../../../shared/ui/localized-description";
 import { KeywordTag } from "../../../../shared/ui/keyword-tag";
 import { PortaledTooltip } from "../../../../shared/ui/tooltips/portaled-tooltip";
 import { TooltipBody, TooltipHeader } from "../../../../shared/ui/tooltips/tooltip-panel";
@@ -111,6 +111,22 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
   const Icon = special?.icon ?? keywordIcons[kw];
   if (!definition || !Icon) return null;
   const hideValue = Boolean(!haste && special && chip.hideValue);
+  const extendedControl = chip.value > 1 && (chip.id === "stunned" || chip.id === "frozen");
+  const description = i18n.read(() =>
+    extendedControl
+      ? renderMessage({
+          id: chip.id === "stunned" ? "battle.status.stunned-turns" : "battle.status.frozen-turns",
+          template:
+            chip.id === "stunned"
+              ? "<keyword0>Stunned</keyword0> combatants skip their next {{count}} turns."
+              : "<keyword0>Frozen</keyword0> combatants skip their next {{count}} turns.",
+          values: { count: chip.value },
+          slots: { keyword0: { keywordId: chip.id === "stunned" ? "stun" : "freeze" } },
+        })
+      : haste
+        ? i18n.displayText(definition.description)
+        : renderColoredKeywords(chip.description ?? definition.description),
+  );
   const plasmaColorPair = haste
     ? HASTE_PLASMA_PAIR
     : phoenix
@@ -141,11 +157,7 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
           value={chip.value}
           hideValue={hideValue}
           valueColorClass={definition.colorClass}
-          description={i18n.displayText(
-            haste
-              ? definition.description
-              : i18n.read(() => renderColoredKeywords(chip.description ?? definition.description)),
-          )}
+          description={description}
         />
       }
       plasmaColorPair={plasmaColorPair}
@@ -157,7 +169,7 @@ const HASTE_STATUS = {
   label: "Haste",
   icon: Sparkles,
   colorClass: "text-fuchsia-300",
-  description: "Skips the next enemy phase and grants another player turn.",
+  description: "Haste grants an extra turn before enemies act.",
 };
 
 export function DeathsDoorStatusIcon({ remainingTurns }: { remainingTurns?: number | null }) {
@@ -187,24 +199,10 @@ export function DeathsDoorStatusIcon({ remainingTurns }: { remainingTurns?: numb
             <p>
               {i18n.text(
                 "ui.status-icons.4",
-                "Fatal damage leaves you at 1 Health while protected. Healing does not end protection.",
+                "Death's Door keeps you at 1 Health when taking fatal damage while protected.",
               )}
             </p>
-            <p>
-              {i18n.text(
-                "ui.status-icons.5",
-                "Once protection expires, fatal damage can defeat you. Death's Door triggers once per combat.",
-              )}
-            </p>
-          </TooltipBody>
-          <TooltipBody className="italic">
-            <p>
-              <GameMessage
-                id="ui.status-icons.s2"
-                defaultValue="Because I could not stop for Death,<part0/>He kindly stopped for me"
-                parts={{ part0: <br /> }}
-              />
-            </p>
+            <p>{i18n.text("ui.status-icons.5", "Triggers once per combat.")}</p>
           </TooltipBody>
         </>
       }

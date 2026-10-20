@@ -38,5 +38,23 @@
       "one": "View Deck \u00b7 {{count}} card",
       "other": "View Deck \u00b7 {{count}} cards"
     }
+  },
+  "battle.status.stunned-turns": {
+    "text": "<keyword0>Stunned</keyword0> combatants skip their next {{count}} turns.",
+    "context": "Battle status tooltip: remaining Stunned turns",
+    "plural": true,
+    "forms": {
+      "one": "<keyword0>Stunned</keyword0> combatants skip their next {{count}} turn.",
+      "other": "<keyword0>Stunned</keyword0> combatants skip their next {{count}} turns."
+    }
+  },
+  "battle.status.frozen-turns": {
+    "text": "<keyword0>Frozen</keyword0> combatants skip their next {{count}} turns.",
+    "context": "Battle status tooltip: remaining Frozen turns",
+    "plural": true,
+    "forms": {
+      "one": "<keyword0>Frozen</keyword0> combatants skip their next {{count}} turn.",
+      "other": "<keyword0>Frozen</keyword0> combatants skip their next {{count}} turns."
+    }
   }
 }

@@ -102,14 +102,13 @@ describe("getPlayerStatusChips", () => {
 });
 
 describe("getEnemyStatusChips", () => {
-  it("keeps Stoke the Forge visible after an enemy attack with the persistent Forge tooltip", () => {
+  it("keeps Stoke the Forge visible after an enemy attack", () => {
     const golem = enemyBestiary.find((enemy) => enemy.id === "forge-golem")!;
     const initial = createBattleState({ runDeck: [makeTestCard()], currentEnemy: golem, rng: () => 0.99 });
     const result = endPlayerTurn({ ...initial, turn: 2, lastEnemyAbilityId: "molten-bulwark" });
     expect(getEnemyStatusChips(result.state)).toContainEqual({
       id: "forge",
       value: 1,
-      description: "Each stack of Forge increases this enemy’s Physical and Stun damage by 1 for the rest of combat.",
     });
   });
 
