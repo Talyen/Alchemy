@@ -13,6 +13,7 @@ import { ShopPage } from "../../tests/pages/shop-page";
 import { injectExactSave } from "../../tests/e2e/save-injection";
 import { waitForBattleReady } from "../battle-setup";
 import { createCombatChoices } from "../combat-choices";
+import { waitForCombatDecision } from "../combat-decision";
 import { delay } from "../delay";
 import { expect, test, type ScenarioId } from "../fixtures";
 import { assertJourneyCase, type JourneyCase, type SegmentRequirement } from "../journey-types";
@@ -64,31 +65,6 @@ async function resolveWishChoices(
   if (await panel.isVisible().catch(() => false)) throw new Error("Wish choices did not settle");
 }
 
-async function waitForCombatDecision(
-  page: Page,
-  battle: BattlePage,
-  recordAction: RecordAction,
-  choices: ReturnType<typeof createCombatChoices>,
-): Promise<void> {
-  // A Wish can appear while the last card is still resolving. Recheck after
-  // each resolved choice so End Turn never waits behind an unhandled overlay.
-  while (true) {
-    await expect
-      .poll(
-        async () => {
-          if (await battle.isBattleOver()) return true;
-          if (await page.locator(".wish-overlay-panel").isVisible()) return true;
-          return battle.endTurnBtn.isEnabled().catch(() => false);
-        },
-        { timeout: 20_000 },
-      )
-      .toBe(true);
-    if (await battle.isBattleOver()) return;
-    if (!(await page.locator(".wish-overlay-panel").isVisible())) return;
-    await resolveWishChoices(page, recordAction, choices);
-  }
-}
-
 async function playRealCombat(
   page: Page,
   phase: Phase,
@@ -107,7 +83,7 @@ async function playRealCombat(
     for (let cardIndex = 0; cardIndex < (variedCombat ? 8 : 3) && !(await battle.isBattleOver()); cardIndex++) {
       // A removed card can still be resolving damage, draws, or victory. Wait
       // for a decision boundary before consuming the next replay choice.
-      await waitForCombatDecision(page, battle, recordAction, decisions);
+      await waitForCombatDecision(page, battle, () => resolveWishChoices(page, recordAction, decisions));
       if (await battle.isBattleOver()) break;
       const playable = battle.hand.filter({ visible: true });
       const count = await playable.count();
@@ -145,7 +121,7 @@ async function playRealCombat(
       await resolveWishChoices(page, recordAction, decisions);
     }
     if (await battle.isBattleOver()) break;
-    await waitForCombatDecision(page, battle, recordAction, decisions);
+    await waitForCombatDecision(page, battle, () => resolveWishChoices(page, recordAction, decisions));
     if (await battle.isBattleOver()) break;
     await phase("enemy-turn");
     await record("end-turn", () => battle.endTurn(), recordAction);
