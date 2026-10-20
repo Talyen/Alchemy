@@ -125,7 +125,7 @@ export function TalentsScreen({
           onClick={() => setShowResetConfirm(true)}
           aria-label={i18n.text("ui.talents-screen.1", "Reset talents")}
         >
-          <RotateCcw className="h-6 w-6" />
+          <RotateCcw />
         </ChromeIconButton>
       }
     >

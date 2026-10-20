@@ -92,7 +92,7 @@ export function RemoveCardPanel({
           </Button>
         ) : null}
         <Button size="lg" variant="primary" disabled={confirmDisabled} onClick={handleConfirm}>
-          <Trash2 className="h-7 w-7" />{" "}
+          <Trash2 />{" "}
           {i18n.displayText(
             fitHeight
               ? i18n.text("ui.remove-card-panel.d1", "Remove")

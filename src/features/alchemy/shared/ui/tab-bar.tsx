@@ -55,7 +55,7 @@ export function TabBar<T extends string>({
             )}
             aria-pressed={tab.id === activeTab}
           >
-            <Icon className={cn("h-7 w-7", tab.iconClassName)} />
+            <Icon className={tab.iconClassName} />
             {i18n.displayText(tab.label)}
           </Button>
         );

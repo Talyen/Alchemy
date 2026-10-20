@@ -20,7 +20,7 @@ function SelectTrigger({ className, children, ref, ...props }: SelectTriggerProp
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
+        <ChevronDown className="shrink-0 text-muted-foreground" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
@@ -71,7 +71,7 @@ function SelectItem({ className, children, ref, ...props }: SelectItemProps) {
     >
       <span className="absolute left-3 flex h-4 w-4 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <Check className="h-4 w-4" />
+          <Check />
         </SelectPrimitive.ItemIndicator>
       </span>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>

@@ -93,6 +93,14 @@ Max-roll Astral and Unique affix names use the first three distinct keywords fro
 
 Astral definition-only previews use base affinities; Unique definition borders use their described effect. Unique item borders use the same keyword shine as Astral gear rather than a gold palette, while Unique item titles keep their gold palette. Gear hover backgrounds use only described affix keywords, with neutral gray for no recognized keywords; Unique gear keeps the gold hex pair for its inventory, equipped-slot, and collection hover background. CSS text fades must not feed the hex-only background renderer.
 
+## Icons
+
+Lucide icons default to `0.9em` square and a `2.5` stroke in `src/styles/base.css`,
+matching label cap height and semibold weight. Put text size on the shared icon/label
+container so both scale together; omit icon width and height utilities for text
+controls. Explicit dimensions are reserved for artwork, status markers, and
+comparison diagrams. Icon-only buttons set their font size through `Button`.
+
 ## UI gold palette
 
 General interface gold uses one warm family: base `#cd9b51`, light `#e6c58e`,

@@ -58,7 +58,7 @@ export function ShineAccentButton({
         disabled={disabled}
         onClick={onClick}
       >
-        {Icon ? <Icon className="h-7 w-7" /> : null}
+        {Icon ? <Icon /> : null}
         {children}
       </Button>
       {!disabled ? <ShineBorder shineColor={shineColor} borderWidth={1} duration={8} className="rounded-xl" /> : null}

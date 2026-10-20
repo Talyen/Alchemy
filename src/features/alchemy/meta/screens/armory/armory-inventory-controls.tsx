@@ -109,7 +109,7 @@ export function ArmoryInventoryControls({
             else setSearchExpanded(true);
           }}
         >
-          <Search aria-hidden="true" className="h-5 w-5" />
+          <Search aria-hidden="true" />
         </InventoryIconButton>
         <div className="armory-inventory-search-field" inert={!searchExpanded}>
           <input
@@ -128,7 +128,7 @@ export function ArmoryInventoryControls({
             className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2"
             onClick={closeSearch}
           >
-            <X aria-hidden="true" className="h-4 w-4" />
+            <X aria-hidden="true" />
           </Button>
         </div>
       </div>
@@ -147,7 +147,7 @@ export function ArmoryInventoryControls({
             aria-haspopup="dialog"
             onClick={() => setMenu(menu === "filter" ? null : "filter")}
           >
-            <SlidersHorizontal aria-hidden="true" className="h-5 w-5" />
+            <SlidersHorizontal aria-hidden="true" />
           </InventoryIconButton>
         )}
       >
@@ -222,7 +222,7 @@ export function ArmoryInventoryControls({
             aria-haspopup="dialog"
             onClick={() => setMenu(menu === "sort" ? null : "sort")}
           >
-            <ArrowDownWideNarrow aria-hidden="true" className="h-5 w-5" />
+            <ArrowDownWideNarrow aria-hidden="true" />
           </InventoryIconButton>
         )}
       >

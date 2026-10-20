@@ -31,7 +31,7 @@ export function BattleBoonInspectButton({ open, onToggle }: { open: boolean; onT
       )}
       data-testid="battle-boon-inspect-toggle"
     >
-      <Trophy className="h-6 w-6" />
+      <Trophy />
     </ChromeIconButton>
   );
 }
@@ -73,7 +73,7 @@ export function BattleBoonInspectOverlay({
             onClick={onClose}
             aria-label={i18n.text("ui.boon-inspect.2", "Close boons")}
           >
-            <X className="h-5 w-5" />
+            <X />
           </ChromeIconButton>
         </div>
 

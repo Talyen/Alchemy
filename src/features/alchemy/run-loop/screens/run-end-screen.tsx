@@ -109,11 +109,7 @@ export function RunEndScreen({
                 aria-controls={talentGridId}
                 onClick={() => setTalentsExpanded((expanded) => !expanded)}
               >
-                {talentsExpanded ? (
-                  <ChevronUp className="h-5 w-5" aria-hidden="true" />
-                ) : (
-                  <ChevronDown className="h-5 w-5" aria-hidden="true" />
-                )}
+                {talentsExpanded ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
               </Button>
             ) : null}
           </div>

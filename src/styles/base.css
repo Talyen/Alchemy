@@ -39,6 +39,14 @@ html:lang(zh-Hans) {
 }
 
 @layer base {
+  /* Match label cap height and semibold weight; artwork may override dimensions. */
+  .lucide {
+    width: 0.9em;
+    height: 0.9em;
+    flex-shrink: 0;
+    stroke-width: 2.5;
+  }
+
   * {
     --content-rem: calc(1rem * var(--content-scale, 1));
     border-color: var(--color-border);

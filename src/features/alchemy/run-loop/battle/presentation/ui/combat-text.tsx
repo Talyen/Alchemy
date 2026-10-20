@@ -257,8 +257,7 @@ function CombatTextEntry({ entry, staticMotion }: { entry: FloatingCombatText; s
         leading
           ? createElement(leading, {
               "aria-hidden": true,
-              style: { width: "0.94em", height: "0.94em" },
-              strokeWidth: 3,
+              style: { width: "0.94em", height: "0.94em", strokeWidth: 3 },
             })
           : null,
       )}
@@ -268,8 +267,8 @@ function CombatTextEntry({ entry, staticMotion }: { entry: FloatingCombatText; s
               style: {
                 width: "0.94em",
                 height: "0.94em",
+                strokeWidth: 3,
               },
-              strokeWidth: 3,
             })
           : null,
       )}

@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 function SettingsIcon({ icon: Icon }: { icon: LucideIcon }) {
   return (
     <span aria-hidden="true" className="flex h-[1lh] w-6 shrink-0 items-center justify-center self-start">
-      <Icon className="h-[0.9em] w-[0.9em] text-gold-pale" strokeWidth={2.5} />
+      <Icon className="text-gold-pale" />
     </span>
   );
 }
