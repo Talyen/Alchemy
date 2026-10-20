@@ -54,7 +54,9 @@ function getForgeBonusForDamage(state: BattleState, damageType: DamageType): num
   if (!(percent > 0)) return 0;
   const forge = state.playerStatuses.forge;
   if (damageType === "physical" && state.talentEffects.forgeToPhysicalDamageMultiplier > 0) {
-    return forge * state.talentEffects.forgeToPhysicalDamageMultiplier;
+    // Round the converted Forge bonus like every other magnitude so damage
+    // multipliers apply to an integer, matching Shield Slam's Block scaling.
+    return Math.round(forge * state.talentEffects.forgeToPhysicalDamageMultiplier);
   }
   return scalePercent(forge, percent);
 }

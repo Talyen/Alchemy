@@ -16,6 +16,21 @@ it.each([
   expect(result.playerStatuses.forge).toBe(2);
 });
 
+it("computeBaseDamage — Expert Blacksmith rounds its Forge bonus before damage multipliers", () => {
+  const state = patchBattleState({
+    playerStatuses: { forge: 2 },
+    talentEffects: { forgeToPhysicalDamageMultiplier: 1.25 },
+    enemyStatuses: { bleed: 1 },
+    rng: () => 0.99,
+  });
+  const card = makeTestCard({
+    effects: [{ kind: "damage", damageType: "physical", amount: 3, doubleIfEnemyBleeding: true }],
+  });
+  const result = dealDamage(state, card);
+  // Base 3 + round(2 × 1.25) = 6, doubled against the bleeding enemy.
+  expect(result.enemyHealth).toBe(30 - 12);
+});
+
 describe("applyForgeStunRider", () => {
   it("stuns enemy when forge meets boon threshold", () => {
     const state = patchBattleState({
