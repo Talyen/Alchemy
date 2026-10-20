@@ -106,7 +106,9 @@ export function MysteryChoiceRewards({
             case "gainMaterial":
             case "gainXP":
               return null;
-            default:
+            case "chooseCard":
+            case "gainRandomGear":
+            case "healHealth":
               return <MysteryEffectBadge key={index} effect={effect} findCard={findCard} findTrinket={findTrinket} />;
           }
         })}

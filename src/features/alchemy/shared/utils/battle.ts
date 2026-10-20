@@ -78,24 +78,14 @@ export function getCombatTextLeadingIcon(event: CombatTextEvent) {
 function combatStatLabel(stat: CombatTextEvent["stat"]): string {
   const presentation = combatStatPresentation(stat);
   if (presentation) return displayText(presentation.label);
-  switch (stat) {
-    case "deathsDoor":
-      return text("battle.feedback.deaths-door", "Death's Door");
-    case "gems":
-      return text("battle.feedback.gems", "Gems");
-    case "haste":
-      return text("battle.feedback.haste", "Haste");
-    case "draw":
-      return text("battle.feedback.draw", "Draw");
-    case "cleanse":
-      return text("battle.feedback.cleanse", "Cleanse");
-    case "scheduled":
-      return text("battle.feedback.scheduled", "Scheduled");
-    case "effect":
-      return text("battle.feedback.effect", "Effect");
-    default:
-      return stat;
-  }
+  if (stat === "deathsDoor") return text("battle.feedback.deaths-door", "Death's Door");
+  if (stat === "gems") return text("battle.feedback.gems", "Gems");
+  if (stat === "haste") return text("battle.feedback.haste", "Haste");
+  if (stat === "draw") return text("battle.feedback.draw", "Draw");
+  if (stat === "cleanse") return text("battle.feedback.cleanse", "Cleanse");
+  if (stat === "scheduled") return text("battle.feedback.scheduled", "Scheduled");
+  if (stat === "effect") return text("battle.feedback.effect", "Effect");
+  return stat;
 }
 
 export function getCombatTextAccessibleLabel(event: FloatingCombatText): string {
