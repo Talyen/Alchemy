@@ -146,7 +146,7 @@ export function GameMenu({
                   onSelect();
                   onClose();
                 }}
-                icon={<Icon className={cn("h-6 w-6 shrink-0", iconClassName)} />}
+                icon={<Icon className={cn("shrink-0", iconClassName)} />}
                 className={cn(controlLabelClass, "h-11 w-full justify-start gap-3", danger && "text-red-400")}
               >
                 {i18n.displayText(label)}

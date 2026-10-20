@@ -29,11 +29,9 @@ export function KeywordProgressCard({
   return (
     <div className={cn("rounded-shell-compact border border-border/70 text-left surface-muted", large ? "p-4" : "p-3")}>
       <div className="flex items-center justify-between gap-2">
-        <div className={cn("flex items-center", large ? "gap-2" : "gap-1.5")}>
-          {Icon ? <Icon className={cn(large ? "h-6 w-6" : "h-5 w-5", def?.colorClass)} /> : null}
-          <span className={cn(large ? "text-lg" : "text-base", "font-semibold", def?.colorClass)}>
-            {i18n.displayText(def?.label ?? kw)}
-          </span>
+        <div className={cn("flex items-center font-semibold", large ? "gap-2 text-lg" : "gap-1.5 text-base")}>
+          {Icon ? <Icon className={def?.colorClass} /> : null}
+          <span className={def?.colorClass}>{i18n.displayText(def?.label ?? kw)}</span>
         </div>
         <span className={cn(large ? "text-lg" : "text-base", "font-semibold", def?.colorClass)}>
           <GameMessage

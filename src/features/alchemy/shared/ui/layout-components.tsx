@@ -43,7 +43,7 @@ export function ScreenHeaderRow({
     leading ??
     (effectiveBack ? (
       <ChromeIconButton onClick={effectiveBack} aria-label={i18n.text("ui.layout-components.1", "Back")}>
-        <ArrowLeft className="h-7 w-7" />
+        <ArrowLeft />
       </ChromeIconButton>
     ) : null);
 

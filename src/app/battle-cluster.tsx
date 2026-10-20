@@ -21,7 +21,7 @@ function BattleAutoplayToggle({ enabled, onToggle }: { enabled: boolean; onToggl
       aria-pressed={enabled}
       data-testid="autoplay-toggle"
     >
-      <Repeat className="h-6 w-6" />
+      <Repeat />
     </ChromeIconButton>
   );
 }
@@ -42,7 +42,7 @@ function BattleSkipCombatButton({ onSkip, disabled }: { onSkip: () => void; disa
         onFocus={onFocusCapture}
         onBlur={onBlurCapture}
       >
-        <SkipForward className="h-6 w-6" />
+        <SkipForward />
       </ChromeIconButton>
       <PortaledTooltip
         triggerRef={triggerRef}

@@ -30,7 +30,7 @@ export function TraitBox({ trait, variant = "default" }: { trait: EnemyTrait; va
       {i18n.displayText(
         createElement(Icon, {
           "aria-hidden": true,
-          className: cn("shrink-0", compact ? "size-[calc(1.5*var(--content-rem,1rem))]" : "size-9", colorClass),
+          className: cn(compact ? "text-[length:calc(0.875*var(--content-rem,1rem))]" : "text-lg", colorClass),
         }),
       )}
       <div className="min-w-0">

@@ -109,7 +109,7 @@ export function ArmoryInventoryMenu({
               className="h-8 w-8 shrink-0"
               onClick={() => onDismiss(true)}
             >
-              <X aria-hidden="true" className="h-4 w-4" />
+              <X aria-hidden="true" />
             </Button>
           </div>
           {children}

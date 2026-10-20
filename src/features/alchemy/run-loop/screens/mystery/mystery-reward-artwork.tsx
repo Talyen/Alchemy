@@ -28,7 +28,7 @@ export function MysteryCardRewardItem({
   );
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className={cn("flex flex-col items-center gap-3", viewCardWidthClass)}>
       <BattleCardButton
         card={card}
         hovered={isHovered}
@@ -57,11 +57,17 @@ export function MysteryEquipmentRewardItem({
   useGameTranslation();
   const gear = "instanceId" in item;
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className={cn("flex flex-col items-center gap-3", viewCardWidthClass)}>
       {gear ? (
-        <GearTile instance={item} interactionKey={interactionKey} />
+        <GearTile instance={item} interactionKey={interactionKey} className={viewCardWidthClass} />
       ) : (
-        <TrinketTile trinket={item} interactionKey={interactionKey} as="button" temporary />
+        <TrinketTile
+          trinket={item}
+          interactionKey={interactionKey}
+          as="button"
+          className={viewCardWidthClass}
+          temporary
+        />
       )}
       <p className={controlLabelClass}>
         {gear ? <GearItemTitle instance={item} /> : <TrinketItemTitle trinket={item} />}
