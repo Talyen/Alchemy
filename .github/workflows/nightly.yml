@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "0 6 * * *"
   workflow_dispatch:
+    inputs:
+      discovery_cycle:
+        description: "Replay a prior run number's performance seeds (0 uses this run)"
+        type: number
+        default: 0
 
 permissions:
   contents: read
@@ -162,7 +167,7 @@ jobs:
       - name: Select rotating seed
         id: seed
         run: |
-          seed=$(node --input-type=module -e "import { selectDiscoverySeed } from './performance/case-selection.mjs'; console.log(selectDiscoverySeed(${{ github.run_number }}, ${{ matrix.slot }}));")
+          seed=$(node --input-type=module -e "import { selectDiscoverySeed } from './performance/case-selection.mjs'; console.log(selectDiscoverySeed(${{ inputs.discovery_cycle || github.run_number }}, ${{ matrix.slot }}));")
           echo "value=$seed" >> "$GITHUB_OUTPUT"
 
       - name: Run seeded journey
