@@ -57,7 +57,7 @@ it("scales every nested Luck outcome without changing its probabilities", () => 
       [chance([{ kind: "gain-gold", amount: 8 }], [{ kind: "player-status", status: "block", amount: 8 }])],
     ),
   ]);
-  expect(mixed.descriptionLines).toEqual(["Gain 8 Mana, Gold, or Block", "Consume"]);
+  expect(mixed.descriptionLines).toEqual(["50% chance: Gain 8 Mana", "Otherwise: Gain 8 Gold or Block", "Consume"]);
 });
 
 it("keeps distinct ingredients and same-ID ingredients with different nested outcomes separate", () => {

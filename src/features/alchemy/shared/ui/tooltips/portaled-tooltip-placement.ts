@@ -110,30 +110,35 @@ export function usePortaledTooltipPlacement(
             padding: { top: padding, bottom: padding, left: horizontalInset, right: horizontalInset },
           }),
         ],
-      }).then(({ x, y, placement: finalPlacement }) => {
-        if (cancelled || currentMeasurement !== measurement) return;
-        const left = `${x}px`;
-        // Anchor fixed above panels directly to the artwork so resizing and
-        // celebratory scale never feed transformed panel dimensions back into placement.
-        const tooltipStyle: CSSProperties =
-          !allowFlip && finalPlacement === "top"
-            ? {
-                left,
-                bottom: `${Math.min(
-                  window.innerHeight - trigger.getBoundingClientRect().top + padding,
-                  window.innerHeight - bounds.top - padding - tooltipEl.offsetHeight,
-                )}px`,
-              }
-            : { left, top: `${y}px` };
-        setPosition((previous) =>
-          previous.placement === finalPlacement &&
-          previous.tooltipStyle?.left === tooltipStyle.left &&
-          previous.tooltipStyle?.top === tooltipStyle.top &&
-          previous.tooltipStyle?.bottom === tooltipStyle.bottom
-            ? previous
-            : { placement: finalPlacement, tooltipStyle },
-        );
-      });
+      }).then(
+        ({ x, y, placement: finalPlacement }) => {
+          if (cancelled || currentMeasurement !== measurement) return;
+          const left = `${x}px`;
+          // Anchor fixed above panels directly to the artwork so resizing and
+          // celebratory scale never feed transformed panel dimensions back into placement.
+          const tooltipStyle: CSSProperties =
+            !allowFlip && finalPlacement === "top"
+              ? {
+                  left,
+                  bottom: `${Math.min(
+                    window.innerHeight - trigger.getBoundingClientRect().top + padding,
+                    window.innerHeight - bounds.top - padding - tooltipEl.offsetHeight,
+                  )}px`,
+                }
+              : { left, top: `${y}px` };
+          setPosition((previous) =>
+            previous.placement === finalPlacement &&
+            previous.tooltipStyle?.left === tooltipStyle.left &&
+            previous.tooltipStyle?.top === tooltipStyle.top &&
+            previous.tooltipStyle?.bottom === tooltipStyle.bottom
+              ? previous
+              : { placement: finalPlacement, tooltipStyle },
+          );
+        },
+        () => {
+          // Positioning can reject when the trigger unmounts mid-flight; the next autoUpdate pass repositions.
+        },
+      );
     };
 
     update();

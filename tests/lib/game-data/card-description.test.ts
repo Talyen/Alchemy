@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getEffectiveCardDescriptionLines } from "@/lib/game-data";
+import { cardById, getEffectiveCardDescriptionLines } from "@/lib/game-data";
 import { makeTestCard } from "../../fixtures/cards";
 
 describe("getEffectiveCardDescriptionLines", () => {
@@ -28,6 +28,16 @@ describe("getEffectiveCardDescriptionLines", () => {
     expect(getEffectiveCardDescriptionLines({ ...card, descriptionLines: [] })).toEqual([
       "Deals 1 Bleed or Physical damage each turn",
       "Companion",
+    ]);
+  });
+
+  it("shows per-level odds for nested chances instead of implying equal outcomes", () => {
+    // Luck Potion resolves 50% Mana, then 50% Gold within the remainder: the
+    // flat "Gain X A, B, or C" form would advertise three equal outcomes.
+    expect(cardById["luck-potion"]!.descriptionLines).toEqual([
+      "50% chance: Gain 4 Mana",
+      "Otherwise: Gain 4 Gold or Block",
+      "Consume",
     ]);
   });
 });

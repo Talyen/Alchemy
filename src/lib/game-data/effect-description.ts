@@ -256,7 +256,19 @@ function chanceLines(
     return [["Gain ", value(failure, childAddress(address, 1), "amount"), " Gold or Wish"]];
   const choices = resourceChoices(effect, address);
   const firstChoice = choices?.[0];
-  if (firstChoice && choices.every((choice) => choice.amount === firstChoice.amount))
+  // A flat "Gain X A, B, or C" line reads as one shared draw, so it must only
+  // collapse a single even chance. Nested trees carry per-level odds (Luck
+  // Potion is 50% Mana, then 50% Gold within the remainder); collapsing them
+  // would advertise three equal outcomes for a 50/25/25 split.
+  const hasNestedChance =
+    effect.successEffects.some((child) => child.kind === "chance") ||
+    effect.failureEffects.some((child) => child.kind === "chance");
+  if (
+    !hasNestedChance &&
+    effect.probability === 0.5 &&
+    firstChoice &&
+    choices.every((choice) => choice.amount === firstChoice.amount)
+  )
     return [
       [
         "Gain ",
