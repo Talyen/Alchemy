@@ -104,3 +104,16 @@ html:lang(zh-Hans) {
     user-select: text;
   }
 }
+
+/* Neutral, consistent keyboard focus replaces the browser's blue outline. */
+:focus-visible {
+  --tw-ring-color: #d6d3ce;
+  outline: 2px solid #d6d3ce;
+  outline-offset: 3px;
+}
+
+html:not([data-focus-navigation="true"]) :focus {
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  outline: none;
+}

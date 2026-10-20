@@ -1,3 +1,4 @@
+import { installFocusInputForTests } from "../../../../../helpers/focus-input-test";
 import "../../../../../helpers/mock-audio";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -11,6 +12,8 @@ import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import { patchBattleState } from "../../../../../fixtures/battle";
 import { installReadyArtworkForTests, waitForArtwork } from "../../../../../helpers/artwork-test";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
+
+installFocusInputForTests(true);
 
 installReadyArtworkForTests();
 afterEach(() => {

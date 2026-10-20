@@ -1,3 +1,4 @@
+import { focusControl } from "@/features/alchemy/shared/ui/focus-navigation";
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -108,7 +109,7 @@ export function LabyrinthMapViewport({
           inspector.style.visibility = "visible";
           if (needsFocus) {
             needsFocus = false;
-            inspector.focus({ preventScroll: true });
+            focusControl(inspector);
           }
         },
         () => {

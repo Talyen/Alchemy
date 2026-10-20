@@ -1,3 +1,4 @@
+import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
 import { initializeAlchemyVisitForTest as initializeAlchemyVisit } from "../../../../helpers/visit-initialization";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,6 +12,8 @@ import { cardById, keywordDefinitions, type BattleCard } from "@/lib/game-data";
 import { getTransmutationVariants, getTransmutationOffers } from "@/lib/alchemist/transmutation";
 import { defaultGameSession } from "@/app/application-session";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
+
+installFocusInputForTests(true);
 vi.mock("@/lib/audio", () => ({ playUISound: vi.fn() }));
 vi.mock("@/features/alchemy/shared/ui/cards/selectable-card", () => ({
   SelectableCard: ({ card, onSelect, disabled }: { card: BattleCard; onSelect: () => void; disabled?: boolean }) => (

@@ -78,13 +78,13 @@ resetting pagination cannot change the closing panel. Reopening cancels removal 
 starts a fresh panel mount and artwork gate. Consumers retain action-specific guards
 such as Wish's single-selection latch and confirmation buttons' disabled state.
 `dialog-focus-owner.ts` owns the ordered interactive panel stack, focus containment,
-initial focus, recovery, and opener restoration. `useDialogFocus` registers a panel
+initial focus, recovery, and opener restoration during intentional keyboard navigation. `useDialogFocus` registers a panel
 with that owner; controller traversal uses the same active panel rather than portal
 DOM order. One shared focus listener and mutation observer serve the stack and are
 released when the last panel and pending restoration are gone.
 Dialog focus containment belongs to the most recently opened interactive panel.
 Opening the pause menu over a pending Wish suspends the Wish's focus trap;
-closing the menu restores focus to the choice. Inert and hidden panels do not reclaim focus. When a focused choice disappears or
+closing the menu through a keyboard action restores focus to the choice. Escape clears focus instead. Inert and hidden panels do not reclaim focus. When a focused choice disappears or
 becomes unavailable, focus recovers inside the active panel; removing a covered
 panel preserves the foreground selection.
 Confirmation focus containment pauses while the panel is inert; focus returns
@@ -107,7 +107,7 @@ controls within the screen or top dialog. Left/right adjust horizontal sliders;
 up/down leave them. Text editing and dropdowns keep their own arrow behavior.
 Tab/Shift+Tab remain keyboard traversal; Steam Input uses F7/Tab for bumpers
 to avoid the Steam overlay chord. Directional focus stops at layout edges.
-F7 counts as keyboard input for deferred screen-focus recovery while artwork is preparing.
+Tab, F7, and arrow navigation enable focus navigation through the shared `focus-input.ts` owner. Enter and Space activate an already focused control; they never enable focus navigation themselves. Escape clears focus and cancels automatic handoffs, including screen recovery, dialog entry/restoration, and delayed artwork readiness. Pointer input and window blur disable automatic handoffs. Keyboard focus uses a neutral warm gray outline.
 Window switching (Alt+Tab or Command+Tab) does not traverse controls or arm deferred
 focus recovery. Window blur cancels pending screen and hand focus recovery without
 opening the game menu; existing focus stays in place on return. Steam overlay
@@ -115,18 +115,18 @@ activation still opens the battle pause menu.
 The controlled select state registers above dialogs in the Escape stack so it
 cannot accidentally navigate out of Options or Armory.
 
-[Screen focus](../src/app/use-screen-focus.ts) recovers after keyboard-driven screen
+[Screen focus](../src/app/use-screen-focus.ts) recovers after intentional focus navigation across screen
 readiness changes when the old focus is gone or unavailable. Pointer input cancels
 that behavior. Ready, visible controls are selected through
 [shared focus eligibility](../src/features/alchemy/shared/ui/focus-navigation.ts);
 inert, hidden, and natively disabled controls are excluded. Inspection-only
 aria-disabled controls can still be traversed and inspected. Recovery scrolls
 only as needed. Closing inspection does not trigger screen-focus recovery.
-Dialogs restore their opener or fall back to the active screen when a previously
+During focus navigation, dialogs restore their opener or fall back to the active screen when a previously
 focused opener disappeared. Opening a dialog with no control focused restores
 that unfocused state on close. Deferred restoration retains an opener through temporary screen preparation,
 including when it stays inert beyond the first recovery frame. Fresh pointer input
-or focus elsewhere cancels that pending restoration. Existing focus is respected when deferred recovery runs.
+or focus elsewhere cancels that pending restoration. Existing focus is respected when deferred recovery runs. Pointer-opened dialogs and pointer-selected results do not select a control automatically. Inventory search focuses its text field only when explicitly opened, not merely because a saved filter keeps it expanded.
 
 Battle hand recovery is local to the hand and uses stable card identities. After a
 keyboard play, focus goes to the next playable card in the prior visual order,

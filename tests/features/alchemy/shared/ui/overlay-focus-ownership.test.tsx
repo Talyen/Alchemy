@@ -1,4 +1,5 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { enableFocusNavigation, trackFocusInput } from "@/features/alchemy/shared/ui/focus-input";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDialogFocus } from "@/features/alchemy/shared/ui/use-dialog-focus";
 import { ConfirmationDialog } from "@/features/alchemy/shared/ui/dialogs";
@@ -29,6 +30,7 @@ function Dialog({
 const scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
 
 beforeEach(() => {
+  enableFocusNavigation();
   vi.useFakeTimers();
   vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([
     new DOMRect(0, 0, 100, 30),
@@ -39,6 +41,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  delete document.documentElement.dataset.focusNavigation;
   document.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
   resetEscapeStackForTests();
   vi.useRealTimers();
@@ -56,6 +59,43 @@ async function settle() {
 }
 
 describe("overlay focus ownership", () => {
+  it.each(["Escape", "pointer", "blur"])("cancels delayed dialog handoffs after %s", async (input) => {
+    const stop = trackFocusInput();
+    try {
+      const content = (open: boolean, preparing = false) => (
+        <>
+          <div data-screen-content inert={preparing}>
+            <button>Opener</button>
+          </div>
+          {open && <Dialog name="Inspect" />}
+        </>
+      );
+      const view = render(content(false));
+      fireEvent.keyDown(window, { key: "Tab" });
+      const opener = screen.getByRole("button", { name: "Opener" });
+      opener.focus();
+      view.rerender(content(true));
+      await settle();
+      view.rerender(content(false, true));
+      if (input === "Escape") fireEvent.keyDown(window, { key: "Escape" });
+      else if (input === "pointer") fireEvent.pointerDown(document.body);
+      else fireEvent.blur(window);
+      view.rerender(content(false));
+      await settle();
+      expect(document.activeElement).toBe(document.body);
+      // Reopening a pointer/dismissal-driven dialog must stay unfocused, even
+      // after its controls finish preparing. Tab can explicitly enter it again.
+      view.rerender(content(true));
+      await settle();
+      expect(document.activeElement).toBe(document.body);
+      fireEvent.keyDown(window, { key: "Tab" });
+      await settle();
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Inspect first" }));
+    } finally {
+      stop();
+    }
+  });
+
   it.each([false, true])(
     "falls back after a completed action disables its opener (screen preparing: %s)",
     async (preparing) => {

@@ -7,7 +7,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it.each(["bumper", "Alt+Tab", "blur", "blur after ready"])(
+it.each(["bumper", "Alt+Tab", "blur", "blur after ready", "Escape", "pointer", "Enter", " "])(
   "handles %s during screen preparation without unintended focus",
   (input) => {
     const frames = new Map<number, FrameRequestCallback>();
@@ -23,6 +23,11 @@ it.each(["bumper", "Alt+Tab", "blur", "blur after ready"])(
     }
     const { rerender } = render(<PreparingScreen ready={false} />);
     fireEvent.keyDown(window, { key: "F7" });
+    if (["Escape", "Enter", " "].includes(input)) {
+      if (input !== "Escape") fireEvent.pointerDown(document.body);
+      fireEvent.keyDown(window, { key: input });
+    }
+    if (input === "pointer") fireEvent.pointerDown(document.body);
     if (input === "Alt+Tab") fireEvent.keyDown(window, { key: "Tab", altKey: true });
     if (input === "blur") {
       fireEvent.blur(window);
@@ -87,3 +92,27 @@ it.each([{ altKey: true }, { altKey: true, shiftKey: true }, { metaKey: true }])
     expect(activate).not.toHaveBeenCalled();
   },
 );
+
+it("does not turn text editing or dropdown arrows into focus navigation", () => {
+  function EditingScreen() {
+    useScreenFocus("options", true);
+    return (
+      <>
+        <input aria-label="Search" />
+        <select aria-label="Language">
+          <option>English</option>
+        </select>
+      </>
+    );
+  }
+  render(<EditingScreen />);
+  for (const control of [screen.getByRole("textbox"), screen.getByRole("combobox")]) {
+    control.focus();
+    fireEvent.keyDown(control, { key: "ArrowDown" });
+    expect(document.documentElement.dataset.focusNavigation).toBe("false");
+  }
+  fireEvent.keyDown(window, { key: "Tab", isComposing: true });
+  expect(document.documentElement.dataset.focusNavigation).toBe("false");
+  fireEvent.keyDown(window, { key: "Tab" });
+  expect(document.documentElement.dataset.focusNavigation).toBe("true");
+});
