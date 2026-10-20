@@ -1969,6 +1969,7 @@
   "mystery.gain-xp": {"text":"Erhalte <amount/> <keyword/>-EP","sourceHash":"bb2164c89e31147696ec5cec8703171865f844d4d633c881e1ab3d96cee80778","reviewed":true},
   "mystery.gear-preview-rolls": {"text":"Die Effekte der Ausrüstung werden nach der Auswahl ausgewürfelt.","sourceHash":"b93a8ab10d5dc9720975254d5f91895f506f401d3f86d698e0636f6fa9693d12","reviewed":true},
   "mystery.heal": {"text":"Stelle <amount/> <health/> wieder her","sourceHash":"27cb7103e429eb5753c815056dcbe77584457f0e9955d4534c6d5eb0081e9a87","reviewed":true},
+  "mystery.keyword-xp-label": {"text":"{{keyword}}-EP","sourceHash":"d1e43f4967210dd58610d47fcb50eb40b33f3b1a5414959d83b950966fc2dfb8","reviewed":true},
   "options.language-choice": {"text":"Sprache","sourceHash":"a6154da0a1792c4ddf2c5346968308b553fa506cce90dee525185294476775d2","reviewed":true},
   "run-end.continue": {"text":"Weiter","sourceHash":"b7e64053b1aaf99a161184fbe5d282859a2132cc8d7da0e165966b0c055bb747","reviewed":true},
   "shop.buy": {"text":"{{title}} für {{price}} Gold kaufen","sourceHash":"1403e9a7c77b361a630d7acfb8ae1a3cfe24fa021f15ad5a16d1985bbea337f7","reviewed":true},

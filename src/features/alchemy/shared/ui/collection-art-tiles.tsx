@@ -122,6 +122,7 @@ export function TrinketTile({
 
 export interface GearTileProps {
   instance: GearInstance;
+  className?: string | undefined;
   interactionKey: string;
   as?: "button" | "div" | undefined;
   selected?: boolean | undefined;
@@ -140,6 +141,7 @@ export interface GearTileProps {
 
 export function GearTile({
   instance,
+  className,
   interactionKey,
   as,
   selected,
@@ -162,7 +164,7 @@ export function GearTile({
       interactionKey={interactionKey}
       title={i18n.displayText(title)}
       art={definition?.art ?? ""}
-      className={cn(cardSurfaceClass, getTileWidthClass("collection"), gearArtAspectClass)}
+      className={cn(cardSurfaceClass, getTileWidthClass("collection"), gearArtAspectClass, className)}
       imageClassName={gearArtFillClass}
       shineOnHover
       shineColor={

@@ -1969,6 +1969,7 @@
   "mystery.gain-xp": {"text":"<keyword/>の経験値を<amount/>得る","sourceHash":"e0a20ef0efeccbb32e413466e6e4f63954817a9aa8773c7b31992c11fb86eaac","reviewed":true},
   "mystery.gear-preview-rolls": {"text":"装備の効果は選択後に抽選されます。","sourceHash":"a4abca40cbdb5e9701aa50377ec392dae8c3ed8a504be71c6af1ce9839973c67","reviewed":true},
   "mystery.heal": {"text":"<health/>を<amount/>回復する","sourceHash":"bff435620c859ed7f420fbb932ab8cc7236dfb4b4ad9167ea5f055f4b62c144a","reviewed":true},
+  "mystery.keyword-xp-label": {"text":"{{keyword}}の経験値","sourceHash":"197c9444fd8fa6c6f5605e3af16028acb58affaf3c1b3cd6f92271964975c85a","reviewed":true},
   "options.language-choice": {"text":"言語","sourceHash":"d739beb20889b734bd31b6d52f05dd0b0193d64d88ae9eb75dd12a1773094111","reviewed":true},
   "run-end.continue": {"text":"続ける","sourceHash":"66c93c16a1c2a49148e4cbcf795805387681c018d17f2efc4f3cd112d48e7e81","reviewed":true},
   "shop.buy": {"text":"{{title}}を{{price}}ゴールドで購入","sourceHash":"d362a4f5a695d0fa88830f6bf9d5689d468f5dc4b17deef42733c27faa0b3269","reviewed":true},

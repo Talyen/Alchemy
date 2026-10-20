@@ -4278,6 +4278,7 @@
   "mystery.gain-xp": {"text":"Gain <amount/> <keyword/> XP","context":"features/alchemy/run-loop/screens/mystery/mystery-effect-badge.tsx","slots":{"amount":"effect.amount","keyword":"<KeywordTag keywordId={effect.keyword} />"},"terms":[]},
   "mystery.gear-preview-rolls": {"text":"Gear effects are rolled after choosing.","context":"features/alchemy/run-loop/screens/mystery/mystery-choice-rewards.tsx","terms":[]},
   "mystery.heal": {"text":"Restore <amount/> <health/>","context":"features/alchemy/run-loop/screens/mystery/mystery-effect-badge.tsx","slots":{"amount":"effect.amount","health":"<KeywordTag keywordId=\"health\" />"},"terms":["Health"]},
+  "mystery.keyword-xp-label": {"text":"{{keyword}} XP","context":"features/alchemy/run-loop/screens/mystery/mystery-choice-rewards.tsx","parameters":{"keyword":"i18n.displayText(keyword.label)"},"terms":[]},
   "options.clear-confirm": {"text":"Are you sure you wish to clear all Save Data? This cannot be undone","context":"features/alchemy/meta/screens/options-screen.tsx","aliasOf":"description.7cd96a42a90593c6","values":{},"terms":["Wish"]},
   "options.language-choice": {"text":"Language","context":"features/alchemy/meta/screens/options/options-panels.tsx","terms":[]},
   "run-end.continue": {"text":"Continue","context":"app/screen-routes/run-end-routes.tsx","terms":[]},

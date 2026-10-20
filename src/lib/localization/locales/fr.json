@@ -1969,6 +1969,7 @@
   "mystery.gain-xp": {"text":"Gagnez <amount/> XP de <keyword/>","sourceHash":"9d61686b0a6efc78b73884e911d5c4013cb0fd7b3a996df142ce08da3c9f5848","reviewed":true},
   "mystery.gear-preview-rolls": {"text":"Les effets de l'équipement sont tirés après le choix.","sourceHash":"afeba1ba448110dfb58ee947f00fe139fc017fccc178d5a3703212536019a5d0","reviewed":true},
   "mystery.heal": {"text":"Restaurez <amount/> <health/>","sourceHash":"34caf91c1182b02269aee6557d9c27677ba9f0bc293bc6e9f1d751cf4044962f","reviewed":true},
+  "mystery.keyword-xp-label": {"text":"XP de {{keyword}}","sourceHash":"a452a2f34ab1da700953b9c0a1c3c30c7b6398bc2f0f4d63ab470fc10a49d2fa","reviewed":true},
   "options.language-choice": {"text":"Langue","sourceHash":"9d0cdf75b7f90c0fe66af870a0be3982107ee79d506e2178f72bb8166f6bd811","reviewed":true},
   "run-end.continue": {"text":"Continuer","sourceHash":"0be707fe07329d730bc7289f0d9ea60fbe49a8b825d610f9f0e41596ea054cf0","reviewed":true},
   "shop.buy": {"text":"Acheter {{title}} pour {{price}} Or","sourceHash":"7c91fda8cb2f6855f4fa56183f82ba049774f01ab3206b19528489af53e948be","reviewed":true},
