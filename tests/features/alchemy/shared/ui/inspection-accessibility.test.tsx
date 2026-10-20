@@ -49,7 +49,7 @@ describe("inspection through keyboard and Steam Input focus", () => {
     const { container } = render(<KeywordTag keywordId="burn" pill showTooltip />);
     await userEvent.tab();
     expect(document.activeElement).toBe(container.firstElementChild);
-    await waitFor(() => expect(document.body.textContent).toContain("reduces by half each turn"));
+    await waitFor(() => expect(document.body.textContent).toContain("Burn deals damage each turn, then halves."));
   });
 
   it("inspects and chooses a keyword chip through the same keyboard target", async () => {
@@ -57,7 +57,7 @@ describe("inspection through keyboard and Steam Input focus", () => {
     const { container } = render(<KeywordTag keywordId="burn" pill showTooltip onSelect={onSelect} />);
     await userEvent.tab();
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Choose Burn" }));
-    await waitFor(() => expect(document.body.textContent).toContain("reduces by half each turn"));
+    await waitFor(() => expect(document.body.textContent).toContain("Burn deals damage each turn, then halves."));
     expect(container.querySelector("button button")).toBeNull();
     await userEvent.keyboard("{Enter}");
     expect(onSelect).toHaveBeenCalledOnce();

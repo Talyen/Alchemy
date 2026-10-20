@@ -152,7 +152,7 @@ Behavioral contracts: [Talent manifests and progression](./TALENT_RULES.md#talen
 
 Define talents in the ordered `src/lib/game-data/talents/talent-rows.ts` catalog. Each keyword builder fixes the keyword; the first call declares saved ID and name, and the second supplies icon, description, and typed bonus fields. Preserve row order because offers and progression use it.
 
-Numeric and boolean fields set their authored values; arrays concatenate. Wrap a stackable numeric bonus in `add(amount)`, including when two keywords write the same bonus. Keep talent-owned magnitudes beside their descriptions. Talent and keyword descriptions omit periods, as enforced by content typography validation.
+Numeric and boolean fields set their authored values; arrays concatenate. Wrap a stackable numeric bonus in `add(amount)`, including when two keywords write the same bonus. Keep talent-owned magnitudes beside their descriptions. Talent descriptions omit periods, as enforced by content typography validation. Keyword tooltips may use full sentences with periods.
 
 1. Ordinary bonus field types and neutral manifest defaults derive from the catalog. Register only Homestead-only fields and nonzero defaults (such as `healMultiplier: 1`) in `talents/manifest-defaults.ts`. Numeric fields start at zero, flags at false, arrays and dictionaries empty, and threshold rewards at null. `talent-effect-manifest.ts` re-exports the derived type.
 2. Add the talent row and register its Lucide icon in `src/features/alchemy/shared/config/talent-icons.ts`. `talent-pool-definitions.ts` owns the derived ID and keyword indexes; the talent barrel exposes the catalog.
@@ -197,7 +197,7 @@ Homestead screens (like all screen directories) are excluded from `vitest` cover
 4. Ordinary XP already flows through `awardCardXP` in `src/features/alchemy/shared/stores/write/run-progress.ts`; add a separate trigger there only when the mechanic needs one, as Dodge does. `src/lib/game-data/talents/progression.ts` owns point math, not event triggering. Add its talent tree through [Add a new talent](#add-a-new-talent).
 5. Update Transmutation in `src/lib/game-constants/transmutation.ts`: assign the keyword to `TRANSMUTATION_KEYWORD_GROUPS` and add its title prefix to `TRANSMUTATION_PREFIXES`. Implement compatible conversions or additions in `getTransmutationVariants` in `src/lib/alchemist/transmutation.ts`; listing a keyword alone does not make it offerable. Verify a useful alteration and its saved preview under the [Transmutation contract](#transmutation-keywords-and-potion-brewing).
 
-Keyword labels and descriptions must pass the typography rules (no em dashes; descriptions stay period-free — see `src/lib/content-validation/validators-typography.ts`). Run `npm run content:audit` before handing off.
+Keyword labels and descriptions must pass the typography rules (no em dashes; tooltip sentences may use periods — see `src/lib/content-validation/validators-typography.ts`). Run `npm run content:audit` before handing off.
 
 ---
 

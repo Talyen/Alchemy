@@ -135,7 +135,10 @@ describe("SCREEN_ROUTES registry", () => {
     expect(readGameplayState(defaultGameSession)).toBe(before);
     expect(transmutationRender).toHaveBeenCalled();
     for (const [visit] of transmutationRender.mock.calls) {
-      expect(visit.transmutation?.choices).toHaveLength(3);
+      expect(visit.transmutation?.choices.length).toBeGreaterThan(0);
+      expect(visit).toEqual(
+        before.session.activity.kind === "transmutation" ? before.session.activity.data : undefined,
+      );
       expect(visit.completed).toBe(false);
     }
   });

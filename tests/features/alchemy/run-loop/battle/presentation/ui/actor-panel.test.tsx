@@ -46,9 +46,10 @@ describe("ArtPanel hover motion", () => {
     await waitFor(() => {
       const tooltip = document.querySelector(".hover-popup-panel[data-visible]");
       expect(tooltip?.textContent).toContain("3 protected turns remaining.");
-      expect(tooltip?.textContent).toContain("Fatal damage leaves you at 1 Health while protected.");
-      expect(tooltip?.textContent).toContain("Healing does not end protection.");
-      expect(tooltip?.textContent).toContain("Once protection expires, fatal damage can defeat you.");
+      expect(tooltip?.textContent).toContain(
+        "Death's Door keeps you at 1 Health when taking fatal damage while protected.",
+      );
+      expect(tooltip?.textContent).toContain("Triggers once per combat.");
     });
     rerender(<ArtPanel {...baseProps} deathsDoorActive deathsDoorGraceTurnsRemaining={1} />);
     expect(screen.getByRole("button", { name: "Death's Door: 1 protected turn remaining" })).toBeTruthy();

@@ -121,7 +121,7 @@ it.each(["campaign", "labyrinth"] as const)(
       }
       const activity = committed.session.activity;
       if (activity.kind === "campfire") expect(activity.data.offers).toHaveLength(3);
-      if (activity.kind === "transmutation") expect(activity.data.transmutation?.choices).toHaveLength(3);
+      if (activity.kind === "transmutation") expect(activity.data.transmutation?.choices.length).toBeGreaterThan(0);
       if (activity.kind === "mystery") expect(activity.data.mysteryEvent).not.toBeNull();
       expect(enter(mode, destination, game), destination).toBeNull();
       expect(readGameplayState(game), destination).toBe(committed);

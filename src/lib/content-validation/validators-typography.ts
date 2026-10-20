@@ -97,9 +97,8 @@ export function validateTypography(collector: Collector): void {
 
   for (const [id, definition] of Object.entries(keywordDefinitions)) {
     check("keywords", id, "Keyword label", definition.label, true);
-    // The approved Forge tooltip is a full sentence; retain its terminal period.
-    const description = id === "forge" ? definition.description.replace(/\.$/u, "") : definition.description;
-    check("keywords", id, "Keyword description", description);
+    // Keyword tooltips use full sentences; inline card and Talent lines stay period-free.
+    check("keywords", id, "Keyword description", definition.description, true);
   }
 
   for (const [id, trait] of Object.entries(ENCOUNTER_TRAITS)) {
