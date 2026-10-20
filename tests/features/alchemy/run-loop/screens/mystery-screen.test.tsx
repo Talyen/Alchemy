@@ -2,7 +2,7 @@ import "../../../../helpers/mock-audio";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MysteryScreen } from "@/features/alchemy/run-loop/screens/mystery/mystery-screen";
-import { cardById } from "@/lib/game-data";
+import { cardById, trinketLibrary } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
 import { findMysteryEvent, type MysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { computeGoldReward, computeMysteryMaterialReward } from "@/lib/homestead/material-rewards";
@@ -70,6 +70,8 @@ describe("Mystery action feedback", () => {
       />,
     );
     const choice = screen.getByRole("button", { name: "Take" });
+    expect(screen.getByText("+6")).toBeTruthy();
+    expect(screen.getByText("+14")).toBeTruthy();
     fireEvent.mouseEnter(choice.parentElement!);
     const tooltip = await screen.findByRole("tooltip");
     expect(tooltip.textContent).toContain("6 Gold");
@@ -79,6 +81,54 @@ describe("Mystery action feedback", () => {
     expect(offered.choices[0]?.effects).toEqual([
       { kind: "gainGold", amount: 3 },
       { kind: "gainMaterial", material: "gems", amount: 10 },
+    ]);
+  });
+
+  it("inspects each shelf's rewards without committing until its choice button is activated", async () => {
+    const boon = trinketLibrary.find((entry) => entry.id === "icy-heart")!;
+    const offered: MysteryEvent = {
+      ...event,
+      choices: [
+        { label: "Take the Heart", effects: [{ kind: "gainTrinket", trinketId: boon.id }] },
+        { label: "Take the Card", effects: [{ kind: "addCard", cardId: "slash" }] },
+        { label: "Keep the Heart", effects: [{ kind: "gainTrinket", trinketId: boon.id }] },
+      ],
+    };
+    const onChoose = vi.fn(() => true);
+    render(<MysteryScreen {...props} event={offered} findTrinket={() => boon} onChoose={onChoose} />);
+
+    const boonArt = screen.getAllByRole("button", { name: boon.title })[0]!;
+    fireEvent.focus(boonArt);
+    expect((await screen.findByRole("tooltip")).textContent).toContain("Physical");
+    fireEvent.click(boonArt);
+    expect(onChoose).not.toHaveBeenCalled();
+    fireEvent.blur(boonArt);
+
+    const cardArt = screen.getByRole("button", { name: "Slash" });
+    fireEvent.mouseEnter(cardArt.parentElement!);
+    expect((await screen.findByRole("tooltip")).textContent).toContain("Physical");
+    fireEvent.click(cardArt);
+    expect(onChoose).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Take the Card" }));
+    expect(onChoose).toHaveBeenCalledExactlyOnceWith(offered.choices[1]);
+  });
+
+  it("previews guaranteed gear artwork without claiming rolled effects or accepting the choice", async () => {
+    const offered: MysteryEvent = {
+      ...event,
+      choices: [
+        { label: "Take the Ring", effects: [{ kind: "gainGeneratedGear", baseItemId: "sapphire-ring", astral: true }] },
+      ],
+    };
+    const onChoose = vi.fn(() => true);
+    render(<MysteryScreen {...props} event={offered} onChoose={onChoose} />);
+    const ring = screen.getByRole("button", { name: "Astral Sapphire Ring" });
+    fireEvent.focus(ring);
+    expect((await screen.findByRole("tooltip")).textContent).toContain("Gear effects are rolled after choosing.");
+    fireEvent.click(ring);
+    expect(onChoose).not.toHaveBeenCalled();
+    expect(offered.choices[0]?.effects).toEqual([
+      { kind: "gainGeneratedGear", baseItemId: "sapphire-ring", astral: true },
     ]);
   });
 

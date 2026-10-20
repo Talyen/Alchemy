@@ -1975,6 +1975,7 @@
   "mystery.choose-card": ["Choose 1 of {{choices}} cards","Wähle 1 von {{choices}} Karten","从{{choices}}张卡牌中选择1张","Выберите 1 карту. Вариантов: {{choices}}","Elige 1 de {{choices}} cartas","Escolha 1 de {{choices}} cartas"],
   "mystery.choose-card-details": ["Choose 1 of {{choices}} cards to add to your deck","Wähle 1 von {{choices}} Karten für dein Deck","从{{choices}}张卡牌中选择1张加入牌组","Выберите 1 карту для колоды. Вариантов: {{choices}}","Elige 1 de {{choices}} cartas para añadir a tu mazo","Escolha 1 de {{choices}} cartas para adicionar ao baralho"],
   "mystery.gain-xp": ["Gain <amount/> <keyword/> XP","Erhalte <amount/> <keyword/>-EP","获得<amount/>点<keyword/>经验","Получите <amount/> опыта типа <keyword/>","Obtén <amount/> de EXP de <keyword/>","Ganhe <amount/> de EXP de <keyword/>"],
+  "mystery.gear-preview-rolls": ["Gear effects are rolled after choosing.","Die Effekte der Ausrüstung werden nach der Auswahl ausgewürfelt.","装备效果将在选择后随机生成。","Эффекты снаряжения определяются случайным образом после выбора.","Los efectos del equipo se generan al azar después de elegir.","Os efeitos do equipamento são gerados aleatoriamente após a escolha."],
   "mystery.heal": ["Restore <amount/> <health/>","Stelle <amount/> <health/> wieder her","恢复<amount/>点<health/>","Восстановите <amount/> ед. <health/>","Recupera <amount/> de <health/>","Recupere <amount/> de <health/>"],
   "options.language-choice": ["Language","Sprache","语言","Язык","Idioma","Idioma"],
   "run-end.continue": ["Continue","Weiter","继续","Продолжить","Continuar","Continuar"],

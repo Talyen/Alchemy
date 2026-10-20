@@ -6,71 +6,17 @@ import { type MaterialId } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 
 import { FoundResourcesRow } from "../../../shared/ui/found-resources-row";
-import {
-  bodyTextClass,
-  cardInteractiveGlowClass,
-  controlLabelClass,
-  getCardInspectionShineColors,
-  viewCardWidthClass,
-} from "@/features/alchemy/shared/config";
+import { bodyTextClass, controlLabelClass } from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEffect } from "@/lib/mystery";
 import type { GearInstance } from "@/lib/gear";
-import { BattleCardButton } from "../../../shared/ui/cards/card-button";
-import { CardTitle, getCardDisplayTitle } from "../../../shared/ui/cards/card-description-ui";
-import { GearTile, TrinketTile } from "../../../shared/ui/collection-art-tiles";
-import { GearItemTitle, TrinketItemTitle } from "../../../shared/ui/gear-item-title";
 import { MysteryEffectBadge } from "./mystery-effect-badge";
-import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { KeywordProgressGrid } from "../keyword-progress-grid";
+import { MysteryCardRewardItem, MysteryEquipmentRewardItem } from "./mystery-reward-artwork";
 import { pairMysteryEffectsWithGrants } from "./mystery-choice-utils";
 
 interface LookupProps {
   findCard: (id: string) => BattleCard | undefined;
   findTrinket: (id: string) => TrinketEntry | undefined;
-}
-
-function MysteryCardRewardItem({ card }: { card: BattleCard }) {
-  const i18n = useGameTranslation();
-  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
-    "mystery-reward",
-    card.id,
-  );
-
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <BattleCardButton
-        card={card}
-        hovered={isHovered}
-        onHoverStart={onHoverStart}
-        onHoverEnd={onHoverEnd}
-        ariaLabel={i18n.read(() => getCardDisplayTitle(card))}
-        shimmerActive={shimmerActive}
-        shimmerToken={shimmerToken}
-        shineColor={getCardInspectionShineColors(card)}
-        className={cn(viewCardWidthClass, cardInteractiveGlowClass)}
-      />
-      <p className={controlLabelClass}>
-        <CardTitle card={card} />
-      </p>
-    </div>
-  );
-}
-
-function MysteryEquipmentRewardItem({ item }: { item: TrinketEntry | GearInstance }) {
-  useGameTranslation();
-  const gear = "instanceId" in item;
-  return (
-    <div className="flex flex-col items-center gap-3">
-      {gear ? (
-        <GearTile instance={item} interactionKey="mystery-reward" />
-      ) : (
-        <TrinketTile trinket={item} interactionKey="mystery-reward" temporary />
-      )}
-      <p className={controlLabelClass}>
-        {gear ? <GearItemTitle instance={item} /> : <TrinketItemTitle trinket={item} />}
-      </p>
-    </div>
-  );
 }
 
 function MysteryRewardEffectItem({

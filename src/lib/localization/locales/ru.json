@@ -1952,6 +1952,7 @@
   "mystery.choose-card": {"text":"Выберите 1 карту. Вариантов: {{choices}}","sourceHash":"3420d9fa07b9be3311f18e73182b263cac7a1ade7879f2b2ef88a7f60474a34b","reviewed":true},
   "mystery.choose-card-details": {"text":"Выберите 1 карту для колоды. Вариантов: {{choices}}","sourceHash":"af243b4e818144cbd0c48037458c1af05b411da2e721730d34c31db0995de908","reviewed":true},
   "mystery.gain-xp": {"text":"Получите <amount/> опыта типа <keyword/>","sourceHash":"e05c75a27e6c4667b06342c53cd12ef87f4a13168fb6ba6833587e2fb209970b","reviewed":true},
+  "mystery.gear-preview-rolls": {"text":"Эффекты снаряжения определяются случайным образом после выбора.","sourceHash":"082ddcac5ced57382a3577e2a36a6313371ffbfff64470865d2095dd086e1f74","reviewed":true},
   "mystery.heal": {"text":"Восстановите <amount/> ед. <health/>","sourceHash":"d9f96700b5bbf3a1f60d1411788e65d32694164b66eec870adf5641dc30f7d64","reviewed":true},
   "options.language-choice": {"text":"Язык","sourceHash":"6d0e666cf56663e2717e3f9808ed9606dbbb419a61cbf7d1a24123fcb804be1a","reviewed":true},
   "run-end.continue": {"text":"Продолжить","sourceHash":"e97e3d14fe8a9b7cbac15f96319ea90214c47142fb97455799dbb86667261092","reviewed":true},
