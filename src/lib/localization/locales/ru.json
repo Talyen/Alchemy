@@ -2120,7 +2120,7 @@
   "ui.item-picker-grid.d1": {"text":"Несовместимо с текущим снаряжением","sourceHash":"bf770c3f579ddcb064f1d89e58c91e53283b668b20617093c31c67fbd7f5c18e","reviewed":true},
   "ui.item-picker-grid.d2": {"text":"{{value0}}. {{value1}}","sourceHash":"35bcb203f5dedde52a3f6fbcb2b814bef3d63fae6195c293622cd7814093eadd","reviewed":true},
   "ui.keyword-progress-card.2": {"text":"Прогресс: {{value0}}, уровень {{value1}}","sourceHash":"2c94c9bef7d43d2ef0ddae6058bca9ae9c3fb3c31da33fac2a2014f18e2cbb17","reviewed":true},
-  "ui.keyword-progress-card.s1": {"text":"Ур. <part0/>","sourceHash":"3cec495db86d2e64201756bcfb29684afda24e8c89060cedbf94c0cdb72b058e","reviewed":true},
+  "ui.keyword-progress-card.s1": {"text":"Ур. <part0/>","sourceHash":"a72a9e9f1d5c762b1a10b5e605565473fdb9c39d53e4ba143deb0c4507e679c6","reviewed":true},
   "ui.keyword-tag.d1": {"text":"Выбрать: {{value0}}","sourceHash":"ef6fddc1816a01defb8e8d3a65ee053c3483c6f2d1bef0ce78e87132efba85b8","reviewed":true},
   "ui.keyword-tag.d2": {"text":"Осмотреть ключевое слово: {{value0}}","sourceHash":"11f1b10f982c1b39b98a4fe74ba6ec57dab2faaf03a67493863ba95c4ce3024a","reviewed":true},
   "ui.labyrinth-map-screen.1": {"text":"Лабиринт","sourceHash":"9ff1838edac1b84792254a57f289da13edcc2f536bfeb453e5527b5869ffea23","reviewed":true},

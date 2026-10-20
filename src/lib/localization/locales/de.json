@@ -2120,7 +2120,7 @@
   "ui.item-picker-grid.d1": {"text":"Mit der aktuellen Ausrüstung nicht kompatibel","sourceHash":"5276caaa21ecb263001528e7ee6a5001bdccdd5ddcab731335f3f0f27a39540c","reviewed":true},
   "ui.item-picker-grid.d2": {"text":"{{value0}}. {{value1}}","sourceHash":"36e4bc60d74de26c164f6b04fc94d363d8c1628dfdac6a15691f37799e0db2b9","reviewed":true},
   "ui.keyword-progress-card.2": {"text":"{{value0}}: Fortschritt auf Stufe {{value1}}","sourceHash":"aa120c98747dfdab1ca22b59462bc4347a828b8010492a94c304684b262951fb","reviewed":true},
-  "ui.keyword-progress-card.s1": {"text":"St. <part0/>","sourceHash":"0ebfe74f75f6812015b4dea4a94592c57e374f3cafad3e8661edd45099b408f5","reviewed":true},
+  "ui.keyword-progress-card.s1": {"text":"St. <part0/>","sourceHash":"fc4b1486a04a671ecbab1eefb27110f298526a8bd7850d999e1aac1060fe1adb","reviewed":true},
   "ui.keyword-tag.d1": {"text":"{{value0}} wählen","sourceHash":"fc8876ce4d283c8946b95ea3afd24a496ab294eecdcb1b5a00d996a4a642b6a0","reviewed":true},
   "ui.keyword-tag.d2": {"text":"Schlüsselwort {{value0}} untersuchen","sourceHash":"d71df4d41078f3209cc3992f8e242e4a250a89ac4beb715eda250c1ba59f47a3","reviewed":true},
   "ui.labyrinth-map-screen.1": {"text":"Labyrinth","sourceHash":"79e7b4bf57b1fabf7ec627ca5f05f6ee4c68b4d2d749eb7326585dc1b82b7911","reviewed":true},

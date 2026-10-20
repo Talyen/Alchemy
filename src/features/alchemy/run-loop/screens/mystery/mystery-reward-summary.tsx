@@ -160,9 +160,8 @@ export function MysteryRewardSummary({
   return (
     <div className="flex w-full flex-col items-center gap-6 text-center">
       <KeywordProgressGrid
-        entries={[...xpGains].map(([kw, gainedXP]) => ({
+        entries={[...xpGains].map(([kw]) => ({
           kw,
-          gainedXP,
           totalXP: (talentXP[kw] ?? 0) + (runTalentXP[kw] ?? 0),
         }))}
         size="lg"

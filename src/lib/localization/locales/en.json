@@ -4424,7 +4424,7 @@
   "ui.item-picker-grid.d1": {"text":"Incompatible with the current loadout","context":"features/alchemy/meta/screens/armory/item-picker-grid.tsx","terms":[]},
   "ui.item-picker-grid.d2": {"text":"{{value0}}. {{value1}}","context":"features/alchemy/meta/screens/armory/item-picker-grid.tsx","parameters":{"value0":"i18n.displayText(title)","value1":"i18n.displayText(reservationReason)"},"terms":[]},
   "ui.keyword-progress-card.2": {"text":"{{value0}} level {{value1}} progress","context":"features/alchemy/run-loop/screens/keyword-progress-card.tsx","parameters":{"value0":"i18n.displayText(def?.label ?? kw)","value1":"i18n.displayText(displayLevel)"},"terms":[]},
-  "ui.keyword-progress-card.s1": {"text":"Lv<part0/>","context":"features/alchemy/run-loop/screens/keyword-progress-card.tsx","slots":{"part0":"i18n.displayText(displayLevel)"},"terms":[]},
+  "ui.keyword-progress-card.s1": {"text":"Lv <part0/>","context":"features/alchemy/run-loop/screens/keyword-progress-card.tsx","slots":{"part0":"i18n.displayText(displayLevel)"},"terms":[]},
   "ui.keyword-tag.d1": {"text":"Choose {{value0}}","context":"features/alchemy/shared/ui/keyword-tag.tsx","parameters":{"value0":"i18n.displayText(def.label)"},"terms":[]},
   "ui.keyword-tag.d2": {"text":"Inspect {{value0}} keyword","context":"features/alchemy/shared/ui/keyword-tag.tsx","parameters":{"value0":"i18n.displayText(def.label)"},"terms":[]},
   "ui.labyrinth-map-screen.1": {"text":"Labyrinth","context":"features/alchemy/run-loop/screens/labyrinth/labyrinth-map-screen.tsx","terms":[]},

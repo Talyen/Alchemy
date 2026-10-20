@@ -2120,7 +2120,7 @@
   "ui.item-picker-grid.d1": {"text":"Incompatible con el equipo actual","sourceHash":"0ef30114f144d39f51387d3183f3a5c42761936995717be6bde05d503790282d","reviewed":true},
   "ui.item-picker-grid.d2": {"text":"{{value0}}. {{value1}}","sourceHash":"31d1792a97ddacc6da24480d4c985a661b4e669799d05f0c7e78da1cad6273c9","reviewed":true},
   "ui.keyword-progress-card.2": {"text":"Progreso de {{value0}}, nivel {{value1}}","sourceHash":"4fece7997d28e00a2ea9f8c436c2a824bcbe336edc05e77b72d3f45031873ced","reviewed":true},
-  "ui.keyword-progress-card.s1": {"text":"Niv. <part0/>","sourceHash":"9da490100fec97b7bdf56a12c321451d301ad5f7a57d108e771ce225819760ad","reviewed":true},
+  "ui.keyword-progress-card.s1": {"text":"Niv. <part0/>","sourceHash":"7be4a37abc08c16c19ff932261c5f409c47d5dbf90c15091e01d89b32aa684ab","reviewed":true},
   "ui.keyword-tag.d1": {"text":"Elegir {{value0}}","sourceHash":"d2bdd48284a75e077fac1d6be3d186631437105b96516fcab7f7d9609fc7a3ef","reviewed":true},
   "ui.keyword-tag.d2": {"text":"Inspeccionar palabra clave {{value0}}","sourceHash":"f0928724957c9a79f9fcbc8e440c2bd587fa23650ac42da18d49dd1d419bf015","reviewed":true},
   "ui.labyrinth-map-screen.1": {"text":"Laberinto","sourceHash":"00418a22b845400e22b996c2b82f926c38fa171882dce65d3cba9797204e3111","reviewed":true},

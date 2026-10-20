@@ -66,7 +66,7 @@ export function RunEndScreen({
       (Object.keys(runEndTalentXP) as KeywordId[])
         .filter((kw) => visibleKeywords.has(kw) && (runEndTalentXP[kw] ?? 0) > 0)
         .sort((a, b) => (runEndTalentXP[b] ?? 0) - (runEndTalentXP[a] ?? 0))
-        .map((kw) => ({ kw, totalXP: talentXP[kw] ?? 0, gainedXP: runEndTalentXP[kw] ?? 0 })),
+        .map((kw) => ({ kw, totalXP: talentXP[kw] ?? 0 })),
     [runEndTalentXP, talentXP, visibleKeywords],
   );
   const earnedCurrencies = useMemo(

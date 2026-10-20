@@ -2120,7 +2120,7 @@
   "ui.item-picker-grid.d1": {"text":"与当前配置不兼容","sourceHash":"558f796047677fda19acf95b1bfcaad0c356442646e58fad19631232d5f3aec2","reviewed":true},
   "ui.item-picker-grid.d2": {"text":"{{value0}}。{{value1}}","sourceHash":"d06ce8cee54c2936fb333cbad6f7ae000c08583111940cf34c9ae883dff0c4ac","reviewed":true},
   "ui.keyword-progress-card.2": {"text":"{{value0}}等级{{value1}}进度","sourceHash":"2f9ee2547e208500506d1fd74cd7b9ed27f2d519bf4f07318396a232aaeaa64a","reviewed":true},
-  "ui.keyword-progress-card.s1": {"text":"等级<part0/>","sourceHash":"f2c89855304eb9da37b730c7ad32ff358f71eb1aa4c4a2e52f059dc408cb52fa","reviewed":true},
+  "ui.keyword-progress-card.s1": {"text":"等级<part0/>","sourceHash":"7ba256412335bfc0376e71a7c2654ace535cd68f68772732e28420b424f28e4b","reviewed":true},
   "ui.keyword-tag.d1": {"text":"选择{{value0}}","sourceHash":"805b139a534f49c47a61f799b908cc92d31ec65f8816095ccaafedbe55d6278e","reviewed":true},
   "ui.keyword-tag.d2": {"text":"查看{{value0}}关键词","sourceHash":"953b28d78a271e826fec4a97f353b0f6daf0c74102e3f9d801abb524367ad440","reviewed":true},
   "ui.labyrinth-map-screen.1": {"text":"迷宫","sourceHash":"21a2c4f8147f90103aa3d5d84596c15b22cd64a391131096ad4e94c911347238","reviewed":true},
