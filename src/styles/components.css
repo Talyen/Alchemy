@@ -312,15 +312,10 @@
   width: 78%;
   margin-inline: auto;
 }
-.battle-corner {
-  position: absolute;
-  bottom: 0;
-  width: calc(var(--hand-card-width) * 0.8);
-}
 .mana-dock {
   flex-shrink: 0;
   position: relative;
-  /* Keep the display anchored to the corner while preserving the original art width. */
+  /* Bound the display to its column while preserving the original art width. */
   --mana-dock-art-width: min(
     calc(27.2 * var(--content-rem, 1rem)),
     calc((100vw - 2.25 * var(--content-rem, 1rem)) * 0.4)

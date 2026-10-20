@@ -1,4 +1,3 @@
-import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { ManaPanel } from "../../battle/presentation/ui/mana-dock";
@@ -38,7 +37,7 @@ export function BattleBottomBar({
   return (
     <section className={battleBottomBarClass} data-battle-bottom-bar>
       {battleState.currentEnemy.enemyType === "boss" ? <BossLyrics bossId={battleState.currentEnemy.id} /> : null}
-      <div className={cn(battleBottomColumnClass, "battle-corner left-0")}>
+      <div className={battleBottomColumnClass}>
         <ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} presentation={presentation} />
         <PilePanel
           ref={drawPileRef}
@@ -58,7 +57,7 @@ export function BattleBottomBar({
           playabilityState={playabilityState}
         />
       </div>
-      <div className={cn(battleBottomColumnClass, "battle-corner right-0")}>
+      <div className={battleBottomColumnClass}>
         {endTurn}
         <PilePanel
           ref={discardPileRef}
