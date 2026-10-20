@@ -85,6 +85,21 @@ describe("alchemy visit transactions and resume", () => {
     expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(hp);
     expect(brewAtCampfire({ kind: "new", offerIndex: 0 }, defaultGameSession)).toBeNull();
   });
+  it("Herbal Hearth draws its Potion from the events stream, leaving rewards untouched", () => {
+    setRunProgress({
+      contentSystemType: "labyrinth",
+      rng: { seed: 7, counters: { rewards: 0, destinations: 0, events: 0, shops: 0, world: 0 } },
+    });
+    setRunSession({ activeLabyrinthRewardModifiers: ["herbal-hearth"] });
+    initializeAlchemyVisit("campfire", defaultGameSession);
+    const before = { ...readActiveRun(defaultGameSession).rng.counters };
+    const deckBefore = readActiveRun(defaultGameSession).runDeck.length;
+    expect(restAtCampfire(defaultGameSession)).toBe(true);
+    const after = readActiveRun(defaultGameSession).rng.counters;
+    expect(after.rewards).toBe(before.rewards);
+    expect(after.events - before.events).toBe(1);
+    expect(readActiveRun(defaultGameSession).runDeck).toHaveLength(deckBefore + 1);
+  });
   it("persists offers, random source choices, and previews, then alters the original card exactly once", () => {
     initializeAlchemyVisit("transmutation", defaultGameSession);
     const initial = readRunSession(defaultGameSession).activity;

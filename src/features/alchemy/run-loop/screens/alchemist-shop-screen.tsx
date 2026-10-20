@@ -1,11 +1,10 @@
-import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { useEffect, useRef, useState } from "react";
 import { FlaskConical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { type BattleCard } from "@/lib/game-data";
+import { type BattleCard, isPotionCard } from "@/lib/game-data";
 import { PotionComparison } from "./potion-comparison";
 import { BrewPotionPanel } from "./brew-potion-panel";
 import { strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";

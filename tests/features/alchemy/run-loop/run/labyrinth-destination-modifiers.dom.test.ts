@@ -9,7 +9,7 @@ import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/naviga
 import { useRunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
-import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
+import { mutateGameplayForTest, resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
@@ -62,6 +62,18 @@ describe("Labyrinth destination modifiers", () => {
       expect(result.current.modifiers).toBe(modifiers);
     },
   );
+
+  it("Campfire screen data carries Homestead healing in the same subscription", () => {
+    mutateGameplayForTest((draft) => {
+      draft.runProfile.effects.homesteadHealing = 4;
+    });
+    setRunSession({
+      activity: { kind: "campfire", data: emptyAlchemyVisit() },
+    });
+    const { result } = renderHook(() => useRunScreenData("campfire"));
+    expect(result.current.homesteadHealing).toBe(4);
+    expect(result.current.homesteadHealing).toBe(readRunProfile(defaultGameSession).effects.homesteadHealing);
+  });
 
   it("Golden Omen presents and pays the doubled event reward once", () => {
     setRunProgress({ contentSystemType: "labyrinth", gold: 0 });

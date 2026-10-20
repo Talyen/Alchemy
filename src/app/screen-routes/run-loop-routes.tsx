@@ -27,7 +27,6 @@ import { useBattleScreenRouteData } from "@/app/screen-routes/use-battle-screen-
 import { useBattlePlayback } from "@/app/screen-routes/use-battle-playback";
 import { MysteryScreenRoute } from "@/app/screen-routes/mystery-screen-route";
 import { useRunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
-import { useHomesteadEffects } from "@/features/alchemy/shared/stores/use-run-reads";
 import { CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
 
@@ -182,14 +181,13 @@ function DestinationScreenRoute({ routeCommands }: RunLoopRouteCtx) {
 function CampfireScreenRoute({ routeCommands }: RunLoopRouteCtx) {
   const commands = routeCommands.runLoop.destinations;
   const r = useRunScreenData("campfire");
-  const healingBonus = useHomesteadEffects().homesteadHealing;
   const healFraction = labyrinthCampfireHealing(CAMPFIRE_HEAL_FRACTION, r.modifiers);
   return (
     <CampfireScreen
       playerHealth={r.runPlayerHealth}
       maxHealth={r.runMaxHealth}
       healFraction={healFraction}
-      healingBonus={healingBonus}
+      healingBonus={r.homesteadHealing}
       modifiers={r.modifiers}
       runDeck={r.runDeck}
       visit={r.visit}

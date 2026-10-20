@@ -1,11 +1,10 @@
-import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { PotionComparison } from "./potion-comparison";
 import { playUISound } from "@/lib/audio";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { BattleCard } from "@/lib/game-data";
+import { type BattleCard, isPotionCard } from "@/lib/game-data";
 import { strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
 import { BattleCardButton } from "../../shared/ui/cards/card-button";
@@ -42,12 +41,14 @@ export function BrewPotionPanel({
   const [submitted, setSubmitted] = useState(false);
   const confirmRef = useRef<HTMLButtonElement>(null);
   const [selectionDeck, setSelectionDeck] = useState(deck);
-  if (!submitted && selectionDeck !== deck) {
-    setSelectionDeck(deck);
-    setSelected([]);
-    setPage(0);
-    setError("deck");
-  }
+  useEffect(() => {
+    if (!submitted && selectionDeck !== deck) {
+      setSelectionDeck(deck);
+      setSelected([]);
+      setPage(0);
+      setError("deck");
+    }
+  }, [deck, selectionDeck, submitted]);
   // An accepted brew changes the live deck before its saved result replaces this panel.
   const sourceDeck = submitted ? selectionDeck : deck;
   useLayoutEffect(() => {

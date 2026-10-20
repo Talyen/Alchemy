@@ -75,6 +75,7 @@ export const RUN_SCREEN_SELECTORS = {
     ),
     runPlayerHealth: state.run.activeRun.runPlayerHealth,
     runMaxHealth: state.run.activeRun.runMaxHealth,
+    homesteadHealing: state.runProfile.effects.homesteadHealing,
   }),
   "labyrinth-map": (state: GameplayState) => ({
     labyrinthMap: state.session.labyrinthMap,

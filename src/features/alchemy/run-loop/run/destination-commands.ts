@@ -39,8 +39,11 @@ export function restAtCampfireInDraft(draft: RunTransaction): void {
   );
   const healFraction = labyrinthCampfireHealing(CAMPFIRE_HEAL_FRACTION, modifiers);
   if (modifiers.includes("hidden-purse")) addGold(draft, LABYRINTH_MODIFIER_CONFIG.hiddenPurseGold);
+  // Campfire visits draw from the events stream like campfire offers and
+  // mystery setup; the rewards stream owns victory and reward choices, so
+  // resting must not perturb it.
   if (modifiers.includes("herbal-hearth"))
-    applyAlchemistPotion({ draft, rng: createDraftRunRandomSource(draft, "rewards") });
+    applyAlchemistPotion({ draft, rng: createDraftRunRandomSource(draft, "events") });
   setRunPlayerHealth(draft, (prev) =>
     getCampfireRestHealth(
       prev,
