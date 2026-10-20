@@ -43,12 +43,12 @@ export function SettingsAction({
   useGameTranslation();
   return (
     <div className="options-settings-row options-settings-action">
-      <div className="options-settings-label options-settings-label-content">
-        <SettingsIcon icon={Icon} />
-        <div className="min-w-0">
-          <p className={controlLabelClass}>{label}</p>
-          <p className={cn("options-settings-description", controlDescriptionClass)}>{description}</p>
-        </div>
+      <div className="options-settings-label">
+        <p className={cn("options-settings-label-content", controlLabelClass)}>
+          <SettingsIcon icon={Icon} />
+          <span>{label}</span>
+        </p>
+        <p className={cn("options-settings-description pl-10", controlDescriptionClass)}>{description}</p>
       </div>
       <div className="options-settings-control flex justify-end">{children}</div>
     </div>
