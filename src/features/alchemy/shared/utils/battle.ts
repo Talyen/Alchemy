@@ -75,29 +75,53 @@ export function getCombatTextLeadingIcon(event: CombatTextEvent) {
   return undefined;
 }
 
+function combatStatLabel(stat: CombatTextEvent["stat"]): string {
+  const presentation = combatStatPresentation(stat);
+  if (presentation) return displayText(presentation.label);
+  switch (stat) {
+    case "deathsDoor":
+      return text("battle.feedback.deaths-door", "Death's Door");
+    case "gems":
+      return text("battle.feedback.gems", "Gems");
+    case "haste":
+      return text("battle.feedback.haste", "Haste");
+    case "draw":
+      return text("battle.feedback.draw", "Draw");
+    case "cleanse":
+      return text("battle.feedback.cleanse", "Cleanse");
+    case "scheduled":
+      return text("battle.feedback.scheduled", "Scheduled");
+    case "effect":
+      return text("battle.feedback.effect", "Effect");
+    default:
+      return stat;
+  }
+}
+
 export function getCombatTextAccessibleLabel(event: FloatingCombatText): string {
-  const label = combatStatPresentation(event.stat)?.label ?? event.stat;
+  const label = combatStatLabel(event.stat);
   if (event.kind === "notice") {
+    if (event.signal === "immune") return text("battle.immune", "Immune to {{label}}", { label });
     if (event.signal === "purge" || event.text === "Purged")
-      return text("battle.purged", "Purged {{label}}", { label: displayText(label) });
-    if (event.signal === "cleanse") return text("battle.cleansed", "Cleansed {{label}}", { label: displayText(label) });
+      return text("battle.purged", "Purged {{label}}", { label });
+    if (event.signal === "cleanse") return text("battle.cleansed", "Cleansed {{label}}", { label });
     if (event.signal === "prepared")
-      return displayText(event.text) || text("battle.prepared", "{{label}} prepared", { label: displayText(label) });
-    return displayText(event.text || (event.stat === "deathsDoor" ? "Death's Door" : label));
+      return displayText(event.text) || text("battle.prepared", "{{label}} prepared", { label });
+    return event.text ? displayText(event.text) : label;
   }
   if (event.kind === "damage" && event.includesCritical)
     return text("battle.damage-includes-critical", "{{label}}: {{amount}} (includes a Critical)", {
-      label: displayText(label),
-      amount: displayText(event.displayText),
+      label,
+      amount: event.displayText,
     });
   return event.kind === "damage" && event.critical
     ? text("battle.critical-label", "Critical {{label}}: {{amount}}", {
-        label: displayText(label),
-        amount: displayText(event.displayText),
+        label,
+        amount: event.displayText,
       })
     : text("battle.stat-label", "{{label}}: {{amount}}", {
-        label: displayText(label),
-        amount: displayText(event.displayText),
+        label,
+        amount: event.displayText,
       });
 }
 

@@ -241,7 +241,7 @@ function CombatTextEntry({ entry, staticMotion }: { entry: FloatingCombatText; s
   return (
     <div
       data-testid="combat-text"
-      aria-label={i18n.displayText(i18n.read(() => getCombatTextAccessibleLabel(entry)))}
+      aria-label={i18n.read(() => getCombatTextAccessibleLabel(entry))}
       data-kind={entry.kind}
       data-stat={entry.stat}
       className={cn(
