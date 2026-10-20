@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorLogViewer } from "@/features/alchemy/meta/screens/options/error-log-viewer";
 import { useErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
+import { installCatalogs, localization } from "@/lib/localization/runtime";
+import catalogs from "@/lib/localization/locales/runtime.json";
 import { installDisabledAnimationsForTests } from "../../../../../helpers/animation-test";
 
 describe("ErrorLogViewer", () => {
@@ -12,8 +14,9 @@ describe("ErrorLogViewer", () => {
     useErrorLogStore.getState().clearErrors();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     cleanup();
+    await localization.changeLanguage("en");
   });
 
   it("expands logged errors with click, Enter, and Space while exposing the expanded state", async () => {
@@ -46,6 +49,43 @@ describe("ErrorLogViewer", () => {
     expect(entry.getAttribute("aria-expanded")).toBe("true");
     await user.click(screen.getByText("Error: at line 10"));
     expect(entry.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("switches counts, source labels and dates without translating diagnostic evidence", async () => {
+    installCatalogs(catalogs);
+    const user = userEvent.setup();
+    useErrorLogStore.getState().pushError({ message: "Battle", source: "storage", stack: "Error: at line 10" });
+    const entry = useErrorLogStore.getState().errors[0]!;
+    render(<ErrorLogViewer onClose={vi.fn()} />);
+    for (const [locale, expected] of [
+      ["de", "1 Fehler"],
+      ["zh-Hans", "1个错误"],
+      ["ru", "1 ошибка"],
+      ["es", "1 error"],
+      ["pt-BR", "1 erro"],
+    ] as const) {
+      await act(async () => {
+        await localization.changeLanguage(locale);
+      });
+      expect(screen.getByText(expected)).toBeTruthy();
+      expect(screen.getByText("Battle")).toBeTruthy();
+      const date = new Date(entry.timestamp).toLocaleString(locale);
+      expect(screen.getByText(date, { normalizer: (value) => value })).toBeTruthy();
+    }
+    await act(async () => {
+      await localization.changeLanguage("ru");
+    });
+    act(() => useErrorLogStore.getState().pushError({ message: "Second failure", source: "global" }));
+    expect(screen.getByText("2 ошибки")).toBeTruthy();
+    for (let index = 0; index < 3; index++)
+      act(() => useErrorLogStore.getState().pushError({ message: `Failure ${index}`, source: "other" }));
+    expect(screen.getByText("5 ошибок")).toBeTruthy();
+    expect(screen.getByText("Данные сохранения")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: /Battle/ }));
+    expect(screen.getByText("Error: at line 10")).toBeTruthy();
+    const writeText = vi.spyOn(navigator.clipboard, "writeText");
+    await user.click(screen.getByRole("button", { name: "Скопировать всё" }));
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining("[storage] Battle"));
   });
 
   it("invalidates copy feedback when a full log replaces its oldest entry", async () => {

@@ -1,13 +1,16 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GameModeSelectScreen } from "@/features/alchemy/meta/screens/game-mode-select-screen";
+import { installCatalogs, localization, text, displayText } from "@/lib/localization/runtime";
+import catalogs from "@/lib/localization/locales/runtime.json";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 
 describe("GameModeSelectScreen", () => {
   installDisabledAnimationsForTests();
 
-  afterEach(() => {
+  afterEach(async () => {
     cleanup();
+    await localization.changeLanguage("en");
   });
 
   const defaultProps = {
@@ -48,6 +51,22 @@ describe("GameModeSelectScreen", () => {
     fireEvent.mouseEnter(mode);
     fireEvent.mouseLeave(mode);
     expect(screen.getByRole("tooltip").textContent).toContain("The Campaign");
+  });
+
+  it("updates locked accessible names in place when the language changes", async () => {
+    installCatalogs(catalogs);
+    render(<GameModeSelectScreen {...defaultProps} finishedRunCharacters={[]} />);
+    const mode = screen.getByRole("button", { name: "The Labyrinth (Locked)" });
+    await act(async () => {
+      await localization.changeLanguage("de");
+    });
+    const expected = text("ui.game-mode-select-screen.locked", "{{value0}} (Locked)", {
+      value0: displayText("The Labyrinth"),
+    });
+    expect(expected).not.toContain("Locked");
+    expect(expected).not.toContain("The Labyrinth");
+    expect(screen.getByRole("button", { name: expected })).toBe(mode);
+    expect(mode.getAttribute("aria-disabled")).toBe("true");
   });
 
   it("locks modes when unlock prerequisites are not met", () => {

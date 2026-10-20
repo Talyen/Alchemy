@@ -102,6 +102,7 @@
         will-change: transform;
       }
       .alchemy-loading-word {
+        min-height: 1.5em;
         margin: 0;
         margin-top: calc(-0.75rem * var(--content-scale, 1));
         font-family: "Inter", "Alchemy Cyrillic", "Alchemy Chinese", sans-serif;
@@ -446,7 +447,7 @@
       aria-valuemin="0"
       aria-valuemax="100"
       aria-valuenow="0"
-      aria-label="Loading Alchemy"
+      aria-label="Alchemy"
     >
       <h1 class="alchemy-loading-title" aria-label="Alchemy">
         <span class="loading-decoration" aria-hidden="true">
@@ -522,8 +523,7 @@
           <span class="alchemy-loading-logo-fill-text">Alchemy</span>
         </span>
       </h1>
-      <p id="startup-splash-phrase" class="alchemy-loading-word">Adventure awaits...</p>
-      <script src="/startup-words.js"></script>
+      <p id="startup-splash-phrase" class="alchemy-loading-word"></p>
     </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

@@ -306,8 +306,9 @@ One loading experience at cold start, then navigation through the shared fade â€
 | SFX       | `use-app-effects.ts`                                                           | Critical sounds eager; rest on idle                                                                                                     |
 
 `index.html` owns the single startup splash, including its artwork, filling
-wordmark, styles and reduced-motion behavior. `public/startup-words.js` rotates
-phrases on one timer from first paint until dismissal. React renders no second
+wordmark, styles and reduced-motion behavior. It shows the Alchemy name without
+English phrases at first paint. `src/app/startup-splash.ts` starts one localized
+phrase timer after catalogs and the selected language are ready. React renders no second
 loader: `App` calls `syncStartupSplash` to publish smoothed progress to the
 splash's `progressbar` ARIA value and dismiss it once bootstrap and initial
 loading are ready. The fill animation matches `INITIAL_LOAD_MIN_DURATION_MS`;

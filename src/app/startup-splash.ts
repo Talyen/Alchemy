@@ -1,7 +1,7 @@
 import { clamp01 } from "@/lib/math";
 import { text } from "@/lib/localization/runtime";
 
-/** Replace the first-paint English clock once bundled text and the locale are ready. */
+/** Start splash phrases once bundled text and the selected locale are ready. */
 export function localizeStartupSplash(): void {
   const splash = document.getElementById("startup-splash");
   const phrase = document.getElementById("startup-splash-phrase");

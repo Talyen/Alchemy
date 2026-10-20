@@ -56,5 +56,14 @@
       "one": "<keyword0>Frozen</keyword0> combatants skip their next {{count}} turn.",
       "other": "<keyword0>Frozen</keyword0> combatants skip their next {{count}} turns."
     }
+  },
+  "error-log.count": {
+    "text": "{{count}} errors",
+    "context": "Error Log entry count; count is the number of logged errors",
+    "plural": true,
+    "forms": {
+      "one": "{{count}} error",
+      "other": "{{count}} errors"
+    }
   }
 }

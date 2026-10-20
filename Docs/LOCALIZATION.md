@@ -34,6 +34,14 @@ switches do not remount the application or dispatch gameplay commands.
 Resource amounts use `formatLargeAmount(amount, i18n.locale)` at presentation
 boundaries. Separators and compact units follow the selected game language, with
 compaction starting at 100,000 and expanded English using English formatting.
+
+The startup splash shows the Alchemy name until catalogs and the selected language
+are ready, then starts localized phrases. The Error Log localizes its controls,
+source categories, plural counts and timestamps using the selected game language.
+Raw exception messages, stack traces, context payloads and copied diagnostic exports
+retain their original text for troubleshooting; do not run those through catalog
+lookups, where a diagnostic such as `Battle` could collide with a game label.
+
 Inspection sorts translated card titles with the selected language's collator;
 equal titles keep a fixed tie-break order without changing saved card order.
 

@@ -1,4 +1,3 @@
-import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -27,6 +26,17 @@ function formatLoggedError(entry: LoggedError): string {
 
 export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
   const i18n = useGameTranslation();
+  const sourceLabels = {
+    react: i18n.text("error-log.source.react", "Interface"),
+    global: i18n.text("error-log.source.global", "Application"),
+    promise: i18n.text("error-log.source.promise", "Background task"),
+    battle: i18n.text("error-log.source.battle", "Battle"),
+    storage: i18n.text("error-log.source.storage", "Save data"),
+    validation: i18n.text("error-log.source.validation", "Validation"),
+    audio: i18n.text("error-log.source.audio", "Audio"),
+    card: i18n.text("error-log.source.card", "Card"),
+    other: i18n.text("error-log.source.other", "Other"),
+  };
   const errors = useErrorLogStore((s) => s.errors);
   const clearErrors = useErrorLogStore((s) => s.clearErrors);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -73,21 +83,12 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
           {i18n.text("ui.error-log-viewer.4", "Clear")}
         </Button>
         <span className="ml-auto self-center text-sm text-muted-foreground">
-          <GameMessage
-            id="ui.error-log-viewer.s1"
-            defaultValue="<part0/><part1/> error<part2/>"
-            parts={{
-              part0: i18n.displayText(
-                visibleCopyFeedback?.status === "copied"
-                  ? i18n.text("ui.error-log-viewer.d1", "Copied · ")
-                  : visibleCopyFeedback?.status === "failed"
-                    ? i18n.text("ui.error-log-viewer.d2", "Copy failed · ")
-                    : null,
-              ),
-              part1: i18n.displayText(errors.length),
-              part2: i18n.displayText(errors.length !== 1 ? "s" : ""),
-            }}
-          />
+          {visibleCopyFeedback?.status === "copied"
+            ? i18n.text("ui.error-log-viewer.d1", "Copied · ")
+            : visibleCopyFeedback?.status === "failed"
+              ? i18n.text("ui.error-log-viewer.d2", "Copy failed · ")
+              : null}
+          {i18n.text("error-log.count", "{{count}} errors", { count: errors.length })}
         </span>
       </div>
 
@@ -117,22 +118,25 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
                             : "bg-blue-900/40 text-blue-300",
                       )}
                     >
-                      {i18n.displayText(e.source)}
+                      {sourceLabels[e.source]}
                     </span>
-                    <span className="truncate text-sm font-semibold text-foreground">
-                      {i18n.displayText(e.message)}
+                    <span lang="en" className="truncate text-sm font-semibold text-foreground">
+                      {e.message}
                     </span>
                   </span>
                   <span className="mt-1 block text-xs text-muted-foreground">
-                    {i18n.displayText(new Date(e.timestamp).toLocaleString())}
+                    {new Date(e.timestamp).toLocaleString(i18n.locale === "en-XA" ? "en" : i18n.locale)}
                   </span>
                 </span>
               </button>
 
               {expandedId === e.id && (
                 <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
-                  <p className="text-sm break-words whitespace-pre-wrap text-foreground">
-                    {i18n.displayText(e.message)}
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    {i18n.text("error-log.diagnostics", "Diagnostic details (original language)")}
+                  </p>
+                  <p lang="en" className="text-sm break-words whitespace-pre-wrap text-foreground">
+                    {e.message}
                   </p>
                   {[
                     { label: "Stack", text: e.stack },
@@ -142,14 +146,15 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
                     text ? (
                       <div key={label}>
                         <p className="text-xs font-semibold text-muted-foreground">
-                          <GameMessage
-                            id="ui.error-log-viewer.s2"
-                            defaultValue="<part0/>:"
-                            parts={{ part0: i18n.displayText(label) }}
-                          />
+                          {i18n.text("error-log.detail-label", "{{label}}:", { label: i18n.displayText(label) })}
                         </p>
-                        <pre className="mt-1 rounded-lg bg-black/30 p-2 text-xs break-all whitespace-pre-wrap text-foreground/80">
-                          {i18n.displayText(text)}
+                        <pre
+                          lang={label === "Context" && text === "Context could not be displayed." ? undefined : "en"}
+                          className="mt-1 rounded-lg bg-black/30 p-2 text-xs break-all whitespace-pre-wrap text-foreground/80"
+                        >
+                          {label === "Context" && text === "Context could not be displayed."
+                            ? i18n.displayText(text)
+                            : text}
                         </pre>
                       </div>
                     ) : null,

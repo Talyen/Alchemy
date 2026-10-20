@@ -41,7 +41,10 @@ function GameModeTile({
 }) {
   const i18n = useGameTranslation();
   const Icon = meta.icon;
-  const ariaLabel = isLocked ? `${meta.title} (Locked)` : meta.title;
+  const title = i18n.displayText(meta.title);
+  const ariaLabel = isLocked
+    ? i18n.text("ui.game-mode-select-screen.locked", "{{value0}} (Locked)", { value0: title })
+    : title;
   const tileTriggerRef = useRef<HTMLButtonElement>(null);
 
   return (
@@ -50,8 +53,8 @@ function GameModeTile({
       interactionId={modeId}
       art={meta.art}
       icon={Icon}
-      label={i18n.displayText(meta.title)}
-      ariaLabel={i18n.displayText(ariaLabel)}
+      label={title}
+      ariaLabel={ariaLabel}
       accentClassName={meta.accentClassName}
       plasmaColorPair={isLocked ? null : meta.plasmaColorPair}
       widthClass={gameModeArtWidthClass}
@@ -69,7 +72,7 @@ function GameModeTile({
       renderTooltip={(visible) =>
         visible ? (
           <PortaledTooltip triggerRef={tileTriggerRef} visible className="text-center">
-            <TooltipHeader>{i18n.displayText(meta.title)}</TooltipHeader>
+            <TooltipHeader>{title}</TooltipHeader>
             <TooltipBody>
               {isLocked ? (
                 <p>
