@@ -163,7 +163,7 @@ export const gameModeMeta: Record<
   },
   labyrinth: {
     title: "The Labyrinth",
-    description: "Descend through a maze of encounters",
+    description: "Descend the Endless Labyrinth",
     icon: Map,
     art: theLabyrinth,
     accentClassName: "text-violet-400",
@@ -171,7 +171,7 @@ export const gameModeMeta: Record<
   },
   wildwood: {
     title: "Wildwood Draft",
-    description: "Draft a deck and survive an endless boss gauntlet",
+    description: "Draft a Deck in the Boss Gauntlet",
     icon: PawPrint,
     art: wildwoodDraft,
     accentClassName: "text-emerald-300",
