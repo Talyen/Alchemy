@@ -167,6 +167,18 @@ describe("resolved card damage", () => {
     expect(ordinary.enemyHealth).toBe(25);
   });
 
+  it("does not spend Meteorite on a Bleed hit shared by Bloodember Pendant", () => {
+    const card = makeTestCard({ effects: [makeEffect("bleed", 5)] });
+    const state = patchBattleState({
+      rng: () => 0.99,
+      trinketEffects: { firstBurnDoubled: true },
+      gearEffects: { sharedBurnBleedBonuses: 1 },
+    });
+    const result = dealDamage(state, card);
+    expect(result.enemyHealth).toBe(25);
+    expect(result.flags.firstBurnTrinketDoubledUsed).toBe(false);
+  });
+
   it.each(["burn", "poison", "bleed", "freeze", "stun"] as const)(
     "reports exact %s damage and builds only its matching status",
     (damageType) => {

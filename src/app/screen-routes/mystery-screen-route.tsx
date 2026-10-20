@@ -91,6 +91,11 @@ export function MysteryScreenRoute({ routeCommands }: RunLoopRouteCtx) {
               effects: r.homesteadEffects,
             })[effect.material],
           };
+        if (effect.kind === "healHealth")
+          return {
+            ...effect,
+            amount: effect.amount + (effect.amount > 0 ? r.homesteadEffects.homesteadHealing : 0),
+          };
         return effect;
       }}
       mysteryCardChoices={heldVisit.cardChoices}
