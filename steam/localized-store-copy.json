@@ -58,5 +58,25 @@
       "about": "Trave batalhas de cartas um contra um na campanha, no labirinto e na Seleção do Bosque Selvagem. Ganhe talentos, construa uma propriedade e reúna equipamentos e amuletos para futuras jornadas.",
       "shortDescription": "Escolha um herói, monte um baralho e fique mais forte entre jornadas em um roguelite de fantasia de construção de baralhos."
     }
+  },
+  "ja": {
+    "demo": {
+      "about": "デッキを組み、キャンペーン最初のボスに挑み、拠点を発展させましょう。デモは何度でもプレイでき、獲得した永続的な進行状況は製品版に引き継げます。",
+      "shortDescription": "永続的な成長を楽しめるファンタジー・ローグライト・デッキ構築ゲーム、Alchemyの第I章を探索しましょう。"
+    },
+    "full": {
+      "about": "キャンペーン、迷宮、ワイルドウッド・ドラフトで一対一のカードバトルに挑みましょう。タレントを獲得し、拠点を築き、装備や装身具を集めて次のランに備えましょう。",
+      "shortDescription": "英雄を選び、デッキを組み、ランを重ねて強くなるファンタジー・ローグライト・デッキ構築ゲーム。"
+    }
+  },
+  "fr": {
+    "demo": {
+      "about": "Construisez un deck, affrontez le premier boss de la Campagne et développez votre Domaine. Rejouez la démo et transférez votre progression permanente acquise vers le jeu complet.",
+      "shortDescription": "Explorez l'acte I d'Alchemy, un deckbuilder roguelite fantastique à progression permanente."
+    },
+    "full": {
+      "about": "Livrez des duels de cartes dans la Campagne, le Labyrinthe et le Draft du Bois sauvage. Gagnez des talents, bâtissez un Domaine et collectionnez équipement et bibelots pour vos prochaines parties.",
+      "shortDescription": "Choisissez un héros, construisez un deck et renforcez-vous entre les parties dans un deckbuilder roguelite fantastique."
+    }
   }
 }

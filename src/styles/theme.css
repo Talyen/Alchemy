@@ -37,7 +37,7 @@
   /* Mirrors ANIMATION_DISABLED_DURATION in src/lib/animation/animation-prefs.ts (1): keep in sync. */
   --animation-disabled-duration: 1ms;
 
-  --font-sans: "Inter", "Alchemy Cyrillic", "Alchemy Chinese", sans-serif;
+  --font-sans: "Inter", "Alchemy Cyrillic", "Alchemy Chinese", "Alchemy Japanese", sans-serif;
 
   /* Readable scale at 16px root: base 18, lg 20, xl 22. sm/2xl stay Tailwind defaults. */
   --text-base--line-height: calc(1.5 / 1.125);

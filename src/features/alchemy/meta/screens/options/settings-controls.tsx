@@ -103,7 +103,7 @@ export function SettingsSelect<T extends string>({
         <SelectContent>
           {options.map((option) => (
             <SelectItem key={option.value} value={option.value}>
-              {option.native ? <span>{option.label}</span> : i18n.displayText(option.label)}
+              {option.native ? <span lang={option.value}>{option.label}</span> : i18n.displayText(option.label)}
             </SelectItem>
           ))}
         </SelectContent>

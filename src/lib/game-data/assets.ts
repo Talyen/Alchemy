@@ -21,6 +21,8 @@ export const demoFeatureShowcaseByLocale = {
   ru: assetRefs.demoFeatureShowcaseRu,
   es: assetRefs.demoFeatureShowcaseEs,
   "pt-BR": assetRefs.demoFeatureShowcasePtBr,
+  ja: assetRefs.demoFeatureShowcaseJa,
+  fr: assetRefs.demoFeatureShowcaseFr,
 } satisfies Record<keyof typeof languages, string>;
 export const armorySalvageArt = assetRefs.armorySalvage;
 

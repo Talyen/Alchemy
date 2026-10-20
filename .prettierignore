@@ -24,6 +24,8 @@ src/lib/localization/locales/zh-Hans.json
 src/lib/localization/locales/ru.json
 src/lib/localization/locales/es.json
 src/lib/localization/locales/pt-BR.json
+src/lib/localization/locales/ja.json
+src/lib/localization/locales/fr.json
 .worktrees/
 .git/
 blob-report/
