@@ -63,7 +63,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   block: {
     id: "block",
     label: "Block",
-    description: "Block absorbs damage before Health and halves at the start of its owner's next turn",
+    description: "Block absorbs damage before Health. Halves each turn.",
     colorClass: "text-sky-300",
     borderClass: "border-sky-300",
     shineColors: ["#7dd3fc", "#0ea5e9", "#7dd3fc"],
@@ -80,7 +80,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   armor: {
     id: "armor",
     label: "Armor",
-    description: "Each stack of Armor decreases Physical and Stun damage taken by 1, lose 1 Armor when taking damage",
+    description: "Armor reduces incoming Physical and Stun damage by 1 per stack. Lose 1 Armor when damaged.",
     colorClass: "text-gray-400",
     borderClass: "border-gray-400",
     shineColors: ["#9ca3af", "#4b5563", "#9ca3af"],
@@ -88,7 +88,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   forge: {
     id: "forge",
     label: "Forge",
-    description: "Each stack of Forge increases Physical and Stun damage by 1 for the rest of combat.",
+    description: "Forge adds 1 Physical and Stun damage per stack.",
     colorClass: "text-orange-300",
     borderClass: "border-orange-300",
     shineColors: ["#fdba74", "#ea580c", "#fdba74"],
@@ -96,7 +96,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   burn: {
     id: "burn",
     label: "Burn",
-    description: "Burn deals damage and reduces by half each turn",
+    description: "Burn deals damage each turn, then halves.",
     colorClass: "text-orange-400",
     borderClass: "border-orange-400",
     shineColors: ["#fb923c", "#ea580c", "#fb923c"],
@@ -105,7 +105,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
     id: "freeze",
     label: "Freeze",
     description:
-      "Builds toward Frozen; normally triggers at half the hero's maximum Health or the enemy's Health before the hit, causing them to lose their next turn",
+      "Freeze builds toward Frozen, which skips a turn. Normally triggers at half the hero's maximum Health or the enemy's Health before the hit.",
     colorClass: "text-cyan-300",
     borderClass: "border-cyan-300",
     shineColors: ["#67e8f9", "#06b6d4", "#67e8f9"],
@@ -121,7 +121,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   poison: {
     id: "poison",
     label: "Poison",
-    description: "Poison deals damage and decreases by 20% each turn (minimum 1)",
+    description: "Poison deals damage each turn, then loses 20% of its stacks (at least 1).",
     colorClass: "text-green-700",
     borderClass: "border-green-700",
     shineColors: ["#15803d", "#14532d", "#15803d"],
@@ -129,7 +129,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   bleed: {
     id: "bleed",
     label: "Bleed",
-    description: "Bleed deals damage once, and then deals the same amount next turn",
+    description: "Bleed repeats its damage next turn, then clears.",
     colorClass: "text-red-600",
     borderClass: "border-red-600",
     shineColors: ["#dc2626", "#7f1d1d", "#dc2626"],
@@ -138,7 +138,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
     id: "stun",
     label: "Stun",
     description:
-      "Builds toward Stunned; normally triggers at half the hero's maximum Health or the enemy's Health before the hit, causing them to lose their next turn",
+      "Stun builds toward Stunned, which skips a turn. Normally triggers at half the hero's maximum Health or the enemy's Health before the hit.",
     colorClass: "text-amber-300",
     borderClass: "border-amber-300",
     shineColors: ["#fcd34d", "#d97706", "#fcd34d"],
@@ -204,7 +204,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   thorns: {
     id: "thorns",
     label: "Thorns",
-    description: "When hit, Consume Thorns to deal Nature damage",
+    description: "Thorns are consumed when hit, dealing Nature damage to the attacker.",
     colorClass: "text-emerald-600",
     borderClass: "border-emerald-600",
     shineColors: ["#059669", "#064e3b", "#059669"],

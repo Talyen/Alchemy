@@ -122,14 +122,12 @@ function buildActiveCcChips(cc: CcState): StatusChip[] {
       id: "stunned",
       value: cc.stunSkipTurns,
       hideValue: true,
-      ...(cc.stunSkipTurns > 1 ? { description: `Loses their next ${cc.stunSkipTurns} turns.` } : {}),
     });
   if (cc.freezeSkipTurns > 0)
     chips.push({
       id: "frozen",
       value: cc.freezeSkipTurns,
       hideValue: true,
-      ...(cc.freezeSkipTurns > 1 ? { description: `Loses their next ${cc.freezeSkipTurns} turns.` } : {}),
     });
   return chips;
 }
@@ -206,12 +204,6 @@ export function getEnemyStatusChips(state: BattleSnapshot | null | undefined): S
       mitigationChips.push({
         id: key,
         value,
-        ...(key === "forge"
-          ? {
-              description:
-                "Each stack of Forge increases this enemy’s Physical and Stun damage by 1 for the rest of combat.",
-            }
-          : {}),
       });
   }
   const statusChips = buildStatusChips(ENEMY_STATUS_DISPLAY_ORDER, state.enemyStatuses, state.enemyCC);

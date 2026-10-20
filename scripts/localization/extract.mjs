@@ -299,6 +299,7 @@ export async function extractMessages() {
       "/src/lib/content-systems/encounter-traits.ts",
       "/src/lib/mystery/pool.ts",
       "/src/features/alchemy/shared/config/phoenix-feather-status.ts",
+      "/src/features/alchemy/shared/augment-definitions.ts",
     ]) {
       const catalog = await server.ssrLoadModule(module);
       for (const [key, value] of Object.entries(catalog)) enumerate(value, key);
