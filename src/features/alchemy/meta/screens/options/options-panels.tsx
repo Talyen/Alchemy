@@ -1,3 +1,23 @@
+import {
+  Languages,
+  Monitor,
+  Sun,
+  Scaling,
+  MessageSquare,
+  Eclipse,
+  Sparkles,
+  Volume2,
+  Music,
+  AudioLines,
+  MicVocal,
+  VolumeX,
+  StepForward,
+  Brain,
+  RotateCcw,
+  Trash2,
+  KeyRound,
+  Bug,
+} from "lucide-react";
 import type { LanguagePreference } from "@/lib/localization/runtime";
 import { useGameTranslation } from "@/components/use-game-translation";
 
@@ -50,6 +70,7 @@ export function DisplayOptionsPanel({
       <SettingsSection title={i18n.text("ui.options-panels.1", "Display")}>
         <SettingsSelect
           id="language"
+          icon={Languages}
           label={i18n.text("options.language-choice", "Language")}
           value={display.languagePreference}
           options={LANGUAGE_OPTIONS}
@@ -58,6 +79,7 @@ export function DisplayOptionsPanel({
         {display.showDisplayMode ? (
           <SettingsSelect
             id="display-mode"
+            icon={Monitor}
             label={i18n.text("ui.options-panels.5", "Display Mode")}
             value={values.displayMode}
             options={displayModeOptions}
@@ -65,6 +87,7 @@ export function DisplayOptionsPanel({
           />
         ) : null}
         <SettingsSlider
+          icon={Sun}
           label={i18n.text("ui.options-panels.6", "Brightness")}
           value={values.brightness}
           onChange={actions.setBrightness}
@@ -72,12 +95,14 @@ export function DisplayOptionsPanel({
           max={SETTINGS_RANGES.brightness.max}
         />
         <SettingsSlider
+          icon={Scaling}
           label={i18n.text("ui.options-panels.7", "Game Size")}
           value={display.gameSizePercent}
           onChange={display.onGameSizeChange}
           {...DEVICE_DISPLAY_RANGES.gameSizePercent}
         />
         <SettingsSlider
+          icon={MessageSquare}
           label={i18n.text("ui.options-panels.8", "Tooltip Size")}
           value={display.tooltipSizePercent}
           onChange={display.onTooltipSizeChange}
@@ -86,12 +111,14 @@ export function DisplayOptionsPanel({
       </SettingsSection>
       <SettingsSection title={i18n.text("ui.options-panels.9", "Background")}>
         <SettingsSlider
+          icon={Eclipse}
           label={i18n.text("ui.options-panels.10", "Background Glow")}
           value={values.backgroundGlowIntensity}
           onChange={actions.setBackgroundGlowIntensity}
           {...SETTINGS_RANGES.specialEffects}
         />
         <SettingsSlider
+          icon={Sparkles}
           label={i18n.text("ui.options-panels.11", "Background Particles")}
           value={values.backgroundParticlesIntensity}
           onChange={actions.setBackgroundParticlesIntensity}
@@ -109,13 +136,14 @@ export function AudioOptionsPanel({ preferences }: { preferences: OptionsPrefere
     <SettingsSection title={i18n.text("ui.options-panels.12", "Audio")}>
       {(
         [
-          ["Overall Volume", values.masterVolume, actions.setMasterVolume],
-          ["Music Volume", values.musicVolume, actions.setMusicVolume],
-          ["Sound Effects Volume", values.sfxVolume, actions.setSfxVolume],
+          [Volume2, "Overall Volume", values.masterVolume, actions.setMasterVolume],
+          [Music, "Music Volume", values.musicVolume, actions.setMusicVolume],
+          [AudioLines, "Sound Effects Volume", values.sfxVolume, actions.setSfxVolume],
         ] as const
-      ).map(([label, value, onChange]) => (
+      ).map(([icon, label, value, onChange]) => (
         <SettingsSlider
           key={label}
+          icon={icon}
           label={i18n.displayText(label)}
           value={value}
           onChange={onChange}
@@ -123,11 +151,13 @@ export function AudioOptionsPanel({ preferences }: { preferences: OptionsPrefere
         />
       ))}
       <SettingsToggle
+        icon={MicVocal}
         label={i18n.text("ui.options-panels.13", "Boss Lyrics")}
         checked={values.bossLyricsEnabled}
         onChange={actions.setBossLyricsEnabled}
       />
       <SettingsToggle
+        icon={VolumeX}
         label={i18n.text("ui.options-panels.14", "Mute in Background")}
         checked={values.muteInBackground}
         onChange={actions.setMuteInBackground}
@@ -142,11 +172,13 @@ export function GameplayOptionsPanel({ preferences }: { preferences: OptionsPref
   return (
     <SettingsSection title={i18n.text("ui.options-panels.15", "Battle")}>
       <SettingsToggle
+        icon={StepForward}
         label={i18n.text("ui.options-panels.16", "Auto-End Turn")}
         checked={values.autoEndTurn}
         onChange={actions.setAutoEndTurn}
       />
       <SettingsToggle
+        icon={Brain}
         label={i18n.text("ui.options-panels.17", "Remember Auto-Battle Preference")}
         checked={values.rememberAutoplayPreference}
         onChange={actions.setRememberAutoplayPreference}
@@ -160,6 +192,7 @@ function SaveDataOptionsPanel({ saveData }: { saveData: SaveDataOptionsProps }) 
   return (
     <SettingsSection title={i18n.text("ui.options-panels.18", "Reset & Save Data")}>
       <SettingsAction
+        icon={RotateCcw}
         label={i18n.text("ui.options-panels.19", "Options")}
         description={i18n.text("ui.options-panels.20", "Reset all options to default values")}
       >
@@ -168,6 +201,7 @@ function SaveDataOptionsPanel({ saveData }: { saveData: SaveDataOptionsProps }) 
         </Button>
       </SettingsAction>
       <SettingsAction
+        icon={Trash2}
         label={i18n.text("ui.options-panels.22", "Save Data")}
         description={i18n.text("ui.options-panels.23", "Clear all existing save data and start fresh")}
       >
@@ -185,6 +219,7 @@ function DevOptionsPanel({ dev }: { dev: DevOptionsProps }) {
   return (
     <SettingsSection title={i18n.text("ui.options-panels.25", "Dev Only")}>
       <SettingsAction
+        icon={KeyRound}
         label={i18n.text("ui.options-panels.27", "Dev / QA Unlocks")}
         description={i18n.text(
           "ui.options-panels.28",
@@ -195,6 +230,7 @@ function DevOptionsPanel({ dev }: { dev: DevOptionsProps }) {
       </SettingsAction>
       {dev.onOpenErrorLog ? (
         <SettingsAction
+          icon={Bug}
           label={i18n.text("ui.options-panels.30", "Error Log")}
           description={i18n.text("ui.options-panels.31", "Inspect errors logged during this session for bug reports")}
         >

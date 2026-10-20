@@ -1,3 +1,4 @@
+import type { LucideIcon } from "lucide-react";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { useModalEscapeDismiss } from "../../../shared/ui/use-modal-escape-dismiss";
@@ -21,10 +22,12 @@ export function SettingsSection({ title, children }: { title: string; children: 
 }
 
 export function SettingsAction({
+  icon: Icon,
   label,
   description,
   children,
 }: {
+  icon: LucideIcon;
   label: string;
   description: string;
   children: ReactNode;
@@ -32,9 +35,12 @@ export function SettingsAction({
   useGameTranslation();
   return (
     <div className="options-settings-row options-settings-action">
-      <div className="options-settings-label">
-        <p className={controlLabelClass}>{label}</p>
-        <p className={cn("options-settings-description", controlDescriptionClass)}>{description}</p>
+      <div className="options-settings-label flex items-center gap-3">
+        <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-gold-pale" />
+        <div className="min-w-0">
+          <p className={controlLabelClass}>{label}</p>
+          <p className={cn("options-settings-description", controlDescriptionClass)}>{description}</p>
+        </div>
       </div>
       <div className="options-settings-control flex justify-end">{children}</div>
     </div>
@@ -43,13 +49,21 @@ export function SettingsAction({
 
 interface SettingsSelectProps<T extends string> {
   id: string;
+  icon: LucideIcon;
   label: string;
   value: T;
   options: ReadonlyArray<{ value: T; label: string; native?: boolean }>;
   onChange: (value: T) => void;
 }
 
-export function SettingsSelect<T extends string>({ id, label, value, options, onChange }: SettingsSelectProps<T>) {
+export function SettingsSelect<T extends string>({
+  icon: Icon,
+  id,
+  label,
+  value,
+  options,
+  onChange,
+}: SettingsSelectProps<T>) {
   const i18n = useGameTranslation();
   const [open, setOpen] = useState(false);
   // Radix listens below our window capture listener. Register its open state so
@@ -62,8 +76,9 @@ export function SettingsSelect<T extends string>({ id, label, value, options, on
   });
   return (
     <div className="options-settings-row">
-      <label htmlFor={id} className={cn("options-settings-label", controlLabelClass)}>
-        {label}
+      <label htmlFor={id} className={cn("options-settings-label flex items-center gap-3", controlLabelClass)}>
+        <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-gold-pale" />
+        <span>{label}</span>
       </label>
       <Select
         open={open}
@@ -90,6 +105,7 @@ export function SettingsSelect<T extends string>({ id, label, value, options, on
 }
 
 export function SettingsSlider({
+  icon: Icon,
   label,
   value,
   onChange,
@@ -97,6 +113,7 @@ export function SettingsSlider({
   max = 100,
   step = 1,
 }: {
+  icon: LucideIcon;
   label: string;
   value: number;
   onChange: (value: number) => void;
@@ -107,7 +124,10 @@ export function SettingsSlider({
   useGameTranslation();
   return (
     <div className="options-settings-row">
-      <p className={cn("options-settings-label", controlLabelClass)}>{label}</p>
+      <p className={cn("options-settings-label flex items-center gap-3", controlLabelClass)}>
+        <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-gold-pale" />
+        <span>{label}</span>
+      </p>
       <div className="options-settings-control flex items-center gap-3">
         <input
           type="range"
@@ -128,10 +148,12 @@ export function SettingsSlider({
 }
 
 export function SettingsToggle({
+  icon: Icon,
   label,
   checked,
   onChange,
 }: {
+  icon: LucideIcon;
   label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
@@ -140,8 +162,9 @@ export function SettingsToggle({
   const id = useId();
   return (
     <div className="options-settings-row options-settings-toggle">
-      <label htmlFor={id} className={cn("min-w-0 flex-1 cursor-pointer", controlLabelClass)}>
-        {label}
+      <label htmlFor={id} className={cn("flex min-w-0 flex-1 cursor-pointer items-center gap-3", controlLabelClass)}>
+        <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-gold-pale" />
+        <span>{label}</span>
       </label>
       <Switch
         id={id}
