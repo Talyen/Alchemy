@@ -147,11 +147,10 @@ Collection and other nonbattle views retain authored descriptions.
 
 ## Deck and pile inspection
 
-The stacked-cards toolbar icon opens the run Deck during drafting, run screens,
-and meta detours from that run. Opening always selects Deck. During battle the
-viewer header contains Deck, Draw, and Discard tabs, with counts only in their
-accessible names. Tabs reuse `TabBar` selection and keyboard focus feedback.
-Outside battle the viewer retains its centered Deck title without tabs.
+The stacked-cards toolbar icon opens the run Deck during drafting, non-battle run
+screens, and meta detours from that run. Battle has no Deck toolbar button; clicking
+Draw Pile or Discard Pile opens only that pile. Each viewer has a centered title
+(Deck, Draw Pile, or Discard Pile) with no collection tabs.
 Titled screen headers place Deck on the left alongside any Back control and Menu
 on the right, with the title centered between them. The icon has no tooltip.
 
@@ -160,9 +159,8 @@ on the right, with the title centered between them. The icon has no tooltip.
 visible individually, sorted by displayed title with an instance-content tie
 break independent of draw order. The grid uses
 [`viewCardWidthClass`](../src/features/alchemy/shared/config/layout.ts), matching
-`CardSelectionGrid`'s reference width. The close button remains at the upper right;
-tabs replace the visible collection title during battle. Empty collections retain
-the tabs and show the collection icon. Pagination resets when switching collections
+`CardSelectionGrid`'s reference width. The close button remains at the upper right. Empty collections retain
+their title and show the collection icon. Pagination resets when switching collections
 or reopening. There are no visible counts, instructions, or labels below cards.
 Full Deck is the run deck, including cards Consumed in the current battle;
 battle-only generated cards appear in their current piles instead. Inspected
@@ -174,7 +172,7 @@ Wish, pending transition, hidden hand card, card ghost, or card transfer. While
 open it contains focus and blocks underlying input, autoplay, and automatic End
 Turn without changing saved automation preferences. Navigation, run replacement,
 battle teardown, or opening a peer menu closes it. Escape, backdrop, and the close
-button dismiss it and return focus to the toolbar opener.
+button dismiss it and return focus to the toolbar or pile opener.
 
 ## Enemy inspection
 

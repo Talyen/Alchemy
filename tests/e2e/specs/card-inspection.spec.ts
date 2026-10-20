@@ -9,11 +9,10 @@ import {
   makeGoblinBattleState,
   seedRandom,
   startBattleWithDeck,
-  waitForLayoutSettled,
 } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 
-test("inspects the run deck and each battle pile without advancing combat", critical, async ({ page, fastBattle }) => {
+test("inspects each battle pile without advancing combat", critical, async ({ page, fastBattle }) => {
   void fastBattle;
   const slash = makeCard({ uid: 101, cost: 1 });
   const block = makeCard({ id: "block", uid: 102 });
@@ -37,45 +36,26 @@ test("inspects the run deck and each battle pile without advancing combat", crit
   await expect(boonsOverlay.getByRole("heading", { name: "Boons", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(boonsOverlay).toHaveCount(0);
-  const icon = page.getByRole("button", { name: "View Deck · 4 cards" });
-  await expect(page.getByTestId("draw-pile")).toHaveCount(1);
-  await expect(page.getByTestId("discard-pile")).toHaveCount(1);
-  await icon.click();
-  const dialog = page.getByRole("dialog", { name: "Deck", exact: true });
-  await expect(dialog.getByRole("img")).toHaveCount(4);
-  await waitForLayoutSettled(page, dialog);
-  await expect(dialog.getByRole("img", { name: "Apple", exact: true })).toBeVisible();
-  const draw = dialog.getByRole("button", { name: "Draw · 1 cards", exact: true });
-  const tabTop = (await draw.boundingBox())!.y;
-  await expect(draw).toHaveText("Draw");
-  await draw.focus();
-  await page.keyboard.press("Enter");
-  await expect(draw).toHaveAttribute("aria-pressed", "true");
-  expect((await draw.boundingBox())!.y).toBeCloseTo(tabTop, 0);
-  await expect(dialog.getByRole("img", { name: "Block", exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "Discard · 1 cards" }).click();
-  await expect(dialog.getByRole("img", { name: "Anvil", exact: true })).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(dialog).toHaveCount(0);
-  await expect(icon).toBeFocused();
-  for (const [pile, tab, image] of [
-    ["draw", "Draw · 1 cards", "Block"],
-    ["discard", "Discard · 1 cards", "Anvil"],
+  await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveCount(0);
+  for (const [pile, title, image] of [
+    ["draw", "Draw Pile", "Block"],
+    ["discard", "Discard Pile", "Anvil"],
   ] as const) {
     const opener = page.getByTestId(`${pile}-pile`).getByRole("button");
     await opener.focus();
     await page.keyboard.press("Enter");
-    await expect(dialog.getByRole("button", { name: tab, exact: true })).toHaveAttribute("aria-pressed", "true");
+    const dialog = page.getByRole("dialog", { name: title, exact: true });
+    await expect(dialog.getByRole("img")).toHaveCount(1);
     await expect(dialog.getByRole("img", { name: image, exact: true })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: / · \d+ cards$/ })).toHaveCount(0);
     await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
     await expect(opener).toBeFocused();
   }
   expect(await battle.enemyHealth()).toBe(health);
   await battle.playCardNamed("Slash");
-  await icon.click();
-  await expect(dialog.getByRole("button", { name: "Deck · 4 cards" })).toHaveAttribute("aria-pressed", "true");
-  await dialog.getByRole("button", { name: "Discard · 2 cards" }).click();
-  await expect(dialog.getByRole("img")).toHaveCount(2);
+  await page.getByTestId("discard-pile").getByRole("button").click();
+  await expect(page.getByRole("dialog", { name: "Discard Pile", exact: true }).getByRole("img")).toHaveCount(2);
 });
 
 test("shows an empty draft and updates the viewer after each pick", async ({ page, fastBattle }) => {
@@ -99,6 +79,7 @@ test("shows an empty draft and updates the viewer after each pick", async ({ pag
   await page.getByRole("button", { name: "View Deck · 0 cards" }).click();
   await expect(page.getByRole("dialog").getByRole("heading", { name: "Deck", exact: true })).toBeVisible();
   await expect(page.getByRole("dialog").getByRole("img", { name: "Empty Deck", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("button", { name: / · \d+ cards$/ })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page
@@ -116,7 +97,7 @@ test("waits for real card animations and keeps the hand dock fixed", slow, async
   await page.addInitScript(() => {
     const state = window as Window & { inspectionBlockedDuringDeal?: boolean };
     new MutationObserver(() => {
-      const icon = document.querySelector('[aria-label^="View Deck"]');
+      const icon = document.querySelector('[data-testid="draw-pile"] button');
       if (document.querySelector("[data-flying-card]") && icon?.getAttribute("aria-disabled") === "true") {
         state.inspectionBlockedDuringDeal = true;
       }
@@ -126,7 +107,7 @@ test("waits for real card animations and keeps the hand dock fixed", slow, async
     page,
     Array.from({ length: 8 }, () => makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] })),
   );
-  const icon = page.getByRole("button", { name: /^View Deck/ });
+  const icon = page.getByTestId("draw-pile").getByRole("button");
   await expect
     .poll(() =>
       page.evaluate(() => (window as Window & { inspectionBlockedDuringDeal?: boolean }).inspectionBlockedDuringDeal),

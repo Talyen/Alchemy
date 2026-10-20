@@ -234,14 +234,6 @@
     translate: 0 6px;
   }
 
-  .card-inspection-overlay-tabs {
-    align-items: flex-start;
-    padding-top: max(1.5rem, 10vh);
-  }
-  .card-inspection-overlay-tabs > [role="dialog"] {
-    width: min(100%, calc(64 * var(--content-rem, 1rem)));
-  }
-
   .card-inspection-overlay-empty > [role="dialog"] {
     min-width: min(20rem, 100%);
   }

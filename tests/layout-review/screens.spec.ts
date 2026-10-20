@@ -176,18 +176,13 @@ test("battle and inspection overlays", async () => {
         .last()
         .hover(),
   });
-  for (const [pattern, name] of [
-    [/^View Deck/, "deck-inspection"],
-    [/^Inspect Boons/, "boon-inspection"],
-  ] as const) {
-    await page.getByRole("button", { name: pattern }).click();
-    await shot(name);
-    await page.keyboard.press("Escape");
-  }
-  await page.getByRole("button", { name: /^View Deck/ }).click();
-  await page.getByRole("button", { name: /^Draw ·/ }).click();
+  await page.getByRole("button", { name: /^Inspect Boons/ }).click();
+  await shot("boon-inspection");
+  await page.keyboard.press("Escape");
+  await page.getByTestId("draw-pile").getByRole("button").click();
   await shot("draw-pile-inspection");
-  await page.getByRole("button", { name: /^Discard ·/ }).click();
+  await page.keyboard.press("Escape");
+  await page.getByTestId("discard-pile").getByRole("button").click();
   await shot("discard-pile-inspection");
   await page.keyboard.press("Escape");
   await click("Open game menu");
@@ -405,8 +400,8 @@ test("size and viewport stress", async () => {
           .hover(),
     });
     await page.mouse.move(0, 0);
-    await page.getByRole("button", { name: /^View Deck/ }).click();
-    await shot(`deck-stress-${suffix}`, { viewports });
+    await page.getByTestId("draw-pile").getByRole("button").click();
+    await shot(`draw-pile-stress-${suffix}`, { viewports });
     await page.keyboard.press("Escape");
   }
 });

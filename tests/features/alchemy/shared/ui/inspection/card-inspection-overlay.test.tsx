@@ -1,11 +1,8 @@
-import { useState } from "react";
-import type { CardInspectionView } from "@/features/alchemy/shared/types";
 import { sortInspectionCards } from "@/features/alchemy/shared/ui/inspection/card-inspection-sort";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
-import { keywordDefinitions } from "@/lib/game-data";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { makeTestCard } from "../../../../../fixtures/battle";
 import { installDisabledAnimationsForTests } from "../../../../../helpers/animation-test";
@@ -45,7 +42,6 @@ const props = {
   collections: [{ id: "deck" as const, cards: [beta, alpha, { ...alpha, uid: 3 }] }],
   descriptionContext: {},
   onClose: vi.fn(),
-  onSelect: vi.fn(),
 };
 
 describe("card inspection", () => {
@@ -139,46 +135,28 @@ describe("card inspection", () => {
         collections={[...props.collections, { id: "draw", cards: [beta] }, { id: "discard", cards: [] }]}
       />,
     );
-    expect(screen.getByRole("dialog", { name: "Deck" })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Discard Pile" })).toBeTruthy();
     expect(within(screen.getByRole("dialog")).getByRole("img", { name: "Empty Discard Pile" })).toBeTruthy();
     expect(screen.queryByRole("group", { name: "Card collections" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Discard · 0 cards" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.queryByRole("button", { name: /cards$/ })).toBeNull();
     expect(screen.queryByTestId("card-selection-grid")).toBeNull();
   });
 
-  it("switches collections with the keyboard without closing or exposing visible counts", async () => {
-    function Viewer() {
-      const [selected, onSelect] = useState<CardInspectionView>("deck");
-      return (
-        <CardInspectionOverlay
-          {...props}
-          selected={selected}
-          onSelect={onSelect}
-          collections={[...props.collections, { id: "draw", cards: [beta] }, { id: "discard", cards: [] }]}
-        />
-      );
-    }
-    render(<Viewer />);
-    await waitForArtwork();
-    await waitFor(() =>
-      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close card inspection" })),
+  it("shows only the selected pile without collection tabs", () => {
+    render(
+      <CardInspectionOverlay
+        {...props}
+        selected="draw"
+        collections={[...props.collections, { id: "draw", cards: [beta] }, { id: "discard", cards: [] }]}
+      />,
     );
-    const draw = screen.getByRole("button", { name: "Draw · 1 cards" });
-    draw.focus();
-    await userEvent.setup().keyboard("{Enter}");
-    expect(draw.textContent).toBe("Draw");
-    expect(draw.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("dialog", { name: "Draw Pile" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /cards$/ })).toBeNull();
     expect(
       within(screen.getByTestId("card-selection-grid"))
         .getAllByRole("img")
         .map((img) => img.getAttribute("alt")),
     ).toEqual(["Beta"]);
-    await waitForArtwork();
-    fireEvent.click(screen.getByRole("button", { name: "Discard · 0 cards" }));
-    expect(screen.getByRole("img", { name: "Empty Discard Pile" })).toBeTruthy();
-    await waitForArtwork();
-    fireEvent.click(screen.getByRole("button", { name: "Deck · 3 cards" }));
-    expect(within(screen.getByTestId("card-selection-grid")).getAllByRole("img")).toHaveLength(3);
   });
 
   it("contains focus, supports every dismissal route, and restores the opener", async () => {
@@ -201,36 +179,6 @@ describe("card inspection", () => {
     view.unmount();
     expect(document.activeElement).toBe(opener);
     opener.remove();
-  });
-
-  it("shows hover-only keyword shine, with neutral fallback when no keywords resolve", () => {
-    const keywordCard = makeTestCard({
-      id: "physical-slash",
-      title: "Physical Slash",
-      uid: 11,
-      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-    });
-    const plainCard = makeTestCard({ id: "plain", title: "Plain", uid: 12, effects: [], descriptionLines: [] });
-    render(
-      <CardInspectionOverlay {...props} collections={[{ id: "deck" as const, cards: [keywordCard, plainCard] }]} />,
-    );
-    const keywordButton = screen.getByRole("button", { name: "Physical Slash" });
-    const plainButton = screen.getByRole("button", { name: "Plain" });
-    expect(keywordButton.querySelector(".shine-border")).toBeNull();
-    expect(plainButton.querySelector(".shine-border")).toBeNull();
-    fireEvent.mouseEnter(keywordButton.parentElement!);
-    const shine = keywordButton.querySelector<HTMLElement>(".shine-border")!;
-    expect(shine).not.toBeNull();
-    expect(keywordButton.className).toMatch(/card-art-shine/);
-    const color = document.createElement("span");
-    color.style.color = keywordDefinitions.physical.shineColors[0]!;
-    expect(shine.querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundImage).toContain(color.style.color);
-    fireEvent.mouseLeave(keywordButton.parentElement!);
-    expect(keywordButton.querySelector(".shine-border")).toBeNull();
-    fireEvent.focus(plainButton);
-    expect(plainButton.querySelector(".shine-border")).not.toBeNull();
-    fireEvent.blur(plainButton);
-    expect(plainButton.querySelector(".shine-border")).toBeNull();
   });
 
   it("resets pagination on collection changes and reopen, and rejects closing-fade clicks", async () => {

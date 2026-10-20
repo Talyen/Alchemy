@@ -87,18 +87,18 @@ async function lastManaJourney(info: TestInfo, reducedMotion: boolean) {
     const battle = await seedDrawBattle(page);
     await battle.playFirstCard();
     await expect.poll(() => battle.mana()).toBe(0);
-    await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false");
+    await expect(page.getByTestId("draw-pile").getByRole("button")).toHaveAttribute("aria-disabled", "false");
     const enemy = page.getByTestId("battle-enemy-art-panel");
     await enemy.click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(enemy).toBeFocused();
-    await controllerInput(page).activate(page.getByRole("button", { name: /^View Deck/ }));
+    await controllerInput(page).activate(page.getByTestId("draw-pile").getByRole("button"));
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: /^View Deck/ })).toBeFocused();
+    await expect(page.getByTestId("draw-pile").getByRole("button")).toBeFocused();
     const health = await battle.playerHealth();
     await controllerInput(page).activate(battle.endTurnBtn);
     await expect.poll(() => battle.playerHealth()).toBeLessThan(health);
@@ -162,7 +162,7 @@ test(
       await battle.autoplayToggle.click();
       await expect.poll(() => battle.mana()).toBeGreaterThan(0);
       await battle.autoplayToggle.click();
-      await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false");
+      await expect(page.getByTestId("draw-pile").getByRole("button")).toHaveAttribute("aria-disabled", "false");
       await battle.endTurn();
     });
   },
@@ -250,7 +250,7 @@ test(
       await expect(page.getByTestId("game-menu")).toHaveCount(0);
       await expect(battle.endTurnBtn).toBeFocused();
       await expect(page.getByText("Saving…", { exact: true })).toHaveCount(0);
-      await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false");
+      await expect(page.getByTestId("draw-pile").getByRole("button")).toHaveAttribute("aria-disabled", "false");
       await battle.endTurn();
     });
   },

@@ -14,7 +14,7 @@ test(
       page,
       Array.from({ length: 6 }, () => makeCard()),
     );
-    await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false", {
+    await expect(page.getByTestId("draw-pile").getByRole("button")).toHaveAttribute("aria-disabled", "false", {
       timeout: 20_000,
     });
     const enemy = page.getByTestId("battle-enemy-art-panel");

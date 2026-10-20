@@ -30,7 +30,7 @@ test("Slash starts its SFX and rapid End Turn advances once and restores the han
     .poll(async () => savedActivityData((await readSavedGame(page)).activeRun, "battle")?.battleState.turn)
     .toBe(3);
   const after = await battle.playerHealth();
-  await page.getByRole("button", { name: "View Deck · 6 cards" }).click();
+  await page.getByTestId("draw-pile").getByRole("button").click();
   await expect(page.getByRole("dialog")).toBeVisible();
   expect(await battle.playerHealth()).toBe(after);
   expect(savedActivityData((await readSavedGame(page)).activeRun, "battle")?.battleState.turn).toBe(3);

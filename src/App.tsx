@@ -156,14 +156,14 @@ function AppMainContent({
   const onOpenDeck = useCallback(() => openCardInspection("deck"), [openCardInspection]);
   const deckInspection = useMemo(
     () =>
-      inspection.visible
+      inspection.visible && renderedScreen !== "battle"
         ? {
             count: inspection.count,
             disabled: !inspection.canOpen,
             onOpen: onOpenDeck,
           }
         : undefined,
-    [inspection.visible, inspection.count, inspection.canOpen, onOpenDeck],
+    [inspection.visible, inspection.count, inspection.canOpen, onOpenDeck, renderedScreen],
   );
 
   // Dialogs restore their own focus; closing inspection is not a screen transition.
@@ -251,7 +251,6 @@ function AppMainContent({
         <CardInspectionOverlay
           open={inspection.open}
           selected={inspection.selected}
-          onSelect={openCardInspection}
           collections={inspection.collections}
           descriptionContext={inspection.battleDescriptionContext ?? cardDescriptionContext}
           onClose={inspection.close}

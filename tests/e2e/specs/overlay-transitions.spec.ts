@@ -72,8 +72,8 @@ test("interrupting a tab reveal never jumps back to full opacity", slow, async (
 test("closing during preparation never reveals late artwork, including reduced motion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   const card = makeCard();
-  await injectActiveBattle(page, makeGoblinBattleState({ hand: [card] }), { runDeck: [card] });
-  const opener = page.getByRole("button", { name: "View Deck · 1 card" });
+  await injectActiveBattle(page, makeGoblinBattleState({ hand: [], deck: [card] }), { runDeck: [card] });
+  const opener = page.getByTestId("draw-pile").getByRole("button");
   await expect(opener).toHaveAttribute("aria-disabled", "false");
   await page.evaluate(() => {
     const decode = HTMLImageElement.prototype.decode;
@@ -151,7 +151,7 @@ test("inspection reveals a complete panel and retains its page through exit", cr
   await injectActiveBattle(page, makeGoblinBattleState({ hand: [cards[0]!], deck: cards.slice(1) }), {
     runDeck: cards,
   });
-  const opener = page.getByRole("button", { name: "View Deck · 40 cards" });
+  const opener = page.getByTestId("draw-pile").getByRole("button");
   await expect(opener).toHaveAttribute("aria-disabled", "false");
   await page.evaluate(() => {
     const decode = HTMLImageElement.prototype.decode;

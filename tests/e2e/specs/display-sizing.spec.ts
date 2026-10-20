@@ -196,7 +196,7 @@ test.describe("Responsive display sizes", slow, () => {
             page,
             Array.from({ length: 6 }, () => makeCard()),
           );
-          await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false", {
+          await expect(page.getByTestId("draw-pile").getByRole("button")).toHaveAttribute("aria-disabled", "false", {
             timeout: 20_000,
           });
           await page.getByTestId("battle-enemy-art-panel").hover();
@@ -517,7 +517,7 @@ for (const deviceScaleFactor of [1.25, 2]) {
       const count = await cards.count();
       await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
       await expect(cards).toHaveCount(count - 1);
-      const inspect = page.getByRole("button", { name: /^View Deck/ });
+      const inspect = page.getByTestId("draw-pile").getByRole("button");
       await controllerInput(page).activate(inspect);
       await expect(page.getByRole("dialog")).toBeVisible();
       await page.keyboard.press("Escape");
