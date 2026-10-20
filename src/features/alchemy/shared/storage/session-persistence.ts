@@ -36,6 +36,7 @@ type PersistenceInterruption = SaveStorageEvent | "restored";
 export interface SessionPersistenceRestoreOptions {
   restoreActions?: readonly SaveRestoreAction[] | undefined;
   preserveActiveRunIfInitialized?: boolean;
+  startAtMenu?: boolean;
 }
 
 export interface SessionPersistence {
@@ -101,6 +102,7 @@ export function createSessionPersistence(gameSession: GameSession): SessionPersi
     restore: (save: UnstampedSaveData, options?: SessionPersistenceRestoreOptions) => {
       return restoreSessionSave(save, gameSession, {
         preserveActiveRunIfInitialized: options?.preserveActiveRunIfInitialized ?? false,
+        startAtMenu: options?.startAtMenu ?? false,
         abandonIncompatibleBattle: options?.restoreActions?.includes("abandon-active-run") ?? false,
       });
     },

@@ -304,8 +304,8 @@ jobs:
       - run: mkdir -p reports
 
       - name: Localization layout, gameplay and font acceptance
-        # The six-locale acceptance matrix needs a longer aggregate budget than critical smoke.
-        run: npm run test:e2e:dev -- tests/e2e/specs/localization.spec.ts tests/e2e/specs/localization-gameplay.spec.ts --global-timeout=900000
+        # The eight-locale acceptance matrix needs a longer aggregate budget than critical smoke.
+        run: npm run test:e2e:dev -- tests/e2e/specs/localization.spec.ts tests/e2e/specs/localization-gameplay.spec.ts --global-timeout=1200000
         env:
           ALCHEMY_LOCALIZATION_LAYOUT_REVIEW: "1"
           PLAYWRIGHT_JSON_OUTPUT_NAME: reports/playwright-localization-results.json

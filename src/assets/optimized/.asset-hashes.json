@@ -299,6 +299,16 @@
     "outputHash": "adb0036602c47a696da29d3ec38d5bbe",
     "selectionHash": "eb635faee5d24722ef83138635f792b96726be8c2414c638991c57bbe988fa7c"
   },
+  "demo-feature-showcase-fr.webp": {
+    "hash": "cd592c0c6c7e75c2082082405409a02a",
+    "outputHash": "da91bc0c29d5f0edd62a679c494b8aed",
+    "selectionHash": "56dc8004b6c0a0075984fabb3752d38b7236e08a99a93a67495f1f4cd35856ee"
+  },
+  "demo-feature-showcase-ja.webp": {
+    "hash": "bc55c5c6b593725638fbfe9c52dd4711",
+    "outputHash": "5b87dd49e8275765c9c57774bac45afd",
+    "selectionHash": "046181cb4fb52f82bec38159e71a119616ac31d4fb05fe0ca3f412e9e769abd2"
+  },
   "demo-feature-showcase-pt-br.webp": {
     "hash": "1a944c46ec7a77fa0d7201fbc971f657",
     "outputHash": "28d9b755146aaf2df355ff7a4115eb1c",

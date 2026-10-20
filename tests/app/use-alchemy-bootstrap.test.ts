@@ -78,6 +78,7 @@ describe("useAlchemyBootstrap", () => {
     expect(second.result.current).toBe(loaded);
     expect(mockPersistence.restore).toHaveBeenCalledExactlyOnceWith(loaded.data, {
       preserveActiveRunIfInitialized: true,
+      startAtMenu: true,
       restoreActions: loaded.restoreActions,
     });
     second.unmount();
@@ -160,6 +161,7 @@ describe("useAlchemyBootstrap", () => {
 
     expect(mockPersistence.restore).toHaveBeenCalledWith(result.data, {
       preserveActiveRunIfInitialized: true,
+      startAtMenu: true,
       restoreActions: undefined,
     });
     expect(hook.current).toBe(result);
@@ -179,6 +181,7 @@ describe("useAlchemyBootstrap", () => {
     expect(mockPersistence.routeToRecovery).toHaveBeenCalledOnce();
     expect(mockPersistence.restore).toHaveBeenCalledWith(expect.objectContaining({ activeRun: null }), {
       preserveActiveRunIfInitialized: true,
+      startAtMenu: true,
       restoreActions: undefined,
     });
     expect(hook.current?.status).toEqual({ kind: "unavailable" });
@@ -239,6 +242,7 @@ describe("useAlchemyBootstrap", () => {
     });
     expect(mockPersistence.restore).toHaveBeenCalledWith(defaultSaveData, {
       preserveActiveRunIfInitialized: true,
+      startAtMenu: true,
       restoreActions: undefined,
     });
     expect(hook.current).toBe(result);

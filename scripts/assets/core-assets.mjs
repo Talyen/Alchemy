@@ -36,6 +36,8 @@ export const coreAssets = [
     ["Unlock Full Game Demo Promo - ru.png", "demo-feature-showcase-ru.webp"],
     ["Unlock Full Game Demo Promo - es.png", "demo-feature-showcase-es.webp"],
     ["Unlock Full Game Demo Promo - pt-BR.png", "demo-feature-showcase-pt-br.webp"],
+    ["Unlock Full Game Demo Promo - ja.png", "demo-feature-showcase-ja.webp"],
+    ["Unlock Full Game Demo Promo - fr.png", "demo-feature-showcase-fr.webp"],
   ]),
   // Piles share the boon quality (82): flat graphic fields band at card quality (80).
   ...artGroup(

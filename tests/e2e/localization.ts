@@ -9,7 +9,7 @@ import { assertNoOverflow, assertReachableControlsInViewport, waitForLayoutSettl
 
 const catalogs = unpackCatalogs(packed);
 
-export const acceptanceLocales = ["de", "zh-Hans", "ru", "es", "pt-BR", "en-XA"] as const;
+export const acceptanceLocales = ["de", "zh-Hans", "ru", "es", "pt-BR", "ja", "fr", "en-XA"] as const;
 export type AcceptanceLocale = (typeof acceptanceLocales)[number];
 export const layoutReview = process.env.ALCHEMY_LOCALIZATION_LAYOUT_REVIEW === "1";
 

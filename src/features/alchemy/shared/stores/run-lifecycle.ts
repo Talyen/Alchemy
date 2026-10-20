@@ -67,7 +67,7 @@ function restoreRunInDraft(
 export function restoreSessionSave(
   save: UnstampedSaveData,
   gameSession: GameSession,
-  options?: { preserveActiveRunIfInitialized?: boolean; abandonIncompatibleBattle?: boolean },
+  options?: { preserveActiveRunIfInitialized?: boolean; abandonIncompatibleBattle?: boolean; startAtMenu?: boolean },
 ): boolean {
   const result = dispatchGameplayCommand(
     (draft) => {
@@ -76,6 +76,7 @@ export function restoreSessionSave(
       const abandoned = preserve
         ? false
         : restoreRunInDraft(draft, save.activeRun, save.talentXP, save.unlockedTalents, options);
+      if (!preserve && options?.startAtMenu) setScreen(draft, "menu");
       return acceptCommand({ restored: !preserve, abandoned });
     },
     { restore: { settings: save } },

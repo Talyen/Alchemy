@@ -75,6 +75,7 @@ export const RUN_SCREEN_SELECTORS = {
     ),
     runPlayerHealth: state.run.activeRun.runPlayerHealth,
     runMaxHealth: state.run.activeRun.runMaxHealth,
+    homesteadHealing: state.runProfile.effects.homesteadHealing,
   }),
   "labyrinth-map": (state: GameplayState) => ({
     labyrinthMap: state.session.labyrinthMap,
@@ -102,6 +103,8 @@ export const RUN_SCREEN_SELECTORS = {
       mysteryChosenChoice: visit.mysteryChosenChoice,
       homesteadEffects: state.runProfile.effects,
       goldMultiplier: getGoldMultiplier(state.run.activeRun.characterId, state.run.activeRun.selectedDifficulty),
+      runPlayerHealth: state.run.activeRun.runPlayerHealth,
+      runMaxHealth: state.run.activeRun.runMaxHealth,
       // Screens sum the current run's XP and the permanent profile total.
       runTalentXP: state.run.activeRun.runTalentXP,
       talentXP: state.runProfile.talentXP,

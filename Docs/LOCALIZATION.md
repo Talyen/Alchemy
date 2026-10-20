@@ -2,8 +2,8 @@
 
 English is Alchemy's authoritative text. The shipped language registry is
 `src/lib/localization/locales/languages.json`; it owns native names, locale IDs and
-Steam export codes for English, German, Simplified Chinese, Russian, Spanish–Spain
-and Brazilian Portuguese. AI coding agents translate and review
+Steam export codes for English, German, Simplified Chinese, Russian, Spanish–Spain,
+Brazilian Portuguese, Japanese and French. AI coding agents translate and review
 changed messages as part of their normal development task. There is no translation
 service, AI API key, or runtime translation request. This uses the existing agent
 allowance; deterministic scripts cannot generate new translations by themselves.
@@ -106,14 +106,15 @@ quality; AI semantic review remains part of completing the task.
 
 ## Qualification and Steam
 
-Expanded English is a developer-only layout tool. Chinese and Russian use bundled
-Noto Sans SC and Noto Sans variable font subsets with their OFL licenses. The
+Expanded English is a developer-only layout tool. Chinese, Japanese and Russian use bundled
+Noto Sans SC, Noto Sans JP and Noto Sans variable font subsets with their OFL licenses. The
 subsets retain variable weights, hinting and layout features, Latin characters,
 punctuation, symbols, abbreviations for large amounts, and every required
-Chinese/Cyrillic catalog glyph and native language label. The offline gate reads the actual bundled character maps and
+Chinese/Japanese/Cyrillic catalog glyph and the corresponding native language label. The offline gate reads the actual bundled character maps and
 rejects missing glyphs; adding an uncovered character blocks integration
 until the fonts are regenerated. Native
-language names use the same fallbacks even before selecting those languages.
+language names carry their own language tags and script font fallbacks even before
+selecting those languages; the Japanese font need not cover simplified Chinese names.
 Verified renderer packages also check a generated catalog manifest and SHA-256
 digest, so omitted or corrupted bundled catalogs cannot pass packaging.
 Font regeneration is an explicit authoring operation, separate from offline checks:
@@ -185,8 +186,9 @@ ALCHEMY_EDITION=demo PLAYWRIGHT_ELECTRON_FULL=1 npm run test:ship:desktop -- tes
 ```
 
 The native demo journey closes and relaunches the actual Electron process using
-one isolated temporary profile with normal motion, retains the Chinese language override, switches
-the resumed battle to Russian, then relaunches again and compares saved mechanics,
+one isolated temporary profile per language pair with normal motion. It retains the
+initial language override, switches the resumed battle from Chinese to Russian or
+Japanese to French, then relaunches again and compares saved mechanics,
 full card data and RNG. It waits for the real startup/artwork and battle-input
 gates before interacting. Its profile never touches the player's normal saves.
 Native timing canaries and foreground/hardware qualification remain separate.
@@ -232,16 +234,16 @@ reports the following interface-language shares:
 | Spanish–Spain        |        4.08% |
 | Brazilian Portuguese |        3.70% |
 | German               |        2.48% |
+| Japanese             |        2.41% |
+| French               |        2.08% |
 
-These shares sum to 84.90% of survey respondents' selected interface languages;
+These shares sum to 89.39% of survey respondents' selected interface languages;
 they do not estimate Alchemy sales, incremental reach or player language fluency.
 Participation is optional and anonymous, and monthly shares fluctuate. Recheck the
 survey before committing the launch scope.
 
-The rollout after German follows Simplified Chinese, Russian, Spanish–Spain, then
-Brazilian Portuguese. Japanese (2.41%) and French (2.08%) remain the next candidates,
-bringing the selected shares to 89.39%. This ordering is our
-inference from the survey, not a claim about deckbuilder purchasing behavior.
+The bundled selection reflects our inference from the survey, not a claim about
+deckbuilder purchasing behavior.
 Spanish–Latin America and European Portuguese are separate locales; do not count
 them as qualified by the Spanish–Spain and Brazilian catalogs.
 

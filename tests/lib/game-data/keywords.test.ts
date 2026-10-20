@@ -8,8 +8,8 @@ import {
 } from "@/lib/game-data/keywords";
 import { makeTestCard } from "../../fixtures/cards";
 
-it("keywordDefinitions keeps only catalog keywords eligible for Talent XP", () => {
-  const keywords = ["burn", "constructor", "__proto__", "toString", "health"] as KeywordId[];
+it("keeps only keywords with a shipped Talent tree eligible for Talent XP", () => {
+  const keywords = ["burn", "constructor", "__proto__", "toString", "health", "thorns"] as KeywordId[];
   expect(filterKeywordsForTalentXP(keywords)).toEqual(["burn", "health"]);
 });
 

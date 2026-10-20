@@ -38,7 +38,14 @@ export function LabyrinthNodeInspector({ node, map, onEnter, onDescend }: Props)
     >
       <div className="min-h-0 overflow-y-auto overscroll-contain p-4">
         <div className="relative overflow-hidden rounded-shell-compact bg-black" data-testid="chamber-art">
-          <img src={enemy?.art ?? meta.art} alt="" decoding="async" className="block h-auto w-full" draggable={false} />
+          <img
+            src={enemy?.art ?? meta.art}
+            alt=""
+            loading="eager"
+            decoding="async"
+            className="block h-auto w-full"
+            draggable={false}
+          />
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-4 pt-12">
             {node.type === "entrance" || category !== title ? (
               <p className="text-base font-semibold tracking-widest text-stone-200 uppercase">

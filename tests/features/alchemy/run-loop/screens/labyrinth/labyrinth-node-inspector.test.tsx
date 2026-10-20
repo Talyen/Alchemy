@@ -77,4 +77,10 @@ describe("Labyrinth inspector", () => {
     expect(onDescend).toHaveBeenCalledOnce();
     expect(onEnter).not.toHaveBeenCalled();
   });
+
+  it("loads chamber art eagerly", () => {
+    renderInspector({ type: "rest" });
+    const art = screen.getByTestId("chamber-art").querySelector("img");
+    expect(art?.getAttribute("loading")).toBe("eager");
+  });
 });

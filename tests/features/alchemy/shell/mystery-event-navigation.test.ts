@@ -96,6 +96,32 @@ describe("createMysteryEventNavigation", () => {
     expect(choice.effects[0]).toEqual({ kind: "gainMaterial", material: "herbs", amount: 3 });
   });
 
+  it.each([
+    [10, 5, 18, 8],
+    [28, 5, 30, 2],
+    [30, 5, 30, 0],
+    [10, 0, 10, 0],
+  ])(
+    "records actual Mystery healing from %i Health with a base reward of %i",
+    (health, amount, restoredHealth, award) => {
+      setRunProgress({
+        runPlayerHealth: health,
+        runMaxHealth: 30,
+        effects: { ...defaultHomesteadEffects, homesteadHealing: 3 },
+      });
+      const { nav } = createMysteryNav();
+      const choice = offerChoices([{ label: "Rest", effects: [{ kind: "healHealth", amount }] }])[0]!;
+
+      expect(nav.handleMysteryChoice(choice)).toBe(true);
+
+      expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(restoredHealth);
+      expect(
+        readActivityData(readRunSession(defaultGameSession).activity, "mystery").mysteryChosenChoice?.effects,
+      ).toEqual([{ kind: "healHealth", amount: award }]);
+      expect(choice.effects).toEqual([{ kind: "healHealth", amount }]);
+    },
+  );
+
   it("presents an initialized event without changing its committed state", () => {
     initializeMysteryForTest(defaultGameSession);
     const before = readRunRevision(defaultGameSession);

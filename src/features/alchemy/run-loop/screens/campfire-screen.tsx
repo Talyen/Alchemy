@@ -62,6 +62,7 @@ export function CampfireScreen({
           <img
             src={campfire}
             alt={i18n.text("ui.campfire-screen.5", "Campfire")}
+            loading="eager"
             decoding="async"
             className="card-hover-scale w-full max-w-lg rounded-shell-panel object-contain"
           />
@@ -139,6 +140,7 @@ export function CampfireScreen({
                   const from = playerHealth;
                   const to = playerHealth + restore;
                   if (onRest()) {
+                    setError(false);
                     setRest({ from, to, saved: false });
                     afterProgressSaved(() => setRest({ from, to, saved: true }));
                   } else setError(true);

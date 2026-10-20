@@ -1,5 +1,6 @@
 import type { BattleCard, BattleCardEffect, CompanionDefinition, KeywordDefinition, KeywordId } from "./types";
 import { collectKeywordsFromBattleEffects } from "./effect-metadata";
+import { TALENT_TREE_KEYWORD_IDS } from "./talents/xp-keywords";
 
 // Cost/title variants can share an immutable effect tree. Cache that tree,
 // while keeping Consume and tags on the card that actually requested it.
@@ -211,6 +212,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   },
 };
 
+/** Keywords that earn in-run Talent XP; tree-less keywords stay out of the XP and Health math. */
 export function filterKeywordsForTalentXP(keywords: KeywordId[]): KeywordId[] {
-  return keywords.filter((kw) => Object.hasOwn(keywordDefinitions, kw));
+  return keywords.filter((keyword) => TALENT_TREE_KEYWORD_IDS.has(keyword));
 }

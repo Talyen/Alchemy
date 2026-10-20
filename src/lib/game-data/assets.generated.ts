@@ -60,6 +60,8 @@ export { default as cutpurseKnife } from "@/assets/optimized/cutpurse-knife.webp
 export { default as darkPact } from "@/assets/optimized/dark-pact.webp";
 export { default as demoFeatureShowcaseDe } from "@/assets/optimized/demo-feature-showcase-de.webp";
 export { default as demoFeatureShowcaseEs } from "@/assets/optimized/demo-feature-showcase-es.webp";
+export { default as demoFeatureShowcaseFr } from "@/assets/optimized/demo-feature-showcase-fr.webp";
+export { default as demoFeatureShowcaseJa } from "@/assets/optimized/demo-feature-showcase-ja.webp";
 export { default as demoFeatureShowcasePtBr } from "@/assets/optimized/demo-feature-showcase-pt-br.webp";
 export { default as demoFeatureShowcaseRu } from "@/assets/optimized/demo-feature-showcase-ru.webp";
 export { default as demoFeatureShowcaseZhHans } from "@/assets/optimized/demo-feature-showcase-zh-hans.webp";

@@ -125,7 +125,8 @@ export function applyFirstDamageBonus(
   let nextState: BattleState = state;
   let firstBonus = 0;
 
-  if (isLikeDamage(effect.damageType, "burn", state)) {
+  // Meteorite keys off Burn card hits; shared Burn/Bleed bonuses do not reclassify Bleed.
+  if (effect.damageType === "burn") {
     if (nextState.trinketEffects.firstBurnDoubled && !readCombatFlag(nextState, "firstBurnTrinketDoubledUsed")) {
       firstBonus += 1;
       nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);

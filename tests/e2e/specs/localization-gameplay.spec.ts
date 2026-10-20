@@ -83,6 +83,9 @@ async function crossLanguageResume(page: Page, locale: AcceptanceLocale, ready: 
 
 for (const locale of acceptanceLocales) {
   test.describe(locale, () => {
+    // These journeys boot several pages and compare independently resumed saves.
+    test.setTimeout(60_000);
+
     test.beforeEach(() => {
       // oxlint-disable-next-line playwright/no-skipped-test -- Pseudotext is deliberately developer-only.
       test.skip(locale === "en-XA" && process.env.PLAYWRIGHT_VITE_MODE !== "dev", "QA locale");
@@ -147,7 +150,6 @@ for (const locale of acceptanceLocales) {
     });
 
     test("Talents and Collection keep localized keyboard targets and saved allocation", async ({ page }) => {
-      test.setTimeout(60_000);
       await injectHomestead(page, { talentXP: { dodge: 550 }, unlockedTalents: {}, discoveredCardIds: ["anvil"] });
       await page.goto("/");
       await localizedCheckpoint(page, locale, async (fresh) => {

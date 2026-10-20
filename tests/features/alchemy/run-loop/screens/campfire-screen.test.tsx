@@ -103,4 +103,14 @@ describe("Campfire Rest or Brew", () => {
     act(() => saved!());
     await waitFor(() => expect(screen.getByText("50 / 100")).toBeTruthy());
   });
+
+  it("clears a previous Rest failure after a later Rest succeeds", () => {
+    const p = { ...props(), onRest: vi.fn(() => false) };
+    render(<CampfireScreen {...p} />);
+    fireEvent.click(screen.getByRole("button", { name: /^Rest$/ }));
+    expect(screen.getByRole("alert")).toBeTruthy();
+    p.onRest.mockReturnValue(true);
+    fireEvent.click(screen.getByRole("button", { name: /^Rest$/ }));
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
 });

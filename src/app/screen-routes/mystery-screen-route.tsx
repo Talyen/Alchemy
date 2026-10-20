@@ -91,6 +91,13 @@ export function MysteryScreenRoute({ routeCommands }: RunLoopRouteCtx) {
               effects: r.homesteadEffects,
             })[effect.material],
           };
+        if (effect.kind === "healHealth") {
+          const total = effect.amount + (effect.amount > 0 ? r.homesteadEffects.homesteadHealing : 0);
+          // The choice applies Math.min(maxHealth, health + total); clamp the
+          // preview to the same missing Health so a near-full run does not
+          // promise healing it cannot receive.
+          return { ...effect, amount: Math.min(total, Math.max(0, r.runMaxHealth - r.runPlayerHealth)) };
+        }
         return effect;
       }}
       mysteryCardChoices={heldVisit.cardChoices}

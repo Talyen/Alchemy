@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import { runLoopScreenRoutes } from "@/app/screen-routes/run-loop-routes";
-import type { MysteryEvent } from "@/lib/mystery";
+import type { MysteryEffect, MysteryEvent } from "@/lib/mystery";
 import { createMockRouteCommands } from "../helpers/run-controller";
 
 const MysteryRoute = runLoopScreenRoutes.mystery;
@@ -15,9 +15,17 @@ const mysteryScreenData = vi.hoisted(() => ({
     mysteryGrantedGearInstances: [] as unknown[],
     mysteryChosenCardId: null as string | null,
     mysteryChosenChoice: null as unknown,
+    homesteadEffects: { homesteadHealing: 0, goldFindBonus: 0 },
+    goldMultiplier: 1,
+    runPlayerHealth: 10,
+    runMaxHealth: 30,
     runTalentXP: {},
     talentXP: {},
   },
+}));
+
+const previewEffectSpy = vi.hoisted(() => ({
+  current: null as ((effect: MysteryEffect) => MysteryEffect) | null,
 }));
 
 vi.mock("@/features/alchemy/shared/stores/use-run-screen-data", () => ({
@@ -35,7 +43,10 @@ vi.mock("@/features/alchemy/run-loop/screens", () => {
     EquipmentShopScreen: Screen,
     LabyrinthMapScreen: Screen,
     CardShopScreen: Screen,
-    MysteryScreen: Screen,
+    MysteryScreen: ({ previewEffect }: { previewEffect?: (effect: MysteryEffect) => MysteryEffect }) => {
+      previewEffectSpy.current = previewEffect ?? null;
+      return null;
+    },
     MysteryScreenShell: Screen,
     RewardsScreen: Screen,
     TrinketShopScreen: Screen,
@@ -64,9 +75,14 @@ afterEach(() => {
     mysteryGrantedGearInstances: [],
     mysteryChosenCardId: null,
     mysteryChosenChoice: null,
+    homesteadEffects: { homesteadHealing: 0, goldFindBonus: 0 },
+    goldMultiplier: 1,
+    runPlayerHealth: 10,
+    runMaxHealth: 30,
     runTalentXP: {},
     talentXP: {},
   };
+  previewEffectSpy.current = null;
 });
 
 function routeElement() {
@@ -96,6 +112,36 @@ describe("MysteryScreenRoute", () => {
     view.rerender(routeElement());
 
     expect(continueSpy).toHaveBeenCalledOnce();
+  });
+
+  it("previews Mystery healing with the same Culinary Arts bonus applied by the choice", () => {
+    mysteryScreenData.current = {
+      ...mysteryScreenData.current,
+      mysteryEvent: {
+        ...sampleEvent,
+        choices: [{ label: "Rest", effects: [{ kind: "healHealth", amount: 5 }] }],
+      },
+      homesteadEffects: { homesteadHealing: 3, goldFindBonus: 0 },
+    };
+    render(routeElement());
+
+    expect(previewEffectSpy.current?.({ kind: "healHealth", amount: 5 })).toEqual({ kind: "healHealth", amount: 8 });
+  });
+
+  it("clamps the Mystery heal preview to missing Health like the choice does", () => {
+    mysteryScreenData.current = {
+      ...mysteryScreenData.current,
+      mysteryEvent: {
+        ...sampleEvent,
+        choices: [{ label: "Rest", effects: [{ kind: "healHealth", amount: 5 }] }],
+      },
+      homesteadEffects: { homesteadHealing: 3, goldFindBonus: 0 },
+      runPlayerHealth: 28,
+      runMaxHealth: 30,
+    };
+    render(routeElement());
+
+    expect(previewEffectSpy.current?.({ kind: "healHealth", amount: 5 })).toEqual({ kind: "healHealth", amount: 2 });
   });
 
   it("does not auto-continue when a held mystery event is cleared after Continue", () => {

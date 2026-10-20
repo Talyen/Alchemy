@@ -7,6 +7,7 @@ import {
   XP_TRIANGULAR_MULTIPLIER,
 } from "@/lib/game-constants";
 import type { KeywordId } from "../types";
+import { TALENT_TREE_KEYWORD_IDS } from "./xp-keywords";
 
 export type TalentXP = Partial<Record<KeywordId, number>>;
 
@@ -27,7 +28,11 @@ export function computeTalentPoints(xp: number): number {
 }
 
 function computeTotalTalentPoints(talentXP: TalentXP): number {
-  return Object.values(talentXP).reduce((sum, xp) => sum + computeTalentPoints(xp ?? 0), 0);
+  return Object.entries(talentXP).reduce(
+    (sum, [keyword, xp]) =>
+      TALENT_TREE_KEYWORD_IDS.has(keyword as KeywordId) ? sum + computeTalentPoints(xp ?? 0) : sum,
+    0,
+  );
 }
 
 export function computeStartingMaxHealth(talentXP: TalentXP): number {

@@ -139,6 +139,7 @@ for (const locale of acceptanceLocales) {
 for (const [locale, family, phrase] of [
   ["zh-Hans", "Alchemy Chinese", "造成伤害，获得格挡。简体中文，万亿"],
   ["ru", "Alchemy Cyrillic", "Здоровье, броня, оглушение"],
+  ["ja", "Alchemy Japanese", "体力、装甲、マナ。日本語、億、兆"],
 ] as const) {
   test(`${locale} uses a bundled font for its script`, async ({ page }) => {
     await page.addInitScript((value) => localStorage.setItem("alchemy-language-v1", value), locale);
@@ -156,6 +157,21 @@ for (const [locale, family, phrase] of [
       { family, phrase },
     );
     expect(loaded).toBe(true);
+    if (locale === "ja") {
+      await page.locator("#language").click();
+      for (const [optionLocale, optionFamily] of [
+        ["ja", "Alchemy Japanese"],
+        ["zh-Hans", "Alchemy Chinese"],
+      ] as const) {
+        const nativeName = page
+          .getByRole("option", { name: languages[optionLocale].name, exact: true })
+          .locator(`[lang="${optionLocale}"]`);
+        await expect(nativeName).toBeVisible();
+        const nativeFamily = await nativeName.evaluate((element) => getComputedStyle(element).fontFamily);
+        expect(nativeFamily.split(",")[1]?.trim().replaceAll('"', "")).toBe(optionFamily);
+      }
+      await page.keyboard.press("Escape");
+    }
     await assertNoOverflow(page, `${locale} font coverage`);
   });
 }

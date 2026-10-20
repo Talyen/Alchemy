@@ -59,6 +59,8 @@ describe("localized game presentation", () => {
       ["ru", "123,5\u00a0тыс."],
       ["es", "123,5\u00a0mil"],
       ["pt-BR", "123,5\u00a0mil"],
+      ["ja", "12.3万"],
+      ["fr", "123,5\u00a0k"],
       ["en-XA", "123.5K"],
     ] as const) {
       await act(async () => {
@@ -206,6 +208,8 @@ describe("localized game presentation", () => {
       ["ru", ["Просмотр колоды · 1 карта", "Просмотр колоды · 2 карты", "Просмотр колоды · 5 карт"]],
       ["es", ["Ver mazo · 1 carta", "Ver mazo · 2 cartas", "Ver mazo · 5 cartas"]],
       ["pt-BR", ["Ver baralho · 1 carta", "Ver baralho · 2 cartas", "Ver baralho · 5 cartas"]],
+      ["ja", ["デッキを見る・1枚", "デッキを見る・2枚", "デッキを見る・5枚"]],
+      ["fr", ["Voir le deck · 1 carte", "Voir le deck · 2 cartes", "Voir le deck · 5 cartes"]],
     ] as const) {
       await localization.changeLanguage(locale);
       for (const [index, count] of [1, 2, 5].entries())
@@ -239,6 +243,8 @@ describe("localized game presentation", () => {
       ["russian", "ru"],
       ["spanish", "es"],
       ["brazilian", "pt-BR"],
+      ["japanese", "ja"],
+      ["french", "fr"],
     ])
       expect(resolveLocale("auto", steam!, ["en-US"])).toBe(locale);
     for (const [system, locale] of [
@@ -247,6 +253,9 @@ describe("localized game presentation", () => {
       ["ru-RU", "ru"],
       ["es-ES", "es"],
       ["pt-BR", "pt-BR"],
+      ["ja-JP", "ja"],
+      ["fr-FR", "fr"],
+      ["fr-CA", "fr"],
     ])
       expect(resolveLocale("auto", null, [system!])).toBe(locale);
     for (const steam of ["tchinese", "latam", "portuguese", "constructor", "__proto__"])

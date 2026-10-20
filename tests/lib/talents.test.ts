@@ -37,6 +37,10 @@ describe("talent progression", () => {
     expect(computeStartingMaxHealth({})).toBe(MAX_PLAYER_HEALTH);
   });
 
+  it("ignores tree-less keywords so saved Thorns XP cannot grant hidden Health", () => {
+    expect(computeStartingMaxHealth({ thorns: 40 })).toBe(MAX_PLAYER_HEALTH);
+  });
+
   it("awards keyword XP without changing the previous snapshot", () => {
     const input = Object.freeze({ physical: 1 });
     expect(addTalentXP(input, ["physical", "burn"], 3)).toEqual({ physical: 4, burn: 3 });
