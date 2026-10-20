@@ -85,6 +85,14 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(result.runMetaMaxHealth).toBe(30);
   });
 
+  it.each([{ runPlayerHealth: 0 }, { runPlayerHealth: -4 }, { runPlayerHealth: 2.5 }, { runPlayerHealth: undefined }])(
+    "repairs missing or invalid player health to maxHealth instead of resuming dead (%o)",
+    (overrides) => {
+      const result = parseActiveRunData({ runMaxHealth: 30, ...overrides });
+      expect(result.runPlayerHealth).toBe(30);
+    },
+  );
+
   it("strips labyrinth modifiers for campaign mode", () => {
     const result = parseActiveRunData({
       contentSystemType: "campaign",

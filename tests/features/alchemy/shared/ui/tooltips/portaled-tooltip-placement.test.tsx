@@ -153,6 +153,31 @@ describe("usePortaledTooltipPlacement", () => {
     expect(stop).toHaveBeenCalledTimes(2);
   });
 
+  it("absorbs a rejected measurement without an unhandled rejection and positions on the next pass", async () => {
+    const compute = vi.spyOn(floatingUi, "computePosition").mockRejectedValueOnce(new Error("unmounted mid-flight"));
+    let remeasure!: () => void;
+    vi.spyOn(floatingUi, "autoUpdate").mockImplementation((_reference, _floating, update) => {
+      remeasure = update;
+      return () => {};
+    });
+    const rejections: unknown[] = [];
+    const onUnhandled = (event: PromiseRejectionEvent) => {
+      rejections.push(event.reason);
+    };
+    window.addEventListener("unhandledrejection", onUnhandled);
+    try {
+      render(<Harness placement="below" />);
+      await waitFor(() => expect(compute).toHaveBeenCalledTimes(1));
+      await act(async () => {});
+      expect(rejections).toEqual([]);
+      compute.mockResolvedValue({ x: 30, y: 40, placement: "bottom", strategy: "fixed", middlewareData: {} });
+      act(() => remeasure());
+      await waitFor(() => expect(screen.getByTestId("tip-floating").style.left).toBe("30px"));
+    } finally {
+      window.removeEventListener("unhandledrejection", onUnhandled);
+    }
+  });
+
   it("coalesces repeated resize notifications into one frame and disposes it on unmount", () => {
     let remeasure!: () => void;
     vi.spyOn(floatingUi, "autoUpdate").mockImplementation((_trigger, _tooltip, update) => {

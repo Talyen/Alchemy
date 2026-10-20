@@ -150,7 +150,9 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
   return {
     ...data,
     rng: rngCountersChanged ? rngState : data.rng,
-    runPlayerHealth: Math.min(data.runPlayerHealth, data.runMaxHealth),
+    // A saved active run at 0 Health is corruption, not defeat: defeat tears
+    // the run down, so resume repair keeps the run alive at full Health.
+    runPlayerHealth: data.runPlayerHealth > 0 ? Math.min(data.runPlayerHealth, data.runMaxHealth) : data.runMaxHealth,
     runMetaMaxHealth: data.runMetaMaxHealth > 0 ? data.runMetaMaxHealth : data.runMaxHealth,
     runDeck,
     labyrinthMap: data.contentSystemType === "labyrinth" ? data.labyrinthMap : null,

@@ -68,14 +68,22 @@ export function ArmoryInventoryMenu({
             },
           }),
         ],
-      }).then(({ x, y }) => {
-        if (disposed) return;
-        Object.assign(panel.style, { left: `${x}px`, top: `${y}px`, visibility: "visible" });
-        if (!focused) {
-          focused = true;
-          focusControl(panel.querySelector<HTMLElement>("button, input"));
-        }
-      });
+      }).then(
+        ({ x, y }) => {
+          if (disposed) return;
+          Object.assign(panel.style, { left: `${x}px`, top: `${y}px`, visibility: "visible" });
+          if (!focused) {
+            focused = true;
+            focusControl(panel.querySelector<HTMLElement>("button, input"));
+          }
+        },
+        () => {
+          // Positioning can reject when the trigger unmounts mid-flight; reveal
+          // anyway so the menu does not stay hidden until the next pass repositions.
+          if (disposed) return;
+          panel.style.visibility = "visible";
+        },
+      );
     };
     const cleanup = autoUpdate(trigger, panel, update, {
       elementResize: typeof ResizeObserver !== "undefined",

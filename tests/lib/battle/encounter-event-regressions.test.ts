@@ -220,16 +220,20 @@ describe("encounter event regressions", () => {
 
   it("Powerful Wish upgrades every Luck Potion outcome", () => {
     const potion = upgradeWishCard(cardById["luck-potion"]!);
-    expect(potion.descriptionLines[0]).toBe("Gain 5 Mana, Gold, or Block");
+    expect(potion.descriptionLines[0]).toBe("50% chance: Gain 5 Mana");
+    expect(potion.descriptionLines[1]).toBe("Otherwise: Gain 5 Gold or Block");
     expect(JSON.stringify(potion.effects)).not.toContain('"amount":4');
     const dice = upgradeWishCard(cardById["roll-the-dice"]!);
     expect(dice.descriptionLines).toEqual(cardById["roll-the-dice"]!.descriptionLines);
     expect(dice.effects.every((effect) => BattleCardEffectSchema.safeParse(effect).success)).toBe(true);
     expect(dice.effects).toEqual([{ kind: "random-draw", minAmount: 1, maxAmount: 6 }]);
     const original = cardById["luck-potion"]!;
-    const target = getEditableCorruptionTargets(original).at(-1)!;
-    const corrupted = applyNumericCorruption(original, target, 1);
-    expect(corrupted.descriptionLines[0]).toBe("Gain 5 Mana, Gold, or Block");
+    const targets = getEditableCorruptionTargets(original);
+    const once = applyNumericCorruption(original, targets[0]!, 1);
+    const inner = getEditableCorruptionTargets(once).find((entry) => entry.id === targets[1]!.id)!;
+    const corrupted = applyNumericCorruption(once, inner, 1);
+    expect(corrupted.descriptionLines[0]).toBe("50% chance: Gain 5 Mana");
+    expect(corrupted.descriptionLines[1]).toBe("Otherwise: Gain 5 Gold or Block");
     expect(corrupted.effects).toEqual([
       expect.objectContaining({
         successEffects: [{ kind: "restore-mana", amount: 5 }],
@@ -241,6 +245,7 @@ describe("encounter event regressions", () => {
         ],
       }),
     ]);
-    expect(original.descriptionLines[0]).toBe("Gain 4 Mana, Gold, or Block");
+    expect(original.descriptionLines[0]).toBe("50% chance: Gain 4 Mana");
+    expect(original.descriptionLines[1]).toBe("Otherwise: Gain 4 Gold or Block");
   });
 });
