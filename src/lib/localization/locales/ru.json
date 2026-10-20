@@ -2123,8 +2123,6 @@
   "ui.error-log-viewer.s1": {"text":"<part0/><part1/> ошибок<part2/>","sourceHash":"acf812a8e4521c8f85a0aa099fb22aaee92db5f7809fbdd3a1dc45220fa0098c","reviewed":true},
   "ui.error-log-viewer.s2": {"text":"<part0/>:","sourceHash":"93d2ac6d4eff5b25058df01c39a62edd09b5f84d0c8b5525d579ce559f4032dd","reviewed":true},
   "ui.game-menu.1": {"text":"Игровое меню","sourceHash":"df029fad64cf3f56647fd27cdf43e349706b942b7de83bb5dfe6c30d509fb4df","reviewed":true},
-  "ui.game-menu.2": {"text":"Завершить этот забег?","sourceHash":"d7359a8f1cc77afb32537d32f3414f508e8ab359532e31d50394845dcc42fd1e","reviewed":true},
-  "ui.game-menu.3": {"text":"Вы не сможете продолжить этот забег.","sourceHash":"d2c010c4a06ac2fcc0fcedfe72df1053455881ec5416a8ffca98f4b928e6ed38","reviewed":true},
   "ui.game-mode-select-screen.1": {"text":"Начать забег","sourceHash":"96ea7507beb21082b21b6984d3250c3deef4774facd808540de7326f37db59a3","reviewed":true},
   "ui.hand.1": {"text":"Играть: {{value0}}","sourceHash":"78feaf77e1498299674b4e1d8f34515dbc27eeb5335625eda648dac9ce8f77ce","reviewed":true},
   "ui.health-restore-meter.s1": {"text":"<part0/> / <part1/>","sourceHash":"ad87e2f061a3c566cbcf18dcc7098e71c68897fc78f63f218dd4466c57376119","reviewed":true},

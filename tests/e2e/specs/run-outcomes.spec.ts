@@ -73,10 +73,6 @@ test.describe("Run Outcomes", () => {
       await page.getByRole("button", { name: "Open game menu", exact: true }).click();
       await expect(page.getByRole("button", { name: "End Run" })).toBeVisible({ timeout: 3000 });
       await page.getByRole("button", { name: "End Run" }).click();
-      await page
-        .getByRole("dialog", { name: "End this run?" })
-        .getByRole("button", { name: "End Run", exact: true })
-        .click();
       await expect(page.getByRole("heading", { name: "Journey’s End" })).toBeVisible({ timeout: 5000 });
       await page.getByRole("button", { name: "Continue", exact: true }).click();
       await expect(page.getByRole("heading", { name: "Hero Unlocked", exact: true })).toBeVisible();

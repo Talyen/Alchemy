@@ -1,13 +1,12 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { BookOpen, Cog, House, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
-import { Fragment, useState, type ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { getProgressionFeatureUnlockMessage } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { Screen } from "@/lib/routing";
 import { controlLabelClass } from "../config/typography";
 import { useHeldWhile } from "./use-fade";
-import { ConfirmationDialog } from "./dialogs";
 import { LockedMenuItem } from "./locked-menu-item";
 import { ModalOverlayShell } from "./modal-overlay-shell";
 import { useDialogFocus } from "./use-dialog-focus";
@@ -99,9 +98,6 @@ export function GameMenu({
   isHomesteadLocked = false,
 }: GameMenuProps) {
   const i18n = useGameTranslation();
-  const [confirmEndRun, setConfirmEndRun] = useState(false);
-  if ((!isOpen || !onEndRun) && confirmEndRun) setConfirmEndRun(false);
-
   const layoutAnchorRect = useHeldWhile(isOpen, anchorRect ?? null);
   const items: MenuItem[] = [
     { key: "return-to-run", label: returnToRunLabel, Icon: Swords, onSelect: onReturnToRun },
@@ -147,10 +143,6 @@ export function GameMenu({
                 message={i18n.displayText(lock?.message ?? "")}
                 locked={lock?.locked ?? false}
                 onSelect={() => {
-                  if (key === "end-run") {
-                    setConfirmEndRun(true);
-                    return;
-                  }
                   onSelect();
                   onClose();
                 }}
@@ -167,37 +159,22 @@ export function GameMenu({
   );
 
   return (
-    <>
-      <ModalOverlayShell
-        open={isOpen}
-        mount={!confirmEndRun}
-        escapeId="game-menu"
-        onClose={onClose}
-        dismissOnBackdrop
-        dim={false}
-        zIndex={120}
-        className={cn(!layoutAnchorRect && "flex items-center justify-center px-6")}
-      >
-        {layoutAnchorRect ? (
-          <div className="fixed z-[121]" style={anchoredMenuStyle(layoutAnchorRect)}>
-            {i18n.displayText(panel)}
-          </div>
-        ) : (
-          panel
-        )}
-      </ModalOverlayShell>
-      <ConfirmationDialog
-        open={isOpen && confirmEndRun && Boolean(onEndRun)}
-        title={i18n.text("ui.game-menu.2", "End this run?")}
-        description={i18n.text("ui.game-menu.3", "You won’t be able to continue this run.")}
-        confirmLabel={i18n.text("ui.game-menu.4", "End Run")}
-        onCancel={() => setConfirmEndRun(false)}
-        onConfirm={() => {
-          setConfirmEndRun(false);
-          onEndRun?.();
-          onClose();
-        }}
-      />
-    </>
+    <ModalOverlayShell
+      open={isOpen}
+      escapeId="game-menu"
+      onClose={onClose}
+      dismissOnBackdrop
+      dim={false}
+      zIndex={120}
+      className={cn(!layoutAnchorRect && "flex items-center justify-center px-6")}
+    >
+      {layoutAnchorRect ? (
+        <div className="fixed z-[121]" style={anchoredMenuStyle(layoutAnchorRect)}>
+          {i18n.displayText(panel)}
+        </div>
+      ) : (
+        panel
+      )}
+    </ModalOverlayShell>
   );
 }

@@ -2123,8 +2123,6 @@
   "ui.error-log-viewer.s1": {"text":"<part0/><part1/>个错误<part2/>","sourceHash":"f74102140593d791479ca274fe437bec1a294210673b7665bb58e6de2c364eff","reviewed":true},
   "ui.error-log-viewer.s2": {"text":"<part0/>：","sourceHash":"9a03d03e169c0a0791938f4682b0175de2e2fdbdef565ea49d02c26ce084c094","reviewed":true},
   "ui.game-menu.1": {"text":"游戏菜单","sourceHash":"78f0d26ec68a747941ab5fa6a1a56b448920c87260a5521e422db61ed88cecd9","reviewed":true},
-  "ui.game-menu.2": {"text":"结束此次冒险？","sourceHash":"8ae7919ab7a76f8cdd3e77651c3ff623299be22410ef85b409c93aa9ec9a8414","reviewed":true},
-  "ui.game-menu.3": {"text":"你将无法继续此次冒险。","sourceHash":"3d44aa2da9a4abf31518972f98388d12a7fa4d7ce8648912edfe9b8050913275","reviewed":true},
   "ui.game-mode-select-screen.1": {"text":"开始冒险","sourceHash":"036f96623fe0e234a523d6c9a131dfb17578d35e64f7e1c6a2e984b6dff325c0","reviewed":true},
   "ui.hand.1": {"text":"打出{{value0}}","sourceHash":"8f61e47a78de942cd063de73004caf5edcb5cce03d161b628e457ecf4831dd41","reviewed":true},
   "ui.health-restore-meter.s1": {"text":"<part0/> / <part1/>","sourceHash":"f28d0e749985f7cec0f9a06efd74e582317ea63e2c9c1a46269225c3696a58fe","reviewed":true},

@@ -2123,8 +2123,6 @@
   "ui.error-log-viewer.s1": {"text":"<part0/><part1/> errores<part2/>","sourceHash":"15a02cd8b4cbeb2a1941f889c75525f54e2211cb12a625c8876bc232d497afee","reviewed":true},
   "ui.error-log-viewer.s2": {"text":"<part0/>:","sourceHash":"0f744a49852548237c287639e09ec29daaa58d620a9029bb5b18948000d02f21","reviewed":true},
   "ui.game-menu.1": {"text":"Menú de juego","sourceHash":"360c8293caa08dcf2d5c31229965bc0961ecd65d9469f4af8ac612cdcc03281e","reviewed":true},
-  "ui.game-menu.2": {"text":"¿Terminar esta aventura?","sourceHash":"e29c399f6e14391b375790f20e985b81e3b1510fa1e0df508c4ae921c4b72a0a","reviewed":true},
-  "ui.game-menu.3": {"text":"No podrás continuar esta aventura.","sourceHash":"623a2e6f86a7478d54b5a7f1802a9e0cc063e4ca542b98cca95eb3de37d0831b","reviewed":true},
   "ui.game-mode-select-screen.1": {"text":"Empezar aventura","sourceHash":"9b8bdb6b58cc3ba9bc9c0780fcaca3925965434b6afc5fab3f06961de38572b4","reviewed":true},
   "ui.hand.1": {"text":"Jugar {{value0}}","sourceHash":"27d084ba6de67d01c8d9b80a22784139df6e6a80000977cf49b4510a4a4dd853","reviewed":true},
   "ui.health-restore-meter.s1": {"text":"<part0/> / <part1/>","sourceHash":"03e6ad2f5555c31e2e88766ac5aae95b9c0399bdddbeabe1a71a1faf38d43138","reviewed":true},

@@ -154,10 +154,6 @@ test.describe("Steam demo edition", () => {
       await battle.playFirstCard();
       await battle.menuBtn.click();
       await page.getByTestId("game-menu").getByRole("button", { name: "End Run", exact: true }).click();
-      await page
-        .getByRole("dialog", { name: "End this run?", exact: true })
-        .getByRole("button", { name: "End Run", exact: true })
-        .click();
       await expect(page.getByRole("heading", { name: "Journey’s End", exact: true })).toBeVisible();
       if (hero !== "Ranger") {
         await page.getByRole("button", { name: "Continue", exact: true }).click();

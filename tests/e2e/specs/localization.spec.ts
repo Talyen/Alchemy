@@ -194,14 +194,8 @@ for (const locale of acceptanceLocales) {
         .getByTestId("game-menu")
         .getByRole("button", { name: label("End Run"), exact: true })
         .click();
-      const dialog = localized.getByRole("dialog", { name: label("End this run?"), exact: true });
-      await expect(dialog).toBeVisible();
-      await dialog.getByRole("button", { name: label("Cancel"), exact: true }).focus();
-      await expect(dialog.getByRole("button", { name: label("Cancel"), exact: true })).toBeFocused();
-      await reviewLayout(localized, `${locale} confirmation`);
-      await dialog.getByRole("button", { name: label("Cancel"), exact: true }).click();
-      await expect(dialog).toHaveCount(0);
-      expect(mechanics((await readSavedGame(localized)).activeRun)).toEqual(before);
+      await expect(localized.getByRole("heading", { name: label("Journey’s End"), exact: true })).toBeVisible();
+      await expect.poll(async () => (await readSavedGame(localized)).activeRun).toBeNull();
     });
   });
 }

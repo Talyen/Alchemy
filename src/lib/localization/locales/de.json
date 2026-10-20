@@ -2123,8 +2123,6 @@
   "ui.error-log-viewer.s1": {"text":"<part0/><part1/> Fehler<part2/>","sourceHash":"340847d1194088a802cf1ac628f5f657d7cad2904cd26c56525db76f22f3d6aa","reviewed":true},
   "ui.error-log-viewer.s2": {"text":"<part0/>:","sourceHash":"91694d43afb7a4cfd7963bb31bc999b730d344683ec6f86ec96815fff67c37fd","reviewed":true},
   "ui.game-menu.1": {"text":"Spielmenü","sourceHash":"2117c877d4808ba2d34673edc4525c439258c0c28cbea67d3973b8c42413ee46","reviewed":true},
-  "ui.game-menu.2": {"text":"Diesen Lauf beenden?","sourceHash":"0247f9b541da6bd238dd0b43e41bba183f83e55352f53b5003b7cf6404bcc4dd","reviewed":true},
-  "ui.game-menu.3": {"text":"Du kannst diesen Lauf danach nicht fortsetzen.","sourceHash":"248c1d2e10d8f9e7802b76a068b540724cd9f1a8cfd397d9c49a84498f8d432b","reviewed":true},
   "ui.game-mode-select-screen.1": {"text":"Lauf starten","sourceHash":"8d5f3b590fa44f753c42ee971b5ae1e6fa5c4ea6f5ceb84186ce2d2cb7d3f202","reviewed":true},
   "ui.hand.1": {"text":"{{value0}} spielen","sourceHash":"064ff733dc08aafe9ff6cd43d38744b48bf200aef69a7aa85586c0f21b9253bb","reviewed":true},
   "ui.health-restore-meter.s1": {"text":"<part0/> / <part1/>","sourceHash":"933b2932359fe6fa144958eb392d08064f7d8b360849c95d45efec85f213b9a7","reviewed":true},

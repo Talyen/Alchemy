@@ -39,13 +39,6 @@ test.describe("Menu", () => {
     await expectRunPhase(page, "battle");
     await new BattlePage(page).menuBtn.click();
     await page.getByTestId("game-menu").getByRole("button", { name: "End Run", exact: true }).click();
-    const confirmation = page.getByRole("dialog", { name: "End this run?" });
-    await expect(confirmation).toBeVisible();
-    await confirmation.getByRole("button", { name: "Cancel", exact: true }).click();
-    await expect(confirmation).toHaveCount(0);
-    await expect.poll(async () => (await readSavedGame(page)).activeRun).not.toBeNull();
-    await page.getByTestId("game-menu").getByRole("button", { name: "End Run", exact: true }).click();
-    await confirmation.getByRole("button", { name: "End Run", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Journey’s End" })).toBeVisible();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await page.getByRole("button", { name: "Main Menu" }).click();

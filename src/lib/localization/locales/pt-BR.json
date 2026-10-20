@@ -2123,8 +2123,6 @@
   "ui.error-log-viewer.s1": {"text":"<part0/><part1/> erros<part2/>","sourceHash":"d7a569a9ab4542e77d55532bb418439e4583fbe50fc0c49114cf353491b6d3a5","reviewed":true},
   "ui.error-log-viewer.s2": {"text":"<part0/>:","sourceHash":"6873689f2ecea3795f8a69aab517108e9a4b77cefc47c5375c08161d00d5c892","reviewed":true},
   "ui.game-menu.1": {"text":"Menu do jogo","sourceHash":"289a957d466e27b61bb914cd3231a018ff03544a645a641137558a1c6a9085a5","reviewed":true},
-  "ui.game-menu.2": {"text":"Encerrar esta jornada?","sourceHash":"46c7526541e6483951601a111368a72d1a440418fe1b1266e7a6dbf9b6529d63","reviewed":true},
-  "ui.game-menu.3": {"text":"Você não poderá continuar esta jornada.","sourceHash":"15b04a4789467663aec325fe6937016b804595fef458d746ce926eb4ad6a6d8d","reviewed":true},
   "ui.game-mode-select-screen.1": {"text":"Iniciar jornada","sourceHash":"cf40287f383eb87c1a0b714bbba7abf81e629e44880d2999b45ff6093de30c1e","reviewed":true},
   "ui.hand.1": {"text":"Jogar {{value0}}","sourceHash":"5094173800f99b981510af01d69af8615e20a428e404daa7b81e1d7f7e47c5d3","reviewed":true},
   "ui.health-restore-meter.s1": {"text":"<part0/> / <part1/>","sourceHash":"5f62fd128b6dc48d8eb035b7b1697ffca14d928541a0ebe758d85e1049dfd225","reviewed":true},
