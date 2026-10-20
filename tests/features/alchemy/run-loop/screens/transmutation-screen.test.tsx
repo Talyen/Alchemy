@@ -129,11 +129,29 @@ describe("Transmutation flow", () => {
     render(<Harness />);
     click("Slash");
     expect(visit().transmutation).toMatchObject({ keyword: "burn", offerIndex: 1 });
-    expect((screen.getByRole("button", { name: "Choose Companion" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByRole("button", { name: "Choose Companion" })).toBeNull();
     await previewReady();
     click("Transmute");
     expect(readActiveRun(defaultGameSession).runDeck[0]?.transmuted).toBe("burn");
     expect(onExchange).toHaveBeenCalledExactlyOnceWith(0, 1);
+  });
+
+  it("shows only the selected card's choices and preserves them after switching cards", () => {
+    const choices = visit().transmutation!.choices;
+    expect(choices.length).toBeGreaterThan(3);
+    render(<Harness />);
+    for (const title of ["Slash", "Frostbolt", "Slash"]) {
+      click(title);
+      const offers = getTransmutationOffers(visit());
+      const buttons = within(screen.getByRole("group", { name: "Alterations" })).getAllByRole("button");
+      expect(buttons.map((button) => button.getAttribute("aria-label"))).toEqual(
+        offers.map((offer) => `Choose ${keywordDefinitions[offer.transmuted!].label}`),
+      );
+      expect(buttons).toHaveLength(3);
+      expect(buttons.every((button) => !(button as HTMLButtonElement).disabled)).toBe(true);
+      click("Back");
+    }
+    expect(visit().transmutation!.choices).toEqual(choices);
   });
 
   it("shows keyword buttons above original and preview, keeps values, and commits only through Transmute", async () => {

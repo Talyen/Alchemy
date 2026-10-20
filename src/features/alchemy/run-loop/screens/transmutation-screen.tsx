@@ -238,18 +238,20 @@ export function TransmutationScreen({
               role="group"
               aria-label={i18n.text("ui.transmutation-screen.6", "Alterations")}
             >
-              {selection?.choices.map((choice) => (
-                <KeywordTag
-                  key={choice.keyword}
-                  keywordId={choice.keyword}
-                  pill
-                  choice
-                  showTooltip
-                  selected={keyword === choice.keyword}
-                  disabled={locked || !canTransmuteCard([choice], source, selection?.sourceIndex ?? undefined, runDeck)}
-                  onSelect={() => select({ kind: "keyword", keyword: choice.keyword })}
-                />
-              ))}
+              {selection?.choices
+                .filter((choice) => canTransmuteCard([choice], source, selection?.sourceIndex ?? undefined, runDeck))
+                .map((choice) => (
+                  <KeywordTag
+                    key={choice.keyword}
+                    keywordId={choice.keyword}
+                    pill
+                    choice
+                    showTooltip
+                    selected={keyword === choice.keyword}
+                    disabled={locked}
+                    onSelect={() => select({ kind: "keyword", keyword: choice.keyword })}
+                  />
+                ))}
             </div>
             {preview && (
               <div

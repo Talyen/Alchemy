@@ -150,11 +150,28 @@ it("excludes existing destination keywords and repeat Transmutation or Corruptio
   expect(getTransmutationVariants(repeatedDamage, "archery", [])).toHaveLength(1);
 });
 
-it("rolls useful, reproducible keywords per bucket and fills missing buckets without duplicates", () => {
+it("saves three valid, reproducible choices per card even when the visit needs more than three keywords", () => {
   const deck = [cardById.slash!, cardById.heal!, cardById.block!];
   const choices = createTransmutationOffers(deck, createSeededRng(2));
   expect(choices).toEqual(createTransmutationOffers(deck, createSeededRng(2)));
-  choices.forEach((choice, index) => expect(TRANSMUTATION_KEYWORD_GROUPS[index]).toContain(choice.keyword));
+  expect(choices.length).toBeGreaterThan(3);
+  expect(new Set(choices.map((choice) => choice.keyword)).size).toBe(choices.length);
+  deck.forEach((card, sourceIndex) => {
+    const offered = choices.filter((choice) => choice.alterations.some((entry) => entry.sourceIndex === sourceIndex));
+    expect(offered).toHaveLength(3);
+    for (const group of TRANSMUTATION_KEYWORD_GROUPS) {
+      if (group.some((keyword) => getTransmutationVariants(card, keyword, deck).length > 0))
+        expect(offered.some((choice) => (group as readonly KeywordId[]).includes(choice.keyword))).toBe(true);
+    }
+    for (const choice of offered) {
+      const alteration = choice.alterations.find((entry) => entry.sourceIndex === sourceIndex)!;
+      expect(alteration.source).toEqual(card);
+      expect(getTransmutationVariants(card, choice.keyword, deck)).toContainEqual({
+        sourceKeyword: alteration.sourceKeyword,
+        result: alteration.result,
+      });
+    }
+  });
   const fallback = createTransmutationOffers([cardById.heal!], createSeededRng(2));
   expect(new Set(fallback.map((choice) => choice.keyword)).size).toBe(3);
   expect(fallback.every((choice) => choice.alterations.length)).toBe(true);

@@ -275,38 +275,38 @@ export function getTransmutationVariants(
 }
 
 export function createTransmutationOffers(deck: readonly BattleCard[], rng: () => number): TransmutationChoice[] {
-  // Eligibility and selection share previews without consuming extra RNG or
-  // retaining cards beyond this visit's generation.
-  const variants = deck.map(() => new Map<KeywordId, ReturnType<typeof getTransmutationVariants>>());
-  function variantsFor(sourceIndex: number, keyword: KeywordId) {
-    const saved = variants[sourceIndex]!;
-    let result = saved.get(keyword);
-    if (!result) {
-      result = getTransmutationVariants(deck[sourceIndex]!, keyword, deck);
-      saved.set(keyword, result);
+  const choices = new Map<KeywordId, TransmutationChoice>();
+  deck.forEach((source, sourceIndex) => {
+    // Roll against this card so unrelated cards cannot crowd out useful choices.
+    const variants = new Map<KeywordId, ReturnType<typeof getTransmutationVariants>>();
+    const pools = TRANSMUTATION_KEYWORD_GROUPS.map((group) =>
+      group.filter((keyword) => {
+        const result = getTransmutationVariants(source, keyword, deck);
+        variants.set(keyword, result);
+        return result.length > 0;
+      }),
+    );
+    const keywords: KeywordId[] = [];
+    for (const pool of pools) {
+      const keyword = pickRandom(pool, rng);
+      if (keyword) keywords.push(keyword);
     }
-    return result;
-  }
-  const pools = TRANSMUTATION_KEYWORD_GROUPS.map((group) =>
-    group.filter((keyword) => deck.some((_card, index) => variantsFor(index, keyword).length > 0)),
-  );
-  const keywords: KeywordId[] = [];
-  for (const pool of pools) {
-    const keyword = pickRandom(pool, rng);
-    if (keyword) keywords.push(keyword);
-  }
-  const chosen = new Set(keywords);
-  const remaining = pools.flat().filter((keyword) => !chosen.has(keyword));
-  while (keywords.length < 3 && remaining.length) {
-    keywords.push(takeRandomItem(remaining, rng)!);
-  }
-  return keywords.map((keyword) => ({
-    keyword,
-    alterations: deck.flatMap((source, sourceIndex) => {
-      const alteration = pickRandom(variantsFor(sourceIndex, keyword), rng);
-      return alteration ? [{ ...alteration, source: cloneBattleCard(source), sourceIndex }] : [];
-    }),
-  }));
+    const chosen = new Set(keywords);
+    const remaining = pools.flat().filter((keyword) => !chosen.has(keyword));
+    while (keywords.length < 3 && remaining.length) {
+      keywords.push(takeRandomItem(remaining, rng)!);
+    }
+    for (const keyword of keywords) {
+      const alteration = pickRandom(variants.get(keyword)!, rng)!;
+      let choice = choices.get(keyword);
+      if (!choice) {
+        choice = { keyword, alterations: [] };
+        choices.set(keyword, choice);
+      }
+      choice.alterations.push({ ...alteration, source: cloneBattleCard(source), sourceIndex });
+    }
+  });
+  return [...choices.values()];
 }
 
 /** Saved sources match live cards exactly; even a cost drift makes the preview stale. */
