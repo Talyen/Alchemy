@@ -1969,6 +1969,7 @@
   "mystery.gain-xp": {"text":"获得<amount/>点<keyword/>经验","sourceHash":"84cd57a1b6405eea34e9e4dcf02cc85ad583cb68a57fd74ea93555d2df73caa2","reviewed":true},
   "mystery.gear-preview-rolls": {"text":"装备效果将在选择后随机生成。","sourceHash":"dfc23867de889905688361845ea1893d6a0934c7e5034d2fefbacf4ecda7347f","reviewed":true},
   "mystery.heal": {"text":"恢复<amount/>点<health/>","sourceHash":"d26788129a9a1cdeaad6bc1575d07defd291e3974f89b6ee51c05bd61e747679","reviewed":true},
+  "mystery.keyword-xp-label": {"text":"{{keyword}}经验","sourceHash":"c1b8bb33351d7ff5004ea93aa0a865f1eefa92e2f4641c4abe0678da2a309b2f","reviewed":true},
   "options.language-choice": {"text":"语言","sourceHash":"9c85939f222527f0c9dcb05bf2ac467835a23945c51e72f99e280c8c422d36d4","reviewed":true},
   "run-end.continue": {"text":"继续","sourceHash":"9e8c4494dade21fef774617fdb875c34a1332ef7bbdbb93d8fecf68eeecb39c1","reviewed":true},
   "shop.buy": {"text":"花费{{price}}金币购买{{title}}","sourceHash":"76fd469c32a39c8be88b6df5a873f32f6c0e0c3036a71fdae78b275540f77be9","reviewed":true},

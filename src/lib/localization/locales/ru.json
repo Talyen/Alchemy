@@ -1969,6 +1969,7 @@
   "mystery.gain-xp": {"text":"Получите <amount/> опыта типа <keyword/>","sourceHash":"e05c75a27e6c4667b06342c53cd12ef87f4a13168fb6ba6833587e2fb209970b","reviewed":true},
   "mystery.gear-preview-rolls": {"text":"Эффекты снаряжения определяются случайным образом после выбора.","sourceHash":"082ddcac5ced57382a3577e2a36a6313371ffbfff64470865d2095dd086e1f74","reviewed":true},
   "mystery.heal": {"text":"Восстановите <amount/> ед. <health/>","sourceHash":"d9f96700b5bbf3a1f60d1411788e65d32694164b66eec870adf5641dc30f7d64","reviewed":true},
+  "mystery.keyword-xp-label": {"text":"Опыт: {{keyword}}","sourceHash":"b4368f9f4e2e043fc3808b369dbe740f4c6d7055312265ed1c6d04618fa99033","reviewed":true},
   "options.language-choice": {"text":"Язык","sourceHash":"6d0e666cf56663e2717e3f9808ed9606dbbb419a61cbf7d1a24123fcb804be1a","reviewed":true},
   "run-end.continue": {"text":"Продолжить","sourceHash":"e97e3d14fe8a9b7cbac15f96319ea90214c47142fb97455799dbb86667261092","reviewed":true},
   "shop.buy": {"text":"Купить {{title}} за {{price}} золота","sourceHash":"a1b261462bc9ff8ccbd20bdd378b683ea2ef646c98ba8d7fc78c8e4348e6e228","reviewed":true},
