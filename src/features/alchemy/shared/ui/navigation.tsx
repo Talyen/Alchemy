@@ -37,7 +37,7 @@ function PageArrow({
       disabled={previous ? page === 0 : page >= totalPages - 1}
       onClick={() => onPageChange(page + direction)}
     >
-      <Icon className="h-5 w-5" />
+      <Icon />
     </Button>
   );
 }
@@ -124,7 +124,7 @@ export function HamburgerTrigger({
       onClick={(e) => onClick(e.currentTarget.getBoundingClientRect())}
       aria-label={label}
     >
-      <Menu className="h-6 w-6" />
+      <Menu />
     </ChromeIconButton>
   );
 }

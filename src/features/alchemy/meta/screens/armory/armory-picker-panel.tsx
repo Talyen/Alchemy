@@ -111,7 +111,7 @@ export function ArmoryPickerPanel({
                     }
                   }}
                 >
-                  <Dices className="h-4 w-4" />
+                  <Dices />
                 </Button>
               </div>
             ) : null}

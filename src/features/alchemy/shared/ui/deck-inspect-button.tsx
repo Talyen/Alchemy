@@ -22,7 +22,7 @@ export function DeckInspectButton({ count, disabled, onOpen }: DeckInspectButton
         onOpen();
       }}
     >
-      <PlayingCards className="h-6 w-6" />
+      <PlayingCards />
     </ChromeIconButton>
   );
 }

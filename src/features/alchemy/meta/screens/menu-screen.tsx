@@ -92,7 +92,7 @@ export function MenuScreen({
         <GameMessage
           id="ui.menu-screen.s1"
           defaultValue="<part0/>Options"
-          parts={{ part0: <Cog className="h-7 w-7 text-zinc-400" /> }}
+          parts={{ part0: <Cog className="text-zinc-400" /> }}
         />
       </Button>
     </MenuPlasmaHover>
@@ -132,7 +132,7 @@ export function MenuScreen({
             className={MENU_NAV_BUTTON_CLASS}
             onClick={onPlay}
           >
-            <Swords className="h-7 w-7" />
+            <Swords />
             {i18n.displayText(
               hasActiveRun ? i18n.text("ui.menu-screen.d1", "Continue") : i18n.text("ui.menu-screen.d2", "Play"),
             )}
@@ -150,7 +150,7 @@ export function MenuScreen({
               <GameMessage
                 id="ui.menu-screen.s2"
                 defaultValue="<part0/>Collection"
-                parts={{ part0: <BookOpen className="h-7 w-7 text-gold-light" /> }}
+                parts={{ part0: <BookOpen className="text-gold-light" /> }}
               />
             </Button>
           </MenuPlasmaHover>
@@ -160,7 +160,7 @@ export function MenuScreen({
               message={i18n.displayText(getProgressionFeatureUnlockMessage("homestead"))}
               locked={isHomesteadLocked}
               onSelect={onHomestead}
-              icon={<TreePine className="h-7 w-7 text-emerald-400" />}
+              icon={<TreePine className="text-emerald-400" />}
               wrapperClassName={MENU_NAV_BUTTON_WRAPPER_CLASS}
               className={MENU_NAV_BUTTON_CLASS}
               size="lg"
@@ -181,7 +181,7 @@ export function MenuScreen({
               message={i18n.displayText(getProgressionFeatureUnlockMessage("talents"))}
               locked={isTalentsLocked}
               onSelect={onTalents}
-              icon={<WandSparkles className="h-7 w-7 text-violet-400" />}
+              icon={<WandSparkles className="text-violet-400" />}
               wrapperClassName={MENU_NAV_BUTTON_WRAPPER_CLASS}
               className={MENU_NAV_BUTTON_CLASS}
               size="lg"
@@ -205,7 +205,7 @@ export function MenuScreen({
               <GameMessage
                 id="ui.menu-screen.s3"
                 defaultValue="<part0/>Armory"
-                parts={{ part0: <Shield className="h-7 w-7 text-sky-300" /> }}
+                parts={{ part0: <Shield className="text-sky-300" /> }}
               />
             </Button>
           </MenuPlasmaHover>
@@ -223,7 +223,7 @@ export function MenuScreen({
                 <GameMessage
                   id="ui.menu-screen.s4"
                   defaultValue="<part0/>Quit"
-                  parts={{ part0: <Power className="h-7 w-7 text-rose-400" /> }}
+                  parts={{ part0: <Power className="text-rose-400" /> }}
                 />
               </Button>
             </div>

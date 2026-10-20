@@ -229,7 +229,7 @@ export function HomesteadScreen({
               }
               onClick={() => setShowResetConfirm(true)}
             >
-              <RotateCcw className="h-6 w-6" />
+              <RotateCcw />
             </ChromeIconButton>
           }
         />
