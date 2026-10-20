@@ -155,7 +155,7 @@ export const gameModeMeta: Record<
 > = {
   campaign: {
     title: "The Campaign",
-    description: "Journey through Act I, Act II, and Act III",
+    description: "Journey through Act I, II, and III",
     icon: Swords,
     art: theCampaign,
     accentClassName: "text-red-400",
