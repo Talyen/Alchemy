@@ -37,6 +37,43 @@ function battleSave() {
 }
 
 describe("session save restoration", () => {
+  it.each(["battle", "shop", "rewards"] as const)(
+    "opens the menu at startup and continues the saved %s without changing progress",
+    async (activity) => {
+      const save = battleSave();
+      if (activity !== "battle") save.activeRun!.activity = savedActivityFixture(activity);
+      else if (save.activeRun?.activity.kind === "battle") save.activeRun.activity.data.battleState.gold = save.gold;
+      const loaded = evaluateSaveCandidates([JSON.stringify(save)]);
+      expect(loaded.status.kind).toBe("ok");
+      await using session = createGameSession();
+      const persistence = createSessionPersistence(session);
+      const screens: string[] = [];
+      persistence.subscribe(() => screens.push(readGameplayState(session).run.navigation.screen));
+
+      persistence.restore(loaded.data, { startAtMenu: true, preserveActiveRunIfInitialized: true });
+      expect(screens).toEqual(["menu"]);
+      const checkpoint = persistence.snapshot();
+      expect(checkpoint.activeRun?.activity.kind).toBe(activity);
+      expect(checkpoint.activeRun?.rng).toEqual(save.activeRun!.rng);
+      expect(checkpoint.gold).toBe(save.gold);
+
+      // Saving while on the menu must retain the interrupted activity too.
+      const reloaded = evaluateSaveCandidates([JSON.stringify(checkpoint)]);
+      await using reopened = createGameSession();
+      const reopenedPersistence = createSessionPersistence(reopened);
+      reopenedPersistence.restore(reloaded.data, { startAtMenu: true });
+      expect(readGameplayState(reopened).run.navigation.screen).toBe("menu");
+      const beforeContinue = reopenedPersistence.snapshot();
+      const { flow } = createPlaythroughController(reopened);
+      flow.beginCampaign();
+      expect(readGameplayState(reopened).run.navigation.screen).toBe(activity);
+      expect(reopenedPersistence.snapshot()).toEqual(beforeContinue);
+
+      reopenedPersistence.restore(loaded.data, { startAtMenu: true, preserveActiveRunIfInitialized: true });
+      expect(readGameplayState(reopened).run.navigation.screen).toBe(activity);
+    },
+  );
+
   it("resumes a battle with a retired fixed ratio without replaying draws or losing progress", async () => {
     const save = battleSave();
     if (save.activeRun?.activity.kind !== "battle") throw new Error("Battle was lost");

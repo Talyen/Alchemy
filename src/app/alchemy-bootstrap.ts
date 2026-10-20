@@ -60,6 +60,7 @@ export function bootstrapAlchemySession(gameSession: GameSession): Promise<SaveL
     if (!active) return null;
     persistence.restore(loaded.data, {
       preserveActiveRunIfInitialized: true,
+      startAtMenu: true,
       restoreActions: loaded.restoreActions,
     });
     return active ? loaded : null;

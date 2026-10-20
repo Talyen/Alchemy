@@ -284,6 +284,10 @@ React adapters subscribe to its result; Strict Mode replay and shell remounts sh
 pending work and retain completed readiness without restoring over newer progress.
 Closing the session revokes continuations before another persistence operation or
 restore can start. Independent sessions bootstrap independently.
+Cold startup restores saved progress but opens the main menu, including when a
+battle was interrupted. Continue opens the saved activity without restarting it.
+The menu is selected in the restore publication, before observers can run battle
+presentation; an already initialized session keeps its current screen.
 
 Image preload pipelines borrow deduplicated fetch/decode work from `lib/preload/image.ts`.
 Each pipeline owns cancellation across its batches, frame yields, and progress
