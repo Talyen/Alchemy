@@ -1934,6 +1934,7 @@
   "mystery.choose-card": {"text":"Escolha 1 de {{choices}} cartas","sourceHash":"4aae75ccf10e340a777c3364201a23dfefdc1d1c10c745601b044c9fc39cfc6b","reviewed":true},
   "mystery.choose-card-details": {"text":"Escolha 1 de {{choices}} cartas para adicionar ao baralho","sourceHash":"442f0d41e8b7ccd1583b20aec11cfaf350f5ca96d1bf14bff96475416fdbf158","reviewed":true},
   "mystery.gain-xp": {"text":"Ganhe <amount/> de EXP de <keyword/>","sourceHash":"5f8f15f93315e92076e9e01b756ef7703e816f62e4230b5a81a114b99993d06e","reviewed":true},
+  "mystery.gear-preview-rolls": {"text":"Os efeitos do equipamento são gerados aleatoriamente após a escolha.","sourceHash":"e4dceef1048963b87254367a557dfbd7a58d878e1b92a1e48666ca04f4fdc12a","reviewed":true},
   "mystery.heal": {"text":"Recupere <amount/> de <health/>","sourceHash":"456652cc34b4589d724ce727e9daf807cd877e9a045519f99e6c77a7860b6804","reviewed":true},
   "options.language-choice": {"text":"Idioma","sourceHash":"6a18fba05e20a4b6149e46ee3ec9530a07da52997e01a949405a96a6881bfa41","reviewed":true},
   "run-end.continue": {"text":"Continuar","sourceHash":"5c5cfaa1b2189b496abe0ea51d8032ecb371ecc66dbf6f643366a8446cd8542f","reviewed":true},

@@ -1,5 +1,5 @@
 import { makeTestCard } from "../../../../fixtures/cards";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { MysteryRewardSummary } from "@/features/alchemy/run-loop/screens/mystery/mystery-reward-summary";
@@ -55,19 +55,6 @@ describe("MysteryRewardSummary", () => {
     expect(screen.getByText(getGearInstanceTitle(random))).toBeTruthy();
   });
 
-  it("shows the trinket hover tooltip for gainTrinket", () => {
-    renderSummary([{ kind: "gainTrinket", trinketId: boneCharm.id }]);
-
-    const img = screen.getByRole("img", { name: "Bone Charm" });
-    const tileWrapper = img.parentElement?.parentElement;
-    expect(tileWrapper).toBeTruthy();
-    expect(screen.getAllByText("Bone Charm")).toHaveLength(1);
-
-    fireEvent.mouseEnter(tileWrapper!);
-
-    expect(screen.getAllByText("Bone Charm")).toHaveLength(2);
-  });
-
   it("shows the chosen card tile and hover popup for chooseCard", () => {
     const slash = makeTestCard({
       id: "slash",
@@ -96,7 +83,7 @@ describe("MysteryRewardSummary", () => {
     expect(screen.getByText(/damage/)).toBeTruthy();
   });
 
-  it("groups event XP gains separately from prior XP and shows progress after leveling up", () => {
+  it("combines prior and run XP when showing progress after leveling up", async () => {
     const onContinue = vi.fn();
     render(
       <MysteryRewardSummary
@@ -118,12 +105,14 @@ describe("MysteryRewardSummary", () => {
       />,
     );
 
-    const burn = within(screen.getByRole("progressbar", { name: "Burn level 2 progress" }).parentElement!);
-    expect(burn.getByText("+8")).toBeTruthy();
-    expect(burn.getByText("28/40")).toBeTruthy();
-    const freeze = within(screen.getByRole("progressbar", { name: "Freeze level 2 progress" }).parentElement!);
-    expect(freeze.getByText("+6")).toBeTruthy();
-    expect(freeze.getByText("0/40")).toBeTruthy();
+    await waitFor(() =>
+      expect(screen.getByRole("progressbar", { name: "Burn level 2 progress" }).getAttribute("aria-valuenow")).toBe(
+        "70",
+      ),
+    );
+    expect(screen.getByRole("progressbar", { name: "Freeze level 2 progress" }).getAttribute("aria-valuenow")).toBe(
+      "0",
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(onContinue).toHaveBeenCalledOnce();

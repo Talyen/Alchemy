@@ -1934,6 +1934,7 @@
   "mystery.choose-card": {"text":"从{{choices}}张卡牌中选择1张","sourceHash":"685f8572ad8d6bb2e2262d4e5933263708bbf116a68b15bcf5c1b973c2704ab1","reviewed":true},
   "mystery.choose-card-details": {"text":"从{{choices}}张卡牌中选择1张加入牌组","sourceHash":"620e8e85176e32e7837af0a2ca014055511b6be65364981815df9b3edd9d6a80","reviewed":true},
   "mystery.gain-xp": {"text":"获得<amount/>点<keyword/>经验","sourceHash":"84cd57a1b6405eea34e9e4dcf02cc85ad583cb68a57fd74ea93555d2df73caa2","reviewed":true},
+  "mystery.gear-preview-rolls": {"text":"装备效果将在选择后随机生成。","sourceHash":"dfc23867de889905688361845ea1893d6a0934c7e5034d2fefbacf4ecda7347f","reviewed":true},
   "mystery.heal": {"text":"恢复<amount/>点<health/>","sourceHash":"d26788129a9a1cdeaad6bc1575d07defd291e3974f89b6ee51c05bd61e747679","reviewed":true},
   "options.language-choice": {"text":"语言","sourceHash":"9c85939f222527f0c9dcb05bf2ac467835a23945c51e72f99e280c8c422d36d4","reviewed":true},
   "run-end.continue": {"text":"继续","sourceHash":"9e8c4494dade21fef774617fdb875c34a1332ef7bbdbb93d8fecf68eeecb39c1","reviewed":true},

@@ -23,6 +23,7 @@ import { FadeSlot } from "../../../shared/ui/use-fade";
 import { PortaledTooltip } from "../../../shared/ui/tooltips/portaled-tooltip";
 import { useHoverVisible } from "../../../shared/ui/use-hover-visible";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
+import { MysteryChoiceRewards } from "./mystery-choice-rewards";
 
 const CONFIG = {
   EVENT_IMAGE_WIDTH: 900,
@@ -60,7 +61,7 @@ function MysteryEventChoiceButton({
       <Button
         size="lg"
         variant="outline"
-        className="min-w-32"
+        className="w-full min-w-32"
         data-testid="mystery-choice"
         onClick={() => onPick(choice)}
       >
@@ -145,9 +146,15 @@ export function MysteryEventIntro({
         </TextAnimate>
       </div>
 
-      <FadeSlot swapKey={event.id} className="flex flex-wrap justify-center gap-4">
+      <FadeSlot swapKey={event.id} className="flex w-full flex-wrap justify-center gap-8">
         {event.choices.map((choice, i) => (
-          <div key={i}>
+          <div key={i} className="flex flex-col gap-6">
+            <MysteryChoiceRewards
+              interactionKey={`mystery-choice:${event.id}:${i}`}
+              effects={previewEffect ? choice.effects.map(previewEffect) : choice.effects}
+              findCard={findCard}
+              findTrinket={findTrinket}
+            />
             <MysteryEventChoiceButton
               choice={choice}
               previewEffect={previewEffect}

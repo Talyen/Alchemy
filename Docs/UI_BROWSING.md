@@ -66,6 +66,20 @@ An empty palette falls back to neutral shine rather than rendering black.
 name (`aria-label`/`aria-labelledby`), and `value` owns the fill width —
 `fillStyle` carries only extra styling such as transitions.
 
+## Mystery reward shelves
+
+Each Mystery choice shows its rewards above its action button. Keep the event art
+at the standard landscape size, cards at the standard inspection size, and Boons
+and Gear at the standard Collection size. Portrait rewards keep their 3:4 aspect
+ratio; shelves wrap instead of reducing artwork sizes. Resource pills and XP stay
+with their choice, including previewed Homestead bonuses.
+
+Hover or keyboard focus inspects a reward without choosing the outcome. Only the
+choice button commits the original offer. Known cards and Boons show their normal
+effect tooltips. Generated Gear previews show the known item artwork and explain
+that effects roll after choosing; random Gear and future card selections retain
+their outcome labels instead of inventing a rolled reward.
+
 ## Homestead gallery
 
 Homestead is an artwork-first gallery. Hover/focus inspects a node through the
