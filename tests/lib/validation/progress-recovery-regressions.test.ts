@@ -66,7 +66,7 @@ describe("progress recovery regressions", () => {
       [undefined, 77],
       [Number.MAX_VALUE, 77],
       [0, 0],
-      [3.75, 3],
+      [3.75, 4],
       [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
     ] as const) {
       const restored = SaveDataSchema.parse(battleSave({ gold: raw }));

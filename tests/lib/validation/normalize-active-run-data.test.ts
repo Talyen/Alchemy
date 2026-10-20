@@ -88,8 +88,8 @@ describe("ActiveRunDataSchema normalize", () => {
   it.each([{ runPlayerHealth: 0 }, { runPlayerHealth: -4 }, { runPlayerHealth: 2.5 }, { runPlayerHealth: undefined }])(
     "repairs missing or invalid player health to maxHealth instead of resuming dead (%o)",
     (overrides) => {
-      const result = parseActiveRunData({ runMaxHealth: 30, ...overrides });
-      expect(result.runPlayerHealth).toBe(30);
+      const result = parseActiveRunData({ runMaxHealth: 80, ...overrides });
+      expect(result.runPlayerHealth).toBe(80);
     },
   );
 

@@ -341,16 +341,24 @@ describe("numeric effect bindings", () => {
 
   it("rejects a stale shared edit without changing any branch or its description", () => {
     const card = cardById["luck-potion"]!;
-    const target = getEditableCorruptionTargets(card)[0]!;
+    const target = getEditableCorruptionTargets(card)[1]!;
+    expect(target.edits).toHaveLength(2);
     const altered = makeTestCard({
       ...card,
       effects: card.effects.map((effect) =>
         effect.kind === "chance"
-          ? { ...effect, failureEffects: [{ kind: "gain-gold", amount: target.value + 1 }] }
+          ? {
+              ...effect,
+              failureEffects: effect.failureEffects.map((child) =>
+                child.kind === "chance"
+                  ? { ...child, failureEffects: [{ kind: "player-status", status: "block", amount: target.value + 1 }] }
+                  : child,
+              ),
+            }
           : effect,
       ),
     });
-    // The selected branch is unchanged; another member of the same displayed value changed.
+    // Gold is unchanged, but Block no longer shares its displayed value.
     expect(updateCardNumericValue(altered, target, target.value + 2)).toBe(altered);
     expect(applyNumericCorruption(altered, target, 2)).toBe(altered);
   });

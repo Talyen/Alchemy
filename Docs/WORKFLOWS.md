@@ -114,7 +114,7 @@ Visible behavior: [UI battle feedback](./UI_BATTLE.md#battle-feedback) and [batt
 9. Wire the navigation trigger at the caller of `goToScreen("<name>")`. For run activities, also update the production-flow adapter and legal choices in `src/app/playthrough/` so headless careers can proceed. Review affected route mocks, save fixtures, and browser helpers against the new contracts; verify initialization and current-format resume with focused unit tests.
 10. Classify the route in `SCREEN_FAMILIES` in `tests/interaction/screen-coverage.ts` and update the [interaction screen map](../tests/interaction/README.md#screen-and-boundary-map) with its lifecycle family and retained protection. This exhaustive registration does not by itself prove action coverage; choose tests under the shared [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy).
 
-Boot restore/hydration sets a validated saved screen directly and intentionally bypasses the interactive transition table. Screen components subscribing to Zustand stores should select narrow slices or use `useShallow` to prevent render churn during high-frequency combat ticks.
+Restore/hydration bypasses the interactive transition table. Cold startup opens the main menu while preserving the validated saved activity; Continue resumes that activity through the resume policy. Screen components subscribing to Zustand stores should select narrow slices or use `useShallow` to prevent render churn during high-frequency combat ticks.
 
 ---
 
