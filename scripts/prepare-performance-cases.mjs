@@ -65,7 +65,15 @@ async function runWorker(label, checkpointAt) {
   if (child.status !== 0)
     throw new Error(`Playthrough ${label} failed: ${child.output.slice(-3000) || "worker returned no exit code"}`);
   const result = JSON.parse(fs.readFileSync(output, "utf8"));
-  if (result.status !== "completed") throw new Error(`Playthrough ${label} incomplete: ${result.error ?? "unknown"}`);
+  // Exploratory profiling needs a reachable prefix, not a winning career. A
+  // legal deck can stalemate after consuming its attacks; preserve that evidence
+  // while still rejecting invariants, worker failures and other incomplete runs.
+  const boundedDiscovery =
+    selected.exploratory &&
+    result.status === "incomplete" &&
+    result.error === "Incomplete: battle turn budget exhausted";
+  if (result.status !== "completed" && !boundedDiscovery)
+    throw new Error(`Playthrough ${label} incomplete: ${result.error ?? "unknown"}`);
   return { output, result };
 }
 
@@ -102,6 +110,7 @@ const instanceId = instanceParts.join(":");
 if (craftingAction && (!initialSave.craftingCurrencies?.[currencyId] || !instanceId || activeRun))
   throw new Error("Crafting checkpoint must have available currency and no combat reservations");
 const coverage = {
+  discovery: { status: discovery.result.status, ...(discovery.result.error ? { error: discovery.result.error } : {}) },
   ...(craftingAction
     ? { crafting: { currencyId, instanceId }, craftingCurrencies: initialSave.craftingCurrencies }
     : {}),

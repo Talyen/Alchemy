@@ -29,6 +29,9 @@ export default {
   dryRunTimeoutMinutes: 15,
   concurrency: 4,
   disableTypeChecks: true,
+  // TypeScript 7 has no JavaScript compiler API. Vitest transforms the sandbox
+  // sources; this self-contained tsconfig has no external extends/references to rewrite.
+  tsconfigFile: "",
   ignoreStatic: true,
   // Static source-text assertions (tests/architecture) read file contents, so
   // they assert against Stryker's instrumented sandbox copies instead of real

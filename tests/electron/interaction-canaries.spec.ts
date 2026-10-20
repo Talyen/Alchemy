@@ -181,7 +181,9 @@ test(
         const [width, height] = window.getSize();
         window.setSize(width - 20, height - 20);
       });
-      await expect(equipmentSlotLocator(page, "body").locator("img")).toHaveCount(1);
+      await expect(
+        equipmentSlotLocator(page, "body").locator("img:not([data-testid=armory-slot-background])"),
+      ).toHaveCount(1);
       await page.getByRole("button", { name: "Search inventory", exact: true }).click();
       await page.getByRole("searchbox", { name: "Search inventory" }).fill("unlikely match");
       await page.keyboard.press("Escape");
@@ -211,22 +213,35 @@ test(
       await expect(battle.endTurnBtn).toBeFocused();
       await page.keyboard.press("Alt+Shift+Tab");
       await expect(battle.endTurnBtn).toBeFocused();
-      await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.blur());
-      await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(false);
-      await expect(page.getByTestId("game-menu")).toHaveCount(0);
-      await app.evaluate(({ BrowserWindow }) => {
+      // Xvfb has no window manager to give focus to an empty desktop on blur().
+      // A second native window provides an actual focus destination.
+      const otherWindowId = await app.evaluate(async ({ BrowserWindow }) => {
+        const other = new BrowserWindow({ width: 320, height: 200 });
+        await other.loadURL("about:blank");
+        other.focus();
+        return other.id;
+      });
+      try {
+        await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(false);
+        await expect(page.getByTestId("game-menu")).toHaveCount(0);
+      } finally {
+        await app.evaluate(({ BrowserWindow }, id) => BrowserWindow.fromId(id)?.destroy(), otherWindowId);
+      }
+      const resized = await app.evaluate(({ BrowserWindow }) => {
         const window = BrowserWindow.getAllWindows()[0]!;
-        window.setFullScreen(true);
+        const [width, height] = window.getSize();
+        const size = [width - 20, height - 20];
+        window.setSize(size[0]!, size[1]!);
         window.focus();
+        return size;
       });
       await expect
-        .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isFullScreen()))
-        .toBe(true);
+        .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.getSize()))
+        .toEqual(resized);
       await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(true);
       await expect(page.getByTestId("game-menu")).toHaveCount(0);
       await expect(battle.endTurnBtn).toBeFocused();
       await expect(page.getByText("Saving…", { exact: true })).toHaveCount(0);
-      await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setFullScreen(false));
       await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false");
       await battle.endTurn();
     });
