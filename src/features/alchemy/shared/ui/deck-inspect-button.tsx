@@ -1,6 +1,6 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
-import { Layers } from "lucide-react";
+import { PlayingCards } from "lucide-react";
 import { ChromeIconButton } from "./chrome-icon-button";
 
 export interface DeckInspectButtonProps {
@@ -23,7 +23,7 @@ export function DeckInspectButton({ count, disabled, onOpen }: DeckInspectButton
         onOpen();
       }}
     >
-      <Layers className="h-6 w-6" />
+      <PlayingCards className="h-6 w-6" />
     </ChromeIconButton>
   );
 }
