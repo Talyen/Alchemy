@@ -4,6 +4,9 @@ import { GameModeSelectScreen } from "@/features/alchemy/meta/screens/game-mode-
 import { installCatalogs, localization, text, displayText } from "@/lib/localization/runtime";
 import catalogs from "@/lib/localization/locales/runtime.json";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
+import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
+
+installFocusInputForTests(true);
 
 describe("GameModeSelectScreen", () => {
   installDisabledAnimationsForTests();

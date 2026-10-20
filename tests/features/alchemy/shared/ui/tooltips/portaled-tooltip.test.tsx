@@ -1,3 +1,4 @@
+import { installFocusInputForTests } from "../../../../../helpers/focus-input-test";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,6 +7,8 @@ import { useRef, useState } from "react";
 import { PortaledTooltip } from "@/features/alchemy/shared/ui/tooltips/portaled-tooltip";
 import { KeywordTag } from "@/features/alchemy/shared/ui/keyword-tag";
 import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
+
+installFocusInputForTests(true);
 
 async function expectSettled(assertion: () => void) {
   await act(async () => {
@@ -58,12 +61,13 @@ describe("PortaledTooltip", () => {
     vi.useRealTimers();
   });
 
-  it.each(["move", "press", "focus", "window blur", "window exit"])(
+  it.each(["move", "press", "focus", "window blur", "window exit", "wheel"])(
     "dismisses a stale tooltip on outside %s and allows keyboard inspection again",
     async (input) => {
       render(<StaleTooltipHarness />);
       await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
       const outside = screen.getByRole("button", { name: "Overlay choice" });
+      if (input === "wheel") fireEvent.wheel(document.body);
       if (input === "move") fireEvent.pointerMove(outside);
       if (input === "press") fireEvent.pointerDown(outside);
       if (input === "focus") act(() => outside.focus());
@@ -72,6 +76,7 @@ describe("PortaledTooltip", () => {
 
       expect(document.querySelector("[role='tooltip'][data-visible]")).toBeNull();
       await expectSettled(() => expect(screen.queryByRole("tooltip")).toBeNull());
+      fireEvent.keyDown(document.body, { key: "Tab" });
       act(() => screen.getByRole("button", { name: "Trigger" }).focus());
       await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
     },
@@ -113,6 +118,7 @@ describe("PortaledTooltip", () => {
     await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
     fireEvent.pointerDown(trigger);
     act(() => trigger.focus());
+    expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy();
     fireEvent.mouseLeave(trigger);
     fireEvent.pointerMove(document.body);
 
@@ -175,6 +181,7 @@ describe("PortaledTooltip", () => {
     fireEvent.blur(window);
     fireEvent.focus(window);
     act(() => trigger.blur());
+    fireEvent.keyDown(document.body, { key: "Tab" });
     act(() => trigger.focus());
     await expectSettled(() => expect(document.querySelector("[role='tooltip'][data-visible]")).toBeTruthy());
     expect(trigger.hasAttribute("aria-describedby")).toBe(true);

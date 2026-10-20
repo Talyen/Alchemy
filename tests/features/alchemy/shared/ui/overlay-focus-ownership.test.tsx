@@ -59,7 +59,7 @@ async function settle() {
 }
 
 describe("overlay focus ownership", () => {
-  it.each(["Escape", "pointer", "blur"])("cancels delayed dialog handoffs after %s", async (input) => {
+  it.each(["Escape", "pointer", "blur", "wheel"])("cancels delayed dialog handoffs after %s", async (input) => {
     const stop = trackFocusInput();
     try {
       const content = (open: boolean, preparing = false) => (
@@ -79,6 +79,7 @@ describe("overlay focus ownership", () => {
       view.rerender(content(false, true));
       if (input === "Escape") fireEvent.keyDown(window, { key: "Escape" });
       else if (input === "pointer") fireEvent.pointerDown(document.body);
+      else if (input === "wheel") fireEvent.wheel(document.body);
       else fireEvent.blur(window);
       view.rerender(content(false));
       await settle();

@@ -117,3 +117,5 @@ html:not([data-focus-navigation="true"]) :focus {
   --tw-ring-offset-shadow: 0 0 #0000;
   outline: none;
 }
+
+@custom-variant focus-navigation (&:where(html[data-focus-navigation="true"] *));

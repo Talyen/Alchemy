@@ -85,6 +85,18 @@ export function LabyrinthMapViewport({
   const handleHover = useCallback((nodeId: string | null) => setHoveredNodeId(nodeId), []);
   const handleFocus = useCallback((nodeId: string | null) => setFocusedNodeId(nodeId), []);
 
+  useEffect(() => {
+    const clearFocusEmphasis = () => setFocusedNodeId(null);
+    window.addEventListener("blur", clearFocusEmphasis);
+    document.addEventListener("pointerdown", clearFocusEmphasis, true);
+    document.addEventListener("wheel", clearFocusEmphasis, { capture: true, passive: true });
+    return () => {
+      window.removeEventListener("blur", clearFocusEmphasis);
+      document.removeEventListener("pointerdown", clearFocusEmphasis, true);
+      document.removeEventListener("wheel", clearFocusEmphasis, true);
+    };
+  }, []);
+
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     const inspector = inspectorRef.current;

@@ -1,7 +1,10 @@
+import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, renderHook, screen, cleanup, act, fireEvent } from "@testing-library/react";
 import { useState } from "react";
 import { useHoverVisible } from "@/features/alchemy/shared/ui/use-hover-visible";
+
+installFocusInputForTests(true);
 
 afterEach(() => {
   cleanup();
@@ -10,6 +13,38 @@ afterEach(() => {
 });
 
 describe("useHoverVisible", () => {
+  it("does not keep inspection active for pointer-retained focus after the cursor leaves", () => {
+    function InspectionHover() {
+      const { triggerRef, onMouseEnter, onMouseLeave, onFocusCapture, visible } = useHoverVisible<HTMLButtonElement>({
+        focusWithinGuard: true,
+      });
+      return (
+        <>
+          <button ref={triggerRef} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onFocus={onFocusCapture}>
+            Inspect
+          </button>
+          <output>{String(visible)}</output>
+        </>
+      );
+    }
+    render(<InspectionHover />);
+    const trigger = screen.getByRole("button");
+    fireEvent.mouseEnter(trigger);
+    fireEvent.pointerDown(trigger);
+    act(() => trigger.focus());
+    fireEvent.mouseLeave(trigger);
+    expect(document.activeElement).toBe(trigger);
+    expect(screen.getByRole("status").textContent).toBe("false");
+  });
+
+  it("dismisses keyboard-only inspection when the player scrolls with the pointer", () => {
+    const { result } = renderHook(() => useHoverVisible());
+    act(() => result.current.onFocusCapture());
+    expect(result.current.visible).toBe(true);
+    fireEvent.wheel(document.body);
+    expect(result.current.visible).toBe(false);
+  });
+
   it("does not resurrect a disabled tooltip when availability changes after the pointer leaves", () => {
     const { result, rerender } = renderHook((interactive) => useHoverVisible({ interactive }), { initialProps: true });
     act(() => result.current.onMouseEnter());

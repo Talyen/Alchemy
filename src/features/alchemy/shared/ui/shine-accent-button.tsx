@@ -1,4 +1,5 @@
-import { useState, type ElementType, type ReactNode } from "react";
+import { type ElementType, type ReactNode } from "react";
+import { useHoverVisible } from "./use-hover-visible";
 
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -39,17 +40,18 @@ export function ShineAccentButton({
   className,
   onClick,
 }: ShineAccentButtonProps) {
-  const [active, setActive] = useState(false);
+  const { wrapperRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible();
   const colors = typeof shineColor === "string" ? [shineColor] : shineColor;
-  usePlasmaInteraction(getPlasmaColorPairFromColors(colors), active && !disabled);
+  usePlasmaInteraction(getPlasmaColorPairFromColors(colors), visible && !disabled);
 
   return (
     <div
       className={cn("relative", "rounded-xl", disabled && "opacity-50", className)}
-      onMouseEnter={() => setActive(true)}
-      onMouseLeave={() => setActive(false)}
-      onFocusCapture={() => setActive(true)}
-      onBlurCapture={() => setActive(false)}
+      ref={wrapperRef}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocusCapture={onFocusCapture}
+      onBlurCapture={onBlurCapture}
     >
       <Button
         size="lg"

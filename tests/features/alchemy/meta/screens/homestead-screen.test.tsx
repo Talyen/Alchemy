@@ -8,6 +8,9 @@ import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 import { playUISound } from "@/lib/audio";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
 import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
+import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
+
+installFocusInputForTests(true);
 
 vi.mock("@/lib/audio", () => ({ playUISound: vi.fn() }));
 

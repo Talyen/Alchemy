@@ -11,6 +11,9 @@ import {
 
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
+import { installFocusInputForTests } from "../../../../../helpers/focus-input-test";
+
+installFocusInputForTests(true);
 
 const card = {
   id: "strike-1",

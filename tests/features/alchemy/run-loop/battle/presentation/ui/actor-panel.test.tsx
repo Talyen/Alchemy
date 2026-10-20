@@ -10,6 +10,9 @@ vi.mock("@/features/alchemy/run-loop/battle/presentation/ui/hurt-spark-burst", (
 import { ArtPanel } from "@/features/alchemy/run-loop/battle/presentation/ui/actor-panel";
 import type { BestiaryEntry } from "@/lib/game-data/index";
 import { installDisabledAnimationsForTests } from "../../../../../../helpers/animation-test";
+import { installFocusInputForTests } from "../../../../../../helpers/focus-input-test";
+
+installFocusInputForTests(true);
 
 const baseProps = {
   side: "player" as const,

@@ -1,9 +1,13 @@
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { labyrinthShroudedArt, mysteryBg } from "@/features/alchemy/shared/config/game-data-catalog";
 import { afterEach, expect, it, vi } from "vitest";
 import { floorNodes } from "@/lib/content-systems/labyrinth/map-state";
 import { LabyrinthMapViewport } from "@/features/alchemy/run-loop/screens/labyrinth/labyrinth-map-viewport";
 import { gridLabyrinthMapFixture } from "../../../../../fixtures/labyrinth-map";
+
+import { installFocusInputForTests } from "../../../../../helpers/focus-input-test";
+
+installFocusInputForTests(true);
 
 afterEach(() => {
   cleanup();
@@ -93,4 +97,19 @@ it("keeps varied fog independent of hidden encounters and replaces it upon disco
   expect(button.getAttribute("aria-disabled")).toBe("false");
   fireEvent.click(button);
   expect(props.onSelect).toHaveBeenCalledWith(node.id);
+});
+
+it("distinguishes pointer focus from keyboard map inspection and clears it on scrolling", () => {
+  renderViewport("");
+  const tile = document.querySelector<HTMLElement>('[data-labyrinth-node][data-state="undiscovered"]')!;
+  const button = tile.querySelector("button")!;
+  fireEvent.pointerDown(button);
+  act(() => button.focus());
+  expect(tile.getAttribute("data-emphasized")).toBe("false");
+  act(() => button.blur());
+  fireEvent.keyDown(document.body, { key: "Tab" });
+  act(() => button.focus());
+  expect(tile.getAttribute("data-emphasized")).toBe("true");
+  fireEvent.wheel(document.body);
+  expect(tile.getAttribute("data-emphasized")).toBe("false");
 });

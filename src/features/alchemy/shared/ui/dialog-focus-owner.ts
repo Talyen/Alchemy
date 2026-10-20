@@ -119,6 +119,7 @@ function ensureListeners() {
   window.addEventListener("keydown", onKeyInput, true);
   window.addEventListener("blur", cancelRestore);
   document.addEventListener("pointerdown", cancelRestore, true);
+  document.addEventListener("wheel", cancelRestore, { capture: true, passive: true });
   observer = new MutationObserver(scheduleReconcile);
   observer.observe(document.body, {
     subtree: true,
@@ -136,6 +137,7 @@ function releaseListenersIfIdle() {
   window.removeEventListener("keydown", onKeyInput, true);
   window.removeEventListener("blur", cancelRestore);
   document.removeEventListener("pointerdown", cancelRestore, true);
+  document.removeEventListener("wheel", cancelRestore, true);
   if (frame !== undefined) cancelAnimationFrame(frame);
   frame = undefined;
   owner = undefined;

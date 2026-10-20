@@ -1,7 +1,8 @@
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { UI_GOLD } from "@/lib/game-constants/ui-colors";
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
+import { useHoverVisible } from "../../shared/ui/use-hover-visible";
 import { BookOpen, Cog, Power, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -29,19 +30,17 @@ const OPTIONS_PLASMA_PAIR: PlasmaColorPair = { primary: "#a1a1aa", secondary: "#
 
 function MenuPlasmaHover({ colorPair, children }: { colorPair: PlasmaColorPair; children: ReactNode }) {
   useGameTranslation();
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
-  usePlasmaInteraction(colorPair, hovered || focused);
+  const { wrapperRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible();
+  usePlasmaInteraction(colorPair, visible);
 
   return (
     <div
       className="menu-nav-button"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onFocusCapture={() => setFocused(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
-      }}
+      ref={wrapperRef}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocusCapture={onFocusCapture}
+      onBlurCapture={onBlurCapture}
     >
       {children}
     </div>

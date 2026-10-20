@@ -80,7 +80,7 @@ export const screenShellPaddingClass = "p-[calc(2.1*var(--content-rem,1rem))]";
 export const chooserLockedSurfaceClass = "cursor-not-allowed opacity-45 grayscale";
 
 export const lockedHoverPreviewClass =
-  "opacity-45 grayscale group-focus-within:opacity-100 group-focus-within:grayscale-0 group-hover:opacity-100 group-hover:grayscale-0";
+  "opacity-45 grayscale focus-navigation:group-focus-within:opacity-100 focus-navigation:group-focus-within:grayscale-0 group-hover:opacity-100 group-hover:grayscale-0";
 
 export const chooserLockedHoverSurfaceClass = `cursor-not-allowed ${lockedHoverPreviewClass}`;
 

@@ -8,6 +8,9 @@ import { findMysteryEvent, type MysteryEvent, type MysteryChoice } from "@/lib/m
 import { computeGoldReward, computeMysteryMaterialReward } from "@/lib/homestead/material-rewards";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
+import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
+
+installFocusInputForTests(true);
 
 vi.mock("@/features/alchemy/shared/ui/use-plasma-source", () => ({
   usePlasmaBaseline: vi.fn(),

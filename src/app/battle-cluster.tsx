@@ -1,6 +1,6 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
-import { useRef, useState } from "react";
+import { useHoverVisible } from "@/features/alchemy/shared/ui/use-hover-visible";
 import { Repeat, SkipForward } from "lucide-react";
 import { ChromeIconButton } from "@/features/alchemy/shared/ui/chrome-icon-button";
 import { GoldDisplay } from "@/features/alchemy/shared/ui/display-elements";
@@ -28,9 +28,8 @@ function BattleAutoplayToggle({ enabled, onToggle }: { enabled: boolean; onToggl
 
 function BattleSkipCombatButton({ onSkip, disabled }: { onSkip: () => void; disabled: boolean }) {
   const i18n = useGameTranslation();
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
+  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
+    useHoverVisible<HTMLButtonElement>();
   return (
     <>
       <ChromeIconButton
@@ -38,16 +37,16 @@ function BattleSkipCombatButton({ onSkip, disabled }: { onSkip: () => void; disa
         aria-label={i18n.text("ui.battle-cluster.2", "Skip Combat")}
         disabled={disabled}
         onClick={onSkip}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onFocus={onFocusCapture}
+        onBlur={onBlurCapture}
       >
         <SkipForward className="h-6 w-6" />
       </ChromeIconButton>
       <PortaledTooltip
         triggerRef={triggerRef}
-        visible={!disabled && (hovered || focused)}
+        visible={!disabled && visible}
         placement="below"
         allowFlip={false}
         horizontalInset={8}

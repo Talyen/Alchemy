@@ -12,6 +12,9 @@ import {
   installArmoryScreenTestHooks,
   renderArmoryScreen,
 } from "./armory/armory-screen-test-helpers";
+import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
+
+installFocusInputForTests(true);
 
 describe("ArmoryScreen core", () => {
   installArmoryScreenTestHooks();

@@ -30,16 +30,26 @@ export function trackFocusInput(): () => void {
         ) !== null ||
           ((event.key === "ArrowLeft" || event.key === "ArrowRight") &&
             target.matches('input[type="range"], [role="slider"]')));
-      if (event.key === "Tab" || event.key === "F7" || !editing) enableFocusNavigation();
+      if (event.key === "Tab" || event.key === "F7" || !editing) {
+        // A key held across dismissal or pointer input is not a fresh request.
+        if (event.repeat && !isFocusNavigationEnabled()) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        enableFocusNavigation();
+      }
     }
   };
   window.addEventListener("keydown", onKey, true);
   document.addEventListener("pointerdown", cancel, true);
   window.addEventListener("blur", cancel);
+  document.addEventListener("wheel", cancel, { capture: true, passive: true });
   return () => {
     window.removeEventListener("keydown", onKey, true);
     document.removeEventListener("pointerdown", cancel, true);
     window.removeEventListener("blur", cancel);
+    document.removeEventListener("wheel", cancel, true);
     cancel();
   };
 }
