@@ -57,7 +57,9 @@ const immunityLabels = {
   ru: ["Иммунитет: Оглушение", "Иммунитет: Заморозка"],
   es: ["Inmune a Aturdimiento", "Inmune a Congelación"],
   "pt-BR": ["Imune a Atordoamento", "Imune a Congelamento"],
-} as const;
+  ja: ["気絶無効", "冷気無効"],
+  fr: ["Immunité : Étourdissement", "Immunité : Gel"],
+} as const satisfies Record<keyof typeof languages, readonly [string, string]>;
 
 function entry(event: CombatTextEvent): FloatingCombatText {
   return { ...event, id: "entry", displayText: "" };

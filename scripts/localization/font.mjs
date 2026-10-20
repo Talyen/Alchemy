@@ -45,6 +45,13 @@ export function missingGlyphs(bytes, text, pattern) {
 export const FONTTOOLS_VERSION = "4.60.1";
 export const FONT_REQUIREMENTS = [
   {
+    locale: "ja",
+    file: "noto-sans-jp.ttf",
+    pattern: /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\u3000-\u303f\uff00-\uffef]/gu,
+    url: "https://raw.githubusercontent.com/google/fonts/a85815a42757630ce188fdad368c2dfc444d4773/ofl/notosansjp/NotoSansJP%5Bwght%5D.ttf",
+    sha256: "c2f3b4d463500a2ddcd3849cded1fceeb9fd6d1c32e6cbecd568453ba50fc68f",
+  },
+  {
     locale: "zh-Hans",
     file: "noto-sans-sc.ttf",
     pattern: /[\p{Script=Han}\u3000-\u303f\uff00-\uffef]/gu,
@@ -64,8 +71,6 @@ export function requiredFontText(catalogs, languages, requirement) {
   const text =
     Object.values(catalogs[requirement.locale] ?? {}).join("\n") +
     Array.from({ length: 11 }, (_, index) => amounts.format(10 ** (index + 5))).join("") +
-    Object.values(languages)
-      .map(({ name }) => name)
-      .join("");
+    (languages[requirement.locale]?.name ?? "");
   return [...new Set(text.match(requirement.pattern) ?? [])].sort().join("");
 }

@@ -25,7 +25,7 @@ export function resolveLocale(
   const candidates = steam ? [Object.hasOwn(steamLocales, steam) ? steamLocales[steam]! : steam] : system;
   for (const candidate of candidates) {
     const code = candidate.toLowerCase();
-    for (const locale of ["en", "de", "ru"] as const)
+    for (const locale of ["en", "de", "ru", "ja", "fr"] as const)
       if (code === locale || code.startsWith(locale + "-")) return locale;
     if (code === "zh" || /^(zh-hans|zh-cn|zh-sg)(-|$)/.test(code)) return "zh-Hans";
     if (code === "es" || /^es-es(-|$)/.test(code)) return "es";
