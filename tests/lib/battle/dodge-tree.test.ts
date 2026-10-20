@@ -10,8 +10,8 @@ const fullTree = computeTalentEffects({ dodge: dodgeTalents.map((talent) => tale
 
 it("Dodge tree progression offers ten real talents in four gated rows", () => {
   expect(getTalentRows("dodge").map((row) => row.length)).toEqual([1, 2, 3, 4]);
-  expect(tryUnlockTalent("dodge", "dodge-lightfoot", { dodge: 19 }, {}).unlockedTalents).toBeNull();
-  const first = tryUnlockTalent("dodge", "dodge-lightfoot", { dodge: 20 }, {});
+  expect(tryUnlockTalent("dodge", "dodge-lightfoot", { dodge: 9 }, {}).unlockedTalents).toBeNull();
+  const first = tryUnlockTalent("dodge", "dodge-lightfoot", { dodge: 10 }, {});
   expect(first.unlockedTalents).toEqual({ dodge: ["dodge-lightfoot"] });
   expect(tryUnlockTalent("dodge", "dodge-feint", { dodge: 1100 }, {}).unlockedTalents).toBeNull();
   let unlocked = {};
