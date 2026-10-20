@@ -17,6 +17,8 @@ const mysteryScreenData = vi.hoisted(() => ({
     mysteryChosenChoice: null as unknown,
     homesteadEffects: { homesteadHealing: 0, goldFindBonus: 0 },
     goldMultiplier: 1,
+    runPlayerHealth: 10,
+    runMaxHealth: 30,
     runTalentXP: {},
     talentXP: {},
   },
@@ -75,6 +77,8 @@ afterEach(() => {
     mysteryChosenChoice: null,
     homesteadEffects: { homesteadHealing: 0, goldFindBonus: 0 },
     goldMultiplier: 1,
+    runPlayerHealth: 10,
+    runMaxHealth: 30,
     runTalentXP: {},
     talentXP: {},
   };
@@ -122,6 +126,22 @@ describe("MysteryScreenRoute", () => {
     render(routeElement());
 
     expect(previewEffectSpy.current?.({ kind: "healHealth", amount: 5 })).toEqual({ kind: "healHealth", amount: 8 });
+  });
+
+  it("clamps the Mystery heal preview to missing Health like the choice does", () => {
+    mysteryScreenData.current = {
+      ...mysteryScreenData.current,
+      mysteryEvent: {
+        ...sampleEvent,
+        choices: [{ label: "Rest", effects: [{ kind: "healHealth", amount: 5 }] }],
+      },
+      homesteadEffects: { homesteadHealing: 3, goldFindBonus: 0 },
+      runPlayerHealth: 28,
+      runMaxHealth: 30,
+    };
+    render(routeElement());
+
+    expect(previewEffectSpy.current?.({ kind: "healHealth", amount: 5 })).toEqual({ kind: "healHealth", amount: 2 });
   });
 
   it("does not auto-continue when a held mystery event is cleared after Continue", () => {

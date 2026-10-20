@@ -356,6 +356,34 @@ it("applyRunStartSnapshot clears runTalentXP and run-end snapshots when starting
   expect(readRunSession(defaultGameSession).hasActiveRun).toBe(true);
 });
 
+it("applyRunStartSnapshot reseeds run RNG instead of reusing the previous run", () => {
+  setRunProgress({
+    rng: { seed: 123, counters: { rewards: 5, destinations: 5, events: 5, shops: 5, world: 5 } },
+  });
+  applyRunStartSnapshot({
+    characterId: "knight",
+    contentSystemType: "campaign",
+    freshDeck: [],
+    selectedDifficulty: "difficulty-1",
+    runPlayerHealth: 80,
+    runMaxHealth: 80,
+    roomsEncountered: 0,
+    currentAct: 1,
+    destinationIndexInAct: 0,
+    completedDestinations: [],
+    runBoons: [],
+    hasActiveRun: true,
+  });
+  expect(readActiveRun(defaultGameSession).rng.counters).toEqual({
+    rewards: 0,
+    destinations: 0,
+    events: 0,
+    shops: 0,
+    world: 0,
+  });
+  expect(Number.isFinite(readActiveRun(defaultGameSession).rng.seed)).toBe(true);
+});
+
 describe("finalizeRunEndSession", () => {
   it("copies obtained items onto the run-end session snapshot", () => {
     const obtained = [

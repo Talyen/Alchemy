@@ -4,6 +4,7 @@ import type { CharacterId } from "@/lib/game-data";
 import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { gameplayDraftRuntime, type GameplayDraft } from "../gameplay-command";
+import { createRunRngState } from "@/lib/rng";
 import { createInitialActiveRunFields, runFieldsFromSnapshot, type ActiveRunProgressFields } from "../run-state-init";
 import { setHasActiveRun } from "./run-session";
 
@@ -38,6 +39,9 @@ export function initializeFromResumeSnapshot(draft: GameplayDraft, activeRun: Ac
 function hydrateFromSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): void {
   draft.session.activity = { kind: "idle" };
   Object.assign(draft.run.activeRun, runFieldsFromSnapshot(snapshot), {
+    // A fresh run owns fresh RNG: the snapshot carries no seed, so reusing the
+    // previous run's counters would repeat its shuffles and reward sequences.
+    rng: createRunRngState(gameplayDraftRuntime(draft).generateRunSeed()),
     runTalentXP: {},
     runMaterialsEarned: emptyInventory(),
     runCurrenciesEarned: { ...EMPTY_CRAFTING_CURRENCIES },
