@@ -4,7 +4,7 @@ Canonical detail linked from [GAME_RULES.md](./GAME_RULES.md).
 
 ## Talent manifests and progression
 
-Each keyword earns talent points independently. The first point costs 20 XP, and each following point costs 20 XP more; point `n` unlocks at `10 × n × (n + 1)` total keyword XP.
+Each keyword earns talent points independently. The first point costs 10 XP and the second costs another 30 XP. Later point costs remain 60, 80, 100 XP, and so on; point `n` unlocks at `10 × n × (n + 1) − 10 × min(n, 2)` total keyword XP (10, 40, 100, 180, 280, …).
 
 Talent tuning follows repeatability, not merely whether a condition exists. Frequent rewards stay small; once-per-combat opening grants and bounded opening/finishing windows can remain larger. Brittle Ice adds 1 damage to positive player/Companion packets against Frozen enemies, and Corrosive does the same against Poisoned enemies; Exploit Weakness retains double damage. Active Stun/Freeze blocks further crowd control, and recovery starts their shared three-turn immunity. Do not balance around simultaneous Stun and Freeze as an ordinarily reachable state. Health threshold rewards can retrigger after returning across their threshold unless explicitly limited to once per combat.
 

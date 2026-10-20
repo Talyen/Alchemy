@@ -1,7 +1,7 @@
 import {
   MAX_HEALTH_PER_TALENT_POINT,
   MAX_PLAYER_HEALTH,
-  XP_BASE_PER_POINT,
+  XP_EARLY_POINT_DISCOUNT,
   XP_MIN_THRESHOLD,
   XP_ROOT_DIVISOR,
   XP_TRIANGULAR_MULTIPLIER,
@@ -11,16 +11,17 @@ import type { KeywordId } from "../types";
 export type TalentXP = Partial<Record<KeywordId, number>>;
 
 function xpForNextPoint(currentPoints: number): number {
-  return (currentPoints + 1) * XP_BASE_PER_POINT;
+  return xpThresholdForPoints(currentPoints + 1) - xpThresholdForPoints(currentPoints);
 }
 
 export function xpThresholdForPoints(points: number): number {
-  return points * (points + 1) * XP_TRIANGULAR_MULTIPLIER;
+  return points * (points + 1) * XP_TRIANGULAR_MULTIPLIER - Math.min(points, 2) * XP_EARLY_POINT_DISCOUNT;
 }
 
 export function computeTalentPoints(xp: number): number {
   if (!Number.isFinite(xp) || xp > Number.MAX_SAFE_INTEGER || xp < XP_MIN_THRESHOLD) return 0;
-  const points = Math.floor((-1 + Math.sqrt(1 + XP_ROOT_DIVISOR * xp)) / 2);
+  // Restore the two early discounts when inverting the later triangular thresholds.
+  const points = Math.floor((-1 + Math.sqrt(1 + XP_ROOT_DIVISOR * (xp + 2 * XP_EARLY_POINT_DISCOUNT))) / 2);
   // The square root can round up one point before large, still-valid thresholds.
   return xp < xpThresholdForPoints(points) ? points - 1 : points;
 }

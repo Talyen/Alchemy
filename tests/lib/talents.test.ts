@@ -16,21 +16,24 @@ import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 
 describe("talent progression", () => {
   it.each([
-    [19, 0, 1],
-    [20, 1, 40],
-    [59, 1, 1],
-    [60, 2, 60],
-    [119, 2, 1],
-    [120, 3, 80],
-    [2814749934878719, 16777215, 1],
-    [2814749934878720, 16777216, 335544340],
+    [0, 0, 10],
+    [9, 0, 1],
+    [10, 1, 30],
+    [39, 1, 1],
+    [40, 2, 60],
+    [99, 2, 1],
+    [100, 3, 80],
+    [179, 3, 1],
+    [180, 4, 100],
+    [2814749934878699, 16777215, 1],
+    [2814749934878700, 16777216, 335544340],
   ])("awards points only at the threshold for %i XP", (xp, points, remaining) => {
     expect(computeTalentPoints(xp)).toBe(points);
     expect(xpToNextPoint(xp)).toBe(remaining);
   });
 
   it("adds starting Health from points earned independently across keywords", () => {
-    expect(computeStartingMaxHealth({ physical: 19, health: 60 })).toBe(MAX_PLAYER_HEALTH + 2);
+    expect(computeStartingMaxHealth({ physical: 9, health: 40 })).toBe(MAX_PLAYER_HEALTH + 2);
     expect(computeStartingMaxHealth({})).toBe(MAX_PLAYER_HEALTH);
   });
 
@@ -45,9 +48,9 @@ describe("talent progression", () => {
       totalXP: 30,
       points: 1,
       displayLevel: 2,
-      xpForNext: 40,
-      xpRemaining: 30,
-      progressPercent: 25,
+      xpForNext: 30,
+      xpRemaining: 10,
+      progressPercent: 67,
       spentPoints: 0,
       unspentPoints: 1,
       hasUnspent: true,
@@ -55,7 +58,7 @@ describe("talent progression", () => {
     expect(getTalentKeywordProgress(200, 3, 3)).toMatchObject({ unspentPoints: 0, hasUnspent: false });
     expect(getTalentKeywordProgress(200, 1, 2)).toMatchObject({ unspentPoints: 1, hasUnspent: true });
     expect(getTalentKeywordProgress(20, 5)).toMatchObject({ unspentPoints: 0, hasUnspent: false });
-    expect(getTalentKeywordProgress(20, 0)).toMatchObject({ progressPercent: 0, xpRemaining: 40 });
+    expect(getTalentKeywordProgress(10, 0)).toMatchObject({ progressPercent: 0, xpRemaining: 30 });
   });
 });
 
@@ -88,7 +91,7 @@ describe("run-end talent XP", () => {
 
 it("spends earned points exactly once and rejects the next eligible Talent until more XP is earned", () => {
   const first = getAllocatableTalentChoices("physical", [])[0]!;
-  expect(canUnlockTalent("physical", first.id, { physical: 19 }, {})).toEqual({
+  expect(canUnlockTalent("physical", first.id, { physical: 9 }, {})).toEqual({
     ok: false,
     reason: "no-unspent-points",
   });
@@ -98,16 +101,16 @@ it("spends earned points exactly once and rejects the next eligible Talent until
       reason: "no-unspent-points",
     });
   }
-  const result = tryUnlockTalent("physical", first.id, { physical: 20 }, {});
+  const result = tryUnlockTalent("physical", first.id, { physical: 10 }, {});
   if (!result.unlockedTalents) throw new Error("Expected an earned Talent point");
-  expect(canUnlockTalent("physical", first.id, { physical: 20 }, result.unlockedTalents)).toEqual({
+  expect(canUnlockTalent("physical", first.id, { physical: 10 }, result.unlockedTalents)).toEqual({
     ok: false,
     reason: "already-unlocked",
   });
   const next = getAllocatableTalentChoices("physical", result.unlockedTalents.physical!)[0]!;
-  expect(canUnlockTalent("physical", next.id, { physical: 59 }, result.unlockedTalents)).toEqual({
+  expect(canUnlockTalent("physical", next.id, { physical: 39 }, result.unlockedTalents)).toEqual({
     ok: false,
     reason: "no-unspent-points",
   });
-  expect(canUnlockTalent("physical", next.id, { physical: 60 }, result.unlockedTalents)).toEqual({ ok: true });
+  expect(canUnlockTalent("physical", next.id, { physical: 40 }, result.unlockedTalents)).toEqual({ ok: true });
 });

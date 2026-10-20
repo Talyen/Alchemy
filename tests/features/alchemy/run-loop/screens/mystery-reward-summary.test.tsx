@@ -106,12 +106,12 @@ describe("MysteryRewardSummary", () => {
     );
 
     await waitFor(() =>
-      expect(screen.getByRole("progressbar", { name: "Burn level 2 progress" }).getAttribute("aria-valuenow")).toBe(
-        "70",
+      expect(screen.getByRole("progressbar", { name: "Burn level 3 progress" }).getAttribute("aria-valuenow")).toBe(
+        "13",
       ),
     );
     expect(screen.getByRole("progressbar", { name: "Freeze level 2 progress" }).getAttribute("aria-valuenow")).toBe(
-      "0",
+      "33",
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));

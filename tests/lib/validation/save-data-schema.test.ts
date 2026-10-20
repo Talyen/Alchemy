@@ -147,7 +147,7 @@ describe("SaveDataSchema", () => {
       talentXP: damagedXP,
       activeRun: makeMinimalActiveRunInput({ runTalentXP: damagedXP }),
     });
-    expect(computeStartingMaxHealth(result.talentXP)).toBe(MAX_PLAYER_HEALTH + 2);
+    expect(computeStartingMaxHealth(result.talentXP)).toBe(MAX_PLAYER_HEALTH + 4);
     expect(result.talentXP).toEqual({ block: 10, holy: 100 });
     expect(result.activeRun?.runTalentXP).toEqual(result.talentXP);
   });

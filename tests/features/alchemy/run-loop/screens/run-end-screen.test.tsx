@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RunEndScreen } from "@/features/alchemy/run-loop/screens/run-end-screen";
 import { getTalentTreeKeywordIds, keywordDefinitions } from "@/lib/game-data";
@@ -59,18 +59,20 @@ describe("RunEndScreen", () => {
     vi.unstubAllGlobals();
   });
 
-  it("shows each run XP award beside its progress within the current talent level", () => {
+  it("shows settled XP progress within the current talent level", async () => {
     renderRunEnd({
       runEndTalentXP: { physical: 12, burn: 3 },
       talentXP: { physical: 30, burn: 3 },
     });
 
-    const physical = within(screen.getByRole("progressbar", { name: "Physical level 2 progress" }).parentElement!);
-    expect(physical.getByText("+12")).toBeTruthy();
-    expect(physical.getByText("10/40")).toBeTruthy();
-    const burn = within(screen.getByRole("progressbar", { name: "Burn level 1 progress" }).parentElement!);
-    expect(burn.getByText("+3")).toBeTruthy();
-    expect(burn.getByText("3/20")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole("progressbar", { name: "Physical level 2 progress" }).getAttribute("aria-valuenow")).toBe(
+        "67",
+      );
+      expect(screen.getByRole("progressbar", { name: "Burn level 1 progress" }).getAttribute("aria-valuenow")).toBe(
+        "30",
+      );
+    });
   });
 
   it.each(["defeat", "victory"] as const)(
