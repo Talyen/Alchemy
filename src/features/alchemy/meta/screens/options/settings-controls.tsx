@@ -11,6 +11,14 @@ import { playUISound } from "@/lib/audio";
 import { controlLabelClass, controlDescriptionClass } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 
+function SettingsIcon({ icon: Icon }: { icon: LucideIcon }) {
+  return (
+    <span aria-hidden="true" className="flex h-[1lh] w-6 shrink-0 items-center justify-center self-start text-lg">
+      <Icon className="h-5 w-5 text-gold-pale" />
+    </span>
+  );
+}
+
 export function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
   useGameTranslation();
   return (
@@ -35,8 +43,8 @@ export function SettingsAction({
   useGameTranslation();
   return (
     <div className="options-settings-row options-settings-action">
-      <div className="options-settings-label flex items-center gap-3">
-        <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-gold-pale" />
+      <div className="options-settings-label options-settings-label-content">
+        <SettingsIcon icon={Icon} />
         <div className="min-w-0">
           <p className={controlLabelClass}>{label}</p>
           <p className={cn("options-settings-description", controlDescriptionClass)}>{description}</p>
@@ -76,8 +84,8 @@ export function SettingsSelect<T extends string>({
   });
   return (
     <div className="options-settings-row">
-      <label htmlFor={id} className={cn("options-settings-label flex items-center gap-3", controlLabelClass)}>
-        <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-gold-pale" />
+      <label htmlFor={id} className={cn("options-settings-label options-settings-label-content", controlLabelClass)}>
+        <SettingsIcon icon={Icon} />
         <span>{label}</span>
       </label>
       <Select
@@ -124,8 +132,8 @@ export function SettingsSlider({
   useGameTranslation();
   return (
     <div className="options-settings-row">
-      <p className={cn("options-settings-label flex items-center gap-3", controlLabelClass)}>
-        <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-gold-pale" />
+      <p className={cn("options-settings-label options-settings-label-content", controlLabelClass)}>
+        <SettingsIcon icon={Icon} />
         <span>{label}</span>
       </p>
       <div className="options-settings-control flex items-center gap-3">
@@ -162,8 +170,11 @@ export function SettingsToggle({
   const id = useId();
   return (
     <div className="options-settings-row options-settings-toggle">
-      <label htmlFor={id} className={cn("flex min-w-0 flex-1 cursor-pointer items-center gap-3", controlLabelClass)}>
-        <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-gold-pale" />
+      <label
+        htmlFor={id}
+        className={cn("options-settings-label-content min-w-0 flex-1 cursor-pointer", controlLabelClass)}
+      >
+        <SettingsIcon icon={Icon} />
         <span>{label}</span>
       </label>
       <Switch

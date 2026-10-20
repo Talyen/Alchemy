@@ -33,6 +33,12 @@
   min-width: 0;
 }
 
+.options-settings-label-content {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--content-rem);
+}
+
 .options-settings-control {
   flex: 3 1 calc(20 * var(--content-rem));
   min-width: 0;
