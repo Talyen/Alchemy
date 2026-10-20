@@ -13,8 +13,8 @@ import { cn } from "@/lib/utils";
 
 function SettingsIcon({ icon: Icon }: { icon: LucideIcon }) {
   return (
-    <span aria-hidden="true" className="flex h-[1lh] w-6 shrink-0 items-center justify-center self-start text-lg">
-      <Icon className="h-5 w-5 text-gold-pale" />
+    <span aria-hidden="true" className="flex h-[1lh] w-6 shrink-0 items-center justify-center self-start">
+      <Icon className="h-[0.9em] w-[0.9em] text-gold-pale" strokeWidth={2.5} />
     </span>
   );
 }
