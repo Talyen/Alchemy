@@ -2,12 +2,14 @@
 
 ## Battle layout
 
-Draw Pile anchors to the bottom-left corner; Discard Pile anchors to the
-bottom-right. Both open their matching tab in the shared card viewer. The hand
-uses its earlier centered fan and hover movement, with clearance for its rotated
-artwork. Mana crystals sit centered above Draw Pile, retaining their spending,
-refill, capacity, overflow, glint and blue spill effects. End Turn is an outline
-text button above Discard Pile and commits immediately after input gates pass.
+Draw Pile and Mana sit beside the left of the centered card hand; Discard Pile
+and End Turn sit beside its right. The three columns form one centered group,
+with the earlier responsive gap between the hand and each side column. Both piles
+open their matching tab in the shared card viewer. The hand retains its centered
+fan and hover movement, with clearance for its rotated artwork. Mana crystals sit
+centered above Draw Pile, retaining their spending, refill, capacity, overflow,
+glint and blue spill effects. End Turn is an outline text button above Discard Pile
+and commits immediately after input gates pass.
 
 ## Battle feedback
 
