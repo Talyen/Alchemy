@@ -64,15 +64,24 @@ export function resolveCardEffectChain(
   const damageEffects = options.damageEffects ?? [];
   const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
   let nextState = reacted;
+  let attackAttempted = false;
+  let repeatAttackAttempted = false;
   for (let copy = 0; copy < (options.playTwice ? 2 : 1); copy++) {
     // The first copy can be accepted during victory grace; repeats require a live fight.
     if (copy > 0 && getBattleOutcome(nextState) !== null) break;
+    // Dodged packets mark the attempt cell without joining the resolved damage
+    // that Unique repeats and Archery echoes replay.
+    const attemptCell = { value: false };
     nextState = applyCardEffects(nextState, card, combatTexts, {
       origin: options.playedCard ? "played-card" : "triggered-card",
       damageEffects: copy === 0 ? damageEffects : repeatedDamageEffects,
+      attackAttempted: attemptCell,
       manaAtStart: copy === 0 ? (options.manaAtStart ?? reacted.mana) : nextState.mana,
       ...(options.guaranteedCrit === undefined ? {} : { guaranteedCrit: options.guaranteedCrit }),
     });
+    const attempted = (copy === 0 ? damageEffects : repeatedDamageEffects).length > 0 || attemptCell.value;
+    if (copy === 0) attackAttempted = attempted;
+    else repeatAttackAttempted = attempted;
     nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
   }
   // A full-card repeat repeats effects and Potion use, but rewards the play once.
@@ -80,8 +89,8 @@ export function resolveCardEffectChain(
   nextState = applyTwinCasting(nextState, card, combatTexts);
   return {
     state: nextState,
-    attackAttempted: damageEffects.length > 0,
-    repeatAttackAttempted: repeatedDamageEffects.length > 0,
+    attackAttempted,
+    repeatAttackAttempted,
   };
 }
 

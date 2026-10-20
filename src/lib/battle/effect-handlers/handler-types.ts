@@ -8,6 +8,9 @@ export interface CardEffectResolutionContext {
   // Coordinated Strike applies to one Companion attack, including a dodged attempt.
   companionAttackBonus?: { amount: number };
   damageEffects?: Array<Extract<BattleCardEffect, { kind: "damage" }>>;
+  // Dodged packets still count as attempts for encounter reactions, but they
+  // resolve no damage for Unique repeats or Archery echoes.
+  attackAttempted?: { value: boolean };
   onDamageDealt?: (amount: number) => void;
   damageMultiplier?: number;
   baseDamageBonus?: number;

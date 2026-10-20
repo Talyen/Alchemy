@@ -143,7 +143,10 @@ export function dealDamageToEnemy(
     return state;
   const dodged = tryDodgePlayerAttackPacket(state, combatTexts);
   if (dodged) {
-    captureDamageEffect(resolvedEffect);
+    // A dodge deals no damage, so dodged packets stay out of the resolved
+    // damage that Unique repeats and Archery echoes replay. The attempt still
+    // counts for encounter reactions through the shared attempt cell.
+    if (context?.attackAttempted) context.attackAttempted.value = true;
     return dodged;
   }
 

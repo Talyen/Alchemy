@@ -54,6 +54,7 @@ export function resolveCompanionAction(
     const burningEnemy = s.enemyStatuses.burn > 0;
     const companionAttackBonus = { amount: s.flags.companionNextAttackBonus };
     const damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
+    const attackAttempted = { value: false };
     let damageDealt = 0;
     let damagePackets = 0;
     let afterEffects = port.afterAction(
@@ -62,6 +63,7 @@ export function resolveCompanionAction(
         companionAttackBonus,
         origin: "companion",
         damageEffects,
+        attackAttempted,
         onDamageDealt: (amount) => {
           damageDealt += amount;
           if (amount > 0) damagePackets += 1;
@@ -69,7 +71,7 @@ export function resolveCompanionAction(
       }),
       companionCard,
       combatTexts,
-      damageEffects.length > 0,
+      damageEffects.length > 0 || attackAttempted.value,
     );
 
     afterEffects = {
