@@ -1,6 +1,6 @@
 import type { CharacterId } from "@/lib/game-data";
 import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ArmorySalvagePending } from "./armory-screen-types";
 import { useArmoryTargetingEvents } from "./use-armory-targeting-events";
 
@@ -69,7 +69,16 @@ export function useArmoryTargetingState({
     setTargeting(IDLE);
   }
 
+  // Editability can disable the focused control in place, so that transition
+  // drops focus. Character switches remount their content (which already drops
+  // focus from removed nodes) while the tab that triggered the switch stays
+  // mounted; blurring there would strand keyboard focus on the body.
+  const previousCharacterId = useRef(characterId);
   useEffect(() => {
+    if (previousCharacterId.current !== characterId) {
+      previousCharacterId.current = characterId;
+      return;
+    }
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   }, [editable, characterId]);
 

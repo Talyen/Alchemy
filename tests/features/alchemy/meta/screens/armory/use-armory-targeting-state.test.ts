@@ -1,11 +1,17 @@
 import { useArmoryTargetingState } from "@/features/alchemy/meta/screens/armory/use-armory-targeting-state";
-import { EMPTY_CRAFTING_CURRENCIES, computeSalvageYield, type GearInstance } from "@/lib/gear";
+import { EMPTY_CRAFTING_CURRENCIES, computeSalvageYield, type CraftingCurrencyId, type GearInstance } from "@/lib/gear";
+import type { CharacterId } from "@/lib/game-data";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 const instance: GearInstance = { instanceId: "sword-1", definitionId: "shortsword-basic", affixes: [] };
 const pending = { instance, yield: computeSalvageYield(instance) };
-const initialProps = {
+const initialProps: {
+  editable: boolean;
+  characterId: CharacterId;
+  craftingCurrencies: Record<CraftingCurrencyId, number>;
+  inventoryById: Map<string, GearInstance>;
+} = {
   editable: true,
   characterId: "knight" as const,
   craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 1 },
@@ -42,6 +48,19 @@ describe("Armory targeting transitions", () => {
     act(() => result.current.confirmSalvage(pending));
     rerender({ ...initialProps, inventoryById: new Map() });
     expect(result.current.salvagePending).toBeNull();
+  });
+
+  it("preserves focus across character switches but blurs when editing locks", () => {
+    const { rerender } = renderHook(useArmoryTargetingState, { initialProps });
+    const button = document.createElement("button");
+    document.body.append(button);
+    button.focus();
+    expect(document.activeElement).toBe(button);
+    rerender({ ...initialProps, characterId: "ranger" });
+    expect(document.activeElement).toBe(button);
+    rerender({ ...initialProps, characterId: "ranger", editable: false });
+    expect(document.activeElement).toBe(document.body);
+    button.remove();
   });
 });
 
