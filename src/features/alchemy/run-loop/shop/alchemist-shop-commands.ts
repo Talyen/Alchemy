@@ -14,8 +14,7 @@ import { readActivityData } from "@/lib/active-run-session";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import { strengthenPotion as prepareStrengthenedPotion } from "@/lib/alchemist/brewing";
 import { ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
-import { isMixedPotionCard, type BattleCard } from "@/lib/game-data";
-import { getStandardPotionPool, isPotionCard } from "@/lib/game-data/cards/card-pools";
+import { getStandardPotionPool, isMixedPotionCard, isPotionCard, type BattleCard } from "@/lib/game-data";
 import { isValidDeckIndex } from "@/lib/utils";
 import {
   cardSlotKeyOf,

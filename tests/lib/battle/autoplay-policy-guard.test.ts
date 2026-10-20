@@ -9,6 +9,21 @@ import { makeTestBattleState } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
 
 describe("autoplay policy", () => {
+  it("scores equal-to-resource damage with applicable Forge", () => {
+    const blockCard = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "damage", damageType: "physical", amount: 0, equalToBlock: true }],
+    });
+    const armorCard = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "damage", damageType: "physical", amount: 0, equalToArmor: true }],
+    });
+    const state = makeTestBattleState({ playerStatuses: { block: 7, armor: 5, forge: 3 } });
+    // Live base is resource + Forge (physical converts Forge at full value).
+    expect(getEffectiveDamageScore(blockCard, state)).toBe(10);
+    expect(getEffectiveDamageScore(armorCard, state)).toBe(8);
+  });
+
   it("chooses a refill only when it has usable Mana room and keeps hand order on equal scores", () => {
     const refill = makeTestCard({ cost: 0, effects: [{ kind: "restore-mana", amount: 2 }] });
     const draw = makeTestCard({ cost: 0, effects: [{ kind: "draw-cards", amount: 1 }] });

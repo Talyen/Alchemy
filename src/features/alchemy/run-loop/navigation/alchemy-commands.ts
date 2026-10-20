@@ -1,4 +1,4 @@
-import { isPotionCard } from "@/lib/game-data/cards/card-pools";
+import { isPotionCard } from "@/lib/game-data";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";

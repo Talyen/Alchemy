@@ -11,6 +11,7 @@ import {
   type BattleCardEffect,
 } from "@/lib/game-data";
 import { halveRounded, scalePercent } from "./amount-helpers";
+import { getForgeBonusForDamage } from "./player-damage-base";
 import { computeCardPayment } from "./card-cost-rules";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 
@@ -40,8 +41,12 @@ function scoreEffects(effects: readonly BattleCardEffect[], state: BattleSnapsho
 function scoreDamageBase(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleSnapshot): number {
   if (effect.forgeBonusPercent !== undefined)
     return effect.amount + scalePercent(state.playerStatuses.forge, effect.forgeBonusPercent);
-  if (effect.equalToBlock) return scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? 100);
-  if (effect.equalToArmor) return state.playerStatuses.armor;
+  if (effect.equalToBlock)
+    return (
+      scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? 100) +
+      getForgeBonusForDamage(state, effect.damageType)
+    );
+  if (effect.equalToArmor) return state.playerStatuses.armor + getForgeBonusForDamage(state, effect.damageType);
   // Ordinary attacks need no temporary resolved effect.
   if (!effect.damageTypeIfTargetFrozen) return effect.amount;
   return resolveConditionalCardDamage(effect, state.enemyCC.freezeSkipTurns > 0).amount;

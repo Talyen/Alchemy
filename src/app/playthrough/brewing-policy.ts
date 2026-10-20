@@ -1,8 +1,13 @@
-import { isPotionCard } from "@/lib/game-data/cards/card-pools";
+import {
+  harmfulPlayerStatusIds,
+  isPotionCard,
+  mapEffectChildren,
+  type BattleCard,
+  type BattleCardEffect,
+} from "@/lib/game-data";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
 import { strengthenPotion } from "@/lib/alchemist/brewing";
 import { getEffectiveDamageScore, type BattleSnapshot } from "@/lib/battle";
-import { harmfulPlayerStatusIds, mapEffectChildren, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 
 // Visible-effect estimates for preparation, not combat predictions. Healing has
 // future value here even at full Health; combat decisions use the live snapshot.

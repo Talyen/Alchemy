@@ -14,7 +14,7 @@ import {
   getPoisonBonusAgainstBleeding,
   getPoisonDamageMultiplierAgainstBleeding,
 } from "./status-helpers";
-import type { BattleState } from "./types";
+import type { BattleSnapshot, BattleState } from "./types";
 
 function forgeDamagePercent(
   damageType: DamageType,
@@ -49,7 +49,7 @@ function blockScaledDamage(state: BattleState, percent: number): number {
   return scalePercent(state.playerStatuses.block, percent, PERCENT_DENOMINATOR);
 }
 
-function getForgeBonusForDamage(state: BattleState, damageType: DamageType): number {
+export function getForgeBonusForDamage(state: BattleSnapshot, damageType: DamageType): number {
   const percent = forgeDamagePercent(damageType, state.talentEffects, state.gearEffects);
   if (!(percent > 0)) return 0;
   const forge = state.playerStatuses.forge;

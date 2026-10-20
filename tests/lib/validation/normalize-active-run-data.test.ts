@@ -279,6 +279,27 @@ describe("ActiveRunDataSchema normalize", () => {
     const result = parseActiveRunData({ activity: savedActivityFixture("shop") });
     expect(savedActivityData(result, "mystery")).toBeNull();
   });
+
+  it("clears a stale Labyrinth pending node that is missing from the map", () => {
+    const map = generateLabyrinthMap(createSeededRng(1));
+    const validNode = Object.keys(map.nodes)[0]!;
+    const valid = parseActiveRunData({
+      contentSystemType: "labyrinth",
+      labyrinthMap: map,
+      labyrinthPendingNode: validNode,
+      activity: savedActivityFixture("battle", { battleState: defaultBattleState() }),
+    });
+    expect(valid.labyrinthPendingNode).toBe(validNode);
+
+    const stale = parseActiveRunData({
+      contentSystemType: "labyrinth",
+      labyrinthMap: map,
+      labyrinthPendingNode: "missing-room",
+      activity: savedActivityFixture("battle", { battleState: defaultBattleState() }),
+    });
+    expect(stale.labyrinthMap).toEqual(map);
+    expect(stale.labyrinthPendingNode).toBeNull();
+  });
 });
 
 it("preserves an active Wish and queued choices until the active choice is resolved", () => {

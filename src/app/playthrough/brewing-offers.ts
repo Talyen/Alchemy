@@ -1,4 +1,4 @@
-import { isPotionCard } from "@/lib/game-data/cards/card-pools";
+import { isPotionCard } from "@/lib/game-data";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { cardSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
