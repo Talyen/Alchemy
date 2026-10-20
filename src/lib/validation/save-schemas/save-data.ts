@@ -91,9 +91,9 @@ function readRawCombatGold(value: unknown): unknown {
 
 // Single owner for the live-combat-gold rule: the mid-fight purse override is
 // intentional, not damage. save-candidates.ts uses this to suppress the gold
-// repair warning instead of re-implementing the floor comparison.
+// repair warning instead of re-implementing the rounding comparison.
 export function isCombatGoldOverride(liveCombatGold: unknown, persistedGold: number): boolean {
-  return isUsableLiveCombatGold(liveCombatGold) && Math.floor(liveCombatGold) === persistedGold;
+  return isUsableLiveCombatGold(liveCombatGold) && Math.round(liveCombatGold) === persistedGold;
 }
 
 const SaveDataObjectSchema = z
@@ -151,7 +151,7 @@ export const SaveDataSchema = z
   .transform(({ save, combatGold }) => {
     const run = save.activeRun;
     if (run?.activity.kind !== "battle") return save;
-    const gold = isUsableLiveCombatGold(combatGold) ? Math.floor(combatGold) : save.gold;
+    const gold = isUsableLiveCombatGold(combatGold) ? Math.round(combatGold) : save.gold;
     return {
       ...save,
       gold,

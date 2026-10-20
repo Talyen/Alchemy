@@ -127,6 +127,7 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
           key={art}
           src={art}
           alt=""
+          loading="eager"
           draggable={false}
           decoding="async"
           className={cn(
