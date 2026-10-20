@@ -1,3 +1,5 @@
+import { exerciseControllerCursor } from "../e2e/controller-cursor";
+import { exerciseFocusInputOptions, exerciseFocusInputBattle } from "../e2e/focus-input";
 import { savedActivityData } from "../fixtures/run-activity";
 import { controllerInput } from "../e2e/controller-input";
 import fs from "node:fs";
@@ -235,6 +237,23 @@ test("mapped controller keys navigate the packaged desktop renderer", desktop, a
     await expect(page.getByRole("slider", { name: "Background Particles", exact: true })).toBeInViewport();
     await input.press("back");
     await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+    expect(errors).toEqual([]);
+  } finally {
+    await application.close();
+  }
+});
+
+test("Escape, clicks and scrolling preserve focus intent in the packaged desktop renderer", desktop, async () => {
+  const application = await launchElectronApp({ packagedRenderer: true });
+  try {
+    const page = await getElectronMainWindow(application);
+    const errors = failOnRuntimeErrors(page);
+    await new MenuPage(page).expectMainMenuAfterColdStart();
+    expect(page.url()).toMatch(/^alchemy:\/\//);
+    await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
+    await exerciseFocusInputOptions(page);
+    await exerciseFocusInputBattle(page);
+    await exerciseControllerCursor(page);
     expect(errors).toEqual([]);
   } finally {
     await application.close();

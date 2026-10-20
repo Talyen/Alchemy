@@ -1,3 +1,4 @@
+import { expectUnfocused } from "../focus-input";
 import { expect, test } from "../../fixtures/e2e";
 import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
 import { critical, slow } from "../../playwright-tags";
@@ -119,7 +120,7 @@ test("closing during preparation never reveals late artwork, including reduced m
   await expect(panel).toBeVisible();
   await expect(panel.locator("img")).toHaveCSS("visibility", "hidden");
   await expect(panel).toHaveCSS("translate", "none");
-  await expect(panel.getByRole("button", { name: "Close card inspection" })).toBeFocused();
+  await expectUnfocused(page);
 });
 
 // Corruption prompt/cards/actions mounting is covered by the corruption result
@@ -171,7 +172,7 @@ test("inspection reveals a complete panel and retains its page through exit", cr
   expect(await panel.evaluate((element) => element.contains(document.activeElement))).toBe(false);
   await page.evaluate(() => (window as unknown as { releaseOverlayArtwork: () => void }).releaseOverlayArtwork());
   await expect(panel).toBeVisible();
-  await expect(panel.getByRole("button", { name: "Close card inspection" })).toBeFocused();
+  await expectUnfocused(page);
   await panel.getByRole("button", { name: "Next page" }).click();
   await expect(panel.getByRole("button", { name: "Previous page" })).toBeEnabled();
   await expect(panel.locator(".screen-fade-out, [data-artwork-pending]")).toHaveCount(0);

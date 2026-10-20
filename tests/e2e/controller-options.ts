@@ -1,3 +1,4 @@
+import { expectUnfocused } from "./focus-input";
 import { expect, type Page } from "@playwright/test";
 import { controllerInput } from "./controller-input";
 
@@ -32,7 +33,7 @@ export async function exerciseControllerOptions(page: Page) {
   await expect(cancel).toBeFocused();
   await input.press("back");
   await expect(dialog).toHaveCount(0);
-  await expect(clear).toBeFocused();
+  await expectUnfocused(page);
   await input.press("back");
   await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   return before - 1;

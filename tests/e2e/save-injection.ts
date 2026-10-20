@@ -7,7 +7,7 @@ import { baseHomesteadSave, BASE_ROSTER_CHARACTERS, DEFAULT_DISCOVERED_CARD_IDS 
 import type { InjectedBattleState } from "../fixtures/battle-state";
 import { gridLabyrinthMapFixture } from "../fixtures/labyrinth-map";
 import { makeHighDamageCard } from "./cards";
-import { navigateToGame } from "./navigation";
+import { navigateToGame, resumeInjectedRun } from "./navigation";
 import { failOnRuntimeErrors } from "./errors";
 import type { ParsedSaveData } from "@/lib/validation";
 
@@ -191,6 +191,7 @@ export async function injectActiveBattle(
     ...overrides,
   });
   if (!loaded) await navigateToGame(page);
+  await resumeInjectedRun(page);
 }
 
 export async function enterPrimaryRewardScreen(page: Page, pending: Record<string, unknown>) {
@@ -268,5 +269,6 @@ export async function injectLabyrinthRun(
     activity: savedActivityFixture("labyrinth-map"),
   });
   if (!loaded) await navigateToGame(page);
+  await resumeInjectedRun(page);
   await expect(page.getByRole("heading", { name: /Labyrinth|Map/i })).toBeVisible({ timeout: 20000 });
 }

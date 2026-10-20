@@ -89,7 +89,9 @@ describe("overlay focus ownership", () => {
       view.rerender(content(true));
       await settle();
       expect(document.activeElement).toBe(document.body);
-      fireEvent.keyDown(window, { key: "Tab" });
+      // Prevent native traversal from briefly leaving Electron's document.
+      expect(fireEvent.keyDown(window, { key: "Tab" })).toBe(false);
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Inspect first" }));
       await settle();
       expect(document.activeElement).toBe(screen.getByRole("button", { name: "Inspect first" }));
     } finally {

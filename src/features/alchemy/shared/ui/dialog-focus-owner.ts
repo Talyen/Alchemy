@@ -110,7 +110,14 @@ function cancelRestore() {
 
 function onKeyInput(event: KeyboardEvent) {
   if (event.key === "Escape") cancelRestore();
-  else scheduleReconcile();
+  else {
+    const scope = activeScope();
+    // Native Tab from an inert opener can leave Electron's document before the
+    // next frame. Enter the dialog immediately and prevent that window blur.
+    if (event.key === "Tab" && isFocusNavigationEnabled() && scope && !scope.panel.contains(document.activeElement))
+      trapDialogTab(scope.panel, event);
+    scheduleReconcile();
+  }
 }
 
 function ensureListeners() {

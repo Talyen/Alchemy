@@ -124,7 +124,7 @@ seeding. If the next enemy turn must deal damage, supply three canonical damagin
 ability IDs rather than assume the default Goblin cannot Block.
 
 Save injection returns whether Electron already reloaded the checkpoint; composed
-helpers navigate only for browser injection. Desktop writes remain doubled to
+helpers navigate only for browser injection. Injected runs boot to the main menu; battle, destination, and Labyrinth bootstrap helpers explicitly press Continue before returning the playable checkpoint. Desktop writes remain doubled to
 protect against a rewards autosave racing injection; each bridge write awaits disk
 acknowledgment. Destination setup requires an explicit destination; Labyrinth setup
 reuses the injection result rather than probing the renderer twice.

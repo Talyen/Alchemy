@@ -1,3 +1,4 @@
+import { exerciseFocusInputOptions, exerciseFocusInputBattle } from "../focus-input";
 import { expect, test } from "../../fixtures/e2e";
 import { makeCard, startBattleWithDeck, injectActiveBattle, makeGoblinBattleState } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
@@ -113,3 +114,23 @@ test("opening the menu during card transfer cancels hand focus recovery", critic
   await expect(battle.endTurnBtn).toBeEnabled();
   expect(await page.getByTestId("battle-hand").evaluate((hand) => hand.contains(document.activeElement))).toBe(false);
 });
+
+test(
+  "Escape, pointer clicks and wheel input keep focus inactive until fresh keyboard input",
+  critical,
+  async ({ page }) => {
+    test.setTimeout(45_000);
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto("/");
+    await exerciseFocusInputOptions(page);
+  },
+);
+
+test(
+  "wheel input cancels real card-transfer recovery and pointer inspection stays unfocused",
+  critical,
+  async ({ page }) => {
+    test.setTimeout(45_000);
+    await exerciseFocusInputBattle(page);
+  },
+);
