@@ -235,12 +235,15 @@ jobs:
       - name: Install Electron system dependencies
         run: npx playwright install-deps chromium
 
+      - name: Install native window manager for focus canaries
+        run: sudo apt-get install -y --no-install-recommends openbox
+
       - run: npm run check:ship
 
       - run: mkdir -p reports
 
       - name: Run Electron e2e
-        run: xvfb-run --auto-servernum -- npm run test:ship:desktop
+        run: xvfb-run --auto-servernum -- sh -c 'openbox >/tmp/alchemy-openbox.log 2>&1 & npm run test:ship:desktop'
         env:
           CI: true
           PLAYWRIGHT_ELECTRON_FULL: "1"

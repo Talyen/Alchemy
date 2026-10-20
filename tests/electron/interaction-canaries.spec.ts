@@ -208,13 +208,21 @@ test(
     );
     await desktopJourney(info, async (page, app) => {
       const battle = await seedDrawBattle(page);
+      // Playwright forces document.hasFocus() true by default. This fresh app
+      // must observe real native focus until desktopJourney closes it.
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send("Emulation.setFocusEmulationEnabled", { enabled: false });
+      await page.evaluate(() => window.alchemyDesktop!.setDisplayMode("windowed"));
+      await expect
+        .poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isFullScreen()))
+        .toBe(false);
       await battle.endTurnBtn.focus();
       await page.keyboard.press("Alt+Tab");
       await expect(battle.endTurnBtn).toBeFocused();
       await page.keyboard.press("Alt+Shift+Tab");
       await expect(battle.endTurnBtn).toBeFocused();
-      // Xvfb has no window manager to give focus to an empty desktop on blur().
-      // A second native window provides an actual focus destination.
+      // Use a second native window as the focus destination rather than relying
+      // on the desktop to take focus when the main window blurs.
       const otherWindowId = await app.evaluate(async ({ BrowserWindow }) => {
         const other = new BrowserWindow({ width: 320, height: 200 });
         await other.loadURL("about:blank");
