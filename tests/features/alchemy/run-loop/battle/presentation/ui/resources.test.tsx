@@ -40,6 +40,6 @@ it("caps visible gems with a badge and keeps exact values accessible without a r
   render(<ManaPanel mana={14} maxMana={17} presentation={battlePresentation} />);
   expect(screen.getByTestId("mana-panel").querySelectorAll("[data-mana-index]")).toHaveLength(9);
   expect(screen.getByText("+8")).toBeDefined();
-  expect(screen.getByRole("button", { name: "Inspect Mana: 14 / 17" })).toBeDefined();
+  expect(screen.getByRole("img", { name: "Mana: 14 / 17" })).toBeDefined();
   expect(screen.queryByText("14 / 17")).toBeNull();
 });

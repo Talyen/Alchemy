@@ -48,7 +48,6 @@ test("corner crystals retain capacity, destruction and temporary overflow effect
       );
     });
   });
-  await page.getByRole("button", { name: "Inspect Mana: 5 / 5" }).click();
   await expect(page.locator("[data-hand-slot]")).toHaveCount(3);
   await page.locator("[data-hand-slot] button").first().click();
   await expect(dock).toHaveAttribute("data-max-mana", "15");
@@ -64,7 +63,7 @@ test("corner crystals retain capacity, destruction and temporary overflow effect
   await expect.poll(async () => Number(await dock.getAttribute("data-mana"))).toBeGreaterThan(9);
   const restoredMana = Number(await dock.getAttribute("data-mana"));
   await expect(dock.locator(".mana-dock-overflow")).toHaveText(`+${restoredMana - 9}`);
-  await expect(page.getByRole("button", { name: `Inspect Mana: ${restoredMana} / 8` })).toBeVisible();
+  await expect(page.getByRole("img", { name: `Mana: ${restoredMana} / 8` })).toBeVisible();
   const final = await relativePlacement();
   // The corner remains anchored when cards play and Mana capacity changes.
   expect(final.x).toBeCloseTo(initial.x, 3);

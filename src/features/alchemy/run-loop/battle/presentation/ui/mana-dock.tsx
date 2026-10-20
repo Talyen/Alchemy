@@ -6,8 +6,6 @@ import { manaDockFull, manaDockEmpty } from "@/features/alchemy/shared/config/ga
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import type { BattlePresentationStore } from "../../battle-presentation-store";
 import { MANA_DOCK_VISIBLE_COUNT, projectMana, type ManaGemExit } from "../../mana-presentation";
-import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
-import { PortaledTooltip } from "../../../../shared/ui/tooltips/portaled-tooltip";
 
 const SHARD_SHAPES = [
   "polygon(0 0, 50% 0, 50% 50%)",
@@ -70,8 +68,6 @@ export function ManaPanel({
   // Keep unchanged animation keys while the layout effect commits the new display.
   const state =
     stored?.mana === mana && stored.maxMana === maxMana ? stored : projectMana(stored, mana, maxMana, !reduced);
-  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
-    useHoverVisible<HTMLButtonElement>();
 
   useLayoutEffect(() => {
     presentation.getState().setManaDisplay(mana, maxMana, mounted.current && !reduced);
@@ -79,23 +75,17 @@ export function ManaPanel({
   }, [mana, maxMana, presentation, reduced]);
 
   return (
-    <button
-      type="button"
-      aria-label={i18n.text("ui.mana-dock.1", "Inspect Mana: {{value0}} / {{value1}}", {
+    <div
+      role="img"
+      aria-label={i18n.text("ui.mana-dock.1", "Mana: {{value0}} / {{value1}}", {
         value0: mana,
         value1: maxMana,
       })}
-      onClick={onMouseEnter}
-      ref={triggerRef}
       className="mana-dock"
       data-testid="mana-panel"
       data-mana={mana}
       data-max-mana={maxMana}
       data-reduced-motion={reduced || undefined}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      onFocusCapture={onFocusCapture}
-      onBlurCapture={onBlurCapture}
     >
       <div className="mana-dock-art" aria-hidden="true">
         <div className="battle-mana-spill" aria-hidden="true">
@@ -154,33 +144,6 @@ export function ManaPanel({
         ))}
         {!reduced ? state.exits.map((exit) => <ManaExit key={exit.id} exit={exit} />) : null}
       </div>
-      <PortaledTooltip triggerRef={triggerRef} visible={visible} width="w-auto" placement="above">
-        <span className="font-semibold text-sky-400">
-          <GameMessage
-            id="ui.mana-dock.s2"
-            defaultValue="Mana <part0/> / <part1/>"
-            parts={{ part0: mana, part1: maxMana }}
-          />
-        </span>
-        {mana > maxMana ? (
-          <span className="block text-sm">
-            <GameMessage
-              id="ui.mana-dock.s3"
-              defaultValue="<part0/> bonus Mana"
-              parts={{ part0: i18n.displayText(mana - maxMana) }}
-            />
-          </span>
-        ) : null}
-        {state.hidden > 0 ? (
-          <span className="block text-sm">
-            <GameMessage
-              id="ui.mana-dock.s4"
-              defaultValue="<part0/> crystals beyond the visible <part1/>"
-              parts={{ part0: i18n.displayText(state.hidden), part1: i18n.displayText(MANA_DOCK_VISIBLE_COUNT) }}
-            />
-          </span>
-        ) : null}
-      </PortaledTooltip>
-    </button>
+    </div>
   );
 }

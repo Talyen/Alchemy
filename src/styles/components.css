@@ -320,7 +320,7 @@
 .mana-dock {
   flex-shrink: 0;
   position: relative;
-  /* Bound the inspection target to the corner; the art retains its original frame below. */
+  /* Keep the display anchored to the corner while preserving the original art width. */
   --mana-dock-art-width: min(
     calc(27.2 * var(--content-rem, 1rem)),
     calc((100vw - 2.25 * var(--content-rem, 1rem)) * 0.4)
@@ -331,7 +331,6 @@
   padding: 0;
   border: 0;
   background: transparent;
-  cursor: help;
   pointer-events: none;
 }
 .mana-dock-art {
@@ -340,18 +339,6 @@
   left: 50%;
   width: var(--mana-dock-art-width);
   transform: translateX(-50%);
-}
-.mana-dock::before {
-  content: "";
-  position: absolute;
-  inset: 28% 0 30%;
-  pointer-events: auto;
-}
-.mana-dock:focus-visible {
-  outline: none;
-}
-.mana-dock:focus-visible::before {
-  background: rgb(255 244 222 / 8%);
 }
 .mana-dock-gem {
   position: absolute;
