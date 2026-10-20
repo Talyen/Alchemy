@@ -28,7 +28,7 @@ import { PageLayout, ScreenHeaderRow } from "../../shared/ui/layout-components";
 import { FadeSlot } from "../../shared/ui/use-fade";
 import { ArmoryCharacterTabs, ArmoryOverlays, type ArmoryScreenProps } from "./armory";
 import { ArmoryEquipmentPanel } from "./armory/armory-equipment-panel";
-import { ArmoryFeedback } from "./armory/armory-feedback";
+import { ArmoryFeedback, type ArmoryFeedbackTone } from "./armory/armory-feedback";
 import { COMBAT_LOCKED_MESSAGE } from "./armory/armory-item-state";
 import type { ArmoryInventoryFilters } from "./armory/armory-inventory-filtering";
 import type { ArmorySortOption } from "./armory/armory-ordering";
@@ -75,6 +75,11 @@ export function ArmoryScreen({
   const [selectedSlot, setSelectedSlot] = useState<ArmorySlot>("main-hand");
   const [craftingResult, setCraftingResult] = useState<CraftingResult | null>(null);
   const [notice, setNotice] = useState<string | { item: string }>("");
+  const [noticeTone, setNoticeTone] = useState<ArmoryFeedbackTone>("success");
+  function showNotice(next: string | { item: string }, tone: ArmoryFeedbackTone = "success") {
+    setNotice(next);
+    setNoticeTone(tone);
+  }
   const sharedInventory = useMemo(() => flattenGearInventories(inventories), [inventories]);
   const inventoryById = useMemo(
     () => new Map(sharedInventory.map((item) => [item.instanceId, item])),
@@ -127,7 +132,7 @@ export function ArmoryScreen({
 
   function handleCombatLockedAttempt() {
     if (!browseOnly) return;
-    setNotice(COMBAT_LOCKED_MESSAGE);
+    showNotice(COMBAT_LOCKED_MESSAGE, "error");
     playUISound("error");
   }
 
@@ -162,7 +167,7 @@ export function ArmoryScreen({
     sharedInventory,
     ordering,
     requireEditable,
-    setNotice,
+    setNotice: (message) => showNotice(message, "warning"),
     afterProgressSaved,
   });
 
@@ -198,7 +203,7 @@ export function ArmoryScreen({
       if (!activeCurrencyId || modificationReservations[instance.instanceId]) return;
       const reason = craftingCurrencyBlockedReason(activeCurrencyId, instance);
       if (reason) {
-        setNotice(reason);
+        showNotice(reason, "warning");
         playUISound("error");
         return;
       }
@@ -217,7 +222,7 @@ export function ArmoryScreen({
           if (feedbackSequence.current === sequence)
             setCraftingResult({ before: instance, currencyId: activeCurrencyId });
         });
-      } else setNotice("Crafting could not be completed. No currency was spent.");
+      } else showNotice("Crafting could not be completed. No currency was spent.", "error");
     });
   };
 
@@ -353,7 +358,7 @@ export function ArmoryScreen({
           }
           result={craftingResult}
           after={craftedItem}
-          error={notice === COMBAT_LOCKED_MESSAGE}
+          tone={noticeTone}
           onDismiss={() => {
             setNotice("");
             setCraftingResult(null);
@@ -372,7 +377,10 @@ export function ArmoryScreen({
               const sequence = ++feedbackSequence.current;
               afterProgressSaved(() => {
                 if (feedbackSequence.current === sequence)
-                  setNotice({ item: salvagePending ? getGearInstanceTitle(salvagePending.instance) : "Item" });
+                  showNotice(
+                    { item: salvagePending ? getGearInstanceTitle(salvagePending.instance) : "Item" },
+                    "success",
+                  );
               });
             }
             return success;

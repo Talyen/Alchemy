@@ -25,7 +25,8 @@ export function isEditionRunAvailable(run: {
     !IS_DEMO ||
     (isEditionCharacterAvailable(run.characterId) &&
       isEditionModeAvailable(run.contentSystemType) &&
-      run.selectedDifficulty === "difficulty-1" &&
-      run.currentAct === 1)
+      run.selectedDifficulty != null &&
+      isEditionDifficultyAvailable(run.selectedDifficulty) &&
+      run.currentAct <= GAME_EDITION_POLICY.campaignActs)
   );
 }

@@ -15,6 +15,17 @@ import { filterLiveCards, isRecoverableCard } from "./normalize-persisted-battle
 import type { ValidatedActiveRunData } from "./save-schemas/active-run";
 import type { PersistedBattleCard } from "./save-schemas/battle-card-schemas";
 
+type WildwoodPhase = "draft" | "battle" | "reward" | "removal";
+
+/** The saved activity is the player's resume screen; Wildwood phase must agree with it. */
+function wildwoodPhaseForActivity(kind: ValidatedActiveRunData["activity"]["kind"]): WildwoodPhase | null {
+  if (kind === "draft-deck") return "draft";
+  if (kind === "battle") return "battle";
+  if (kind === "rewards") return "reward";
+  if (kind === "wildwood-removal") return "removal";
+  return null;
+}
+
 export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedActiveRunData {
   const runDeck = filterLiveCards(data.runDeck);
   const rngState: RunRngState = { seed: data.rng.seed, counters: { ...data.rng.counters } };
@@ -52,10 +63,20 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
 
   const drafting = runDeck.length < DRAFT_ROUNDS;
   const wildwood = data.contentSystemType === "wildwood" ? data.wildwoodDraft : null;
+  const wildwoodPhase = wildwood ? wildwoodPhaseForActivity(data.activity.kind) : null;
+  const phase = wildwoodPhase ?? wildwood?.phase;
   const wildwoodDraft = wildwood && {
     ...wildwood,
+    ...(wildwoodPhase
+      ? {
+          phase: wildwoodPhase,
+          currentCombatTraitIds: wildwoodPhase === "battle" ? wildwood.currentCombatTraitIds : [],
+          currentRewardTraitIds:
+            wildwoodPhase === "battle" || wildwoodPhase === "reward" ? wildwood.currentRewardTraitIds : [],
+        }
+      : {}),
     draftChoices: repairChoices(wildwood.draftChoices, {
-      canPick: wildwood.phase === "draft" && drafting,
+      canPick: phase === "draft" && drafting,
       stream: "world",
       seedKeywords: characters[data.characterId].keywords,
     }),
@@ -75,7 +96,7 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
             stream: "events",
             alreadyOwned: [],
             count: MYSTERY_CARD_CHOICES,
-            ...(cardChoice?.tag ? { keyword: cardChoice.tag as KeywordId } : {}),
+            ...(cardChoice?.tag ? { keyword: cardChoice.tag } : {}),
           })
         : null,
   };

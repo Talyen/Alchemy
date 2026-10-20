@@ -1,24 +1,8 @@
 import type { DeckInspectButtonProps } from "@/features/alchemy/shared/ui/deck-inspect-button";
 import { createContext, useContext, useMemo, type ReactNode } from "react";
-import {
-  cardLibrary,
-  characterArt,
-  characters,
-  type CharacterId,
-  type CompanionId,
-} from "@/features/alchemy/shared/config/game-data-catalog";
-import {
-  countImplementedTalents,
-  computeTalentPoints,
-  getTalentTreeKeywordIds,
-  type UnlockedTalents,
-  type TalentXP,
-} from "@/lib/game-data";
-import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
-import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
-import { canAfford } from "@/lib/homestead/inventory";
-import { canUpgradeTierItem } from "@/lib/homestead/upgrades";
-import type { MaterialInventory } from "@/lib/homestead/types";
+import { characterArt, characters, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
+import { hasUnspentTalentPoint } from "@/lib/game-data";
+import { hasAffordableHomesteadUpgrade } from "@/lib/homestead/affordability";
 import { useProfileDiscoverySlice } from "@/features/alchemy/shared/stores/use-profile-store";
 import {
   useActiveRunCharacterId,
@@ -26,64 +10,6 @@ import {
   useTalentProgressSlice,
 } from "@/features/alchemy/shared/stores/use-run-reads";
 import type { Screen } from "@/lib/routing";
-
-interface CompanionCardEntry {
-  id: string;
-  companionId: CompanionId;
-}
-
-const COMPANION_CARDS: readonly CompanionCardEntry[] = cardLibrary.flatMap((c) => {
-  const effect = c.effects.find(
-    (e): e is { kind: "summon-companion"; companionId: CompanionId } => e.kind === "summon-companion",
-  );
-  return effect ? [{ id: c.id, companionId: effect.companionId }] : [];
-});
-
-const TALENT_TREE_KEYWORD_IMPLEMENTED_COUNTS = getTalentTreeKeywordIds().map((kwId) => ({
-  kwId,
-  count: countImplementedTalents(kwId),
-}));
-
-export function hasUnspentTalents(talentXP: TalentXP, unlockedTalents: UnlockedTalents): boolean {
-  return TALENT_TREE_KEYWORD_IMPLEMENTED_COUNTS.some(({ kwId, count }) => {
-    return Math.min(computeTalentPoints(talentXP[kwId] ?? 0), count) > (unlockedTalents[kwId] ?? []).length;
-  });
-}
-
-export function hasAffordableHomesteadUpgrade(input: {
-  materialInventory: MaterialInventory;
-  constructedBuildings: Record<string, number>;
-  plantedFarms: Record<string, number>;
-  completedResearch: Record<string, number>;
-  bondedCompanions: Record<string, number>;
-  discoveredCardIds: string[];
-}): boolean {
-  const {
-    materialInventory,
-    constructedBuildings,
-    plantedFarms,
-    completedResearch,
-    bondedCompanions,
-    discoveredCardIds,
-  } = input;
-
-  for (const [items, levels] of [
-    [buildings, constructedBuildings],
-    [farmPlots, plantedFarms],
-    [researchUpgrades, completedResearch],
-  ] as const) {
-    if (items.some((item) => canUpgradeTierItem(item, levels[item.id] ?? 0, materialInventory))) return true;
-  }
-
-  const discoveredSet = new Set(discoveredCardIds);
-  return COMPANION_CARDS.some(({ id, companionId }) => {
-    if (!discoveredSet.has(id)) return false;
-    const currentLevel = bondedCompanions[companionId] ?? 0;
-    if (currentLevel >= COMPANION_MAX_TIER) return false;
-    const bondTier = COMPANION_BOND_TIERS[currentLevel];
-    return bondTier !== undefined && canAfford(materialInventory, bondTier);
-  });
-}
 
 export interface AppScreenChrome {
   characterId: CharacterId;
@@ -161,7 +87,7 @@ export function AppScreenChromeProvider({
 export function useMenuBadges(): { hasUnspentTalents: boolean; hasAffordableHomestead: boolean } {
   const { talentXP, unlockedTalents } = useTalentProgressSlice();
   const hasUnspentTalentsBadge = useMemo(
-    () => hasUnspentTalents(talentXP, unlockedTalents),
+    () => hasUnspentTalentPoint(talentXP, unlockedTalents),
     [talentXP, unlockedTalents],
   );
 

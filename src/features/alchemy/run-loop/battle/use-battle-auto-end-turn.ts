@@ -18,6 +18,7 @@ interface AutoEndTurnOptions {
   battleState: BattleSnapshot;
   hasActiveBattle: boolean;
   gameMenuOpen?: boolean;
+  boonInspectOpen?: boolean;
   isCardPlayInProgress?: () => boolean;
   isProgressSavePending?: (() => boolean) | undefined;
   onEndTurn: (expected: BattleSnapshot) => void;
@@ -32,6 +33,7 @@ export function useBattleAutoEndTurn({
   battleState,
   hasActiveBattle,
   gameMenuOpen = false,
+  boonInspectOpen = false,
   isCardPlayInProgress,
   isProgressSavePending,
   onEndTurn,
@@ -49,6 +51,7 @@ export function useBattleAutoEndTurn({
     battleState,
     hasActiveBattle,
     gameMenuOpen,
+    boonInspectOpen,
     isCardPlayInProgress,
     isProgressSavePending,
     presentationGateRef,

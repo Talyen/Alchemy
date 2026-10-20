@@ -124,6 +124,33 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(result.starterDraftChoices).toBeNull();
   });
 
+  it.each([
+    ["draft-deck", "draft", [], []],
+    ["battle", "battle", ["tempered"], ["alchemist"]],
+    ["rewards", "reward", [], ["alchemist"]],
+    ["wildwood-removal", "removal", [], []],
+  ] as const)("reconciles a saved %s activity with Wildwood phase %s", (kind, phase, combat, reward) => {
+    const activity =
+      kind === "battle"
+        ? savedActivityFixture("battle", { battleState: defaultBattleState() })
+        : savedActivityFixture(kind);
+    const result = parseActiveRunData({
+      contentSystemType: "wildwood",
+      runDeck: Array.from({ length: DRAFT_ROUNDS }, () => liveCard),
+      wildwoodDraft: makeWildwoodDraft({
+        phase: "battle",
+        currentCombatTraitIds: ["tempered"],
+        currentRewardTraitIds: ["alchemist"],
+      }),
+      activity,
+    });
+    expect(result.wildwoodDraft).toMatchObject({
+      phase,
+      currentCombatTraitIds: combat,
+      currentRewardTraitIds: reward,
+    });
+  });
+
   it("filters tombstonedCard starter draft choices instead of nulling them on campaign runs", () => {
     const result = parseActiveRunData({
       contentSystemType: "campaign",

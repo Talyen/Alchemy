@@ -123,6 +123,10 @@ Boot restore/hydration sets a validated saved screen directly and intentionally 
 - **1. Add to `DESTINATIONS` const** — `src/lib/routing/destinations.ts`
 - **2. Add to destination pool / availability** — `src/lib/routing/destination-availability.ts`
 - **3. Offer construction (pure)** — `shared/run-flow/destination-flow.ts` — campaign start and run-loop progression pass offer history, boss ID, and command-bound RNG
+- **4. Add display metadata** — `destinationMeta` in `src/features/alchemy/shared/config/metadata.ts` supplies the label, description, and artwork used by destination choices
+- **5. Map room entry** — add the destination case in `src/features/alchemy/run-loop/run/room-entry-commands.ts` so entering the offered node opens an existing screen or activity
+- **6. Add a screen and route when needed** — follow [Adding a new screen](#adding-a-new-screen); reuse an existing screen when the destination shares its interaction
+- **7. Add localization and tests** — extract new labels, then cover offer rendering, availability, room entry, and current-format resume with focused tests
 
 ---
 

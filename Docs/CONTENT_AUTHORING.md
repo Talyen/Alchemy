@@ -83,6 +83,11 @@ effect ordering, and the focused schema/handler/description tests.
 - **3. List card IDs in `startingDeck` (resolved via `resolveDeck`)** — same file
 - **4. Set the hero's `keywords` badges (3 per hero; wildcard drafts and uses none)** — same file
 - **5. Keep every badge covered by the starting deck (see below)** — same file + characters test
+- **6. Add the unlock prerequisite** — `src/lib/game-data/character-unlocks.ts` (`CHARACTER_REQUIREMENTS`); an omitted entry leaves the hero permanently locked
+- **7. Add the difficulty header title** — `src/lib/game-data/difficulties.ts` (`CHARACTER_HEADER_TITLES`); extract localization with `npm run i18n:extract`
+- **8. Add Armory tab metadata** — `src/features/alchemy/meta/screens/armory/armory-character-tabs.tsx` (`CHARACTER_ICONS` and `CHARACTER_KEYWORDS`)
+- **9. Register the portrait** — `characterArt` in `src/lib/game-data/assets.ts`, source art in `scripts/assets/core-assets.mjs`, then regenerate barrels and optimized outputs with the [asset workflow](./WORKFLOWS-ASSETS.md)
+- **10. Cover the hero** — update character unlock, Armory tab, and asset-manifest tests; run `npm run typecheck` so every `Record<CharacterId, …>` owner fails loudly
 
 `resolveDeck` throws on unknown card IDs so a typo fails loudly instead of
 shortening the deck. Every badge must appear in at least one starting-deck

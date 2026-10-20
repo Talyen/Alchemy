@@ -161,7 +161,7 @@ for (const [locale, family, phrase] of [
 }
 
 for (const locale of acceptanceLocales) {
-  test(`${locale} shop, menus and confirmation dialog retain usable translated controls`, async ({ page }) => {
+  test(`${locale} shop and menus retain usable translated controls`, async ({ page }) => {
     // oxlint-disable-next-line playwright/no-skipped-test -- QA locales are deliberately absent from production builds.
     test.skip(locale === "en-XA" && process.env.PLAYWRIGHT_VITE_MODE !== "dev", "Expanded English is a QA locale");
     const label = (english: string) => translatedLabel(locale, english);

@@ -14,7 +14,7 @@ import {
 import { parseSavedCardArray, savedCardArraySchema } from "./battle-card-schemas";
 import { MaterialInventorySchema } from "./schema-enums";
 import { UniqueGearBattleStateSchema } from "./unique-gear-state";
-import { recordNestedValidationWarnings } from "./validation-utils";
+import { deduplicatedStringArraySchema, recordNestedValidationWarnings } from "./validation-utils";
 
 // Load-tolerant fallbacks: one corrupt scalar or collection repairs to battle
 // defaults instead of voiding the whole combat session. Only primitives are
@@ -114,7 +114,8 @@ const PersistedBattleStateWireSchema = z.looseObject({
   reactions: z.record(z.string(), z.unknown()).catch({}),
   uniqueGear: UniqueGearBattleStateSchema,
   encounterBenefits: EncounterRewardTraitArraySchema,
-  discoveredCardIds: z.array(z.unknown()).catch([]),
+  discoveredCardIds: deduplicatedStringArraySchema(),
+  appliesFightPacing: z.boolean().catch(battleFallbacks.appliesFightPacing),
   difficultyModifiers: z
     .array(z.unknown())
     .transform((modifiers) =>

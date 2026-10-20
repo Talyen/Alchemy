@@ -12,10 +12,12 @@ import { renderUnlockNode } from "../unlock-text";
 export function DisabledTooltip({
   show,
   message,
+  focusable = true,
   children,
 }: {
   show: boolean;
   message: ReactNode;
+  focusable?: boolean;
   children: ReactNode;
 }) {
   const i18n = useGameTranslation();
@@ -37,9 +39,7 @@ export function DisabledTooltip({
       className="relative"
       {...(show
         ? {
-            role: "group",
-            tabIndex: 0,
-            "aria-disabled": true,
+            ...(focusable ? { role: "group", tabIndex: 0, "aria-disabled": true } : {}),
             onMouseEnter,
             onMouseLeave,
             onFocusCapture,

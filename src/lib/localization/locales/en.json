@@ -4602,7 +4602,7 @@
   "ui.potion-comparison.2": {"text":"Original: {{value0}}","context":"features/alchemy/run-loop/screens/potion-comparison.tsx","parameters":{"value0":"i18n.read(() => getCardDisplayTitle(original))"},"terms":[],"aliasOf":"ui.corruption-screen.7"},
   "ui.potion-comparison.3": {"text":"Inspect brew result: {{value0}}","context":"features/alchemy/run-loop/screens/potion-comparison.tsx","parameters":{"value0":"i18n.read(() => getCardDisplayTitle(result))"},"terms":[],"aliasOf":"ui.brew-potion-panel.3"},
   "ui.purchasable-shop-tile.1": {"text":"Purchased","context":"features/alchemy/run-loop/shop/ui/purchasable-shop-tile.tsx","terms":[]},
-  "ui.purchasable-shop-tile.2": {"text":"Not Enough Gold","context":"features/alchemy/run-loop/shop/ui/purchasable-shop-tile.tsx","aliasOf":"description.33b8b1d16aacd0a1","values":{},"terms":["Gold"]},
+  "ui.purchasable-shop-tile.2": {"text":"Not Enough Gold","context":"features/alchemy/run-loop/shop/ui/purchasable-shop-item.tsx","aliasOf":"description.33b8b1d16aacd0a1","values":{},"terms":["Gold"]},
   "ui.remove-card-panel.d1": {"text":"Remove","context":"features/alchemy/shared/ui/remove-card-panel.tsx","terms":[]},
   "ui.remove-card-panel.d2": {"text":"Remove Card","context":"features/alchemy/shared/ui/remove-card-panel.tsx","terms":[],"aliasOf":"ui.card-shop-screen.1"},
   "ui.remove-card-panel.default-cancelLabel": {"text":"Cancel","context":"features/alchemy/shared/ui/remove-card-panel.tsx","terms":[],"aliasOf":"ui.corruption-screen.12"},

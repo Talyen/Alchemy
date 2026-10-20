@@ -23,18 +23,7 @@ contextBridge.exposeInMainWorld("alchemyDesktop", {
   steamGetGameLanguage: () => ipcRenderer.invoke("alchemy:steam-get-game-language"),
   steamGetName: () => ipcRenderer.invoke("alchemy:steam-get-name"),
   steamSetRichPresence: (key, val) => ipcRenderer.invoke("alchemy:steam-set-rich-presence", key, val),
-  steamCloudRead: (slot) => {
-    // Only allow DOM mock in dev: main process sets NODE_ENV, preload's `process`
-    // may be unavailable in some Electron configurations, so guard carefully.
-    const isDev = typeof process !== "undefined" && process.env != null && process.env.NODE_ENV !== "production";
-    if (slot === undefined && isDev && typeof document !== "undefined") {
-      const mockEl = document.getElementById("__steamCloudReadMock");
-      if (mockEl) {
-        return Promise.resolve(mockEl.getAttribute("data-payload") || null);
-      }
-    }
-    return ipcRenderer.invoke("alchemy:steam-cloud-read", slot);
-  },
+  steamCloudRead: (slot) => ipcRenderer.invoke("alchemy:steam-cloud-read", slot),
   steamCloudWrite: (data, slot) => ipcRenderer.invoke("alchemy:steam-cloud-write", data, slot),
   steamCloudDelete: (slot) => ipcRenderer.invoke("alchemy:steam-cloud-delete", slot),
 });

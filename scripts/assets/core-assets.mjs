@@ -51,12 +51,6 @@ export const coreAssets = [
     ],
   ),
   {
-    source: "2d Assets/Game Sources/Items/Resources/Mana Crystal - Transparent.png",
-    target: "battle-mana-crystal.webp",
-    ...ART_PRESETS.resource,
-    requiresTransparency: true,
-  },
-  {
     source: "2d Assets/Game Sources/Interface/Cursors/Pointer - Shaded.png",
     target: "pointer-c-shaded.webp",
     ...ART_PRESETS.cursor,

@@ -19,6 +19,7 @@ interface UseBattleAutoplayOptions {
   isCardPlayInProgress: () => boolean;
   isProgressSavePending?: (() => boolean) | undefined;
   gameMenuOpen: boolean;
+  boonInspectOpen?: boolean;
   playCard: AutoplayCardHandler;
   playWish: AutoplayWishHandler;
   presentationGateRef: RefObject<BattlePlaybackPresentationGate>;

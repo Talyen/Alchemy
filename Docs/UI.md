@@ -236,19 +236,22 @@ use raw container-height units as the primary card size. Available-space caps
 are allowed: the battle hand caps card height and compresses its fan into the
 reserved center region.
 The hand rests against the bottom viewport edge, centered with capped spacing and
-responsive card sizing. Draw and Discard are inspected through the toolbar's
-Deck viewer; no pile artwork or decorative Mana bar occupies the bottom corners.
-All battle transfer and feedback coordinates use the full viewport scene.
-Mana crystals sit inside the hero portrait, centered near its bottom edge at half
-the former dock's size. Their shallow curved arrangement, recessed settings,
-spending, refill, capacity, hover glint, glow, and shard effects remain intact.
-Full crystals retain subdued Mana blue; spent crystals are dim grayscale.
-Increasing counts gradually shrink the crystals and effects; the row caps at nine.
-Beyond nine, the final crystal carries a +N badge. Exact current and maximum Mana
-remain in accessible inspection, without a persistent numerical readout.
-The battle toolbar places live Gold before the inspection controls, with a brief
-highlight on increases. End Turn uses an icon and tooltip immediately before the dev-only Skip Combat
-control and Menu. Dev-only Skip Combat uses a labeled skip-forward icon and tooltip.
+responsive card sizing. Draw Pile sits beside the hand's left edge and Discard Pile
+beside its right, both with their pile artwork in the bottom corners. Clicking either
+pile opens only that pile in the shared card viewer. All battle transfer and feedback
+coordinates use the full viewport scene.
+Mana crystals sit centered above Draw Pile in the left bottom column. Their shallow
+curved arrangement, recessed settings, spending, refill, capacity, hover glint, glow,
+and shard effects remain intact. Full crystals retain subdued Mana blue; spent
+crystals are dim grayscale. Increasing counts gradually shrink the crystals and
+effects; the row caps at nine. Beyond nine, the final crystal carries a +N badge.
+Exact current and maximum Mana remain in accessible inspection, without a persistent
+numerical readout.
+The top-right battle cluster shows live Gold before deck inspection, the Autoplay and
+Boons toggles, the dev-only Skip Combat control, and Menu. Gold briefly highlights on
+increases. End Turn is an outline text button above Discard Pile and commits
+immediately after input gates pass. Dev-only Skip Combat uses a labeled skip-forward
+icon and tooltip.
 The hand's bottom dock stays centered and stationary as the hand grows to seven
 cards; smaller hands remain centered with capped spacing. Every resting card
 touches or overlaps the bottom edge; playable card centers stay visible. Hover

@@ -90,7 +90,9 @@ export function selectTransmutation(selection: TransmutationSelectionCommand, ga
             deck,
           ),
         );
-        next.keyword = offers[next.offerIndex]!.transmuted!;
+        const offer = offers[next.offerIndex];
+        if (!offer?.transmuted) return rejectCommand("Transmutation choice is unavailable", false);
+        next.keyword = offer.transmuted;
       } else if (selection.kind === "back") {
         next.keyword = null;
         next.offerIndex = null;

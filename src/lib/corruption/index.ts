@@ -16,6 +16,10 @@ export interface CorruptionResult {
 
 export const isSpecialCorruptionCard = isMixedPotionCard;
 
+export function canCorruptCard(card: Pick<BattleCard, "corrupted" | "transmuted">): boolean {
+  return !card.corrupted && !card.transmuted;
+}
+
 function pickMutation(groups: CorruptionMutationGroup[], rng: () => number) {
   const group = pickWeighted(groups, (entry) => entry.weight, rng);
   if (!group) return undefined;
@@ -36,7 +40,7 @@ export function corruptCard(
   rng: () => number,
   modifiers: readonly EncounterRewardTraitId[] = [],
 ): CorruptionResult | null {
-  if (selectedCard.corrupted || selectedCard.transmuted) return null;
+  if (!canCorruptCard(selectedCard)) return null;
   const pure = modifiers.includes("pure-altar");
   const twin = modifiers.includes("twin-offering");
   const singleModifiers = twin ? modifiers.filter((id) => id !== "twin-offering") : modifiers;

@@ -249,33 +249,6 @@
     animation: numberPop 280ms ease-out both;
   }
 
-  .mana-gem-active {
-    animation: manaGemSettle 260ms ease-out both;
-  }
-
-  .mana-gem-glint {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    mask-size: contain;
-    mask-position: center;
-    mask-repeat: no-repeat;
-    background: linear-gradient(115deg, transparent 42%, rgb(220 245 255 / 85%) 50%, transparent 58%);
-    background-size: 300% 100%;
-    background-position: 100% 0;
-  }
-
-  .mana-gem:hover .mana-gem-glint {
-    animation: manaGemGlint 650ms ease-out both;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .mana-gem:hover .mana-gem-glint {
-      animation: none;
-      background: rgb(220 245 255 / 20%);
-    }
-  }
-
   .status-chip-pop {
     animation: statusChipPop 220ms var(--ease-out-expo) both;
   }
@@ -997,14 +970,6 @@
   animation: actionRejection 260ms ease-out both;
 }
 
-.mana-row {
-  border-radius: var(--radius-xl);
-}
-
-.mana-gem-spent {
-  animation: manaGemSpend 180ms ease-out both;
-}
-
 .portrait-recoil {
   --recoil-distance: calc(3px * var(--content-scale, 1));
 }
@@ -1071,8 +1036,6 @@
 @media (prefers-reduced-motion: reduce) {
   .hero-unlock-portrait img,
   .portrait-recoil-active,
-  .mana-gem-spent,
-  .mana-gem-active,
   .reward-choice-selected {
     animation: none;
   }
@@ -1088,8 +1051,6 @@
 
 html.alchemy-disable-animations .hero-unlock-portrait img,
 html.alchemy-disable-animations .portrait-recoil-active,
-html.alchemy-disable-animations .mana-gem-spent,
-html.alchemy-disable-animations .mana-gem-active,
 html.alchemy-disable-animations .reward-choice-selected {
   animation: none;
 }

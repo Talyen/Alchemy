@@ -69,6 +69,7 @@ function BattleScreenRoute({ cardInspection, routeCommands, gameMenuOpen }: Batt
     battleState: inputBattleState,
     hasActiveBattle,
     gameMenuOpen,
+    boonInspectOpen: commands.boonInspectOpen,
     isAutoplayEnabled: commands.isAutoplayEnabled,
     handleEndTurn: commands.handleEndTurn,
     handleAutoplayCard: commands.handleAutoplayCard,

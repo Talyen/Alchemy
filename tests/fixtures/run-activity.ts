@@ -13,10 +13,36 @@ const DEFAULT_REWARD_STATE = {
   choiceIds: [],
 };
 
-const DEFAULT_SHOP_STATE = { cards: [], refreshesLeft: 1, purchasedSlotKeys: [] };
-const DEFAULT_ALCHEMIST_STATE = { potions: [], refreshesLeft: 1, purchasedSlotKeys: [] };
-const DEFAULT_TRINKET_SHOP_STATE = { trinketIds: [], refreshesLeft: 1, purchasedSlotKeys: [] };
-const DEFAULT_EQUIPMENT_SHOP_STATE = { gear: [], refreshesLeft: 1, purchasedSlotKeys: [] };
+const DEFAULT_SHOP_STATE = {
+  cards: [],
+  refreshesLeft: 1,
+  freeRefreshUsed: false,
+  firstPurchaseUsed: false,
+  purchasedSlotKeys: [],
+  removeUsed: false,
+} satisfies Extract<PersistedRunActivity, { kind: "shop" }>["data"];
+const DEFAULT_ALCHEMIST_STATE = {
+  potions: [],
+  refreshesLeft: 1,
+  freeRefreshUsed: false,
+  firstPurchaseUsed: false,
+  purchasedSlotKeys: [],
+  mixUsed: false,
+} satisfies Extract<PersistedRunActivity, { kind: "alchemist" }>["data"];
+const DEFAULT_TRINKET_SHOP_STATE = {
+  trinketIds: [],
+  refreshesLeft: 1,
+  freeRefreshUsed: false,
+  firstPurchaseUsed: false,
+  purchasedSlotKeys: [],
+} satisfies Extract<PersistedRunActivity, { kind: "trinket-shop" }>["data"];
+const DEFAULT_EQUIPMENT_SHOP_STATE = {
+  gear: [],
+  refreshesLeft: 1,
+  freeRefreshUsed: false,
+  firstPurchaseUsed: false,
+  purchasedSlotKeys: [],
+} satisfies Extract<PersistedRunActivity, { kind: "equipment-shop" }>["data"];
 const DEFAULT_ALCHEMY_VISIT = { offers: [], completed: false, result: null, original: null };
 
 // Shared with Node-side Playwright discovery: keep runtime game and artwork imports out.

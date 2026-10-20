@@ -22,6 +22,7 @@ interface OptionsScreenStubProps {
     showClearSaveConfirm: boolean;
     onOpenClearSaveConfirm: () => void;
     onCloseClearSaveConfirm: () => void;
+    onConfirmClearSave: () => void;
     onResetOptions: () => void;
   };
 }
@@ -39,6 +40,9 @@ vi.mock("@/features/alchemy/meta/screens", () => ({
       </button>
       <button type="button" onClick={saveData.onCloseClearSaveConfirm}>
         Close Confirm
+      </button>
+      <button type="button" onClick={saveData.onConfirmClearSave}>
+        Confirm Clear
       </button>
       <button type="button" onClick={saveData.onResetOptions}>
         Reset Options
@@ -100,5 +104,14 @@ describe("options screen route", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Close Confirm" }));
     expect(useUiStore.getState().showClearSaveConfirm).toBe(false);
+  });
+
+  it("routes the confirmed clear-save action to the app wipe owner", () => {
+    const onClearSaveData = vi.fn();
+    render(<OptionsRoute {...routeContext} onClearSaveData={onClearSaveData} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Confirm Clear" }));
+
+    expect(onClearSaveData).toHaveBeenCalledOnce();
   });
 });

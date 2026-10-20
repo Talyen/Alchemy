@@ -5,7 +5,7 @@
 Draw Pile and Mana sit beside the left of the centered card hand; Discard Pile
 and End Turn sit beside its right. The three columns form one centered group,
 with the earlier responsive gap between the hand and each side column. Both piles
-open their matching tab in the shared card viewer. The hand retains its centered
+open their matching pile viewer. The hand retains its centered
 fan and hover movement, with clearance for its rotated artwork. Mana crystals sit
 centered above Draw Pile, retaining their spending, refill, capacity, overflow,
 glint and blue spill effects. End Turn is an outline text button above Discard Pile
@@ -134,8 +134,8 @@ Do not mirror engine field dependencies in a separate UI cache.
 
 ## Damage values in battle inspection
 
-Card hover and keyboard inspection in the battle hand, Wish, and Deck/Draw/Discard
-viewer show current offensive damage before Block, Armor, resistance, dodge, or
+Card hover and keyboard inspection in the battle hand, Wish, and the pile viewers
+show current offensive damage before Block, Armor, resistance, dodge, or
 critical strikes. The combat owner's offensive stages supply Forge, active
 bonuses, prepared Poison conversion, current conditions, mana remaining after
 payment, and fight pacing. Resource-based attacks show a damage number. Random

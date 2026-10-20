@@ -30,7 +30,10 @@ const KnownKeywordSchema = z.custom<KeywordId>(
 
 const MysteryEffectSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("addCard"), cardId: z.string() }),
-  z.object({ kind: z.literal("chooseCard"), tag: z.string().optional() }),
+  z.object({
+    kind: z.literal("chooseCard"),
+    tag: z.preprocess((value) => (value === "" ? undefined : value), KnownKeywordSchema.optional().catch(undefined)),
+  }),
   z.object({
     kind: z.literal("healHealth"),
     amount: z.number().int().nonnegative().catch(0),
@@ -122,7 +125,9 @@ const AlchemyVisitObjectSchema = z.object({
               sourceIndex: z.number().int().nonnegative(),
               source: BattleCardSchema,
               sourceKeyword: KnownKeywordSchema.nullable(),
-              result: BattleCardSchema,
+              result: BattleCardSchema.refine((card) => card.transmuted !== undefined, {
+                message: "Transmutation results require a keyword",
+              }),
             }),
           ),
         }),

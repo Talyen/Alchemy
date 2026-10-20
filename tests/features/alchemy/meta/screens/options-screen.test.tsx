@@ -1,5 +1,5 @@
 import { createSettingsStore } from "@/features/alchemy/shared/stores/settings-state";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OptionsScreen } from "@/features/alchemy/meta/screens/options-screen";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
@@ -103,6 +103,30 @@ describe("OptionsScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Gameplay" }));
     fireEvent.click(await screen.findByRole("switch", { name: "Remember Auto-Battle Preference" }));
     expect(setRememberAutoplayPreference).toHaveBeenCalledWith(true);
+  });
+
+  it("routes clear-save confirmation actions through save data", async () => {
+    const onConfirmClearSave = vi.fn();
+    const onCloseClearSaveConfirm = vi.fn();
+    render(
+      <OptionsScreen
+        {...defaultProps}
+        saveData={{
+          ...defaultProps.saveData,
+          showClearSaveConfirm: true,
+          onConfirmClearSave,
+          onCloseClearSaveConfirm,
+        }}
+      />,
+    );
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText(/Are you sure you wish to clear all Save Data/u)).toBeTruthy();
+    await waitFor(() => expect(dialog.closest("[data-artwork-pending]")).toBeNull());
+    fireEvent.click(within(dialog).getByRole("button", { name: "Clear Save Data" }));
+    expect(onConfirmClearSave).toHaveBeenCalledOnce();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(onCloseClearSaveConfirm).toHaveBeenCalledOnce();
   });
 
   it("shows display mode only when the platform supports it", () => {
