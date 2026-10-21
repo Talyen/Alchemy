@@ -45,4 +45,22 @@ describe("bugfix trio regressions", () => {
     // Reaction scoring uses the exact uniform expectation (2.5) so autoplay and the simulator agree.
     expect(scoreAvailableReactions(random, state)).toBe(0.5);
   });
+
+  it("clears enemy Bleed on detonateAllBleed in reaction projection", () => {
+    const state = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyStatuses: { bleed: 10 },
+    });
+    const multiHit = makeTestCard({
+      effects: [
+        { kind: "damage", damageType: "bleed", amount: 2, detonateAllBleed: true },
+        { kind: "damage", damageType: "physical", amount: 4, doubleIfEnemyBleeding: true },
+      ],
+    });
+    // First hit detonates Bleed to 0, so the second hit does not see Bleed on the enemy
+    // and scoreAvailableReactions does not project double damage or lingering Bleed.
+    // Score tracks reaction payoffs; with Bleed cleared, no post-detonation Bleed reactions trigger.
+    expect(scoreAvailableReactions(multiHit, state)).toBe(0);
+  });
 });

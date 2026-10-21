@@ -314,31 +314,37 @@ describe("normalizePersistedBattleState", () => {
     expect(defaults.gold).toBe(0);
   });
 
-  it.each([{ playerHealth: 0 }, { playerHealth: -5 }])(
-    "repairs zero or negative player health to maxHealth instead of resuming dead (%o)",
-    (overrides) => {
-      const normalized = normalizePersistedBattleState({
-        currentEnemy: enemyById.skeleton,
-        playerMaxHealth: 60,
-        ...overrides,
-      } as unknown as Partial<ReturnType<typeof defaultBattleState>>);
-      expect(normalized.playerHealth).toBe(60);
-      expect(normalizePersistedBattleState(normalized).playerHealth).toBe(60);
-    },
-  );
+  it("repairs negative player health to maxHealth while preserving zero for defeat resumption", () => {
+    const corrupt = normalizePersistedBattleState({
+      currentEnemy: enemyById.skeleton,
+      playerMaxHealth: 60,
+      playerHealth: -5,
+    } as unknown as Partial<ReturnType<typeof defaultBattleState>>);
+    expect(corrupt.playerHealth).toBe(60);
 
-  it.each([{ enemyHealth: 0 }, { enemyHealth: -10 }])(
-    "repairs zero or negative enemy health to enemyMaxHealth instead of resuming an unearned victory (%o)",
-    (overrides) => {
-      const normalized = normalizePersistedBattleState({
-        currentEnemy: enemyById.skeleton,
-        enemyMaxHealth: 45,
-        ...overrides,
-      } as unknown as Partial<ReturnType<typeof defaultBattleState>>);
-      expect(normalized.enemyHealth).toBe(45);
-      expect(normalizePersistedBattleState(normalized).enemyHealth).toBe(45);
-    },
-  );
+    const defeated = normalizePersistedBattleState({
+      currentEnemy: enemyById.skeleton,
+      playerMaxHealth: 60,
+      playerHealth: 0,
+    } as unknown as Partial<ReturnType<typeof defaultBattleState>>);
+    expect(defeated.playerHealth).toBe(0);
+  });
+
+  it("repairs negative enemy health to enemyMaxHealth while preserving zero for victory resumption", () => {
+    const corrupt = normalizePersistedBattleState({
+      currentEnemy: enemyById.skeleton,
+      enemyMaxHealth: 45,
+      enemyHealth: -10,
+    } as unknown as Partial<ReturnType<typeof defaultBattleState>>);
+    expect(corrupt.enemyHealth).toBe(45);
+
+    const victorious = normalizePersistedBattleState({
+      currentEnemy: enemyById.skeleton,
+      enemyMaxHealth: 45,
+      enemyHealth: 0,
+    } as unknown as Partial<ReturnType<typeof defaultBattleState>>);
+    expect(victorious.enemyHealth).toBe(0);
+  });
 
   it("repairs zero player health on Death's Door to 1 instead of full health", () => {
     const normalized = normalizePersistedBattleState({

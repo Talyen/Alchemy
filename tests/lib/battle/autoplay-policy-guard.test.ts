@@ -235,4 +235,25 @@ describe("autoplay policy", () => {
     });
     expect(getImmediateDefense(repeatDefense)).toBe(12);
   });
+
+  it("scores 0-amount Forge-scaling attacks nominally in stateless draft heuristics", () => {
+    const forgeAttack = makeTestCard({
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 0, forgeBonusPercent: 50 }],
+    });
+    expect(getImmediateDamage(forgeAttack)).toBe(1);
+  });
+
+  it("scores cleanse-player-status-to-damage as defense when status is present", () => {
+    const purifyingFlame = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }],
+    });
+    // Stateless counts nominally; live counts if and only if harmful burn stacks are present
+    expect(getImmediateDefense(purifyingFlame)).toBeGreaterThan(0);
+    expect(getImmediateDefense(purifyingFlame, makeTestBattleState({ playerStatuses: { burn: 0 } }))).toBe(0);
+    expect(getImmediateDefense(purifyingFlame, makeTestBattleState({ playerStatuses: { burn: 4 } }))).toBeGreaterThan(
+      0,
+    );
+  });
 });

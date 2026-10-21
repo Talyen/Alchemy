@@ -195,7 +195,8 @@ function immediateDamageFromEffects(effects: readonly BattleCardEffect[], state?
       // draft heuristic cannot scale Block/Armor without a snapshot, so count
       // those attacks nominally instead of zero (Shield Bash, Blessed Aegis).
       if (state) return total + scoreDamageEffect(effect, state);
-      if (effect.equalToBlock || effect.equalToArmor) return total + Math.max(effect.amount, 1);
+      if (effect.equalToBlock || effect.equalToArmor || effect.forgeBonusPercent !== undefined)
+        return total + Math.max(effect.amount, 1);
       return total + effect.amount;
     }
     if (effect.kind === "random-damage") {
@@ -250,7 +251,7 @@ function immediateDefenseFromEffects(effects: readonly BattleCardEffect[], state
       // Stateless heuristic: a full cleanse counts nominally; fixed counts its amount.
       return total + (effect.amount ?? 1) * AUTOPLAY_EFFECT_SCORE.cleanse;
     }
-    if (effect.kind === "remove-player-status") {
+    if (effect.kind === "remove-player-status" || effect.kind === "cleanse-player-status-to-damage") {
       return total + (!state || state.playerStatuses[effect.status] > 0 ? AUTOPLAY_EFFECT_SCORE.cleanse : 0);
     }
     if (effect.kind === "dodge-next-attack") return total + (state?.flags.dodgeNextAttack ? 0 : 1);

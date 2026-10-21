@@ -80,6 +80,7 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
     };
   }
   if (selected.detonateAllBurn) state = setEnemyStatus(state, "burn", 0);
+  if (selected.detonateAllBleed) state = setEnemyStatus(state, "bleed", 0);
   const payoffs = getPostHitReactionPayoffs(before, state, consumed.packet.damageType, healthDamage);
   let score = shatter ? before.enemyMitigation.block + before.enemyMitigation.armor : 0;
   if (shatter) payoffs.unshift({ id: "shatter", damage: before.reactions.shatterDamage });
