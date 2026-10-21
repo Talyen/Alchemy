@@ -21,7 +21,7 @@ describe("bugfix trio regressions", () => {
     if (result.success) expect(result.data.gold).toBe(11);
   });
 
-  it("projects odd-span random damage at the exact average", () => {
+  it("averages reaction payoffs across integer random hits before lethal cutoffs", () => {
     const base = patchBattleState({
       rng: () => 0.99,
       enemyHealth: 100,
@@ -36,49 +36,64 @@ describe("bugfix trio regressions", () => {
       ),
       enemyStatuses: { burn: 8 },
     });
-    // Wildheart doubles the first Nature hit: 2.5 * 2 = 5 leaves 1 HP on a 6-HP
-    // enemy, so wildfire pays 1 on the Nature branch and 0 on Holy, averaging 0.5.
     const state = { ...endPlayerTurn(endPlayerTurn(base).state).state, enemyHealth: 6 };
     const random = makeTestCard({
       effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: ["nature", "holy"] }],
     });
-    // Reaction scoring uses the exact uniform expectation (2.5) so autoplay and the simulator agree.
-    expect(scoreAvailableReactions(random, state)).toBe(0.5);
+    const expected = [1, 2, 3, 4].reduce(
+      (sum, amount) =>
+        sum +
+        (["nature", "holy"] as const).reduce(
+          (subtotal, damageType) =>
+            subtotal +
+            scoreAvailableReactions(
+              makeTestCard({
+                effects: [{ kind: "damage", damageType, amount }],
+              }),
+              state,
+            ),
+          0,
+        ) /
+          8,
+      0,
+    );
+    expect(expected).toBe(0.625);
+    expect(scoreAvailableReactions(random, state)).toBe(expected);
   });
 
-  it("clears enemy Bleed on detonateAllBleed in reaction projection", () => {
+  it("clears detonated Bleed before a conditional follow-up and reaction finisher", () => {
     const state = patchBattleState({
-      enemyHealth: 100,
-      enemyMaxHealth: 100,
-      enemyStatuses: { bleed: 10 },
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      enemyStatuses: { bleed: 10, burn: 1 },
+      reactions: { wildfireDamage: 3 },
     });
-    const multiHit = makeTestCard({
+    const card = makeTestCard({
       effects: [
         { kind: "damage", damageType: "bleed", amount: 2, detonateAllBleed: true },
         { kind: "damage", damageType: "physical", amount: 4, doubleIfEnemyBleeding: true },
+        { kind: "damage", damageType: "nature", amount: 1 },
       ],
     });
-    // First hit detonates Bleed to 0, so the second hit does not see Bleed on the enemy
-    // and scoreAvailableReactions does not project double damage or lingering Bleed.
-    // Score tracks reaction payoffs; with Bleed cleared, no post-detonation Bleed reactions trigger.
-    expect(scoreAvailableReactions(multiHit, state)).toBe(0);
+    // 2 direct + 12 detonation + 4 Physical + 1 Nature leaves 1 for Wildfire.
+    expect(scoreAvailableReactions(card, state)).toBe(1);
   });
 
-  it("adds direct Bleed status from Bleed damage in reaction projection", () => {
+  it("carries fresh Bleed into a conditional lethal hit before a reaction finisher", () => {
     const state = patchBattleState({
-      enemyHealth: 100,
-      enemyMaxHealth: 100,
-      enemyStatuses: { bleed: 0 },
+      enemyHealth: 13,
+      enemyMaxHealth: 13,
+      enemyStatuses: { burn: 1 },
+      reactions: { wildfireDamage: 3 },
     });
-    const bleedThenHit = makeTestCard({
+    const card = makeTestCard({
       effects: [
         { kind: "damage", damageType: "bleed", amount: 4 },
         { kind: "damage", damageType: "physical", amount: 5, doubleIfEnemyBleeding: true },
+        { kind: "damage", damageType: "nature", amount: 1 },
       ],
     });
-    // First hit adds 4 Bleed to enemyStatuses, so second hit sees Bleed and doubles its damage.
-    // Reactions score available reactions without throwing or losing state across hits.
-    expect(scoreAvailableReactions(bleedThenHit, state)).toBe(0);
+    expect(scoreAvailableReactions(card, state)).toBe(0);
   });
 
   it("deducts DoT detonation damage from enemy health so lethal detonations stop subsequent hits", () => {

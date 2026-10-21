@@ -169,19 +169,22 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
             : effect.kind === "damage"
               ? [effect.damageType]
               : DAMAGE_TYPES;
-          return pool.map((damageType) =>
-            projectHit(
-              { ...path, probability: path.probability / pool.length },
-              card,
-              effect.kind === "damage"
-                ? { ...effect, damageType }
-                : {
-                    kind: "damage",
-                    damageType,
-                    amount: (effect.minAmount + effect.maxAmount) / 2,
-                  },
-            ),
-          );
+          if (effect.kind === "damage") {
+            return pool.map((damageType) =>
+              projectHit({ ...path, probability: path.probability / pool.length }, card, { ...effect, damageType }),
+            );
+          }
+          // Damage rounding, mitigation, and lethal cutoffs are nonlinear. Keep
+          // the integer outcomes until after their payoffs have been resolved.
+          // Validated card magnitudes bound the range to 1..999.
+          const outcomes: Projection[] = [];
+          const probability = path.probability / (pool.length * (effect.maxAmount - effect.minAmount + 1));
+          for (let amount = effect.minAmount; amount <= effect.maxAmount; amount++) {
+            for (const damageType of pool) {
+              outcomes.push(projectHit({ ...path, probability }, card, { kind: "damage", damageType, amount }));
+            }
+          }
+          return outcomes;
         }
         if (effect.kind === "cleanse-player-status-to-damage") {
           const stacks = path.state.playerStatuses[effect.status] ?? 0;

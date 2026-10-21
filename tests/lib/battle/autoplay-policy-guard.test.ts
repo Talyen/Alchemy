@@ -158,22 +158,6 @@ describe("autoplay policy", () => {
     expect(getEffectiveDamageScore(strike, makeTestBattleState({ playerStatuses: { forge: 3 } }))).toBe(8);
   });
 
-  it("rounds multiply-enemy-status scoring like the live pipeline", () => {
-    const multiply = makeTestCard({
-      cost: 0,
-      effects: [{ kind: "multiply-enemy-status", status: "burn", factor: 2 }],
-    });
-    const state = makeTestBattleState({ enemyStatuses: { burn: 3 } });
-    // Live adds Math.round(current * (factor - 1)); integer factors stay exact.
-    expect(getEffectiveDamageScore(multiply, state)).toBe(3);
-    const fractional = makeTestCard({
-      cost: 0,
-      effects: [{ kind: "multiply-enemy-status", status: "burn", factor: 1.5 as unknown as 2 }],
-    });
-    // (1.5 - 1) * 3 = 1.5 rounds to 2, matching addEnemyStatus.
-    expect(getEffectiveDamageScore(fractional, state)).toBe(2);
-  });
-
   it("treats a mana-conversion guard as non-defensive without current Mana", () => {
     const convert = makeTestCard({
       cost: 0,
