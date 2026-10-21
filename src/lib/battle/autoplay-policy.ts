@@ -47,9 +47,11 @@ function scoreDamageBase(effect: Extract<BattleCardEffect, { kind: "damage" }>, 
       getForgeBonusForDamage(state, effect.damageType)
     );
   if (effect.equalToArmor) return state.playerStatuses.armor + getForgeBonusForDamage(state, effect.damageType);
-  // Ordinary attacks need no temporary resolved effect.
-  if (!effect.damageTypeIfTargetFrozen) return effect.amount;
-  return resolveConditionalCardDamage(effect, state.enemyCC.freezeSkipTurns > 0).amount;
+  // Ordinary attacks include the usual Forge bonus like the live base pipeline;
+  // explicit Forge scaling and equal-resource attacks already add it above.
+  if (!effect.damageTypeIfTargetFrozen) return effect.amount + getForgeBonusForDamage(state, effect.damageType);
+  const resolved = resolveConditionalCardDamage(effect, state.enemyCC.freezeSkipTurns > 0);
+  return resolved.amount + getForgeBonusForDamage(state, resolved.damageType);
 }
 
 function scoreDamageEffect(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleSnapshot): number {
@@ -140,7 +142,8 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
         : 0;
     case "multiply-enemy-status": {
       const current = state.enemyStatuses[effect.status] ?? 0;
-      return current > 0 ? (effect.factor - 1) * current : 0;
+      // Mirror the live pipeline's nearest-integer rounding so close picks agree.
+      return current > 0 ? Math.round((effect.factor - 1) * current) : 0;
     }
     case "remove-enemy-armor":
       return effect.halve

@@ -145,4 +145,43 @@ describe("autoplay policy", () => {
     expect(getImmediateDamage(bleedCard, makeTestBattleState({ enemyStatuses: { bleed: 0 } }))).toBe(5);
     expect(getImmediateDamage(bleedCard, makeTestBattleState({ enemyStatuses: { bleed: 2 } }))).toBe(10);
   });
+
+  it("scores ordinary damage with the usual Forge bonus like the live base pipeline", () => {
+    const strike = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    // Stateless heuristics stay nominal; physical converts Forge at full value with state.
+    expect(getImmediateDamage(strike)).toBe(5);
+    expect(getImmediateDamage(strike, makeTestBattleState({ playerStatuses: { forge: 0 } }))).toBe(5);
+    expect(getImmediateDamage(strike, makeTestBattleState({ playerStatuses: { forge: 3 } }))).toBe(8);
+    expect(getEffectiveDamageScore(strike, makeTestBattleState({ playerStatuses: { forge: 3 } }))).toBe(8);
+  });
+
+  it("rounds multiply-enemy-status scoring like the live pipeline", () => {
+    const multiply = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "multiply-enemy-status", status: "burn", factor: 2 }],
+    });
+    const state = makeTestBattleState({ enemyStatuses: { burn: 3 } });
+    // Live adds Math.round(current * (factor - 1)); integer factors stay exact.
+    expect(getEffectiveDamageScore(multiply, state)).toBe(3);
+    const fractional = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "multiply-enemy-status", status: "burn", factor: 1.5 as unknown as 2 }],
+    });
+    // (1.5 - 1) * 3 = 1.5 rounds to 2, matching addEnemyStatus.
+    expect(getEffectiveDamageScore(fractional, state)).toBe(2);
+  });
+
+  it("treats a mana-conversion guard as non-defensive without current Mana", () => {
+    const convert = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 2 }],
+    });
+    // Stateless draft heuristics use the authored factor; live defense needs actual Mana.
+    expect(getImmediateDefense(convert)).toBeGreaterThan(0);
+    expect(getImmediateDefense(convert, makeTestBattleState({ mana: 0 }))).toBe(0);
+    expect(getImmediateDefense(convert, makeTestBattleState({ mana: 3 }))).toBeGreaterThan(0);
+  });
 });

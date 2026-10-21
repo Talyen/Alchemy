@@ -64,7 +64,7 @@ function chooseCardToPlay(
     return pickHighestScoring(playable, (card) => getEffectiveDamageScore(card, state));
   }
   if (policy === "defensive-random" && state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR) {
-    const defensive = playable.filter(({ card }) => getImmediateDefense(card) > 0);
+    const defensive = playable.filter(({ card }) => getImmediateDefense(card, state) > 0);
     if (defensive.length > 0) return defensive[rngInt(policyRng, defensive.length)] ?? null;
   }
   return playable[rngInt(policyRng, playable.length)] ?? null;
