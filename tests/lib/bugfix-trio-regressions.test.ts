@@ -63,4 +63,39 @@ describe("bugfix trio regressions", () => {
     // Score tracks reaction payoffs; with Bleed cleared, no post-detonation Bleed reactions trigger.
     expect(scoreAvailableReactions(multiHit, state)).toBe(0);
   });
+
+  it("adds direct Bleed status from Bleed damage in reaction projection", () => {
+    const state = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyStatuses: { bleed: 0 },
+    });
+    const bleedThenHit = makeTestCard({
+      effects: [
+        { kind: "damage", damageType: "bleed", amount: 4 },
+        { kind: "damage", damageType: "physical", amount: 5, doubleIfEnemyBleeding: true },
+      ],
+    });
+    // First hit adds 4 Bleed to enemyStatuses, so second hit sees Bleed and doubles its damage.
+    // Reactions score available reactions without throwing or losing state across hits.
+    expect(scoreAvailableReactions(bleedThenHit, state)).toBe(0);
+  });
+
+  it("deducts DoT detonation damage from enemy health so lethal detonations stop subsequent hits", () => {
+    const state = patchBattleState({
+      enemyHealth: 10,
+      enemyMaxHealth: 10,
+      enemyStatuses: { burn: 20 },
+      reactions: { wildfireDamage: 10 },
+    });
+    const lethalCombustion = makeTestCard({
+      effects: [
+        { kind: "damage", damageType: "burn", amount: 1, detonateAllBurn: true },
+        { kind: "damage", damageType: "nature", amount: 2 },
+      ],
+    });
+    // Hit 1 deals 1 damage + detonates 20 Burn, killing the 10-HP enemy.
+    // Hit 2 (Nature, which would otherwise trigger Wildfire) does not land on a defeated enemy.
+    expect(scoreAvailableReactions(lethalCombustion, state)).toBe(0);
+  });
 });

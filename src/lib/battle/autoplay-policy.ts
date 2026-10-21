@@ -1,4 +1,5 @@
 import { CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
+import { projectEnemyDotDamage } from "./dot-resolve";
 import { scoreAvailableReactions } from "./reaction-score";
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import type { BattleSnapshot } from "./types/state-types";
@@ -40,6 +41,13 @@ function scoreEffects(effects: readonly BattleCardEffect[], state: BattleSnapsho
   return total;
 }
 
+function averageForgeBonus(state: BattleSnapshot, damageTypes: readonly DamageType[]): number {
+  if (damageTypes.length === 0) return 0;
+  let total = 0;
+  for (const type of damageTypes) total += getForgeBonusForDamage(state, type);
+  return total / damageTypes.length;
+}
+
 function scoreDamageBase(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleSnapshot): number {
   if (effect.forgeBonusPercent !== undefined)
     return effect.amount + scalePercent(state.playerStatuses.forge, effect.forgeBonusPercent);
@@ -49,18 +57,12 @@ function scoreDamageBase(effect: Extract<BattleCardEffect, { kind: "damage" }>, 
       getForgeBonusForDamage(state, effect.damageType)
     );
   if (effect.equalToArmor) return state.playerStatuses.armor + getForgeBonusForDamage(state, effect.damageType);
+  if (effect.damageTypePool?.length) return effect.amount + averageForgeBonus(state, effect.damageTypePool);
   // Ordinary attacks include the usual Forge bonus like the live base pipeline;
   // explicit Forge scaling and equal-resource attacks already add it above.
   if (!effect.damageTypeIfTargetFrozen) return effect.amount + getForgeBonusForDamage(state, effect.damageType);
   const resolved = resolveConditionalCardDamage(effect, state.enemyCC.freezeSkipTurns > 0);
   return resolved.amount + getForgeBonusForDamage(state, resolved.damageType);
-}
-
-function averageForgeBonus(state: BattleSnapshot, damageTypes: readonly DamageType[]): number {
-  if (damageTypes.length === 0) return 0;
-  let total = 0;
-  for (const type of damageTypes) total += getForgeBonusForDamage(state, type);
-  return total / damageTypes.length;
 }
 
 function scoreDamageEffect(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleSnapshot): number {
@@ -69,7 +71,11 @@ function scoreDamageEffect(effect: Extract<BattleCardEffect, { kind: "damage" }>
   const bonus =
     Number(effect.doubleIfEnemyBleeding === true && bleeding) +
     (effect.tripleIfEnemyNotBurning === true && !burning ? 2 : 0);
-  return scoreDamageBase(effect, state) * (1 + bonus);
+  const base = scoreDamageBase(effect, state) * (1 + bonus);
+  const detonation =
+    (effect.detonateAllBurn ? projectEnemyDotDamage(state, "burn") : 0) +
+    (effect.detonateAllBleed ? projectEnemyDotDamage(state, "bleed") : 0);
+  return base + detonation;
 }
 
 function playerStatusAmount(
@@ -195,7 +201,13 @@ function immediateDamageFromEffects(effects: readonly BattleCardEffect[], state?
       // draft heuristic cannot scale Block/Armor without a snapshot, so count
       // those attacks nominally instead of zero (Shield Bash, Blessed Aegis).
       if (state) return total + scoreDamageEffect(effect, state);
-      if (effect.equalToBlock || effect.equalToArmor || effect.forgeBonusPercent !== undefined)
+      if (
+        effect.equalToBlock ||
+        effect.equalToArmor ||
+        effect.forgeBonusPercent !== undefined ||
+        effect.detonateAllBurn ||
+        effect.detonateAllBleed
+      )
         return total + Math.max(effect.amount, 1);
       return total + effect.amount;
     }

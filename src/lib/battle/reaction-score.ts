@@ -11,6 +11,7 @@ import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import { resolveSecondaryAction } from "./action-context";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 import { canShatter, consumeReactionOpportunity, getPostHitReactionPayoffs } from "./elemental-reactions";
+import { projectEnemyDotDamage } from "./dot-resolve";
 import { setEnemyStatus } from "./status-state";
 import { FLAG_DEFINITIONS } from "./combat-flags";
 import type { BattleSnapshot, BattleState } from "./types";
@@ -70,7 +71,7 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
   let state = { ...resolved.nextState, enemyHealth: candidate.enemyHealth - healthDamage };
   // Project certain direct status additions, never chance riders or CC procs.
   const stat = consumed.packet.damageType;
-  if ((stat === "burn" || stat === "poison") && healthDamage > 0) {
+  if ((stat === "burn" || stat === "poison" || stat === "bleed") && healthDamage > 0) {
     state = {
       ...state,
       enemyStatuses: {
@@ -79,8 +80,14 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
       },
     };
   }
-  if (selected.detonateAllBurn) state = setEnemyStatus(state, "burn", 0);
-  if (selected.detonateAllBleed) state = setEnemyStatus(state, "bleed", 0);
+  if (selected.detonateAllBurn) {
+    const detonated = projectEnemyDotDamage(state, "burn");
+    state = { ...setEnemyStatus(state, "burn", 0), enemyHealth: Math.max(0, state.enemyHealth - detonated) };
+  }
+  if (selected.detonateAllBleed) {
+    const detonated = projectEnemyDotDamage(state, "bleed");
+    state = { ...setEnemyStatus(state, "bleed", 0), enemyHealth: Math.max(0, state.enemyHealth - detonated) };
+  }
   const payoffs = getPostHitReactionPayoffs(before, state, consumed.packet.damageType, healthDamage);
   let score = shatter ? before.enemyMitigation.block + before.enemyMitigation.armor : 0;
   if (shatter) payoffs.unshift({ id: "shatter", damage: before.reactions.shatterDamage });

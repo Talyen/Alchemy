@@ -256,4 +256,39 @@ describe("autoplay policy", () => {
       0,
     );
   });
+
+  it("averages Forge bonus across damageTypePool damage types", () => {
+    const toxicArrow = makeTestCard({
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "poison", damageTypePool: ["poison", "physical"], amount: 2 }],
+    });
+    // Poison gets 0% Forge, Physical gets 100% Forge. With 4 Forge, average bonus is 2.
+    const forgedState = makeTestBattleState({ playerStatuses: { forge: 4 } });
+    expect(getImmediateDamage(toxicArrow, forgedState)).toBe(4);
+    expect(getEffectiveDamageScore(toxicArrow, forgedState)).toBe(4);
+  });
+
+  it("scores detonateAllBurn and detonateAllBleed with live detonation damage and nominally in draft", () => {
+    const combustion = makeTestCard({
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "burn", amount: 1, detonateAllBurn: true }],
+    });
+    const hemorrhage = makeTestCard({
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "bleed", amount: 2, detonateAllBleed: true }],
+    });
+
+    // Stateless draft heuristic counts both nominally
+    expect(getImmediateDamage(combustion)).toBe(1);
+    expect(getImmediateDamage(hemorrhage)).toBe(2);
+
+    // Live scoring includes detonation of present DoT stacks
+    const burnState = makeTestBattleState({ enemyStatuses: { burn: 8 } });
+    expect(getImmediateDamage(combustion, burnState)).toBe(1 + 8);
+    expect(getEffectiveDamageScore(combustion, burnState)).toBe(1 + 8);
+
+    const bleedState = makeTestBattleState({ enemyStatuses: { bleed: 6 } });
+    expect(getImmediateDamage(hemorrhage, bleedState)).toBe(2 + 6);
+    expect(getEffectiveDamageScore(hemorrhage, bleedState)).toBe(2 + 6);
+  });
 });
