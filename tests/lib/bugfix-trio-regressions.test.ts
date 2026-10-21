@@ -98,4 +98,33 @@ describe("bugfix trio regressions", () => {
     // Hit 2 (Nature, which would otherwise trigger Wildfire) does not land on a defeated enemy.
     expect(scoreAvailableReactions(lethalCombustion, state)).toBe(0);
   });
+
+  it("distinguishes player statuses in projection keys so chance branches do not drop cleansed states", () => {
+    const state = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyStatuses: { burn: 10 },
+      playerStatuses: { burn: 5 },
+      reactions: { wildfireDamage: 10 },
+    });
+    const multiBranch = makeTestCard({
+      effects: [
+        {
+          kind: "chance",
+          probability: 0.5,
+          successEffects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }],
+          failureEffects: [{ kind: "damage", damageType: "holy", amount: 5 }],
+        },
+        {
+          kind: "cleanse-player-status-to-damage",
+          status: "burn",
+          damageType: "nature",
+        },
+      ],
+    });
+    // Success branch cleanses Burn on hit 1 so hit 2 does not trigger Wildfire.
+    // Failure branch keeps Burn on hit 1, so hit 2 cleanses Burn as Nature, triggering Wildfire (10 damage).
+    // Distinct playerStatuses prevent false merging, yielding 0.5 * 10 = 5.
+    expect(scoreAvailableReactions(multiBranch, state)).toBe(5);
+  });
 });

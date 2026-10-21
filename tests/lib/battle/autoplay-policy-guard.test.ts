@@ -291,4 +291,33 @@ describe("autoplay policy", () => {
     expect(getImmediateDamage(hemorrhage, bleedState)).toBe(2 + 6);
     expect(getEffectiveDamageScore(hemorrhage, bleedState)).toBe(2 + 6);
   });
+
+  it("scores remove-harmful-status live according to present debuffs and nominally in draft", () => {
+    const fixedCleanse = makeTestCard({
+      cost: 1,
+      effects: [{ kind: "remove-harmful-status", amount: 1 }],
+    });
+    const fullCleanse = makeTestCard({
+      cost: 1,
+      effects: [{ kind: "remove-harmful-status", removeAll: true }],
+    });
+
+    // Stateless draft heuristics score both nominally
+    expect(getImmediateDefense(fixedCleanse)).toBe(AUTOPLAY_EFFECT_SCORE.cleanse);
+    expect(getImmediateDefense(fullCleanse)).toBe(AUTOPLAY_EFFECT_SCORE.cleanse);
+
+    // Live scoring without debuffs gives 0 defense and 0 autoplay score
+    const cleanState = makeTestBattleState({ playerStatuses: { burn: 0, poison: 0, bleed: 0 } });
+    expect(getImmediateDefense(fixedCleanse, cleanState)).toBe(0);
+    expect(getImmediateDefense(fullCleanse, cleanState)).toBe(0);
+    expect(getEffectiveDamageScore(fixedCleanse, cleanState)).toBe(0);
+    expect(getEffectiveDamageScore(fullCleanse, cleanState)).toBe(0);
+
+    // Live scoring with multiple debuffs: fixed cleanses up to its amount, removeAll cleanses all
+    const debuffedState = makeTestBattleState({ playerStatuses: { burn: 5, poison: 3, bleed: 2 } });
+    expect(getImmediateDefense(fixedCleanse, debuffedState)).toBe(1 * AUTOPLAY_EFFECT_SCORE.cleanse);
+    expect(getImmediateDefense(fullCleanse, debuffedState)).toBe(3 * AUTOPLAY_EFFECT_SCORE.cleanse);
+    expect(getEffectiveDamageScore(fixedCleanse, debuffedState)).toBe(1 * AUTOPLAY_EFFECT_SCORE.cleanse);
+    expect(getEffectiveDamageScore(fullCleanse, debuffedState)).toBe(3 * AUTOPLAY_EFFECT_SCORE.cleanse);
+  });
 });

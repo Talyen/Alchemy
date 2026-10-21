@@ -1,4 +1,5 @@
 import { rollBattleChance } from "./chance-roll";
+import { HALF_DIVISOR } from "../game-constants";
 import type { BattleCardEffect } from "@/lib/game-data";
 import type { CardHitRequest, HitFacts } from "./player-hit-core";
 import { applyEmberforgedPayout } from "./bonus-effects";
@@ -113,7 +114,7 @@ export function applyCardHitReactions(
     effect.lifesteal ||
     (effect.damageType === "physical" &&
       !companionAttack &&
-      eligibility.playerHealth < eligibility.playerMaxHealth / 2 &&
+      eligibility.playerHealth < eligibility.playerMaxHealth / HALF_DIVISOR &&
       eligibility.gearEffects.physicalLeechBelowHalfHealth > 0)
   ) {
     nextState = applyLifestealAndPlayerHitTriggers(

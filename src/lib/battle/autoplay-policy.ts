@@ -115,14 +115,10 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
     case "heal":
       return Math.min(effect.amount, Math.max(0, state.playerMaxHealth - state.playerHealth));
     case "remove-harmful-status": {
-      // A full cleanse is worth the harmful effects actually present; a
-      // fixed cleanse is worth its amount. Panacea Potion carries no amount.
-      if (effect.removeAll) {
-        let removable = 0;
-        for (const status of harmfulPlayerStatusIds) if (state.playerStatuses[status] > 0) removable += 1;
-        return removable * AUTOPLAY_EFFECT_SCORE.cleanse;
-      }
-      return (effect.amount ?? 0) * AUTOPLAY_EFFECT_SCORE.cleanse;
+      let removable = 0;
+      for (const status of harmfulPlayerStatusIds) if (state.playerStatuses[status] > 0) removable += 1;
+      const count = effect.removeAll ? removable : Math.min(effect.amount ?? 0, removable);
+      return count * AUTOPLAY_EFFECT_SCORE.cleanse;
     }
     case "chance":
       return (
@@ -259,7 +255,12 @@ function immediateDefenseFromEffects(effects: readonly BattleCardEffect[], state
       );
     if (effect.kind === "player-status") return total + playerStatusDefense(effect, state);
     if (effect.kind === "remove-harmful-status") {
-      if (state && !harmfulPlayerStatusIds.some((status) => state.playerStatuses[status] > 0)) return total;
+      if (state) {
+        let removable = 0;
+        for (const status of harmfulPlayerStatusIds) if (state.playerStatuses[status] > 0) removable += 1;
+        const count = effect.removeAll ? removable : Math.min(effect.amount ?? 0, removable);
+        return total + count * AUTOPLAY_EFFECT_SCORE.cleanse;
+      }
       // Stateless heuristic: a full cleanse counts nominally; fixed counts its amount.
       return total + (effect.amount ?? 1) * AUTOPLAY_EFFECT_SCORE.cleanse;
     }

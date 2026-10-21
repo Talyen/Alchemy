@@ -1,6 +1,7 @@
 import {
   DAMAGE_TYPES,
   ENEMY_STATUS_DISPLAY_ORDER,
+  PLAYER_STATUS_DISPLAY_ORDER,
   getModifiedCompanionEffects,
   type BattleCard,
   type BattleCardEffect,
@@ -106,7 +107,8 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
 const FLAG_KEY_ORDER = Object.keys(FLAG_DEFINITIONS);
 
 function projectionKey(state: BattleState): string {
-  const statuses = ENEMY_STATUS_DISPLAY_ORDER.map((key) => state.enemyStatuses[key]).join(",");
+  const enemyStatuses = ENEMY_STATUS_DISPLAY_ORDER.map((key) => state.enemyStatuses[key]).join(",");
+  const playerStatuses = PLAYER_STATUS_DISPLAY_ORDER.map((key) => state.playerStatuses[key]).join(",");
   const flags = FLAG_KEY_ORDER.map((key) => {
     const value = state.flags[key as keyof typeof state.flags];
     return typeof value === "boolean" ? (value ? "1" : "0") : String(value);
@@ -121,7 +123,8 @@ function projectionKey(state: BattleState): string {
     state.reactions.consecrated ? "1" : "0",
   ].join(",");
   const action = state.action ? `${state.action.source},${state.action.repeatActive ? "1" : "0"}` : "-";
-  return `${state.enemyHealth}|${state.enemyMitigation.armor},${state.enemyMitigation.forge},${state.enemyMitigation.block}|${statuses}|${reactions}|${flags}|${action}`;
+  const cc = `${state.enemyCC.freezeSkipTurns},${state.enemyCC.stunSkipTurns}`;
+  return `${state.playerHealth}|${state.enemyHealth}|${state.enemyMitigation.armor},${state.enemyMitigation.forge},${state.enemyMitigation.block}|${enemyStatuses}|${playerStatuses}|${reactions}|${flags}|${cc}|${action}`;
 }
 
 function mergeProjections(paths: Projection[]): Projection[] {

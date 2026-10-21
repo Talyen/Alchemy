@@ -66,6 +66,26 @@ describe("useBattleAutoEndTurn", () => {
     },
   );
 
+  it("cancels an existing timer during boon inspection and resumes after closing", () => {
+    const onEndTurn = vi.fn();
+    const { rerender } = renderHook(
+      (props) =>
+        useAutoEndTurnUnderTest({
+          ...baseOptions,
+          battleState: makeEmptyHandBattle().battleState,
+          onEndTurn,
+          boonInspectOpen: props.boonInspectOpen,
+        }),
+      { initialProps: { boonInspectOpen: false } },
+    );
+    rerender({ boonInspectOpen: true });
+    act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS * 2));
+    expect(onEndTurn).not.toHaveBeenCalled();
+    rerender({ boonInspectOpen: false });
+    act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS));
+    expect(onEndTurn).toHaveBeenCalledOnce();
+  });
+
   it("schedules end turn when no card is playable", () => {
     const onEndTurn = vi.fn();
     renderHook(() =>

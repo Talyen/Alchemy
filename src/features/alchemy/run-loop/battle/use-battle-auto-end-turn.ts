@@ -109,6 +109,7 @@ export function useBattleAutoEndTurn({
     isAutoplayEnabled,
     gameMenuOpen,
     inspectionOpen,
+    boonInspectOpen,
     battleState,
     screen,
     hasActiveBattle,
