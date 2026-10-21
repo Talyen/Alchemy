@@ -63,7 +63,7 @@ describe("useImpactPulse", () => {
     expect(result.current.pulse?.sequence).toBe(5);
   });
 
-  it("clears an active pulse when presentation resets", () => {
+  it("clears an active pulse when presentation resets and accepts a fresh combat sequence", () => {
     const { result, rerender } = renderHook(
       ({ impactCue }: { impactCue: ReturnType<typeof cue> | null }) => useImpactPulse(impactCue),
       {
@@ -76,5 +76,9 @@ describe("useImpactPulse", () => {
 
     rerender({ impactCue: null });
     expect(result.current.pulse).toBeNull();
+
+    // A subsequent combat restarts sequences from 1: resetting on null prevents lockout.
+    rerender({ impactCue: cue(1) });
+    expect(result.current.pulse?.sequence).toBe(1);
   });
 });

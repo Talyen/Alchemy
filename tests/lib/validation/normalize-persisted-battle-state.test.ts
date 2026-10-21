@@ -313,4 +313,42 @@ describe("normalizePersistedBattleState", () => {
     expect(normalizePersistedBattleState(normalized).gold).toBe(11);
     expect(defaults.gold).toBe(0);
   });
+
+  it.each([{ playerHealth: 0 }, { playerHealth: -5 }])(
+    "repairs zero or negative player health to maxHealth instead of resuming dead (%o)",
+    (overrides) => {
+      const normalized = normalizePersistedBattleState({
+        currentEnemy: enemyById.skeleton,
+        playerMaxHealth: 60,
+        ...overrides,
+      } as unknown as Partial<ReturnType<typeof defaultBattleState>>);
+      expect(normalized.playerHealth).toBe(60);
+      expect(normalizePersistedBattleState(normalized).playerHealth).toBe(60);
+    },
+  );
+
+  it.each([{ enemyHealth: 0 }, { enemyHealth: -10 }])(
+    "repairs zero or negative enemy health to enemyMaxHealth instead of resuming an unearned victory (%o)",
+    (overrides) => {
+      const normalized = normalizePersistedBattleState({
+        currentEnemy: enemyById.skeleton,
+        enemyMaxHealth: 45,
+        ...overrides,
+      } as unknown as Partial<ReturnType<typeof defaultBattleState>>);
+      expect(normalized.enemyHealth).toBe(45);
+      expect(normalizePersistedBattleState(normalized).enemyHealth).toBe(45);
+    },
+  );
+
+  it("repairs zero player health on Death's Door to 1 instead of full health", () => {
+    const normalized = normalizePersistedBattleState({
+      currentEnemy: enemyById.skeleton,
+      playerMaxHealth: 60,
+      playerHealth: 0,
+      deathsDoorActive: true,
+      deathsDoorUsed: true,
+    } as unknown as Partial<ReturnType<typeof defaultBattleState>>);
+    expect(normalized.playerHealth).toBe(1);
+    expect(normalizePersistedBattleState(normalized).playerHealth).toBe(1);
+  });
 });

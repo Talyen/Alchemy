@@ -184,4 +184,55 @@ describe("autoplay policy", () => {
     expect(getImmediateDefense(convert, makeTestBattleState({ mana: 0 }))).toBe(0);
     expect(getImmediateDefense(convert, makeTestBattleState({ mana: 3 }))).toBeGreaterThan(0);
   });
+
+  it("scores random damage with expected Forge bonus when a snapshot is available", () => {
+    const randomAttack = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "random-damage", minAmount: 2, maxAmount: 4, damageTypePool: ["physical", "nature"] }],
+    });
+    // Stateless uses the nominal average (3); with 4 Forge, physical gets +4 while nature gets 0, so average is +2.
+    expect(getImmediateDamage(randomAttack)).toBe(3);
+    const forged = makeTestBattleState({ playerStatuses: { forge: 4 } });
+    expect(getImmediateDamage(randomAttack, forged)).toBe(5);
+    expect(getEffectiveDamageScore(randomAttack, forged)).toBe(5);
+  });
+
+  it("scores cleanse-player-status-to-damage nominally in draft and with status and Forge live", () => {
+    const purifyingFlame = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }],
+    });
+    // Draft heuristics count it nominally as 1; live scores the cleansed stacks.
+    expect(getImmediateDamage(purifyingFlame)).toBe(1);
+    expect(getImmediateDamage(purifyingFlame, makeTestBattleState({ playerStatuses: { burn: 0 } }))).toBe(0);
+    expect(getImmediateDamage(purifyingFlame, makeTestBattleState({ playerStatuses: { burn: 5 } }))).toBe(5);
+    expect(getEffectiveDamageScore(purifyingFlame, makeTestBattleState({ playerStatuses: { burn: 5 } }))).toBe(5);
+  });
+
+  it("scores nested chance and repeat-over-turns in immediate damage and defense", () => {
+    const chanceAttack = makeTestCard({
+      cost: 0,
+      effects: [
+        {
+          kind: "chance",
+          probability: 0.5,
+          successEffects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+          failureEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
+        },
+      ],
+    });
+    expect(getImmediateDamage(chanceAttack)).toBe(4);
+
+    const repeatDefense = makeTestCard({
+      cost: 0,
+      effects: [
+        {
+          kind: "repeat-over-turns",
+          remainingTurns: 3,
+          effects: [{ kind: "player-status", status: "block", amount: 4 }],
+        },
+      ],
+    });
+    expect(getImmediateDefense(repeatDefense)).toBe(12);
+  });
 });

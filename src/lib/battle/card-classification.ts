@@ -64,7 +64,12 @@ export function isNatureCard(card: BattleCard): boolean {
 export function damageOnlyEffects(effects: readonly BattleCardEffect[]): BattleCardEffect[] {
   const damage: BattleCardEffect[] = [];
   for (const effect of effects) {
-    if (effect.kind === "damage" || effect.kind === "random-damage") damage.push(effect);
+    if (
+      effect.kind === "damage" ||
+      effect.kind === "random-damage" ||
+      effect.kind === "cleanse-player-status-to-damage"
+    )
+      damage.push(effect);
     else if (effect.kind === "chance") {
       const successEffects = damageOnlyEffects(effect.successEffects);
       const failureEffects = damageOnlyEffects(effect.failureEffects);

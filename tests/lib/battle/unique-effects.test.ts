@@ -161,6 +161,16 @@ describe("damageOnlyEffects", () => {
     ]);
     expect(source).toEqual(before);
   });
+
+  it("retains cleanse-player-status-to-damage as a recognized damage effect", () => {
+    const cleanseDamage: BattleCardEffect = {
+      kind: "cleanse-player-status-to-damage",
+      status: "burn",
+      damageType: "holy",
+    };
+    const support: BattleCardEffect = { kind: "draw-cards", amount: 1 };
+    expect(damageOnlyEffects([support, cleanseDamage])).toEqual([cleanseDamage]);
+  });
 });
 
 it("processArcheryEchoes clears queued echoes even when the echo gear is disabled", () => {

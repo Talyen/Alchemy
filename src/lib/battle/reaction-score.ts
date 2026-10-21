@@ -172,6 +172,24 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
             ),
           );
         }
+        if (effect.kind === "cleanse-player-status-to-damage") {
+          const stacks = path.state.playerStatuses[effect.status] ?? 0;
+          if (stacks <= 0) return [path];
+          const cleansedState = {
+            ...path.state,
+            playerStatuses: {
+              ...path.state.playerStatuses,
+              [effect.status]: 0,
+            },
+          };
+          return [
+            projectHit({ ...path, state: cleansedState }, card, {
+              kind: "damage",
+              damageType: effect.damageType,
+              amount: stacks,
+            }),
+          ];
+        }
         if (effect.kind === "companion-action" && path.state.activeCompanion) {
           const companion = path.state.activeCompanion;
           const companionCard: BattleCard = {

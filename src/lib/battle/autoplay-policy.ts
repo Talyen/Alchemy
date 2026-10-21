@@ -3,12 +3,14 @@ import { scoreAvailableReactions } from "./reaction-score";
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import type { BattleSnapshot } from "./types/state-types";
 import {
+  DAMAGE_TYPES,
   getModifiedCompanionEffects,
   getCardKeywords,
   visitBattleCardEffects,
   harmfulPlayerStatusIds,
   type BattleCard,
   type BattleCardEffect,
+  type DamageType,
 } from "@/lib/game-data";
 import { halveRounded, scalePercent } from "./amount-helpers";
 import { getForgeBonusForDamage } from "./player-damage-base";
@@ -54,6 +56,13 @@ function scoreDamageBase(effect: Extract<BattleCardEffect, { kind: "damage" }>, 
   return resolved.amount + getForgeBonusForDamage(state, resolved.damageType);
 }
 
+function averageForgeBonus(state: BattleSnapshot, damageTypes: readonly DamageType[]): number {
+  if (damageTypes.length === 0) return 0;
+  let total = 0;
+  for (const type of damageTypes) total += getForgeBonusForDamage(state, type);
+  return total / damageTypes.length;
+}
+
 function scoreDamageEffect(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleSnapshot): number {
   const burning = state.enemyStatuses.burn > 0;
   const bleeding = state.enemyStatuses.bleed > 0;
@@ -91,8 +100,10 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
   switch (effect.kind) {
     case "damage":
       return scoreDamageEffect(effect, state);
-    case "random-damage":
-      return (effect.minAmount + effect.maxAmount) / 2;
+    case "random-damage": {
+      const pool = effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES;
+      return (effect.minAmount + effect.maxAmount) / 2 + averageForgeBonus(state, pool);
+    }
     case "player-status":
       return playerStatusDefense(effect, state) * AUTOPLAY_EFFECT_SCORE.defense;
     case "heal":
@@ -161,8 +172,10 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
       return effect.companionIfAbsent && state.activeCompanion ? 0 : effect.amount * AUTOPLAY_EFFECT_SCORE.wish;
     case "remove-player-status":
       return state.playerStatuses[effect.status] > 0 ? AUTOPLAY_EFFECT_SCORE.cleanse : 0;
-    case "cleanse-player-status-to-damage":
-      return state.playerStatuses[effect.status];
+    case "cleanse-player-status-to-damage": {
+      const stacks = state.playerStatuses[effect.status] ?? 0;
+      return stacks > 0 ? stacks + getForgeBonusForDamage(state, effect.damageType) : 0;
+    }
     case "lose-mana":
     case "lose-max-mana":
     case "gain-gold":
@@ -175,8 +188,8 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
   }
 }
 
-export function getImmediateDamage(card: BattleCard, state?: BattleSnapshot): number {
-  return card.effects.reduce((total, effect) => {
+function immediateDamageFromEffects(effects: readonly BattleCardEffect[], state?: BattleSnapshot): number {
+  return effects.reduce((total, effect) => {
     if (effect.kind === "damage") {
       // Live scoring includes Forge on equal-resource attacks; the stateless
       // draft heuristic cannot scale Block/Armor without a snapshot, so count
@@ -185,9 +198,33 @@ export function getImmediateDamage(card: BattleCard, state?: BattleSnapshot): nu
       if (effect.equalToBlock || effect.equalToArmor) return total + Math.max(effect.amount, 1);
       return total + effect.amount;
     }
-    if (effect.kind === "random-damage") return total + (effect.minAmount + effect.maxAmount) / 2;
+    if (effect.kind === "random-damage") {
+      const nominal = (effect.minAmount + effect.maxAmount) / 2;
+      if (!state) return total + nominal;
+      const pool = effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES;
+      return total + nominal + averageForgeBonus(state, pool);
+    }
+    if (effect.kind === "cleanse-player-status-to-damage") {
+      if (!state) return total + 1;
+      const stacks = state.playerStatuses[effect.status] ?? 0;
+      return total + (stacks > 0 ? stacks + getForgeBonusForDamage(state, effect.damageType) : 0);
+    }
+    if (effect.kind === "chance") {
+      return (
+        total +
+        effect.probability * immediateDamageFromEffects(effect.successEffects, state) +
+        (1 - effect.probability) * immediateDamageFromEffects(effect.failureEffects, state)
+      );
+    }
+    if (effect.kind === "repeat-over-turns") {
+      return total + effect.remainingTurns * immediateDamageFromEffects(effect.effects, state);
+    }
     return total;
   }, 0);
+}
+
+export function getImmediateDamage(card: BattleCard, state?: BattleSnapshot): number {
+  return immediateDamageFromEffects(card.effects, state);
 }
 
 function immediateDefenseFromEffects(effects: readonly BattleCardEffect[], state?: BattleSnapshot): number {
@@ -198,6 +235,9 @@ function immediateDefenseFromEffects(effects: readonly BattleCardEffect[], state
         effect.probability * immediateDefenseFromEffects(effect.successEffects, state) +
         (1 - effect.probability) * immediateDefenseFromEffects(effect.failureEffects, state)
       );
+    }
+    if (effect.kind === "repeat-over-turns") {
+      return total + effect.remainingTurns * immediateDefenseFromEffects(effect.effects, state);
     }
     if (effect.kind === "heal")
       return (

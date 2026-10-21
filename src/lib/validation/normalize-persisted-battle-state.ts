@@ -275,8 +275,16 @@ function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapsho
     roomScalingMultiplier: positiveOrDefault(state.roomScalingMultiplier, defaults.roomScalingMultiplier),
     playerMaxHealth,
     enemyMaxHealth,
-    playerHealth: Math.min(clampNonNegative(state.playerHealth, defaults.playerHealth), playerMaxHealth),
-    enemyHealth: Math.min(clampNonNegative(state.enemyHealth, defaults.enemyHealth), enemyMaxHealth),
+    // A saved battle at 0 Health is corruption, not defeat/victory: defeat or victory
+    // concludes the battle, so resume repair restores combatants to their maximum.
+    playerHealth:
+      state.playerHealth > 0
+        ? Math.min(clampNonNegative(state.playerHealth, defaults.playerHealth), playerMaxHealth)
+        : playerMaxHealth,
+    enemyHealth:
+      state.enemyHealth > 0
+        ? Math.min(clampNonNegative(state.enemyHealth, defaults.enemyHealth), enemyMaxHealth)
+        : enemyMaxHealth,
     enemyRegeneration: clampNonNegative(state.enemyRegeneration, defaults.enemyRegeneration),
     enemyPhysicalDamageBonus: clampNonNegative(state.enemyPhysicalDamageBonus, defaults.enemyPhysicalDamageBonus),
     // Match SaveDataSchema's live-combat gold rule (Math.round, not floor):
@@ -440,7 +448,11 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
     ...normalizeWishChoices(merged),
     ...normalizeCardPiles(merged, defaults),
     ...survival,
-    playerHealth: survival.deathsDoorActive ? Math.max(1, resources.playerHealth) : resources.playerHealth,
+    playerHealth: survival.deathsDoorActive
+      ? merged.playerHealth > 0
+        ? Math.max(1, resources.playerHealth)
+        : 1
+      : resources.playerHealth,
     pendingBleedLeechHealing,
     pendingEnemyBleedLeechHealing: Math.min(
       clampNonNegative(merged.pendingEnemyBleedLeechHealing, 0),

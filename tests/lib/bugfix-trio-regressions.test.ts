@@ -21,7 +21,7 @@ describe("bugfix trio regressions", () => {
     if (result.success) expect(result.data.gold).toBe(11);
   });
 
-  it("projects odd-span random damage at the rounded average", () => {
+  it("projects odd-span random damage at the exact average", () => {
     const base = patchBattleState({
       rng: () => 0.99,
       enemyHealth: 100,
@@ -36,31 +36,13 @@ describe("bugfix trio regressions", () => {
       ),
       enemyStatuses: { burn: 8 },
     });
-    // Wildheart doubles the first Nature hit, so the pre-round choice matters:
-    // unfixed 2.5 * 2 = 5 leaves 1 HP on a 6-HP enemy (wildfire pays),
-    // while rounded 3 * 2 = 6 kills (wildfire pays nothing).
+    // Wildheart doubles the first Nature hit: 2.5 * 2 = 5 leaves 1 HP on a 6-HP
+    // enemy, so wildfire pays 1 on the Nature branch and 0 on Holy, averaging 0.5.
     const state = { ...endPlayerTurn(endPlayerTurn(base).state).state, enemyHealth: 6 };
     const random = makeTestCard({
       effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: ["nature", "holy"] }],
     });
-    const natureThree = makeTestCard({
-      effects: [{ kind: "damage", damageType: "nature", amount: 3 }],
-    });
-    const holyThree = makeTestCard({
-      effects: [{ kind: "damage", damageType: "holy", amount: 3 }],
-    });
-    const natureTwo = makeTestCard({
-      effects: [{ kind: "damage", damageType: "nature", amount: 2 }],
-    });
-    const holyTwo = makeTestCard({
-      effects: [{ kind: "damage", damageType: "holy", amount: 2 }],
-    });
-    // (1 + 4) / 2 = 2.5 must round to 3 per the combat-magnitude invariant.
-    // scoreAvailableReactions builds a synthetic damage packet, so it must stay
-    // integer; the autoplay heuristic in autoplay-policy may stay fractional.
-    const expected = (scoreAvailableReactions(natureThree, state) + scoreAvailableReactions(holyThree, state)) / 2;
-    const floored = (scoreAvailableReactions(natureTwo, state) + scoreAvailableReactions(holyTwo, state)) / 2;
-    expect(scoreAvailableReactions(random, state)).toBe(expected);
-    expect(scoreAvailableReactions(random, state)).not.toBe(floored);
+    // Reaction scoring uses the exact uniform expectation (2.5) so autoplay and the simulator agree.
+    expect(scoreAvailableReactions(random, state)).toBe(0.5);
   });
 });

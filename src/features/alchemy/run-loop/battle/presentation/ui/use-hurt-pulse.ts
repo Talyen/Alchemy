@@ -10,7 +10,10 @@ export function useImpactPulse(impactCue: CombatImpactCue | null) {
   const prevSequenceRef = useRef(impactCue?.sequence ?? 0);
 
   useEffect(() => {
-    if (!impactCue) return;
+    if (!impactCue) {
+      prevSequenceRef.current = 0;
+      return;
+    }
     if (impactCue.sequence <= prevSequenceRef.current) return;
     prevSequenceRef.current = impactCue.sequence;
     setPulse(impactCue);
