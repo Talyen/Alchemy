@@ -178,7 +178,7 @@ export function getImmediateDamage(card: BattleCard, state?: BattleSnapshot): nu
       // Live scoring includes Forge on equal-resource attacks; the stateless
       // draft heuristic cannot scale Block/Armor without a snapshot, so count
       // those attacks nominally instead of zero (Shield Bash, Blessed Aegis).
-      if (state) return total + scoreDamageBase(effect, state);
+      if (state) return total + scoreDamageEffect(effect, state);
       if (effect.equalToBlock || effect.equalToArmor) return total + Math.max(effect.amount, 1);
       return total + effect.amount;
     }

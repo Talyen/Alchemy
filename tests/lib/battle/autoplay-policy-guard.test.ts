@@ -110,4 +110,39 @@ describe("autoplay policy", () => {
     expect(getImmediateDefense(card, state)).toBe(7.125);
     expect(getImmediateDefense(card)).toBe(9.5);
   });
+
+  it("scores random damage at its exact average instead of rounding odd ranges up", () => {
+    const odd = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 4 }],
+    });
+    const even = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "random-damage", minAmount: 2, maxAmount: 4 }],
+    });
+    const state = makeTestBattleState();
+    // True uniform expectation is 2.5; rounding would inflate Gambler's Shot-style cards to 3.
+    // Reaction scoring uses the same exact average so autoplay and the simulator agree.
+    expect(getImmediateDamage(odd, state)).toBe(2.5);
+    expect(getEffectiveDamageScore(odd, state)).toBe(2.5);
+    expect(getEffectiveDamageScore(even, state)).toBe(3);
+  });
+
+  it("scores conditional double and triple damage live when a snapshot is available", () => {
+    const burnCard = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "damage", damageType: "burn", amount: 7, tripleIfEnemyNotBurning: true }],
+    });
+    const bleedCard = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "damage", damageType: "bleed", amount: 5, doubleIfEnemyBleeding: true }],
+    });
+    // Stateless draft heuristics cannot see enemy statuses, so they stay nominal.
+    expect(getImmediateDamage(burnCard)).toBe(7);
+    expect(getImmediateDamage(bleedCard)).toBe(5);
+    expect(getImmediateDamage(burnCard, makeTestBattleState({ enemyStatuses: { burn: 1 } }))).toBe(7);
+    expect(getImmediateDamage(burnCard, makeTestBattleState({ enemyStatuses: { burn: 0 } }))).toBe(21);
+    expect(getImmediateDamage(bleedCard, makeTestBattleState({ enemyStatuses: { bleed: 0 } }))).toBe(5);
+    expect(getImmediateDamage(bleedCard, makeTestBattleState({ enemyStatuses: { bleed: 2 } }))).toBe(10);
+  });
 });

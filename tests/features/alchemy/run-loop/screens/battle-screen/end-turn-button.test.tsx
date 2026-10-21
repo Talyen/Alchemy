@@ -107,4 +107,15 @@ describe("corner End Turn", () => {
       expect(props.onEndTurn).not.toHaveBeenCalled();
     },
   );
+
+  it("tracks opening-draw presentation reactively without another store update", () => {
+    const { button, props } = setup();
+    expect(button.disabled).toBe(false);
+    act(() => battlePresentation.getState().setOpeningDrawPending(true));
+    expect(button.disabled).toBe(true);
+    fireEvent.click(button);
+    expect(props.onEndTurn).not.toHaveBeenCalled();
+    act(() => battlePresentation.getState().setOpeningDrawPending(false));
+    expect(button.disabled).toBe(false);
+  });
 });

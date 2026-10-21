@@ -8,7 +8,6 @@ import type { Screen } from "@/lib/routing";
 import { isBattleInspectionOpen, useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
 import { isBattlePlaybackBlocked } from "../../battle/playback-gate";
-import { readPlaybackPresentationGate } from "../../battle/presentation/use-hand-presentation";
 
 export interface BattleEndTurnButtonProps {
   battleState: BattleSnapshot;
@@ -41,7 +40,7 @@ export function BattleEndTurnButton({
   const inspectionOpen = useUiStore(isBattleInspectionOpen);
   const playing = useSyncExternalStore(subscribePlayback, isCardPlayInProgress);
   const saving = useSyncExternalStore(subscribeProgressSave, isProgressSavePending);
-  useStore(
+  const { cardTransferInProgress, hiddenHandCardKeys, openingDrawPending } = useStore(
     presentation,
     useShallow((state) => ({
       cardTransferInProgress: state.cardTransferInProgress,
@@ -52,15 +51,16 @@ export function BattleEndTurnButton({
   function canEndTurn() {
     return (
       !blocked &&
-      !isProgressSavePending() &&
-      !presentation.getState().openingDrawPending &&
+      !saving &&
+      !openingDrawPending &&
       !isBattlePlaybackBlocked({
-        ...readPlaybackPresentationGate(presentation),
+        cardTransferInProgress,
+        hiddenHandCardKeys,
         battleState,
         hasActiveBattle,
         screen,
-        cardPlayInProgress: isCardPlayInProgress(),
-        inspectionOpen: isBattleInspectionOpen(useUiStore.getState()),
+        cardPlayInProgress: playing,
+        inspectionOpen,
       })
     );
   }

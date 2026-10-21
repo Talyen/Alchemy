@@ -167,7 +167,7 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
                 : {
                     kind: "damage",
                     damageType,
-                    amount: Math.round((effect.minAmount + effect.maxAmount) / 2),
+                    amount: (effect.minAmount + effect.maxAmount) / 2,
                   },
             ),
           );
