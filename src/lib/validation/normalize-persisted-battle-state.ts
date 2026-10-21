@@ -279,7 +279,9 @@ function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapsho
     enemyHealth: Math.min(clampNonNegative(state.enemyHealth, defaults.enemyHealth), enemyMaxHealth),
     enemyRegeneration: clampNonNegative(state.enemyRegeneration, defaults.enemyRegeneration),
     enemyPhysicalDamageBonus: clampNonNegative(state.enemyPhysicalDamageBonus, defaults.enemyPhysicalDamageBonus),
-    gold: toSafeNonNegativeInt(state.gold) ?? defaults.gold,
+    // Match SaveDataSchema's live-combat gold rule (Math.round, not floor):
+    // a fractional purse must repair to the same integer in both paths.
+    gold: toSafeNonNegativeInt(Math.round(state.gold)) ?? defaults.gold,
     mana: clampNonNegative(state.mana, defaults.mana),
     maxMana: Math.max(MIN_MAX_MANA_FLOOR, clampNonNegative(state.maxMana, defaults.maxMana)),
   };

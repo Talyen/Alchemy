@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AUTOPLAY_EFFECT_SCORE,
   getEffectiveDamageScore,
+  getImmediateDamage,
   getImmediateDefense,
   pickHighestScoring,
 } from "@/lib/battle/autoplay-policy";
@@ -22,6 +23,20 @@ describe("autoplay policy", () => {
     // Live base is resource + Forge (physical converts Forge at full value).
     expect(getEffectiveDamageScore(blockCard, state)).toBe(10);
     expect(getEffectiveDamageScore(armorCard, state)).toBe(8);
+  });
+
+  it("counts equal-to-resource attacks in stateless heuristics and scores them live with state", () => {
+    const blockCard = makeTestCard({
+      cost: 0,
+      effects: [{ kind: "damage", damageType: "stun", amount: 0, equalToBlock: true, equalToBlockPercent: 50 }],
+    });
+    // Draft and archetype heuristics have no snapshot: a zero-amount
+    // equal-resource attack must still count as an attack.
+    expect(getImmediateDamage(blockCard)).toBeGreaterThan(0);
+    const state = makeTestBattleState({ playerStatuses: { block: 6, forge: 0 } });
+    expect(getImmediateDamage(blockCard, state)).toBe(3);
+    const forged = makeTestBattleState({ playerStatuses: { block: 6, forge: 4 } });
+    expect(getImmediateDamage(blockCard, forged)).toBeGreaterThan(3);
   });
 
   it("chooses a refill only when it has usable Mana room and keeps hand order on equal scores", () => {

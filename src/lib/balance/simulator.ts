@@ -22,7 +22,7 @@ import {
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { createRunRngState, createRunStateRng, createSeededRng, hashStringToUint32, rngInt, type Rng } from "@/lib/rng";
-import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
+import { HALF_DIVISOR, MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { createEmptyAnomalies, sampleAnomalies, type BattleAnomalies } from "./anomalies";
 import { companionIdsFromDeck } from "./companion-deck";
 import { buildSimCompanionBondLevels } from "./homestead-preset";
@@ -59,11 +59,11 @@ function chooseCardToPlay(
 ): { card: BattleCard; index: number } | null {
   const playable = getPlayableCards(state);
   if (playable.length === 0) return null;
-  if (policy === "greedy-damage") return pickHighestScoring(playable, getImmediateDamage);
+  if (policy === "greedy-damage") return pickHighestScoring(playable, (card) => getImmediateDamage(card, state));
   if (policy === "greedy-effective-damage") {
     return pickHighestScoring(playable, (card) => getEffectiveDamageScore(card, state));
   }
-  if (policy === "defensive-random" && state.playerHealth <= state.playerMaxHealth / 2) {
+  if (policy === "defensive-random" && state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR) {
     const defensive = playable.filter(({ card }) => getImmediateDefense(card) > 0);
     if (defensive.length > 0) return defensive[rngInt(policyRng, defensive.length)] ?? null;
   }

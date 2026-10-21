@@ -172,9 +172,16 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
   }
 }
 
-export function getImmediateDamage(card: BattleCard): number {
+export function getImmediateDamage(card: BattleCard, state?: BattleSnapshot): number {
   return card.effects.reduce((total, effect) => {
-    if (effect.kind === "damage") return total + effect.amount;
+    if (effect.kind === "damage") {
+      // Live scoring includes Forge on equal-resource attacks; the stateless
+      // draft heuristic cannot scale Block/Armor without a snapshot, so count
+      // those attacks nominally instead of zero (Shield Bash, Blessed Aegis).
+      if (state) return total + scoreDamageBase(effect, state);
+      if (effect.equalToBlock || effect.equalToArmor) return total + Math.max(effect.amount, 1);
+      return total + effect.amount;
+    }
     if (effect.kind === "random-damage") return total + (effect.minAmount + effect.maxAmount) / 2;
     return total;
   }, 0);

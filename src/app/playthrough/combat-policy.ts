@@ -8,6 +8,7 @@ import {
   type BattleSnapshot,
 } from "@/lib/battle";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
+import { HALF_DIVISOR } from "@/lib/game-constants";
 import { shouldPreserveConsumable } from "./brewing-policy";
 import type { CareerConfig, PlayerChoice } from "./types";
 
@@ -42,9 +43,9 @@ export function scoreCombatCards(
       case "random-playable":
         return 1;
       case "greedy-damage":
-        return getImmediateDamage(card);
+        return getImmediateDamage(card, state);
       case "defensive-random":
-        return state.playerHealth < state.playerMaxHealth / 2 &&
+        return state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR &&
           getImmediateDefense(card, modern ? state : undefined) > 0
           ? 2
           : 1;
@@ -64,7 +65,7 @@ export function scoreCombatCards(
     // Emergency defense keeps its original priority for two defensive turns.
     // Afterwards an available attack must receive a turn, even if the pure
     // defense's nominal grant keeps growing with the Mana pool.
-    return spendsAllMana && (state.playerHealth >= state.playerMaxHealth / 2 || defenseOnlyTurns >= 2)
+    return spendsAllMana && (state.playerHealth > state.playerMaxHealth / HALF_DIVISOR || defenseOnlyTurns >= 2)
       ? Math.min(score, bestAttack / 2)
       : score;
   });

@@ -302,4 +302,15 @@ describe("normalizePersistedBattleState", () => {
     expect(normalized.enemyMitigation).toEqual({ ...defaults.enemyMitigation, block: 3 });
     expect(normalizePersistedBattleState(normalized)).toEqual(normalized);
   });
+
+  it("rounds fractional battle gold like the save purse instead of flooring it", () => {
+    const defaults = defaultBattleState();
+    const normalized = normalizePersistedBattleState({
+      currentEnemy: enemyById.skeleton,
+      gold: 10.9,
+    } as unknown as Partial<ReturnType<typeof defaultBattleState>>);
+    expect(normalized.gold).toBe(11);
+    expect(normalizePersistedBattleState(normalized).gold).toBe(11);
+    expect(defaults.gold).toBe(0);
+  });
 });

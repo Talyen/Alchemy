@@ -72,6 +72,17 @@ describe("simulation combat policy", () => {
     },
   );
 
+  it("treats exactly half Health as defensive, matching autoplay and the balance simulator", () => {
+    // maxHealth 86 is even, so 43 is exactly half.
+    const half = snapshot(43);
+    expect(half.playerHealth).toBe(half.playerMaxHealth / 2);
+    const scores = scoreCombatCards([shield, attack], half, "defensive-random", 0);
+    expect(scores[0]).toBeGreaterThan(scores[1]!);
+    const above = snapshot(44);
+    const aboveScores = scoreCombatCards([shield, attack], above, "defensive-random", 0);
+    expect(aboveScores[1]).toBeGreaterThan(aboveScores[0]!);
+  });
+
   it("retains defense with spare Mana or no attack, and leaves random play unchanged", () => {
     const block = cloneBattleCard(cardById.block!);
     const state = { ...snapshot(86), mana: 7 };
