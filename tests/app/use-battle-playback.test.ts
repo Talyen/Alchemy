@@ -120,4 +120,28 @@ describe("useBattlePlayback", () => {
     expect(handleEndTurn).toHaveBeenCalledOnce();
     vi.useRealTimers();
   });
+
+  it("reschedules auto-end and wakes automation when game menu closes mid-turn", () => {
+    vi.useFakeTimers();
+    useSettingsStore.getState().setAutoEndTurn(true);
+    const handleEndTurn = vi.fn();
+    const { rerender } = renderPlayback({
+      handleEndTurn,
+      battleState: makeEmptyHandBattle().battleState,
+      gameMenuOpen: true,
+      isAutoplayEnabled: true,
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS * 2);
+    });
+    expect(handleEndTurn).not.toHaveBeenCalled();
+
+    rerender({ gameMenuOpen: false });
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
+    });
+    expect(handleEndTurn).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
 });

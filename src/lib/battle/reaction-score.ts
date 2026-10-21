@@ -3,9 +3,11 @@ import {
   ENEMY_STATUS_DISPLAY_ORDER,
   PLAYER_STATUS_DISPLAY_ORDER,
   getModifiedCompanionEffects,
+  harmfulPlayerStatusIds,
   type BattleCard,
   type BattleCardEffect,
 } from "@/lib/game-data";
+import { halveRounded } from "./amount-helpers";
 import { consumeAttackPacketFlags } from "./damage";
 import { computeCardAttackPower, computeCardDamageToEnemy } from "./damage-calc";
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
@@ -202,6 +204,81 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
               damageType: effect.damageType,
               amount: stacks,
             }),
+          ];
+        }
+        if (effect.kind === "remove-enemy-armor") {
+          const currentArmor = path.state.enemyMitigation.armor;
+          if (currentArmor <= 0) return [path];
+          const nextArmor = effect.halve
+            ? halveRounded(currentArmor)
+            : effect.removeAll
+              ? 0
+              : Math.max(0, currentArmor - (effect.amount ?? 0));
+          if (nextArmor === currentArmor) return [path];
+          return [
+            {
+              ...path,
+              state: {
+                ...path.state,
+                enemyMitigation: { ...path.state.enemyMitigation, armor: nextArmor },
+              },
+            },
+          ];
+        }
+        if (effect.kind === "multiply-enemy-status") {
+          const current = path.state.enemyStatuses[effect.status] ?? 0;
+          if (current <= 0 || effect.factor === 1) return [path];
+          const added = Math.round(current * (effect.factor - 1));
+          if (added === 0) return [path];
+          return [
+            {
+              ...path,
+              state: {
+                ...path.state,
+                enemyStatuses: {
+                  ...path.state.enemyStatuses,
+                  [effect.status]: Math.min(Number.MAX_SAFE_INTEGER, current + added),
+                },
+              },
+            },
+          ];
+        }
+        if (effect.kind === "remove-player-status") {
+          if ((path.state.playerStatuses[effect.status] ?? 0) <= 0) return [path];
+          return [
+            {
+              ...path,
+              state: {
+                ...path.state,
+                playerStatuses: {
+                  ...path.state.playerStatuses,
+                  [effect.status]: 0,
+                },
+              },
+            },
+          ];
+        }
+        if (effect.kind === "remove-harmful-status") {
+          const limit = effect.removeAll ? harmfulPlayerStatusIds.length : (effect.amount ?? 0);
+          if (limit <= 0) return [path];
+          let removed = 0;
+          const nextStatuses = { ...path.state.playerStatuses };
+          for (const statusId of harmfulPlayerStatusIds) {
+            if (removed >= limit) break;
+            if (nextStatuses[statusId] > 0) {
+              nextStatuses[statusId] = 0;
+              removed++;
+            }
+          }
+          if (removed === 0) return [path];
+          return [
+            {
+              ...path,
+              state: {
+                ...path.state,
+                playerStatuses: nextStatuses,
+              },
+            },
           ];
         }
         if (effect.kind === "companion-action" && path.state.activeCompanion) {

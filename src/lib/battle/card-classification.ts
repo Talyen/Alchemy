@@ -6,7 +6,7 @@ import {
   type BattleCardEffect,
 } from "@/lib/game-data";
 
-export { cardHasKeyword } from "@/lib/game-data/keywords";
+export { cardHasKeyword };
 
 interface EffectClassification {
   damageTypes: ReadonlySet<string>;

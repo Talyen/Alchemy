@@ -36,7 +36,7 @@ import { applyPlayerCombatDamage, playerHealthLostToDamage, damageEnemyHealth } 
 import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { hasEnemyTrait, hasEncounterBenefit } from "./encounter-trait-state";
 import { resolveSecondaryAction } from "./action-context";
-import { BATTLE_CONFIG, BLEED_STATUS_MULTIPLIER } from "../game-constants";
+import { BATTLE_CONFIG, BLEED_STATUS_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
 import { mitigatePlayerStatusDamage, getEnemyDamageMultiplier } from "./status-helpers";
 import {
   resolveCrowdControlBonuses,
@@ -591,14 +591,14 @@ export function getBattleDamageInspectionCard(
       const explicitLeech = consumed.packet.lifesteal === true;
       const physicalLeech =
         type === "physical" &&
-        current.playerHealth * 2 < current.playerMaxHealth &&
+        current.playerHealth < current.playerMaxHealth / HALF_DIVISOR &&
         current.gearEffects.physicalLeechBelowHalfHealth > 0;
       if (explicitLeech || physicalLeech)
         after = projectLeech(after, type === "poison" ? healthDamage : damage, explicitLeech);
       if (type === "holy") {
         if (
           !explicitLeech &&
-          current.playerHealth * 2 < current.playerMaxHealth &&
+          current.playerHealth < current.playerMaxHealth / HALF_DIVISOR &&
           after.talentEffects.holyLifestealPercent > 0
         )
           after = projectLeech(after, damage, false, after.talentEffects.holyLifestealPercent);

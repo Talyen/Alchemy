@@ -142,4 +142,63 @@ describe("bugfix trio regressions", () => {
     // Distinct playerStatuses prevent false merging, yielding 0.5 * 10 = 5.
     expect(scoreAvailableReactions(multiBranch, state)).toBe(5);
   });
+
+  it("projects remove-enemy-armor before physical hits and Shatter scoring", () => {
+    const state = patchBattleState({
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      enemyMitigation: { armor: 10, block: 0, forge: 0 },
+      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0 },
+      reactions: { shatterDamage: 5 },
+    });
+    const sunder = makeTestCard({
+      effects: [
+        { kind: "remove-enemy-armor", halve: true },
+        { kind: "damage", damageType: "physical", amount: 3 },
+      ],
+    });
+    // Armor halves from 10 to 5.
+    // Physical hit 3 triggers Shatter on the 5 remaining armor.
+    // Shatter scores remaining armor (5) + shatter damage (5) = 10, not 10 + 5 = 15.
+    expect(scoreAvailableReactions(sunder, state)).toBe(10);
+  });
+
+  it("projects multiply-enemy-status before DoT detonation reactions", () => {
+    const state = patchBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyStatuses: { burn: 2, bleed: 5 },
+      reactions: { wildfireDamage: 3 },
+    });
+    const multiplyAndDetonate = makeTestCard({
+      effects: [
+        { kind: "multiply-enemy-status", status: "bleed", factor: 2 },
+        { kind: "damage", damageType: "bleed", amount: 1, detonateAllBleed: true },
+        { kind: "damage", damageType: "nature", amount: 1 },
+      ],
+    });
+    // Bleed doubles from 5 to 10.
+    // Hit 1 deals 1 direct + adds 1 bleed (11 total) and detonates all 11 Bleed (11 damage).
+    // Total enemy health remaining: 30 - 1 - 11 = 18 HP.
+    // Hit 2 deals 1 Nature damage on burning enemy, triggering Wildfire for min(17, 3) = 3 payoff.
+    expect(scoreAvailableReactions(multiplyAndDetonate, state)).toBe(3);
+  });
+
+  it("clears player statuses when projecting remove-harmful-status", () => {
+    const state = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      playerStatuses: { burn: 5 },
+      reactions: { wildfireDamage: 10 },
+    });
+    const cleanseThenAttack = makeTestCard({
+      effects: [
+        { kind: "remove-harmful-status", removeAll: true },
+        { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "nature" },
+      ],
+    });
+    // First effect cleanses player burn to 0.
+    // Second effect sees 0 burn, so deals 0 damage and triggers no Wildfire reaction.
+    expect(scoreAvailableReactions(cleanseThenAttack, state)).toBe(0);
+  });
 });

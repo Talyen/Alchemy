@@ -95,13 +95,13 @@ export function useBattlePlayback({
     wakeRef: wakeAutoplayRef,
   });
 
-  // A timer that fired while Boons was open rechecks the gate and returns.
+  // A timer that fired while an overlay was open rechecks the gate and returns.
   // Wake automation again when the overlay closes so it cannot stay stalled.
   useEffect(() => {
-    if (boonInspectOpen) return;
+    if (boonInspectOpen || gameMenuOpen) return;
     scheduleAutoEndTurnRef.current();
     wakeAutoplayRef.current?.();
-  }, [boonInspectOpen]);
+  }, [boonInspectOpen, gameMenuOpen]);
 
   const bind = useMemo(
     () =>
