@@ -120,6 +120,7 @@ describe("run architecture type contracts", () => {
     expectTypeOf<SessionPersistenceRestoreOptions>().toEqualTypeOf<{
       preserveActiveRunIfInitialized?: boolean;
       restoreActions?: ReadonlyArray<"abandon-active-run"> | undefined;
+      startAtMenu?: boolean;
     }>();
   });
   it("requires combat data with battle activity and removes independently writable battle flags", () => {

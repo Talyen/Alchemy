@@ -3,6 +3,7 @@ import type { BattleSnapshot } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { isBattleInspectionOpen, useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useBattleAutoEndTurn } from "@/features/alchemy/run-loop/battle/use-battle-auto-end-turn";
 import { useBattleAutoplay } from "@/features/alchemy/run-loop/battle/use-battle-autoplay";
 import type {
@@ -48,6 +49,7 @@ export function useBattlePlayback({
   bindPlayback,
 }: UseBattlePlaybackProps) {
   const autoEndTurn = useSettingsStore((s) => s.autoEndTurn);
+  const inspectionOpen = useUiStore(isBattleInspectionOpen);
   const scheduleAutoEndTurnRef = useRef<(state?: BattleSnapshot) => void>(() => {});
   const wakeAutoplayRef = useRef<(() => void) | null>(null);
 
@@ -98,10 +100,10 @@ export function useBattlePlayback({
   // A timer that fired while an overlay was open rechecks the gate and returns.
   // Wake automation again when the overlay closes so it cannot stay stalled.
   useEffect(() => {
-    if (boonInspectOpen || gameMenuOpen) return;
+    if (boonInspectOpen || gameMenuOpen || inspectionOpen) return;
     scheduleAutoEndTurnRef.current();
     wakeAutoplayRef.current?.();
-  }, [boonInspectOpen, gameMenuOpen]);
+  }, [boonInspectOpen, gameMenuOpen, inspectionOpen]);
 
   const bind = useMemo(
     () =>

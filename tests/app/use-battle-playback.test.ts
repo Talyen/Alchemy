@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { battlePresentation } from "@/app/battle-presentation";
 import { useBattlePlayback } from "@/app/screen-routes/use-battle-playback";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { resetBattlePresentationAndRun } from "../features/alchemy/run-loop/battle/battle-test-reset";
 import { AUTO_END_TURN_DELAY_MS } from "@/lib/game-constants";
 import { makeTestBattleState } from "../fixtures/battle";
@@ -33,6 +34,8 @@ function renderPlayback(overrides: Partial<Parameters<typeof useBattlePlayback>[
 describe("useBattlePlayback", () => {
   beforeEach(() => {
     useSettingsStore.getState().resetToDefaults();
+    useUiStore.getState().setEnemyInspectionOpen(false);
+    useUiStore.getState().setCardInspection(null);
     resetBattlePresentationAndRun();
   });
 
@@ -138,6 +141,32 @@ describe("useBattlePlayback", () => {
     expect(handleEndTurn).not.toHaveBeenCalled();
 
     rerender({ gameMenuOpen: false });
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
+    });
+    expect(handleEndTurn).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+
+  it("reschedules auto-end and wakes automation when enemy inspection closes mid-turn", () => {
+    vi.useFakeTimers();
+    useSettingsStore.getState().setAutoEndTurn(true);
+    useUiStore.getState().setEnemyInspectionOpen(true);
+    const handleEndTurn = vi.fn();
+    renderPlayback({
+      handleEndTurn,
+      battleState: makeEmptyHandBattle().battleState,
+      isAutoplayEnabled: true,
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS * 2);
+    });
+    expect(handleEndTurn).not.toHaveBeenCalled();
+
+    act(() => {
+      useUiStore.getState().setEnemyInspectionOpen(false);
+    });
     act(() => {
       vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
     });

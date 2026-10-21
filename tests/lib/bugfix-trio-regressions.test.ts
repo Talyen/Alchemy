@@ -201,4 +201,44 @@ describe("bugfix trio regressions", () => {
     // Second effect sees 0 burn, so deals 0 damage and triggers no Wildfire reaction.
     expect(scoreAvailableReactions(cleanseThenAttack, state)).toBe(0);
   });
+
+  it("projects player-status block before equal-to-block attacks to trigger Shatter", () => {
+    const state = patchBattleState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      playerStatuses: { block: 0 },
+      enemyMitigation: { armor: 10, block: 0, forge: 0 },
+      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0 },
+      reactions: { shatterDamage: 5 },
+    });
+    const blockThenBash = makeTestCard({
+      effects: [
+        { kind: "player-status", status: "block", amount: 10 },
+        { kind: "damage", damageType: "physical", amount: 0, equalToBlock: true },
+      ],
+    });
+    // First effect grants 10 Block to player.
+    // Second effect deals 10 Physical damage (equal to 10 Block).
+    // Enemy is frozen with 10 Armor and Shatter: Shatter triggers, scoring 10 (armor) + 5 (shatterDamage) = 15.
+    expect(scoreAvailableReactions(blockThenBash, state)).toBe(15);
+  });
+
+  it("projects next-hit-poison so subsequent attacks convert to poison and trigger reactions", () => {
+    const state = patchBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyStatuses: { burn: 0, poison: 0 },
+    });
+    const poisonThenBurn = makeTestCard({
+      effects: [
+        { kind: "next-hit-poison" },
+        { kind: "damage", damageType: "physical", amount: 3 },
+        { kind: "damage", damageType: "burn", amount: 2 },
+      ],
+    });
+    // First effect sets nextHitPoison.
+    // Second effect converts physical to 3 poison damage, adding 3 poison stacks to the enemy.
+    // Third effect deals 2 burn damage against the now-poisoned enemy, triggering Venomflash (1 bonus damage).
+    expect(scoreAvailableReactions(poisonThenBurn, state)).toBe(1);
+  });
 });

@@ -108,6 +108,15 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
 /** Random-type cards can have many equivalent paths; merge them before the next effect. */
 const FLAG_KEY_ORDER = Object.keys(FLAG_DEFINITIONS);
 
+const FLAG_EFFECT_KEYS: Partial<Record<BattleCardEffect["kind"], keyof BattleState["flags"]>> = {
+  "next-hit-crit": "nextHitCrit",
+  "next-hit-leech": "nextHitLeech",
+  "next-archery-free": "nextArcheryCardFree",
+  "next-hit-poison": "nextHitPoison",
+  "play-next-card-twice": "playNextCardTwice",
+  "dodge-next-attack": "dodgeNextAttack",
+};
+
 function projectionKey(state: BattleState): string {
   const enemyStatuses = ENEMY_STATUS_DISPLAY_ORDER.map((key) => state.enemyStatuses[key]).join(",");
   const playerStatuses = PLAYER_STATUS_DISPLAY_ORDER.map((key) => state.playerStatuses[key]).join(",");
@@ -277,6 +286,51 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
               state: {
                 ...path.state,
                 playerStatuses: nextStatuses,
+              },
+            },
+          ];
+        }
+        if (effect.kind === "player-status") {
+          const pool = effect.statusPool?.length ? effect.statusPool : [effect.status];
+          const probability = path.probability / pool.length;
+          return pool.map((status) => {
+            let amount = effect.amount;
+            let nextMana = path.state.mana;
+            if (effect.convertCurrentMana !== undefined) {
+              amount = path.state.mana * effect.convertCurrentMana;
+              nextMana = 0;
+            } else if (effect.perManaCrystal !== undefined) {
+              amount = effect.perManaCrystal * path.state.maxMana;
+            }
+            if (status === "forge" && effect.forgeAmount !== undefined) {
+              amount = effect.forgeAmount;
+            }
+            const current = path.state.playerStatuses[status] ?? 0;
+            return {
+              ...path,
+              probability,
+              state: {
+                ...path.state,
+                mana: nextMana,
+                playerStatuses: {
+                  ...path.state.playerStatuses,
+                  [status]: Math.min(Number.MAX_SAFE_INTEGER, current + Math.max(0, amount)),
+                },
+              },
+            };
+          });
+        }
+        const flagKey = FLAG_EFFECT_KEYS[effect.kind];
+        if (flagKey) {
+          return [
+            {
+              ...path,
+              state: {
+                ...path.state,
+                flags: {
+                  ...path.state.flags,
+                  [flagKey]: true,
+                },
               },
             },
           ];
