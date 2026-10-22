@@ -35,13 +35,7 @@ Temporary captures belong in ignored reports/output; do not create design archiv
 
 ## Browser authorization
 
-Player-facing UI/UX, layout, visual polish and artwork tasks authorize the bounded
-local rendered review and focused browser checks needed for the affected flows,
-including starting a development preview. Use `npm run agent:browser` under
-[managed preview ownership](../CONTRIBUTING.md#agent-preview-ownership); reuse a
-suitable preview and preserve other tasks' servers, browsers and occupied lanes.
-Broad browser suites, Electron, production builds, profiling, coverage and
-publication retain their separate execution permissions.
+[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns execution permissions. Use its [managed preview workflow](../CONTRIBUTING.md#agent-preview-ownership), reusing a suitable preview and preserving other tasks' servers, browsers and occupied lanes.
 
 Visual work needs rendered review before it can be called complete. If rendering
 is blocked, report the missing review and its limits; do not claim visual

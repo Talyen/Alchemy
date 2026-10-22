@@ -2,7 +2,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
-import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -203,15 +202,8 @@ export async function main(argv = process.argv.slice(2)) {
     // The OS releases this shared lock when its owner exits, including crashes.
     // Hash collisions fail closed as busy; they never allow concurrent integration.
     const port = 20000 + (createHash("sha256").update(common).digest().readUInt32BE(0) % 40000);
-    const lock = net.createServer((socket) => socket.destroy());
-    await new Promise((resolve, reject) => {
-      lock.once("error", reject);
-      lock.listen({ host: "127.0.0.1", port, exclusive: true }, resolve);
-    }).catch((error) => {
-      if (error.code === "EADDRINUSE")
-        throw new Error("Integration lock busy; retry later without messaging other chats.");
-      throw error;
-    });
+    const { acquireExclusivePort } = await import("./lib/exclusive-port.mjs");
+    const lock = await acquireExclusivePort(port, { label: "Integration lock" });
     try {
       const records = git(root, ["worktree", "list", "--porcelain", "-z"], true).split("\0\0");
       const mainRecord = records.find((record) => record.split("\0").includes("branch refs/heads/main"));
@@ -261,7 +253,6 @@ export async function main(argv = process.argv.slice(2)) {
           if (result.status !== 0) throw new Error("Integration verification failed; main remains unchanged.");
         };
         check(["run", "check", "--", ...paths]);
-        if (paths.some((file) => file.endsWith(".md"))) check(["run", "docs:check"]);
       }
       clean(taskPath, `agent/${task}`);
       clean(mainPath, "main");
@@ -272,9 +263,7 @@ export async function main(argv = process.argv.slice(2)) {
       console.log(`Integrated ${task} into local main at ${taskHead}; no push performed.`);
       if (!hasFlag("--keep-worktree")) removeIntegratedWorktree(mainPath, taskPath, `agent/${task}`, taskHead);
     } finally {
-      await new Promise((resolve) => {
-        lock.close(resolve);
-      });
+      await lock.release();
     }
     return;
   }

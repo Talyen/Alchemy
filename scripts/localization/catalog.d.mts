@@ -1,4 +1,4 @@
-interface Message {
+export interface Message {
   plural?: boolean;
   forms?: Record<string, string>;
   text: string;
@@ -7,7 +7,7 @@ interface Message {
   aliasOf?: string;
   values?: Record<string, string | number>;
 }
-interface Translation {
+export interface Translation {
   forms?: Record<string, string>;
   text: string;
   sourceHash: string;
@@ -42,3 +42,17 @@ export function relatedTerms(
   terms: readonly string[],
   aliases?: ReadonlyArray<{ match: string; keywordId: string }>,
 ): string[];
+
+interface WorkflowInput {
+  messages: Record<string, Message>;
+  glossary: Record<string, Record<string, string>>;
+  catalogs: Record<string, Record<string, Translation>>;
+}
+export function translationPackets(input: WorkflowInput): Array<{
+  locale: string;
+  instructions: string;
+  glossary: Record<string, string>;
+  messages: Record<string, Message & { sourceHash: string; previous: string | null }>;
+  results: Record<string, Translation>;
+}>;
+export function validateBatch(input: unknown, context: WorkflowInput): Record<string, Record<string, Translation>>;

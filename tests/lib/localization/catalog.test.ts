@@ -1,6 +1,14 @@
 import { packCatalogs, unpackCatalogs } from "../../../src/lib/localization/catalog-format.mjs";
 import { describe, expect, it } from "vitest";
-import { sourceHash, validateResults, resolveAliases, relatedTerms } from "../../../scripts/localization/catalog.mjs";
+import {
+  sourceHash,
+  validateResults,
+  resolveAliases,
+  relatedTerms,
+  TARGETS,
+  translationPackets,
+  validateBatch,
+} from "../../../scripts/localization/catalog.mjs";
 
 const message = { text: "Deal <damage>{{amount}}</damage> damage", context: "Attack damage", terms: ["damage"] };
 const glossary = { damage: "Schaden", unused: "Unverwendet" };
@@ -9,6 +17,68 @@ const valid = () => ({
   text: "Verursache <damage>{{amount}}</damage> Schaden",
   sourceHash: sourceHash(message, glossary, "de"),
   reviewed: true,
+});
+
+it("prepares only pending canonical messages with unreviewed editable plural templates", () => {
+  const plural = {
+    text: "{{count}} items",
+    context: "Quantity",
+    plural: true,
+    forms: { one: "{{count}} item", other: "{{count}} items" },
+  };
+  const source = { ...messages, plural, alias: { ...message, aliasOf: "attack" } };
+  const glossaries = Object.fromEntries(TARGETS.map((locale) => [locale, glossary]));
+  const catalogs = Object.fromEntries(
+    TARGETS.map((locale) => [
+      locale,
+      Object.fromEntries(
+        Object.entries(source)
+          .filter(([id]) => id !== "alias")
+          .map(([id, entry]) => [
+            id,
+            { text: entry.text, sourceHash: sourceHash(entry, glossary, locale), reviewed: true },
+          ]),
+      ),
+    ]),
+  );
+  expect(translationPackets({ messages: source, glossary: glossaries, catalogs })).toEqual([]);
+  delete catalogs.de!.plural;
+  const [packet] = translationPackets({ messages: source, glossary: glossaries, catalogs });
+  expect(packet?.locale).toBe("de");
+  expect(Object.keys(packet?.messages ?? {})).toEqual(["plural"]);
+  expect(packet?.results.plural).toEqual({
+    text: "",
+    sourceHash: sourceHash(plural, glossary, "de"),
+    reviewed: false,
+    forms: { one: "", other: "" },
+  });
+});
+
+it("validates all locale results before returning replacements and rejects stale or duplicate batches", () => {
+  const catalogs = { de: { attack: valid() }, fr: {} };
+  const context = { messages, glossary: { de: glossary, fr: glossary }, catalogs };
+  const de = { locale: "de", results: { attack: valid() } };
+  const fr = {
+    locale: "fr",
+    results: {
+      attack: {
+        text: "Inflige <damage>{{amount}}</damage> dégâts",
+        sourceHash: sourceHash(message, glossary, "fr"),
+        reviewed: true,
+      },
+    },
+  };
+  expect(validateBatch([de, fr], context).fr?.attack?.text).toBe(fr.results.attack.text);
+  expect(validateBatch(de, context).de).toEqual(catalogs.de);
+  expect(() =>
+    validateBatch([de, { ...fr, results: { attack: { ...fr.results.attack, reviewed: false } } }], context),
+  ).toThrow("not been reviewed");
+  expect(() =>
+    validateBatch([de, { ...fr, results: { attack: { ...fr.results.attack, sourceHash: "stale" } } }], context),
+  ).toThrow("Outdated");
+  expect(() => validateBatch([de, de], context)).toThrow("Duplicate");
+  expect(catalogs.fr).toEqual({});
+  expect(catalogs.de.attack).toEqual(valid());
 });
 
 describe("localization ingestion", () => {

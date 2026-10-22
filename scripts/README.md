@@ -210,16 +210,17 @@ node scripts/agent-worktree.mjs integrate --task <slug>
 ```
 
 Integration uses an exclusive loopback port derived from the shared Git directory,
-so all worktrees share one OS-released lock. A busy lock fails immediately; retry
+so all worktrees share one OS-released lock. A busy lock waits for up to 60 seconds with status output; cancellation stops the wait.
+`ALCHEMY_LOCK_WAIT_MS` sets the deadline (`0` fails immediately). If it expires, retry
 later without messaging other chats. A port collision also fails closed. The command
 requires registered task and `main` checkouts with no dirty files or unfinished Git
 operations. Safety reads bypass Git's filesystem monitor and untracked cache
 without changing repository settings. While holding the lock, it merges current local `main` into the task,
-runs `npm run check -- <combined changed paths>` (including both sides of renames) and, for Markdown changes,
-`npm run docs:check`, then fast-forwards `main` only if verification succeeded and
+runs `npm run check -- <combined changed paths>` (including both sides of renames),
+using the same selected units, docs and supporting checks as ordinary task verification, then fast-forwards `main` only if verification succeeded and
 both checkouts remain clean at the expected commits. It never pushes or switches
 checkout branches. Verification uses the merged task's shared Node command launcher
-so npm runs without shell interpretation on Windows too. Additional task-required tests remain the task owner's responsibility.
+so npm runs without shell interpretation on Windows too. Only protection the selector cannot infer needs an additional focused run.
 An active bisect in either checkout also blocks integration before either branch advances.
 
 Resolve understood merge conflicts in the task worktree, commit the resolution,

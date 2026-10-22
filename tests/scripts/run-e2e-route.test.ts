@@ -14,7 +14,7 @@ function routeSpecFiles(route: { args: readonly string[] }): string[] {
 
 describe("e2e routes", () => {
   it.each([{ args: [] }, { args: ["--live"] }])(
-    "refuses an occupied test lane before starting Playwright (%j)",
+    "times out an occupied test lane before starting Playwright (%j)",
     async ({ args }) => {
       const lane = await acquireLocalTestLane(0);
       const root = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-e2e-lane-"));
@@ -32,9 +32,10 @@ describe("e2e routes", () => {
           cwd: root,
           encoding: "utf8",
           timeout: 10_000,
+          env: { ...process.env, ALCHEMY_LOCK_WAIT_MS: "20" },
         });
         expect(result.status, result.stderr).toBe(1);
-        expect(result.stdout + result.stderr).toContain("no tests were started");
+        expect(result.stdout + result.stderr).toContain("No work started");
         expect(fs.existsSync(path.join(root, "browser-started"))).toBe(false);
       } finally {
         await lane.release();

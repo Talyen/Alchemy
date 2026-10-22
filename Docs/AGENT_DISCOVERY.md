@@ -73,15 +73,9 @@ checkouts; omit paths to review the whole dirty set. Review commands do not acce
 
 ## Verification
 
-[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns execution tiers.
-`verify` is fixed Node smoke, `verify:unit` selects relevant unit coverage, and
-`check` adds localization freshness and selected-file formatting. Bounded rendered
-UI review and focused browser checks follow [visual review](./UI_VISUAL_REVIEW.md#browser-authorization).
-Broad browser suites, Electron, builds, full static checks, and broader local
-verification remain explicit opt-ins. Owner lookup does not select tests.
+[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns the task gate and execution permissions. Use `npm run check -- <paths>`; add `--plan` to inspect selected commands without running them. Owner lookup locates documentation and does not select tests.
 
 [`runs:show`](./REFERENCE.md#failure-first-triage) includes primary evidence paths
 so a failed run's digest can be opened directly. Compact failure summaries
 collapse identical selected lines with occurrence counts and first/last log
-locations, preserving space for distinct causes. Passing local smoke is
-not evidence that edited gameplay or integration passed.
+locations, preserving space for distinct causes. Minimal environment smoke is not evidence that edited gameplay or integration passed.

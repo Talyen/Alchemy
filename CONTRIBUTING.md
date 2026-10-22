@@ -4,24 +4,49 @@ Install dependencies with `npm ci`. `npm run context -- <relevant paths>` can lo
 
 ## What to run when you change…
 
-The default local gate is deliberately resource-light. Agents may run unit tests whenever useful without user approval; CI still owns complete validation.
+Use one task-scoped gate during work, before handoff, and during protected integration:
 
-| Moment           | Command                           | Responsibility                                                                                                   |
-| ---------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Local smoke      | `npm test` / `npm run test:smoke` | Three fixed Node suites, one worker, lower process priority, 512 MiB Node heap limit and a 30-second deadline    |
-| During work      | `npm run verify -- --diff`        | Bounded Node smoke; no import-graph selection or dependency-cache identity walk                                  |
-| Push and handoff | `npm run check -- --diff`         | Local smoke, localization freshness, and selected-file formatting; no builds, browsers, or full static aggregate |
-| CI               | Pull request or push to `main`    | Full Vitest, static checks, builds, smoke, critical browser journeys and applicable desktop/assets checks        |
+```sh
+npm run check -- <task-owned paths>
+npm run check -- <task-owned paths> --plan
+```
 
-Local formatting checks at most 50 existing files, each no larger than 256,000 bytes. Larger batches are explicitly deferred to CI. Reports say that a passing local check still requires full CI validation; it is not release evidence.
+Use `--diff` instead of paths when the complete dirty set belongs to the task.
+The plan prints selected commands and skips without executing checks. Directory
+selections include deleted paths. Integration runs this same gate against the
+combined result after incorporating current local `main`.
 
-Markdown-only selections skip Node smoke in the default verifier. For documentation
-edits, run `npm run docs:check` explicitly as well as the task-scoped `check`;
-the default gate checks selected-file formatting but does not run documentation contracts.
+The gate selects dependency-related, changed, and risk-selected unit suites,
+documentation contracts when documentation changes, localization freshness for
+code/content changes, and selected-file formatting and lint diagnostics. Markdown-only
+changes run documentation contracts and formatting without units or localization.
+Formatting and lint each accept at most 50 existing files of at most 256,000 bytes;
+larger batches are reported as deferred to CI. Scoped lint is authorized, including
+the configured type-aware diagnostics; complete TypeScript compilation remains a
+separate gate. A local pass still requires full CI validation.
 
-Use explicit task-owned paths in a mixed checkout. `--diff` selects the complete dirty set, including deletions. `npm run verify -- --diff --plan` previews the lightweight selection. The pre-push hook selects outgoing paths and retains its source/cleanliness guards, but uses the same lightweight gate.
+| Need                      | Command                             | Scope                                                                      |
+| ------------------------- | ----------------------------------- | -------------------------------------------------------------------------- |
+| Ordinary task             | `npm run check -- <paths>`          | Selected units, docs, localization, formatting and bounded lint            |
+| Unit diagnosis            | `npm run test:full -- <test-paths>` | Focused tests; omit paths for all units                                    |
+| Minimal environment smoke | `npm test`                          | Three fixed Node suites; no edited-code coverage claim                     |
+| Broad local validation    | `npm run check:full -- <paths>`     | Full static, applicable builds, budgets and preview smoke; explicit opt-in |
+| CI                        | Pull request or push to `main`      | Complete validation and applicable desktop/assets checks                   |
 
-Focused, dependency-related, and full unit tests, including DOM unit tests, may run locally without user approval. Use `npm run verify:unit -- <task-owned paths>` for dependency-related and risk-selected units. Use `npm run test:full -- <paths>` for focused suites or `npm run test:full` for the full unit suite. Broader local validation still requires an explicit user request: `npm run check:full -- --diff` and `npm run verify:full -- --diff` include checks beyond unit tests. Bounded rendered review and focused browser checks of affected UI/UX, layout, polish, and artwork flows are authorized by [visual review](./Docs/UI_VISUAL_REVIEW.md). Broad browser suites, Electron, coverage, mutation, profiling, builds, and full static commands remain opt-ins. Do not substitute a direct Playwright invocation to bypass that policy. Release workflows remain fully verified in CI.
+Unit suites, including DOM, and bounded scoped lint may run without additional
+approval. UI/UX, layout, polish and artwork work also authorizes development
+previews, bounded rendered review and focused browser checks of affected flows;
+[visual review](./Docs/UI_VISUAL_REVIEW.md) owns the quality requirements. Broad
+browser suites, Electron, coverage, mutation, profiling, full static checks,
+production builds and packaging require an explicit local-execution request.
+Do not bypass these limits with direct tool invocations.
+
+Existing `verify`, `verify:unit`, and `verify:full` commands remain available for
+selection diagnosis: `verify` selects units and documentation, `verify:unit`
+restricts that selection to units, and `verify:full` adds broader route checks.
+Use `check` for ordinary work so the supporting gates are included automatically.
+Pre-push retains outgoing-path selection and source/cleanliness guards and uses
+the same task gate.
 
 Use `rg --files tests` to locate unfamiliar suite paths. Vitest arguments are
 filters: a passing mixed selection can ignore a misspelled path while another
@@ -30,8 +55,10 @@ matches, so confirm the reported file count before claiming that scope passed.
 One-shot Vitest and Playwright commands through `run-compact.mjs`, including
 full/focused unit tests and the full verifier's related/changed selections, share
 one local test lane with the ship unit runner across checkouts on the same host.
-An occupied lane fails before tests start; retry after the active run finishes.
-The lightweight Node smoke does not acquire this lane. Raw CLI and watch/debug
+An occupied lane waits for up to 60 seconds before failing without starting tests.
+The wait is cancellable; `ALCHEMY_LOCK_WAIT_MS` sets its deadline in milliseconds
+(`0` fails immediately). Status reports waiting and acquisition once each.
+The minimal Node smoke does not acquire this lane. Raw CLI and watch/debug
 sessions bypass it and must be coordinated manually. The runner defaults native
 bundler threads to one; the four-worker Vitest ceiling remains unchanged. An
 unrelated overloaded host can still cause failures: preserve the failed result
@@ -72,13 +99,13 @@ temporarily removes Node storage descriptors before browser globals are installe
 and restores them during teardown. JSDOM owns both local and session storage;
 Node Web Storage flags and a Node storage file are unnecessary for these tests.
 
-The unit verifier selects dependency-related, changed, and risk-selected unit tests without reports, asset checks, or broader gates. The full verifier retains broad risk selection: save changes select persistence suites, asset changes select prepared-output checks, desktop changes select boundary suites, and tooling changes select tooling/architecture tests. Other implementation changes use dependency-related selection. These escalations do not run in the default local gate. The full completion gate adds static checks, lockfile consistency, applicable builds, bundle budgets, and preview smoke.
+The task gate selects save/persistence units for save changes, desktop boundary units for desktop changes, tooling/architecture units for tooling changes, and dependency-related coverage for other implementation changes. The full completion gate additionally selects report/asset checks, full static checks, lockfile consistency, applicable builds, bundle budgets and preview smoke.
 
 Authoritative working-tree discovery disables Git's filesystem monitor and untracked cache per command (`-c core.fsmonitor=false -c core.untrackedCache=false`). Discovery failures are not a clean checkout. Checks preserve run-attributed diagnostics. Default checks guard task selections and declared local harness inputs; full and pre-push checks retain checkout-wide guards. Unrelated runtime edits do not invalidate a scoped local check.
 
 ## Verification reuse
 
-The default local verifier does not scan installed dependencies or create full-verification receipts.
+Task verification executes its selected commands without scanning installed dependencies or reusing full-verification receipts.
 
 The opt-in full verifier keeps local passing receipts under `reports/verification-cache/` for eligible slow commands: dependency-related and changed unit tests plus save, desktop, and performance unit suites. Reuse requires unchanged inputs and the same executable and arguments; a narrower command cannot satisfy broader coverage. Tooling suites, reports, assets, static checks, builds, smoke tests, browser runs, and CI always execute.
 
@@ -86,7 +113,7 @@ Receipts expire after one hour. Reused results retain their original run ID and 
 
 Set `ALCHEMY_VERIFY_FRESH=1` for fresh local observations, including nondeterminism investigations and benchmark comparisons. Actual outcomes still replace or invalidate receipts. [Cache implementation details](./scripts/VERIFICATION.md#verification-cache) document input identity and the cost threshold.
 
-The localization stage has a 60-second deadline because it checks the complete catalog; the bounded Node smoke retains its 30-second deadline.
+Supporting local stages have a 60-second deadline. Selected units use their test deadlines and the bounded lane wait; minimal Node smoke retains its 30-second deadline.
 
 The default local check also runs the offline [localization freshness gate](./Docs/LOCALIZATION.md#agent-workflow). Agents update translations in the same task as English text edits; checks and builds never invoke a translation service.
 
@@ -112,13 +139,13 @@ These examples are contextual: exact values and layout assertions can be high-va
 
 ### Active test retirement
 
-Evaluate tests read, modified, or diagnosed during authorized work. Remove encountered low- and medium-value tests by default after checking their purpose and dependencies; retaining a borderline test requires a concrete reason. Unique coverage alone does not require retention or replacement. When an inexpensive change can provide high-value protection, strengthen the test or move it to a cheaper layer instead.
+Test retirement is required when the task concerns test maintenance or a test demonstrably obstructs the requested work. Reading or diagnosing nearby tests creates no cleanup obligation. Useful incidental consolidation is allowed when its purpose and dependencies are understood and it stays within the task. When an inexpensive change provides stronger protection, improve the test or move it to a cheaper layer.
 
 Before retirement, check why the test exists, including known regressions, distinct integration risks, and execution tiers. Diagnose failures first: never delete or weaken a test simply to hide a product defect or obtain a green gate. Preserve trustworthy protection for consequential known regressions, save compatibility, critical journeys, and architectural boundaries; their existing test form is not sacred.
 
-No separate permission or one-for-one replacement is required. For material coverage changes, briefly report protection added or reused, justified exceptions or borderline retention, and protection retired. For overlap, identify surviving protection; for unique coverage retired, explain the specific risk accepted and maintenance tradeoff. Avoid scoring forms and routine essays.
+No separate permission or one-for-one replacement is required. For material coverage changes, briefly report protection added or reused, justified additions, and protection retired. For overlap, identify surviving protection; for unique coverage retired, explain the specific risk accepted and maintenance tradeoff. Avoid scoring forms and routine essays.
 
-Keep cleanup within tests encountered during authorized work; do not turn every task into a suite-wide audit. Keep scenarios focused and failures diagnosable. Combining unrelated checks into a giant journey or parameterized matrix does not improve value merely by reducing test declarations. Share fixtures where they preserve a common invariant or prevent drift; keep scenario-specific setup clear.
+Keep cleanup within the task's needs; do not turn every task into a suite-wide audit. Keep scenarios focused and failures diagnosable. Combining unrelated checks into a giant journey or parameterized matrix does not improve value merely by reducing test declarations. Share fixtures where they preserve a common invariant or prevent drift; keep scenario-specific setup clear.
 
 For exhaustive orchestration checks such as the affix sweep, retain the scenario coverage while collecting invariant violations into a total and bounded, scenario-specific examples. Avoid thousands of identical matcher calls. Test-local timeouts are failure ceilings, not performance targets; reproduce a slowdown with the full unit suite running separately from browser work before changing global workers, timeouts, or gameplay.
 

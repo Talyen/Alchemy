@@ -8,11 +8,9 @@ import { runCiLint } from "../../scripts/lint-ci.mjs";
 const ROOT = join(import.meta.dirname, "../..");
 
 describe("canonical verification commands", () => {
-  it("exposes only verify, check, and release as workflow entry points", () => {
+  it("preserves verification entry points and routes pre-push through the checked source gate", () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> };
     const lefthook = readFileSync(join(ROOT, "lefthook.yml"), "utf8");
-    const contributing = readFileSync(join(ROOT, "CONTRIBUTING.md"), "utf8");
-    const skill = readFileSync(join(ROOT, ".agents/skills/verifier/SKILL.md"), "utf8");
 
     expect(pkg.scripts.verify).toBe("node scripts/verify-changed.mjs");
     expect(pkg.scripts.check).toBe("node scripts/check.mjs");
@@ -21,9 +19,6 @@ describe("canonical verification commands", () => {
       expect(pkg.scripts[removed]).toBeUndefined();
     expect(lefthook).toContain("npm run check -- --pre-push");
     expect(lefthook).toContain("use_stdin: true");
-    expect(contributing).toContain("npm run verify -- --diff");
-    expect(contributing).toContain("npm run check -- --diff");
-    expect(skill).toMatch(/npm run check -- (?:--diff|<paths>)/);
   });
 
   it("makes ordinary builds pure and generated-output-validating", () => {
