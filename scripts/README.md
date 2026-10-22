@@ -297,3 +297,12 @@ without changing command success; exposure metrics remain advisory.
 ## Script declarations
 
 Keep TypeScript declarations beside the JavaScript module (the .d.mts extension beside .mjs), following the module's actual exports. Tests import those modules normally. Shared interface types belong to their implementation owner and are imported by other declarations; do not recreate wildcard ambient declarations in tests. Update the adjacent declaration when changing a script's public interface, and run source/test type checks.
+
+## Visual review evidence
+
+`npm run visual:review -- --init <paths>` initializes the task-local receipt;
+`npm run visual:review -- <paths>` validates it. `npm run check` enforces this
+for selected runtime paths before protected local integration. See
+[visual acceptance](../Docs/UI_VISUAL_REVIEW.md#local-evidence-gate) for the schema,
+nonvisual rationale, image requirements and limitations. The command never launches
+a browser or claims to judge aesthetic quality.

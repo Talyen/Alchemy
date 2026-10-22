@@ -22,6 +22,7 @@ import { runCommandAsync } from "./lib/run-command.mjs";
 import { closeTaskBrowsers, taskKey } from "./lib/agent-browser-session.mjs";
 import { INLINE_ARGS_BYTES } from "./lib/verification/selection-budgets.mjs";
 import { filterPrettierPaths } from "./lib/verification/prettier-paths.mjs";
+import { requiresVisualReview } from "./visual-review.mjs";
 import { resolveRoutes } from "./lib/verification/change-routes.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -102,7 +103,14 @@ function defaultRunner(label, command, args, env) {
   return runCommandAsync(command, args, {
     cwd: ROOT,
     env,
-    timeout: env.ALCHEMY_CHECK_PROFILE === "local" ? 30_000 : undefined,
+    // Localization checks the complete catalog even for a one-file task; its
+    // observed runtime can exceed the per-step smoke deadline on a busy host.
+    timeout:
+      env.ALCHEMY_CHECK_PROFILE === "local"
+        ? command === "npm" && args.includes("i18n:check")
+          ? 60_000
+          : 30_000
+        : undefined,
     logPath: path.join(ROOT, "reports/runs", env.ALCHEMY_RUN_ID, "check", `${slug}.log`),
   });
 }
@@ -165,6 +173,17 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     formatPaths.every((file) => fs.statSync(path.join(ROOT, file)).size <= 256_000);
   const assetPush = argv.includes("--pre-push") && resolveRoutes(paths).some((route) => route.id === "assets");
   const definitions = [
+    {
+      key: "visual-review",
+      label: "visual review evidence",
+      command: "node",
+      args: [
+        "scripts/visual-review.mjs",
+        ...verifyArgs.filter((arg) => arg !== "--full" && arg !== "--skip-docs-check"),
+      ],
+      enabled: !argv.includes("--pre-push") && paths.some(requiresVisualReview),
+      reason: "no runtime paths selected, or push checks omit disposable local review artifacts",
+    },
     {
       key: "asset-sources",
       label: assetPush ? "local asset source freshness" : "committed asset integrity",

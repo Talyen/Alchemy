@@ -21,7 +21,7 @@ the default gate checks selected-file formatting but does not run documentation 
 
 Use explicit task-owned paths in a mixed checkout. `--diff` selects the complete dirty set, including deletions. `npm run verify -- --diff --plan` previews the lightweight selection. The pre-push hook selects outgoing paths and retains its source/cleanliness guards, but uses the same lightweight gate.
 
-Focused, dependency-related, and full unit tests, including DOM unit tests, may run locally without user approval. Use `npm run verify:unit -- <task-owned paths>` for dependency-related and risk-selected units. Use `npm run test:full -- <paths>` for focused suites or `npm run test:full` for the full unit suite. Broader local validation still requires an explicit user request: `npm run check:full -- --diff` and `npm run verify:full -- --diff` include checks beyond unit tests. Browser/Electron, coverage, mutation, profiling, builds, and full static commands remain opt-ins. Do not substitute a direct Playwright invocation to bypass that policy. Release workflows remain fully verified in CI.
+Focused, dependency-related, and full unit tests, including DOM unit tests, may run locally without user approval. Use `npm run verify:unit -- <task-owned paths>` for dependency-related and risk-selected units. Use `npm run test:full -- <paths>` for focused suites or `npm run test:full` for the full unit suite. Broader local validation still requires an explicit user request: `npm run check:full -- --diff` and `npm run verify:full -- --diff` include checks beyond unit tests. Bounded rendered review and focused browser checks of affected UI/UX, layout, polish, and artwork flows are authorized by [visual acceptance](./Docs/UI_VISUAL_REVIEW.md). Broad browser suites, Electron, coverage, mutation, profiling, builds, and full static commands remain opt-ins. Do not substitute a direct Playwright invocation to bypass that policy. Release workflows remain fully verified in CI.
 
 Use `rg --files tests` to locate unfamiliar suite paths. Vitest arguments are
 filters: a passing mixed selection can ignore a misspelled path while another
@@ -38,9 +38,11 @@ unrelated overloaded host can still cause failures: preserve the failed result
 and inspect collection and host resources before retrying or changing timeouts.
 Implementation: [local test lane](./scripts/lib/verification/local-test-lane.mjs).
 
+The local completion gate also enforces [visual review evidence](./Docs/UI_VISUAL_REVIEW.md#local-evidence-gate) for runtime selections. This validates source freshness, scope, findings and image files; it does not establish aesthetic quality.
+
 ### Agent preview ownership
 
-For an authorized interactive browser review on macOS/Linux, use
+For interactive browser review on macOS/Linux, use
 `npm run agent:browser -- <action and arguments>` in place of the raw CLI.
 It selects the Codex task's session automatically; use the same actions for
 navigation, reloads and captures. New managed sessions automatically use a
@@ -85,6 +87,8 @@ The opt-in full verifier keeps local passing receipts under `reports/verificatio
 Receipts expire after one hour. Reused results retain their original run ID and expiry, with provenance in the run-specific `verify/summary.json` linked by the completion report. Failures invalidate receipts; changed or unverifiable inputs prevent reuse. Normal report cleanup removes disposable receipts.
 
 Set `ALCHEMY_VERIFY_FRESH=1` for fresh local observations, including nondeterminism investigations and benchmark comparisons. Actual outcomes still replace or invalidate receipts. [Cache implementation details](./scripts/VERIFICATION.md#verification-cache) document input identity and the cost threshold.
+
+The localization stage has a 60-second deadline because it checks the complete catalog; the bounded Node smoke retains its 30-second deadline.
 
 The default local check also runs the offline [localization freshness gate](./Docs/LOCALIZATION.md#agent-workflow). Agents update translations in the same task as English text edits; checks and builds never invoke a translation service.
 

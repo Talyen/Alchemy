@@ -49,7 +49,7 @@ Run a fresh web build first. For an intentional visual change, use
 image, then rerun without updates. Never update baselines merely to clear a
 failure. Differences and failure diagnostics are retained by CI. Other OSes
 need separately reviewed baselines before running this visual suite. Local
-builds and browser execution retain the explicit opt-in policy below.
+builds and broad browser suites retain the explicit opt-in policy below.
 
 These four baselines protect composition, text fitting and layering that
 functional assertions cannot see; the wider desktop layout-review gallery
@@ -59,7 +59,7 @@ remains the tool for manual review across viewport sizes.
 
 ### Local execution policy
 
-Browser and Electron suites are CI-first. The default local `check` gate runs only bounded Node smoke and selected-file formatting. The commands below are manual opt-ins, requiring an explicit user request for local execution. Do not launch suites automatically for an implementation or test-fix task.
+Browser and Electron suites are CI-first. The default local `check` gate runs bounded Node smoke, localization, selected-file formatting and local [visual evidence validation](../../Docs/UI_VISUAL_REVIEW.md#local-evidence-gate); it does not launch browsers. Bounded rendered review and focused browser checks of affected UI/UX, layout, polish and artwork flows are already authorized under [visual acceptance](../../Docs/UI_VISUAL_REVIEW.md#browser-authorization). Broad browser suites, Electron and production builds require an explicit local-execution request. Prefer development mode for current-source UI checks.
 [Browser and Electron commands](#browser-and-electron-commands) own invocation,
 ports, build edition and concurrency details when local execution is requested.
 

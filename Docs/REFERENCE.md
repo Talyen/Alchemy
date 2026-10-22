@@ -24,7 +24,7 @@ duplicating command lists in subsystem docs. Script implementation owners are ma
 
 ## Failure-first triage
 
-Use CI reports for complete validation. Agents may run full or focused unit tests, including DOM unit tests, without user approval using `npm run test:full -- <test-path>`. Browser/Electron and build reruns on the local machine require an explicit user request. `npm test` is bounded Node smoke.
+Use CI reports for complete validation. Agents may run full or focused unit tests, including DOM unit tests, without user approval using `npm run test:full -- <test-path>`. Bounded rendered review and focused browser checks for UI/UX, layout, polish and artwork are authorized under [visual acceptance](./UI_VISUAL_REVIEW.md#browser-authorization). Broad browser suites, Electron and build reruns still require an explicit user request. `npm test` is bounded Node smoke.
 
 Verification and audit commands keep full artifacts on disk but print a bounded digest. Start with the digest when the cause is unclear; open the most relevant artifact directly when you have a specific hypothesis. Battle warnings use the `[Enemy Turn]` prefix.
 

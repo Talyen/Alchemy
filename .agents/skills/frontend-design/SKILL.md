@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: Design new Alchemy game UI or substantially reshape an existing interface with intentional visual direction and critique. Excludes routine bug fixes, copy edits, and mechanical component changes.
+description: Design and review Alchemy player-facing UI, layout, visual polish, copy density, and artwork composition with rendered acceptance. Use for visible behavior fixes too; excludes purely mechanical edits with no presentation or interaction effect.
 license: Complete terms in LICENSE.txt
 ---
 
@@ -12,53 +12,66 @@ Modified for Alchemy: replaces general website direction with game-screen design
 existing UI ownership, and scoped visual verification. Review upstream updates
 manually against this pinned revision and Alchemy's current conventions.
 
-## Ground the design in the player's task
+## Required inputs
 
-Alchemy is a fantasy roguelite deckbuilder. Identify what the player needs to
-understand, decide, or do on the requested screen. Use real game content and
-player-facing names. Inspect comparable screens and the shared primitives they
-use before proposing a layout. Resolve consequential ambiguity with the user;
-use established conventions for routine choices.
+Read [visual acceptance](../../../Docs/UI_VISUAL_REVIEW.md) and the relevant
+[UI owner](../../../Docs/UI.md) sections. Inspect actual images in the
+[current reference set](../../../Docs/design/visual-references.md), affected
+screens, and shared primitives. For art, also read the applicable style prompt in
+[asset workflows](../../../Docs/WORKFLOWS-ASSETS.md#art-style-and-generation-prompts).
+Do not substitute a style adjective or prompt for reference inspection.
 
-[UI.md](../../../Docs/UI.md) is the canonical design authority. Read its relevant
-sections and linked guides. Reuse Alchemy's existing typography, gold and
-content-owned palettes, artwork, controls, and motion conventions. Propose
-departures only when the requested work calls for them; a distinctive design
-does not require a new visual system or new tokens for each task.
+## Design and implement
 
-## Plan, review, implement
+- Capture the starting screen and reproducible conditions before editing. State
+  the player's main decision and necessary information in the task brief, not
+  in player-facing explanatory text.
+- Name the reference and concrete qualities to borrow. Current screens are
+  baselines, not automatic quality standards. Preserve functional contracts;
+  replace weak visual treatments within scope. Existing primitives do not
+  require copying a poor screen composition.
+- For new screens or major redesigns, render two meaningfully different
+  compositions with real content before detailed polish. Select by hierarchy,
+  artwork prominence, density, and the player's task. Use a simple A/B screenshot
+  choice when user preference matters. Follow the one-screen calibration pilot
+  before propagating an unapproved treatment across the game.
+- Use existing type/color roles and owners. Give the main decision clear visual
+  emphasis. Make grouping, alignment, spacing and artwork crop work before
+  decorating. New panels, badges, borders, glow or motion must have an actual
+  information/interaction purpose; do not fill empty space with chrome or copy.
+- Apply the acceptance contract's copy test to each new explanatory block and
+  the text in the affected composition. Delete narration of visible controls,
+  state and success. Preserve mechanics, accessible names, errors and required
+  decisions. Use existing keyboard/pointer inspection for secondary details.
+  Update all translations through the localization workflow when copy changes.
+- Review art candidates at their actual display size and crop, in the game,
+  alongside existing assets. Compare silhouette, focal point, lighting,
+  materials, palette, ink/shading and detail density with approved anchors.
+  Reject poor composition before adding effects. Follow the established asset
+  pipeline; do not introduce a separate project-wide style.
 
-- Propose a compact visual direction tied to the player's task: information
-  hierarchy, composition, existing type and color roles, and interaction states.
-  Use a small wireframe when it clarifies a consequential layout choice.
-- Review the direction against the brief and comparable screens before coding.
-  Revise choices that feel like a generic template or conflict with Alchemy's
-  identity. Put visual emphasis on the player's main decision or outcome and
-  keep supporting elements quiet.
-- Let structure communicate information. Add borders, labels, divisions, or
-  numbering only when they express grouping, state, or an actual sequence.
-  Avoid decorative dashboard cards, hero sections, and repeated explanatory copy
-  unless the requested screen needs them.
-- Implement through existing owners and primitives. Preserve concise labels,
-  essential mechanics, accessible names, visible keyboard focus, and reduced
-  motion behavior. Follow UI.md's action-feedback rules: every supported action
-  communicates its acknowledgment and outcome visibly, including while muted.
-  Use purposeful motion to clarify changes; avoid unrelated decorative effects.
-- Write from the player's perspective. Name actions consistently, make failures
-  specific, and remove copy that repeats visible state. Do not add routine
-  success messages when the resulting state already communicates success.
+## Critique, verify and accept
 
-## Critique and verify
+Run a distinct critique pass from screenshots, the player task and reference,
+without starting from the implementation's justification. Make specific visible
+observations about hierarchy, alignment, spacing, type, contrast, artwork and
+visual noise; fix defects and recapture. Do not assign aesthetic scores.
 
-Review the implemented hierarchy, spacing, readability, supported display sizes,
-focus and selection states, and action outcomes against the brief. Remove
-decoration that adds no meaning; assess visual quality from rendered evidence.
+Separately exercise relevant pointer/keyboard flows, selection/focus,
+unavailability, pending/error outcomes, and muted/reduced-motion feedback.
+Inspect affected localized/long content and display sizes. Looking attractive
+cannot compensate for an unclear action or broken interaction.
 
-Follow [verification permissions](../../../CONTRIBUTING.md#what-to-run-when-you-change)
-and use [verifier](../verifier/SKILL.md) for edited-path checks. For an authorized
-interactive browser review, use [preview ownership](../../../CONTRIBUTING.md#agent-preview-ownership)
-and inspect actual screenshots of the affected screens and relevant interaction
-states before claiming visual validation. Code review and passing checks do not
-prove the rendered result. When browser execution is not authorized, complete
-the permitted checks and report visual validation as pending. This skill does
-not authorize browser execution, builds, or publication.
+Bounded local rendered review and focused browser checks for this work are
+already authorized. Use [managed previews](../../../CONTRIBUTING.md#agent-preview-ownership).
+Capture before/after at identical viewport and reproducible state; default to
+1920 × 1080. Loading states, code inspection and passing tests do not pass visual
+acceptance. Blocked rendering leaves acceptance pending and prevents ordinary
+integration; never disguise it as a nonvisual edit.
+
+Complete the [local evidence receipt](../../../Docs/UI_VISUAL_REVIEW.md#local-evidence-gate)
+and use [verifier](../verifier/SKILL.md) before handoff. Report appearance findings,
+copy removals/justifications, interaction coverage, remaining limitations and
+reference approval status separately from functional checks. Only explicit user
+selection promotes an image into the approved screen references. Keep only
+current approved examples, not experiment or task-report archives.
