@@ -43,7 +43,11 @@ without publishing state or consuming RNG.
 The battle route retains its outgoing display data through delays and fades.
 Outcome playback transfers its final frame into `battle-presentation-store`
 before settlement removes combat. Those retained frames are presentation only,
-never gameplay command inputs or resume data. Menu and meta navigation remain
+never gameplay command inputs or resume data. Presentation publication detaches
+caller-owned data; `copyForPublication` borrows only branches already validated
+and deeply frozen by `deepFreeze`. A shallow `Object.freeze` does not qualify.
+This retains immutable structural sharing across playback frames without
+freezing or retaining mutable caller-owned branches. Menu and meta navigation remain
 independent of activity, so an unfinished battle stays resumable there.
 
 Live reads and screen data expose `runProfile.gold` as `gold`. `profile` never owns gameplay currency. Homestead and talent mutations rebind live Health and battle manifests through the owning command. Battle VFX live separately in `run-loop/battle/` (state in `battle-presentation-store.ts`, overlays in `presentation/` leaves) and are not persisted.

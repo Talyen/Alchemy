@@ -8,7 +8,7 @@ import { createGameSession } from "@/features/alchemy/shared/stores/session/game
 import { readGearState } from "@/features/alchemy/shared/stores/session/gear-store";
 import { readProfileStore } from "@/features/alchemy/shared/stores/session/profile-store";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/commands/run-session-command";
-import { deepFreeze } from "@/features/alchemy/shared/stores/session/store-utils";
+import { copyForPublication, deepFreeze } from "@/features/alchemy/shared/stores/session/store-utils";
 import { useGameplayStateStore } from "@/features/alchemy/shared/stores/react/gameplay-state-store";
 import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
 import {
@@ -106,6 +106,22 @@ describe("aggregate read ports", () => {
       await gameSession.dispose();
       vi.unstubAllEnvs();
     }
+  });
+
+  it("copies unowned aliases and cycles without trusting shallow Object.freeze", () => {
+    const borrowed = deepFreeze({ values: [1] });
+    const mutable = { values: [2] };
+    const input = { borrowed, first: mutable, second: mutable, self: null as unknown };
+    input.self = input;
+    Object.freeze(input);
+    const copied = deepFreeze(copyForPublication(input));
+    expect(copied.borrowed).toBe(borrowed);
+    expect(copied.self).toBe(copied);
+    expect(copied.first).toBe(copied.second);
+    expect(copied.first).not.toBe(mutable);
+    mutable.values.push(3);
+    expect(copied.first.values).toEqual([2]);
+    expect(copyForPublication(copied)).toBe(copied);
   });
 
   it("traverses shallow-frozen and cyclic shared data", () => {

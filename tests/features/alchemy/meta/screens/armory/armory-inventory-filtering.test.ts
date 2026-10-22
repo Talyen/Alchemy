@@ -1,10 +1,9 @@
 import { installCatalogs, localization } from "@/lib/localization/runtime";
 import catalogs from "@/lib/localization/locales/runtime.json";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_ARMORY_INVENTORY_FILTERS,
-  matchesGearFilters,
-  matchesTrinketFilters,
+  createArmoryInventoryMatcher,
   type ArmoryInventoryFilters,
 } from "@/features/alchemy/meta/screens/armory/armory-inventory-filtering";
 import { getGearInstanceKeywordIds, type GearInstance } from "@/lib/gear";
@@ -23,9 +22,28 @@ const filters = (patch: Partial<ArmoryInventoryFilters>): ArmoryInventoryFilters
   ...patch,
 });
 
+let matcher = createArmoryInventoryMatcher();
+const matchesGearFilters = (item: GearInstance, criteria: ArmoryInventoryFilters) =>
+  matcher.matchesGearFilters(item, criteria);
+const matchesTrinketFilters = (item: TrinketEntry, criteria: ArmoryInventoryFilters) =>
+  matcher.matchesTrinketFilters(item, criteria);
+beforeEach(() => {
+  matcher = createArmoryInventoryMatcher();
+});
 afterEach(() => vi.restoreAllMocks());
 
 describe("Armory inventory matching", () => {
+  it("reuses search text across queries and rebuilds it for changed item references", () => {
+    const translate = vi.fn(<T>(value: T): T => value);
+    const cached = createArmoryInventoryMatcher(translate);
+    expect(cached.matchesGearFilters(sword, filters({ search: "longsword" }))).toBe(true);
+    const calls = translate.mock.calls.length;
+    expect(cached.matchesGearFilters(sword, filters({ search: "poison" }))).toBe(true);
+    expect(translate.mock.calls).toHaveLength(calls);
+    expect(cached.matchesGearFilters({ ...sword, affixes: [] }, filters({ search: "poison" }))).toBe(false);
+    expect(translate.mock.calls.length).toBeGreaterThan(calls);
+  });
+
   it("accepts localized item names and effects while retaining English searches", async () => {
     installCatalogs(catalogs);
     await localization.changeLanguage("de");

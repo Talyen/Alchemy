@@ -1,3 +1,5 @@
+import { installCatalogs, localization } from "@/lib/localization/runtime";
+import catalogs from "@/lib/localization/locales/runtime.json";
 import { createElement, StrictMode, type PropsWithChildren } from "react";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
@@ -47,6 +49,26 @@ describe("useArmoryOrdering", () => {
     descriptionLines: [],
     effects: {},
   };
+
+  it("invalidates cached searches when the language changes without replacing inventory", async () => {
+    installCatalogs(catalogs);
+    const props = {
+      characterId: "knight" as const,
+      selectedSlot: "main-hand" as const,
+      pickerItems: [swordAstral],
+      ownedTrinkets: [],
+    };
+    const { result } = renderHook(() => useArmoryOrdering(props));
+    act(() => result.current.setFilters({ ...DEFAULT_ARMORY_INVENTORY_FILTERS, search: "langschwert" }));
+    expect(result.current.visibleGear).toEqual([]);
+    try {
+      await act(() => localization.changeLanguage("de"));
+      expect(result.current.visibleGear).toEqual([swordAstral]);
+    } finally {
+      await act(() => localization.changeLanguage("en"));
+    }
+    expect(result.current.visibleGear).toEqual([]);
+  });
 
   it("switches between Gear and Trinkets without leaking items that share the same identity", () => {
     const gear = { ...swordBasic1, instanceId: trinketA.id };
