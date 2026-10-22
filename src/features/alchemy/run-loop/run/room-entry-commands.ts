@@ -1,13 +1,13 @@
 import { getBossById } from "@/features/alchemy/shared/config";
-import type { BattleStarted, BattleStartRequest } from "@/features/alchemy/shared/stores/battle-start-types";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import type { BattleStarted, BattleStartRequest } from "@/features/alchemy/shared/stores/commands/battle-start-types";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
   rejectCommand,
   snapshotTransactionValue,
   type RunTransaction,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   beginDestinationClaim,
   commitDestinationClaim,
@@ -17,7 +17,7 @@ import {
   setActiveLabyrinthPendingNode,
   setActiveLabyrinthRewardModifiers,
   setRunActivityData,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { LABYRINTH_TYPE_TO_DESTINATION } from "@/lib/content-systems/labyrinth/data";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-generation";
 import { DESTINATIONS, ROUTE_SCREENS, type Destination, type Screen } from "@/lib/routing";

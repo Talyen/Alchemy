@@ -4,8 +4,11 @@ import {
   beginMysteryVisitInTransaction,
 } from "@/features/alchemy/run-loop/run/room-visit-initialization";
 import type { ShopActivity } from "@/lib/active-run-session";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 
 export function initializeShopForTest(kind: ShopActivity, session: GameSession): void {
   dispatchRunSessionCommand((draft) => acceptCommand(initializeShopVisit(draft, kind)), undefined, session);

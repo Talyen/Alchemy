@@ -6,9 +6,9 @@ import { createProgressionCommands } from "@/features/alchemy/run-loop/run/progr
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
 import { DESTINATIONS, type Screen } from "@/lib/routing";
-import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/gameplay-command";
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { setRewardState, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/session/gameplay-command";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
+import { setRewardState, setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import {
   mutateGameplayForTest,
   setRunProgress,

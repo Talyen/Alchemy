@@ -6,7 +6,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { mutateRunForTest, setBattleActiveForTest } from "../../../../../helpers/run-domain-store-test";
-import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { battlePresentation } from "@/app/battle-presentation";
 import { BattleHand } from "@/features/alchemy/run-loop/screens/battle-screen/hand";
 import type {

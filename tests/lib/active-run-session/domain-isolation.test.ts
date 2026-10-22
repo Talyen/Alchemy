@@ -6,7 +6,7 @@ vi.mock("@/lib/validation", () => {
 });
 
 import { ACTIVE_RUN_PROGRESS_KEYS, createEmptyRewardState, serializePendingReward } from "@/lib/active-run-session";
-import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/run-state-init";
+import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/session/run-state-init";
 
 it("run domain isolation constructs seeded progress and reward activities without the save parser", () => {
   const run = createInitialActiveRunFields(null, "knight", () => 42);

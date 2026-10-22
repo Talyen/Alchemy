@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { vi } from "vitest";
-import { ModalOverlayShell } from "@/features/alchemy/shared/ui/modal-overlay-shell";
-import { setModalRoot } from "@/features/alchemy/shared/ui/portal-root";
+import { ModalOverlayShell } from "@/features/alchemy/shared/ui/dialogs/modal-overlay-shell";
+import { setModalRoot } from "@/features/alchemy/shared/ui/dialogs/portal-root";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { defineSequenceFamily, requireProgress, type Scenario } from "./sequence";
 import { advance, installFrames } from "./timing";

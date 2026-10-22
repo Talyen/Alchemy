@@ -1,13 +1,13 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { optionsScreenRoutes } from "@/app/screen-routes/options-screen-route";
-import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useSettingsStore } from "@/features/alchemy/shared/stores/react/settings-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import {
   flushDeviceDisplayPreferences,
   initDeviceDisplayPreferences,
   useDeviceDisplayStore,
-} from "@/features/alchemy/shared/stores/device-display-store";
+} from "@/features/alchemy/shared/stores/react/device-display-store";
 import { DEVICE_DISPLAY_STORAGE_KEY } from "@/features/alchemy/shared/storage";
 import type { OptionsRouteCtx } from "@/app/screen-routes/route-ctx";
 

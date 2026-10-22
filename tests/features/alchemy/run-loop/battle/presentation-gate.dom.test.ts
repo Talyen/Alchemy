@@ -1,4 +1,4 @@
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import { createBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

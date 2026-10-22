@@ -7,10 +7,10 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { createBattleDevOutcomes } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { readBattle } from "@/features/alchemy/shared/stores/session/run-reads";
 import { defaultBattleState } from "@/lib/battle";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
-import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
 
 function makeDevOutcomes(screen: string) {

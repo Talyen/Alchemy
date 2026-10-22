@@ -4,8 +4,8 @@ import { initializeShopForTest } from "../../../../helpers/visit-initialization"
 import { describe, expect, it, vi } from "vitest";
 import { shopItemSlotKey } from "@/lib/active-run-session";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
-import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   buildActions,
   createInitialAlchemistState,

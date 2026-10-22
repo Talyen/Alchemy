@@ -1,5 +1,5 @@
 import { afterEach, beforeEach } from "vitest";
-import { trackFocusInput } from "@/features/alchemy/shared/ui/focus-input";
+import { trackFocusInput } from "@/features/alchemy/shared/ui/dialogs/focus-input";
 
 /** Mirror the app's input tracking in isolated UI tests. */
 export function installFocusInputForTests(keyboard = false): void {

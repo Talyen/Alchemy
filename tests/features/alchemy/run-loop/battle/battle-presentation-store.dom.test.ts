@@ -18,8 +18,8 @@ import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { patchBattleState, makeTestCard } from "../../../../fixtures/battle";
 import { battlePresentation } from "@/app/battle-presentation";
-import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import { setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { defaultGameSession } from "@/app/application-session";
 

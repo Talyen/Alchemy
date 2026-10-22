@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import type { BattleCard, CardDescriptionContext } from "@/lib/game-data";
 
 import { BattleCardButton } from "../../../shared/ui/cards/card-button";
-import { useUiStore } from "../../../shared/stores/ui-store";
+import { useUiStore } from "../../../shared/stores/react/ui-store";
 import { getHoverId } from "../../../shared/utils";
 import { CombatantStatusEffectPresentation } from "../../battle/presentation/ui/combatant-status-effect-presentation";
 import { getCardDisplayTitle } from "../../../shared/ui/cards/card-description-ui";
@@ -35,7 +35,7 @@ import { getHandCardKey } from "../../battle/playable-hand";
 import { getElementCenterX, playHandSlotReflows, type HandSlotReflow } from "./hand-slot-reflow";
 import { useHandPresentation } from "../../battle/presentation/use-hand-presentation";
 import type { BattleSnapshot } from "@/lib/battle";
-import { focusControl } from "../../../shared/ui/focus-navigation";
+import { focusControl } from "../../../shared/ui/dialogs/focus-navigation";
 import { getActiveCcKeyword, type ActiveCcKeyword } from "@/lib/battle";
 
 const HandCardItem = memo(function HandCardItem({

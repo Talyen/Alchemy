@@ -17,7 +17,7 @@ import {
 } from "@/lib/game-data";
 
 import { TalentOverviewGrid } from "../talents/talent-overview-grid";
-import { ConfirmationDialog } from "../../shared/ui/dialogs";
+import { ConfirmationDialog } from "../../shared/ui/dialogs/dialogs";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { ChromeIconButton } from "../../shared/ui/chrome-icon-button";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
@@ -26,7 +26,7 @@ import { FadeSlot } from "../../shared/ui/use-fade";
 import { cn } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
-import { useCaptureEscapeCancel } from "../../shared/ui/use-modal-escape-dismiss";
+import { useCaptureEscapeCancel } from "../../shared/ui/dialogs/use-modal-escape-dismiss";
 
 const TALENT_PANE_CLASS = "col-start-1 row-start-1 flex w-full flex-col items-center";
 

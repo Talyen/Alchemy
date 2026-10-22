@@ -13,15 +13,15 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID, DRAFT_ROUNDS } from "@/lib/game-constants";
 import { makeTestCard } from "../../../../fixtures/battle";
-import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/gameplay-command";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/session/gameplay-command";
 import {
   readActiveRun,
   readActiveRunScreen,
   readBattle,
   readRunSession,
-} from "@/features/alchemy/shared/stores/run-reads";
-import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+} from "@/features/alchemy/shared/stores/session/run-reads";
+import { setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { readProfileStore } from "@/features/alchemy/shared/stores/session/profile-store";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { getStartingDeck } from "@/lib/game-data";

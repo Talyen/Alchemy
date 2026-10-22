@@ -1,14 +1,14 @@
-import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
-import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/run-session-command";
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session/session-capabilities";
+import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/commands/deck-mutations";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   createDraftRunRandomSource,
   deductGold,
   readDraftGold,
   setRunDeck,
   setShopState,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
 import { SHOP_CARDS_OFFERED } from "@/lib/game-constants";
 import { isValidDeckIndex } from "@/lib/utils";

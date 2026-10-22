@@ -1,6 +1,6 @@
-import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session/session-capabilities";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { BATTLE_END_TRANSITION_DELAY_MS } from "@/lib/game-constants";

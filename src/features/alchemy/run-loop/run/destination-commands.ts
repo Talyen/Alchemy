@@ -1,17 +1,17 @@
 import { CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
   rejectCommand,
   type RunTransaction,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   addGold,
   createDraftRunRandomSource,
   setAlchemyVisit,
   setRunPlayerHealth,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { getCampfireRestHealth } from "@/lib/campfire-heal";
 import { activeLabyrinthBenefits, labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
 import { LABYRINTH_MODIFIER_CONFIG } from "@/lib/game-constants";

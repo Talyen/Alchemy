@@ -1,6 +1,6 @@
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { restoreSessionSave } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { restoreSessionSave } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import { ACTS_PER_RUN, DESTINATIONS_PER_ACT } from "@/lib/game-constants";
 import type { CharacterId } from "@/lib/game-data";
 import { characters } from "@/lib/game-data";

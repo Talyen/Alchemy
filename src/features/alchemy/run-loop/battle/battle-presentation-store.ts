@@ -1,5 +1,8 @@
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { bindSessionCapabilities, registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import {
+  bindSessionCapabilities,
+  registerSessionCleanup,
+} from "@/features/alchemy/shared/stores/session/session-capabilities";
 import {
   createCombatFeedback,
   createCombatFeedbackState,
@@ -9,12 +12,12 @@ import {
 import { createStore } from "zustand/vanilla";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { projectMana, MANA_DOCK_EXIT_MS, type ManaPresentation } from "./mana-presentation";
-import { createNotificationChannel } from "@/features/alchemy/shared/stores/notification-channel";
-import { deepFreeze } from "@/features/alchemy/shared/stores/store-utils";
+import { createNotificationChannel } from "@/features/alchemy/shared/stores/session/notification-channel";
+import { deepFreeze } from "@/features/alchemy/shared/stores/session/store-utils";
 import { logError } from "@/lib/error-logger";
 import { battleSnapshot } from "@/lib/battle";
-import { readBattle, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
-import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { readBattle, readRunPhase } from "@/features/alchemy/shared/stores/session/run-reads";
+import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { CardGhost, CardTransfer } from "../../shared/types";
 import {

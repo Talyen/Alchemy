@@ -1,5 +1,5 @@
-import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/session/run-reads";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import type { BrewingObservation, BrewingOpportunity } from "./brewing-offers";
 import type { CareerResult, PlayerChoice } from "./types";
 

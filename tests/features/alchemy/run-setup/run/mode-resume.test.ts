@@ -11,16 +11,20 @@ import {
   evaluateSaveCandidates,
   hydrateAlchemyPersistenceFields,
 } from "@/features/alchemy/shared/storage";
-import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readActiveRunScreen, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import { setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import {
+  readActiveRunScreen,
+  readRunProfile,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/session/run-reads";
 import {
   mutateGameplayForTest,
   resetAllTestStores,
   setRunProgress,
   setRunSession,
 } from "../../../../helpers/run-domain-store-test";
-import { ANCIENT_ALTAR_MYSTERY_VISIT } from "../../shared/stores/active-run-data-fixture";
+import { ANCIENT_ALTAR_MYSTERY_VISIT } from "../../shared/stores/session/active-run-data-fixture";
 import { defaultGameSession } from "@/app/application-session";
 import { savedActivityFixture } from "../../../../fixtures/run-activity";
 

@@ -1,6 +1,6 @@
 # Alchemy architecture
 
-Canonical reference for run state, store layout, and boot policy. Coding rules: [AGENTS.md](../AGENTS.md). Gameplay / battle rules: [GAME_RULES.md § Battle](./GAME_RULES.md#battle-implementation-rules). How-to: [WORKFLOWS.md](./WORKFLOWS.md). Hooks and tests: [CONTRIBUTING.md](../CONTRIBUTING.md). Audits: [Audits/README.md](./Audits/README.md).
+Canonical map of repository ownership, feature layout, and application composition. Coding rules: [AGENTS.md](../AGENTS.md). Gameplay / battle rules: [GAME_RULES.md § Battle](./GAME_RULES.md#battle-implementation-rules). How-to: [WORKFLOWS.md](./WORKFLOWS.md). Hooks and tests: [CONTRIBUTING.md](../CONTRIBUTING.md). Audits: [Audits/README.md](./Audits/README.md).
 
 `src/lib/` stays React-free. Feature UI lives under `src/features/alchemy/`.
 
@@ -12,17 +12,77 @@ Canonical reference for run state, store layout, and boot policy. Coding rules: 
 - [Battle controllers](./BATTLE_CONTROLLERS.md): command props, committed playback, and navigation timing.
 - Below: feature layout, run setup, shops, meta progression, import boundaries, and boot.
 
+## Repository ownership
+
+Start here to locate a subsystem, then follow its contract or workflow. Command
+selection belongs to [Commands](./COMMANDS.md), execution policy to
+[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change), and tooling internals
+to the [scripts map](../scripts/README.md). [Agent discovery](./AGENT_DISCOVERY.md)
+provides optional lookup over these owners.
+
+| Responsibility                                      | Implementation home                                                                                 | Contract or workflow                                                                                |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Application boot and route composition              | `src/app/`, `src/features/alchemy/shell/`                                                           | [Boot](#boot-and-loading), [screen workflows](./WORKFLOWS.md)                                       |
+| Game session, transactions, reads and initial state | `src/features/alchemy/shared/stores/session/`                                                       | [Run state](./RUN_STATE.md)                                                                         |
+| Gameplay commands, lifecycle and draft writes       | `src/features/alchemy/shared/stores/commands/`                                                      | [Run workflows](./RUN_WORKFLOWS.md)                                                                 |
+| Session save codecs                                 | `src/features/alchemy/shared/stores/persistence/`                                                   | [Persistence API](./RUN_STATE.md#persistence-api)                                                   |
+| React state adapters and presentation stores        | `src/features/alchemy/shared/stores/react/`                                                         | [Capability ports](./RUN_STATE.md#session-capability-ports)                                         |
+| Save transport and durable writes                   | `src/features/alchemy/shared/storage/`, `src/lib/platform-save-backend.ts`                          | [Save compatibility](../src/features/alchemy/shared/storage/MIGRATIONS.md)                          |
+| Saved-data schemas, parsing and recovery            | `src/lib/validation/`                                                                               | [Persistence ownership](#persistence-ownership)                                                     |
+| Run activity contracts and pure visit conversion    | `src/lib/active-run-session/`                                                                       | [Activity and rewards](./RUN_STATE.md#activity-and-rewards)                                         |
+| Battle rules and effects                            | `src/lib/battle/`                                                                                   | [Game rules](./GAME_RULES.md#battle-implementation-rules)                                           |
+| Cards, characters, enemies and authored catalogs    | `src/lib/game-data/`                                                                                | [Content authoring](./CONTENT_AUTHORING.md)                                                         |
+| Authored-content correctness                        | `src/lib/content-validation/`                                                                       | [Content authoring](./CONTENT_AUTHORING.md)                                                         |
+| Campaign alternatives and map generation            | `src/lib/content-systems/`                                                                          | [Content-system workflow](./WORKFLOWS.md#content-system-behavior)                                   |
+| Gear, loot, Homestead, corruption and brewing rules | `src/lib/gear/`, `src/lib/loot/`, `src/lib/homestead/`, `src/lib/corruption/`, `src/lib/alchemist/` | [Armory](./ARMORY.md), [unique items](./UNIQUE_ITEMS.md), [game rules](./GAME_RULES.md)             |
+| Destination and screen policies                     | `src/lib/routing/`, `src/features/alchemy/run-loop/navigation/`                                     | [Run loop](#run-loop-overview)                                                                      |
+| Shared tuning                                       | `src/lib/game-constants/`                                                                           | [Tuning conventions](./CONTENT_AUTHORING.md#shared-tuning)                                          |
+| Reusable UI, dialogs and inspection                 | `src/components/`, `src/features/alchemy/shared/ui/`                                                | [UI](./UI.md)                                                                                       |
+| Audio and image loading                             | `src/lib/audio/`, `src/lib/preload/`                                                                | [Audio](./AUDIO.md), [boot](#boot-and-loading)                                                      |
+| Localization                                        | `src/lib/localization/`, `scripts/localization/`                                                    | [Localization](./LOCALIZATION.md)                                                                   |
+| Headless careers and battle simulation              | `src/app/playthrough/`, `src/lib/balance/`, `scripts/lib/playthrough/`                              | [Playthroughs](./PLAYTHROUGH_SIMULATION.md), [battle simulation](./REFERENCE.md#balance-simulation) |
+| Performance scenarios and runner                    | `performance/`, `scripts/lib/performance/`                                                          | [Performance](./PERFORMANCE.md)                                                                     |
+| Desktop bridge, packaging and Steam                 | `desktop/`, `src/lib/desktop-api.ts`, `src/lib/platform.ts`, `steam/`, `scripts/lib/release/`       | [Release](./RELEASE.md), [Steam demo](./STEAM_DEMO.md)                                              |
+| Verification and import rules                       | `tests/`, `scripts/lib/verification/`, `lint/`                                                      | [Contributing](../CONTRIBUTING.md), [verification implementation](../scripts/VERIFICATION.md)       |
+| Asset masters, prepared art and public media        | External Asset Library, `src/assets/`, `public/`, `scripts/assets/`                                 | [Assets](./WORKFLOWS-ASSETS.md)                                                                     |
+
+Tests mirror their source owners under `tests/`. Cross-subsystem interaction,
+architecture, browser, Electron and playthrough suites retain their distinct
+homes because they validate contracts spanning multiple owners.
+
+## Persistence ownership
+
+Follow the save path by responsibility rather than treating every save-related
+module as storage:
+
+- **Schemas and repair:** `lib/validation/` validates saved input and recovers
+  damaged data. `lib/active-run-session/` owns domain activity shapes and pure
+  visit conversions shared by live commands and save recovery; it must not
+  depend on validation or transport.
+- **Codecs:** `shared/stores/persistence/` selects and detaches session fields,
+  applies defaults, and hydrates through the owning transaction. Gear, profile,
+  settings, permanent progress and run-resume codecs live here. Session reads
+  and mutations remain with their session or command owners.
+- **Storage:** `shared/storage/` owns backend access, save queues, recovery
+  candidates, snapshots and completion tracking. `persistence.ts` composes
+  codecs into the versioned envelope and performs bootstrap hydration; it does
+  not own gameplay rules. Platform backends live at the I/O seam.
+
+[Persistence API](./RUN_STATE.md#persistence-api) owns the detailed contract;
+[change persisted data](./RUN_WORKFLOWS.md#change-persisted-save-data) owns the
+editing sequence. These directory roles do not change the saved format.
+
 ## Directory layout (`src/features/alchemy/`)
 
-- **`shared/`** — `stores/`, `storage/`, `ui/`, `config/`, `context/`, `utils/`, `run-flow/`, `types.ts`
+- **`shared/`** — `stores/` (`session/`, `commands/`, `persistence/`, `react/`), `storage/`, `ui/`, `config/`, `context/`, `utils/`, `run-flow/`, `types.ts`
 - **`meta/`** — Menu, collection, homestead, talents, armory screens
 - **`run-setup/`** — Character, difficulty, draft screens
 - **`run-loop/`** — Battle glue, navigation, shop, in-run screens
 - **`shell/`** — Screen routing + run/battle controller composition (see navigation vocabulary below)
 
-`shared/ui/tooltips/` owns tooltip placement, panels, and item popups; `shared/ui/inspection/` owns card and enemy inspection overlays and their grid/sorting helpers. `shared/ui/cards/` owns card rendering and selection used across screens. General shared hooks stay directly in `shared/ui/`; battle-only panels and playback visuals live under `run-loop/battle/presentation/` (`ui/` for panels and effects). Unit tests mirror these owners. Collection-only presentation lives in `meta/screens/collection/`; shop purchase and service widgets live in `run-loop/shop/ui/`. Mystery outcome badges live beside their screens in `run-loop/screens/mystery/`; Options panels, controls, and the error-log viewer live in `meta/screens/options/`. Display scaling belongs to `shared/ui/use-virtual-resolution.ts`; the general latest-value ref hook belongs to `shared/ui/use-latest-ref.ts`. Import shared UI directly from its owning module rather than a catch-all barrel.
+`shared/ui/tooltips/` owns tooltip placement, panels, and item popups; `shared/ui/inspection/` owns card and enemy inspection overlays and their grid/sorting helpers. `shared/ui/cards/` owns card rendering and selection used across screens. `shared/ui/dialogs/` owns modal shells, focus ownership/navigation, portal roots, and dialog dismissal; hooks without a cohesive subsystem stay directly in `shared/ui/`; battle-only panels and playback visuals live under `run-loop/battle/presentation/` (`ui/` for panels and effects). Unit tests mirror these owners. Collection-only presentation lives in `meta/screens/collection/`; shop purchase and service widgets live in `run-loop/shop/ui/`. Mystery outcome badges live beside their screens in `run-loop/screens/mystery/`; Options panels, controls, and the error-log viewer live in `meta/screens/options/`. Display scaling belongs to `shared/ui/use-virtual-resolution.ts`; the general latest-value ref hook belongs to `shared/ui/use-latest-ref.ts`. Import shared UI directly from its owning module rather than a catch-all barrel.
 
-Import lib catalogs through their Oxlint-enforced barrels (`@/lib/game-data`, `@/lib/battle`, `@/lib/validation`, `@/lib/content-validation`). Feature stores and screens use on-disk paths (for example `@/features/alchemy/shared/stores/run-reads`). Feature UI reads static catalogs through [`shared/config/game-data-catalog.ts`](../src/features/alchemy/shared/config/game-data-catalog.ts). Content parity helpers live under `@/lib/content-validation/card-parity` (the only sanctioned deep path: relative imports inside the package plus test deep imports, which sit outside boundary lint; every other `src/` import goes through the barrel). Naming rule for the three similarly-named lib areas: authored-content correctness (card text matches effects, catalogs are consistent) belongs in `content-validation`; persisted save shapes, normalization, and migrations belong in `validation`; mode logic (labyrinth/wildwood map generation, encounter-trait picking) belongs in `content-systems`. Tests sit outside boundary lint and may deep-import battle leaves (for example `@/lib/battle/encounter-trait-events`); `src/` must use the `@/lib/battle` barrel. Battle state contracts (`battle/types.ts` and `battle/types/state-types.ts`) are type-only; they cannot import or re-export executable rules. Internal callers import mechanics from their owners: `health-state.ts` for Health, healing and death prevention; `status-state.ts` for status writes; `enemy-mitigation-state.ts` for enemy defenses; `encounter-trait-state.ts` for immutable trait lookups; `resource-state.ts` for Mana and Gold; and `damage-modifiers.ts` for damage scaling. Snapshot serialization and crowd-control eligibility live in `battle-snapshot.ts` and `crowd-control-policy.ts`. This keeps low-level state contracts independent of gameplay and makes rule dependencies explicit. The battle barrel exports the gameplay surface only — hit-pipeline staging helpers (`remapDrawnCardBenefits`, `playerStatusDelta`, `mitigatePlayerCombatDamage`, `scaleReceivedPlayerDamage`) and single-use tooling (`regrowEnemyThorns`) stay importable by relative path inside `src/lib/battle/` but are not barrel exports.
+Import lib catalogs through their Oxlint-enforced barrels (`@/lib/game-data`, `@/lib/battle`, `@/lib/validation`, `@/lib/content-validation`). Feature stores and screens use on-disk paths (for example `@/features/alchemy/shared/stores/session/run-reads`). Feature UI reads static catalogs through [`shared/config/game-data-catalog.ts`](../src/features/alchemy/shared/config/game-data-catalog.ts). Content parity helpers live under `@/lib/content-validation/card-parity` (the only sanctioned deep path: relative imports inside the package plus test deep imports, which sit outside boundary lint; every other `src/` import goes through the barrel). Naming rule for the three similarly-named lib areas: authored-content correctness (card text matches effects, catalogs are consistent) belongs in `content-validation`; persisted save shapes, normalization, and migrations belong in `validation`; mode logic (labyrinth/wildwood map generation, encounter-trait picking) belongs in `content-systems`. Tests sit outside boundary lint and may deep-import battle leaves (for example `@/lib/battle/encounter-trait-events`); `src/` must use the `@/lib/battle` barrel. Battle state contracts (`battle/types.ts` and `battle/types/state-types.ts`) are type-only; they cannot import or re-export executable rules. Internal callers import mechanics from their owners: `health-state.ts` for Health, healing and death prevention; `status-state.ts` for status writes; `enemy-mitigation-state.ts` for enemy defenses; `encounter-trait-state.ts` for immutable trait lookups; `resource-state.ts` for Mana and Gold; and `damage-modifiers.ts` for damage scaling. Snapshot serialization and crowd-control eligibility live in `battle-snapshot.ts` and `crowd-control-policy.ts`. This keeps low-level state contracts independent of gameplay and makes rule dependencies explicit. The battle barrel exports the gameplay surface only — hit-pipeline staging helpers (`remapDrawnCardBenefits`, `playerStatusDelta`, `mitigatePlayerCombatDamage`, `scaleReceivedPlayerDamage`) and single-use tooling (`regrowEnemyThorns`) stay importable by relative path inside `src/lib/battle/` but are not barrel exports.
 
 > Token-barrel exception: keep `game-data-catalog.ts` off the token `config/` barrel so layout/token imports stay catalog-free.
 
@@ -54,7 +114,7 @@ The main menu offers Continue when a run is unfinished, otherwise Play. Continue
 
 Destination eligibility is pure in `shared/run-flow/resolve-available-destinations.ts`;
 weighted offer construction lives in `shared/run-flow/destination-flow.ts`.
-`shared/stores/destination-offer-command.ts` derives act, room history, Health,
+`shared/stores/commands/destination-offer-command.ts` derives act, room history, Health,
 Gold, and collection eligibility from the open transaction. Run start, resume
 repair, and progression use that owner; victory supplies its plain eligibility
 context to reward calculation, which uses settled Health and Gold. Domain
@@ -173,7 +233,7 @@ choice sampling. It returns a typed offer without run settlement fields;
 `reward-flow.ts` adds the reward state defaults, settled Gold, Materials, destinations,
 and post-claim routing.
 
-Single owners to know: `shared/stores/write/run-progress.ts` owns run-earned Material
+Single owners to know: `shared/stores/commands/write/run-progress.ts` owns run-earned Material
 and currency tallies; `alchemy/no-run-earned-add-materials` enforces their write boundary;
 `battle/playback-gate.ts` owns the shared Card, Wish, and auto-end-turn gate
 (`isBattlePlaybackBlocked`, `usePlaybackBlocked`). `use-battle-autoplay.ts` selects
@@ -184,8 +244,8 @@ owns explicit playback phases, binding readiness, cancellation, timers, transfer
 is shared even when callers copy dependencies to strengthen a screen guard.
 `battle/battle-transfers.ts` supplies DOM measurements, sound, and timed transfer wiring.
 `battle/battle-session.ts` adapts that lifetime to presentation and delegates turn
-commit to `shared/stores/battle-commands.ts`; restore hydrates committed snapshots after save-version gating. Battle start
-uses `shared/stores/battle-start-commands.ts` and then arms presentation. Fight feedback (floating numbers + shake + sound) is
+commit to `shared/stores/commands/battle-commands.ts`; restore hydrates committed snapshots after save-version gating. Battle start
+uses `shared/stores/commands/battle-start-commands.ts` and then arms presentation. Fight feedback (floating numbers + shake + sound) is
 unified in `presentCombatTexts` in `battle/controller-utils.ts`; card overlay
 layers live beside their leaves (`card-ghost-overlay.tsx`,
 `card-transfer-overlay.tsx`).
@@ -240,11 +300,11 @@ shelf assignment, and modifier ordering, follow
   derives fresh defaults and field types from it and owns encoding and hydration.
   Options receives these values and named actions directly through route props.
 
-Gameplay progression remains in the [aggregate regions](./RUN_STATE.md#run-state); persistence follows the [codec contract](./RUN_STATE.md#persistence-api). Run reward finalization uses the write module and `run-lifecycle.ts` (`finalizeRunXP`, `awardMaterialsDuringRun` — see [grant materials](./RUN_WORKFLOWS.md#grant-materials-during-a-run)), never the discovery-only profile region. `error-log-store.ts` is a standalone local-only error buffer (own storage key, debounced persist); `shared/stores/reset.ts` owns the Options wipe (distinct from the audio test reset in `src/lib/audio/reset.ts`). Both sit outside the gameplay aggregate and its save codecs.
+Gameplay progression remains in the [aggregate regions](./RUN_STATE.md#run-state); persistence follows the [codec contract](./RUN_STATE.md#persistence-api). Run reward finalization uses the write module and `run-lifecycle.ts` (`finalizeRunXP`, `awardMaterialsDuringRun` — see [grant materials](./RUN_WORKFLOWS.md#grant-materials-during-a-run)), never the discovery-only profile region. `error-log-store.ts` is a standalone local-only error buffer (own storage key, debounced persist); `shared/stores/commands/reset.ts` owns the Options wipe (distinct from the audio test reset in `src/lib/audio/reset.ts`). Both sit outside the gameplay aggregate and its save codecs.
 
 ## Permanent Gear (`gear-store`)
 
-Owned Gear and per-character loadouts live in `shared/stores/gear-store.ts`. Pure rules live under `src/lib/gear/`; per-command draft views and health-sync wrappers live in `gear-session-command.ts` (`GearDraftView` with deeply readonly collection views and guarded mutation methods, explicit write tracking — no snapshot comparison). `gear-state-defaults.ts` owns `createInitialGearState` and save-field defaults independently of live mutation code; `gear-actions.ts` owns draft mutators. Player actions live in `gear-commands.ts`; routes and headless playthroughs cannot supply draft callbacks or save-flush adapters. Salvage owns removal and all payouts in `salvageGearInTransaction`, outside the generic draft view. Import boundaries keep Gear mutation internals store-owned. Gear is meta progression, not copied into active-run data; battle snapshots `BattleState.gearEffects` and live meta mutations rebind via `rebindLiveRunMeta`. Feature code reads through `gear-store.ts`. Screen, mutations, and HP-sync: [ARMORY.md](./ARMORY.md). Authoring new items: [WORKFLOWS § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
+Owned Gear and per-character loadouts live in `shared/stores/session/gear-store.ts`. Pure rules live under `src/lib/gear/`; per-command draft views and health-sync wrappers live in `gear-session-command.ts` (`GearDraftView` with deeply readonly collection views and guarded mutation methods, explicit write tracking — no snapshot comparison). `gear-state-defaults.ts` owns `createInitialGearState` and save-field defaults independently of live mutation code; `gear-actions.ts` owns draft mutators. Player actions live in `gear-commands.ts`; routes and headless playthroughs cannot supply draft callbacks or save-flush adapters. Salvage owns removal and all payouts in `salvageGearInTransaction`, outside the generic draft view. Import boundaries keep Gear mutation internals store-owned. Gear is meta progression, not copied into active-run data; battle snapshots `BattleState.gearEffects` and live meta mutations rebind via `rebindLiveRunMeta`. Feature code reads through `gear-store.ts`. Screen, mutations, and HP-sync: [ARMORY.md](./ARMORY.md). Authoring new items: [WORKFLOWS § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
 
 ## Types
 
@@ -259,7 +319,7 @@ explicit capabilities (for example command-bound RNG), rather than data to copy.
 
 `GameplayState` in `gameplay-state.ts` defines the [aggregate regions](./RUN_STATE.md#run-state). Read, write, command, and screen contracts are listed in the [capability reference](./RUN_STATE.md#session-capability-ports); persistence types are in the [codec contract](./RUN_STATE.md#persistence-api).
 
-Run-progress contracts and the exhaustive `ACTIVE_RUN_PROGRESS_KEYS` projection live in `lib/active-run-session/run-progress.ts`, independently of save validation. `lib/validation` owns saved-run parsing and recovery; its schemas check the domain contracts. Initial progress and permanent fields, `generateRandomRunSeed`, and `pickActiveRunView` live in `run-state-init.ts`; `run-domain-types.ts` defines session, battle, and run-data fields. `profile-store-types.ts` owns its domain (completion buckets derived from the character registry); `gear-state-defaults.ts` owns the initial gear state. Fresh-run snapshots live in `shared/run-flow/run-start.ts`. Shared numeric manifest defaults use `createNumericManifest` from `manifest-utils.ts`. Talent IDs, presentation, and bonuses share the ordered `talents/talent-rows.ts` catalog. Its authored bonus shapes derive `TalentEffectManifest` and neutral defaults; `manifest-defaults.ts` registers only Homestead-only fields and special defaults. Numeric additions use explicit `add(amount)` values, while ordinary values set and arrays concatenate.
+Run-progress contracts and the exhaustive `ACTIVE_RUN_PROGRESS_KEYS` projection live in `lib/active-run-session/run-progress.ts`, independently of save validation. `lib/validation` owns saved-run parsing and recovery; its schemas check the domain contracts. Initial progress and permanent fields, `generateRandomRunSeed`, and `pickActiveRunView` live in `run-state-init.ts`; `run-domain-types.ts` defines session, battle, and run-data fields. `profile-store-types.ts` owns its domain (completion buckets derived from the character registry); `gear-state-defaults.ts` owns the initial gear state. `stores/persistence/gear-codec.ts`, `profile-codec.ts`, and `settings-codec.ts` own their save conversions independently of live reads and actions. Fresh-run snapshots live in `shared/run-flow/run-start.ts`. Shared numeric manifest defaults use `createNumericManifest` from `manifest-utils.ts`. Talent IDs, presentation, and bonuses share the ordered `talents/talent-rows.ts` catalog. Its authored bonus shapes derive `TalentEffectManifest` and neutral defaults; `manifest-defaults.ts` registers only Homestead-only fields and special defaults. Numeric additions use explicit `add(amount)` values, while ordinary values set and arrays concatenate.
 
 ## Import boundaries
 

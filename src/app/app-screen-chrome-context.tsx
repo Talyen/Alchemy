@@ -3,12 +3,12 @@ import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { characterArt, characters, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { hasUnspentTalentPoint } from "@/lib/game-data";
 import { hasAffordableHomesteadUpgrade } from "@/lib/homestead/affordability";
-import { useProfileDiscoverySlice } from "@/features/alchemy/shared/stores/use-profile-store";
+import { useProfileDiscoverySlice } from "@/features/alchemy/shared/stores/react/use-profile-store";
 import {
   useActiveRunCharacterId,
   useHomesteadProgressSlice,
   useTalentProgressSlice,
-} from "@/features/alchemy/shared/stores/use-run-reads";
+} from "@/features/alchemy/shared/stores/react/use-run-reads";
 import type { Screen } from "@/lib/routing";
 
 export interface AppScreenChrome {

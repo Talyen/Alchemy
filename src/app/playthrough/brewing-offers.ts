@@ -1,7 +1,7 @@
 import { isPotionCard } from "@/lib/game-data";
 import { HALF_DIVISOR } from "@/lib/game-constants";
-import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import { cardSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { getCampfireBrewKind } from "@/lib/alchemist/brewing";
 import { brewCandidates, potionPurchaseScore, potionUtility } from "./brewing-policy";

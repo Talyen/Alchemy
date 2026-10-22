@@ -1,11 +1,11 @@
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   readActiveRun,
   readActiveRunScreen,
   readBattle,
   readRunProfile,
   readRunSession,
-} from "@/features/alchemy/shared/stores/run-reads";
+} from "@/features/alchemy/shared/stores/session/run-reads";
 import { createEmptyAnomalies, sampleAnomalies } from "@/lib/balance/anomalies";
 import { snapshotBattle, snapshotRunProgress } from "./telemetry";
 import type { CareerConfig, CareerResult, PlayerChoice } from "./types";

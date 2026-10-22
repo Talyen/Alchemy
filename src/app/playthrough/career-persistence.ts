@@ -4,14 +4,14 @@ import {
   evaluateSaveCandidates,
   type UnstampedSaveData,
 } from "@/features/alchemy/shared/storage";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   readActiveRunScreen,
   readBattle,
   readHasActiveRun,
   readRunSession,
   selectAutosaveAllowed,
-} from "@/features/alchemy/shared/stores/run-reads";
+} from "@/features/alchemy/shared/stores/session/run-reads";
 import { createHash } from "node:crypto";
 import { performance } from "node:perf_hooks";
 import { createAlchemyAutosaveLifecycle } from "../autosave-lifecycle";

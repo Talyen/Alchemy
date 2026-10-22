@@ -1,4 +1,4 @@
-import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/run-session-command";
+import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   isEditionCharacterAvailable,
   isEditionModeAvailable,
@@ -9,9 +9,9 @@ import { isCharacterUnlocked } from "@/lib/game-data";
 import { type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
-import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
-import type { RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
-import { applyRunStartSnapshot } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { discoverCardIds } from "@/features/alchemy/shared/stores/session/profile-store";
+import type { RunTransaction } from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { applyRunStartSnapshot } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { createRunStartSnapshot, type RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 
 interface CreateRunStartSnapshotInput {

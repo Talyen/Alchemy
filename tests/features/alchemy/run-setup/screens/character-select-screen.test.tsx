@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CharacterSelectScreen } from "@/features/alchemy/run-setup/screens/character-select-screen";
 
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 
 describe("CharacterSelectScreen", () => {
   afterEach(() => {

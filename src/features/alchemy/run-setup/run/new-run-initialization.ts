@@ -1,13 +1,13 @@
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import { createStarterDraftChoices } from "@/features/alchemy/shared/run-flow/starter-draft";
-import { sampleAndApplyDestinationOffer } from "@/features/alchemy/shared/stores/destination-offer-command";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { sampleAndApplyDestinationOffer } from "@/features/alchemy/shared/stores/commands/destination-offer-command";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
   snapshotTransactionValue,
   type RunTransaction,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   createDraftRunRandomSource,
   initializeBattle,
@@ -16,8 +16,8 @@ import {
   setRunProgressActivity,
   setStarterDraftChoices,
   setWildwoodDraft,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";

@@ -22,8 +22,8 @@ import { logError } from "@/lib/error-logger";
 import { isDesktop, setDisplayMode as setPlatformDisplayMode } from "@/lib/platform";
 import type { DisplayMode } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { useHasActiveBattle } from "@/features/alchemy/shared/stores/use-run-reads";
+import { readBattle } from "@/features/alchemy/shared/stores/session/run-reads";
+import { useHasActiveBattle } from "@/features/alchemy/shared/stores/react/use-run-reads";
 
 interface AppAudioEffectsOptions {
   masterVolume: number;

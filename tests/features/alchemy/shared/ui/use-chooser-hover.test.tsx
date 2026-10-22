@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, expect, it } from "vitest";
 import { useChooserHover } from "@/features/alchemy/shared/ui/use-chooser-hover";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
 
 installFocusInputForTests(true);

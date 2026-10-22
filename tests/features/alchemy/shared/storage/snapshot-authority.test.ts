@@ -1,12 +1,15 @@
 import { createSaveBackend } from "../../../../helpers/save-backend";
 import { expect, it, vi } from "vitest";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
-import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
+import { sessionRuntime } from "@/features/alchemy/shared/stores/session/session-runtime";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { setGold } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { deferred } from "../../../../helpers/deferred";
 
 function fixture() {

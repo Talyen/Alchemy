@@ -1,0 +1,391 @@
+import { releaseEdition } from "../release/game-edition.mjs";
+import { runTaskCommand } from "../run-command.mjs";
+/**
+ * On-demand FPS / hitch profiling runner.
+ * Usage:
+ *   node scripts/run-performance.mjs
+ *   node scripts/run-performance.mjs --scenario collection-tabs
+ *   node scripts/run-performance.mjs --all
+ *   node scripts/run-performance.mjs --trace --scenario battle-effects
+ *   node scripts/run-performance.mjs --compare reports/performance/a reports/performance/b
+ *   node scripts/run-performance.mjs --electron --scenario collection-tabs
+ */
+import fs from "node:fs";
+import { randomInt } from "node:crypto";
+import path from "node:path";
+import { REPO_ROOT as root } from "../repository-paths.mjs";
+import { writeCurrentRun } from "../verification/current-run.mjs";
+import { PERF_PREVIEW_PORT } from "../dev-port.mjs";
+import {
+  checkEnvironmentCompatibility,
+  compareReports,
+  renderComparisonTable,
+} from "../../../performance/compare-model.mjs";
+
+const PERFORMANCE_CATALOG = JSON.parse(fs.readFileSync(path.join(root, "performance/catalog.json"), "utf8"));
+const METRIC_SCENARIOS = PERFORMANCE_CATALOG.metricScenarios;
+const SYNTHETIC_SCENARIOS = PERFORMANCE_CATALOG.syntheticScenarios;
+const SEEDED_SCENARIOS = PERFORMANCE_CATALOG.seededScenarios;
+const EXTREME_SCENARIOS = PERFORMANCE_CATALOG.extremeScenarios;
+const DIAG_SCENARIOS = PERFORMANCE_CATALOG.diagnosticScenarios;
+const SCENARIOS = [
+  ...METRIC_SCENARIOS,
+  ...SYNTHETIC_SCENARIOS,
+  ...SEEDED_SCENARIOS,
+  ...EXTREME_SCENARIOS,
+  ...DIAG_SCENARIOS,
+];
+const REALISTIC_CASE_IDS = new Set([
+  ...METRIC_SCENARIOS.filter((id) => id !== "startup-first-use"),
+  ...SEEDED_SCENARIOS,
+]);
+const DEFAULT_SCENARIO = PERFORMANCE_CATALOG.defaultScenario;
+
+export function parsePerformanceArgs(argv) {
+  const args = {
+    scenario: null,
+    runs: null,
+    all: false,
+    suite: null,
+    seed: null,
+    replay: null,
+    trace: false,
+    electron: false,
+    cold: false,
+    compare: null,
+    skipBuild: false,
+    live: false,
+    help: false,
+  };
+  const value = (index, flag) => {
+    const supplied = argv[index];
+    if (!supplied || supplied.startsWith("-")) throw new Error(`${flag} requires a value`);
+    return supplied;
+  };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === "--help" || a === "-h") args.help = true;
+    else if (a === "--trace") args.trace = true;
+    else if (a === "--electron") args.electron = true;
+    else if (a === "--cold") args.cold = true;
+    else if (a === "--skip-build") args.skipBuild = true;
+    else if (a === "--live" || a === "--verbose") args.live = true;
+    else if (a === "--all") args.all = true;
+    else if (a === "--suite") args.suite = value(++i, a);
+    else if (a === "--seed") args.seed = Number(value(++i, a));
+    else if (a === "--replay") args.replay = value(++i, a);
+    else if (a === "--scenario") args.scenario = value(++i, a);
+    else if (a === "--runs") args.runs = Number(value(++i, a));
+    else if (a === "--compare") {
+      args.compare = [value(++i, a), value(++i, a)];
+    } else if (a.startsWith("--scenario=")) args.scenario = a.slice("--scenario=".length);
+    else if (a.startsWith("--runs=")) args.runs = Number(a.slice("--runs=".length));
+    else throw new Error(`Unknown performance option: ${a}`);
+  }
+  if (args.runs !== null && (!Number.isSafeInteger(args.runs) || args.runs < 1))
+    throw new Error("--runs must be a positive integer");
+  if (args.suite !== null && !["realistic", "synthetic", "seeded", "extreme"].includes(args.suite))
+    throw new Error("--suite must be realistic, synthetic, seeded, or extreme");
+  if (args.seed !== null && (!Number.isSafeInteger(args.seed) || args.seed < 0 || args.seed > 0xffffffff))
+    throw new Error("--seed must be a uint32");
+  if (args.scenario !== null && !SCENARIOS.includes(args.scenario))
+    throw new Error(`Unknown scenario: ${args.scenario}`);
+  if (
+    args.compare &&
+    (args.scenario !== null ||
+      args.runs !== null ||
+      args.all ||
+      args.trace ||
+      args.electron ||
+      args.cold ||
+      args.skipBuild ||
+      args.replay ||
+      argv.includes("--suite") ||
+      argv.includes("--seed"))
+  )
+    throw new Error("--compare cannot be combined with profiling options");
+  return args;
+}
+
+function printHelp() {
+  console.log(`On-demand FPS / hitch profiling
+
+Usage:
+  npm run perf
+  npm run perf -- --scenario collection-tabs
+  npm run perf -- --all
+  npm run perf -- --suite synthetic --all
+  npm run perf -- --suite seeded --seed 1234
+  npm run perf -- --replay reports/performance/<run>/replay/seeded-discovery.json
+  npm run perf:trace -- --scenario battle-effects
+  npm run perf:compare -- <beforeDir> <afterDir>
+  npm run perf -- --electron --scenario battle-end-turn
+
+Options:
+  --scenario <id>   One of: ${SCENARIOS.join(", ")} (default: ${DEFAULT_SCENARIO})
+  --all             Run the selected suite (realistic by default)
+  --suite <name>    realistic (--all default), synthetic, seeded, or extreme
+  --seed <uint32>   Replayable discovery seed (default: fresh random uint32)
+  --replay <file>   Reuse a saved case and action log
+  --runs <n>        Measured repetitions (default 1; warm-up still runs)
+  --trace           CDP deep-trace mode (targets not authoritative)
+  --electron        Confirm on shipping Electron runtime (separate from Chromium)
+  --cold            Skip warm-up and relaunch Electron for every measured run
+  --skip-build      Reuse existing dist/ (must already exist)
+  --compare a b     Diff two prior report directories
+  --help            Show this help
+
+Env (harness iteration only, not for baselines):
+  PERF_MEASURE_MS   Per-scenario measure window override
+  PERF_MIN_FRAMES   Minimum frames override (per scenario)
+  PERF_RUNS         Alias for --runs (CLI flag wins when both pass)
+`);
+}
+
+async function buildDist({ skipIfPresent = false, live = false } = {}) {
+  if (skipIfPresent) {
+    const index = path.join(root, releaseEdition().rendererDirectory, "index.html");
+    if (!fs.existsSync(index)) throw new Error(`--skip-build requires an existing renderer: ${index}`);
+    return;
+  }
+  console.log("Building production renderer for performance profiling…");
+  const result = await runTaskCommand("npm", ["run", "build"], { cwd: root, label: "performance build", live });
+  if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
+function stampOutputDir(runtime = "chromium") {
+  const stamp = new Date()
+    .toISOString()
+    .replaceAll(":", "-")
+    .replace(/\.\d+Z$/, "Z");
+  const dir = path.join(root, "reports", "performance", `${stamp}-${runtime}`);
+  fs.mkdirSync(path.join(dir, "runs"), { recursive: true });
+  fs.mkdirSync(path.join(dir, "traces"), { recursive: true });
+  return dir;
+}
+
+function runCompare(beforeDir, afterDir) {
+  const beforePath = path.resolve(beforeDir);
+  const afterPath = path.resolve(afterDir);
+  const beforeFile = path.join(beforePath, "results.json");
+  const afterFile = path.join(afterPath, "results.json");
+  if (!fs.existsSync(beforeFile)) {
+    console.error("Missing results.json in", beforePath);
+    process.exit(1);
+  }
+  if (!fs.existsSync(afterFile)) {
+    console.error("Missing results.json in", afterPath);
+    process.exit(1);
+  }
+
+  const before = JSON.parse(fs.readFileSync(beforeFile, "utf8"));
+  const after = JSON.parse(fs.readFileSync(afterFile, "utf8"));
+
+  const compat = checkEnvironmentCompatibility(before.environment, after.environment);
+  if (!compat.compatible) {
+    console.error("Incompatible performance reports for comparison:");
+    for (const err of compat.errors) console.error(` - ${err}`);
+    process.exit(1);
+  }
+
+  let comparisonResult;
+  try {
+    comparisonResult = compareReports(before, after);
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
+  }
+
+  const outDir = stampOutputDir("compare");
+
+  const lines = [
+    "# Performance compare",
+    "",
+    `- **Before:** \`${beforePath}\``,
+    `- **After:** \`${afterPath}\``,
+    `- **Generated:** ${new Date().toISOString()}`,
+    "",
+  ];
+
+  for (const s of comparisonResult.scenarios) {
+    if (s.missing) {
+      lines.push(`## ${s.scenario}`, "", "_Missing in after report._", "");
+      continue;
+    }
+    lines.push(`## ${s.scenario}`, "");
+    lines.push(...renderComparisonTable(s.deltas));
+    lines.push("");
+    for (const segment of s.segmentDeltas ?? []) {
+      lines.push(`### ${segment.name}`, "", ...renderComparisonTable(segment.deltas), "");
+    }
+    for (const note of s.notes) lines.push(`- ${note}`);
+    lines.push("");
+  }
+
+  const summaryPath = path.join(outDir, "summary.md");
+  fs.writeFileSync(summaryPath, lines.join("\n"));
+  fs.writeFileSync(
+    path.join(outDir, "results.json"),
+    JSON.stringify({ before: beforePath, after: afterPath, generated: new Date().toISOString() }, null, 2),
+  );
+  writeCurrentRun({
+    rootDir: root,
+    status: "passed",
+    command: "npm run perf:compare",
+    artifacts: [
+      { path: path.relative(root, summaryPath), role: "primary" },
+      { path: path.relative(root, outDir), role: "secondary" },
+    ],
+    summary: "Performance comparison completed.",
+  });
+  console.log(`Compare report written to ${summaryPath}`);
+}
+
+export async function runPerformance() {
+  const args = parsePerformanceArgs(process.argv.slice(2));
+  if (args.help) {
+    printHelp();
+    return;
+  }
+
+  if (args.compare) {
+    const [beforeDir, afterDir] = args.compare;
+    if (!beforeDir || !afterDir) {
+      console.error("Usage: npm run perf:compare -- <beforeDir> <afterDir>");
+      process.exit(1);
+    }
+    runCompare(beforeDir, afterDir);
+    return;
+  }
+
+  if (args.all && args.scenario) {
+    console.error("Pass either --all or --scenario, not both.");
+    process.exit(1);
+  }
+
+  if (args.replay && (args.all || args.scenario || args.suite !== null)) {
+    throw new Error("--replay selects its scenario and cannot be combined with --all, --scenario, or --suite");
+  }
+
+  if (args.cold && !args.electron) {
+    console.error("--cold currently requires --electron so every run can use a fresh app process.");
+    process.exit(1);
+  }
+
+  if (args.scenario && !SCENARIOS.includes(args.scenario)) {
+    console.error(`Unknown scenario "${args.scenario}". Expected one of: ${SCENARIOS.join(", ")}`);
+    process.exit(1);
+  }
+
+  const selectedSuite =
+    args.suite === "extreme"
+      ? EXTREME_SCENARIOS
+      : args.suite === "synthetic"
+        ? SYNTHETIC_SCENARIOS
+        : args.suite === "seeded"
+          ? SEEDED_SCENARIOS
+          : METRIC_SCENARIOS;
+  const replay = args.replay ? JSON.parse(fs.readFileSync(path.resolve(args.replay), "utf8")) : null;
+  if (
+    args.replay &&
+    (replay?.version !== 1 || (!REALISTIC_CASE_IDS.has(replay?.scenario) && replay?.scenario !== "memory-soak"))
+  )
+    throw new Error("Invalid replay bundle");
+  const scenario =
+    replay?.scenario ?? (args.all ? null : (args.scenario ?? (args.suite ? selectedSuite[0] : DEFAULT_SCENARIO)));
+
+  if (args.electron) {
+    console.log("Ensuring Electron binary…");
+    const ensure = await runTaskCommand("npm", ["run", "ensure:electron"], {
+      cwd: root,
+      label: "Electron setup",
+      live: args.live,
+    });
+    if (ensure.status !== 0) process.exit(ensure.status ?? 1);
+  }
+
+  await buildDist({ skipIfPresent: args.skipBuild, live: args.live });
+
+  const outDir = stampOutputDir(args.electron ? "electron" : "chromium");
+  const prepared = args.all
+    ? selectedSuite.filter((id) => REALISTIC_CASE_IDS.has(id))
+    : REALISTIC_CASE_IDS.has(scenario)
+      ? [scenario]
+      : scenario === "memory-soak"
+        ? ["meta-journey"]
+        : [];
+  const discoverySeed = replay?.seed ?? args.seed ?? randomInt(0x100000000);
+  if (replay) console.log(`Replay case: ${replay.scenario} seed=${replay.seed}`);
+  else if (prepared.includes("seeded-discovery")) console.log(`Discovery seed: ${discoverySeed}`);
+  if (replay) {
+    fs.writeFileSync(path.join(outDir, `${replay.scenario}.case.json`), JSON.stringify(replay, null, 2));
+  } else {
+    for (const id of prepared) {
+      const prepare = await runTaskCommand(
+        "node",
+        ["scripts/prepare-performance-cases.mjs", outDir, id, String(discoverySeed)],
+        {
+          cwd: root,
+          label: `prepare ${id}`,
+          live: args.live,
+        },
+      );
+      if (prepare.status !== 0) process.exit(prepare.status ?? 1);
+    }
+  }
+  const perfPort = process.env.PLAYWRIGHT_PERF_PORT ?? String(PERF_PREVIEW_PORT);
+  const env = {
+    ...process.env,
+    PERF_OUTPUT_DIR: outDir,
+    PLAYWRIGHT_PERF_PORT: perfPort,
+    PLAYWRIGHT_PERF_TRACE: args.trace ? "1" : "",
+    PLAYWRIGHT_PERF_ELECTRON: args.electron ? "1" : "",
+    PLAYWRIGHT_PERF_COLD: args.cold ? "1" : "",
+    PERF_RUNS: String(args.runs ?? process.env.PERF_RUNS ?? 1),
+    PERF_SCENARIO: scenario ?? "",
+    PERF_CASE_DIR: outDir,
+    PERF_REPLAY: args.replay ? "1" : "",
+    ...(process.env.PERF_MEASURE_MS ? { PERF_MEASURE_MS: process.env.PERF_MEASURE_MS } : {}),
+    ...(process.env.PERF_MIN_FRAMES ? { PERF_MIN_FRAMES: process.env.PERF_MIN_FRAMES } : {}),
+    ...(args.electron ? { PLAYWRIGHT_ELECTRON_PREVIEW_PORT: perfPort } : {}),
+  };
+
+  // --all runs metric scenarios only; battle-art-diag is opt-in via --scenario.
+  // Token-boundary grep mirrors performance/reporter.ts: `-` is part of the
+  // token, so `\b` would still match `battle-effects-extra`. Use an explicit
+  // non-token char class instead.
+  const tokenBoundary = "[^a-zA-Z0-9-]";
+  const grepArgs = args.all
+    ? ["--grep", `/(${tokenBoundary}|^)(${selectedSuite.join("|")})(${tokenBoundary}|$)/`]
+    : scenario
+      ? ["--grep", `/(${tokenBoundary}|^)${scenario}(${tokenBoundary}|$)/`]
+      : [];
+  console.log(`\nProfiling → ${outDir}`);
+  console.log(
+    `Runtime: ${args.electron ? "electron" : "chromium"} | Cold: ${args.cold ? "yes" : "no"} | Trace: ${args.trace ? "yes" : "no"} | Scenario: ${args.all ? selectedSuite.join(",") : (scenario ?? "all")} | Runs: ${env.PERF_RUNS}`,
+  );
+
+  const result = await runTaskCommand(
+    process.execPath,
+    ["scripts/run-compact.mjs", "playwright", "test", "--config", "playwright.performance.config.ts", ...grepArgs],
+    { cwd: root, env, label: "performance scenarios", live: args.live, logPath: path.join(outDir, "runner.log") },
+  );
+
+  const summaryPath = path.join(outDir, "summary.md");
+  if (fs.existsSync(summaryPath)) {
+    console.log(`\nReport: ${summaryPath}`);
+  }
+
+  writeCurrentRun({
+    rootDir: root,
+    status: result.status === 0 ? "passed" : "failed",
+    command: "npm run perf",
+    artifacts: [
+      { path: path.relative(root, summaryPath), role: "primary" },
+      { path: path.relative(root, outDir), role: "secondary" },
+    ],
+    summary: result.status === 0 ? "Performance profiling completed." : "Performance profiling failed.",
+  });
+
+  return result.status ?? 1;
+}

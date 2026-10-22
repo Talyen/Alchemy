@@ -5,8 +5,8 @@ import { createCareerRuntime } from "@/app/playthrough/career-runtime";
 import { createPlaythroughController } from "@/app/playthrough/controller";
 import { snapshotCareer } from "@/app/playthrough/career";
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage";
-import { restoreSessionSave } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { restoreSessionSave } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import { readBattle, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import {
   canUnlockTalent,
   computeTalentEffects,

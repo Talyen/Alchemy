@@ -1,5 +1,9 @@
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { readActiveRunScreen, readRunSession, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import {
+  readActiveRunScreen,
+  readRunSession,
+  readRunRevision,
+} from "@/features/alchemy/shared/stores/session/run-reads";
 import type { BattleSnapshot, CombatTextEvent } from "@/lib/battle";
 import { createSeededRng } from "@/lib/rng";
 import { createCombatProgress } from "./combat-policy";

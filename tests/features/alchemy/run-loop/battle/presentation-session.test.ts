@@ -1,12 +1,15 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { makeTestCard } from "../../../../fixtures/cards";
 import type { CardTransfer } from "@/features/alchemy/shared/types";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import { createBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { defaultBattleState } from "@/lib/battle";
 import { COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION_MS } from "@/lib/game-constants";
 import { initializeBattleForTest } from "../../../../helpers/run-domain-store-test";

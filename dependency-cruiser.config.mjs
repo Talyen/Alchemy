@@ -69,7 +69,7 @@ export default {
       comment: "Only shared/stores may import the authoritative gameplay aggregate directly.",
       from: { pathNot: "^src/features/alchemy/shared/stores/" },
       to: {
-        path: "^src/features/alchemy/shared/stores/(gameplay-state-store|gameplay-state-reads|gameplay-state)\\.ts$",
+        path: "^src/features/alchemy/shared/stores/(react/gameplay-state-store|session/(gameplay-state-reads|gameplay-state))\\.ts$",
       },
     },
     {
@@ -82,7 +82,7 @@ export default {
           "^src/app/application-session\\.ts$",
         ],
       },
-      to: { path: "^src/features/alchemy/shared/stores/session-runtime\\.ts$" },
+      to: { path: "^src/features/alchemy/shared/stores/session/session-runtime\\.ts$" },
     },
     {
       name: "gameplay-mutation-is-internal",
@@ -90,7 +90,7 @@ export default {
       comment: "Feature commands use readonly transactions and domain operations; hydration is trusted infrastructure.",
       from: { pathNot: "^src/features/alchemy/shared/(stores/|storage/persistence\\.ts$)" },
       to: {
-        path: "^src/features/alchemy/shared/stores/(gameplay-command|transaction-internal|readonly-view|boundary-data|gear-session-command|gear-actions)\\.ts$",
+        path: "^src/features/alchemy/shared/stores/(session/(gameplay-command|transaction-internal|readonly-view|boundary-data)|commands/(gear-session-command|gear-actions))\\.ts$",
       },
     },
   ].map((rule) => ({

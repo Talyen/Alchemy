@@ -6,7 +6,7 @@ import { type BattleCard, type CardDescriptionContext } from "@/lib/game-data";
 
 import { BattleCardButton } from "../../../shared/ui/cards/card-button";
 import { getCardDisplayTitle } from "../../../shared/ui/cards/card-description-ui";
-import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
+import { ModalOverlayShell } from "../../../shared/ui/dialogs/modal-overlay-shell";
 import { ScreenHeader } from "../../../shared/ui/layout-components";
 import {
   collectionTileWidthClass,
@@ -16,11 +16,11 @@ import {
 import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import { cn } from "@/lib/utils";
 import { MAX_HAND_SIZE, WISH_OVERLAY_Z_INDEX } from "@/lib/game-constants";
-import { useDialogFocus } from "../../../shared/ui/use-dialog-focus";
+import { useDialogFocus } from "../../../shared/ui/dialogs/use-dialog-focus";
 import type { BattleActionsProps, BattleScreenState } from "./types";
 import { useBattleDescriptionContext } from "./use-battle-description-context";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
-import { useUiStore } from "../../../shared/stores/ui-store";
+import { useUiStore } from "../../../shared/stores/react/ui-store";
 import { getHoverId } from "../../../shared/utils";
 
 function WishCardItem({

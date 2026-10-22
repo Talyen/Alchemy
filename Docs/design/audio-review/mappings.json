@@ -1571,7 +1571,7 @@
       "currentState": "silent",
       "note": "",
       "priority": "P2",
-      "evidence": ["src/features/alchemy/shared/stores/run-resume-codec.ts"]
+      "evidence": ["src/features/alchemy/shared/stores/persistence/run-resume-codec.ts"]
     },
     {
       "id": "save",
@@ -1597,7 +1597,7 @@
       "currentState": "playing",
       "note": "Compare a subdued negative cue; ordinary cancel uses navigation.",
       "priority": "P2",
-      "evidence": ["src/features/alchemy/shared/stores/run-lifecycle.ts"]
+      "evidence": ["src/features/alchemy/shared/stores/commands/run-lifecycle.ts"]
     },
     {
       "id": "enemyHit",
@@ -2610,7 +2610,7 @@
       "currentState": "playing",
       "note": "",
       "priority": "P1",
-      "evidence": ["src/features/alchemy/shared/stores/run-lifecycle.ts"]
+      "evidence": ["src/features/alchemy/shared/stores/commands/run-lifecycle.ts"]
     },
     {
       "id": "amb-camp",

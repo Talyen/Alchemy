@@ -11,10 +11,10 @@ import {
   resetProfileForTest,
   setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
-import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
-import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
+import { readProfileStore } from "@/features/alchemy/shared/stores/session/profile-store";
+import { readGearState } from "@/features/alchemy/shared/stores/session/gear-store";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
 import { defaultGameSession } from "@/app/application-session";
 function apply(effect: MysteryEffect, rng: () => number = () => 0.5): MysteryEffectResult {

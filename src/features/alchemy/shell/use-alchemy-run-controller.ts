@@ -1,9 +1,9 @@
 import type { AlchemyRunCommands } from "./route-commands";
-import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
+import { guardProgressAction } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import type { BattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import { useRunControllerState } from "@/features/alchemy/shared/stores/use-session-run-reads";
+import { useRunControllerState } from "@/features/alchemy/shared/stores/react/use-session-run-reads";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { useCallback, useMemo, useSyncExternalStore } from "react";

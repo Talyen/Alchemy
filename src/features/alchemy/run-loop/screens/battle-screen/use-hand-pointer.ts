@@ -1,7 +1,7 @@
 import { type MouseEvent, type FocusEvent, type RefObject, useLayoutEffect, useRef } from "react";
 import { HAND_FAN_ROTATION_DEGREES } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
-import { useUiStore } from "../../../shared/stores/ui-store";
+import { useUiStore } from "../../../shared/stores/react/ui-store";
 import { getHoverId } from "../../../shared/utils";
 import { getHandCardKey } from "../../battle/playable-hand";
 

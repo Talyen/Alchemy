@@ -86,13 +86,13 @@ installers, and Steam shipping:
 
 ## Layout
 
-Feature layout and run-state ownership:
+Repository ownership and feature layout:
 [`Docs/ARCHITECTURE.md`](./Docs/ARCHITECTURE.md).
 
 - `desktop/` — Electron main/preload
 - `src/app/` — boot, screen routes, save-state
-- `src/lib/` — React-free game logic (battle, game-data, gear, content-systems, homestead, … — see `Docs/REFERENCE.md#navigation-hints`)
-- `src/features/alchemy/` — React UI (`meta`, `run-setup`, `run-loop`, `shell`, `shared`)
+- `src/lib/` — React-free game logic (battle, game-data, gear, content-systems, homestead, … — see the [ownership map](./Docs/ARCHITECTURE.md#repository-ownership))
+- `src/features/alchemy/` — game features and session infrastructure (`meta`, `run-setup`, `run-loop`, `shell`, `shared`)
 - `tests/` — unit tests grouped by source owner; browser specs in `tests/e2e/specs/`, Electron checks in `tests/electron/`, and desktop unit tests in `tests/desktop/`; shared fixtures, page objects, and helpers support multiple suites
 - `performance/` — browser and desktop measurement scenarios and reporting tools; runtime instrumentation lives in `src/lib/performance/`
 - Asset Library (external), `src/assets/`, `public/` — raw masters, bundled assets, and public assets; [asset workflows](./Docs/WORKFLOWS-ASSETS.md) identify generated outputs

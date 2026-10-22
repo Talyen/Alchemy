@@ -11,9 +11,9 @@ import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import { battlePresentation } from "@/app/battle-presentation";
-import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { useSettingsStore } from "@/features/alchemy/shared/stores/react/settings-store";
+import { readBattle } from "@/features/alchemy/shared/stores/session/run-reads";
+import { setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {

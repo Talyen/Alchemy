@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect } from "react";
-import { focusScreenStart, isFocusAvailable } from "@/features/alchemy/shared/ui/focus-navigation";
+import { focusScreenStart, isFocusAvailable } from "@/features/alchemy/shared/ui/dialogs/focus-navigation";
 
-import { isFocusNavigationEnabled, trackFocusInput } from "@/features/alchemy/shared/ui/focus-input";
+import { isFocusNavigationEnabled, trackFocusInput } from "@/features/alchemy/shared/ui/dialogs/focus-input";
 
 /** Recover only across screen readiness boundaries after intentional focus navigation. */
 export function useScreenFocus(screen: string, ready: boolean) {

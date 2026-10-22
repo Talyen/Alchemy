@@ -7,10 +7,13 @@ import { defaultGameSession } from "@/app/application-session";
 import { SaveWriteNotice } from "@/app/save-write-notice";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
-import { useGameplayStateStore } from "@/features/alchemy/shared/stores/gameplay-state-store";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
+import { useGameplayStateStore } from "@/features/alchemy/shared/stores/react/gameplay-state-store";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { setGold } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { guardProgressAction } from "@/features/alchemy/shared/stores/session/session-capabilities";
 
 const persistence = createSessionPersistence(defaultGameSession);
 afterEach(async () => {

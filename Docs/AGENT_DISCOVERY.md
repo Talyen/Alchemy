@@ -1,6 +1,6 @@
 # Agent Discovery
 
-Read known owners directly. Optional lookup returns canonical documentation
+The [repository ownership map](./ARCHITECTURE.md#repository-ownership) is the human starting point. Read known owners directly. Optional lookup returns canonical documentation
 ranges and implementation entry points without printing their contents:
 
 ```sh

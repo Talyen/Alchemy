@@ -1,4 +1,4 @@
-import { createNotificationChannel } from "../stores/notification-channel";
+import { createNotificationChannel } from "../stores/session/notification-channel";
 import type { UnstampedSaveData } from "./types";
 import { logStorageFailure } from "@/lib/storage-logging";
 

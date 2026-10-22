@@ -9,10 +9,10 @@ import { useBattlePlayback } from "@/app/screen-routes/use-battle-playback";
 import { useCardInspection } from "@/app/use-card-inspection";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import { CardGhostLayer } from "@/features/alchemy/run-loop/battle/presentation/card-ghost-overlay";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/use-run-reads";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { readBattle } from "@/features/alchemy/shared/stores/session/run-reads";
+import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/react/use-run-reads";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
+import { useSettingsStore } from "@/features/alchemy/shared/stores/react/settings-store";
 import { canPlayCard, isPlayerDefeated } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import {
@@ -24,8 +24,8 @@ import {
   setRunSession,
 } from "../helpers/run-domain-store-test";
 import { battleCohort, combatOutcome } from "./battle-cohorts";
-import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import { parseActiveRun } from "@/lib/validation";
 import { isDeepStrictEqual } from "node:util";
 import { defineSequenceFamily, requireProgress, type Scenario } from "./sequence";

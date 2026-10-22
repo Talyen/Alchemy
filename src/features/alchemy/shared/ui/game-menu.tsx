@@ -8,8 +8,8 @@ import type { Screen } from "@/lib/routing";
 import { controlLabelClass } from "../config/typography";
 import { useHeldWhile } from "./use-fade";
 import { LockedMenuItem } from "./locked-menu-item";
-import { ModalOverlayShell } from "./modal-overlay-shell";
-import { useDialogFocus } from "./use-dialog-focus";
+import { ModalOverlayShell } from "./dialogs/modal-overlay-shell";
+import { useDialogFocus } from "./dialogs/use-dialog-focus";
 
 const GAME_MENU_CONFIG = {
   anchoredMenuOffsetPx: 8,

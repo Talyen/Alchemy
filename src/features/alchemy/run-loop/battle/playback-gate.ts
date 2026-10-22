@@ -1,7 +1,7 @@
 import { useCallback, type RefObject } from "react";
 import { getBattleOutcome, type BattleSnapshot } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
-import { isBattleInspectionOpen, useUiStore } from "../../shared/stores/ui-store";
+import { isBattleInspectionOpen, useUiStore } from "../../shared/stores/react/ui-store";
 import { useLatestRef } from "../../shared/ui/use-latest-ref";
 import { handHasHiddenCard, type HiddenHandCardKeys } from "./playable-hand";
 import type { BattlePlaybackPresentationGate } from "./presentation/use-hand-presentation";

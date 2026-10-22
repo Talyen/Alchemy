@@ -3,9 +3,9 @@ import { cruiserPathFromGroups } from "../../lint/boundaries.js";
 
 describe("cruiserPathFromGroups", () => {
   it("prefers an alias group when one is present", () => {
-    expect(cruiserPathFromGroups(["**/stores/run-reads", "@/features/alchemy/shared/stores/run-reads"])).toBe(
-      "^src/features/alchemy/shared/stores/run-reads/",
-    );
+    expect(
+      cruiserPathFromGroups(["**/stores/session/run-reads", "@/features/alchemy/shared/stores/session/run-reads"]),
+    ).toBe("^src/features/alchemy/shared/stores/session/run-reads/");
   });
 
   it("falls back to the deepest glob group", () => {

@@ -6,7 +6,7 @@ import { readMusicPlayback } from "@/lib/audio";
 import { MUSIC_KEYS } from "@/lib/game-constants";
 import { installCatalogs, localization } from "@/lib/localization/runtime";
 import catalogs from "@/lib/localization/locales/runtime.json";
-import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { useSettingsStore } from "@/features/alchemy/shared/stores/react/settings-store";
 
 vi.mock("@/lib/audio", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/audio")>()),

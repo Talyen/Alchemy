@@ -8,7 +8,7 @@ import { PortaledTooltip } from "@/features/alchemy/shared/ui/tooltips/portaled-
 import { BattleBoonInspectButton } from "@/features/alchemy/run-loop/screens/battle-screen/boon-inspect";
 import { DeckInspectButton, type DeckInspectButtonProps } from "@/features/alchemy/shared/ui/deck-inspect-button";
 import { HamburgerTrigger } from "@/features/alchemy/shared/ui/navigation";
-import { useBattleClusterState } from "@/features/alchemy/shared/stores/use-run-reads";
+import { useBattleClusterState } from "@/features/alchemy/shared/stores/react/use-run-reads";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
 function BattleAutoplayToggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {

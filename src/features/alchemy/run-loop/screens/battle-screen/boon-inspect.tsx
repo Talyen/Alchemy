@@ -10,13 +10,13 @@ import { cn } from "@/lib/utils";
 
 import { InspectionEmptyState } from "../../../shared/ui/inspection/inspection-content";
 import { FadeSlot } from "../../../shared/ui/use-fade";
-import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
+import { ModalOverlayShell } from "../../../shared/ui/dialogs/modal-overlay-shell";
 import { PaginationControls } from "../../../shared/ui/navigation";
 import { ScreenHeader } from "../../../shared/ui/layout-components";
 import { TrinketTile } from "../../../shared/ui/collection-art-tiles";
 import { usePaginatedRows } from "../../../shared/ui/use-paginated-rows";
 import { uniqueRunBoons } from "./unique-run-boons";
-import { useDialogFocus } from "../../../shared/ui/use-dialog-focus";
+import { useDialogFocus } from "../../../shared/ui/dialogs/use-dialog-focus";
 
 const INSPECT_COLUMNS = 4;
 

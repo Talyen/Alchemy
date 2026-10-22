@@ -1,27 +1,27 @@
 import { createStarterDraftChoices } from "@/features/alchemy/shared/run-flow/starter-draft";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { discoverCardIds, readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { discoverCardIds, readProfileStore } from "@/features/alchemy/shared/stores/session/profile-store";
 import {
   readActiveRun,
   readActiveRunScreen,
   readHasActiveBattle,
   readHasActiveRun,
   readRunSession,
-} from "@/features/alchemy/shared/stores/run-reads";
+} from "@/features/alchemy/shared/stores/session/run-reads";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
   rejectCommand,
   snapshotTransactionValue,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   createDraftRunRandomSource,
   setPendingCharacterId,
   setRunDeck,
   setRunProgressActivity,
   setStarterDraftChoices,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import { logError } from "@/lib/error-logger";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID, DRAFT_ROUNDS } from "@/lib/game-constants";

@@ -1,4 +1,4 @@
-import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/ui-store";
+import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/react/ui-store";
 import { enemyAbilityDealsDamage, getEnemyAbilityCard } from "@/lib/game-data";
 import { getBattleOutcome, type BattleSnapshot, type BattleTurnFrame } from "@/lib/battle";
 import { playBattleEvent } from "@/lib/audio";

@@ -4,13 +4,13 @@ import {
   initializeBattleForTest as initializeActiveBattle,
   resetRunDomainStore,
 } from "../../../../helpers/run-domain-store-test";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { readBattle } from "@/features/alchemy/shared/stores/session/run-reads";
 import { beforeEach, describe, expect, it } from "vitest";
 import { resolveBattleTurn } from "@/lib/battle";
 import { companionLibrary } from "@/lib/game-data";
 import { commitEndTurn } from "@/features/alchemy/run-loop/battle/battle-session";
 import { patchBattleState, slashDeck, seededRng } from "../../../../fixtures/battle";
-import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(resetRunDomainStore);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import { logStorageFailure } from "@/lib/storage-logging";
 import { bootstrapAlchemySession } from "./alchemy-bootstrap";
 

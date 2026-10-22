@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { settingsPersistenceCodec } from "@/features/alchemy/shared/stores/settings-store";
+import { settingsPersistenceCodec } from "@/features/alchemy/shared/stores/react/settings-store";
 import { audioState } from "@/lib/audio/state";
 import { DEFAULT_MASTER_VOLUME_PCT, DEFAULT_MUSIC_VOLUME_PCT, DEFAULT_SFX_VOLUME_PCT } from "@/lib/game-constants";
 import {

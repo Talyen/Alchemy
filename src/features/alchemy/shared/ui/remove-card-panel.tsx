@@ -11,7 +11,7 @@ import { CardSelectionGrid } from "./cards/card-selection-grid";
 import { getCardInspectionShineColors } from "../config";
 import { GoldCost } from "./display-elements";
 import { SelectableCard } from "./cards/selectable-card";
-import { useCaptureEscapeCancel } from "./use-modal-escape-dismiss";
+import { useCaptureEscapeCancel } from "./dialogs/use-modal-escape-dismiss";
 
 export function RemoveCardPanel({
   runDeck,

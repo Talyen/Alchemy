@@ -71,7 +71,7 @@ BattleScreenRoute → useBattleScreenRouteData → displayed frame, active comba
 ### Data flow
 
 Battle launching uses the required `BattleStartCommands` contract inferred from
-`shared/stores/battle-start-commands.ts`. Campaign, Labyrinth, Wildwood, the React
+`shared/stores/commands/battle-start-commands.ts`. Campaign, Labyrinth, Wildwood, the React
 controller, and headless playthroughs share its named options; shell adapters do
 not redeclare positional arguments or accept alternate callback names. Launch
 options select the encounter and difficulty; the command reads the deck and Gold

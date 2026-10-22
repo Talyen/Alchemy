@@ -2,13 +2,13 @@ import { selectTransmutation, transmuteCard } from "@/features/alchemy/run-loop/
 import { getTransmutationOffers, canTransmuteCard, isTransmutationSourceCurrent } from "@/lib/alchemist/transmutation";
 import { PLAYABLE_HAND_OPTIONS } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { cardSlotKeyOf, gearSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   readActiveRun,
   readActiveRunScreen,
   readRunProfile,
   readRunSession,
-} from "@/features/alchemy/shared/stores/run-reads";
+} from "@/features/alchemy/shared/stores/session/run-reads";
 import { DESTINATIONS } from "@/lib/routing";
 import { getRewardChoiceId } from "@/lib/active-run-session";
 import {

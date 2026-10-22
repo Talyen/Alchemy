@@ -30,7 +30,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { hasInspectableBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { useVirtualResolution } from "@/features/alchemy/shared/ui/use-virtual-resolution";
-import { useDeviceDisplayPreferences } from "@/features/alchemy/shared/stores/device-display-store";
+import { useDeviceDisplayPreferences } from "@/features/alchemy/shared/stores/react/device-display-store";
 import {
   useActiveRunCharacterId,
   useActiveRunBoons,
@@ -40,12 +40,12 @@ import {
   useHasActiveBattle,
   useRunPhase,
   useTalentEffects,
-} from "@/features/alchemy/shared/stores/use-run-reads";
-import { useAppSettings } from "@/features/alchemy/shared/stores/settings-store";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+} from "@/features/alchemy/shared/stores/react/use-run-reads";
+import { useAppSettings } from "@/features/alchemy/shared/stores/react/settings-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
 import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";
-import { setModalRoot, setTooltipRoot } from "@/features/alchemy/shared/ui/portal-root";
+import { setModalRoot, setTooltipRoot } from "@/features/alchemy/shared/ui/dialogs/portal-root";
 import { useArtworkReady } from "@/features/alchemy/shared/ui/use-artwork-ready";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";

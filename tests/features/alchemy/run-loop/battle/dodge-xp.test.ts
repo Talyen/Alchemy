@@ -13,11 +13,11 @@ import { toActiveRunData } from "@/lib/validation";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { ActiveRunDataSchema } from "@/lib/validation/save-schemas/active-run";
 import { getDifficultyXPMultiplier } from "@/lib/game-data";
-import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { awardBattleDodgeXP } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
-import { readActiveRun, readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
-import { snapshotRun, restoreRun, abandonRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/session/gameplay-command";
+import { awardBattleDodgeXP } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { setBattleState } from "@/features/alchemy/shared/stores/commands/write/run-battle";
+import { readActiveRun, readBattle, readRunProfile } from "@/features/alchemy/shared/stores/session/run-reads";
+import { snapshotRun, restoreRun, abandonRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import { incomingPhysical } from "../../../../fixtures/battle";
 import { defaultGameSession } from "@/app/application-session";
 

@@ -6,16 +6,19 @@ import {
   createGameSession,
   type GameSession,
   type GameSessionOptions,
-} from "@/features/alchemy/shared/stores/game-session";
+} from "@/features/alchemy/shared/stores/session/game-session";
 import { createBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
-import { showRunScreen } from "@/features/alchemy/shared/stores/navigation-commands";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
-import { readBattle, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
-import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setGold, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { showRunScreen } from "@/features/alchemy/shared/stores/commands/navigation-commands";
+import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
+import { readBattle, readRunRevision } from "@/features/alchemy/shared/stores/session/run-reads";
+import { sessionRuntime } from "@/features/alchemy/shared/stores/session/session-runtime";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { setGold, setHasActiveRun } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { defaultGameSession } from "@/app/application-session";
 
 vi.mock("@/lib/platform", () => ({ setSteamRichPresence: vi.fn() }));

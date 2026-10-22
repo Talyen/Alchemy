@@ -3,9 +3,9 @@ import { defaultGameSession } from "@/app/application-session";
 import { useCallback, useLayoutEffect, useMemo, useRef } from "react";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";
 import type { CardInspectionView } from "@/features/alchemy/shared/types";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { readCardInspectionData } from "@/features/alchemy/shared/stores/run-reads";
-import { useCardInspectionData } from "@/features/alchemy/shared/stores/use-run-reads";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
+import { readCardInspectionData } from "@/features/alchemy/shared/stores/session/run-reads";
+import { useCardInspectionData } from "@/features/alchemy/shared/stores/react/use-run-reads";
 import {
   readCardAnimationInProgress,
   readPlaybackPresentationGate,

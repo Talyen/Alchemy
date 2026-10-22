@@ -1,6 +1,6 @@
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { readActivityData } from "@/lib/active-run-session";
 import { corruptRunCard } from "./corruption-commands";
 export interface CorruptionFlowDeps {

@@ -1,13 +1,20 @@
 import { defaultGameSession } from "@/app/application-session";
 import { playUISound } from "@/lib/audio";
-import { discoverCardIds, discoverTrinketIds, discoverUniqueIds } from "@/features/alchemy/shared/stores/profile-store";
-import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  discoverCardIds,
+  discoverTrinketIds,
+  discoverUniqueIds,
+} from "@/features/alchemy/shared/stores/session/profile-store";
+import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/commands/reset";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   setEncounteredEnemyIds,
   setFinishedRunCharacters,
   setMaterials,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";

@@ -4,7 +4,7 @@ import { twoFloorLabyrinthMapFixture } from "../../../../fixtures/labyrinth-map"
 import { describe, expect, it } from "vitest";
 import { buildActions } from "./shop-actions-harness";
 import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
-import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import { shopItemSlotKey } from "@/lib/active-run-session";
 import { cardById, getCardKeywords } from "@/lib/game-data";
 import { gearDefinitions } from "@/lib/gear";

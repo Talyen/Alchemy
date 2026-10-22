@@ -1,7 +1,7 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { type ReactNode, useMemo, useState } from "react";
-import { useUiStore } from "../../shared/stores/ui-store";
+import { useUiStore } from "../../shared/stores/react/ui-store";
 import { getCardKeywords } from "@/lib/game-data";
 import { getGearInstanceTitle } from "@/lib/gear";
 import { cn } from "@/lib/utils";

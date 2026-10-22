@@ -15,8 +15,8 @@ export const CONTEXT_TASKS = {
       /(?:shared\/(?:stores|storage|run-flow)\/|run-loop\/(?:run|navigation)\/|run-setup\/|active-run-session\/|lib\/validation\/|autosave|alchemy-bootstrap)/,
     docs: [owner("Docs/RUN_STATE.md"), owner("src/features/alchemy/shared/storage/MIGRATIONS.md")],
     entrypoints: [
-      "src/features/alchemy/shared/stores/run-session-command.ts",
-      "src/features/alchemy/shared/stores/run-resume-codec.ts",
+      "src/features/alchemy/shared/stores/commands/run-session-command.ts",
+      "src/features/alchemy/shared/stores/persistence/run-resume-codec.ts",
     ],
   },
   ui: {
@@ -37,12 +37,12 @@ export const CONTEXT_TASKS = {
   gear: {
     matches: /(?:\/gear\/|gear-store|gear-session|armory)/,
     docs: [owner("Docs/ARMORY.md")],
-    entrypoints: ["src/features/alchemy/shared/stores/gear-store.ts"],
+    entrypoints: ["src/features/alchemy/shared/stores/session/gear-store.ts"],
   },
   settings: {
     matches: /(?:settings(?:-|\.|\/)|device-display|\/screens\/options(?:\/|-))/,
     docs: [owner("Docs/ARCHITECTURE.md", "Settings and meta profile"), owner("Docs/UI_BROWSING.md", "Options")],
-    entrypoints: ["src/lib/settings-values.ts", "src/features/alchemy/shared/stores/settings-store.ts"],
+    entrypoints: ["src/lib/settings-values.ts", "src/features/alchemy/shared/stores/react/settings-store.ts"],
   },
   shop: {
     matches: /(?:\/shop\/|shop-(?:screen|persistence|offering)|-shop-screen)/,
@@ -87,7 +87,7 @@ export const CONTEXT_TASKS = {
   },
   playthrough: {
     matches:
-      /^(?:src\/app\/playthrough\/|tests\/playthrough\/|scripts\/run-playthrough\.mjs$|vitest\.playthrough\.config\.ts$)/,
+      /^(?:src\/app\/playthrough\/|tests\/playthrough\/|scripts\/(?:run-playthrough(?:-worker)?\.mjs$|lib\/playthrough\/)|vitest\.playthrough\.config\.ts$)/,
     docs: [owner("Docs/PLAYTHROUGH_SIMULATION.md")],
     entrypoints: ["src/app/playthrough/career.ts", "scripts/run-playthrough.mjs"],
   },

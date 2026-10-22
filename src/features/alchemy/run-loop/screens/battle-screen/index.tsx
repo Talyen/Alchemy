@@ -16,7 +16,7 @@ import type { BattleActionsProps, BattleFeedbackProps, BattleRefsProps, BattleSc
 import { getEnemyStatusChips, getPlayerStatusChips } from "../../../shared/utils";
 import { BackgroundParticles } from "../../../shared/ui/background-particles";
 import { getScreenParticleConfig } from "@/app/screen-particle-config";
-import { useSettingsStore } from "../../../shared/stores/settings-store";
+import { useSettingsStore } from "../../../shared/stores/react/settings-store";
 
 interface BattleScreenProps {
   endTurn: ReactNode;

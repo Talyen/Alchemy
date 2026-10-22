@@ -1,0 +1,406 @@
+import { initializeShopForTest } from "../../../../../helpers/visit-initialization";
+import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
+import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
+import { createRunRouteActions } from "@/features/alchemy/shell/run-route-actions";
+import { createBattleStartCommands } from "@/features/alchemy/shared/stores/commands/battle-start-commands";
+
+import { registerSessionCleanup } from "@/features/alchemy/shared/stores/session/session-capabilities";
+import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
+import { snapshotCareer, stateDigest } from "@/app/playthrough/career-persistence";
+import { createPlaythroughController } from "@/app/playthrough/controller";
+import { cardSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
+import { PLAYABLE_HAND_OPTIONS } from "@/features/alchemy/shared/config/battle-input";
+import {
+  createDefaultSaveData,
+  createSessionPersistence,
+  loadAlchemySaveState,
+} from "@/features/alchemy/shared/storage";
+import { commitCardPlay, commitEndTurn } from "@/features/alchemy/shared/stores/commands/battle-commands";
+import {
+  createGameSession,
+  type GameSession,
+  type SessionClock,
+} from "@/features/alchemy/shared/stores/session/game-session";
+import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
+import { onRunTeardown, teardownRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import {
+  readActiveRun,
+  readBattle,
+  readRunProfile,
+  readRunRevision,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/session/run-reads";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+  rejectCommand,
+  subscribeRunSessionCommits,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { addGold, createDraftRunRandomSource } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { canPlayCard } from "@/lib/battle";
+import { SAVE_KEY } from "@/lib/game-constants";
+import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
+import { showRunScreen } from "@/features/alchemy/shared/stores/commands/navigation-commands";
+import { readActiveRunScreen } from "@/features/alchemy/shared/stores/session/run-reads";
+import type { SaveBackend } from "@/lib/platform-save-backend";
+import { describe, expect, it, vi } from "vitest";
+import { defaultGameSession } from "@/app/application-session";
+
+function memoryBackend() {
+  const bytes = new Map<string, string>();
+  let pending: (() => void) | undefined;
+  let delayNext = false;
+  const backend: SaveBackend = {
+    readCandidates: async (key) => ({ ok: true, candidates: bytes.has(key) ? [bytes.get(key)!] : [] }),
+    write: async (key, value) => {
+      if (delayNext) {
+        delayNext = false;
+        await new Promise<void>((resolve) => {
+          pending = resolve;
+        });
+      }
+      bytes.set(key, value);
+      return { ok: true };
+    },
+    writeSync: (key, value) => {
+      bytes.set(key, value);
+      return { ok: true };
+    },
+    clear: async () => {
+      bytes.clear();
+      return { ok: true };
+    },
+  };
+  return {
+    backend,
+    bytes,
+    delay() {
+      delayNext = true;
+    },
+    release() {
+      pending?.();
+    },
+  };
+}
+
+function controlledClock(now: number): SessionClock {
+  let id = 0;
+  return { now: () => now, setTimeout: () => ++id, clearTimeout: () => {} };
+}
+
+class ControlledRuntimeInputs {
+  #id = 0;
+  readonly clock: SessionClock;
+  constructor(private readonly seed: number) {
+    this.clock = controlledClock(seed);
+  }
+  generateRunSeed() {
+    return this.seed;
+  }
+  createInstanceId() {
+    return `session-${this.seed}-gear-${++this.#id}`;
+  }
+}
+
+function start(seed: number, gold: number, backend?: SaveBackend) {
+  const initialSave = createDefaultSaveData();
+  initialSave.gold = gold;
+  initialSave.musicVolume = seed;
+  const session = createGameSession({
+    initialSave,
+    ...(backend ? { saveBackend: backend } : {}),
+    runtimeInputs: new ControlledRuntimeInputs(seed),
+  });
+  const controller = createPlaythroughController(session);
+  controller.flow.goToScreen("game-mode-select");
+  controller.flow.beginCampaign();
+  controller.flow.handleCharacterSelect("knight");
+  return { session, controller };
+}
+
+function playReadyCard(session: GameSession) {
+  const battle = readBattle(session).battleState;
+  const index = battle.hand.findIndex((card, slot) => canPlayCard(battle, card, slot, PLAYABLE_HAND_OPTIONS));
+  expect(index).toBeGreaterThanOrEqual(0);
+  expect(commitCardPlay(battle, index, battle.hand[index]!.id, session)).not.toBeNull();
+}
+
+describe("independent game sessions", () => {
+  it.each(["outcomes", "battle", "battle outcome", "navigation", "navigation cancellation"] as const)(
+    "rejects mixed-career %s before publishing state or scheduling navigation",
+    async (foreignCapability) => {
+      const a = start(31, 1000);
+      const b = start(32, 2000);
+      const transition = vi.fn();
+      const navigateTo = vi.fn();
+      const runActions = createRunRouteActions(a.session);
+      const actions = { transition, navigateTo, clearCardHover: runActions.clearCardHover };
+      try {
+        const beforeA = stateDigest(a.session);
+        const beforeB = stateDigest(b.session);
+        const application = readGameplayState(defaultGameSession);
+        const outcomes = createRunOutcomes(
+          {
+            actions: foreignCapability === "outcomes" ? { transition, navigateTo, clearCardHover: () => {} } : actions,
+          },
+          foreignCapability === "outcomes" ? b.session : a.session,
+        );
+        const foreignNavigation = createScreenNavigation(
+          {
+            readScreen: () => readActiveRunScreen(b.session),
+            showScreen: (screen) => showRunScreen(screen, b.session),
+          },
+          b.session,
+        );
+        expect(() =>
+          createRunFlowEngine(
+            {
+              navigateTo: foreignCapability === "navigation" ? foreignNavigation.navigateTo : navigateTo,
+              resumeTo: vi.fn(),
+              transition,
+              cancelPending:
+                foreignCapability === "navigation cancellation" ? foreignNavigation.cancelPending : vi.fn(),
+              battle: createBattleStartCommands(
+                foreignCapability === "battle outcome" ? b.controller.flow.handleBattleVictory : () => {},
+                foreignCapability === "battle" ? b.session : a.session,
+              ),
+            },
+            outcomes,
+            a.session,
+          ),
+        ).toThrow(/different game sessions/);
+        expect(stateDigest(a.session)).toBe(beforeA);
+        expect(stateDigest(b.session)).toBe(beforeB);
+        expect(readGameplayState(defaultGameSession)).toBe(application);
+        expect(transition).not.toHaveBeenCalled();
+        expect(navigateTo).not.toHaveBeenCalled();
+      } finally {
+        await Promise.all([a.session.dispose(), b.session.dispose()]);
+      }
+    },
+  );
+
+  it("keeps class-based runtime inputs isolated for saves, feedback, navigation, and cleanup", async () => {
+    class Feedback {
+      readonly sounds: string[] = [];
+      playUISound(sound: string) {
+        this.sounds.push(sound);
+      }
+    }
+    class Clock implements SessionClock {
+      #id = 0;
+      #time = 1;
+      readonly callbacks = new Map<number, () => void>();
+      now() {
+        return this.#time;
+      }
+      advance(now: number) {
+        this.#time = now;
+      }
+      setTimeout(callback: () => void) {
+        this.callbacks.set(++this.#id, callback);
+        return this.#id;
+      }
+      clearTimeout(timer: ReturnType<typeof setTimeout> | number) {
+        this.callbacks.delete(Number(timer));
+      }
+    }
+    const create = (failCleanup = false) => {
+      const clock = new Clock();
+      const feedback = new Feedback();
+      const transport = memoryBackend();
+      const session = createGameSession({
+        saveBackend: transport.backend,
+        runtimeInputs: { clock },
+        feedback,
+      });
+      if (failCleanup)
+        registerSessionCleanup(session, () => {
+          throw new Error("Controlled cleanup failure");
+        });
+      const navigation = createScreenNavigation(
+        {
+          readScreen: () => readActiveRunScreen(session),
+          showScreen: (screen) => showRunScreen(screen, session),
+        },
+        session,
+      );
+      return { session, navigation, clock, feedback, callbacks: clock.callbacks, bytes: transport.bytes };
+    };
+    const a = create(true);
+    const b = create();
+    try {
+      a.clock.advance(17);
+      for (const [career, expectedTime] of [
+        [a, 17],
+        [b, 1],
+      ] as const) {
+        const persistence = createSessionPersistence(career.session);
+        await expect(persistence.write(persistence.snapshot())).resolves.toBe("saved");
+        expect(JSON.parse(career.bytes.get(SAVE_KEY)!).lastSavedAt).toBe(expectedTime);
+      }
+      a.navigation.navigateTo("game-mode-select");
+      b.navigation.navigateTo("game-mode-select");
+      expect(a.feedback.sounds).toEqual(["navigate"]);
+      expect(b.feedback.sounds).toEqual(["navigate"]);
+      expect(a.callbacks.size).toBe(1);
+      expect(b.callbacks.size).toBe(1);
+      await expect(a.session.dispose()).rejects.toThrow("Game session cleanup failed");
+      expect(a.callbacks.size).toBe(0);
+      expect(b.callbacks.size).toBe(1);
+      for (const callback of b.callbacks.values()) callback();
+      expect(readActiveRunScreen(b.session)).toBe("game-mode-select");
+    } finally {
+      await Promise.all([a.session.dispose().catch(() => {}), b.session.dispose()]);
+    }
+  });
+  it("interleaves production combat, purchases and gear generation without changing another career or the application", async () => {
+    const application = readGameplayState(defaultGameSession);
+    const a = start(7, 1000);
+    const b = start(19, 2000);
+    const bCommits = vi.fn();
+    subscribeRunSessionCommits(bCommits, b.session);
+    try {
+      expect(snapshotCareer(a.session).musicVolume).toBe(7);
+      expect(snapshotCareer(b.session).musicVolume).toBe(19);
+      expect(readActiveRun(a.session).rng.seed).toBe(7);
+      expect(readActiveRun(b.session).rng.seed).toBe(19);
+      const beforeB = stateDigest(b.session);
+      playReadyCard(a.session);
+      const shop = a.controller.shop().merchant;
+      initializeShopForTest("shop", a.session);
+      const visit = readRunSession(a.session).activity;
+      if (visit.kind !== "shop") throw new Error("Card Shop did not initialize");
+      const card = visit.data.cards[0]!;
+      const key = cardSlotKeyOf(card, 0);
+      const price = shop.getCardBuyPrice(card);
+      const gold = readRunProfile(a.session).gold;
+      const deckSize = readActiveRun(a.session).runDeck.length;
+      expect(shop.buyCard(key)).toBe(true);
+      expect(readRunProfile(a.session).gold).toBe(gold - price);
+      expect(readActiveRun(a.session).runDeck).toHaveLength(deckSize + 1);
+      expect(shop.buyCard(key)).toBe(false);
+      expect(stateDigest(b.session)).toBe(beforeB);
+      expect(bCommits).not.toHaveBeenCalled();
+
+      const beforeA = stateDigest(a.session);
+      playReadyCard(b.session);
+      commitEndTurn(readBattle(b.session).battleState, b.session);
+      expect(stateDigest(a.session)).toBe(beforeA);
+      expect(bCommits).toHaveBeenCalled();
+
+      for (const career of [a, b]) {
+        initializeShopForTest("equipment-shop", career.session);
+        const equipment = readRunSession(career.session).activity;
+        if (equipment.kind !== "equipment-shop") throw new Error("Equipment Shop did not initialize");
+        expect(equipment.data.gear.length).toBeGreaterThan(0);
+        expect(
+          equipment.data.gear.every((item) =>
+            item.instanceId.startsWith(`session-${readActiveRun(career.session).rng.seed}-gear-`),
+          ),
+        ).toBe(true);
+      }
+      expect(readGameplayState(defaultGameSession)).toBe(application);
+    } finally {
+      await Promise.all([a.session.dispose(), b.session.dispose()]);
+    }
+  });
+
+  it("rolls back rejected state and RNG within one instance and keeps nested-command guards instance-local", async () => {
+    const a = start(3, 1000);
+    const b = start(4, 2000);
+    try {
+      const beforeA = stateDigest(a.session);
+      const revision = readRunRevision(a.session);
+      dispatchRunSessionCommand(
+        (draft) => {
+          addGold(draft, 50);
+          createDraftRunRandomSource(draft, "world")();
+          dispatchRunSessionCommand((other) => acceptCommand(addGold(other, 9)), undefined, b.session);
+          return rejectCommand("Controlled rejection", false);
+        },
+        undefined,
+        a.session,
+      );
+      expect(stateDigest(a.session)).toBe(beforeA);
+      expect(readRunRevision(a.session)).toBe(revision);
+      expect(readRunProfile(b.session).gold).toBe(2009);
+      expect(() =>
+        dispatchRunSessionCommand(
+          () => {
+            dispatchRunSessionCommand(() => acceptCommand(), undefined, a.session);
+            return acceptCommand();
+          },
+          undefined,
+          a.session,
+        ),
+      ).toThrow(/nested command/);
+      expect(stateDigest(a.session)).toBe(beforeA);
+    } finally {
+      await Promise.all([a.session.dispose(), b.session.dispose()]);
+    }
+  });
+
+  it("keeps delayed saves, resume and disposal local while another session continues saving", async () => {
+    const transportA = memoryBackend();
+    const transportB = memoryBackend();
+    const a = start(11, 1000, transportA.backend);
+    const b = start(12, 2000, transportB.backend);
+    const autosaveA = createAlchemyAutosaveLifecycle(() => true, undefined, a.session);
+    const autosaveB = createAlchemyAutosaveLifecycle(() => true, undefined, b.session);
+    try {
+      transportA.delay();
+      dispatchRunSessionCommand((draft) => acceptCommand(addGold(draft, 17)), undefined, a.session);
+      const snapshotA = snapshotCareer(a.session);
+      autosaveA.flush();
+      await Promise.resolve();
+      const disposedBattle = readBattle(a.session).battleState;
+      const disposalA = a.session.dispose();
+      dispatchRunSessionCommand((draft) => acceptCommand(addGold(draft, 23)), undefined, b.session);
+      await autosaveB.drain();
+      expect(JSON.parse(transportB.bytes.get(SAVE_KEY)!).gold).toBe(2023);
+      expect(JSON.parse(transportB.bytes.get(SAVE_KEY)!).lastSavedAt).toBe(12);
+      transportA.release();
+      await disposalA;
+      expect(JSON.parse(transportA.bytes.get(SAVE_KEY)!).gold).toBe(snapshotA.gold);
+      expect(JSON.parse(transportA.bytes.get(SAVE_KEY)!).lastSavedAt).toBe(11);
+      expect(() => commitEndTurn(disposedBattle, a.session)).toThrow(/disposed/);
+
+      const loaded = await loadAlchemySaveState(b.session);
+      expect(loaded.status.kind).toBe("ok");
+      await using resumed = createGameSession({ initialSave: loaded.data });
+
+      expect(snapshotCareer(resumed)).toEqual(snapshotCareer(b.session));
+    } finally {
+      transportA.release();
+      autosaveB.dispose(false);
+      await Promise.all([a.session.dispose(), b.session.dispose()]);
+    }
+  });
+
+  it("tears down and removes subscriptions for only the owning session", async () => {
+    const a = start(21, 1000);
+    const b = start(22, 2000);
+    const aTeardown = vi.fn();
+    const bTeardown = vi.fn();
+    onRunTeardown(aTeardown, a.session);
+    onRunTeardown(bTeardown, b.session);
+    try {
+      const beforeB = stateDigest(b.session);
+      teardownRun(a.session);
+      expect(aTeardown).toHaveBeenCalledOnce();
+      expect(bTeardown).not.toHaveBeenCalled();
+      expect(stateDigest(b.session)).toBe(beforeB);
+      const retainedEndTurn = a.controller.battle.endTurn;
+      const offered = a.controller.battle.read().battleState;
+      await a.session.dispose();
+      expect(() => retainedEndTurn(offered)).toThrow(/disposed/);
+      expect(stateDigest(b.session)).toBe(beforeB);
+      teardownRun(b.session);
+      expect(bTeardown).toHaveBeenCalledOnce();
+      expect(aTeardown).toHaveBeenCalledOnce();
+    } finally {
+      await Promise.all([a.session.dispose(), b.session.dispose()]);
+    }
+  });
+});
