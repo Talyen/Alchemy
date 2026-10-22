@@ -252,6 +252,30 @@ describe("script execution reliability", () => {
     expect(result.stdout.trim()).toBe("preserved");
   });
 
+  it.each([
+    ["reset", "--h"],
+    ["checkout", "--f"],
+    ["switch", "--di"],
+  ])("backs up dirty work before abbreviated %s %s", (command, option) => {
+    const root = repository();
+    fs.writeFileSync(path.join(root, "game.ts"), "unsaved work");
+    fs.writeFileSync(path.join(root, "untracked.txt"), "unfinished source");
+    const operands = command === "reset" ? [] : [git(root, "branch", "--show-current")];
+    const result = spawnSync(
+      process.execPath,
+      [path.join(ROOT, "scripts/git-safety-guard.mjs"), command, option, ...operands],
+      {
+        cwd: root,
+        encoding: "utf8",
+        env: { ...process.env, LEFTHOOK: "0" },
+      },
+    );
+    expect(result.status, result.stderr).toBe(1);
+    expect(result.stderr).toContain("blocked: destructive git command");
+    expect(git(root, "show", "stash@{0}:game.ts")).toBe("unsaved work");
+    expect(git(root, "show", "stash@{0}^3:untracked.txt")).toBe("unfinished source");
+  });
+
   it.each([["game.ts"], ["HEAD", "game.ts"]])(
     "backs up checkout path restores without an explicit separator: %j",
     (...operands) => {

@@ -34,11 +34,17 @@ export function isDestructive(parsedArgs) {
   if (!DESTRUCTIVE.has(subcommand)) return false;
 
   if (subcommand === "reset") {
-    return args.includes("--hard") || args.includes("--merge") || args.includes("--keep");
+    // Git accepts abbreviated long options, including --h for --hard.
+    // --m remains ambiguous between --mixed and --merge; --me selects merge.
+    return (
+      hasLongOption(args, "--hard", "--h") ||
+      hasLongOption(args, "--merge", "--me") ||
+      hasLongOption(args, "--keep", "--k")
+    );
   }
   if (subcommand === "checkout") {
     if (args.includes("--")) return true;
-    if (hasForceFlag(args)) return true;
+    if (hasForceFlag(args) || hasLongOption(args, "--force", "--f")) return true;
     if (args.includes(".")) return true;
     return false;
   }
@@ -60,7 +66,7 @@ export function isDestructive(parsedArgs) {
     return args.some((a) => a.startsWith("-") && a.includes("f"));
   }
   if (subcommand === "switch") {
-    return hasForceFlag(args) || args.includes("--discard-changes");
+    return hasForceFlag(args) || hasLongOption(args, "--discard-changes", "--di");
   }
   if (subcommand === "branch") {
     return (
@@ -86,6 +92,13 @@ export function isDestructive(parsedArgs) {
     return false;
   }
   return false;
+}
+
+function hasLongOption(args, option, minimumPrefix) {
+  const end = args.indexOf("--");
+  return args
+    .slice(1, end < 0 ? undefined : end)
+    .some((arg) => arg.length >= minimumPrefix.length && option.startsWith(arg));
 }
 
 function hasForceFlag(args) {
