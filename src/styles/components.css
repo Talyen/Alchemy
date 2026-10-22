@@ -916,6 +916,8 @@
 }
 
 .labyrinth-discovery {
+  position: relative;
+  z-index: 1;
   pointer-events: none;
   display: block;
   width: 100%;
@@ -923,6 +925,24 @@
   object-fit: cover;
   user-select: none;
   animation: labyrinth-discover 180ms ease-out both;
+}
+
+.labyrinth-discovery[data-crossfade] {
+  animation-duration: 260ms;
+  animation-timing-function: ease-in-out;
+}
+
+[data-artwork-pending] .labyrinth-discovery[data-crossfade] {
+  animation-play-state: paused;
+}
+
+.labyrinth-discovery-fog {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .labyrinth-hero-art {
@@ -936,6 +956,10 @@
 
   .labyrinth-discovery {
     animation: none;
+  }
+
+  .labyrinth-discovery-fog {
+    display: none;
   }
 }
 
