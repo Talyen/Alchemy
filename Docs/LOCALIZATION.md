@@ -79,7 +79,7 @@ Build and package gates validate all shipped languages and the asset digest.
 ## Agent workflow
 
 The [localization skill](../.agents/skills/localization/SKILL.md) applies whenever
-player-facing text changes. Draft wording may evolve in the isolated task worktree without translating each experiment. Once the wording settles, translate and review the batch before final verification and integration. Integration, pre-push and CI still reject stale catalogs.
+player-facing text changes. Draft wording may evolve in the isolated task worktree without translating each experiment. Prepare one batch after the task's English wording settles, then translate and review its affected messages across all shipped locales. Reuse unchanged translations; there is no per-edit translation cycle. [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns verification and completion requirements; stale catalogs remain blocked by the freshness gate.
 
 1. Run `npm run i18n:prepare -- <task-file.json>` (default: `reports/localization/tasks.json`). This extracts current English, refreshes derived outputs, and writes one editable packet containing only pending canonical messages and result templates for affected locales. An existing packet is never overwritten; choose another path when source changes during ongoing work.
 2. Translate the packet's `results`, then review meaning in a separate pass against `messages`: negation, actor, timing, conditions, quantities, permanence, alternatives, and glossary consistency. Preserve named parameters, semantic tags and Steam tokens. Plural templates include every required category; `text` must match `forms.other`. Mark `reviewed: true` only after that review.

@@ -1,7 +1,7 @@
 export function acquireLocalTestLane(
   port?: number,
   options?: {
-    timeoutMs?: number;
+    timeoutMs?: number | null;
     signal?: AbortSignal;
     onWait?: (message: string) => void;
   },

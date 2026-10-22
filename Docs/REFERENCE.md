@@ -27,7 +27,7 @@ duplicating command lists in subsystem docs. Script implementation owners are ma
 
 Verification and audit commands keep full artifacts on disk but print a bounded digest. Start with the digest when the cause is unclear; open the most relevant artifact directly when you have a specific hypothesis. Battle warnings use the `[Enemy Turn]` prefix.
 
-For one-shot investigations, `npm run compact -- npm run test:full -- <test-path>` (or `npm run compact -- npm run lint:ci`, or `npm run compact -- npm run test:e2e -- <spec-path>`) preserves command arguments and exit status while printing available test totals and bounded failures. Full stdout/stderr stays under `reports/compact/<run-id>/output.log`; unrecognized totals are not guessed. This command does not replace verification or update its receipts. Keep normal streaming commands for watch, headed debugging, and interactive sessions.
+Unit diagnosis already uses compact output through `npm run test:unit -- <test-path>`. For other one-shot investigations, `npm run compact -- npm run lint:ci` (or `npm run compact -- npm run test:e2e -- <spec-path>`) preserves command arguments and exit status while printing available test totals and bounded failures. Full stdout/stderr stays under `reports/compact/<run-id>/output.log`; unrecognized totals are not guessed. This command does not replace verification or update its receipts. Keep normal streaming commands for watch, headed debugging, and interactive sessions.
 
 Outer test runners set `ALCHEMY_RUN_ID` once and pass it to child commands; CI derives the same identity from its run, attempt, job, and optional matrix variant. Do not change it within one invocation.
 

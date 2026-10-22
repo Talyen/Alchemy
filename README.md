@@ -48,17 +48,17 @@ binaries, prepared-asset failures, and running checkouts on separate ports.
 
 ## Develop
 
-| Command                    | Action                                                  |
-| -------------------------- | ------------------------------------------------------- |
-| `npm run dev`              | Start Vite dev server                                   |
-| `npm run dev:desktop`      | Start the Electron shell                                |
-| `npm test`                 | Run bounded Node-only smoke tests                       |
-| `npm run test:full`        | Run the full unit suite; append paths for focused tests |
-| `npm run test:e2e`         | Run Playwright against the existing production build    |
-| `npm run lint`             | Lint all source files                                   |
-| `npm run verify -- --diff` | Run lightweight changed-path verification               |
-| `npm run check -- --diff`  | Run the lightweight push and handoff gate               |
-| `npm run docs:check`       | Validate documentation links, commands, and contracts   |
+| Command                        | Action                                                  |
+| ------------------------------ | ------------------------------------------------------- |
+| `npm run dev`                  | Start Vite dev server                                   |
+| `npm run dev:desktop`          | Start the Electron shell                                |
+| `npm test`                     | Run bounded Node-only smoke tests                       |
+| `npm run test:unit`            | Run the full unit suite; append paths for focused tests |
+| `npm run test:e2e`             | Run Playwright against the existing production build    |
+| `npm run lint`                 | Lint all source files                                   |
+| `npm run check -- --diff`      | Check the current task                                  |
+| `npm run check:full -- --diff` | Run broad local validation                              |
+| `npm run docs:check`           | Validate documentation links, commands, and contracts   |
 
 Install Playwright's browser once before the first local E2E run:
 
@@ -72,7 +72,7 @@ commands and fixture guidance live in the [E2E guide](./tests/e2e/README.md).
 
 Use explicit task-owned paths instead of `--diff` when the checkout contains
 other work. [Contributing](./CONTRIBUTING.md#what-to-run-when-you-change) owns
-local execution policy and the opt-in full gates; a local pass still needs CI validation.
+verification permissions and completion requirements.
 
 Full command catalog (build, desktop, gates, balance sim, perf, clean):
 [`Docs/REFERENCE.md`](./Docs/REFERENCE.md#environment--commands). Path-specific

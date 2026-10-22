@@ -210,9 +210,10 @@ node scripts/agent-worktree.mjs integrate --task <slug>
 ```
 
 Integration uses an exclusive loopback port derived from the shared Git directory,
-so all worktrees share one OS-released lock. A busy lock waits for up to 60 seconds with status output; cancellation stops the wait.
-`ALCHEMY_LOCK_WAIT_MS` sets the deadline (`0` fails immediately). If it expires, retry
-later without messaging other chats. A port collision also fails closed. The command
+so all worktrees share one OS-released lock. Contention waits for release with
+periodic status and cancellation, using the same waiting policy as the
+[test lane](../CONTRIBUTING.md#what-to-run-when-you-change). An explicit deadline
+can still fail before acquisition; no owner is reclaimed. The command
 requires registered task and `main` checkouts with no dirty files or unfinished Git
 operations. Safety reads bypass Git's filesystem monitor and untracked cache
 without changing repository settings. While holding the lock, it merges current local `main` into the task,
@@ -229,19 +230,30 @@ Failures preserve task work and leave `main` unchanged. Never bypass serializati
 with a manual update to `main`. Keep unintegrated work committed and recoverable;
 cleanup must not discard work.
 
-Successful integration automatically deletes and unregisters only the named task
-worktree while holding the integration lock. Cleanup rechecks its branch, commit,
+Final integration closes the current task's managed browser sessions, preserves
+review evidence, then deletes and unregisters only the named task worktree while
+holding the integration lock. `--keep-worktree` skips this final teardown. Cleanup rechecks its branch, commit,
 clean status, unfinished Git operations, registration and lock state; submodules
 block automatic cleanup. Failed verification never removes a worktree. A cleanup
 failure leaves the completed integration in place and reports the blocker.
 
 The checkout first moves atomically to a temporary directory under
 `~/.codex/worktree-archives/Alchemy/` so failed unregistration can restore it.
+Before staging, the latest `reports/current-run` pointers, their run bundle and
+directly linked artifacts, and `reports/visual-review/` are copied into a unique
+`reports/integrations/` bundle in the original checkout. Reused run bundles are
+included. The printed path and `integration.json` identify the original checkout
+and integrated commit; relative report paths retain their layout within the bundle.
+Managed browser screenshots use `reports/visual-review/` by default; put selected
+captures from other tools there too. Unsupported entries, escaping paths, symlinks
+or copy failures preserve the worktree and report a cleanup blocker. These bundles
+use ordinary report retention and explicit cleanup; they are not a design archive.
 After unregistration, the temporary directory is deleted immediately, including
-ignored files and build outputs. Successful integration retains no archived
+remaining ignored files and build outputs. Successful integration retains no archived
 checkout. The task branch remains available through
 `git worktree add <original-path> <branch>`; ignored and other local-only files are
-permanently deleted. Use `--keep-worktree` when those files are still needed.
+deleted except for the preserved review evidence. Use `--keep-worktree` when other
+local files are still needed.
 `CODEX_WORKTREE_ARCHIVE_ROOT` can select an external staging directory; moving
 across filesystems fails without deleting the source. If cleanup fails after
 integration, inspect the reported checkout or staging directory; `recovery.json`

@@ -4,9 +4,10 @@ Canonical detail linked from [REFERENCE.md](./REFERENCE.md).
 
 ## Script Command Reference
 
-The table covers common tasks; `package.json` owns the complete list.
-[Contributing](../CONTRIBUTING.md#what-to-run-when-you-change) owns what each gate
-includes and when it applies.
+Start with `check` for a task, `test:unit` for unit diagnosis, and `check:full`
+for broader validation. [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change)
+is the sole owner of verification permissions and completion requirements.
+The table locates other operations; `package.json` owns the complete list.
 
 | Task                                | Command                            | Notes                                                                                             |
 | ----------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------- |
@@ -17,10 +18,9 @@ includes and when it applies.
 | Check local asset freshness         | `npm run assets:check`             | Read-only; requires selected local Asset Library sources                                          |
 | Check prepared outputs              | `npm run assets:check:outputs`     | Read-only; does not require Asset Library; used by CI                                             |
 | Run local smoke                     | `npm test`                         | Fixed Node-only suites; accepts no test-path arguments                                            |
-| Run unit tests                      | `npm run test:full -- <path>`      | Omit paths for the full unit suite; agents may run unit tests without approval                    |
-| Select affected unit tests          | `npm run verify:unit -- <paths>`   | Dependency-related and risk-selected units only; add `--plan` to inspect selection                |
+| Run unit tests                      | `npm run test:unit -- <path>`      | Omit paths for the full unit suite; `test:full` is a compatibility alias                          |
 | Check a task during work or handoff | `npm run check -- --diff`          | Add `--plan` to preview selection                                                                 |
-| Check source types                  | `npm run typecheck`                | Source types; full static checks run in CI or by explicit local request                           |
+| Check source types                  | `npm run typecheck`                | Source compilation only; see Contributing for gate selection                                      |
 | Run the CI static aggregate         | `npm run lint:ci`                  | See [gate policy](../CONTRIBUTING.md#static-build-and-ci-policy)                                  |
 | Validate docs                       | `npm run docs:check`               | Links, paths, commands, discovery references, plan metadata                                       |
 | Run a browser journey               | `npm run test:e2e:route -- <name>` | [E2E guide](../tests/e2e/README.md#running-focused-checks); preview mode requires a current build |
@@ -40,8 +40,7 @@ Use [Agent discovery](./AGENT_DISCOVERY.md) for optional lookup/measurement
 commands and [Plans](./Plans/README.md) for plan creation and completion.
 `npm run docs:check:final` is a non-mutating repository-wide closure check: it
 requires no active or blocked plans and does not finish or delete them.
-Ordinary documentation handoff uses the task-scoped `check`, which includes documentation contracts;
-other tasks' active or blocked plans may remain.
+See [Contributing](../CONTRIBUTING.md#hooks-and-workflow-hygiene) for plan handoff requirements.
 
 ## Local development
 

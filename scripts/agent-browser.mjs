@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
+import path from "node:path";
 import {
   captureBrowser,
   browserSocketDirectory,
@@ -71,6 +72,8 @@ try {
                   ...process.env,
                   AGENT_BROWSER_SOCKET_DIR: browserSocketDirectory(),
                   AGENT_BROWSER_NAMESPACE: "",
+                  AGENT_BROWSER_SCREENSHOT_DIR:
+                    process.env.AGENT_BROWSER_SCREENSHOT_DIR || path.join(ROOT, "reports/visual-review"),
                 },
               }
             : {}),

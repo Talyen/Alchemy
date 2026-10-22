@@ -8,6 +8,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -146,7 +147,7 @@ function integrationFixture(suffix = "") {
   git(["config", "user.name", "Integration Test"]);
   git(["config", "user.email", "integration@example.test"]);
   git(["config", "commit.gpgsign", "false"]);
-  writeFileSync(join(root, ".gitignore"), ".worktrees/\n");
+  writeFileSync(join(root, ".gitignore"), ".worktrees/\nreports/\n");
   writeFileSync(
     join(root, "package.json"),
     JSON.stringify({ scripts: { check: "node check.cjs", "docs:check": "node check.cjs" } }),
@@ -374,19 +375,37 @@ describe("serialized local integration", () => {
   }, 20000);
 });
 
-it("deletes local outputs, retains the branch and leaves a peer untouched", () => {
+it("preserves check evidence and captures before deleting outputs, retaining the branch and leaving peers untouched", () => {
   const { root, taskPath, git, integrate, archive } = integrationFixture();
   using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
 
   writeFileSync(join(root, "main.txt"), "main\n");
   git(["add", "main.txt"]);
   git(["commit", "-qm", "test: main"]);
-  writeFileSync(join(taskPath, ".gitignore"), ".worktrees/\nignored\nnode_modules/\n");
+  writeFileSync(join(taskPath, ".gitignore"), ".worktrees/\nreports/\nignored\nnode_modules/\n");
   git(["add", ".gitignore"], taskPath);
   git(["commit", "-qm", "test: ignore outputs"], taskPath);
   writeFileSync(join(taskPath, "ignored"), "local evidence");
   mkdirSync(join(taskPath, "node_modules"));
   writeFileSync(join(taskPath, "node_modules", "cached"), "rebuildable");
+  mkdirSync(join(taskPath, "reports/runs/check-test"), { recursive: true });
+  mkdirSync(join(taskPath, "reports/runs/reused-test"), { recursive: true });
+  mkdirSync(join(taskPath, "reports/visual-review"));
+  writeFileSync(join(taskPath, "reports/runs/check-test/run.md"), "passing integration check");
+  writeFileSync(join(taskPath, "reports/runs/reused-test/output.log"), "original verification evidence");
+  writeFileSync(join(taskPath, "reports/visual-review/screen.png"), "selected capture");
+  writeFileSync(
+    join(taskPath, "reports/current-run.json"),
+    JSON.stringify({ runId: "check-test", artifacts: [{ path: "reports/runs/reused-test/output.log" }] }),
+  );
+  writeFileSync(join(taskPath, "reports/current-run.md"), "latest summary");
+  // Completion closes the task's browsers before removing their launcher.
+  writeFileSync(
+    join(taskPath, "scripts/lib/agent-browser-session.mjs"),
+    `import fs from 'node:fs'; export async function closeTaskBrowsers() { fs.mkdirSync(${JSON.stringify(join(root, "reports"))}, { recursive: true }); fs.writeFileSync(${JSON.stringify(join(root, "reports/browser-closed"))}, 'closed'); }`,
+  );
+  git(["add", "scripts/lib/agent-browser-session.mjs"], taskPath);
+  git(["commit", "-qm", "test: browser lifecycle"], taskPath);
   const peer = join(root, ".worktrees", "peer");
   git(["worktree", "add", "-b", "agent/peer", peer]);
   writeFileSync(join(peer, "unfinished"), "peer work");
@@ -396,7 +415,40 @@ it("deletes local outputs, retains the branch and leaves a peer untouched", () =
   expect(git(["worktree", "list", "--porcelain"])).not.toContain(taskPath);
   expect(readFileSync(join(peer, "unfinished"), "utf8")).toBe("peer work");
   expect(git(["rev-parse", "agent/task"])).toBe(git(["rev-parse", "main"]));
+  const bundles = readdirSync(join(root, "reports/integrations"));
+  expect(bundles).toHaveLength(1);
+  const evidence = join(root, "reports/integrations", bundles[0]);
+  expect(readFileSync(join(evidence, "reports/runs/check-test/run.md"), "utf8")).toBe("passing integration check");
+  expect(readFileSync(join(evidence, "reports/runs/reused-test/output.log"), "utf8")).toBe(
+    "original verification evidence",
+  );
+  expect(readFileSync(join(evidence, "reports/visual-review/screen.png"), "utf8")).toBe("selected capture");
+  expect(JSON.parse(readFileSync(join(evidence, "integration.json"), "utf8")).commit).toBe(git(["rev-parse", "main"]));
+  expect(readFileSync(join(root, "reports/browser-closed"), "utf8")).toBe("closed");
+  expect(result.stdout).toContain("Preserved integration evidence:");
 }, 20000);
+
+it.skipIf(process.platform === "win32").each(["escaping artifact", "symlink"])(
+  "preserves the integrated checkout when evidence contains an %s",
+  (entry) => {
+    const { root, taskPath, git, integrate } = integrationFixture();
+    using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
+    mkdirSync(join(taskPath, "reports/visual-review"), { recursive: true });
+    if (entry === "symlink") symlinkSync(join(root, "shared.txt"), join(taskPath, "reports/visual-review/linked.txt"));
+    else
+      writeFileSync(
+        join(taskPath, "reports/current-run.json"),
+        JSON.stringify({ runId: "check-test", artifacts: [{ path: "../shared.txt" }] }),
+      );
+    const result = integrate();
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("preserved");
+    expect(existsSync(taskPath)).toBe(true);
+    expect(readFileSync(join(root, "shared.txt"), "utf8")).toBe("base\n");
+    expect(git(["rev-parse", "main"])).toBe(git(["rev-parse", "agent/task"]));
+  },
+  20000,
+);
 
 it("keeps an intermediate integration when requested", () => {
   const { root, taskPath, script, git, archive } = integrationFixture();

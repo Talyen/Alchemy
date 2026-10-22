@@ -41,6 +41,7 @@ function harness() {
     if (set >= 0 && args[set + 1] === "device") viewport = [390, 844];
     fs.writeFileSync(file, JSON.stringify(viewport));
     fs.appendFileSync(${JSON.stringify(path.join(root, "calls.jsonl"))}, JSON.stringify(args) + "\\n");
+    if (args.includes("screenshot")) fs.writeFileSync(${JSON.stringify(path.join(root, "screenshot-dir"))}, process.env.AGENT_BROWSER_SCREENSHOT_DIR);
     console.log(args.includes("--json") ? JSON.stringify({ viewport }) : "Viewport: " + viewport.join("x"));
   `,
     { mode: 0o755 },
@@ -58,6 +59,7 @@ function harness() {
         .trim()
         .split("\n")
         .map((line) => JSON.parse(line) as string[]),
+    screenshotDirectory: () => readFileSync(path.join(root, "screenshot-dir"), "utf8"),
     cleanup: () => rmSync(root, { recursive: true, force: true }),
   };
 }
@@ -89,6 +91,7 @@ describe.skipIf(process.platform === "win32")("managed browser command output", 
       using _scopeCleanup = createCleanup(() => cli.cleanup());
 
       expect(JSON.parse(cli.run("--json", capture))).toEqual({ viewport: [1920, 1080] });
+      if (capture === "screenshot") expect(cli.screenshotDirectory()).toMatch(/reports[/\\]visual-review$/u);
       cli.run("set", "viewport", "800", "600");
       expect(JSON.parse(cli.run("--json", capture))).toEqual({ viewport: [800, 600] });
     },

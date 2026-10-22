@@ -36,7 +36,7 @@ of per file. The `documentation` route covers `Docs/**` so check classification
 
 `check` runs the task-scoped plan described in [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change). `verify-changed.mjs` filters route commands to selected units and documentation by default; `--unit` omits documentation and `--full` retains report/asset routes. The outer gate adds applicable localization, source/test compilation, formatting and bounded selected-file lint. `check --plan` prints both the outer stages and selected route commands without executing them. Integration invokes that same gate after merging current `main`; eligible deterministic commands reuse passing receipts in task and full profiles.
 
-`lib/exclusive-port.mjs` supplies bounded waiting for the test lane and integration lock. It retries occupied ports without reclaiming them, reports waiting/acquisition once, supports AbortSignal cancellation, and defaults to a 60-second deadline configurable by `ALCHEMY_LOCK_WAIT_MS`. Timeout starts no protected work. Normal release or process termination frees the OS-owned listener. Raw test invocations and watch/debug sessions remain outside the test lane; it does not coordinate unrelated host workloads.
+`lib/exclusive-port.mjs` supplies cancellable waiting for the test lane and integration lock. It retries occupied ports without reclaiming them, reports acquisition and periodic waiting status, and supports AbortSignal cancellation. Waiting policy and optional deadlines live in [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change). Normal release or process termination frees the OS-owned listener. Raw test invocations and watch/debug sessions remain outside the test lane; it does not coordinate unrelated host workloads.
 
 ## CI and documentation contracts
 
@@ -45,7 +45,7 @@ workflows; `tests/scripts/ci-path-filters.test.ts` pins the intended
 route↔gate alignment so the two lists cannot drift silently. In the full profile, `docs:check` runs
 once per gate: verification skips its copy (`--skip-docs-check`) when `check`
 will run it through the static aggregate.
-`check:static` runs generated + format + typecheck + lint (CI or explicit local opt-in);
+`check:static` runs generated + format + typecheck + lint;
 `lint:ci` adds docs + deadcode + boundaries + architecture-smoke + Playwright
 collection, so the boundary subset is not double-run on every full static
 invocation. Generated-output validation stays layered by design: fast

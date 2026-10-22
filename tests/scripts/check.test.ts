@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
-import { readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,6 +15,31 @@ vi.mock("../../scripts/lib/verification/changed-paths.mjs", async (importOrigina
 }));
 
 const runCheck = (...args: Parameters<typeof runFullCheck>) => runFullCheck([...(args[0] ?? []), "--full"], args[1]);
+
+it("leaves the interactive browser alone when the actual check CLI fails", () => {
+  const directory = mkdtempSync(join(tmpdir(), "alchemy-check-browser-"));
+  const marker = join(directory, "closed");
+  const browserModule = `import fs from 'node:fs'; export const taskKey = () => null; export const closeTaskBrowsers = async () => fs.writeFileSync(${JSON.stringify(marker)}, 'closed');`;
+  const loader = `import { registerHooks } from 'node:module'; registerHooks({ load(url, context, next) { return url.endsWith('/lib/agent-browser-session.mjs') ? { format: 'module', source: ${JSON.stringify(browserModule)}, shortCircuit: true } : next(url, context); } });`;
+  try {
+    const result = spawnSync(
+      process.execPath,
+      [
+        "--import",
+        `data:text/javascript,${encodeURIComponent(loader)}`,
+        "scripts/check.mjs",
+        "scripts/check.mjs",
+        "--invalid",
+      ],
+      { encoding: "utf8" },
+    );
+    expect(result.status, result.stderr).toBe(2);
+    expect(result.stderr).toContain("Unknown check option");
+    expect(existsSync(marker)).toBe(false);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
 
 describe("full source-aware completion gate", () => {
   let runId: string;

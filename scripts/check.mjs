@@ -3,7 +3,6 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 
 import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { summarizeAndReportFailure, summarizeStepResult } from "./lib/run-step.mjs";
@@ -19,7 +18,6 @@ import { isMainModule } from "./lib/is-main-module.mjs";
 import { runGit, expandRepositoryPaths } from "./lib/repository-paths.mjs";
 import { LOCAL_CHECK_INPUTS } from "./lib/verification/test-commands.mjs";
 import { runCommandAsync } from "./lib/run-command.mjs";
-import { closeTaskBrowsers, taskKey } from "./lib/agent-browser-session.mjs";
 import { INLINE_ARGS_BYTES } from "./lib/verification/selection-budgets.mjs";
 import { filterPrettierPaths } from "./lib/verification/prettier-paths.mjs";
 import { resolveRoutes } from "./lib/verification/change-routes.mjs";
@@ -409,30 +407,12 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
 
 if (isMainModule(import.meta.url)) {
   const planOnly = process.argv.includes("--plan");
-  let cleanupFinished = false;
-  process.once("exit", () => {
-    if (planOnly || cleanupFinished || !taskKey() || process.platform === "win32") return;
-    // Cancellation can exit from the command runner before promises settle.
-    // Finish cleanup here and expose a failure instead of abandoning a silent child.
-    const cleanup = spawnSync(process.execPath, [path.join(ROOT, "scripts/agent-browser.mjs"), "--cleanup-task"], {
-      stdio: "inherit",
-      timeout: 30_000,
-    });
-    if (cleanup.status !== 0) {
-      console.error("Browser cleanup failed; retained ownership records for recovery.");
-      process.exitCode = 2;
-    }
-  });
   (planOnly ? Promise.resolve() : registerArtifactSession(ROOT, () => pruneExpiredArtifacts({ rootDir: ROOT })))
     .then(() => runCheck())
-    .then(async (code) => {
-      if (!planOnly) await closeTaskBrowsers();
-      cleanupFinished = true;
+    .then((code) => {
       process.exitCode = code;
     })
-    .catch(async (error) => {
-      if (!planOnly) await closeTaskBrowsers().catch((cleanupError) => console.error(cleanupError.message));
-      cleanupFinished = true;
+    .catch((error) => {
       console.error(error instanceof Error ? error.message : String(error));
       process.exitCode = 2;
     });

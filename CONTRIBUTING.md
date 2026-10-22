@@ -25,13 +25,18 @@ larger batches are reported as deferred to CI. Scoped lint includes the configur
 establishes local completion for its reported scope; CI and platform acceptance
 remain separate evidence, and are reported only when actually run.
 
-| Need                      | Command                             | Scope                                                                  |
-| ------------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
-| Ordinary task             | `npm run check -- <paths>`          | Selected units, types, docs, localization, formatting and bounded lint |
-| Unit diagnosis            | `npm run test:full -- <test-paths>` | Focused tests; omit paths for all units                                |
-| Minimal environment smoke | `npm test`                          | Three fixed Node suites; no edited-code coverage claim                 |
-| Broad local validation    | `npm run check:full -- <paths>`     | Full static, applicable builds, budgets and preview smoke              |
-| CI                        | Pull request or push to `main`      | Complete validation and applicable desktop/assets checks               |
+The primary commands are:
+
+| Need                 | Command                             | Scope                                                                  |
+| -------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
+| Check this task      | `npm run check -- <paths>`          | Selected units, types, docs, localization, formatting and bounded lint |
+| Run unit tests       | `npm run test:unit -- <test-paths>` | Focused tests; omit paths for all units                                |
+| Run broad validation | `npm run check:full -- <paths>`     | Full static, applicable builds, budgets and preview smoke              |
+
+`test:full` remains an alias for the same unit runner. `npm test` remains the
+fixed, minimal Node smoke; it does not select edited-code coverage. CI runs
+complete validation and applicable desktop/assets checks on pull requests and
+pushes to `main`.
 
 Task work authorizes the local verification needed to implement and diagnose it:
 units, compilation, lint, development previews, focused browser/Electron checks,
@@ -62,9 +67,10 @@ matches, so confirm the reported file count before claiming that scope passed.
 One-shot Vitest and Playwright commands through `run-compact.mjs`, including
 full/focused unit tests and the full verifier's related/changed selections, share
 one local test lane with the ship unit runner across checkouts on the same host.
-An occupied lane waits for up to 60 seconds before failing without starting tests.
-The wait is cancellable; `ALCHEMY_LOCK_WAIT_MS` sets its deadline in milliseconds
-(`0` fails immediately). Status reports waiting and acquisition once each.
+An occupied lane waits for release without a default timeout, so ordinary contention
+does not fail verification. Waiting reports progress every 30 seconds and is
+cancellable. Set `ALCHEMY_LOCK_WAIT_MS` for an explicit deadline in milliseconds
+(`0` fails immediately). No protected work starts before acquisition.
 The minimal Node smoke does not acquire this lane. Raw CLI and watch/debug
 sessions bypass it and must be coordinated manually. The runner defaults native
 bundler threads to one; the four-worker Vitest ceiling remains unchanged. An
@@ -82,12 +88,15 @@ navigation, reloads and captures. New managed sessions automatically use a
 Use `npm run agent:browser -- set viewport <width> <height>` for a deliberate
 responsive check; later navigation and screenshots preserve that choice.
 An explicit viewport or device on the first command takes precedence; user-attached
-sessions are not resized. Use the same managed command for navigation, reloads
-and captures. It selects the current task's session automatically.
+sessions are not resized. Managed screenshots default to `reports/visual-review/`
+for automatic preservation at final integration; explicit output paths and
+`AGENT_BROWSER_SCREENSHOT_DIR` overrides still work.
 
-`npm run check` closes this task's managed sessions on success, failure or
-cancellation and reports cleanup failures. No manual session registration is
-needed. Without a Codex task identity, or on Windows, the command passes through
+`npm run check` preserves interactive sessions, including after failure or
+cancellation. Final integration closes this task's managed sessions before
+removing its worktree; `--keep-worktree` preserves them for continued work.
+Use `npm run agent:browser -- close` for explicit teardown. Existing ownership
+guards and orphan recovery remain active; no manual registration is needed. Without a Codex task identity, or on Windows, the command passes through
 to the native CLI and leaves human session ownership unchanged. Never close all
 sessions, kill unrelated browsers, or reclaim an active session based on age.
 Preserve ownership records when cleanup fails.
@@ -128,7 +137,7 @@ investigations and benchmark comparisons. [Cache implementation details](./scrip
 document input identity. Reuse is an optimization, never permission to omit a
 newly selected check or substitute narrower coverage.
 
-Supporting local stages have a 60-second deadline. Selected units use their test deadlines and the bounded lane wait; minimal Node smoke retains its 30-second deadline.
+Supporting local stages have a 60-second deadline. Selected units use their test deadlines after acquiring the shared lane; lane waiting has no default deadline. Minimal Node smoke retains its 30-second deadline.
 
 When source/catalog inputs change, the local check also runs the offline [localization freshness gate](./Docs/LOCALIZATION.md#agent-workflow). Agents settle experimental wording in their isolated worktree, then update translations before final verification and integration; checks and builds never invoke a translation service.
 

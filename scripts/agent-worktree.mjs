@@ -40,6 +40,67 @@ function runGit(args, opts = {}) {
   return result;
 }
 
+function preserveIntegrationEvidence(main, task, branch, head) {
+  const evidencePath = (relative) => {
+    const source = path.resolve(task, relative);
+    if (!source.startsWith(task + path.sep)) throw new Error("Evidence path leaves task checkout; preserved");
+    // Never follow links into another checkout, including ancestors of a file.
+    let ancestor = task;
+    for (const segment of path.relative(task, source).split(path.sep)) {
+      ancestor = path.join(ancestor, segment);
+      if (fs.lstatSync(ancestor, { throwIfNoEntry: false })?.isSymbolicLink())
+        throw new Error("Evidence symlink requires inspection; checkout preserved");
+    }
+    return source;
+  };
+  const pointer = evidencePath("reports/current-run.json");
+  const run = fs.existsSync(pointer) ? JSON.parse(fs.readFileSync(pointer, "utf8")) : null;
+  const selected = new Set(["reports/current-run.json", "reports/current-run.md", "reports/visual-review"]);
+  if (run) {
+    if (!/^[a-z0-9-]+$/u.test(run.runId)) throw new Error("Invalid evidence run ID; checkout preserved");
+    selected.add(`reports/runs/${run.runId}`);
+    for (const artifact of run.artifacts ?? []) {
+      // Reused verification can link a previous run. Preserve that bundle too.
+      const bundle = /^reports\/runs\/[a-z0-9-]+(?:\/|$)/u.exec(artifact.path);
+      selected.add(bundle ? bundle[0].replace(/\/$/u, "") : artifact.path);
+    }
+  }
+  const existing = [...new Set([...selected].map((relative) => path.relative(task, evidencePath(relative))))].filter(
+    (relative) => fs.existsSync(path.join(task, relative)),
+  );
+  if (!existing.length) return;
+  let parent = main;
+  for (const segment of ["reports", "integrations"]) {
+    parent = path.join(parent, segment);
+    if (fs.lstatSync(parent, { throwIfNoEntry: false })?.isSymbolicLink())
+      throw new Error("Evidence destination is a symlink; checkout preserved");
+    fs.mkdirSync(parent, { recursive: true });
+  }
+  const destination = fs.mkdtempSync(path.join(parent, `${branch.replaceAll("/", "-")}-${head.slice(0, 12)}-`));
+  const copy = (source, target) => {
+    const stat = fs.lstatSync(source);
+    if (stat.isDirectory()) {
+      fs.mkdirSync(target, { recursive: true });
+      for (const entry of fs.readdirSync(source)) copy(path.join(source, entry), path.join(target, entry));
+    } else if (stat.isFile()) {
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.copyFileSync(source, target);
+    } else throw new Error("Unsupported evidence entry; checkout preserved");
+    fs.utimesSync(target, stat.atime, stat.mtime);
+  };
+  try {
+    for (const relative of existing) copy(path.resolve(task, relative), path.resolve(destination, relative));
+    fs.writeFileSync(
+      path.join(destination, "integration.json"),
+      JSON.stringify({ branch, commit: head, originalCheckout: task, evidence: existing }, null, 2) + "\n",
+    );
+  } catch (error) {
+    fs.rmSync(destination, { recursive: true, force: true });
+    throw error;
+  }
+  console.log("Preserved integration evidence: " + destination);
+}
+
 // Stage the checkout for rollback if unregistration fails. Successful cleanup
 // deletes the complete checkout, including local-only files, and retains its branch.
 export function removeIntegratedWorktree(main, task, branch, head) {
@@ -64,6 +125,7 @@ export function removeIntegratedWorktree(main, task, branch, head) {
     if (fs.existsSync(git("-C", task, "rev-parse", "--path-format=absolute", "--git-path", state)))
       throw new Error("Unfinished Git operation preserved");
   if (/^160000 /m.test(git("-C", task, "ls-files", "--stage"))) throw new Error("Submodule worktree preserved");
+  preserveIntegrationEvidence(main, task, branch, head);
   const root = path.resolve(
     process.env.CODEX_WORKTREE_ARCHIVE_ROOT ??
       path.join(os.homedir(), ".codex", "worktree-archives", path.basename(main)),
@@ -261,7 +323,14 @@ export async function main(argv = process.argv.slice(2)) {
       }
       git(mainPath, ["merge", "--ff-only", taskHead]);
       console.log(`Integrated ${task} into local main at ${taskHead}; no push performed.`);
-      if (!hasFlag("--keep-worktree")) removeIntegratedWorktree(mainPath, taskPath, `agent/${task}`, taskHead);
+      if (!hasFlag("--keep-worktree")) {
+        const browsers = path.join(taskPath, "scripts/lib/agent-browser-session.mjs");
+        if (fs.existsSync(browsers)) {
+          const { closeTaskBrowsers } = await import(pathToFileURL(browsers).href);
+          await closeTaskBrowsers(taskPath);
+        }
+        removeIntegratedWorktree(mainPath, taskPath, `agent/${task}`, taskHead);
+      }
     } finally {
       await lock.release();
     }
