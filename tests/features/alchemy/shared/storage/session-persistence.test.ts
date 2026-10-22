@@ -3,18 +3,18 @@ import { describe, expect, it, vi } from "vitest";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/session/gameplay-command";
+import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import {
   encodePersistenceFields,
   hydrateAlchemyPersistenceFields,
 } from "@/features/alchemy/shared/storage/persistence";
-import { resetHomestead } from "@/features/alchemy/shared/stores/meta-commands";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
-import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
-import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
+import { resetHomestead } from "@/features/alchemy/shared/stores/commands/meta-commands";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
+import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { setGold } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { sessionRuntime } from "@/features/alchemy/shared/stores/session/session-runtime";
 import { createPlaythroughController } from "@/app/playthrough/controller";
 import { chooseMysteryOption } from "@/features/alchemy/run-loop/navigation/mystery-commands";
 import { readActivityData } from "@/lib/active-run-session";

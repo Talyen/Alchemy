@@ -234,8 +234,8 @@ validation follows a successful committed action.
 
 Shared operations remain with their production owners:
 
-- Battle start and card/Wish commands: `shared/stores/battle-start-commands.ts`
-  and `shared/stores/battle-commands.ts` under `src/features/alchemy/`.
+- Battle start and card/Wish commands: `shared/stores/commands/battle-start-commands.ts`
+  and `shared/stores/commands/battle-commands.ts` under `src/features/alchemy/`.
 - Turn completion and outcome settlement: existing battle/run-flow owners.
 - Autosave subscription, scheduling and acknowledgement: `src/app/autosave-lifecycle.ts`.
 - Gear mutations and flushes: the Armory command owner.

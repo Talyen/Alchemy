@@ -11,9 +11,9 @@ export const APPLICATION_SESSION_ADAPTERS = Object.freeze([
   "src/app/save-write-notice.tsx",
   "src/app/use-app-save-state.ts",
   "src/app/battle-presentation.ts",
-  "src/features/alchemy/shared/stores/gameplay-state-store.ts",
-  "src/features/alchemy/shared/stores/settings-store.ts",
-  "src/features/alchemy/shared/stores/use-run-screen-data.ts",
+  "src/features/alchemy/shared/stores/react/gameplay-state-store.ts",
+  "src/features/alchemy/shared/stores/react/settings-store.ts",
+  "src/features/alchemy/shared/stores/react/use-run-screen-data.ts",
 ]);
 
 function isGameSessionType(type, names) {

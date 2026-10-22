@@ -3,7 +3,7 @@ import { cleanup, fireEvent, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ESCAPE_PRIORITY, pushEscapeHandler, resetEscapeStackForTests } from "@/app/escape-stack";
 import { useAppKeyboardShortcuts } from "@/app/use-app-keyboard-shortcuts";
-import * as focusNav from "@/features/alchemy/shared/ui/focus-navigation";
+import * as focusNav from "@/features/alchemy/shared/ui/dialogs/focus-navigation";
 
 afterEach(() => {
   cleanup();

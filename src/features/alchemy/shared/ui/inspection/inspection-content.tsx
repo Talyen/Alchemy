@@ -11,8 +11,8 @@ import { BattleCardButton } from "../cards/card-button";
 import { getCardDisplayTitle } from "../cards/card-description-ui";
 import { CardSelectionGrid } from "../cards/card-selection-grid";
 import { sortInspectionCards } from "./card-inspection-sort";
-import { useDialogFocus } from "../use-dialog-focus";
-import { ModalOverlayShell } from "../modal-overlay-shell";
+import { useDialogFocus } from "../dialogs/use-dialog-focus";
+import { ModalOverlayShell } from "../dialogs/modal-overlay-shell";
 
 export function InspectionCardGrid({
   cards,

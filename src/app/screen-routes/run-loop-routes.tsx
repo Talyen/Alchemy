@@ -2,7 +2,7 @@ import { BattleEndTurnButton } from "@/features/alchemy/run-loop/screens/battle-
 import { TransmutationScreen } from "@/features/alchemy/run-loop/screens/transmutation-screen";
 import { labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
 import { useEffect, useRef } from "react";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { EnemyInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/enemy-inspection-overlay";
 import {
   readCardAnimationInProgress,
@@ -26,7 +26,7 @@ import {
 import { useBattleScreenRouteData } from "@/app/screen-routes/use-battle-screen-route-data";
 import { useBattlePlayback } from "@/app/screen-routes/use-battle-playback";
 import { MysteryScreenRoute } from "@/app/screen-routes/mystery-screen-route";
-import { useRunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
+import { useRunScreenData } from "@/features/alchemy/shared/stores/react/use-run-screen-data";
 import { CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 import type { BattleRouteCtx, RunLoopRouteCtx } from "./route-ctx";
 

@@ -1,4 +1,4 @@
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import { type Destination } from "@/lib/routing";
 import { enterRunRoom } from "./room-entry-commands";
 import { presentRunRoomEntry } from "./run-destination-handlers";

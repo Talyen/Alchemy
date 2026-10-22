@@ -1,7 +1,10 @@
-import type { BattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { onRunRestored } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { assertSessionOwnership, registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
+import type { BattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { onRunRestored } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import {
+  assertSessionOwnership,
+  registerSessionCleanup,
+} from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { PlaybackLifetime } from "./playback-lifetime";
 import { useRef, useMemo, useLayoutEffect, useState } from "react";
 import type { BattleSnapshot } from "@/lib/battle";

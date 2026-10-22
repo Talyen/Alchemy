@@ -1,4 +1,4 @@
-import { isFocusNavigationEnabled } from "./focus-input";
+import { isFocusNavigationEnabled } from "./dialogs/focus-input";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?: {

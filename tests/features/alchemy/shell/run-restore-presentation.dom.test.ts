@@ -2,18 +2,21 @@ import { createCleanup } from "@/lib/cleanup";
 import "../../../helpers/mock-audio";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import { createGameSession, type GameSession } from "@/features/alchemy/shared/stores/game-session";
+import { createGameSession, type GameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
-import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { createBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useBattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
-import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
+import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/commands/reset";
 import { createSaveBackend } from "../../../helpers/save-backend";
-import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { sessionRuntime } from "@/features/alchemy/shared/stores/session/session-runtime";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 
 const sessions: GameSession[] = [];
 function career() {

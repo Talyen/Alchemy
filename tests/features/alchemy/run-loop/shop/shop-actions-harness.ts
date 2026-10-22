@@ -7,7 +7,10 @@ import {
 import { beforeEach } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { type BattleCard } from "@/lib/game-data";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   setShopState as mutateShopState,
   setAlchemistState as mutateAlchemistState,
@@ -16,7 +19,7 @@ import {
   setRunBoons,
   setCurrentAct,
   setDestinationIndexInAct,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import {
   createInitialShopState as createInitialShopStateImpl,
   createInitialAlchemistState as createInitialAlchemistStateImpl,

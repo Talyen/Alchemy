@@ -1,13 +1,13 @@
 import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
-import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { showRunScreen } from "@/features/alchemy/shared/stores/navigation-commands";
-import { readActiveRunScreen } from "@/features/alchemy/shared/stores/run-reads";
+import { createBattleStartCommands } from "@/features/alchemy/shared/stores/commands/battle-start-commands";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { showRunScreen } from "@/features/alchemy/shared/stores/commands/navigation-commands";
+import { readActiveRunScreen } from "@/features/alchemy/shared/stores/session/run-reads";
 import { createLabyrinthNodeRouting } from "@/features/alchemy/shell/labyrinth-node-routing";
 import { createRunRouteActions } from "@/features/alchemy/shell/run-route-actions";
-import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
 

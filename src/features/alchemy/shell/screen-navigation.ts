@@ -4,9 +4,9 @@ import {
   registerSessionCleanup,
   sessionClock,
   sessionFeedback,
-} from "@/features/alchemy/shared/stores/session-capabilities";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { onRunRestored } from "@/features/alchemy/shared/stores/run-lifecycle";
+} from "@/features/alchemy/shared/stores/session/session-capabilities";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { onRunRestored } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import type { UISound } from "@/lib/audio";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";

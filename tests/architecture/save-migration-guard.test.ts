@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { CURRENT_SAVE_SCHEMA_VERSION, LAUNCH_SAVE_SCHEMA_VERSION, SaveDataSchema } from "@/lib/validation";
-import { createCompleteActiveRunData } from "../features/alchemy/shared/stores/active-run-data-fixture";
+import { createCompleteActiveRunData } from "../features/alchemy/shared/stores/session/active-run-data-fixture";
 import { currentSchemaCampaignSave, currentSchemaMysterySave } from "../fixtures/current-saves";
 
 describe("supported save baseline", () => {

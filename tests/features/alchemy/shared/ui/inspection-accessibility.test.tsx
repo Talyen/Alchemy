@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { companionLibrary } from "@/lib/game-data";
 import { CompanionPanel } from "@/features/alchemy/run-loop/battle/presentation/ui/companion-panel";
 import { ServiceButton } from "@/features/alchemy/run-loop/shop/ui/service-button";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { KeywordTag } from "@/features/alchemy/shared/ui/keyword-tag";
 import { LockedMenuItem } from "@/features/alchemy/shared/ui/locked-menu-item";
 import { TabBar } from "@/features/alchemy/shared/ui/tab-bar";

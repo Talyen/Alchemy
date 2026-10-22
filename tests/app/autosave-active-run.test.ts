@@ -5,7 +5,7 @@ import {
   setHasActiveRun,
   setRunProgressActivity,
   setScreen,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { mutateRunForTest, resetAllTestStores, setRunProgress } from "../helpers/run-domain-store-test";
 import { defaultGameSession } from "@/app/application-session";
 

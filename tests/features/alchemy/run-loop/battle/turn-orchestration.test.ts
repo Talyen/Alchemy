@@ -9,10 +9,10 @@ import {
 import { beforeEach, expect, it } from "vitest";
 import { battleSnapshot } from "@/lib/battle";
 import { createRunRngState } from "@/lib/rng";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { readBattle } from "@/features/alchemy/shared/stores/session/run-reads";
 import { commitEndTurn } from "@/features/alchemy/run-loop/battle/battle-session";
 import { makeTestBattleState } from "../../../../fixtures/battle";
-import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {

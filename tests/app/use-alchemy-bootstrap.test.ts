@@ -1,5 +1,5 @@
 import { StrictMode } from "react";
-import { createGameSession, type GameSession } from "@/features/alchemy/shared/stores/game-session";
+import { createGameSession, type GameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultSaveData, type SaveLoadState } from "@/features/alchemy/shared/storage";

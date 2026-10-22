@@ -8,7 +8,7 @@ import {
   type BattleEndTurnButtonProps,
 } from "@/features/alchemy/run-loop/screens/battle-screen/end-turn-button";
 import { battlePresentation } from "@/app/battle-presentation";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { installReadyArtworkForTests } from "../../../../../helpers/artwork-test";
 import { makeTestBattleState, makeTestCard } from "../../../../../fixtures/battle";

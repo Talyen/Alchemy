@@ -1,0 +1,48 @@
+name: Expanded-English localization acceptance
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  localization-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Record test job setup start
+        run: echo "ALCHEMY_CI_SETUP_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/setup-playwright
+      - name: Run expanded-English acceptance
+        # QA catalogs are deliberately absent from the production renderer.
+        run: npm run test:e2e:dev -- tests/e2e/specs/localization.spec.ts tests/e2e/specs/localization-gameplay.spec.ts --grep @localization-qa
+        env:
+          CI: true
+          ALCHEMY_LOCALIZATION_LAYOUT_REVIEW: "1"
+          PLAYWRIGHT_JSON_OUTPUT_NAME: reports/playwright-localization-qa-results.json
+      - name: Summarize expanded-English acceptance
+        id: playwright-summary
+        if: always()
+        run: node scripts/ci-summarize.mjs --playwright reports/playwright-localization-qa-results.json
+      - name: Upload expanded-English results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: playwright-localization-qa-results
+          path: reports/playwright-localization-qa-results.json
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Upload expanded-English diagnostics
+        if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: playwright-localization-qa-diagnostics
+          path: |
+            playwright-report/
+            test-results/
+            reports/current-run.*
+            reports/runs/
+          retention-days: 1

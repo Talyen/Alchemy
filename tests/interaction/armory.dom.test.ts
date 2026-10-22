@@ -10,9 +10,9 @@ import {
 } from "@/lib/gear";
 import { useArmoryTransfers } from "@/features/alchemy/meta/screens/armory/use-armory-transfers";
 import { useArmoryOrdering } from "@/features/alchemy/meta/screens/armory/use-armory-ordering";
-import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
-import { useGearArmorySlice } from "@/features/alchemy/shared/stores/use-gear-store";
-import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
+import { readGearState } from "@/features/alchemy/shared/stores/session/gear-store";
+import { useGearArmorySlice } from "@/features/alchemy/shared/stores/react/use-gear-store";
+import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/commands/gear-session-command";
 import { defaultGameSession } from "@/app/application-session";
 import { resetAllTestStores } from "../helpers/run-domain-store-test";
 import { defineSequenceFamily, requireProgress, type Scenario } from "./sequence";

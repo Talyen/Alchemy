@@ -1,4 +1,4 @@
-import { focusControl } from "@/features/alchemy/shared/ui/focus-navigation";
+import { focusControl } from "@/features/alchemy/shared/ui/dialogs/focus-navigation";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { PotionComparison } from "./potion-comparison";
@@ -12,7 +12,7 @@ import { BattleCardButton } from "../../shared/ui/cards/card-button";
 import { collectionTileWidthClass } from "../../shared/config";
 import { SelectableCard } from "../../shared/ui/cards/selectable-card";
 import { CardSelectionGrid } from "../../shared/ui/cards/card-selection-grid";
-import { useCaptureEscapeCancel } from "../../shared/ui/use-modal-escape-dismiss";
+import { useCaptureEscapeCancel } from "../../shared/ui/dialogs/use-modal-escape-dismiss";
 
 export function BrewPotionPanel({
   deck,

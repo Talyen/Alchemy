@@ -1,6 +1,6 @@
 import type { SaveBackend } from "@/lib/platform-save-backend";
-import type { GameSession } from "../stores/game-session-types";
-import { sessionRuntime } from "../stores/session-runtime";
+import type { GameSession } from "../stores/session/game-session-types";
+import { sessionRuntime } from "../stores/session/session-runtime";
 import type { UnstampedSaveData } from "./types";
 import type { SaveStorageEvent } from "./save-operation-queue";
 

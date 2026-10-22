@@ -1,4 +1,4 @@
-import { createNotificationChannel } from "../stores/notification-channel";
+import { createNotificationChannel } from "../stores/session/notification-channel";
 import { logStorageFailure } from "@/lib/storage-logging";
 import type { SaveWriteOutcome } from "./save-operation-queue";
 

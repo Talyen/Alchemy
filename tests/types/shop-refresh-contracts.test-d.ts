@@ -2,8 +2,8 @@ import { createShopRefreshAction } from "@/features/alchemy/run-loop/shop/shop-c
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { initializeShopVisit } from "@/features/alchemy/run-loop/run/room-visit-initialization";
 import type { AlchemistState } from "@/lib/active-run-session";
-import { setRunActivityData } from "@/features/alchemy/shared/stores/run-session-write-port";
-import type { RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
+import { setRunActivityData } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import type { RunTransaction } from "@/features/alchemy/shared/stores/commands/run-session-command";
 import { defaultGameSession } from "@/app/application-session";
 import type { TalentEffectManifest } from "@/lib/game-data";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";

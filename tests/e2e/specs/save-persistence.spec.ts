@@ -1,3 +1,4 @@
+import { resumeInjectedRun } from "../navigation";
 import { savedActivityFixture, savedActivityData } from "../../fixtures/run-activity";
 import { expect, test } from "../../fixtures/e2e";
 import {
@@ -32,6 +33,7 @@ test("current-format resume retains Health, Gold, and offered destinations", cri
     },
   });
   await page.goto("/");
+  await resumeInjectedRun(page);
   await new DestinationPage(page).expectVisible();
   await expect.poll(async () => (await readSavedGame(page)).activeRun?.runPlayerHealth).toBe(18);
   await withSavedGame(page, async (resumed) => {

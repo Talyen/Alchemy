@@ -1,11 +1,14 @@
 import { createSaveBackend } from "../../../../helpers/save-backend";
 import { afterEach, expect, it, vi } from "vitest";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
-import { sessionGameplayStore } from "@/features/alchemy/shared/stores/session-gameplay-store";
-import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { guardProgressAction } from "@/features/alchemy/shared/stores/session/session-capabilities";
+import { sessionGameplayStore } from "@/features/alchemy/shared/stores/session/session-gameplay-store";
+import { setGold } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 
 function setup() {

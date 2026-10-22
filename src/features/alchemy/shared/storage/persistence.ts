@@ -1,15 +1,15 @@
-import { acceptCommand } from "@/features/alchemy/shared/stores/command-outcome";
-import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { gearPersistenceCodec } from "@/features/alchemy/shared/stores/gear-store";
-import { subscribePersistenceCommits } from "@/features/alchemy/shared/stores/persistence-commit-filter";
-import { profilePersistenceCodec } from "@/features/alchemy/shared/stores/profile-store";
-import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run-profile-codec";
-import { hydrateGameplayPersistenceFields } from "../stores/persistence-hydration";
+import { acceptCommand } from "@/features/alchemy/shared/stores/commands/command-outcome";
+import { dispatchGameplayCommand } from "@/features/alchemy/shared/stores/session/gameplay-command";
+import { gearPersistenceCodec } from "@/features/alchemy/shared/stores/persistence/gear-codec";
+import { subscribePersistenceCommits } from "@/features/alchemy/shared/stores/persistence/persistence-commit-filter";
+import { profilePersistenceCodec } from "@/features/alchemy/shared/stores/persistence/profile-codec";
+import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/persistence/run-profile-codec";
+import { hydrateGameplayPersistenceFields } from "../stores/persistence/persistence-hydration";
 import { isActiveRunActivity } from "@/lib/active-run-session";
-import { encodeRunResumeSnapshot } from "../stores/run-resume-codec";
+import { encodeRunResumeSnapshot } from "../stores/persistence/run-resume-codec";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
-import type { GameSession } from "../stores/game-session-types";
-import { sessionRuntime } from "../stores/session-runtime";
+import type { GameSession } from "../stores/session/game-session-types";
+import { sessionRuntime } from "../stores/session/session-runtime";
 import type { AlchemyPersistenceFields, UnstampedSaveData } from "./types";
 
 export type { AlchemyPersistenceFields } from "./types";

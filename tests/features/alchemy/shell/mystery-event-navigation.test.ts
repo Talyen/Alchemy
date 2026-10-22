@@ -10,13 +10,13 @@ import {
   setRunProgress,
   setRunSession,
 } from "../../../helpers/run-domain-store-test";
-import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   readActiveRun,
   readRunProfile,
   readRunRevision,
   readRunSession,
-} from "@/features/alchemy/shared/stores/run-reads";
+} from "@/features/alchemy/shared/stores/session/run-reads";
 import { findMysteryEvent, type MysteryChoice, type MysteryEffect } from "@/lib/mystery";
 import { playGoldGain, playUISound } from "@/lib/audio";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
@@ -253,7 +253,7 @@ describe("createMysteryEventNavigation", () => {
   it("handleMysteryChooseCard ignores a second pick", async () => {
     const { nav } = createMysteryNav();
 
-    const { setMysteryCardChoices } = await import("@/features/alchemy/shared/stores/run-session-write-port");
+    const { setMysteryCardChoices } = await import("@/features/alchemy/shared/stores/commands/run-session-write-port");
     const { cardById } = await import("@/lib/game-data");
     mutateRunForTest((draft) => {
       setMysteryCardChoices(draft, [cardById["slash"], cardById["block"]].filter(Boolean) as never);

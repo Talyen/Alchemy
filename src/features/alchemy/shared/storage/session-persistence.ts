@@ -1,14 +1,14 @@
 import { logStorageFailure } from "@/lib/storage-logging";
 import type { ProgressSaveState } from "./progress-completion";
-import type { GameSession } from "../stores/game-session-types";
-import { restoreSessionSave } from "../stores/run-lifecycle";
+import type { GameSession } from "../stores/session/game-session-types";
+import { restoreSessionSave } from "../stores/commands/run-lifecycle";
 import {
   bindSessionCapabilities,
   markSessionProgress,
   readSessionRevision,
   registerSessionCleanup,
   sessionProgressCompletion,
-} from "../stores/session-capabilities";
+} from "../stores/session/session-capabilities";
 import {
   clearAlchemySaveData,
   configureSaveBackend,

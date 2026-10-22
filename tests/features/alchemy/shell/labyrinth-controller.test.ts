@@ -7,7 +7,7 @@ import {
   setRunSession,
 } from "../../../helpers/run-domain-store-test";
 import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import { getStartingDeck } from "@/lib/game-data";
 import { defaultGameSession } from "@/app/application-session";
 

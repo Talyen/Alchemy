@@ -11,8 +11,13 @@ import {
 } from "../../../../helpers/run-domain-store-test";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createVictoryHandlers } from "@/features/alchemy/run-loop/run/run-flow-victory";
-import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import {
+  readActiveRun,
+  readBattle,
+  readRunProfile,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/session/run-reads";
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import { playGoldGain } from "@/lib/audio";
 import { cardById } from "@/lib/game-data";
@@ -24,8 +29,8 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 import { defaultGameSession } from "@/app/application-session";
-vi.mock("@/features/alchemy/shared/stores/run-lifecycle", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-lifecycle")>();
+vi.mock("@/features/alchemy/shared/stores/commands/run-lifecycle", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/commands/run-lifecycle")>();
   return {
     ...actual,
     applyRunDefeatTeardown: vi.fn(),

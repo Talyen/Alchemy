@@ -2,8 +2,11 @@ import "../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
 import { mutateRunForTest, resetAllTestStores, setRunProgress } from "../../../helpers/run-domain-store-test";
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { setMysteryCardChoices, setMysteryEvent } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
+import {
+  setMysteryCardChoices,
+  setMysteryEvent,
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { cardById, cardLibrary } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 import { readActivityData } from "@/lib/active-run-session";

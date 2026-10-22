@@ -1,3 +1,4 @@
+import { resumeInjectedRun } from "../e2e/navigation";
 import { expectUnfocused } from "../e2e/focus-input";
 import fs from "node:fs";
 import path from "node:path";
@@ -137,6 +138,7 @@ test(
         runMaxHealth: 30,
         activity: savedActivityFixture("campfire"),
       });
+      await resumeInjectedRun(page);
       await page.getByRole("button", { name: /^Rest$/ }).click({ clickCount: 2 });
       await expect(page.getByRole("button", { name: /^Rest$/ })).toHaveCount(0);
       const profile = await app.evaluate(({ app: host }) => host.getPath("userData"));
@@ -290,6 +292,7 @@ test(
       app = await launchElectronApp({ packagedRenderer: true, profile });
       page = await getElectronMainWindow(app);
       const resumedErrors = failOnRuntimeErrors(page);
+      await resumeInjectedRun(page);
       const resumed = new BattlePage(page);
       await resumed.waitForOpeningHand();
       await expect.poll(() => resumed.playerHealth()).toBe(acknowledged.playerHealth);

@@ -6,17 +6,20 @@ import { isEditionRunAvailable } from "@/lib/game-edition";
 import { createNewRunInitialization } from "@/features/alchemy/run-setup/run/new-run-initialization";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { completeActInDraft } from "@/features/alchemy/run-loop/run/progression-commands";
-import { readActiveRun, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { readActiveRun, readHasActiveRun } from "@/features/alchemy/shared/stores/session/run-reads";
+import { readProfileStore } from "@/features/alchemy/shared/stores/session/profile-store";
+import { restoreRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import {
   completeRunDefeat,
   completeRunVictory,
   abandonCurrentRun,
 } from "@/features/alchemy/run-loop/run/run-end-commands";
-import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { snapshotRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import { defaultGameSession } from "@/app/application-session";
 import { SAVE_KEY } from "@/lib/game-constants";
 import { SaveStorage } from "@/features/alchemy/shared/storage/save-storage";

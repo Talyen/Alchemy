@@ -1,4 +1,4 @@
-import { isFocusNavigationEnabled } from "@/features/alchemy/shared/ui/focus-input";
+import { isFocusNavigationEnabled } from "@/features/alchemy/shared/ui/dialogs/focus-input";
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { memo, useState } from "react";

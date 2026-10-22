@@ -1,9 +1,9 @@
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   abandonRun,
   applyRunDefeatTeardown,
   finalizeRunEndSession,
-} from "@/features/alchemy/shared/stores/run-lifecycle";
+} from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 
 export function completeRunVictory(gameSession: GameSession): void {
   finalizeRunEndSession(gameSession);

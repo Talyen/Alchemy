@@ -4,14 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
 import { makeFlowHandlerDeps } from "../../../helpers/run-flow-handler-deps";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
+import { createBattleStartCommands } from "@/features/alchemy/shared/stores/commands/battle-start-commands";
 import { createWildwoodGauntletFlow } from "@/features/alchemy/run-loop/run/wildwood-gauntlet-flow";
-import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import { cardById } from "@/lib/game-data";
 import { defaultGameSession } from "@/app/application-session";
 describe("Wildwood reward selection", () => {

@@ -52,12 +52,12 @@ export default {
     // Unified persistence seam: single source in persistence.ts.
     "src/features/alchemy/shared/storage/persistence.ts": ["exports"],
     // run-resume-codec is the canonical resume boundary (shops/interrupted-flow included).
-    "src/features/alchemy/shared/stores/run-resume-codec.ts": ["exports"],
+    "src/features/alchemy/shared/stores/persistence/run-resume-codec.ts": ["exports"],
     // Test-only / external seams: profile slice and talent catalog are external contracts.
-    "src/features/alchemy/shared/stores/profile-store.ts": ["exports"],
+    "src/features/alchemy/shared/stores/session/profile-store.ts": ["exports"],
     "src/lib/game-data/talents/talent-pool-definitions.ts": ["exports"],
-    "src/features/alchemy/shared/stores/persistence-codec.ts": ["types"],
-    "src/features/alchemy/shared/stores/run-session-write-port.ts": ["exports"],
+    "src/features/alchemy/shared/stores/persistence/persistence-codec.ts": ["types"],
+    "src/features/alchemy/shared/stores/commands/run-session-write-port.ts": ["exports"],
     "src/lib/content-systems/types.ts": ["exports", "types"],
     // Testable save-load seams: evaluated via storage-io tests; platform dedup is public API.
     "src/features/alchemy/shared/storage/io.ts": ["exports", "types"],

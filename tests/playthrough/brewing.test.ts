@@ -14,19 +14,24 @@ import {
   initializeAlchemyVisitForTest as initializeAlchemyVisit,
   initializeShopForTest,
 } from "../helpers/visit-initialization";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/session/gameplay-command";
 import {
   applyTalentState,
   setGold,
   setRunDeck,
   setRunPlayerHealth,
   setRunActivityData,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import {
+  readActiveRun,
+  readBattle,
+  readRunProfile,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/session/run-reads";
 import { hydrateAlchemyPersistenceFields } from "@/features/alchemy/shared/storage";
-import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { restoreRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import { cardById, cloneBattleCard } from "@/lib/game-data";
-import { setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
+import { setBattleState } from "@/features/alchemy/shared/stores/commands/write/run-battle";
 import { createBattleState, isAttackCard } from "@/lib/battle";
 import { enemyById } from "@/lib/game-data";
 import { defaultGameSession as session } from "@/app/application-session";

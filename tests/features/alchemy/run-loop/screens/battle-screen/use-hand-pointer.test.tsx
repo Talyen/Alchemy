@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useHandPointer } from "@/features/alchemy/run-loop/screens/battle-screen/use-hand-pointer";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import type { BattleCard } from "@/lib/game-data";
 
 const cards: BattleCard[] = [];

@@ -1,10 +1,10 @@
 import { createCleanup } from "@/lib/cleanup";
 import { createSaveBackend } from "../helpers/save-backend";
-import { setRunProgressActivity } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setRunProgressActivity } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook, act, cleanup } from "@testing-library/react";
 import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
-import { setGold, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setGold, setHasActiveRun } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 import { mutateRunForTest, resetAllTestStores } from "../helpers/run-domain-store-test";
 import { deferred } from "../helpers/deferred";

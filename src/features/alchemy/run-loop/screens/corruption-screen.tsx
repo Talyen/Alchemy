@@ -20,7 +20,7 @@ import { SelectableCard } from "../../shared/ui/cards/selectable-card";
 import { ScreenDescription, TitledScreenShell } from "../../shared/ui/layout-components";
 import { ShineAccentButton } from "../../shared/ui/shine-accent-button";
 import { cn } from "@/lib/utils";
-import { useCaptureEscapeCancel } from "../../shared/ui/use-modal-escape-dismiss";
+import { useCaptureEscapeCancel } from "../../shared/ui/dialogs/use-modal-escape-dismiss";
 import { FadeSlot } from "../../shared/ui/use-fade";
 
 function CorruptionDeckPicker({

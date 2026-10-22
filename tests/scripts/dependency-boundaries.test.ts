@@ -71,7 +71,22 @@ it("resolves TSX aliases and rejects layer violations and cycles using SWC", () 
     "src/features/alchemy/shell/visit-bypass.ts",
     'import { initialize } from "@/features/alchemy/run-loop/run/room-visit-initialization"; export const bypass = initialize;',
   );
+  write("src/features/alchemy/shared/stores/session/gameplay-state.ts", "export const state = {};");
+  write("src/features/alchemy/shared/stores/commands/gear-actions.ts", "export const mutate = () => {};");
+  write("src/features/alchemy/shared/stores/react/gameplay-state-store.ts", "export const hook = () => {};");
+  write(
+    "src/features/alchemy/meta/aggregate-bypass.ts",
+    'import { state } from "@/features/alchemy/shared/stores/session/gameplay-state"; import { hook } from "@/features/alchemy/shared/stores/react/gameplay-state-store"; import { mutate } from "@/features/alchemy/shared/stores/commands/gear-actions"; export { state, hook, mutate };',
+  );
   const invalid = cruise();
+  for (const name of ["gameplay-aggregate-is-internal", "gameplay-mutation-is-internal"]) {
+    expect(invalid.summary.violations).toContainEqual(
+      expect.objectContaining({
+        from: "src/features/alchemy/meta/aggregate-bypass.ts",
+        rule: expect.objectContaining({ name }),
+      }),
+    );
+  }
   expect(invalid.summary.violations).toContainEqual(
     expect.objectContaining({
       from: "src/features/alchemy/shell/visit-bypass.ts",

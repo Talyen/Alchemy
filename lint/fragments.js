@@ -130,7 +130,7 @@ export const DOMAIN_STORE_PATTERNS = [
       "**/gameplay-state-store",
       "**/gameplay-state-reads",
       "**/gameplay-state",
-      "@/features/alchemy/shared/stores/gameplay-state-store",
+      "@/features/alchemy/shared/stores/react/gameplay-state-store",
     ],
     message: "Import capability reads, writes, commands, or run-lifecycle instead of the low-level gameplay aggregate.",
   },
@@ -153,13 +153,13 @@ export const DOMAIN_STORE_PATTERNS = [
 export const WRITE_PORT_PATTERNS = [
   {
     group: [
-      "**/shared/stores/write",
-      "**/shared/stores/write/*",
-      "@/features/alchemy/shared/stores/write",
-      "@/features/alchemy/shared/stores/write/*",
+      "**/shared/stores/commands/write",
+      "**/shared/stores/commands/write/*",
+      "@/features/alchemy/shared/stores/commands/write",
+      "@/features/alchemy/shared/stores/commands/write/*",
     ],
     message:
-      "Import gameplay writes from @/features/alchemy/shared/stores/run-session-write-port, never from ./write/* directly.",
+      "Import gameplay writes from @/features/alchemy/shared/stores/commands/run-session-write-port, never from ./write/* directly.",
   },
 ];
 
@@ -290,12 +290,12 @@ export const RUN_LOOP_NO_RUN_SETUP = [
 export const UI_NO_SESSION_STORES = [
   {
     group: [
-      "**/stores/run-session-*",
-      "**/stores/run-reads",
-      "**/stores/use-run-reads",
-      "@/features/alchemy/shared/stores/run-session-write-port",
-      "@/features/alchemy/shared/stores/run-reads",
-      "@/features/alchemy/shared/stores/gameplay-state-store",
+      "**/stores/commands/run-session-*",
+      "**/stores/session/run-reads",
+      "**/stores/react/use-run-reads",
+      "@/features/alchemy/shared/stores/commands/run-session-write-port",
+      "@/features/alchemy/shared/stores/session/run-reads",
+      "@/features/alchemy/shared/stores/react/gameplay-state-store",
     ],
     message: "UI widgets receive data via props. Only ui-store is allowed for ephemeral hover/shimmer.",
   },

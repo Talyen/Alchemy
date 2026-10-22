@@ -1,31 +1,31 @@
-import { resolveDraftAvailableDestinations } from "@/features/alchemy/shared/stores/destination-offer-command";
+import { resolveDraftAvailableDestinations } from "@/features/alchemy/shared/stores/commands/destination-offer-command";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import {
   isBossOnlyDestinationOffer,
   restoreOrCreateDestinationRewardState,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   readActiveRun,
   readHasActiveBattle,
   readHasActiveRun,
   readRunResumeScreen,
-} from "@/features/alchemy/shared/stores/run-reads";
+} from "@/features/alchemy/shared/stores/session/run-reads";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
   snapshotTransactionValue,
   type RunTransaction,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   createDraftRunRandomSource,
   setDestinationOfferState,
   setPendingCharacterId,
   setPendingContentSystemType,
   setRewardState,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
-import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session/session-capabilities";
+import { readProfileStore } from "@/features/alchemy/shared/stores/session/profile-store";
 import { isGameModeUnlocked } from "@/lib/game-data";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import { isEditionModeAvailable } from "@/lib/game-edition";

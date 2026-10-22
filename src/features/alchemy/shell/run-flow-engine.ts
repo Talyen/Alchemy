@@ -3,11 +3,14 @@ import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/naviga
 import type { RunFlowShellActions, RunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createWildwoodGauntletFlow } from "@/features/alchemy/run-loop/run/wildwood-gauntlet-flow";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { bindSessionCapabilities, sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import {
+  bindSessionCapabilities,
+  sessionFeedback,
+} from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { ROUTE_SCREENS, type Screen, type ScreenTransitionOptions } from "@/lib/routing";
-import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
+import type { BattleStartCommands } from "@/features/alchemy/shared/stores/commands/battle-start-commands";
 
 /** Command deps for the framework-free flow engine (no display state). */
 export interface RunFlowEngineDeps {

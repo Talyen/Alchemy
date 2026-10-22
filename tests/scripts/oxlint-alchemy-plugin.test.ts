@@ -75,13 +75,13 @@ tester.run("no-run-earned-add-materials", alchemyPlugin.rules["no-run-earned-add
   valid: [
     {
       code: "draft.run.activeRun.runMaterialsEarned = {};",
-      filename: filename("src/features/alchemy/shared/stores/write/run-progress.ts"),
+      filename: filename("src/features/alchemy/shared/stores/commands/write/run-progress.ts"),
     },
     ...[
-      "src/features/alchemy/shared/stores/write/run-end.ts",
-      "src/features/alchemy/shared/stores/write/run-homestead.ts",
-      "src/features/alchemy/shared/stores/run-session-write-port.ts",
-      "src/features/alchemy/shared/stores/gear-session-command.ts",
+      "src/features/alchemy/shared/stores/commands/write/run-end.ts",
+      "src/features/alchemy/shared/stores/commands/write/run-homestead.ts",
+      "src/features/alchemy/shared/stores/commands/run-session-write-port.ts",
+      "src/features/alchemy/shared/stores/commands/gear-session-command.ts",
     ].map((file) => ({
       code: 'addMaterialsToStockpile({}); const grant = port["addMaterialsToStockpile"];',
       filename: filename(file),
@@ -117,7 +117,7 @@ tester.run("no-unowned-web-storage owners", alchemyPlugin.rules["no-unowned-web-
     "src/lib/active-run-session/session.ts",
     "src/lib/platform-save-backend.ts",
     "src/startup.ts",
-    "src/features/alchemy/shared/stores/error-log-store.ts",
+    "src/features/alchemy/shared/stores/react/error-log-store.ts",
     "src/features/alchemy/shared/utils/dev-mode.ts",
     "src/lib/animation/animation-prefs.ts",
   ].map((file) => ({ code: "const { localStorage: storage } = window;", filename: filename(file) })),

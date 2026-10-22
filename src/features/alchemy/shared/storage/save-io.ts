@@ -1,4 +1,4 @@
-import { createNotificationChannel } from "../stores/notification-channel";
+import { createNotificationChannel } from "../stores/session/notification-channel";
 import { createPlatformSaveBackend, type SaveBackend } from "@/lib/platform-save-backend";
 import { isClientContext } from "@/lib/storage-environment";
 import { logStorageFailure } from "@/lib/storage-logging";

@@ -10,13 +10,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS, type Screen, type ScreenTransitionOptions } from "@/lib/routing";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
+import type { BattleStartCommands } from "@/features/alchemy/shared/stores/commands/battle-start-commands";
 import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
-import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
+import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
+import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { makeTestCard } from "../../../fixtures/battle";
 import { defaultGameSession } from "@/app/application-session";
 

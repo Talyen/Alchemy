@@ -28,7 +28,7 @@ const previewEffectSpy = vi.hoisted(() => ({
   current: null as ((effect: MysteryEffect) => MysteryEffect) | null,
 }));
 
-vi.mock("@/features/alchemy/shared/stores/use-run-screen-data", () => ({
+vi.mock("@/features/alchemy/shared/stores/react/use-run-screen-data", () => ({
   useRunScreenData: () => mysteryScreenData.current,
 }));
 
@@ -54,7 +54,7 @@ vi.mock("@/features/alchemy/run-loop/screens", () => {
   };
 });
 
-vi.mock("@/features/alchemy/shared/stores/use-run-reads", () => ({
+vi.mock("@/features/alchemy/shared/stores/react/use-run-reads", () => ({
   useTalentEffects: () => ({}),
 }));
 

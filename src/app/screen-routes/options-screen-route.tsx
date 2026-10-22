@@ -1,11 +1,11 @@
 import { useSyncExternalStore } from "react";
 import { languagePreference, subscribeLanguage, setLanguagePreference } from "@/lib/localization/language";
 import { playUISound } from "@/lib/audio";
-import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/device-display-store";
+import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/react/device-display-store";
 import { isDesktop } from "@/lib/platform";
 import { OptionsScreen } from "@/features/alchemy/meta/screens";
-import { useAppSettings, useSettingsActions } from "@/features/alchemy/shared/stores/settings-store";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useAppSettings, useSettingsActions } from "@/features/alchemy/shared/stores/react/settings-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import type { OptionsRouteCtx } from "./route-ctx";
 
 const noop = (): void => {};

@@ -1,7 +1,7 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useGameMenuState } from "@/app/use-app-navigation";
-import { readActiveRunScreen } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRunScreen } from "@/features/alchemy/shared/stores/session/run-reads";
 const state = vi.hoisted(() => ({ listener: null as (() => void) | null }));
 vi.mock("@/lib/desktop-api", () => ({
   getDesktopApi: () => ({
@@ -13,8 +13,8 @@ vi.mock("@/lib/desktop-api", () => ({
     },
   }),
 }));
-vi.mock("@/features/alchemy/shared/stores/run-reads", async (original) => ({
-  ...(await original<typeof import("@/features/alchemy/shared/stores/run-reads")>()),
+vi.mock("@/features/alchemy/shared/stores/session/run-reads", async (original) => ({
+  ...(await original<typeof import("@/features/alchemy/shared/stores/session/run-reads")>()),
   readActiveRunScreen: vi.fn(),
 }));
 afterEach(cleanup);

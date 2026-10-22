@@ -2,7 +2,7 @@
 
 ## Run state
 
-Each game session owns one authoritative nested gameplay aggregate constructed in `shared/stores/gameplay-state.ts`. `gameplay-state-reads.ts` owns explicit-session aggregate reads and subscriptions; `session-gameplay-store.ts` owns a cached presentation read store per session; `gameplay-state-store.ts` is the default-application adapter. Reusable reads, commands, and persistence codecs do not import React or initialize the application. Its `run`, `session`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state, and the aggregate is data-only: draft mutators in `run-session-write-port.ts` (plus `homestead-actions.ts` / `gear-actions.ts`) compose atomic changes. Feature commands receive a deeply readonly `RunTransaction`, with live reads of the same draft. Only store-owned mutation implementations and bootstrap hydration receive the raw `GameplayDraft`; feature commands cannot assign fields or mutate nested collections directly. Feature orchestration should call intent-level commands rather than assemble field updates. `profile-store.ts` and `gear-store.ts` are thin aggregate-backed read/persistence modules; React profile slices live in `use-profile-store.ts`; they do not own shadow state. The write module, reads, commands, and `run-lifecycle.ts` are the feature-facing seams. Independent runtimes follow [Session ownership](#session-ownership).
+Each game session owns one authoritative nested gameplay aggregate constructed in `shared/stores/session/gameplay-state.ts`. `gameplay-state-reads.ts` owns explicit-session aggregate reads and subscriptions; `session-gameplay-store.ts` owns a cached presentation read store per session; `gameplay-state-store.ts` is the default-application adapter. Reusable reads, commands, and persistence codecs do not import React or initialize the application. Its `run`, `session`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state, and the aggregate is data-only: draft mutators in `run-session-write-port.ts` (plus `homestead-actions.ts` / `gear-actions.ts`) compose atomic changes. Feature commands receive a deeply readonly `RunTransaction`, with live reads of the same draft. Only store-owned mutation implementations and bootstrap hydration receive the raw `GameplayDraft`; feature commands cannot assign fields or mutate nested collections directly. Feature orchestration should call intent-level commands rather than assemble field updates. `session/profile-store.ts` and `session/gear-store.ts` expose aggregate-backed domain operations; their save conversions live in `persistence/profile-codec.ts` and `persistence/gear-codec.ts`; React profile slices live in `use-profile-store.ts`; they do not own shadow state. The write module, reads, commands, and `run-lifecycle.ts` are the feature-facing seams. Independent runtimes follow [Session ownership](#session-ownership).
 
 Committed gameplay is immutable in every build. `createGameplayStore` freezes the
 complete initial aggregate and each new revision before save-status or gameplay
@@ -171,7 +171,7 @@ outcomes follow [completed actions and local saving](#completed-actions-and-loca
 through the same session's `SessionPersistence.afterProgressSaved` capability.
 
 Session feedback adapters are an explicit exception to error propagation.
-`shared/stores/session-effects.ts` isolates each audio/UI adapter and lifecycle
+`shared/stores/session/session-effects.ts` isolates each audio/UI adapter and lifecycle
 listener, logging its failure without aborting the caller's remaining work.
 Execution and persistence errors retain their own failure contracts; the command
 dispatcher does not suppress arbitrary `afterCommit` errors.
@@ -230,7 +230,7 @@ Finding Rhythm; Health costs do not award it.
 
 ## Session ownership
 
-`shared/stores/game-session.ts` exposes `createGameSession({ initialSave, saveBackend, runtimeInputs })`.
+`shared/stores/session/game-session.ts` exposes `createGameSession({ initialSave, saveBackend, runtimeInputs })`.
 A session owns one career: permanent progression plus its sole active run. Its opaque
 `GameSession` handle exposes disposal; gameplay access still goes through capability
 reads and intent-level commands. Independent sessions do not share aggregates,
@@ -420,6 +420,8 @@ ordering on its own. Cloud request failures release the lane for subsequent work
 
 ## Persistence API
 
+The [persistence ownership map](./ARCHITECTURE.md#persistence-ownership) separates schemas and repair, session codecs, and storage transport. `shared/stores/persistence/settings-codec.ts` owns settings field selection and hydration; `shared/stores/session/settings-state.ts` owns live settings and notifications.
+
 `buildAlchemySaveDataFromStores(session)` owns complete snapshot construction.
 It derives the active activity and permanent fields from the current session,
 then detaches the whole payload; callers cannot supply a stale run or omit a
@@ -488,7 +490,7 @@ progression and rebinding its live manifests in the same command.
 `hydrateAlchemyPersistenceFields` remains the fields-only operation and does not
 restore an activity. Both paths include Trinket-manifest repair. `parseActiveRun(raw)` validates JSON before hydration; `toActiveRunData` in `lib/validation/parse-active-run.ts` handles run parsing, while `PersistedBattleStateSchema` owns battle wire parsing and default merging.
 
-Domain persistence codecs own field selection, defaults, encoding, hydration, and subscriptions. `GameplayPersistenceCodec<T>` receives a `GameplayDraft`; `StandalonePersistenceCodec<T>` owns a separate Zustand store. `shared/storage/persistence.ts` composes their fields into the versioned envelope and subscribes to settings changes plus the gameplay commit signal. Codec types live in `shared/stores/persistence-codec.ts`.
+Domain persistence codecs own field selection, defaults, encoding, hydration, and subscriptions. `GameplayPersistenceCodec<T>` receives a `GameplayDraft`; `StandalonePersistenceCodec<T>` owns a separate Zustand store. `shared/storage/persistence.ts` composes their fields into the versioned envelope and subscribes to settings changes plus the gameplay commit signal. Codec types live in `shared/stores/persistence/persistence-codec.ts`.
 
 The settings store defers hydration notifications until the coordinator arms save
 protection; subscriber failures are isolated so they cannot interrupt publication.
@@ -498,7 +500,7 @@ same publication boundary while retaining the current activity. Restore publishe
 its new persistence generation even if the saved values are equal; the gameplay
 root and revision remain unchanged when no gameplay field changes.
 
-`shared/stores/run-resume-codec.ts` owns `projectRunResumeSnapshot`, the single
+`shared/stores/persistence/run-resume-codec.ts` owns `projectRunResumeSnapshot`, the single
 projection used by both run encoding and persistence change detection. The
 projection selects the current activity's wire fields and mode-specific data;
 inactive runs project to null. `persistence-commit-filter.ts` compares those
@@ -578,13 +580,13 @@ Use this reference for access and orchestration; unprefixed store filenames are 
 - **Settings actions** — `settings-store.ts`: `useSettingsActions` / `useAppSettings` for App chrome. The public store exposes reads, subscriptions, and named actions; raw replacement and hydration authority stay with the settings owner and its persistence codec. Borrowed reads and actions check session lifetime, and subscriptions belong to that session. Homestead and Collection commands are first-class intent commands in `meta-commands.ts` exposed via `AlchemyRouteCommands.meta` and bound to the session controller.
 - **Flow commands** — `navigation-commands.ts` supplies shell navigation and talent actions; `room-entry-commands.ts` applies room traits with activity initialization. Domain command modules beside run flows own destination claims, campfire healing, progression, Mystery/Corruption choices, Wildwood updates, and run settlement. Shell, battle presentation, and these flow adapters cannot import draft dispatch or setters (Oxlint-enforced). Feature command authors compose public domain operations inside a readonly transaction. Store-owned implementations retain raw draft access.
 - **Route command composition** — `shell/use-alchemy-run-controller.ts` composes the explicit contracts in `shell/route-commands.ts`.
-- **Navigation and rewards** — `shell/use-alchemy-run-controller.ts` wires React lifetime and display reads; `shell/run-flow-engine.ts` composes command factories. Start at `createRunFlow` in `run-loop/run/run-flow.ts`, its `run-flow-*.ts` modules, and `run-loop/navigation/mystery-event-navigation.ts` for destinations. Navigation vocabulary: `transition` is validated + delayed, `navigateTo` is `transition` sugar, `goToScreen` is `navigateTo` plus card-hover clear; every flow `navigateTo` clears hover by construction. Destination eligibility: pure `resolveAvailableDestinations` in `shared/run-flow/resolve-available-destinations.ts`, transaction projection and offer sampling in `shared/stores/destination-offer-command.ts`. Commands derive eligibility from their open transaction; shells supply no destination reader. Labyrinth combat traits travel via session store, not battle-starter args.
+- **Navigation and rewards** — `shell/use-alchemy-run-controller.ts` wires React lifetime and display reads; `shell/run-flow-engine.ts` composes command factories. Start at `createRunFlow` in `run-loop/run/run-flow.ts`, its `run-flow-*.ts` modules, and `run-loop/navigation/mystery-event-navigation.ts` for destinations. Navigation vocabulary: `transition` is validated + delayed, `navigateTo` is `transition` sugar, `goToScreen` is `navigateTo` plus card-hover clear; every flow `navigateTo` clears hover by construction. Destination eligibility: pure `resolveAvailableDestinations` in `shared/run-flow/resolve-available-destinations.ts`, transaction projection and offer sampling in `shared/stores/commands/destination-offer-command.ts`. Commands derive eligibility from their open transaction; shells supply no destination reader. Labyrinth combat traits travel via session store, not battle-starter args.
 - **Mode entry** — Follow [run setup ownership](./ARCHITECTURE.md#run-setup-ownership) for mode selection, starter drafts, run-start snapshots, and Wildwood progression.
 - **Battle control** — `shell/use-battle-controller.ts` provides commands; `app/screen-routes/use-battle-playback.ts` owns route playback. See [Battle path](./ARCHITECTURE.md#battle-path).
 - **Shops** — `run-loop/shop/create-shop-actions.ts` composes the [shop command owners](./ARCHITECTURE.md#shop-commands).
 - **Screen transitions** — `lib/routing/screen-transition-policy.ts` owns ordinary interactive edges and the separate meta-to-saved-run resume rule; `run-setup/run/run-resume-navigation.ts` selects the active run's saved screen before calling `resumeTo`. `shell/use-screen-transitions.ts` applies the same preparation, cancellation, and presentation timing to both paths. Each committed hook lifetime creates a navigation owner; replacement or unmount disposes it, unregisters restore/session cleanup, and revokes retained commands before they can prepare gameplay. Imperative owners expose the same idempotent `dispose()` operation and are also disposed with their session.
 
-Run-ending gameplay belongs to `shared/stores/write/run-end.ts`: one `settleRunEnd`
+Run-ending gameplay belongs to `shared/stores/commands/write/run-end.ts`: one `settleRunEnd`
 operation captures earned resources, merges talent XP, unlocks the hero, captures
 the recap, and ends activity atomically. Lifecycle commands take only the owning
 session; feature code cannot supply or separately invoke material/XP settlement.

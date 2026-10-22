@@ -10,7 +10,7 @@ const ALLOWED_FILES = new Set([
   // through animation-prefs today but stays listed as the boot seam;
   // active-run-session is a reserved owner (pinned by oxlint-alchemy-plugin.test.ts).
   "src/startup.ts",
-  "src/features/alchemy/shared/stores/error-log-store.ts",
+  "src/features/alchemy/shared/stores/react/error-log-store.ts",
   "src/features/alchemy/shared/utils/dev-mode.ts",
   "src/lib/animation/animation-prefs.ts",
 ]);

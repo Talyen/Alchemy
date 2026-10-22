@@ -5,7 +5,7 @@ import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
-import { isBattleInspectionOpen, useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { isBattleInspectionOpen, useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
 import { isBattlePlaybackBlocked } from "../../battle/playback-gate";
 

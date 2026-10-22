@@ -14,11 +14,11 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import { readBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import { setGold, setHasActiveRun, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
-import { readRunSession, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
+import { readBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/session/run-reads";
+import { setGold, setHasActiveRun, setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/commands/reset";
+import { sessionRuntime } from "@/features/alchemy/shared/stores/session/session-runtime";
+import { readRunSession, readRunRevision } from "@/features/alchemy/shared/stores/session/run-reads";
 import { gridLabyrinthMapFixture } from "../../../fixtures/labyrinth-map";
 import { defaultGameSession } from "@/app/application-session";
 vi.mock("@/lib/platform", () => ({

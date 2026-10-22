@@ -1,7 +1,7 @@
 import { createSaveBackend } from "../../../../helpers/save-backend";
 import { afterEach, expect, it, vi } from "vitest";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
+import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
 import { createSessionPersistence, evaluateSaveCandidates } from "@/features/alchemy/shared/storage";
 import { defaultBattleState, battleSnapshot, type BattleSnapshot } from "@/lib/battle";
 import { createRunRngState } from "@/lib/rng";
@@ -9,7 +9,7 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { saveEnvelopeFixture } from "../../../../fixtures/saves";
 import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
-import * as settlement from "@/features/alchemy/shared/stores/write/run-end";
+import * as settlement from "@/features/alchemy/shared/stores/commands/write/run-end";
 
 const sessions: Array<ReturnType<typeof createGameSession>> = [];
 afterEach(async () => {

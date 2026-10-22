@@ -16,8 +16,8 @@ import {
 } from "@/features/alchemy/shared/storage/persistence";
 import { defaultSaveData } from "@/features/alchemy/shared/storage";
 import { SaveDataSchema } from "@/lib/validation";
-import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useSettingsStore } from "@/features/alchemy/shared/stores/react/settings-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 
 import {
   handleCollectionTabChange,
@@ -27,21 +27,21 @@ import {
   setMaterials as setRunProfileMaterials,
   setScreen,
   setSelectedLabyrinthNodeId,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions";
-import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { addGearCurrencies } from "@/features/alchemy/shared/stores/commands/gear-actions";
+import { readProfileStore } from "@/features/alchemy/shared/stores/session/profile-store";
+import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import { createEmptyGearInventories, generateUniqueGearInstance, getUniqueItemDefinition } from "@/lib/gear";
 import { defaultGameSession } from "@/app/application-session";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
 import { emptyHydratedMysteryVisit } from "@/lib/active-run-session";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   acceptCommand,
   dispatchGameplayCommand,
   type GameplayDraft,
-} from "@/features/alchemy/shared/stores/gameplay-command";
+} from "@/features/alchemy/shared/stores/session/gameplay-command";
 
 function mutateSession(session: GameSession, mutate: (draft: GameplayDraft) => void) {
   dispatchGameplayCommand(

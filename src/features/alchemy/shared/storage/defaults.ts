@@ -1,6 +1,6 @@
 import type { SaveData } from "./types";
 import { SaveDataSchema } from "@/lib/validation";
-import { deepFreeze } from "../stores/store-utils";
+import { deepFreeze } from "../stores/session/store-utils";
 
 // Single defaults owner: the Zod schema is the oracle so codec defaults,
 // schema .catch defaults, and fixtures cannot drift. The contract test in

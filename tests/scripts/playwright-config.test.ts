@@ -167,3 +167,70 @@ it("keeps deeper interaction journeys nightly while retaining existing Electron 
   vi.stubEnv("ALCHEMY_INTERACTION_TIER", "nightly");
   expect(createAlchemyPlaywrightConfig("electron").grepInvert).toBeUndefined();
 });
+
+// Collection exercises the real specs and inherited tags without launching a browser.
+it("gates every localization risk once and keeps QA coverage out of production smoke", async () => {
+  const output = await new Promise<string>((resolve, reject) => {
+    execFile(
+      process.execPath,
+      [
+        require.resolve("@playwright/test/cli"),
+        "test",
+        "--list",
+        "--project=chromium",
+        "--reporter=json",
+        "tests/e2e/specs/localization.spec.ts",
+        "tests/e2e/specs/localization-gameplay.spec.ts",
+      ],
+      {
+        cwd: path.resolve(import.meta.dirname, "../.."),
+        env: { ...process.env, CI: "true" },
+        timeout: 20_000,
+        maxBuffer: 4 * 1024 * 1024,
+      },
+      (error, stdout) => (error ? reject(error) : resolve(stdout)),
+    );
+  });
+  interface Spec {
+    title: string;
+    tags: string[];
+  }
+  interface Suite {
+    title?: string;
+    specs?: Spec[];
+    suites?: Suite[];
+    errors?: unknown[];
+  }
+  const report = JSON.parse(output) as Suite;
+  expect(report.errors).toEqual([]);
+  const journeys = new Map<string, Spec[]>();
+  const locales = new Set<string>();
+  const collect = (suite: Suite) => {
+    for (const spec of suite.specs ?? []) {
+      expect(spec.tags).toContain("localization");
+      expect(spec.tags).not.toContain("critical");
+      const locale = spec.title.match(/^(de|zh-Hans|ru|es|pt-BR|ja|fr|en-XA) /u)?.[1] ?? suite.title;
+      if (spec.tags.includes("localization-smoke")) {
+        expect(locale).not.toBe("en-XA");
+        locales.add(locale!);
+      }
+      expect(spec.tags.includes("localization-qa")).toBe(locale === "en-XA");
+      // Each font family has its own loading risk; other journeys have one
+      // representative locale rather than repeating the same flow in all locales.
+      const risk = spec.title.includes("uses a bundled font")
+        ? spec.title
+        : spec.title.replace(/^(de|zh-Hans|ru|es|pt-BR|ja|fr|en-XA) /u, "");
+      journeys.set(risk, [...(journeys.get(risk) ?? []), spec]);
+    }
+    for (const child of suite.suites ?? []) collect(child);
+  };
+  collect(report);
+  expect([...locales].sort()).toEqual(["de", "es", "fr", "ja", "pt-BR", "ru", "zh-Hans"]);
+  expect(journeys.size).toBeGreaterThan(0);
+  for (const [risk, variants] of journeys) {
+    expect(
+      variants.filter((spec) => spec.tags.includes("localization-smoke")),
+      risk,
+    ).toHaveLength(1);
+  }
+}, 30_000);

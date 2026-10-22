@@ -16,6 +16,7 @@ it("locates source and document owners and validates their canonical references"
   expect(selectContext(["src/app/playthrough/career.ts", "tests/playthrough/careers.test.ts"]).tasks).toEqual([
     "playthrough",
   ]);
+  expect(selectContext(["scripts/lib/playthrough/playthrough-runner.mjs"]).tasks).toContain("playthrough");
   expect(selectContext(["AGENTS.md"]).docs.map((doc) => doc.path)).toContain("Docs/AGENT_DISCOVERY.md");
   const verification = selectContext(["scripts/check.mjs"]);
   expect(verification.docs).toEqual([
@@ -39,7 +40,7 @@ it("replaces general fallback reads with focused owners while retaining contract
     }
   }
   const mixed = selectContext([
-    "src/features/alchemy/shared/stores/settings-store.ts",
+    "src/features/alchemy/shared/stores/react/settings-store.ts",
     "src/features/alchemy/run-loop/navigation/reward-flow.ts",
   ]);
   expect(mixed.tasks).toEqual(expect.arrayContaining(["run-state", "settings", "rewards"]));

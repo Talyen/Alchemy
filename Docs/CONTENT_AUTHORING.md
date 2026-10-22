@@ -1,5 +1,14 @@
 # Content authoring
 
+## Shared tuning
+
+Shared knobs live in topical files under `src/lib/game-constants/`, exported
+through its `index.ts`. Content-owned magnitudes stay with their card, talent,
+difficulty or other authored definition. Use `_FRACTION` for 0–1 values,
+`_PERCENT` / `_PCT` for 0–100 values, `_MULTIPLIER` for factors, `_MS` / `_SEC`
+for time, and `_PX` for pixels. `_CHANCE` is deprecated for new tuning; use
+fraction helpers.
+
 ## Add a new status effect
 
 1. Extend `PlayerStatusId` or `EnemyStatusId` in `src/lib/game-data/types.ts`. Classify the status in the applicable harmful/beneficial lists and display order there.
@@ -199,7 +208,7 @@ Homestead screens (like all screen directories) are excluded from `vitest` cover
 2. Add the keyword's icon to `keywordIcons` in `src/features/alchemy/shared/config/metadata.ts`. Register its display wording and inflections in `src/lib/keyword-text.ts` so descriptions, item shine, and tooltips recognize it.
 3. Make `getCardKeywords` report it through effect metadata in `src/lib/game-data/effect-metadata.ts` or an explicit card tag. This same classification drives card display and ordinary card-play XP.
    `cardHasKeyword` shares that cache for single-keyword queries; use it when no keyword array is needed.
-4. Ordinary XP already flows through `awardCardXP` in `src/features/alchemy/shared/stores/write/run-progress.ts`; add a separate trigger there only when the mechanic needs one, as Dodge does. `src/lib/game-data/talents/progression.ts` owns point math, not event triggering. Add its talent tree through [Add a new talent](#add-a-new-talent).
+4. Ordinary XP already flows through `awardCardXP` in `src/features/alchemy/shared/stores/commands/write/run-progress.ts`; add a separate trigger there only when the mechanic needs one, as Dodge does. `src/lib/game-data/talents/progression.ts` owns point math, not event triggering. Add its talent tree through [Add a new talent](#add-a-new-talent).
 5. Update Transmutation in `src/lib/game-constants/transmutation.ts`: assign the keyword to `TRANSMUTATION_KEYWORD_GROUPS` and add its title prefix to `TRANSMUTATION_PREFIXES`. Implement compatible conversions or additions in `getTransmutationVariants` in `src/lib/alchemist/transmutation.ts`; listing a keyword alone does not make it offerable. Verify a useful alteration and its saved preview under the [Transmutation contract](#transmutation-keywords-and-potion-brewing).
 
 Keyword labels and descriptions must pass the typography rules (no em dashes; tooltip sentences may use periods — see `src/lib/content-validation/validators-typography.ts`). Run `npm run content:audit` before handing off.

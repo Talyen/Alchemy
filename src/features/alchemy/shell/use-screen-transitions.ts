@@ -1,9 +1,9 @@
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
-import { showRunScreen } from "@/features/alchemy/shared/stores/navigation-commands";
+import { showRunScreen } from "@/features/alchemy/shared/stores/commands/navigation-commands";
 import { type Screen } from "@/lib/routing";
 import { useLayoutEffect, useMemo, useState } from "react";
-import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { createScreenNavigation, type ScreenNavigation } from "./screen-navigation";
 
 function createNavigationBinding(options: Parameters<typeof createScreenNavigation>[0], gameSession: GameSession) {

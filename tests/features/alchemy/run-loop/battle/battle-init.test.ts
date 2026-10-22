@@ -13,12 +13,12 @@ import {
   setRunSession,
   setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
-import { readActiveRun, readBattle, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readBattle, readRunRevision } from "@/features/alchemy/shared/stores/session/run-reads";
 import { battlePresentation } from "@/app/battle-presentation";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import { createRunRngState } from "@/lib/rng";
-import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
 
 beforeEach(() => {

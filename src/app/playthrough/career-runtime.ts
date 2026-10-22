@@ -1,5 +1,5 @@
 import type { UnstampedSaveData } from "@/features/alchemy/shared/storage";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
 
 export interface CareerRuntimeInputs {
   idCounter: number;

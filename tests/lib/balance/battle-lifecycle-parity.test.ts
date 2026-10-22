@@ -8,10 +8,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as battle from "@/lib/battle";
 import * as random from "@/lib/rng";
 import { simulateBattle, type BattleSimulationConfig } from "@/lib/balance";
-import { commitBattleWish, commitCardPlay, commitEndTurn } from "@/features/alchemy/shared/stores/battle-commands";
-import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
+import {
+  commitBattleWish,
+  commitCardPlay,
+  commitEndTurn,
+} from "@/features/alchemy/shared/stores/commands/battle-commands";
+import { createBattleStartCommands } from "@/features/alchemy/shared/stores/commands/battle-start-commands";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
-import { readActiveRun, readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readBattle } from "@/features/alchemy/shared/stores/session/run-reads";
 import { makeTestCard } from "../../fixtures/battle";
 import { defaultGameSession } from "@/app/application-session";
 

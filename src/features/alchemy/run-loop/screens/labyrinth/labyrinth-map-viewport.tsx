@@ -1,4 +1,4 @@
-import { focusControl } from "@/features/alchemy/shared/ui/focus-navigation";
+import { focusControl } from "@/features/alchemy/shared/ui/dialogs/focus-navigation";
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";

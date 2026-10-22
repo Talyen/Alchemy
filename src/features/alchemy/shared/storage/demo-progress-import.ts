@@ -1,7 +1,7 @@
 import type { DemoImportSource } from "@/lib/desktop-api";
-import { createDefaultGearSaveFields } from "../stores/gear-state-defaults";
-import { createDefaultProfileSaveFields } from "../stores/profile-store-types";
-import { RUN_PROFILE_SAVE_KEYS } from "../stores/run-profile-save-fields";
+import { createDefaultGearSaveFields } from "../stores/session/gear-state-defaults";
+import { createDefaultProfileSaveFields } from "../stores/session/profile-store-types";
+import { RUN_PROFILE_SAVE_KEYS } from "../stores/persistence/run-profile-save-fields";
 import { createDefaultSaveData } from "./defaults";
 import { selectSaveCandidates } from "./save-candidates";
 import type { SaveData, UnstampedSaveData } from "./types";

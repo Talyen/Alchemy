@@ -1,15 +1,15 @@
-import { readDraftDestinationEligibility } from "@/features/alchemy/shared/stores/destination-offer-command";
+import { readDraftDestinationEligibility } from "@/features/alchemy/shared/stores/commands/destination-offer-command";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
-import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/commands/loot-progress";
+import { syncBattleToRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
   rejectCommand,
   snapshotTransactionValue,
   type RunTransaction,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   addRunGoldEarned,
   completeRunRoom,
@@ -20,7 +20,7 @@ import {
   setGold,
   settleBattleVictory,
   settlePendingBattleMaterials,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { getBattleOutcome, type BattleSnapshot } from "@/lib/battle";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";

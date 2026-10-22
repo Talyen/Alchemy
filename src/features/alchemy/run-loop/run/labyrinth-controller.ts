@@ -1,19 +1,19 @@
-import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session-capabilities";
+import { bindSessionCapabilities } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { enterRunRoom, type RunRoomEntered } from "./room-entry-commands";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
   rejectCommand,
   snapshotTransactionValue,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   completeRunRoom,
   createDraftRunRandomSource,
   setActiveLabyrinthPendingNode,
   setLabyrinthMap,
   setSelectedLabyrinthNodeId,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { expandBeyondBoss } from "@/lib/content-systems/labyrinth/map-generation";
 import {
   canDescendFromLabyrinthNode,

@@ -5,8 +5,8 @@ import { ArrowDownWideNarrow, Search, SlidersHorizontal, X } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { ESCAPE_PRIORITY } from "@/app/escape-stack";
 import { ChromeIconButton } from "@/features/alchemy/shared/ui/chrome-icon-button";
-import { focusControl } from "@/features/alchemy/shared/ui/focus-navigation";
-import { useModalEscapeDismiss } from "@/features/alchemy/shared/ui/use-modal-escape-dismiss";
+import { focusControl } from "@/features/alchemy/shared/ui/dialogs/focus-navigation";
+import { useModalEscapeDismiss } from "@/features/alchemy/shared/ui/dialogs/use-modal-escape-dismiss";
 import { useHoverVisible } from "@/features/alchemy/shared/ui/use-hover-visible";
 import { PortaledTooltip } from "@/features/alchemy/shared/ui/tooltips/portaled-tooltip";
 import { cn } from "@/lib/utils";

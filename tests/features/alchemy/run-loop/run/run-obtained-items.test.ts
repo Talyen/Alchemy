@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
+import { readActiveRun } from "@/features/alchemy/shared/stores/session/run-reads";
+import { readGearState } from "@/features/alchemy/shared/stores/session/gear-store";
 import type { GearInstance } from "@/lib/gear";
 import { trinketLibrary } from "@/lib/game-data";
 import { mutateRunForTest, resetAllTestStores, setRunSession } from "../../../../helpers/run-domain-store-test";

@@ -1,6 +1,6 @@
 import { createCleanup } from "@/lib/cleanup";
-import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
+import { sessionRuntime } from "@/features/alchemy/shared/stores/session/session-runtime";
+import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/react";
 import { ROUTE_SCREEN_VALUES, type Screen } from "@/lib/routing";

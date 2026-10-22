@@ -5,8 +5,8 @@ import { autoUpdate, computePosition, offset, shift, size } from "@floating-ui/d
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ESCAPE_PRIORITY } from "@/app/escape-stack";
-import { focusControl } from "@/features/alchemy/shared/ui/focus-navigation";
-import { useModalEscapeDismiss } from "@/features/alchemy/shared/ui/use-modal-escape-dismiss";
+import { focusControl } from "@/features/alchemy/shared/ui/dialogs/focus-navigation";
+import { useModalEscapeDismiss } from "@/features/alchemy/shared/ui/dialogs/use-modal-escape-dismiss";
 
 export function ArmoryInventoryMenu({
   label,

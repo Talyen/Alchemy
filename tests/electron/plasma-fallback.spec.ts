@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { getElectronMainWindow, launchElectronApp } from "./electron-helpers";
 import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../browser-helpers";
+import { resumeInjectedRun } from "../e2e/navigation";
 import { BattlePage } from "../pages/battle-page";
 import { failOnRuntimeErrors } from "../e2e/errors";
 
@@ -42,6 +43,7 @@ test("packaged plasma restores a lost context and falls back on shader failure",
       };
     });
     await page.reload();
+    await resumeInjectedRun(page);
     await battle.waitForOpeningHand();
     await battle.hand.first().hover();
     await expect(page.getByTestId("static-plasma-background")).toBeVisible();

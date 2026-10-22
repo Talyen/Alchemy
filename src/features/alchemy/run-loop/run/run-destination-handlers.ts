@@ -1,6 +1,6 @@
-import type { BattleStarted } from "@/features/alchemy/shared/stores/battle-start-commands";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+import type { BattleStarted } from "@/features/alchemy/shared/stores/commands/battle-start-commands";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import type { RunRoomEntered } from "./room-entry-commands";
 

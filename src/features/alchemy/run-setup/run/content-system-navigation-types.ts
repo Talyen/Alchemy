@@ -1,4 +1,4 @@
-import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
+import type { BattleStartCommands } from "@/features/alchemy/shared/stores/commands/battle-start-commands";
 import type { Screen } from "@/lib/routing";
 
 export interface ContentSystemNavigationDeps {

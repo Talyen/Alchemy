@@ -1,8 +1,8 @@
 import { useStore } from "zustand";
 import type { BattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useMemo, useState } from "react";
-import { useActiveRunBoons } from "@/features/alchemy/shared/stores/use-run-reads";
-import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/use-run-reads";
+import { useActiveRunBoons } from "@/features/alchemy/shared/stores/react/use-run-reads";
+import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/react/use-run-reads";
 import type { BattleScreenData } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 
 export function useBattleScreenRouteData(presentation: BattlePresentationStore) {

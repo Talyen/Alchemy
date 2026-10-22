@@ -1,10 +1,13 @@
 import { createCleanup } from "@/lib/cleanup";
 import { afterEach, expect, it, vi } from "vitest";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { setGold } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { createSaveBackend } from "../../../helpers/save-backend";
 
 afterEach(() => vi.useRealTimers());

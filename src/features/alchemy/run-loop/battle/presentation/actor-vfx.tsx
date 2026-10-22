@@ -2,7 +2,7 @@ import { type ComponentProps } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { ArtPanel } from "@/features/alchemy/run-loop/battle/presentation/ui/actor-panel";
 import { CompanionPanel } from "@/features/alchemy/run-loop/battle/presentation/ui/companion-panel";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { useStore } from "zustand";
 import type { BattlePresentationStore } from "../battle-presentation-store";
 

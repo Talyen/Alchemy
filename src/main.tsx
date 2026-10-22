@@ -8,8 +8,8 @@ import App from "./App";
 import "./index.css";
 import { cursorArt } from "@/lib/game-data";
 import { initializeRendererCrashReporting } from "./lib/crash-reporting";
-import { initErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
-import { initDeviceDisplayPreferences } from "@/features/alchemy/shared/stores/device-display-store";
+import { initErrorLogStore } from "@/features/alchemy/shared/stores/react/error-log-store";
+import { initDeviceDisplayPreferences } from "@/features/alchemy/shared/stores/react/device-display-store";
 
 initErrorLogStore();
 initDeviceDisplayPreferences();

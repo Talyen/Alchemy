@@ -1,9 +1,9 @@
 import * as destinationFlow from "@/features/alchemy/shared/run-flow/destination-flow";
 import * as config from "@/features/alchemy/shared/config";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createGameSession, type GameSession } from "@/features/alchemy/shared/stores/game-session";
-import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/gameplay-command";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
+import { createGameSession, type GameSession } from "@/features/alchemy/shared/stores/session/game-session";
+import { acceptCommand, dispatchGameplayCommand } from "@/features/alchemy/shared/stores/session/gameplay-command";
+import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
 import { createProgressionCommands } from "@/features/alchemy/run-loop/run/progression-commands";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { emptyAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";

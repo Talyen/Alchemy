@@ -1,7 +1,7 @@
-import { projectCampaignReward } from "@/features/alchemy/shared/stores/campaign-reward";
+import { projectCampaignReward } from "@/features/alchemy/shared/stores/commands/campaign-reward";
 import { applyAlchemistPotion } from "./alchemist-reward";
 import { canOfferWildwoodRemoval, enterWildwoodRemoval } from "@/lib/content-systems/wildwood/gauntlet";
-import { flushSaveAfterRunEnd } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { flushSaveAfterRunEnd } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import {
   clearLabyrinthNodeInDraft,
   completeActInDraft,
@@ -14,15 +14,15 @@ import {
   appendCardToRunWithDiscovery,
   grantGearToRunWithRecord,
   grantTrinketToRunWithRecord,
-} from "@/features/alchemy/shared/stores/deck-mutations";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+} from "@/features/alchemy/shared/stores/commands/deck-mutations";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
   rejectCommand,
   snapshotTransactionValue,
   type RunTransaction,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   awardMaterialsDuringRun,
   resolveStarterHomesteadGrant,
@@ -35,7 +35,7 @@ import {
   setCompanionRewardCards,
   setRewardState,
   setRunProgressActivity,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { resolveRewardChoice, type ResolvedRewardChoice } from "@/lib/active-run-session";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { REWARD_ROUTES, ROUTE_SCREENS, type Screen } from "@/lib/routing";

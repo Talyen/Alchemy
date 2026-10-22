@@ -3,7 +3,7 @@ import { useGameTranslation } from "@/components/use-game-translation";
 import { useEffect, useState } from "react";
 import { getBossMusicKey, getLyricFrame, getMusicLyrics, readMusicPlayback, type LyricFrame } from "@/lib/audio";
 import { cn } from "@/lib/utils";
-import { useSettingsStore } from "../../../shared/stores/settings-store";
+import { useSettingsStore } from "../../../shared/stores/react/settings-store";
 
 export function BossLyrics({ bossId }: { bossId: string }) {
   useGameTranslation();

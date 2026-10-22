@@ -1,7 +1,7 @@
 import { useEffect, useId } from "react";
 
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
-import { useUiStore } from "../stores/ui-store";
+import { useUiStore } from "../stores/react/ui-store";
 
 function usePlasmaRegistration(colorPair: PlasmaColorPair | null, active: boolean, baseline: boolean) {
   const ownerId = useId();

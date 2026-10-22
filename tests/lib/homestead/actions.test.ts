@@ -6,9 +6,9 @@ import {
   plantFarm,
   pruneUnknownCompanions,
   resetHomestead,
-} from "@/features/alchemy/shared/stores/homestead-actions";
+} from "@/features/alchemy/shared/stores/commands/homestead-actions";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { createInitialPermanentFields } from "@/features/alchemy/shared/stores/run-state-init";
+import { createInitialPermanentFields } from "@/features/alchemy/shared/stores/session/run-state-init";
 import * as errorLogger from "@/lib/error-logger";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { companionTierItems } from "@/lib/homestead/companions";

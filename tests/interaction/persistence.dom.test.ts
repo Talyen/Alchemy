@@ -1,9 +1,12 @@
 import { vi } from "vitest";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { setGold } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import type { SaveBackend } from "@/lib/platform-save-backend";
 import { deferred } from "../helpers/deferred";
 import { defineSequenceFamily, requireProgress, type Scenario } from "./sequence";

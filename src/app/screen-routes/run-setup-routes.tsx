@@ -1,7 +1,10 @@
 import { CharacterSelectScreen, DifficultySelectScreen, DraftDeckScreen } from "@/features/alchemy/run-setup/screens";
-import { useCompletedDifficulties, useFinishedRunCharacters } from "@/features/alchemy/shared/stores/use-profile-store";
-import { useDifficultySelectSlice } from "@/features/alchemy/shared/stores/use-run-reads";
-import { useRunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
+import {
+  useCompletedDifficulties,
+  useFinishedRunCharacters,
+} from "@/features/alchemy/shared/stores/react/use-profile-store";
+import { useDifficultySelectSlice } from "@/features/alchemy/shared/stores/react/use-run-reads";
+import { useRunScreenData } from "@/features/alchemy/shared/stores/react/use-run-screen-data";
 import type { RunSetupRouteCtx } from "./route-ctx";
 
 function CharacterSelectScreenRoute({ routeCommands, onBack, onOpenGameMenu }: RunSetupRouteCtx) {

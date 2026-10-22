@@ -17,7 +17,7 @@ import { BattleCardButton } from "../../shared/ui/cards/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/cards/card-description-ui";
 import { FadeSlot } from "../../shared/ui/use-fade";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
-import { focusableControls, focusControl, isFocusAvailable } from "../../shared/ui/focus-navigation";
+import { focusableControls, focusControl, isFocusAvailable } from "../../shared/ui/dialogs/focus-navigation";
 
 export function TransmutationScreen({
   runDeck,

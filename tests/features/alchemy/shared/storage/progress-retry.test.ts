@@ -1,6 +1,6 @@
 import { createCleanup } from "@/lib/cleanup";
 import { afterEach, expect, it, vi } from "vitest";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
 import { createSaveBackend } from "../../../../helpers/save-backend";
 

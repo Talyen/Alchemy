@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { getStartingDeck } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { createRunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
-import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/run-state-init";
+import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/session/run-state-init";
 import {
   canReplaceRunForStart,
   isDifficultySelectContinuation,

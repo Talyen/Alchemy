@@ -1,4 +1,4 @@
-import { isFocusNavigationEnabled } from "../focus-input";
+import { isFocusNavigationEnabled } from "../dialogs/focus-input";
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import {
