@@ -6,7 +6,8 @@ import {
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION_MS } from "@/lib/game-constants";
-import type { CombatTextEvent } from "@/lib/battle";
+import { battleSnapshot, type CombatTextEvent } from "@/lib/battle";
+import { deepFreeze } from "@/features/alchemy/shared/stores/store-utils";
 import {
   companionLibrary,
   computeTalentEffects,
@@ -24,6 +25,49 @@ import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { defaultGameSession } from "@/app/application-session";
 
 describe("battle-presentation-store", () => {
+  it("does not publish unchanged flags or empty patches, but publishes real changes once", () => {
+    const initial = battlePresentation.getState();
+    const notify = vi.fn();
+    const release = battlePresentation.subscribe(notify);
+    try {
+      initial.setOpeningDrawPending(false);
+      initial.setCardTransferInProgress((previous) => previous);
+      initial.setHiddenHandCardKeys((previous) => previous);
+      initial.setDisplayedBattle(null);
+      expect(battlePresentation.getState()).toBe(initial);
+      expect(notify).not.toHaveBeenCalled();
+      initial.setOpeningDrawPending(true);
+      const changed = battlePresentation.getState();
+      initial.setOpeningDrawPending(true);
+      expect(battlePresentation.getState()).toBe(changed);
+      expect(notify).toHaveBeenCalledOnce();
+    } finally {
+      release();
+    }
+  });
+
+  it("shares only validated immutable branches and detaches shallow-frozen caller snapshots", () => {
+    const immutable = deepFreeze(battleSnapshot(patchBattleState()));
+    const hand = [makeTestCard({ id: "snapshot-card" })];
+    const input = Object.freeze({ ...immutable, hand });
+    battlePresentation.getState().setDisplayedBattle(input);
+    const displayed = battlePresentation.getState().displayedBattle!;
+    expect(displayed).toEqual(input);
+    expect(displayed.gearEffects).toBe(immutable.gearEffects);
+    expect(displayed.hand).not.toBe(hand);
+    hand[0]!.title = "Changed outside presentation";
+    hand.push(makeTestCard({ id: "later-card" }));
+    expect(displayed.hand).toHaveLength(1);
+    expect(displayed.hand[0]!.title).not.toBe(hand[0]!.title);
+    expect(Object.isFrozen(hand)).toBe(false);
+    expect(() => displayed.hand.pop()).toThrow(TypeError);
+    battlePresentation.getState().setDisplayedBattle({ ...displayed, playerHealth: displayed.playerHealth - 1 });
+    const next = battlePresentation.getState().displayedBattle!;
+    expect(next.hand).toBe(displayed.hand);
+    expect(next.playerHealth).toBe(displayed.playerHealth - 1);
+    expect(displayed.playerHealth).toBe(immutable.playerHealth);
+  });
+
   it("settles mana effects immediately when motion is disabled without changing resources", () => {
     const state = battlePresentation.getState();
     state.setManaDisplay(5, 5, false);
