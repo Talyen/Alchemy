@@ -34,8 +34,11 @@ afterEach(() => vi.restoreAllMocks());
 
 describe("Armory inventory matching", () => {
   it("reuses search text across queries and rebuilds it for changed item references", () => {
-    const translate = vi.fn(<T>(value: T): T => value);
-    const cached = createArmoryInventoryMatcher(translate);
+    const translate = vi.fn<(value: unknown) => void>();
+    const cached = createArmoryInventoryMatcher(<T>(value: T): T => {
+      translate(value);
+      return value;
+    });
     expect(cached.matchesGearFilters(sword, filters({ search: "longsword" }))).toBe(true);
     const calls = translate.mock.calls.length;
     expect(cached.matchesGearFilters(sword, filters({ search: "poison" }))).toBe(true);
