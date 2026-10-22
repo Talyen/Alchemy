@@ -114,12 +114,9 @@ export function removeIntegratedWorktree(main, task, branch, head) {
     record.split("\0").some((field) => /^(locked|prunable)( |$)/.test(field))
   )
     throw new Error("Task worktree registration changed or is locked");
-  if (
-    git("-C", task, "branch", "--show-current") !== branch ||
-    git("-C", task, "rev-parse", "HEAD") !== head ||
-    git("rev-parse", "main") !== head
-  )
-    throw new Error("Task or main changed after integration");
+  if (git("-C", task, "branch", "--show-current") !== branch || git("-C", task, "rev-parse", "HEAD") !== head)
+    throw new Error("Task changed after integration");
+  git("merge-base", "--is-ancestor", head, "main");
   if (git("-C", task, "status", "--porcelain", "--untracked-files=all")) throw new Error("Unfinished work preserved");
   for (const state of UNFINISHED_GIT_STATES)
     if (fs.existsSync(git("-C", task, "rev-parse", "--path-format=absolute", "--git-path", state)))
@@ -265,7 +262,11 @@ export async function main(argv = process.argv.slice(2)) {
     // Hash collisions fail closed as busy; they never allow concurrent integration.
     const port = 20000 + (createHash("sha256").update(common).digest().readUInt32BE(0) % 40000);
     const { acquireExclusivePort } = await import("./lib/exclusive-port.mjs");
-    const lock = await acquireExclusivePort(port, { label: "Integration lock" });
+    let taskPort = 20000 + (createHash("sha256").update(`${common}:${task}`).digest().readUInt32BE(0) % 40000);
+    if (taskPort === port) taskPort = 20000 + ((taskPort - 20000 + 1) % 40000);
+    // Keep this task stable while peers verify independently. The shared lock
+    // protects only main snapshots, merges and advancement, never test-lane waits.
+    const taskLock = await acquireExclusivePort(taskPort, { label: "Task integration lock" });
     try {
       const records = git(root, ["worktree", "list", "--porcelain", "-z"], true).split("\0\0");
       const mainRecord = records.find((record) => record.split("\0").includes("branch refs/heads/main"));
@@ -289,39 +290,54 @@ export async function main(argv = process.argv.slice(2)) {
           }
         }
       };
-      clean(mainPath, "main");
-      clean(taskPath, `agent/${task}`);
-      const mainHead = git(mainPath, ["rev-parse", "HEAD"]);
-      git(taskPath, [
-        "merge",
-        "--no-edit",
-        "-m",
-        "chore: incorporate main before integration\n\nUser-Facing: no",
-        mainHead,
-      ]);
-      const taskHead = git(taskPath, ["rev-parse", "HEAD"]);
-      const paths = git(taskPath, ["diff", "--no-renames", "--name-only", "-z", mainHead, taskHead], true)
-        .split("\0")
-        .filter(Boolean);
-      if (paths.length) {
-        const { commandInvocation } = await import(
-          pathToFileURL(path.join(taskPath, "scripts/lib/command-invocation.mjs")).href
-        );
-        const check = (args) => {
-          const result = spawnSync(...commandInvocation("npm", args), {
+      let taskHead;
+      for (;;) {
+        const snapshotLock = await acquireExclusivePort(port, { label: "Integration lock" });
+        let mainHead;
+        try {
+          clean(mainPath, "main");
+          clean(taskPath, `agent/${task}`);
+          mainHead = git(mainPath, ["rev-parse", "HEAD"]);
+          git(taskPath, [
+            "merge",
+            "--no-edit",
+            "-m",
+            "chore: incorporate main before integration\n\nUser-Facing: no",
+            mainHead,
+          ]);
+          taskHead = git(taskPath, ["rev-parse", "HEAD"]);
+        } finally {
+          await snapshotLock.release();
+        }
+        const paths = git(taskPath, ["diff", "--no-renames", "--name-only", "-z", mainHead, taskHead], true)
+          .split("\0")
+          .filter(Boolean);
+        if (paths.length) {
+          const { commandInvocation } = await import(
+            pathToFileURL(path.join(taskPath, "scripts/lib/command-invocation.mjs")).href + `?commit=${taskHead}`
+          );
+          const result = spawnSync(...commandInvocation("npm", ["run", "check", "--", ...paths]), {
             cwd: taskPath,
             stdio: "inherit",
           });
-          if (result.status !== 0) throw new Error("Integration verification failed; main remains unchanged.");
-        };
-        check(["run", "check", "--", ...paths]);
+          if (result.status !== 0) throw new Error("Integration verification failed; task was not advanced into main.");
+        }
+        const advanceLock = await acquireExclusivePort(port, { label: "Integration lock" });
+        try {
+          clean(taskPath, `agent/${task}`);
+          clean(mainPath, "main");
+          if (git(taskPath, ["rev-parse", "HEAD"]) !== taskHead)
+            throw new Error("Task changed during verification; retry integration.");
+          if (git(mainPath, ["rev-parse", "HEAD"]) !== mainHead) {
+            console.log("Main advanced during verification; incorporating it and checking the combined result again.");
+            continue;
+          }
+          git(mainPath, ["merge", "--ff-only", taskHead]);
+          break;
+        } finally {
+          await advanceLock.release();
+        }
       }
-      clean(taskPath, `agent/${task}`);
-      clean(mainPath, "main");
-      if (git(taskPath, ["rev-parse", "HEAD"]) !== taskHead || git(mainPath, ["rev-parse", "HEAD"]) !== mainHead) {
-        throw new Error("A checkout changed during verification; retry integration.");
-      }
-      git(mainPath, ["merge", "--ff-only", taskHead]);
       console.log(`Integrated ${task} into local main at ${taskHead}; no push performed.`);
       if (!hasFlag("--keep-worktree")) {
         const browsers = path.join(taskPath, "scripts/lib/agent-browser-session.mjs");
@@ -332,7 +348,7 @@ export async function main(argv = process.argv.slice(2)) {
         removeIntegratedWorktree(mainPath, taskPath, `agent/${task}`, taskHead);
       }
     } finally {
-      await lock.release();
+      await taskLock.release();
     }
     return;
   }

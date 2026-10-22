@@ -48,7 +48,10 @@ interface WorkflowInput {
   glossary: Record<string, Record<string, string>>;
   catalogs: Record<string, Record<string, Translation>>;
 }
-export function translationPackets(input: WorkflowInput): Array<{
+export function translationPackets(
+  input: WorkflowInput,
+  drafts?: unknown,
+): Array<{
   locale: string;
   instructions: string;
   glossary: Record<string, string>;

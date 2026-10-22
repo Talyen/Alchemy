@@ -4,7 +4,7 @@
 
 1. Decide whether the change needs a version bump or a safe additive default using the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#when-to-increment).
 2. Follow its [required pattern](../src/features/alchemy/shared/storage/MIGRATIONS.md#required-pattern-automated), updating the schema, domain defaults, codecs, and fixtures together. [Defaults and resume normalization](../src/features/alchemy/shared/storage/MIGRATIONS.md#defaults-and-resume-normalization) names the owners; [deletion](../src/features/alchemy/shared/storage/MIGRATIONS.md#deletion) owns clear-save modes.
-3. Verify the [save test expectations](../src/features/alchemy/shared/storage/MIGRATIONS.md#test-expectations) with the relevant save/persistence unit suites (`npm run test:full -- <test-paths>`), then run the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change). The default local gate does not select the complete save suite; the opt-in full verifier does. Reuse `tests/helpers/save-candidate-fixtures.ts` for candidate scenarios.
+3. Verify the [save test expectations](../src/features/alchemy/shared/storage/MIGRATIONS.md#test-expectations) with the relevant save/persistence unit suites (`npm run test:unit -- <test-paths>`), then run the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change). The task gate selects save protection for persisted-state owners. Reuse `tests/helpers/save-candidate-fixtures.ts` for candidate scenarios.
 
 ---
 
@@ -14,7 +14,7 @@
 2. Update the active-run schema and, for progression fields, `PersistedRunProgress` and `ACTIVE_RUN_PROGRESS_KEYS` in `src/lib/active-run-session/run-progress.ts`, the matching validation schema in `src/lib/validation/save-schemas/run-progress.ts`, and fresh/resume initialization in `run-state-init.ts`. The domain contract owns shared wire/live fields and serialization keys; validation owns recovery defaults. Follow the [shared run-progress contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#shared-run-progress-shape), preserving the distinction between fresh-run defaults and missing-field recovery.
 3. Update `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()` in `run-resume-codec.ts`. This codec is the sole active-run progress/session ↔ `ActiveRunData` translation boundary; shops and interrupted flow keep their focused codec helpers.
 4. Keep `snapshotRun()` / `restoreRun()` as thin lifecycle wrappers and publish boot/resume through one `dispatchRunSessionCommand()`. Defer navigation, audio, and presentation work until after commit.
-5. Run the active-run snapshot/codec tests plus the storage/migration tests named by the save contract using `npm run test:full -- <test-paths>`. Follow the [verification policy](../CONTRIBUTING.md#what-to-run-when-you-change) for the final gate; the default local gate does not perform dependency-related selection.
+5. Run the active-run snapshot/codec tests plus the storage/migration tests named by the save contract using `npm run test:unit -- <test-paths>`. Follow the [verification policy](../CONTRIBUTING.md#what-to-run-when-you-change) for the final gate; the task gate includes dependency-related and save protection.
 
 ---
 

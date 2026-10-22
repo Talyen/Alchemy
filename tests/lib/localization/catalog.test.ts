@@ -81,6 +81,52 @@ it("validates all locale results before returning replacements and rejects stale
   expect(catalogs.de.attack).toEqual(valid());
 });
 
+it("resumes reviewed drafts only for unchanged sources and keeps changed drafts for review", () => {
+  const context = {
+    messages,
+    glossary: Object.fromEntries(TARGETS.map((locale) => [locale, glossary])),
+    catalogs: {},
+  };
+  const drafts = [{ locale: "de", results: { attack: valid() } }];
+  const resumed = translationPackets(context, drafts).find((packet) => packet.locale === "de");
+  expect(resumed?.results.attack).toEqual(valid());
+  const changed = translationPackets(
+    { ...context, messages: { attack: { ...message, text: "Deal <damage>{{amount}}</damage> damage twice" } } },
+    drafts,
+  ).find((packet) => packet.locale === "de");
+  expect(changed?.results.attack?.text).toBe(valid().text);
+  expect(changed?.results.attack?.reviewed).toBe(false);
+  expect(changed?.results.attack?.sourceHash).not.toBe(valid().sourceHash);
+  const terminology = translationPackets(
+    { ...context, glossary: { ...context.glossary, de: { damage: "Treffer" } } },
+    drafts,
+  ).find((packet) => packet.locale === "de");
+  expect(terminology?.results.attack?.reviewed).toBe(false);
+  expect(() => translationPackets(context, [...drafts, ...drafts])).toThrow("duplicate draft locale");
+});
+
+it("repairs plural metadata without approving incomplete or conflicting drafts", () => {
+  const plural = { text: "{{count}} items", context: "Quantity", plural: true };
+  const context = {
+    messages: { plural },
+    glossary: Object.fromEntries(TARGETS.map((locale) => [locale, {}])),
+    catalogs: {},
+  };
+  const drafts = [
+    {
+      locale: "de",
+      results: { plural: { text: "{{count}} Dinge", sourceHash: sourceHash(plural, {}, "de"), reviewed: true } },
+    },
+  ];
+  const result = translationPackets(context, drafts).find((packet) => packet.locale === "de")?.results.plural;
+  expect(result).toMatchObject({
+    text: "{{count}} Dinge",
+    forms: { one: "", other: "{{count}} Dinge" },
+    reviewed: false,
+  });
+  expect(drafts[0]?.results.plural.reviewed).toBe(true);
+});
+
 describe("localization ingestion", () => {
   it("tracks terminology through plurals and keyword word forms", () => {
     const terms = relatedTerms(

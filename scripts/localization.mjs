@@ -122,10 +122,23 @@ try {
       "Usage: localization.mjs prepare [tasks.json]|finish <tasks.json>|extract|tasks|apply <results.json>|check",
     );
   const packetFile = path.resolve(process.argv[3] ?? path.join(ROOT, "reports/localization/tasks.json"));
-  if (command === "prepare" && fs.existsSync(packetFile))
-    throw new Error(`Translation work already exists at ${packetFile}; finish it or choose another output path.`);
+  const savedPacket = command === "prepare" && fs.existsSync(packetFile) ? fs.readFileSync(packetFile, "utf8") : null;
+  const drafts = savedPacket === null ? [] : JSON.parse(savedPacket);
   const { messages, issues } = await extractMessages();
   const glossary = read("glossary");
+  // Refresh drafts before writing derived catalogs, so malformed packets leave
+  // both the working file and catalogs untouched.
+  const packets =
+    command === "prepare" || command === "tasks"
+      ? translationPackets(
+          {
+            messages,
+            glossary,
+            catalogs: Object.fromEntries(TARGETS.map((locale) => [locale, read(locale)])),
+          },
+          drafts,
+        )
+      : null;
   if (command === "extract" || command === "prepare") {
     await write("en", messages);
     for (const locale of TARGETS)
@@ -137,13 +150,19 @@ try {
     writeSteamExports(messages, glossary);
     console.log(`Extracted ${Object.keys(messages).length} English messages`);
     if (command === "prepare") {
-      const packets = translationPackets({
-        messages,
-        glossary,
-        catalogs: Object.fromEntries(TARGETS.map((locale) => [locale, read(locale)])),
-      });
       fs.mkdirSync(path.dirname(packetFile), { recursive: true });
-      fs.writeFileSync(packetFile, serialize(packets), { flag: "wx" });
+      if (savedPacket !== null && savedPacket !== serialize(packets)) {
+        const backup = `${packetFile}.${Date.now()}.bak`;
+        fs.writeFileSync(backup, savedPacket, { flag: "wx" });
+        console.log(`Previous packet preserved: ${backup}`);
+      }
+      const temporary = `${packetFile}.${process.pid}.tmp`;
+      try {
+        fs.writeFileSync(temporary, serialize(packets), { flag: "wx" });
+        fs.renameSync(temporary, packetFile);
+      } finally {
+        if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
+      }
       console.log(
         `${packets.reduce((total, packet) => total + Object.keys(packet.results).length, 0)} pending translations across ${packets.length} locales: ${packetFile}`,
       );
@@ -152,11 +171,6 @@ try {
       );
     }
   } else if (command === "tasks") {
-    const packets = translationPackets({
-      messages,
-      glossary,
-      catalogs: Object.fromEntries(TARGETS.map((locale) => [locale, read(locale)])),
-    });
     process.stdout.write(serialize(packets));
   } else if (command === "apply" || command === "finish") {
     if (!process.argv[3]) throw new Error("A translation result file is required");

@@ -163,6 +163,7 @@ if (process.env.INTEGRATION_READY) {
 }
 if (process.env.INTEGRATION_PROOF) fs.writeFileSync(process.env.INTEGRATION_PROOF, fs.readFileSync('main.txt', 'utf8') + fs.readFileSync('task.txt', 'utf8'));
 if (process.env.INTEGRATION_PATHS) fs.writeFileSync(process.env.INTEGRATION_PATHS, JSON.stringify(process.argv.slice(2)));
+if (process.env.INTEGRATION_CHECKS) fs.appendFileSync(process.env.INTEGRATION_CHECKS, require('node:child_process').execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }));
 process.exit(process.env.INTEGRATION_FAIL ? 1 : 0);
 `,
   );
@@ -282,18 +283,22 @@ describe("serialized local integration", () => {
     expect(readFileSync(join(root, "task.txt"), "utf8")).toBe("task\n");
   }, 20000);
 
-  it("refuses a main checkout detached at the same commit during verification", () => {
-    const { root, git, integrate } = integrationFixture();
-    using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
+  it.each(["main", "task"])(
+    "refuses a %s checkout detached at the same commit during verification",
+    (checkout) => {
+      const { root, taskPath, git, integrate } = integrationFixture();
+      using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
 
-    const before = git(["rev-parse", "main"]);
-    const result = integrate({ INTEGRATION_DETACH: root });
-    expect(result.status, result.stdout).toBe(1);
-    expect(result.stderr).toContain("expected branch");
-    expect(git(["rev-parse", "main"])).toBe(before);
-    expect(git(["rev-parse", "HEAD"])).toBe(before);
-    expect(existsSync(join(root, "task.txt"))).toBe(false);
-  }, 20000);
+      const before = git(["rev-parse", "main"]);
+      const result = integrate({ INTEGRATION_DETACH: checkout === "main" ? root : taskPath });
+      expect(result.status, result.stdout).toBe(1);
+      expect(result.stderr).toContain("expected branch");
+      expect(git(["rev-parse", "main"])).toBe(before);
+      expect(git(["rev-parse", "HEAD"])).toBe(before);
+      expect(existsSync(join(root, "task.txt"))).toBe(false);
+    },
+    20000,
+  );
 
   it("refuses dirty main and preserves a conflicting merge in the task worktree", () => {
     const { root, taskPath, git, integrate } = integrationFixture();
@@ -358,7 +363,7 @@ describe("serialized local integration", () => {
         { encoding: "utf8", env: { ...process.env, ALCHEMY_LOCK_WAIT_MS: "0" } },
       );
       expect(busy.status).toBe(1);
-      expect(busy.stderr).toContain("Integration lock busy");
+      expect(busy.stderr).toContain("Task integration lock busy");
       expect(git(["rev-parse", "main"])).toBe(before);
       child.kill("SIGKILL");
       writeFileSync(release, "release");
@@ -373,6 +378,104 @@ describe("serialized local integration", () => {
       rmSync(signals, { recursive: true, force: true });
     }
   }, 20000);
+
+  it.each(["verification", "cleanup"])(
+    "allows another task to integrate during %s and preserves the combined result",
+    async (phase) => {
+      const { root, script, taskPath, git, archive } = integrationFixture();
+      const signals = mkdtempSync(join(tmpdir(), "alchemy-integration-concurrency-"));
+      const ready = join(signals, "ready");
+      const release = join(signals, "release");
+      const checks = join(signals, "checks");
+      if (phase === "cleanup") {
+        writeFileSync(
+          join(taskPath, "scripts/lib/agent-browser-session.mjs"),
+          `import fs from 'node:fs'; import { setTimeout } from 'node:timers/promises';
+export async function closeTaskBrowsers() {
+  if (!process.env.INTEGRATION_READY) return;
+  fs.writeFileSync(process.env.INTEGRATION_READY, 'ready');
+  while (!fs.existsSync(process.env.INTEGRATION_RELEASE)) await setTimeout(20);
+}`,
+        );
+        git(["add", "scripts/lib/agent-browser-session.mjs"], taskPath);
+        git(["commit", "-qm", "test: gate cleanup"], taskPath);
+      }
+      const peer = join(root, ".worktrees", "peer");
+      git(["worktree", "add", "-b", "agent/peer", peer]);
+      writeFileSync(join(peer, "peer.txt"), "peer\n");
+      if (phase === "verification") {
+        const launcher = join(peer, "scripts/lib/command-invocation.mjs");
+        writeFileSync(
+          launcher,
+          readFileSync(launcher, "utf8") +
+            "\nif (process.env.INTEGRATION_CHECKS) fs.writeFileSync(process.env.INTEGRATION_CHECKS + '.launcher', 'updated');\n",
+        );
+      }
+      git(["add", "peer.txt", "scripts/lib/command-invocation.mjs"], peer);
+      git(["commit", "-qm", "test: peer change"], peer);
+      // The cleanup case gates only the browser module, not the check runner.
+      if (phase === "cleanup") {
+        const check = readFileSync(join(taskPath, "check.cjs"), "utf8").replace(
+          "if (process.env.INTEGRATION_READY)",
+          "if (false)",
+        );
+        writeFileSync(join(taskPath, "check.cjs"), check);
+        git(["add", "check.cjs"], taskPath);
+        git(["commit", "-qm", "test: gate only cleanup"], taskPath);
+      }
+      const child = spawn(process.execPath, [script, "integrate", "--task", "task"], {
+        env: {
+          ...process.env,
+          CODEX_WORKTREE_ARCHIVE_ROOT: archive,
+          INTEGRATION_READY: ready,
+          INTEGRATION_RELEASE: release,
+          INTEGRATION_CHECKS: checks,
+        },
+        stdio: "pipe",
+      });
+      let output = "";
+      child.stdout.on("data", (data) => {
+        output += data;
+      });
+      child.stderr.on("data", (data) => {
+        output += data;
+      });
+      const closed = new Promise<number | null>((resolve) => {
+        child.once("close", resolve);
+      });
+      try {
+        const deadline = Date.now() + 10000;
+        while (!existsSync(ready) && Date.now() < deadline && child.exitCode === null)
+          await new Promise((resolve) => {
+            setTimeout(resolve, 20);
+          });
+        expect(existsSync(ready), output).toBe(true);
+        const peerResult = spawnSync(process.execPath, [script, "integrate", "--task", "peer"], {
+          encoding: "utf8",
+          env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive, ALCHEMY_LOCK_WAIT_MS: "0" },
+        });
+        expect(peerResult.status, peerResult.stdout + peerResult.stderr).toBe(0);
+        writeFileSync(release, "release");
+        expect(await closed, output).toBe(0);
+        expect(readFileSync(join(root, "peer.txt"), "utf8")).toBe("peer\n");
+        expect(readFileSync(join(root, "task.txt"), "utf8")).toBe("task\n");
+        expect(existsSync(taskPath)).toBe(false);
+        const observed = readFileSync(checks, "utf8").trim().split("\n");
+        expect(new Set(observed).size).toBe(phase === "verification" ? 2 : 1);
+        if (phase === "verification") {
+          expect(output).toContain("Main advanced during verification");
+          expect(readFileSync(checks + ".launcher", "utf8")).toBe("updated");
+        }
+      } finally {
+        writeFileSync(release, "release");
+        if (child.exitCode === null) child.kill("SIGKILL");
+        await closed;
+        rmSync(root, { recursive: true, force: true });
+        rmSync(signals, { recursive: true, force: true });
+      }
+    },
+    20000,
+  );
 });
 
 it("preserves check evidence and captures before deleting outputs, retaining the branch and leaving peers untouched", () => {

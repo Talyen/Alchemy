@@ -216,10 +216,13 @@ periodic status and cancellation, using the same waiting policy as the
 can still fail before acquisition; no owner is reclaimed. The command
 requires registered task and `main` checkouts with no dirty files or unfinished Git
 operations. Safety reads bypass Git's filesystem monitor and untracked cache
-without changing repository settings. While holding the lock, it merges current local `main` into the task,
-runs `npm run check -- <combined changed paths>` (including both sides of renames),
-using the same selected units, docs and supporting checks as ordinary task verification, then fast-forwards `main` only if verification succeeded and
-both checkouts remain clean at the expected commits. It never pushes or switches
+without changing repository settings. A per-task lock prevents duplicate integrations of the same task. Under the shared
+lock, integration captures current local `main` and merges it into the task. It
+releases the shared lock before running `npm run check -- <combined changed paths>`
+(including both sides of renames), then reacquires it and rechecks branch,
+cleanliness and both commits before fast-forwarding `main`. If another task
+advanced main, it incorporates that commit and verifies the new combined result
+again. Test-lane waits never hold the shared integration lock. It never pushes or switches
 checkout branches. Verification uses the merged task's shared Node command launcher
 so npm runs without shell interpretation on Windows too. Only protection the selector cannot infer needs an additional focused run.
 An active bisect in either checkout also blocks integration before either branch advances.
@@ -230,9 +233,11 @@ Failures preserve task work and leave `main` unchanged. Never bypass serializati
 with a manual update to `main`. Keep unintegrated work committed and recoverable;
 cleanup must not discard work.
 
-Final integration closes the current task's managed browser sessions, preserves
-review evidence, then deletes and unregisters only the named task worktree while
-holding the integration lock. `--keep-worktree` skips this final teardown. Cleanup rechecks its branch, commit,
+After releasing the shared integration lock, final integration closes the current
+task's managed browser sessions, preserves review evidence, then deletes and
+unregisters only the named task worktree while retaining the task lock.
+Cleanup permits later main commits only when they still contain the integrated
+task commit. `--keep-worktree` skips this final teardown. Cleanup rechecks its branch, commit,
 clean status, unfinished Git operations, registration and lock state; submodules
 block automatic cleanup. Failed verification never removes a worktree. A cleanup
 failure leaves the completed integration in place and reports the blocker.

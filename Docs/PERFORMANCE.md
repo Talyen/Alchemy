@@ -291,7 +291,7 @@ trace events fail capture. Screenshots are omitted to reduce trace overhead.
 | `scripts/run-performance.mjs`                           | CLI entry (`npm run perf`, `npm run perf:compare`) |
 | `tests/performance/`                                    | Metrics, compare, and report unit tests (Node)     |
 
-Run metric and comparison unit tests with `npm run test:full -- tests/performance`.
+Run metric and comparison unit tests with `npm run test:unit -- tests/performance`.
 They also run in the full unit suite; `npm test` contains only fixed local smoke suites.
 
 Related: [PerformanceAudit.md](./Audits/PerformanceAudit.md) (when to change code), [CONTRIBUTING.md](../CONTRIBUTING.md) (E2E helpers / animation policy).

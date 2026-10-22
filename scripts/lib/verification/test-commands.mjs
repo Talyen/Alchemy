@@ -84,7 +84,7 @@ export const COMMANDS = Object.freeze({
     label: "complete unit suite",
     reason: "large selections use full coverage without exceeding platform argument limits",
     command: NPM,
-    args: ["run", "test:full"],
+    args: ["run", "test:unit"],
   },
   related: {
     label: "dependency-related unit tests",
@@ -102,13 +102,13 @@ export const COMMANDS = Object.freeze({
     label: "connected interaction progress",
     reason: "asynchronous flow changes preserve completion, cancellation and usable input",
     command: NPM,
-    args: ["run", "test:full", "--", "tests/interaction"],
+    args: ["run", "test:unit", "--", "tests/interaction"],
   },
   "unit-save": {
     label: "save/persistence unit tests",
     reason: "save changes preserve schema, storage, autosave, and hydration behavior",
     command: NPM,
-    args: ["run", "test:full", "--", ...TEST_SUITES.save],
+    args: ["run", "test:unit", "--", ...TEST_SUITES.save],
   },
   "unit-desktop": {
     label: "desktop boundary unit tests",
@@ -116,7 +116,7 @@ export const COMMANDS = Object.freeze({
     command: NPM,
     args: [
       "run",
-      "test:full",
+      "test:unit",
       "--",
       "tests/desktop/desktop-security.test.ts",
       "tests/desktop/desktop-sentry.test.ts",
@@ -127,13 +127,13 @@ export const COMMANDS = Object.freeze({
     label: "tooling and architecture unit tests",
     reason: "tooling checks read repository files and cannot be selected reliably from imports alone",
     command: NPM,
-    args: ["run", "test:full", "--", ...TEST_SUITES.tooling],
+    args: ["run", "test:unit", "--", ...TEST_SUITES.tooling],
   },
   "unit-performance": {
     label: "performance harness unit tests",
     reason: "performance harness and runtime marks share profiling contracts",
     command: NPM,
-    args: ["run", "test:full", "--", "tests/performance", "tests/lib/performance"],
+    args: ["run", "test:unit", "--", "tests/performance", "tests/lib/performance"],
   },
   "report-balance": {
     label: "balance report integration",

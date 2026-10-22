@@ -83,8 +83,8 @@ navigation. Keep persisted drafts and resume paths in their existing owners.
   [Corruption flow](#adding--changing-corruption-flow).
 - Preserve supported saved geography and in-flight encounters. Below-baseline development maps are disposable under the [save baseline](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline); no historical grid/hex migration belongs in navigation.
 - Cover the changed setup/resume route with focused unit tests using
-  `npm run test:full -- <test-paths>` or select affected unit suites with
-  `npm run verify:unit -- <task-owned paths>` under the [verification policy](../CONTRIBUTING.md#what-to-run-when-you-change).
+  `npm run test:unit -- <test-paths>` or select affected unit suites with
+  `npm run check -- <task-owned paths>` under the [verification policy](../CONTRIBUTING.md#what-to-run-when-you-change).
 
 ## Change battle playback
 
@@ -98,7 +98,7 @@ Visible behavior: [UI battle feedback](./UI_BATTLE.md#battle-feedback) and [batt
 - Defeat settlement runs synchronously in the transition's `prepare` callback; only the visible screen change waits. Retain the terminal presentation frame through that delay and fade, following [battle controllers](./BATTLE_CONTROLLERS.md#data-flow). Keep [battle timing](../src/lib/game-constants/battle-timing.ts) aligned with `combatant-attack-lunge` in [keyframes](../src/styles/keyframes.css) and the shake delay in [theme styles](../src/styles/theme.css). Death, survival, and lunge composition details live in [UI battle motion](./UI_MOTION.md#battle-motion).
 - Wish choices open after active card transfers finish. Cards with both Draw and Wish show their draws first; queued Wishes also wait for the previous chosen card to reach the hand. Use the existing transfer-in-progress presentation signal without delaying gameplay commits.
 - Preserve immutable hidden-hand keys, callback binding, post-death navigation timing, and the rule that mid-enemy-turn reload skips presentation replay.
-- Run the focused battle playback unit tests with `npm run test:full -- <test-paths>` and finish with the task-scoped local gate. For affected visible flows, perform the bounded rendered review and focused browser checks authorized by [visual review](./UI_VISUAL_REVIEW.md#browser-authorization), following [the E2E guide](../tests/e2e/README.md#running-focused-checks). Use its shared fixture with real timing; do not request `fastBattle` or enable fast mode when timing is under test.
+- Run the focused battle playback unit tests with `npm run test:unit -- <test-paths>` and finish with the task-scoped local gate. For affected visible flows, perform the bounded rendered review and focused browser checks authorized by [visual review](./UI_VISUAL_REVIEW.md#browser-authorization), following [the E2E guide](../tests/e2e/README.md#running-focused-checks). Use its shared fixture with real timing; do not request `fastBattle` or enable fast mode when timing is under test.
 
 ## Adding a new screen
 

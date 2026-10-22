@@ -257,6 +257,16 @@ const COMPILED_ROUTES = ROUTES.map((candidate) => ({
 
 function matches(route, filePath) {
   if (filePath.endsWith(".md") && route.candidate.id !== "documentation") return false;
+  // Presentation changes retain dependency-related coverage. Explicit lifecycle
+  // hooks still select families, and unfamiliar behavior owners keep the fallback.
+  if (
+    route.candidate.id === "interactions" &&
+    (/^src\/features\/alchemy\/.*\/screens\//u.test(filePath) ||
+      /^src\/features\/alchemy\/shared\/(?:ui|config|types)\//u.test(filePath) ||
+      /^src\/app\/playthrough\//u.test(filePath)) &&
+    !/\/use-[^/]+\.[jt]sx?$/u.test(filePath)
+  )
+    return false;
   return (
     route.patterns.some((expression) => expression.test(filePath)) &&
     !route.exclude.some((expression) => expression.test(filePath))
@@ -339,7 +349,7 @@ export function resolveRoutePlan(paths) {
   if (interactions.length === 0) keys.delete("unit-interactions");
   const selectedCommand = (key) =>
     key === "unit-interactions"
-      ? { ...COMMANDS[key], args: ["run", "test:full", "--", ...interactions] }
+      ? { ...COMMANDS[key], args: ["run", "test:unit", "--", ...interactions] }
       : COMMANDS[key];
   const coveredPaths = [...keys]
     .filter((key) => key.startsWith("unit-") && key !== "unit-changed")

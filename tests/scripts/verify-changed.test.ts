@@ -60,7 +60,7 @@ describe("verification selection", () => {
     ];
     const plan = resolveRoutePlan(paths);
     expect(plan.commands.map((command) => command.key)).toEqual(["assets-check", "unit-all"]);
-    expect(plan.commands.find((command) => command.key === "unit-all")?.args).toEqual(["run", "test:full"]);
+    expect(plan.commands.find((command) => command.key === "unit-all")?.args).toEqual(["run", "test:unit"]);
   });
 
   it("loads a large selection losslessly from a JSON file", () => {
@@ -292,11 +292,11 @@ it("selects connected progress coverage once for asynchronous flow owners", () =
 });
 
 it("selects lifecycle families without suppressing other related interaction tests", () => {
-  const plan = resolveRoutePlan(["src/features/alchemy/meta/screens/options/settings-controls.tsx"]);
+  const plan = resolveRoutePlan(["src/features/alchemy/meta/screens/options/use-settings-controls.ts"]);
   const selected = plan.commands.find((command) => command.key === "unit-interactions");
   expect(selected?.args).toEqual([
     "run",
-    "test:full",
+    "test:unit",
     "--",
     "tests/interaction/navigation.dom.test.ts",
     "tests/interaction/overlays.dom.test.tsx",
@@ -309,14 +309,33 @@ it("selects lifecycle families without suppressing other related interaction tes
     expect(fs.existsSync(file)).toBe(true);
   expect(resolveRoutePlan(["src/features/alchemy/shared/storage/io.ts"]).commands[0]?.args).toEqual([
     "run",
-    "test:full",
+    "test:unit",
     "--",
     "tests/interaction/persistence.dom.test.ts",
   ]);
   expect(resolveRoutePlan(["src/features/alchemy/shared/ui/use-fade.tsx"]).commands[0]?.args).toEqual([
     "run",
-    "test:full",
+    "test:unit",
     "--",
     "tests/interaction",
   ]);
+});
+
+it("keeps presentation edits dependency-selected while preserving lifecycle fallback coverage", () => {
+  for (const file of [
+    "src/features/alchemy/run-loop/screens/campfire-screen.tsx",
+    "src/features/alchemy/run-loop/screens/battle-screen/hand.tsx",
+    "src/features/alchemy/shared/ui/trait-box.tsx",
+    "src/features/alchemy/shared/config/game-data-catalog.ts",
+    "src/app/playthrough/report.ts",
+  ]) {
+    const plan = resolveRoutePlan([file]);
+    expect(
+      plan.commands.some((command) => command.key === "unit-interactions"),
+      file,
+    ).toBe(false);
+    expect(plan.commands.find((command) => command.key === "related")?.args, file).toContain(file);
+  }
+  const fallback = resolveRoutePlan(["src/features/alchemy/shared/stores/session/session-runtime.ts"]);
+  expect(fallback.commands.find((command) => command.key === "unit-interactions")?.args).toContain("tests/interaction");
 });

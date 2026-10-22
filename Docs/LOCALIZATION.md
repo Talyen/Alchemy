@@ -81,7 +81,7 @@ Build and package gates validate all shipped languages and the asset digest.
 The [localization skill](../.agents/skills/localization/SKILL.md) applies whenever
 player-facing text changes. Draft wording may evolve in the isolated task worktree without translating each experiment. Prepare one batch after the task's English wording settles, then translate and review its affected messages across all shipped locales. Reuse unchanged translations; there is no per-edit translation cycle. [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns verification and completion requirements; stale catalogs remain blocked by the freshness gate.
 
-1. Run `npm run i18n:prepare -- <task-file.json>` (default: `reports/localization/tasks.json`). This extracts current English, refreshes derived outputs, and writes one editable packet containing only pending canonical messages and result templates for affected locales. An existing packet is never overwritten; choose another path when source changes during ongoing work.
+1. Run `npm run i18n:prepare -- <task-file.json>` (default: `reports/localization/tasks.json`). This extracts current English, refreshes derived outputs, and writes one editable packet containing only pending canonical messages and result templates for affected locales. Reusing the same path refreshes pending messages while retaining matching drafts and reviewed results. Source/glossary changes clear review for affected results. Metadata and missing plural slots are rebuilt; translation and semantic review remain agent work. Before a changed packet is replaced atomically, its prior contents are saved beside it as a timestamped `.bak`, including drafts for removed or already-applied messages.
 2. Translate the packet's `results`, then review meaning in a separate pass against `messages`: negation, actor, timing, conditions, quantities, permanence, alternatives, and glossary consistency. Preserve named parameters, semantic tags and Steam tokens. Plural templates include every required category; `text` must match `forms.other`. Mark `reviewed: true` only after that review.
 3. Run `npm run i18n:finish -- <task-file.json>`. Every locale in the packet is validated before any catalog is written; stale hashes, missing review, invalid placeholders/tags/plurals and duplicate locales are rejected. It applies the batch, regenerates outputs once, and runs the complete freshness, font and export checks. A structural check cannot establish translation quality.
 
@@ -96,7 +96,7 @@ same batch format without demanding that all other pending work is finished.
 
 The local check, locked integration, CI static gate and verified builds enforce
 this check. They never call a model or modify translations. If integration
-incorporates changed English, the agent updates its translations and retries.
+incorporates changed English, rerun prepare with the same packet path, repair the affected translations and retry.
 Machine checks protect structural validity and freshness, not native-speaker
 quality; AI semantic review remains part of completing the task.
 

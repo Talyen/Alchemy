@@ -127,7 +127,15 @@ export function validateResults({ messages, glossary, locale, results, previous 
   );
 }
 
-export function translationPackets({ messages, glossary, catalogs }) {
+export function translationPackets({ messages, glossary, catalogs }, drafts = []) {
+  const saved = new Map();
+  for (const packet of Array.isArray(drafts) ? drafts : [drafts]) {
+    if (!packet || !TARGETS.includes(packet.locale) || saved.has(packet.locale))
+      throw new Error("Invalid or duplicate draft locale; existing packet preserved");
+    if (!packet.results || typeof packet.results !== "object" || Array.isArray(packet.results))
+      throw new Error("Expected draft results keyed by message ID; existing packet preserved");
+    saved.set(packet.locale, packet.results);
+  }
   return TARGETS.flatMap((locale) => {
     const previous = catalogs[locale] ?? {};
     const pending = Object.entries(messages).filter(
@@ -152,10 +160,10 @@ export function translationPackets({ messages, glossary, catalogs }) {
           ]),
         ),
         results: Object.fromEntries(
-          pending.map(([id, message]) => [
-            id,
-            {
-              text: previous[id]?.text ?? "",
+          pending.map(([id, message]) => {
+            const draft = saved.get(locale)?.[id];
+            const result = {
+              text: draft?.text ?? previous[id]?.text ?? "",
               sourceHash: sourceHash(message, glossary[locale], locale),
               reviewed: false,
               ...(message.plural
@@ -163,12 +171,31 @@ export function translationPackets({ messages, glossary, catalogs }) {
                     forms: Object.fromEntries(
                       new Intl.PluralRules(locale)
                         .resolvedOptions()
-                        .pluralCategories.map((category) => [category, previous[id]?.forms?.[category] ?? ""]),
+                        .pluralCategories.map((category) => [
+                          category,
+                          (draft ? draft.forms?.[category] : previous[id]?.forms?.[category]) ?? "",
+                        ]),
                     ),
                   }
                 : {}),
-            },
-          ]),
+            };
+            // Restore mechanical metadata, never carry review across changed
+            // English/glossary or incomplete plural forms. Translation stays editable.
+            if (message.plural) {
+              if (!result.text) result.text = result.forms.other;
+              if (!result.forms.other) result.forms.other = result.text;
+            }
+            if (draft?.sourceHash === result.sourceHash && draft.reviewed === true) {
+              try {
+                validateTranslation(message, result.text);
+                validatePluralForms(message, result, locale);
+                result.reviewed = true;
+              } catch {
+                // Preserve the draft for repair without claiming it is reviewed.
+              }
+            }
+            return [id, result];
+          }),
         ),
       },
     ];

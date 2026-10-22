@@ -5,8 +5,7 @@ Electron, isolated temporary saves, muted audio, and hidden windows.
 Native page capture keeps the window hidden and normalizes Retina bitmaps to CSS
 viewport dimensions; the native content bounds and renderer viewport must match.
 It never requests native fullscreen or brings a window forward. Run browser,
-Electron, and full unit batches separately. Local builds and screenshot suites
-require an explicit execution request under [Contributing](../../CONTRIBUTING.md#what-to-run-when-you-change);
+Electron, and full unit batches separately. Focused builds and screenshot checks follow the task authorization in [Contributing](../../CONTRIBUTING.md#what-to-run-when-you-change);
 the compact runner below participates in the shared local test lane.
 
 ```sh

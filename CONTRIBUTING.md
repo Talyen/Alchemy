@@ -1,145 +1,80 @@
 # Contributing
 
-Install dependencies with `npm ci`. `npm run context -- <relevant paths>` can locate applicable owner sections; `npm run context` lists task categories. Direct reads and scoped searches are equally valid. The [documentation map](./README.md#documentation) is the human index; [AGENTS.md](./AGENTS.md) owns scope, preservation of existing work, and Git authorization.
+Install dependencies with `npm ci`. Follow [AGENTS.md](./AGENTS.md) for task isolation,
+Git authorization and local integration. Read known owners directly; use
+`npm run context -- <paths>` when ownership is unclear.
 
 ## What to run when you change…
 
-Use one task-scoped gate during work, before handoff, and during protected integration:
+Use these three commands for ordinary work:
 
-```sh
-npm run check -- <task-owned paths>
-npm run check -- <task-owned paths> --plan
-```
+| Need                 | Command                                    |
+| -------------------- | ------------------------------------------ |
+| Check a task         | `npm run check -- <task-owned paths>`      |
+| Run focused units    | `npm run test:unit -- <test-paths>`        |
+| Run broad validation | `npm run check:full -- <task-owned paths>` |
 
-Use `--diff` instead of paths when the complete dirty set belongs to the task.
-The plan prints selected commands and skips without executing checks. Directory
-selections include deleted paths. Integration runs this same gate against the
-combined result after incorporating current local `main`.
+Use `--diff` instead of task paths when the entire dirty set belongs to the task.
+Add `--plan` to preview selected checks. Include deleted paths; omit unit paths
+only when you intend to run all units. Retained command aliases are documented in
+[the implementation reference](./scripts/VERIFICATION.md#compatibility-commands-and-test-runners).
 
-The gate selects dependency-related, changed, and risk-selected unit suites,
-documentation contracts when documentation changes, localization freshness for
-source/catalog inputs, source/test compilation for executable changes, and selected-file formatting and lint diagnostics. Markdown-only
-changes run documentation contracts and formatting without units or localization.
-Formatting and lint each accept at most 50 existing files of at most 256,000 bytes;
-larger batches are reported as deferred to CI. Scoped lint includes the configured type-aware diagnostics. A passing task gate
-establishes local completion for its reported scope; CI and platform acceptance
-remain separate evidence, and are reported only when actually run.
+The task gate selects changed and dependency-related units, explicit lifecycle,
+save, desktop or tooling protection, source/test compilation, localization freshness
+for source/catalog inputs, documentation contracts, and selected-file formatting
+and lint. Presentation files rely on related tests; lifecycle hooks and shared
+behavior seams retain explicit interaction coverage. Unknown behavior owners keep
+the conservative fallback. Markdown-only tasks run documentation checks and formatting.
+Formatting and lint batches above 50 files or containing a file above 256,000 bytes
+are deferred to CI and reported. Broader checks add full static validation,
+applicable builds, bundle budgets and preview smoke.
 
-The primary commands are:
+Task work authorizes units, compilation, lint, development previews, focused
+browser/Electron checks and builds without another permission request. Start with
+bounded checks; use exhaustive browser suites, coverage, mutation and profiling
+for a concrete risk or explicit request. Avoid overlapping expensive runs on an
+overloaded host. Release packaging, signing, publication and uploads retain their
+release authorization rules.
 
-| Need                 | Command                             | Scope                                                                  |
-| -------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
-| Check this task      | `npm run check -- <paths>`          | Selected units, types, docs, localization, formatting and bounded lint |
-| Run unit tests       | `npm run test:unit -- <test-paths>` | Focused tests; omit paths for all units                                |
-| Run broad validation | `npm run check:full -- <paths>`     | Full static, applicable builds, budgets and preview smoke              |
+Run the task gate before handoff. Protected integration checks the merged task
+against pinned main/task commits, then revalidates both under the integration lock
+before advancing clean main. If main advances during verification, integration
+incorporates it and checks again. Pre-push uses the same task gate against outgoing
+changes and requires a clean checkout. A passing gate establishes local completion
+for its reported scope; claim CI or platform acceptance only when actually run.
+When a push and CI follow-up are requested, finish both before calling the task complete.
 
-`test:full` remains an alias for the same unit runner. `npm test` remains the
-fixed, minimal Node smoke; it does not select edited-code coverage. CI runs
-complete validation and applicable desktop/assets checks on pull requests and
-pushes to `main`.
+For visible changes, [visual review](./Docs/UI_VISUAL_REVIEW.md) requires rendered
+comparison and affected interactions. Finalize text in the task worktree, then
+[translate and review](./Docs/LOCALIZATION.md#agent-workflow) before final checks
+and integration. Checks and builds never invoke a translation service.
 
-Task work authorizes the local verification needed to implement and diagnose it:
-units, compilation, lint, development previews, focused browser/Electron checks,
-and builds may run without another permission request. Use `check` for ordinary
-work and `check:full` when broader evidence is useful. Choose bounded checks first;
-reserve exhaustive browser suites, coverage, mutation and profiling for a concrete
-risk or an explicit request. Avoid overlapping expensive runs on an overloaded
-host. Release packaging, signing, publication and uploads retain their release
-and authorization rules.
-
-For visible changes, [visual review](./Docs/UI_VISUAL_REVIEW.md) additionally
-requires rendered comparison and affected interactions. A passing local gate
-alone does not establish visual quality. Local completion does not authorize a
-push or imply green CI; when a push and CI follow-up are requested, finish those
-steps before calling that requested work complete.
-
-Existing `verify`, `verify:unit`, and `verify:full` commands remain available for
-selection diagnosis: `verify` selects units and documentation, `verify:unit`
-restricts that selection to units, and `verify:full` adds broader route checks.
-Use `check` for ordinary work so the supporting gates are included automatically.
-Pre-push retains outgoing-path selection and source/cleanliness guards and uses
-the same task gate.
-
-Use `rg --files tests` to locate unfamiliar suite paths. Vitest arguments are
-filters: a passing mixed selection can ignore a misspelled path while another
-matches, so confirm the reported file count before claiming that scope passed.
-
-One-shot Vitest and Playwright commands through `run-compact.mjs`, including
-full/focused unit tests and the full verifier's related/changed selections, share
-one local test lane with the ship unit runner across checkouts on the same host.
-An occupied lane waits for release without a default timeout, so ordinary contention
-does not fail verification. Waiting reports progress every 30 seconds and is
-cancellable. Set `ALCHEMY_LOCK_WAIT_MS` for an explicit deadline in milliseconds
-(`0` fails immediately). No protected work starts before acquisition.
-The minimal Node smoke does not acquire this lane. Raw CLI and watch/debug
-sessions bypass it and must be coordinated manually. The runner defaults native
-bundler threads to one; the four-worker Vitest ceiling remains unchanged. An
-unrelated overloaded host can still cause failures: preserve the failed result
-and inspect collection and host resources before retrying or changing timeouts.
-Implementation: [local test lane](./scripts/lib/verification/local-test-lane.mjs).
+Tests share a host-wide lane; occupied lanes wait and remain cancellable. Never
+terminate another task's run. Raw CLI/watch commands bypass that lane and require
+manual coordination. For test filters, verify the reported file count: Vitest can
+ignore a misspelled path when another filter matches. [Runner details](./scripts/VERIFICATION.md#compatibility-commands-and-test-runners)
+cover deadlines, contention and overrides.
 
 ### Agent preview ownership
 
-For interactive browser review on macOS/Linux, use
-`npm run agent:browser -- <action and arguments>` in place of the raw CLI.
-It selects the Codex task's session automatically; use the same actions for
-navigation, reloads and captures. New managed sessions automatically use a
-1920 × 1080 (16:9) viewport, so ordinary game screenshots need no resize step.
-Use `npm run agent:browser -- set viewport <width> <height>` for a deliberate
-responsive check; later navigation and screenshots preserve that choice.
-An explicit viewport or device on the first command takes precedence; user-attached
-sessions are not resized. Managed screenshots default to `reports/visual-review/`
-for automatic preservation at final integration; explicit output paths and
-`AGENT_BROWSER_SCREENSHOT_DIR` overrides still work.
+Use `npm run agent:browser -- <action and arguments>` for interactive review on
+macOS/Linux. Task sessions and a 1920 × 1080 viewport are automatic. Use
+`set viewport <width> <height>` for responsive checks. Screenshots default to
+`reports/visual-review/` and are preserved during final integration.
 
-`npm run check` preserves interactive sessions, including after failure or
-cancellation. Final integration closes this task's managed sessions before
-removing its worktree; `--keep-worktree` preserves them for continued work.
-Use `npm run agent:browser -- close` for explicit teardown. Existing ownership
-guards and orphan recovery remain active; no manual registration is needed. Without a Codex task identity, or on Windows, the command passes through
-to the native CLI and leaves human session ownership unchanged. Never close all
-sessions, kill unrelated browsers, or reclaim an active session based on age.
-Preserve ownership records when cleanup fails.
-
-One-shot Playwright/Electron runs use the existing managed command and test-lane
-cleanup; do not replace them with detached browser daemons. The Alchemy test lane
-does not reserve memory against Lantern previews or Trinket builds. When another
-repo is running an expensive inspection and memory pressure is high, finish or
-close the owned inspection before admitting another; source editing can continue.
-
-DOM suites use [the JSDOM environment](./tests/jsdom-environment.ts), which
-temporarily removes Node storage descriptors before browser globals are installed
-and restores them during teardown. JSDOM owns both local and session storage;
-Node Web Storage flags and a Node storage file are unnecessary for these tests.
-
-The task gate selects save/persistence units for save changes, desktop boundary units for desktop changes, tooling/architecture units for tooling changes, and dependency-related coverage for other implementation changes. The full completion gate additionally selects report/asset checks, full static checks, lockfile consistency, applicable builds, bundle budgets and preview smoke.
-
-Authoritative working-tree discovery disables Git's filesystem monitor and untracked cache per command (`-c core.fsmonitor=false -c core.untrackedCache=false`). Discovery failures are not a clean checkout. Checks preserve run-attributed diagnostics. Default checks guard task selections and declared local harness inputs; full and pre-push checks retain checkout-wide guards. Unrelated runtime edits do not invalidate a scoped local check.
+Checks preserve interactive sessions. Final integration closes task browsers and
+removes the completed worktree after releasing the shared integration lock;
+`--keep-worktree` preserves both for continued work. Never close all sessions or
+reclaim another task's browser. [Preview details](./scripts/VERIFICATION.md#preview-implementation-notes)
+cover one-shot runners and platform behavior.
 
 ## Verification reuse
 
-Local task and full checks reuse passing results for deterministic unit selections
-and supporting type, localization, format and lint diagnostics when their exact
-commands and inputs match. This includes repeated checks before handoff, during
-integration and at pre-push in the same checkout. Committing unchanged files does
-not invalidate a receipt; changes to source, dependency identities, configuration,
-environment or checkout do. Documentation-only checks do not scan dependencies or reuse receipts. CI always runs fresh. Builds, browser runs, assets
-and report-producing gates always execute.
-
-Receipts expire after one hour without extending on reuse. Reuse is accepted only
-when it saves more than twice the input-scan cost and the original command took
-at least five seconds. Reports identify the original passing run; failures and
-input drift invalidate receipts. Managed worktrees support the root checkout's
-linked dependency installation. Normal report cleanup removes disposable receipts.
-
-Set `ALCHEMY_VERIFY_FRESH=1` for fresh observations, including nondeterminism
-investigations and benchmark comparisons. [Cache implementation details](./scripts/VERIFICATION.md#verification-cache)
-document input identity. Reuse is an optimization, never permission to omit a
-newly selected check or substitute narrower coverage.
-
-Supporting local stages have a 60-second deadline. Selected units use their test deadlines after acquiring the shared lane; lane waiting has no default deadline. Minimal Node smoke retains its 30-second deadline.
-
-When source/catalog inputs change, the local check also runs the offline [localization freshness gate](./Docs/LOCALIZATION.md#agent-workflow). Agents settle experimental wording in their isolated worktree, then update translations before final verification and integration; checks and builds never invoke a translation service.
+The gate automatically reuses eligible deterministic successes when commands and
+inputs match; CI always runs fresh. Set `ALCHEMY_VERIFY_FRESH=1` for nondeterminism
+investigations or benchmarks. Reuse never substitutes narrower coverage. See
+[receipt rules](./scripts/VERIFICATION.md#verification-receipt-rules) for cache identity,
+expiry and diagnostics.
 
 ## Test value and coverage strategy
 
@@ -163,147 +98,68 @@ These examples are contextual: exact values and layout assertions can be high-va
 
 ### Active test retirement
 
-Test retirement is required when the task concerns test maintenance or a test demonstrably obstructs the requested work. Reading or diagnosing nearby tests creates no cleanup obligation. Useful incidental consolidation is allowed when its purpose and dependencies are understood and it stays within the task. When an inexpensive change provides stronger protection, improve the test or move it to a cheaper layer.
+Retire tests when test maintenance is requested or a test demonstrably obstructs
+the task. Reading nearby tests creates no cleanup obligation. Diagnose failures
+before changing coverage; never weaken a test to hide a product defect. Preserve
+consequential regressions and distinct integration protection, preferably at the
+cheapest effective layer. No separate approval or one-for-one replacement is required.
 
-Before retirement, check why the test exists, including known regressions, distinct integration risks, and execution tiers. Diagnose failures first: never delete or weaken a test simply to hide a product defect or obtain a green gate. Preserve trustworthy protection for consequential known regressions, save compatibility, critical journeys, and architectural boundaries; their existing test form is not sacred.
-
-No separate permission or one-for-one replacement is required. For material coverage changes, briefly report protection added or reused, justified additions, and protection retired. For overlap, identify surviving protection; for unique coverage retired, explain the specific risk accepted and maintenance tradeoff. Avoid scoring forms and routine essays.
-
-Keep cleanup within the task's needs; do not turn every task into a suite-wide audit. Keep scenarios focused and failures diagnosable. Combining unrelated checks into a giant journey or parameterized matrix does not improve value merely by reducing test declarations. Share fixtures where they preserve a common invariant or prevent drift; keep scenario-specific setup clear.
-
-For exhaustive orchestration checks such as the affix sweep, retain the scenario coverage while collecting invariant violations into a total and bounded, scenario-specific examples. Avoid thousands of identical matcher calls. Test-local timeouts are failure ceilings, not performance targets; reproduce a slowdown with the full unit suite running separately from browser work before changing global workers, timeouts, or gameplay.
-
-When removing or moving tests, remove support code made unused by retirement and update maintained references and explicit gate selections to match the surviving protection. Include deleted paths in verification scope; changed unit files that no longer exist are not executed, but their route escalations remain. For consolidation, also select the surviving test files; for retirement without replacement, run applicable gates and report material lost protection. Use timing and coverage reports as evidence when useful, without inventing quotas, mandatory measurements, or automatic threshold ratcheting.
-
-CLI tests that create package or release artifacts must use temporary project roots,
-including the script dependency closure and output directories. Never create or
-remove fixtures in the checkout's real package-output or Steam build directories.
-
-For lint policy tests, batch distinct fixture paths through
-`lintFixtures` in `tests/helpers/lint-fixture.ts` so they share a real linter
-launch. Preserve the original paths and configuration overrides. Independent
-statements for the same path can share a source file when they parse together;
-assert diagnostic source lines to distinguish rejected statements from allowed
-neighbors. Keep separate launches for different configuration or type-aware modes.
-Do not trade away path exceptions or diagnostic precision to reduce process count.
+For material changes, report protection added/reused and retired, including any
+unique risk accepted. Remove unused support code and repair references. Select
+deleted tests and surviving replacements in the task gate. Keep incidental cleanup
+within the task. [Maintenance details](./scripts/VERIFICATION.md#test-maintenance-details)
+cover fixtures, exhaustive checks and timeouts.
 
 ### Component and hook tests
 
-Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. Name browser-API suites without React `*.dom.test.ts` so their environment is clear and the shared glob selects them. React `*.test.tsx` and `use-*` / `*-hook` suites already select DOM. The include/exclude patterns in `vitest.config.ts` own that classification; the project guard checks actual collection rules for omissions and overlap. Full unit runs share the four-worker ceiling used by related and ship checks, leaving one CPU free on smaller hosts. CLI worker overrides remain available for focused diagnosis.
-
-Preserve test import order when a shared harness registers mocks or hooks. Import organization must not move that harness after modules whose dependencies it mocks; use explicit hoisted mocks where feasible. Ordinary explanatory comments are allowed; Oxlint suppressions still require a reason. Keep comments focused on ordering, compatibility, and other reasons that names and tests alone do not explain.
-
-Hook tests pass changing inputs through `renderHook(callback, { initialProps })` and `rerender(nextProps)`. `rerender` updates props; it does not replace the render callback.
+Use the [component and hook conventions](./scripts/VERIFICATION.md#component-and-hook-conventions)
+for Vitest environments, mock ordering and rerendering.
 
 ## E2E policy
 
-Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests/e2e/README.md](./tests/e2e/README.md). Every pull request and push to `main` runs the `@critical` suite once, including all retained save specs. There is no separate save browser job. Critical browser coverage uses one job with two workers; nightly and release retain their full-suite shard counts until hosted efficiency comparisons qualify further consolidation. Nightly and release workflows own the full browser suite; nightly also owns coverage, mutation, deep entry-export analysis, and full Electron coverage.
+[The E2E guide](./tests/e2e/README.md) owns fixtures, tags, page objects and diagnostics.
+Every push/PR runs critical journeys; nightly and release run the full browser
+suite, with broader Electron and analysis gates at their configured tiers.
+[Workflows](./.github/workflows/) own exact CI topology.
 
 ## Hooks and workflow hygiene
 
-`lefthook` pre-push invokes only `npm run check -- --pre-push`, forwarding Git’s ref/object-ID pairs through stdin. The gate selects the union of outgoing changes, including removed paths; a new remote ref selects its full tree. Deleted remote refs require no checks. Large selections travel through a JSON path file; the opt-in full verifier falls back to the complete unit suite when related-test arguments exceed platform limits. Outgoing commits must match the checked-out HEAD, and unavailable base revisions fail explicitly. When source checks are needed, pre-push requires a clean checkout (including nonignored untracked files) so tests cannot pass against an uncommitted fix. Ordinary task checks still support dirty work. Local `--diff` continues to select working-tree changes, retaining both sides of renames for risk selection and falling back to HEAD’s changes when clean. Pre-commit formats staged files selected by `scripts/lib/verification/prettier-paths.mjs`; commit-msg runs commitlint. Install hooks with `npm run prepare`.
+Hooks format staged files and validate commit messages; pre-push checks outgoing
+source and committed asset integrity. Task checks allow dirty task work; pre-push
+requires cleanliness. Install hooks with `npm run prepare`.
 
-Execution plans under `Docs/Plans/` are workflow artifacts, not product correctness gates. Follow the [plan lifecycle](./Docs/Plans/README.md) to finish and remove only task-owned plans, then validate with `npm run docs:check` (also included in the opt-in full gate). `npm run docs:check:final` is an explicit repository-wide closure check; another task's active plan does not require cancellation or block ordinary handoff.
+Plans are optional workflow artifacts. Finish only task-owned plans under the
+[plan lifecycle](./Docs/Plans/README.md); other tasks' plans do not block handoff.
+`docs:check:final` is an explicit repository-wide closure check. See
+[hook details](./scripts/VERIFICATION.md#git-hook-implementation) for ref selection.
 
 ## Static, build, and CI policy
 
-Development and CI use Node 24 (minimum 24.18) and npm 11; package engines and
-strict install checks enforce that supported toolchain. Peer dependencies are
-validated rather than bypassed. ESLint is installed only as the peer host for
-the plugins run through Oxlint's JS bridge; Oxlint remains the lint runner.
+Node 24 (minimum 24.18) and npm 11 are required. Keep package engines, lockfile and
+CI aligned. Oxlint owns lint; TypeScript owns source/test compilation; Prettier
+owns formatting. Builds validate generated outputs without rewriting sources.
+Use explicit asset/sync commands for authoring.
 
-Dependabot checks npm and Actions weekly. Related React, Vite, Vitest and Tailwind
-minor/patch updates travel together; major upgrades remain separate reviews.
-`npm run check:dependencies` audits all dependencies at moderate severity and
-above and runs in `lint:ci`. Do not bypass a new advisory without tracing its
-actual dependency path and exposure. Temporary overrides keep electron-builder
-on the maintained ESM Electron downloader and typed-rest-client on patched qs;
-remove each when its upstream dependency range incorporates the fix.
-Electron binary downloads use Electron's own hardened ZIP extractor. Install
-scripts are explicitly allowed for Electron, Sharp, Sentry CLI, SWC and hooks;
-optional fsevents scripts are disabled in favor of Node's watcher fallback.
-
-Desktop renderer output targets Electron 45's Chromium 156; web QA output uses
-Vite's widely available browser baseline. Keep the desktop target aligned when
-updating Electron. Packaged Windows smoke, native Steam overlay/input and release
-signing still need their respective platform and release checks.
-
-TypeScript 7 owns source and test compilation. Oxlint owns linting through
-`oxlint.config.ts`, with type-aware source checks supplied by `oxlint-tsgolint`.
-Prettier continues to own formatting. The Oxc and TypeScript 7 language-server
-extensions are recommended in `.vscode/extensions.json`; the TypeScript extension
-still uses the upstream `native-preview` extension identifier, while the compiler
-package itself is the stable release. `dev:checked` retains terminal diagnostics
-and the browser overlay through vite-plugin-checker's native compiler watcher.
-Dependency-cruiser uses SWC and the shared alias through its resolve-config seam;
-its cycle gate excludes erased type edges, while Oxlint enforces type import
-boundaries as well as runtime imports.
-
-| Command                           | Role                                                                                                                                         |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run check:static`            | Generated outputs, formatting, source/test types, and Oxlint (fast local static; no boundary subset double-run)                              |
-| `npm run lint:ci`                 | The canonical every-push static aggregate: `check:static`, docs, dead code, import boundaries, architecture smoke, and Playwright collection |
-| `npm run build` / `build:desktop` | Pure generated-output-validating web or desktop build                                                                                        |
-| `npm run assets:check`            | Read-only local Asset Library source freshness check                                                                                         |
-| `npm run test:e2e:critical`       | Every-push representative player journeys                                                                                                    |
-
-Independent static checks finish even when a sibling fails, including the nested
-aggregate. The aggregate still fails if any checker fails; dependent build and
-smoke steps do not run after failure. Compact failure summaries share their
-budget across failed checkers, retain excerpts from both ends of long diagnostics,
-and link to numbered full-log locations. Exit status identifies a failed checker;
-when its diagnostic format is unrecognized, retain bounded output from both ends
-instead of reducing the summary to its exit footer.
-
-Pre-push also validates committed asset integrity: asset-related selections run
-`npm run assets:check` and require the selected local library sources; other
-selections run `npm run assets:check:outputs` without the library. Ordinary
-task-scoped `check` does not add either asset check.
-
-Builds only validate generated outputs and never prepare or rewrite tracked
-sources. `npm run dev` validates committed outputs through its `predev` lifecycle; use the
-explicit `sync:*` and asset authoring commands when intentionally regenerating
-outputs for a build.
-
-Every pull request and push to `main` runs the static aggregate, full Vitest, one web build plus preview smoke, the critical browser suite, and representative production localization acceptance in an independent job. Nightly and release retain the full shipped-locale matrix plus expanded-English development acceptance. Prepared assets, desktop packaging, and Electron tests remain path-gated. Dependency setup skips Electron downloads by default; only packaging and Electron test jobs install the binary. Installed Electron binaries use exact lockfile-specific caches without fallback to an older dependency set. Browser setup installs OS dependencies even when browser binaries are cached. Prepared-output integrity jobs use committed selections and outputs without Asset Library. CI topology is owned solely by `.github/workflows/`; local test selection is owned by the broad categories in `scripts/lib/verification/change-routes.mjs`.
-
-Static and unit CI jobs use one-commit checkouts; history-dependent tests create
-their own fixture repositories. Change detection and release ancestry jobs retain
-full history. Clean shallow selections conservatively use the checked-out tree.
-
-External GitHub Actions in workflows and composite actions use full commit SHAs,
-with version comments for review. Resolve pins from the action's own repository;
-keep local actions on relative paths. [.github/dependabot.yml](./.github/dependabot.yml)
-groups weekly Actions updates into reviewable pull requests; updates still pass
-the normal CI gates before merging.
-
-[Bugbot](./.cursor/BUGBOT.md) remains an optional post-push review aid for gameplay, save, and battle-rule changes; it is not a required status check.
-
-Release validation remains deliberately redundant because it protects published artifacts. See [RELEASE.md](./Docs/RELEASE.md).
+CI runs full static and unit validation, a web build and preview smoke, critical
+browser journeys and representative localization acceptance. Desktop and asset
+gates remain path-selected; nightly/release expand coverage. Release validation
+retains its artifact checks under [RELEASE.md](./Docs/RELEASE.md).
+[The infrastructure reference](./scripts/VERIFICATION.md#toolchain-and-ci-reference)
+owns tool configuration, dependency security, platform targets and CI mechanics.
 
 ## Failure-first triage
 
-Follow [REFERENCE.md](./Docs/REFERENCE.md#failure-first-triage). Start with the compact run record or failure digest when the cause is unclear. Open relevant logs or traces directly for a specific hypothesis; keep excerpts focused rather than pasting full reports into agent context.
+Follow [REFERENCE.md](./Docs/REFERENCE.md#failure-first-triage): start with the compact
+failure digest, form a hypothesis, and inspect only the relevant logs or traces.
 
 ## Changelog and patch notes
 
-Changelog updates happen at release only. Player patch notes are generated from Conventional Commits, changed paths, and an optional `User-Facing: yes` or `User-Facing: no` trailer. Release-time details live in [RELEASE.md](./Docs/RELEASE.md).
+Update changelogs at release only. Use Conventional Commits and `User-Facing: yes`
+or `User-Facing: no` trailers under [release policy](./Docs/RELEASE.md#changelog-release-time-only).
 
 ### Connected interaction progress tests
 
-[Interaction coverage](./tests/interaction/README.md) maps every screen to its
-lifecycle family and documents deterministic replay. `npm run test:interactions`
-runs the seven connected families with 16 fixed seeds and up to 40 actions each.
-The normal CI unit suite includes those cases. Nightly unit coverage sets
-`ALCHEMY_INTERACTION_TIER=nightly` for 128 distinct seeds and up to 120 actions;
-it does not rerun push seeds. Failures and seed manifests live in the existing
-run-attributed reports directory. `--family`, `--seed`, `--replay`, `--day` and
-`--shrink` support reproduction and bounded trace reduction.
-
-Use these tests for asynchronous completion, cancellation and stale callbacks;
-retain real commands and gate logic. Replace low-value helper-call assertions
-when connected outcome coverage supersedes them. Electron interaction canaries
-run in the existing desktop CI tier, with deeper variants nightly. No additional
-browser engine or worker/shard expansion is required. Local execution follows
-the [gate policy](#what-to-run-when-you-change), including its authorization for
-bounded rendered UI review and focused browser checks.
+[Interaction coverage](./tests/interaction/README.md) owns connected lifecycle
+families and deterministic replay. Use these tests for consequential completion,
+cancellation and stale-callback failures. [Runner details](./scripts/VERIFICATION.md#connected-interaction-runner)
+cover seeds and reproduction; ordinary execution follows the task policy above.
