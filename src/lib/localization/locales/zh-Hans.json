@@ -1023,6 +1023,7 @@
   "currency.available": {"text":"{{name}}，可用数量：{{count}}","sourceHash":"46c8a32aee19933d4abde40e01138cc33b0caa7492a97c470865ff79aff7cb7c","reviewed":true},
   "currency.count": {"text":"{{name}}, {{count}}","sourceHash":"59b052b39023f1fbf0500b02b85279958c55296a8968c9763bb0d1f74add5173","reviewed":true},
   "deck.inspect": {"text":"查看牌组 · {{count}}张牌","sourceHash":"5186cd862b0546cb718449dfda50820781a463b480898d2f2d15ee4280989043","reviewed":true,"forms":{"other":"查看牌组 · {{count}}张牌"}},
+  "demo-completion.act-complete": {"text":"第一幕完成","sourceHash":"e0c8fdeab077ffef83b6464e7bf30f8d435476a8727b093e7a848c94db75c170","reviewed":true},
   "description.10f7d5fde093cf85": {"text":"<keyword0>锻造</keyword0>达到{{value0}}或以上时，每回合你的首次造成伤害的<keyword1>物理</keyword1>命中额外造成{{value1}}点<keyword2>眩晕</keyword2>伤害","sourceHash":"d710d288bc9bcd869d04ad0e6a15459af83dffe6b6eb03f0123920012e83e40a","reviewed":true},
   "description.119bd35f3d1351af": {"text":"每回合你的首次<keyword0>物理</keyword0>攻击造成双倍伤害","sourceHash":"d34bf6f2b24e3edf8f27e2914a01d3c430fedeca858cd81463d56ae0f1598197","reviewed":true},
   "description.11a5316482c571c8": {"text":"造成<keyword1>眩晕</keyword1>伤害或<keyword2>神圣</keyword2>伤害后获得{{value0}}点<keyword0>格挡</keyword0>\n受到的<keyword3>神圣</keyword3>伤害减少{{value1}}%","sourceHash":"26eca6f12752b48e4c364bd5641d787a60624b6a57c00cb2caa3b692a9bff6e9","reviewed":true},

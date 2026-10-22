@@ -4,7 +4,6 @@ import { demoFeatureShowcaseByLocale } from "@/lib/game-data";
 import { useLayoutEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { focusControl } from "../../shared/ui/focus-navigation";
-import { ScreenHeader } from "../../shared/ui/layout-components";
 
 export function DemoCompletionScreen({ onWishlist, onMainMenu }: { onWishlist?: () => void; onMainMenu: () => void }) {
   const i18n = useGameTranslation();
@@ -17,8 +16,15 @@ export function DemoCompletionScreen({ onWishlist, onMainMenu }: { onWishlist?: 
     focusControl(wishlist.current ?? mainMenu.current);
   }, []);
   return (
-    <div className="flex h-full min-h-0 w-full flex-col items-center gap-3 px-5 py-7">
-      <ScreenHeader title={i18n.text("ui.demo-completion-screen.1", "The Journey Continues")} />
+    <div className="flex h-full min-h-0 w-full flex-col items-center gap-4 bg-background px-8 py-5">
+      <header className="flex shrink-0 flex-col items-center gap-1 text-center">
+        <p className="text-sm font-semibold tracking-[0.2em] text-muted-foreground uppercase">
+          {i18n.text("demo-completion.act-complete", "Act I Complete")}
+        </p>
+        <h1 className="text-3xl font-bold tracking-wide text-balance text-gold-pale sm:text-4xl">
+          {i18n.text("ui.demo-completion-screen.1", "The Journey Continues")}
+        </h1>
+      </header>
       <div className="flex min-h-0 w-full flex-1 items-center justify-center">
         <img
           src={artwork}
@@ -33,13 +39,13 @@ export function DemoCompletionScreen({ onWishlist, onMainMenu }: { onWishlist?: 
           className="h-auto max-h-full w-auto max-w-full object-contain"
         />
       </div>
-      <div className="flex shrink-0 flex-wrap justify-center gap-3">
+      <div className="flex w-full shrink-0 flex-col items-center gap-2">
         {onWishlist ? (
-          <Button ref={wishlist} size="lg" variant="primary" onClick={onWishlist}>
+          <Button ref={wishlist} size="lg" variant="primary" className="w-96 max-w-full" onClick={onWishlist}>
             {i18n.text("ui.demo-completion-screen.3", "Wishlist on Steam")}
           </Button>
         ) : null}
-        <Button ref={mainMenu} size="lg" variant="outline" onClick={onMainMenu}>
+        <Button ref={mainMenu} variant="outline" className="h-11 min-w-44" onClick={onMainMenu}>
           {i18n.text("ui.demo-completion-screen.4", "Main Menu")}
         </Button>
       </div>

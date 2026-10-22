@@ -1023,6 +1023,7 @@
   "currency.available": {"text":"{{name}}、利用可能：{{count}}","sourceHash":"03321f9d257b1a50aa0b26eb90e3d70a8e5253170eff2f8dd95673b496aed840","reviewed":true},
   "currency.count": {"text":"{{name}}、{{count}}","sourceHash":"11509a6c7bb9df54c5568a75de685af9538962698f846d6b012737a8774543cb","reviewed":true},
   "deck.inspect": {"text":"デッキを見る・{{count}}枚","sourceHash":"e3e738cbc26167dab1991c4bb4949ac846911d2829a35f81a2ae0905d4ff3142","reviewed":true,"forms":{"other":"デッキを見る・{{count}}枚"}},
+  "demo-completion.act-complete": {"text":"第一幕クリア","sourceHash":"439313a8a53f2405435812e776ad18a98f7a4d179e74e1847fd9c26672de30df","reviewed":true},
   "description.10f7d5fde093cf85": {"text":"<keyword0>鍛造</keyword0>が{{value0}}以上なら、毎ターン最初の<keyword1>物理</keyword1>ダメージの一撃は追加で{{value1}}の<keyword2>気絶</keyword2>ダメージを与える","sourceHash":"d51237148d50c7665f9bf92b78d6ebac8c332d1a9a8fd03f5d1cd746bf6e6f3d","reviewed":true},
   "description.119bd35f3d1351af": {"text":"毎ターン最初の<keyword0>物理</keyword0>攻撃のダメージが二倍になる","sourceHash":"7ac76b779e830d86d2848cc39aecb4154688515cbb1d0eda261316536c1410a8","reviewed":true},
   "description.11a5316482c571c8": {"text":"<keyword1>気絶</keyword1>または<keyword2>聖</keyword2>ダメージを与えた後、<keyword0>ブロック</keyword0>を{{value0}}得る\n受ける<keyword3>聖</keyword3>ダメージが{{value1}}%減少する","sourceHash":"319c18382a37cf372335ccb472a16376ce22cd10167231eb1ee48b5f777e18c0","reviewed":true},
