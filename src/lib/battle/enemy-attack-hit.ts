@@ -117,6 +117,15 @@ function applyDodgeCounterAttacks(
 
 function applyDodgeOffensiveBuffs(state: BattleState): BattleState {
   let nextState = state;
+  if (state.gearEffects.nextStunAttackBonusOnDodge > 0) {
+    nextState = {
+      ...nextState,
+      flags: {
+        ...nextState.flags,
+        nextStunAttackBonus: state.gearEffects.nextStunAttackBonusOnDodge,
+      },
+    };
+  }
   const nextAttackBonus =
     nextState.gearEffects.nextAttackPhysicalOnDodge + nextState.talentEffects.nextAttackPhysicalOnDodge;
   if (nextAttackBonus > 0) {

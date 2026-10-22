@@ -149,7 +149,7 @@ export const {
   checkHealthThresholds,
   applyPlayerStatusEffect,
   applyHealingWithCombatText,
-  applyHealOnManaGain,
+  applyManaGainRewards,
   gainManaWithCombatText,
   addPlayerStatusWithCombatText,
   addGoldWithCombatText,

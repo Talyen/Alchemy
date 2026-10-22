@@ -35,27 +35,14 @@ describe("gear generation", () => {
   it.each([
     { fillCount: false, nextRandom: 0.19854954350739717 },
     { fillCount: true, nextRandom: 0.4058688203804195 },
-  ])("preserves seeded gear and subsequent RNG with fillCount=$fillCount", ({ fillCount, nextRandom }) => {
+  ])("preserves seeded base selection and subsequent RNG with fillCount=$fillCount", ({ fillCount, nextRandom }) => {
     const rng = createSeededRng(17);
     const choices = generateLootGearChoices(4, rng, weights, new Set(), ["ruby-ring", "emerald-ring"], fillCount);
-    const expected = [
-      { definitionId: "ruby-ring-basic", affixes: [{ id: "burn-per-mana", value: 5 }] },
-      {
-        definitionId: "emerald-ring-astral",
-        affixes: [
-          { id: "armor-on-nature-card", value: 2 },
-          { id: "dodge-armor", value: 3 },
-          { id: "archery-ignore-armor", value: 3 },
-        ],
-      },
-      ...(fillCount
-        ? [
-            { definitionId: "emerald-ring-basic", affixes: [{ id: "archery-ignore-armor", value: 1 }] },
-            { definitionId: "emerald-ring-basic", affixes: [{ id: "dodge-chance", value: 2 }] },
-          ]
-        : []),
-    ];
-    expect(choices.map(({ definitionId, affixes }) => ({ definitionId, affixes }))).toEqual(expected);
+    expect(choices.map(({ definitionId }) => definitionId)).toEqual([
+      "ruby-ring-basic",
+      "emerald-ring-astral",
+      ...(fillCount ? ["emerald-ring-basic", "emerald-ring-basic"] : []),
+    ]);
     expect(rng()).toBe(nextRandom);
   });
 

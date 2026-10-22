@@ -202,6 +202,27 @@ The keyword affixes use the same battle events as cards and talents. Bramblecall
 
 Cleanse, Purge, and Death's Door remain mechanics rather than Alchemy keywords; their new affixes use existing item affinities. Restorative rolls only after Health is actually restored, and Clearheaded and Solace reward each harmful status removed. Spellrending has a 25% chance at either rarity to Purge one enemy benefit at the start of each player turn, including the opening turn; it no longer reacts to Mana spending. Multiple copies add their chance, and no turn allowance is saved; Unraveling and Denouncing reward a successful Purge once, even if it removes multiple benefits. Emberwake deals a Burn follow-up only on Death's Door entry, Lastwatch raises Critical Hit chance only during its grace window, and Rekindled heals on surviving expiry. Ironbriar grants Thorns when Block remains after turn decay. Bristling checks Block after the incoming hit, and Spiteful heals only for the first Thorns retaliation each turn that removes enemy Health.
 
+Infected, Ashen Wake, and Cauterize increase existing Bleed/Burn damage over time,
+including detonations, without changing attack hits or initial status application.
+Bloodember shares their periodic bonuses between Burn and Bleed. Frostburn adds
+Freeze attack damage and buildup against Burning enemies. Executioner's and Dazed
+add damage to hero card attacks against enemies below 30% Health or actually Stunned;
+they exclude Companion and triggered follow-up damage. Conditions are checked per hit.
+
+Spellguard grants Block before card effects when Mana is actually paid and Block
+was absent before payment. Arcane Ward requires actual Mana gained without Block,
+including new Mana Crystals; normal turn refills grant no Block. Both use ordinary
+Block rewards. Blur adds Dodge only below half Health and respects the Dodge cap.
+Second Wind heals a surviving hero on the first crossing below 25% Health each
+combat, including self-damage. Its spent allowance is separate from enemy Second
+Wind. Deathgrip grants Block on Death's Door entry after the triggering damage.
+Disrupting rolls on a successful Stun and settles one ordinary Purge with its
+normal rewards. Copies add their values and chances. Whiplash readies one Stun
+attack bonus after Dodge; further Dodges refresh it. Non-Stun attacks, Companions,
+secondary actions, and dodged Stun hits preserve it. The charge, recovery allowance,
+and pending entry/Purge rewards use saved combat flags with safe additive defaults.
+These affixes add no per-turn activation allowances.
+
 Fateful uses Mana as its secondary affinity so its Wish draw effect can roll on ordinary Mana Gear. Shared content validation checks that every ordinary affix is reachable on at least one Basic or Astral item.
 
 `src/lib/gear/affix-rows.ts` owns the ordered affix definitions. Typed builders

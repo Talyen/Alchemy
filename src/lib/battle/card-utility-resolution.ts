@@ -12,7 +12,7 @@ type PlayerStatusEffect = Extract<BattleCardEffect, { kind: "player-status" }>;
 export interface CardUtilityPort {
   heal: (state: BattleState, amount: number, texts: CombatTextEvent[], cardHealing: boolean) => BattleState;
   mana: (state: BattleState, amount: number, texts: CombatTextEvent[], allowOverflow: boolean) => BattleState;
-  manaHealing: (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
+  manaGainRewards: (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
   healthCost: (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
   crystalLoss: (state: BattleState, damage: number, texts: CombatTextEvent[]) => BattleState;
   status: (state: BattleState, effect: PlayerStatusEffect, texts: CombatTextEvent[]) => BattleState;
@@ -85,7 +85,7 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
     "gain-max-mana": (state, _card, effect, _potionMult, combatTexts) => {
       const amount = effect.amount;
       mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount });
-      return port.manaHealing(
+      return port.manaGainRewards(
         { ...state, maxMana: state.maxMana + amount, mana: state.mana + amount },
         amount,
         combatTexts,

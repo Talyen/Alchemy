@@ -1,5 +1,5 @@
 import { harmfulPlayerStatusIds, type BattleCardEffect, type PlayerStatusId } from "@/lib/game-data";
-import { HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
+import { HALF_DIVISOR, PERCENT_DENOMINATOR, SECOND_WIND_HEALTH_THRESHOLD_PERCENT } from "../game-constants";
 import { applyPercentBonus } from "./amount-helpers";
 import { mergeCombatText } from "./combat-text-events";
 import { blockAmountWithForge, setPlayerStatus, addPlayerStatus } from "./status-state";
@@ -79,12 +79,16 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
       : state;
   }
 
-  function applyHealOnManaGain(state: BattleState, gainAmount: number, combatTexts: CombatTextEvent[]): BattleState {
+  function applyManaGainRewards(state: BattleState, gainAmount: number, combatTexts: CombatTextEvent[]): BattleState {
     if (gainAmount <= 0) return state;
-    if (state.talentEffects.healthPerMana > 0) {
-      return applyHealingWithCombatText(state, gainAmount * state.talentEffects.healthPerMana, combatTexts);
+    const blocked =
+      state.playerStatuses.block === 0 && state.gearEffects.blockOnManaRestoreWithoutBlock > 0
+        ? applyBlockReward(state, state.gearEffects.blockOnManaRestoreWithoutBlock, combatTexts)
+        : state;
+    if (blocked.talentEffects.healthPerMana > 0) {
+      return applyHealingWithCombatText(blocked, gainAmount * blocked.talentEffects.healthPerMana, combatTexts);
     }
-    return state;
+    return blocked;
   }
 
   function gainManaWithCombatText(
@@ -100,7 +104,7 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     if (gained > 0 && combatTexts) {
       mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: gained });
     }
-    return applyHealOnManaGain(nextState, gained, combatTexts ?? []);
+    return applyManaGainRewards(nextState, gained, combatTexts ?? []);
   }
 
   function addPlayerStatusWithCombatText(
@@ -316,6 +320,18 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     let nextState = applyHealthThresholdCleanse(prevHealth, state, combatTexts, nextHealth);
     const maxHealth = state.playerMaxHealth;
 
+    if (
+      state.gearEffects.healOnFirstQuarterHealth > 0 &&
+      !state.flags.gearSecondWindUsed &&
+      crossedBelow(prevHealth, nextHealth, (maxHealth * SECOND_WIND_HEALTH_THRESHOLD_PERCENT) / PERCENT_DENOMINATOR)
+    ) {
+      nextState = applyHealingWithCombatText(
+        setFlag(nextState, "gearSecondWindUsed", true),
+        state.gearEffects.healOnFirstQuarterHealth,
+        combatTexts,
+      );
+    }
+
     const once = state.talentEffects.healthThresholdBlockOnce;
     if (once && !readCombatFlag(nextState, "desperateGuardUsed")) {
       const thresholdHp = (maxHealth * once.threshold) / PERCENT_DENOMINATOR;
@@ -362,7 +378,7 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     resolveHealingWithFeedback,
     applyHealingWithCombatText,
     applyRestorativeCleanse,
-    applyHealOnManaGain,
+    applyManaGainRewards,
     gainManaWithCombatText,
     addPlayerStatusWithCombatText,
     addGoldWithCombatText,

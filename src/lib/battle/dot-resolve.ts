@@ -110,7 +110,15 @@ export function projectEnemyDotDamage(
   if (amount <= 0) return 0;
   let finalDamage = 0;
   let stacks = amount;
-  const bonus = status === "poison" ? getPoisonBonusAgainstBleeding(state) : 0;
+  const poisoned = state.enemyStatuses.poison > 0;
+  const bleedBonus =
+    (poisoned ? state.gearEffects.bleedTickBonusVsPoisoned : 0) +
+    (state.enemyStatuses.burn > 0 ? state.gearEffects.bleedTickBonusVsBurning : 0);
+  const burnBonus = poisoned ? state.gearEffects.burnTickBonusVsPoisoned : 0;
+  let bonus = status === "poison" ? getPoisonBonusAgainstBleeding(state) : 0;
+  if (status === "bleed") bonus = bleedBonus;
+  if (status === "burn") bonus = burnBonus;
+  if (status !== "poison" && state.gearEffects.sharedBurnBleedBonuses > 0) bonus = bleedBonus + burnBonus;
   const multiplier =
     getEnemyDamageMultiplier(state, status) *
     (status === "burn" ? getBurnBonusToBleedingMultiplier(state) : 1) *

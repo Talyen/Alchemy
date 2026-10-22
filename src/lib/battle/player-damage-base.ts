@@ -6,7 +6,7 @@ import {
   type DamageType,
   type TalentEffectManifest,
 } from "@/lib/game-data";
-import { PERCENT_DENOMINATOR } from "../game-constants";
+import { LOW_HEALTH_THRESHOLD_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { scalePercent } from "./amount-helpers";
 import { flatDamageBonus } from "./damage-modifiers";
 import {
@@ -149,8 +149,23 @@ export function computeBaseDamage(
     card?.consume && !companionAttack && effect.damageType === "burn" ? state.gearEffects.burnOnConsume : 0;
   const potionBonus =
     card && !companionAttack && isPotionCard(card) ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;
+  const attackBonus =
+    card && !companionAttack
+      ? (state.enemyHealth * PERCENT_DENOMINATOR < state.enemyMaxHealth * LOW_HEALTH_THRESHOLD_PERCENT
+          ? state.gearEffects.attackBonusVsLowHealth
+          : 0) +
+        (state.enemyCC.stunSkipTurns > 0 ? state.gearEffects.attackBonusVsStunned : 0) +
+        (effect.damageType === "freeze" && state.enemyStatuses.burn > 0
+          ? state.gearEffects.freezeAttackBonusVsBurning
+          : 0)
+      : 0;
   const rawAmount =
-    computeBaseRawAmount(state, effect, card) + bonus + poisonPotionBonus + consumeBurnBonus + potionBonus;
+    computeBaseRawAmount(state, effect, card) +
+    bonus +
+    poisonPotionBonus +
+    consumeBurnBonus +
+    potionBonus +
+    attackBonus;
   const hasBlock = effect.equalToBlock === true;
   const hasArmor = effect.equalToArmor === true;
   const isEqualTo = hasBlock || hasArmor;

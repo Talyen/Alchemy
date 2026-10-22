@@ -127,6 +127,7 @@ export function resolveEnemyStun(
     next = writeCombatFlag(recordEnemyAbilityActivation(next, "brawler"), "enemyBrawlerDamagePenalty", true);
   const talents = next.talentEffects;
   const gear = next.gearEffects;
+  const purge = port.chance(gear.purgeOnStunChance, next);
   next = port.bonuses(
     next,
     {
@@ -143,9 +144,10 @@ export function resolveEnemyStun(
   );
   next = port.physical(next, next.gearEffects.damageOnStunPhysical, texts);
   next = port.thunderstone(next, texts);
-  return fromHolyDamage && next.gearEffects.holyStunBuildupGold > 0
-    ? port.gold(next, next.gearEffects.holyStunBuildupGold, texts)
-    : next;
+  if (fromHolyDamage && next.gearEffects.holyStunBuildupGold > 0)
+    next = port.gold(next, next.gearEffects.holyStunBuildupGold, texts);
+  // Purge rewards can cause more hits; settle them after Stun's own rewards.
+  return purge ? writeCombatFlag(next, "pendingDisruptingPurge", true) : next;
 }
 
 export function resolveEnemyFreeze(

@@ -2,7 +2,7 @@ import { createCardUtilityHandlers } from "../card-utility-resolution";
 import { applyCardHealing, applyPlayerStatusEffect, checkHealthThresholds } from "../status-player";
 import {
   applyHealingWithCombatText,
-  applyHealOnManaGain,
+  applyManaGainRewards,
   gainManaWithCombatText,
   addGoldWithCombatText,
   applyBlockReward,
@@ -19,7 +19,7 @@ export const UTILITY_HANDLERS = createCardUtilityHandlers({
   heal: (state, amount, texts, cardHealing) =>
     cardHealing ? applyCardHealing(state, amount, texts) : applyHealingWithCombatText(state, amount, texts),
   mana: (state, amount, texts, allowOverflow) => gainManaWithCombatText(state, amount, texts, { allowOverflow }),
-  manaHealing: applyHealOnManaGain,
+  manaGainRewards: applyManaGainRewards,
   healthCost: (state, amount, texts) => {
     const damaged = dealSelfDamage(state, amount, "health", texts).state;
     return checkHealthThresholds(state.playerHealth, damaged.playerHealth, damaged, texts);

@@ -28,12 +28,15 @@ export const FLAG_DEFINITIONS = {
   runicQuillUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
   pendingCinderSkinReaction: { default: false as const, secondaryValue: null, lifetime: "combat" },
   pendingEmberwakeDamage: { default: false as const, secondaryValue: null, lifetime: "combat" },
+  pendingDeathgripBlock: { default: false as const, secondaryValue: null, lifetime: "combat" },
+  pendingDisruptingPurge: { default: false as const, secondaryValue: null, lifetime: "combat" },
   cinderSkinUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   holyRetributionUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   spitefulHealedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
 
   divineAegisTriggered: { default: false as const, secondaryValue: null, lifetime: "combat" },
   desperateGuardUsed: { default: false as const, secondaryValue: null, lifetime: "combat" },
+  gearSecondWindUsed: { default: false as const, secondaryValue: null, lifetime: "combat" },
 
   nextHitCrit: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   nextPhysicalCrit: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
@@ -41,6 +44,7 @@ export const FLAG_DEFINITIONS = {
   playNextCardTwice: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   nextHitPoison: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   nextHitPhysicalBonus: { default: 0 as const, secondaryValue: 0 as const, lifetime: "until-consumed" },
+  nextStunAttackBonus: { default: 0 as const, secondaryValue: 0 as const, lifetime: "until-consumed" },
   nextPhysicalDealsBleed: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   nextArcheryCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   nextNatureCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },

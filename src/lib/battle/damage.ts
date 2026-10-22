@@ -27,6 +27,7 @@ interface AttackPacket {
   packet: DamageEffect;
   /** Opening joins a Physical hit or supplies a separate Physical follow-up. */
   physicalBonus: number;
+  stunBonus: number;
   applyPartingCut: boolean;
 }
 
@@ -49,6 +50,11 @@ export function consumeAttackPacketFlags(
     damageState = { ...damageState, flags: { ...damageState.flags, nextHitLeech: false } };
   }
 
+  const stunBonus = packet.damageType === "stun" ? readCombatFlag(damageState, "nextStunAttackBonus") : 0;
+  if (stunBonus > 0) {
+    damageState = { ...damageState, flags: { ...damageState.flags, nextStunAttackBonus: 0 } };
+  }
+
   let physicalBonus = 0;
   if (readCombatFlag(damageState, "nextHitPhysicalBonus") > 0) {
     physicalBonus = readCombatFlag(damageState, "nextHitPhysicalBonus");
@@ -62,7 +68,7 @@ export function consumeAttackPacketFlags(
   if (applyPartingCut) {
     damageState = { ...damageState, flags: { ...damageState.flags, nextPhysicalDealsBleed: false } };
   }
-  return { state: damageState, packet, physicalBonus, applyPartingCut };
+  return { state: damageState, packet, physicalBonus, stunBonus, applyPartingCut };
 }
 
 function applyAttackPacketFollowUps(
@@ -130,7 +136,8 @@ export function dealDamageToEnemy(
   if (context?.companionAttackBonus) context.companionAttackBonus.amount = 0;
   const consumed = consumeAttackPacketFlags(state, resolvedEffect);
   const { packet, applyPartingCut } = consumed;
-  const baseDamageBonus = companionBonus + (packet.damageType === "physical" ? consumed.physicalBonus : 0);
+  const baseDamageBonus =
+    companionBonus + consumed.stunBonus + (packet.damageType === "physical" ? consumed.physicalBonus : 0);
   const armorSuppliesDamage =
     packet.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0 && state.enemyMitigation.armor > 0;
   if (

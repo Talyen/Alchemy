@@ -14,7 +14,7 @@ import { countRemovableHarmfulStatuses } from "./status-player";
 import { isCcControlled } from "./status-cc";
 import { applyResonantChimeTrinket, resolveCardEffectChain, shouldElementalTalentRepeat } from "./card-play-effects";
 import { cardHasKeyword } from "./card-classification";
-import { gainManaWithCombatText } from "./player-rewards";
+import { applyBlockReward, gainManaWithCombatText } from "./player-rewards";
 import { handlePostPlayCardDestination } from "./card-consume";
 
 function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof computeCardPayment>): BattleState {
@@ -186,13 +186,16 @@ function resolveCardPlay(
   const manaSpent = Math.min(paymentState.mana, effectiveCost);
   if (blockCost > 0)
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockCost, impact: false });
-  const stripped: BattleState = {
+  let stripped: BattleState = {
     ...paymentState,
     hand: paymentState.hand.filter((_, handIndex) => handIndex !== index),
     flags: { ...paymentState.flags, playNextCardTwice: false },
     cardsPlayedThisTurn: paymentState.cardsPlayedThisTurn + 1,
     mana: Math.max(0, paymentState.mana - effectiveCost),
   };
+  if (manaSpent > 0 && state.playerStatuses.block === 0 && state.gearEffects.blockOnPaidCardWithoutBlock > 0) {
+    stripped = applyBlockReward(stripped, state.gearEffects.blockOnPaidCardWithoutBlock, combatTexts);
+  }
   const played = resolveCardEffectChain(deliverPendingHandCards(stripped), card, combatTexts, {
     eligibility: state,
     playedCard: true,

@@ -4,7 +4,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { runCommandAsync } from "./lib/run-command.mjs";
 import { createHash } from "node:crypto";
-import { chooseCheckpointStep, selectCase } from "../performance/case-selection.mjs";
+import { chooseCheckpointStep, isUsableDiscoveryResult, selectCase } from "../performance/case-selection.mjs";
 import { REPO_ROOT, runGit } from "./lib/repository-paths.mjs";
 
 const [outputPath, scenario, seedText = "42"] = process.argv.slice(2);
@@ -65,14 +65,7 @@ async function runWorker(label, checkpointAt) {
   if (child.status !== 0)
     throw new Error(`Playthrough ${label} failed: ${child.output.slice(-3000) || "worker returned no exit code"}`);
   const result = JSON.parse(fs.readFileSync(output, "utf8"));
-  // Exploratory profiling needs a reachable prefix, not a winning career. A
-  // legal deck can stalemate after consuming its attacks; preserve that evidence
-  // while still rejecting invariants, worker failures and other incomplete runs.
-  const boundedDiscovery =
-    selected.exploratory &&
-    result.status === "incomplete" &&
-    result.error === "Incomplete: battle turn budget exhausted";
-  if (result.status !== "completed" && !boundedDiscovery)
+  if (!isUsableDiscoveryResult(selected, result))
     throw new Error(`Playthrough ${label} incomplete: ${result.error ?? "unknown"}`);
   return { output, result };
 }

@@ -804,6 +804,113 @@ export const gearAffixRows = [
     "health",
     "leech",
   )("healOnDeathsDoorSurvival", rollRange(2, 4, 5, 7), "Restore {value} Health when you survive Death’s Door"),
+  offensiveAffix(
+    "bleed-tick-vs-poisoned",
+    "Infected",
+    "bleed",
+    "poison",
+  )(
+    "bleedTickBonusVsPoisoned",
+    rollRange(1, 2, 2, 3),
+    "Bleed damage over time deals {value} additional damage to Poisoned enemies",
+  ),
+  offensiveAffix(
+    "burn-tick-vs-poisoned",
+    "Ashen Wake",
+    "burn",
+    "poison",
+  )(
+    "burnTickBonusVsPoisoned",
+    rollRange(1, 2, 2, 3),
+    "Burn damage over time deals {value} additional damage to Poisoned enemies",
+  ),
+  offensiveAffix(
+    "bleed-tick-vs-burning",
+    "Cauterize",
+    "bleed",
+    "burn",
+  )(
+    "bleedTickBonusVsBurning",
+    rollRange(1, 2, 2, 3),
+    "Bleed damage over time deals {value} additional damage to Burning enemies",
+  ),
+  offensiveAffix(
+    "freeze-attack-vs-burning",
+    "Frostburn",
+    "freeze",
+    "burn",
+  )(
+    "freezeAttackBonusVsBurning",
+    rollRange(1, 2, 3, 4),
+    "Freeze attacks deal {value} additional damage to Burning enemies",
+  ),
+  offensiveAffix("attack-vs-low-health", "Executioner’s", "physical")(
+    "attackBonusVsLowHealth",
+    rollRange(2, 3, 3, 4),
+    "Attacks deal {value} additional damage to enemies below 30% Health",
+  ),
+  offensiveAffix("attack-vs-stunned", "Dazed", "stun")(
+    "attackBonusVsStunned",
+    rollRange(2, 3, 3, 4),
+    "Attacks deal {value} additional damage to Stunned enemies",
+  ),
+  defensiveAffix(
+    "dodge-below-half-health",
+    "Blur",
+    "dodge",
+    "health",
+  )("dodgeChanceBelowHalfHealth", rollRange(3, 5, 6, 8), "Gain {value}% Dodge chance while below half Health"),
+  defensiveAffix(
+    "block-on-paid-card-without-block",
+    "Spellguard",
+    "mana",
+    "block",
+  )(
+    "blockOnPaidCardWithoutBlock",
+    rollRange(1, 2, 2, 3),
+    "Playing a card that spends Mana while you have no Block grants {value} Block",
+  ),
+  defensiveAffix(
+    "block-on-mana-restore-without-block",
+    "Arcane Ward",
+    "mana",
+    "block",
+  )(
+    "blockOnManaRestoreWithoutBlock",
+    rollRange(1, 2, 2, 3),
+    "Restoring Mana while you have no Block grants {value} Block",
+  ),
+  defensiveAffix("heal-on-first-quarter-health", "Second Wind", "health")(
+    "healOnFirstQuarterHealth",
+    rollRange(6, 8, 10, 12),
+    "Restore {value} Health the first time you fall below 25% Health each combat",
+  ),
+  defensiveAffix(
+    "block-on-deaths-door-entry",
+    "Deathgrip",
+    "block",
+    "health",
+  )("blockOnDeathsDoorEntry", rollRange(4, 6, 7, 9), "Gain {value} Block when you enter Death’s Door"),
+  offensiveAffix(
+    "purge-on-stun",
+    "Disrupting",
+    "stun",
+    "holy",
+  )(
+    "purgeOnStunChance",
+    rollRange(20, 25, 30, 35),
+    "When you Stun an enemy, {value}% chance to Purge one beneficial status",
+  ),
+  offensiveAffix(
+    "next-stun-attack-on-dodge",
+    "Whiplash",
+    "stun",
+    "dodge",
+  )(
+    "nextStunAttackBonusOnDodge",
+    rollRange(2, 3, 4, 5),
+    "After Dodging, the next Stun attack deals {value} additional damage",
+  ),
 ] as const satisfies readonly AffixRowInput[];
 
 export type GearAffixId = (typeof gearAffixRows)[number]["id"];

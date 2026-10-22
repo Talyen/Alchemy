@@ -122,8 +122,12 @@ export function applyPlayerCombatDamage(
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: state.turn,
       deathsDoorGraceTurnsRemaining: deathsDoorGraceTurns(state.talentEffects.deathsDoorExtension),
-      flags:
-        state.gearEffects.burnOnDeathsDoorEntry > 0 ? { ...state.flags, pendingEmberwakeDamage: true } : state.flags,
+      // Entry rewards settle after the triggering hit commits its Block spending.
+      flags: {
+        ...state.flags,
+        pendingEmberwakeDamage: state.gearEffects.burnOnDeathsDoorEntry > 0 || state.flags.pendingEmberwakeDamage,
+        pendingDeathgripBlock: state.gearEffects.blockOnDeathsDoorEntry > 0 || state.flags.pendingDeathgripBlock,
+      },
     };
   }
   if (state.deathsDoorActive) {
