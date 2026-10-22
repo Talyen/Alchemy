@@ -1,8 +1,4 @@
-import {
-  DEFAULT_BRIGHTNESS_PCT,
-  DEFAULT_MASTER_VOLUME_PCT,
-  DEFAULT_BACKGROUND_PARTICLES_PCT,
-} from "./game-constants/settings";
+import { DEFAULT_BRIGHTNESS_PCT, DEFAULT_MASTER_VOLUME_PCT, DEFAULT_BACKGROUND_PARTICLES_PCT } from "./game-constants";
 import { clamp } from "./math";
 
 export const DISPLAY_MODE_VALUES = ["windowed", "borderless-fullscreen", "fullscreen"] as const;

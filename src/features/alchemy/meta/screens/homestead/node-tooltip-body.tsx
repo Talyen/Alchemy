@@ -3,7 +3,7 @@ import { useGameTranslation } from "@/components/use-game-translation";
 import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
-import { HOMESTEAD_FEEDBACK } from "@/lib/game-constants/ui-motion";
+import { HOMESTEAD_FEEDBACK } from "@/lib/game-constants";
 import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
 import { HomesteadResourceArtwork } from "../../../shared/ui/material-icons";
 import { TooltipBody, TooltipSeparator } from "../../../shared/ui/tooltips/tooltip-panel";

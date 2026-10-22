@@ -1,9 +1,8 @@
 import { isCompanionSummonCard } from "./card-pools";
-import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
+import { CONSUME_DESCRIPTION_LINE, TRANSMUTATION_PREFIXES } from "@/lib/game-constants";
 import type { BattleCard } from "../types";
 import { cardById } from "./library/cards";
 import { mapCardDescriptionReferences } from "../card-description-model";
-import { TRANSMUTATION_PREFIXES } from "@/lib/game-constants/transmutation";
 
 export type SavedCard = BattleCard;
 

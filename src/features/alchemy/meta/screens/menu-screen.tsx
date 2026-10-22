@@ -1,6 +1,6 @@
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
-import { UI_GOLD } from "@/lib/game-constants/ui-colors";
+import { UI_GOLD } from "@/lib/game-constants";
 import { type ReactNode } from "react";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";
 import { BookOpen, Cog, Power, Shield, Swords, TreePine, WandSparkles } from "lucide-react";

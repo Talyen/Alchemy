@@ -1,4 +1,4 @@
-import { UI_GOLD } from "@/lib/game-constants/ui-colors";
+import { UI_GOLD } from "@/lib/game-constants";
 import {
   characters,
   getCompanionKeywords,

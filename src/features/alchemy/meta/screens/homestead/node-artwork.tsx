@@ -1,7 +1,7 @@
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { useEffect, useState, type CSSProperties } from "react";
-import { HOMESTEAD_FEEDBACK } from "@/lib/game-constants/ui-motion";
+import { HOMESTEAD_FEEDBACK } from "@/lib/game-constants";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import { HomesteadTooltipBody } from "./node-tooltip-body";
 import { Check, LockKeyhole, Star } from "lucide-react";

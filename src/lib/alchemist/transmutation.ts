@@ -17,8 +17,11 @@ import {
   type DamageType,
   type KeywordId,
 } from "@/lib/game-data";
-import { CORRUPTION_MAX_EFFECT_LINES } from "@/lib/game-constants/corruption";
-import { TRANSMUTATION_KEYWORD_GROUPS, TRANSMUTATION_PREFIXES } from "@/lib/game-constants/transmutation";
+import {
+  CORRUPTION_MAX_EFFECT_LINES,
+  TRANSMUTATION_KEYWORD_GROUPS,
+  TRANSMUTATION_PREFIXES,
+} from "@/lib/game-constants";
 import type {
   AlchemyVisit,
   TransmutationChoice,

@@ -51,6 +51,10 @@ export const BARREL_PATTERNS = [
     message: "Import from @/lib/content-validation (barrel) instead of deep paths.",
   },
   {
+    group: ["@/lib/game-constants/*", "**/lib/game-constants/*"],
+    message: "Import from @/lib/game-constants (barrel) instead of deep paths.",
+  },
+  {
     group: ["@/features/alchemy/shared/utils/*", "**/features/alchemy/shared/utils/*"],
     message: "Import from @/features/alchemy/shared/utils (barrel) instead of deep paths.",
   },

@@ -18,7 +18,8 @@ import { resolveSecondaryAction } from "./action-context";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 import { canShatter, consumeReactionOpportunity, getPostHitReactionPayoffs } from "./elemental-reactions";
 import { projectEnemyDotDamage } from "./dot-resolve";
-import { setEnemyStatus } from "./status-state";
+import { addPlayerStatus, setEnemyStatus } from "./status-state";
+import { dealSelfDamage } from "./status-helpers";
 import { FLAG_DEFINITIONS } from "./combat-flags";
 import type { BattleSnapshot, BattleState } from "./types";
 
@@ -376,6 +377,14 @@ function projectEffects(
           if (nextHealth === path.state.playerHealth) return [path];
           return [{ ...path, state: { ...path.state, playerHealth: nextHealth } }];
         }
+        if (effect.kind === "self-damage") {
+          if (path.state.enemyHealth <= 0 || path.state.playerHealth <= 0) return [path];
+          const { state: nextState, healthLost } = dealSelfDamage(path.state, effect.amount, effect.damageType, []);
+          const statusType = harmfulPlayerStatusIds.find((id) => id === effect.damageType);
+          const withStatus =
+            statusType && healthLost > 0 ? addPlayerStatus(nextState, statusType, healthLost) : nextState;
+          return [{ ...path, state: withStatus }];
+        }
         const flagKey = FLAG_EFFECT_KEYS[effect.kind];
         if (flagKey) {
           return [
@@ -439,11 +448,16 @@ function projectEffects(
 }
 
 export function scoreAvailableReactions(card: BattleCard, snapshot: BattleSnapshot, manaAtStart?: number): number {
-  const paths = projectEffects(
-    [{ state: { ...snapshot, rng: unexpectedScoringRoll }, score: 0, probability: 1 }],
+  const playTwice = snapshot.flags.playNextCardTwice;
+  const initial = playTwice ? { ...snapshot, flags: { ...snapshot.flags, playNextCardTwice: false } } : snapshot;
+  let paths = projectEffects(
+    [{ state: { ...initial, rng: unexpectedScoringRoll }, score: 0, probability: 1 }],
     card,
     card.effects,
     manaAtStart ?? snapshot.mana,
   );
+  if (playTwice) {
+    paths = projectEffects(paths, { ...card, consume: false }, card.effects, manaAtStart ?? snapshot.mana);
+  }
   return paths.reduce((sum, path) => sum + path.score * path.probability, 0);
 }

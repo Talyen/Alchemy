@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SaveDataSchema, isCombatGoldOverride } from "@/lib/validation";
 import { defaultBattleState } from "@/lib/battle";
 import { isStandardPotionCard } from "@/lib/game-data";
-import { HALF_DIVISOR } from "@/lib/game-constants";
+import { HALF_DIVISOR, TRANSMUTATION_KEYWORD_GROUPS, TRANSMUTATION_PREFIXES, UI_GOLD } from "@/lib/game-constants";
 import { scoreCombatCards } from "../../src/app/playthrough/combat-policy";
 import { makeMinimalActiveRunInput } from "../fixtures/active-run";
 import { savedActivityFixture } from "../fixtures/run-activity";
@@ -430,5 +430,57 @@ describe("bugfix trio regressions", () => {
     const scores = scoreCombatCards([attack, defense], state, "greedy-effective-damage", 2);
     // bestAttack is 10; defense is capped at bestAttack / HALF_DIVISOR = 10 / 2 = 5.
     expect(scores[1]).toBe(10 / HALF_DIVISOR);
+  });
+
+  it("projects self-damage health loss and status application before follow-up cleanses", () => {
+    const state = patchBattleState({
+      playerHealth: 20,
+      playerMaxHealth: 20,
+      playerStatuses: { burn: 0 },
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      enemyStatuses: { burn: 5 },
+      reactions: { wildfireDamage: 10 },
+    });
+    const exorcism = makeTestCard({
+      effects: [
+        { kind: "self-damage", damageType: "burn", amount: 2 },
+        { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "nature" },
+      ],
+    });
+    // Self-damage applies 2 Burn to player. Cleanse converts 2 Burn to Nature damage.
+    // Nature damage against burning enemy triggers Wildfire reaction (10 damage).
+    expect(scoreAvailableReactions(exorcism, state)).toBe(10);
+
+    // If self-damage is lethal (with Death's Door already expended), subsequent hits and reactions score 0.
+    const fragileState = patchBattleState({
+      ...state,
+      playerHealth: 2,
+      deathsDoorUsed: true,
+    });
+    expect(scoreAvailableReactions(exorcism, fragileState)).toBe(0);
+  });
+
+  it("projects repeated execution when playNextCardTwice combat flag is set", () => {
+    const state = patchBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyStatuses: { poison: 5, burn: 0 },
+      flags: { playNextCardTwice: true },
+    });
+    const burnAttack = makeTestCard({
+      effects: [{ kind: "damage", damageType: "burn", amount: 3 }],
+    });
+    // Hit 1 deals 3 Burn, triggering Venomflash because enemy has Poison and Burn was 0.
+    // Venomflash payoff is getReactionBonus(poison: 5) = 1.
+    // Hit 2 deals 3 Burn again without repeating Venomflash. Total reaction score = 1.
+    expect(scoreAvailableReactions(burnAttack, state)).toBe(1);
+  });
+
+  it("re-exports transmutation keywords, prefixes, and ui gold from game-constants barrel", () => {
+    expect(TRANSMUTATION_PREFIXES.physical).toBe("Brutal");
+    expect(TRANSMUTATION_PREFIXES.holy).toBe("Hallowed");
+    expect(TRANSMUTATION_KEYWORD_GROUPS).toBeDefined();
+    expect(UI_GOLD.base).toBe("#cd9b51");
   });
 });

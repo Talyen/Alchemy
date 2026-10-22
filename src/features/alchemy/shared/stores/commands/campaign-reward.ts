@@ -1,7 +1,7 @@
 import type { Immutable } from "immer";
 import type { GameplayState } from "../session/gameplay-state-reads";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
-import { STARTER_HOMESTEAD_MATERIAL_TARGET } from "@/lib/game-constants/materials-economy";
+import { STARTER_HOMESTEAD_MATERIAL_TARGET } from "@/lib/game-constants";
 import { hasHomesteadPurchases } from "@/lib/homestead/purchases";
 
 /** Preview and claim share one calculation against the current stockpile. */
