@@ -29,6 +29,8 @@ Ordinary development and builds use committed outputs. `predev` and hosted CI ru
 
 ## Art style and generation prompts
 
+Art authoring and replacement must follow [visual acceptance](./UI_VISUAL_REVIEW.md#appearance-and-artwork-criteria). Inspect the [approved art anchors](./design/visual-references.md#approved-artwork-anchors) and compare candidates at the destination display size, crop and surrounding UI before accepting them. A prompt match or standalone full-resolution image is insufficient.
+
 Alchemy's visual identity is anchored by its **Master Action-Anime Art Style**.
 Canonical style reference images in the repository include `Knight` (`src/assets/optimized/knight.webp`), `Wizard` (`src/assets/optimized/wizard.webp`), and `Fireball` (`src/assets/optimized/fireball.webp`), as well as approved crafting currencies `Discordant Dice` and `Ascension Seal`.
 

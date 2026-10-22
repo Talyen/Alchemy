@@ -36,7 +36,7 @@ of per file. The `documentation` route covers `Docs/**` so check classification
 
 The default `verify` profile runs a fixed, bounded Node smoke suite for selections
 containing non-Markdown paths; Markdown-only selections run no verifier commands.
-`check` adds small selected-file formatting batches. Documentation edits also need
+`check` adds localization, small selected-file formatting batches, and [visual review evidence](../Docs/UI_VISUAL_REVIEW.md#local-evidence-gate) for runtime selections. The evidence gate does not launch browsers; UI work performs its standing-authorized rendered review before checking. Documentation edits also need
 an explicit `npm run docs:check` under [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change).
 The default profile does not run dependency-related selection, full static checks,
 builds, browsers, or the verification-cache identity walk. `npm run verify:unit -- <paths>`

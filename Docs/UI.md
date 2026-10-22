@@ -274,6 +274,8 @@ fill the frame.
 
 ## Verification
 
+Player-facing visual and interaction work must pass [visual acceptance](./UI_VISUAL_REVIEW.md), including current rendered evidence, copy review and separate appearance/interaction critique. Use the [current visual references](./design/visual-references.md); source code and tests do not establish visual quality.
+
 Use the changed-path route and [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) in CONTRIBUTING. Cover shared interaction behavior and representative browser risks; do not multiply UI tests for every mechanic or cosmetic variant. Interaction
 or browser-journey work also follows [tests/e2e/README.md](../tests/e2e/README.md).
 
