@@ -93,6 +93,26 @@ describe("battle damage inspection", () => {
     ]);
   });
 
+  it("does not invent negative Block when inspecting an unaffordable Freeze card", () => {
+    const card = makeTestCard({
+      cost: 2,
+      effects: [{ kind: "damage", damageType: "freeze", amount: 1 }, hit()],
+    });
+    const state = patchBattleState({
+      hand: [card],
+      mana: 0,
+      playerStatuses: { block: 1 },
+      gearEffects: { blockPaysFreezeMana: 1 },
+      talentEffects: { blockToPhysicalDamageMultiplier: 1 },
+    });
+    expect(getBattleDamageInspectionCard(card, state).descriptionLines).toEqual([
+      "Deal 1 Freeze damage",
+      "Deal 6 Physical damage",
+    ]);
+    expect(playBattleCardResolved(state, card.id, 0).state).toBe(state);
+    expect(state.playerStatuses.block).toBe(1);
+  });
+
   it("resolves current conditional damage and keeps random alternatives as a range", () => {
     const state = patchBattleState({ playerStatuses: { forge: 4 }, enemyCC: { freezeSkipTurns: 1 } });
     const card = makeTestCard({
