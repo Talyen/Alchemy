@@ -10,6 +10,8 @@ import {
 } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { DEVICE_DISPLAY_RANGES } from "../../../src/lib/settings-values";
+import { controllerInput } from "../controller-input";
+import { expectUnfocused } from "../focus-input";
 import { assertNoOverflow } from "../layout-assertions";
 import {
   acceptanceLocales,
@@ -84,7 +86,6 @@ for (const locale of acceptanceLocales) {
       await expect(page.locator("html")).toHaveAttribute("lang", locale === "en-XA" ? "en" : locale);
       await expect(page.getByRole("heading", { name: label("Options"), exact: true })).toBeVisible();
       await page.getByRole("button", { name: label("Back"), exact: true }).click();
-      await page.getByRole("button", { name: label("Continue"), exact: true }).click();
       await expect(page.getByRole("button", { name: label("End Turn"), exact: true })).toBeVisible();
       expect(mechanics((await readSavedGame(page)).activeRun)).toEqual(before);
       await withSavedGame(
@@ -128,7 +129,7 @@ for (const locale of acceptanceLocales) {
         locale === "en-XA" ? /ÔÔptïïôôns\]$/ : label("Options"),
         page.getByRole("heading", { name: label("Options"), exact: true }),
       );
-      await page.locator("#language").focus();
+      await controllerInput(page).reach(page.locator("#language"));
       await expect(page.locator("#language")).toBeFocused();
       for (const tab of ["Display", "Sound", "Gameplay", "Other"]) {
         await page.getByRole("button", { name: label(tab), exact: true }).click();
@@ -148,7 +149,7 @@ for (const locale of acceptanceLocales) {
           await expect(page.getByRole("listbox")).toBeVisible();
           await reviewLayout(page, `${locale} language choices`);
           await page.keyboard.press("Escape");
-          await expect(page.locator("#language")).toBeFocused();
+          await expectUnfocused(page);
         }
         const clipped = await page
           .locator(".options-settings-label:visible")
@@ -230,7 +231,7 @@ for (const locale of acceptanceLocales) {
             .join("");
           const buy = localized.getByRole("button", { name: new RegExp(`^${purchasePattern}$`) }).first();
           await expect(buy).toBeEnabled();
-          await buy.focus();
+          await controllerInput(localized).reach(buy);
           await expect(buy).toBeFocused();
           await buy.hover();
           await expect(localized.locator('[role="tooltip"]:visible').last()).toBeVisible();

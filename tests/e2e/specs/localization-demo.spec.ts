@@ -2,6 +2,7 @@ import { savedActivityData } from "../../fixtures/run-activity";
 import { expect, test } from "../../fixtures/e2e";
 import { injectBossState, readSavedGame, failOnRuntimeErrors } from "../../browser-helpers";
 import { DEVICE_DISPLAY_RANGES } from "../../../src/lib/settings-values";
+import { controllerInput } from "../controller-input";
 import {
   acceptanceLocales,
   layoutReview,
@@ -123,8 +124,7 @@ for (const locale of acceptanceLocales.filter((entry) => entry !== "en-XA")) {
         expect(ratio).toBeCloseTo(2752 / 1536, 2);
         await reviewLayout(resumed, `${locale} demo ending`);
         const mainMenu = resumed.getByRole("button", { name: label("Main Menu"), exact: true });
-        await expect(mainMenu).toBeFocused();
-        await resumed.keyboard.press("Enter");
+        await controllerInput(resumed).activate(mainMenu);
         await expect(resumed.getByRole("button", { name: label("Play"), exact: true })).toBeVisible();
         const after = await readSavedGame(resumed);
         expect(after.gold).toBe(settled.gold);
