@@ -7,8 +7,7 @@ Optional lookup and measurement tools live in [Agent discovery](./AGENT_DISCOVER
 
 ## Environment & Commands
 
-- **Node.js `^20.19.0 || >=22.12.0`** — authoritative in `package.json` `engines` (`.node-version` pins 24 for local dev).
-- **npm `>=11`** — authoritative in `package.json` `engines` (Node 24 bundles npm 11).
+- **Node.js and npm:** follow the [prerequisites](../README.md#prerequisites); `package.json` owns the supported ranges and `.npmrc` enforces them during installation.
 - **Playwright:** `npx playwright install chromium` once before first `npm run test:e2e`.
 - **GitHub CLI (`gh`):** optional; PR/CI only when the user asks — do not run `gh auth login`.
 - **Git hooks / local gates:** [CONTRIBUTING.md](../CONTRIBUTING.md). Changelog updates happen at release only ([RELEASE.md](./RELEASE.md)).

@@ -6,12 +6,12 @@ Install dependencies with `npm ci`. `npm run context -- <relevant paths>` can lo
 
 The default local gate is deliberately resource-light. Agents may run unit tests whenever useful without user approval; CI still owns complete validation.
 
-| Moment           | Command                           | Responsibility                                                                                                 |
-| ---------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Local smoke      | `npm test` / `npm run test:smoke` | Three fixed Node suites, one worker, lower process priority, 512 MiB Node heap limit and a 30-second deadline  |
-| During work      | `npm run verify -- --diff`        | Bounded Node smoke; no import-graph selection or dependency-cache identity walk                                |
-| Push and handoff | `npm run check -- --diff`         | Local smoke plus selected-file formatting; no builds, installs, browsers, DOM suites, or full static aggregate |
-| CI               | Pull request or push to `main`    | Full Vitest, static checks, builds, smoke, critical browser journeys and applicable desktop/assets checks      |
+| Moment           | Command                           | Responsibility                                                                                                   |
+| ---------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Local smoke      | `npm test` / `npm run test:smoke` | Three fixed Node suites, one worker, lower process priority, 512 MiB Node heap limit and a 30-second deadline    |
+| During work      | `npm run verify -- --diff`        | Bounded Node smoke; no import-graph selection or dependency-cache identity walk                                  |
+| Push and handoff | `npm run check -- --diff`         | Local smoke, localization freshness, and selected-file formatting; no builds, browsers, or full static aggregate |
+| CI               | Pull request or push to `main`    | Full Vitest, static checks, builds, smoke, critical browser journeys and applicable desktop/assets checks        |
 
 Local formatting checks at most 50 existing files, each no larger than 256,000 bytes. Larger batches are explicitly deferred to CI. Reports say that a passing local check still requires full CI validation; it is not release evidence.
 
@@ -253,5 +253,6 @@ Use these tests for asynchronous completion, cancellation and stale callbacks;
 retain real commands and gate logic. Replace low-value helper-call assertions
 when connected outcome coverage supersedes them. Electron interaction canaries
 run in the existing desktop CI tier, with deeper variants nightly. No additional
-browser engine or worker/shard expansion is required. Local browser/Electron,
-build and full-static execution still requires an explicit request.
+browser engine or worker/shard expansion is required. Local execution follows
+the [gate policy](#what-to-run-when-you-change), including its authorization for
+bounded rendered UI review and focused browser checks.

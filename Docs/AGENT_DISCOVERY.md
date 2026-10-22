@@ -75,8 +75,10 @@ checkouts; omit paths to review the whole dirty set. Review commands do not acce
 
 [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns execution tiers.
 `verify` is fixed Node smoke, `verify:unit` selects relevant unit coverage, and
-`check` adds selected-file formatting. Full static, browser, build, and broader
-local verification remain explicit opt-ins. Owner lookup does not select tests.
+`check` adds localization freshness and selected-file formatting. Bounded rendered
+UI review and focused browser checks follow [visual review](./UI_VISUAL_REVIEW.md#browser-authorization).
+Broad browser suites, Electron, builds, full static checks, and broader local
+verification remain explicit opt-ins. Owner lookup does not select tests.
 
 [`runs:show`](./REFERENCE.md#failure-first-triage) includes primary evidence paths
 so a failed run's digest can be opened directly. Compact failure summaries

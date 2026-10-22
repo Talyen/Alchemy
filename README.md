@@ -26,8 +26,11 @@ Campfires.
 
 ## Prerequisites
 
-- Node.js `^20.19.0 || >=22.12.0` (see `engines` in `package.json`; `.node-version` pins 24 for local dev)
-- npm 11+
+- Node.js 24.18 or later within 24.x
+- npm 11.x
+
+[`package.json`](./package.json) owns the supported ranges; `.npmrc` enforces
+them during installation. `.node-version` selects the Node 24 release line.
 
 ## Quick Start
 
