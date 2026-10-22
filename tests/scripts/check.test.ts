@@ -85,7 +85,6 @@ describe("full source-aware completion gate", () => {
     });
     expect(code).toBe(0);
     expect(calls).toEqual([
-      "visual review evidence",
       "localization freshness and contracts",
       "changed-path verification",
       "CI static checks",
@@ -232,24 +231,7 @@ describe("full source-aware completion gate", () => {
     expect(detail).toContain("static failure detail");
     expect(detail).toContain("# Verification failure: CI static checks");
     expect(record.summary).toBe("Check failed at CI static checks.");
-    expect(record.commandExposures.map((entry) => entry.key)).toEqual([
-      "visual-review",
-      "localization",
-      "verification",
-      "ci-static",
-    ]);
-  });
-
-  it("blocks completion at missing visual evidence before running other gates", async () => {
-    const runner = vi.fn((label: string) => (label === "visual review evidence" ? 1 : 0));
-    expect(
-      await runFullCheck(["src/App.tsx"], {
-        runner,
-        captureDigest: () => ({ head: "abc", hash: "same" }),
-      }),
-    ).toBe(1);
-    expect(runner).toHaveBeenCalledTimes(1);
-    expect(runner.mock.calls[0]?.[0]).toBe("visual review evidence");
+    expect(record.commandExposures.map((entry) => entry.key)).toEqual(["localization", "verification", "ci-static"]);
   });
 
   it("rejects ambiguous path selections", () => {

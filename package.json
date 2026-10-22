@@ -50,7 +50,6 @@
     "compact": "node scripts/run-compact.mjs",
     "context": "node scripts/agent-context.mjs",
     "review:diff": "node scripts/agent-diff.mjs",
-    "visual:review": "node scripts/visual-review.mjs",
     "review:status": "node scripts/agent-diff.mjs --status",
     "new:plan": "node scripts/new-plan.mjs",
     "finish:plans": "node scripts/finish-plans.mjs",
