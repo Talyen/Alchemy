@@ -1,4 +1,5 @@
 import { isPotionCard } from "@/lib/game-data";
+import { HALF_DIVISOR } from "@/lib/game-constants";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
 import { cardSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
@@ -41,7 +42,7 @@ export function offerBrewingChoices(
       offer("campfire", "rest", 1, controller.flow.handleCampfireContinue);
       return observation;
     }
-    const urgent = run.runPlayerHealth < run.runMaxHealth / 2;
+    const urgent = run.runPlayerHealth < run.runMaxHealth / HALF_DIVISOR;
     // Retain the old composite Rest + Continue identity for journal replay.
     offer("campfire", "rest", urgent ? 1000 : 1, controller.flow.handleCampfireContinue);
     const kind = getCampfireBrewKind(run.runDeck);

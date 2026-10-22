@@ -241,4 +241,63 @@ describe("bugfix trio regressions", () => {
     // Third effect deals 2 burn damage against the now-poisoned enemy, triggering Venomflash (1 bonus damage).
     expect(scoreAvailableReactions(poisonThenBurn, state)).toBe(1);
   });
+
+  it("distinguishes player mana in projection keys so mana-spending branches do not falsely merge", () => {
+    const state = patchBattleState({
+      mana: 4,
+      maxMana: 4,
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      playerStatuses: { block: 0 },
+      enemyMitigation: { armor: 10, block: 0, forge: 0 },
+      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0 },
+      reactions: { shatterDamage: 5 },
+    });
+    const multiBranch = makeTestCard({
+      effects: [
+        {
+          kind: "chance",
+          probability: 0.5,
+          successEffects: [{ kind: "player-status", status: "block", convertCurrentMana: 1 }],
+          failureEffects: [{ kind: "player-status", status: "block", amount: 0 }],
+        },
+        {
+          kind: "damage",
+          damageType: "physical",
+          amount: 0,
+          equalToBlock: true,
+        },
+      ],
+    });
+    // Success branch converts 4 Mana into 4 Block (setting mana to 0).
+    // Physical hit deals 4 damage equal to Block, triggering Shatter: 10 (armor) + 5 (shatterDamage) = 15.
+    // Failure branch keeps 4 Mana and 0 Block.
+    // Physical hit deals 0 damage, so base damage is 0, Shatter does not trigger: 0 score.
+    // Weighted score: 0.5 * 15 + 0.5 * 0 = 7.5.
+    expect(scoreAvailableReactions(multiBranch, state)).toBe(7.5);
+  });
+
+  it("projects restore-mana so subsequent mana-scaling conversions calculate accurate reaction scores", () => {
+    const state = patchBattleState({
+      mana: 1,
+      maxMana: 5,
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      playerStatuses: { block: 0 },
+      enemyMitigation: { armor: 10, block: 0, forge: 0 },
+      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0 },
+      reactions: { shatterDamage: 5 },
+    });
+    const restoreThenConvert = makeTestCard({
+      effects: [
+        { kind: "restore-mana", amount: 3 },
+        { kind: "player-status", status: "block", convertCurrentMana: 2 },
+        { kind: "damage", damageType: "physical", amount: 0, equalToBlock: true },
+      ],
+    });
+    // 1 mana + 3 restored = 4 mana.
+    // 4 mana * 2 = 8 Block.
+    // 8 damage equal to block against frozen enemy with 10 armor and 5 shatterDamage scores 10 + 5 = 15.
+    expect(scoreAvailableReactions(restoreThenConvert, state)).toBe(15);
+  });
 });

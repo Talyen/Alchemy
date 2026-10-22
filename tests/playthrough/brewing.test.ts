@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { HALF_DIVISOR } from "@/lib/game-constants";
 import { createCareerActor } from "@/app/playthrough/actor";
 import { createPlaythroughController } from "@/app/playthrough/controller";
 import { snapshotCareer, stateDigest } from "@/app/playthrough/career";
@@ -254,9 +255,21 @@ describe("headless brewing through production commands", () => {
   it("prioritizes survival, distinguishes disabled brewing, and skips unchanged distillation", () => {
     start();
     initializeAlchemyVisit("campfire", session);
+    const maxHp = readActiveRun(session).runMaxHealth;
     dispatchGameplayCommand(
       (draft) => {
-        setRunPlayerHealth(draft, 1);
+        setRunPlayerHealth(draft, maxHp / HALF_DIVISOR);
+        return acceptCommand();
+      },
+      undefined,
+      session,
+    );
+    const atHalf = createCareerActor(config, undefined, session);
+    expect(atHalf.observe().find((c) => c.kind === "campfire")?.score).toBe(1);
+
+    dispatchGameplayCommand(
+      (draft) => {
+        setRunPlayerHealth(draft, maxHp / HALF_DIVISOR - 1);
         return acceptCommand();
       },
       undefined,
@@ -265,6 +278,7 @@ describe("headless brewing through production commands", () => {
     const actor = createCareerActor(config, undefined, session);
     const choices = actor.observe();
     expect(choices.find((c) => c.score === Math.max(...choices.map((c) => c.score)))?.kind).toBe("campfire");
+    expect(choices.find((c) => c.kind === "campfire")?.score).toBe(1000);
     const disabled = createCareerActor({ ...config, brewing: "off" }, undefined, session);
     expect(disabled.observe().some((c) => c.kind.startsWith("campfire-"))).toBe(false);
     expect(disabled.brewingObservation()?.opportunities[0]?.reason).toBe("disabled");

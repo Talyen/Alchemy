@@ -1,4 +1,3 @@
-import { getStandardPotionPool, isPotionCard } from "@/lib/game-data/cards/card-pools";
 import {
   BattleCardEffectSchema,
   areBattleCardEffectsEqual,
@@ -6,8 +5,10 @@ import {
   createEffectDescription,
   carryCardDescriptionMarks,
   getCardDescription,
-  withCardDescription,
   getCardEffect,
+  getStandardPotionPool,
+  isPotionCard,
+  withCardDescription,
   type BattleCard,
   type BattleCardEffect,
   type CardDescription,

@@ -135,7 +135,7 @@ function projectionKey(state: BattleState): string {
   ].join(",");
   const action = state.action ? `${state.action.source},${state.action.repeatActive ? "1" : "0"}` : "-";
   const cc = `${state.enemyCC.freezeSkipTurns},${state.enemyCC.stunSkipTurns}`;
-  return `${state.playerHealth}|${state.enemyHealth}|${state.enemyMitigation.armor},${state.enemyMitigation.forge},${state.enemyMitigation.block}|${enemyStatuses}|${playerStatuses}|${reactions}|${flags}|${cc}|${action}`;
+  return `${state.playerHealth}|${state.mana},${state.maxMana}|${state.enemyHealth}|${state.enemyMitigation.armor},${state.enemyMitigation.forge},${state.enemyMitigation.block}|${enemyStatuses}|${playerStatuses}|${reactions}|${flags}|${cc}|${action}`;
 }
 
 function mergeProjections(paths: Projection[]): Projection[] {
@@ -192,7 +192,14 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
           const probability = path.probability / (pool.length * (effect.maxAmount - effect.minAmount + 1));
           for (let amount = effect.minAmount; amount <= effect.maxAmount; amount++) {
             for (const damageType of pool) {
-              outcomes.push(projectHit({ ...path, probability }, card, { kind: "damage", damageType, amount }));
+              outcomes.push(
+                projectHit({ ...path, probability }, card, {
+                  kind: "damage",
+                  damageType,
+                  amount,
+                  ...(effect.lifesteal ? { lifesteal: true } : {}),
+                }),
+              );
             }
           }
           return outcomes;
@@ -212,6 +219,7 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
               kind: "damage",
               damageType: effect.damageType,
               amount: stacks,
+              ...(effect.lifesteal ? { lifesteal: true } : {}),
             }),
           ];
         }
@@ -319,6 +327,18 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
               },
             };
           });
+        }
+        if (effect.kind === "restore-mana") {
+          const nextMana = effect.allowOverflow
+            ? path.state.mana + effect.amount
+            : Math.min(path.state.maxMana, path.state.mana + effect.amount);
+          if (nextMana === path.state.mana) return [path];
+          return [{ ...path, state: { ...path.state, mana: nextMana } }];
+        }
+        if (effect.kind === "lose-mana") {
+          const nextMana = Math.max(0, path.state.mana - effect.amount);
+          if (nextMana === path.state.mana) return [path];
+          return [{ ...path, state: { ...path.state, mana: nextMana } }];
         }
         const flagKey = FLAG_EFFECT_KEYS[effect.kind];
         if (flagKey) {
