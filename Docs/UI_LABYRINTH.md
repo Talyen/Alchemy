@@ -15,7 +15,11 @@ scrolling, zoom toolbar, legend, corridor, visible room label, or location dot.
 Undiscovered rooms use six generic fog-of-war illustrations, selected by a stable
 hash of node identity independently of encounter type and gameplay RNG. No hidden
 encounter art, category, Trait, accessible name, or hover theme is exposed. Discovery
-replaces the fog with the actual artwork and plays the reveal. Actual Mystery encounters reveal
+crossfades the fog into the actual artwork over 260ms, retaining opaque fog beneath
+the incoming image until the reveal completes. Reachable rooms also crossfade when
+the map remounts after a room visit; completed rooms and the always-visible boss
+retain their existing treatment. The crossfade waits for screen artwork readiness.
+Reduced motion shows the artwork immediately. Actual Mystery encounters reveal
 their existing art. The boss is always visible and inspectable, with the shared
 display label Boss and a persistent red glow independent of hover/selection.
 All rooms rest with the standard dim `border-border/80` frame, except the current

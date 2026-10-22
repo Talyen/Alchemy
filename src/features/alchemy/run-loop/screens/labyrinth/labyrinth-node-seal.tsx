@@ -1,7 +1,7 @@
 import { isFocusNavigationEnabled } from "@/features/alchemy/shared/ui/focus-input";
 import { useGameTranslation } from "@/components/use-game-translation";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { SHINE_PALETTES } from "@/features/alchemy/shared/config/shine-palettes";
 import { Surface } from "@/features/alchemy/shared/ui/surface";
@@ -48,14 +48,27 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
   const i18n = useGameTranslation();
   const discovered = visual !== "undiscovered";
   const colors = SHINE_PALETTES.labyrinth[node.type];
+  // Node identity keeps fog independent of encounter data and gameplay RNG.
+  const fogArt = labyrinthShroudedArt[hashStringToUint32(node.id) % labyrinthShroudedArt.length]!;
   const art = current
     ? heroArt
     : discovered
       ? node.enemyId && isEnemyId(node.enemyId)
         ? enemyById[node.enemyId].art
         : LABYRINTH_NODE_META[node.type].art
-      : // Node identity keeps fog stable across rerenders and saves without using gameplay RNG or encounter data.
-        labyrinthShroudedArt[hashStringToUint32(node.id) % labyrinthShroudedArt.length]!;
+      : fogArt;
+  // The map remounts after room visits, so reachable rooms also reveal on entry.
+  const [reveal, setReveal] = useState({
+    art,
+    discovered,
+    crossfade: visual === "reachable",
+    fogVisible: visual === "reachable",
+  });
+  if (reveal.art !== art || reveal.discovered !== discovered) {
+    const crossfade = !reveal.discovered && discovered;
+    // Adjust before commit so the incoming image never first paints without its fog backdrop.
+    setReveal({ art, discovered, crossfade, fogVisible: crossfade });
+  }
   const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("labyrinth", node.id);
   const status = current
     ? i18n.text("labyrinth.node-status-0", "you are here")
@@ -132,6 +145,10 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
           loading="eager"
           draggable={false}
           decoding="async"
+          data-crossfade={reveal.crossfade || undefined}
+          onAnimationEnd={() => {
+            if (reveal.fogVisible) setReveal({ ...reveal, fogVisible: false });
+          }}
           className={cn(
             "labyrinth-discovery",
             current && "labyrinth-hero-art",
@@ -141,6 +158,15 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
             visual === "undiscovered" && "brightness-[0.82] saturate-[0.8]",
           )}
         />
+        {reveal.fogVisible ? (
+          <img
+            src={fogArt}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            className="labyrinth-discovery-fog brightness-[0.82] saturate-[0.8]"
+          />
+        ) : null}
       </Surface>
     </div>
   );
