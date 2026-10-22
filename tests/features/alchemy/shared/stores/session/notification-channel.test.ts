@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { createNotificationChannel } from "@/features/alchemy/shared/stores/notification-channel";
+import { createNotificationChannel } from "@/features/alchemy/shared/stores/session/notification-channel";
 
 it("drains observer notifications even when reporting a listener failure throws", () => {
   const onError = vi.fn(() => {
