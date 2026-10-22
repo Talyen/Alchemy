@@ -2,7 +2,7 @@ import { applyEmergencyWishForEmptyDraw } from "./wish";
 import { readCombatFlag } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { mergeCombatText } from "./combat-text-events";
-import type { BattleCard } from "@/lib/game-data";
+import { harmfulPlayerStatusIds, type BattleCard } from "@/lib/game-data";
 import type { BattleResolution, BattleState, BattleSnapshot, CombatFlags, CombatTextEvent } from "./types";
 import { getBattleOutcome, isPlayerDefeated } from "./battle-outcome";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
@@ -49,6 +49,7 @@ export interface CardPlayOptions {
 function cleanseOnlyCardHasNoTargets(card: BattleCard, state: BattleSnapshot): boolean {
   let hasCleanse = false;
   let hasCleanseTarget = false;
+  const createdStatuses = new Set<string>();
 
   for (const effect of card.effects) {
     if (effect.kind === "remove-harmful-status") {
@@ -56,16 +57,20 @@ function cleanseOnlyCardHasNoTargets(card: BattleCard, state: BattleSnapshot): b
       if (
         !hasCleanseTarget &&
         (effect.removeAll === true || (effect.amount ?? 0) > 0) &&
-        countRemovableHarmfulStatuses(state.playerStatuses) > 0
+        (countRemovableHarmfulStatuses(state.playerStatuses) > 0 || createdStatuses.size > 0)
       ) {
         hasCleanseTarget = true;
       }
     } else if (effect.kind === "remove-player-status") {
       hasCleanse = true;
-      if (!hasCleanseTarget && state.playerStatuses[effect.status] > 0) {
+      if (!hasCleanseTarget && (state.playerStatuses[effect.status] > 0 || createdStatuses.has(effect.status))) {
         hasCleanseTarget = true;
       }
-    } else if (effect.kind !== "self-damage") {
+    } else if (effect.kind === "self-damage") {
+      // A preceding typed cost can create the status this card cleanses.
+      if (effect.amount > 0 && harmfulPlayerStatusIds.some((status) => status === effect.damageType))
+        createdStatuses.add(effect.damageType);
+    } else {
       return false;
     }
   }

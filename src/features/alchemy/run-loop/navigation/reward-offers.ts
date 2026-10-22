@@ -3,6 +3,7 @@ import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-tra
 import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import {
   cardHasKeyword,
+  isCompanionSummonCard,
   getOfferableCardPool,
   getStandardPotionPool,
   selectRewardCards,
@@ -63,7 +64,7 @@ export function getCompanionCardChoices(
         : "companion";
   const companions =
     theme === "companion"
-      ? getOfferableCardPool().filter((c) => c.effects?.some((e) => e.kind === "summon-companion"))
+      ? getOfferableCardPool().filter(isCompanionSummonCard)
       : getOfferableCardPool().filter((card) => cardHasKeyword(card, theme));
   return sampleItems(companions, LABYRINTH_REWARD_CONFIG.companionCardChoices, rng);
 }

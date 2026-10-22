@@ -1,5 +1,6 @@
+import * as gameData from "@/lib/game-data";
 import { expect, it, vi } from "vitest";
-import { createRewardOffer } from "@/features/alchemy/run-loop/navigation/reward-offers";
+import { createRewardOffer, getCompanionCardChoices } from "@/features/alchemy/run-loop/navigation/reward-offers";
 import { trinketLibrary } from "@/lib/game-data";
 import { gearDefinitions } from "@/lib/gear";
 
@@ -31,4 +32,30 @@ it("honors the first guaranteed hoard without spending randomness on ordinary ca
   expect(firstDraws).toBe(rng.mock.calls.length);
   expect(first.choices).toHaveLength(3);
   expect(first.choices.every((item) => gearDefinitions[item.definitionId].compatibleSlots.includes("body"))).toBe(true);
+});
+
+it("Companion offers recognize summons inside Chance and delayed effects", () => {
+  const summon = gameData.cardById["wolf-companion"]!;
+  const conditional = {
+    ...summon,
+    id: "conditional-summon",
+    effects: [{ kind: "chance" as const, probability: 0.5, successEffects: summon.effects, failureEffects: [] }],
+  };
+  const delayed = {
+    ...summon,
+    id: "delayed-summon",
+    effects: [{ kind: "repeat-over-turns" as const, remainingTurns: 1, effects: summon.effects }],
+  };
+  const pool = vi
+    .spyOn(gameData, "getOfferableCardPool")
+    .mockReturnValue([conditional, delayed, gameData.cardById.slash!]);
+  try {
+    expect(
+      getCompanionCardChoices(() => 0.5)
+        .map((card) => card.id)
+        .sort(),
+    ).toEqual(["conditional-summon", "delayed-summon"]);
+  } finally {
+    pool.mockRestore();
+  }
 });
