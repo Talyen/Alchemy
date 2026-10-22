@@ -127,14 +127,29 @@ export function playBattleCardResolved(
   index: number,
   options?: CardPlayOptions,
 ): BattleResolution {
+  const card = getHandCard(state, cardId, index);
+  const payment = card && validateCardPlay(state, card, index, options);
+  if (!card || !payment) return { state, combatTexts: [] };
+  return resolveCardPlay(state, card, index, payment);
+}
+
+/** Hypothetical admission only. The same payment and action recipe owns all consequences. */
+export function resolveInspectedCardPlay(
+  state: BattleState & { observer: NonNullable<BattleState["observer"]> },
+  card: BattleCard,
+  handIndex: number,
+): BattleResolution {
+  return resolveCardPlay(state, card, handIndex, computeCardPayment(state, card));
+}
+
+function resolveCardPlay(
+  state: BattleState,
+  card: BattleCard,
+  index: number,
+  payment: ReturnType<typeof computeCardPayment>,
+): BattleResolution {
   const combatTexts: CombatTextEvent[] = [];
   const enemyWasAlive = state.enemyHealth > 0;
-
-  const card = getHandCard(state, cardId, index);
-  if (!card) return { state, combatTexts };
-  const payment = validateCardPlay(state, card, index, options);
-  if (!payment) return { state, combatTexts };
-
   // An Emergency Wish is a nested action; its retaliation precedes the interrupted hit's healing.
   const previousEmptyDraw = state.onEmptyDraw;
   state = {

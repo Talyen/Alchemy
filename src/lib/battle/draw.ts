@@ -109,6 +109,7 @@ export function takeRandomCardFromDeck(state: BattleState): {
   nextCardUid: number;
   uniqueGear: BattleState["uniqueGear"];
 } | null {
+  if (state.deck.length > 0 || state.discard.length > 0) state.observer?.unknownDraw();
   const battleRng = getBattleRng(state);
   const refilled = refillDeck(state.deck, state.discard, battleRng);
   if (!refilled || refilled.deck.length === 0) return null;
@@ -126,6 +127,7 @@ export function takeRandomCardFromDeck(state: BattleState): {
 }
 
 export function drawFromState(state: BattleState, amount: number) {
+  if (amount > 0 && (state.deck.length > 0 || state.discard.length > 0)) state.observer?.unknownDraw();
   return drawCards(
     state.deck,
     state.discard,
@@ -186,6 +188,7 @@ export function drawKeywordCard(
     if (cardHasKeyword(refilled.deck[index]!, keyword)) indices.push(index);
   }
   if (indices.length === 0) return { ...ready, deck: refilled.deck, discard: refilled.discard };
+  state.observer?.unknownDraw();
   const sampled = indices[rngInt(readyRng, indices.length)];
   if (sampled === undefined) return { ...ready, deck: refilled.deck, discard: refilled.discard };
   const index = sampled;

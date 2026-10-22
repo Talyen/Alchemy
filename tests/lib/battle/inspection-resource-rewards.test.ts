@@ -11,7 +11,7 @@ function acid(keyword: KeywordId): BattleCard {
   return getTransmutationVariants(card, keyword, [card])[0]!.result;
 }
 
-function compare(card: BattleCard, patch: BattleStatePatch, expected: number[]) {
+function compare(card: BattleCard, patch: BattleStatePatch, expected: Array<number | [number, number]>) {
   const rng = vi.fn(() => 0.99);
   const state = patchBattleState({
     hand: [card],
@@ -40,8 +40,19 @@ function compare(card: BattleCard, patch: BattleStatePatch, expected: number[]) 
         ]
       : [],
   );
-  expect(actual.map((text) => (text && "amount" in text ? text.amount : null))).toEqual(expected);
-  expect(preview.effects.flatMap((effect) => (effect.kind === "damage" ? [effect.amount] : []))).toEqual(expected);
+  expect(actual.map((text) => (text && "amount" in text ? text.amount : null))).toEqual(
+    expected.map((amount) => (typeof amount === "number" ? amount : amount[0])),
+  );
+  expect(
+    preview.effects.flatMap(
+      (effect): Array<number | [number, number]> =>
+        effect.kind === "damage"
+          ? [effect.amount]
+          : effect.kind === "random-damage"
+            ? [[effect.minAmount, effect.maxAmount]]
+            : [],
+    ),
+  ).toEqual(expected);
 }
 
 describe("inspection follows resource rewards between ingredients", () => {
@@ -78,14 +89,14 @@ describe("inspection follows resource rewards between ingredients", () => {
     );
   });
 
-  it("does not promise fractional Leech rewards or draw RNG while inspecting them", () => {
+  it("keeps fractional Leech outcomes as a range without drawing RNG", () => {
     compare(
       createMixedPotion(acid("leech"), acid("burn")),
       {
         gearEffects: { manaOnLeechChance: 50, leechBlockChance: 50 },
         talentEffects: { burnDamagePerMana: 100 },
       },
-      [2, 4],
+      [2, [4, 5]],
     );
   });
 

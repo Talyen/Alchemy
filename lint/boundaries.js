@@ -81,6 +81,13 @@ const catalogPatterns = [
   DOMAIN_STORE_PATTERNS,
   WRITE_PORT_PATTERNS,
 ];
+const battlePatterns = [
+  [{ group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." }],
+  BATTLE_NO_FEATURES,
+  DOMAIN_STORE_PATTERNS,
+  WRITE_PORT_PATTERNS,
+  NO_DIRECT_ASSET_IMPORT,
+];
 
 export const BOUNDARY_CONFIGS = [
   scope(
@@ -145,14 +152,40 @@ export const BOUNDARY_CONFIGS = [
     },
   ]),
   scope(["src/lib/game-data/**/*.{ts,tsx}"], [...catalogPatterns, NO_DIRECT_ASSET_IMPORT], LIB_NO_FRAMEWORK_PATHS),
+  scope(["src/lib/battle/**/*.{ts,tsx}"], battlePatterns, BATTLE_NO_FRAMEWORK_PATHS),
   scope(
-    ["src/lib/battle/**/*.{ts,tsx}"],
+    ["src/lib/battle/card-damage-inspection.ts"],
     [
-      [{ group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." }],
-      BATTLE_NO_FEATURES,
-      DOMAIN_STORE_PATTERNS,
-      WRITE_PORT_PATTERNS,
-      NO_DIRECT_ASSET_IMPORT,
+      ...battlePatterns,
+      [
+        {
+          group: [
+            "./*",
+            "!./card-play",
+            "!./battle-snapshot",
+            "!./enemy-turn-attack",
+            "!./enemy-description",
+            "!./inspection-outcomes",
+            "!./resolution-observer",
+            "!./types",
+          ],
+          message:
+            "Inspection observes production card and enemy actions; combat rules belong to their execution owners.",
+        },
+      ],
+    ],
+    BATTLE_NO_FRAMEWORK_PATHS,
+  ),
+  scope(
+    ["src/lib/battle/inspection-outcomes.ts"],
+    [
+      ...battlePatterns,
+      [
+        {
+          group: ["./*", "!./resolution-observer"],
+          message: "The inspection collector tracks alternatives, never combat rules or effect dispatch.",
+        },
+      ],
     ],
     BATTLE_NO_FRAMEWORK_PATHS,
   ),

@@ -1,4 +1,9 @@
-export type Rng = () => number;
+export type RandomDecision =
+  | { kind: "integer"; size: number }
+  | { kind: "chance"; probability: number; purpose: "effect" | "critical" | "dodge" };
+
+/** Alternative decision sources resolve finite choices without sampling a stream. */
+export type Rng = (() => number) & { decide?: (decision: RandomDecision) => number };
 
 export type RunRngStream = "rewards" | "destinations" | "events" | "shops" | "world";
 
@@ -90,6 +95,11 @@ export function createRunStateRng(state: RunRngState, stream: RunRngStream): Rng
 
 export function rngInt(rng: Rng, n: number): number {
   if (!Number.isInteger(n) || n <= 0) throw new Error("rngInt requires a positive integer range");
+  if (rng.decide) {
+    const chosen = rng.decide({ kind: "integer", size: n });
+    if (!Number.isInteger(chosen) || chosen < 0 || chosen >= n) throw new Error("Invalid integer decision");
+    return chosen;
+  }
   return Math.floor(assertDraw(rng()) * n);
 }
 
@@ -111,15 +121,24 @@ export const placeholderRng: Rng = () => {
   throw new Error("BattleState.rng is required for outcome rolls");
 };
 
-export function rollChance(probability: number, rng: Rng): boolean {
+export function rollChance(
+  probability: number,
+  rng: Rng,
+  purpose: "effect" | "critical" | "dodge" = "effect",
+): boolean {
   if (Number.isNaN(probability)) throw new Error("rollChance requires a number");
   if (probability <= 0) return false;
   if (probability >= 1) return true;
+  if (rng.decide) {
+    const chosen = rng.decide({ kind: "chance", probability, purpose });
+    if (chosen !== 0 && chosen !== 1) throw new Error("Invalid chance decision");
+    return chosen === 1;
+  }
   return assertDraw(rng()) < probability;
 }
 
-export function rollPercent(chance: number, rng: Rng): boolean {
-  return rollChance(chance / 100, rng);
+export function rollPercent(chance: number, rng: Rng, purpose: "effect" | "critical" | "dodge" = "effect"): boolean {
+  return rollChance(chance / 100, rng, purpose);
 }
 
 export function getBattleRng(state: { rng?: Rng }): Rng {

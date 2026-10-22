@@ -16,6 +16,7 @@ export function resolveBattleSequence<T>(
 ): BattleState {
   let next = state;
   for (const step of steps) {
+    next.observer?.step();
     if (stopWhen === "either-defeated" ? getBattleOutcome(next) !== null : isPlayerDefeated(next)) break;
     next = resolve(next, step);
     if (reactions.kind === "each-step") next = reactions.settle(next, texts);

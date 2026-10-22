@@ -29,15 +29,26 @@ import { writeCombatFlag as setFlag } from "./action-context";
 function applyEnemyEffect(
   state: BattleState,
   effect: EnemyAbilityEffect,
-  context: EnemyAbilityContext,
+  context: EnemyAbilityContext & { card: BattleCard },
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (state.observer)
+    return state.observer.effect(context.card, effect, () => resolveEnemyEffect(state, effect, context, combatTexts));
+  return resolveEnemyEffect(state, effect, context, combatTexts);
+}
+
+function resolveEnemyEffect(
+  state: BattleState,
+  effect: EnemyAbilityEffect,
+  context: EnemyAbilityContext & { card: BattleCard },
   combatTexts: CombatTextEvent[],
 ): BattleState {
   if (getBattleOutcome(state) !== null) return state;
   switch (effect.kind) {
     case "chance": {
-      const effects = rollChance(effect.probability, getBattleRng(state))
-        ? effect.successEffects
-        : effect.failureEffects;
+      const success = rollChance(effect.probability, getBattleRng(state));
+      state.observer?.branch(effect, success);
+      const effects = success ? effect.successEffects : effect.failureEffects;
       return resolveBattleSequence(
         state,
         effects,
@@ -97,7 +108,7 @@ export function applyEnemyAbility(state: BattleState, card: BattleCard, combatTe
   if (!isEnemyAbilityCard(card)) throw new Error(`Unsupported enemy ability: ${card.id}`);
   if (getBattleOutcome(state) !== null) return state;
   const damaging = enemyAbilityDealsDamage(card);
-  const context = createEnemyAbilityContext(state, damaging);
+  const context = { ...createEnemyAbilityContext(state, damaging), card };
   let nextState = recordEnemyAbilityUse({ ...state, lastEnemyAbilityId: card.id }, card.id);
   if (damaging) nextState = recordEnemyAttackAction(nextState);
   if (context.brawlerPenalty) nextState = setFlag(nextState, "enemyBrawlerDamagePenalty", false);

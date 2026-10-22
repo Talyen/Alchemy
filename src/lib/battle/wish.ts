@@ -92,10 +92,14 @@ export function applyWishEffect(
 
   const nextWishOptions: BattleCard[][] = [];
   for (let index = 0; index < wishCount; index += 1) {
-    nextWishOptions.push(buildWishOptions(state, card, companionOnly));
+    const sample = () => buildWishOptions(state, card, companionOnly);
+    const options = state.sampleWishOptions?.(sample) ?? { cards: sample(), deferred: false };
+    // During hypothetical resolution the offer remains pending without picking
+    // card identities. Immediate Wish rewards still use their production order.
+    if (options.deferred || options.cards.length > 0) nextWishOptions.push(options.cards);
     if (hasEncounterBenefit(state, "wishful")) state = { ...state, flags: { ...state.flags, encounterWishUsed: true } };
   }
-  const queuedOptions = nextWishOptions.filter((options) => options.length > 0);
+  const queuedOptions = nextWishOptions;
   const nextState: BattleState =
     state.wishOptions || queuedOptions.length === 0
       ? { ...state, wishQueue: [...state.wishQueue, ...queuedOptions] }

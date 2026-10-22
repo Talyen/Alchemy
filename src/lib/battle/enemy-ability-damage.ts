@@ -23,6 +23,8 @@ import type { BattleState, CombatTextEvent } from "./types";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import { getBattleOutcome } from "./battle-outcome";
 import { writeCombatFlag as setFlag } from "./action-context";
+import { observeAttackPower } from "./resolution-observer";
+import { prepareEnemyDamage } from "./enemy-damage-mitigation";
 
 /** Scratch facts shared by the ordered effects and follow-ups of one ability. */
 export interface EnemyAbilityContext {
@@ -169,6 +171,16 @@ export function applyAbilityDamage(
     effect,
     context.brawlerPenalty,
   );
+  if (state.observer)
+    observeAttackPower(
+      state,
+      effect,
+      prepareEnemyDamage(state, damage, {
+        amountMultiplier,
+        flatBonus,
+        ignorePlayerMitigation: true,
+      }).attemptedDamage,
+    );
   let nextState = state;
   for (const id of activatedTraits) nextState = recordEnemyAbilityActivation(nextState, id);
   const trait = (id: string) => hasEnemyTrait(nextState, id);

@@ -11,7 +11,34 @@ import {
   sampleItems,
   sampleItemsExcluding,
   takeRandomItem,
+  type RandomDecision,
 } from "@/lib/rng";
+
+it("resolves finite decisions without sampling and rejects invalid alternative outcomes", () => {
+  const seen: RandomDecision[] = [];
+  const rng = Object.assign(
+    () => {
+      throw new Error("Finite decisions must not draw");
+    },
+    {
+      decide: (decision: RandomDecision) => {
+        seen.push(decision);
+        return decision.kind === "integer" ? 2 : decision.purpose === "critical" ? 0 : 1;
+      },
+    },
+  );
+  expect(rngInt(rng, 3)).toBe(2);
+  expect(rollChance(0.25, rng)).toBe(true);
+  expect(rollPercent(5, rng, "critical")).toBe(false);
+  expect(seen).toEqual([
+    { kind: "integer", size: 3 },
+    { kind: "chance", probability: 0.25, purpose: "effect" },
+    { kind: "chance", probability: 0.05, purpose: "critical" },
+  ]);
+  expect(() => rngInt(rng, 2)).toThrow("Invalid integer decision");
+  const invalid = Object.assign(() => 0, { decide: () => 2 });
+  expect(() => rollChance(0.5, invalid)).toThrow("Invalid chance decision");
+});
 
 describe("rngInt", () => {
   it("rejects empty and non-integer ranges", () => {

@@ -12,7 +12,7 @@ Add a schema definition to the matching `<group>-schemas.ts` collection; ordinar
 
 The description parity checker compares authored mechanic lines with generated text, including summon summaries and additional effects. Custom phrasing must stay canonical; the mixed-potion template and Steal/Gain Gold alias have narrow exceptions. Missing keyword and Consume lines produce warnings. Unrenderable effects produce errors. Keep independent formatter/behavior assertions; the shared formatter is not its own correctness oracle.
 
-New custom mechanics extend the canonical description rendering in `effect-metadata.ts` as needed. New recursive shapes additionally extend `types.ts`, recursive schema construction, and `effect-tree.ts`; its child order is success effects followed by failure effects, which defines corruption target paths. Cloning, corruption editing and potion scaling consume this traversal; each retains its own leaf behavior. The potion mixer traverses the registered recursive effect kinds and renders scaled effects through `describeCardEffects`. New nested effect kinds must extend the shared traversal before they can be mixed safely. The schema registry derives ordinary effect types; `tests/lib/game-data/effect-kind-coverage.test.ts` checks runtime handler coverage. Add schema tests for consequential refinements, not another per-kind template table. Card previews show authored base amounts only, except summon lines recomputed with Bond/damage bonuses.
+New custom mechanics extend the canonical description rendering in `effect-metadata.ts` as needed. New recursive shapes additionally extend `types.ts`, recursive schema construction, and `effect-tree.ts`; its child order is success effects followed by failure effects, which defines corruption target paths. Cloning, corruption editing and potion scaling consume this traversal; each retains its own leaf behavior. The potion mixer traverses the registered recursive effect kinds and renders scaled effects through `describeCardEffects`. New nested effect kinds must extend the shared traversal before they can be mixed safely. The schema registry derives ordinary effect types; `tests/lib/game-data/effect-kind-coverage.test.ts` checks runtime handler coverage. Add schema tests for consequential refinements, not another per-kind template table. Outside battle, card previews show authored base amounts only, except summon lines recomputed with Bond/damage bonuses.
 
 [`applyCardEffects`](../../battle/effect-handlers/registry.ts) is the single entry point exported from `@/lib/battle`. It walks each effect on a card, routes `chance` (via `rollChance` + `getBattleRng`) and `repeat-over-turns` (queue `pendingTurnStartEffects` with source card ID, Consume, and tags) before the registry, and otherwise delegates to `applyEffectByKind`. Dispatch details: `applySingleEffect` short-circuits when the hero is defeated; `applyEffectByKind` runs the handler, then (for `summon-companion` with Eager Pack) two immediate Companion pulses by design, then `resolvePendingBattleReactions` after every single effect. Companion turn-start and pending-turn-start pulses re-enter through synthetic cards under explicit `resolveSecondaryAction` scope (see `battle/companion-effects.ts`, `player-turn-transition.ts`); `resolveCardEffectChain` (`battle/card-play-effects.ts`) owns paid and Dodge-triggered full-card execution: prepare once, resolve each copy and Potion use, then settle card-play rewards and Twin Casting once; unique-card repeats run with `action.source === "repeat"` (which also suppresses potion scaling).
 
@@ -26,17 +26,45 @@ Health, Mana, Mana Crystals, Gold, player statuses, cleansing, Armor removal,
 Companion summoning/buffs, and armed action flags. It owns amount calculations,
 Potion potency, conditional eligibility, resource limits, and effect feedback.
 `effect-handlers/utility-handlers.ts` supplies live reactions and seeded status
-choices. Inspection supplies guaranteed reactions and leaves random status
-choices unknown; it never calls the live resolver or samples the battle RNG.
+choices. Inspection calls the production action resolver with an isolated finite
+choice source; it does not assemble another utility or attack recipe.
 
-Inspection carries a certain Chance branch's resulting state and once-per-card
-claims into following effects. Uncertain branches retain independent projections.
-Conditional Mana uses the same frozen pre-card Freeze count as execution. Summons
-install the new Companion before later utility actions, and armed Leech can alter
-Health before later conditional hits. Critical power remains excluded from display.
-Utility calculations must change in this shared table rather than in parallel
-preview and runtime implementations. Attack projection and asynchronous draws
-remain separate policies.
+## Battle inspection ownership
+
+[`card-damage-inspection.ts`](../../battle/card-damage-inspection.ts) adapts
+production observations into presentation-only card descriptions. Player payment,
+pre-triggers, ordered effects, and follow-ups resolve through `card-play.ts`;
+enemy abilities resolve through `enemy-turn-attack.ts`. Admission alone is
+hypothetical, so cards outside the hand or above the current Mana remain inspectable.
+`damage.ts` and `enemy-ability-damage.ts` report offensive power before defenses
+and critical strikes. Resulting state still includes mitigation and prepared
+critical consequences when later packets depend on them.
+
+[`inspection-outcomes.ts`](../../battle/inspection-outcomes.ts) tracks exact,
+alternative, or unknown packet observations by complete correlated execution.
+It branches finite integer/chance decisions without drawing the live RNG. Random
+critical strikes and Dodge are excluded by the existing inspection convention;
+fractional resource/status procs retain their alternatives. It evaluates every
+supported integer result, rather than assuming range endpoints bound nonlinear
+threshold effects. Limits of 128 replays, 64 decisions per replay, and 4096 total
+sequence steps downgrade unresolved dependent packets to unknown. Known earlier
+packets remain usable. Unknown packets and future-turn effects retain authored
+description values; they are never exposed as computed exact outcomes.
+
+Drawn card identities stop dependent projection. Wish offers remain pending but
+unsampled through the execution-only `sampleWishOptions` seam; their immediate
+rewards keep the production recipe and order. `battleSnapshot` removes observers,
+Wish samplers, RNG, and action callbacks. Inspection also strips borrowed execution
+capabilities before running; it cannot invoke a live empty-draw callback.
+
+Effect occurrence addresses, including both Chance branches, own observation and
+Corruption-mark mapping. Repeated references to one authored effect object still
+have independent packet identities. Import boundaries keep the description adapter
+on action owners and keep the alternative collector free of combat rules.
+
+When adding a kind, update the exhaustive `INSPECTION_EFFECT_POLICY` classification
+and the production handler. Add independent outcome assertions when the mechanic
+can change later packets. No second inspection handler should be introduced.
 
 ## Resource reward ownership
 
@@ -44,24 +72,21 @@ remain separate policies.
 Armor, Block, and Cleanse recipes, including card overhealing, Health-threshold
 rewards, and Block depletion. `player-rewards.ts` binds the live interpreter and
 exports its operations directly; `status-player.ts` retains status-application
-helpers and the existing resource exports. Live combat and damage inspection instantiate
-that same interpreter. Its ports supply chance outcomes, healing reactions, and
-Holy draws; live combat retains seeded rolls, while inspection admits only
-guaranteed procs and never samples a pile or consumes RNG. Unknown draws remain
-outside the deterministic projection.
+helpers and the existing resource exports. Inspection runs that same production interpreter. Its ports retain chance,
+healing, and Holy draw behavior; the inspection decision source preserves finite
+alternatives without consuming gameplay RNG. Unknown draws stop dependent projection.
 
 `battle/resource-reward-resolution.ts` owns Leech restoration facts and riders,
 Nature resource payouts, Cutpurse Gold, and Bloodfire's Leech eligibility. Both
 execution and inspection use these rules. Inspection carries earned resources
 between damage packets, including Gold, so later ingredients use the resulting
-purse, Mana, Block, and Health. Rendering still owns damage ranges, presentation
-copies, and nonrandom attack projection; it must not execute the displayed card.
+purse, Mana, Block, and Health. Rendering owns only damage summaries and presentation copies; it must not execute
+the displayed card.
 
 ## Crowd-control ownership
 
 `battle/crowd-control-resolution.ts` owns enemy Stun and Freeze eligibility,
-retained buildup, trait reactions, and reward ordering. Live combat and inspection
-supply resource and hit policies to the same recipes. `status-stun-core.ts` binds
+retained buildup, trait reactions, and reward ordering. Inspection runs the live resource and hit policies through the same recipes. `status-stun-core.ts` binds
 live Stun reactions without importing its Leech orchestrator; Freeze binds through
 `damage-status-riders.ts`. Guaranteed Thunderstone Mana and Gold rewards carry
 into later inspected packets. `scaled-damage.ts` shares pacing, vulnerability,

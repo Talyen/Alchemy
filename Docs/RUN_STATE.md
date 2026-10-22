@@ -198,10 +198,12 @@ Companion follow-up with the engine-owned `resolveBattleAction` end-turn request
 awards Dodge XP only after acceptance, and publishes the result atomically before
 discard or enemy animation.
 
-`BattleState` is the engine's execution shape, which may carry RNG and action
-callbacks. Use `battleSnapshot(state)` when converting engine or fixture state
+`BattleState` is the engine's execution shape, which may carry RNG, action
+callbacks, execution observers, and a Wish-offer sampler. Use `battleSnapshot(state)` when converting engine or fixture state
 to committed data; a type assertion does not remove executable fields. The
-helper strips execution metadata without drawing RNG or resolving gameplay.
+helper strips all execution metadata without drawing RNG or resolving gameplay.
+Inspection strips those borrowed capabilities before binding its own isolated
+resolution inputs; observer and sampler callbacks never enter committed state.
 
 Playback consumes detached `BattleTurnFrame` values and updates only
 `battle-presentation-store.displayedBattle`; cancellation or failed animation

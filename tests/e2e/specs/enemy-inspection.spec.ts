@@ -2,6 +2,8 @@ import { expect, test } from "../../fixtures/e2e";
 import { makeCard, seedRandom, startBattleWithDeck, assertNoOverflow } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
+import { controllerInput } from "../controller-input";
+import { expectUnfocused } from "../focus-input";
 
 test(
   "enemy inspection preserves battle and fades portrait hover before card inspection",
@@ -38,9 +40,9 @@ test(
     await expect(tooltip).toContainText(cardName!);
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
-    await expect(enemy).toBeFocused();
+    await expectUnfocused(page);
     await expect(tooltip).toHaveCount(0);
-    await page.keyboard.press("Enter");
+    await controllerInput(page).activate(enemy);
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Close enemy inspection" })).toBeFocused();
     await dialog.getByTestId("card-selection-grid").getByRole("button").first().focus();
@@ -67,11 +69,11 @@ test("Bestiary uses the same trait and ability inspection without revealing undi
   await expect(tooltip).toHaveCount(0);
   for (const name of ["Slash", "Serrated Edge", "Block"])
     await expect(dialog.getByRole("img", { name, exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "Serrated Edge", exact: true }).focus();
+  await controllerInput(page).reach(dialog.getByRole("button", { name: "Serrated Edge", exact: true }));
   await expect(tooltip).toContainText("Deal 2 Physical or Bleed damage");
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
-  await expect(bandit).toBeFocused();
+  await expectUnfocused(page);
   await expect(tooltip).toHaveCount(0);
   const undiscovered = page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first();
   await undiscovered.hover();

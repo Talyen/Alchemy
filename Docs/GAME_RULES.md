@@ -269,24 +269,29 @@ of its prior and granted values. Nested scopes inherit repeat suppression and re
 the legacy `uniqueRepeatActive` field, remain readable.
 
 `resource-reward-resolution.ts` owns Leech rewards and the resource reactions
-from Poison, Nature, and Holy hits. Combat supplies seeded chance checks and
-inspection supplies guaranteed outcomes; both preserve reward order and captured
-hit facts so later packets see the same known resources.
+from Poison, Nature, and Holy hits. `battle-sequence.ts` owns ordered step
+execution and defeat cutoffs for card sequences, enemy abilities, status ticks,
+and Wish rewards. An explicit reaction boundary selects settlement after each
+step or in the enclosing hit. Card Wishes settle between Wishes; triggered Holy
+Wishes settle with their enclosing hit. `wish-rewards.ts` retains Wish eligibility
+and reward ordering, and `companion-resolution.ts` retains Companion action scope,
+Bond scaling, captured damage facts, and fatal cutoffs.
 
-`battle-sequence.ts` owns ordered step execution and defeat cutoffs for card
-sequences, enemy abilities, status ticks, and Wish rewards. An explicit reaction
-boundary selects settlement after each step or in the enclosing hit. Card Wishes
-settle between Wishes; triggered Holy Wishes settle with their enclosing hit.
-`wish-rewards.ts` owns Wish eligibility, resource rewards, damage, and reaction
-boundaries for live combat and damage inspection. Hosts supply seeded rolls and
-execution or guaranteed, nonrandom projections; neither host assembles the stage
-order. Wish option sampling and selection remain in `wish.ts`.
-`companion-resolution.ts` likewise owns Companion action scope, Bond scaling,
-captured damage facts, reward order, and fatal cutoffs. `companion-effects.ts`
-binds live execution; inspection supplies guaranteed outcomes without sampling
-cards or random damage types. Alternative damage types advance only shared facts.
-This lets later card packets see known kills, crowd control, healing, and Mana
-from earlier Wish and Companion actions without consuming the live RNG stream.
+Battle inspection replays those production rules through `card-play.ts` or
+`enemy-turn-attack.ts`. It bypasses only action admission. Execution observers
+report offensive power before defenses and critical strikes; intermediate state
+still reflects defenses and prepared critical consequences for later packets.
+Random critical strikes and Dodge remain excluded from displayed inspection.
+
+`inspection-outcomes.ts` branches finite decisions into complete correlated
+worlds, without consuming gameplay RNG. Fractional procs and dependent damage
+retain ranges; disagreeing facts never fall back to the initial snapshot as
+computed truth. Unresolved draws, future-turn effects, or exceeded work budgets
+retain authored descriptions and explicit unknown projection results. Wish offer
+identities are deferred while immediate rewards resolve through their normal
+owner. The [handler guide](../src/lib/game-data/effects/BATTLE_HANDLERS.md#battle-inspection-ownership)
+owns projection limits, effect classification, observation boundaries, and the
+workflow for adding previewable mechanics.
 
 Pending Cinder Skin and Emberwake settlement remains in `enemy-attack-damage.ts`,
 using the existing damage path. Hit-specific preconditions and depth-first ordering

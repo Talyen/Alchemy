@@ -83,10 +83,27 @@ function applySingleEffect(
   combatTexts: CombatTextEvent[],
   context: CardEffectResolutionContext,
 ): BattleState {
+  if (state.observer)
+    return state.observer.effect(card, effect, () =>
+      resolveSingleEffect(state, card, effect, potionMult, combatTexts, context),
+    );
+  return resolveSingleEffect(state, card, effect, potionMult, combatTexts, context);
+}
+
+function resolveSingleEffect(
+  state: BattleState,
+  card: BattleCard,
+  effect: BattleCardEffect,
+  potionMult: number,
+  combatTexts: CombatTextEvent[],
+  context: CardEffectResolutionContext,
+): BattleState {
   if (isPlayerDefeated(state)) return state;
   if (effect.kind === "chance") {
     const rng = getBattleRng(state);
-    const branch = rollChance(effect.probability, rng) ? effect.successEffects : effect.failureEffects;
+    const success = rollChance(effect.probability, rng);
+    state.observer?.branch(effect, success);
+    const branch = success ? effect.successEffects : effect.failureEffects;
 
     return resolveBattleSequence(
       state,

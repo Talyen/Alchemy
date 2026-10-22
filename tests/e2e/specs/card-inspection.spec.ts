@@ -1,6 +1,7 @@
 import { savedActivityFixture } from "../../fixtures/run-activity";
-import { expect } from "@playwright/test";
-import { test } from "../../fixtures/e2e";
+import { expect, test } from "../../fixtures/e2e";
+import { controllerInput } from "../controller-input";
+import { expectUnfocused } from "../focus-input";
 import { critical, slow } from "../../playwright-tags";
 import {
   injectActiveBattle,
@@ -9,18 +10,29 @@ import {
   makeGoblinBattleState,
   seedRandom,
   startBattleWithDeck,
+  resumeInjectedRun,
 } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 
 test("inspects each battle pile without advancing combat", critical, async ({ page, fastBattle }) => {
   void fastBattle;
-  const slash = makeCard({ uid: 101, cost: 1 });
-  const block = makeCard({ id: "block", uid: 102 });
+  const effects = [
+    {
+      kind: "chance",
+      probability: 0.5,
+      successEffects: [{ kind: "player-status", status: "block", amount: 4 }],
+      failureEffects: [{ kind: "player-status", status: "block", amount: 8 }],
+    },
+    { kind: "damage", damageType: "physical", amount: 0, equalToBlock: true },
+  ];
+  const slash = makeCard({ uid: 101, cost: 1, effects });
+  const block = makeCard({ id: "block", uid: 102, effects });
   const anvil = makeCard({ id: "anvil", uid: 103 });
   const apple = makeCard({ id: "apple", uid: 104, consume: true });
   await injectActiveBattle(
     page,
     makeGoblinBattleState({
+      appliesFightPacing: false,
       hand: [slash],
       deck: [block],
       discard: [anvil],
@@ -30,6 +42,8 @@ test("inspects each battle pile without advancing combat", critical, async ({ pa
   );
   const battle = new BattlePage(page);
   const health = await battle.enemyHealth();
+  await battle.hand.first().hover();
+  await expect(page.locator(".hover-popup-panel[data-visible]")).toContainText("Deal 4–8 Physical damage");
   const boonsOpener = page.getByRole("button", { name: "Inspect Boons", exact: true });
   await boonsOpener.click();
   const boonsOverlay = page.getByTestId("battle-boon-inspect-overlay");
@@ -42,15 +56,18 @@ test("inspects each battle pile without advancing combat", critical, async ({ pa
     ["discard", "Discard Pile", "Anvil"],
   ] as const) {
     const opener = page.getByTestId(`${pile}-pile`).getByRole("button");
-    await opener.focus();
-    await page.keyboard.press("Enter");
+    await controllerInput(page).activate(opener);
     const dialog = page.getByRole("dialog", { name: title, exact: true });
     await expect(dialog.getByRole("img")).toHaveCount(1);
     await expect(dialog.getByRole("img", { name: image, exact: true })).toBeVisible();
+    if (pile === "draw") {
+      await dialog.getByRole("img", { name: image, exact: true }).hover();
+      await expect(page.locator(".hover-popup-panel[data-visible]")).toContainText("Deal 4–8 Physical damage");
+    }
     await expect(dialog.getByRole("button", { name: / · \d+ cards$/ })).toHaveCount(0);
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
-    await expect(opener).toBeFocused();
+    await expectUnfocused(page);
   }
   expect(await battle.enemyHealth()).toBe(health);
   await battle.playCardNamed("Slash");
@@ -76,6 +93,7 @@ test("shows an empty draft and updates the viewer after each pick", async ({ pag
     activity: savedActivityFixture("draft-deck"),
   });
   await page.goto("/");
+  await resumeInjectedRun(page);
   await page.getByRole("button", { name: "View Deck · 0 cards" }).click();
   await expect(page.getByRole("dialog").getByRole("heading", { name: "Deck", exact: true })).toBeVisible();
   await expect(page.getByRole("dialog").getByRole("img", { name: "Empty Deck", exact: true })).toBeVisible();

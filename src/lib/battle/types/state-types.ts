@@ -18,6 +18,8 @@ import type {
 import type { GearEffectManifest } from "@/lib/gear";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { CombatFlags } from "../combat-flags";
+import type { Rng } from "@/lib/rng";
+import type { BattleResolutionObserver } from "../resolution-observer";
 import type { UniqueGearBattleState } from "../unique-gear-state";
 
 export type { TrinketManifest };
@@ -172,7 +174,10 @@ export interface BattleResolution {
 
 /** Execution-only dependency; never retained in a committed or saved snapshot. */
 export interface BattleResolutionContext {
-  rng: () => number;
+  rng: Rng;
+  observer?: BattleResolutionObserver;
+  /** A deferred offer has pending choices but no identities until external input. */
+  sampleWishOptions?: (sample: () => BattleCard[]) => { cards: BattleCard[]; deferred: boolean };
   action?: BattleActionContext;
   onEmptyDraw?: (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
 }

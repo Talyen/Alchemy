@@ -47,7 +47,7 @@ function tryDodgePacket(
   options: { target: "player" | "enemy"; chance: number; canDodge: boolean },
 ): BattleState | null {
   if (!options.canDodge) return null;
-  if (!rollPercent(options.chance, getBattleRng(state))) return null;
+  if (!rollPercent(options.chance, getBattleRng(state), "dodge")) return null;
   mergeCombatText(combatTexts, {
     target: options.target,
     kind: "notice",

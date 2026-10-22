@@ -5,7 +5,7 @@ import {
   canInitiateElementalReaction,
   canShatter,
 } from "./elemental-reactions";
-import { readCombatFlag } from "./action-context";
+import { readCombatFlag, resolveSecondaryAction } from "./action-context";
 import { scalePercent } from "./amount-helpers";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
@@ -19,6 +19,7 @@ import { applyEncounterThorns } from "./encounter-trait-events";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
+import { observeAttackPower } from "./resolution-observer";
 
 type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
 
@@ -139,8 +140,10 @@ export function dealDamageToEnemy(
       bonus: baseDamageBonus,
       companionAttack: context?.origin === "companion",
     }) <= 0
-  )
+  ) {
+    observeAttackPower(state, packet, 0);
     return state;
+  }
   const dodged = tryDodgePlayerAttackPacket(state, combatTexts);
   if (dodged) {
     // A dodge deals no damage, so dodged packets stay out of the resolved
@@ -159,6 +162,26 @@ export function dealDamageToEnemy(
     computeCardAttackPower(consumed.state, packet, card, { ...context, baseDamageBonus }).damage > 0;
   const shatterDamage = shatter ? state.reactions.shatterDamage : 0;
   const damageState = shatter ? applyShatter(consumed.state, combatTexts) : consumed.state;
+
+  if (state.observer) {
+    const power = computeCardAttackPower(damageState, packet, card, { ...context, baseDamageBonus }, false).damage;
+    const armorBonus =
+      packet.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0
+        ? state.enemyMitigation.armor * (context?.damageMultiplier ?? 1)
+        : 0;
+    observeAttackPower(state, packet, power + armorBonus);
+    if (packet.damageType !== "physical" && consumed.physicalBonus > 0 && power + armorBonus > 0) {
+      resolveSecondaryAction(damageState, "reward", (secondary) => {
+        const followUp = { kind: "damage" as const, damageType: "physical" as const, amount: consumed.physicalBonus };
+        observeAttackPower(
+          state,
+          followUp,
+          computeCardAttackPower(secondary, followUp, undefined, undefined, false).damage,
+        );
+        return secondary;
+      });
+    }
+  }
 
   // Resolve magnitude and defenses before riders, follow-up hits, then reactions.
   const { nextState, modifiedDamage, critical } = computeCardDamageToEnemy(damageState, packet, card, {

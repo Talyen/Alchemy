@@ -29,6 +29,30 @@ function checkPaths(ruleId: string, paths: string[], code: string, lines: number
 }
 
 describe("Oxlint policies", () => {
+  it("keeps inspection dependent on production action owners rather than individual combat rules", () => {
+    checkPolicy("no-restricted-imports", [
+      {
+        filePath: "src/lib/battle/card-damage-inspection.ts",
+        code: [
+          'import { resolveInspectedCardPlay } from "./card-play";',
+          'import { applyEnemyAbility } from "./enemy-turn-attack";',
+          'import { computeCardAttackPower } from "./damage-calc";',
+          'import { addEnemyStatus } from "./status-state";',
+          'import { applyCardEffects } from "./effect-handlers";',
+        ].join("\n"),
+        lines: [3, 4, 5],
+      },
+      {
+        filePath: "src/lib/battle/inspection-outcomes.ts",
+        code: [
+          'import type { BattleResolutionObserver } from "./resolution-observer";',
+          'import { applyCardEffects } from "./effect-handlers";',
+        ].join("\n"),
+        lines: [2],
+      },
+    ]);
+  });
+
   it("reserves visit initialization for room entry across route, command, and headless adapters", () => {
     const code = 'import { initializeShopVisit } from "@/features/alchemy/run-loop/run/room-visit-initialization";';
     const paths = [

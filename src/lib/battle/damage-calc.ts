@@ -26,7 +26,9 @@ function applyCrit(damage: number, state: BattleState, guaranteed = false, rollC
   const chance =
     GLOBAL_CRIT_CHANCE_PERCENT + (state.deathsDoorActive ? state.gearEffects.criticalChanceWhileDeathsDoor : 0);
   const critical =
-    guaranteed || readCombatFlag(state, "nextHitCrit") || (rollCritical && rollPercent(chance, getBattleRng(state)));
+    guaranteed ||
+    readCombatFlag(state, "nextHitCrit") ||
+    (rollCritical && rollPercent(chance, getBattleRng(state), "critical"));
   return {
     damage: critical && damage > 0 ? damage * CRIT_MULTIPLIER : damage,
     critical: critical && damage > 0,
