@@ -33,6 +33,19 @@ temporary feedback flags; those flags may clear before enough stable frames arri
 For fitted text, sample after the frame's resize observers finish, rather than
 reading intermediate geometry from a requestAnimationFrame callback.
 
+Responsive functional coverage uses five boundary viewports (narrow, minimum
+height, standard, ultrawide and 4K), plus focused maximum-size and DPR journeys.
+It protects containment, reachable actions and resize continuity rather than
+exact decorative gaps, colors or scale ratios. Trait tooltips exercise the
+maximum-size/minimum-height boundary in both Collection and Battle. The layout
+review gallery owns the wider visual matrix.
+
+Collection discovery and authored card tooltip wiring live in the Collection DOM
+suite; Bestiary retains the real pointer/keyboard inspection journey. Card Shop
+removal combines resize continuity with cancellation, exact deck/Gold settlement,
+repeat-input protection and fresh-page resume. Its DOM counterpart uses the real
+picker for rejected-command recovery and pending-save admission.
+
 ## Rendered accessibility and visual regression
 
 `specs/accessibility.spec.ts` runs axe WCAG A/AA checks on the live menu,

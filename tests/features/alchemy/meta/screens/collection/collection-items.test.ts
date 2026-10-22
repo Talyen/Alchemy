@@ -4,7 +4,6 @@ import {
   getCollectionPageItems,
   getCollectionTotalPages,
 } from "@/features/alchemy/meta/screens/collection/collection-items";
-import { COLLECTION_PAGE_SIZE, BESTIARY_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import { cardLibrary, characters, enemyBestiary, KNIGHT_UNLOCK_MESSAGE, trinketLibrary } from "@/lib/game-data";
 import { uniqueItemList } from "@/lib/gear";
 
@@ -27,16 +26,6 @@ function allUniqueItems(discoveredUniqueIds: string[] = []) {
 }
 
 describe("collection item helpers", () => {
-  it("calculates total pages from the active tab library", () => {
-    expect(getCollectionTotalPages("heroes")).toBe(
-      Math.max(1, Math.ceil(Object.keys(characters).length / COLLECTION_PAGE_SIZE)),
-    );
-    expect(getCollectionTotalPages("cards")).toBe(Math.max(1, Math.ceil(cardLibrary.length / COLLECTION_PAGE_SIZE)));
-    expect(getCollectionTotalPages("bestiary")).toBe(Math.max(1, Math.ceil(enemyBestiary.length / BESTIARY_PAGE_SIZE)));
-    expect(getCollectionTotalPages("trinkets")).toBe(Math.max(1, Math.ceil(trinketLibrary.length / TRINKET_PAGE_SIZE)));
-    expect(getCollectionTotalPages("uniques")).toBe(Math.max(1, Math.ceil(uniqueItemList.length / TRINKET_PAGE_SIZE)));
-  });
-
   it("returns hidden card copy when a card has not been discovered", () => {
     const [item] = getCollectionPageItems({
       collectionTab: "cards",

@@ -1,7 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
-const SUBPIXEL_GAP_TOLERANCE = 0.5;
-
 export async function assertNoOverflow(page: Page, screenName: string) {
   const layout = await page.evaluate(() => ({
     width: document.documentElement.scrollWidth,
@@ -36,38 +34,6 @@ export async function assertStageFitsViewport(page: Page) {
   expect(bounds.left).toBeGreaterThanOrEqual(-1);
   expect(bounds.right).toBeLessThanOrEqual(bounds.viewportWidth + 1);
   expect(bounds.bottom).toBeLessThanOrEqual(bounds.viewportHeight + 1);
-}
-
-export async function assertHorizontalNeighborGap(
-  locator: Locator,
-  { minGap = 16, minCount = 2 }: { minGap?: number; minCount?: number } = {},
-) {
-  await expect(locator.first()).toBeVisible();
-  await expect(async () => {
-    const layout = await locator.evaluateAll((elements) => {
-      const first = elements[0];
-      const second = elements[1];
-      if (!first || !second) return null;
-      const a = first.getBoundingClientRect();
-      const b = second.getBoundingClientRect();
-      const stage = first.closest('[data-testid="vr-stage"]') ?? document.querySelector('[data-testid="vr-stage"]');
-      const stageScale =
-        stage instanceof HTMLElement && stage.offsetWidth > 0
-          ? stage.getBoundingClientRect().width / stage.offsetWidth
-          : 1;
-      const contentScale = Number.parseFloat(getComputedStyle(first).getPropertyValue("--content-scale"));
-      const scale = stageScale * (Number.isFinite(contentScale) && contentScale > 0 ? contentScale : 1);
-      return {
-        count: elements.length,
-        width: Math.min(a.width, b.width),
-        gap: (b.x - a.right) / (Number.isFinite(scale) && scale > 0 ? scale : 1),
-      };
-    });
-    expect(layout).not.toBeNull();
-    expect(layout!.count).toBeGreaterThanOrEqual(minCount);
-    expect(layout!.width).toBeGreaterThan(0);
-    expect(layout!.gap).toBeGreaterThanOrEqual(minGap - SUBPIXEL_GAP_TOLERANCE);
-  }).toPass({ timeout: 5_000 });
 }
 
 /** Wait for artwork and geometry; inspection dialogs may keep the ready backdrop inert. */

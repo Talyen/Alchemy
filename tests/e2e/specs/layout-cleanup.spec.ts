@@ -1,8 +1,16 @@
 import { expect, test } from "../../fixtures/e2e";
 import type { Locator } from "@playwright/test";
-import { startAtDestination, waitForLayoutSettled, assertNoOverflow } from "../../browser-helpers";
+import {
+  makeCard,
+  readSavedGame,
+  withSavedGame,
+  startAtDestination,
+  waitForLayoutSettled,
+  assertNoOverflow,
+} from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
-import { slow } from "../../playwright-tags";
+import { ShopPage } from "../../pages/shop-page";
+import { critical, slow } from "../../playwright-tags";
 
 async function boxes(locator: Locator) {
   return locator.evaluateAll((elements) =>
@@ -12,46 +20,6 @@ async function boxes(locator: Locator) {
     }),
   );
 }
-
-async function expectCenteredRows(locator: Locator, maxColumns: number, width: number) {
-  const rects = await boxes(locator);
-  expect(rects.length).toBeGreaterThan(0);
-  const rows: Array<typeof rects> = [];
-  for (const rect of rects) {
-    const row = rows.find((items) => Math.abs(items[0]!.y - rect.y) < 4);
-    if (row) row.push(rect);
-    else rows.push([rect]);
-  }
-  for (const row of rows) {
-    expect(row.length).toBeLessThanOrEqual(maxColumns);
-    const left = Math.min(...row.map((r) => r.x));
-    const right = Math.max(...row.map((r) => r.x + r.width));
-    expect(Math.abs((left + right) / 2 - width / 2)).toBeLessThan(2);
-  }
-}
-
-test(
-  "Collection keeps its column limits and centered rows on short, tall, and large displays",
-  slow,
-  async ({ page }) => {
-    test.setTimeout(60_000);
-    await page.setViewportSize({ width: 1470, height: 738 });
-    await new MenuPage(page).gotoCollection();
-    const tiles = page.getByRole("button", { name: /^Inspect/ });
-    for (const viewport of [
-      { width: 1470, height: 738 },
-      { width: 3840, height: 2160 },
-    ]) {
-      await page.setViewportSize(viewport);
-      for (const tab of ["Heroes", "Bestiary"]) {
-        await page.getByRole("button", { name: tab, exact: true }).click();
-        await page.mouse.move(0, 0);
-        await waitForLayoutSettled(page, tiles);
-        await expectCenteredRows(tiles, tab === "Bestiary" ? 3 : 4, viewport.width);
-      }
-    }
-  },
-);
 
 test("Corruption picker capacity is independent of resize history and preserves selection", slow, async ({ page }) => {
   await page.setViewportSize({ width: 1470, height: 956 });
@@ -80,7 +48,6 @@ test("Corruption picker capacity is independent of resize history and preserves 
     expect(Math.abs(rect.y - initial[index]!.y)).toBeLessThan(2);
   }
   await expect(page.getByRole("button", { name: "Corrupt", exact: true })).toBeEnabled();
-  await expectCenteredRows(cards, 4, 1470);
 });
 
 test("Collection and Homestead keep reachable actions at maximum Game Size", slow, async ({ page }) => {
@@ -107,11 +74,22 @@ test("Collection and Homestead keep reachable actions at maximum Game Size", slo
 });
 
 test(
-  "Card Shop removal bounds its fitting area and preserves confirmation through resizing",
-  slow,
-  async ({ page }) => {
+  "Card Shop removal preserves selection through resize, charges once, and survives resume",
+  critical,
+  async ({ page, fastBattle }) => {
+    void fastBattle;
     await page.setViewportSize({ width: 1470, height: 956 });
-    await startAtDestination(page, { gold: 9999 }, { forceDestination: "Card Shop" });
+    await startAtDestination(
+      page,
+      {
+        runGold: 9999,
+        runDeck: [
+          makeCard({ id: "bash", uid: 201 }),
+          ...Array.from({ length: 5 }, (_, index) => makeCard({ uid: 202 + index })),
+        ],
+      },
+      { forceDestination: "Card Shop" },
+    );
     await page.getByRole("button", { name: "Card Shop", exact: true }).click();
     await page.getByRole("button", { name: /^Remove Card/ }).click();
     const cards = page.getByRole("button", { name: /^Select / });
@@ -119,11 +97,21 @@ test(
     const cancel = page.getByRole("button", { name: "Cancel", exact: true });
     await expect(cards).toHaveCount(6);
     const heading = page.getByRole("heading", { name: "Remove Card", exact: true });
-    const top = (await heading.boundingBox())!.y;
-    const bottom = (await cancel.boundingBox())!;
-    expect(Math.abs((top + bottom.y + bottom.height) / 2 - 956 / 2)).toBeLessThan(3);
-    expect(bottom.y - Math.max(...(await boxes(cards)).map((r) => r.y + r.height))).toBeLessThan(100);
-    await cards.first().click();
+    await expect(heading).toBeInViewport();
+    await expect(cancel).toBeInViewport();
+    const shop = new ShopPage(page);
+    const saved = await readSavedGame(page);
+    const before = saved.activeRun!;
+    const goldBefore = saved.gold;
+    const selected = page.getByRole("button", { name: "Select Bash", exact: true });
+    await selected.click();
+    // Cancelling must leave the same deck and Gold available for a later removal.
+    await cancel.click();
+    await expect(shop.heading).toBeVisible();
+    expect(await shop.gold()).toBe(goldBefore);
+    expect((await readSavedGame(page)).activeRun?.runDeck).toEqual(before.runDeck);
+    await shop.startCardRemoval();
+    await selected.click();
     const remove = page.getByRole("button", { name: /^Remove Gold/ });
     await expect(remove).toBeEnabled();
     await page.setViewportSize({ width: 1280, height: 720 });
@@ -131,7 +119,22 @@ test(
     await expect(cancel).toBeInViewport();
     await expect(remove).toBeInViewport();
     await expect(remove).toBeEnabled();
-    await remove.click();
-    await expect(page.getByRole("heading", { name: "Card Shop", exact: true })).toBeVisible();
+    const price = Number((await remove.locator("span.tabular-nums").last().innerText()).replaceAll(",", ""));
+    expect(price).toBeGreaterThan(0);
+    await remove.click({ clickCount: 2, delay: 20 });
+    await expect(shop.heading).toBeVisible();
+    await expect.poll(() => shop.gold()).toBe(goldBefore - price);
+    const expectedDeck = before.runDeck.filter((card) => card.id !== "bash");
+    expect(expectedDeck).toHaveLength(5);
+    await expect.poll(async () => (await readSavedGame(page)).activeRun?.runDeck).toEqual(expectedDeck);
+    await withSavedGame(page, async (resumed) => {
+      await expect(new ShopPage(resumed).heading).toBeVisible();
+      expect(await new ShopPage(resumed).gold()).toBe(goldBefore - price);
+      expect((await readSavedGame(resumed)).activeRun?.runDeck).toEqual(expectedDeck);
+      await expect(resumed.getByRole("button", { name: "Remove Card - Sold Out", exact: true })).toBeDisabled();
+      await resumed.getByRole("button", { name: "View Deck · 5 cards" }).click();
+      await expect(resumed.getByRole("dialog").getByRole("img", { name: "Bash", exact: true })).toHaveCount(0);
+      await expect(resumed.getByRole("dialog").getByRole("img", { name: "Slash", exact: true })).toHaveCount(5);
+    });
   },
 );

@@ -24,7 +24,7 @@ export const E2E_ROUTES = Object.freeze({
   gear: e2eRoute("gear Playwright flows", ["armory"]),
   mystery: e2eRoute("mystery Playwright flow", ["destination-progression"], "Mystery"),
   homestead: e2eRoute("homestead Playwright flow", ["homestead-flow"]),
-  collection: e2eRoute("collection Playwright flow", ["collection"]),
+  collection: e2eRoute("collection Playwright flow", ["enemy-inspection"], "Bestiary"),
   talents: e2eRoute("talents Playwright flow", ["talents-flow"]),
   options: e2eRoute("options Playwright flow", ["menu-navigation"], "controller-equivalent options"),
   locks: e2eRoute("progression locks Playwright flow", ["menu-navigation"], "Progression Locks"),
