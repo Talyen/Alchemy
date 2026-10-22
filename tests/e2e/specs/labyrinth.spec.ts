@@ -1,3 +1,4 @@
+import { expectUnfocused } from "../focus-input";
 import { controllerInput } from "../controller-input";
 import { expect, test } from "../../fixtures/e2e";
 import { gridLabyrinthMapFixture, twoFloorLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
@@ -43,7 +44,7 @@ test.describe("Labyrinth exploration", critical, () => {
     await expect(page.getByRole("button", { name: "Fight", exact: true })).toHaveCount(0);
     await expect(page.getByText("Move to an adjacent chamber to enter.")).toHaveCount(0);
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("button", { name: /^Boss chamber/ })).toBeFocused();
+    await expectUnfocused(page);
   });
 
   test("completed branches remain accessible and discovery survives returning from another room", async ({ page }) => {
@@ -68,7 +69,7 @@ test.describe("Labyrinth exploration", critical, () => {
     await expect(room.locator("img")).toHaveAttribute("src", /knight(?:-[\w-]+)?\.webp/);
     await expect(room.locator("img")).not.toHaveClass(/grayscale/);
     await expect(page.getByRole("button", { name: /^Entrance chamber/ }).locator("img")).toHaveClass(/grayscale/);
-    await expect(diagonal.locator("img")).not.toHaveAttribute("src", /labyrinth-shrouded-/);
+    await expect(diagonal.locator("img:not([aria-hidden])")).not.toHaveAttribute("src", /labyrinth-shrouded-/);
     const entrance = page.getByRole("button", { name: /^Entrance chamber/ });
     await entrance.click();
     await expect(page.getByText("Floor 1", { exact: true })).toBeVisible();

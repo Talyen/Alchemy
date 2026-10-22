@@ -33,6 +33,28 @@ temporary feedback flags; those flags may clear before enough stable frames arri
 For fitted text, sample after the frame's resize observers finish, rather than
 reading intermediate geometry from a requestAnimationFrame callback.
 
+## Rendered accessibility and visual regression
+
+`specs/accessibility.spec.ts` runs axe WCAG A/AA checks on the live menu,
+Options, Battle and card inspection. It complements focus journeys and JSX lint;
+passing automated checks does not establish complete screen-reader usability.
+
+`npm run test:visual` uses `playwright.visual.config.ts` and the shared fixtures
+to compare Battle, card inspection and English/German Options at 1920 × 1080.
+Seeded checkpoints, reduced motion and settled artwork/fonts make captures
+repeatable. The dedicated CI job uses macOS 15 and the lockfile's Playwright
+Chromium; Darwin baselines are committed under `tests/visual/baselines/darwin/`.
+Run a fresh web build first. For an intentional visual change, use
+`npm run test:visual -- --update-snapshots` on macOS, inspect every changed
+image, then rerun without updates. Never update baselines merely to clear a
+failure. Differences and failure diagnostics are retained by CI. Other OSes
+need separately reviewed baselines before running this visual suite. Local
+builds and browser execution retain the explicit opt-in policy below.
+
+These four baselines protect composition, text fitting and layering that
+functional assertions cannot see; the wider desktop layout-review gallery
+remains the tool for manual review across viewport sizes.
+
 ## Running focused checks
 
 ### Local execution policy

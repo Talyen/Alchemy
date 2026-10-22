@@ -86,11 +86,7 @@ function applyHitRewards(
 }
 
 /** Shared offensive stage; no hits, rewards, mitigation, or random selection. */
-export function prepareEnemyAbilityDamage(
-  state: BattleState,
-  effect: EnemyAbilityDamageEffect,
-  brawlerPenalty: boolean,
-) {
+function prepareEnemyAbilityDamage(state: BattleState, effect: EnemyAbilityDamageEffect, brawlerPenalty: boolean) {
   const activatedTraits: string[] = [];
   let amountMultiplier = brawlerPenalty ? BRAWLER_PENALTY_MULTIPLIER : 1;
   let flatBonus = 0;

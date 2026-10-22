@@ -1,21 +1,10 @@
-import {
-  isPotionCard,
-  companionLibrary,
-  type BattleCard,
-  type BattleCardEffect,
-  type PlayerStatusId,
-} from "@/lib/game-data";
+import { isPotionCard, companionLibrary, type BattleCardEffect, type PlayerStatusId } from "@/lib/game-data";
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { applyPotionMultiplier, halveRounded } from "./amount-helpers";
 import { writeCombatFlag } from "./action-context";
 import { reduceEnemyArmor } from "./enemy-mitigation-state";
 import { mergeCombatText } from "./combat-text-events";
-import {
-  hasCardHealing,
-  type EffectHandlers,
-  type EffectHandler,
-  type CardEffectResolutionContext,
-} from "./effect-handlers/handler-types";
+import { hasCardHealing, type EffectHandlers, type EffectHandler } from "./effect-handlers/handler-types";
 import type { BattleState, CombatTextEvent } from "./types";
 
 type PlayerStatusEffect = Extract<BattleCardEffect, { kind: "player-status" }>;
@@ -202,20 +191,4 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
     ...FLAG_HANDLERS,
   } satisfies Partial<EffectHandlers>;
   return handlers;
-}
-
-export type CardUtilityHandlers = ReturnType<typeof createCardUtilityHandlers>;
-export function applyCardUtilityEffect(
-  handlers: CardUtilityHandlers,
-  state: BattleState,
-  card: BattleCard,
-  effect: BattleCardEffect,
-  multiplier: number,
-  texts: CombatTextEvent[],
-  context?: CardEffectResolutionContext,
-): BattleState | undefined {
-  if (!Object.hasOwn(handlers, effect.kind)) return undefined;
-  // The table and key derive from the same effect discriminant.
-  const handler = handlers[effect.kind as keyof CardUtilityHandlers] as EffectHandler;
-  return handler(state, card, effect, multiplier, texts, context);
 }

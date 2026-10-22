@@ -2,7 +2,13 @@ import { savedActivityFixture } from "../../fixtures/run-activity";
 import { controllerInput } from "../controller-input";
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
-import { injectSaveState, makeStartingDeck, readSavedGame, withSavedGame } from "../../browser-helpers";
+import {
+  injectSaveState,
+  makeStartingDeck,
+  readSavedGame,
+  withSavedGame,
+  resumeInjectedRun,
+} from "../../browser-helpers";
 import { DestinationPage } from "../../pages/destination-page";
 import { MysteryPage } from "../../pages/mystery-page";
 import { CorruptionPage } from "../../pages/corruption-page";
@@ -33,6 +39,7 @@ test(
       }),
     });
     await page.goto("/");
+    await resumeInjectedRun(page);
     await expect(page.getByRole("button", { name: /Take the Offering/ })).toBeVisible();
     const before = (await readSavedGame(page)).activeRun?.runTalentXP?.holy ?? 0;
     await page.getByRole("button", { name: /Take the Offering/ }).click({ clickCount: 2, delay: 20 });

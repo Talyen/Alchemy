@@ -35,7 +35,7 @@ function scalePlayerLeechHeal(state: BattleState, amount: number): number {
   return amount * (hasEncounterBenefit(state, "blood-feast") ? LABYRINTH_MODIFIER_CONFIG.double : 1);
 }
 
-export function leechHealingAmount(
+function leechHealingAmount(
   state: BattleState,
   amount: number,
   afflicted = state.enemyStatuses.poison > 0 || state.enemyStatuses.bleed > 0,
@@ -58,7 +58,7 @@ export function applyLeechHealing(
 }
 
 /** Shared base scaler: desperate → gear → Deep Siphon → blood-feast. */
-export function scaleLeechBase(state: BattleState, amount: number): number {
+function scaleLeechBase(state: BattleState, amount: number): number {
   const base = scaledGearLeechHeal(applyDesperateLeechBonus(state, amount), state.gearEffects);
   return scalePlayerLeechHeal(state, base + state.talentEffects.leechHealingBonus);
 }

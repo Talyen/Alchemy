@@ -9,7 +9,7 @@ import type { RandomDecision, Rng } from "@/lib/rng";
 import type { BattleResolutionObserver, ObservedAttack } from "./resolution-observer";
 
 /** Classification is exhaustive; execution, including draws and scheduling, stays with the registry. */
-export const INSPECTION_EFFECT_POLICY = {
+const INSPECTION_EFFECT_POLICY = {
   damage: "resolve",
   "random-damage": "branch",
   "self-damage": "resolve",

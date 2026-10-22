@@ -8,6 +8,7 @@ import {
   makeHighDamageCard,
   SAVE_KEY,
   readSavedGame,
+  resumeInjectedRun,
 } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
@@ -33,6 +34,7 @@ async function startBossBattle(page: Page, act: 1 | 3) {
     }),
   });
   await page.goto("/");
+  await resumeInjectedRun(page);
 }
 
 test.describe("Run Outcomes", () => {

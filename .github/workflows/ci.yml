@@ -610,3 +610,31 @@ jobs:
             reports/current-run.*
             reports/runs/
           retention-days: 1
+
+  visual:
+    name: Player screen visual regression
+    needs: build
+    # Match the committed Darwin baselines; Linux/Windows text rasterization differs.
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: dist
+          path: dist/
+      - uses: ./.github/actions/setup-playwright
+        with:
+          install-deps: "false"
+      - run: npm run test:visual
+      - name: Retain visual differences
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: player-screen-visual-diffs
+          path: |
+            test-results/
+            playwright-report/
+            reports/
+          retention-days: 7

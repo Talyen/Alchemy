@@ -8,3 +8,26 @@ updates:
       github-actions:
         patterns:
           - "*"
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+        update-types: ["minor", "patch"]
+      vite:
+        patterns: ["vite", "@vitejs/*", "@rolldown/*"]
+        update-types: ["minor", "patch"]
+      vitest:
+        patterns: ["vitest", "@vitest/*"]
+        update-types: ["minor", "patch"]
+      tailwind:
+        patterns: ["tailwindcss", "@tailwindcss/*", "tailwind-merge"]
+        update-types: ["minor", "patch"]
+      testing-library:
+        patterns: ["@testing-library/*"]
+        update-types: ["minor", "patch"]
+    commit-message:
+      prefix: chore

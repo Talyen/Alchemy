@@ -48,6 +48,7 @@ module.exports = async function hardenElectronAfterPack(context) {
     [FuseV1Options.OnlyLoadAppFromAsar]: true,
     [FuseV1Options.LoadBrowserProcessSpecificV8Snapshot]: true,
     [FuseV1Options.GrantFileProtocolExtraPrivileges]: false,
+    [FuseV1Options.WasmTrapHandlers]: true,
     resetAdHocDarwinSignature: targetPlatform === "darwin",
     strictlyRequireAllFuses: true,
   });

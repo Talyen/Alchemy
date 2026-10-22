@@ -89,7 +89,7 @@ export default defineConfig(({ mode, command }) => {
         checker({
           typescript: { tsconfigPath: "./tsconfig.json" },
         }),
-      process.env.ANALYZE &&
+      Boolean(process.env.ANALYZE) &&
         visualizer({
           open: !process.env.CI,
           gzipSize: true,
@@ -112,7 +112,8 @@ export default defineConfig(({ mode, command }) => {
     ].filter(Boolean),
     build: {
       outDir: policy.rendererDirectory,
-      target: "esnext",
+      // Desktop follows Electron 45; web QA uses Vite's interoperable browser baseline.
+      target: mode === "desktop" ? "chrome156" : "baseline-widely-available",
       assetsInlineLimit: 4096,
       reportCompressedSize: Boolean(process.env.ANALYZE),
       sourcemap: resolveSourcemapMode(mode),

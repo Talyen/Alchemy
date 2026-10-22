@@ -79,6 +79,7 @@ describe("canonical verification commands", () => {
         .sort(),
     ).toEqual(
       [
+        "dependency-security",
         "localization",
         "static-checks",
         "documentation-checks",

@@ -7,8 +7,6 @@ import { readGameplayState } from "./gameplay-state-reads";
 import type { GearStateFields } from "./gear-store-types";
 export type { GearCombatRestrictions } from "./gear-combat-restrictions";
 
-export type { GearSaveFields } from "./gear-store-types";
-
 export type GearArmorySlice = GearStateFields;
 
 export function selectHasAnyOwnedGear(

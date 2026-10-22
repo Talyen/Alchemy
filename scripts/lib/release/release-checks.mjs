@@ -180,6 +180,7 @@ export async function verifyDesktopPackage() {
     [FuseV1Options.OnlyLoadAppFromAsar, FuseState.ENABLE],
     [FuseV1Options.LoadBrowserProcessSpecificV8Snapshot, FuseState.ENABLE],
     [FuseV1Options.GrantFileProtocolExtraPrivileges, FuseState.DISABLE],
+    [FuseV1Options.WasmTrapHandlers, FuseState.ENABLE],
   ]);
   for (const [fuse, expected] of requiredFuses) {
     if (wire[fuse] !== expected) throw new Error(`Electron fuse ${fuse} was ${wire[fuse]}; expected ${expected}.`);

@@ -1,4 +1,5 @@
-import { spawnSync } from "node:child_process";
+import extract from "@electron-internal/extract-zip";
+import { downloadArtifact } from "@electron/get";
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -13,8 +14,6 @@ import {
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const require = createRequire(import.meta.url);
-const { downloadArtifact } = require("@electron/get");
-const extract = require("extract-zip");
 
 const { version } = require(path.join(electronRoot, "package.json"));
 const checksums = require(path.join(electronRoot, "checksums.json"));
@@ -71,34 +70,6 @@ async function locateRelativeExecutable(distPath) {
   );
 }
 
-async function extractZip(zipPath, distPath) {
-  await fs.promises.mkdir(distPath, { recursive: true });
-  console.log(`Extracting Electron zip into ${distPath}...`);
-
-  if (process.platform === "win32") {
-    await extract(zipPath, { dir: distPath });
-    return;
-  }
-
-  try {
-    const result = spawnSync("unzip", ["-oq", zipPath, "-d", distPath], {
-      stdio: "inherit",
-      timeout: 120_000,
-    });
-
-    if (result.error || result.status !== 0) {
-      console.warn(
-        `unzip failed (status: ${result.status ?? "unknown"}), falling back to extract-zip JS library...`,
-        result.error || "",
-      );
-      await extract(zipPath, { dir: distPath });
-    }
-  } catch (err) {
-    console.warn("unzip process failed, falling back to extract-zip JS library...", err);
-    await extract(zipPath, { dir: distPath });
-  }
-}
-
 async function downloadElectronOnce() {
   const distPath = path.join(electronRoot, "dist");
   console.log(`Fetching Electron ${version} for ${process.platform}-${process.arch}...`);
@@ -111,7 +82,8 @@ async function downloadElectronOnce() {
   });
   console.log(`Downloaded Electron zip to ${zipPath}`);
 
-  await extractZip(zipPath, distPath);
+  await fs.promises.mkdir(distPath, { recursive: true });
+  await extract(zipPath, { dir: distPath });
 
   const relativePath = await locateRelativeExecutable(distPath);
   await fs.promises.writeFile(path.join(electronRoot, "path.txt"), relativePath);

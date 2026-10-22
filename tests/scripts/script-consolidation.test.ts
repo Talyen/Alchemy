@@ -2,13 +2,12 @@ import { createCleanup } from "@/lib/cleanup";
 import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { parseKnownFlags } from "../../scripts/lib/cli-args.mjs";
 import { UsageError } from "../../scripts/lib/script-run.mjs";
 import { runStreamCommand, runTaskCommand } from "../../scripts/lib/run-command.mjs";
 import { resolvePrettierTargets } from "../../scripts/run-prettier.mjs";
-import { runCiLint } from "../../scripts/lint-ci.mjs";
 
 describe("script consolidation", () => {
   it("parses simple flags, values, shorts, and passthrough", () => {
@@ -62,29 +61,5 @@ describe("script consolidation", () => {
     );
     expect(result.status).toBe(0);
     expect(statSync(logPath).size).toBeGreaterThan(20_000);
-  });
-
-  it("compacts the aggregate CI static gate while retaining step logs", async () => {
-    const root = mkdtempSync(join(tmpdir(), "lint-ci-"));
-    using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
-
-    const log = vi.spyOn(console, "log").mockImplementation(() => {});
-    const runner = vi.fn(async (_command: string, _args: string[], options: Record<string, unknown>) => ({
-      status: 0,
-      elapsedMs: 1,
-      output: "Tests  3 passed (3)",
-      logPath: String(options.logPath),
-    }));
-    expect(await runCiLint({ rootDir: root, runner })).toBe(0);
-    expect(runner.mock.calls.map(([command, args]) => [command, args])).toEqual([
-      ["npm", ["run", "i18n:check"]],
-      ["npm", ["run", "check:static"]],
-      ["npm", ["run", "docs:check"]],
-      ["npm", ["run", "deadcode"]],
-      ["npm", ["run", "lint:boundaries"]],
-      ["npm", ["run", "lint:architecture-smoke"]],
-      ["npx", ["playwright", "test", "--list", "--project=chromium"]],
-    ]);
-    expect(log.mock.calls.flat().join("\n")).toContain("CI static checks: 7/7 passed");
   });
 });

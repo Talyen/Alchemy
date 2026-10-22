@@ -154,6 +154,27 @@ Execution plans under `Docs/Plans/` are workflow artifacts, not product correctn
 
 ## Static, build, and CI policy
 
+Development and CI use Node 24 (minimum 24.18) and npm 11; package engines and
+strict install checks enforce that supported toolchain. Peer dependencies are
+validated rather than bypassed. ESLint is installed only as the peer host for
+the plugins run through Oxlint's JS bridge; Oxlint remains the lint runner.
+
+Dependabot checks npm and Actions weekly. Related React, Vite, Vitest and Tailwind
+minor/patch updates travel together; major upgrades remain separate reviews.
+`npm run check:dependencies` audits all dependencies at moderate severity and
+above and runs in `lint:ci`. Do not bypass a new advisory without tracing its
+actual dependency path and exposure. Temporary overrides keep electron-builder
+on the maintained ESM Electron downloader and typed-rest-client on patched qs;
+remove each when its upstream dependency range incorporates the fix.
+Electron binary downloads use Electron's own hardened ZIP extractor. Install
+scripts are explicitly allowed for Electron, Sharp, Sentry CLI, SWC and hooks;
+optional fsevents scripts are disabled in favor of Node's watcher fallback.
+
+Desktop renderer output targets Electron 45's Chromium 156; web QA output uses
+Vite's widely available browser baseline. Keep the desktop target aligned when
+updating Electron. Packaged Windows smoke, native Steam overlay/input and release
+signing still need their respective platform and release checks.
+
 TypeScript 7 owns source and test compilation. Oxlint owns linting through
 `oxlint.config.ts`, with type-aware source checks supplied by `oxlint-tsgolint`.
 Prettier continues to own formatting. The Oxc and TypeScript 7 language-server

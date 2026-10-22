@@ -7,11 +7,14 @@
     "electron-winstaller": true,
     "ffmpeg-static": true,
     "lefthook": true,
-    "sharp": true
+    "sharp": true,
+    "@sentry/cli": true,
+    "@swc/core": true,
+    "fsevents": false
   },
   "engines": {
-    "node": "^20.19.0 || >=22.12.0",
-    "npm": ">=11"
+    "node": "^24.18.0",
+    "npm": "^11.0.0"
   },
   "type": "module",
   "main": "desktop/main.cjs",
@@ -133,7 +136,9 @@
     "i18n:extract": "node scripts/localization.mjs extract",
     "i18n:tasks": "node scripts/localization.mjs tasks",
     "i18n:apply": "node scripts/localization.mjs apply",
-    "i18n:check": "node scripts/localization.mjs check"
+    "i18n:check": "node scripts/localization.mjs check",
+    "check:dependencies": "npm audit --audit-level=moderate",
+    "test:visual": "cross-env PLAYWRIGHT_VITE_MODE=preview node scripts/run-compact.mjs playwright test --config playwright.visual.config.ts"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.8.0",
@@ -145,8 +150,8 @@
     "immer": "^11.1.8",
     "lucide-react": "^1.37.0",
     "motion": "^12.38.0",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "react-i18next": "^17.0.17",
     "steamworks.js": "^0.4.0",
     "tailwind-merge": "^3.5.0",
@@ -157,10 +162,10 @@
     "@babel/core": "^7.29.7",
     "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^21.0.1",
-    "@electron/asar": "^3.4.1",
+    "@electron/asar": "^4.3.1",
     "@electron/fuses": "^2.1.3",
-    "@electron/get": "^2.0.0",
-    "@playwright/test": "^1.60.0",
+    "@electron/get": "^5.1.0",
+    "@playwright/test": "^1.64.1",
     "@rolldown/plugin-babel": "^0.2.3",
     "@sentry/vite-plugin": "^5.4.0",
     "@stryker-mutator/core": "^10.0.0",
@@ -174,33 +179,35 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
-    "@vitest/coverage-v8": "^4.1.6",
+    "@vitest/coverage-v8": "^4.1.12",
     "babel-plugin-react-compiler": "^1.0.0",
     "commit-and-tag-version": "^12.6.0",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
     "dependency-cruiser": "18.5.0",
-    "electron": "^39.2.6",
-    "electron-builder": "^26.0.12",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.15.3",
     "eslint-plugin-playwright": "^2.11.0",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "extract-zip": "^2.0.1",
     "ffmpeg-static": "^5.3.0",
     "jsdom": "^29.1.1",
-    "knip": "^6.14.2",
+    "knip": "6.14.2",
     "lefthook": "^2.1.6",
-    "prettier": "^3.8.3",
+    "prettier": "3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "rollup-plugin-visualizer": "^7.0.1",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.3.0",
     "typescript": "7.0.2",
-    "vite": "^8.0.10",
+    "vite": "^8.3.5",
     "vite-plugin-checker": "0.14.5",
-    "vitest": "^4.1.5",
+    "vitest": "^4.1.12",
     "oxlint": "1.87.0",
     "oxlint-tsgolint": "7.0.2003",
-    "@swc/core": "1.16.13"
+    "@swc/core": "1.16.13",
+    "@axe-core/playwright": "^4.14.0",
+    "eslint": "^10.0.0",
+    "@electron-internal/extract-zip": "^1.0.1"
   },
   "build": {
     "appId": "com.alchemy.game",
@@ -230,6 +237,14 @@
         }
       ],
       "icon": "desktop/icons/icon.ico"
+    }
+  },
+  "overrides": {
+    "app-builder-lib": {
+      "@electron/get": "^5.1.0"
+    },
+    "typed-rest-client": {
+      "qs": "^6.16.1"
     }
   }
 }

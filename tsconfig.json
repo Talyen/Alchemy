@@ -38,6 +38,7 @@
     "playwright.electron.config.ts",
     "playwright.performance.config.ts",
     "oxlint.config.ts",
-    "lint/audit.config.ts"
+    "lint/audit.config.ts",
+    "playwright.visual.config.ts"
   ]
 }

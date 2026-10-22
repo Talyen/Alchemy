@@ -44,7 +44,7 @@ resizing the grid. It prefers right, then left, top, or bottom, with a 10px gap
 and 8px boundary padding. Its width is 320–420 rendered pixels, capped to the
 viewport; width and node-gap limits compensate for virtual-stage scale.
 Outside clicks dismiss it, another inspectable node switches inspection, and
-Escape dismisses and restores focus. Floor changes dismiss old selection.
+Escape dismisses and clears focus. Floor changes dismiss old selection.
 
 The inspector retains natural-aspect artwork, the category/name overlay, shared
 unboxed Trait rows, and a pinned action footer while details scroll. Inaccessible

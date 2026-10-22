@@ -25,7 +25,7 @@ export interface DealEnemyScaledDamageOptions {
 }
 
 /** Shared pacing, vulnerability, Block spending and Armor mitigation before hit reactions. */
-export function prepareScaledEnemyHit(
+function prepareScaledEnemyHit(
   state: BattleState,
   baseDamage: number,
   stat: "physical" | "burn" | "nature",

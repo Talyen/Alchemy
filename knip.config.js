@@ -38,7 +38,12 @@ export default {
   ],
   // The compact CLI wrapper hides --config from command-line inference.
   playwright: {
-    config: ["playwright.config.{js,ts,mjs}", "playwright.electron.config.ts", "playwright.layout-review.config.ts"],
+    config: [
+      "playwright.config.{js,ts,mjs}",
+      "playwright.electron.config.ts",
+      "playwright.layout-review.config.ts",
+      "playwright.visual.config.ts",
+    ],
   },
   project: ["src/**/*.{ts,tsx}", "scripts/**/*.mjs", "desktop/**/*.cjs", "tests/**/*.{ts,tsx}"],
   ignoreIssues: {

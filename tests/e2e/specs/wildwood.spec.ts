@@ -12,6 +12,7 @@ import {
   readSavedGame,
   SAVE_KEY,
   withSavedGame,
+  resumeInjectedRun,
 } from "../../browser-helpers";
 
 async function pickDraftCard(page: import("@playwright/test").Page) {
@@ -168,6 +169,7 @@ test.describe("Wildwood Draft", () => {
       void fastBattle;
       await injectSaveState(page, wildwoodRewardFlow());
       await page.goto("/");
+      await resumeInjectedRun(page);
       await expect(page.getByRole("heading", { name: "Victory" })).toBeVisible({ timeout: 10000 });
 
       const rewardsBefore = savedActivityData((await readSavedGame(page)).activeRun, "rewards");

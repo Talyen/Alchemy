@@ -1,3 +1,5 @@
+import { expectUnfocused } from "../focus-input";
+import { controllerInput } from "../controller-input";
 import { expect, test } from "../../fixtures/e2e";
 import { HomesteadPage } from "../../pages/homestead-page";
 import { MenuPage } from "../../pages/menu-page";
@@ -131,7 +133,7 @@ test(
     expect((await readSavedGame(page)).materialInventory).toMatchObject({ wood: 4, stone: 16, iron: 33 });
     await heading.hover();
     await expect(panel).toBeHidden();
-    await tile.focus();
+    await controllerInput(page).reach(tile);
     await expect(panel).toBeVisible();
     await page.keyboard.press("Tab");
     await expect(page.getByRole("button", { name: /^Build Hunter's Lodge for / })).toBeFocused();
@@ -167,7 +169,7 @@ test(
         name: "Upgrade Blacksmith for 12 Stone, 33 Iron",
         exact: true,
       });
-      await resumedTile.focus();
+      await controllerInput(resumed).reach(resumedTile);
       const inspection = resumed.getByRole("tooltip").filter({ has: resumed.getByText("Blacksmith", { exact: true }) });
       await expect(inspection).toContainText("Physical damage is increased by 2");
       await expect(inspection.getByRole("button")).toHaveCount(0);
@@ -196,9 +198,9 @@ test(
     await expect(dialog).toContainText("refund all spent materials");
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
-    await expect(page.getByRole("button", { name: "Reset Homestead", exact: true })).toBeFocused();
-    await page.keyboard.press("Enter");
-    await dialog.getByRole("button", { name: "Reset", exact: true }).click();
+    await expectUnfocused(page);
+    await controllerInput(page).activate(page.getByRole("button", { name: "Reset Homestead", exact: true }));
+    await controllerInput(page).activate(dialog.getByRole("button", { name: "Reset", exact: true }));
     await expect(dialog).toBeHidden();
     await expect(tile).toHaveAttribute("aria-label", "Build Blacksmith for 4 Stone, 11 Iron");
     await expect(page.getByRole("button", { name: "Reset Homestead", exact: true })).toBeDisabled();
