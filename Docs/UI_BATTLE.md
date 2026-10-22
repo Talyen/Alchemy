@@ -135,15 +135,22 @@ Do not mirror engine field dependencies in a separate UI cache.
 ## Damage values in battle inspection
 
 Card hover and keyboard inspection in the battle hand, Wish, and the pile viewers
-show current offensive damage before Block, Armor, resistance, dodge, or
-critical strikes. The combat owner's offensive stages supply Forge, active
-bonuses, prepared Poison conversion, current conditions, mana remaining after
-payment, and fight pacing. Resource-based attacks show a damage number. Random
-damage keeps an adjusted range; chance branches remain separate. Delayed attacks
-retain authored values because future resources and pacing are unknown. These
-values describe attack packets, excluding follow-up reactions and damage over time.
-Inspection never rolls randomness or spends live resources or prepared effects.
-Collection and other nonbattle views retain authored descriptions.
+show current offensive damage before defenses and critical strikes. Inspection
+runs production card resolution against detached battle alternatives, including
+payment, pre-triggers, ordered effects, and reactions that affect later packets.
+Forge, prepared conversions, resource changes, conditions, and fight pacing
+therefore come from the same rules as play. These are offensive packet values,
+not final Health loss or a total of all reactions and damage over time.
+
+Finite random outcomes retain their correlated state through later effects.
+Agreement produces an exact value; disagreement produces an adjusted range or
+damage-type alternatives. Chance clauses remain separate. Unknown drawn-card
+identities or inspection work limits leave dependent damage at its authored
+value; already known earlier packets remain usable. Delayed attacks also retain
+authored values because future resources and pacing are unknown. Inspection
+never consumes live RNG, resources, or prepared effects. Collection and other
+nonbattle views retain authored descriptions. The [inspection owner](../src/lib/game-data/effects/BATTLE_HANDLERS.md#battle-inspection-ownership)
+defines execution seams, uncertainty limits, and effect-authoring requirements.
 
 ## Deck and pile inspection
 
