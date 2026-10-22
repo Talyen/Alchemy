@@ -26,6 +26,6 @@ export async function selectGameMode(page: Page, mode: GameMode) {
 }
 
 /** Seeded checkpoints boot to the menu; enter them through the player's Continue action. */
-export async function resumeInjectedRun(page: Page) {
-  await page.getByRole("button", { name: "Continue", exact: true }).click();
+export async function resumeInjectedRun(page: Page, continueLabel = "Continue") {
+  await page.getByRole("button", { name: continueLabel, exact: true }).click();
 }

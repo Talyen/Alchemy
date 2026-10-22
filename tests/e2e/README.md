@@ -117,6 +117,14 @@ owners directly.
 | Inspect acknowledged save     | `save-injection.ts`: `withSavedGame`, `readSavedGame`               | The former opens an unseeded page, checks runtime errors and closes it; the latter reads the acknowledged payload |
 | Collect errors on extra pages | `errors.ts`: `failOnRuntimeErrors`                                  | Assert collected errors before closing; the browser fixture covers its own page automatically                     |
 
+Fresh-page and desktop relaunch journeys enter active checkpoints through the
+main menu's Continue action. `withSavedGame` does this when the acknowledged save
+contains an active run; pass its translated Continue label as the third argument
+for localized saves. Meta-only saves remain on the main menu. Raw `injectSaveState`
+and `injectExactSave` only seed storage; callers must navigate if needed and use
+`resumeInjectedRun` when they need to enter the run. `enterPrimaryRewardScreen`
+loads and enters the seeded reward.
+
 Save assertions wait for the persisted value with `expect.poll`; visible
 navigation does not imply that a debounced write has completed. After injection,
 verify persistence on a fresh page in the same browser context, without page-level
@@ -168,7 +176,25 @@ tag a test `@critical` when its journey must gate every push. Tags are inherited
 adding `@slow` to a child does not remove a parent's `@critical`. In mixed suites,
 tag representative tests individually so secondary variants stay nightly-only.
 
-CI traces the first retry rather than every passing browser journey. CI retains JSON results on every run and failure diagnostics on failed or flaky
+Localization functional coverage has a separate every-push job, independent of
+critical gameplay. `localizationCoverage(locale, representative)` assigns one
+shipped language to gate each journey via `@localization-smoke`; the three script
+font checks also gate pushes. This samples all seven shipped translations in 15
+cases instead of the 99-case development matrix. Locale battle/resume checks have
+one owner here and do not carry `@critical`.
+
+Nightly/release production shards retain all shipped-locale variants. Their distinct
+protection is translated geometry, generated descriptions, movable keyword slots,
+and cross-language saves; unit/DOM tests own mechanics and catalog correctness.
+Both workflows also call the expanded-English acceptance workflow, which runs
+only `@localization-qa` against development source because QA catalogs are absent
+from production. The full 99 cases remain covered across those jobs.
+`ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1` enables minimum-viewport, maximum-size
+geometry and reachability checks. Passing screenshots additionally require
+`ALCHEMY_LOCALIZATION_SCREENSHOTS=1` for an explicit visual review; functional CI
+keeps assertions and browser failure screenshots without encoding passing PNGs.
+
+CI traces the first retry rather than every passing browser journey. CI retains critical and localization JSON results for seven days on every run and failure diagnostics on failed or flaky
 runs, including tests that pass on retry. A retry remains permitted; flakes do
 not create an additional gate.
 
@@ -215,7 +241,11 @@ required for the Electron-only release target.
 CI JSON reports retain commit/run identity, Playwright wall time, summed test
 execution including retries, retry execution, and pre-Playwright setup time.
 Setup starts at the job's first explicit step; it excludes runner provisioning,
-queueing and teardown. Summed test execution can exceed elapsed wall time because
+queueing and teardown. The critical and localization jobs each record their own
+setup start, summary and JSON report, including successful acceptance runs.
+Compare at least three successful hosted runs before claiming a speedup; failed
+runs that stop early are not a healthy-runtime baseline.
+Summed test execution can exceed elapsed wall time because
 workers run concurrently. Compare total job/runner time through Actions as well
 as these report metrics before claiming a speedup.
 

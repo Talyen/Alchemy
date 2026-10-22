@@ -23,11 +23,16 @@ export function readSavedGame(page: Page): Promise<ParsedSaveData> {
 }
 
 /** Page-level seed scripts rerun on reload; this page reads only the acknowledged save. */
-export async function withSavedGame(page: Page, verify: (resumed: Page) => Promise<void>): Promise<void> {
+export async function withSavedGame(
+  page: Page,
+  verify: (resumed: Page) => Promise<void>,
+  continueLabel = "Continue",
+): Promise<void> {
   const resumed = await page.context().newPage();
   const errors = failOnRuntimeErrors(resumed);
   try {
     await resumed.goto(new URL("/", page.url()).href, { waitUntil: "domcontentloaded" });
+    if ((await readSavedGame(resumed)).activeRun) await resumeInjectedRun(resumed, continueLabel);
     await verify(resumed);
     expect(errors).toEqual([]);
   } finally {
@@ -204,6 +209,7 @@ export async function enterPrimaryRewardScreen(page: Page, pending: Record<strin
     }),
   });
   if (!loaded) await navigateToGame(page);
+  await resumeInjectedRun(page);
 }
 
 export async function injectHomestead(page: Page, overrides: Record<string, unknown> = {}) {

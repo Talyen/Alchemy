@@ -1,6 +1,7 @@
 import { exerciseControllerCursor } from "../e2e/controller-cursor";
 import { exerciseFocusInputOptions, exerciseFocusInputBattle } from "../e2e/focus-input";
 import { savedActivityData } from "../fixtures/run-activity";
+import { resumeInjectedRun } from "../e2e/navigation";
 import { controllerInput } from "../e2e/controller-input";
 import fs from "node:fs";
 import path from "node:path";
@@ -82,6 +83,7 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
         await waitForLayoutSettled(window);
         await assertNoOverflow(window, `Desktop ${tab}`);
         await assertReachableControlsInViewport(window, `Desktop ${tab}`);
+        if (process.env.ALCHEMY_LOCALIZATION_SCREENSHOTS !== "1") continue;
         const png = await electronApp!.evaluate(async ({ BrowserWindow }) =>
           (
             await BrowserWindow.getAllWindows()[0].webContents.capturePage(
@@ -293,6 +295,7 @@ test("a played desktop run survives closing and relaunching the packaged UI", de
     application = await launchElectronApp({ packagedRenderer: true, profile });
     page = await getElectronMainWindow(application);
     const restoredErrors = failOnRuntimeErrors(page);
+    await resumeInjectedRun(page);
     const restored = new BattlePage(page);
     await restored.waitForOpeningHand();
     await expect(restored.endTurnBtn).toBeEnabled();
