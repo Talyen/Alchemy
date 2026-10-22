@@ -94,9 +94,18 @@ describe("canonical verification commands", () => {
 
   it("runs critical browser journeys on every push and keeps manual save selection unfiltered", () => {
     const workflow = readFileSync(join(ROOT, ".github/workflows/ci.yml"), "utf8");
-    const e2eJob = workflow.split("  e2e:\n")[1].split("  ship-gate:\n")[0];
+    const e2eJob = workflow.split("  e2e:\n")[1].split(/\n {2}[\w-]+:\n/u)[0];
     expect(e2eJob).not.toMatch(/^ {4}if:/mu);
     expect(e2eJob).toContain("npm run test:e2e:critical");
+    expect(e2eJob).not.toContain("localization.spec.ts");
+    const localizationJob = workflow.split("  localization:\n")[1].split(/\n {2}[\w-]+:\n/u)[0];
+    expect(localizationJob).toContain("needs: build");
+    expect(localizationJob).toContain("--grep @localization-smoke");
+    expect(localizationJob).toMatch(/name: Upload localization results\n\s+if: always\(\)/u);
+    for (const name of ["nightly", "release"]) {
+      const full = readFileSync(join(ROOT, `.github/workflows/${name}.yml`), "utf8");
+      expect(full).toContain("uses: ./.github/workflows/localization-qa.yml");
+    }
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> };
     expect(pkg.scripts["test:e2e:critical"]).toContain("--grep @critical");
     expect(pkg.scripts["test:ship:e2e"]).not.toContain("--grep");

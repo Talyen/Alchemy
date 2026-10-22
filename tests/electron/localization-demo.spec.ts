@@ -1,3 +1,4 @@
+import { resumeInjectedRun } from "../e2e/navigation";
 import { savedActivityData } from "../fixtures/run-activity";
 import fs from "node:fs";
 import os from "node:os";
@@ -80,6 +81,7 @@ for (const [initialLocale, resumeLocale] of [
 
       ({ page, errors } = await open());
       await expect(page.locator("html")).toHaveAttribute("lang", initialLocale);
+      await resumeInjectedRun(page, initialLabel("Continue"));
       await expect(page.getByRole("button", { name: initialLabel("End Turn"), exact: true })).toBeVisible();
       expect(mechanics((await read(page)).activeRun)).toEqual(mechanics(before));
       await reviewLayout(page, `${initialLocale} native demo resume`);
@@ -101,6 +103,7 @@ for (const [initialLocale, resumeLocale] of [
 
       ({ page, errors } = await open());
       await expect(page.locator("html")).toHaveAttribute("lang", resumeLocale);
+      await resumeInjectedRun(page, resumeLabel("Continue"));
       await expect(page.getByRole("button", { name: resumeLabel("End Turn"), exact: true })).toBeVisible();
       expect(mechanics((await read(page)).activeRun)).toEqual(mechanics(before));
       expect((await read(page)).activeRun?.runDeck).toEqual(before?.runDeck);
