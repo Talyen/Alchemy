@@ -178,7 +178,10 @@ function resolveCardPlay(
   const prepared = prepareUniqueCardPlay(costState, card, effectiveCost);
   const paymentState = {
     ...prepared.state,
-    playerStatuses: { ...prepared.state.playerStatuses, block: prepared.state.playerStatuses.block - blockCost },
+    playerStatuses: {
+      ...prepared.state.playerStatuses,
+      block: Math.max(0, prepared.state.playerStatuses.block - blockCost),
+    },
   };
   const manaSpent = Math.min(paymentState.mana, effectiveCost);
   if (blockCost > 0)

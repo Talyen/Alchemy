@@ -237,7 +237,8 @@ Gear rule coverage lives in `tests/lib/gear/` (`gear`, `generation`,
 `crafting`, `crafting-ids`, `salvage-yield`,
 `unique-catalog`, `gear-shine`, `affixes`,
 `affix-pool`); aggregate and
-persistence contracts in `tests/features/alchemy/shared/stores/gear-*` and
+persistence contracts in `tests/features/alchemy/shared/stores/session/gear-*`,
+`tests/features/alchemy/shared/stores/commands/gear-*`, and
 `tests/features/alchemy/shared/storage/gear-save.test.ts`; Armory interaction
 in `tests/features/alchemy/meta/screens/armory-screen*.test.tsx` and
 `tests/features/alchemy/meta/screens/armory/*.test.ts`; catalog rejection checks in
