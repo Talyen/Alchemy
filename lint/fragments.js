@@ -38,7 +38,7 @@ export function layerImportsWithPaths(paths, ...fragments) {
 export const BARREL_PATTERNS = [
   {
     group: ["@/lib/game-data/*", "**/lib/game-data/*"],
-    allowImportNames: ["hydrateCard", "getOfferableCardPool", "getStandardPotionPool", "isStandardPotionCard"],
+    allowImportNames: ["hydrateCard"],
     message: "Import from @/lib/game-data (barrel) instead of deep paths.",
   },
   { group: ["@/lib/battle/*", "**/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },

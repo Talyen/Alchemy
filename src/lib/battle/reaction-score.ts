@@ -7,6 +7,7 @@ import {
   type BattleCard,
   type BattleCardEffect,
 } from "@/lib/game-data";
+import { MIN_MAX_MANA_FLOOR } from "../game-constants";
 import { gainMana } from "./resource-state";
 import { createPlayerResourceResolver } from "./player-resource-resolution";
 import { halveRounded } from "./amount-helpers";
@@ -348,6 +349,33 @@ function projectEffects(
           if (nextMana === path.state.mana) return [path];
           return [{ ...path, state: { ...path.state, mana: nextMana } }];
         }
+        if (effect.kind === "gain-max-mana") {
+          return [
+            {
+              ...path,
+              state: {
+                ...path.state,
+                maxMana: path.state.maxMana + effect.amount,
+                mana: path.state.mana + effect.amount,
+              },
+            },
+          ];
+        }
+        if (effect.kind === "lose-max-mana") {
+          const maxMana = Math.max(MIN_MAX_MANA_FLOOR, path.state.maxMana - effect.amount);
+          if (maxMana === path.state.maxMana) return [path];
+          return [{ ...path, state: { ...path.state, maxMana, mana: Math.min(maxMana, path.state.mana) } }];
+        }
+        if (effect.kind === "heal") {
+          const nextHealth = Math.min(path.state.playerMaxHealth, path.state.playerHealth + effect.amount);
+          if (nextHealth === path.state.playerHealth) return [path];
+          return [{ ...path, state: { ...path.state, playerHealth: nextHealth } }];
+        }
+        if (effect.kind === "lose-health") {
+          const nextHealth = Math.max(0, path.state.playerHealth - effect.amount);
+          if (nextHealth === path.state.playerHealth) return [path];
+          return [{ ...path, state: { ...path.state, playerHealth: nextHealth } }];
+        }
         const flagKey = FLAG_EFFECT_KEYS[effect.kind];
         if (flagKey) {
           return [
@@ -410,12 +438,12 @@ function projectEffects(
   return paths;
 }
 
-export function scoreAvailableReactions(card: BattleCard, snapshot: BattleSnapshot): number {
+export function scoreAvailableReactions(card: BattleCard, snapshot: BattleSnapshot, manaAtStart?: number): number {
   const paths = projectEffects(
     [{ state: { ...snapshot, rng: unexpectedScoringRoll }, score: 0, probability: 1 }],
     card,
     card.effects,
-    snapshot.mana,
+    manaAtStart ?? snapshot.mana,
   );
   return paths.reduce((sum, path) => sum + path.score * path.probability, 0);
 }

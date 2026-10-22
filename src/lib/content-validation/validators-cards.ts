@@ -1,12 +1,12 @@
 import {
   cardLibrary,
   companionLibrary,
+  getOfferableCardPool,
   trinketLibrary,
   visitBattleCardEffects,
   type BattleCard,
   type TrinketEntry,
 } from "@/lib/game-data";
-import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { validateCardDescriptionParity, validateTrinketDescriptionParity } from "./card-parity";
 import { CardContentSchema, TrinketContentSchema } from "./schemas";
 import { validateLibraryBasics, type Collector } from "./utils";

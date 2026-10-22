@@ -1,9 +1,10 @@
 import { createMixedPotion } from "@/lib/alchemist";
-import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import {
   characters,
   cloneBattleCard,
   getCardKeywords,
+  getOfferableCardPool,
+  getStandardPotionPool,
   getStartingDeck,
   type BattleCard,
   type CharacterId,

@@ -1,5 +1,5 @@
 import { MIXED_POTION_CARD_ID } from "../game-constants";
-import { isMixedPotionCard } from "../game-data/cards/card-pools";
+import { isMixedPotionCard } from "../game-data";
 import type { Screen } from "../routing/screens";
 
 // Null keeps a semantic event available while explicitly choosing silence.

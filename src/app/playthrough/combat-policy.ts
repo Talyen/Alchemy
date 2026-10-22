@@ -66,7 +66,7 @@ export function scoreCombatCards(
     // Afterwards an available attack must receive a turn, even if the pure
     // defense's nominal grant keeps growing with the Mana pool.
     return spendsAllMana && (state.playerHealth > state.playerMaxHealth / HALF_DIVISOR || defenseOnlyTurns >= 2)
-      ? Math.min(score, bestAttack / 2)
+      ? Math.min(score, bestAttack / HALF_DIVISOR)
       : score;
   });
 }

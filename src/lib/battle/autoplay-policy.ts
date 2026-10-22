@@ -288,7 +288,7 @@ export function getEffectiveDamageScore(card: BattleCard, state: BattleSnapshot)
   const manaAfterPayment = Math.max(0, state.mana - effectiveCost);
   return (
     scoreEffects(card.effects, paid, Math.max(0, state.maxMana - manaAfterPayment)) +
-    scoreAvailableReactions(card, { ...paid, mana: manaAfterPayment })
+    scoreAvailableReactions(card, { ...paid, mana: manaAfterPayment }, state.mana)
   );
 }
 

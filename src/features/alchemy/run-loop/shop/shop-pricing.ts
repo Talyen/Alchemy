@@ -21,8 +21,12 @@ import {
   SHOP_REMOVE_PRICE,
   TRINKET_SHOP_TRINKET_PRICE,
 } from "@/lib/game-constants";
-import { computeTalentEffects, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
-import { isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
+import {
+  computeTalentEffects,
+  isStandardPotionCard,
+  type BattleCard,
+  type TalentEffectManifest,
+} from "@/lib/game-data";
 import { gearDefinitions, type GearInstance } from "@/lib/gear";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { combineTrinketEffectIds, getTrinketEffectValue } from "@/lib/trinkets";

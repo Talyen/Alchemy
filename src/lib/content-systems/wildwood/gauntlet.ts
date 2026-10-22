@@ -1,7 +1,7 @@
-import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import {
   characters,
   cloneBattleCard,
+  getOfferableCardPool,
   selectRewardCards,
   type BattleCard,
   type BestiaryEntry,

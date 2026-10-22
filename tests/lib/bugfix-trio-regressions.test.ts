@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { SaveDataSchema, isCombatGoldOverride } from "@/lib/validation";
 import { defaultBattleState } from "@/lib/battle";
+import { isStandardPotionCard } from "@/lib/game-data";
+import { HALF_DIVISOR } from "@/lib/game-constants";
+import { scoreCombatCards } from "../../src/app/playthrough/combat-policy";
 import { makeMinimalActiveRunInput } from "../fixtures/active-run";
 import { savedActivityFixture } from "../fixtures/run-activity";
 import { scoreAvailableReactions } from "@/lib/battle/reaction-score";
@@ -321,5 +324,111 @@ describe("bugfix trio regressions", () => {
     });
     // Seven Block plus four Forge damage leaves nine HP for Shatter.
     expect(scoreAvailableReactions(card, state)).toBe(9);
+  });
+
+  it("projects healing before evaluating health-threshold damage bonuses", () => {
+    const base = patchBattleState({
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      playerHealth: 9,
+      playerMaxHealth: 20,
+      talentEffects: { physicalDoubledBelowHalfHealth: true },
+    });
+    // 9 HP is below half health (9 * 2 < 20).
+    // Without heal: Physical 5 doubles to 10.
+    const unhealedAttack = makeTestCard({
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    // With heal 2: player reaches 11 HP (above half health, 11 * 2 >= 20),
+    // so physical damage does not double (deals 5).
+    const healThenAttack = makeTestCard({
+      effects: [
+        { kind: "heal", amount: 2 },
+        { kind: "damage", damageType: "physical", amount: 5 },
+      ],
+    });
+    // Compare enemy health remaining or reaction score impact:
+    // With an enemy frozen with Shatter damage:
+    const frozenState = {
+      ...base,
+      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0 },
+      reactions: { shatterDamage: 20 },
+    };
+    // Unhealed attack: deals 10 physical, leaving 10 HP for Shatter -> scores 10.
+    expect(scoreAvailableReactions(unhealedAttack, frozenState)).toBe(10);
+    // Heal-then-attack: deals 5 physical, leaving 15 HP for Shatter -> scores 15.
+    expect(scoreAvailableReactions(healThenAttack, frozenState)).toBe(15);
+  });
+
+  it("projects lose-health and stops subsequent hits on player death", () => {
+    const state = patchBattleState({
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      playerHealth: 4,
+      playerMaxHealth: 20,
+      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0 },
+      reactions: { shatterDamage: 20 },
+    });
+    const fatalSacrifice = makeTestCard({
+      effects: [
+        { kind: "lose-health", amount: 5 },
+        { kind: "damage", damageType: "physical", amount: 5 },
+      ],
+    });
+    // Losing 5 health kills the 4-HP player, so subsequent physical hit and reactions score 0.
+    expect(scoreAvailableReactions(fatalSacrifice, state)).toBe(0);
+  });
+
+  it("projects gain-max-mana before max-mana scaled damage calculations", () => {
+    const state = patchBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      mana: 2,
+      maxMana: 2,
+      gearEffects: { burnDamagePerManaPercent: 100 },
+      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0 },
+      reactions: { frostfireDamage: 30 },
+    });
+    // Burn damage receives (maxMana * 100%) / 100 bonus multiplier.
+    // Base 5 damage with maxMana=2 gets +200% = 15 damage, leaving 15 for Frostfire.
+    const withoutMaxManaGain = makeTestCard({
+      effects: [{ kind: "damage", damageType: "burn", amount: 5 }],
+    });
+    expect(scoreAvailableReactions(withoutMaxManaGain, state)).toBe(15);
+
+    // With gain-max-mana 1: maxMana becomes 3, getting +300% = 20 damage, leaving 10 for Frostfire.
+    const withMaxManaGain = makeTestCard({
+      effects: [
+        { kind: "gain-max-mana", amount: 1 },
+        { kind: "damage", damageType: "burn", amount: 5 },
+      ],
+    });
+    expect(scoreAvailableReactions(withMaxManaGain, state)).toBe(10);
+  });
+
+  it("re-exports isStandardPotionCard from @/lib/game-data barrel", () => {
+    const healthPotion = makeTestCard({ id: "health-potion" });
+    const slash = makeTestCard({ id: "slash" });
+    expect(isStandardPotionCard(healthPotion)).toBe(true);
+    expect(isStandardPotionCard(slash)).toBe(false);
+  });
+
+  it("caps emergency defense in combat policy using HALF_DIVISOR", () => {
+    const attack = makeTestCard({ id: "attack", effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
+    const defense = makeTestCard({
+      id: "defense",
+      cost: 1,
+      effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 10 }],
+    });
+    const state = patchBattleState({
+      mana: 3,
+      maxMana: 3,
+      playerHealth: 20,
+      playerMaxHealth: 20,
+      hand: [attack, defense],
+    });
+    const scores = scoreCombatCards([attack, defense], state, "greedy-effective-damage", 2);
+    // bestAttack is 10; defense is capped at bestAttack / HALF_DIVISOR = 10 / 2 = 5.
+    expect(scores[1]).toBe(10 / HALF_DIVISOR);
   });
 });

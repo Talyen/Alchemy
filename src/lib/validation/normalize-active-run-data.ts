@@ -5,11 +5,12 @@ import {
   cardHasKeyword,
   characters,
   cloneBattleCard,
+  getOfferableCardPool,
+  isStandardPotionCard,
   selectRewardCards,
   type BattleCard,
   type KeywordId,
 } from "@/lib/game-data";
-import { getOfferableCardPool, isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
 import { createRunStateRng, type RunRngState, type RunRngStream } from "@/lib/rng";
 import { filterLiveCards, isRecoverableCard } from "./normalize-persisted-battle-state";
 import type { ValidatedActiveRunData } from "./save-schemas/active-run";

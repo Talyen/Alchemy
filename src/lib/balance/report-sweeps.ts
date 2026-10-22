@@ -5,10 +5,10 @@ import {
   companionLibrary,
   computeTalentEffects,
   getCardKeywords,
+  getOfferableCardPool,
   trinketLibrary,
   type BattleCard,
 } from "@/lib/game-data";
-import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { effectsForInstance, generateLootGearChoices, gearBaseItemList } from "@/lib/gear";
 import { gearAffixList } from "@/lib/gear/affix-catalog";
 import { effectsForAffixRolls } from "@/lib/gear/affixes";

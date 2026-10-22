@@ -17,8 +17,14 @@ import {
   SHOP_CARDS_OFFERED,
   TRINKET_SHOP_OFFERED,
 } from "@/lib/game-constants";
-import { selectRewardCards, trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
-import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
+import {
+  getOfferableCardPool,
+  getStandardPotionPool,
+  selectRewardCards,
+  trinketLibrary,
+  type BattleCard,
+  type TrinketEntry,
+} from "@/lib/game-data";
 import {
   gearDefinitions,
   generateGearRewardChoicesForRarity,
