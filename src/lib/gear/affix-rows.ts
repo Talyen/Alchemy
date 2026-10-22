@@ -911,6 +911,76 @@ export const gearAffixRows = [
     rollRange(2, 3, 4, 5),
     "After Dodging, the next Stun attack deals {value} additional damage",
   ),
+  offensiveAffix(
+    "attack-vs-full-health",
+    "Firstblood",
+    "physical",
+    "health",
+  )(
+    "attackBonusVsFullHealth",
+    rollRange(2, 3, 4, 5),
+    "Attacks deal {value} additional damage to enemies at full Health",
+  ),
+  offensiveAffix(
+    "archery-vs-poisoned",
+    "Venomflight",
+    "archery",
+    "poison",
+  )(
+    "archeryAttackBonusVsPoisoned",
+    rollRange(2, 3, 4, 5),
+    "Archery attacks deal {value} additional damage to Poisoned enemies",
+  ),
+  offensiveAffix(
+    "holy-attack-vs-burning",
+    "Sunscorched",
+    "holy",
+    "burn",
+  )(
+    "holyAttackBonusVsBurning",
+    rollRange(1, 2, 2, 3),
+    "Holy attacks deal {value} additional damage to Burning enemies",
+  ),
+  offensiveAffix(
+    "freeze-attack-with-block",
+    "Iceguard",
+    "freeze",
+    "block",
+  )(
+    "freezeAttackBonusWithBlock",
+    rollRange(1, 2, 2, 3),
+    "Freeze attacks deal {value} additional damage while you have Block",
+  ),
+  offensiveAffix(
+    "companion-vs-bleeding",
+    "Bloodscent",
+    "companion",
+    "bleed",
+  )(
+    "companionDamageBonusVsBleeding",
+    rollRange(1, 2, 2, 3),
+    "Companions deal {value} additional damage to Bleeding enemies",
+  ),
+  defensiveAffix(
+    "block-gain-below-half-health",
+    "Last Bastion",
+    "block",
+    "health",
+  )(
+    "blockGainBonusBelowHalfHealth",
+    rollRange(2, 3, 3, 4),
+    "Increases Block gained by {value} while below half Health",
+  ),
+  defensiveAffix("healing-below-half-health", "Mending", "health")(
+    "healingBonusBelowHalfHealth",
+    rollRange(1, 2, 2, 3),
+    "Healing restores {value} additional Health while below half Health",
+  ),
+  defensiveAffix("attack-reduction-without-mana", "Spentward", "mana")(
+    "enemyAttackReductionWithoutMana",
+    rollRange(1, 1, 1, 2),
+    "Enemy attacks deal {value} less damage while you have no Mana",
+  ),
 ] as const satisfies readonly AffixRowInput[];
 
 export type GearAffixId = (typeof gearAffixRows)[number]["id"];
