@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { BattleCardEffect } from "@/lib/game-data";
+import { getCardDescription, withCardDescription, type BattleCardEffect } from "@/lib/game-data";
 import { battleSnapshot } from "@/lib/battle/battle-snapshot";
 import { inspectBattleCardDamage } from "@/lib/battle/card-damage-inspection";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
@@ -17,6 +17,30 @@ const chance = (successEffects: BattleCardEffect[], failureEffects: BattleCardEf
 });
 
 describe("inspection resolves correlated production outcomes", () => {
+  it.each(["corrupted", "distilled"] as const)("preserves %s marks when an exact magnitude becomes a range", (mark) => {
+    const card = makeTestCard({ effects: [chance([block(4)], [block(8)]), hit] });
+    const marked = withCardDescription(
+      card,
+      getCardDescription(card).map((line) => ({
+        ...line,
+        parts: line.parts.map((part) =>
+          typeof part !== "string" && part.references.some((reference) => reference.effectIndex === 1)
+            ? { ...part, [mark]: true }
+            : part,
+        ),
+      })),
+    );
+    const inspected = inspectBattleCardDamage(
+      marked,
+      patchBattleState({ talentEffects: { blockToPhysicalDamageMultiplier: 1 } }),
+    ).card;
+    expect(inspected.descriptionLines[2]).toBe("Deal 10–14 Physical damage");
+    const magnitudes = inspected.description![2]!.parts.filter((part) => typeof part !== "string");
+    expect(magnitudes).toHaveLength(2);
+    expect(magnitudes.every((part) => part[mark])).toBe(true);
+    expect(new Set(magnitudes.map((part) => part.id)).size).toBe(2);
+  });
+
   it("shows 4–8 Block-scaled damage instead of inventing the original zero Block", () => {
     const card = makeTestCard({ cost: 0, effects: [chance([block(4)], [block(8)]), blockHit] });
     const rng = vi.fn(() => 0.99);

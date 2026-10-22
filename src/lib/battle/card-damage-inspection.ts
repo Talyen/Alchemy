@@ -1,6 +1,7 @@
 import {
   carryCardDescriptionMarks,
   getCardDescription,
+  getCardEffect,
   mapEffectChildren,
   mapCardDescriptionReferences,
   isEnemyAbilityCard,
@@ -8,6 +9,7 @@ import {
   type BattleCard,
   type BattleCardEffect,
   type CardEffectAddress,
+  type CardMagnitudeReference,
 } from "@/lib/game-data";
 import { resolveInspectedCardPlay } from "./card-play";
 import { battleSnapshot } from "./battle-snapshot";
@@ -137,10 +139,35 @@ export function inspectBattleCardDamage(
   const { description: _description, ...base } = presentation;
   const projected = { ...base, effects };
   // Added follow-up lines must not steal a later effect's Corruption marks.
-  const previous = mapCardDescriptionReferences(getCardDescription(card), (reference) => {
-    const location = projectedAddresses.get([reference.effectIndex, ...(reference.effectPath ?? [])].join("."));
-    return location ? { ...reference, ...location } : reference;
-  });
+  const previous = getCardDescription(card).map((line) => ({
+    ...line,
+    parts: line.parts.map((part) =>
+      typeof part === "string"
+        ? part
+        : {
+            ...part,
+            references: part.references.flatMap((reference): CardMagnitudeReference[] => {
+              const location = projectedAddresses.get(
+                [reference.effectIndex, ...(reference.effectPath ?? [])].join("."),
+              );
+              if (!location) return [reference];
+              const target = getCardEffect(effects, location);
+              // A computed range has two distinct magnitude IDs. Both inherit the
+              // authored amount's marks without sharing a now-invalid amount binding.
+              if (reference.kind === "damage" && reference.field === "amount" && target?.kind === "random-damage")
+                return (["minAmount", "maxAmount"] as const).map((field) => ({
+                  ...reference,
+                  ...location,
+                  kind: "random-damage",
+                  field,
+                }));
+              if (reference.kind === "random-damage" && target?.kind === "damage")
+                return [{ ...reference, ...location, kind: "damage", field: "amount" }];
+              return [{ ...reference, ...location }];
+            }),
+          },
+    ),
+  }));
   const description = carryCardDescriptionMarks(
     previous,
     mapCardDescriptionReferences(getCardDescription(projected), (reference) => reference, "inspection"),
