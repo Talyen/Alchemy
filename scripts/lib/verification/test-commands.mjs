@@ -34,8 +34,7 @@ export const TEST_SUITES = Object.freeze({
   shipUnit: Object.freeze([...SAVE_CORE_SUITES, "tests/scripts", "tests/architecture"]),
 });
 
-// Conservative local harness inputs. Task selections add their own files and
-// directory membership; unrelated gameplay does not affect these fixed suites.
+// Task selections add their own files and directory membership.
 export const LOCAL_CHECK_INPUTS = Object.freeze([
   "scripts",
   "src/lib/localization",
@@ -49,6 +48,10 @@ export const LOCAL_CHECK_INPUTS = Object.freeze([
   "package.json",
   "package-lock.json",
   "vitest.local.config.ts",
+  "vitest.config.ts",
+  "oxlint.config.ts",
+  "lint",
+  "tsconfig.test.json",
   "tsconfig.json",
   ".prettierrc",
   ".prettierignore",

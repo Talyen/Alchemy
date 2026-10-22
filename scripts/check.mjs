@@ -90,7 +90,7 @@ export function parseCheckArgs(argv) {
     usage: "Provide paths or use --diff. Example: npm run check -- --diff",
   });
   for (const flag of flags) {
-    if (flag !== "diff" && flag !== "full") throw new Error(`Unknown check option: --${flag}`);
+    if (!["diff", "full", "plan"].includes(flag)) throw new Error(`Unknown check option: --${flag}`);
   }
   return resolveSelectedPaths(ROOT, { flags, paths });
 }
@@ -102,13 +102,12 @@ function defaultRunner(label, command, args, env) {
   return runCommandAsync(command, args, {
     cwd: ROOT,
     env,
-    // Localization checks the complete catalog even for a one-file task; its
-    // observed runtime can exceed the per-step smoke deadline on a busy host.
+    // Unit selections have their own test deadlines and may wait for the lane.
     timeout:
       env.ALCHEMY_CHECK_PROFILE === "local"
-        ? command === "npm" && args.includes("i18n:check")
-          ? 60_000
-          : 30_000
+        ? args[0] === "scripts/verify-changed.mjs"
+          ? undefined
+          : 60_000
         : undefined,
     logPath: path.join(ROOT, "reports/runs", env.ALCHEMY_RUN_ID, "check", `${slug}.log`),
   });
@@ -135,11 +134,9 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     ...(full
       ? {}
       : {
-          NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --max-old-space-size=512`.trim(),
           RAYON_NUM_THREADS: "1",
         }),
   };
-  const before = digestFn();
   let verifyArgs = [...paths];
   // Byte budget for inline CLI args before spilling the selection to paths.json.
   // Distinct from the related-test arg limit in change-routes.mjs (see
@@ -170,6 +167,11 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     formatPaths.length > 0 &&
     formatPaths.length <= 50 &&
     formatPaths.every((file) => fs.statSync(path.join(ROOT, file)).size <= 256_000);
+  const lintPaths = formatPaths.filter((file) => /\.[cm]?[jt]sx?$/u.test(file));
+  const smallLintBatch =
+    lintPaths.length > 0 &&
+    lintPaths.length <= 50 &&
+    lintPaths.every((file) => fs.statSync(path.join(ROOT, file)).size <= 256_000);
   const assetPush = argv.includes("--pre-push") && resolveRoutes(paths).some((route) => route.id === "assets");
   const definitions = [
     {
@@ -184,11 +186,12 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       label: "localization freshness and contracts",
       command: "npm",
       args: ["run", "i18n:check"],
-      enabled: true,
+      enabled: full || selection.needsCodeChecks,
+      reason: "documentation-only change",
     },
     {
       key: "verification",
-      label: full ? "changed-path verification" : "fixed Node smoke selection",
+      label: "changed-path verification",
       command: "node",
       args: ["scripts/verify-changed.mjs", ...verifyArgs],
       enabled: true,
@@ -200,6 +203,14 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       args: ["scripts/run-prettier.mjs", "--check", ...formatPaths],
       enabled: !full && smallFormatBatch,
       reason: full ? "included in full static checks" : "empty or large formatting batch deferred to CI",
+    },
+    {
+      key: "local-lint",
+      label: "selected-file lint",
+      command: "node",
+      args: ["scripts/run-compact.mjs", "oxlint", ...lintPaths, "--format", "stylish", "--max-warnings=0"],
+      enabled: !full && smallLintBatch,
+      reason: full ? "included in full static checks" : "empty or large lint batch deferred to CI",
     },
     {
       key: "documentation-format",
@@ -276,6 +287,16 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const exposures = [];
   let failed = null;
 
+  if (argv.includes("--plan")) {
+    for (const definition of definitions) {
+      console.log(
+        `${definition.enabled ? "Run" : "Skip"}: ${definition.label}${definition.enabled ? ` — ${definition.command} ${definition.args.join(" ")}` : ` — ${definition.reason ?? "not applicable"}`}`,
+      );
+    }
+    const { main: verify } = await import("./verify-changed.mjs");
+    return verify([...verifyArgs, "--plan"]);
+  }
+  const before = digestFn();
   console.log(`Check run: ${runId} (source ${before.hash}; guard: ${before.scope ?? "provided input identity"})`);
   for (const definition of definitions) {
     if (!definition.enabled) {
@@ -360,9 +381,10 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
 }
 
 if (isMainModule(import.meta.url)) {
+  const planOnly = process.argv.includes("--plan");
   let cleanupFinished = false;
   process.once("exit", () => {
-    if (cleanupFinished || !taskKey() || process.platform === "win32") return;
+    if (planOnly || cleanupFinished || !taskKey() || process.platform === "win32") return;
     // Cancellation can exit from the command runner before promises settle.
     // Finish cleanup here and expose a failure instead of abandoning a silent child.
     const cleanup = spawnSync(process.execPath, [path.join(ROOT, "scripts/agent-browser.mjs"), "--cleanup-task"], {
@@ -374,15 +396,15 @@ if (isMainModule(import.meta.url)) {
       process.exitCode = 2;
     }
   });
-  registerArtifactSession(ROOT, () => pruneExpiredArtifacts({ rootDir: ROOT }))
+  (planOnly ? Promise.resolve() : registerArtifactSession(ROOT, () => pruneExpiredArtifacts({ rootDir: ROOT })))
     .then(() => runCheck())
     .then(async (code) => {
-      await closeTaskBrowsers();
+      if (!planOnly) await closeTaskBrowsers();
       cleanupFinished = true;
       process.exitCode = code;
     })
     .catch(async (error) => {
-      await closeTaskBrowsers().catch((cleanupError) => console.error(cleanupError.message));
+      if (!planOnly) await closeTaskBrowsers().catch((cleanupError) => console.error(cleanupError.message));
       cleanupFinished = true;
       console.error(error instanceof Error ? error.message : String(error));
       process.exitCode = 2;

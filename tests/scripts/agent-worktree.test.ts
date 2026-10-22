@@ -141,6 +141,7 @@ function integrationFixture(suffix = "") {
     join(process.cwd(), "scripts", "lib", "command-invocation.mjs"),
     join(root, "scripts", "lib", "command-invocation.mjs"),
   );
+  copyFileSync(join(process.cwd(), "scripts/lib/exclusive-port.mjs"), join(root, "scripts/lib/exclusive-port.mjs"));
   git(["init", "-q", "-b", "main"]);
   git(["config", "user.name", "Integration Test"]);
   git(["config", "user.email", "integration@example.test"]);
@@ -353,7 +354,7 @@ describe("serialized local integration", () => {
       const busy = spawnSync(
         process.execPath,
         [join(taskPath, "scripts", "agent-worktree.mjs"), "integrate", "--task", "task"],
-        { encoding: "utf8" },
+        { encoding: "utf8", env: { ...process.env, ALCHEMY_LOCK_WAIT_MS: "0" } },
       );
       expect(busy.status).toBe(1);
       expect(busy.stderr).toContain("Integration lock busy");

@@ -8,36 +8,39 @@ The table covers common tasks; `package.json` owns the complete list.
 [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change) owns what each gate
 includes and when it applies.
 
-| Task                               | Command                            | Notes                                                                                             |
-| ---------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Develop in the browser             | `npm run dev`                      | Validates committed assets, then starts Vite                                                      |
-| Develop in Electron                | `npm run dev:desktop`              | Starts the desktop shell                                                                          |
-| Build the web renderer             | `npm run build`                    | Validates generated outputs; does not rewrite them or run typecheck                               |
-| Regenerate assets                  | `npm run assets`                   | [Asset workflow](./WORKFLOWS-ASSETS.md) covers narrower operations                                |
-| Check local asset freshness        | `npm run assets:check`             | Read-only; requires selected local Asset Library sources                                          |
-| Check prepared outputs             | `npm run assets:check:outputs`     | Read-only; does not require Asset Library; used by CI                                             |
-| Run local smoke                    | `npm test`                         | Fixed Node-only suites; accepts no test-path arguments                                            |
-| Run unit tests                     | `npm run test:full -- <path>`      | Omit paths for the full unit suite; agents may run unit tests without approval                    |
-| Select affected unit tests         | `npm run verify:unit -- <paths>`   | Dependency-related and risk-selected units only; add `--plan` to inspect selection                |
-| Run lightweight checks during work | `npm run verify -- --diff`         | Add `--plan` to preview selection                                                                 |
-| Finish a task                      | `npm run check -- --diff`          | Use explicit task-owned paths in a mixed checkout                                                 |
-| Check source types                 | `npm run typecheck`                | Source types; full static checks run in CI or by explicit local request                           |
-| Run the CI static aggregate        | `npm run lint:ci`                  | See [gate policy](../CONTRIBUTING.md#static-build-and-ci-policy)                                  |
-| Validate docs                      | `npm run docs:check`               | Links, paths, commands, discovery references, plan metadata                                       |
-| Run a browser journey              | `npm run test:e2e:route -- <name>` | [E2E guide](../tests/e2e/README.md#running-focused-checks); preview mode requires a current build |
-| Simulate isolated battles          | `npm run balance:sim`              | [Battle simulation](./REFERENCE.md#balance-simulation)                                            |
-| Simulate careers                   | `npm run balance:playthrough`      | [Headless playthroughs](./PLAYTHROUGH_SIMULATION.md)                                              |
-| Compare loot offers                | `npm run balance:loot`             | [Loot tuning](./ARMORY.md#loot-tuning)                                                            |
-| Profile frames and hitches         | `npm run perf`                     | [Performance guide](./PERFORMANCE.md)                                                             |
-| Find recent check evidence         | `npm run runs:show -- --last 10`   | Run IDs, outcomes and artifact locations                                                          |
-| Reset local diagnostics            | `npm run clean`                    | Cleanup details below                                                                             |
-| Publish a release                  | `npm run release`                  | Gates, commit/tag, push and CI watch; follow [Release](./RELEASE.md)                              |
+| Task                                | Command                            | Notes                                                                                             |
+| ----------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Develop in the browser              | `npm run dev`                      | Validates committed assets, then starts Vite                                                      |
+| Develop in Electron                 | `npm run dev:desktop`              | Starts the desktop shell                                                                          |
+| Build the web renderer              | `npm run build`                    | Validates generated outputs; does not rewrite them or run typecheck                               |
+| Regenerate assets                   | `npm run assets`                   | [Asset workflow](./WORKFLOWS-ASSETS.md) covers narrower operations                                |
+| Check local asset freshness         | `npm run assets:check`             | Read-only; requires selected local Asset Library sources                                          |
+| Check prepared outputs              | `npm run assets:check:outputs`     | Read-only; does not require Asset Library; used by CI                                             |
+| Run local smoke                     | `npm test`                         | Fixed Node-only suites; accepts no test-path arguments                                            |
+| Run unit tests                      | `npm run test:full -- <path>`      | Omit paths for the full unit suite; agents may run unit tests without approval                    |
+| Select affected unit tests          | `npm run verify:unit -- <paths>`   | Dependency-related and risk-selected units only; add `--plan` to inspect selection                |
+| Check a task during work or handoff | `npm run check -- --diff`          | Add `--plan` to preview selection                                                                 |
+| Check source types                  | `npm run typecheck`                | Source types; full static checks run in CI or by explicit local request                           |
+| Run the CI static aggregate         | `npm run lint:ci`                  | See [gate policy](../CONTRIBUTING.md#static-build-and-ci-policy)                                  |
+| Validate docs                       | `npm run docs:check`               | Links, paths, commands, discovery references, plan metadata                                       |
+| Run a browser journey               | `npm run test:e2e:route -- <name>` | [E2E guide](../tests/e2e/README.md#running-focused-checks); preview mode requires a current build |
+| Simulate isolated battles           | `npm run balance:sim`              | [Battle simulation](./REFERENCE.md#balance-simulation)                                            |
+| Simulate careers                    | `npm run balance:playthrough`      | [Headless playthroughs](./PLAYTHROUGH_SIMULATION.md)                                              |
+| Compare loot offers                 | `npm run balance:loot`             | [Loot tuning](./ARMORY.md#loot-tuning)                                                            |
+| Profile frames and hitches          | `npm run perf`                     | [Performance guide](./PERFORMANCE.md)                                                             |
+| Find recent check evidence          | `npm run runs:show -- --last 10`   | Run IDs, outcomes and artifact locations                                                          |
+| Reset local diagnostics             | `npm run clean`                    | Cleanup details below                                                                             |
+| Publish a release                   | `npm run release`                  | Gates, commit/tag, push and CI watch; follow [Release](./RELEASE.md)                              |
+
+For changed player-facing text, use `npm run i18n:prepare -- <task-file.json>`,
+translate and separately review its result templates, then run
+`npm run i18n:finish -- <task-file.json>`. [Localization](./LOCALIZATION.md#agent-workflow) owns the workflow.
 
 Use [Agent discovery](./AGENT_DISCOVERY.md) for optional lookup/measurement
 commands and [Plans](./Plans/README.md) for plan creation and completion.
 `npm run docs:check:final` is a non-mutating repository-wide closure check: it
 requires no active or blocked plans and does not finish or delete them.
-Ordinary documentation handoff uses `docs:check` plus the task-scoped `check`;
+Ordinary documentation handoff uses the task-scoped `check`, which includes documentation contracts;
 other tasks' active or blocked plans may remain.
 
 ## Local development

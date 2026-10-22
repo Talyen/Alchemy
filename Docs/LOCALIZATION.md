@@ -81,22 +81,18 @@ Build and package gates validate all shipped languages and the asset digest.
 The [localization skill](../.agents/skills/localization/SKILL.md) applies whenever
 player-facing text changes.
 
-1. Run `npm run i18n:extract` to refresh English, remove obsolete entries, and
-   regenerate runtime/Steam exports.
-2. Run `npm run i18n:tasks` for JSON packets containing only missing, stale, or
-   unreviewed canonical entries. Packets include context, source hashes, relevant
-   terminology, and prior translations. Repeated wording and exact-number catalog
-   aliases reuse canonical translations mechanically.
-3. The current agent drafts translations, then reviews their meaning separately.
-   Preserve negation, actors, conditions, timing, quantities, semantic tags and
-   placeholders. There is no manual translation or human-review requirement.
-4. Apply a JSON result using `npm run i18n:apply -- <file>`. Its shape is
-   `{ "locale": "de", "results": { "message.id": { "text": "…", "sourceHash": "…", "reviewed": true } } }`.
-   Plural messages also require `forms` for every category in the target locale's
-   `Intl.PluralRules`; the default text equals `forms.other`.
-5. Run `npm run i18n:check`. Source/context changes, relevant glossary changes,
-   missing review, invalid placeholders/tags/plurals, orphan entries, stale runtime
-   assets and stale Steam exports fail the check.
+1. Run `npm run i18n:prepare -- <task-file.json>` (default: `reports/localization/tasks.json`). This extracts current English, refreshes derived outputs, and writes one editable packet containing only pending canonical messages and result templates for affected locales. An existing packet is never overwritten; choose another path when source changes during ongoing work.
+2. Translate the packet's `results`, then review meaning in a separate pass against `messages`: negation, actor, timing, conditions, quantities, permanence, alternatives, and glossary consistency. Preserve named parameters, semantic tags and Steam tokens. Plural templates include every required category; `text` must match `forms.other`. Mark `reviewed: true` only after that review.
+3. Run `npm run i18n:finish -- <task-file.json>`. Every locale in the packet is validated before any catalog is written; stale hashes, missing review, invalid placeholders/tags/plurals and duplicate locales are rejected. It applies the batch, regenerates outputs once, and runs the complete freshness, font and export checks. A structural check cannot establish translation quality.
+
+An empty packet means no translations are pending; finishing it still checks freshness.
+Packets may be arrays or the existing single-locale shape:
+`{ "locale": "de", "results": { "message.id": { "text": "…", "sourceHash": "…", "reviewed": true } } }`.
+Context and templates are task-local working files, not committed catalogs.
+
+The existing `i18n:extract`, `i18n:tasks`, `i18n:apply -- <file>` and `i18n:check`
+commands remain available for diagnosis and partial work. `i18n:apply` accepts the
+same batch format without demanding that all other pending work is finished.
 
 The local check, locked integration, CI static gate and verified builds enforce
 this check. They never call a model or modify translations. If integration

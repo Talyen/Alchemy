@@ -127,6 +127,75 @@ export function validateResults({ messages, glossary, locale, results, previous 
   );
 }
 
+export function translationPackets({ messages, glossary, catalogs }) {
+  return TARGETS.flatMap((locale) => {
+    const previous = catalogs[locale] ?? {};
+    const pending = Object.entries(messages).filter(
+      ([id, message]) =>
+        !message.aliasOf &&
+        (previous[id]?.sourceHash !== sourceHash(message, glossary[locale], locale) || previous[id]?.reviewed !== true),
+    );
+    if (!pending.length) return [];
+    return [
+      {
+        locale,
+        instructions: INSTRUCTIONS,
+        glossary: glossary[locale],
+        messages: Object.fromEntries(
+          pending.map(([id, message]) => [
+            id,
+            {
+              ...message,
+              sourceHash: sourceHash(message, glossary[locale], locale),
+              previous: previous[id]?.text ?? null,
+            },
+          ]),
+        ),
+        results: Object.fromEntries(
+          pending.map(([id, message]) => [
+            id,
+            {
+              text: previous[id]?.text ?? "",
+              sourceHash: sourceHash(message, glossary[locale], locale),
+              reviewed: false,
+              ...(message.plural
+                ? {
+                    forms: Object.fromEntries(
+                      new Intl.PluralRules(locale)
+                        .resolvedOptions()
+                        .pluralCategories.map((category) => [category, previous[id]?.forms?.[category] ?? ""]),
+                    ),
+                  }
+                : {}),
+            },
+          ]),
+        ),
+      },
+    ];
+  });
+}
+
+export function validateBatch(input, { messages, glossary, catalogs }) {
+  const packets = Array.isArray(input) ? input : [input];
+  const next = {};
+  for (const packet of packets) {
+    if (!packet || typeof packet !== "object" || !TARGETS.includes(packet.locale))
+      throw new Error("Unsupported translation locale");
+    const { locale, results } = packet;
+    if (Object.hasOwn(next, locale)) throw new Error(`Duplicate translation locale: ${locale}`);
+    if (!results || typeof results !== "object" || Array.isArray(results))
+      throw new Error("Expected results keyed by message ID");
+    next[locale] = validateResults({
+      messages,
+      glossary: glossary[locale],
+      locale,
+      results,
+      previous: catalogs[locale],
+    });
+  }
+  return next;
+}
+
 export function resolveAliases(messages, entries, glossary, locale) {
   const result = { ...entries };
   const resolving = new Set();

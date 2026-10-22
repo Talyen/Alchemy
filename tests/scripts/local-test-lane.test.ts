@@ -12,13 +12,9 @@ async function reclaimReleasedPort(port: number) {
   const deadline = Date.now() + 1_000;
   for (;;) {
     try {
-      return await acquireLocalTestLane(port);
+      return await acquireLocalTestLane(port, { timeoutMs: 0 });
     } catch (error) {
-      if (
-        !(error instanceof Error) ||
-        !error.message.startsWith("Local test lane is occupied") ||
-        Date.now() >= deadline
-      )
+      if (!(error instanceof Error) || !error.message.startsWith("Local test lane busy") || Date.now() >= deadline)
         throw error;
       await delay(10);
     }
@@ -28,8 +24,7 @@ async function reclaimReleasedPort(port: number) {
 it("rejects an overlapping run without disturbing its owner, then permits reuse after release", async () => {
   const first = await acquireLocalTestLane(0);
   try {
-    await expect(acquireLocalTestLane(first.port)).rejects.toThrow("no tests were started");
-    await expect(acquireLocalTestLane(first.port)).rejects.toThrow("no tests were started");
+    await expect(acquireLocalTestLane(first.port, { timeoutMs: 0 })).rejects.toThrow("No work started");
   } finally {
     await first.release();
   }
@@ -45,12 +40,56 @@ it("preserves an unrelated listener instead of treating the occupied port as a s
   const address = server.address();
   if (!address || typeof address === "string") throw new Error("Expected TCP address");
   try {
-    await expect(acquireLocalTestLane(address.port)).rejects.toThrow("inspect the port owner");
+    await expect(acquireLocalTestLane(address.port, { timeoutMs: 0 })).rejects.toThrow("inspect the port owner");
     expect(server.listening).toBe(true);
   } finally {
     await new Promise<void>((resolve) => {
       server.close(() => resolve());
     });
+  }
+});
+
+it("waits for release, then acquires the same lane without overlapping its owner", async () => {
+  const first = await acquireLocalTestLane(0);
+  const messages: string[] = [];
+  let waiting!: () => void;
+  const observed = new Promise<void>((resolve) => {
+    waiting = resolve;
+  });
+  const next = acquireLocalTestLane(first.port, {
+    timeoutMs: 2_000,
+    onWait: (message) => {
+      messages.push(message);
+      waiting();
+    },
+  });
+  try {
+    await observed;
+    await expect(acquireLocalTestLane(first.port, { timeoutMs: 0 })).rejects.toThrow("No work started");
+  } finally {
+    await first.release();
+  }
+  const acquired = await next;
+  expect(acquired.port).toBe(first.port);
+  expect(messages).toHaveLength(2);
+  await acquired.release();
+});
+
+it("cancels or times out a waiting run while preserving the owner's listener", async () => {
+  const owner = await acquireLocalTestLane(0);
+  const controller = new AbortController();
+  try {
+    await expect(
+      acquireLocalTestLane(owner.port, {
+        timeoutMs: 2_000,
+        signal: controller.signal,
+        onWait: () => controller.abort(),
+      }),
+    ).rejects.toThrow("abort");
+    await expect(acquireLocalTestLane(owner.port, { timeoutMs: 20, onWait: () => {} })).rejects.toThrow("timed out");
+    await expect(acquireLocalTestLane(owner.port, { timeoutMs: 0 })).rejects.toThrow("No work started");
+  } finally {
+    await owner.release();
   }
 });
 
@@ -70,7 +109,7 @@ const lane = await acquireLocalTestLane(0); console.log(lane.port);`,
   try {
     const [output] = await once(child.stdout, "data");
     const port = Number(String(output).trim());
-    await expect(acquireLocalTestLane(port)).rejects.toThrow("no tests were started");
+    await expect(acquireLocalTestLane(port, { timeoutMs: 0 })).rejects.toThrow("No work started");
     child.kill("SIGTERM");
     await exited;
     const replacement = await reclaimReleasedPort(port);

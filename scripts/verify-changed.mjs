@@ -6,7 +6,7 @@ import fs from "node:fs";
 import { summarizeAndReportFailure, summarizeStepResult } from "./lib/run-step.mjs";
 import { resolveRoutePlan } from "./lib/verification/change-routes.mjs";
 import { parseChangedPathsArgs, resolveSelectedPaths } from "./lib/verification/changed-paths.mjs";
-import { COMMANDS, DOCS_CHECK_KEY } from "./lib/verification/test-commands.mjs";
+import { DOCS_CHECK_KEY } from "./lib/verification/test-commands.mjs";
 import { ensureRunId, writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { defineScript } from "./lib/script-run.mjs";
 import { runCommand } from "./lib/run-command.mjs";
@@ -43,14 +43,13 @@ export function filterPlanCommands(plan, flags) {
       ...plan,
       commands: plan.commands.filter((command) => command.key === "related" || command.key.startsWith("unit-")),
     };
-  if (!flags.has("full")) {
+  if (!flags.has("full"))
     return {
       ...plan,
-      commands: plan.paths.some((file) => !file.endsWith(".md"))
-        ? [{ key: "unit-local", ...COMMANDS["unit-local"] }]
-        : [],
+      commands: plan.commands.filter(
+        (command) => command.key === "related" || command.key.startsWith("unit-") || command.key === DOCS_CHECK_KEY,
+      ),
     };
-  }
   if (flags.has("skip-docs-check")) {
     return { ...plan, commands: plan.commands.filter((command) => command.key !== DOCS_CHECK_KEY) };
   }
@@ -113,17 +112,14 @@ export function main(argv = process.argv.slice(2)) {
     // docs:check itself, so one gate never pays for documentation checks twice.
     const plan = filterPlanCommands(resolveRoutePlan(paths), flags);
     console.log(
-      `Run: ${runId}; scope: ${flags.has("full") ? "broader verification" : flags.has("unit") ? "focused units" : "fixed Node smoke"}`,
+      `Run: ${runId}; scope: ${flags.has("full") ? "broader verification" : flags.has("unit") ? "focused units" : "task units and documentation"}`,
     );
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
     if (!flags.has("full"))
-      console.log(
-        "Pending: full static, builds, browser/Electron and CI integration validation." +
-          (flags.has("unit") ? "" : " Edited gameplay is not selected by fixed smoke."),
-      );
+      console.log("Pending: full static, builds, browser/Electron and CI integration validation.");
     if (flags.has("plan")) return 0;
 
-    // Local smoke does not need the full repository/dependency identity walk.
+    // Task checks always execute; only the explicit full profile reuses receipts.
     const cache = flags.has("full") ? createVerificationCache(ROOT, plan.commands) : null;
     const outcomes = [];
     for (const [index, command] of plan.commands.entries()) {
@@ -185,10 +181,10 @@ export function main(argv = process.argv.slice(2)) {
           : flags.has("full")
             ? `${outcomes.length}/${outcomes.length} verification steps passed.`
             : outcomes.length === 0
-              ? "No executable tests selected; run documentation checks separately. Full CI validation is required."
+              ? "No applicable verification commands selected; full CI validation is required."
               : flags.has("unit")
                 ? "Focused units passed; full CI validation is required."
-                : "Fixed Node smoke passed; edited gameplay coverage and full CI validation remain pending.",
+                : "Task units and documentation passed; full CI validation is required.",
     });
     return failed.length === 0 ? 0 : 1;
   } catch (error) {
