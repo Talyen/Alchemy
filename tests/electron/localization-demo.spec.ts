@@ -94,7 +94,6 @@ for (const [initialLocale, resumeLocale] of [
       await page.getByRole("option", { name: languages[resumeLocale].name, exact: true }).click();
       const resumeLabel = (english: string) => translatedLabel(resumeLocale, english);
       await page.getByRole("button", { name: resumeLabel("Back"), exact: true }).click();
-      await page.getByRole("button", { name: resumeLabel("Continue"), exact: true }).click();
       await expect(page.getByRole("button", { name: resumeLabel("End Turn"), exact: true })).toBeVisible();
       expect(mechanics((await read(page)).activeRun)).toEqual(mechanics(before));
       expect(errors).toEqual([]);
