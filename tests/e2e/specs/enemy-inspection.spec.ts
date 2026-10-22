@@ -82,9 +82,3 @@ test("Bestiary uses the same trait and ability inspection without revealing undi
   await undiscovered.click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
-
-// Trait-box sizing across map, hover, and inspection widths belonged to the
-// display-sizing layout owner ("enemy Traits remain readable and inside the
-// viewport in Collection and Battle"); the unified-pixel measurements were
-// brittle static assertions, and containment/readability survives there.
-// Screenshots for this flow now come from display-sizing only.

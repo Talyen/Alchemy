@@ -1,7 +1,7 @@
 import { makeTestCard } from "../../../../fixtures/cards";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { CardShopScreen } from "@/features/alchemy/run-loop/screens/card-shop-screen";
 import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
@@ -9,21 +9,18 @@ import { installShopScreenIntersectionObserver } from "../../../../helpers/shop-
 
 beforeAll(() => {
   installShopScreenIntersectionObserver();
+  // JSDOM has no layout observer; the browser journey owns resize geometry.
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
 });
 
-vi.mock(
-  "@/features/alchemy/run-loop/shop/ui/purchasable-shop-item",
-  () => import("../../../../helpers/shop-screen-ui-mocks"),
-);
-vi.mock("@/features/alchemy/shared/ui/cards/selectable-card", () => import("../../../../helpers/shop-screen-ui-mocks"));
-vi.mock(
-  "@/features/alchemy/shared/ui/cards/card-selection-grid",
-  () => import("../../../../helpers/shop-screen-ui-mocks"),
-);
-vi.mock(
-  "@/features/alchemy/run-loop/screens/shop-browse-shell",
-  () => import("../../../../helpers/shop-screen-ui-mocks"),
-);
+afterAll(() => vi.unstubAllGlobals());
 
 const deckCard = makeTestCard({
   id: "strike-1",
@@ -40,7 +37,11 @@ describe("CardShopScreen remove mode", () => {
     cleanup();
   });
 
-  function renderCardShop(onRemoveCard: (index: number) => boolean, runDeck = [deckCard]) {
+  function renderCardShop(
+    onRemoveCard: (index: number) => boolean,
+    runDeck = [deckCard],
+    isProgressSavePending = () => false,
+  ) {
     return render(
       <CardShopScreen
         gold={100}
@@ -54,6 +55,7 @@ describe("CardShopScreen remove mode", () => {
         refreshPrice={15}
         onBuy={() => true}
         onRemoveCard={onRemoveCard}
+        isProgressSavePending={isProgressSavePending}
         onRefresh={() => {}}
         onContinue={() => {}}
       />,
@@ -72,23 +74,30 @@ describe("CardShopScreen remove mode", () => {
     expect(onRemoveCard).not.toHaveBeenCalled();
   });
 
-  it("explains a rejected removal and permits a successful retry", async () => {
+  it("keeps the selected identity after rejection, blocks pending saves, and permits retry", async () => {
     const user = userEvent.setup();
     const onRemoveCard = vi.fn(() => false);
-    renderCardShop(onRemoveCard);
+    let savePending = false;
+    renderCardShop(onRemoveCard, [deckCard, { ...deckCard, id: "bash", title: "Bash" }], () => savePending);
 
     await user.click(screen.getByRole("button", { name: /Remove Card/i }));
     expect(await screen.findByRole("heading", { name: "Remove Card" })).toBeTruthy();
-    expect(screen.queryByText("Select a card to remove from your deck")).toBeNull();
 
-    await user.click(await screen.findByRole("button", { name: "Select shop card" }));
+    await user.click(await screen.findByRole("button", { name: "Select Bash" }));
     await user.click(screen.getByRole("button", { name: /^Remove(?! Card)/i }));
 
-    expect(onRemoveCard).toHaveBeenCalledWith(0);
+    expect(onRemoveCard).toHaveBeenCalledExactlyOnceWith(1);
     expect(screen.getByRole("heading", { name: "Remove Card" })).toBeTruthy();
     expect(screen.getByRole("alert").textContent).toMatch(/could not.*remove/i);
+    savePending = true;
+    await user.click(screen.getByRole("button", { name: /^Remove(?! Card)/i }));
+    expect(onRemoveCard).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("alert")).toBeTruthy();
+    savePending = false;
     onRemoveCard.mockReturnValueOnce(true);
     await user.click(screen.getByRole("button", { name: /^Remove(?! Card)/i }));
+    expect(onRemoveCard).toHaveBeenNthCalledWith(2, 1);
+    expect(onRemoveCard).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.queryByRole("heading", { name: "Remove Card" })).toBeNull();
   });

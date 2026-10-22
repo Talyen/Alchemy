@@ -106,6 +106,17 @@ describe("CollectionScreen", () => {
     expect(audio.previewBossMusic).toHaveBeenCalledWith(getBossMusicKey("forge-golem"));
   });
 
+  it("reveals a newly discovered card's authored description without remounting Collection", () => {
+    const { rerender } = render(<CollectionScreen {...defaultProps} discoveredCardIds={[]} />);
+    expect(screen.queryByRole("button", { name: "Inspect Anvil" })).toBeNull();
+    rerender(<CollectionScreen {...defaultProps} discoveredCardIds={["anvil"]} />);
+    const anvil = screen.getByRole("button", { name: "Inspect Anvil" });
+    fireEvent.mouseEnter(anvil.parentElement!);
+    expect(screen.getByRole("tooltip").textContent).toMatch(/Gain \d+ Forge/);
+    fireEvent.click(anvil);
+    expect(audio.playCardSound).toHaveBeenCalledExactlyOnceWith("anvil");
+  });
+
   it("does not reveal an undiscovered card through its sound", () => {
     render(<CollectionScreen {...defaultProps} discoveredCardIds={[]} />);
     fireEvent.click(screen.getAllByRole("button", { name: "Inspect Undiscovered Entry" })[0]!);

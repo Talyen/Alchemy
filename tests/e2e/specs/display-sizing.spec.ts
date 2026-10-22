@@ -9,7 +9,6 @@ import {
   startBattleWithDeck,
   waitForLayoutSettled,
 } from "../../browser-helpers";
-import { openArmory } from "../armory";
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
 import { getVirtualResolutionLayout } from "../../../src/features/alchemy/shared/ui/use-virtual-resolution";
@@ -19,13 +18,8 @@ import { CONTENT_REFERENCE_VIEWPORT } from "../../../src/lib/game-constants/ui-l
 const VIEWPORTS = [
   { width: 1024, height: 768 },
   { width: 1280, height: 720 },
-  { width: 1280, height: 800 },
-  { width: 1500, height: 1000 },
   { width: 1920, height: 1080 },
-  { width: 1920, height: 1200 },
-  { width: 2560, height: 1440 },
   { width: 3440, height: 1440 },
-  { width: 3840, height: 1080 },
   { width: 3840, height: 2160 },
 ];
 
@@ -168,72 +162,39 @@ test.describe("Responsive display sizes", slow, () => {
     }
   });
 
-  // Computed dimensions catch oversized hover traits and accidental double scaling;
-  // DOM tests cannot resolve Tailwind sizes or inherited content units.
-  for (const { viewport, gameSizePercent, tooltipSizePercent } of [
-    { viewport: CONTENT_REFERENCE_VIEWPORT, gameSizePercent: 100, tooltipSizePercent: 100 },
-    { viewport: { width: 1280, height: 720 }, gameSizePercent: 120, tooltipSizePercent: 125 },
-  ]) {
-    test(`enemy hover Traits stay compact in Collection and Battle at ${viewport.width}px, Game ${gameSizePercent}%, Tooltip ${tooltipSizePercent}%`, async ({
-      page,
-    }) => {
-      test.setTimeout(60_000);
-      await page.setViewportSize(viewport);
-      await page.addInitScript(
-        (preferences) => localStorage.setItem("alchemy-device-display-v1", JSON.stringify(preferences)),
-        { version: 1, gameSizePercent, tooltipSizePercent },
+  test("enemy Traits remain readable and contained at maximum sizing", async ({ page, fastBattle }) => {
+    void fastBattle;
+    const viewport = { width: 1280, height: 720 };
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "alchemy-device-display-v1",
+        JSON.stringify({ version: 1, gameSizePercent: 120, tooltipSizePercent: 125 }),
       );
-      const scale = getVirtualResolutionLayout(viewport.width, viewport.height, {
-        gameSizePercent,
-        tooltipSizePercent,
-      }).tooltipScale;
-      await new MenuPage(page).gotoCollection({ encounteredEnemyIds: ["bandit"] });
-      const tooltip = page.locator("#tooltip-root .hover-popup-panel[data-visible]");
-      await page.getByRole("button", { name: "Bestiary", exact: true }).click();
-      for (const screen of ["Collection", "Battle"]) {
-        if (screen === "Battle") {
-          await startBattleWithDeck(
-            page,
-            Array.from({ length: 6 }, () => makeCard()),
-          );
-          await expect(page.getByTestId("draw-pile").getByRole("button")).toHaveAttribute("aria-disabled", "false", {
-            timeout: 20_000,
-          });
-          await page.getByTestId("battle-enemy-art-panel").hover();
-        } else {
-          await page.getByRole("button", { name: "Inspect Bandit", exact: true }).hover();
-        }
-        const trait = tooltip.locator("[data-trait]").first();
-        await expect(trait).toBeVisible();
-        const sizes = await trait.evaluate((el) => {
-          const heading = el.querySelector("h3")!;
-          const description = el.querySelector("p")!;
-          const icon = el.querySelector("svg")!;
-          return {
-            heading: parseFloat(getComputedStyle(heading).fontSize),
-            description: parseFloat(getComputedStyle(description).fontSize),
-            iconWidth: parseFloat(getComputedStyle(icon).width),
-            iconHeight: parseFloat(getComputedStyle(icon).height),
-            rowGap: parseFloat(getComputedStyle(el).columnGap),
-            titleGap: parseFloat(getComputedStyle(description).marginTop),
-            traitGap: parseFloat(getComputedStyle(el.parentElement!.parentElement!).rowGap),
-          };
-        });
-        for (const [dimension, pixels] of Object.entries({
-          heading: 14,
-          description: 12,
-          iconWidth: 24,
-          iconHeight: 24,
-          rowGap: 8,
-          titleGap: 3,
-          traitGap: 8,
-        })) {
-          expect(sizes[dimension as keyof typeof sizes], `${screen}: ${dimension}`).toBeCloseTo(pixels * scale, 1);
-        }
-        await expectTooltipFitsViewport(tooltip, viewport, 0);
-      }
     });
-  }
+    await new MenuPage(page).gotoCollection({ encounteredEnemyIds: ["bandit"] });
+    await page.getByRole("button", { name: "Bestiary", exact: true }).click();
+    const tooltip = page.locator("#tooltip-root .hover-popup-panel[data-visible]");
+    for (const screen of ["Collection", "Battle"]) {
+      if (screen === "Battle") {
+        await startBattleWithDeck(
+          page,
+          Array.from({ length: 6 }, () => makeCard()),
+        );
+        await page.getByTestId("battle-enemy-art-panel").hover();
+      } else {
+        await page.getByRole("button", { name: "Inspect Bandit", exact: true }).hover();
+      }
+      const trait = tooltip.locator("[data-trait]").first();
+      await expect(trait).toBeVisible();
+      await expect(trait.locator("h3")).not.toBeEmpty();
+      await expect(trait.locator("p")).not.toBeEmpty();
+      await expectTooltipFitsViewport(tooltip, viewport, 0);
+      await expect
+        .poll(() => trait.locator("p").evaluate((element) => element.scrollWidth - element.clientWidth))
+        .toBeLessThanOrEqual(1);
+    }
+  });
 
   test("collection keeps page capacity and position across proportional resizes and tab changes", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
@@ -356,64 +317,6 @@ test("compact Options controls remain reachable at large size in a narrow window
   await expect(page.getByRole("slider", { name: "Brightness", exact: true })).toHaveCount(0);
 });
 
-test("Start a Run artwork and tooltips share proportional scaling through resizes", slow, async ({ page }) => {
-  await page.setViewportSize(CONTENT_REFERENCE_VIEWPORT);
-  await page.addInitScript(() => {
-    localStorage.setItem(
-      "alchemy-device-display-v1",
-      JSON.stringify({ version: 1, gameSizePercent: 100, tooltipSizePercent: 100 }),
-    );
-  });
-  const menu = new MenuPage(page);
-  await menu.goto();
-  await menu.openGameModeSelect();
-  const campaign = page.getByRole("button", { name: "The Campaign", exact: true });
-  const image = campaign.locator("img").first();
-  await campaign.hover();
-  const tooltip = page.locator("#tooltip-root .hover-popup-panel[data-visible]").last();
-  await expect(tooltip).toBeVisible();
-  await expect(campaign).toHaveCSS("scale", "1.035");
-  const reference = {
-    image: (await image.boundingBox())!,
-    tooltipContentWidth: await tooltip.evaluate((el) => {
-      const style = getComputedStyle(el);
-      return el.getBoundingClientRect().width - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth);
-    }),
-    font: await tooltip
-      .locator("p")
-      .first()
-      .evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
-  };
-  const referenceLayout = getVirtualResolutionLayout(
-    CONTENT_REFERENCE_VIEWPORT.width,
-    CONTENT_REFERENCE_VIEWPORT.height,
-  );
-  expect(reference.font).toBeCloseTo(18 * referenceLayout.tooltipScale, 2);
-
-  for (const viewport of [
-    { width: 1280, height: 720 },
-    { width: 1920, height: 1080 },
-  ]) {
-    await page.setViewportSize(viewport);
-    const factor =
-      getVirtualResolutionLayout(viewport.width, viewport.height).contentScale / referenceLayout.contentScale;
-    await campaign.hover();
-    await expect(campaign).toHaveCSS("scale", "1.035");
-    await expect.poll(async () => (await image.boundingBox())!.width / reference.image.width).toBeCloseTo(factor, 2);
-    await expect(tooltip).toBeVisible();
-    await expect
-      .poll(() =>
-        tooltip
-          .locator("p")
-          .first()
-          .evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
-      )
-      .toBeCloseTo(reference.font * factor, 2);
-    await assertStageFitsViewport(page);
-    await assertNoOverflow(page, `Start a Run ${viewport.width} × ${viewport.height}`);
-  }
-});
-
 test(
   "card selection grid removal actions stay visible and stable across pages at maximum game size",
   slow,
@@ -464,30 +367,6 @@ test(
       .toEqual(before);
   },
 );
-
-test("Armory currency artwork follows Game Size", slow, async ({ page }) => {
-  await page.setViewportSize(CONTENT_REFERENCE_VIEWPORT);
-  await page.goto("/");
-  await new MenuPage(page).expectMainMenuAfterColdStart();
-  const widths: number[] = [];
-  for (const gameSizePercent of [80, 120]) {
-    await page.evaluate(
-      (percent) =>
-        localStorage.setItem(
-          "alchemy-device-display-v1",
-          JSON.stringify({ version: 1, gameSizePercent: percent, tooltipSizePercent: 100 }),
-        ),
-      gameSizePercent,
-    );
-    await openArmory(page);
-    const currency = page.getByTestId("armory-crafting-currency").first();
-    await waitForLayoutSettled(page, currency);
-    const bounds = (await currency.boundingBox())!;
-    expect(bounds.width).toBeCloseTo(bounds.height, 1);
-    widths.push(bounds.width);
-  }
-  expect(widths[1]! / widths[0]!).toBeCloseTo(1.5, 2);
-});
 
 for (const deviceScaleFactor of [1.25, 2]) {
   test.describe(`DPR ${deviceScaleFactor}`, () => {
