@@ -1,8 +1,8 @@
-import { isFocusNavigationEnabled } from "@/features/alchemy/shared/ui/focus-input";
+import { isFocusNavigationEnabled } from "@/features/alchemy/shared/ui/dialogs/focus-input";
 import type { LucideIcon } from "lucide-react";
 import { GameMessage } from "@/components/localization";
 import { useGameTranslation } from "@/components/use-game-translation";
-import { useModalEscapeDismiss } from "../../../shared/ui/use-modal-escape-dismiss";
+import { useModalEscapeDismiss } from "../../../shared/ui/dialogs/use-modal-escape-dismiss";
 import { ESCAPE_PRIORITY } from "@/app/escape-stack";
 import { useState } from "react";
 import { useId, type ReactNode } from "react";

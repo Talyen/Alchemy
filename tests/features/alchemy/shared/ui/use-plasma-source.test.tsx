@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { usePlasmaBaseline, usePlasmaInteraction } from "@/features/alchemy/shared/ui/use-plasma-source";
 
 const red = { primary: "#ff0000", secondary: "#440000" };

@@ -90,7 +90,7 @@ panel preserves the foreground selection.
 Confirmation focus containment pauses while the panel is inert; focus returns
 to its existing target when the panel unmounts.
 
-Use `focusableControls` from `shared/ui/focus-navigation.ts` for traversal and
+Use `focusableControls` from `shared/ui/dialogs/focus-navigation.ts` for traversal and
 `isFocusAvailable` before programmatic focus. Recompute eligible controls when
 handling input: a save, choice, pagination change, or rerender can disable or
 replace a previously eligible button. Native disabled, hidden, detached, and
@@ -118,7 +118,7 @@ cannot accidentally navigate out of Options or Armory.
 [Screen focus](../src/app/use-screen-focus.ts) recovers after intentional focus navigation across screen
 readiness changes when the old focus is gone or unavailable. Pointer input cancels
 that behavior. Ready, visible controls are selected through
-[shared focus eligibility](../src/features/alchemy/shared/ui/focus-navigation.ts);
+[shared focus eligibility](../src/features/alchemy/shared/ui/dialogs/focus-navigation.ts);
 inert, hidden, and natively disabled controls are excluded. Inspection-only
 aria-disabled controls can still be traversed and inspected. Recovery scrolls
 only as needed. Closing inspection does not trigger screen-focus recovery.

@@ -61,7 +61,7 @@ describe("Oxlint policies", () => {
       "src/features/alchemy/run-loop/shop/merchant-shop-commands.ts",
       "src/features/alchemy/run-loop/navigation/alchemy-commands.ts",
       "src/app/playthrough/controller.ts",
-      "src/features/alchemy/shared/stores/meta-commands.ts",
+      "src/features/alchemy/shared/stores/commands/meta-commands.ts",
     ];
     checkPolicy("no-restricted-imports", [
       ...paths.map((filePath) => ({ filePath, code, lines: [1] })),
@@ -112,7 +112,7 @@ describe("Oxlint policies", () => {
       'Math["random"]();',
       'const computed = Math["random"];',
       "Math[random]();",
-      'import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";',
+      'import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/commands/gear-session-command";',
     ].join("\n");
     const paths = [
       "src/lib/battle/card-play.ts",
@@ -310,7 +310,7 @@ it("keeps the shipping singleton out of reusable domains and headless careers", 
   ].join("\n");
   const paths = [
     "src/features/alchemy/run-loop/shop/create-shop-actions.ts",
-    "src/features/alchemy/shared/stores/battle-commands.ts",
+    "src/features/alchemy/shared/stores/commands/battle-commands.ts",
     "src/features/alchemy/shared/storage/bootstrap-save-state.ts",
     "src/app/playthrough/controller.ts",
     "src/app/autosave-lifecycle.ts",
@@ -330,7 +330,7 @@ it("keeps the shipping singleton out of reusable domains and headless careers", 
 it("requires explicit sessions in functions and callback contracts", () => {
   checkPaths(
     "alchemy/session-ownership",
-    ["src/features/alchemy/shared/stores/battle-commands.ts"],
+    ["src/features/alchemy/shared/stores/commands/battle-commands.ts"],
     [
       'import type { GameSession as Career } from "./game-session-types";',
       "function optional(session?: Career) {}",
@@ -351,23 +351,38 @@ it("preserves layer boundaries and their owning exceptions", () => {
     ["src/features/alchemy/run-loop/probe.ts", 'import { setup } from "@/features/alchemy/run-setup/setup";', [1]],
     [
       "src/features/alchemy/shared/ui/probe.tsx",
-      'import { state } from "@/features/alchemy/shared/stores/gameplay-state-store";',
+      'import { state } from "@/features/alchemy/shared/stores/react/gameplay-state-store";',
       [1, 1],
     ],
     [
       "src/features/alchemy/run-loop/read-probe.ts",
-      'import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";',
+      'import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";',
       [1],
     ],
     [
       "src/features/alchemy/shared/ui/read-probe.tsx",
-      'import { useHasActiveRun } from "@/features/alchemy/shared/stores/use-run-reads";',
+      'import { useHasActiveRun } from "@/features/alchemy/shared/stores/react/use-run-reads";',
       [1],
     ],
     ["src/features/alchemy/meta/screens/probe.tsx", 'import { navigation } from "@/app/use-app-navigation";', [1]],
+    ...["session", "commands", "persistence"].flatMap(
+      (group) =>
+        [
+          [`src/features/alchemy/shared/stores/${group}/probe.ts`, 'import { useMemo } from "react";', [1]],
+          [
+            `src/features/alchemy/shared/stores/${group}/adapter-probe.ts`,
+            'import { useUiStore } from "../react/ui-store";',
+            [1],
+          ],
+        ] as const,
+    ),
     ["src/lib/balance/probe.ts", 'import { createBattleState } from "@/lib/battle";', [1]],
-    ["src/features/alchemy/shared/storage/persistence.ts", 'import { runtime } from "../stores/session-runtime";', []],
-    ["src/features/alchemy/shared/storage/io.ts", 'import { runtime } from "../stores/session-runtime";', []],
+    [
+      "src/features/alchemy/shared/storage/persistence.ts",
+      'import { runtime } from "../stores/session/session-runtime";',
+      [],
+    ],
+    ["src/features/alchemy/shared/storage/io.ts", 'import { runtime } from "../stores/session/session-runtime";', []],
   ] as const;
   checkPolicy(
     "no-restricted-imports",
@@ -474,9 +489,9 @@ it("keeps generic Gear mutation out of consumers while allowing domain commands"
       "src/features/alchemy/run-loop/run/reward-commands.ts",
     ],
     [
-      'import * as gearInternals from "@/features/alchemy/shared/stores/gear-session-command";',
-      'import * as gearActions from "@/features/alchemy/shared/stores/gear-actions";',
-      'import { salvageGear } from "@/features/alchemy/shared/stores/gear-commands";',
+      'import * as gearInternals from "@/features/alchemy/shared/stores/commands/gear-session-command";',
+      'import * as gearActions from "@/features/alchemy/shared/stores/commands/gear-actions";',
+      'import { salvageGear } from "@/features/alchemy/shared/stores/commands/gear-commands";',
     ].join("\n"),
     [1, 2],
   );

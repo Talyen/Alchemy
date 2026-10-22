@@ -13,33 +13,38 @@ import {
   resetUnlockedTalents,
   unlockTalent,
   applyTalentState,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { talentPool, canUnlockTalent, cardById } from "@/lib/game-data";
 import { mutateGameplayForTest, resetAllTestStores } from "../helpers/run-domain-store-test";
-import { readBattle, readRunSession, readRunProfile, readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
+import {
+  readBattle,
+  readRunSession,
+  readRunProfile,
+  readActiveRun,
+} from "@/features/alchemy/shared/stores/session/run-reads";
 import {
   setGold,
   setMaterials,
   setRunDeck,
   setScreen,
   setStarterDraftChoices,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { setBattleState } from "@/features/alchemy/shared/stores/commands/write/run-battle";
 import { createPlaythroughController } from "@/app/playthrough/controller";
-import { commitCardPlay } from "@/features/alchemy/shared/stores/battle-commands";
+import { commitCardPlay } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { cardSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import { claimRunReward } from "@/features/alchemy/run-loop/run/reward-commands";
 import { getRewardChoiceId } from "@/lib/active-run-session";
 import { parseActiveRun } from "@/lib/validation";
 import { buildings } from "@/lib/homestead/data";
-import { constructBuilding } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { constructBuilding } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import {
   createDefaultSaveData,
   configureSaveBackend,
   loadAlchemySaveState,
   hydrateAlchemyPersistenceFields,
 } from "@/features/alchemy/shared/storage";
-import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { restoreRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
 import { stateDigest, snapshotCareer } from "@/app/playthrough/career";
 import { resetStorageIoForTests } from "@/features/alchemy/shared/storage/io";

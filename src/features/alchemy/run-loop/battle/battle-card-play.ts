@@ -1,4 +1,4 @@
-import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/ui-store";
+import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/react/ui-store";
 import type { MouseEvent } from "react";
 import {
   canPlayCard as canPlayCardInBattle,

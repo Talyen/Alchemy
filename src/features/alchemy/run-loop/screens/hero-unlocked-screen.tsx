@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { characterArt, characters, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { getPlasmaColorPairForCharacter } from "@/features/alchemy/shared/config";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
-import { focusControl } from "../../shared/ui/focus-navigation";
+import { focusControl } from "../../shared/ui/dialogs/focus-navigation";
 import { usePlasmaBaseline } from "../../shared/ui/use-plasma-source";
 import { useArtworkReady } from "../../shared/ui/use-artwork-ready";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";

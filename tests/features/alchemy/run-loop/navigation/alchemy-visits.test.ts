@@ -8,7 +8,7 @@ import {
   setRunProgress,
   setRunSession,
 } from "../../../../helpers/run-domain-store-test";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { readBattle } from "@/features/alchemy/shared/stores/session/run-reads";
 import { patchBattleState } from "../../../../fixtures/battle";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
@@ -18,8 +18,8 @@ import {
 } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { restAtCampfire } from "@/features/alchemy/run-loop/run/destination-commands";
 import { createAlchemistShopCommands } from "@/features/alchemy/run-loop/shop/alchemist-shop-commands";
-import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { readActiveRun, readRunSession, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
+import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import { readActiveRun, readRunSession, readRunProfile } from "@/features/alchemy/shared/stores/session/run-reads";
 import { parseActiveRun } from "@/lib/validation";
 import { cardById, type BattleCard } from "@/lib/game-data";
 import { defaultGameSession } from "@/app/application-session";

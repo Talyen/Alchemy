@@ -1,5 +1,8 @@
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { bindSessionCapabilities, registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import {
+  bindSessionCapabilities,
+  registerSessionCleanup,
+} from "@/features/alchemy/shared/stores/session/session-capabilities";
 import {
   createCombatFeedback,
   createCombatFeedbackState,
@@ -9,12 +12,12 @@ import {
 import { createStore } from "zustand/vanilla";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { projectMana, MANA_DOCK_EXIT_MS, type ManaPresentation } from "./mana-presentation";
-import { createNotificationChannel } from "@/features/alchemy/shared/stores/notification-channel";
-import { deepFreeze } from "@/features/alchemy/shared/stores/store-utils";
+import { createNotificationChannel } from "@/features/alchemy/shared/stores/session/notification-channel";
+import { copyForPublication, deepFreeze } from "@/features/alchemy/shared/stores/session/store-utils";
 import { logError } from "@/lib/error-logger";
 import { battleSnapshot } from "@/lib/battle";
-import { readBattle, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
-import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { readBattle, readRunPhase } from "@/features/alchemy/shared/stores/session/run-reads";
+import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { CardGhost, CardTransfer } from "../../shared/types";
 import {
@@ -106,6 +109,8 @@ export function createBattlePresentationStore(gameSession: GameSession): BattleP
     ) =>
       publish((state) => {
         const patch = typeof change === "function" ? change(state) : change;
+        if (Object.entries(patch).every(([key, value]) => Object.is(state[key as keyof typeof state], value)))
+          return state;
         for (const value of Object.values(patch)) deepFreeze(value);
         return Object.freeze({ ...state, ...patch });
       }, true);
@@ -147,7 +152,7 @@ export function createBattlePresentationStore(gameSession: GameSession): BattleP
       setOpeningDrawPending: (openingDrawPending) => set({ openingDrawPending }),
       setDisplayedBattle: (displayedBattle) =>
         set({
-          displayedBattle: displayedBattle === null ? null : structuredClone(battleSnapshot(displayedBattle)),
+          displayedBattle: displayedBattle === null ? null : copyForPublication(battleSnapshot(displayedBattle)),
         }),
 
       spawnCardGhost: (ghost) => {

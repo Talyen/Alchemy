@@ -1,7 +1,7 @@
 import { createSessionPersistence, type SaveWriteOutcome } from "@/features/alchemy/shared/storage";
-import type { GameSession, SessionClock } from "@/features/alchemy/shared/stores/game-session-types";
-import { readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
-import { registerSessionCleanup, sessionClock } from "@/features/alchemy/shared/stores/session-capabilities";
+import type { GameSession, SessionClock } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { readRunPhase } from "@/features/alchemy/shared/stores/session/run-reads";
+import { registerSessionCleanup, sessionClock } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import {
   AUTOSAVE_DEBOUNCE_MS,

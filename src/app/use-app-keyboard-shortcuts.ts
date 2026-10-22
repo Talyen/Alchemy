@@ -2,7 +2,7 @@ import {
   focusPreviousControl,
   focusInDirection,
   type FocusDirection,
-} from "@/features/alchemy/shared/ui/focus-navigation";
+} from "@/features/alchemy/shared/ui/dialogs/focus-navigation";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import type { Screen } from "@/lib/routing";

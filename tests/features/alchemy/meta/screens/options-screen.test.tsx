@@ -1,4 +1,4 @@
-import { createSettingsStore } from "@/features/alchemy/shared/stores/settings-state";
+import { createSettingsStore } from "@/features/alchemy/shared/stores/session/settings-state";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OptionsScreen } from "@/features/alchemy/meta/screens/options-screen";

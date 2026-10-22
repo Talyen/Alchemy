@@ -1,18 +1,18 @@
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
   rejectCommand,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   createDraftRunRandomSource,
   setCorruptionResult,
   setRunDeck,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
 import { corruptDeckCard } from "@/lib/corruption";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
-import { discoverCardIds } from "../../shared/stores/profile-store";
+import { discoverCardIds } from "../../shared/stores/session/profile-store";
 
 export function corruptRunCard(cardIndex: number, gameSession: GameSession) {
   return dispatchRunSessionCommand(

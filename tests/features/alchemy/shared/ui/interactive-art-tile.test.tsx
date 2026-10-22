@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { InteractiveArtTile } from "@/features/alchemy/shared/ui/interactive-art-tile";
 import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
 import userEvent from "@testing-library/user-event";

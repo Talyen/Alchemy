@@ -18,6 +18,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  localization-qa:
+    uses: ./.github/workflows/localization-qa.yml
+
   prepare:
     name: Prepare build
     runs-on: ubuntu-latest
@@ -93,6 +96,7 @@ jobs:
         run: npm run test:e2e:nightly -- --shard=${{ matrix.shard }}/4
         env:
           CI: true
+          ALCHEMY_LOCALIZATION_LAYOUT_REVIEW: "1"
 
       - name: Summarize web e2e shard
         id: playwright-summary
@@ -105,7 +109,7 @@ jobs:
         with:
           name: playwright-report-nightly-web-${{ matrix.shard }}-results
           path: reports/playwright-results.json
-          retention-days: 1
+          retention-days: 7
           if-no-files-found: ignore
 
       - name: Upload Playwright report

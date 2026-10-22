@@ -4,7 +4,7 @@ import type { RefObject } from "react";
 import { Sparkles } from "lucide-react";
 import { gearDefinitions, type CraftingCurrencyId } from "@/lib/gear";
 import { useHeldWhile } from "../../../shared/ui/use-fade";
-import { ConfirmationDialog } from "../../../shared/ui/dialogs";
+import { ConfirmationDialog } from "../../../shared/ui/dialogs/dialogs";
 import { GearItemTitle } from "../../../shared/ui/gear-item-title";
 import { ArmoryCurrencyCursor } from "./armory-currency-targeting";
 import { SalvageYieldPreview } from "./salvage-yield-preview";

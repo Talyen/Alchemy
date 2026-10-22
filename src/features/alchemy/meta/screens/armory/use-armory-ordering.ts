@@ -19,8 +19,7 @@ import {
 import {
   DEFAULT_ARMORY_INVENTORY_FILTERS,
   hasArmoryCriteria,
-  matchesGearFilters,
-  matchesTrinketFilters,
+  createArmoryInventoryMatcher,
   type ArmoryInventoryFilters,
 } from "./armory-inventory-filtering";
 
@@ -51,6 +50,32 @@ function reconcileCategory(
   };
 }
 
+function useFilteredInventory(
+  orderedIds: readonly string[],
+  byId: ReadonlyMap<string, GearInstance | TrinketEntry>,
+  filters: ArmoryInventoryFilters,
+  matcher: ReturnType<typeof createArmoryInventoryMatcher>,
+) {
+  return useMemo(() => {
+    const visibleGear: GearInstance[] = [];
+    const visibleTrinkets: TrinketEntry[] = [];
+    const visibleIds: string[] = [];
+    for (const id of orderedIds) {
+      const item = byId.get(id);
+      if (!item) continue;
+      if ("instanceId" in item) {
+        if (!matcher.matchesGearFilters(item, filters)) continue;
+        visibleGear.push(item);
+      } else {
+        if (!matcher.matchesTrinketFilters(item, filters)) continue;
+        visibleTrinkets.push(item);
+      }
+      visibleIds.push(id);
+    }
+    return { visibleGear, visibleTrinkets, visibleIds };
+  }, [orderedIds, byId, filters, matcher]);
+}
+
 export function useArmoryOrdering({
   characterId,
   selectedSlot,
@@ -63,6 +88,7 @@ export function useArmoryOrdering({
   ownedTrinkets: TrinketEntry[];
 }) {
   const i18n = useGameTranslation();
+  const matcher = useMemo(() => createArmoryInventoryMatcher(i18n.displayText), [i18n]);
 
   const isTrinket = selectedSlot === "trinket";
   const activeKey = `${characterId}:${selectedSlot}`;
@@ -97,21 +123,7 @@ export function useArmoryOrdering({
   // Keep the complete order separate from its current browsing projection.
   // Reconciliation writes the category during render; derive its projection
   // directly so it cannot retain a previous category's items.
-  const visibleGear: GearInstance[] = [];
-  const visibleTrinkets: TrinketEntry[] = [];
-  const visibleIds: string[] = [];
-  for (const id of orderedIds) {
-    const item = byId.get(id);
-    if (!item) continue;
-    if ("instanceId" in item) {
-      if (!i18n.read(() => matchesGearFilters(item, filters))) continue;
-      visibleGear.push(item);
-    } else {
-      if (!i18n.read(() => matchesTrinketFilters(item, filters))) continue;
-      visibleTrinkets.push(item);
-    }
-    visibleIds.push(id);
-  }
+  const { visibleGear, visibleTrinkets, visibleIds } = useFilteredInventory(orderedIds, byId, filters, matcher);
   const { page: safePage, totalPages } = getPagination(visibleIds.length, storedPage, ARMORY_PAGE_SIZE);
   // Persist clamping so later inventory growth cannot restore an obsolete page.
   if (reconciled !== entry || safePage !== storedPage) {

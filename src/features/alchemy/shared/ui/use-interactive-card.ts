@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { useUiStore } from "../stores/ui-store";
+import { useUiStore } from "../stores/react/ui-store";
 import { getHoverId } from "../utils";
 
 export function useInteractiveCard(scope: string, itemId: string) {

@@ -14,7 +14,7 @@ const SAVE_CORE_SUITES = Object.freeze([
   "tests/app/autosave-hook.test.ts",
   "tests/app/autosave-active-run.test.ts",
   "tests/app/autosave-scheduler.test.ts",
-  "tests/features/alchemy/shared/stores/select-autosave-allowed.test.ts",
+  "tests/features/alchemy/shared/stores/session/select-autosave-allowed.test.ts",
   "tests/lib/validation",
   "tests/lib/active-run-session",
 ]);

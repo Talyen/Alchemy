@@ -17,14 +17,14 @@ import {
   useFinishedRunCharacters,
   useProfileCollectionSlice,
   useProfileDiscoverySlice,
-} from "@/features/alchemy/shared/stores/use-profile-store";
+} from "@/features/alchemy/shared/stores/react/use-profile-store";
 import {
   useBondedCompanions,
   useHomesteadProgressSlice,
   useHasActiveRun,
   useTalentProgressSlice,
-} from "@/features/alchemy/shared/stores/use-run-reads";
-import { useGearArmorySlice, useGearCombatRestrictions } from "@/features/alchemy/shared/stores/use-gear-store";
+} from "@/features/alchemy/shared/stores/react/use-run-reads";
+import { useGearArmorySlice, useGearCombatRestrictions } from "@/features/alchemy/shared/stores/react/use-gear-store";
 import type { MetaRouteCtx } from "./route-ctx";
 
 function MenuScreenRoute({ routeCommands }: MetaRouteCtx) {

@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFadePresence, useHeldWhile } from "@/features/alchemy/shared/ui/use-fade";
 import { cardById, trinketById } from "@/features/alchemy/shared/config/game-data-catalog";
 import { MysteryScreen, MysteryScreenShell } from "@/features/alchemy/run-loop/screens";
-import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/run-screen-data";
-import { useRunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
+import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/session/run-screen-data";
+import { useRunScreenData } from "@/features/alchemy/shared/stores/react/use-run-screen-data";
 import type { RunLoopRouteCtx } from "./route-ctx";
 import { computeGoldReward, computeMysteryMaterialReward } from "@/lib/homestead/material-rewards";
 

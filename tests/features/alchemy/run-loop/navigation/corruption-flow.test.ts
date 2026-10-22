@@ -1,8 +1,8 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/corruption-flow";
-import { setCorruptionResult, setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+import { setCorruptionResult, setRunDeck } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { readActiveRun } from "@/features/alchemy/shared/stores/session/run-reads";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/commands/reset";
 import { makeTestCard } from "../../../../fixtures/cards";
 import { defaultGameSession } from "@/app/application-session";
 import { mutateRunForTest } from "../../../../helpers/run-domain-store-test";

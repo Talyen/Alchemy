@@ -2,7 +2,7 @@ import { preloadBattleSounds, playBattleEvent } from "@/lib/audio";
 import { playCompanionSound, presentCombatTexts } from "./controller-utils";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
-import type { BattleStarted } from "@/features/alchemy/shared/stores/battle-start-commands";
+import type { BattleStarted } from "@/features/alchemy/shared/stores/commands/battle-start-commands";
 
 export function createBattleInit(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
   function presentBattleStart({ startingTexts, companionId, outcome, openingCardIds }: BattleStarted) {

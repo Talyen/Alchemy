@@ -11,6 +11,7 @@ import {
   failOnRuntimeErrors,
 } from "../browser-helpers";
 import { savedActivityFixture } from "../fixtures/run-activity";
+import { resumeInjectedRun } from "../e2e/navigation";
 import { ShopPage } from "../pages/shop-page";
 import { BattlePage } from "../pages/battle-page";
 import type { SaveData } from "@/features/alchemy/shared/storage/types";
@@ -64,6 +65,7 @@ async function prepare(page: Page, kind: "purchase" | "reward" | "victory") {
         freeRefreshUsed: false,
       }),
     });
+    await resumeInjectedRun(page);
     const shop = new ShopPage(page);
     await expect(shop.buyBtn.first()).toBeVisible();
     return () => shop.buyCard();
@@ -84,6 +86,7 @@ async function prepare(page: Page, kind: "purchase" | "reward" | "victory") {
         companionChoiceIds: [],
       }),
     });
+    await resumeInjectedRun(page);
     const choice = page.locator('[aria-label^="Select "]').first();
     await expect(choice).toBeVisible();
     return () => choice.click();
@@ -137,6 +140,7 @@ for (const kind of ["purchase", "reward", "victory"] as const) {
         const resumedErrors = failOnRuntimeErrors(page);
         // Relaunch performs real image/font loading before revealing the restored activity.
         await expect(page.locator("#startup-splash")).toHaveCount(0, { timeout: 30_000 });
+        await resumeInjectedRun(page);
         await expect(
           page.getByRole("heading", {
             name: kind === "purchase" ? "Card Shop" : kind === "reward" ? "Choose Destination" : "Victory",
@@ -205,6 +209,7 @@ for (const stage of [
       page = await getElectronMainWindow(app);
       const resumedErrors = failOnRuntimeErrors(page);
       await expect(page.locator("#startup-splash")).toHaveCount(0, { timeout: 30_000 });
+      await resumeInjectedRun(page);
       await expect(page.getByRole("heading", { name: "Card Shop", exact: true })).toBeVisible();
       const shop = new ShopPage(page);
       if (!acquired) {

@@ -2,7 +2,7 @@ import { useGameTranslation } from "@/components/use-game-translation";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useErrorLogStore, type LoggedError } from "@/features/alchemy/shared/stores/error-log-store";
+import { useErrorLogStore, type LoggedError } from "@/features/alchemy/shared/stores/react/error-log-store";
 import { ScreenHeaderRow, ScreenShell } from "../../../shared/ui/layout-components";
 
 function displayContext(context: Record<string, unknown> | undefined, indent?: number): string | undefined {

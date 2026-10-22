@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { useInteractiveCard } from "@/features/alchemy/shared/ui/use-interactive-card";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 
 describe("useInteractiveCard", () => {
   beforeEach(() => {

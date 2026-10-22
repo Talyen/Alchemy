@@ -4,7 +4,7 @@ import { CombatTextLayer } from "@/features/alchemy/run-loop/battle/presentation
 import { battlePresentation } from "@/app/battle-presentation";
 import { resetBattlePresentationAndRun } from "../battle-test-reset";
 import { mutateRunForTest, setBattleActiveForTest } from "../../../../../helpers/run-domain-store-test";
-import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import type { BattleRefs, CombatTextBurst } from "@/features/alchemy/shared/types";
 
 vi.mock("@/features/alchemy/run-loop/battle/presentation/ui/combat-text", () => ({

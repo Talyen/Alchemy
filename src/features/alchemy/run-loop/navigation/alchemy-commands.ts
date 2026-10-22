@@ -1,15 +1,15 @@
 import { isPotionCard } from "@/lib/game-data";
-import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
+import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/commands/deck-mutations";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { discoverCardIds } from "@/features/alchemy/shared/stores/session/profile-store";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
   rejectCommand,
   snapshotTransactionValue,
-} from "@/features/alchemy/shared/stores/run-session-command";
-import { setAlchemyVisit, setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { setAlchemyVisit, setRunDeck } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import { getCampfireBrewKind, type BrewOperation } from "@/lib/alchemist/brewing";
 import { getTransmutationOffers, canTransmuteCard, isTransmutationSourceCurrent } from "@/lib/alchemist/transmutation";

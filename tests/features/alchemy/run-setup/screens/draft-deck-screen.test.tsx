@@ -6,7 +6,7 @@ import { DraftDeckScreen } from "@/features/alchemy/run-setup/screens/draft-deck
 import { DRAFT_ROUNDS, MOTION_FADE_MS } from "@/lib/game-constants";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { makeTestCard } from "../../../../fixtures/battle";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 
 describe("DraftDeckScreen", () => {
   afterEach(() => {

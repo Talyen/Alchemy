@@ -63,7 +63,7 @@ export { GAME_DATA_NO_BATTLE, LIB_NO_FEATURES, META_NO_RUN_LOOP, RUN_LOOP_NO_RUN
 
 const COMMAND_ONLY = [
   {
-    group: ["**/run-session-write-port", "**/run-session-command", "**/stores/write/**"],
+    group: ["**/run-session-write-port", "**/run-session-command", "**/stores/commands/write/**"],
     message: "Presentation and flow adapters call intent-level commands; draft mutation belongs to command owners.",
   },
 ];
@@ -100,6 +100,24 @@ export const BOUNDARY_CONFIGS = [
     ["src/features/alchemy/shared/stores/**/*.{ts,tsx}"],
     [BARREL_PATTERNS, ROOM_INITIALIZATION_ONLY],
     GAMEPLAY_NO_UNSAFE_RANDOM_PICK,
+  ),
+  scope(
+    [
+      "src/features/alchemy/shared/stores/session/**/*.{ts,tsx}",
+      "src/features/alchemy/shared/stores/commands/**/*.{ts,tsx}",
+      "src/features/alchemy/shared/stores/persistence/**/*.{ts,tsx}",
+    ],
+    [
+      BARREL_PATTERNS,
+      ROOM_INITIALIZATION_ONLY,
+      [
+        {
+          group: ["@/features/alchemy/shared/stores/react/**", "**/react/**", "react/**", "react-dom/**"],
+          message: "Session, commands, and codecs must remain independent of React adapters.",
+        },
+      ],
+    ],
+    [...GAMEPLAY_NO_UNSAFE_RANDOM_PICK, ...LIB_NO_FRAMEWORK_PATHS],
   ),
   // Bootstrap hydrates all codecs atomically. Only raw dispatch is exempt;
   // the aggregate, write internals, and other source restrictions still apply.

@@ -3,10 +3,10 @@ import {
   assertSessionOwnership,
   guardProgressAction,
   sessionFeedback,
-} from "@/features/alchemy/shared/stores/session-capabilities";
+} from "@/features/alchemy/shared/stores/session/session-capabilities";
 import type { BattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
 import { useBattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
@@ -19,10 +19,10 @@ import {
 } from "@/features/alchemy/run-loop/battle/controller-utils";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 import { useBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/use-battle-opening-draw";
-import { useSessionHasActiveBattle } from "@/features/alchemy/shared/stores/use-session-run-reads";
-import { readSessionSettings } from "@/features/alchemy/shared/stores/session-settings";
-import { preferredAutoplayEnabled } from "@/features/alchemy/shared/stores/settings-state";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useSessionHasActiveBattle } from "@/features/alchemy/shared/stores/react/use-session-run-reads";
+import { readSessionSettings } from "@/features/alchemy/shared/stores/session/session-settings";
+import { preferredAutoplayEnabled } from "@/features/alchemy/shared/stores/session/settings-state";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import type { CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";

@@ -14,18 +14,18 @@ import {
 } from "@/lib/audio";
 import { MUSIC_KEYS } from "@/lib/game-constants";
 import type { Screen } from "@/lib/routing";
-import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { useSettingsStore } from "@/features/alchemy/shared/stores/react/settings-store";
 
 const battleActive = vi.hoisted(() => ({ value: false, enemyId: "skeleton", enemyType: "normal" }));
 
-vi.mock("@/features/alchemy/shared/stores/run-reads", () => ({
+vi.mock("@/features/alchemy/shared/stores/session/run-reads", () => ({
   readBattle: () => ({
     hasActiveBattle: battleActive.value,
     battleState: { currentEnemy: { id: battleActive.enemyId, enemyType: battleActive.enemyType } },
   }),
 }));
 
-vi.mock("@/features/alchemy/shared/stores/use-run-reads", () => ({
+vi.mock("@/features/alchemy/shared/stores/react/use-run-reads", () => ({
   useHasActiveBattle: () => battleActive.value,
 }));
 

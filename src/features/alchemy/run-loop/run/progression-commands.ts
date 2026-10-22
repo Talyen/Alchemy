@@ -2,15 +2,15 @@ import { restAtCampfireInDraft } from "./destination-commands";
 import { withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
 import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
 import { isBossOnlyDestinationOffer } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { sampleAndApplyDestinationOffer } from "@/features/alchemy/shared/stores/destination-offer-command";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { sampleAndApplyDestinationOffer } from "@/features/alchemy/shared/stores/commands/destination-offer-command";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   acceptCommand,
   rejectCommand,
   dispatchRunSessionCommand,
   type RunTransaction,
   snapshotTransactionValue,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   abandonCorruptionDestinationVisit,
   abandonLabyrinthCorruptionVisit,
@@ -29,7 +29,7 @@ import {
   setSelectedLabyrinthNodeId,
   setRoomsEncountered,
   setRunProgressActivity,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
 import { GAME_EDITION_POLICY, IS_DEMO } from "@/lib/game-edition";

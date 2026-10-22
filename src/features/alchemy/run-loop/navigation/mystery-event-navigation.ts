@@ -1,6 +1,6 @@
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { type MysteryChoice } from "@/lib/mystery";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { chooseMysteryCard, chooseMysteryOption } from "./mystery-commands";

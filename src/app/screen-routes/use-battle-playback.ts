@@ -2,8 +2,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
-import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { isBattleInspectionOpen, useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useSettingsStore } from "@/features/alchemy/shared/stores/react/settings-store";
+import { isBattleInspectionOpen, useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { useBattleAutoEndTurn } from "@/features/alchemy/run-loop/battle/use-battle-auto-end-turn";
 import { useBattleAutoplay } from "@/features/alchemy/run-loop/battle/use-battle-autoplay";
 import type {

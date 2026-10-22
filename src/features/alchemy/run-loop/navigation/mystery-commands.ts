@@ -1,19 +1,19 @@
 import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
-import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/commands/deck-mutations";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
   rejectCommand,
   snapshotTransactionValue,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   createDraftRunRandomSource,
   setMysteryCardChoices,
   setMysteryChosenCardId,
   setMysteryChosenChoice,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
 import type { MysteryChoice } from "@/lib/mystery";
 export function chooseMysteryOption(choice: MysteryChoice, gameSession: GameSession): Array<"gain"> | null {

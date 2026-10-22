@@ -1,5 +1,5 @@
 import { createPlaythroughFixture } from "@/app/playthrough/fixtures";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   characters,
   getAllocatableTalentChoices,

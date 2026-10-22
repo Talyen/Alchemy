@@ -1,4 +1,4 @@
-import { createDefaultProfileSaveFields } from "@/features/alchemy/shared/stores/profile-store-types";
+import { createDefaultProfileSaveFields } from "@/features/alchemy/shared/stores/session/profile-store-types";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 
 // Canonical minimal candidate builders for save load-path tests. Production

@@ -1,11 +1,11 @@
 import { createCleanup } from "@/lib/cleanup";
 import "../../../../helpers/mock-audio";
-import { selectBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { selectBattle } from "@/features/alchemy/shared/stores/session/run-reads";
 import {
   mutateGameplayForTest,
   initializeBattleForTest as initializeActiveBattle,
 } from "../../../../helpers/run-domain-store-test";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { readBattle } from "@/features/alchemy/shared/stores/session/run-reads";
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { playBattleEvent, playCardSound } from "@/lib/audio";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,13 +13,13 @@ import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-tu
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfers";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
+import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
 import { battlePresentation } from "@/app/battle-presentation";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { patchBattleState, slashDeck } from "../../../../fixtures/battle";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { makeDrawSequenceDeps } from "./turn-orchestration-fixture";
-import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
 
 vi.mock("@/lib/animation/animation-prefs", () => ({

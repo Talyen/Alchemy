@@ -1,5 +1,5 @@
 import { resolveBattleAction, resolveBattleCard, resolveBattleWish, type BattleSnapshot } from "@/lib/battle";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { readBattle } from "@/features/alchemy/shared/stores/session/run-reads";
 import {
   createSessionPersistence,
   saveAlchemySaveData,
@@ -8,7 +8,7 @@ import {
   type UnstampedSaveData,
 } from "@/features/alchemy/shared/storage";
 
-import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-types";
+import type { GearDraftView } from "@/features/alchemy/shared/stores/session/gear-store-types";
 import { describe, expectTypeOf, it } from "vitest";
 import type { BattleCard } from "@/lib/game-data";
 import type { BattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
@@ -16,7 +16,7 @@ import type { useAlchemyRunController } from "@/features/alchemy/shell/use-alche
 import type { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
 import type { AlchemyRouteCommands, AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow";
-import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/run-screen-data";
+import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/session/run-screen-data";
 import {
   acceptCommand,
   rejectCommand,
@@ -24,27 +24,27 @@ import {
   dispatchRunSessionCommand,
   createRunSessionCommand,
   type RunTransaction,
-} from "@/features/alchemy/shared/stores/run-session-command";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   dispatchGearMutationWithRunHealthSync,
   mutateGearWithRunHealthSync,
-} from "@/features/alchemy/shared/stores/gear-session-command";
-import { salvageGear } from "@/features/alchemy/shared/stores/gear-commands";
-import { commitEndTurn, createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+} from "@/features/alchemy/shared/stores/commands/gear-session-command";
+import { salvageGear } from "@/features/alchemy/shared/stores/commands/gear-commands";
+import { commitEndTurn, createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import {
   abandonRun,
   applyRunDefeatTeardown,
   finalizeRunEndSession,
-} from "@/features/alchemy/shared/stores/run-lifecycle";
+} from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 
 declare const asyncMutation: () => Promise<void>;
 declare const maybeAsyncMutation: () => number | PromiseLike<number>;
 declare const draft: RunTransaction;
 declare const snapshot: BattleSnapshot;
 
-type WritePort = typeof import("@/features/alchemy/shared/stores/run-session-write-port");
+type WritePort = typeof import("@/features/alchemy/shared/stores/commands/run-session-write-port");
 // Pure (non-mutating) helpers are exempt from the transaction-first rule.
 type PureWriteHelper = "cloneRunObtainedItem";
 type NonDraftFirstWrite = Exclude<

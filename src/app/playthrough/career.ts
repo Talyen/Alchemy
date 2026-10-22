@@ -1,13 +1,16 @@
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { readActiveRunScreen, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { addGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { readActiveRunScreen, readRunRevision } from "@/features/alchemy/shared/stores/session/run-reads";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { addGold } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { characters, DIFFICULTY_ORDER } from "@/lib/game-data";
 import { createSeededRng } from "@/lib/rng";
 import { performance } from "node:perf_hooks";
 import { recordBrewingObservation, recordBrewingCommit } from "./brewing-evidence";
-import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/session/run-reads";
 import { createCareerActor } from "./actor";
 import {
   createCareerResult,

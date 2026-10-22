@@ -3,18 +3,18 @@ import {
   equipTrinket,
   applyCurrencyToGear,
   salvageGear,
-} from "@/features/alchemy/shared/stores/gear-commands";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
-import { purchaseTalent } from "@/features/alchemy/shared/stores/navigation-commands";
-import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
+} from "@/features/alchemy/shared/stores/commands/gear-commands";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { readGearState } from "@/features/alchemy/shared/stores/session/gear-store";
+import { purchaseTalent } from "@/features/alchemy/shared/stores/commands/navigation-commands";
+import { readProfileStore } from "@/features/alchemy/shared/stores/session/profile-store";
+import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/session/run-reads";
 import {
   bondCompanion,
   completeResearch,
   constructBuilding,
   plantFarm,
-} from "@/features/alchemy/shared/stores/meta-commands";
+} from "@/features/alchemy/shared/stores/commands/meta-commands";
 import {
   canUnlockTalent,
   cardLibrary,

@@ -10,16 +10,19 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
-import { readRunResumeScreen, readActiveRunScreen } from "@/features/alchemy/shared/stores/run-reads";
-import { setRunProgressActivity, resetNavigation } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { showRunScreen } from "@/features/alchemy/shared/stores/navigation-commands";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
-import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { readRunResumeScreen, readActiveRunScreen } from "@/features/alchemy/shared/stores/session/run-reads";
+import {
+  setRunProgressActivity,
+  resetNavigation,
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { showRunScreen } from "@/features/alchemy/shared/stores/commands/navigation-commands";
+import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
+import { snapshotRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import { emptyShopState, createEmptyRewardState } from "@/lib/active-run-session";
 import { defaultBattleState } from "@/lib/battle";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
 import { defaultGameSession } from "@/app/application-session";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage/session-persistence";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 beforeEach(() => {

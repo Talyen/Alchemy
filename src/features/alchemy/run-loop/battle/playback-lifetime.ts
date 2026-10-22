@@ -2,7 +2,7 @@ import { TimerGroup, type TimerClock } from "@/lib/animation/game-timer";
 
 import type { BattleSnapshot } from "@/lib/battle";
 import { runPlaybackTask } from "./playback-task";
-import { createNotificationChannel } from "@/features/alchemy/shared/stores/notification-channel";
+import { createNotificationChannel } from "@/features/alchemy/shared/stores/session/notification-channel";
 import { logError } from "@/lib/error-logger";
 
 function runPlaybackCleanup(cleanup: () => void): void {

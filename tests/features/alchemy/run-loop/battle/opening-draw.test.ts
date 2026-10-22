@@ -5,7 +5,7 @@ import { battlePresentation } from "@/app/battle-presentation";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
 import { makeDrawSequenceDeps } from "./turn-orchestration-fixture";
 import { installImmediateRafForTests } from "./battle-test-reset";
-import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
 
 const scheduleAutoEndTurn = vi.fn();
@@ -15,7 +15,7 @@ const initial = {
 };
 let domain = { battleState: initial };
 
-vi.mock("@/features/alchemy/shared/stores/run-reads", () => ({ readBattle: () => domain }));
+vi.mock("@/features/alchemy/shared/stores/session/run-reads", () => ({ readBattle: () => domain }));
 
 describe("opening hand playback", () => {
   installImmediateRafForTests();

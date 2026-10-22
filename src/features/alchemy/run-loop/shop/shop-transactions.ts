@@ -1,11 +1,11 @@
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   acceptCommand,
   dispatchRunSessionCommand,
   rejectCommand,
   type RunTransaction,
-} from "@/features/alchemy/shared/stores/run-session-command";
-import { guardProgressAction, sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { guardProgressAction, sessionFeedback } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import type { BattleCard } from "@/lib/game-data";
 import { type playUISound } from "@/lib/audio";
 import type { ShopActivity } from "@/lib/active-run-session";

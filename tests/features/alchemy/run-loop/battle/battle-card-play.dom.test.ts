@@ -10,15 +10,15 @@ import { act, renderHook } from "@testing-library/react";
 import { useBattleScreenRouteData } from "@/app/screen-routes/use-battle-screen-route-data";
 import { useBattleAutoplay } from "@/features/alchemy/run-loop/battle/use-battle-autoplay";
 import { battleSnapshot, type BattleSnapshot } from "@/lib/battle";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { describe, expect, it, vi, beforeEach, afterEach, type Mock } from "vitest";
 import { useRef, type MouseEvent } from "react";
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfers";
-import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { readBattle } from "@/features/alchemy/shared/stores/session/run-reads";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/battle";
@@ -62,8 +62,8 @@ vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", async (importOrigina
   };
 });
 
-vi.mock("@/features/alchemy/shared/stores/run-session-write-port", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/features/alchemy/shared/stores/run-session-write-port")>()),
+vi.mock("@/features/alchemy/shared/stores/commands/run-session-write-port", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/alchemy/shared/stores/commands/run-session-write-port")>()),
   awardCardXP: vi.fn(),
 }));
 
@@ -74,8 +74,8 @@ vi.mock("@/lib/animation/animation-prefs", async (importOriginal) => ({
   shouldReduceMotion: vi.fn(() => true),
 }));
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
-import { awardCardXP } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { awardCardXP } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
 
 function slashCard() {

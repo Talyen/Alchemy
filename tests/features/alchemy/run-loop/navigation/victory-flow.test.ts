@@ -7,7 +7,7 @@ import {
   resetRunDomainStore,
   setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
+import { readBattle } from "@/features/alchemy/shared/stores/session/run-reads";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   computeVictoryRewards,
@@ -25,7 +25,7 @@ import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { createRunRngState, createRunStateRng } from "@/lib/rng";
 import type { Destination } from "@/lib/routing";
 import { sampleDestinationChoices } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
+import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
 import { commitVictoryRewards, type CommitVictoryRewardsDeps } from "@/features/alchemy/run-loop/run/victory-commands";
 import { defaultGameSession } from "@/app/application-session";
 beforeEach(() => resetRunDomainStore());

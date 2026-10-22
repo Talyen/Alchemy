@@ -2,11 +2,14 @@ import { initializeShopForTest } from "../../../../helpers/visit-initialization"
 import { describe, expect, it } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { shopItemSlotKey } from "@/lib/active-run-session";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
-import { completeResearch, constructBuilding } from "@/features/alchemy/shared/stores/meta-commands";
-import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { applyTalentState, setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
+import { completeResearch, constructBuilding } from "@/features/alchemy/shared/stores/commands/meta-commands";
+import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { applyTalentState, setRunDeck } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage";
 import { readActivityData } from "@/lib/active-run-session";
 import { cardById } from "@/lib/game-data";

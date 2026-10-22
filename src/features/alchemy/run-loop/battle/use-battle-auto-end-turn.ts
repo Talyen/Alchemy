@@ -1,4 +1,4 @@
-import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/ui-store";
+import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/react/ui-store";
 import { useCallback, useEffect, useRef, type RefObject } from "react";
 
 import { type BattleSnapshot } from "@/lib/battle";

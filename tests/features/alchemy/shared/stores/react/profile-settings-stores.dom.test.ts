@@ -1,0 +1,181 @@
+import { beforeEach, describe, expect, it } from "vitest";
+import { profilePersistenceCodec } from "@/features/alchemy/shared/stores/persistence/profile-codec";
+import { readProfileStore } from "@/features/alchemy/shared/stores/session/profile-store";
+import { mutateGameplayForTest, resetProfileForTest } from "../../../../../helpers/run-domain-store-test";
+import { settingsPersistenceCodec, useSettingsStore } from "@/features/alchemy/shared/stores/react/settings-store";
+import { defaultSaveData, type SaveData } from "@/features/alchemy/shared/storage";
+import {
+  handleCollectionTabChange,
+  resetToDefaults,
+  setCollectionPage,
+  setDiscoveredCardIds,
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { defaultGameSession } from "@/app/application-session";
+
+function makeSave(overrides: Partial<SaveData> = {}): SaveData {
+  return { ...defaultSaveData, ...overrides };
+}
+
+beforeEach(() => {
+  resetProfileForTest();
+  useSettingsStore.getState().resetToDefaults();
+});
+
+describe("profile store", () => {
+  it("hydrates only profile fields from save data", () => {
+    mutateGameplayForTest((draft) =>
+      profilePersistenceCodec.hydrate(
+        makeSave({
+          discoveredCardIds: ["card-a"],
+          encounteredEnemyIds: ["goblin"],
+          completedDifficulties: {
+            ...defaultSaveData.completedDifficulties,
+            knight: ["difficulty-1"],
+          },
+        }),
+        draft,
+      ),
+    );
+
+    const profile = readProfileStore(defaultGameSession);
+    expect(profile.discoveredCardIds).toEqual(["card-a"]);
+    expect(profile.encounteredEnemyIds).toEqual(["goblin"]);
+    expect(profile.completedDifficulties.knight).toEqual(["difficulty-1"]);
+  });
+
+  it("supports functional discovery updates and collection navigation", () => {
+    mutateGameplayForTest((draft) => {
+      setDiscoveredCardIds(draft, (previous: readonly string[]) => [...previous, "card-a"]);
+      setCollectionPage(draft, "bestiary", 2);
+      setCollectionPage(draft, "cards", -1);
+      handleCollectionTabChange(draft, "bestiary");
+    });
+
+    expect(readProfileStore(defaultGameSession)).toMatchObject({
+      discoveredCardIds: ["card-a"],
+      collectionTab: "bestiary",
+      collectionPages: { heroes: 0, cards: 0, bestiary: 2, trinkets: 0, uniques: 0 },
+    });
+  });
+
+  it("resets persisted and transient profile state", () => {
+    mutateGameplayForTest((draft) => {
+      setDiscoveredCardIds(draft, ["card-a"]);
+      handleCollectionTabChange(draft, "trinkets");
+      resetToDefaults(draft);
+    });
+
+    expect(readProfileStore(defaultGameSession).discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
+    expect(readProfileStore(defaultGameSession).collectionTab).toBe("heroes");
+  });
+
+  it("encodes detached profile data without collection navigation or unrelated save fields", () => {
+    mutateGameplayForTest((draft) => {
+      setDiscoveredCardIds(draft, ["card-a"]);
+      setCollectionPage(draft, "cards", 2);
+      handleCollectionTabChange(draft, "cards");
+    });
+    const encoded = profilePersistenceCodec.encode(defaultGameSession);
+    expect(Object.keys(encoded).sort()).toEqual(Object.keys(profilePersistenceCodec.createDefault()).sort());
+    encoded.discoveredCardIds.push("external");
+    encoded.completedDifficulties.knight.push("difficulty-1");
+    expect(readProfileStore(defaultGameSession).discoveredCardIds).toEqual(["card-a"]);
+    expect(readProfileStore(defaultGameSession).completedDifficulties.knight).toEqual([]);
+  });
+});
+
+describe("settings store", () => {
+  it("exposes only reads and named actions to feature consumers", () => {
+    expect(useSettingsStore).not.toHaveProperty("setState");
+    expect(useSettingsStore).not.toHaveProperty("commitHydration");
+    useSettingsStore.getState().setMasterVolume(999);
+    expect(settingsPersistenceCodec.encode().masterVolume).toBe(100);
+  });
+  it("hydrates only settings fields from save data", () => {
+    settingsPersistenceCodec.hydrate(
+      makeSave({
+        displayMode: "windowed",
+        musicVolume: 50,
+        sfxVolume: 80,
+        masterVolume: 90,
+        autoEndTurn: false,
+        bossLyricsEnabled: false,
+      }),
+    );
+
+    const encoded = settingsPersistenceCodec.encode();
+    expect(Object.keys(encoded).sort()).toEqual(Object.keys(settingsPersistenceCodec.createDefault()).sort());
+    expect(encoded).not.toHaveProperty("discoveredCardIds");
+    expect(encoded).not.toHaveProperty("setBrightness");
+    expect(useSettingsStore.getState().setBrightness).toBeTypeOf("function");
+    expect(encoded).toMatchObject({
+      displayMode: "windowed",
+      musicVolume: 50,
+      sfxVolume: 80,
+      masterVolume: 90,
+      autoEndTurn: false,
+      bossLyricsEnabled: false,
+    });
+  });
+
+  it("updates and resets preferences independently from profile state", () => {
+    mutateGameplayForTest((draft) => setDiscoveredCardIds(draft, ["card-a"]));
+    const settings = useSettingsStore.getState();
+    settings.setBrightness(120);
+    settings.setMasterVolume(75);
+    settings.setBossLyricsEnabled(false);
+    expect(settingsPersistenceCodec.encode().bossLyricsEnabled).toBe(false);
+    settings.resetToDefaults();
+
+    expect(useSettingsStore.getState().bossLyricsEnabled).toBe(true);
+    expect(useSettingsStore.getState().brightness).toBe(defaultSaveData.brightness);
+    expect(useSettingsStore.getState().masterVolume).toBe(defaultSaveData.masterVolume);
+    expect(readProfileStore(defaultGameSession).discoveredCardIds).toEqual(["card-a"]);
+  });
+
+  it("clamps numeric preferences to the save-schema ranges on write", () => {
+    const settings = useSettingsStore.getState();
+    settings.setBrightness(1000);
+    settings.setMasterVolume(-20);
+    settings.setBackgroundGlowIntensity(1000);
+
+    expect(useSettingsStore.getState().brightness).toBe(150);
+    expect(useSettingsStore.getState().masterVolume).toBe(0);
+    expect(useSettingsStore.getState().backgroundGlowIntensity).toBe(100);
+  });
+
+  it("clears stored autoplay when remember is turned off", () => {
+    const settings = useSettingsStore.getState();
+    settings.setRememberAutoplayPreference(true);
+    settings.setAutoplayEnabled(true);
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(true);
+
+    settings.setRememberAutoplayPreference(false);
+    expect(useSettingsStore.getState().rememberAutoplayPreference).toBe(false);
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(false);
+  });
+
+  it("hydrates autoplay off when remember is off even if the save stored it on", () => {
+    settingsPersistenceCodec.hydrate(
+      makeSave({
+        rememberAutoplayPreference: false,
+        autoplayEnabled: true,
+      }),
+    );
+
+    expect(useSettingsStore.getState().rememberAutoplayPreference).toBe(false);
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(false);
+  });
+
+  it("hydrates autoplay on only when remember is on", () => {
+    settingsPersistenceCodec.hydrate(
+      makeSave({
+        rememberAutoplayPreference: true,
+        autoplayEnabled: true,
+      }),
+    );
+
+    expect(useSettingsStore.getState().rememberAutoplayPreference).toBe(true);
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(true);
+  });
+});

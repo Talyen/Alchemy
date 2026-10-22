@@ -11,8 +11,8 @@ import {
 import { restAtCampfire } from "@/features/alchemy/run-loop/run/destination-commands";
 import { claimRunReward } from "@/features/alchemy/run-loop/run/reward-commands";
 import { createAlchemistShopCommands } from "@/features/alchemy/run-loop/shop/alchemist-shop-commands";
-import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { parseActiveRun } from "@/lib/validation";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";

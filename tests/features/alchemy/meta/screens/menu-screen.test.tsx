@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MenuScreen } from "@/features/alchemy/meta/screens/menu-screen";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
 import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
 
 installFocusInputForTests(true);

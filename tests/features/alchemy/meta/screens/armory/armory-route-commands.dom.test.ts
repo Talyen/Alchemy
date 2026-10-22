@@ -1,4 +1,4 @@
-import { setRunProgressActivity } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setRunProgressActivity } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import {
   mutateRunForTest,
   setBattleActiveForTest as setHasActiveBattle,
@@ -15,22 +15,22 @@ import {
   setMaterials,
   setRunMaxHealth,
   setRunPlayerHealth,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import { initializeActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
-import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { initializeActiveRun } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/session/run-reads";
+import { readGearState } from "@/features/alchemy/shared/stores/session/gear-store";
 import { createEmptyGearInventories, type GearInstance } from "@/lib/gear";
 import { computeSalvageYield, EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
 import { defaultGameSession } from "@/app/application-session";
 
 vi.mock("@/app/app-screen-chrome-context", () => ({
   useAppScreenChrome: () => ({ returnToRunScreen: null }),
 }));
 
-vi.mock("@/features/alchemy/shared/stores/run-lifecycle", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-lifecycle")>();
+vi.mock("@/features/alchemy/shared/stores/commands/run-lifecycle", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/commands/run-lifecycle")>();
   return {
     ...actual,
     flushSaveAfterGearMutation: vi.fn(),

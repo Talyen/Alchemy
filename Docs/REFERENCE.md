@@ -127,36 +127,9 @@ implementation runs both the focused unit suite and this report check.
 
 ## Navigation Hints
 
-Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths are on-disk unless noted.
-
-- **App boot / screen registry** — `src/app/screen-routes/`
-- **Audio (cache / music / SFX / volume)** — [Audio ownership and runtime contract](./AUDIO.md).
-- **Cold-start loading gate** — [ARCHITECTURE.md § Boot](./ARCHITECTURE.md#boot-and-loading)
-- **Balance simulation** — `src/lib/balance/`
-- **Card corruption** — `src/lib/corruption/`
-- **Card library barrel** — `src/lib/game-data/cards/library/cards.ts` (via `@/lib/game-data`)
-- **Content systems (labyrinth / wildwood)** — `src/lib/content-systems/`
-- **Effect handler registry doc** — `src/lib/game-data/effects/BATTLE_HANDLERS.md`
-- **Feature config barrel** — `src/features/alchemy/shared/config/`
-- **Game-data types** — `src/lib/game-data/types.ts`
-- **Homestead data** — `src/lib/homestead/`
-- **In-run material grants** — [WORKFLOWS § Grant materials](./RUN_WORKFLOWS.md#grant-materials-during-a-run)
-- **UI placement, motion, and interaction** — [UI system](./UI.md)
-- **Image preload helper** — `src/lib/preload/image.ts`
-- **Potion mixing** — `src/lib/alchemist/potion-mixer.ts`
-- **Platform / Steam** — `src/lib/platform.ts`, `src/lib/desktop-api.ts`, `src/lib/platform-save-backend.ts`, `desktop/`
-- **Reward offer eligibility and sampling** — `src/features/alchemy/run-loop/navigation/reward-offers.ts`; `reward-flow.ts` assembles the settled reward state
-- **Reward math (gold / traits)** — `src/features/alchemy/run-loop/navigation/reward-math.ts`
-- **Run loop layering** — [ARCHITECTURE.md § Run loop overview](./ARCHITECTURE.md#run-loop-overview)
-- **Run lifecycle / capability ports** — [ARCHITECTURE.md](./ARCHITECTURE.md)
-- **Run screen taxonomy** — `src/lib/routing/run-screen-router.ts`
-- **Save migrations doc** — `src/features/alchemy/shared/storage/MIGRATIONS.md`
-- **Save schemas / load gate** — `SaveDataSchema`, `evaluateSaveCandidates` from `@/lib/validation` / `@/features/alchemy/shared/storage`
-- **Content validation / audit** — `runContentValidation` from `@/lib/content-validation`, `scripts/content-audit.mjs`
-- **Sound ↔ card registry** — `src/lib/audio/sound-registry.ts`
-- **Talent XP math vs talent data** — `src/lib/game-data/talents/progression.ts` vs `src/lib/game-data/talents/`
-- **Tuning** — Topical files under `src/lib/game-constants/` (`combat-rules`, `battle-timing`, `progression`, `run-rewards`, `audio`, `ui-motion`, `ui-layout`, `settings`, `enemy-traits`, `enemy-balance`, `corruption`, `labyrinth-modifiers`, `materials-economy`, `storage`, `gear`), exported through `src/lib/game-constants/index.ts`. Suffixes: `_FRACTION` is 0-1, `_PERCENT`/`_PCT` is 0-100, `_MULTIPLIER` is a ×N scale, `_MS` is milliseconds, `_SEC` is seconds, `_PX` is pixels. `_CHANCE` is deprecated for new tuning; use fraction helpers. Shared knobs live here; content-owned `amount:` values stay with their card/talent/difficulty definitions.
-- **Unique items (signatures/combat)** — [UNIQUE_ITEMS.md](./UNIQUE_ITEMS.md)
+The [repository ownership map](./ARCHITECTURE.md#repository-ownership) is the
+canonical starting point for implementation locations and subsystem contracts.
+Use [agent discovery](./AGENT_DISCOVERY.md) for optional path or topic lookup.
 
 ## Headless playthrough commands
 

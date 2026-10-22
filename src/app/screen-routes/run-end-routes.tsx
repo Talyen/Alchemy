@@ -7,7 +7,7 @@ import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { DemoCompletionScreen } from "@/features/alchemy/run-loop/screens/demo-completion-screen";
 import { HeroUnlockedScreen } from "@/features/alchemy/run-loop/screens/hero-unlocked-screen";
 import { RunEndScreen } from "@/features/alchemy/run-loop/screens/run-end-screen";
-import { useRunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
+import { useRunScreenData } from "@/features/alchemy/shared/stores/react/use-run-screen-data";
 import type { RunEndRouteCtx } from "./route-ctx";
 
 const RUN_END_COPY = {

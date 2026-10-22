@@ -13,7 +13,7 @@ vi.mock("@/lib/game-edition", () => ({
   isEditionCharacterAvailable: (id: string) => !state.demo || id === "rogue",
 }));
 vi.mock("@/lib/platform", () => ({ isDesktop: () => false }));
-vi.mock("@/features/alchemy/shared/stores/use-run-screen-data", () => ({
+vi.mock("@/features/alchemy/shared/stores/react/use-run-screen-data", () => ({
   useRunScreenData: () => ({ runEndUnlockedCharacters: state.unlocks }),
 }));
 vi.mock("@/features/alchemy/run-loop/screens/run-end-screen", () => ({

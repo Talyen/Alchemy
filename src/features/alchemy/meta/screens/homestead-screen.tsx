@@ -3,7 +3,7 @@ import { useGameTranslation } from "@/components/use-game-translation";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { RotateCcw } from "lucide-react";
 import { ChromeIconButton } from "../../shared/ui/chrome-icon-button";
-import { ConfirmationDialog } from "../../shared/ui/dialogs";
+import { ConfirmationDialog } from "../../shared/ui/dialogs/dialogs";
 import { type BuildingId, type FarmId, type MaterialInventory, type ResearchId } from "@/lib/homestead/types";
 import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
 import { PaginationControls } from "../../shared/ui/navigation";

@@ -25,8 +25,8 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 Campaign, Labyrinth, and Wildwood victories grant shared combat Materials through the same reward flow; Wildwood shows them beside Gold on its existing Victory screen and includes them in the run-end summary.
 
 1. Route combat payouts through `computeCombatMaterialReward()` and mystery grants through `computeMysteryMaterialReward()` (both in `@/lib/homestead/material-rewards`); they own shared encounter-type/band bundles, location modifiers, and final Homestead find bonuses. Direct Wish payouts use the same quantity helper before emitting feedback and pending rewards. Do not reimplement or repeat the sequence at the call site.
-2. Call `awardMaterialsDuringRun(transaction, materials)` inside the owning command (`run-loop/run/reward-commands.ts`, `run-loop/navigation/mystery-flow.ts`, or Armory salvage in `shared/stores/gear-session-command.ts`). The `alchemy/no-run-earned-add-materials` lint rule prevents raw stockpile grants from consumers and tally mutations outside the write port.
-3. Reuse the run-end display: `settleRunEnd` in `shared/stores/write/run-end.ts`, used by all endings, copies `runMaterialsEarned` into `session.runEndMaterials` and clears the tally. Resource summaries and talent XP finalization are private settlement steps; feature commands cannot invoke them independently. Materials have already reached the stockpile at their grant site.
+2. Call `awardMaterialsDuringRun(transaction, materials)` inside the owning command (`run-loop/run/reward-commands.ts`, `run-loop/navigation/mystery-flow.ts`, or Armory salvage in `shared/stores/commands/gear-session-command.ts`). The `alchemy/no-run-earned-add-materials` lint rule prevents raw stockpile grants from consumers and tally mutations outside the write port.
+3. Reuse the run-end display: `settleRunEnd` in `shared/stores/commands/write/run-end.ts`, used by all endings, copies `runMaterialsEarned` into `session.runEndMaterials` and clears the tally. Resource summaries and talent XP finalization are private settlement steps; feature commands cannot invoke them independently. Materials have already reached the stockpile at their grant site.
 4. Check `tests/features/alchemy/run-loop/run/run-victory-handlers.dom.test.ts` and the affected mystery/reward-flow tests when adding a new source.
 
 **Do not** call `addMaterialsToStockpile()` on the run profile store directly from run-loop or mystery code for player loot.
@@ -54,7 +54,7 @@ Destination eligibility uses health and maximum health after victory bonuses and
 
 ## Run teardown
 
-Run outcome flows use [`run-end-commands.ts`](../src/features/alchemy/run-loop/run/run-end-commands.ts), which passes the session to intent-level commands in [`run-lifecycle.ts`](../src/features/alchemy/shared/stores/run-lifecycle.ts):
+Run outcome flows use [`run-end-commands.ts`](../src/features/alchemy/run-loop/run/run-end-commands.ts), which passes the session to intent-level commands in [`run-lifecycle.ts`](../src/features/alchemy/shared/stores/commands/run-lifecycle.ts):
 
 - Victory: `completeRunVictory()` calls `finalizeRunEndSession()` to award earned progression, capture the victory recap, end resumable activity, and flush the save.
 - Defeat: `completeRunDefeat()` calls `applyRunDefeatTeardown()` to settle progression with a death recap, clear combat state, and perform defeat feedback and saving after commit.
@@ -66,7 +66,7 @@ All endings use the store-owned `settleRunEnd` operation, including victory insi
 
 `flushSaveAfterGearMutation()` provides immediate persistence after Armory mutations (the fast path and autosave debounce share the save queue).
 
-[`reset.ts`](../src/features/alchemy/shared/stores/reset.ts) owns test/teardown and Options wipe:
+[`reset.ts`](../src/features/alchemy/shared/stores/commands/reset.ts) owns test/teardown and Options wipe:
 
 - `resetTransientRunUi()` — test/boot helper that resets the UI store and transient session fields. Clearing the session removes active combat along with its activity, without settling progression or cleaning up battle playback; use the outcome/lifecycle commands above for a live run.
 - `clearAllPersistentGameData()` — Options' Clear Save Data action. It first deletes save slots through `localWipe`; only acknowledged deletion resets settings, profile discoveries/unlocks, Talents, Homestead, Gear, and active-run state. Those changes use one restore publication: outgoing navigation and battle playback are cancelled, snapshots captured during deletion are invalidated, and observers see the complete new career before the confirmation closes. Failure leaves memory and pending presentation unchanged. If the session closes during deletion, the disk operation finishes without publishing into the disposed session. Device-local display sizes and demo-import initialization receipts survive under the [deletion contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#deletion).
@@ -77,9 +77,12 @@ Ownership and anti-patterns: [RUN_STATE.md § Run state](./RUN_STATE.md#run-stat
 
 ```ts
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 
 export function awardMaterialReward(materials: MaterialInventory, session: GameSession): MaterialInventory {
   return dispatchRunSessionCommand(

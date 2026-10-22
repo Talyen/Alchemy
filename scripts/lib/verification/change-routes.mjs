@@ -163,6 +163,8 @@ const ROUTES = Object.freeze([
     [
       "performance/**",
       "src/lib/performance/**",
+      "scripts/run-performance.mjs",
+      "scripts/lib/performance/**",
       "tests/performance/**",
       "tests/lib/performance/**",
       "playwright.performance.config.ts",

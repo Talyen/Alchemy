@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as config from "@/features/alchemy/shared/config";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createEmptyRewardState } from "@/lib/active-run-session";
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import {
   setMysteryCardChoices,
   setMysteryChosenCardId,
@@ -11,7 +11,7 @@ import {
   setMysteryEvent,
   setMysteryGrantedGearInstances,
   setRewardState,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 import {
   mutateRunForTest,

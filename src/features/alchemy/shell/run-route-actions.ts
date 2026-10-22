@@ -4,7 +4,7 @@ import {
   selectTransmutation,
 } from "@/features/alchemy/run-loop/navigation/alchemy-commands";
 import { restAtCampfire } from "@/features/alchemy/run-loop/run/destination-commands";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
 import {
   applyCurrencyToGear,
   bondCompanion,
@@ -21,13 +21,16 @@ import {
   spawnDevTrinket,
   unequipGear,
   unequipTrinket,
-} from "@/features/alchemy/shared/stores/meta-commands";
+} from "@/features/alchemy/shared/stores/commands/meta-commands";
 import {
   purchaseTalent,
   resetTalentUnlocks,
   unlockTalentsForDevelopment,
-} from "@/features/alchemy/shared/stores/navigation-commands";
-import { bindSessionCapabilities, sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+} from "@/features/alchemy/shared/stores/commands/navigation-commands";
+import {
+  bindSessionCapabilities,
+  sessionFeedback,
+} from "@/features/alchemy/shared/stores/session/session-capabilities";
 
 export function createRunRouteActions(gameSession: GameSession) {
   return bindSessionCapabilities(gameSession, {

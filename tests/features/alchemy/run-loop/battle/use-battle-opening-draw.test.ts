@@ -1,11 +1,14 @@
 import { createCleanup } from "@/lib/cleanup";
 import { act, renderHook } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
-import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { createBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/use-battle-opening-draw";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
 import { battlePresentation } from "@/app/battle-presentation";
 import { makeTestBattleState, makeTestCardWithId } from "../../../../fixtures/battle";
 import { initializeBattleForTest } from "../../../../helpers/run-domain-store-test";

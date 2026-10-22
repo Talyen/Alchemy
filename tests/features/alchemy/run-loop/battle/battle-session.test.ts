@@ -10,13 +10,13 @@ import { battlePresentation } from "@/app/battle-presentation";
 import { battleStageMarkName, markBattleStage } from "@/lib/performance/marks";
 import { defaultBattleState } from "@/lib/battle";
 import { cardById } from "@/lib/game-data";
-import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
-import { createBattleCapabilities } from "@/features/alchemy/shared/stores/battle-commands";
+import { createBattleCapabilities } from "@/features/alchemy/shared/stores/commands/battle-commands";
 import { defaultGameSession } from "@/app/application-session";
-import { readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
+import { readRunRevision } from "@/features/alchemy/shared/stores/session/run-reads";
 
 function makeSession() {
   const playback = new PlaybackLifetime();

@@ -10,7 +10,7 @@ selection, reports, build validation, and receipt caching.
 Keep command entry points directly in `scripts/`. Asset registries and pipeline
 helpers live together in `assets/`, with TypeScript declarations beside their
 modules. Sound desk mapping, media, server and board modules live in `audio-review/`;
-`audio-review.mjs` remains its command entry point. `lib/agent/`, `lib/release/`, and `lib/verification/` group task-specific helpers; general process and repository helpers remain directly in `lib/`.
+`audio-review.mjs` remains its command entry point. `lib/agent/`, `lib/release/`, `lib/verification/`, `lib/performance/`, and `lib/playthrough/` group subsystem implementations; general process and repository helpers remain directly in `lib/`.
 
 ## Assets
 
@@ -114,7 +114,7 @@ differ by design. Malformed reports must fail rather than appear to be
 successful zero-test runs. Supplied counters must be non-negative integers;
 unknown assertion outcomes also fail the summary and retain CI diagnostics.
 
-`run-performance.mjs` owns profiling options and validates them before builds
+`run-performance.mjs` delegates to `lib/performance/performance-runner.mjs`, which owns profiling options and validates them before builds
 or downloads. Measurements and interpretation follow [PERFORMANCE](../Docs/PERFORMANCE.md).
 
 Balance and loot reports share the middleware-mode Vite bootstrap in
@@ -126,6 +126,11 @@ invoking CWD. One-shot suite/build/profiling CLIs
 `run-prettier`, `audit` dispatcher) use `runTaskCommand` to retain complete logs
 and print compact summaries. Supported `--live` / `--verbose` options select
 streaming output when needed.
+
+`run-playthrough.mjs` delegates to `lib/playthrough/playthrough-runner.mjs`;
+`run-playthrough-worker.mjs` delegates to `lib/playthrough/career-worker.mjs`.
+The entry points retain CLI lifecycle and artifact registration; implementations
+are import-safe. Performance comparison models and scenarios remain in `performance/`.
 
 Playthrough and performance-case workers use `runCommandAsync` so deadlines and
 cancellation stop their process trees. Interrupted playthroughs keep their

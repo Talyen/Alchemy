@@ -118,6 +118,7 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
     preserveOutput: "failures-only",
     use: {
       baseURL: `http://127.0.0.1:${port}`,
+      screenshot: "only-on-failure",
       trace: isPrepush ? "off" : isCi ? "on-first-retry" : "retain-on-failure",
       actionTimeout: isCi ? TIMEOUTS.e2e.actionCi : TIMEOUTS.e2e.actionLocal,
       launchOptions: { args: ["--mute-audio"] },

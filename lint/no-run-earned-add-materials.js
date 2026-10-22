@@ -1,10 +1,10 @@
 import { repoRelativePosix } from "./filename.js";
 
 const ALLOWED = new Set([
-  "src/features/alchemy/shared/stores/run-session-write-port.ts",
-  "src/features/alchemy/shared/stores/write/run-homestead.ts",
-  "src/features/alchemy/shared/stores/gear-session-command.ts",
-  "src/features/alchemy/shared/stores/write/run-end.ts",
+  "src/features/alchemy/shared/stores/commands/run-session-write-port.ts",
+  "src/features/alchemy/shared/stores/commands/write/run-homestead.ts",
+  "src/features/alchemy/shared/stores/commands/gear-session-command.ts",
+  "src/features/alchemy/shared/stores/commands/write/run-end.ts",
 ]);
 
 function name(node) {
@@ -37,8 +37,8 @@ export const noRunEarnedAddMaterials = {
     const relative = repoRelativePosix(context.filename);
     const stockpileOwner = ALLOWED.has(relative);
     const tallyOwner =
-      relative.startsWith("src/features/alchemy/shared/stores/write/") ||
-      relative === "src/features/alchemy/shared/stores/run-session-write-port.ts";
+      relative.startsWith("src/features/alchemy/shared/stores/commands/write/") ||
+      relative === "src/features/alchemy/shared/stores/commands/run-session-write-port.ts";
     const report = (node) => context.report({ node, messageId: "addMaterials" });
     function checkTallyWrite(node) {
       if (tallyOwner) return;

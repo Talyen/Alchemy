@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { displayModeOptions } from "@/features/alchemy/shared/config";
 import { DEVICE_DISPLAY_RANGES, SETTINGS_RANGES } from "@/lib/settings-values";
 import { SettingsSelect, SettingsSlider, SettingsToggle, SettingsSection, SettingsAction } from "./settings-controls";
-import type { SettingsActions, SettingsSaveFields } from "../../../shared/stores/settings-store";
+import type { SettingsActions, SettingsSaveFields } from "../../../shared/stores/react/settings-store";
 
 export interface DisplayOptionsProps {
   languagePreference: LanguagePreference;

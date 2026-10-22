@@ -1,7 +1,10 @@
-import type { BattleStarted } from "@/features/alchemy/shared/stores/battle-start-commands";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { bindSessionCapabilities, sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+import type { BattleStarted } from "@/features/alchemy/shared/stores/commands/battle-start-commands";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import {
+  bindSessionCapabilities,
+  sessionFeedback,
+} from "@/features/alchemy/shared/stores/session/session-capabilities";
 import type { Screen, ScreenTransitionOptions } from "@/lib/routing";
 import { createProgressionCommands } from "./progression-commands";
 import { claimRunReward, finishRewardClaim } from "./reward-commands";

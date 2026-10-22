@@ -1,6 +1,6 @@
-import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
-import type { RunTransaction } from "@/features/alchemy/shared/stores/run-session-command";
-import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/run-session-command";
+import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/commands/loot-progress";
+import type { RunTransaction } from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { snapshotTransactionValue } from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   addGold,
   awardMaterialsDuringRun,
@@ -9,7 +9,7 @@ import {
   setMysteryCardChoices,
   setMysteryGrantedGearInstances,
   setRunPlayerHealth,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { cardById, cardHasKeyword, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
@@ -29,7 +29,7 @@ import {
   appendBoonToRunWithDiscovery,
   appendCardToRunWithDiscovery,
   grantGearToRunWithRecord,
-} from "../../shared/stores/deck-mutations";
+} from "../../shared/stores/commands/deck-mutations";
 
 export interface MysteryEffectResult {
   followUp: "choose-card" | null;

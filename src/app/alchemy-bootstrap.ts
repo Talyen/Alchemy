@@ -4,8 +4,8 @@ import {
   type SaveLoadState,
   type SessionPersistence,
 } from "@/features/alchemy/shared/storage";
-import type { GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { registerSessionCleanup } from "@/features/alchemy/shared/stores/session-capabilities";
+import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { registerSessionCleanup } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { logStorageFailure } from "@/lib/storage-logging";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 

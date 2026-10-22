@@ -1,20 +1,26 @@
 import { createCleanup } from "@/lib/cleanup";
-import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
+import { sessionRuntime } from "@/features/alchemy/shared/stores/session/session-runtime";
 import { createSaveBackend } from "../../../../helpers/save-backend";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
 import { afterEach, expect, it, vi } from "vitest";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import { createDefaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
-import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { flushSaveAfterGearMutation, flushSaveAfterRunEnd } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
-import { subscribePersistenceCommits } from "@/features/alchemy/shared/stores/persistence-commit-filter";
-import { readSessionRevision } from "@/features/alchemy/shared/stores/session-capabilities";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { guardProgressAction } from "@/features/alchemy/shared/stores/session/session-capabilities";
+import { setGold } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import {
+  flushSaveAfterGearMutation,
+  flushSaveAfterRunEnd,
+} from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { subscribePersistenceCommits } from "@/features/alchemy/shared/stores/persistence/persistence-commit-filter";
+import { readSessionRevision } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { registerErrorSink } from "@/lib/error-logger";
-import { readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
+import { readRunProfile } from "@/features/alchemy/shared/stores/session/run-reads";
 import { deferred } from "../../../../helpers/deferred";
 import type { SaveBackend } from "@/lib/platform-save-backend";
 

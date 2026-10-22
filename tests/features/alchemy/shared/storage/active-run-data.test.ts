@@ -12,11 +12,14 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { defaultBattleState, type BattleState } from "@/lib/battle";
 import { getStartingDeck, trinketLibrary } from "@/lib/game-data";
 import { emptyHydratedMysteryVisit, readActivityData, type ActiveRunData } from "@/lib/active-run-session";
-import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
-import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/run-state-init";
-import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { ANCIENT_ALTAR_MYSTERY_VISIT, makeActiveRunData } from "../stores/active-run-data-fixture";
+import {
+  decodeRunResumeSnapshot,
+  encodeRunResumeSnapshot,
+} from "@/features/alchemy/shared/stores/persistence/run-resume-codec";
+import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/session/run-state-init";
+import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
+import { setRewardState } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { ANCIENT_ALTAR_MYSTERY_VISIT, makeActiveRunData } from "../stores/session/active-run-data-fixture";
 import { defaultGameSession } from "@/app/application-session";
 function encodeState(): ActiveRunData {
   return encodeRunResumeSnapshot({

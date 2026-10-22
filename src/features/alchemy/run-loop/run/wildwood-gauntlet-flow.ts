@@ -1,9 +1,9 @@
 import { runActivityScreen } from "@/lib/active-run-session";
-import type { BattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
-import { type GameSession } from "@/features/alchemy/shared/stores/game-session-types";
-import { teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { sessionFeedback } from "@/features/alchemy/shared/stores/session-capabilities";
+import type { BattleStartCommands } from "@/features/alchemy/shared/stores/commands/battle-start-commands";
+import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
+import { teardownRun } from "@/features/alchemy/shared/stores/commands/run-lifecycle";
+import { readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
+import { sessionFeedback } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { canSkipWildwoodRemoval } from "@/lib/content-systems/wildwood/gauntlet";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { chooseWildwoodDraftCard, completeWildwoodDraft, prepareWildwoodBoss } from "./wildwood-commands";

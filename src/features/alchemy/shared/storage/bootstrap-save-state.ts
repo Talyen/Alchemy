@@ -1,4 +1,4 @@
-import type { GameSession } from "../stores/game-session-types";
+import type { GameSession } from "../stores/session/game-session-types";
 import { initializeSteam, isDesktop } from "@/lib/platform";
 import { createPlatformSaveBackend } from "@/lib/platform-save-backend";
 import { configureSaveBackend, loadAlchemySaveState } from "./io";

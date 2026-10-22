@@ -4,23 +4,23 @@ import {
   dispatchGameplayCommand,
   type GameplayDraft,
   type SynchronousResult,
-} from "@/features/alchemy/shared/stores/gameplay-command";
+} from "@/features/alchemy/shared/stores/session/gameplay-command";
 import {
   createInitialRunDomainData,
   createInitialSessionFields,
   type RunSessionFields,
-} from "@/features/alchemy/shared/stores/run-domain-types";
+} from "@/features/alchemy/shared/stores/session/run-domain-types";
 import {
   createInitialActiveRunFields,
   createInitialPermanentFields,
   ACTIVE_RUN_PROGRESS_KEYS,
   type ActiveRunProgressFields,
   type PermanentProgressFields,
-} from "@/features/alchemy/shared/stores/run-state-init";
-import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
-import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-types";
-import { createInitialGearState } from "@/features/alchemy/shared/stores/gear-state-defaults";
-import { createInitialProfileState } from "@/features/alchemy/shared/stores/profile-store-types";
+} from "@/features/alchemy/shared/stores/session/run-state-init";
+import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/commands/gear-session-command";
+import type { GearDraftView } from "@/features/alchemy/shared/stores/session/gear-store-types";
+import { createInitialGearState } from "@/features/alchemy/shared/stores/session/gear-state-defaults";
+import { createInitialProfileState } from "@/features/alchemy/shared/stores/session/profile-store-types";
 import {
   clearTransientSession,
   resetToDefaults,
@@ -28,15 +28,15 @@ import {
   setHasActiveRun,
   setRewardState,
   setCompanionRewardCards,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { defaultBattleState, battleSnapshot, type BattleSnapshot } from "@/lib/battle";
 import {
   createRunSessionCommand,
   dispatchRunSessionCommand,
   type RunTransaction,
-} from "@/features/alchemy/shared/stores/run-session-command";
-import { transactionDraft } from "@/features/alchemy/shared/stores/transaction-internal";
-import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { transactionDraft } from "@/features/alchemy/shared/stores/session/transaction-internal";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/commands/reset";
 import { defaultGameSession } from "@/app/application-session";
 
 /** Test setup still commits through the real command boundary. */

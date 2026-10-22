@@ -3,14 +3,17 @@ import { afterEach, expect, it, vi } from "vitest";
 import { createAlchemyAutosaveLifecycle } from "@/app/autosave-lifecycle";
 import { createScreenNavigation } from "@/features/alchemy/shell/screen-navigation";
 import { createSessionPersistence } from "@/features/alchemy/shared/storage";
-import { createGameSession } from "@/features/alchemy/shared/stores/game-session";
-import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-reads";
-import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
-import { guardProgressAction } from "@/features/alchemy/shared/stores/session-capabilities";
-import { sessionGameplayStore } from "@/features/alchemy/shared/stores/session-gameplay-store";
-import { sessionRuntime } from "@/features/alchemy/shared/stores/session-runtime";
-import { acceptCommand, dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
+import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
+import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/commands/reset";
+import { guardProgressAction } from "@/features/alchemy/shared/stores/session/session-capabilities";
+import { sessionGameplayStore } from "@/features/alchemy/shared/stores/session/session-gameplay-store";
+import { sessionRuntime } from "@/features/alchemy/shared/stores/session/session-runtime";
+import {
+  acceptCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/commands/run-session-command";
+import { setGold } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { deferred } from "../../../../helpers/deferred";
 import { createSaveBackend } from "../../../../helpers/save-backend";
 import type { SaveBackend } from "@/lib/platform-save-backend";

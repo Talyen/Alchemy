@@ -5,9 +5,9 @@ import { initializeShopForTest } from "../../../../helpers/visit-initialization"
 import { describe, expect, it } from "vitest";
 import { shopItemSlotKey } from "@/lib/active-run-session";
 import { mutateGearForTest, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
-import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
-import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
+import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
+import { readGearState } from "@/features/alchemy/shared/stores/session/gear-store";
+import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/commands/run-session-command";
 import {
   buildActions,
   createInitialAlchemistState,

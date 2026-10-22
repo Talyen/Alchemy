@@ -3,7 +3,7 @@ import { useGameTranslation } from "@/components/use-game-translation";
 import { demoFeatureShowcaseByLocale } from "@/lib/game-data";
 import { useLayoutEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { focusControl } from "../../shared/ui/focus-navigation";
+import { focusControl } from "../../shared/ui/dialogs/focus-navigation";
 
 export function DemoCompletionScreen({ onWishlist, onMainMenu }: { onWishlist?: () => void; onMainMenu: () => void }) {
   const i18n = useGameTranslation();

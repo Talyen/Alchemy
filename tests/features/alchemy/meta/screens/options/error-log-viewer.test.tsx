@@ -2,7 +2,7 @@ import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorLogViewer } from "@/features/alchemy/meta/screens/options/error-log-viewer";
-import { useErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
+import { useErrorLogStore } from "@/features/alchemy/shared/stores/react/error-log-store";
 import { installCatalogs, localization } from "@/lib/localization/runtime";
 import catalogs from "@/lib/localization/locales/runtime.json";
 import { installDisabledAnimationsForTests } from "../../../../../helpers/animation-test";
