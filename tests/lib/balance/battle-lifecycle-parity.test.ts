@@ -145,10 +145,10 @@ describe("simulator and live command parity", () => {
       },
       { rng: random.createRunStreamRng(24) },
     );
-    expect(result.state.gold).toBe(4);
+    expect(result.state.gold).toBe(2);
     expect(result.companion?.state.hand).toHaveLength(0);
     expect(result.state.hand).toHaveLength(4);
-    expect(result.companion?.texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 4 }]);
+    expect(result.companion?.texts).toEqual([{ target: "player", kind: "status", stat: "gold", amount: 2 }]);
     expect(structuredClone(result)).toEqual(result);
   });
   it("replays random card and Wish decisions without advancing combat RNG for the decisions", () => {
@@ -182,7 +182,7 @@ describe("simulator and live command parity", () => {
     if (ended?.kind !== "end") throw new Error("Expected an end-turn action");
     expect(ended.frames.map((frame) => frame.turn.playerTurnSkipped)).toEqual([true, true, false]);
     expect(ended.frames.filter((frame) => frame.companion)).toHaveLength(1);
-    expect(result.combatGoldEarned).toBe(4); // Opening action plus the first playable turn.
+    expect(result.combatGoldEarned).toBe(2); // Opening action plus the first playable turn.
     expect(result.turns).toBe(3);
   });
 
@@ -225,7 +225,7 @@ describe("simulator and live command parity", () => {
         playerCC: { stunSkipTurns: 3, freezeSkipTurns: 0, cooldown: 0 },
       },
     );
-    expect(result).toMatchObject({ outcome: "timeout", turns: 2, combatGoldEarned: 2 });
+    expect(result).toMatchObject({ outcome: "timeout", turns: 2, combatGoldEarned: 1 });
     expect(actions).toHaveLength(1);
     const action = actions[0];
     if (action?.kind !== "end") throw new Error("Expected an end-turn action");
@@ -244,7 +244,7 @@ describe("simulator and live command parity", () => {
       },
     );
     expect(result.outcome).toBe("loss");
-    expect(result.combatGoldEarned).toBe(2);
+    expect(result.combatGoldEarned).toBe(1);
     expect(
       actions
         .filter((action) => action.kind === "end")

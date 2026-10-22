@@ -175,9 +175,9 @@ describe("Toxic Profit and saved damage rules", () => {
             : source === "detonation"
               ? detonateEnemyStatuses(initial, ["poison"], [])
               : resolveFollowUpHit(initial, { source: "talent-fixed", damageType: "burn", amount: 4 }, []);
-      expect(next.gold).toBe(3);
+      expect(next.gold).toBe(4);
       expect(next.playerHealth).toBe(12);
-      expect(payKillPayouts(next, true, []).gold).toBe(3);
+      expect(payKillPayouts(next, true, []).gold).toBe(4);
       expect(payKillPayouts(next, true, []).playerHealth).toBe(12);
     },
   );
@@ -194,7 +194,15 @@ describe("Toxic Profit and saved damage rules", () => {
       },
       [],
     );
-    expect(next.gold).toBe(3);
+    expect(next.gold).toBe(4);
+  });
+
+  it("does not reroll a failed Toxic Profit reward after the kill", () => {
+    const initial = battle({ enemyHealth: 1, enemyStatuses: { poison: 1 }, talentEffects: effects, rng: () => 0.1 });
+    const killed = resolveFollowUpHit(initial, { source: "talent-fixed", damageType: "burn", amount: 4 }, []);
+    expect(killed.gold).toBe(0);
+    expect(killed.flags.killRewardsPaid).toBe(true);
+    expect(payKillPayouts({ ...killed, rng: () => 0 }, true, []).gold).toBe(0);
   });
 
   it("does not pay for an unpoisoned kill or hit an already defeated enemy", () => {
@@ -211,6 +219,8 @@ describe("Toxic Profit and saved damage rules", () => {
     });
     const saved = PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(state)));
     expect(saved.talentEffects.physicalBleedChance).toBe(10);
+    expect(saved.talentEffects.goldOnPoisonedKillChance).toBe(10);
+    expect(saved.talentEffects.goldOnPoisonedKill).toBe(4);
     expect(saved.flags.killRewardsPaid).toBe(true);
   });
 });

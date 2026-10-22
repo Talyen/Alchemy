@@ -55,7 +55,7 @@ describe("queued rewards and hit ordering", () => {
     });
     const after = playBattleCardResolved(state, card.id, 0).state;
     expect(after.gold).toBeGreaterThan(0);
-    expect(after.playerStatuses.forge).toBe(forge);
+    expect(after.playerStatuses.forge).toBe(forge + 1);
   });
 
   it("counts queued Companion cards when weighting Wish offers", () => {
@@ -116,7 +116,7 @@ describe("queued rewards and hit ordering", () => {
           ENCOUNTER_TRAITS["crimson-ward"].enemyTrait,
         ],
       },
-      trinketEffects: { cutpurseGoldOnBleed: 1 },
+      trinketEffects: { cutpurseGoldChance: 100 },
       gearEffects: { healOnCombatGoldGain: 1 },
     });
     const after = tickEnemyStatuses(state, []);

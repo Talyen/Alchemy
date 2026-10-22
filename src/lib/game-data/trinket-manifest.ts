@@ -11,7 +11,7 @@ export const defaultTrinketEffects = {
   sinEaterHealOnHarmfulStatusRemove: 0,
   vanguardCrestForgeOnBlockAbsorb: 0,
   parasiticBloomLeechChance: 0,
-  cutpurseGoldOnBleed: 0,
+  cutpurseGoldChance: 0,
   wishingWellGoldOnWish: 0,
   plagueDoctorPoisonCleanse: 0,
   mortarPestlePoisonOnPotionUse: 0,

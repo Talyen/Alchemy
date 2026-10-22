@@ -211,18 +211,17 @@ describe("Dodge talent rewrites", () => {
     expect(result.enemyHealth).toBeLessThan(frozen.enemyHealth);
   });
 
-  it("Lucky Foot grants Gold when you Dodge", () => {
+  it.each([0.099, 0.1])("Lucky Foot grants 4 Gold only below its 10%% boundary at %s", (roll) => {
+    let calls = 0;
     const result = enemyHit(
       incomingPhysical({
-        rng: (() => {
-          let calls = 0;
-          return () => (++calls <= 2 ? 0.01 : 0.99);
-        })(),
+        rng: () => (++calls === 1 ? 0.01 : roll),
         gold: 10,
-        talentEffects: { goldOnDodge: 1 },
+        talentEffects: { goldOnDodge: 4 },
       }),
     );
-    expect(result.gold).toBe(11);
+    expect(result.playerDodgeCount).toBe(1);
+    expect(result.gold).toBe(roll < 0.1 ? 14 : 10);
   });
 
   it.each([

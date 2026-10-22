@@ -186,7 +186,7 @@ describe("thematic card effects", () => {
     const packTactics = cardById["pack-tactics"]!;
     expect(getCardKeywords(packTactics)).not.toContain("wish");
     const utility = play("pack-tactics", { activeCompanion: companionLibrary["golden-retriever"] });
-    expect(utility.gold).toBe(4);
+    expect(utility.gold).toBe(2);
     expect(utility.wishOptions).toBeNull();
     expect(utility.playerStatuses.block).toBe(4);
     const absent = play("pack-tactics");

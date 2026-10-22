@@ -125,7 +125,7 @@ describe("selective feedback rewards", () => {
     });
     const consume = makeTestCard({ cost: 0, consume: true, effects: [] });
     expect(play(state, consume).state.gold).toBe(roll < 0.1 ? 4 : 0);
-    expect(applyWishEffect(state, makeTestCard(), 1, []).gold).toBe(roll < 0.5 ? 3 : 0);
+    expect(applyWishEffect(state, makeTestCard(), 1, []).gold).toBe(roll < 0.1 ? 3 : 0);
   });
 
   it.each([0.249, 0.25])("Bladedance only auto-plays after a successful proc at %s", (roll) => {
@@ -146,9 +146,9 @@ describe("selective feedback rewards", () => {
     expect(result.playerStatuses.forge).toBe(roll < 0.25 ? 4 : 0);
   });
 
-  it("The Golden Crucible rewards successive Gold gains", () => {
+  it.each([0, 0.99])("The Golden Crucible guarantees Forge for successive Gold gains at roll %s", (roll) => {
     const state = battle({
-      rng: () => 0,
+      rng: () => roll,
       gearEffects: { goldGrantsForgeAndHoly: 1 },
     });
     const first = addGoldWithCombatText(state, 4, []);
@@ -193,7 +193,7 @@ describe("selective feedback rewards", () => {
     const next = applyEnemyAbility(state, incoming, texts);
     expect(next.playerDodgeCount).toBe(1);
     expect(next.playerStatuses).toMatchObject({ block: 1, armor: 1, forge: roll < 0.25 ? 1 : 0 });
-    expect(next.gold).toBe(roll < 0.25 ? 4 : 0);
+    expect(next.gold).toBe(roll < 0.1 ? 4 : 0);
     expect(next.enemyHealth < state.enemyHealth).toBe(roll < 0.5);
     if (roll > 0.5) expect(texts).toHaveLength(1);
   });

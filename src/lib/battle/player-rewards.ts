@@ -79,7 +79,11 @@ export function payKillPayouts(
   if (state.enemyHealth > 0 || !enemyWasAlive || state.flags.killRewardsPaid) return state;
   state = { ...state, flags: { ...state.flags, killRewardsPaid: true } };
   const statuses = enemyStatusesOverride ?? state.enemyStatuses;
-  if (statuses.poison > 0 && state.talentEffects.goldOnPoisonedKill > 0) {
+  if (
+    statuses.poison > 0 &&
+    state.talentEffects.goldOnPoisonedKill > 0 &&
+    rollBattleChance(state.talentEffects.goldOnPoisonedKillChance, state)
+  ) {
     state = addGoldWithCombatText(state, state.talentEffects.goldOnPoisonedKill, combatTexts);
   }
   const afterBoneCharm = applyKillHeal(state, state.trinketEffects.boneCharmHealOnKill, combatTexts);

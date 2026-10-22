@@ -39,13 +39,13 @@ describe("applyEnemyDotDamage", () => {
     expect(state.enemyStatuses).toMatchObject({ burn: 4, poison: 2 });
   });
 
-  it.each([4, 6, 8])("attributes ordered pulse rewards only to Health actually lost from %i Health", (health) => {
+  it.each([4, 6, 7, 8, 9])("attributes ordered pulse rewards only to Health actually lost from %i Health", (health) => {
     const state = patchBattleState({
       enemyHealth: health,
       mana: 0,
       maxMana: 3,
       gearEffects: { elementalDamageManaChance: 100 },
-      trinketEffects: { cutpurseGoldOnBleed: 2 },
+      trinketEffects: { cutpurseGoldChance: 100 },
     });
     const next = applyEnemyDotDamage(
       state,
@@ -58,7 +58,7 @@ describe("applyEnemyDotDamage", () => {
     );
     expect(next.enemyHealth).toBe(0);
     expect(next.mana).toBe(health > 4 ? 1 : 0);
-    expect(next.gold).toBe(state.gold + (health > 6 ? 2 : 0));
+    expect(next.gold).toBe(state.gold + Math.max(0, health - 6));
   });
 });
 
@@ -206,17 +206,22 @@ describe("remaining-tick detonation", () => {
     expect(next.playerHealth).toBe(20);
   });
 
-  it.each(["tick", "detonation"] as const)("Cutpurse Knife pays for a Bleed %s", (source) => {
+  it.each([
+    { source: "tick", roll: 0.099, gold: 4 },
+    { source: "tick", roll: 0.1, gold: 0 },
+    { source: "detonation", roll: 0.099, gold: 4 },
+    { source: "detonation", roll: 0.1, gold: 0 },
+  ])("Cutpurse Knife pays $gold Gold for a Bleed $source at roll $roll", ({ source, roll, gold }) => {
     const state = patchBattleState({
       enemyHealth: 100,
       enemyMaxHealth: 100,
       enemyStatuses: { bleed: 4 },
-      trinketEffects: { cutpurseGoldOnBleed: 1 },
-      rng: () => 0.99,
+      trinketEffects: { cutpurseGoldChance: 10 },
+      rng: () => roll,
     });
     const next = source === "tick" ? tickEnemyStatuses(state, []) : detonateEnemyStatuses(state, ["bleed"], []);
     expect(next.enemyHealth).toBe(96);
-    expect(next.gold).toBe(state.gold + 1);
+    expect(next.gold).toBe(state.gold + gold);
   });
 
   it.each([
@@ -274,7 +279,7 @@ describe("remaining-tick detonation", () => {
       enemyStatuses: { poison: 4, bleed: 4 },
       pendingBleedLeechHealing: 4,
       talentEffects: { drawOnBleedDamageChance: 100 },
-      trinketEffects: { cutpurseGoldOnBleed: 1 },
+      trinketEffects: { cutpurseGoldChance: 100 },
       rng: () => 0.99,
     });
     const next = detonateEnemyStatuses(state, ["poison", "bleed"], []);

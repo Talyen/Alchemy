@@ -23,7 +23,7 @@ function companionAction(effect: BattleCardEffect): string | null {
       return `Cleanses ${amount} harmful status effect${amount === 1 ? "" : "s"}`;
     }
     case "gain-gold":
-      return `Grants ${effect.amount} Gold`;
+      return `Gain ${effect.amount} Gold`;
     case "player-status":
       return effect.status === "block" ? `Gains ${effect.amount} Block` : null;
     case "draw-cards": {
@@ -66,12 +66,7 @@ export function getCompanionDescriptionLines(
 ): string[] {
   const modifiers = typeof damageBonus === "number" ? { damageBonus, damageMultiplier: 1 } : damageBonus;
   const effects = getModifiedCompanionEffects(companion, bondLevel, modifiers);
-  const lines = effects.map((effect) => {
-    const line = companionAction(effect);
-    return (companion.id === "golden-retriever" || companion.id === "fox") && effect.kind === "gain-gold"
-      ? line?.replace(/^Grants /, "Steals ")
-      : line;
-  });
+  const lines = effects.map(companionAction);
   const bonus = effects[1];
   const overflow = effects.some((effect) => effect.kind === "restore-mana" && effect.allowOverflow)
     ? ", allowing overflow"

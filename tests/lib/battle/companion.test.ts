@@ -232,7 +232,7 @@ describe("Companion Bond progression", () => {
     const skeleton = bondedState("skeleton", level);
     expect(processCompanionTurnStart(skeleton, []).enemyHealth).toBe(skeleton.enemyHealth - 1 - level);
     expect(processCompanionTurnStart(bondedState("shield-scarab", level), []).playerStatuses.block).toBe(2 + level);
-    expect(processCompanionTurnStart(bondedState("golden-retriever", level), []).gold).toBe(2 + level);
+    expect(processCompanionTurnStart(bondedState("golden-retriever", level), []).gold).toBe(1 + level);
     const pixie = { ...bondedState("pixie", level), playerHealth: 10 };
     expect(processCompanionTurnStart(pixie, []).playerHealth).toBe(11 + level);
     const wisp = { ...bondedState("will-o-wisp", level), playerHealth: 10 };

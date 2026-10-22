@@ -116,10 +116,18 @@ describe("inspection follows resource rewards between ingredients", () => {
     compare(
       createMixedPotion(acid("bleed"), acid("holy")),
       {
-        trinketEffects: { cutpurseGoldOnBleed: 1 },
+        trinketEffects: { cutpurseGoldChance: 100 },
         talentEffects: { holyGoldPercent: 100 },
       },
-      [2, 3],
+      [2, 4],
+    );
+  });
+
+  it("keeps Cutpurse's uncertain Gold correlated with the next Holy ingredient", () => {
+    compare(
+      createMixedPotion(acid("bleed"), acid("holy")),
+      { trinketEffects: { cutpurseGoldChance: 10 }, talentEffects: { holyGoldPercent: 100 } },
+      [2, [2, 4]],
     );
   });
 });
