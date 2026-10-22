@@ -27,13 +27,13 @@ export const gearAffixRows = [
     "Kingbreaker",
     "stun",
     "physical",
-  )("armorIncreasesStun", "Enemy Armor increases your Stun damage instead of reducing it."),
+  )("armorIncreasesStun", "Enemy Armor increases Stun damage instead of reducing it."),
   offensiveUnique(
     "everkeen",
     "Everkeen",
     "forge",
     "physical",
-  )("forgeReadiesPhysicalRepeat", "Gaining Forge makes your next Physical card strike twice."),
+  )("forgeReadiesPhysicalRepeat", "Gaining Forge makes the next Physical card strike twice."),
   offensiveUnique(
     "red-harvest",
     "Red Harvest",
@@ -45,7 +45,7 @@ export const gearAffixRows = [
     "Oathkeeper",
     "forge",
     "holy",
-  )("oathkeeperHolyAndBlock", "Holy damage is increased by half your Forge. Damaging Holy attacks grant 1 Block."),
+  )("oathkeeperHolyAndBlock", "Holy damage is increased by 50% of Forge. Damaging Holy attacks grant 1 Block."),
   offensiveUnique(
     "the-patient-edge",
     "The Patient Edge",
@@ -57,7 +57,7 @@ export const gearAffixRows = [
     "Viper’s Courtesy",
     "dodge",
     "poison",
-  )("dodgeReadiesVenomousHit", "After Dodging, your next Physical hit adds half its damage as Poison and Bleed."),
+  )("dodgeReadiesVenomousHit", "After Dodging, the next Physical hit adds half its damage as Poison and Bleed."),
   offensiveUnique(
     "the-lingering-bell",
     "The Lingering Bell",
@@ -75,7 +75,7 @@ export const gearAffixRows = [
     "Wrenflight",
     "archery",
     "dodge",
-  )("archeryDodgeAndDraw", "Archery grants 10% Dodge until your next turn. Dodging draws an Archery card."),
+  )("archeryDodgeAndDraw", "Archery grants 10% Dodge until next turn. Dodging draws an Archery card."),
   offensiveUnique(
     "the-returning-gale",
     "The Returning Gale",
@@ -87,7 +87,7 @@ export const gearAffixRows = [
     "The Final Spark",
     "mana",
     "burn",
-  )("lastManaElementalRepeat", "Spend your last Mana to repeat a Burn or Freeze card’s damage. Once per turn."),
+  )("lastManaElementalRepeat", "Spend the last Mana to repeat a Burn or Freeze card’s damage. Once per turn."),
   defensiveUnique(
     "laughing-guard",
     "Laughing Guard",
@@ -95,20 +95,20 @@ export const gearAffixRows = [
     "dodge",
   )(
     "dodgeSpendsPreservedBlock",
-    "Keep Block between turns. Dodging spends half your Block to deal that much Physical damage.",
+    "Keep Block between turns. Dodging spends half the Block to deal that much Physical damage.",
   ),
   defensiveUnique(
     "the-knights-answer",
     "The Knight’s Answer",
     "block",
     "physical",
-  )("blockReadiesFreePhysical", "Blocking an attack makes your next Physical card free."),
+  )("blockReadiesFreePhysical", "Blocking an attack makes the next Physical card free."),
   offensiveUnique(
     "the-returning-flight",
     "The Returning Flight",
     "archery",
     "dodge",
-  )("recoverLastArcheryCard", "Each turn, recover your last Archery card. It costs 1 less Mana."),
+  )("recoverLastArcheryCard", "Each turn, recover the last Archery card played. It costs 1 less Mana."),
   offensiveUnique(
     "threefold-grace",
     "Threefold Grace",
@@ -138,7 +138,7 @@ export const gearAffixRows = [
     "Wildheart’s Favor",
     "dodge",
     "nature",
-  )("dodgeReadiesNatureCrit", "Dodging makes your next Nature card free and guarantees its damage Critically Hits."),
+  )("dodgeReadiesNatureCrit", "Dodging makes the next Nature card free and guarantees its damage Critically Hits."),
   offensiveUnique(
     "the-golden-crucible",
     "The Golden Crucible",
@@ -146,7 +146,7 @@ export const gearAffixRows = [
     "forge",
   )(
     "goldGrantsForgeAndHoly",
-    "Gaining Gold during combat has a 25% chance to grant 1 Forge. Holy damage is increased by half your Forge.",
+    "Gaining Gold during combat has a 25% chance to grant 1 Forge. Holy damage is increased by 50% of Forge.",
   ),
   flatDamageAffix("flat-physical", "Ironbound", "physical", "flatPhysicalDamage"),
   flatDamageAffix("flat-stun", "Concussive", "stun", "flatStunDamage"),
@@ -291,7 +291,7 @@ export const gearAffixRows = [
     "Aegis",
     "holy",
     "block",
-  )("holyDamageFromBlockPercent", ROLL_PERCENT, "Increases Holy damage by {value}% of your Block"),
+  )("holyDamageFromBlockPercent", ROLL_PERCENT, "Increases Holy damage by {value}% of Block"),
   offensiveAffix("leech-potency", "Sanguine", "leech")(
     "leechHealBonusPercent",
     ROLL_PERCENT,
@@ -307,7 +307,7 @@ export const gearAffixRows = [
     "Aureate",
     "holy",
     "gold",
-  )("holyDamageFromGoldPercent", rollRange(2, 3, 4, 5), "Increases Holy damage by {value}% of your Gold"),
+  )("holyDamageFromGoldPercent", rollRange(2, 3, 4, 5), "Increases Holy damage by {value}% of Gold"),
   resistAffix("resist-physical", "Stoneward", "physical", "resistPhysical"),
   resistAffix("resist-stun", "Unshaken", "stun", "resistStun"),
   resistAffix("resist-holy", "Shadowveiled", "holy", "resistHoly"),
@@ -349,7 +349,7 @@ export const gearAffixRows = [
     "Aetherward",
     "mana",
     "block",
-  )("damageReductionPerMana", rollRange(1, 1, 1, 1), "Reduce damage taken by your number of full Mana Crystals"),
+  )("damageReductionPerMana", rollRange(1, 1, 1, 1), "Reduce damage taken by the number of full Mana Crystals"),
   defensiveAffix(
     "heal-on-burn-death",
     "Cauterizing",
@@ -385,13 +385,13 @@ export const gearAffixRows = [
     "Reactive",
     "block",
     "stun",
-  )("stunOnBlockDepleted", rollRange(2, 3, 4, 5), "Deal {value} Stun damage when your Block is depleted"),
+  )("stunOnBlockDepleted", rollRange(2, 3, 4, 5), "Deal {value} Stun damage when Block is depleted"),
   defensiveAffix(
     "companion-leech",
     "Kinbound",
     "companion",
     "health",
-  )("healOnCompanionAttack", ROLL_SMALL, "Below half Health, restore {value} Health when your Companion deals damage"),
+  )("healOnCompanionAttack", ROLL_SMALL, "Below half Health, restore {value} Health when a Companion deals damage"),
   defensiveAffix(
     "armor-on-cc",
     "Stalwart",
@@ -405,7 +405,7 @@ export const gearAffixRows = [
     "Briarward",
     "thorns",
     "block",
-  )("thornsOnBlockDepleted", rollRange(2, 3, 4, 5), "When your Block is depleted, gain {value} Thorns"),
+  )("thornsOnBlockDepleted", rollRange(2, 3, 4, 5), "When Block is depleted, gain {value} Thorns"),
   offensiveAffix(
     "forge-on-consume-burn",
     "Cinderfed",
@@ -421,7 +421,7 @@ export const gearAffixRows = [
     "Briarplate",
     "thorns",
     "armor",
-  )("armorOnThornsDamage", rollRange(1, 1, 2, 2), "When your Thorns deal damage, gain {value} Armor"),
+  )("armorOnThornsDamage", rollRange(1, 1, 2, 2), "When Thorns deal damage, gain {value} Armor"),
   offensiveAffix(
     "mana-on-paid-consume",
     "Distilled",
@@ -433,13 +433,13 @@ export const gearAffixRows = [
     "Rotbloom",
     "consume",
     "poison",
-  )("poisonTickOnConsume", rollRange(1, 1, 1, 1), "When you Consume a card, your Poison deals damage immediately"),
+  )("poisonTickOnConsume", rollRange(1, 1, 1, 1), "When you Consume a card, Poison deals damage immediately"),
   offensiveAffix(
     "draw-on-last-hand-consume",
     "Afterglow",
     "consume",
     "mana",
-  )("drawOnLastHandConsume", rollRange(1, 1, 1, 2), "When you Consume your last card in hand, draw {value} Cards"),
+  )("drawOnLastHandConsume", rollRange(1, 1, 1, 2), "When you Consume the last card in hand, draw {value} Cards"),
   defensiveAffix(
     "block-on-companion-summon",
     "Packguard",
@@ -504,7 +504,7 @@ export const gearAffixRows = [
     "wardbreaker-purge",
     "Wardbreaking",
     "stun",
-  )("attackPurgeOncePerTurn", "Once per turn, your attacks Purge one beneficial status effect"),
+  )("attackPurgeOncePerTurn", "Once per turn, attacks Purge one beneficial status effect"),
   defensiveUnique(
     "dance-of-blades",
     "Bladedance",
@@ -539,13 +539,13 @@ export const gearAffixRows = [
   offensiveAffix("dodge-opening", "Opportunist", "dodge")(
     "nextAttackPhysicalOnDodge",
     rollRange(2, 3, 4, 6),
-    "Your next attack deals {value} additional Physical damage when you Dodge",
+    "The next attack deals {value} additional Physical damage after Dodging",
   ),
   offensiveUnique(
     "dodge-crit",
     "Off-Balance",
     "dodge",
-  )("nextAttackCritOnDodge", "Your next attack is guaranteed to Critically Hit when you Dodge"),
+  )("nextAttackCritOnDodge", "After Dodging, the next attack is guaranteed to Critically Hit"),
   offensiveAffix("dodge-bleed", "Fleeting", "dodge")(
     "bleedOnDodge",
     rollRange(2, 3, 4, 5),
@@ -567,7 +567,7 @@ export const gearAffixRows = [
     "block",
   )(
     "freezeGrantsBlockAndMana",
-    "While you have no Block, Freeze damage grants equal Block. Freezing an enemy while you have no Mana restores Mana equal to half your Block",
+    "While you have no Block, Freeze damage grants equal Block. Freezing an enemy while you have no Mana restores Mana equal to half the Block",
   ),
   offensiveUnique(
     "blackfletch",
@@ -611,7 +611,7 @@ export const gearAffixRows = [
     "Spitebloom",
     "thorns",
     "poison",
-  )("poisonOnThornsDamage", rollRange(1, 2, 2, 3), "When your Thorns deal damage, deal {value} Poison damage"),
+  )("poisonOnThornsDamage", rollRange(1, 2, 2, 3), "When Thorns deal damage, deal {value} Poison damage"),
   defensiveAffix(
     "heal-on-combat-gold",
     "Gildmend",
@@ -681,7 +681,7 @@ export const gearAffixRows = [
     "Counterplate",
     "armor",
     "stun",
-  )("stunOnArmorLostToAttack", rollRange(2, 3, 4, 5), "When an attack removes your Armor, deal {value} Stun damage"),
+  )("stunOnArmorLostToAttack", rollRange(2, 3, 4, 5), "Losing Armor to an attack deals {value} Stun damage"),
   offensiveAffix(
     "nature-leech-vs-poisoned",
     "Rootmender",
@@ -769,7 +769,7 @@ export const gearAffixRows = [
     "Spellrending",
     "mana",
     "holy",
-  )("turnStartPurgeChance", rollRange(25, 25, 25, 25), "At the start of your turn, 25% chance to Purge the enemy"),
+  )("turnStartPurgeChance", rollRange(25, 25, 25, 25), "At turn start, 25% chance to Purge the enemy"),
   offensiveAffix(
     "block-on-purge",
     "Unraveling",
