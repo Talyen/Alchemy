@@ -16,7 +16,7 @@ export function DemoCompletionScreen({ onWishlist, onMainMenu }: { onWishlist?: 
     focusControl(wishlist.current ?? mainMenu.current);
   }, []);
   return (
-    <div className="flex h-full min-h-0 w-full flex-col items-center gap-6 bg-background px-8 py-8">
+    <div className="flex h-full min-h-0 w-full flex-col items-center justify-center gap-4 bg-background px-8 py-8">
       <header className="flex shrink-0 flex-col items-center gap-1 text-center">
         <p className="text-sm font-semibold tracking-[0.2em] text-muted-foreground uppercase">
           {i18n.text("demo-completion.act-complete", "Act I Complete")}
@@ -25,7 +25,7 @@ export function DemoCompletionScreen({ onWishlist, onMainMenu }: { onWishlist?: 
           {i18n.text("ui.demo-completion-screen.1", "The Journey Continues")}
         </h1>
       </header>
-      <div className="flex min-h-0 w-full flex-1 items-center justify-center py-4">
+      <div className="flex h-[65cqh] min-h-0 w-full shrink items-center justify-center">
         <img
           src={artwork}
           width={2752}
@@ -36,10 +36,10 @@ export function DemoCompletionScreen({ onWishlist, onMainMenu }: { onWishlist?: 
           )}
           data-testid="demo-marketing-image"
           decoding="async"
-          className="h-auto max-h-[90%] w-auto max-w-[90%] object-contain"
+          className="h-auto max-h-full w-auto max-w-[90%] object-contain"
         />
       </div>
-      <div className="flex w-full shrink-0 flex-col items-center gap-3 pb-8">
+      <div className="flex w-full shrink-0 flex-col items-center gap-3">
         {onWishlist ? (
           <Button ref={wishlist} size="lg" variant="primary" className="min-w-56" onClick={onWishlist}>
             {i18n.text("ui.demo-completion-screen.3", "Wishlist on Steam")}
