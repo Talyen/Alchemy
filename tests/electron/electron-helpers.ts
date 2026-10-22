@@ -40,10 +40,12 @@ export async function launchElectronApp(
     profile?: string;
   } = {},
 ): Promise<ElectronApplication> {
-  const args =
-    process.env.CI && !options.enableGpu
-      ? [".", "--no-sandbox", "--disable-gpu", "--mute-audio"]
-      : [".", "--mute-audio"];
+  // Virtual CI displays have no hardware GPU. Chromium requires an explicit
+  // software WebGL opt-in, including for the context-loss recovery journey.
+  const args = process.env.CI
+    ? [".", "--no-sandbox", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--mute-audio"]
+    : [".", "--mute-audio"];
+  if (process.env.CI && !options.enableGpu) args.push("--disable-gpu");
   // Profiling needs normal audio allocation; output stays muted at Chromium's
   // device boundary. Functional automation keeps the app's silent-host policy.
   if (options.playerAudioHost) args.push("--disable-blink-features=AutomationControlled");
