@@ -116,11 +116,15 @@ export function main(argv = process.argv.slice(2)) {
     );
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
     if (!flags.has("full"))
-      console.log("Pending: full static, builds, browser/Electron and CI integration validation.");
+      console.log(
+        "Scope: selected units and documentation; check adds types and supporting diagnostics. CI and platform acceptance are separate.",
+      );
     if (flags.has("plan")) return 0;
 
-    // Task checks always execute; only the explicit full profile reuses receipts.
-    const cache = flags.has("full") ? createVerificationCache(ROOT, plan.commands) : null;
+    // The ordinary outer check caches this deterministic aggregate and guards
+    // its inputs once. Full verification includes artifact-producing commands,
+    // so it retains per-unit receipts instead of reusing the whole stage.
+    const cache = process.env.ALCHEMY_CHECK_PROFILE === "local" ? null : createVerificationCache(ROOT, plan.commands);
     const outcomes = [];
     for (const [index, command] of plan.commands.entries()) {
       const receipt = cache?.read(command);
@@ -181,10 +185,10 @@ export function main(argv = process.argv.slice(2)) {
           : flags.has("full")
             ? `${outcomes.length}/${outcomes.length} verification steps passed.`
             : outcomes.length === 0
-              ? "No applicable verification commands selected; full CI validation is required."
+              ? "No applicable unit or documentation commands selected."
               : flags.has("unit")
-                ? "Focused units passed; full CI validation is required."
-                : "Task units and documentation passed; full CI validation is required.",
+                ? "Focused units passed; CI and platform acceptance are separate."
+                : "Task units and documentation passed; CI and platform acceptance are separate.",
     });
     return failed.length === 0 ? 0 : 1;
   } catch (error) {

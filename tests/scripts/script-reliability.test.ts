@@ -205,11 +205,20 @@ describe("script execution reliability", () => {
   });
 
   it.each(["-C", "--work-tree", "--config-env"])(
-    "backs up the selected checkout for %s without altering the caller",
+    "rejects destructive commands for %s without changing either checkout",
     (option) => {
       const caller = repository();
       const target = repository();
+      fs.writeFileSync(path.join(target, "game.ts"), "earlier work");
+      git(target, "stash", "push", "-m", "existing backup");
+      const stashes = git(target, "stash", "list");
+      const head = git(target, "rev-parse", "HEAD");
+      fs.writeFileSync(path.join(target, "game.ts"), "staged work");
+      git(target, "add", "game.ts");
+      const staged = git(target, "diff", "--cached");
+      const index = fs.readFileSync(path.join(target, ".git/index"));
       fs.writeFileSync(path.join(target, "game.ts"), "target work");
+      fs.writeFileSync(path.join(target, "unfinished.txt"), "untracked work");
       const prelude =
         option === "-C"
           ? ["-C", target, "-C", "."]
@@ -227,7 +236,12 @@ describe("script execution reliability", () => {
       );
       expect(result.status).toBe(1);
       expect(result.stderr).toContain("blocked: destructive git command");
-      expect(git(target, "show", "stash@{0}:game.ts")).toBe("target work");
+      expect(fs.readFileSync(path.join(target, "game.ts"), "utf8")).toBe("target work");
+      expect(git(target, "stash", "list")).toBe(stashes);
+      expect(git(target, "rev-parse", "HEAD")).toBe(head);
+      expect(fs.readFileSync(path.join(target, ".git/index"))).toEqual(index);
+      expect(git(target, "diff", "--cached")).toBe(staged);
+      expect(fs.readFileSync(path.join(target, "unfinished.txt"), "utf8")).toBe("untracked work");
       expect(git(caller, "stash", "list")).toBe("");
       expect(fs.readFileSync(path.join(caller, "game.ts"), "utf8")).toBe("original");
     },
@@ -256,7 +270,7 @@ describe("script execution reliability", () => {
     ["reset", "--h"],
     ["checkout", "--f"],
     ["switch", "--di"],
-  ])("backs up dirty work before abbreviated %s %s", (command, option) => {
+  ])("preserves dirty work when rejecting abbreviated %s %s", (command, option) => {
     const root = repository();
     fs.writeFileSync(path.join(root, "game.ts"), "unsaved work");
     fs.writeFileSync(path.join(root, "untracked.txt"), "unfinished source");
@@ -272,12 +286,13 @@ describe("script execution reliability", () => {
     );
     expect(result.status, result.stderr).toBe(1);
     expect(result.stderr).toContain("blocked: destructive git command");
-    expect(git(root, "show", "stash@{0}:game.ts")).toBe("unsaved work");
-    expect(git(root, "show", "stash@{0}^3:untracked.txt")).toBe("unfinished source");
+    expect(fs.readFileSync(path.join(root, "game.ts"), "utf8")).toBe("unsaved work");
+    expect(git(root, "stash", "list")).toBe("");
+    expect(fs.readFileSync(path.join(root, "untracked.txt"), "utf8")).toBe("unfinished source");
   });
 
   it.each([["game.ts"], ["HEAD", "game.ts"]])(
-    "backs up checkout path restores without an explicit separator: %j",
+    "rejects checkout path restores without changing files: %j",
     (...operands) => {
       const root = repository();
       fs.writeFileSync(path.join(root, "game.ts"), "unsaved work");
@@ -292,7 +307,8 @@ describe("script execution reliability", () => {
       );
       expect(result.status, result.stderr).toBe(1);
       expect(result.stderr).toContain("blocked: destructive git command");
-      expect(git(root, "show", "stash@{0}:game.ts")).toBe("unsaved work");
+      expect(fs.readFileSync(path.join(root, "game.ts"), "utf8")).toBe("unsaved work");
+      expect(git(root, "stash", "list")).toBe("");
     },
   );
 
@@ -313,7 +329,7 @@ describe("script execution reliability", () => {
   });
 
   it.skipIf(process.platform === "win32")(
-    "backs up work hidden by a stale filesystem monitor before blocking reset",
+    "preserves work hidden by a stale filesystem monitor when blocking reset",
     () => {
       const root = repository();
       const monitor = path.join(root, ".git", "silent-fsmonitor");
@@ -331,7 +347,8 @@ describe("script execution reliability", () => {
       });
       expect(result.status, result.stderr).toBe(1);
       expect(result.stderr).toContain("blocked: destructive git command");
-      expect(git(root, "show", "stash@{0}:game.ts")).toBe("unsaved work");
+      expect(fs.readFileSync(path.join(root, "game.ts"), "utf8")).toBe("unsaved work");
+      expect(git(root, "stash", "list")).toBe("");
       expect(git(root, "config", "core.fsmonitor")).toBe(monitor);
       expect(git(root, "config", "core.untrackedCache")).toBe("true");
     },

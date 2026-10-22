@@ -9,8 +9,8 @@ Use a skill when its workflow applies. [AGENTS.md](../../AGENTS.md#find-the-owne
 | Write/debug Alchemy Playwright tests or use its browser fixtures/page objects                                                                                               | [`playwright-e2e`](./playwright-e2e/SKILL.md)   |
 | Change player-facing text, game content wording, generated descriptions, or Steam copy                                                                                      | [`localization`](./localization/SKILL.md)       |
 | Run a user-cited audit or all audits                                                                                                                                        | [`run-audits`](./run-audits/SKILL.md)           |
-| Verify edits during work and before handoff                                                                                                                                 | [`verifier`](./verifier/SKILL.md)               |
+| Optional entry point for verification guidance                                                                                                                              | [`verifier`](./verifier/SKILL.md)               |
 
-Load order: for authoring/debugging browser tests use `playwright-e2e`; for gating edited work use `verifier`. `architect` designs the contract; `run-audits` proposes findings against it.
+Verification follows [CONTRIBUTING](../../CONTRIBUTING.md#what-to-run-when-you-change) directly; loading `verifier` is optional.
 
 [AGENTS.md](../../AGENTS.md#find-the-owner) routes implementation work to canonical owners. In particular, use [asset workflows](../../Docs/WORKFLOWS-ASSETS.md) for generated assets, [boot and loading](../../Docs/ARCHITECTURE.md#boot-and-loading) for route loading, and [Armory write paths](../../Docs/ARMORY.md#write-paths) for gear mutations.

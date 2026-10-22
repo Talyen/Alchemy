@@ -10,23 +10,24 @@ const REUSABLE_COMMANDS = new Set([
   "unit-desktop",
   "unit-performance",
   "unit-all",
+  "unit-tooling",
+  "unit-interactions",
+  "localization",
+  "local-types",
+  "local-format",
+  "local-lint",
+  "verification",
 ]);
-// Only deterministic unit selections reuse receipts: docs-check,
-// assets-check, and report-balance are excluded because they are slow,
-// environment-sensitive, or produce artifacts the receipt cannot vouch for.
-// unit-all is included: its args are stable (full suite), so the receipt key
-// is stable too — the largest selections benefit most from reuse.
+// Builds, browser runs, asset checks and reports must produce fresh artifacts.
 const MAX_AGE_MS = 60 * 60 * 1000;
 // Receipts expire from first write, not last reuse (finish skips writing on
 // reused outcomes): continuous reuse still ages out after MAX_AGE_MS so stale
 // environments cannot be trusted indefinitely. See verification-cache.test.ts.
 const VOLATILE_ENV =
   /^(?:ALCHEMY_RUN_ID|ALCHEMY_VERIFY_FRESH|npm_lifecycle_event|npm_lifecycle_script|npm_command|npm_package_json|INIT_CWD|SHLVL|_)$/u;
-// Note: gate skip flags (e.g. ALCHEMY_CHECK_SKIP_BUILD) are intentionally not
-// volatile: only unit selections reuse receipts, and those commands run the
-// same way regardless of build-skipping.
+// Gate skip flags are not volatile: a receipt never weakens another profile.
 
-function fileIdentity(filename, hash, rootDir) {
+function fileIdentity(filename, hash, rootDir, dependenciesDir) {
   try {
     const stat = fs.lstatSync(filename, { bigint: true });
     hash.update(
@@ -34,10 +35,9 @@ function fileIdentity(filename, hash, rootDir) {
     );
     if (stat.isSymbolicLink()) {
       const target = fs.realpathSync(filename);
-      const dependencies = `${path.join(rootDir, "node_modules")}${path.sep}`;
       if (
-        !filename.startsWith(dependencies) ||
-        !target.startsWith(dependencies) ||
+        !dependenciesDir ||
+        !target.startsWith(`${dependenciesDir}${path.sep}`) ||
         /node_modules[/\\]\.(?:cache|vite)/u.test(target)
       )
         throw new Error("Linked input outside installed dependencies");
@@ -56,24 +56,28 @@ export function captureVerificationInputs(rootDir, env = process.env) {
     if (!fs.existsSync(path.join(rootDir, "node_modules/.package-lock.json"))) return null;
     const listed = listRepositoryFiles(rootDir);
     const hash = crypto.createHash("sha256");
-    hash.update(JSON.stringify([1, rootDir, process.execPath, process.version, process.platform, process.arch]));
+    const dependenciesDir = fs.realpathSync(path.join(rootDir, "node_modules"));
+    hash.update(
+      JSON.stringify([2, rootDir, dependenciesDir, process.execPath, process.version, process.platform, process.arch]),
+    );
     const environment = Object.entries(env)
       .filter(([key]) => !VOLATILE_ENV.test(key))
       .sort(([a], [b]) => a.localeCompare(b));
     hash.update(JSON.stringify(environment));
-    const files = new Set(listed);
+    // A directory-only Git ignore can expose the managed dependency symlink as
+    // an untracked path. Its target and contents are captured separately below.
+    const files = new Set(listed.filter((file) => file !== "node_modules" && !file.startsWith("node_modules/")));
     for (const name of fs.readdirSync(rootDir)) if (name === ".npmrc" || name.startsWith(".env")) files.add(name);
     for (const file of [...files].sort()) fileIdentity(path.join(rootDir, file), hash, rootDir);
     const walk = (directory) => {
       for (const name of fs.readdirSync(directory).sort()) {
-        if (directory === path.join(rootDir, "node_modules") && [".cache", ".vite", ".vite-temp"].includes(name))
-          continue;
+        if (directory === dependenciesDir && [".cache", ".vite", ".vite-temp"].includes(name)) continue;
         const filename = path.join(directory, name);
-        const stat = fileIdentity(filename, hash, rootDir);
+        const stat = fileIdentity(filename, hash, rootDir, dependenciesDir);
         if (stat?.isDirectory()) walk(filename);
       }
     };
-    walk(path.join(rootDir, "node_modules"));
+    walk(dependenciesDir);
     return hash.digest("hex");
   } catch {
     return null;
@@ -101,13 +105,12 @@ export function createVerificationCache(rootDir, commands, options = {}) {
       return null;
     }
   };
-  const candidate = (command) => enabled && REUSABLE_COMMANDS.has(command.key);
-  const worthScanning = commands.some(
-    (command) =>
-      candidate(command) && (minimumDuration === 0 || (readReceipt(command)?.durationMs ?? 0) >= minimumDuration),
-  );
+  const candidate = (command) =>
+    enabled &&
+    REUSABLE_COMMANDS.has(command.key) &&
+    !(command.key === "verification" && command.args.includes("--full"));
   const started = now();
-  const before = worthScanning ? capture() : null;
+  const before = commands.some(candidate) ? capture() : null;
   const scanMs = now() - started;
   const eligible = (command) => Boolean(before && candidate(command));
   return {

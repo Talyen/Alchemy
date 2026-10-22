@@ -23,6 +23,7 @@ import { closeTaskBrowsers, taskKey } from "./lib/agent-browser-session.mjs";
 import { INLINE_ARGS_BYTES } from "./lib/verification/selection-budgets.mjs";
 import { filterPrettierPaths } from "./lib/verification/prettier-paths.mjs";
 import { resolveRoutes } from "./lib/verification/change-routes.mjs";
+import { createVerificationCache } from "./lib/verification/verification-cache.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -186,8 +187,8 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       label: "localization freshness and contracts",
       command: "npm",
       args: ["run", "i18n:check"],
-      enabled: full || selection.needsCodeChecks,
-      reason: "documentation-only change",
+      enabled: full || selection.localization,
+      reason: "localization inputs unchanged",
     },
     {
       key: "verification",
@@ -195,6 +196,14 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       command: "node",
       args: ["scripts/verify-changed.mjs", ...verifyArgs],
       enabled: true,
+    },
+    {
+      key: "local-types",
+      label: "source and test types",
+      command: "npm",
+      args: ["run", "typecheck:all"],
+      enabled: !full && selection.needsCodeChecks,
+      reason: full ? "included in full static checks" : "documentation-only change",
     },
     {
       key: "local-format",
@@ -297,6 +306,14 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     return verify([...verifyArgs, "--plan"]);
   }
   const before = digestFn();
+  const cache =
+    options.runner || !selection.needsCodeChecks
+      ? null
+      : createVerificationCache(
+          ROOT,
+          definitions.filter((step) => step.enabled),
+        );
+  const outcomes = [];
   console.log(`Check run: ${runId} (source ${before.hash}; guard: ${before.scope ?? "provided input identity"})`);
   for (const definition of definitions) {
     if (!definition.enabled) {
@@ -305,11 +322,12 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     }
     console.log(`\n== ${definition.label} ==`);
     const started = Date.now();
-    const runnerResult = await runner(definition.label, definition.command, definition.args, env);
+    const receipt = cache?.read(definition);
+    const runnerResult = receipt ? 0 : await runner(definition.label, definition.command, definition.args, env);
     if (definition.key === "verification" && !options.runner) {
       // Intentional nesting: verify owns its run record and selection policy;
       // check links verify/summary.json so reuse provenance survives handoff.
-      const verificationSummary = path.join(ROOT, "reports/runs", runId, "verify/summary.json");
+      const verificationSummary = path.join(ROOT, "reports/runs", receipt?.runId ?? runId, "verify/summary.json");
       if (fs.existsSync(verificationSummary)) artifacts.push({ path: verificationSummary, role: "secondary" });
     }
     const durationMs = Date.now() - started;
@@ -324,7 +342,13 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
           };
     const code = result.status ?? 1;
     const status = code === 0 ? "passed" : "failed";
-    steps.push({ label: definition.label, status, durationMs });
+    steps.push({
+      label: definition.label,
+      status,
+      durationMs,
+      ...(receipt ? { reason: `Reused passing run ${receipt.runId}; inputs unchanged` } : {}),
+    });
+    outcomes.push({ command: definition, passed: code === 0, result, ...(receipt ? { reused: receipt.runId } : {}) });
     if (code !== 0) {
       const reportsDir = path.join(ROOT, "reports", "runs", runId, "check");
       const evidence = summarizeAndReportFailure(reportsDir, definition, result, runId, steps.length - 1, ROOT);
@@ -335,14 +359,17 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     }
     const { exposure } = summarizeStepResult(definition, result);
     exposures.push(exposure);
-    console.log(`✓ ${definition.label} (${(durationMs / 1000).toFixed(1)}s)`);
+    console.log(
+      `✓ ${definition.label} (${receipt ? `reused passing run ${receipt.runId}; inputs unchanged` : `${(durationMs / 1000).toFixed(1)}s`})`,
+    );
   }
   for (const definition of definitions.slice(steps.length)) {
     steps.push({ label: definition.label, status: "skipped", durationMs: 0, reason: "earlier step failed" });
   }
 
   const after = digestFn();
-  if (!failed && after.hash !== before.hash) {
+  const stable = cache?.finish(outcomes, runId) ?? true;
+  if (!failed && (after.hash !== before.hash || !stable)) {
     failed = { label: "source staleness", code: 1 };
     steps.push({
       label: "source staleness",
@@ -368,14 +395,14 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       ? `Check failed at ${failed.label}.`
       : full
         ? `${passed} steps passed; ${skipped} not applicable.`
-        : "Local check passed; full CI validation is required.",
+        : "Local verification complete; CI and platform acceptance are separate.",
   });
   if (failed) {
     console.error(`✗ check failed at ${failed.label} (exit ${failed.code}, run ${runId})`);
     return 1;
   }
   console.log(
-    `\n✓ ${full ? "full check passed" : "local check passed; full validation required in CI"} (run ${runId}, source ${before.hash})`,
+    `\n✓ ${full ? "full check passed" : "local verification complete; CI and platform acceptance are separate"} (run ${runId}, source ${before.hash})`,
   );
   return 0;
 }

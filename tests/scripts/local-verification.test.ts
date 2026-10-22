@@ -16,7 +16,7 @@ afterEach(() => {
   rmSync(`reports/runs/${runId}`, { recursive: true, force: true });
 });
 
-it("keeps runtime and package handoff free of builds, installs, browsers, and broad static checks", async () => {
+it("checks types by default without builds, installs, browsers or full lint", async () => {
   const calls: string[] = [];
   expect(
     await runCheck(["src/App.tsx", "package.json"], {
@@ -33,11 +33,12 @@ it("keeps runtime and package handoff free of builds, installs, browsers, and br
   expect(calls).toEqual([
     "localization freshness and contracts",
     "changed-path verification",
+    "source and test types",
     "selected-file format",
     "selected-file lint",
   ]);
   expect(JSON.parse(readFileSync("reports/current-run.json", "utf8")).summary).toBe(
-    "Local check passed; full CI validation is required.",
+    "Local verification complete; CI and platform acceptance are separate.",
   );
 });
 
@@ -90,4 +91,26 @@ it("previews the same selection without executing or capturing source state", as
   expect(await runCheck(["scripts/check.mjs", "Docs/REFERENCE.md", "--plan"], { runner, captureDigest })).toBe(0);
   expect(runner).not.toHaveBeenCalled();
   expect(captureDigest).not.toHaveBeenCalled();
+});
+
+it("checks localization inputs but skips tooling-only and test-only edits", async () => {
+  for (const [file, localized] of [
+    ["scripts/check.mjs", false],
+    ["tests/scripts/check.test.ts", false],
+    ["src/lib/game-data/cards/index.ts", true],
+    ["src/lib/localization/locales/fr.json", true],
+    ["steam/store-copy.source.json", true],
+  ] as const) {
+    const calls: string[] = [];
+    expect(
+      await runCheck([file], {
+        runner: (label) => {
+          calls.push(label);
+          return 0;
+        },
+        captureDigest: () => ({ head: "test", hash: "unchanged" }),
+      }),
+    ).toBe(0);
+    expect(calls.includes("localization freshness and contracts")).toBe(localized);
+  }
 });

@@ -29,7 +29,7 @@ describe("SaveStorage ownership", () => {
       const original = {
         ...backend(),
         writes: [] as string[],
-        async write(_key: string, value: string) {
+        async write(_key: string, value: string): ReturnType<SaveBackend["write"]> {
           this.writes.push(value);
           return { ok: true as const };
         },

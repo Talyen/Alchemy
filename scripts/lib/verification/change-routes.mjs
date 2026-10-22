@@ -288,13 +288,62 @@ function isRelatedInput(filePath) {
   return /^(src|scripts|desktop|performance)\//u.test(filePath) || /\.(ts|tsx|js|mjs|cjs)$/u.test(filePath);
 }
 
+// Shared lifecycle seams retain the whole interaction suite. Feature owners
+// select their lifecycle families; dependency-related selection still finds
+// other affected interaction tests through actual imports.
+const INTERACTION_SCOPES = [
+  [
+    /^src\/features\/alchemy\/(?:run-loop\/battle\/|shell\/use-battle-controller\.ts$|run-loop\/screens\/battle-screen\/)/u,
+    ["battle", "overlays", "audio-progress", "timing"],
+  ],
+  [
+    /^src\/features\/alchemy\/meta\/(?:screens\/armory(?:\/|-screen\.)|screens\/homestead(?:\/|-screen\.)|screens\/talents-screen\.|talents\/)/u,
+    ["armory", "navigation"],
+  ],
+  [/^src\/features\/alchemy\/meta\/screens\/options(?:\/|-screen\.)/u, ["navigation", "overlays"]],
+  [/^src\/features\/alchemy\/meta\/screens\//u, ["navigation", "overlays", "startup"]],
+  [/^src\/features\/alchemy\/run-setup\//u, ["navigation"]],
+  [/^src\/features\/alchemy\/run-loop\//u, ["visits", "navigation"]],
+  [/^src\/features\/alchemy\/shell\//u, ["navigation", "battle"]],
+  [/^src\/features\/alchemy\/shared\/storage\//u, ["persistence"]],
+  [/^src\/(?:app\/autosave|lib\/platform-save-backend\.ts$)/u, ["persistence"]],
+  [/^src\/lib\/preload\/image\.ts$/u, ["startup", "overlays"]],
+  [/^src\/lib\/routing\//u, ["navigation"]],
+];
+
+function interactionSuites(paths, routes) {
+  if (!routes.some((candidate) => candidate.id === "interactions")) return [];
+  const suites = new Set();
+  const interactionRoute = routes.find((candidate) => candidate.id === "interactions");
+  for (const filePath of paths.filter((file) => matchesCandidate(interactionRoute, file))) {
+    if (isUnitTest(filePath)) {
+      if (!existsSync(path.join(ROOT_DIR, filePath))) return ["tests/interaction"];
+      suites.add(filePath);
+      continue;
+    }
+    const scope = INTERACTION_SCOPES.find(([pattern]) => pattern.test(filePath));
+    if (!scope) return ["tests/interaction"];
+    for (const family of scope[1]) {
+      const extension = family === "battle" || family === "overlays" ? "tsx" : "ts";
+      suites.add(`tests/interaction/${family}.dom.test.${extension}`);
+    }
+  }
+  return [...suites].sort();
+}
+
 export function resolveRoutePlan(paths) {
   const normalized = expandRepositoryPaths(ROOT_DIR, paths);
   const routes = resolveRoutes(normalized);
   const keys = new Set(routes.flatMap((candidate) => candidate.commands));
+  const interactions = interactionSuites(normalized, routes);
+  if (interactions.length === 0) keys.delete("unit-interactions");
+  const selectedCommand = (key) =>
+    key === "unit-interactions"
+      ? { ...COMMANDS[key], args: ["run", "test:full", "--", ...interactions] }
+      : COMMANDS[key];
   const coveredPaths = [...keys]
     .filter((key) => key.startsWith("unit-") && key !== "unit-changed")
-    .flatMap((key) => COMMANDS[key].args.filter((arg) => arg.startsWith("tests/")));
+    .flatMap((key) => selectedCommand(key).args.filter((arg) => arg.startsWith("tests/")));
   const changedTests = normalized.filter(
     (filePath) =>
       isUnitTest(filePath) &&
@@ -320,7 +369,7 @@ export function resolveRoutePlan(paths) {
     paths: normalized,
     routes,
     commands: [...keys].map((key) => {
-      const command = COMMANDS[key];
+      const command = selectedCommand(key);
       if (key === "unit-changed") return { key, ...command, args: [...command.args, ...changedTests] };
       if (key === "related") {
         return {
@@ -329,7 +378,9 @@ export function resolveRoutePlan(paths) {
           args: [
             ...command.args,
             ...relatedInputs,
-            ...(keys.has("unit-interactions") ? ["--exclude", "tests/interaction/**"] : []),
+            ...(keys.has("unit-interactions")
+              ? interactions.flatMap((suite) => ["--exclude", suite === "tests/interaction" ? `${suite}/**` : suite])
+              : []),
             "--run",
             "--passWithNoTests",
           ],

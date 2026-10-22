@@ -7,6 +7,8 @@ description: Keep Alchemy translations synchronized when changing player-facing 
 
 English is authoritative. The active coding agent performs translation and semantic review using its current session; do not require a paid service, API key, human translator, or a separate localization request.
 
+Draft and compare English wording in the isolated task worktree first. Batch translation and semantic review after the wording settles, before final verification and integration; no translation cycle is required for each experiment. Do not bypass freshness checks or integrate stale catalogs.
+
 Read [the localization owner](../../../Docs/LOCALIZATION.md) for contracts and command formats.
 
 - Use stable, descriptive message IDs and whole sentences with named parameters. Preserve existing IDs when rewording. React components use `const i18n = useGameTranslation()` and its `text`/`displayText` methods. Wrap localization-reading helpers in `i18n.read(() => helper(...))` and include `i18n` in explicit memo dependencies so React Compiler updates cached text. Global readers belong in non-React helpers. Localize visible and accessible text at render time. Keep IDs, comparisons, effects and saved mechanics in English/data form.

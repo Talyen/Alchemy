@@ -5,7 +5,14 @@ export function resolveSelectedPaths(root: string, selection: { flags?: Set<stri
 export function classifyCheckPaths(
   root: string,
   paths: string[],
-): { needsCodeChecks: boolean; lockfile: boolean; desktop: boolean; web: boolean; routeIds: string[] };
+): {
+  needsCodeChecks: boolean;
+  lockfile: boolean;
+  desktop: boolean;
+  web: boolean;
+  localization: boolean;
+  routeIds: string[];
+};
 
 export function parseChangedPathsArgs(
   argv: string[],

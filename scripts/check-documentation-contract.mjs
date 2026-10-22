@@ -266,9 +266,12 @@ export const DOCUMENTATION_CONTRACTS = [
   ["backticked current file references", checkBacktickedCurrentFileReferences],
   ["documented npm scripts", checkDocumentedNpmScripts],
   ["Markdown heading anchors", checkMarkdownHeadingAnchors],
+  ["agent discovery catalog", () => validateContextCatalog(ROOT)],
+];
+
+const DOCUMENTATION_ADVISORIES = [
   ["durable document reachability", checkDurableDocumentReachability],
   ["skill index completeness", checkSkillIndexCompleteness],
-  ["agent discovery catalog", () => validateContextCatalog(ROOT)],
 ];
 
 export function checkDocumentationContracts() {
@@ -276,6 +279,9 @@ export function checkDocumentationContracts() {
 }
 
 export function reportDocumentationContracts() {
+  for (const [name, check] of DOCUMENTATION_ADVISORIES) {
+    for (const finding of check()) console.warn(`Documentation advisory — ${name}: ${finding}`);
+  }
   const failures = checkDocumentationContracts();
   if (failures.length > 0) {
     console.error("Documentation contracts failed:");

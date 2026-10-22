@@ -283,10 +283,40 @@ it("selects connected progress coverage once for asynchronous flow owners", () =
     const plan = resolveRoutePlan([owner, "tests/interaction/battle.dom.test.tsx"]);
     expect(plan.commands.filter((command) => command.key === "unit-interactions")).toHaveLength(1);
     expect(plan.commands.find((command) => command.key === "related")?.args).toEqual(
-      expect.arrayContaining(["--exclude", "tests/interaction/**"]),
+      expect.arrayContaining(["--exclude", "tests/interaction/battle.dom.test.tsx"]),
     );
     expect(plan.commands.find((command) => command.key === "unit-changed")?.args ?? []).not.toContain(
       "tests/interaction/battle.dom.test.tsx",
     );
   }
+});
+
+it("selects lifecycle families without suppressing other related interaction tests", () => {
+  const plan = resolveRoutePlan(["src/features/alchemy/meta/screens/options/settings-controls.tsx"]);
+  const selected = plan.commands.find((command) => command.key === "unit-interactions");
+  expect(selected?.args).toEqual([
+    "run",
+    "test:full",
+    "--",
+    "tests/interaction/navigation.dom.test.ts",
+    "tests/interaction/overlays.dom.test.tsx",
+  ]);
+  const related = plan.commands.find((command) => command.key === "related");
+  expect(related?.args).toContain("tests/interaction/navigation.dom.test.ts");
+  expect(related?.args).not.toContain("tests/interaction/**");
+  expect(related?.args).not.toContain("tests/interaction/persistence.dom.test.ts");
+  for (const file of selected?.args.filter((arg) => arg.startsWith("tests/")) ?? [])
+    expect(fs.existsSync(file)).toBe(true);
+  expect(resolveRoutePlan(["src/features/alchemy/shared/storage/io.ts"]).commands[0]?.args).toEqual([
+    "run",
+    "test:full",
+    "--",
+    "tests/interaction/persistence.dom.test.ts",
+  ]);
+  expect(resolveRoutePlan(["src/features/alchemy/shared/ui/use-fade.tsx"]).commands[0]?.args).toEqual([
+    "run",
+    "test:full",
+    "--",
+    "tests/interaction",
+  ]);
 });

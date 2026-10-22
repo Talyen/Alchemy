@@ -18,28 +18,35 @@ combined result after incorporating current local `main`.
 
 The gate selects dependency-related, changed, and risk-selected unit suites,
 documentation contracts when documentation changes, localization freshness for
-code/content changes, and selected-file formatting and lint diagnostics. Markdown-only
+source/catalog inputs, source/test compilation for executable changes, and selected-file formatting and lint diagnostics. Markdown-only
 changes run documentation contracts and formatting without units or localization.
 Formatting and lint each accept at most 50 existing files of at most 256,000 bytes;
-larger batches are reported as deferred to CI. Scoped lint is authorized, including
-the configured type-aware diagnostics; complete TypeScript compilation remains a
-separate gate. A local pass still requires full CI validation.
+larger batches are reported as deferred to CI. Scoped lint includes the configured type-aware diagnostics. A passing task gate
+establishes local completion for its reported scope; CI and platform acceptance
+remain separate evidence, and are reported only when actually run.
 
-| Need                      | Command                             | Scope                                                                      |
-| ------------------------- | ----------------------------------- | -------------------------------------------------------------------------- |
-| Ordinary task             | `npm run check -- <paths>`          | Selected units, docs, localization, formatting and bounded lint            |
-| Unit diagnosis            | `npm run test:full -- <test-paths>` | Focused tests; omit paths for all units                                    |
-| Minimal environment smoke | `npm test`                          | Three fixed Node suites; no edited-code coverage claim                     |
-| Broad local validation    | `npm run check:full -- <paths>`     | Full static, applicable builds, budgets and preview smoke; explicit opt-in |
-| CI                        | Pull request or push to `main`      | Complete validation and applicable desktop/assets checks                   |
+| Need                      | Command                             | Scope                                                                  |
+| ------------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
+| Ordinary task             | `npm run check -- <paths>`          | Selected units, types, docs, localization, formatting and bounded lint |
+| Unit diagnosis            | `npm run test:full -- <test-paths>` | Focused tests; omit paths for all units                                |
+| Minimal environment smoke | `npm test`                          | Three fixed Node suites; no edited-code coverage claim                 |
+| Broad local validation    | `npm run check:full -- <paths>`     | Full static, applicable builds, budgets and preview smoke              |
+| CI                        | Pull request or push to `main`      | Complete validation and applicable desktop/assets checks               |
 
-Unit suites, including DOM, and bounded scoped lint may run without additional
-approval. UI/UX, layout, polish and artwork work also authorizes development
-previews, bounded rendered review and focused browser checks of affected flows;
-[visual review](./Docs/UI_VISUAL_REVIEW.md) owns the quality requirements. Broad
-browser suites, Electron, coverage, mutation, profiling, full static checks,
-production builds and packaging require an explicit local-execution request.
-Do not bypass these limits with direct tool invocations.
+Task work authorizes the local verification needed to implement and diagnose it:
+units, compilation, lint, development previews, focused browser/Electron checks,
+and builds may run without another permission request. Use `check` for ordinary
+work and `check:full` when broader evidence is useful. Choose bounded checks first;
+reserve exhaustive browser suites, coverage, mutation and profiling for a concrete
+risk or an explicit request. Avoid overlapping expensive runs on an overloaded
+host. Release packaging, signing, publication and uploads retain their release
+and authorization rules.
+
+For visible changes, [visual review](./Docs/UI_VISUAL_REVIEW.md) additionally
+requires rendered comparison and affected interactions. A passing local gate
+alone does not establish visual quality. Local completion does not authorize a
+push or imply green CI; when a push and CI follow-up are requested, finish those
+steps before calling that requested work complete.
 
 Existing `verify`, `verify:unit`, and `verify:full` commands remain available for
 selection diagnosis: `verify` selects units and documentation, `verify:unit`
@@ -74,19 +81,16 @@ navigation, reloads and captures. New managed sessions automatically use a
 1920 × 1080 (16:9) viewport, so ordinary game screenshots need no resize step.
 Use `npm run agent:browser -- set viewport <width> <height>` for a deliberate
 responsive check; later navigation and screenshots preserve that choice.
-An explicit viewport or device on the first command also takes precedence.
-User-attached/native sessions are not resized. Launch records persist in Git's common directory.
-The guardian cleans recorded browser groups if their daemon exits, verifying
-surviving members even after a group leader exits; a later command recovers
-abandoned records. Managed launches use the same socket directory for the CLI
-and ownership capture, including Linux runtime directories. `npm run check` automatically closes this task's
-sessions on success, failure or cancellation and verifies process exit, including failed closes.
-Its exit fallback waits for cleanup and reports failures while retaining ownership records.
-No manual session IDs, registration or cleanup checklist are required.
-Without a Codex task identity, or on Windows, the command passes through to the
-native CLI and leaves human session ownership unchanged. User-attached browsers
-use the native CLI. Never close all sessions, kill unrelated browsers, or reclaim
-an active session based on age. Preserve identities and report failed cleanup.
+An explicit viewport or device on the first command takes precedence; user-attached
+sessions are not resized. Use the same managed command for navigation, reloads
+and captures. It selects the current task's session automatically.
+
+`npm run check` closes this task's managed sessions on success, failure or
+cancellation and reports cleanup failures. No manual session registration is
+needed. Without a Codex task identity, or on Windows, the command passes through
+to the native CLI and leaves human session ownership unchanged. Never close all
+sessions, kill unrelated browsers, or reclaim an active session based on age.
+Preserve ownership records when cleanup fails.
 
 One-shot Playwright/Electron runs use the existing managed command and test-lane
 cleanup; do not replace them with detached browser daemons. The Alchemy test lane
@@ -105,17 +109,28 @@ Authoritative working-tree discovery disables Git's filesystem monitor and untra
 
 ## Verification reuse
 
-Task verification executes its selected commands without scanning installed dependencies or reusing full-verification receipts.
+Local task and full checks reuse passing results for deterministic unit selections
+and supporting type, localization, format and lint diagnostics when their exact
+commands and inputs match. This includes repeated checks before handoff, during
+integration and at pre-push in the same checkout. Committing unchanged files does
+not invalidate a receipt; changes to source, dependency identities, configuration,
+environment or checkout do. Documentation-only checks do not scan dependencies or reuse receipts. CI always runs fresh. Builds, browser runs, assets
+and report-producing gates always execute.
 
-The opt-in full verifier keeps local passing receipts under `reports/verification-cache/` for eligible slow commands: dependency-related and changed unit tests plus save, desktop, and performance unit suites. Reuse requires unchanged inputs and the same executable and arguments; a narrower command cannot satisfy broader coverage. Tooling suites, reports, assets, static checks, builds, smoke tests, browser runs, and CI always execute.
+Receipts expire after one hour without extending on reuse. Reuse is accepted only
+when it saves more than twice the input-scan cost and the original command took
+at least five seconds. Reports identify the original passing run; failures and
+input drift invalidate receipts. Managed worktrees support the root checkout's
+linked dependency installation. Normal report cleanup removes disposable receipts.
 
-Receipts expire after one hour. Reused results retain their original run ID and expiry, with provenance in the run-specific `verify/summary.json` linked by the completion report. Failures invalidate receipts; changed or unverifiable inputs prevent reuse. Normal report cleanup removes disposable receipts.
-
-Set `ALCHEMY_VERIFY_FRESH=1` for fresh local observations, including nondeterminism investigations and benchmark comparisons. Actual outcomes still replace or invalidate receipts. [Cache implementation details](./scripts/VERIFICATION.md#verification-cache) document input identity and the cost threshold.
+Set `ALCHEMY_VERIFY_FRESH=1` for fresh observations, including nondeterminism
+investigations and benchmark comparisons. [Cache implementation details](./scripts/VERIFICATION.md#verification-cache)
+document input identity. Reuse is an optimization, never permission to omit a
+newly selected check or substitute narrower coverage.
 
 Supporting local stages have a 60-second deadline. Selected units use their test deadlines and the bounded lane wait; minimal Node smoke retains its 30-second deadline.
 
-The default local check also runs the offline [localization freshness gate](./Docs/LOCALIZATION.md#agent-workflow). Agents update translations in the same task as English text edits; checks and builds never invoke a translation service.
+When source/catalog inputs change, the local check also runs the offline [localization freshness gate](./Docs/LOCALIZATION.md#agent-workflow). Agents settle experimental wording in their isolated worktree, then update translations before final verification and integration; checks and builds never invoke a translation service.
 
 ## Test value and coverage strategy
 

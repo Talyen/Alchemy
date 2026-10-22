@@ -257,12 +257,11 @@ acknowledgments, polling, or waking completed chats. Only a concrete unresolved
 dependency or conflict warrants a bounded chat exchange.
 
 `scripts/bin/git` shims destructive git through
-`git-safety-guard.mjs` (auto-stash backup); `setup-git-safety.mjs` installs the PATH hook.
-Inspection and backup must honor the caller's Git options and checkout; failed
+`git-safety-guard.mjs` (rejects destructive commands against dirty checkouts); `setup-git-safety.mjs` installs the PATH hook.
+Inspection must honor the caller's Git options and checkout; failed
 inspection blocks the operation. Checkout path restores are guarded with or without
 `--`; a single branch operand remains a branch switch even when a tracked file
-shares its name. Git clean and push dry runs bypass backup so
-inspection never stashes the working tree. Creation instructions return to the
+shares its name. Rejection leaves files, the index, branches and stashes untouched. Git clean and push dry runs remain available for inspection. Backups require an explicit, authorized action. Creation instructions return to the
 original checkout before worktree removal.
 
 ## Command execution and argument handling

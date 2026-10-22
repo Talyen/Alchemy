@@ -351,8 +351,8 @@ describe("bugfix trio regressions", () => {
     // With an enemy frozen with Shatter damage:
     const frozenState = {
       ...base,
-      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0 },
-      reactions: { shatterDamage: 20 },
+      enemyCC: { ...base.enemyCC, freezeSkipTurns: 1, stunSkipTurns: 0 },
+      reactions: { ...base.reactions, shatterDamage: 20 },
     };
     // Unhealed attack: deals 10 physical, leaving 10 HP for Shatter -> scores 10.
     expect(scoreAvailableReactions(unhealedAttack, frozenState)).toBe(10);

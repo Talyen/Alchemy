@@ -112,6 +112,14 @@ export function classifyCheckPaths(rootDir, paths) {
   const sharedBuild = codePaths.some((filePath) =>
     COMPILED_SHARED_BUILD_PATTERNS.some((expression) => expression.test(filePath)),
   );
+  // Extraction scans source literals and derives descriptions from runtime modules.
+  // Test/tooling-only changes do not affect those catalogs; integration and
+  // pre-push still select this gate for every changed localization input.
+  const localization = codePaths.some((filePath) =>
+    /^(?:src\/.*\.[cm]?[jt]sx?$|src\/lib\/localization\/|scripts\/localization(?:[./])|steam\/|public\/fonts\/|package(?:-lock)?\.json$|vite\.config\.ts$)/u.test(
+      filePath,
+    ),
+  );
   const desktop = ids.has("desktop") || sharedBuild;
   const web =
     sharedBuild ||
@@ -122,5 +130,5 @@ export function classifyCheckPaths(rootDir, paths) {
         filePath,
       ),
     );
-  return { needsCodeChecks, lockfile, desktop, web, routeIds: [...ids] };
+  return { needsCodeChecks, lockfile, desktop, web, localization, routeIds: [...ids] };
 }
