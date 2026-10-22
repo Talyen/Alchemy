@@ -6,6 +6,10 @@ export function deepFreeze<T>(value: T): T {
   const pending: object[] = [];
   function inspect(entry: unknown): void {
     if (typeof entry === "function") throw new Error("Gameplay state must contain only plain data, not functions");
+    if (typeof entry === "number" && !Number.isFinite(entry))
+      throw new Error("Gameplay state must contain only finite numbers");
+    if (typeof entry === "bigint" || typeof entry === "symbol")
+      throw new Error("Gameplay state must contain only plain data, not bigint or symbol values");
     if (entry === null || typeof entry !== "object" || deeplyFrozen.has(entry) || seen.has(entry)) return;
     const prototype = Object.getPrototypeOf(entry) as object | null;
     if (Array.isArray(entry) ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null)

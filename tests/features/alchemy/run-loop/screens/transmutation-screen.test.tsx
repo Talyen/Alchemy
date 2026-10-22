@@ -10,6 +10,7 @@ import { useRunScreenData } from "@/features/alchemy/shared/stores/react/use-run
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
 import { cardById, keywordDefinitions, type BattleCard } from "@/lib/game-data";
 import { getTransmutationVariants, getTransmutationOffers } from "@/lib/alchemist/transmutation";
+import { createRunRngState } from "@/lib/rng";
 import { defaultGameSession } from "@/app/application-session";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 
@@ -88,7 +89,11 @@ beforeEach(() => {
   vi.spyOn(HTMLImageElement.prototype, "naturalWidth", "get").mockReturnValue(100);
   resetAllTestStores();
   vi.clearAllMocks();
-  setRunProgress({ characterId: "wizard", runDeck: [cardById.slash!, cardById.frostbolt!, cardById["mixed-potion"]!] });
+  setRunProgress({
+    characterId: "wizard",
+    runDeck: [cardById.slash!, cardById.frostbolt!, cardById["mixed-potion"]!],
+    rng: createRunRngState(1234),
+  });
   setRunSession({ hasActiveRun: true, activity: { kind: "destination" } });
   initializeAlchemyVisit("transmutation", defaultGameSession);
 });

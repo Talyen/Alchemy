@@ -23,6 +23,37 @@ function backend() {
 }
 
 describe("SaveStorage ownership", () => {
+  it.each(["construction", "configuration"])(
+    "captures backend methods at %s without losing their receiver",
+    async (entry) => {
+      const original = {
+        ...backend(),
+        writes: [] as string[],
+        async write(_key: string, value: string) {
+          this.writes.push(value);
+          return { ok: true as const };
+        },
+      };
+      const clear = original.clear;
+      const replacement = backend();
+      const storage = new SaveStorage(entry === "construction" ? original : backend());
+      if (entry === "configuration") storage.configureBackend(original);
+      const saving = storage.save({ ...createDefaultSaveData(), gold: 17 });
+      original.write = replacement.write;
+      original.clear = replacement.clear;
+
+      expect(await saving).toBe("saved");
+      expect(original.writes.map((value) => JSON.parse(value).gold)).toEqual([17]);
+      expect(replacement.write).not.toHaveBeenCalled();
+      expect(await storage.clear()).toBe(true);
+      expect(clear).toHaveBeenCalledOnce();
+      expect(replacement.clear).not.toHaveBeenCalled();
+      storage.configureBackend(replacement);
+      expect(await storage.save(createDefaultSaveData())).toBe("saved");
+      expect(replacement.write).toHaveBeenCalledOnce();
+    },
+  );
+
   it.each(["save", "saveForExit"] as const)(
     "%s waits for a pending load to identify the protected primary slot",
     async (operation) => {

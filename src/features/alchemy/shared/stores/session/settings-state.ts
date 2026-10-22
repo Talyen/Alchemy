@@ -29,6 +29,7 @@ export function preferredAutoplayEnabled(fields: {
 export function createSettingsStore(
   isActive: () => boolean = () => true,
   track: (cleanup: () => void) => () => void = (cleanup) => cleanup,
+  beforeChangeNotification: () => void = () => {},
 ) {
   const assertActive = () => {
     if (!isActive()) throw new Error("Game session is disposed or invalid");
@@ -66,15 +67,21 @@ export function createSettingsStore(
     };
   });
   type Listener = (state: SettingsStore, previous: SettingsStore) => void;
-  const notifications = createNotificationChannel<Parameters<Listener>>((error) => {
+  const notifications = createNotificationChannel<[...Parameters<Listener>, liveChange: boolean]>((error) => {
     logError("Settings subscriber failed", "other", undefined, undefined, undefined, error);
   }, isActive);
   let installing = false;
   const notify = notifications.publish;
+  const savedKeys = Object.keys(createDefaultSettingsSaveFields()) as Array<keyof SettingsSaveFields>;
+  // Run inside the FIFO channel: progress observers can themselves change
+  // settings, and those later publications must not overtake the original one.
+  notifications.subscribe((state, previous, liveChange) => {
+    if (liveChange && savedKeys.some((key) => !Object.is(state[key], previous[key]))) beforeChangeNotification();
+  });
   Object.freeze(store.getState());
   store.subscribe((state, previous) => {
     Object.freeze(state);
-    if (!installing) notify(state, previous);
+    if (!installing) notify(state, previous, true);
   });
   return {
     getState: () => {
@@ -101,7 +108,7 @@ export function createSettingsStore(
         installing = false;
       }
       prepareObservers();
-      notify(store.getState(), previous);
+      notify(store.getState(), previous, false);
     },
   };
 }

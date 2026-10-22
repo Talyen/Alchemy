@@ -13,7 +13,9 @@ input ownership and detached command results stay at the transaction boundary.
 Freezing caches fully traversed objects, so later revisions traverse only changed
 branches and retain structural sharing. Publication validates the changed graph
 before freezing: gameplay accepts plain records and arrays, never functions,
-accessors, or built-ins with mutable internal slots such as Map and Date.
+accessors, bigint/symbol values, non-finite numbers, or built-ins with mutable
+internal slots such as Map and Date. Invalid values reject publication before
+they can turn into missing or null fields in a save.
 Detached command results retain their broader supported data types; they do not
 become gameplay state. Settings and progress-status snapshots are also frozen,
 so borrowed reads cannot bypass their notification and persistence paths.
@@ -496,6 +498,11 @@ Domain persistence codecs own field selection, defaults, encoding, hydration, an
 
 The settings store defers hydration notifications until the coordinator arms save
 protection; subscriber failures are isolated so they cannot interrupt publication.
+Live settings changes advance the durability checkpoint before notifying observers
+when progress tracking is active or a save is already pending. Settings do not
+advance the gameplay revision, so an older snapshot of that revision cannot
+acknowledge the newer settings. Unchanged setters do not advance the checkpoint;
+hydration uses the coordinator's replacement epoch instead.
 Persistence subscriptions compare both owners against one baseline, producing
 one complete snapshot when restore changes both. Fields-only hydration uses the
 same publication boundary while retaining the current activity. Restore publishes
@@ -519,7 +526,7 @@ its resumable activity is complete. The save builder reads the gameplay aggregat
 directly and detaches the complete save once; it does not construct screen or
 battle display data to persist a run.
 
-`shared/storage/save-candidates.ts` owns save parsing, validation, and future-version protection (deterministic `evaluateSaveCandidates`, for testability); `shared/storage/save-storage.ts` owns each storage instance’s backend, queue, write protection, and load/write/exit/clear operations. `shared/storage/io.ts` preserves the app function API over the selected session’s IO instance and owns the unconfigured storage guard. The application adapter preserves the SSR guard. Backend configuration is allowed only while loads, writes, and clears are idle, so submitted work cannot move to a different transport. Bootstrap configures the application instance; each headless career configures its own instance; isolated tests can construct `SaveStorage` directly. The queue is private to its storage owner. `src/lib/platform-save-backend.ts` owns browser/desktop transport, backup/cloud candidate order, and recoverable write/clear ordering. `initializeSteam()` returns an explicit `cloudSyncEnabled` capability; it does not mutate shared platform state. Candidate order, Steam Cloud as a one-way mirror, and wipe/protect behavior: [MIGRATIONS.md § Public save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract).
+`shared/storage/save-candidates.ts` owns save parsing, validation, and future-version protection (deterministic `evaluateSaveCandidates`, for testability); `shared/storage/save-storage.ts` owns each storage instance’s backend, queue, write protection, and load/write/exit/clear operations. `shared/storage/io.ts` preserves the app function API over the selected session’s IO instance and owns the unconfigured storage guard. The application adapter preserves the SSR guard. Backend configuration is allowed only while loads, writes, and clears are idle, so submitted work cannot move to a different transport. Construction and configuration capture backend methods with their original receiver; replacing methods on the caller's adapter cannot bypass that gate. Bootstrap configures the application instance; each headless career configures its own instance; isolated tests can construct `SaveStorage` directly. The queue is private to its storage owner. `src/lib/platform-save-backend.ts` owns browser/desktop transport, backup/cloud candidate order, and recoverable write/clear ordering. `initializeSteam()` returns an explicit `cloudSyncEnabled` capability; it does not mutate shared platform state. Candidate order, Steam Cloud as a one-way mirror, and wipe/protect behavior: [MIGRATIONS.md § Public save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract).
 
 `desktop/save-storage.cjs` owns a second, process-wide lane for native profile
 files. IPC ring reads, writes, deletion, and demo-initialization receipt work

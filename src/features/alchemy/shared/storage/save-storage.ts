@@ -9,22 +9,39 @@ import { selectSaveCandidates, type SaveLoadState } from "./save-candidates";
 import { SaveOperationQueue, type SaveStorageEvent, type SaveWriteOutcome } from "./save-operation-queue";
 import type { SaveData, UnstampedSaveData } from "./types";
 
+/** Capture transport methods without freezing the caller's adapter or losing its receiver. */
+function captureBackend(backend: SaveBackend): SaveBackend {
+  return Object.freeze({
+    readCandidates: backend.readCandidates.bind(backend),
+    write: backend.write.bind(backend),
+    writeSync: backend.writeSync.bind(backend),
+    clear: backend.clear.bind(backend),
+    ...(backend.readDemoImportSource ? { readDemoImportSource: backend.readDemoImportSource.bind(backend) } : {}),
+    ...(backend.completeDemoInitialization
+      ? { completeDemoInitialization: backend.completeDemoInitialization.bind(backend) }
+      : {}),
+  });
+}
+
 export class SaveStorage {
   private readonly queue = new SaveOperationQueue();
   private writeKeys: ReadonlyArray<typeof SAVE_KEY | typeof SAVE_RECOVERY_KEY> = [SAVE_KEY, SAVE_RECOVERY_KEY];
   private demoInitialization: Promise<SaveLoadState | null> | null = null;
   private lastSavedAt = 0;
+  private backend: SaveBackend;
 
   constructor(
-    private backend: SaveBackend,
+    backend: SaveBackend,
     private readonly now: () => number = () => Date.now(),
-  ) {}
+  ) {
+    this.backend = captureBackend(backend);
+  }
 
   configureBackend(backend: SaveBackend): void {
     if (!this.queue.isIdle) {
       throw new Error("Cannot configure save storage while an operation is pending");
     }
-    this.backend = backend;
+    this.backend = captureBackend(backend);
     this.demoInitialization = null;
     this.writeKeys = [SAVE_KEY, SAVE_RECOVERY_KEY];
   }

@@ -35,7 +35,15 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     { generateRunSeed: generateRandomRunSeed, createInstanceId },
     options.runtimeInputs,
   );
-  const settings = createSettingsStore(lifetime.isActive, lifetime.track);
+  const gameplay = createGameplayStore(generateRunSeed, lifetime.isActive);
+  const progressCompletion = new ProgressCompletion(lifetime.isActive);
+  const settings = createSettingsStore(lifetime.isActive, lifetime.track, () => {
+    if (!progressCompletion.hasRetryDriver && progressCompletion.read().kind === "idle") return;
+    if (progressCompletion.read().kind === "idle") runtime.presentationBase = gameplay.reads.getState();
+    // Settings have no gameplay revision. Revoke older acknowledgements before
+    // observers can capture the changed settings in a new save snapshot.
+    progressCompletion.mark(gameplay.reads.getState().revision, true);
+  });
   const feedback = isolateSessionFeedback(
     bindRuntimeMethods<SessionFeedback>(
       {
@@ -54,8 +62,6 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
       options.feedback,
     ),
   );
-  const gameplay = createGameplayStore(generateRunSeed, lifetime.isActive);
-  const progressCompletion = new ProgressCompletion(lifetime.isActive);
   const lifecycle = createRunLifecycleEffects(feedback, lifetime.isActive);
   const io = createSaveIo(options.saveBackend, sourceClock.now, allowPlatformStorage, lifetime.isActive);
   const saveSnapshots = new SessionSaveSnapshots(progressCompletion);
@@ -76,7 +82,7 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
   // Restore publication installs both stores before this event, and notifies
   // their observers only after old navigation and playback have been revoked.
   lifetime.track(progressCompletion.subscribeRestore(() => lifecycle.restore()));
-  return {
+  const runtime = {
     gameplay,
     presentationBase: gameplay.reads.getState(),
     settings,
@@ -94,6 +100,7 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     track: lifetime.track,
     lifetime,
   };
+  return runtime;
 }
 
 export type SessionRuntime = ReturnType<typeof createRuntime>;
