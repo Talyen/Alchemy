@@ -30,12 +30,7 @@ it("keeps runtime and package handoff free of builds, installs, browsers, and br
       captureDigest: () => ({ head: "test", hash: "unchanged" }),
     }),
   ).toBe(0);
-  expect(calls).toEqual([
-    "visual review evidence",
-    "localization freshness and contracts",
-    "fixed Node smoke selection",
-    "selected-file format",
-  ]);
+  expect(calls).toEqual(["localization freshness and contracts", "fixed Node smoke selection", "selected-file format"]);
   expect(JSON.parse(readFileSync("reports/current-run.json", "utf8")).summary).toBe(
     "Local check passed; full CI validation is required.",
   );

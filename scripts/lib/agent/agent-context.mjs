@@ -21,7 +21,7 @@ export const CONTEXT_TASKS = {
   },
   ui: {
     matches: /(?:\.(?:tsx|css)$|shared\/ui\/|screen|tooltip)/,
-    docs: [owner("Docs/UI.md"), owner("Docs/UI_VISUAL_REVIEW.md"), owner("Docs/design/visual-references.md")],
+    docs: [owner("Docs/UI.md"), owner("Docs/UI_VISUAL_REVIEW.md")],
     entrypoints: ["src/app/screen-routes/index.tsx"],
   },
   audio: {
