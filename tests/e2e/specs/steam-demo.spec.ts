@@ -6,6 +6,7 @@ import {
   SAVE_KEY,
   startAtDestination,
   winBattleAndClaimReward,
+  resumeInjectedRun,
 } from "../../browser-helpers";
 import { DESTINATIONS } from "@/lib/routing/destinations";
 import { BattlePage } from "../../pages/battle-page";
@@ -59,6 +60,7 @@ test.describe("Steam demo edition", () => {
     void fastBattle;
     await injectBossState(page, 1, { selectedDifficulty: "difficulty-1" });
     await page.goto("/");
+    await resumeInjectedRun(page);
     const destination = new DestinationPage(page);
     await destination.expectVisible();
     await destination.enterCombat("Boss");
