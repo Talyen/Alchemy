@@ -31,7 +31,11 @@ export function createNotificationChannel<Args extends unknown[]>(
             try {
               listener(...event.args);
             } catch (error) {
-              onError(error);
+              try {
+                onError(error);
+              } catch {
+                // A failed diagnostic must not abort delivery or discard queued publications.
+              }
             }
           }
         }

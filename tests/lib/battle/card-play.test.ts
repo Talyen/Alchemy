@@ -441,3 +441,31 @@ describe("reusable evasion", () => {
     expect(canPlayCard({ ...state, playerStatuses: { ...state.playerStatuses, stun: 1 } }, card, 0)).toBe(true);
   });
 });
+
+it.each(["remove-harmful-status", "remove-player-status"] as const)(
+  "allows self-damage to create the target for a following %s",
+  (kind) => {
+    const card = makeTestCard({
+      cost: 1,
+      effects: [
+        { kind: "self-damage", damageType: "burn", amount: 1 },
+        kind === "remove-harmful-status" ? { kind, amount: 1 } : { kind, status: "burn" },
+      ],
+    });
+    const state = makeState({
+      hand: [card],
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      talentEffects: { healOnStatusCleanse: 3 },
+      rng: () => 0.99,
+    });
+    expect(canPlayCard(state, card, 0)).toBe(true);
+    const reversed = { ...card, effects: [...card.effects].reverse() };
+    expect(canPlayCard({ ...state, hand: [reversed] }, reversed, 0)).toBe(false);
+    const result = playBattleCardResolved(state, card.id, 0);
+    expect(result.state.mana).toBe(state.mana - 1);
+    expect(result.state.playerHealth).toBe(12);
+    expect(result.state.playerStatuses.burn).toBe(0);
+    expect(result.state.discard).toContainEqual(card);
+  },
+);
