@@ -36,7 +36,7 @@ export function DemoCompletionScreen({ onWishlist, onMainMenu }: { onWishlist?: 
           )}
           data-testid="demo-marketing-image"
           decoding="async"
-          className="h-auto max-h-full w-auto max-w-full object-contain"
+          className="h-auto max-h-[90%] w-auto max-w-[90%] object-contain"
         />
       </div>
       <div className="flex w-full shrink-0 flex-col items-center gap-3 pb-8">
