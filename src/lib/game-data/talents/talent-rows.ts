@@ -354,7 +354,7 @@ export const talentRows = [
   gold("gold-start", "Seed Money")("Sprout", "Dealing Nature damage has a 10% chance to also grant Gold", {
     goldOnNatureDamageChance: 10,
   }),
-  gold("gold-per-combat", "Lucky Foot")("CircleDollarSign", "When you Dodge, you have a 25% chance to gain 4 Gold", {
+  gold("gold-per-combat", "Lucky Foot")("CircleDollarSign", "When you Dodge, you have a 10% chance to gain 4 Gold", {
     goldOnDodge: 4,
   }),
   gold("gold-potion-discount", "Apothecary Membership")("Beaker", "Potion purchases cost 5 less Gold", {
@@ -576,8 +576,9 @@ export const talentRows = [
   poison("poison-half-damage", "Toxin Resistance")("Shield", "Take half Poison damage", {
     receiveHalfPoisonDamage: true,
   }),
-  poison("poison-gold-first", "Toxic Profit")("Coins", "Gain 3 Gold when you defeat a Poisoned enemy", {
-    goldOnPoisonedKill: 3,
+  poison("poison-gold-first", "Toxic Profit")("Coins", "10% chance to steal 4 Gold when you defeat a Poisoned enemy", {
+    goldOnPoisonedKill: 4,
+    goldOnPoisonedKillChance: 10,
   }),
   poison("poison-heal-reduce", "Necrosis")("Skull", "Poisoned enemies restore half as much Health", {
     poisonHalvesHealing: true,

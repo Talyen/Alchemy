@@ -28,20 +28,33 @@ describe("damage status riders", () => {
   });
 
   it.each([
-    ["bleed", 0, 2],
-    ["bleed", 50, 3],
-  ] as const)("%s rewards Gold and matching feedback with %i%% Gear scaling", (damageType, goldGainPercent, gold) => {
-    const state = patchBattleState({
-      trinketEffects: { cutpurseGoldOnBleed: 2 },
-      gearEffects: { goldGainPercent },
-    });
-    const texts: CombatTextEvent[] = [];
-    const result = applyDamageStatuses(state, { kind: "damage", damageType, amount: 3 }, 3, texts, state.enemyHealth, {
-      critical: true,
-    });
-    expect(result.gold).toBe(gold);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: gold });
-  });
+    { health: 30, damage: 3, roll: 0.099, goldGainPercent: 0, gold: 3 },
+    { health: 30, damage: 3, roll: 0.099, goldGainPercent: 50, gold: 5 },
+    { health: 1, damage: 3, roll: 0.099, goldGainPercent: 0, gold: 1 },
+    { health: 30, damage: 3, roll: 0.1, goldGainPercent: 0, gold: 0 },
+    { health: 30, damage: 0, roll: 0.099, goldGainPercent: 0, gold: 0 },
+  ])(
+    "Cutpurse pays $gold Gold for $damage Bleed at $health Health and roll $roll",
+    ({ health, damage, roll, goldGainPercent, gold }) => {
+      const effect = { kind: "damage", damageType: "bleed", amount: 3 } as const;
+      const state = patchBattleState({
+        enemyHealth: health,
+        trinketEffects: { cutpurseGoldChance: 10 },
+        gearEffects: { goldGainPercent },
+        rng: () => roll,
+      });
+      const texts: CombatTextEvent[] = [];
+      const result = resolvePlayerHit(
+        state,
+        { source: "card-attack", card: makeTestCard({ effects: [effect] }), effect, resolvedDamage: damage },
+        texts,
+      );
+      expect(result.gold).toBe(gold);
+      expect(texts.filter((text) => text.stat === "gold")).toEqual(
+        gold > 0 ? [{ target: "player", kind: "status", stat: "gold", amount: gold }] : [],
+      );
+    },
+  );
 
   it("queues Bleed Leech healing for later ticks", () => {
     const state = patchBattleState();

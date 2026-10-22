@@ -55,7 +55,7 @@ function checkTagWarnings(card: BattleCard): ContentValidationIssue[] {
 // The catalog's Steal wording is a flavor alias for the canonical Gain gold
 // line. Player-visible text stays untouched; only the checker normalizes.
 function normalizeAlias(line: string): string {
-  return line.replace(/^Steals? /, "Gain ");
+  return line.replace(/^Steals? /, "Gain ").replace(/^(\d+% chance) to Steal /, "$1: Gain ");
 }
 
 function diffMechanicLines(card: BattleCard, expectedMechanic: string[]): ContentValidationIssue[] {

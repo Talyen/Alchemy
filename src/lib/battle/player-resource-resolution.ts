@@ -151,9 +151,7 @@ export function createPlayerResourceResolver(port: PlayerResourceResolutionPort)
     if (nextState.gearEffects.healOnCombatGoldGain > 0) {
       nextState = applyHealingWithCombatText(nextState, nextState.gearEffects.healOnCombatGoldGain, combatTexts ?? []);
     }
-    return state.gearEffects.goldGrantsForgeAndHoly > 0 && port.chance(25, nextState)
-      ? addForgeToPlayer(nextState, 1, combatTexts)
-      : nextState;
+    return state.gearEffects.goldGrantsForgeAndHoly > 0 ? addForgeToPlayer(nextState, 1, combatTexts) : nextState;
   }
 
   function applyBlockReward(

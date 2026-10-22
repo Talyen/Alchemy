@@ -66,7 +66,7 @@ export const companionLibrary: Record<CompanionId, CompanionDefinition> = {
   }),
   "golden-retriever": companion("golden-retriever", "Golden Retriever Companion", goldenRetrieverCompanion, {
     kind: "gain-gold",
-    amount: 2,
+    amount: 1,
   }),
   "shield-scarab": companion("shield-scarab", "Shield Scarab Companion", shieldScarabCompanion, {
     kind: "player-status",

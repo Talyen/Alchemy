@@ -160,11 +160,19 @@ describe("combat reward ordering", () => {
     expect(state.gold).toBe(0);
   });
 
+  it.each([0.099, 0.1])("Bounty Shot steals 4 Gold only below its 10%% boundary at %s", (roll) => {
+    const card = cardById["bounty-shot"]!;
+    const state = patchBattleState({ hand: [card], enemyHealth: 30, enemyMaxHealth: 30, rng: () => roll });
+    const next = playBattleCardResolved(state, card.id, 0).state;
+    expect(next.enemyHealth).toBe(28);
+    expect(next.gold).toBe(roll < 0.1 ? 4 : 0);
+  });
+
   it.each([
     { id: "ice-shot", enemyHealth: 3, gold: 2 },
-    { id: "bounty-shot", enemyHealth: 3, gold: 4 },
-    { id: "bounty-shot", enemyHealth: 1, gold: 4 },
-    { id: "bounty-shot", enemyHealth: 6, gold: 6 },
+    { id: "bounty-shot", enemyHealth: 3, gold: 2 },
+    { id: "bounty-shot", enemyHealth: 1, gold: 2 },
+    { id: "bounty-shot", enemyHealth: 6, gold: 2 },
   ])(
     "Trophy Shot pays once for $id defeating $enemyHealth Health, including secondary hits",
     ({ id, enemyHealth, gold }) => {

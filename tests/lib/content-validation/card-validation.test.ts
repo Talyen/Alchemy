@@ -43,14 +43,10 @@ describe("authored card effect validation", () => {
           ],
         },
       ]),
-    ).toEqual([
-      "References unknown companion: missing-success",
-      "References unknown companion: missing-failure",
-      "Authored chance effect has an empty failure branch",
-    ]);
+    ).toEqual(["References unknown companion: missing-success", "References unknown companion: missing-failure"]);
   });
 
-  it("reports each authored empty chance branch, including a delayed nested branch", () => {
+  it("allows chance bonuses to do nothing on failure, including delayed nested bonuses", () => {
     expect(
       checkEffects([
         {
@@ -68,9 +64,6 @@ describe("authored card effect validation", () => {
           failureEffects: [],
         },
       ]),
-    ).toEqual([
-      "Authored chance effect has an empty failure branch",
-      "Authored chance effect has an empty failure branch",
-    ]);
+    ).toEqual([]);
   });
 });

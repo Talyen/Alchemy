@@ -94,7 +94,7 @@ export function battleCohort(seed: number) {
     case "poison-overkill-leech":
       battle.playerHealth = 10;
       battle.enemyHealth = 1;
-      expected = { playerHealth: 14, enemyHealth: 0, gold: 3 };
+      expected = { playerHealth: 14, enemyHealth: 0, gold: 0 };
       break;
     case "stun-immunity":
       battle.enemyHealth = 10;

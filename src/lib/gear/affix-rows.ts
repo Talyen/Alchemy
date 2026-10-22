@@ -144,10 +144,7 @@ export const gearAffixRows = [
     "The Golden Crucible",
     "gold",
     "forge",
-  )(
-    "goldGrantsForgeAndHoly",
-    "Gaining Gold during combat has a 25% chance to grant 1 Forge. Holy damage is increased by 50% of Forge.",
-  ),
+  )("goldGrantsForgeAndHoly", "When you gain Gold in combat, gain 1 Forge. Holy damage is increased by 50% of Forge."),
   flatDamageAffix("flat-physical", "Ironbound", "physical", "flatPhysicalDamage"),
   flatDamageAffix("flat-stun", "Concussive", "stun", "flatStunDamage"),
   flatDamageAffix("flat-holy", "Sanctified", "holy", "flatHolyDamage"),
@@ -214,7 +211,7 @@ export const gearAffixRows = [
     "Wishful",
     "gold",
     "wish",
-  )("goldOnWish", ROLL_SMALL, "When you Wish, sometimes gain {value} Gold (50% chance)"),
+  )("goldOnWish", ROLL_SMALL, "When you Wish, sometimes gain {value} Gold (10% chance)"),
   offensiveAffix(
     "burn-on-wish",
     "Wishfire",

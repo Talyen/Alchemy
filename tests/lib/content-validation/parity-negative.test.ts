@@ -53,10 +53,10 @@ it.each<{ name: string; effects: BattleCardEffect[]; lines: string[]; message: s
 
 it("validates summon summaries together with additional mechanics and normalizes both sides of Gold aliases", () => {
   const summon: BattleCardEffect = { kind: "summon-companion", companionId: "golden-retriever" };
-  expect(validateCardDescriptionParity(card([summon], ["Steals 2 Gold each turn", "Companion"]))).toEqual([]);
+  expect(validateCardDescriptionParity(card([summon], ["Gain 1 Gold each turn", "Companion"]))).toEqual([]);
   expect(
     validateCardDescriptionParity(
-      card([summon, { kind: "heal", amount: 2 }], ["Steals 2 Gold each turn", "Restore 99 Health", "Companion"]),
+      card([summon, { kind: "heal", amount: 2 }], ["Gain 1 Gold each turn", "Restore 99 Health", "Companion"]),
     ),
   ).toEqual([
     {
