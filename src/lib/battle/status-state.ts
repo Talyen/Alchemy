@@ -2,7 +2,7 @@ import { mergeCombatText } from "./combat-text-events";
 import type { BattleState, CombatTextEvent } from "./types";
 import { isStunFreezeBuildupBlocked } from "./crowd-control-policy";
 import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
-import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
+import { HALF_DIVISOR, LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { scalePercent, halveRounded } from "./amount-helpers";
 import { hasEncounterBenefit, hasEnemyTrait } from "./encounter-trait-state";
@@ -18,7 +18,12 @@ function playerStatusDelta(state: BattleState, status: PlayerStatusId, delta: nu
   if (status === "stun" && delta > 0) {
     return Math.max(0, Math.round(delta));
   }
-  return status === "block" && delta > 0 ? delta + state.gearEffects.flatBlockGained : delta;
+  if (status !== "block" || delta <= 0) return delta;
+  return (
+    delta +
+    state.gearEffects.flatBlockGained +
+    (state.playerHealth < state.playerMaxHealth / HALF_DIVISOR ? state.gearEffects.blockGainBonusBelowHalfHealth : 0)
+  );
 }
 
 export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delta: number): BattleState {

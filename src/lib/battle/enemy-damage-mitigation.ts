@@ -84,7 +84,9 @@ export function prepareEnemyDamage(
   };
   const attemptedDamage = scale(baseDamage + elementalBonus);
   const manaMitigated = options.ignorePlayerMitigation ? attemptedDamage : reduceDamageByMana(state, attemptedDamage);
-  return { attemptedDamage, incomingDamage: manaMitigated };
+  const spentward =
+    !options.ignorePlayerMitigation && state.mana === 0 ? state.gearEffects.enemyAttackReductionWithoutMana : 0;
+  return { attemptedDamage, incomingDamage: Math.max(0, manaMitigated - spentward) };
 }
 
 export function calculateBlockAndArmorMitigation(

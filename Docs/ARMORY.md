@@ -223,6 +223,20 @@ secondary actions, and dodged Stun hits preserve it. The charge, recovery allowa
 and pending entry/Purge rewards use saved combat flags with safe additive defaults.
 These affixes add no per-turn activation allowances.
 
+Firstblood, Venomflight, Sunscorched, and Iceguard enlarge hero card attack
+packets at full enemy Health, against Poisoned enemies with Archery, against
+Burning enemies with Holy, and with Block for Freeze respectively. Bloodscent
+instead enlarges Companion hits against Bleeding enemies through shared Companion
+scaling, including its low-Health multiplier and inspection. Hero attack conditions
+are checked per hit; these bonuses do not affect ongoing damage or create follow-up hits.
+Last Bastion enlarges positive Block gains below half Health alongside Warding
+and Forge. Mending enlarges positive healing below half Health before healing
+multipliers; each heal checks Health again. Neither grants resources by itself.
+Spentward reduces incoming enemy attack damage before Block only with no Mana;
+it preserves attack contact and Dodge, excludes DoT and self-damage, and respects
+attacks that ignore mitigation. All eight modify existing combat magnitudes and
+combat-text entries without adding activation allowances or saved flags.
+
 Fateful uses Mana as its secondary affinity so its Wish draw effect can roll on ordinary Mana Gear. Shared content validation checks that every ordinary affix is reachable on at least one Basic or Astral item.
 
 `src/lib/gear/affix-rows.ts` owns the ordered affix definitions. Typed builders
