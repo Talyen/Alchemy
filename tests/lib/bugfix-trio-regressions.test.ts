@@ -165,8 +165,8 @@ describe("bugfix trio regressions", () => {
 
   it("projects multiply-enemy-status before DoT detonation reactions", () => {
     const state = patchBattleState({
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
+      enemyHealth: 14,
+      enemyMaxHealth: 14,
       enemyStatuses: { burn: 2, bleed: 5 },
       reactions: { wildfireDamage: 3 },
     });
@@ -177,11 +177,8 @@ describe("bugfix trio regressions", () => {
         { kind: "damage", damageType: "nature", amount: 1 },
       ],
     });
-    // Bleed doubles from 5 to 10.
-    // Hit 1 deals 1 direct + adds 1 bleed (11 total) and detonates all 11 Bleed (11 damage).
-    // Total enemy health remaining: 30 - 1 - 11 = 18 HP.
-    // Hit 2 deals 1 Nature damage on burning enemy, triggering Wildfire for min(17, 3) = 3 payoff.
-    expect(scoreAvailableReactions(multiplyAndDetonate, state)).toBe(3);
+    // Doubling Bleed leaves two HP after detonation, so Wildfire can only score one.
+    expect(scoreAvailableReactions(multiplyAndDetonate, state)).toBe(1);
   });
 
   it("clears player statuses when projecting remove-harmful-status", () => {
@@ -242,62 +239,87 @@ describe("bugfix trio regressions", () => {
     expect(scoreAvailableReactions(poisonThenBurn, state)).toBe(1);
   });
 
-  it("distinguishes player mana in projection keys so mana-spending branches do not falsely merge", () => {
+  it("keeps equal-status branches with different mana distinct before mana-scaled attacks", () => {
     const state = patchBattleState({
       mana: 4,
       maxMana: 4,
-      enemyHealth: 50,
-      enemyMaxHealth: 50,
-      playerStatuses: { block: 0 },
-      enemyMitigation: { armor: 10, block: 0, forge: 0 },
+      enemyHealth: 5,
+      enemyMaxHealth: 5,
       enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0 },
-      reactions: { shatterDamage: 5 },
+      reactions: { frostfireDamage: 10 },
+      talentEffects: { burnDamagePerMana: 100 },
     });
-    const multiBranch = makeTestCard({
+    const card = makeTestCard({
       effects: [
         {
           kind: "chance",
           probability: 0.5,
-          successEffects: [{ kind: "player-status", status: "block", convertCurrentMana: 1 }],
-          failureEffects: [{ kind: "player-status", status: "block", amount: 0 }],
+          successEffects: [{ kind: "lose-mana", amount: 4 }],
+          failureEffects: [],
         },
-        {
-          kind: "damage",
-          damageType: "physical",
-          amount: 0,
-          equalToBlock: true,
-        },
+        { kind: "damage", damageType: "burn", amount: 1 },
       ],
     });
-    // Success branch converts 4 Mana into 4 Block (setting mana to 0).
-    // Physical hit deals 4 damage equal to Block, triggering Shatter: 10 (armor) + 5 (shatterDamage) = 15.
-    // Failure branch keeps 4 Mana and 0 Block.
-    // Physical hit deals 0 damage, so base damage is 0, Shatter does not trigger: 0 score.
-    // Weighted score: 0.5 * 15 + 0.5 * 0 = 7.5.
-    expect(scoreAvailableReactions(multiBranch, state)).toBe(7.5);
+    expect(scoreAvailableReactions(card, state)).toBe(2);
   });
 
-  it("projects restore-mana so subsequent mana-scaling conversions calculate accurate reaction scores", () => {
+  it("converts the action's starting mana even after restoration or an earlier conversion", () => {
     const state = patchBattleState({
       mana: 1,
       maxMana: 5,
-      enemyHealth: 50,
-      enemyMaxHealth: 50,
-      playerStatuses: { block: 0 },
+      enemyHealth: 6,
+      enemyMaxHealth: 6,
       enemyMitigation: { armor: 10, block: 0, forge: 0 },
       enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0 },
       reactions: { shatterDamage: 5 },
     });
-    const restoreThenConvert = makeTestCard({
+    const card = makeTestCard({
       effects: [
         { kind: "restore-mana", amount: 3 },
-        { kind: "player-status", status: "block", convertCurrentMana: 2 },
+        { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 1 },
+        { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 1 },
         { kind: "damage", damageType: "physical", amount: 0, equalToBlock: true },
       ],
     });
-    // 1 mana + 3 restored = 4 mana.
-    // 4 mana * 2 = 8 Block.
-    // 8 damage equal to block against frozen enemy with 10 armor and 5 shatterDamage scores 10 + 5 = 15.
-    expect(scoreAvailableReactions(restoreThenConvert, state)).toBe(15);
+    expect(scoreAvailableReactions(card, state)).toBe(14);
+  });
+
+  it("preserves existing mana overflow when projecting capped restoration", () => {
+    const state = patchBattleState({
+      mana: 6,
+      maxMana: 3,
+      enemyHealth: 8,
+      enemyMaxHealth: 8,
+      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0 },
+      reactions: { frostfireDamage: 10 },
+      talentEffects: { burnDamagePerMana: 100 },
+    });
+    const card = makeTestCard({
+      effects: [
+        { kind: "restore-mana", amount: 1 },
+        { kind: "damage", damageType: "burn", amount: 1 },
+      ],
+    });
+    expect(scoreAvailableReactions(card, state)).toBe(1);
+  });
+
+  it("includes Forge and gear Block bonuses before scoring a Shield Slam", () => {
+    const state = patchBattleState({
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      playerStatuses: { forge: 4 },
+      gearEffects: { flatBlockGained: 2 },
+      talentEffects: { forgeBlockPercent: 100 },
+      enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0 },
+      reactions: { shatterDamage: 20 },
+    });
+    const card = makeTestCard({
+      effects: [
+        { kind: "player-status", status: "block", amount: 1 },
+        { kind: "damage", damageType: "physical", amount: 0, equalToBlock: true },
+      ],
+    });
+    // Seven Block plus four Forge damage leaves nine HP for Shatter.
+    expect(scoreAvailableReactions(card, state)).toBe(9);
   });
 });

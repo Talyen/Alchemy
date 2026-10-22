@@ -7,6 +7,8 @@ import {
   type BattleCard,
   type BattleCardEffect,
 } from "@/lib/game-data";
+import { gainMana } from "./resource-state";
+import { createPlayerResourceResolver } from "./player-resource-resolution";
 import { halveRounded } from "./amount-helpers";
 import { consumeAttackPacketFlags } from "./damage";
 import { computeCardAttackPower, computeCardDamageToEnemy } from "./damage-calc";
@@ -157,7 +159,19 @@ function mergeProjections(paths: Projection[]): Projection[] {
   return [...merged.values()];
 }
 
-function projectEffects(paths: Projection[], card: BattleCard, effects: readonly BattleCardEffect[]): Projection[] {
+const playerResources = createPlayerResourceResolver({
+  chance: (chance) => chance >= 100,
+  afterHealing: (state) => state,
+  drawHoly: (state) => state,
+  forgeReady: () => {},
+});
+
+function projectEffects(
+  paths: Projection[],
+  card: BattleCard,
+  effects: readonly BattleCardEffect[],
+  manaAtStart: number,
+): Projection[] {
   for (const effect of effects) {
     paths = mergeProjections(
       paths.flatMap((path): Projection[] => {
@@ -167,11 +181,13 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
               [{ ...path, probability: path.probability * effect.probability }],
               card,
               effect.successEffects,
+              manaAtStart,
             ),
             ...projectEffects(
               [{ ...path, probability: path.probability * (1 - effect.probability) }],
               card,
               effect.failureEffects,
+              manaAtStart,
             ),
           ].filter((branch) => branch.probability > 0);
         if (effect.kind === "damage" || effect.kind === "random-damage") {
@@ -305,7 +321,7 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
             let amount = effect.amount;
             let nextMana = path.state.mana;
             if (effect.convertCurrentMana !== undefined) {
-              amount = path.state.mana * effect.convertCurrentMana;
+              amount = manaAtStart * effect.convertCurrentMana;
               nextMana = 0;
             } else if (effect.perManaCrystal !== undefined) {
               amount = effect.perManaCrystal * path.state.maxMana;
@@ -313,27 +329,19 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
             if (status === "forge" && effect.forgeAmount !== undefined) {
               amount = effect.forgeAmount;
             }
-            const current = path.state.playerStatuses[status] ?? 0;
             return {
               ...path,
               probability,
-              state: {
-                ...path.state,
-                mana: nextMana,
-                playerStatuses: {
-                  ...path.state.playerStatuses,
-                  [status]: Math.min(Number.MAX_SAFE_INTEGER, current + Math.max(0, amount)),
-                },
-              },
+              state: playerResources.applyPlayerStatusEffect(
+                { ...path.state, mana: nextMana },
+                { ...effect, status, amount },
+                [],
+              ),
             };
           });
         }
         if (effect.kind === "restore-mana") {
-          const nextMana = effect.allowOverflow
-            ? path.state.mana + effect.amount
-            : Math.min(path.state.maxMana, path.state.mana + effect.amount);
-          if (nextMana === path.state.mana) return [path];
-          return [{ ...path, state: { ...path.state, mana: nextMana } }];
+          return [{ ...path, state: gainMana(path.state, effect.amount, effect.allowOverflow) }];
         }
         if (effect.kind === "lose-mana") {
           const nextMana = Math.max(0, path.state.mana - effect.amount);
@@ -375,7 +383,12 @@ function projectEffects(paths: Projection[], card: BattleCard, effects: readonly
               next.flatMap((current) => {
                 let projected: Projection[] = [];
                 resolveSecondaryAction(current.state, "companion", (scoped) => {
-                  projected = projectEffects([{ ...current, state: scoped }], companionCard, companionCard.effects);
+                  projected = projectEffects(
+                    [{ ...current, state: scoped }],
+                    companionCard,
+                    companionCard.effects,
+                    scoped.mana,
+                  );
                   return scoped;
                 });
                 return projected.map((result) => {
@@ -402,6 +415,7 @@ export function scoreAvailableReactions(card: BattleCard, snapshot: BattleSnapsh
     [{ state: { ...snapshot, rng: unexpectedScoringRoll }, score: 0, probability: 1 }],
     card,
     card.effects,
+    snapshot.mana,
   );
   return paths.reduce((sum, path) => sum + path.score * path.probability, 0);
 }

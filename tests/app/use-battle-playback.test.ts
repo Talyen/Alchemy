@@ -124,7 +124,7 @@ describe("useBattlePlayback", () => {
     vi.useRealTimers();
   });
 
-  it("reschedules auto-end and wakes automation when game menu closes mid-turn", () => {
+  it("reschedules auto-end when game menu closes mid-turn", () => {
     vi.useFakeTimers();
     useSettingsStore.getState().setAutoEndTurn(true);
     const handleEndTurn = vi.fn();
@@ -148,7 +148,7 @@ describe("useBattlePlayback", () => {
     vi.useRealTimers();
   });
 
-  it("reschedules auto-end and wakes automation when enemy inspection closes mid-turn", () => {
+  it("reschedules auto-end when enemy inspection closes mid-turn", () => {
     vi.useFakeTimers();
     useSettingsStore.getState().setAutoEndTurn(true);
     useUiStore.getState().setEnemyInspectionOpen(true);
@@ -173,4 +173,30 @@ describe("useBattlePlayback", () => {
     expect(handleEndTurn).toHaveBeenCalledOnce();
     vi.useRealTimers();
   });
+
+  it.each(["menu", "enemy inspection"] as const)(
+    "wakes playable-card autoplay immediately after closing %s",
+    async (overlay) => {
+      vi.useFakeTimers();
+      const handleAutoplayCard = vi.fn(() => false);
+      if (overlay === "enemy inspection") useUiStore.getState().setEnemyInspectionOpen(true);
+      const { rerender, unmount } = renderPlayback({
+        battleState: makeTestBattleState({ hand: [cardById["slash"]!], mana: 3 }),
+        gameMenuOpen: overlay === "menu",
+        isAutoplayEnabled: true,
+        handleAutoplayCard,
+      });
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(handleAutoplayCard).not.toHaveBeenCalled();
+      await act(async () => {
+        if (overlay === "menu") rerender({ gameMenuOpen: false });
+        else useUiStore.getState().setEnemyInspectionOpen(false);
+      });
+      expect(handleAutoplayCard).toHaveBeenCalledOnce();
+      unmount();
+      vi.useRealTimers();
+    },
+  );
 });
