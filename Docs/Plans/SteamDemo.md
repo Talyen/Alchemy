@@ -1,7 +1,7 @@
 ---
 status: blocked
 reason: Native overlay support, Steamworks configuration, and physical controller/Deck and Cloud acceptance remain unresolved.
-updated: 2026-10-14
+updated: 2026-10-23
 ---
 
 # Steam demo release readiness
@@ -11,9 +11,14 @@ Approved product scope, edition identity, and transfer behavior belong to
 
 ## Outstanding work
 
+Steam Input layouts remain a specification: no exported configuration IDs or
+live default assignments have been verified. Windows under Proton, Deck performance
+and suspend/resume also remain unverified. Record real identifiers and candidate
+evidence when closing these items.
+
 - [ ] Configure real demo/full App IDs and depots and verify renderer, package,
       upload, and wishlist targets under [release setup](../RELEASE_SETUP.md#github-secrets-one-time-setup).
-- [ ] Resolve the [native overlay binding prerequisite](../STEAM_DEMO.md#input-and-release-evidence):
+- [ ] Resolve the [native overlay binding prerequisite](#native-overlay-prerequisite):
       activation callbacks and availability detection must work in the packaged game.
       Verify pause/resume and wishlist behavior through Steam, including custom
       shortcuts and Deck paths; browser or mocked callbacks cannot close this item.
@@ -35,3 +40,27 @@ qualify a new candidate or establish physical/service acceptance. Remove this
 plan after the outstanding prerequisites are resolved and sign-off is recorded.
 Public controller/Deck and carryover claims still require that evidence;
 promotion follows the [release procedure](../RELEASE.md#agent-release-flow).
+
+## Native overlay prerequisite
+
+The recorded blocker is steamworks.js 0.4.0 lacking native overlay activation callbacks and
+availability detection. [The pause listener](../../desktop/steam-overlay.cjs) uses
+`SteamCallback.GameOverlayActivated` when supported, pauses on `active: true`,
+and leaves the game menu open when the overlay closes. `steamworks.js.init()`
+owns callback pumping; do not add a second timer or call
+`client.callback.runCallbacks()`, which the installed binding does not expose.
+
+The complete solution is a binding with both native capabilities, followed by
+physical Steam validation. The upstream
+[activation callback patch](https://github.com/ceifa/steamworks.js/pull/205) and
+[availability patch](https://github.com/ceifa/steamworks.js/pull/203) were open
+when last checked on 2026-10-02; recheck upstream before choosing a binding. If a supported release is unavailable when shipping,
+maintain a minimal fork pinned to an exact commit with those two changes. Exclude
+the availability patch's unrelated workshop declaration. Rebuild and verify its
+native binaries for Windows and Linux/Deck (and macOS if shipped); editing
+JavaScript or declarations in the npm package cannot add a native callback.
+Keep its current Steam/cloud APIs and package layout unchanged.
+
+This item remains blocked until native capability and physical Steam evidence
+exist, including custom overlay shortcuts and Deck paths. Browser tests and
+mocked callbacks cannot establish acceptance.

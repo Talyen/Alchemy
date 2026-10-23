@@ -261,6 +261,11 @@ a dependency of manifest construction. Preserve row order when editing: seeded
 Gear generation depends on it. Catalog construction rejects duplicate affix IDs;
 shared content validation owns display-name, roll-range, and ordinary-affix reachability checks.
 
+Forge-producing affixes retain every equipped copy. Roll lists preserve slot and
+affix order through aggregation and save/resume. Exact opening grants and proc
+chances belong to the [affix rows](../src/lib/gear/affix-rows.ts) and
+[Unique catalog](../src/lib/gear/unique-catalog.ts).
+
 ## Persistence
 
 The [Gear codec](../src/features/alchemy/shared/stores/persistence/gear-codec.ts)
@@ -301,5 +306,3 @@ known supporting affixes, generated definitions, and missing-art fallbacks. Use
 CONTRIBUTING's [changed-path gate](../CONTRIBUTING.md#what-to-run-when-you-change) and
 [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) to select
 checks for the affected risks.
-
-Forge-producing affixes retain every equipped copy: Tempered adds 1/2 opening Forge; Forged rolls 25/50% for 1 Forge per successful Stun; Cinderfed rolls 25/50% per consumed Burn card; Trailforged rolls 10/20% per Companion action damaging a Burning enemy. Roll lists preserve slot and affix order through aggregation and save/resume. Everkeen, Oathkeeper, The Patient Edge and The Golden Crucible carry 2 starting Forge; Everkeen’s supporting Forged roll is 50%.

@@ -1,4 +1,4 @@
-# Alchemy — Game rules and glossary
+# Alchemy — Game rules
 
 Canonical owner for game rules, content-system behavior, and shared domain terms. Coding rules: [AGENTS.md](../AGENTS.md). Run state: [ARCHITECTURE.md](./ARCHITECTURE.md). How-to checklists: [WORKFLOWS.md](./WORKFLOWS.md). Command catalog: [COMMANDS.md](./COMMANDS.md).
 
@@ -308,6 +308,8 @@ remain unchanged.
 - Consume removal requires one self-contained effect: healing up to 8, flat Block/Armor/Thorns up to 2, or simple damage no larger than its type baseline. Haste, Wishes, Mana generation, Companions, recursive effects, and conditional/scaling effects are excluded. Save an explicit `consume: false` override and remove the Consume line. Existing saved corruption results retain their shape; `delta` remains the numeric direction for numerical changes and is `1` for other outcomes.
 - Labyrinth Corruption chambers play by the same altar rules at the same support-room rate. Leaving before corrupting returns to the maze with the chamber still open; walking past it skips it the same way. Each chamber rolls one green bonus: Steady Sigil, Pure Altar, Echoing Altar, Blood Rite, or Twin Offering (one visit, two gifts, still corrupted once). Blood Rite increases Leech gifts and favors Bleed within the conversion outcomes; other damage types remain possible.
 
+Numeric corruption also updates matching delayed repeats of the changed effect, so the later turn agrees with the card description. A shared damage number, such as Serrated Edge's Physical-or-Bleed amount, updates both alternatives without consuming the numeric target for a separately described effect. Wishing Well's visible Gold number maps to its Gold branch while its unnumbered Wish remains fixed; Powerful Wish uses the same numeric mapping. Unrelated repeated effects retain their values.
+
 ## Content systems
 
 ### Saved runs and shared progression
@@ -347,6 +349,22 @@ Wildwood boss victories use the same boss Gold and shared Material payout rules 
 Campaign and Labyrinth while retaining Wildwood's reward choices and next-boss
 flow. The existing Victory screen shows both currencies, and run-end summaries
 include collected Materials and crafting currencies.
+
+### Mystery visits
+
+Mystery Boon choices prefer distinct unowned Boons across alternatives, but an unchosen alternative cannot exhaust the pool: reuse an available Boon across mutually exclusive choices before falling back to Astral Gear. Multiple grants within one choice remain distinct.
+
+Before Astral Gear becomes eligible, Mystery selection excludes an entire event if any choice would need an Astral fallback: an owned or repeated named Boon, an authored Astral grant, or too few unowned Boons for its named and random grants. Random grants reserve the named Boons in their own choice, even when those named effects appear later. Already offered and saved visits keep their resolved rewards; this gate applies only when selecting a new event.
+
+The committed `mysteryChosenChoice` records Material amounts actually awarded, including Homestead find bonuses, for the reward summary and save/resume. Keep the offered event's base amounts unchanged and apply bonuses only at the grant. `applyMysteryEffect` returns the actual Material award in `MysteryEffectResult`; navigation records that result without reconstructing it from inventory differences.
+
+Save the complete resolved Mystery offer after Boon substitution and Labyrinth modifiers. Resume uses that offer directly, so an event-pool edit cannot change a choice the player already saw. The chosen choice remains a separate record of rewards actually granted.
+
+Mystery choice commands accept only a choice object from the current resolved visit. Retained callbacks from an earlier visit, even one with the same event, cannot apply effects to the new visit. Resolve effects from the stored offer so the displayed choice and awarded outcome stay together. Choice and card-pick callbacks return whether the command was accepted; rejected actions keep the screen open, show a concise error, and suppress success feedback.
+
+`removeCard` removes a random deck card immediately with no picker. The old player-choice removal picker and `mysteryPendingRemoval` are retired.
+
+Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect` kinds stay on the union and handlers for authoring even when no live event uses them.
 
 ### Labyrinth exploration
 

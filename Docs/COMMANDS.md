@@ -7,7 +7,7 @@ Choose an operation here. [Contributing](../CONTRIBUTING.md) owns task checks;
 
 [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change) contains the complete
 ordinary verification workflow and permissions. This reference lists other operations.
-The table locates other operations; `package.json` owns the complete list.
+`package.json` owns the complete script list.
 
 | Task                        | Command                            | Notes                                                                                             |
 | --------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------- |
@@ -18,9 +18,6 @@ The table locates other operations; `package.json` owns the complete list.
 | Check local asset freshness | `npm run assets:check`             | Read-only; requires selected local Asset Library sources                                          |
 | Check prepared outputs      | `npm run assets:check:outputs`     | Read-only; does not require Asset Library; used by CI                                             |
 | Inspect test reservations   | `npm run test:status`              | Shows managed active and waiting commands; add `--json`                                           |
-| Check source types          | `npm run typecheck`                | Source compilation only; see Contributing for gate selection                                      |
-| Run the CI static aggregate | `npm run lint:ci`                  | See [gate policy](../CONTRIBUTING.md#static-build-and-ci-policy)                                  |
-| Validate docs               | `npm run docs:check`               | Links, paths, commands, discovery references, plan metadata                                       |
 | Run a browser journey       | `npm run test:e2e:route -- <name>` | [E2E guide](../tests/e2e/README.md#running-focused-checks); preview mode requires a current build |
 | Simulate isolated battles   | `npm run balance:sim`              | [Battle simulation](./REFERENCE.md#balance-simulation)                                            |
 | Simulate careers            | `npm run balance:playthrough`      | [Headless playthroughs](./PLAYTHROUGH_SIMULATION.md)                                              |

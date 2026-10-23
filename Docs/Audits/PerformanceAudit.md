@@ -19,11 +19,19 @@ Establish a material cost through runtime profiling, reproducible latency/jank, 
 
 ## Investigation and evidence
 
-Choose representative scenarios with a reason to suspect cost, including sustained play and repeated entry/exit where retention is possible. Record the revision, scenario/seed, runtime and build mode, viewport, and relevant measurement conditions so comparisons are meaningful. Use production-like execution for player-cost claims; development overhead is not a shipping regression.
+Use sustained play and repeated entry/exit for retention questions.
+Record revision, scenario/seed, runtime/build mode, viewport and measurement
+conditions. Use production-like execution for player-cost claims. Measure the same
+workload before and after under [profiling repetition guidance](../PERFORMANCE.md#quick-start),
+reporting variation and repetitions without selecting only the best sample.
 
-Measure the same workload before and after; use the [profiling repetition guidance](../PERFORMANCE.md#quick-start) when results are noisy and report the observed variation. Separate startup, input latency, frame cost, retained memory, and payload: a smaller bundle or fewer renders does not by itself prove a faster interaction. Do not invent a prior baseline if one is unavailable.
-
-Locate the dominant cost and its frequency before optimizing. Verify that the remedy improves that cost without moving it into another phase, retaining more memory, changing seeded outcomes, or degrading interaction. If measurements cannot be obtained, distinguish a statically established issue (such as an unbounded retained collection) from an unconfirmed speedup; do not claim measured improvement.
+Report a missing baseline rather than inventing one.
+Separate startup, input latency, frame cost, retained memory and payload. A smaller
+bundle or fewer renders does not prove faster interaction. Find the dominant cost
+and frequency, then check that the fix does not move it elsewhere, retain more
+memory, change seeded outcomes or degrade presentation. Distinguish a statically
+proven resource issue from an unmeasured speedup; preserve missing evidence under
+the [shared finish contract](README.md#finish).
 
 ## Domain rules
 

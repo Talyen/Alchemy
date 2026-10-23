@@ -5,14 +5,8 @@ Use [Commands](./COMMANDS.md) to choose a command and
 [Contributing](../CONTRIBUTING.md) to select verification gates.
 Optional lookup and measurement tools live in [Agent discovery](./AGENT_DISCOVERY.md).
 
-## Environment & Commands
-
-Start with [README prerequisites](../README.md#prerequisites) for installation,
-[Commands](./COMMANDS.md) for operations, and [Contributing](../CONTRIBUTING.md)
-for verification. `package.json` owns supported versions and script entry points;
-the [scripts map](../scripts/README.md) locates their implementations.
-
-GitHub CLI is optional and used for requested PR/CI work; do not run `gh auth login`.
+GitHub CLI is optional for requested PR/CI work; do not run `gh auth login`.
+Supported versions and installation belong to [README](../README.md#prerequisites).
 
 ## Failure-first triage
 
@@ -61,10 +55,10 @@ npm run balance:sim
 # Run the exhaustive comparison with the original sample counts
 npm run balance:sim:full
 
-# Increase iterations per scenario (quick default: 12; full default: 100)
+# Increase iterations per scenario
 ALCHEMY_BALANCE_ITERATIONS=500 npm run balance:sim
 
-# Increase independent class-deck seeds (quick default: 1; full default: 3)
+# Increase independent class-deck seeds
 ALCHEMY_BALANCE_DECK_SEEDS=5 npm run balance:sim
 
 # Change the play policy (random-playable, greedy-damage, defensive-random, greedy-effective-damage)
@@ -80,15 +74,12 @@ ALCHEMY_BALANCE_PACING=off npm run balance:sim
 npm run test:balance
 ```
 
-`balance:sim` is the interactive sweep: it still covers every hero, enemy,
-card, talent, Companion, Trinket, Gear item, and affix across Early/Mid/Late,
-but uses 12 core iterations, 5 paired iterations, 15 isolated-card deck
-samples, and one core/affix deck seed by default. Isolated and in-class card
-comparisons use up to 3 fight iterations per scenario. Findings from small
-cells are exploratory. `balance:sim:full` restores 100 core iterations, 50
-paired iterations, 33 isolated-card deck samples, and 3 deck seeds for tuning
-decisions. Both commands write the standard `reports/balance-findings.*` and
-`reports/balance-full/` artifacts.
+`balance:sim` runs an exploratory sweep across heroes, enemies, cards, Talents,
+Companions, Trinkets, Gear and affixes at Early/Mid/Late progression.
+`balance:sim:full` uses larger samples for tuning decisions. Both write
+`reports/balance-findings.*` and `reports/balance-full/`; small cells remain
+exploratory. Exact sample counts belong to [the balance owner](../src/lib/balance/)
+and the generated report's methodology.
 
 Live autoplay scoring lives in `src/lib/battle/autoplay-policy.ts` and is game-design owned; changing those weights changes autoplay and Wish picks in real runs. The balance simulator imports that policy directly so reports match the skill floor; independent scoring belongs in the simulator. `findings.ts` gathers ordered candidates from rate, equity, matchup, paired, and anomaly collectors in `findings-*.ts`; `findings-selection.ts` owns deduplication, ranking, matchup clustering, and bucket selection. `findings-collector.ts` attaches report identity separately from metric rules and shares one sampled-median evaluator between enemy-type and class equity; candidate order remains explicit in `collectBalanceFindings`. `report-methodology.ts` supplies shared HTML/JSON methodology without importing the simulation runner. Shared HTML shell, escaping, and JSON stringification live in `report-layout.ts`; gauntlet depths and typical gear-roll depth live in `report-catalog.ts` / `gear-preset.ts`.
 
@@ -117,12 +108,6 @@ construction and render purity without touching `reports/`. Changed balance
 implementation runs both the focused unit suite and this report check.
 
 ---
-
-## Navigation Hints
-
-The [repository ownership map](./ARCHITECTURE.md#repository-ownership) is the
-canonical starting point for implementation locations and subsystem contracts.
-Use [agent discovery](./AGENT_DISCOVERY.md) for optional path or topic lookup.
 
 ## Headless playthrough commands
 
