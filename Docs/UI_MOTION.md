@@ -47,14 +47,6 @@ that snapshot through the outgoing screen fade so applying the heal cannot resta
 the visible refill. Use `CAMPFIRE_ANIMATION_MS` from
 [ui-motion](../src/lib/game-constants/ui-motion.ts).
 
-Canvas decorations share [the canvas lifecycle](../src/lib/animation/canvas-lifecycle.ts):
-background particles, combatant status effects, and keyword plasma use its resize,
-frame pacing, and pause/resume policy. The canvas owns backing dimensions; unchanged
-sizes must not clear its drawing state. Disposal aborts event listeners, cancels
-the queued frame, and disconnects resize observation; late callbacks do nothing.
-Stun and Freeze presentation rebuilds when the shared motion preference changes,
-switching between a static overlay with no tilt and the animated effect.
-
 Hero Unlocked reveals the decoded portrait once per hero with a 560ms fade,
 small upward settle, and 98% to 100% scale. The name and Continue/Main Menu
 button remain immediately available; the reveal never delays navigation or
@@ -137,3 +129,39 @@ When equipping, unequipping, or replacing gear and trinkets:
 - **Position reflow**: When an empty-slot equip, unequip, or hand displacement causes inventory items to shift, surrounding items animate smoothly to their new positions over 200ms using layout position transitions (`motion.div layout="position"`).
 - **Interruption safety**: Any navigation, category switch, slot change, window resize, scroll, or unmount immediately settles all active in-flight transfers, restoring artwork visibility and removing portaled overlays without lingering visual artifacts.
 - **Reduced motion**: When reduced motion is preferred (`prefers-reduced-motion: reduce`), transfers settle immediately with zero travel duration and no portaled flight overlay.
+
+## Canvas rendering
+
+Canvas decorations share [the canvas lifecycle](../src/lib/animation/canvas-lifecycle.ts):
+background particles, combatant status effects, and keyword plasma use its resize,
+frame pacing, and pause/resume policy. The canvas owns backing dimensions; unchanged
+sizes must not clear its drawing state. Disposal aborts event listeners, cancels
+the queued frame, and disconnects resize observation; late callbacks do nothing.
+Stun and Freeze presentation rebuilds when the shared motion preference changes,
+switching between a static overlay with no tilt and the animated effect.
+
+Plasma uses [keyword-plasma.ts](../src/lib/animation/keyword-plasma.ts) as its
+single WebGL entry point. Context/shader failure or context loss shows a static
+CSS gradient matching interaction colors, focal offset, blending and intensity;
+hide it while WebGL works to avoid doubling glow. Restore rebuilds resources once,
+without polling or a second animated backend. Failed startup keeps the fallback
+and may retry on context restoration. Zero intensity hides both layers;
+motion-disabled preferences schedule no color-animation frames.
+
+Construction owns rollback until it returns its disposer.
+
+| Event                    | Resource guarantee                                                                                               |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Construction failure     | Roll back scheduled frames and observers/listeners; plasma also releases allocated shaders, buffers and programs |
+| Disposal                 | Idempotently attempt all cleanup, even if a wake adapter fails                                                   |
+| Context replacement      | Revoke the old renderer before host callbacks                                                                    |
+| Observer/adapter failure | Log startup, teardown and availability failures independently; no player-facing dialog                           |
+
+Hover/leave retarget colors immediately through a critically damped transition
+that retains momentum; object highlights remain immediate. Both renderers use
+clamped Background Glow times `GLOW_BRIGHTNESS` from
+[KeywordPlasmaBackground](../src/features/alchemy/shared/ui/keyword-plasma-background.tsx).
+[The WebGL implementation](../src/lib/animation/keyword-plasma-webgl.ts) owns frame
+pacing and backing-pixel limits. Preserve its single render pass and opacity
+dithering without a higher-resolution output pass. Banding depends on compositing
+and display; panel technology is not detected.

@@ -5,6 +5,20 @@ Session state, command atomicity and persistence capabilities live here.
 format acceptance, file/Cloud transport, fallback writes and deletion modes.
 [Run workflows](./RUN_WORKFLOWS.md) gives editing steps.
 
+## Core model
+
+| Stage              | Guarantee                                                                                                                 |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Execute            | One synchronous command owns the draft, validation and RNG; rejection or execution failure rolls everything back          |
+| Publish            | Changed gameplay becomes one immutable revision before observers run; settings and presentation remain separate owners    |
+| Present            | Playback consumes detached results; cancelling presentation cannot undo or advance gameplay                               |
+| Save               | A covering local write releases completed-action feedback; retry saves the committed outcome without repeating the action |
+| Replace or dispose | Restore invalidates old work at commit; disposal revokes capabilities and drains submitted saves                          |
+
+For editing steps, start below. Detailed contracts follow under
+[commands](#command-atomicity), [sessions](#session-ownership),
+[local saving](#completed-actions-and-local-saving) and [persistence](#persistence-api).
+
 ## Common implementation paths
 
 Start with a matching production example and its regression test. For an existing
@@ -109,103 +123,93 @@ Live reads and screen data expose `runProfile.gold` as `gold`. `profile` never o
 
 ### Command atomicity
 
-Gameplay mutation callers enter through `dispatchRunSessionCommand()` from
-`run-session-command.ts`. The boundary opens one Immer draft of the authoritative
-aggregate and publishes a new root with one incremented revision when state
-changes. Every command returns an explicit `CommandOutcome` using `acceptCommand(value)`
-or `rejectCommand(reason, fallback)`. Rejection discards all draft changes, including RNG
-counters, preserves the root and revision, and emits no commit signal. Unchanged accepted
-commands also preserve the root and revision; thrown execution errors discard the draft.
-The dispatcher returns the outcome's value so route-facing result shapes stay unchanged.
-React selectors and autosave subscribe to
-that same root. Settings and presentation-only state remain separate.
+`dispatchRunSessionCommand()` in `run-session-command.ts` opens one Immer draft
+of the authoritative aggregate. Return `acceptCommand(value)` or
+`rejectCommand(reason, fallback)`; the dispatcher returns the payload without
+changing route-facing result shapes. React selectors and autosave observe the same root.
 
-Store-owned restore commands also stage settings normalization before execution.
-After acceptance, the dispatcher installs gameplay and settings, replaces the
-save acknowledgment epoch, and arms any pending save protection before notifying
-observers. Decoding, settings preparation, rejection, or result-validation failure
-leaves both stores, the pending save gate, and completion callbacks unchanged.
-Ordinary feature commands cannot request this restore publication mode.
+| Outcome                                | Publication                                                                                |
+| -------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Accepted with changes                  | New immutable root and one incremented revision                                            |
+| Accepted without changes               | Same root and revision; still eligible for `afterCommit`                                   |
+| Rejected                               | Discard all draft changes, including RNG counters; same root/revision and no commit signal |
+| Execution or result-validation failure | Abort before publication; no partial state or RNG changes                                  |
 
-Run-profile codecs detach persisted collections on both encode and hydration;
-run restoration owns the entire active-run graph before decoding or rebinding.
-Restoring never freezes or mutates a caller's save, including nested battle and
-visit data. `snapshotRun()` returns detached data just like the complete session
-save builder; internal resume projections may still borrow immutable branches.
+Acceptance is independent of payload truthiness: act advancement or obsolete
+claim cleanup may accept `false`. Shop adapters reject `committed: false`; Gear
+adapters reject operation failures (`false`/`null`). Raw values are not command outcomes.
 
-The aggregate exposes read/subscription capabilities separately from its internal
-commit capability; React adapters and test fixtures cannot bypass commands through
-`setState`. The coordinator installs the complete root, arms its persistence and
-presentation gate, then notifies gameplay subscribers. Save-status subscribers
-therefore see the revision they are being asked to save. Gameplay subscriber
-failures are logged independently and cannot suppress later subscribers, autosave,
-or command completion effects. Subscription changes during gameplay notification
-apply to the next publication. `notification-channel.ts` owns synchronous FIFO
-delivery for gameplay, settings, progress, save status, storage interruptions, and lifecycle
-channels. Each publication captures its listeners; observer-triggered publications
-wait until the current event reaches every observer. Session-owned channels check
-their lifetime before each callback: disposal stops the remaining captured
-listeners and queued publications immediately. Ordinary unsubscribe retains the
-current publication's listener snapshot. Listener failures are isolated
-through the channel owner's diagnostic handler. Execution failures still roll back; explicit
-`afterCommit` failures still propagate after the committed state is retained.
+#### Transaction reads and lifetime
 
-Gameplay and save-status observers run during command publication while the
-command guard is still held. They may read the installed revision, but must not
-dispatch another gameplay command. Put command follow-ups in `afterCommit` or
-after the original dispatcher returns, when the guard has been released.
+- Compose domain operations inside one command, passing its transaction explicitly;
+  never dispatch a nested command. Guards for Gold, refreshes and purchased slots
+  read the live draft, not a committed read port.
+- Transaction reads update with writes but remain deeply readonly under TypeScript
+  and runtime guards. Functional setter updaters return replacements rather than
+  mutating previous values. Validate first where possible; later rejection still
+  rolls back the whole command.
+- `run-session-write-port.ts` adapts existing mutators without another store.
+  Import boundaries restrict raw dispatch, draft lookup and read-facade internals.
+  Reads/subscriptions expose no `setState` bypass; only persistence adapters may
+  subscribe directly to the commit signal.
+- Writes, RNG and instance-ID capabilities expire with their originating draft.
+  Retained handles cannot write in `afterCommit` or another command, even in the
+  same session. An external closure cannot extend their lifetime.
+- Commands cannot span `await`. The factory and Gear wrappers reject Promise-like
+  result types, including unions; runtime checks reject thenables before publication.
+  Rejected continuations are observed to avoid unhandled rejection, but external
+  work already started by an invalid callback cannot be cancelled by this boundary.
+- Input preparation, updater, mutation or Gear Health-rebinding exceptions call
+  `abortGameplayCommand`. The first failure remains until the draft closes, even
+  if a recipe catches it. Expected validation failures use rejection; exceptions
+  abort that command only.
 
-Domain operations receive the transaction explicitly and compose inside one command;
-a command body must not call another command. Transactional checks that guard
-a write (shop Gold, refresh counts, purchased slots) read from that draft rather
-than a committed read port. The read view updates as operations write, and both TypeScript and runtime guards reject direct writes. Functional setter updaters also receive deeply readonly previous values; return the replacement rather than mutating the previous value. Validate before writing when possible; a later rejection still
-rolls back the complete transaction. Raw values are not valid command outcomes.
-Acceptance is independent of the payload: `acceptCommand(false)` can represent a
-successful act advancement, while `rejectCommand(reason, false)` rejects an action.
-Destination-claim cleanup can likewise accept a `false` result after cancelling an
-obsolete claim. Shop adapters translate `committed: false` into rejection; Gear
-adapters translate their operation failure results (`false` and `null`) into rejection.
-Persistence adapters may subscribe to the aggregate
-commit signal directly; gameplay callers must not.
+#### Boundary data
 
-`run-session-write-port.ts` adapts the existing domain mutators to transactions; it does not own a second store. Raw dispatch (`gameplay-command.ts`), draft lookup (`transaction-internal.ts`), and read-facade internals are restricted by import boundaries. A transaction can write only during its callback; retained handles cannot write in `afterCommit` or another command. `snapshotTransactionValue(value)` returns a detached value for engine APIs that require mutable types. The aggregate dispatcher detaches result data before Immer closes the draft, for both store-owned and feature commands. Accepted results and rejected fallbacks may contain nested draft reads or read facades; neither escapes into deferred playback. Result objects are independent of committed state, preserve aliases and cycles, and the same detached result reaches `afterCommit` and the caller. Wrappers do not perform their own result conversion.
+`boundary-data.ts` owns one graph traversal for setters, explicit snapshots and results.
+All supported containers preserve aliases, cycles and own data properties, including
+symbol-keyed and non-enumerable metadata.
+Caller-owned setter inputs detach; existing transaction reads retain their owned
+source. `snapshotTransactionValue(value)` detaches reads for engine APIs requiring
+mutable types. The dispatcher detaches accepted results and rejected fallbacks
+before Immer closes, so draft proxies never escape into playback. The same detached
+result reaches `afterCommit` and the caller; wrappers perform no second conversion.
 
-`boundary-data.ts` owns one graph traversal for setter inputs, explicit transaction
-snapshots, and command results. Supported objects are plain records (including
-null-prototype records), arrays, Maps, Sets, Dates, and RegExps. Aliases and cycles
-are preserved across container entries and all own data properties, including
-non-enumerable and symbol-keyed metadata. Dates retain their timestamp; RegExps
-retain their pattern, flags, and `lastIndex`. Other prototypes and accessor
-properties reject before publication rather than being silently flattened by a
-fallback clone. Caller-owned setter inputs are detached; existing transaction
-reads retain their owned source. Explicit snapshots and results always detach.
+| Data                             | Contract                                                                                                                     |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Records and arrays               | Plain and null-prototype records supported                                                                                   |
+| Maps, Sets, Dates, RegExps       | Preserve container relationships, timestamps, pattern/flags and `lastIndex`                                                  |
+| Accessors or other prototypes    | Reject before publication; never flatten through a fallback clone                                                            |
+| Functions or Promise-like values | Reject anywhere in a result, including nested rejected fallbacks; types check known inputs and runtime checks untyped inputs |
 
-Command results are detached data, including nested arrays, Maps, and Sets.
-Functions and Promise-like values cannot cross this boundary, even inside a
-rejected fallback. Invalid results abort before state, revision, RNG counters,
-or observers publish. Command result types enforce the same rule for known
-types; the runtime boundary also checks untyped inputs.
+Results are independent of committed state. Run-profile codecs detach on encode
+and hydration; restoration owns the full active-run graph before decoding or
+rebinding and never freezes or mutates the caller's save. `snapshotRun()` and the
+complete save builder return detached data; internal resume projections may borrow
+immutable branches.
 
-Transaction-provided RNG and instance-ID functions are execution capabilities.
-They are bound to the originating open draft and reject use after it closes,
-including during a later command in the same session. Retaining a callback in
-an external closure does not extend its lifetime.
+#### Publication and observers
 
-Commands are synchronous and must not span an `await`. The command factory and
-Gear mutation wrappers reject Promise-like result types, including unions with
-asynchronous results. The runtime boundary also rejects thenables before
-publication, preserving the root, revision, and RNG counters. Rejected
-asynchronous continuations are observed to avoid an additional unhandled
-rejection; the boundary cannot cancel external work already started by an
-invalid callback.
+Install the complete root and arm persistence/presentation protection before
+notifying observers. Save-status subscribers see the revision being saved.
+Gameplay and save-status callbacks run while the command guard is held: they may
+read, but follow-up commands belong in `afterCommit` or after dispatch returns.
 
-Every write-port operation invalidates its owning command through
-`abortGameplayCommand` if input preparation, an updater, or mutation throws.
-The same rule covers Gear's coupled mutation and Health rebinding scope.
-The coordinator retains the first failure until the draft closes: catching it
-inside an enclosing recipe cannot publish partial activity, payments, or RNG
-changes. Rejection values remain available for expected validation failures;
-exceptions abort the complete command. This failure state belongs to that command only.
+`notification-channel.ts` supplies synchronous FIFO delivery for gameplay, settings,
+progress, save status, storage interruptions and lifecycle channels. Each publication
+captures its listener set; subscription changes affect the next publication.
+Observer-triggered publications wait until the current event reaches every listener.
+Ordinary unsubscribe preserves the captured set; session disposal immediately stops
+remaining callbacks and queued publications. Diagnostic handlers isolate listener
+failures so later subscribers, autosave and completion effects still run.
+Execution failures roll back; arbitrary `afterCommit` failures propagate with the
+committed state retained.
+
+Store-owned restore commands stage normalized settings before execution, then
+install gameplay/settings, replace the save acknowledgement epoch and arm pending
+save protection before notification. Decode, preparation, rejection or result-validation
+failure leaves both stores, pending protection and completion callbacks unchanged.
+Feature commands cannot request restore publication mode.
 
 ### Post-commit behavior
 
@@ -487,6 +491,8 @@ or externally constructed payloads must go through restore, then snapshot; they
 cannot write over a live career directly. Autosave, Gear flushes, run-end flushes,
 and exit saves use that same boundary.
 
+### Snapshot admission
+
 A snapshot can be written through another adapter for the same session. Each
 receipt binds its contents, career generation, gameplay revision, and capture
 sequence. Capture sequence orders settings-only snapshots as well as gameplay.
@@ -504,6 +510,8 @@ feedback survives until a covering save or invalidation. Disposal revokes feedba
 but drains authorized exit writes. Receipts are runtime-only. Low-level transport
 tests exercise arbitrary payloads below this session boundary.
 
+### Acknowledged feedback
+
 Acknowledged feedback has one session-owned FIFO delivery queue. A covering save
 reserves its batch before publishing idle, so idle observers and nested saves
 cannot deliver newer navigation or feedback ahead of older callbacks. Delivery
@@ -512,6 +520,8 @@ or an idle observer pauses the remaining queue until that checkpoint is saved.
 Restore,
 clear, protection, and disposal revoke undelivered callbacks, including callbacks
 registered reentrantly while the queue is draining. Feedback failures are isolated.
+
+### Codecs and restore
 
 `run-resume-codec.ts` translates the active-run progress and session fields to and from `ActiveRunData`. The encoder selects
 progress, mode geography, and one tagged `activity`; the decoder hydrates that
@@ -551,6 +561,8 @@ same publication boundary while retaining the current activity. Restore publishe
 its new persistence generation even if the saved values are equal; the gameplay
 root and revision remain unchanged when no gameplay field changes.
 
+### Change detection
+
 `shared/stores/persistence/run-resume-codec.ts` owns `projectRunResumeSnapshot`, the single
 projection used by both run encoding and persistence change detection. The
 projection selects the current activity's wire fields and mode-specific data;
@@ -567,6 +579,8 @@ construction without throwing. Strict run encoding still rejects either until
 its resumable activity is complete. The save builder reads the gameplay aggregate
 directly and detaches the complete save once; it does not construct screen or
 battle display data to persist a run.
+
+### Storage and resumable activity
 
 | Storage responsibility                                     | Owner under `shared/storage/` |
 | ---------------------------------------------------------- | ----------------------------- |

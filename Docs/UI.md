@@ -70,8 +70,8 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 - Generic interactive primitives preserve standard ARIA roles, names, values, keyboard behavior, and disabled states. Eligible talent nodes use native buttons for Enter and Space; keyword trees without portrait art remain selectable using a blank portrait and the keyword icon.
 - `Surface` is the shared interactive card/tile owner (`onClick` works for both `button` and `div` renderings; prefer `as="button"` for actions). Callbacks receive the chosen element's click event; keyboard activation of a div dispatches a click. `PortaledTooltip` with `TooltipPanel` owns tooltip chrome. `ShineText` with `GearItemTitle`/`TrinketItemTitle` (both in `gear-item-title.tsx`) own keyword/item shine typography. Gradient text resets inherited text strokes to keep letter interiors clean; use a dark drop shadow for contrast. Nonempty keyword palettes include the shared white shine highlight, including palettes with multiple keywords.
 - Item title and affix palettes follow [item shine](#item-shine).
-- Shop prices (over card art and inside buttons) use unboxed icon and amount standardized on `text-xl font-semibold text-gold-pale tabular-nums` with a 24px (`h-6 w-6`) coin icon. Over card art, prices float directly on the illustration using multi-layered black contour drop-shadows (`drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] drop-shadow-[0_0_2px_rgba(0,0,0,0.95)]`) without background containers or art fades; inside buttons, prices flow naturally as inline text matching the button's typography. Unaffordable prices transition to `text-muted-foreground`.
-- `TraitBox` owns unboxed Trait rows, colored icons, keyword descriptions, and title shine across Labyrinth map details and enemy hover/inspection. Traits have no individual border, background, or box padding. Encounter icon themes live in shared configuration and also drive map effects. Enemy Traits and encounter modifiers form one deduplicated list; inspection uses two equal columns at 40rem of available content width, with a single-column fallback and full-width sole Traits. Hover and map Traits stay stacked. Apply inline-size containment only to the inspection layout: shrink-to-fit tooltips need their contents to contribute intrinsic width.
+- Shop-specific price presentation follows [Browsing UI](./UI_BROWSING.md#shop-prices).
+- `TraitBox` supplies shared Trait presentation; [enemy inspection](./UI_BATTLE.md#enemy-inspection) owns its layout across hover, inspection and map details.
 - Modal interaction and dismissal follow [Overlay lifecycle](./UI_INTERACTION.md#overlay-lifecycle).
 
 `Progress` requires an accessible name (`aria-label` or `aria-labelledby`); `value`
@@ -256,34 +256,10 @@ or browser-journey work also follows [tests/e2e/README.md](../tests/e2e/README.m
 
 ## Plasma availability
 
-`KeywordPlasmaBackground` uses the single WebGL renderer entry point in
-`keyword-plasma.ts`. A failed context/shader setup or lost context shows a static
-CSS gradient with the same interaction colors, focal offset, blending, and
-intensity. Hide that gradient while WebGL is available to avoid doubling the
-glow. Context restoration rebuilds resources once; do not poll or keep a second
-animated Canvas backend. Zero intensity hides both layers, and motion-disabled
-preferences keep their existing unanimated appearance without color-animation
-frames. Availability belongs to the renderer lifecycle; failures are logged,
-not shown in a player-facing dialog.
-
-Renderer construction owns rollback until it returns its disposer. Canvas setup
-failure cancels scheduled frames and releases installed observers/listeners; plasma
-setup also releases allocated shaders, buffers, and programs. Disposal is
-idempotent and attempts all renderer cleanup even when a wake adapter fails.
-Context replacement revokes the old renderer before invoking host callbacks.
-Startup, teardown, and availability observer failures are logged independently;
-a failed startup retains the static fallback and can retry on context restoration.
-
-Hover and leave update the plasma color target immediately. The displayed colors
-use a critically damped transition that retains momentum when retargeted.
-Object highlights remain immediate.
-Both renderers apply the same opacity: clamped Background Glow percentage times
-`GLOW_BRIGHTNESS`, owned by
-[KeywordPlasmaBackground](../src/features/alchemy/shared/ui/keyword-plasma-background.tsx).
-The WebGL renderer retains its single render pass, 30 fps pacing, and 1.5 million
-backing-pixel cap. Its existing opacity dithering remains; no higher-resolution
-output pass is used. Banding can still be visible depending on browser compositing
-and the display. Panel technology is not detected.
+Plasma has one WebGL renderer with a matching static CSS fallback when unavailable.
+Zero intensity hides both; motion-disabled preferences stay unanimated. Hover colors
+retarget smoothly while object highlights respond immediately.
+[Canvas rendering](./UI_MOTION.md#canvas-rendering) owns failure, cleanup and rendering limits.
 
 ## Display options
 
