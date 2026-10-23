@@ -2,7 +2,7 @@ import { useCallback, useLayoutEffect, useRef, type ReactNode } from "react";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
 import { GoldDisplay } from "../../shared/ui/display-elements";
-import { collectionShellWidthClass } from "../../shared/config";
+import { chooserRowShellWidthClass } from "../../shared/config";
 import { cn } from "@/lib/utils";
 
 /** Animate the centered stack's displacement without reserving empty screen space. */
@@ -65,7 +65,7 @@ export function AlchemistLayout({
     <div className="relative h-full w-full overflow-hidden">
       <PageLayout>
         <div ref={ref} className="w-full">
-          <ScreenShell className={cn("relative z-10", collectionShellWidthClass)}>
+          <ScreenShell className={cn("relative z-10", chooserRowShellWidthClass)}>
             <ScreenHeaderRow title={title} trailing={<GoldDisplay gold={gold} />} onBack={onBack} />
             <div className="mt-6 flex flex-col items-center gap-6 text-center">{children}</div>
           </ScreenShell>

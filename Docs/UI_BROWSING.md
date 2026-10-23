@@ -208,7 +208,8 @@ buttons show their Gold cost and icon beneath the button. Dragging lifts
 the mounted card from its original position, without a native ghost or copy;
 releasing outside a slot or cancelling returns it without selecting a Potion.
 Mix keeps its ingredient instances distinct. Mix and Distill Back first deselect
-the current choice. Their pagination row keeps the same space across page counts.
+the current choice. Pagination arrows flank the ingredient cards, keeping their side positions across
+page counts without reserving a row above the slots.
 Completing any service keeps its ingredients and result in place until Continue;
 the action row retains its bounds. Content remains compact and centered;
 necessary stack movement eases between heights, preserves an interrupted ease's

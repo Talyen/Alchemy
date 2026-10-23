@@ -10,11 +10,11 @@ import { type BattleCard, isPotionCard } from "@/lib/game-data";
 import { strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
 import { cn } from "@/lib/utils";
-import { collectionTileWidthClass } from "../../shared/config";
+import { collectionShellWidthClass, collectionTileWidthClass } from "../../shared/config";
 import { BattleCardButton } from "../../shared/ui/cards/card-button";
 import { SelectableCard } from "../../shared/ui/cards/selectable-card";
 import { CardSelectionGrid } from "../../shared/ui/cards/card-selection-grid";
-import { PaginationControls } from "../../shared/ui/navigation";
+import { FlankingPagination, PaginationControls } from "../../shared/ui/navigation";
 import { getPagination } from "../../shared/ui/pagination";
 import { Surface } from "../../shared/ui/surface";
 import { GoldCost } from "../../shared/ui/display-elements";
@@ -193,6 +193,42 @@ export function BrewPotionPanel({
       wrapperClassName="absolute inset-0"
     />
   );
+  const ingredients = (
+    <div
+      className="flex flex-wrap justify-center gap-5"
+      aria-label={
+        kind === "combine"
+          ? i18n.text("brewing.choose-two", "Choose two Potions")
+          : i18n.text("ui.brew-potion-panel.d1", "Choose a Potion")
+      }
+    >
+      {items.slice(pagination.page * 4, (pagination.page + 1) * 4).map(({ card, index }) => (
+        <div
+          key={index}
+          data-potion-choice={index}
+          className={cn(preparationWidthClass, "shrink-0 touch-none")}
+          onPointerDown={(event) => drag.onPointerDown(index, event)}
+          onPointerMove={drag.onPointerMove}
+          onPointerUp={drag.onPointerUp}
+          onPointerCancel={drag.onPointerCancel}
+          onLostPointerCapture={drag.onLostPointerCapture}
+          onClickCapture={drag.onClickCapture}
+        >
+          <div data-potion-movable className="relative">
+            <SelectableCard
+              card={card}
+              chrome="shop"
+              widthClass="w-full"
+              suppressTooltip={drag.draggedIndex !== null}
+              isSelected={selected.includes(index)}
+              disabled={submitted}
+              onSelect={() => choose(index)}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
   return (
     <div
       data-potion-preparation
@@ -223,46 +259,21 @@ export function BrewPotionPanel({
         <PotionComparison original={sourceDeck[a]} result={result} />
       ) : recipeBrew ? null : kind === "combine" || variant === "alchemist" ? (
         <>
-          <div
-            className="flex flex-wrap justify-center gap-5"
-            aria-label={
-              kind === "combine"
-                ? i18n.text("brewing.choose-two", "Choose two Potions")
-                : i18n.text("ui.brew-potion-panel.d1", "Choose a Potion")
-            }
-          >
-            {items.slice(pagination.page * 4, (pagination.page + 1) * 4).map(({ card, index }) => (
-              <div
-                key={index}
-                data-potion-choice={index}
-                className={cn(preparationWidthClass, "shrink-0 touch-none")}
-                onPointerDown={(event) => drag.onPointerDown(index, event)}
-                onPointerMove={drag.onPointerMove}
-                onPointerUp={drag.onPointerUp}
-                onPointerCancel={drag.onPointerCancel}
-                onLostPointerCapture={drag.onLostPointerCapture}
-                onClickCapture={drag.onClickCapture}
-              >
-                <div data-potion-movable className="relative">
-                  <SelectableCard
-                    card={card}
-                    chrome="shop"
-                    widthClass="w-full"
-                    suppressTooltip={drag.draggedIndex !== null}
-                    isSelected={selected.includes(index)}
-                    disabled={submitted}
-                    onSelect={() => choose(index)}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-          <PaginationControls
-            page={pagination.page}
-            totalPages={pagination.totalPages}
-            onPageChange={setPage}
-            reserveSpace={variant === "alchemist"}
-          />
+          {variant === "alchemist" ? (
+            <FlankingPagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              onPageChange={setPage}
+              className={collectionShellWidthClass}
+            >
+              {ingredients}
+            </FlankingPagination>
+          ) : (
+            <>
+              {ingredients}
+              <PaginationControls page={pagination.page} totalPages={pagination.totalPages} onPageChange={setPage} />
+            </>
+          )}
         </>
       ) : (
         <CardSelectionGrid
