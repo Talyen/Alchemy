@@ -56,19 +56,23 @@ The unit runner rejects missing explicit paths before Vitest can ignore a mixed 
 permissions and completion. `check --plan` prints the outer stages and selected
 route commands without executing them.
 
-`verify-changed.mjs` selects changed and dependency-related units plus explicit
-lifecycle, save, desktop and tooling protection. Presentation relies on related
-tests; shared lifecycle seams retain explicit interaction coverage, and unknown
-behavior owners use the conservative fallback. Its default routes are units and
-documentation; `--unit` omits documentation and `--full` retains report/asset routes.
-The outer `check` adds applicable localization, compilation, formatting and lint.
-Formatting/lint batches above 50 files or containing a file above 256,000 bytes
-are deferred to CI and reported.
+`verify-changed.mjs` retains the route catalog for explicit diagnosis and full
+verification. Its default runs documentation contracts only; units are deferred
+to CI. `--unit` selects changed and dependency-related units plus lifecycle, save,
+desktop and tooling protection; `--full` also retains report/asset routes.
+The outer default `check` adds applicable localization, formatting and lint,
+with compilation deferred to CI. Formatting/lint batches above 50 files or
+containing a file above 256,000 bytes are deferred to CI and reported.
 
 `check:all` selects the repository inventory and replaces overlapping unit commands
-with one complete unit run, forced to one worker to bound host resource spikes.
-Other unit commands retain their runner policy. Integration invokes the same gate
-on the pinned combined result; eligible commands follow [receipt rules](#verification-receipt-rules).
+with one complete unit run. Full gates and managed broad unit/browser runs reject
+local execution unless `ALCHEMY_ALLOW_HEAVY_LOCAL=1` is set for an explicitly
+requested local run. `local-execution-policy.mjs` recognizes hosted GitHub Actions
+via `GITHUB_ACTIONS=true`; `CI=true` alone is insufficient because local browser
+aliases also set it. One or two explicit unit files remain available with one
+worker. Policy checks precede lane acquisition and command execution.
+Integration invokes the lightweight gate on the pinned combined result;
+eligible commands follow [receipt rules](#verification-receipt-rules).
 
 `lib/exclusive-port.mjs` supplies cancellable waiting for test and integration
 locks. It retries occupied ports without reclaiming them, reports waiting status,
@@ -134,7 +138,8 @@ an occupied port fails before any HTTP validation. They require an application s
 ## Compatibility commands and test runners
 
 Use [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) for ordinary work.
-These compatibility commands remain available for diagnosis:
+These compatibility commands remain available for diagnosis, subject to the local
+execution policy above:
 
 | Command                      | Scope                                                                    |
 | ---------------------------- | ------------------------------------------------------------------------ |
@@ -142,7 +147,7 @@ These compatibility commands remain available for diagnosis:
 | `check:task`                 | Explicit alias for task-scoped `check`                                   |
 | `check:broad`, `check:full`  | `check --full`: selected units, full static checks and applicable builds |
 | `test:full`, `test:unit:all` | `test:unit`; unfiltered invocation runs all units                        |
-| `verify`                     | Selected units and documentation routes                                  |
+| `verify`                     | Documentation routes; units deferred to CI                               |
 | `verify:unit`                | Selected unit routes only                                                |
 | `verify:full`                | Selected units, documentation and broader report/asset routes            |
 

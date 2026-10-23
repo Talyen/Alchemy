@@ -8,39 +8,54 @@ Git authorization and local integration. Read known owners directly; use
 
 Use four entry points for ordinary work:
 
-| Need                                                                                   | Command                                            |
-| -------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Check the isolated task                                                                | `npm run check`                                    |
-| Check selected paths                                                                   | `npm run check -- <paths>`                         |
-| Check the entire repository, including every unit suite, full static checks and builds | `npm run check:all`                                |
-| Diagnose units                                                                         | `npm run test:unit -- <test-files-or-directories>` |
+| Need                                                            | Command                                        |
+| --------------------------------------------------------------- | ---------------------------------------------- |
+| Lightweight checks for the isolated task                        | `npm run check`                                |
+| Lightweight checks for selected paths                           | `npm run check -- <paths>`                     |
+| Full repository validation (CI; local only by explicit request) | `npm run check:all`                            |
+| Focused unit diagnosis                                          | `npm run test:unit -- <one-or-two-test-files>` |
 
 `check` selects the isolated task, including its uncommitted work. In a mixed or
 unrecorded checkout, name task-owned paths explicitly, including deletions and
 both sides of renames. Add `--plan` to inspect the selected scope before running.
-`test:unit` accepts existing test files/directories; without paths it runs all units.
 [Selection details](./scripts/VERIFICATION.md#task-selection) cover advanced selectors
 and the relationship to main.
 
-The task gate runs affected units and applicable static, localization and documentation
-checks. Markdown-only tasks run documentation checks and formatting. Broader checks
-add full static validation, builds, bundle budgets and preview smoke.
-[Gate details](./scripts/VERIFICATION.md#local-verification-profiles) explain selection,
-large-batch deferrals and compatibility commands.
+The default task gate runs applicable localization freshness, documentation
+contracts, and selected-file formatting and lint. Formatting and lint batches
+above 50 files or containing a file above 256,000 bytes are deferred to CI and
+reported. Unit suites (including dependency-related and risk-selected suites),
+source/test compilation, repository-wide static checks, builds, bundle budgets,
+and automated browser/Electron acceptance belong to CI. Integration and pre-push
+use this same lightweight default; neither escalates to those heavy checks.
+[Gate details](./scripts/VERIFICATION.md#local-verification-profiles) explain selection
+and compatibility commands.
 
-Task work authorizes units, compilation, lint, development previews, focused
-browser/Electron checks and builds without another permission request. Start with
-bounded checks; use exhaustive browser suites, coverage, mutation and profiling
-for a concrete risk or explicit request. Avoid overlapping expensive runs on an
-overloaded host. Release packaging, signing, publication and uploads retain their
-release authorization rules.
+Task work authorizes lightweight checks, a focused reproduction using one or two
+explicit unit test files with one worker, and development previews for required
+visual review. Use focused units to answer a concrete unresolved question; editing
+a file alone does not require a local test run. Do not split a broad suite into
+many focused invocations to bypass CI. Do not run broad units, compilation, builds, automated
+browser/Electron suites, coverage, mutation, simulation sweeps or profiling locally
+unless the user explicitly requests that local execution. A general implementation,
+verification, audit or integration request does not authorize heavy local validation.
+Do not substitute raw CLI commands, watch mode or `CI=true` to bypass this policy.
+For an explicitly requested heavy local run, set
+`ALCHEMY_ALLOW_HEAVY_LOCAL=1` on that command only. The full completion gate and
+managed broad unit/browser runners enforce this override; GitHub Actions runs
+normally without it. Unfiltered, directory and related unit selections need the
+override, including `test:unit` without paths. Avoid overlapping expensive runs on
+an overloaded host. Release packaging, signing, publication and uploads retain
+their release rules. No check command authorizes a push or CI dispatch.
 
 Run the task gate before handoff. Protected integration checks the merged task
 against pinned main/task commits, then revalidates both under the integration lock
 before advancing the clean integration checkout on `main`. If main advances during verification, integration
 incorporates it and checks again. Pre-push uses the same task gate against outgoing
-changes and requires a clean checkout. A passing gate establishes local completion
-for its reported scope; claim CI or platform acceptance only when actually run.
+changes and requires a clean checkout. A passing gate establishes lightweight local completion
+for its reported scope; tests and compilation remain pending CI. Do not rerun
+heavy checks locally to remove that limitation. Claim CI or platform acceptance
+only when actually run.
 When a push and CI follow-up are requested, finish both before calling the task complete.
 
 For visible changes, [visual review](./Docs/UI_VISUAL_REVIEW.md) requires rendered
@@ -48,7 +63,7 @@ comparison and affected interactions. Finalize text in the task worktree, then
 [translate and review](./Docs/LOCALIZATION.md#agent-workflow) before final checks
 and integration. Checks and builds never invoke a translation service.
 
-The runner schedules tests automatically and prints the selected lane. One broad
+Explicit local tests use managed scheduling and print the selected lane. One broad
 run and one focused unit run can execute together; focused runs use one worker,
 including when filtering by test name or selecting a reporter. Reservations wait
 and remain cancellable. Never terminate another task's run. Use `test:status`

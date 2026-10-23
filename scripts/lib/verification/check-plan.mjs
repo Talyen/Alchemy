@@ -61,8 +61,8 @@ export function resolveCheckPlan(
       label: "source and test types",
       command: "npm",
       args: ["run", "typecheck:all"],
-      enabled: !full && selection.needsCodeChecks,
-      reason: full ? "included in full static checks" : "documentation-only change",
+      enabled: false,
+      reason: full ? "included in full static checks" : ciReason,
     },
     {
       key: "local-format",
