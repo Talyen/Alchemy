@@ -83,6 +83,8 @@ describe("Alchemist brewing navigation", () => {
     expect(onBrewPotion).toHaveBeenCalledExactlyOnceWith(0);
     expect(screen.queryByRole("button", { name: "Continue" })).toBeNull();
     act(() => pending.shift()!());
+    expect(screen.getByRole("button", { name: "Choose a Potion" }).querySelector("img")?.alt).toBe("Health Potion");
+    expect(screen.queryByRole("button", { name: "Brew", exact: true })).toBeNull();
     click("Continue");
     expect(screen.getByRole("heading", { name: "Potion Brewing" })).toBeTruthy();
   });

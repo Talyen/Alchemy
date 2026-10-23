@@ -228,6 +228,10 @@ describe("Brew selection safety", () => {
     expect(slot().querySelector("img")?.alt).toBe("Health Potion");
     expect(onBack).not.toHaveBeenCalled();
     await choose("Mana Potion");
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(onBack).toHaveBeenCalledOnce();
+    expect(slot().querySelector("img")?.alt).toBe("Mana Potion");
+    expect(onConfirm).not.toHaveBeenCalled();
     const buy = screen.getByRole("button", { name: "Brew" });
     const cost = document.getElementById(buy.getAttribute("aria-describedby")!)!;
     expect(buy.textContent).toBe("Brew");

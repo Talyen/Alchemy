@@ -201,13 +201,18 @@ Brew shows one Potion slot; clicking its empty or filled artwork opens a Wish-st
 recipe choice overlay. Choosing fills the slot, while cancelling preserves it.
 Distill keeps choices above its input slot and strengthened preview. Clicking or
 dragging fills ingredient slots. Empty and filled slots reserve identical portrait
-bounds, so selections cannot move the centered header or actions. Preparation
+bounds, so selections cannot move the centered header or actions. Recipe choices,
+ingredient lists, slots, previews and purchase results share the standard collection
+card size. Brew's Back returns to the service menu even with a selected recipe. Preparation
 buttons show their Gold cost and icon beneath the button. Dragging lifts
 the mounted card from its original position, without a native ghost or copy;
 releasing outside a slot or cancelling returns it without selecting a Potion.
-Mix keeps its ingredient instances distinct. Back first deselects the current
-choice, including the Distill comparison. Content remains compact and centered;
-stack movement eases between heights and respects reduced motion.
+Mix keeps its ingredient instances distinct. Mix and Distill Back first deselect
+the current choice. Their pagination row keeps the same space across page counts.
+Completing any service keeps its ingredients and result in place until Continue;
+the action row retains its bounds. Content remains compact and centered;
+necessary stack movement eases between heights, preserves an interrupted ease's
+position and respects reduced motion.
 
 Transmutation first shows the selected original card beside an empty, question-mark
 slot, using the same dashed frame as Potion Brewing. Up to three icon-only keyword

@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { type BattleCard, isPotionCard, potionBrewingArt } from "@/lib/game-data";
 import { strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
-import { collectionTileWidthClass, getCardInspectionShineColors } from "../../shared/config";
-import { BattleCardButton } from "../../shared/ui/cards/card-button";
+import { collectionTileWidthClass } from "../../shared/config";
 import { ChooserArtTile } from "../../shared/ui/chooser-art-tile";
 import { DisabledTooltip } from "../../shared/ui/tooltips/disabled-tooltip";
 import { useCaptureEscapeCancel } from "../../shared/ui/dialogs/use-modal-escape-dismiss";
@@ -14,7 +13,6 @@ import { PurchasableCardItem } from "../shop/ui/purchasable-shop-item";
 import { ShopPriceChip } from "../shop/ui/purchasable-shop-tile";
 import { cardSlotKeyOf } from "../shop/shop-commands-core";
 import { BrewPotionPanel, type BrewPotionPanelHandle } from "./brew-potion-panel";
-import { PotionComparison } from "./potion-comparison";
 import { ShopBrowseOfferings, RefreshShopServiceButton } from "./shop-browse-shell";
 import { type ShopShelfProps } from "./shop-shelf";
 import { AlchemistLayout } from "./alchemist-layout";
@@ -47,10 +45,9 @@ export function AlchemistShopScreen({
   afterProgressSaved?: (feedback: () => void) => void;
 }) {
   const i18n = useGameTranslation();
-  const [page, setPage] = useState<"shop" | "methods" | "prepare" | "result">("shop");
+  const [page, setPage] = useState<"shop" | "methods" | "prepare">("shop");
   const [method, setMethod] = useState<Method>("new");
   const [result, setResult] = useState<BattleCard | null>(null);
-  const [original, setOriginal] = useState<BattleCard | null>(null);
   const [purchaseError, setPurchaseError] = useState(false);
   const panel = useRef<BrewPotionPanelHandle>(null);
   const resultSequence = useRef(0);
@@ -107,7 +104,6 @@ export function AlchemistShopScreen({
   }
   useCaptureEscapeCancel(page === "methods" ? back : undefined);
   function confirm(operation: BrewOperation) {
-    const before = operation.kind === "strengthen" ? runDeck[operation.index] : null;
     const next =
       operation.kind === "new"
         ? onBrewPotion(operation.offerIndex)
@@ -118,9 +114,7 @@ export function AlchemistShopScreen({
       const sequence = ++resultSequence.current;
       afterProgressSaved(() => {
         if (sequence !== resultSequence.current) return;
-        setOriginal(before ?? null);
         setResult(next);
-        setPage("result");
       });
     }
     return next;
@@ -257,32 +251,15 @@ export function AlchemistShopScreen({
           onConfirm={confirm}
           isProgressSavePending={isProgressSavePending}
           onBack={leavePreparation}
+          onContinue={
+            result
+              ? () => {
+                  setResult(null);
+                  setPage("methods");
+                }
+              : undefined
+          }
         />
-      ) : result ? (
-        <>
-          {original ? (
-            <PotionComparison original={original} result={result} />
-          ) : (
-            <BattleCardButton
-              card={result}
-              ariaLabel={i18n.displayText(result.title)}
-              shimmerActive={false}
-              shimmerToken={undefined}
-              shineColor={getCardInspectionShineColors(result)}
-              className={collectionTileWidthClass}
-            />
-          )}
-          <Button
-            size="lg"
-            className="min-w-56"
-            onClick={() => {
-              setResult(null);
-              setPage("methods");
-            }}
-          >
-            {i18n.text("shop.brewing.continue", "Continue")}
-          </Button>
-        </>
       ) : null}
     </AlchemistLayout>
   );
