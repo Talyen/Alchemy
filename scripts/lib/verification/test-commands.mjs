@@ -1,4 +1,3 @@
-import { VITEST_MAX_WORKERS } from "./test-concurrency.mjs";
 import { readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
@@ -90,7 +89,8 @@ export const COMMANDS = Object.freeze({
     label: "dependency-related unit tests",
     reason: "Vitest selects tests that import the changed implementation",
     command: process.execPath,
-    args: ["scripts/run-compact.mjs", "vitest", "related", `--maxWorkers=${VITEST_MAX_WORKERS}`],
+    // Related graphs can cover most of the app; bound JSDOM/subprocess memory like the full gate.
+    args: ["scripts/run-compact.mjs", "vitest", "related", "--maxWorkers=1"],
   },
   "unit-changed": {
     label: "changed unit tests",

@@ -30,6 +30,8 @@ because it must exec the real binary past its own shim. Release writes keep
 logged inherit flows via `command-invocation.mjs`; release reads use `runGit`.
 `resolveRoutePlan` returns both coverage commands and build/static/localization classification. `check-plan.mjs` composes the actual completion steps from that result; plan display and execution consume the same step definitions. Git path selection remains separate; the obsolete standalone classification wrapper is removed.
 
+Full-repository and dependency-related selections use one worker to bound JSDOM and subprocess memory on shared hosts. Coverage and test deadlines are unchanged by that scheduling choice.
+
 Route glob matching precompiles `ROUTES` + shared build patterns once instead
 of per file. The `documentation` route covers `Docs/**` so check classification
 (`isDocumentationPath`) and verify routing agree on documentation images.
@@ -261,7 +263,7 @@ Do not trade away path exceptions or diagnostic precision to reduce process coun
 
 ## Component and hook conventions
 
-Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. Name browser-API suites without React `*.dom.test.ts` so their environment is clear and the shared glob selects them. React `*.test.tsx` and `use-*` / `*-hook` suites already select DOM. The include/exclude patterns in `vitest.config.ts` own that classification; the project guard checks actual collection rules for omissions and overlap. Full unit runs share the four-worker ceiling used by related and ship checks, leaving one CPU free on smaller hosts. CLI worker overrides remain available for focused diagnosis.
+Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. Name browser-API suites without React `*.dom.test.ts` so their environment is clear and the shared glob selects them. React `*.test.tsx` and `use-*` / `*-hook` suites already select DOM. The include/exclude patterns in `vitest.config.ts` own that classification; the project guard checks actual collection rules for omissions and overlap. Vitest defaults and ship suites retain the four-worker ceiling, leaving one CPU free on smaller hosts. Completion gates use one worker for full-repository and dependency-related selections. CLI worker overrides remain available for focused diagnosis.
 
 Preserve test import order when a shared harness registers mocks or hooks. Import organization must not move that harness after modules whose dependencies it mocks; use explicit hoisted mocks where feasible. Ordinary explanatory comments are allowed; Oxlint suppressions still require a reason. Keep comments focused on ordering, compatibility, and other reasons that names and tests alone do not explain.
 
