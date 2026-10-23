@@ -1,3 +1,4 @@
+import { readRewardActivity } from "@/lib/active-run-session";
 import * as destinationFlow from "@/features/alchemy/shared/run-flow/destination-flow";
 import * as config from "@/features/alchemy/shared/config";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -52,7 +53,9 @@ describe("transaction-owned visit exits", () => {
     expect(after.run.activeRun.runPlayerHealth).toBe(getCampfireRestHealth(10, 30));
     expect(after.run.activeRun.roomsEncountered).toBe(before.run.activeRun.roomsEncountered + 1);
     expect(after.session.activity.kind).toBe("destination");
-    expect(after.run.activeRun.lastOfferedDestinations).toEqual(after.session.rewardFlow.state.destinations);
+    expect(after.run.activeRun.lastOfferedDestinations).toEqual(
+      readRewardActivity(after.session.activity).state.destinations,
+    );
     expect(commands.leaveVisit("campfire")).toBeNull();
     expect(readGameplayState(session)).toBe(after);
     sample.mockRestore();

@@ -73,9 +73,35 @@ export function useBattleControllerContext(
       release();
     };
   }, [playback, gameSession]);
+  const committed = useRef(props);
+  useLayoutEffect(() => {
+    committed.current = props;
+  });
   const context = useMemo<BattleControllerContext>(
     () => ({
-      ...props,
+      battle: props.battle,
+      presentation: props.presentation,
+      get screen() {
+        return committed.current.screen;
+      },
+      get setHoveredCardId() {
+        return committed.current.setHoveredCardId;
+      },
+      get onBattleVictory() {
+        return committed.current.onBattleVictory;
+      },
+      get onBattleDefeat() {
+        return committed.current.onBattleDefeat;
+      },
+      get measureElementRect() {
+        return committed.current.measureElementRect;
+      },
+      get measureVisualCardRect() {
+        return committed.current.measureVisualCardRect;
+      },
+      get onSessionPrepared() {
+        return committed.current.onSessionPrepared;
+      },
       playback,
       endTurnButtonRef,
       handCardRefs,
@@ -86,11 +112,8 @@ export function useBattleControllerContext(
       enemyPanelRef,
       getPresentation: props.presentation.getState,
     }),
-    // oxlint-disable-next-line react/exhaustive-deps -- One controller lifetime; committed props are synchronized below.
+    // oxlint-disable-next-line react/exhaustive-deps -- One controller lifetime; changing inputs come from the committed ref.
     [playback],
   );
-  useLayoutEffect(() => {
-    Object.assign(context, props, { getPresentation: props.presentation.getState });
-  });
   return context;
 }

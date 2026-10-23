@@ -1,3 +1,4 @@
+import { setRunActivityForTest as setRunProgressActivity } from "../../../../../helpers/run-domain-store-test";
 import { describe, expect, it, vi } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import {
@@ -53,7 +54,7 @@ describe("Gear command boundary", () => {
           },
         });
         if (active) {
-          draft.session.activity = { kind: "destination" };
+          setRunProgressActivity(draft, "destination");
           Object.assign(draft.run.activeRun, { runPlayerHealth: 37, runMaxHealth: 37, runMetaMaxHealth: 37 });
         }
         return acceptCommand();

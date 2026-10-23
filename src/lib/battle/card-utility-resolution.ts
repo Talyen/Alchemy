@@ -1,4 +1,10 @@
-import { isPotionCard, companionLibrary, type BattleCardEffect, type PlayerStatusId } from "@/lib/game-data";
+import {
+  isPotionCard,
+  companionLibrary,
+  type BattleCard,
+  type BattleCardEffect,
+  type PlayerStatusId,
+} from "@/lib/game-data";
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { applyPotionMultiplier, halveRounded } from "./amount-helpers";
 import { writeCombatFlag } from "./action-context";
@@ -10,6 +16,12 @@ import type { BattleState, CombatTextEvent } from "./types";
 type PlayerStatusEffect = Extract<BattleCardEffect, { kind: "player-status" }>;
 
 export interface CardUtilityPort {
+  healingAmount: (
+    state: BattleState,
+    card: BattleCard,
+    effect: Extract<BattleCardEffect, { kind: "heal" }>,
+    potionMult: number,
+  ) => number;
   heal: (state: BattleState, amount: number, texts: CombatTextEvent[], cardHealing: boolean) => BattleState;
   mana: (state: BattleState, amount: number, texts: CombatTextEvent[], allowOverflow: boolean) => BattleState;
   manaGainRewards: (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
@@ -57,6 +69,22 @@ const FLAG_HANDLERS = {
   "next-archery-free": applyFlagEffect,
   "dodge-next-attack": applyFlagEffect,
 } satisfies Pick<EffectHandlers, FlagEffectKind>;
+
+/** Card-specific healing modifiers belong to live resolution, not nominal autoplay utility. */
+export function cardHealingAmount(
+  state: BattleState,
+  card: BattleCard,
+  effect: Extract<BattleCardEffect, { kind: "heal" }>,
+  potionMult: number,
+): number {
+  const amount = applyPotionMultiplier(effect.amount, potionMult);
+  const potionBonus = isPotionCard(card) && effect.amount > 0 ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;
+  const adjusted = Math.round(amount * (1 + (state.talentEffects.cardHealMultipliers[card.id] ?? 0))) + potionBonus;
+  const consumeBonus = card.consume
+    ? state.talentEffects.consumeHealMultiplier + state.gearEffects.consumeHealBonusPercent / PERCENT_DENOMINATOR
+    : 0;
+  return Math.round(adjusted * (1 + consumeBonus));
+}
 
 /** Execute utility rules once; live combat and inspection supply reaction policies. */
 export function createCardUtilityHandlers(port: CardUtilityPort) {
@@ -111,14 +139,7 @@ export function createCardUtilityHandlers(port: CardUtilityPort) {
         : { ...state, maxMana, mana: Math.min(maxMana, state.mana) };
     },
     heal: (state, card, effect, potionMult, combatTexts, context) => {
-      const potionBonus = isPotionCard(card) && effect.amount > 0 ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;
-      const cardHealMultiplier = 1 + (state.talentEffects.cardHealMultipliers[card.id] ?? 0);
-      const adjustedHeal =
-        Math.round(applyPotionMultiplier(effect.amount, potionMult) * cardHealMultiplier) + potionBonus;
-      const consumeBonus = card.consume
-        ? state.talentEffects.consumeHealMultiplier + state.gearEffects.consumeHealBonusPercent / PERCENT_DENOMINATOR
-        : 0;
-      const healAmount = Math.round(adjustedHeal * (1 + consumeBonus));
+      const healAmount = port.healingAmount(state, card, effect, potionMult);
       return port.heal(state, healAmount, combatTexts, hasCardHealing(context));
     },
     "lose-health": (state, _card, effect, _potionMult, combatTexts) => {

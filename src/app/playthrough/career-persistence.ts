@@ -28,7 +28,7 @@ export function stateDigest(gameSession: GameSession) {
       stableJson({
         save: snapshotCareer(gameSession),
         screen: readActiveRunScreen(gameSession),
-        claim: readRunSession(gameSession).rewardFlow.claim,
+        claim: readRunSession(gameSession).progressClaim,
       }),
     )
     .digest("hex");

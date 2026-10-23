@@ -7,7 +7,8 @@ export type ProgressSaveState =
   | { readonly kind: "saving" | "failed"; readonly revision: number };
 
 /** Runtime acknowledgement only: persisted snapshots retain their existing format. */
-export class ProgressCompletion {
+export class ProgressCompletion<Presentation = unknown> {
+  private presentationBase: Presentation | undefined;
   constructor(private readonly isActive: () => boolean = () => true) {}
 
   private state: ProgressSaveState = Object.freeze({ kind: "idle" });
@@ -52,7 +53,16 @@ export class ProgressCompletion {
     return this.retryOwners.size > 0;
   }
 
-  mark(revision: number, force = false) {
+  /** All player entrypoints read this same durability admission policy. */
+  canStartAction(clearing: boolean, writeFailed: boolean): boolean {
+    return !clearing && this.state.kind === "idle" && (!this.hasRetryDriver || !writeFailed);
+  }
+
+  readPresentationBase(current: Presentation): Presentation {
+    return this.state.kind === "idle" ? current : (this.presentationBase ?? current);
+  }
+
+  mark(revision: number, force = false, before?: Presentation) {
     if (force) {
       // Settings and explicit checkpoints can change without a gameplay revision.
       // Earlier snapshots cannot cover this newly requested durability boundary.
@@ -60,6 +70,7 @@ export class ProgressCompletion {
       this.acknowledged = Math.min(this.acknowledged, revision - 1);
     }
     if (revision <= this.acknowledged) return;
+    if (this.state.kind === "idle" && before !== undefined) this.presentationBase = before;
     this.publish({ kind: "saving", revision });
   }
 
@@ -147,7 +158,8 @@ export class ProgressCompletion {
   }
 
   /** Replace a career without briefly unlocking unsaved replacement state. */
-  replace(revision?: number) {
+  replace(revision?: number, before?: Presentation) {
+    if (this.state.kind === "idle" && before !== undefined) this.presentationBase = before;
     this.invalidateReceipts();
     this.restoreVersion++;
     this.publish(revision === undefined ? { kind: "idle" } : { kind: "saving", revision }, true);
@@ -156,6 +168,7 @@ export class ProgressCompletion {
   private invalidateReceipts() {
     this.epoch++;
     this.acknowledged = -1;
+    // The display baseline survives replacement until its covering write settles.
     this.completions = [];
     this.readyCompletions = [];
   }
@@ -185,6 +198,7 @@ export class ProgressCompletion {
       state.kind === this.state.kind &&
       (state.kind === "idle" || (this.state.kind !== "idle" && state.revision === this.state.revision));
     this.state = Object.freeze(state);
+    if (state.kind === "idle") this.presentationBase = undefined;
     if (restored) {
       // Invalidate autosave submissions before any status or store observer
       // can schedule a write in the replacement epoch, even if data is equal.

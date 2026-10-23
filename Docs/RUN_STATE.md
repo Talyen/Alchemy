@@ -336,7 +336,7 @@ transaction-only visit recipes to that owner. Screen and shop command contracts
 expose player actions without initialization. Rendering, remounting, and presenting
 Mystery never sample visit RNG or replace committed activity.
 
-`session.activity.kind === "inactive"` is the sole stored marker for an inactive run. Active runs may have `idle` while being prepared; meta screens preserve the current activity. Read ports derive `hasActiveRun`; it is not a second stored boolean. `session.rewardFlow` owns the current reward bundle, Companion cards, and one claim union (`idle`, `reward`, or `destination` with its destination). Reward and destination claims cannot both be active. The visible navigation screen remains independent so menus and fades do not redefine the resume location. Save codecs retain the existing wire fields.
+`session.activity.kind === "inactive"` is the sole stored marker for an inactive run. Active runs may have `idle` while being prepared; meta screens preserve the current activity. Read ports derive `hasActiveRun`; it is not a second stored boolean. Reward activities own their bundle and Companion follow-up cards; destination activities own only their offered destinations and boss/victory context. `session.progressClaim` owns the one claim union (`idle`, `reward`, or `destination` with its captured offer), so replacement activities cannot invalidate an accepted navigation handoff. Reward and destination claims cannot both be active. `readRunSession().rewardFlow` is a derived compatibility view, never stored authority. The visible navigation screen remains independent so menus and fades do not redefine the resume location. Save codecs retain the existing wire fields.
 
 `reward-commands.ts` owns selection validation, grants, and advancement to the next reward bundle in one transaction. Its claim lock prevents re-entry until routing settles, but save encoding uses the already-advanced bundle rather than inferring which reward was awarded from the lock. Legacy `companion-reward` saves remain readable. `victory-commands.ts` owns victory rewards and the Wildwood phase change, rejects repeated completion, and enters the rewards activity atomically. The matching run-flow modules own navigation and feedback.
 
@@ -363,6 +363,7 @@ Choosing one encounter trait draws once from its eligible pool. Wildwood boss pr
 ## Completed actions and local saving
 
 The renderer marks persisted gameplay commits as pending before publishing them.
+`ProgressCompletion` owns the pre-action presentation baseline and player-action admission alongside acknowledgement. Commands and settings capture that baseline through its mark/replace operations; presentation readers and command guards consume the same owner.
 `SessionPersistence` exposes `checkpoint`, `readProgress`, `subscribeProgress`,
 `trackProgress`, `retryProgress`, and `afterProgressSaved`. A checkpoint carries
 the gameplay revision and a runtime epoch; only a covering local write in that

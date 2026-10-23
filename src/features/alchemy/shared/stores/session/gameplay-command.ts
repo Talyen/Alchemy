@@ -96,11 +96,9 @@ export function dispatchGameplayCommand<T>(
         const progress = runtime.progressCompletion;
         if (options?.restore) {
           const pending = progress.hasRetryDriver || progress.read().kind !== "idle";
-          if (pending && progress.read().kind === "idle") runtime.presentationBase = base;
-          progress.replace(pending ? published.revision : undefined);
+          progress.replace(pending ? published.revision : undefined, base);
         } else if (persistedChange) {
-          if (progress.read().kind === "idle") runtime.presentationBase = base;
-          progress.mark(published.revision);
+          progress.mark(published.revision, false, base);
         }
       };
       const prepareObservers = () => {

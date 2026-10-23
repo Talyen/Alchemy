@@ -21,6 +21,16 @@ export function resolveRoutes(paths: string[]): VerificationRoute[];
 
 export function resolveRoutePlan(paths: string[]): {
   paths: string[];
+  classification: VerificationClassification;
   routes: VerificationRoute[];
   commands: VerificationCommand[];
 };
+
+export interface VerificationClassification {
+  needsCodeChecks: boolean;
+  lockfile: boolean;
+  desktop: boolean;
+  web: boolean;
+  localization: boolean;
+  routeIds: string[];
+}

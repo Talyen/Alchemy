@@ -1,3 +1,4 @@
+import { readRewardActivity } from "@/lib/active-run-session";
 import { resolveDraftAvailableDestinations } from "@/features/alchemy/shared/stores/commands/destination-offer-command";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import {
@@ -22,7 +23,7 @@ import {
   setDestinationOfferState,
   setPendingCharacterId,
   setPendingContentSystemType,
-  setRewardState,
+  setDestinationState,
 } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { sessionFeedback } from "@/features/alchemy/shared/stores/session/session-capabilities";
 import { readProfileStore } from "@/features/alchemy/shared/stores/session/profile-store";
@@ -34,10 +35,10 @@ import type { ContentSystemNavigationDeps } from "./content-system-navigation-ty
 
 function restoreResumedCampaignDestinations(draft: RunTransaction): void {
   const active = draft.run.activeRun;
-  const reward = draft.session.rewardFlow.state;
+  const reward = readRewardActivity(draft.session.activity).state;
   if (reward.destinations.length > 0 && (!isBossOnlyDestinationOffer(reward.destinations) || reward.selectedBossId))
     return;
-  setRewardState(draft, (prev) =>
+  setDestinationState(draft, (prev) =>
     restoreOrCreateDestinationRewardState(snapshotTransactionValue(prev), {
       availableDestinations: resolveDraftAvailableDestinations(draft),
       offerState: {

@@ -53,7 +53,7 @@ export const SHARED_BUILD_PATTERNS = Object.freeze([
 // Docs/) so check classification and verify routing agree — non-Markdown files
 // under Docs/ (images, archived plans) still skip code builds in check
 // classification.
-export function isDocumentationPath(filePath) {
+function isDocumentationPath(filePath) {
   return filePath.endsWith(".md") || /^(Docs|\.agents|\.cursor)\//u.test(filePath);
 }
 
@@ -377,6 +377,7 @@ export function resolveRoutePlan(paths) {
   }
   return {
     paths: normalized,
+    classification: classifyVerificationPaths(normalized),
     routes,
     commands: [...keys].map((key) => {
       const command = selectedCommand(key);
@@ -425,4 +426,37 @@ export function validateRouteCatalog({ rootDir = ROOT_DIR } = {}) {
     }
   }
   return errors;
+}
+
+const COMPILED_SHARED_BUILD_PATTERNS = SHARED_BUILD_PATTERNS.map(globToRegExp);
+
+function classifyVerificationPaths(paths) {
+  const expanded = paths;
+  const codePaths = expanded.filter((filePath) => !isDocumentationPath(filePath));
+  const routes = resolveRoutes(codePaths.length > 0 ? codePaths : expanded);
+  const ids = new Set(routes.map((route) => route.id));
+  const needsCodeChecks = codePaths.length > 0;
+  const lockfile = codePaths.some((filePath) => filePath === "package.json" || filePath === "package-lock.json");
+  const sharedBuild = codePaths.some((filePath) =>
+    COMPILED_SHARED_BUILD_PATTERNS.some((expression) => expression.test(filePath)),
+  );
+  // Extraction scans source literals and derives descriptions from runtime modules.
+  // Test/tooling-only changes do not affect those catalogs; integration and
+  // pre-push still select this gate for every changed localization input.
+  const localization = codePaths.some((filePath) =>
+    /^(?:src\/.*\.[cm]?[jt]sx?$|src\/lib\/localization\/|scripts\/localization(?:[./])|steam\/|public\/fonts\/|package(?:-lock)?\.json$|vite\.config\.ts$)/u.test(
+      filePath,
+    ),
+  );
+  const desktop = ids.has("desktop") || sharedBuild;
+  const web =
+    sharedBuild ||
+    ids.has("runtime") ||
+    ids.has("assets") ||
+    codePaths.some((filePath) =>
+      /^(src\/|public\/|index\.html$|vite\.config\.ts$|vercel\.json$|package\.json$|package-lock\.json$)/u.test(
+        filePath,
+      ),
+    );
+  return { needsCodeChecks, lockfile, desktop, web, localization, routeIds: [...ids] };
 }

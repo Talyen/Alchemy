@@ -1,3 +1,4 @@
+import { readRewardActivity } from "@/lib/active-run-session";
 import { createCleanup } from "@/lib/cleanup";
 import { snapshotSessionSave } from "@/features/alchemy/shared/storage";
 import { savedActivityFixture, savedActivityData } from "../../../../../fixtures/run-activity";
@@ -127,7 +128,9 @@ it("resumes an unsettled victory and commits its rewards exactly once before pre
   const resumed = readGameplayState(defaultGameSession);
   expect(settle()).toBeNull();
   expect(readGameplayState(defaultGameSession)).toBe(resumed);
-  expect(readRunSession(defaultGameSession).rewardFlow.state).toEqual(committed.session.rewardFlow.state);
+  expect(readRunSession(defaultGameSession).rewardFlow.state).toEqual(
+    readRewardActivity(committed.session.activity).state,
+  );
 });
 
 it.each([

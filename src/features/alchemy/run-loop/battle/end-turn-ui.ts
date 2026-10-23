@@ -3,7 +3,6 @@ import { enemyAbilityDealsDamage, getEnemyAbilityCard } from "@/lib/game-data";
 import { getBattleOutcome, type BattleSnapshot, type BattleTurnFrame } from "@/lib/battle";
 import { playBattleEvent } from "@/lib/audio";
 import { COMPANION_ATTACK_DELAY_MS, ENEMY_ATTACK_RECOVERY_DELAY_MS, ENEMY_PHASE_DELAY_MS } from "@/lib/game-constants";
-import { delay } from "@/lib/animation/game-timer";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import type { createBattleSession } from "./battle-session";
 import { markBattleStage } from "@/lib/performance/marks";
@@ -40,7 +39,7 @@ export async function playTurnFrames(
         turnPhase: "enemy",
       });
       presentCombatTexts(presentation, turn.enemyTurnStartCombatTexts);
-      await delay(ENEMY_PHASE_DELAY_MS);
+      if (!(await deps.playback.waitForDelay(sessionNum, ENEMY_PHASE_DELAY_MS))) return;
       if (!deps.isSessionActive(sessionNum)) return;
       if (turn.enemyPerformedAbility) {
         const ability = turn.state.lastEnemyAbilityId ? getEnemyAbilityCard(turn.state.lastEnemyAbilityId) : null;
@@ -54,7 +53,7 @@ export async function playTurnFrames(
         !before.deathsDoorActive && turn.state.deathsDoorActive,
       );
       presentCombatTexts(presentation, turn.enemyResolutionCombatTexts, focalSound);
-      await delay(ENEMY_ATTACK_RECOVERY_DELAY_MS);
+      if (!(await deps.playback.waitForDelay(sessionNum, ENEMY_ATTACK_RECOVERY_DELAY_MS))) return;
       if (!deps.isSessionActive(sessionNum)) return;
       markBattleStage("enemy-end");
     } else {
@@ -75,7 +74,7 @@ export async function playTurnFrames(
     if (!deps.isSessionActive(sessionNum)) return;
     if (!turn.playerTurnSkipped) options?.onHandDrawn?.();
     if (companion) {
-      await delay(COMPANION_ATTACK_DELAY_MS);
+      if (!(await deps.playback.waitForDelay(sessionNum, COMPANION_ATTACK_DELAY_MS))) return;
       if (!deps.isSessionActive(sessionNum)) return;
       if (!options?.isCardPlayInProgress?.()) {
         presentation.setDisplayedBattle(companion.state);
@@ -103,7 +102,7 @@ export function createBattleEndTurnUi(
     const presentation = ctx.getPresentation();
     if (
       expected !== currentState ||
-      !ctx.playback.canAcceptInput() ||
+      !ctx.playback.canEndTurn() ||
       isBattlePlaybackBlocked({
         screen: ctx.screen,
         battleState: currentState,
@@ -122,7 +121,7 @@ export function createBattleEndTurnUi(
     if (!result) return;
     playBattleEvent("endTurn");
     if (!ctx.playback.beginAction(sessionNum)) return;
-    session.clearAllBattleTimeouts(sessionNum);
+    ctx.playback.clearTimers(sessionNum);
     if (getBattleOutcome(result.state) !== null) {
       for (const { before, turn, companion } of result.frames) {
         if (turn.kind === "haste") {

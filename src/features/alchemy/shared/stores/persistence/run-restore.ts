@@ -17,9 +17,7 @@ import {
   setActiveLabyrinthModifiers,
   setActiveLabyrinthPendingNode,
   setActiveLabyrinthRewardModifiers,
-  setCompanionRewardCards,
   setLabyrinthMap,
-  setRewardState,
   setRunProgressActivity,
   setScreen,
   setStarterDraftChoices,
@@ -65,8 +63,6 @@ function restoreRunSession(draft: GameplayDraft, decoded: DecodedRunResumeSessio
   setActiveLabyrinthPendingNode(draft, decoded.labyrinthPendingNode);
   setWildwoodDraft(draft, decoded.wildwoodDraft);
   setStarterDraftChoices(draft, decoded.starterDraftChoices);
-  if (decoded.rewardState) setRewardState(draft, decoded.rewardState);
-  setCompanionRewardCards(draft, decoded.companionRewardCards);
   draft.session.activity = decoded.activity;
   const activity = draft.session.activity;
   if (activity.kind === "trinket-shop") {

@@ -169,7 +169,7 @@ or prevent a replacement battle from becoming ready.
 Consumers supply cancellation fallbacks and presentation work; they do not
 reimplement completion flags or unregister/timer/frame cleanup ordering.
 `PlaybackLifetime.capture(generation)` supplies revocable scheduling and cancellation
-capabilities. Transfer and draw dependencies are created for the generation that
+capabilities, including cancellable game-time waits. Autoplay preview and turn pacing use these waits; preview cancellation clears its own visual synchronously and leaves replacement previews intact. Fixed controller dependencies stay fixed while an explicit committed-input ref supplies changing screen and callback values. Transfer and draw dependencies are created for the generation that
 started the sequence; retained dependencies cannot acquire the replacement battle's
 resources. Their UI writes, measurements, completion callbacks, and delayed sounds
 also check that scope. Cancellation releases owned overlays before the replacement

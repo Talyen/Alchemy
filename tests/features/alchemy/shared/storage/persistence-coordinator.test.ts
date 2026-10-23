@@ -1,3 +1,4 @@
+import { setRunActivityForTest as setRunProgressActivity } from "../../../../helpers/run-domain-store-test";
 import { createCleanup } from "@/lib/cleanup";
 import {
   mutateGameplayForTest,
@@ -92,7 +93,7 @@ describe("persistence coordinator", () => {
       if (activity !== "inactive") {
         mutateSession(session, (draft) => {
           if (activity === "battle") getBattleForTest(draft);
-          else draft.session.activity = { kind: "destination" };
+          else setRunProgressActivity(draft, "destination");
         });
       }
       const persistence = createSessionPersistence(session);
@@ -107,7 +108,7 @@ describe("persistence coordinator", () => {
 
       mutateSession(session, (draft) => {
         if (activity === "inactive") draft.run.activeRun.runPlayerHealth -= 1;
-        else if (activity === "destination") draft.session.rewardFlow.state.gold += 1;
+        else if (activity === "destination") draft.session.selectedLabyrinthNodeId = "presentation-only";
         else
           getBattleForTest(draft).battleState.battleMetrics = {
             enemyAttackActions: 1,
@@ -119,7 +120,16 @@ describe("persistence coordinator", () => {
       expect(persistence.readProgress().kind).toBe("idle");
       mutateSession(session, (draft) => {
         if (activity === "inactive") setGold(draft, 42);
-        else if (activity === "destination") draft.session.rewardFlow.state.destinations = ["Campfire"];
+        else if (activity === "destination")
+          draft.session.activity = {
+            kind: "destination",
+            data: {
+              destinations: ["Campfire"],
+              selectedBossId: null,
+              lastVictoryEnemyType: null,
+              lastVictoryContentSystem: null,
+            },
+          };
         else getBattleForTest(draft).battleState.turn += 1;
       });
       expect(buildAlchemySaveDataFromStores(session)).not.toEqual(before);
@@ -228,7 +238,7 @@ describe("persistence coordinator", () => {
   it("ignores claim locks and derived effects while saving reward payload changes", () => {
     mutateGameplayForTest((draft) => getBattleForTest(draft));
     mutateGameplayForTest((draft) => {
-      draft.session.activity = { kind: "rewards" };
+      setRunProgressActivity(draft, "rewards");
     });
     const listener = vi.fn();
     const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
@@ -245,7 +255,7 @@ describe("persistence coordinator", () => {
   });
 
   it("only saves mode-specific session fields while that mode is active", () => {
-    setRunSession({ activity: { kind: "destination" } });
+    setRunSession({ hasActiveRun: true, activity: { kind: "destination" } });
     const listener = vi.fn();
     const unsubscribe = subscribeAlchemyPersistence(listener, defaultGameSession);
 

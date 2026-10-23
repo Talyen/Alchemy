@@ -20,7 +20,7 @@ export function resolveDraftLootProgress(draft: RunTransaction): LootProgress {
       return createLootProgress(
         campaignLootDepth(
           run.currentAct,
-          run.destinationIndexInAct + (draft.session.rewardFlow.claim.kind === "destination" ? 1 : 0),
+          run.destinationIndexInAct + (draft.session.progressClaim.kind === "destination" ? 1 : 0),
         ),
         draft.profile.completedDifficulties,
       );

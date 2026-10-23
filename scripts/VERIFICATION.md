@@ -7,7 +7,7 @@ Gate composition, CI tiers, and reuse policy live in
 
 | Concern                                   | Implementation owner                                                                                                                                                                                 |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Completion orchestration                  | `check.mjs`                                                                                                                                                                                          |
+| Completion orchestration                  | `check.mjs` + `lib/verification/check-plan.mjs`                                                                                                                                                      |
 | Task and opt-in full test selection       | `verify-changed.mjs` + `run-local-tests.mjs`                                                                                                                                                         |
 | Finished-step exposure/digest reporting   | `lib/run-step.mjs` (shared by `check` + `verify`)                                                                                                                                                    |
 | Path parsing and classification           | `lib/verification/changed-paths.mjs` + `lib/verification/change-routes.mjs`                                                                                                                          |
@@ -28,6 +28,8 @@ single repo-relative spelling, also used by route matching) and `runGit` (the si
 stale-cache overrides); `git-safety-guard.mjs` is the deliberate exception
 because it must exec the real binary past its own shim. Release writes keep
 logged inherit flows via `command-invocation.mjs`; release reads use `runGit`.
+`resolveRoutePlan` returns both coverage commands and build/static/localization classification. `check-plan.mjs` composes the actual completion steps from that result; plan display and execution consume the same step definitions. Git path selection remains separate; the obsolete standalone classification wrapper is removed.
+
 Route glob matching precompiles `ROUTES` + shared build patterns once instead
 of per file. The `documentation` route covers `Docs/**` so check classification
 (`isDocumentationPath`) and verify routing agree on documentation images.

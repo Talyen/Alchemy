@@ -3,15 +3,17 @@ import { BattleCardEffectSchema, keywordDefinitions, type KeywordId } from "@/li
 import { createUniqueGearBattleState } from "@/lib/battle";
 import { recordNestedValidationWarnings } from "./validation-utils";
 
-const echoCardSchema = z.looseObject({
-  id: z.string(),
-  title: z.string(),
-  art: z.string(),
-  cost: z.number().nonnegative(),
-  descriptionLines: z.array(z.string()),
-  effects: z.array(BattleCardEffectSchema),
-  tags: z.array(z.enum(Object.keys(keywordDefinitions) as KeywordId[])).optional(),
-});
+const echoCardSchema = z
+  .looseObject({
+    id: z.string(),
+    title: z.string(),
+    art: z.string(),
+    cost: z.number().nonnegative(),
+    descriptionLines: z.array(z.string()),
+    effects: z.array(BattleCardEffectSchema),
+    tags: z.array(z.enum(Object.keys(keywordDefinitions) as KeywordId[])).optional(),
+  })
+  .transform(({ tags, ...card }) => ({ ...card, ...(tags === undefined ? {} : { tags }) }));
 
 const ready = z.boolean().catch(false);
 const cardUid = z.number().int().nonnegative().nullable().catch(null);

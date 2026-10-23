@@ -1,3 +1,6 @@
+import type { Immutable } from "immer";
+import { createEmptyRewardState, type RewardState } from "./reward-types";
+import type { BattleCard } from "@/lib/game-data";
 import { emptyAlchemyVisit, type AlchemyVisit } from "./alchemy-visits";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { CorruptionResult } from "@/lib/corruption";
@@ -23,20 +26,30 @@ export interface RunActivityData {
 }
 
 type VisitActivity = { [K in keyof RunActivityData]: { kind: K; data: RunActivityData[K] } }[keyof RunActivityData];
-export type RunProgressActivityKind =
-  | "rewards"
-  | "destination"
-  | "labyrinth-map"
-  | "wildwood-removal"
-  | "draft-deck"
-  | "difficulty-select";
+export type RunProgressActivityKind = "labyrinth-map" | "wildwood-removal" | "draft-deck" | "difficulty-select";
 interface ActiveBattle {
   battleState: BattleSnapshot;
+}
+
+export interface RewardActivityData {
+  state: RewardState;
+  companionCards: BattleCard[] | null;
+}
+export type DestinationActivityData = Pick<
+  RewardState,
+  "destinations" | "selectedBossId" | "lastVictoryEnemyType" | "lastVictoryContentSystem"
+>;
+
+export function destinationActivityData(state: RewardState): DestinationActivityData {
+  const { destinations, selectedBossId, lastVictoryEnemyType, lastVictoryContentSystem } = state;
+  return { destinations, selectedBossId, lastVictoryEnemyType, lastVictoryContentSystem };
 }
 
 export type RunActivity =
   | { kind: "inactive" | "idle" | RunProgressActivityKind }
   | { kind: "battle"; data: ActiveBattle }
+  | { kind: "rewards"; data: RewardActivityData }
+  | { kind: "destination"; data: DestinationActivityData }
   | VisitActivity;
 
 function deepFreeze<T>(obj: T): T {
@@ -79,4 +92,25 @@ export function isActiveRunActivity(activity: RunActivity): boolean {
 
 export function runActivityScreen(activity: RunActivity): Screen | null {
   return activity.kind === "idle" || activity.kind === "inactive" ? null : activity.kind;
+}
+
+const emptyRewardActivity = deepFreeze({ state: createEmptyRewardState(), companionCards: null });
+const rewardViews = new WeakMap<object, Immutable<RewardActivityData>>();
+
+/** Compatibility read shape; the activity remains the sole owner of its payload. */
+export function readRewardActivity(activity: RunActivity): RewardActivityData;
+export function readRewardActivity(activity: Immutable<RunActivity>): Immutable<RewardActivityData>;
+export function readRewardActivity(activity: Immutable<RunActivity>): Immutable<RewardActivityData> {
+  if (activity.kind === "rewards") return activity.data;
+  if (activity.kind !== "destination") return emptyRewardActivity;
+  // Cache only committed data. Transactions must always see their latest writes.
+  const immutable = Object.isFrozen(activity.data);
+  const cached = immutable ? rewardViews.get(activity.data) : undefined;
+  if (cached) return cached;
+  const result = { state: { ...emptyRewardActivity.state, ...activity.data }, companionCards: null };
+  if (immutable) {
+    Object.freeze(result.state);
+    rewardViews.set(activity.data, Object.freeze(result));
+  }
+  return result;
 }
