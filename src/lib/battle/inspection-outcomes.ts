@@ -1,6 +1,5 @@
 import {
   areBattleCardEffectsEqual,
-  effectChildren,
   type BattleCard,
   type BattleCardEffect,
   type BattleCardEffectKind,
@@ -59,7 +58,11 @@ class ForkInspection extends Error {
 function walk(effects: readonly BattleCardEffect[], visit: (effect: BattleCardEffect) => void): void {
   for (const effect of effects) {
     visit(effect);
-    if (INSPECTION_EFFECT_POLICY[effect.kind] !== "deferred") walk(effectChildren(effect), visit);
+    // Delayed repeats remain opaque; chance children keep success/failure order.
+    if (effect.kind === "chance") {
+      walk(effect.successEffects, visit);
+      walk(effect.failureEffects, visit);
+    }
   }
 }
 
@@ -149,21 +152,28 @@ export function inspectResolutionOutcomes(
 
   const inspected = new Map<BattleCardEffect, InspectedPackets>();
   for (const effect of sources) {
-    const applicable = outcomes.filter((outcome) => outcome.eligible.has(effect));
-    if (
-      INSPECTION_EFFECT_POLICY[effect.kind] === "deferred" ||
-      applicable.length === 0 ||
-      applicable.some((outcome) => !outcome.complete && !outcome.packets.has(effect))
-    ) {
+    const packets: Array<readonly ObservedAttack[]> = [];
+    let unknown = INSPECTION_EFFECT_POLICY[effect.kind] === "deferred";
+    if (!unknown) {
+      for (const outcome of outcomes) {
+        if (!outcome.eligible.has(effect)) continue;
+        if (!outcome.complete && !outcome.packets.has(effect)) {
+          unknown = true;
+          break;
+        }
+        packets.push(outcome.packets.get(effect) ?? []);
+      }
+    }
+    if (unknown || packets.length === 0) {
       inspected.set(effect, { kind: "unknown" });
       continue;
     }
-    const packets = applicable.map((outcome) => outcome.packets.get(effect) ?? []);
     const first = packets[0] ?? [];
     const exact = packets.every(
       (candidate) =>
-        candidate.length === first.length &&
-        candidate.every((packet, index) => areBattleCardEffectsEqual(packet, first[index]!)),
+        candidate === first ||
+        (candidate.length === first.length &&
+          candidate.every((packet, index) => areBattleCardEffectsEqual(packet, first[index]!))),
     );
     inspected.set(effect, exact ? { kind: "exact", packets: first } : { kind: "alternatives", outcomes: packets });
   }

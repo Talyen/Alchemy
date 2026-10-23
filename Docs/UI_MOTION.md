@@ -74,9 +74,9 @@ disabled motion preserves selection emphasis without decorative animation.
 
 ## Battle motion
 
-Living combatant artwork, including companions, scales to 103.5% during its active
-turn alongside the shine border. Standard hover scaling multiplies that size by
-1.035 again (about 107.1% total), with the shared 200ms ease-out transition.
+Living combatant artwork, including Companions, enlarges during its active turn
+alongside the shine border. Hover multiplies that active size. Exact scale and
+transition values belong to [component styles](../src/styles/components.css).
 
 This guide owns visible battle feedback; [the playback workflow](./WORKFLOWS.md#change-battle-playback)
 owns wiring and lifecycle. Battle VFX live in `run-loop/battle` (visual state in
@@ -96,9 +96,10 @@ target every 180ms. Every resolved impact still retains its flash, numbers, and
 sound. These effects never delay input. Each action requests each combat sound family
 at most once. Player and enemy deaths share the slice effect and battle-end delay;
 Death's Door is not defeat, and voluntary run exits remain immediate.
-The shared 1.25-second death effect uses a straight diagonal cut for both portrait
-halves and particle origins. A pointed white blade flash with a restrained warm
-halo sweeps across in 100ms and fades by 180ms. Dark shading and thin warm glints
+The shared death effect uses a straight diagonal cut for portrait halves and
+particle origins, with a pointed white blade flash and restrained warm halo.
+[Battle timing](../src/lib/game-constants/battle-timing.ts) and the effect's styles
+own durations. Dark shading and thin warm glints
 follow the cut edges as the halves separate and fade; a small directional spark
 burst accompanies the cut, followed by the existing border dissolve. Motion-disabled
 preferences skip the effect and its sound cue.
@@ -115,7 +116,7 @@ Draws fly from the bottom-left Draw Pile into measured hand slots and flip from
 back to front. Discards leave right-to-left, flip onto the bottom-right Discard
 Pile, and scale to its top card. Both follow the shallow curved path in
 [transfer motion](../src/features/alchemy/run-loop/battle/presentation/card-transfer-motion.ts),
-with a 500ms base duration accelerated for larger batches. Flights run sequentially;
+with batch-accelerated timing. Flights run sequentially;
 each departure starts its sound. The live card identity follows hand reflow.
 Tuning lives in `CARD_TRANSFER_CONFIG`.
 
@@ -129,9 +130,11 @@ committed card hidden. Played cards retain their travel, pop, and fade animation
 
 When equipping, unequipping, or replacing gear and trinkets:
 
-- **Transfer animation**: Artwork flies between its inventory tile and equipment slot across an unclipped, portaled overlay (`ArmoryTransferOverlay`) over 220ms with an ease-out curve (`easeOut`).
+- **Transfer animation**: Artwork flies between inventory and equipment through
+  the unclipped [ArmoryTransferOverlay](../src/features/alchemy/meta/screens/armory/armory-transfer-overlay.tsx),
+  which owns duration and easing.
 - **Artwork visibility**: During the in-flight transfer, destination artwork remains hidden (`opacity-0`) to prevent visual duplication until the animation completes and the transfer settles.
-- **Position reflow**: When an empty-slot equip, unequip, or hand displacement causes inventory items to shift, surrounding items animate smoothly to their new positions over 200ms using layout position transitions (`motion.div layout="position"`).
+- **Position reflow**: When an empty-slot equip, unequip, or hand displacement causes inventory items to shift, surrounding items animate to their new positions using layout position transitions (`motion.div layout="position"`).
 - **Interruption safety**: Any navigation, category switch, slot change, window resize, scroll, or unmount immediately settles all active in-flight transfers, restoring artwork visibility and removing portaled overlays without lingering visual artifacts.
 - **Reduced motion**: When reduced motion is preferred (`prefers-reduced-motion: reduce`), transfers settle immediately with zero travel duration and no portaled flight overlay.
 

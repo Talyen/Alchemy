@@ -150,7 +150,7 @@ export function carryCardDescriptionMarks(previous: CardDescription, description
 
 export function renderCardDescription(effects: readonly BattleCardEffect[], description: CardDescription) {
   const magnitudes: RenderedCardMagnitude[] = [];
-  const identities = new Map<string, string>();
+  const identities = new Map<string, CardMagnitude>();
   type MessagePart = Parameters<typeof buildDescriptionMessage>[0][number];
   const localizedParts: Array<Array<string | MessagePart>> = [];
   const descriptionLines = description.map(({ parts }, lineIndex) => {
@@ -164,11 +164,11 @@ export function renderCardDescription(effects: readonly BattleCardEffect[], desc
       }
       const value = cardMagnitudeValue(effects, part);
       if (value === null) throw new Error("Card description references inconsistent effect fields");
-      const signature = magnitudeSignature(part);
       const previous = identities.get(part.id);
-      if (previous !== undefined && previous !== signature)
+      // Most IDs occur once. Build signatures only when an ID is reused.
+      if (previous !== undefined && magnitudeSignature(previous) !== magnitudeSignature(part))
         throw new Error("Card magnitude identity references different effect fields");
-      identities.set(part.id, signature);
+      identities.set(part.id, part);
       const text = formatMagnitude(value, part.format);
       messageParts.push({ text, magnitudeId: part.id });
       magnitudes.push({ id: part.id, magnitude: part, value, lineIndex });
