@@ -20,7 +20,13 @@ defineScript(import.meta.url, async () => {
     await ctx.standalone();
     const explicit = selectors.length ? await ctx.globTestSpecifications(selectors) : [];
     if (selectors.length && !explicit.length) throw new Error("No unit tests matched explicit selections");
-    const dependent = related.length ? await ctx.getRelevantTestSpecifications() : [];
+    const owned = new Set(explicit.map((spec) => spec.taskId));
+    const remaining = related.length
+      ? (await ctx.globTestSpecifications()).filter((spec) => !owned.has(spec.taskId))
+      : [];
+    const dependent = remaining.length
+      ? await ctx.getRelevantTestSpecifications(remaining.map((spec) => spec.moduleId))
+      : [];
     const unique = new Map([...explicit, ...dependent].map((spec) => [spec.taskId, spec]));
     console.log(`Unit selection: ${unique.size} files; one discovery session and reservation.`);
     if (!unique.size) return 0;
