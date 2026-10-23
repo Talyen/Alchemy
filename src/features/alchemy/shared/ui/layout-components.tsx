@@ -116,6 +116,7 @@ export function TitledScreenShell({
   leading,
   onBack,
   onMenu,
+  aboveHeader,
 }: {
   title: ReactNode;
   children: ReactNode;
@@ -125,12 +126,14 @@ export function TitledScreenShell({
   leading?: ReactNode;
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
+  aboveHeader?: ReactNode;
 }) {
   useGameTranslation();
   return (
     <div className="relative h-full w-full overflow-hidden">
       <PageLayout>
         <ScreenShell className={cn("relative z-10", className)} {...(maxWidthClass ? { maxWidthClass } : {})}>
+          {aboveHeader ? <div className="mb-3 flex justify-center">{aboveHeader}</div> : null}
           <ScreenHeaderRow title={title} leading={leading} trailing={headerActions} onBack={onBack} onMenu={onMenu} />
           {children}
         </ScreenShell>
