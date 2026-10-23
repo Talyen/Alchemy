@@ -9,6 +9,7 @@ import type { BattleCard } from "@/lib/game-data";
 import type { AlchemyVisit, TransmutationSelectionCommand } from "@/lib/active-run-session/alchemy-visits";
 import { getTransmutationOffers, canTransmuteCard, isTransmutationSourceCurrent } from "@/lib/alchemist/transmutation";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
+import { useCaptureEscapeCancel } from "../../shared/ui/dialogs/use-modal-escape-dismiss";
 import { SelectableCard } from "../../shared/ui/cards/selectable-card";
 import { CardSelectionGrid } from "../../shared/ui/cards/card-selection-grid";
 import { CardTitle } from "../../shared/ui/cards/card-description-ui";
@@ -129,6 +130,9 @@ export function TransmutationScreen({
       setError("choice");
     }
   }
+
+  const back = () => select({ kind: "back" });
+  useCaptureEscapeCancel(source && !showResult ? back : undefined);
 
   function confirm() {
     if (
@@ -315,7 +319,7 @@ export function TransmutationScreen({
         )}
         {source && !showResult && (
           <div className="flex flex-wrap justify-center gap-3">
-            <Button size="lg" variant="outline" disabled={locked} onClick={() => select({ kind: "back" })}>
+            <Button size="lg" variant="outline" disabled={locked} onClick={back}>
               {i18n.text("ui.transmutation-screen.10", "Back")}
             </Button>
             {keyword && (

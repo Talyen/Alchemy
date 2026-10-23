@@ -24,7 +24,7 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
 
   return (
     <OptionsScreen
-      // Options always has a back target (backFromOptions); the fallback only
+      // Options always has a browsing back target; the fallback only
       // satisfies the shared route ctx's optional onBack for type-level safety.
       onBack={onBack ?? noop}
       onMenu={onOpenGameMenu}

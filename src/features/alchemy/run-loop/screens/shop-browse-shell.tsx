@@ -51,7 +51,7 @@ export function ShopBrowseOfferings({
         {children}
       </FadeSlot>
       {services ? <div className={cn("flex flex-wrap justify-center gap-3", serviceClassName)}>{services}</div> : null}
-      <Button size="lg" variant="primary" wrapperClassName="mt-2" className="min-w-56" onClick={onLeave}>
+      <Button size="lg" variant="outline" wrapperClassName="mt-2" className="min-w-56" onClick={onLeave}>
         {i18n.text("ui.shop-browse-shell.1", "Leave")}
       </Button>
     </div>
