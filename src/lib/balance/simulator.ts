@@ -7,6 +7,7 @@ import {
   getEffectiveDamageScore,
   getImmediateDamage,
   getImmediateDefense,
+  hasPotentialLethalSelfCost,
   pickHighestScoring,
   type BattleSnapshot,
 } from "@/lib/battle";
@@ -57,7 +58,9 @@ function chooseCardToPlay(
   policy: BalancePlayPolicy,
   policyRng: Rng,
 ): { card: BattleCard; index: number } | null {
-  const playable = getPlayableCards(state);
+  const playable = getPlayableCards(state).filter(
+    ({ card }) => policy === "random-playable" || !hasPotentialLethalSelfCost(card, state),
+  );
   if (playable.length === 0) return null;
   if (policy === "greedy-damage") return pickHighestScoring(playable, (card) => getImmediateDamage(card, state));
   if (policy === "greedy-effective-damage") {
