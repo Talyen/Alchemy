@@ -5,6 +5,7 @@ import { playUISound } from "@/lib/audio";
 import { CircleQuestionMark, MoveRight } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import type { BattleCard } from "@/lib/game-data";
 import type { AlchemyVisit, TransmutationSelectionCommand } from "@/lib/active-run-session/alchemy-visits";
 import { getTransmutationOffers, canTransmuteCard, isTransmutationSourceCurrent } from "@/lib/alchemist/transmutation";
@@ -18,6 +19,7 @@ import { BattleCardButton } from "../../shared/ui/cards/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/cards/card-description-ui";
 import { FadeSlot } from "../../shared/ui/use-fade";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
+import { keywordDefinitions } from "../../shared/config/game-data-catalog";
 import { focusableControls, focusControl, isFocusAvailable } from "../../shared/ui/dialogs/focus-navigation";
 
 export function TransmutationScreen({
@@ -38,6 +40,8 @@ export function TransmutationScreen({
   isProgressSavePending?: () => boolean;
 }) {
   const i18n = useGameTranslation();
+  const reducedMotion = useReducedMotionPreference();
+  const [keywordGlowRevision, setKeywordGlowRevision] = useState(0);
   const [page, setPage] = useState(0);
   const [error, setError] = useState<"choice" | "alteration" | "">("");
   const [committedHere, setCommittedHere] = useState(false);
@@ -120,6 +124,9 @@ export function TransmutationScreen({
     if (locked || isProgressSavePending() || committingRef.current || continued.current) return;
     restoreFocus.current = keyboardInput.current && panelRef.current?.contains(document.activeElement) === true;
     if (onSelect(command)) {
+      if (command.kind === "keyword") {
+        if (command.keyword !== keyword) setKeywordGlowRevision((revision) => revision + 1);
+      } else setKeywordGlowRevision(0);
       playUISound("transmuteSelect");
       setError("");
     } else {
@@ -254,7 +261,15 @@ export function TransmutationScreen({
               <div className={cn(controlLabelClass, viewCardWidthClass, "col-start-1 row-start-2")}>
                 <CardTitle card={source} />
               </div>
-              <MoveRight aria-hidden="true" className="col-start-2 row-start-1 h-10 w-10 self-center text-gold-pale" />
+              <MoveRight
+                key={keywordGlowRevision}
+                aria-hidden="true"
+                className={cn(
+                  "col-start-2 row-start-1 h-10 w-10 self-center",
+                  keyword ? keywordDefinitions[keyword].colorClass : "text-gold-pale",
+                  keyword && keywordGlowRevision > 0 && !reducedMotion && "transmutation-arrow-glow",
+                )}
+              />
               {preview ? (
                 <>
                   <BattleCardButton
