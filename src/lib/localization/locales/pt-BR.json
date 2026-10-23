@@ -2120,7 +2120,6 @@
   "ui.brew-potion-panel.d4": {"text":"Não há poções válidas.","sourceHash":"570a43e69751263ab2bec81882eb1012a9eaa620ab5a5ec8ddedfa54298d4b29","reviewed":true},
   "ui.brew-potion-panel.d5": {"text":"Não há receitas de poções disponíveis.","sourceHash":"321560d70e01e10a9bc24a91ee39a0c2709a4fe3043ed9cd468bcb4904515bc1","reviewed":true},
   "ui.brew-potion-panel.d6": {"text":"São necessárias duas Poções válidas.","sourceHash":"6349622b22ee8ed8a255dfb0fa9ce5c5d3affa3030c3609d2f9c32babea79d37","reviewed":true},
-  "ui.brew-potion-panel.d9": {"text":" · {{value0}} de ouro","sourceHash":"18f8ca98bf8a9d25b309cef341dfa5fccab80d58bb818bf1b89a69cd50dc91b0","reviewed":true},
   "ui.brew-potion-panel.s1": {"text":"Ouro insuficiente. Preparar custa <part0/> de ouro.","sourceHash":"e841fcafb0c5bff245ba18203fe878f2416ee972dda17c046d593e342dd76b0d","reviewed":true},
   "ui.campfire-screen.1": {"text":"Fogueira","sourceHash":"431283de905a481fbf06a1d52cbbbc35da4be75ed19460c7b1391f79b684bc35","reviewed":true},
   "ui.campfire-screen.4": {"text":"Uma poção aleatória foi adicionada ao baralho da jornada.","sourceHash":"922be446cb8bac31fdfae5e6936b9bd536a125356a10b3bf48a868424d3597c8","reviewed":true},

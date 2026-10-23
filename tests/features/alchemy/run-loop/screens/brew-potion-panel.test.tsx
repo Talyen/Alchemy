@@ -1,14 +1,16 @@
 import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrewPotionPanel } from "@/features/alchemy/run-loop/screens/brew-potion-panel";
 import { cardById, type BattleCard } from "@/lib/game-data";
 import { strengthenPotion } from "@/lib/alchemist/brewing";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
+import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 
 installFocusInputForTests(true);
+installReadyArtworkForTests();
 vi.mock("@/features/alchemy/shared/ui/cards/selectable-card", () => ({
   SelectableCard: ({ card, onSelect }: { card: BattleCard; onSelect: () => void }) => (
     <button onClick={onSelect}>Select {card.title}</button>
@@ -97,7 +99,7 @@ describe("Brew selection safety", () => {
     const { rerender } = render(<BrewPotionPanel {...p} />);
     fireEvent.click(screen.getByRole("button", { name: "Select Health Potion" }));
     if (kind === "combine") fireEvent.click(screen.getByRole("button", { name: "Select Mana Potion" }));
-    const action = `${kind === "strengthen" ? "Distill" : "Mix"} · 10 Gold`;
+    const action = kind === "strengthen" ? "Distill" : "Mix";
     fireEvent.click(screen.getByRole("button", { name: action }));
     rerender(<BrewPotionPanel {...p} deck={[brewed]} gold={0} isProgressSavePending={() => true} />);
     expect(screen.queryByRole("alert")).toBeNull();
@@ -160,7 +162,8 @@ describe("Brew selection safety", () => {
     fireEvent.click(screen.getByRole("button", { name: "Mix" }));
     expect(onConfirm).toHaveBeenCalledExactlyOnceWith({ kind: "combine", indices: [0, 1] });
   });
-  it.each(["new", "strengthen"] as const)("keeps %s choices above a persistent input slot and preview", (kind) => {
+  it("keeps Distill choices above a persistent input slot and preview", () => {
+    const kind = "strengthen" as const;
     const onConfirm = vi.fn(() => null),
       onBack = vi.fn();
     const cards = [cardById["health-potion"]!, cardById["mana-potion"]!];
@@ -178,14 +181,60 @@ describe("Brew selection safety", () => {
     fireEvent.click(screen.getByRole("button", { name: "Select Health Potion" }));
     expect(screen.getByRole("button", { name: "Remove Potion from slot 1" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Select Mana Potion" })).toBeTruthy();
-    if (kind === "strengthen")
-      expect(screen.getByRole("button", { name: "Inspect brew result: Health Potion" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Inspect brew result: Health Potion" })).toBeTruthy();
     expect(onConfirm).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("img", { name: "Empty Potion slot 1" })).toBeTruthy();
     expect(onBack).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Select Mana Potion" }));
-    fireEvent.click(screen.getByRole("button", { name: kind === "new" ? "Brew" : "Distill" }));
-    expect(onConfirm).toHaveBeenCalledExactlyOnceWith(kind === "new" ? { kind, offerIndex: 1 } : { kind, index: 1 });
+    fireEvent.click(screen.getByRole("button", { name: "Distill" }));
+    expect(onConfirm).toHaveBeenCalledExactlyOnceWith({ kind, index: 1 });
+  });
+  it("chooses Brew through the slot, reopens choices, and cancels without replacing or purchasing", async () => {
+    const onConfirm = vi.fn(() => null),
+      onBack = vi.fn();
+    const cards = [cardById["health-potion"]!, cardById["mana-potion"]!];
+    render(
+      <BrewPotionPanel
+        kind="new"
+        variant="alchemist"
+        deck={cards}
+        offers={cards}
+        price={40}
+        gold={100}
+        onConfirm={onConfirm}
+        onBack={onBack}
+      />,
+    );
+    const slot = () => screen.getByRole("button", { name: "Choose a Potion" });
+    expect(screen.queryByRole("button", { name: "Choose Health Potion" })).toBeNull();
+    const choose = async (title: string) => {
+      fireEvent.click(slot());
+      await waitForArtwork();
+      fireEvent.click(
+        within(screen.getByRole("dialog", { name: "Choose a Potion" })).getByRole("button", {
+          name: `Choose ${title}`,
+        }),
+      );
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    };
+    await choose("Health Potion");
+    expect(slot().querySelector("img")?.alt).toBe("Health Potion");
+    expect(onConfirm).not.toHaveBeenCalled();
+    fireEvent.click(slot());
+    await waitForArtwork();
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(slot().querySelector("img")?.alt).toBe("Health Potion");
+    expect(onBack).not.toHaveBeenCalled();
+    await choose("Mana Potion");
+    const buy = screen.getByRole("button", { name: "Brew" });
+    const cost = document.getElementById(buy.getAttribute("aria-describedby")!)!;
+    expect(buy.textContent).toBe("Brew");
+    expect(cost.querySelector('img[alt="Gold"]')).toBeTruthy();
+    expect(cost.closest("button")).toBeNull();
+    expect(cost.textContent).toContain("40");
+    fireEvent.click(buy);
+    expect(onConfirm).toHaveBeenCalledExactlyOnceWith({ kind: "new", offerIndex: 1 });
   });
 });

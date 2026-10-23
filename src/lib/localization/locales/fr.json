@@ -2120,7 +2120,6 @@
   "ui.brew-potion-panel.d4": {"text":"Aucune potion admissible.","sourceHash":"1ed383fb31e71a61302d330902d2c739b82433a30d35ade1c1d5c63badf1d760","reviewed":true},
   "ui.brew-potion-panel.d5": {"text":"Aucune recette de potion disponible.","sourceHash":"d175e236d0dac4827100bc4ed9382c3a4e677c5978a7eaed5cb96db308f8e9f2","reviewed":true},
   "ui.brew-potion-panel.d6": {"text":"Deux Potions admissibles requises.","sourceHash":"75068325a6c9221c2ee67627e04f8d5308d4742d10d9f3e99b944aaebcd4c9e1","reviewed":true},
-  "ui.brew-potion-panel.d9": {"text":" · {{value0}} Or","sourceHash":"183439aab0abc236cc805f4265ae4b0778e0cce572b8e0c251725b25db1ed6c5","reviewed":true},
   "ui.brew-potion-panel.s1": {"text":"Pas assez d'Or. La préparation coûte <part0/> Or.","sourceHash":"b804c4b012ccd22feeb68e1569a5c3b0abf6cdf375f349147d9cedcd7d41ebc2","reviewed":true},
   "ui.campfire-screen.1": {"text":"Feu de camp","sourceHash":"40a0cd1c23b8a2e67b92f1ed2820619450517e3c0f8ae7fadec88a61854d1f5a","reviewed":true},
   "ui.campfire-screen.4": {"text":"Une potion aléatoire a été ajoutée à votre deck de partie.","sourceHash":"c19ab2f2bac7fddb50514b9ee443b05931a793aa17fa95a0a876ce8db4fdaccc","reviewed":true},

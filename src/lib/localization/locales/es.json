@@ -2120,7 +2120,6 @@
   "ui.brew-potion-panel.d4": {"text":"No hay pociones válidas.","sourceHash":"d2018933063c9326f3cea339e69f7be0f0618901434cd7820b646f3f296d4e59","reviewed":true},
   "ui.brew-potion-panel.d5": {"text":"No hay recetas de pociones disponibles.","sourceHash":"5bd2d9c1cf56d0ad4a7fe5f175724af5b3b64b5ebb7f21e58d1bce9782460826","reviewed":true},
   "ui.brew-potion-panel.d6": {"text":"Se necesitan dos Pociones válidas.","sourceHash":"26f369435bbb98c0517b53f36c5d2b0472ec7198f458579459170db4d1f2aafd","reviewed":true},
-  "ui.brew-potion-panel.d9": {"text":" · {{value0}} de oro","sourceHash":"26429c420b770bb868d2f5f7e999e9d6dfdf0dffd25c56530fd1e8c9e8a4108b","reviewed":true},
   "ui.brew-potion-panel.s1": {"text":"Oro insuficiente. Elaborar cuesta <part0/> de oro.","sourceHash":"166a5e8416ef6d539ca4796299f57727358d8b2a7abb5dbc1f2f7864d78c2dc2","reviewed":true},
   "ui.campfire-screen.1": {"text":"Hoguera","sourceHash":"7c9c11cb827dd1b4e52c8daf0aa97ffbd92cdcb7ffb0b03f84d8505be40f22ad","reviewed":true},
   "ui.campfire-screen.4": {"text":"Se ha añadido una poción aleatoria al mazo de tu aventura.","sourceHash":"816126f04db711b501e8f25e0a6e360019619a190bbc7e48b55504f97611f3c5","reviewed":true},
