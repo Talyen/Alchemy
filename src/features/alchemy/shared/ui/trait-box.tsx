@@ -7,14 +7,15 @@ import { cn } from "@/lib/utils";
 import { getEncounterTraitPresentation } from "../config/encounter-trait-presentation";
 import { getEnemyTraitIcon } from "../config/enemy-trait-icons";
 import { keywordDefinitions, type EnemyTrait } from "../config/game-data-catalog";
+import { tooltipBodyLineClass, tooltipHeaderClass } from "../config/typography";
 import { renderColoredKeywords } from "./cards/card-description-ui";
 import { ShineText } from "./shine-text";
 
-export type TraitBoxVariant = "default" | "compact";
+export type TraitBoxVariant = "default" | "tooltip";
 
 export function TraitBox({ trait, variant = "default" }: { trait: EnemyTrait; variant?: TraitBoxVariant }) {
   const i18n = useGameTranslation();
-  const compact = variant === "compact";
+  const tooltip = variant === "tooltip";
   const keywords = extractKeywordIds(trait.description);
   const encounter = getEncounterTraitPresentation(trait.id);
   const thematic = encounter?.keywords ?? [];
@@ -25,25 +26,15 @@ export function TraitBox({ trait, variant = "default" }: { trait: EnemyTrait; va
     <div
       data-trait={trait.id}
       data-trait-variant={variant}
-      className={cn(
-        "grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center",
-        compact ? "gap-x-[calc(0.5*var(--content-rem,1rem))]" : "gap-x-3",
-      )}
+      className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3"
     >
       {i18n.displayText(
         createElement(Icon, {
           "aria-hidden": true,
-          className: cn(compact ? "text-[length:calc(0.875*var(--content-rem,1rem))]" : "text-lg", colorClass),
+          className: cn("text-lg", colorClass),
         }),
       )}
-      <h3
-        className={cn(
-          "font-semibold",
-          compact
-            ? "text-[length:calc(0.875*var(--content-rem,1rem))] leading-[var(--text-lg--line-height)]"
-            : "text-lg",
-        )}
-      >
+      <h3 className={tooltip ? tooltipHeaderClass : "text-lg font-semibold"}>
         <ShineText
           colors={encounter?.textShineColors ?? getKeywordTextShineColors(keywords.length > 0 ? keywords : thematic)}
           fallbackClassName="text-stone-200"
@@ -53,10 +44,8 @@ export function TraitBox({ trait, variant = "default" }: { trait: EnemyTrait; va
       </h3>
       <p
         className={cn(
-          "col-start-2 leading-relaxed whitespace-pre-line text-stone-300",
-          compact
-            ? "mt-[calc(0.1875*var(--content-rem,1rem))] text-[length:calc(0.75*var(--content-rem,1rem))]"
-            : "mt-1 text-base",
+          "col-start-2 mt-1 whitespace-pre-line",
+          tooltip ? tooltipBodyLineClass : "text-base leading-relaxed text-stone-300",
         )}
       >
         {i18n.displayText(i18n.read(() => renderColoredKeywords(trait.description)))}

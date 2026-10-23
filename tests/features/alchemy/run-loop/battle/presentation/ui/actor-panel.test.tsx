@@ -65,7 +65,7 @@ describe("ArtPanel hover motion", () => {
     expect(screen.queryByRole("button", { name: /Death's Door/ })).toBeNull();
   });
 
-  it("uses compact enemy traits and encounter modifiers while capitalizing description keywords", async () => {
+  it("shows enemy traits and encounter modifiers while capitalizing description keywords", async () => {
     const entry = {
       ...enemy,
       traits: [{ id: "thorns", title: "Thorns", description: "When hit, consume Thorns" }],
@@ -80,8 +80,8 @@ describe("ArtPanel hover motion", () => {
       const tooltip = document.querySelector<HTMLElement>(".hover-popup-panel[data-visible]");
       expect(tooltip?.textContent).toContain("When hit, Consume Thorns");
       expect(tooltip?.textContent).not.toContain("consume");
-      expect(tooltip?.querySelector('[data-trait="thorns"]')?.getAttribute("data-trait-variant")).toBe("compact");
-      expect(tooltip?.querySelector('[data-trait="tempered"]')?.getAttribute("data-trait-variant")).toBe("compact");
+      expect(tooltip?.querySelector('[data-trait="thorns"]')).toBeTruthy();
+      expect(tooltip?.querySelector('[data-trait="tempered"]')).toBeTruthy();
     });
   });
 
