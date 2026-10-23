@@ -6,33 +6,31 @@ Git authorization and local integration. Read known owners directly; use
 
 ## What to run when you change…
 
-Use these commands for ordinary work:
+Use four entry points for ordinary work:
 
-| Need                                         | Command                               |
-| -------------------------------------------- | ------------------------------------- |
-| Check the whole isolated task                | `npm run check:task`                  |
-| Check selected paths                         | `npm run check -- <task-owned paths>` |
-| Run focused units                            | `npm run test:unit -- <test-paths>`   |
-| Run every unit suite                         | `npm run test:unit:all`               |
-| Add full static checks and applicable builds | `npm run check:broad -- --task`       |
-| Run the three small Node smoke suites        | `npm run test:smoke`                  |
+| Need                                                                                   | Command                                            |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Check the isolated task                                                                | `npm run check`                                    |
+| Check selected paths                                                                   | `npm run check -- <paths>`                         |
+| Check the entire repository, including every unit suite, full static checks and builds | `npm run check:all`                                |
+| Diagnose units                                                                         | `npm run test:unit -- <test-files-or-directories>` |
 
-`check:task` selects all committed changes since the task's recorded base, plus
-staged, unstaged and untracked changes in that isolated checkout. Creation records
-the base once; committing or merging main does not reset it. Renames select both
-paths. The gate rechecks task membership before reporting success. Older worktrees
-without a recorded base must use explicit task paths; the selector never guesses.
-`check:broad` accepts the same path selectors as `check`; it adds full static checks
-and applicable builds, while units remain path-selected. `test:unit:all` runs all
-units. Existing commands, including `check:full`, `test:full`, and `npm test`, retain
-their behavior; `npm test` is the small smoke run.
+`check` defaults to the current isolated task. Its selection is the task delta
+against the latest shared ancestor with local `main`, plus staged, unstaged and
+untracked files. Merging main excludes changes contributed only by other tasks.
+The original recorded task base remains provenance; it is not the check selector.
+The gate rechecks membership before reporting success. Unrecorded task branches
+must use explicit paths. Renames select both paths.
 
-Use `--diff` for working changes only when the entire dirty set belongs to the task.
-A clean diff selects nothing. Use `--committed HEAD` (or another revision) to check
-paths changed by one commit explicitly; execution uses the current checkout. Unknown paths fail; Git-recognized deletions stay selectable.
-Add `--plan` to preview selected checks. Include deleted paths; omit unit paths
-only when you intend to run all units. Retained command aliases are documented in
-[the implementation reference](./scripts/VERIFICATION.md#compatibility-commands-and-test-runners).
+`test:unit` without paths runs all units. Explicit test paths must exist; the
+runner rejects missing paths before Vitest can silently ignore a mixed selection.
+Add `--plan` to a check to preview its actual scope. Use `--diff` only when the
+entire dirty set belongs to the task, or `--committed HEAD` for one commit's paths;
+execution always uses the current checkout. Include deleted paths.
+
+Older commands remain supported for compatibility. [Implementation details](./scripts/VERIFICATION.md#compatibility-commands-and-test-runners)
+cover aliases, selective broad checks and advanced selectors; ordinary tasks do
+not need that reference.
 
 The task gate selects changed and dependency-related units, explicit lifecycle,
 save, desktop or tooling protection, source/test compilation, localization freshness
@@ -53,7 +51,7 @@ release authorization rules.
 
 Run the task gate before handoff. Protected integration checks the merged task
 against pinned main/task commits, then revalidates both under the integration lock
-before advancing clean main. If main advances during verification, integration
+before advancing the clean integration checkout on `main`. If main advances during verification, integration
 incorporates it and checks again. Pre-push uses the same task gate against outgoing
 changes and requires a clean checkout. A passing gate establishes local completion
 for its reported scope; claim CI or platform acceptance only when actually run.
@@ -64,21 +62,21 @@ comparison and affected interactions. Finalize text in the task worktree, then
 [translate and review](./Docs/LOCALIZATION.md#agent-workflow) before final checks
 and integration. Checks and builds never invoke a translation service.
 
-Tests share a host-wide budget: one broad run plus one focused unit run with one
-worker. A focused run selects one or two explicit test files without extra flags.
-Use `npm run test:status` to see managed owners and waiting work. Occupied
-reservations wait and remain cancellable; never terminate another task's run.
-Raw CLI/watch commands bypass the budget and require manual coordination. For test filters, verify the reported file count: Vitest can
-ignore a misspelled path when another filter matches. [Runner details](./scripts/VERIFICATION.md#compatibility-commands-and-test-runners)
-cover deadlines, contention and overrides.
+The runner schedules tests automatically and prints the selected lane. One broad
+run and one focused unit run can execute together; focused runs use one worker,
+including when filtering by test name or selecting a reporter. Reservations wait
+and remain cancellable. Never terminate another task's run. Use `test:status`
+only to diagnose contention. Raw CLI/watch commands bypass managed scheduling.
+[Runner details](./scripts/VERIFICATION.md#compatibility-commands-and-test-runners)
+are for diagnosing scheduling and advanced filters.
 
 ### Agent preview ownership
 
 Use `npm run agent:browser -- <action and arguments>` for interactive review on
 macOS/Linux. Task sessions and a 1920 × 1080 viewport are automatic. Use
 `set viewport <width> <height>` for responsive checks. Screenshots default to
-`reports/visual-review/`. Final integration preserves the complete `reports/`
-directory and non-build ignored files in its reported integration bundle.
+`reports/visual-review/`. Task finishing preserves the complete `reports/` directory and non-build ignored
+files in its reported integration bundle.
 
 For repeatable screen captures, use `npm run visual:scenario -- --list`, then
 `npm run visual:scenario -- battle --label before`. The command starts a private
@@ -86,10 +84,11 @@ current-source server and isolated browser context, seeds its checkpoint, and
 captures the settled screen. [Visual review](./Docs/UI_VISUAL_REVIEW.md#reproducible-scenarios)
 owns scenario options and original/candidate comparison.
 
-Checks preserve interactive sessions. Final integration closes task browsers and
-removes the completed worktree after releasing the shared integration lock;
-`--keep-worktree` preserves both for continued work. Never close all sessions or
-reclaim another task's browser. [Preview details](./scripts/VERIFICATION.md#preview-implementation-notes)
+Checks and integration preserve interactive sessions. After reviewing integration,
+run `node scripts/agent-worktree.mjs finish --task <slug>` from the original
+workspace to preserve evidence, close task browsers and remove the completed
+worktree. A cleanup failure leaves integration complete and prints its retry
+command. Never close all sessions or reclaim another task's browser. [Preview details](./scripts/VERIFICATION.md#preview-implementation-notes)
 cover one-shot runners and platform behavior.
 
 ## Verification reuse

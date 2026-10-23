@@ -39,3 +39,6 @@ release-desktop-demo/
 
 # Raw masters live in the external Asset Library.
 /Raw Assets/
+
+# Python bytecode caches
+__pycache__/

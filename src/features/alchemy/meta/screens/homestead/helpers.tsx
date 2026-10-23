@@ -90,9 +90,11 @@ export function getArt(id: string): string {
 export function renderTextWithMaterials(text: string, options?: TokenizedTextOptions): ReactNode {
   return renderMessage(buildDescriptionMessage([{ text }], true), {
     ...options,
-    renderResource: (label, resourceId, key) => (
-      <MaterialInlineChip key={key} material={resourceId as HomesteadResource} label={label} />
-    ),
+    renderResource:
+      options?.renderResource ??
+      ((label, resourceId, key) => (
+        <MaterialInlineChip key={key} material={resourceId as HomesteadResource} label={label} />
+      )),
   });
 }
 

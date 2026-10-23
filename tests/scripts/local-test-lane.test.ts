@@ -210,6 +210,8 @@ it("admits a focused unit alongside broad work, exposes a cancellable queue and 
       ["run", "tests/a.test.ts", "--coverage"],
     ])
       expect(testResourceClass("vitest", args)).toBe("broad");
+    expect(testResourceClass("vitest", ["run", "tests/a.test.ts", "-t", "payment", "--reporter=dot"])).toBe("focused");
+    expect(testResourceClass("vitest", ["run", "tests/a.test.ts", "--maxWorkers", "4"])).toBe("focused");
   } finally {
     await focused.release();
     await broad.release();

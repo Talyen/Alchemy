@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { acquireExclusivePort } from "../exclusive-port.mjs";
+import { unitSelection } from "./unit-selection.mjs";
 
 const LOCAL_TEST_PORT = 48157;
 
@@ -28,14 +29,12 @@ export function usesLocalTestLane(command, args) {
 // A broad run retains the existing lane. One explicitly focused unit run gets
 // a separate one-worker reservation; directories, related and coverage stay broad.
 export function testResourceClass(command, args) {
-  const tool = path.basename(command).replace(/\.(?:cmd|exe)$/u, "");
+  const tool = command
+    .split(/[\\/]/u)
+    .at(-1)
+    .replace(/\.(?:cmd|exe)$/u, "");
   if (tool !== "vitest" || args[0] !== "run") return "broad";
-  const files = args.slice(1);
-  return files.length >= 1 &&
-    files.length <= 2 &&
-    files.every((arg) => /\.test\.tsx?$/u.test(arg) && !arg.startsWith("-"))
-    ? "focused"
-    : "broad";
+  return unitSelection(args).focused ? "focused" : "broad";
 }
 
 const STATUS_DIRECTORY = path.join(
