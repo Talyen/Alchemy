@@ -220,8 +220,10 @@ buttons stay centered below the full comparison, with equal gaps above and below
 keyword fills the empty slot with its saved preview; the arrow centers on the card art,
 independent of titles and controls. Keyword buttons keep translated accessible names
 and a visible selected state, without hover tooltips. Inspect the card for its effects.
-Switching keywords updates the preview without changing the deck. Back returns to the
-card picker without RNG or deck changes. Transmute commits the validated preview.
+Switching keywords keeps preview artwork mounted and fades only its label. Back returns to the
+card picker without RNG or deck changes. Transmute is visible before a choice and
+stays disabled until a valid keyword is chosen. It stays enabled during label
+transitions and commits the latest selected alteration immediately.
 After a covering save, show its inspectable result, play the card-reward chime once and wait for Continue. Pending/failed saves lock
 choices under [Saving/Retry feedback](./UI.md#pending-saves-and-action-feedback).
 Completed resume shows the saved result and Continue without another alteration or

@@ -137,7 +137,7 @@ describe("Transmutation flow", () => {
     render(<Harness />);
     click("Slash");
     expect(visit().transmutation).toMatchObject({ keyword: null, offerIndex: null });
-    expect(screen.queryByRole("button", { name: "Transmute" })).toBeNull();
+    expect((screen.getByRole("button", { name: "Transmute" }) as HTMLButtonElement).disabled).toBe(true);
     click("Choose Burn");
     expect(visit().transmutation).toMatchObject({ keyword: "burn", offerIndex: 1 });
     expect(screen.queryByRole("button", { name: "Choose Companion" })).toBeNull();
@@ -172,8 +172,10 @@ describe("Transmutation flow", () => {
     click("Slash");
     expect(screen.getByRole("button", { name: "Original: Slash" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /^Preview:/ })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Transmute" })).toBeNull();
+    expect((screen.getByRole("button", { name: "Transmute" }) as HTMLButtonElement).disabled).toBe(true);
     expect(visit().transmutation).toMatchObject({ keyword: null, offerIndex: null });
+    click("Transmute");
+    expect(onExchange).not.toHaveBeenCalled();
     expect(transmuteCard(0, 0, defaultGameSession)).toBeNull();
     const choices = within(screen.getByRole("group", { name: "Alterations" })).getAllByRole("button");
     expect(choices).toHaveLength(3);
@@ -203,7 +205,7 @@ describe("Transmutation flow", () => {
   });
 
   it.each([false, true])(
-    "only commits the latest preview after rapid switching (animations disabled: %s)",
+    "stays enabled and immediately commits the latest choice during label changes (animations disabled: %s)",
     async (disabled) => {
       if (disabled) localStorage.setItem("alchemy-disable-animations", "true");
       render(<Harness />);
@@ -219,11 +221,8 @@ describe("Transmutation flow", () => {
       choose(last);
       choose(first);
       choose(last);
-      expect((screen.getByRole("button", { name: "Transmute" }) as HTMLButtonElement).disabled).toBe(true);
-      click("Transmute");
-      expect(onExchange).not.toHaveBeenCalled();
+      expect((screen.getByRole("button", { name: "Transmute" }) as HTMLButtonElement).disabled).toBe(false);
       expect(readActiveRun(defaultGameSession).runDeck).toEqual(before);
-      await previewReady();
       expect(screen.getByRole("button", { name: `Preview: ${last.title}` })).toBeTruthy();
       click("Transmute");
       expect(readActiveRun(defaultGameSession).runDeck[0]).toEqual(last);
