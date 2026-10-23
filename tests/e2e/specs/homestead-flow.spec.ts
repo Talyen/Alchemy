@@ -121,8 +121,8 @@ test(
     const affordableFilter = await tile.evaluate((element) => getComputedStyle(element).filter);
     await tile.hover();
     await expect(panel).toBeVisible();
-    await expect(panel).not.toContainText("Physical damage");
-    await expect(panel).not.toContainText("Find");
+    await expect(panel).toContainText("Physical damage is increased by 1");
+    await expect(panel).toContainText("Find 10% more Iron");
     await expect(panel).toHaveAttribute("data-placement", "below");
     await expect(panel.getByRole("img", { name: "Level 0 of 4" })).toBeVisible();
     await expect(panel.getByLabel("Build cost: 4 Stone, 11 Iron").locator("img")).toHaveCount(2);
