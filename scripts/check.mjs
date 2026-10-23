@@ -155,6 +155,9 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
           RAYON_NUM_THREADS: "1",
         }),
   };
+  // Hooks export repository-local Git settings. Verification also initializes
+  // fixture repositories, which must never inherit the pushing checkout's paths.
+  for (const name of gitOutput(["rev-parse", "--local-env-vars"]).trim().split(/\s+/u)) delete env[name];
   let verifyArgs = [...paths];
   // Byte budget for inline CLI args before spilling the selection to paths.json.
   // Distinct from the related-test arg limit in change-routes.mjs (see

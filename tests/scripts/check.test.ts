@@ -81,6 +81,41 @@ describe("full source-aware completion gate", () => {
     }
   });
 
+  it("isolates verification children from the pushing repository's Git hook environment", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "alchemy-hook-environment-"));
+    const owner = join(directory, "owner");
+    const fixture = join(directory, "fixture");
+    try {
+      expect(spawnSync("git", ["init", "-q", owner]).status).toBe(0);
+      const config = join(owner, ".git/config");
+      const before = readFileSync(config, "utf8");
+      vi.stubEnv("GIT_DIR", join(owner, ".git"));
+      vi.stubEnv("GIT_COMMON_DIR", join(owner, ".git"));
+      vi.stubEnv("GIT_WORK_TREE", owner);
+      vi.stubEnv("GIT_IMPLICIT_WORK_TREE", "0");
+      vi.stubEnv("GIT_SSH_COMMAND", "ssh");
+      vi.spyOn(fs, "readFileSync").mockReturnValueOnce("");
+      vi.mocked(resolvePushPaths).mockReturnValueOnce(["Docs/REFERENCE.md"]);
+      const runner = vi.fn((_label, _command, _args, env: NodeJS.ProcessEnv) => {
+        for (const name of ["GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE", "GIT_IMPLICIT_WORK_TREE"])
+          expect(env[name]).toBeUndefined();
+        expect(env.GIT_SSH_COMMAND).toBe("ssh");
+        expect(spawnSync("git", ["init", "-q", fixture], { env }).status).toBe(0);
+        const root = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd: fixture, env, encoding: "utf8" });
+        expect(fs.realpathSync(root.stdout.trim())).toBe(fs.realpathSync(fixture));
+        return 0;
+      });
+      expect(
+        await runFullCheck(["--pre-push"], { runner, captureDigest: () => ({ head: "test", hash: "same" }) }),
+      ).toBe(0);
+      expect(runner).toHaveBeenCalled();
+      expect(readFileSync(config, "utf8")).toBe(before);
+      expect(process.env.GIT_DIR).toBe(join(owner, ".git"));
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it("runs documentation checks without unit, build, or browser work", async () => {
     const calls: string[] = [];
     const code = await runCheck(
