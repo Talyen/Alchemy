@@ -95,8 +95,8 @@ Astral definition-only previews use base affinities; Unique definition borders u
 
 ## Icons
 
-Lucide icons default to `0.9em` square and a `2.5` stroke in `src/styles/base.css`,
-matching label cap height and semibold weight. Put text size on the shared icon/label
+Lucide icons default to `1em` square and a `2.5` stroke in `src/styles/base.css`,
+matching the inherited text font size. Put text size on the shared icon/label
 container so both scale together; omit icon width and height utilities for text
 controls. Explicit dimensions are reserved for artwork, status markers, and
 comparison diagrams. Icon-only buttons set their font size through `Button`.
