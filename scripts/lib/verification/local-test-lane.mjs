@@ -107,15 +107,18 @@ export async function acquireTestResources(
       // Legacy clients still respect the exclusive listener. Queue ordering
       // applies to clients with leases, without trusting stale legacy records.
       canAcquire: async () => {
-        for (const entry of testResourceStatus(directory).filter(
-          (entry) =>
-            entry.state === "waiting" &&
-            entry.port === port &&
-            Number.isInteger(entry.leasePort) &&
-            entry.leasePort > 0 &&
-            entry.leasePort < 65536 &&
-            typeof entry.ticket === "string",
-        )) {
+        const waiters = testResourceStatus(directory)
+          .filter(
+            (entry) =>
+              entry.state === "waiting" &&
+              entry.port === port &&
+              Number.isInteger(entry.leasePort) &&
+              entry.leasePort > 0 &&
+              entry.leasePort < 65536 &&
+              typeof entry.ticket === "string",
+          )
+          .sort((a, b) => a.ticket.localeCompare(b.ticket));
+        for (const entry of waiters) {
           if (await ownsTicket(entry)) return entry.ticket === record.ticket;
         }
         return false;

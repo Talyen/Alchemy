@@ -236,7 +236,7 @@ it("admits waiters in order, skips canceled and reused-PID tickets, and holds a 
       pid: process.pid,
       state: "waiting",
       since: "2000-01-01",
-      ticket: "dead",
+      ticket: "000000000000000000000000-dead",
     }),
   );
   canceled.abort();
