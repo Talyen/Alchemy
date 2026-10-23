@@ -16,7 +16,7 @@ afterEach(() => {
   rmSync(`reports/runs/${runId}`, { recursive: true, force: true });
 });
 
-it("checks types by default without builds, installs, browsers or full lint", async () => {
+it("defers tests and compilation to CI while keeping lightweight task checks", async () => {
   const calls: string[] = [];
   expect(
     await runCheck(["src/App.tsx", "package.json"], {
@@ -33,7 +33,6 @@ it("checks types by default without builds, installs, browsers or full lint", as
   expect(calls).toEqual([
     "localization freshness and contracts",
     "changed-path verification",
-    "source and test types",
     "selected-file format",
     "selected-file lint",
   ]);
@@ -42,14 +41,9 @@ it("checks types by default without builds, installs, browsers or full lint", as
   );
 });
 
-it("selects consequential tooling and save protection by default while reserving broader gates", () => {
+it("defers automatic tooling and save suites while retaining full verification selection", () => {
   const plan = resolveRoutePlan(["scripts/check.mjs", "src/features/alchemy/shared/storage/io.ts"]);
-  expect(filterPlanCommands(plan, new Set()).commands.map((command) => command.key)).toEqual([
-    "unit-interactions",
-    "related",
-    "unit-save",
-    "unit-tooling",
-  ]);
+  expect(filterPlanCommands(plan, new Set()).commands).toEqual([]);
   expect(filterPlanCommands(plan, new Set(["full"])).commands).toBe(plan.commands);
   expect(
     filterPlanCommands(resolveRoutePlan(["Docs/REFERENCE.md"]), new Set()).commands.map((command) => command.key),
@@ -105,6 +99,16 @@ it("previews the same selection without executing or capturing source state", as
   const captureDigest = vi.fn(() => ({ head: "test", hash: "unchanged" }));
   expect(await runCheck(["scripts/check.mjs", "Docs/REFERENCE.md", "--plan"], { runner, captureDigest })).toBe(0);
   expect(runner).not.toHaveBeenCalled();
+  expect(captureDigest).not.toHaveBeenCalled();
+});
+
+it("rejects the full local gate before source capture while allowing its plan", async () => {
+  vi.stubEnv("GITHUB_ACTIONS", undefined);
+  vi.stubEnv("ALCHEMY_ALLOW_HEAVY_LOCAL", undefined);
+  const captureDigest = vi.fn(() => ({ head: "test", hash: "unchanged" }));
+  await expect(runCheck(["scripts/check.mjs", "--full"], { captureDigest })).rejects.toThrow("belongs to CI");
+  expect(captureDigest).not.toHaveBeenCalled();
+  expect(await runCheck(["scripts/check.mjs", "--full", "--plan"], { captureDigest })).toBe(0);
   expect(captureDigest).not.toHaveBeenCalled();
 });
 

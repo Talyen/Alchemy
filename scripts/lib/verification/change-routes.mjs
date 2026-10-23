@@ -198,7 +198,7 @@ const ROUTES = Object.freeze([
       "stryker.config.mjs",
     ],
     ["unit-tooling"],
-    [doc("Docs/REFERENCE.md", "Tooling ownership", "tooling commands")],
+    [doc("Docs/COMMANDS.md", "Script Command Reference", "tooling commands")],
     "scripts/check.mjs",
   ),
   route(
