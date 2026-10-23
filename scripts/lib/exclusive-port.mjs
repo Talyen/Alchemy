@@ -11,6 +11,7 @@ export async function acquireExclusivePort(
     onWait = console.log,
     canAcquire = () => true,
     onConnection = (socket) => socket.destroy(),
+    wait = (ms, signal) => delay(ms, undefined, { signal }),
   } = {},
 ) {
   if (timeoutMs !== null && (!Number.isFinite(timeoutMs) || timeoutMs < 0))
@@ -47,7 +48,7 @@ export async function acquireExclusivePort(
         onWait(`${label} still waiting (${Math.round(elapsed / 1000)}s; cancel to stop).`);
         nextStatus = Date.now() + 30_000;
       }
-      await delay(Math.min(250, remaining), undefined, { signal });
+      await wait(Math.min(250, remaining), signal);
       continue;
     }
     // Cancellation during bind must not leave a listening socket behind.

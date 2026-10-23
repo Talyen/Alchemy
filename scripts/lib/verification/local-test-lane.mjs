@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import net from "node:net";
+import { setTimeout as delay } from "node:timers/promises";
 import { randomUUID } from "node:crypto";
 import { acquireExclusivePort } from "../exclusive-port.mjs";
 import { unitSelection } from "./unit-selection.mjs";
@@ -91,6 +92,7 @@ export async function acquireTestResources(
   };
   let lane;
   let lease;
+  let watcher;
   try {
     // A PID may be reused after a crash. The private listener proves that the
     // waiting process still owns this exact ticket; the OS releases it on exit.
@@ -100,10 +102,28 @@ export async function acquireTestResources(
       onConnection: (socket) => socket.end(record.ticket),
     });
     record.leasePort = lease.port;
+    let change = new AbortController();
+    watcher = fs.watch(directory, { persistent: false }, () => change.abort());
+    watcher.on("error", () => {
+      watcher.close();
+      change.abort();
+    });
     write();
     lane = await acquireExclusivePort(port, {
       ...options,
       label: `Local ${kind} test lane`,
+      // Releases wake the queue immediately; polling still covers crashed owners.
+      wait: async (ms, signal) => {
+        const observed = change;
+        try {
+          await delay(ms, undefined, { signal: signal ? AbortSignal.any([signal, observed.signal]) : observed.signal });
+        } catch (error) {
+          signal?.throwIfAborted();
+          if (!observed.signal.aborted) throw error;
+        } finally {
+          if (observed.signal.aborted && change === observed) change = new AbortController();
+        }
+      },
       // Legacy clients still respect the exclusive listener. Queue ordering
       // applies to clients with leases, without trusting stale legacy records.
       canAcquire: async () => {
@@ -124,10 +144,12 @@ export async function acquireTestResources(
         return false;
       },
     });
+    watcher.close();
     record.port = lane.port;
     record.state = "active";
     write();
   } catch (error) {
+    watcher?.close();
     await lane?.release();
     await lease?.release();
     fs.rmSync(filename, { force: true });
