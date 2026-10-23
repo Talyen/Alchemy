@@ -495,7 +495,7 @@ export async function main(argv = process.argv.slice(2)) {
 
     if (fs.existsSync(worktreePath)) {
       console.error(`worktree already exists: ${worktreePath}`);
-      console.error(`remove with: node scripts/agent-worktree.mjs remove --task ${task}`);
+      console.error("Reuse this checkout for the same task, or choose a new --task slug.");
       process.exit(1);
     }
 
@@ -551,7 +551,7 @@ export async function main(argv = process.argv.slice(2)) {
       console.log("  npm ci  # install dependencies before verification");
     }
     console.log(`  cd "${root}"  # return before cleanup`);
-    console.log(`  node scripts/agent-worktree.mjs remove --task ${task}  # after merging to main`);
+    console.log(`  node scripts/agent-worktree.mjs finish --task ${task}  # after reviewing integration`);
     process.exit(0);
   }
 
