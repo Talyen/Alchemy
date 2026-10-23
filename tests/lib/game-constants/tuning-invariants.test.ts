@@ -4,6 +4,7 @@ import {
   CORRUPTION_OUTCOME_WEIGHTS,
   ENEMY_BALANCE_BY_TYPE,
   ENEMY_PRESSURE_OVERRIDES,
+  ENEMY_PROGRESSION_DEPTH_LIMIT,
   ENEMY_TRAIT_IDS,
   LOOT_DEPTH_CURVES,
   LOOT_SOURCE_WEIGHTS,
@@ -22,12 +23,21 @@ function pressureAt(enemyType: "normal" | "elite" | "boss", depth: number): numb
 describe("tuning invariants", () => {
   it("keeps enemy pressure curves finite and non-decreasing through the depth cap", () => {
     for (const enemyType of ["normal", "elite", "boss"] as const) {
+      const currentEnemy = {
+        ...enemyBestiary.find((enemy) => enemy.enemyType === enemyType)!,
+        id: "pressure-cap-probe",
+      };
       let previous = -Infinity;
-      // Loot depth caps at 25 (three 8-destination Acts plus the final boss).
-      for (let depth = 0; depth <= 25; depth += 1) {
-        const value = pressureAt(enemyType, depth);
+      for (let depth = 0; depth <= ENEMY_PROGRESSION_DEPTH_LIMIT + 2; depth += 1) {
+        const value = getEnemyAbilityPressure({
+          currentEnemy,
+          roomScalingMultiplier: 1 + depth * ROOM_SCALING_INCREMENT,
+        });
         expect(Number.isFinite(value)).toBe(true);
         expect(value).toBeGreaterThanOrEqual(previous);
+        if (depth >= ENEMY_PROGRESSION_DEPTH_LIMIT) {
+          expect(value).toBeCloseTo(pressureAt(enemyType, ENEMY_PROGRESSION_DEPTH_LIMIT), 10);
+        }
         previous = value;
       }
     }
