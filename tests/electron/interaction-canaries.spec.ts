@@ -117,6 +117,8 @@ test(
   async ({}, info) => {
     await desktopJourney(info, async (page, app) => {
       const battle = await seedDrawBattle(page);
+      await battle.waitForOpeningHand();
+      await expect(battle.endTurnBtn).toBeEnabled();
       await app.evaluate(({ BrowserWindow }) => {
         BrowserWindow.getAllWindows()[0]!.webContents.send("alchemy:external-focus-lost");
       });

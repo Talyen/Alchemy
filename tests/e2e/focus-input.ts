@@ -146,5 +146,6 @@ export async function exerciseFocusInputBattle(page: Page) {
   await expectUnfocused(page);
   await finishWatch();
   await input.activate(battle.endTurnBtn);
+  await battle.waitForTurnReady();
   await expect(battle.endTurnBtn).toBeEnabled();
 }

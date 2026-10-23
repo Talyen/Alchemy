@@ -375,17 +375,10 @@ for (const locale of acceptanceLocales) {
           await expect.poll(async () => (await readSavedGame(page)).activeRun?.activity.kind).toBe("alchemist");
           await localizedCheckpoint(page, locale, async (fresh) => {
             await fresh.getByRole("button", { name: label("Potion Brewing"), exact: true }).click();
-            await fresh
-              .getByRole("button")
-              .filter({ has: fresh.getByText(label("Distill"), { exact: true }) })
-              .click();
+            await fresh.getByRole("button", { name: label("Distill"), exact: true }).click();
             await fresh.locator("[data-potion-choice] button").first().click();
             await reviewLayout(fresh, `${locale} distillation comparison`);
-            await fresh
-              .getByRole("button")
-              .filter({ hasText: label("Distill") })
-              .last()
-              .click();
+            await fresh.getByRole("button", { name: label("Distill"), exact: true }).click();
             await expect
               .poll(async () => (await readSavedGame(fresh)).activeRun?.runDeck[0]?.effects)
               .not.toEqual(brewed!.effects);

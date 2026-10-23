@@ -19,7 +19,7 @@ async function expectNativeArtwork(art: Locator) {
     .toBeLessThan(0.001);
 }
 
-async function observePurchase(page: Page, title: string, activate: () => Promise<void>, grows = true) {
+async function observePurchase(page: Page, title: string, activate: () => Promise<void>) {
   const [observation] = await Promise.all([
     page.evaluate(async (title) => {
       const frames: Array<{
@@ -87,11 +87,8 @@ async function observePurchase(page: Page, title: string, activate: () => Promis
   const heights = frames.map((frame) => frame.height);
   const minimum = Math.min(...heights);
   const maximum = Math.max(...heights);
-  if (grows) {
-    expect(frames.some((frame) => frame.height > minimum + 1 && frame.height < maximum - 1)).toBe(true);
-  } else {
-    expect(maximum - minimum).toBeLessThan(1.5);
-  }
+  // Previewed benefits occupy the same space before and after purchasing.
+  expect(maximum - minimum).toBeLessThan(1.5);
   const moving = frames.filter((frame) => frame.active);
   expect(Math.max(...moving.map((frame) => frame.gap)) - Math.min(...moving.map((frame) => frame.gap))).toBeLessThan(
     1.5,
@@ -148,7 +145,7 @@ test(
     await expect(tile).toHaveAttribute("aria-label", "Upgrade Blacksmith for 8 Stone, 22 Iron");
     await expect(tile).toHaveAttribute("aria-disabled", "false");
     const physicalKeyword = await panel.getByText("Physical", { exact: true }).elementHandle();
-    await observePurchase(page, "Blacksmith", () => page.keyboard.press("Enter"), false);
+    await observePurchase(page, "Blacksmith", () => page.keyboard.press("Enter"));
     await expect(panel).toContainText("Physical damage is increased by 2");
     expect(await physicalKeyword!.evaluate((element) => element.isConnected)).toBe(true);
     await expect(tile.getByText(/^(Built|Upgraded|Bonded)$/)).toHaveCount(0);

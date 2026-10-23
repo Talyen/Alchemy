@@ -86,6 +86,11 @@ export class BattlePage {
       if (!(await this.isBattleOver())) throw error;
     });
 
+    await this.waitForTurnReady();
+  }
+
+  async waitForTurnReady() {
+    const settleTimeout = process.env.CI ? 18_000 : 10_000;
     await expect(async () => {
       if (await this.isBattleOver()) return;
       const endTurn = this.endTurnBtn;
