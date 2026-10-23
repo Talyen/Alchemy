@@ -1,10 +1,11 @@
 import { isRunResumeScreen, ROUTE_SCREENS, type Screen } from "@/lib/routing";
 
-const RUN_SHELL_META_SCREENS: ReadonlySet<Screen> = new Set([
+const BROWSING_SCREENS: ReadonlySet<Screen> = new Set([
   ROUTE_SCREENS.COLLECTION,
   ROUTE_SCREENS.HOMESTEAD,
   ROUTE_SCREENS.TALENTS,
   ROUTE_SCREENS.ARMORY,
+  ROUTE_SCREENS.OPTIONS,
 ]);
 
 export function resolveReturnToRunTarget(
@@ -18,57 +19,44 @@ export function resolveReturnToRunTarget(
   return null;
 }
 
-export function rememberNonOptionsScreen(renderedScreen: Screen, previous: Screen): Screen {
-  return renderedScreen === ROUTE_SCREENS.OPTIONS ? previous : renderedScreen;
-}
-
-export interface OptionsReturnState {
-  optionsReturnScreen: Screen;
-}
-
-export function resolveNextOptionsReturnState(
+export function resolveBrowsingHistory(
   renderedScreen: Screen,
-  prev: { prevScreen: Screen; optionsReturnScreen: Screen },
-): OptionsReturnState {
-  return {
-    optionsReturnScreen: rememberNonOptionsScreen(renderedScreen, prev.optionsReturnScreen),
-  };
+  prev: { prevScreen: Screen; history: readonly Screen[] },
+): readonly Screen[] {
+  if (renderedScreen === prev.prevScreen) return prev.history;
+  if (!BROWSING_SCREENS.has(renderedScreen)) return [];
+  // Returning to an ancestor consumes that visit, including menu shortcuts to
+  // an already visited screen. This keeps repeated browsing from forming cycles.
+  const ancestor = prev.history.lastIndexOf(renderedScreen);
+  return ancestor >= 0 ? prev.history.slice(0, ancestor) : [...prev.history, prev.prevScreen];
 }
 
-export function resolveOptionsBackTarget(
-  optionsReturnScreen: Screen,
+export function resolveBrowsingBackTarget(
+  origin: Screen,
   hasActiveBattle: boolean,
   hasResumableRun: boolean,
 ): { kind: "returnToRun" } | { kind: "goToScreen"; screen: Screen } {
-  if (isRunResumeScreen(optionsReturnScreen)) {
+  if (isRunResumeScreen(origin)) {
     if (hasActiveBattle || hasResumableRun) return { kind: "returnToRun" };
-    if (optionsReturnScreen !== ROUTE_SCREENS.DIFFICULTY_SELECT)
-      return { kind: "goToScreen", screen: ROUTE_SCREENS.MENU };
+    if (origin !== ROUTE_SCREENS.DIFFICULTY_SELECT) return { kind: "goToScreen", screen: ROUTE_SCREENS.MENU };
   }
-  return { kind: "goToScreen", screen: optionsReturnScreen };
+  return { kind: "goToScreen", screen: origin };
 }
 
 export function resolveScreenBackHandler({
   renderedScreen,
-  returnToRunTarget,
-  returnToRun,
   handleMainMenu,
-  backFromOptions,
+  backFromBrowsing,
   backFromDifficultySelect,
   goToScreen,
 }: {
   renderedScreen: Screen;
-  returnToRunTarget: Screen | null;
-  returnToRun: () => void;
   handleMainMenu: () => void;
-  backFromOptions: () => void;
+  backFromBrowsing: () => void;
   backFromDifficultySelect: () => void;
   goToScreen: (screen: Screen) => void;
 }): (() => void) | undefined {
-  if (renderedScreen === ROUTE_SCREENS.OPTIONS) return backFromOptions;
-  if (RUN_SHELL_META_SCREENS.has(renderedScreen)) {
-    return returnToRunTarget ? returnToRun : handleMainMenu;
-  }
+  if (BROWSING_SCREENS.has(renderedScreen)) return backFromBrowsing;
   if (renderedScreen === ROUTE_SCREENS.GAME_MODE_SELECT) {
     return handleMainMenu;
   }

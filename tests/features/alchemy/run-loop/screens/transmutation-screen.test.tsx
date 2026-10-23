@@ -106,7 +106,7 @@ afterEach(() => {
 });
 
 describe("Transmutation flow", () => {
-  it("selects the next fixed offer when only the Companion alteration becomes unavailable", async () => {
+  it("requires a choice from the remaining fixed offers when Companion becomes unavailable", async () => {
     const source = cardById.slash!;
     const deck = [source, cardById["wolf-companion"]!];
     setRunProgress({ runDeck: [source] });
@@ -136,6 +136,9 @@ describe("Transmutation flow", () => {
     });
     render(<Harness />);
     click("Slash");
+    expect(visit().transmutation).toMatchObject({ keyword: null, offerIndex: null });
+    expect(screen.queryByRole("button", { name: "Transmute" })).toBeNull();
+    click("Choose Burn");
     expect(visit().transmutation).toMatchObject({ keyword: "burn", offerIndex: 1 });
     expect(screen.queryByRole("button", { name: "Choose Companion" })).toBeNull();
     await previewReady();
@@ -162,12 +165,24 @@ describe("Transmutation flow", () => {
     expect(visit().transmutation!.choices).toEqual(choices);
   });
 
-  it("shows keyword buttons above original and preview, keeps values, and commits only through Transmute", async () => {
+  it("shows the original before a choice, keeps values, and commits only the chosen preview", async () => {
     const before = readActiveRun(defaultGameSession).runDeck;
     render(<Harness />);
     expect((screen.getByRole("button", { name: "Mixed Potion" }) as HTMLButtonElement).disabled).toBe(true);
-    const preview = await chooseAlteration();
+    click("Slash");
     expect(screen.getByRole("button", { name: "Original: Slash" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Preview:/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Transmute" })).toBeNull();
+    expect(visit().transmutation).toMatchObject({ keyword: null, offerIndex: null });
+    expect(transmuteCard(0, 0, defaultGameSession)).toBeNull();
+    const choices = within(screen.getByRole("group", { name: "Alterations" })).getAllByRole("button");
+    expect(choices).toHaveLength(3);
+    expect(
+      choices.every((button) => button.textContent === "" && button.getAttribute("aria-pressed") === "false"),
+    ).toBe(true);
+    const preview = getTransmutationOffers(visit()).at(-1)!;
+    click(`Choose ${keywordDefinitions[preview.transmuted!].label}`);
+    await previewReady();
     expect(screen.getByRole("button", { name: `Preview: ${preview.title}` })).toBeTruthy();
     expect(readActiveRun(defaultGameSession).runDeck).toEqual(before);
     expect(onExchange).not.toHaveBeenCalled();
@@ -193,6 +208,8 @@ describe("Transmutation flow", () => {
       if (disabled) localStorage.setItem("alchemy-disable-animations", "true");
       render(<Harness />);
       click("Slash");
+      const initial = getTransmutationOffers(visit())[0]!;
+      click(`Choose ${keywordDefinitions[initial.transmuted!].label}`);
       await previewReady();
       const before = readActiveRun(defaultGameSession).runDeck;
       const offers = getTransmutationOffers(visit());

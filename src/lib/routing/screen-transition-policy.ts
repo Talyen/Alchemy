@@ -62,6 +62,7 @@ const META_BROWSING_SCREENS = [
   ROUTE_SCREENS.TALENTS,
   ROUTE_SCREENS.HOMESTEAD,
   ROUTE_SCREENS.ARMORY,
+  ROUTE_SCREENS.OPTIONS,
 ] as const;
 
 function buildAllowedTransitions(): Record<Screen, readonly Screen[]> {
@@ -90,15 +91,6 @@ function buildAllowedTransitions(): Record<Screen, readonly Screen[]> {
       ROUTE_SCREENS.BATTLE,
       ROUTE_SCREENS.LABYRINTH_MAP,
     ],
-    [ROUTE_SCREENS.OPTIONS]: [
-      ...META_DESTINATIONS,
-      ROUTE_SCREENS.GAME_OVER,
-      ROUTE_SCREENS.RUN_VICTORY,
-      ROUTE_SCREENS.GAME_MODE_SELECT,
-      ROUTE_SCREENS.CHARACTER_SELECT,
-      ROUTE_SCREENS.DIFFICULTY_SELECT,
-      ROUTE_SCREENS.DESTINATION,
-    ],
     [ROUTE_SCREENS.BATTLE]: [
       ...RUN_LOOP_SHELL_DESTINATIONS,
       ROUTE_SCREENS.REWARDS,
@@ -118,8 +110,16 @@ function buildAllowedTransitions(): Record<Screen, readonly Screen[]> {
     [ROUTE_SCREENS.LABYRINTH_MAP]: MAP_TARGETS,
     [ROUTE_SCREENS.WILDWOOD_REMOVAL]: [...RUN_LOOP_SHELL_DESTINATIONS, ROUTE_SCREENS.BATTLE],
   };
-  // End Run is available while an active run is being browsed from meta screens.
-  for (const screen of META_BROWSING_SCREENS) allowed[screen] = RUN_LOOP_SHELL_DESTINATIONS;
+  // Browsing can return to setup and recap callers. Live activities still use
+  // the dedicated resume transition so their current saved phase wins.
+  for (const screen of META_BROWSING_SCREENS)
+    allowed[screen] = [
+      ...RUN_LOOP_SHELL_DESTINATIONS,
+      ROUTE_SCREENS.RUN_VICTORY,
+      ROUTE_SCREENS.GAME_MODE_SELECT,
+      ROUTE_SCREENS.CHARACTER_SELECT,
+      ROUTE_SCREENS.DIFFICULTY_SELECT,
+    ];
   for (const screen of RUN_NODE_LEAVE_SCREENS) allowed[screen] = RUN_NODE_LEAVE_DESTINATIONS;
   // Fail fast when a new screen lacks a policy entry instead of crashing on
   // the first transition check with an obscure undefined dereference.

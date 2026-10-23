@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, renderHook, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DestinationScreen } from "@/features/alchemy/run-loop/screens/destination-screen";
@@ -7,6 +7,7 @@ import { createEmptyRewardState } from "@/lib/active-run-session";
 import { playBattleEvent } from "@/lib/audio";
 import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
+import { useAppKeyboardShortcuts } from "@/app/use-app-keyboard-shortcuts";
 
 vi.mock("@/lib/audio", () => ({
   playBattleEvent: vi.fn(),
@@ -26,6 +27,15 @@ describe("DestinationScreen", () => {
     const user = userEvent.setup();
     const onChoose = vi.fn();
     const onPrepare = vi.fn();
+    const toggleGameMenu = vi.fn();
+    renderHook(() =>
+      useAppKeyboardShortcuts({
+        renderedScreen: "destination",
+        screenInteractive: true,
+        gameMenuOpen: false,
+        toggleGameMenu,
+      }),
+    );
     const rewardState = {
       ...createEmptyRewardState(),
       destinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CAMPFIRE],
@@ -54,11 +64,12 @@ describe("DestinationScreen", () => {
     expect(progress.textContent).toContain("Room 5: Unknown");
     expect(progress.textContent).toContain("Room 8: Boss");
     await user.keyboard("{Escape}");
-    expect(screen.queryByRole("list", { name: "Room progress" })).toBeNull();
+    expect(toggleGameMenu).toHaveBeenCalledOnce();
+    expect(screen.getByRole("list", { name: "Room progress" })).toBe(progress);
     expect(document.activeElement).toBe(document.body);
+    await user.click(screen.getByRole("button", { name: "Act I: Show acts" }));
+    expect(screen.queryByRole("list", { name: "Room progress" })).toBeNull();
     expect(onChoose).not.toHaveBeenCalled();
-    await user.tab();
-    expect(document.activeElement?.getAttribute("aria-controls")).toBe(progress.id);
     await user.keyboard("{Enter}");
     expect(screen.getByRole("list", { name: "Room progress" })).toBeTruthy();
 

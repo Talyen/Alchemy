@@ -209,10 +209,14 @@ Mix keeps its ingredient instances distinct. Back first deselects the current
 choice, including the Distill comparison. Content remains compact and centered;
 stack movement eases between heights and respects reduced motion.
 
-Transmutation previews the selected source's first compatible keyword immediately.
-Up to three keyword buttons above the original-to-preview comparison select saved
-alterations. Back returns to the card picker without RNG or deck changes. Transmute
-commits the validated preview. After a covering save, show its inspectable result,
+Transmutation first shows the selected original card with up to three icon-only
+keyword buttons below it. The keyword row stays centered under the full comparison,
+with equal gaps above and below it. No alteration is selected initially. Choosing a
+keyword reveals its saved preview beside the original; the arrow centers on the card art,
+independent of titles and controls. Buttons retain translated accessible names,
+inspection tooltips and a visible selected state. Switching keywords updates the
+preview without changing the deck. Back returns to the card picker without RNG or
+deck changes. Transmute commits the validated preview. After a covering save, show its inspectable result,
 play the card-reward chime once and wait for Continue. Pending/failed saves lock
 choices under [Saving/Retry feedback](./UI.md#pending-saves-and-action-feedback).
 Completed resume shows the saved result and Continue without another alteration or

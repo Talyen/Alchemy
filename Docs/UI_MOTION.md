@@ -6,9 +6,12 @@ Screen-specific Homestead purchase feedback lives with its
 [gallery interaction](./UI_BROWSING.md#purchase-motion).
 
 Choose Destination's act/room toggle keeps its 36px circles at a fixed size while
-individual nodes translate and fade over 420ms, with a short outward stagger for
-the room reveal. The selected act numeral fades as the room trail fans out;
-neighboring acts move to either side without resizing the title or artwork.
+individual nodes travel over 420ms with a gentle start and settle. Movement starts
+together; only the room fades stagger outward, so circles separate before becoming
+visible. Closing lets rooms gather and fade before the act numeral returns.
+Neighboring acts and the connecting line follow the same easing. The line scales
+horizontally instead of animating its width; circles retain their round shape.
+The title and artwork stay fixed.
 Reversible CSS transitions retarget from the current pose on repeated input.
 Keyboard focus is painted on the focused circle, never the expanding transparent hit area.
 The shared reduced/disabled-motion preference settles both views immediately;
