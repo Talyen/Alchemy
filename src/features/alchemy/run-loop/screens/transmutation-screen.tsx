@@ -78,7 +78,10 @@ export function TransmutationScreen({
     if (!panel) return;
     const active = document.activeElement;
     if (active instanceof HTMLElement && active !== document.body && isFocusAvailable(active)) return;
-    focusControl(focusableControls(panel).find((control) => control.getAttribute("aria-disabled") !== "true"));
+    const controls = phase === "preview" ? panel.querySelector('[role="group"]') : panel;
+    focusControl(
+      focusableControls(controls ?? panel).find((control) => control.getAttribute("aria-disabled") !== "true"),
+    );
   }, [phase]);
 
   useEffect(() => {
@@ -234,68 +237,80 @@ export function TransmutationScreen({
         ) : (
           <>
             <div
-              className="flex flex-wrap justify-center gap-5"
-              role="group"
-              aria-label={i18n.text("ui.transmutation-screen.6", "Alterations")}
+              className={cn(
+                "grid items-start justify-items-center gap-x-8 gap-y-3",
+                preview ? "grid-cols-[1fr_auto_1fr]" : "grid-cols-1",
+              )}
+              aria-label={i18n.text("ui.transmutation-screen.7", "Transmutation comparison")}
             >
-              {selection?.choices
-                .filter((choice) => canTransmuteCard([choice], source, selection?.sourceIndex ?? undefined, runDeck))
-                .map((choice) => (
-                  <KeywordTag
-                    key={choice.keyword}
-                    keywordId={choice.keyword}
-                    pill
-                    choice
-                    showTooltip
-                    selected={keyword === choice.keyword}
-                    disabled={locked}
-                    onSelect={() => select({ kind: "keyword", keyword: choice.keyword })}
-                  />
-                ))}
-            </div>
-            {preview && (
-              <div
-                className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3"
-                aria-label={i18n.text("ui.transmutation-screen.7", "Transmutation comparison")}
-              >
-                <div className={cn(viewCardWidthClass, "flex flex-col items-center gap-3")}>
-                  <BattleCardButton
-                    card={source}
-                    ariaLabel={i18n.text("ui.transmutation-screen.8", "Original: {{value0}}", {
-                      value0: i18n.read(() => getCardDisplayTitle(source)),
-                    })}
-                    className={viewCardWidthClass}
-                    shineColor={getCardInspectionShineColors(source)}
-                    shimmerActive={false}
-                    shimmerToken={undefined}
-                  />
-                  <div className={cn(controlLabelClass, "min-h-[2lh] w-full")}>
-                    <CardTitle card={source} />
-                  </div>
-                </div>
-                <MoveRight aria-hidden="true" className="h-10 w-10 self-center text-gold-pale" />
-                <FadeSlot
-                  swapKey={previewKey}
-                  onReady={setReadyPreviewKey}
-                  className={cn(viewCardWidthClass, "col-start-3 flex flex-col items-center gap-3")}
-                >
-                  <BattleCardButton
-                    card={preview}
-                    comparisonCard={source}
-                    ariaLabel={i18n.text("ui.transmutation-screen.9", "Preview: {{value0}}", {
-                      value0: i18n.read(() => getCardDisplayTitle(preview)),
-                    })}
-                    className={viewCardWidthClass}
-                    shineColor={getCardInspectionShineColors(preview)}
-                    shimmerActive={false}
-                    shimmerToken={undefined}
-                  />
-                  <div className={cn(controlLabelClass, "min-h-[2lh] w-full")}>
-                    <CardTitle card={preview} />
-                  </div>
-                </FadeSlot>
+              <BattleCardButton
+                card={source}
+                ariaLabel={i18n.text("ui.transmutation-screen.8", "Original: {{value0}}", {
+                  value0: i18n.read(() => getCardDisplayTitle(source)),
+                })}
+                className={viewCardWidthClass}
+                wrapperClassName="col-start-1 row-start-1 flex"
+                shineColor={getCardInspectionShineColors(source)}
+                shimmerActive={false}
+                shimmerToken={undefined}
+              />
+              <div className={cn(controlLabelClass, viewCardWidthClass, "col-start-1 row-start-2 min-h-[2lh]")}>
+                <CardTitle card={source} />
               </div>
-            )}
+              <div
+                className="col-start-1 row-start-3 flex flex-wrap justify-center gap-3"
+                role="group"
+                aria-label={i18n.text("ui.transmutation-screen.6", "Alterations")}
+              >
+                {selection?.choices
+                  .filter((choice) => canTransmuteCard([choice], source, selection?.sourceIndex ?? undefined, runDeck))
+                  .map((choice) => (
+                    <KeywordTag
+                      key={choice.keyword}
+                      keywordId={choice.keyword}
+                      pill
+                      choice
+                      iconOnly
+                      showTooltip
+                      selected={keyword === choice.keyword}
+                      disabled={locked}
+                      onSelect={() => select({ kind: "keyword", keyword: choice.keyword })}
+                    />
+                  ))}
+              </div>
+              {preview && (
+                <>
+                  <MoveRight
+                    aria-hidden="true"
+                    className="col-start-2 row-start-1 h-10 w-10 self-center text-gold-pale"
+                  />
+                  <FadeSlot
+                    swapKey={previewKey}
+                    onReady={setReadyPreviewKey}
+                    className={cn(
+                      viewCardWidthClass,
+                      "col-start-3 row-span-2 row-start-1 grid grid-rows-subgrid justify-items-center",
+                    )}
+                  >
+                    <BattleCardButton
+                      card={preview}
+                      comparisonCard={source}
+                      ariaLabel={i18n.text("ui.transmutation-screen.9", "Preview: {{value0}}", {
+                        value0: i18n.read(() => getCardDisplayTitle(preview)),
+                      })}
+                      className={viewCardWidthClass}
+                      wrapperClassName="flex"
+                      shineColor={getCardInspectionShineColors(preview)}
+                      shimmerActive={false}
+                      shimmerToken={undefined}
+                    />
+                    <div className={cn(controlLabelClass, "min-h-[2lh] w-full")}>
+                      <CardTitle card={preview} />
+                    </div>
+                  </FadeSlot>
+                </>
+              )}
+            </div>
           </>
         )}
         {source && !showResult && (

@@ -17,6 +17,7 @@ export interface KeywordTagProps {
   pill?: boolean;
   choice?: boolean;
   showIcon?: boolean;
+  iconOnly?: boolean;
   className?: string;
   showTooltip?: boolean;
   onSelect?: () => void;
@@ -29,6 +30,7 @@ export function KeywordTag({
   pill = false,
   choice = false,
   showIcon = true,
+  iconOnly = false,
   className,
   showTooltip = false,
   onSelect,
@@ -51,13 +53,14 @@ export function KeywordTag({
         def.colorClass,
         pill && !choice && "character-keyword-pill-tint items-center rounded-full px-2.5 py-1 text-xs",
         choice && "items-center gap-3 px-6 py-4 text-lg",
+        iconOnly && "justify-center p-4",
         className,
       )}
     >
-      {showIcon ? (
+      {showIcon || iconOnly ? (
         <Icon className={cn("relative top-[0.15em]", (pill || choice) && "top-0")} aria-hidden="true" />
       ) : null}
-      {i18n.displayText(def.label)}
+      {!iconOnly && i18n.displayText(def.label)}
     </span>
   );
 
