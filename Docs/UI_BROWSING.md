@@ -196,8 +196,12 @@ enforce the same choice.
 Alchemist keeps shopping separate from Potion Brewing. Its Brew, Mix and Distill
 artwork tiles carry prices and matching label/icon hover borders; each service has
 its own spent state. The service name becomes the main screen heading. Mix shows
-equal-size ingredient choices and two Potion-icon slots leading to the result;
-clicks and drags select distinct deck instances. Back first deselects the current
+equal-size ingredient choices and two Potion-icon slots leading to the result.
+Brew and Distill keep choices above a persistent input slot; Distill shows the
+strengthened preview beside it. Clicking or dragging fills slots. Dragging lifts
+the mounted card from its original position, without a native ghost or copy;
+releasing outside a slot or cancelling returns it without selecting a Potion.
+Mix keeps its ingredient instances distinct. Back first deselects the current
 choice, including the Distill comparison. Content remains compact and centered;
 stack movement eases between heights and respects reduced motion.
 

@@ -4,24 +4,24 @@ import { useGameTranslation } from "@/components/use-game-translation";
 import { PotionComparison } from "./potion-comparison";
 import { playUISound } from "@/lib/audio";
 import { useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from "react";
-import { FlaskConical, Merge, MoveRight, Plus } from "lucide-react";
+import { FlaskConical, Merge, MoveRight, Pipette, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard, isPotionCard } from "@/lib/game-data";
 import { strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
 import { cn } from "@/lib/utils";
 import { BattleCardButton } from "../../shared/ui/cards/card-button";
-import { collectionTileWidthClass } from "../../shared/config";
 import { SelectableCard } from "../../shared/ui/cards/selectable-card";
 import { CardSelectionGrid } from "../../shared/ui/cards/card-selection-grid";
 import { PaginationControls } from "../../shared/ui/navigation";
 import { getPagination } from "../../shared/ui/pagination";
+import { usePotionDrag } from "./use-potion-drag";
 import { useCaptureEscapeCancel } from "../../shared/ui/dialogs/use-modal-escape-dismiss";
 
 export interface BrewPotionPanelHandle {
   back: () => void;
 }
-const MIX_CARD_WIDTH = "w-[calc(12*var(--content-rem,1rem))]";
+const PREPARATION_CARD_WIDTH = "w-[calc(12*var(--content-rem,1rem))]";
 const EMPTY_OFFERS: BattleCard[] = [];
 export function BrewPotionPanel({
   ref,
@@ -55,8 +55,7 @@ export function BrewPotionPanel({
   const [submitted, setSubmitted] = useState(false);
   const [selectionDeck, setSelectionDeck] = useState(deck);
   const [selectionOffers, setSelectionOffers] = useState(offers);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [dropTarget, setDropTarget] = useState<number | null>(null);
+
   const confirmRef = useRef<HTMLButtonElement>(null);
   if (!submitted && (selectionDeck !== deck || selectionOffers !== offers)) {
     setSelectionDeck(deck);
@@ -64,15 +63,16 @@ export function BrewPotionPanel({
     setSelected([]);
     setPage(0);
     setError("deck");
-    setDraggedIndex(null);
-    setDropTarget(null);
   }
   const sourceDeck = submitted ? selectionDeck : deck;
+  const sourceCards = kind === "new" ? (submitted ? selectionOffers : offers) : sourceDeck;
+  const drag = usePotionDrag({ disabled: submitted || isProgressSavePending(), identity: sourceCards, onDrop: place });
   useLayoutEffect(() => {
     if ((kind === "strengthen" || kind === "new") && selected.length === 1 && document.activeElement === document.body)
       focusControl(confirmRef.current);
   }, [kind, selected]);
   function back() {
+    if (drag.cancel()) return;
     if (submitted) {
       onBack();
       return;
@@ -86,7 +86,7 @@ export function BrewPotionPanel({
   useCaptureEscapeCancel(back);
   const items =
     kind === "new"
-      ? offers.map((card, index) => ({ card, index, preview: card }))
+      ? sourceCards.map((card, index) => ({ card, index, preview: card }))
       : sourceDeck.flatMap((card, index) => {
           if (!isPotionCard(card)) return [];
           const preview = kind === "strengthen" ? strengthenPotion(card) : null;
@@ -134,14 +134,12 @@ export function BrewPotionPanel({
       return [next[1]!, index];
     });
   }
-  function drop(slot: number) {
-    const index = draggedIndex;
-    setDraggedIndex(null);
-    setDropTarget(null);
-    if (index === null || submitted || isProgressSavePending() || !items.some((item) => item.index === index)) return;
+  function place(index: number, slot: number) {
+    if (submitted || isProgressSavePending() || !items.some((item) => item.index === index)) return;
     playUISound(selectionSound);
     setError(null);
     setSelected((previous) => {
+      if (kind !== "combine") return [index];
       const next = [previous[0] ?? -1, previous[1] ?? -1];
       const other = 1 - slot;
       if (next[other] === index) next[other] = next[slot]!;
@@ -163,7 +161,10 @@ export function BrewPotionPanel({
     <BattleCardButton card={card} ariaLabel={label} shimmerActive={false} shimmerToken={undefined} className={width} />
   );
   return (
-    <div className={cn("flex w-full max-w-4xl flex-col items-center", variant === "alchemist" ? "gap-6" : "gap-5")}>
+    <div
+      data-potion-preparation
+      className={cn("flex w-full max-w-4xl flex-col items-center", variant === "alchemist" ? "gap-6" : "gap-5")}
+    >
       {variant === "campfire" && (
         <h2 className="text-xl">
           {i18n.displayText(
@@ -185,41 +186,41 @@ export function BrewPotionPanel({
                 : i18n.text("ui.brew-potion-panel.d6", "Two eligible Potions required."),
           )}
         </p>
-      ) : kind === "strengthen" && result && sourceDeck[a] ? (
+      ) : kind === "strengthen" && variant === "campfire" && result && sourceDeck[a] ? (
         <PotionComparison original={sourceDeck[a]} result={result} />
-      ) : kind === "new" && variant === "alchemist" && result ? (
-        resultCard(result, collectionTileWidthClass, i18n.displayText(result.title))
-      ) : kind === "combine" ? (
+      ) : kind === "combine" || variant === "alchemist" ? (
         <>
           <div
             className="flex flex-wrap justify-center gap-5"
-            aria-label={i18n.text("brewing.choose-two", "Choose two Potions")}
+            aria-label={
+              kind === "combine"
+                ? i18n.text("brewing.choose-two", "Choose two Potions")
+                : i18n.text("ui.brew-potion-panel.d1", "Choose a Potion")
+            }
           >
             {items.slice(pagination.page * 4, (pagination.page + 1) * 4).map(({ card, index }) => (
               <div
                 key={index}
-                // Base CSS disables native dragging; opt in only for ingredient cards.
-                className={cn(MIX_CARD_WIDTH, "[-webkit-user-drag:element]")}
-                draggable={!submitted && !isProgressSavePending()}
-                onDragStart={(event) => {
-                  event.dataTransfer.effectAllowed = "copy";
-                  event.dataTransfer.setData("text/plain", String(index));
-                  setDraggedIndex(index);
-                }}
-                onDragEnd={() => {
-                  setDraggedIndex(null);
-                  setDropTarget(null);
-                }}
+                data-potion-choice={index}
+                className={cn(PREPARATION_CARD_WIDTH, "touch-none")}
+                onPointerDown={(event) => drag.onPointerDown(index, event)}
+                onPointerMove={drag.onPointerMove}
+                onPointerUp={drag.onPointerUp}
+                onPointerCancel={drag.onPointerCancel}
+                onLostPointerCapture={drag.onLostPointerCapture}
+                onClickCapture={drag.onClickCapture}
               >
-                <SelectableCard
-                  card={card}
-                  chrome="shop"
-                  widthClass="w-full"
-                  suppressTooltip={draggedIndex !== null}
-                  isSelected={selected.includes(index)}
-                  disabled={submitted}
-                  onSelect={() => choose(index)}
-                />
+                <div data-potion-movable className="relative">
+                  <SelectableCard
+                    card={card}
+                    chrome="shop"
+                    widthClass="w-full"
+                    suppressTooltip={drag.draggedIndex !== null}
+                    isSelected={selected.includes(index)}
+                    disabled={submitted}
+                    onSelect={() => choose(index)}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -235,43 +236,31 @@ export function BrewPotionPanel({
           renderItem={({ card, index }) => renderCard(card, index)}
         />
       )}
-      {kind === "combine" && items.length > 0 && (
+      {(kind === "combine" || variant === "alchemist") && items.length > 0 && (
         <div
           className="flex flex-wrap items-center justify-center gap-4"
           aria-label={i18n.text("ui.brew-potion-panel.2", "Brew preview")}
         >
-          {[0, 1].map((slot) => (
+          {(kind === "combine" ? [0, 1] : [0]).map((slot) => (
             <div key={slot} className="contents">
               {slot === 1 && <Plus aria-hidden="true" className="h-6 w-6 text-muted-foreground" />}
               <div
                 className={cn(
-                  MIX_CARD_WIDTH,
+                  PREPARATION_CARD_WIDTH,
                   "rounded-shell-card",
-                  dropTarget === slot && "outline-2 outline-offset-4 outline-violet-300",
+                  drag.dropTarget === slot &&
+                    (kind === "new"
+                      ? "outline-2 outline-offset-4 outline-emerald-300"
+                      : kind === "strengthen"
+                        ? "outline-2 outline-offset-4 outline-amber-300"
+                        : "outline-2 outline-offset-4 outline-violet-300"),
                 )}
-                data-mix-slot={slot}
-                onDragEnter={(event) => {
-                  if (draggedIndex !== null && !submitted && !isProgressSavePending()) event.preventDefault();
-                }}
-                onDragOver={(event) => {
-                  if (draggedIndex !== null && !submitted && !isProgressSavePending()) {
-                    event.preventDefault();
-                    event.dataTransfer.dropEffect = "copy";
-                    setDropTarget(slot);
-                  }
-                }}
-                onDragLeave={(event) => {
-                  if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget))
-                    setDropTarget(null);
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  drop(slot);
-                }}
+                data-mix-slot={kind === "combine" ? slot : undefined}
+                data-preparation-slot={slot}
               >
-                {sourceDeck[selected[slot] ?? -1] ? (
+                {sourceCards[selected[slot] ?? -1] ? (
                   <BattleCardButton
-                    card={sourceDeck[selected[slot]!]!}
+                    card={sourceCards[selected[slot]!]!}
                     ariaLabel={i18n.text("brewing.clear-slot", "Remove Potion from slot {{slot}}", { slot: slot + 1 })}
                     className="w-full"
                     shimmerActive={false}
@@ -298,25 +287,36 @@ export function BrewPotionPanel({
               </div>
             </div>
           ))}
-          <MoveRight aria-hidden="true" className="h-9 w-9 text-violet-300" />
-          <div className={MIX_CARD_WIDTH}>
-            {result ? (
-              resultCard(
-                result,
-                "w-full",
-                i18n.text("ui.brew-potion-panel.3", "Inspect brew result: {{value0}}", {
-                  value0: i18n.displayText(result.title),
-                }),
-              )
-            ) : (
-              <div
+          {kind !== "new" && (
+            <>
+              <MoveRight
                 aria-hidden="true"
-                className="flex aspect-[3/4] items-center justify-center rounded-shell-card border border-dashed border-border"
-              >
-                <Merge className="h-10 w-10 text-violet-300" />
+                className={cn("h-9 w-9", kind === "strengthen" ? "text-amber-300" : "text-violet-300")}
+              />
+              <div className={PREPARATION_CARD_WIDTH}>
+                {result ? (
+                  resultCard(
+                    result,
+                    "w-full",
+                    i18n.text("ui.brew-potion-panel.3", "Inspect brew result: {{value0}}", {
+                      value0: i18n.displayText(result.title),
+                    }),
+                  )
+                ) : (
+                  <div
+                    aria-hidden="true"
+                    className="flex aspect-[3/4] items-center justify-center rounded-shell-card border border-dashed border-border"
+                  >
+                    {kind === "strengthen" ? (
+                      <Pipette className="h-10 w-10 text-amber-300" />
+                    ) : (
+                      <Merge className="h-10 w-10 text-violet-300" />
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       )}
       {!submitted && !afford && (

@@ -56,7 +56,7 @@ describe("Alchemist brewing navigation", () => {
     click("Distill");
     expect(screen.getByRole("heading", { name: "Distill Potion" })).toBeTruthy();
     fireEvent.click(screen.getAllByRole("button", { name: "Select shop card" })[0]!);
-    expect(screen.getByRole("button", { name: "Original: Health Potion" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Remove Potion from slot 1" })).toBeTruthy();
     click("Back");
     expect(screen.getAllByRole("button", { name: "Select shop card" })).toHaveLength(2);
     expect(screen.getByRole("heading", { name: "Distill Potion" })).toBeTruthy();
