@@ -1,6 +1,7 @@
 import { expect, test } from "../../fixtures/e2e";
 import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
+import { translatedLabel } from "../localization";
 import { slow } from "../../playwright-tags";
 import type { JSHandle } from "@playwright/test";
 
@@ -333,6 +334,7 @@ for (const reducedMotion of [false, true]) {
           reactions: { shatterDamage: 8, frostfireDamage: 8, wildfireDamage: 3 },
         }),
         { runDeck: hand, autoEndTurn: false, masterVolume: 0 },
+        translatedLabel("ru", "Continue"),
       );
       const card = page.locator('[data-hand-card="true"] button').first();
       await expect.poll(() => card.evaluate((node) => !node.closest("[inert]"))).toBe(true);

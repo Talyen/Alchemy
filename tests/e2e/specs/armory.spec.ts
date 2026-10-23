@@ -1,3 +1,4 @@
+import { expectUnfocused } from "../focus-input";
 import { controllerInput } from "../controller-input";
 import { BattlePage } from "../../pages/battle-page";
 import { expect } from "@playwright/test";
@@ -126,7 +127,7 @@ test.describe("Armory browsing", () => {
     await expect(items).toHaveCount(1);
     await page.keyboard.press("Escape");
     await expect(panel).toBeHidden();
-    await expect(filters).toBeFocused();
+    await expectUnfocused(page);
     await expect(page.getByRole("heading", { name: "Armory", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Close inventory search" }).click();
     expect((await items.first().boundingBox())!.y).toBeCloseTo(gridTop, 0);

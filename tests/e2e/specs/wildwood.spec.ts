@@ -101,6 +101,7 @@ test.describe("Wildwood Draft", () => {
       }),
     );
     await page.goto("/");
+    await resumeInjectedRun(page);
     await expect(page.getByRole("heading", { name: "Draft a Deck" })).toBeVisible({ timeout: 5000 });
 
     await pickDraftCard(page);

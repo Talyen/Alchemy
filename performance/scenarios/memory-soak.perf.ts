@@ -75,7 +75,7 @@ async function progress(page: Page) {
   const battle = new BattlePage(page);
   if (await page.getByTestId("battle-scene").isVisible()) {
     await waitForBattleReady(page);
-    const inspect = page.getByRole("button", { name: /^View Deck/ });
+    const inspect = page.getByTestId("draw-pile").getByRole("button");
     await inspect.click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.keyboard.press("Escape");

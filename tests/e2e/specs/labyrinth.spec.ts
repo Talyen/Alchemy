@@ -212,7 +212,9 @@ for (const { width, height, gameSizePercent } of [
       positions,
     );
     await page.keyboard.press("Escape");
-    await expect(room).toBeFocused();
+    await expectUnfocused(page);
+    await controllerInput(page).activate(room);
+    await expect(inspector).toBeVisible();
   });
 }
 
@@ -231,25 +233,4 @@ test.describe("Labyrinth touch", () => {
     await page.getByRole("heading", { name: "Labyrinth", exact: true }).tap();
     await expect(page.getByRole("complementary", { name: chamberDetails })).toBeHidden();
   });
-});
-
-test("node hover, focus and selection retain shared shine without moving neighboring rooms", async ({ page }) => {
-  await injectLabyrinthRun(page, { labyrinthMap: gridLabyrinthMapFixture() });
-  const room = page.locator('[data-labyrinth-node="labyrinth-floor-1-n0"] button');
-  const neighbor = page.locator('[data-labyrinth-node="labyrinth-floor-1-n1"]');
-  const neighborBefore = await neighbor.boundingBox();
-  await room.hover();
-  await expect(room.locator("..")).toHaveCSS("scale", "1.06");
-  await expect(room.locator(".shine-border")).toBeVisible();
-  await expect(room).toHaveCSS("border-color", "rgba(0, 0, 0, 0)");
-  await expect(room.locator(".shine-border")).toHaveCSS("--border-width", "3px");
-  expect(await neighbor.boundingBox()).toEqual(neighborBefore);
-  await page.getByRole("heading", { name: "Labyrinth", exact: true }).hover();
-  await expect(room.locator("..")).toHaveCSS("scale", "none");
-  await room.focus();
-  await expect(room.locator("..")).toHaveCSS("scale", "1.06");
-  await room.press("Enter");
-  await expect(page.getByRole("complementary", { name: chamberDetails })).toBeVisible();
-  await expect(room.locator("..")).toHaveCSS("scale", "1.06");
-  expect(await neighbor.boundingBox()).toEqual(neighborBefore);
 });

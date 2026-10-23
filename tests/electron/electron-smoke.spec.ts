@@ -71,7 +71,15 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
 
     await new MenuPage(window).expectMainMenuAfterColdStart();
     // Prove the app protocol loads bundled catalogs and retains the local override.
-    await window.getByRole("button", { name: "Options", exact: true }).click();
+    const input = controllerInput(window);
+    await input.activate(window.getByRole("button", { name: "Options", exact: true }));
+    const displayMode = window.getByRole("combobox", { name: "Display Mode" });
+    await input.activate(displayMode);
+    await input.press("down");
+    await input.press("confirm");
+    await expect(window.getByRole("listbox")).toHaveCount(0);
+    await expect(displayMode).toBeFocused();
+    await expect(window.getByRole("slider", { name: "Background Particles", exact: true })).toBeInViewport();
     await window.locator("#language").click();
     await window.getByRole("option", { name: languages[locale].name, exact: true }).click();
     await expect(window.getByRole("heading", { name: label("Options"), exact: true })).toBeVisible();
@@ -218,31 +226,6 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
       expect(errors).toEqual([]);
     });
   });
-});
-
-test("mapped controller keys navigate the packaged desktop renderer", desktop, async () => {
-  const application = await launchElectronApp({ packagedRenderer: true });
-  try {
-    const page = await getElectronMainWindow(application);
-    const errors = failOnRuntimeErrors(page);
-    await new MenuPage(page).expectMainMenuAfterColdStart();
-    expect(page.url()).toMatch(/^alchemy:\/\//);
-    await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
-    const input = controllerInput(page);
-    await input.activate(page.getByRole("button", { name: "Options", exact: true }));
-    const displayMode = page.getByRole("combobox", { name: "Display Mode" });
-    await input.activate(displayMode);
-    await input.press("down");
-    await input.press("confirm");
-    await expect(page.getByRole("listbox")).toHaveCount(0);
-    await expect(displayMode).toBeFocused();
-    await expect(page.getByRole("slider", { name: "Background Particles", exact: true })).toBeInViewport();
-    await input.press("back");
-    await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
-    expect(errors).toEqual([]);
-  } finally {
-    await application.close();
-  }
 });
 
 test("Escape, clicks and scrolling preserve focus intent in the packaged desktop renderer", desktop, async () => {

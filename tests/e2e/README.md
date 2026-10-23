@@ -155,7 +155,8 @@ owners directly.
 Fresh-page and desktop relaunch journeys enter active checkpoints through the
 main menu's Continue action. `withSavedGame` does this when the acknowledged save
 contains an active run; pass its translated Continue label as the third argument
-for localized saves. Meta-only saves remain on the main menu. Raw `injectSaveState`
+for localized saves. `injectActiveBattle` accepts that label as its fourth argument
+when the initial checkpoint already uses another language. Meta-only saves remain on the main menu. Raw `injectSaveState`
 and `injectExactSave` only seed storage; callers must navigate if needed and use
 `resumeInjectedRun` when they need to enter the run. `enterPrimaryRewardScreen`
 loads and enters the seeded reward.

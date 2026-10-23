@@ -1,6 +1,5 @@
-import { savedActivityFixture } from "../tests/fixtures/run-activity";
 import { expect, type Page } from "@playwright/test";
-import { injectSaveState } from "../tests/e2e/save-injection";
+import { startAtDestination } from "../tests/e2e/battle-setup";
 import { DestinationPage } from "../tests/pages/destination-page";
 import { waitForHandPlayable } from "./battle-helpers";
 import {
@@ -14,8 +13,6 @@ interface PerfDeckCard {
   id: string;
 }
 
-type PerfLandedScreen = "battle" | "destination" | "rewards" | "";
-
 /**
  * Bootstrap a combat with real animations and wait until actors + hand are interactable.
  * Explicitly disables auto-end so the measured window stays on player-driven turns.
@@ -27,74 +24,12 @@ export async function startPerfBattle(
 ): Promise<void> {
   const tracker = trackFailedAssetRequests(page);
   try {
-    await injectSaveState(page, {
-      runDeck: deck,
-      autoEndTurn: false,
-      currentScreen: "destination",
-      activity: savedActivityFixture("destination", { destinations: ["Normal Combat"] }),
-      runPlayerHealth: 80,
-      runMaxHealth: 80,
-      ...overrides,
-    });
-
-    const isDesktop = await page.evaluate(() => Boolean(window.alchemyDesktop?.isDesktop)).catch(() => false);
-    // Desktop inject already reloads via the native save bridge; a second goto races resume.
-    if (!isDesktop) {
-      await page.goto("/");
-    }
-
-    const endTurn = page.getByRole("button", { name: "End Turn" });
-    const destinationHeading = page.getByRole("heading", { name: "Choose Destination" });
-    const rewardsHeading = page.getByRole("heading", { name: "Victory" });
-
-    // Electron reload can paint loading → battle/destination after inject; wait for either.
-    // Leftover Victory (prior warm-up / autosave race) is recoverable with a second inject.
-    for (let attempt = 0; attempt < 2; attempt++) {
-      // Box the landing screen so TypeScript keeps the union across the async poll callback.
-      const landed: { screen: PerfLandedScreen } = { screen: "" };
-      await expect
-        .poll(
-          async () => {
-            if (await endTurn.isVisible().catch(() => false)) {
-              landed.screen = "battle";
-              return true;
-            }
-            if (await destinationHeading.isVisible().catch(() => false)) {
-              landed.screen = "destination";
-              return true;
-            }
-            if (await rewardsHeading.isVisible().catch(() => false)) {
-              landed.screen = "rewards";
-              return true;
-            }
-            return false;
-          },
-          { timeout: 25_000, intervals: [100, 200, 500] },
-        )
-        .toBe(true);
-
-      if (landed.screen === "rewards") {
-        if (attempt === 0) {
-          await injectSaveState(page, {
-            runDeck: deck,
-            autoEndTurn: false,
-            currentScreen: "destination",
-            activity: savedActivityFixture("destination", { destinations: ["Normal Combat"] }),
-            runPlayerHealth: 80,
-            runMaxHealth: 80,
-            ...overrides,
-          });
-          continue;
-        }
-        throw new Error("startPerfBattle: stuck on Victory rewards after re-inject");
-      }
-
-      if (landed.screen === "destination") {
-        const destination = new DestinationPage(page);
-        await destination.pick("Normal Combat");
-      }
-      break;
-    }
+    await startAtDestination(
+      page,
+      { runDeck: deck, autoEndTurn: false, runPlayerHealth: 80, runMaxHealth: 80, ...overrides },
+      { forceDestination: "Normal Combat" },
+    );
+    await new DestinationPage(page).pick("Normal Combat");
 
     await waitForBattleReady(page, 30_000, tracker.failures);
   } finally {

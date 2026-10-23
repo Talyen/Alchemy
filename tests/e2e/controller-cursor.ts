@@ -15,8 +15,8 @@ export async function exerciseControllerCursor(page: Page) {
   const map = gridLabyrinthMapFixture();
   const node = map.nodes["labyrinth-floor-1-n0"]!;
   node.enemyId = "vampire";
-  node.modifiers = ["caustic", "flesheater", "tempered", "plated"];
-  node.rewardModifiers = ["generous", "alchemist"];
+  node.modifiers = ["caustic", "flesheater", "tempered", "plated", "jealous", "rooted"];
+  node.rewardModifiers = ["generous", "scavenger", "companion", "alchemist"];
   await injectLabyrinthRun(page, { labyrinthMap: map, deck: Array.from({ length: 6 }, () => makeCard()) });
   const input = controllerInput(page);
   async function clickNamed(name: string) {

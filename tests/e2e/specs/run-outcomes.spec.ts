@@ -16,6 +16,8 @@ import { critical } from "../../playwright-tags";
 import { savedActivityFixture } from "../../fixtures/run-activity";
 import type { Page } from "@playwright/test";
 import { expectRunPhase } from "../../pages/game-stage";
+import { controllerInput } from "../controller-input";
+import { expectUnfocused } from "../focus-input";
 
 async function startBossBattle(page: Page, act: 1 | 3) {
   const card = makeHighDamageCard();
@@ -71,6 +73,7 @@ test.describe("Run Outcomes", () => {
     test("ending a first Knight run reveals Rogue after the recap before returning to menu", async ({ page }) => {
       await injectSaveState(page, { finishedRunCharacters: [] });
       await page.goto("/");
+      await resumeInjectedRun(page);
       await new DestinationPage(page).expectVisible();
       await page.getByRole("button", { name: "Open game menu", exact: true }).click();
       await expect(page.getByRole("button", { name: "End Run" })).toBeVisible({ timeout: 3000 });
@@ -84,14 +87,13 @@ test.describe("Run Outcomes", () => {
       await expect
         .poll(() => portrait.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0))
         .toBe(true);
-      await expect(page.getByRole("button", { name: "Main Menu", exact: true })).toBeFocused();
+      await expectUnfocused(page);
       await portrait.hover();
       await expect(page.getByRole("tooltip")).toContainText("Starting Deck");
       await expect(page.getByRole("tooltip")).toHaveAttribute("data-placement", "below");
       await page.mouse.move(0, 0);
       await expect(page.getByRole("tooltip")).toHaveCount(0);
-      await page.keyboard.press("Shift+Tab");
-      await expect(page.getByRole("button", { name: "Inspect Rogue", exact: true })).toBeFocused();
+      await controllerInput(page).reach(page.getByRole("button", { name: "Inspect Rogue", exact: true }));
       await expect(page.getByRole("tooltip")).toContainText("Starting Deck");
       await page.keyboard.press("Tab");
       await expect(page.getByRole("tooltip")).toHaveCount(0);

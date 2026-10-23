@@ -4,7 +4,7 @@ import { collectRuntimeSnapshot, expect, test } from "../fixtures";
 import type { ScenarioRunResult } from "../report";
 
 test.describe("large-deck", () => {
-  test("repeatedly inspect and page a 60-card run deck", async ({ measureScenario }) => {
+  test("repeatedly inspect and page the Draw Pile of a 60-card run", async ({ measureScenario }) => {
     let samples: NonNullable<ScenarioRunResult["runtimeSamples"]> = [];
     await measureScenario({
       scenario: "large-deck",
@@ -22,10 +22,9 @@ test.describe("large-deck", () => {
         const started = Date.now();
         for (let cycle = 1; cycle <= 20; cycle++) {
           await phase("deck-inspection");
-          await page.getByRole("button", { name: /^View Deck/ }).click();
-          const dialog = page.getByRole("dialog");
+          await page.getByTestId("draw-pile").getByRole("button").click();
+          const dialog = page.getByRole("dialog", { name: "Draw Pile", exact: true });
           await expect(dialog).toBeVisible();
-          await expect(dialog.getByRole("button", { name: "Deck · 60 cards", exact: true })).toBeVisible();
           const grid = dialog.getByTestId("card-selection-grid");
           await expect(grid.getByRole("button").first()).toBeVisible();
           for (let pageIndex = 0; pageIndex < 3; pageIndex++) {

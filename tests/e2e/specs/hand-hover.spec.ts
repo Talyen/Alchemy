@@ -212,73 +212,78 @@ for (const { width, height, gameSizePercent } of [
   { width: 1280, height: 720, gameSizePercent: 120 },
   { width: 2560, height: 1080, gameSizePercent: 80 },
 ]) {
-  test(`hand remains reachable and controls stay fixed at ${width} / ${gameSizePercent}%`, slow, async ({ page }) => {
-    await page.setViewportSize({ width, height });
-    await page.addInitScript(
-      (size) =>
-        localStorage.setItem(
-          "alchemy-device-display-v1",
-          JSON.stringify({ version: 1, gameSizePercent: size, tooltipSizePercent: 100 }),
-        ),
-      gameSizePercent,
-    );
-    await openHand(page);
-    const positions = () =>
-      page.getByRole("button", { name: "End Turn", exact: true }).evaluateAll((elements) =>
-        elements.map((el) => {
-          const r = el.getBoundingClientRect();
-          return { x: r.x, y: r.y };
-        }),
+  test(
+    `hand remains reachable and controls stay fixed at ${width} / ${gameSizePercent}%`,
+    slow,
+    async ({ page, fastBattle }) => {
+      void fastBattle;
+      await page.setViewportSize({ width, height });
+      await page.addInitScript(
+        (size) =>
+          localStorage.setItem(
+            "alchemy-device-display-v1",
+            JSON.stringify({ version: 1, gameSizePercent: size, tooltipSizePercent: 100 }),
+          ),
+        gameSizePercent,
       );
-    const initial = await positions();
-    const scene = await page.getByTestId("battle-scene").boundingBox();
-    expect(scene).toEqual({ x: 0, y: 0, width, height });
-    const mana = await page.getByTestId("mana-panel").boundingBox();
-    const endTurn = await page.getByRole("button", { name: "End Turn", exact: true }).boundingBox();
-    const draw = await page.getByTestId("draw-pile").boundingBox();
-    const discard = await page.getByTestId("discard-pile").boundingBox();
-    expect(mana!.x).toBeGreaterThanOrEqual(0);
-    expect(mana!.x + mana!.width).toBeLessThanOrEqual(width);
-    expect(mana!.x + mana!.width / 2).toBeCloseTo(draw!.x + draw!.width / 2, 0);
-    expect(mana!.y + mana!.height).toBeLessThan(draw!.y);
-    expect(endTurn!.x + endTurn!.width / 2).toBeCloseTo(discard!.x + discard!.width / 2, 0);
-    expect(endTurn!.y + endTurn!.height).toBeLessThan(discard!.y);
-    expect(draw!.x).toBeGreaterThanOrEqual(0);
-    expect(discard!.x + discard!.width).toBeLessThanOrEqual(width);
-    expect(draw!.y + draw!.height).toBeCloseTo(discard!.y + discard!.height, 0);
-    const hand = await page.getByTestId("battle-hand").boundingBox();
-    expect(hand!.x + hand!.width / 2).toBeCloseTo(width / 2, 0);
+      await openHand(page);
+      const positions = () =>
+        page.getByRole("button", { name: "End Turn", exact: true }).evaluateAll((elements) =>
+          elements.map((el) => {
+            const r = el.getBoundingClientRect();
+            return { x: r.x, y: r.y };
+          }),
+        );
+      const initial = await positions();
+      const scene = await page.getByTestId("battle-scene").boundingBox();
+      expect(scene).toEqual({ x: 0, y: 0, width, height });
+      const mana = await page.getByTestId("mana-panel").boundingBox();
+      const endTurn = await page.getByRole("button", { name: "End Turn", exact: true }).boundingBox();
+      const draw = await page.getByTestId("draw-pile").boundingBox();
+      const discard = await page.getByTestId("discard-pile").boundingBox();
+      expect(mana!.x).toBeGreaterThanOrEqual(0);
+      expect(mana!.x + mana!.width).toBeLessThanOrEqual(width);
+      expect(mana!.x + mana!.width / 2).toBeCloseTo(draw!.x + draw!.width / 2, 0);
+      expect(mana!.y + mana!.height).toBeLessThan(draw!.y);
+      expect(endTurn!.x + endTurn!.width / 2).toBeCloseTo(discard!.x + discard!.width / 2, 0);
+      expect(endTurn!.y + endTurn!.height).toBeLessThan(discard!.y);
+      expect(draw!.x).toBeGreaterThanOrEqual(0);
+      expect(discard!.x + discard!.width).toBeLessThanOrEqual(width);
+      expect(draw!.y + draw!.height).toBeCloseTo(discard!.y + discard!.height, 0);
+      const hand = await page.getByTestId("battle-hand").boundingBox();
+      expect(hand!.x + hand!.width / 2).toBeCloseTo(width / 2, 0);
 
-    for (let count = 7; count >= 1; count--) {
-      await expect(page.locator("[data-hand-slot]")).toHaveCount(count);
+      for (let count = 7; count >= 1; count--) {
+        await expect(page.locator("[data-hand-slot]")).toHaveCount(count);
+        await page.mouse.move(0, 0);
+        const bounds = await page.locator("[data-hand-slot] button").evaluateAll((elements) =>
+          elements.map((el) => {
+            const r = el.getBoundingClientRect();
+            return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+          }),
+        );
+        for (const rect of bounds) {
+          expect(rect.left).toBeGreaterThanOrEqual(0);
+          expect(rect.right).toBeLessThanOrEqual(width);
+          expect((rect.top + rect.bottom) / 2).toBeLessThan(height);
+          expect(rect.top).toBeGreaterThanOrEqual(0);
+          expect(rect.bottom).toBeLessThanOrEqual(height + 1);
+        }
+        const current = await positions();
+        current.forEach((position, index) => {
+          expect(position.x).toBeCloseTo(initial[index]!.x, 0);
+          expect(position.y).toBeCloseTo(initial[index]!.y, 0);
+        });
+        if (count === 7 || count === 1) await inspectOuterEdges(page);
+        if (count > 1) {
+          const slot = (await geometry(page))[Math.floor(count / 2)]!;
+          await page.mouse.click(slot.x, slot.y + slot.height / 2);
+        }
+      }
       await page.mouse.move(0, 0);
-      const bounds = await page.locator("[data-hand-slot] button").evaluateAll((elements) =>
-        elements.map((el) => {
-          const r = el.getBoundingClientRect();
-          return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
-        }),
-      );
-      for (const rect of bounds) {
-        expect(rect.left).toBeGreaterThanOrEqual(0);
-        expect(rect.right).toBeLessThanOrEqual(width);
-        expect((rect.top + rect.bottom) / 2).toBeLessThan(height);
-        expect(rect.top).toBeGreaterThanOrEqual(0);
-        expect(rect.bottom).toBeLessThanOrEqual(height + 1);
-      }
-      const current = await positions();
-      current.forEach((position, index) => {
-        expect(position.x).toBeCloseTo(initial[index]!.x, 0);
-        expect(position.y).toBeCloseTo(initial[index]!.y, 0);
-      });
-      if (count === 7 || count === 1) await inspectOuterEdges(page);
-      if (count > 1) {
-        const slot = (await geometry(page))[Math.floor(count / 2)]!;
-        await page.mouse.click(slot.x, slot.y + slot.height / 2);
-      }
-    }
-    await page.mouse.move(0, 0);
-    await controllerInput(page).activate(page.locator("[data-hand-slot] button").last());
-    await expect(page.locator("[data-hand-slot]")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "End Turn", exact: true })).toBeFocused();
-  });
+      await controllerInput(page).activate(page.locator("[data-hand-slot] button").last());
+      await expect(page.locator("[data-hand-slot]")).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "End Turn", exact: true })).toBeFocused();
+    },
+  );
 }
