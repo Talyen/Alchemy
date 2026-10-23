@@ -27,7 +27,7 @@ export function DestinationRoomProgress({
         const boss = index === DESTINATIONS_PER_ACT - 1;
         const destination = completed ?? (boss ? DESTINATIONS.BOSS_COMBAT : undefined);
         const meta = !current && destination ? destinationMeta[destination] : undefined;
-        const Icon = meta?.icon;
+        const Icon = current ? Star : meta?.icon;
         const room = index + 1;
         const label = current
           ? i18n.text("ui.room-progress.current", "Room {{room}}: You are here", { room })
@@ -50,14 +50,11 @@ export function DestinationRoomProgress({
             <span
               aria-hidden="true"
               className={cn(
-                "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-current bg-background font-bold",
-                meta ? meta.accentClassName : "text-muted-foreground/35",
+                "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-current bg-background font-bold",
+                current ? "text-gold-light" : meta ? meta.accentClassName : "text-muted-foreground/35",
               )}
             >
-              {Icon ? <Icon className="shrink-0" /> : "?"}
-              {current ? (
-                <Star className="absolute -top-4 left-1/2 size-3 -translate-x-1/2 fill-current text-gold-pale" />
-              ) : null}
+              {Icon ? <Icon className={cn("shrink-0", current && "fill-current")} /> : "?"}
             </span>
             {!boss && <span aria-hidden="true" className="h-px min-w-0 flex-1 bg-border/70" />}
           </li>

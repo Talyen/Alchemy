@@ -64,7 +64,7 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 
 `TitledScreenShell.aboveHeader` holds compact context above the heading. Choose
 Destination shows the current eight-room trail there: visited destination icons,
-a small gold star above the current question-mark node, unknown future rooms,
+a gold circle with a centered gold star for the current room, unknown future rooms,
 and the boss crown at the end. Nodes use 1px circles and the destination choices'
 icon size, stroke and colors; Boss destinations use deep purple. The trail's end
 nodes align with the header toolbar icons. It is static and adds no act labels or
