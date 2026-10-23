@@ -400,6 +400,7 @@ export async function main(argv = process.argv.slice(2)) {
           saveState({ task, commit: head, integration: "passed", cleanup: "blocked", error: error.message });
           throw new Error(
             `Integration remains complete; cleanup blocked: ${error.message}. Retry: node scripts/agent-worktree.mjs finish --task ${task}`,
+            { cause: error },
           );
         }
         return;

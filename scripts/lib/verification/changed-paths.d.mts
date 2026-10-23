@@ -1,5 +1,4 @@
 export function resolvePushPaths(root: string, input: string): string[];
-export function taskSelectionBase(root: string): string;
 export function taskComparisonBase(root: string): string;
 
 export function resolveSelectedPaths(

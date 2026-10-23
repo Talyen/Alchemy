@@ -64,7 +64,7 @@ function diffHeadPaths(rootDir) {
   return [...new Set([...tracked.stdout.split("\0"), ...untracked.stdout.split("\0")].filter(Boolean))];
 }
 
-export function taskSelectionBase(rootDir) {
+function taskSelectionBase(rootDir) {
   const branch = runGit(rootDir, ["symbolic-ref", "--quiet", "--short", "HEAD"]);
   if (branch.status !== 0) throw new Error("--task requires a task branch, not detached HEAD");
   const name = branch.stdout.trim();
