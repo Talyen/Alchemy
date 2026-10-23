@@ -25,7 +25,10 @@ export function TraitBox({ trait, variant = "default" }: { trait: EnemyTrait; va
     <div
       data-trait={trait.id}
       data-trait-variant={variant}
-      className={cn("flex min-w-0 items-center", compact ? "gap-[calc(0.5*var(--content-rem,1rem))]" : "gap-3")}
+      className={cn(
+        "grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center",
+        compact ? "gap-x-[calc(0.5*var(--content-rem,1rem))]" : "gap-x-3",
+      )}
     >
       {i18n.displayText(
         createElement(Icon, {
@@ -33,33 +36,31 @@ export function TraitBox({ trait, variant = "default" }: { trait: EnemyTrait; va
           className: cn(compact ? "text-[length:calc(0.875*var(--content-rem,1rem))]" : "text-lg", colorClass),
         }),
       )}
-      <div className="min-w-0">
-        <h3
-          className={cn(
-            "font-semibold",
-            compact
-              ? "text-[length:calc(0.875*var(--content-rem,1rem))] leading-[var(--text-lg--line-height)]"
-              : "text-lg",
-          )}
+      <h3
+        className={cn(
+          "font-semibold",
+          compact
+            ? "text-[length:calc(0.875*var(--content-rem,1rem))] leading-[var(--text-lg--line-height)]"
+            : "text-lg",
+        )}
+      >
+        <ShineText
+          colors={encounter?.textShineColors ?? getKeywordTextShineColors(keywords.length > 0 ? keywords : thematic)}
+          fallbackClassName="text-stone-200"
         >
-          <ShineText
-            colors={encounter?.textShineColors ?? getKeywordTextShineColors(keywords.length > 0 ? keywords : thematic)}
-            fallbackClassName="text-stone-200"
-          >
-            {i18n.displayText(trait.title)}
-          </ShineText>
-        </h3>
-        <p
-          className={cn(
-            "leading-relaxed whitespace-pre-line text-stone-300",
-            compact
-              ? "mt-[calc(0.1875*var(--content-rem,1rem))] text-[length:calc(0.75*var(--content-rem,1rem))]"
-              : "mt-1 text-base",
-          )}
-        >
-          {i18n.displayText(i18n.read(() => renderColoredKeywords(trait.description)))}
-        </p>
-      </div>
+          {i18n.displayText(trait.title)}
+        </ShineText>
+      </h3>
+      <p
+        className={cn(
+          "col-start-2 leading-relaxed whitespace-pre-line text-stone-300",
+          compact
+            ? "mt-[calc(0.1875*var(--content-rem,1rem))] text-[length:calc(0.75*var(--content-rem,1rem))]"
+            : "mt-1 text-base",
+        )}
+      >
+        {i18n.displayText(i18n.read(() => renderColoredKeywords(trait.description)))}
+      </p>
     </div>
   );
 }

@@ -239,6 +239,7 @@ back into ability resolution or mutate the canonical catalog.
 `TraitBox` owns unboxed rows with colored icons, keyword descriptions and title
 shine for enemy hover/inspection and Labyrinth details. Traits have no individual
 border, background or box padding. Shared encounter icon themes also drive map effects.
+Icons align with Trait names; descriptions sit below in the text column.
 Inspection uses two equal columns when 40rem is available, one column otherwise,
 and full width for a sole Trait. Hover/map Traits stay stacked. Inline-size
 containment belongs only on inspection: shrink-to-fit tooltips need intrinsic width.
