@@ -54,6 +54,15 @@ Shine Borders, neutral fallbacks and `Progress` semantics follow
 [shared components](./UI.md#component-conventions). Collection and reward borders
 keep their palette, scale and press feedback; selection retains its existing state.
 
+## Shop prices
+
+Prices use the shared [GoldCost](../src/features/alchemy/shared/ui/display-elements.tsx)
+coin/amount treatment and muted unaffordable state. Over artwork they float directly
+on the illustration with dark contour shadows, without containers or art fades;
+inside buttons they inherit button typography.
+[PurchasableShopTile](../src/features/alchemy/run-loop/shop/ui/purchasable-shop-tile.tsx)
+owns the over-art placement and shadow recipe.
+
 ## Mystery reward shelves
 
 Each Mystery choice shows its rewards above its action button. Keep the event art

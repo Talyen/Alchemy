@@ -233,7 +233,7 @@ Classification queries use [Card classification](#card-classification).
 - **Status ownership** — `addPlayerStatus` delegates assignment to `setPlayerStatus`, so both absolute updates and deltas cap pending enemy Bleed Leech when changing Bleed. Explicit Armor loss uses `removePlayerArmor` so Reactive Guard cannot be skipped. Player Forge grants resolve authored amounts and independent +1 talent bonuses once, then Smithguard and Everkeen reactions; bonus Forge cannot recursively activate gain bonuses. Initialization and hydration retain raw state construction.
 - **Damage module ownership** — `player-damage-base.ts` constructs player damage packets from base amounts, Forge, and flat typed bonuses. `player-damage-multipliers.ts` owns additive multipliers and first-Burn bonus flags. `damage-calc.ts` orders those stages, then applies pacing, critical strikes, mitigation, and final resolution. `player-defensive-reactions.ts` owns Block/Health-triggered defensive rewards; `enemy-attack-damage.ts` retains incoming-hit orchestration and reaction ordering.
 - **Armor gain limits** — Layered adds its flat Armor bonus only to the first positive Armor grant each player turn, including opening grants and reactions. Ironroot grants Armor only for the first Nature card played each player turn, including automatic plays. Each limit has its own persisted combat flag and resets at the next player turn; save/resume cannot refresh either allowance.
-- **Deep Siphon** — all positive player Leech healing packets restore 1 additional Health, including Companion, incidental, and deferred Bleed Leech. Apply the bonus once per payout after Desperate/Gear scaling and before Blood Feast and Affliction Siphon. Card-origin attribution remains for Clean Slate.
+- **Leech bonuses** — [Healing and Leech](./TALENT_RULES.md#healing-and-leech) owns Deep Siphon’s payout order and card attribution.
 - **Meteor** — deals 7 Burn damage, loses 1 temporary Mana, and is Consumed. Its ordinary card cost still applies. It does not remove a Mana Crystal or trigger Mana Flare.
 - **Resource scaling** — Talent bonuses from Forge, Armor, and Block, including below-half-Health Armor gains, use percentage fields in the talent manifest. Retired boolean overrides are absent from defaults and ignored during load. Homestead and Gear retain their distinct permissions and never add the same Forge contribution twice.
 - **Homestead** — Wheat Field restores purchased-tier Health after each combat, stacking with post-combat recovery and clamping to maximum Health in every mode. Orchard adds purchased-tier starting Thorns alongside gear/encounter grants; resume never repeats starting grants. Crystal Garden adds 25 percentage points per tier to Freeze damage scaling from current Mana, stacking with talents and using normal damage-resolution timing. Homestead resource bonuses increase eligible reward quantities by 10 percentage points per node tier; they never grant per-room or run-end resources.
@@ -474,7 +474,8 @@ not restore the current visit's service use.
 Distill adds 1 to supported beneficial numerical magnitudes, including Wishes;
 cost, Consume, probabilities, draw counts, durations, and percentage effects stay
 unchanged. Panacea restores 2 Health alongside its full cleanse; each distillation
-adds 1 Health. Increased values are green in card hover tooltips, including after
+adds 1 Health. A full-cleanse Potion without healing gains Restore 1 Health when
+distilled. Increased values are green in card hover tooltips, including after
 reload. The Distillation talent's combat potency bonus is separate from the
 Distill service.
 

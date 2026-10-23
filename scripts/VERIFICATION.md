@@ -38,14 +38,32 @@ of per file. The `documentation` route covers `Docs/**` so check classification
 commands with one complete unit run, alongside full static checks and builds.
 That complete unit pass uses one worker to bound host resource spikes; ordinary
 unit commands retain their existing worker policy.
+
+### Task selection
+
 Bare `check` (including `--plan` or `--full`) defaults to task selection.
 Task creation records its original base in local Git branch configuration. The
 selector validates that provenance, then compares HEAD against its merge base with
 current local main and unions those task changes with working paths,
 and retains both rename sides. The local source guard recomputes task membership
-so new files appearing during a run invalidate success.
+so new files appearing during a run invalidate success. Merging main excludes
+changes contributed only by other tasks; the original recorded base remains provenance.
+Unrecorded task branches require explicit paths. `--diff` selects the complete dirty
+set and is suitable only when all of it belongs to the task; `--committed HEAD`
+selects one commit's paths. Execution always uses the current checkout.
+The unit runner rejects missing explicit paths before Vitest can ignore a mixed selection.
 
 ## Local verification profiles
+
+The task gate selects changed and dependency-related units, explicit lifecycle,
+save, desktop or tooling protection, source/test compilation, localization freshness
+for source/catalog inputs, documentation contracts, and selected-file formatting
+and lint. Presentation files rely on related tests; lifecycle hooks and shared
+behavior seams retain explicit interaction coverage. Unknown behavior owners keep
+the conservative fallback. Markdown-only tasks run documentation checks and formatting.
+Formatting and lint batches above 50 files or containing a file above 256,000 bytes
+are deferred to CI and reported. Broader checks add full static validation,
+applicable builds, bundle budgets and preview smoke.
 
 `check` runs the task-scoped plan described in [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change). `verify-changed.mjs` filters route commands to selected units and documentation by default; `--unit` omits documentation and `--full` retains report/asset routes. The outer gate adds applicable localization, source/test compilation, formatting and bounded selected-file lint. `check --plan` prints both the outer stages and selected route commands without executing them. Integration invokes that same gate outside the shared integration lock after merging current `main`, then revalidates the pinned commits under the lock before advancement; eligible deterministic commands reuse passing receipts in task and full profiles.
 

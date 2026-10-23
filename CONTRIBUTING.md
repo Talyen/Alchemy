@@ -15,32 +15,18 @@ Use four entry points for ordinary work:
 | Check the entire repository, including every unit suite, full static checks and builds | `npm run check:all`                                |
 | Diagnose units                                                                         | `npm run test:unit -- <test-files-or-directories>` |
 
-`check` defaults to the current isolated task. Its selection is the task delta
-against the latest shared ancestor with local `main`, plus staged, unstaged and
-untracked files. Merging main excludes changes contributed only by other tasks.
-The original recorded task base remains provenance; it is not the check selector.
-The gate rechecks membership before reporting success. Unrecorded task branches
-must use explicit paths. Renames select both paths.
+`check` selects the isolated task, including its uncommitted work. In a mixed or
+unrecorded checkout, name task-owned paths explicitly, including deletions and
+both sides of renames. Add `--plan` to inspect the selected scope before running.
+`test:unit` accepts existing test files/directories; without paths it runs all units.
+[Selection details](./scripts/VERIFICATION.md#task-selection) cover advanced selectors
+and the relationship to main.
 
-`test:unit` without paths runs all units. Explicit test paths must exist; the
-runner rejects missing paths before Vitest can silently ignore a mixed selection.
-Add `--plan` to a check to preview its actual scope. Use `--diff` only when the
-entire dirty set belongs to the task, or `--committed HEAD` for one commit's paths;
-execution always uses the current checkout. Include deleted paths.
-
-Older commands remain supported for compatibility. [Implementation details](./scripts/VERIFICATION.md#compatibility-commands-and-test-runners)
-cover aliases, selective broad checks and advanced selectors; ordinary tasks do
-not need that reference.
-
-The task gate selects changed and dependency-related units, explicit lifecycle,
-save, desktop or tooling protection, source/test compilation, localization freshness
-for source/catalog inputs, documentation contracts, and selected-file formatting
-and lint. Presentation files rely on related tests; lifecycle hooks and shared
-behavior seams retain explicit interaction coverage. Unknown behavior owners keep
-the conservative fallback. Markdown-only tasks run documentation checks and formatting.
-Formatting and lint batches above 50 files or containing a file above 256,000 bytes
-are deferred to CI and reported. Broader checks add full static validation,
-applicable builds, bundle budgets and preview smoke.
+The task gate runs affected units and applicable static, localization and documentation
+checks. Markdown-only tasks run documentation checks and formatting. Broader checks
+add full static validation, builds, bundle budgets and preview smoke.
+[Gate details](./scripts/VERIFICATION.md#local-verification-profiles) explain selection,
+large-batch deferrals and compatibility commands.
 
 Task work authorizes units, compilation, lint, development previews, focused
 browser/Electron checks and builds without another permission request. Start with

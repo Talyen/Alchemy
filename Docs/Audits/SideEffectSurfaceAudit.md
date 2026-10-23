@@ -29,25 +29,19 @@ consumer. Validate through teardown/re-entry, rollback, replay, error propagatio
 rejected external input as applicable, without mocking away the behavior. Keep a
 connected repair under one primary finding per the [shared contract](README.md#prioritize-and-remedy).
 
-## Domain rules
+## Investigation leads
 
-- **Entropy:** battle rules consume the command-bound `world` stream; other run outcomes use their documented persisted streams. Follow current RNG owners for seed creation and presentation randomness. Being outside battle code does not make unseeded gameplay entropy safe.
-- **Persistence:** disk/localStorage writes route through storage owners; domain stores mutate memory then delegate; screens do not write saves directly.
-- **Pure lib:** `src/lib/**` stays free of React and of ad-hoc I/O; push effects to seams. Prefer injected state over `useXStore.getState()` inside pure rule handlers.
-- **UI:** decorative randomness must not re-roll every render — initialize lazily (`useState(() => …)`).
-- **Trust boundaries:** renderer/preload/IPC bridges and file, URL, clipboard, or environment adapters expose only intended capabilities and validate external inputs before effects. Check source/operation restrictions and error handling against current desktop contracts; use local fixtures, not live-service probing.
-- **Seam quality:** a documented owner still must surface meaningful failures, avoid duplicate work, clean up its lifetime, and preserve atomic or ordered behavior where required.
-- **Module initialization:** effectful work at import time must be required by the entrypoint contract; otherwise move it to an explicit owning lifecycle.
+| Signal                                                                   | Required ownership / question                                                                                                                                                  |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Date.now`, `new Date`, unseeded gameplay draws                          | Battle uses the command-bound `world` stream; other run outcomes use their persisted streams. Check seed/presentation exceptions, transactional counters and resume continuity |
+| Screen persist calls, duplicate writes/retries                           | Storage owners perform disk/localStorage I/O; domain commands mutate memory then delegate. Trace semantic events for duplicate persistence, emission or synchronization        |
+| `getState()` or Electron/Steam/browser/environment APIs in pure rules    | `src/lib` remains React-free with no ad-hoc I/O; inject state and keep effects at documented seams                                                                             |
+| Decorative entropy on render                                             | Initialize lazily with `useState(() => …)`; inspect entropy sources beyond `Math.random()`                                                                                     |
+| Renderer/preload/IPC, file, URL or clipboard adapters                    | Validate external inputs and restrict sources/operations before effects; use local fixtures rather than live probing                                                           |
+| Timers, observers, object URLs, subscriptions, global style/body changes | Does one creator own teardown? Are failures meaningful, repetition controlled, and required atomicity/order preserved?                                                         |
+| Effectful module initialization                                          | Does the entrypoint require it, or should an explicit lifecycle own it?                                                                                                        |
 
-## Known signals
-
-- **Unseeded entropy outside seams:** `Date.now` / `new Date(` / non-UI `Math.random` outside documented owners. `fetch(` under `src/lib` is `alchemy/no-lib-fetch`; `localStorage` / `sessionStorage` in `src` are `alchemy/no-unowned-web-storage`.
-- **Run entropy leaks:** draws outside the owning persisted stream, counters that advance without their outcome committing, or randomness that diverges after resume; use lint diagnostics for directly banned calls.
-- **Direct storage from screens:** remaining persist-call leaks that are not `localStorage` / `sessionStorage` identifiers (those are lint).
-- **Global mutable access in pure logic:** `getState()` inside `src/lib` rule handlers — prefer injected state.
-- **Desktop IPC in pure lib:** Electron/Steam APIs imported from `src/lib` battle/game-data paths.
-- **UI re-roll:** remaining render entropy that is not `Math.random()` (`alchemy/no-render-math-random` covers that call).
-- **Browser/global access:** `window`, `document`, clipboard, observers, visibility/focus, environment, or location APIs inside pure rules or unowned module initialization.
-- **Unowned lifetime:** timers, observers, object URLs, subscriptions, or global style/body mutations without a creator responsible for teardown.
-- **Duplicate effect orchestration:** multiple callers independently persist, emit, play, synchronize, or retry the same semantic event.
-- **Weak seam:** effect is in a documented owner but silently loses errors, repeats work, exposes partial mutation, or cannot be controlled in tests.
+Use existing diagnostics for banned calls: `alchemy/no-lib-fetch`,
+`alchemy/no-unowned-web-storage` and `alchemy/no-render-math-random`. An allowed
+folder does not prove seam quality; confirm lost errors, partial mutation,
+uncontrolled lifetime or hidden coupling through consumers.

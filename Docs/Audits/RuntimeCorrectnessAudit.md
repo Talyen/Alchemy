@@ -32,22 +32,21 @@ owner. For save/RNG defects, compare uninterrupted and resumed execution and
 failed-command rollback. Unresolved balance or recovery intent remains a decision
 under the [shared contract](README.md#shared-contract).
 
-## Domain rules
+## Investigation leads
 
-- **Lifetime:** effects and subscriptions have an owner responsible for teardown. Confirm whether outstanding work must be cancelled or may complete safely; prevent stale replies from changing a newer session. Primary actions prevent unintended duplicate mutations through the existing command or interaction owner, not necessarily a new UI flag.
-- **Persistence:** validate critical fields under the documented save schemas and repair policy. Trace how write failures affect acknowledgement, retry, and recovery; inspect existing import/export/backup/cloud paths as applicable. Multi-step mutations preserve their documented atomicity and never acknowledge partial durable state as complete.
-- **Idempotency:** reward claim, shop buy, craft, stage completion tolerate double-click/re-entry before mutating.
-- **Failure handling:** trace caught, ignored, and rejected errors through callers. Confirm whether success is falsely acknowledged, player data is lost, or recovery becomes impossible; an empty catch alone is not a finding. Non-fatal audio may intentionally continue.
-- **Trust boundaries:** trace save imports and renderer/IPC inputs through validation and authorized operations. Check malformed payloads, stale sessions, and unintended file/URL access against desktop contracts; do not probe live services or real player data.
-- Presence of `async`/IPC is not a defect — confirm lifetime, cancellation, and single-flight assumptions first.
+`async`, IPC, an empty catch or a missing local flag alone is not a defect.
+Confirm lifetime, cancellation, single-flight and existing validation first.
 
-## Known signals
+| Signal                                                                        | Question                                                                                                                                                      |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Effects/listeners/subscriptions without visible cleanup; writes after `await` | Who owns teardown, and may work outlive the screen? Can stale completion overwrite a newer session?                                                           |
+| Async click handlers, reward/shop/craft/stage re-entry                        | Does the existing command or interaction owner prevent duplicate mutation? Avoid adding a second guard without a gap                                          |
+| Multi-field grant/purchase/craft or persist/hydrate/resume seams              | Do schemas/repair, rollback, write acknowledgement, retry and backup/Cloud recovery preserve atomic state? Partial durable success must never appear complete |
+| Caught/ignored failures                                                       | Can the caller falsely acknowledge success, lose data or make recovery impossible? Non-fatal audio may intentionally continue                                 |
+| Save imports, renderer/IPC inputs, file/URL operations                        | Are malformed payloads, stale sessions and unintended access rejected by the desktop boundary? Use local fixtures, never live services or real player data    |
+| Array indexing, Gold/Health arithmetic, empty decks or maxed upgrades         | Can a reachable boundary value violate bounds or strand progression?                                                                                          |
+| Navigation/reward/shop/outcome state combinations                             | Can repetition, reload, stale IDs or web/Electron differences produce a stuck or divergent state?                                                             |
 
-- Effects registering listeners/intervals without teardown; `.subscribe(` without unsubscribe.
-- Click handlers starting async work without an `isProcessing`/disabled/in-flight guard.
-- `await` then setState/store writes without mounted/abort checks; out-of-order completion overwriting newer results.
-- Persist/hydrate/resume seams (`parseActiveRun`, `snapshotRun`, `restoreRun`, `shared/storage/`, `src/lib/active-run-session/`) discarding corrupt data silently.
-- Non-atomic multi-field updates before a single persist; partial transactions across grant/purchase/craft phases.
-- Array index access without guards in `src/lib/battle`, `src/lib/gear`, stores; unchecked `gold - cost` / `hp - damage` underflow.
-- Impossible/stuck state-machine combinations across navigation, rewards, shops, victory/defeat, resume.
-- Save→reload or web→Electron behavior divergence; boundary values (empty decks, maxed upgrades, stale identifiers).
+Trace save candidates through `parseActiveRun`, `snapshotRun`, `restoreRun`,
+`shared/storage/` and `src/lib/active-run-session/` as relevant; silent repair must
+match the documented policy rather than an assumed strict-validation rule.

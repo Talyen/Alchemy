@@ -26,7 +26,7 @@ The top-right battle cluster shows live Gold, the Autoplay and
 Boons toggles, the dev-only Skip Combat control, and Menu. Gold briefly highlights on
 increases. End Turn is an outline text button above Discard Pile and commits
 immediately after input gates pass, without confirmation. Dev-only Skip Combat uses a labeled skip-forward
-icon and tooltip.
+icon and a below-icon tooltip using `horizontalInset={8}` so the wide content inset does not detach its label. End Turn has no tooltip.
 
 The hand's bottom dock stays centered and stationary as the hand grows to seven
 cards; smaller hands remain centered with capped spacing. Every resting card
@@ -83,22 +83,18 @@ Poison/Burn. Reuse keyword text shine with a dark drop shadow. Transparent gradi
 text must reset inherited text strokes: an outline can cut through its letter interiors.
 This applies to all shared ShineText consumers and the corrupted-title shine.
 
-Reaction names last 1,600 ms independently of numeric bursts. Pop from 90% to 108%
-by 140 ms, settle to 100% by 240 ms, and fade from 1,250 to 1,600 ms.
-Names and numbers share the ordinary combat-feedback upward trajectory. Names
-remain at its final position until their independent lifetime ends. Reserve space for the numeric pop so
-numbers cannot cross names; older actions stack above newer ones. Numeric feedback retains fixed sizing, even during dense rapid sequences. The
-newest group uses the portrait anchor defined by
-[combat text](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx);
-older groups ease upward over 150ms. Reaction names fit their columns independently.
-The existing shine sweeps once between 100 and 1,100 ms. Names
-use 1.25 times the numeric base size. One or two simultaneous names use one column;
-three or more use two. Names never wrap or truncate: fit their size to their
-column, accounting for the pop scale. Keep at most
-three announcement groups per target; newer groups may evict older groups. Numeric
-merging never restarts a name animation or extends its lifetime. Reduced/disabled
-motion shows static keyword-colored names for the same readable duration. Names
-never block play, and teardown cancels their timers and portrait tracking.
+Reaction names have a lifetime independent of numeric bursts. They pop, settle,
+rise with numeric feedback, then hold the final position until expiry while fading. Reserve space for the numeric pop, stack older actions above
+newer ones, and keep numeric size fixed during dense sequences. Names fit each column
+independently, accounting for pop scale, without wrapping/truncation: one or two names
+use one column, three or more use two. New groups may evict the oldest at the shared
+per-target limit. Merging numbers never restarts name motion or extends lifetime.
+Reduced/disabled motion shows static keyword-colored names for the same duration.
+Names never block play; teardown cancels timers and portrait tracking.
+[Reaction text](../src/features/alchemy/run-loop/battle/presentation/ui/reaction-text.tsx)
+owns size/pop curves; [combat text](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx)
+owns anchors/repositioning; [motion constants](../src/lib/game-constants/ui-motion.ts)
+and [battle styles](../src/styles/battle-scene.css) own lifetimes and the single shine sweep.
 
 Within each resolved action, damaging packets of the same type and recipient
 produce one numeric total, including non-additive reaction damage and natural
@@ -107,12 +103,12 @@ packets for gameplay, audio, and impact strength; visual aggregation never turns
 a reaction into a Critical. A total containing Critical damage uses the existing
 accent and an accessible label saying it includes a Critical.
 
-Critical damage uses ordinary typed damage text, retaining its damage color and
-icon. A pale flash fades over 140 ms and a gold glow fades over 480 ms, without
-changing font size, weight, or angle. Reduced/disabled motion uses a steady gold
-glow for the entry's ordinary lifetime. Critical remains in the accessible label
-and uses the existing sound cue. Merging into an already critical entry does not
-restart the pulse or extend the entry's lifetime.
+Critical damage retains ordinary typed color/icon with a brief pale flash and
+gold glow, without changing font size, weight or angle. Reduced/disabled motion
+keeps a steady glow for the ordinary lifetime. Critical remains in the accessible
+label and sound cue. Merging into an already critical entry neither restarts its
+pulse nor extends its lifetime; exact curves live in
+[battle styles](../src/styles/battle-scene.css).
 
 Each action appears immediately above card flights, anchored to its moving portrait.
 Measured layout moves earlier bursts upward without changing their values or
@@ -230,6 +226,13 @@ active attack traits (including Glacial Surge), and pacing, before hero defenses
 The repertoire remains visible without selecting or revealing the next ability. Trait descriptions use the same encounter context through
 `getEncounterEnemyTrait`. These are presentation copies; never pass scaled cards
 back into ability resolution or mutate the canonical catalog.
+
+`TraitBox` owns unboxed rows with colored icons, keyword descriptions and title
+shine for enemy hover/inspection and Labyrinth details. Traits have no individual
+border, background or box padding. Shared encounter icon themes also drive map effects.
+Inspection uses two equal columns when 40rem is available, one column otherwise,
+and full width for a sole Trait. Hover/map Traits stay stacked. Inline-size
+containment belongs only on inspection: shrink-to-fit tooltips need intrinsic width.
 
 Enemy portrait tooltips show traits only, with no repeated-attack text, ability
 cards, or upcoming-action indicator. `EnemyTraits` renders the same named trait
