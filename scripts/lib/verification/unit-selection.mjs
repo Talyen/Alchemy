@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { parseCLI } from "vitest/node";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
 
 const FOCUSED_OPTIONS = new Set([
   "--",
@@ -21,6 +23,8 @@ const FOCUSED_OPTIONS = new Set([
 
 /** Use Vitest's parser so option values never become accidental file selectors. */
 export function unitSelection(args, rootDir) {
+  // Browser-only runners and dependency-free fixtures must not load Vitest.
+  const { parseCLI } = require("vitest/node");
   const { filter: selectors, options } = parseCLI(["vitest", ...args]);
   for (const arg of selectors) {
     if (rootDir && /[\\/]/u.test(arg)) {
