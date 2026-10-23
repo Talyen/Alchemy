@@ -23,7 +23,9 @@ const { initializeMainSentry } = require("./sentry.cjs");
 const { resolveEdition, editionPolicy } = require("../game-edition.mjs");
 const { createDesktopSaveStorage, registerSaveShutdown } = require("./save-storage.cjs");
 const { createSteamCloudStorage } = require("./steam-cloud-storage.cjs");
-const { createDemoProgressBridge, stampSaveOwner } = require("./demo-progress.cjs");
+const { createDemoProgressBridge, stampSaveOwner, stampSaveAccount } = require("./demo-progress.cjs");
+const { steamAccountId, isSteamCloudEnabled } = require("./steam-context.cjs");
+const { saveProfileDirectory, createSaveSlots, migrateLegacySaveProfile } = require("./save-profile.cjs");
 const TEST_PROFILE_ISOLATED =
   app.commandLine.hasSwitch("user-data-dir") || (!app.isPackaged && Boolean(process.env.ALCHEMY_ELECTRON_TEST_PROFILE));
 // Background automation is restricted to isolated development profiles.
@@ -59,43 +61,59 @@ const USE_PACKAGED_RENDERER = app.isPackaged || process.env.ELECTRON_FORCE_PACKA
 const RENDERER_POLICY = { packaged: USE_PACKAGED_RENDERER, devServerUrl: DEV_SERVER_URL };
 const RENDERER_ROOT = path.join(__dirname, "..", EDITION_POLICY.rendererDirectory);
 const WINDOWED_SIZE = { width: 1280, height: 720 };
-const SAVE_SLOTS = Object.fromEntries(
-  ["save.json", "save-recovery.json"].map((name, index) => [
-    index === 0 ? "primary" : "recovery",
-    {
-      name: EDITION_POLICY.cloudFiles[index],
-      file: path.join(app.getPath("userData"), name),
-      tmp: path.join(app.getPath("userData"), `${name}.tmp`),
-      backups: [1, 2, 3].map((i) => path.join(app.getPath("userData"), `${name}.bak.${i}`)),
-    },
-  ]),
-);
+let saveSlots;
 let mainWindow = null;
 let steamClient = null;
-const demoProgress = createDemoProgressBridge({
-  directory: app.getPath("userData"),
-  demoDirectory: path.join(app.getPath("appData"), "Alchemy Demo"),
-  getSteam: () => steamClient,
-  isSavePayload,
-  edition: EDITION,
-});
+let steamworks = null;
+// Chromium's GPU switches must be set before app.ready creates its graphics process.
+if (!TEST_PROFILE_ISOLATED) {
+  try {
+    steamworks = require("steamworks.js");
+    steamworks.electronEnableSteamOverlay();
+  } catch (error) {
+    console.warn("Steam overlay setup is unavailable:", error);
+  }
+}
+let saveStorage;
+let steamCloudStorage;
+let profileSteam = () => null;
 
-const saveStorage = createDesktopSaveStorage({
-  slots: SAVE_SLOTS,
-  demoProgress,
-  isSavePayload,
-  stampOwner: (data) => stampSaveOwner(data, steamClient),
-});
-
-registerSaveShutdown(app, saveStorage);
-
-const steamCloudStorage = createSteamCloudStorage({
-  resolveSlot: resolveSaveSlot,
-  getSteam: () => steamClient,
-  isSavePayload,
-  stampOwner: stampSaveOwner,
-  maxPayloadBytes: MAX_SAVE_PAYLOAD_BYTES,
-});
+async function initializeSaveStorage() {
+  const account = steamAccountId(steamClient);
+  // Keep this process's local/Cloud ownership fixed even if Steam changes users.
+  profileSteam = () => (steamAccountId(steamClient) === account ? steamClient : null);
+  const base = app.getPath("userData");
+  const demoBase = path.join(app.getPath("appData"), "Alchemy Demo");
+  const directory = saveProfileDirectory(base, account, TEST_PROFILE_ISOLATED);
+  try {
+    await migrateLegacySaveProfile({ base, directory, account, isSavePayload });
+  } catch (error) {
+    console.error("Legacy save migration could not complete; source files were preserved:", error);
+  }
+  saveSlots = createSaveSlots(directory, EDITION_POLICY.cloudFiles);
+  const demoProgress = createDemoProgressBridge({
+    directory,
+    demoDirectory: saveProfileDirectory(demoBase, account, TEST_PROFILE_ISOLATED),
+    legacyDemoDirectory: TEST_PROFILE_ISOLATED ? undefined : demoBase,
+    getSteam: profileSteam,
+    isSavePayload,
+    edition: EDITION,
+  });
+  saveStorage = createDesktopSaveStorage({
+    slots: saveSlots,
+    demoProgress,
+    isSavePayload,
+    stampOwner: (data) => stampSaveAccount(data, account),
+  });
+  registerSaveShutdown(app, saveStorage);
+  steamCloudStorage = createSteamCloudStorage({
+    resolveSlot: resolveSaveSlot,
+    getSteam: profileSteam,
+    isSavePayload,
+    stampOwner: stampSaveOwner,
+    maxPayloadBytes: MAX_SAVE_PAYLOAD_BYTES,
+  });
+}
 
 if (!USE_PACKAGED_RENDERER) parseDevServerUrl(DEV_SERVER_URL);
 
@@ -129,8 +147,7 @@ function initializeSteamworks() {
     if (rendererIdentity.edition !== EDITION) throw new Error("Package and renderer editions differ");
   }
   try {
-    const steamworks = require("steamworks.js");
-    steamworks.electronEnableSteamOverlay();
+    if (!steamworks) return;
     steamClient = steamworks.init(steamAppId);
     const overlayPause = registerOverlayPause({
       client: steamClient,
@@ -198,12 +215,13 @@ function handleAuthorized(channel, handler) {
 }
 
 function resolveSaveSlot(slot) {
-  if (slot === undefined) return SAVE_SLOTS.primary;
-  if (slot === "recovery") return SAVE_SLOTS.recovery;
+  if (slot === undefined) return saveSlots.primary;
+  if (slot === "recovery") return saveSlots.recovery;
   throw new Error("Invalid save slot");
 }
 
 function registerIpcHandlers() {
+  handleAuthorized("alchemy:steam-is-cloud-enabled", () => isSteamCloudEnabled(profileSteam()));
   handleAuthorized("alchemy:demo-import-source", saveStorage.readDemoImportSource);
   handleAuthorized("alchemy:demo-initialization", saveStorage.completeDemoInitialization);
   handleAuthorized("alchemy:wishlist", () =>
@@ -359,8 +377,9 @@ app.whenReady().then(async () => {
   if (BACKGROUND_AUTOMATION && process.platform === "darwin") app.setActivationPolicy("prohibited");
   await registerRendererProtocol();
   applySessionSecurity();
-  registerIpcHandlers();
   initializeSteamworks();
+  await initializeSaveStorage();
+  registerIpcHandlers();
 
   // steamworks.js owns the callback pump started by init().
   createMainWindow();

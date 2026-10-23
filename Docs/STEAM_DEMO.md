@@ -54,7 +54,9 @@ Demo restrictions apply to run creation commands, selection callbacks and
 restoration. Out-of-scope activity is dropped without settling it; valid permanent
 progress remains. Full-game catalogs and reward rules are shared. Packaging
 creates a separate Alchemy Demo application identity and local data directory;
-full-game identity and local paths stay unchanged. Explicit isolated test profiles
+full-game application identity stays unchanged. Local progress/receipts are
+account-scoped under the edition directory; device preferences remain local to
+the Electron profile. Explicit isolated test profiles
 take precedence and never connect to live Steam saves.
 
 ## Save transfer
@@ -62,7 +64,7 @@ take precedence and never connect to live Steam saves.
 Each edition has its own local primary/recovery rings. Steam Cloud names are
 `save.json` / `save-recovery.json` for full and
 `demo-save.json` / `demo-save-recovery.json` for demo. Native writes stamp the
-Steam account ID. Local Windows import reads only the fixed Alchemy Demo rings
+Steam account ID. Local Windows import reads only the matching account and legacy Alchemy Demo rings
 and requires a matching account; the renderer cannot supply paths.
 
 On genuinely fresh full-game initialization, select one compatible demo snapshot
@@ -111,9 +113,10 @@ opens in the overlay only when
 fixed Steam store URL in the browser. Unknown availability is not success:
 overlay activation returns void and can silently do nothing.
 
-Native callback and availability support must be implemented and validated in
-packaged Steam builds. The unresolved implementation prerequisite and its dated
-upstream evidence live in the [blocked release plan](./Plans/SteamDemo.md#native-overlay-prerequisite).
+Native callback and availability support are built from the pinned source and
+minimal patches described in the [native build recipe](../scripts/steamworks/README.md).
+Desktop development and packaging qualify both native exports. Packaged Windows
+Steam acceptance remains in the [blocked release plan](./Plans/SteamDemo.md#native-overlay-prerequisite).
 
 Complete [physical Steam acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence)
 on the packaged Windows game and Deck, including custom overlay shortcuts,

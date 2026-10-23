@@ -86,6 +86,7 @@ async function clearDesktop(
   cloudSyncEnabled: boolean,
   forceLocalWipe: boolean,
 ): Promise<SaveBackendWriteResult> {
+  if (desktop.steamIsCloudEnabled) cloudSyncEnabled = await desktop.steamIsCloudEnabled();
   if (!forceLocalWipe) {
     if (desktop.completeDemoInitialization && !(await desktop.completeDemoInitialization())) {
       return { ok: false, error: new Error("Could not preserve demo initialization before clearing progress") };
@@ -159,7 +160,7 @@ async function writeDesktopSave(
   const localWritten = await desktop.writeSave(value, slot);
   // Recovery may still be mirrored after a local failure; the primary slot
   // must remain local-first. Neither Cloud result changes local write success.
-  if (cloudSyncEnabled && (localWritten || slot === "recovery")) {
+  if ((cloudSyncEnabled || desktop.steamIsCloudEnabled) && (localWritten || slot === "recovery")) {
     cloudMirror(desktop).enqueue(
       slot ?? "primary",
       () => desktop.steamCloudWrite?.(value, slot) ?? Promise.resolve(false),

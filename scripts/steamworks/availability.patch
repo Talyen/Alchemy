@@ -1,0 +1,76 @@
+From 206fc5be6aff62eb62286c417c3547c6e8559939 Mon Sep 17 00:00:00 2001
+From: st14n <stijn.schmitz@rws.nl>
+Date: Wed, 19 Nov 2025 14:06:48 +0100
+Subject: [PATCH] Feat: Steam overlay enabled status detection
+
+---
+ client.d.ts   | 2 ++
+ index.d.ts    | 1 +
+ index.js      | 2 ++
+ src/client.rs | 4 ++++
+ src/lib.rs    | 5 +++++
+ 5 files changed, 14 insertions(+)
+
+diff --git a/client.d.ts b/client.d.ts
+index a2501abd..45f3755f 100644
+--- a/client.d.ts
++++ b/client.d.ts
+@@ -1,6 +1,7 @@
+ export declare function init(appId?: number | undefined | null): void
+ export declare function restartAppIfNecessary(appId: number): boolean
+ export declare function runCallbacks(): void
++export declare function isOverlayEnabled(): boolean
+ export interface PlayerSteamId {
+   steamId64: bigint
+   steamId32: string
+diff --git a/index.d.ts b/index.d.ts
+index e249a46d..6b3c8a4a 100644
+--- a/index.d.ts
++++ b/index.d.ts
+@@ -1,5 +1,6 @@
+ export function init(appId?: number): Omit<Client, "init" | "runCallbacks">;
+ export function restartAppIfNecessary(appId: number): boolean;
+ export function electronEnableSteamOverlay(disableEachFrameInvalidation?: boolean): void;
++export function isOverlayEnabled(): boolean;
+ export type Client = typeof import("./client.d");
+ export const SteamCallback: typeof import("./client.d").callback.SteamCallback;
+diff --git a/index.js b/index.js
+index bc9e54d8..29146e4d 100644
+--- a/index.js
++++ b/index.js
+@@ -73,5 +73,7 @@ module.exports.electronEnableSteamOverlay = (disableEachFrameInvalidation) => {
+     }
+ }
+ 
++module.exports.isOverlayEnabled = nativeBinding.isOverlayEnabled;
++
+ const SteamCallback = nativeBinding.callback.SteamCallback
+ module.exports.SteamCallback = SteamCallback
+\ No newline at end of file
+diff --git a/src/client.rs b/src/client.rs
+index 78af3485..6704edb7 100644
+--- a/src/client.rs
++++ b/src/client.rs
+@@ -23,3 +23,7 @@ pub fn drop_client() {
+     let mut client_ref = STEAM_CLIENT.lock().unwrap();
+     *client_ref = None;
+ }
++
++pub fn is_overlay_enabled() -> bool {
++    get_client().utils().is_overlay_enabled()
++}
+\ No newline at end of file
+diff --git a/src/lib.rs b/src/lib.rs
+index f6370283..090ad586 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -40,4 +40,9 @@ pub fn run_callbacks() {
+     client::get_client().run_callbacks();
+ }
+ 
++#[napi]
++pub fn is_overlay_enabled() -> bool {
++    client::is_overlay_enabled()
++}
++
+ pub mod api;
