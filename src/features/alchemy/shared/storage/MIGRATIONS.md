@@ -85,19 +85,12 @@ once using the saved events stream. A resumed Labyrinth map clears stale pending
 room locks. Invalid or missing battle Gold falls back to valid purse Gold in both
 the battle and profile; a valid zero balance remains authoritative.
 
-## Retired cosmetic board fields
+## Discarded presentation fields
 
-Current-shape validation discards obsolete board ownership, selection, resolved
-background and pending reward fields. All other profile and active-run state is
-preserved, and new writes omit those fields. No schema-version increment or
-supported payload transformation is needed.
-
-## Retired display aspect ratio
-
-The game always fills the viewport. `selectedAspectRatio` is no longer a settings
-or save field; current-shape normalization discards saved fixed ratios without
-changing profile progress or active-run state. New writes omit the field. This
-removal needs no supported payload transformation or schema-version increment.
+Current-shape normalization drops obsolete board ownership, selection, resolved
+background and pending-reward fields, plus `selectedAspectRatio`. They are absent
+from new writes; the game fills the viewport. Preserve all other valid profile and
+active-run data. These removals require no schema bump or supported transformation.
 
 ## Progression gate fields
 
@@ -151,7 +144,34 @@ resurrect a saved run after death, abandonment, or victory.
 
 ## Defaults and resume normalization
 
-`createDefaultSaveData()` (`storage/defaults.ts`) is the top-level defaults owner: the Zod schema is parsed once into a frozen singleton and every caller receives a fresh clone, so top-level keys and values cannot drift (the save contract test protects cross-load isolation). Domain defaults must still be updated together: `SettingsSaveFieldsSchema` and its `createDefaultSettingsSaveFields` factory (`src/lib/validation/save-schemas/settings.ts`), `createDefaultProfileSaveFields` (`shared/stores/session/profile-store-types.ts`), `createInitialGearState` (`shared/stores/session/gear-state-defaults.ts`), and `createInitialPermanentFields` (`shared/stores/session/run-state-init.ts`), plus both fixture builders (`tests/fixtures/saves.ts` campaign-full, `tests/helpers/save-candidate-fixtures.ts` candidate-minimal). Validation supplies safe current-field defaults. Normalization repairs current-run choices and catalog references; hydration restores runtime cards and manifests. Repair happens in two layers with distinct owners: schema load-repair (`SaveDataSchema` transform in `save-data.ts`: live-combat gold override, autoplay derive, orphan gear-loadout prune) runs first, then codec hydrate-repair (`hydrateGameplayPersistenceFields` in `shared/stores/persistence/persistence-hydration.ts`: unknown-companion prune, homestead effects, unique ownership union). Complete-save restoration composes that helper inside its existing gameplay transaction; `hydrateAlchemyPersistenceFields` is the separate fields-only wrapper, not a nested restore step. Preserve valid saved card modifications, Health, defenses, flags, pending choices, and RNG. Never reapply starting grants or resolve an action during normalization. Keep material defaults and current field names; retired crystal/recovery and historical Talent conversions are no longer accepted as aliases. Live combat gold intentionally overrides the purse when finite and non-negative; that override is not a repair warning.
+`createDefaultSaveData()` in `storage/defaults.ts` clones a frozen schema-derived
+singleton for each caller. The save contract test protects cross-load isolation.
+Update the affected defaults and fixtures together:
+
+| Domain             | Default owner                                                                                                     |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Settings           | `SettingsSaveFieldsSchema` and `createDefaultSettingsSaveFields` in `src/lib/validation/save-schemas/settings.ts` |
+| Profile            | `createDefaultProfileSaveFields` in `shared/stores/session/profile-store-types.ts`                                |
+| Gear               | `createInitialGearState` in `shared/stores/session/gear-state-defaults.ts`                                        |
+| Permanent progress | `createInitialPermanentFields` in `shared/stores/session/run-state-init.ts`                                       |
+| Fixtures           | `tests/fixtures/saves.ts` (campaign-full) and `tests/helpers/save-candidate-fixtures.ts` (candidate-minimal)      |
+
+Repair runs in two stages:
+
+1. **Schema load repair:** `SaveDataSchema` in `save-data.ts` applies live-combat
+   Gold override, autoplay derivation and orphan-loadout pruning. Valid finite,
+   nonnegative combat Gold overrides purse Gold without a repair warning.
+2. **Codec hydration:** `hydrateGameplayPersistenceFields` in
+   `persistence/persistence-hydration.ts` prunes unknown Companions, recomputes
+   Homestead effects and unions Unique ownership. Complete-save restore composes
+   this operation in its existing transaction; `hydrateAlchemyPersistenceFields`
+   is the separate fields-only wrapper.
+
+Validation supplies safe current-field defaults; normalization repairs choices
+and catalog references; hydration restores runtime cards and manifests. Preserve
+valid modifications, Health, defenses, flags, choices and RNG. Never replay
+starting grants or actions. Retired crystal/recovery and historical Talent
+conversions are not aliases for current fields.
 
 ## Policy: local is authoritative
 
@@ -242,23 +262,14 @@ While a load is pending, exit saves queue without attempting a synchronous write
 slot protection is not yet known. A pending clear skips exit saves. Once loads
 and clears finish, the synchronous exit path remains available.
 
-Renderer gameplay checkpoints publish Saving… before any completed result. Display
-hooks retain pre-action progress while domain commands resolve and saving runs.
-A successful primary or recovery write releases the pending result; failed and
-skipped or superseded writes never acknowledge it. If both slots fail, progression pauses with
-Couldn’t save and Retry. Retrying saves the committed snapshot without executing
-the action again. Automatic retry remains with the existing scheduler and cooldown;
-explicit Retry resets its submission latch without changing normal exit deduplication.
-The retry request belongs to the pending career and checkpoint. Restore or
-cancellation during status notification revokes it before a driver can run. A
-missing or throwing driver falls back to a fresh session checkpoint so its failure
-cannot strand the pending action in Saving….
-
-Checkpoint revisions, epochs, pending presentation references, and failure status
-are runtime-only. Restoring another run, successful clear, write protection, and disposal
-invalidate stale acknowledgements and completion feedback. No schema migration is
-needed. Completed outcomes survive process interruption after local acknowledgement;
-shutdown flushing of unfinished work remains best effort.
+Only a current, covering local write acknowledges a completed player action;
+failed, skipped and superseded submissions do not. Checkpoint versions, epochs,
+retry-driver lifetime and deferred feedback follow the
+[session completion contract](../../../../../Docs/RUN_STATE.md#completed-actions-and-local-saving).
+[UI feedback](../../../../../Docs/UI.md#pending-saves-and-action-feedback) owns
+Saving/Retry presentation. Completion metadata stays outside the save format.
+Acknowledged outcomes survive process interruption; shutdown flushing of unfinished
+renderer work remains best effort.
 
 Cloud mirroring runs independently after local writing, serialized across both
 slots with the newest queued payload per slot. A mirror failure cannot delay local
@@ -348,9 +359,8 @@ survive reload; eligible Potions may be brewed again at later visits under the
 `AlchemyVisit.transmutation` additionally saves each keyword choice's exact
 alterations, including source snapshots/indices, selected source keywords, and
 result cards, plus the current source/keyword/preview selection. Hydration
-restores every source/result card. Completed Transmutation shows its saved result
-and Continue without repeating the alteration or completion feedback. Exhausted
-visits and completed visits missing a result advance automatically. Retired
+restores every source/result card. Completed Transmutation follows the saved-result and missing-result
+[interaction contract](../../../../../Docs/UI_BROWSING.md#campfire-and-transmutation). Retired
 replacement-card offers repair to an uninitialized selection, not a parallel
 workflow.
 

@@ -190,3 +190,55 @@ after each React commit. Store commands own gameplay; hydration consumes legacy
 continuations before the UI observes a battle.
 Session reset cancels and clears presentation without publishing a gameplay
 command or retaining an unused opening snapshot in the run store.
+
+## Playback and automation rules
+
+### Autoplay selection and scheduling
+
+`battle/playable-hand.ts` owns Card/Wish picks (`findBestPlayableHandCard`,
+`findBestWishChoice`). Autoplay excludes potentially lethal self-costs, then chooses the highest
+`getEffectiveDamageScore`, breaking ties leftward. At half Health or below it
+restricts hand picks to defensive cards when any are playable. Wishes prefer
+safe choices, fall back to the whole offer if none are safe, and preview on hover.
+`src/lib/battle/autoplay-policy.ts` owns live scoring and is shared by the balance
+simulator; independent simulation policies stay in the simulator.
+
+`use-battle-autoplay.ts` selects a ready action; `battle/autoplay-driver.ts`
+(`driveAutoplay`) schedules one loop without owning selection or input gates.
+Readiness/retry updates cannot shorten the post-play pause, measured from successful
+play start. Transfer time counts toward it; a longer transfer adds no extra pause.
+Teardown cancels either wait. Recheck current playback gates before the next play.
+
+Previews are uncommitted. The route forwards the driver's abort signal and live
+eligibility check to the card handler. Disabling autoplay or unmounting cancels
+preview; after its delay recheck session/input eligibility before committing.
+Cancelled work cannot clear a newer preview.
+
+### Manual input, draws and automatic turn ending
+
+Manual plays commit immediately during other draws or hand reflow; only incoming
+hidden cards and actual turn transitions are unavailable. Resolve cards by stable
+hand identity. Preserve immutable hidden-hand keys and callback binding.
+Autoplay, auto-end-turn and End Turn share `isBattlePlaybackBlocked` in
+`battle/playback-gate.ts`. Each action goes through `presentCombatTexts` in
+`battle/controller-utils.ts` under [battle feedback](./UI_BATTLE.md#battle-feedback).
+
+Concurrent draws preserve one another's hidden cards and transfers; settlement
+checks current battle state. Explicitly schedule auto-end after draws/resume,
+independently of React battle-state ticks. Opening Menu cancels the countdown;
+closing it starts a fresh normal countdown only if eligible. On expiry, recheck
+current playback gates and hand playability.
+
+Wishes wait for active card transfers. Draw-and-Wish cards show draws first;
+queued Wishes also wait for the prior chosen card to reach the hand. Use the
+existing transfer-in-progress signal without delaying gameplay commits.
+
+### Outcome timing
+
+Defeat settles synchronously in transition `prepare`; only navigation waits.
+Retain the terminal frame through delay/fade under [data flow](#data-flow).
+Keep [battle timing](../src/lib/game-constants/battle-timing.ts) aligned with
+`combatant-attack-lunge` in [keyframes](../src/styles/keyframes.css) and the shake
+delay in [theme styles](../src/styles/theme.css). [Battle motion](./UI_MOTION.md#battle-motion)
+owns death, survival and lunge composition. Mid-enemy-turn reload skips playback
+under [committed battle recovery](./RUN_STATE.md#committed-battle-playback).

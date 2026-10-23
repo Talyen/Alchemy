@@ -20,36 +20,27 @@ card, healing meter, changed value, or selected state can communicate the outcom
 
 ## Every player action receives feedback
 
-Every supported player action must produce a timely, perceivable response that
-acknowledges the input and communicates its outcome. Visible feedback is the
-baseline; audio may reinforce it. Essential meaning must remain understandable
-with sound muted. Apply this core design principle to all UI, UX, and gameplay
-design, implementation, and review.
+Every supported pointer, keyboard and gameplay action needs a timely, visible
+response that acknowledges input and communicates its outcome. Audio may reinforce
+it; essential meaning must survive mute or playback failure.
 
-- Cover pointer actions, keyboard activation, focus and navigation, selection, dismissal, and gameplay actions. Equivalent input methods must communicate the same result.
-- A changed screen, visible focus or selected state, updated value, or clear gameplay reaction can satisfy the principle. Reuse shared feedback before adding effects; add extra effects only when they improve clarity.
-- Acknowledge delayed actions promptly, show that work is pending, then communicate completion or failure. Distinguish input acknowledgment from successful completion.
-- Explain rejected or ineffective actions. Disabled controls must communicate unavailability and its reason through existing inspection or focus patterns without implying success. Valid actions with no effect still need acknowledgment; follow the existing [battle feedback](./UI_BATTLE.md#battle-feedback) conventions for their presentation.
-- Match feedback strength to importance and frequency. Keep repeated actions readable without overwhelming animation or sound; group related outcomes where existing presentation rules allow it.
-- Preserve meaning under existing motion preferences, mute settings, and audio failures. Static state changes can carry the same meaning as motion. Follow the existing [accessibility stance](#accessibility-stance), [motion](./UI_MOTION.md), and [audio contract](./AUDIO.md#runtime-contract).
-- Feedback must reflect resolved gameplay. Animation or sound completion must never determine whether an accepted action commits; preserve the [turn presentation](./GAME_RULES.md#state-turns-and-randomness) contract.
-- Unbound keys and clicks on noninteractive scenery require no reaction.
+- Use changed state, focus, selection, resource values or resolved gameplay to
+  communicate success. A selected tab can rely on its selected state and press feedback.
+- For delayed work, acknowledge input promptly, show pending state, then success
+  or failure. A purchase-success cue must never acknowledge insufficient Gold.
+- Explain rejected or ineffective actions through existing feedback/inspection.
+  Disabled controls expose their reason on inspection or focus. Valid no-effect
+  actions follow [battle feedback](./UI_BATTLE.md#battle-feedback).
+- Match feedback strength to consequence and frequency, using shared effects and
+  grouping. Preserve meaning with existing motion preferences and muted or failed audio.
+- Equivalent inputs communicate the same result. Unbound keys and noninteractive
+  scenery need no reaction. Animation and sound never decide gameplay acceptance.
 
-### Examples
-
-| Action                                    | Expected feedback                                                                                                                                              |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Select a tab                              | The active tab and displayed content visibly change; selecting the current tab can rely on its existing selected state and press feedback.                     |
-| Attempt a purchase with insufficient Gold | The unavailable purchase and required Gold are clear, with a reason available on inspection or focus; do not play a purchase-success cue.                      |
-| Play a card                               | Acknowledge the play and show the resolved card movement, resource changes, and affected combatants' outcomes, using the existing battle feedback conventions. |
-| End Turn                                  | Acknowledge the accepted action and make the discard, enemy, and next-hand sequence visible; gameplay commits independently of playback.                       |
-| Craft an item                             | Show pending state if needed, then the resulting item and spent materials; explain rejection or failure without presenting a successful craft.                 |
-
-### Why this matters
-
-- **Confidence and control:** timely feedback lets players tell whether input registered, understand the current state, and choose their next action. It reduces uncertainty and repeated clicks caused by uncertainty. [Nielsen Norman Group, Visibility of System Status](https://www.nngroup.com/articles/visibility-system-status/)
-- **Game feel and learning:** clear reactions connect actions to consequences and communicate the importance of game events. Pichlmair and Johansen's survey describes feedback amplification as supporting clarity and player empowerment; in Alchemy, these cues should help players understand outcomes as well as feel their impact. [Designing Game Feel: A Survey](https://arxiv.org/abs/2011.09201)
-- **Perceivability:** complementary visual and audio cues help players perceive information when one channel is unavailable. The visual baseline is Alchemy's chosen policy, informed by this guidance; it does not imply adoption of the full guideline set. [Xbox Accessibility Guideline 103: Additional channels for visual and audio cues](https://learn.microsoft.com/en-us/xbox/accessibility/xbox-accessibility-guidelines/103)
+This policy follows the usability rationale in
+[Nielsen Norman Group's visibility principle](https://www.nngroup.com/articles/visibility-system-status/),
+[Designing Game Feel](https://arxiv.org/abs/2011.09201) and
+[Xbox's complementary-channel guidance](https://learn.microsoft.com/en-us/xbox/accessibility/xbox-accessibility-guidelines/103).
+Alchemy's [accessibility stance](#accessibility-stance) defines its actual scope.
 
 ## Guide index
 
@@ -112,9 +103,8 @@ comparison diagrams. Icon-only buttons set their font size through `Button`.
 
 ## UI gold palette
 
-General interface gold uses one warm family: base `#cd9b51`, light `#e6c58e`,
-deep `#986b32`, and pale `#f3e4ca`. `UI_GOLD` in
-`src/lib/game-constants/ui-colors.ts` owns the hex values needed by plasma;
+General interface gold uses one warm base/light/deep/pale family.
+[`UI_GOLD`](../src/lib/game-constants/ui-colors.ts) owns the hex values needed by plasma;
 `src/styles/theme.css` mirrors them as `gold-base/light/deep/pale` utilities.
 Architecture smoke enforces parity. Primary controls use base gold, availability
 borders pulse light → deep → light, and prices and warm headings use pale gold.
@@ -152,7 +142,8 @@ The gold counter and Main Menu logo use the standard 103.5% CSS hover scale over
 
 Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
 
-Labyrinth's rectangular art nodes reuse `Surface`, shared shimmer, and Shine Border. Hover, keyboard focus, and selection enlarge only the emphasized tile to 106%; unknown tiles stay neutral. Completed art remains subdued. Reduced motion makes emphasis immediate and shine static. See [Labyrinth map](./UI_LABYRINTH.md#labyrinth-map) for discovery and movement.
+Labyrinth nodes reuse `Surface`, shimmer and Shine Border under the
+[map interaction and presentation contract](./UI_LABYRINTH.md#labyrinth-map).
 
 ## Accessibility stance
 

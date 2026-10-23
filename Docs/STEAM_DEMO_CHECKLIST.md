@@ -56,7 +56,7 @@ Use [game rules](./GAME_RULES.md), [run state](./RUN_STATE.md), and
 - [ ] Quit opens no store/browser destination. Verify that native shutdown drains admitted file writes under the [write acknowledgement contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#write-acknowledgement); distinguish those writes from unfinished renderer work and already acknowledged progress.
 - [ ] Verify offline startup, Options and local saves without Steam, using isolated profiles.
 - [ ] Run affected current-save, future-save protection and source-preserving demo-import checks under the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
-- [ ] **EXTERNAL:** Verify real overlay/custom chord/controller paths and shared-Cloud transfer under [physical Steam acceptance](#physical-steam-acceptance-evidence). Preserve the native-binding blocker in [Steam demo](./STEAM_DEMO.md#input-and-release-evidence).
+- [ ] **EXTERNAL:** Verify real overlay/custom chord/controller paths and shared-Cloud transfer under [physical Steam acceptance](#physical-steam-acceptance-evidence). Keep the [native-binding prerequisite](./Plans/SteamDemo.md#native-overlay-prerequisite) open until qualified.
 
 ## 5. Readability, feedback, and Options
 
@@ -157,4 +157,4 @@ import while preserving edition slots and initialization receipts.
 Deck evidence includes Proton startup/performance, physical Steam Input/overlay,
 1280×800 readability and suspend/resume. Keep those checks open when hardware is
 unavailable. Renderer geometry and virtual-display results do not establish a
-controller/Deck rating or close the [release blockers](./STEAM_DEMO.md#input-and-release-evidence).
+controller/Deck rating or close the [release blockers](./Plans/SteamDemo.md#outstanding-work).

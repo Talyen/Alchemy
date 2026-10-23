@@ -106,12 +106,6 @@ checks before packaging or signing.
 Preview smoke checks start and close their own server through Vite’s preview API;
 an occupied port fails before any HTTP validation. They require an application script and nonempty JavaScript/CSS responses with matching content types, plus a served MP3 matching authored bytes. HTML fallbacks cannot stand in for missing resources. CI browser artifacts include music and run this smoke check after download.
 
-### Verification cache
-
-`lib/verification/verification-cache.mjs` implements the [reuse policy](../CONTRIBUTING.md#verification-reuse). A command can establish a receipt on its first run. Ordinary checks share one input scan pair across their deterministic stages, including selected units/docs; nested verification does not scan again. Documentation-only checks do not scan dependencies or reuse receipts. Full verification retains per-unit receipts because its aggregate also produces assets and reports. Reuse requires an observed duration of at least five seconds and must save more than twice the measured input-scan cost. The exact executable and ordered argument list identify coverage.
-
-Input identity covers tracked and untracked nonignored files, root environment files and npm configuration, installed dependency file identities, Node executable/version/platform, checkout location, and environment. File identities include mode, size, nanosecond modification/change times, and inode; this is local filesystem reuse, not a portable content-addressed build cache. Dependency caches are excluded. Managed worktrees resolve their linked `node_modules` to the actual installation before scanning it. Linked source or external package symlinks, unreadable inputs, a missing npm install receipt, or changed inputs disable reuse. Fresh successes replace receipts atomically; failures invalidate them. Reuse preserves the original run ID and expiry. Each verifier writes a run-specific `verify/summary.json`, linked by the outer completion report.
-
 ## Compatibility commands and test runners
 
 `npm test` prints its scope and runs only three fixed Node smoke suites; `test:full` is a compatibility alias
@@ -173,28 +167,45 @@ Authoritative working-tree discovery disables Git's filesystem monitor and untra
 
 ## Verification receipt rules
 
-Local task and full checks reuse passing results for deterministic unit selections
-and supporting type, localization, format and lint diagnostics when their exact
-commands and inputs match. This includes repeated checks before handoff, during
-integration and at pre-push in the same checkout. Committing unchanged files does
-not invalidate a receipt; changes to source, dependency identities, configuration,
-environment or checkout do. Documentation-only checks do not scan dependencies or reuse receipts. CI always runs fresh. Builds, browser runs, assets
-and report-producing gates always execute.
+`lib/verification/verification-cache.mjs` implements the
+[reuse policy](../CONTRIBUTING.md#verification-reuse). Deterministic unit selections
+and supporting type, localization, format and lint checks can reuse a passing
+receipt when the exact executable, ordered arguments and inputs match. This covers
+handoff, integration and pre-push in the same checkout. Builds, browsers, assets,
+report-producing checks and CI always execute. Documentation-only checks neither
+scan dependencies nor reuse receipts.
 
-Receipts expire after one hour without extending on reuse. Reuse is accepted only
-when it saves more than twice the input-scan cost and the original command took
-at least five seconds. Reports identify the original passing run; failures and
-input drift invalidate receipts. Managed worktrees support the root checkout's
-linked dependency installation. Normal report cleanup removes disposable receipts.
+Receipts expire after one hour, without renewal on reuse. The original run must
+have taken at least five seconds and reuse must save more than twice the scan cost.
+A first run may establish a receipt; ordinary deterministic stages share one scan
+pair, including nested verification. Full verification retains per-unit receipts
+because its aggregate also produces reports/assets.
 
-Set `ALCHEMY_VERIFY_FRESH=1` for fresh observations, including nondeterminism
-investigations and benchmark comparisons. [Cache implementation details](#verification-cache)
-document input identity. Reuse is an optimization, never permission to omit a
-newly selected check or substitute narrower coverage.
+Input identity includes:
 
-Supporting local stages have a 60-second deadline. Selected units use their test deadlines after acquiring the shared lane; lane waiting has no default deadline. Minimal Node smoke retains its 30-second deadline.
+- Tracked/untracked nonignored files, root environment files and npm configuration.
+- Installed dependency identities (excluding caches), resolving linked worktree
+  `node_modules` to the actual installation.
+- Node executable/version/platform, checkout location and environment.
 
-When source/catalog inputs change, the local check also runs the offline [localization freshness gate](../Docs/LOCALIZATION.md#agent-workflow). Agents settle experimental wording in their isolated worktree, then update translations before final verification and integration; checks and builds never invoke a translation service.
+File identity uses mode, size, nanosecond modification/change times and inode;
+receipts are local filesystem reuse, not portable content-addressed caches.
+Linked source/external package symlinks, unreadable inputs, a missing install receipt
+or changed inputs disable reuse. Committing unchanged files does not invalidate it.
+Fresh successes replace receipts atomically; failures/input drift invalidate them.
+Reports preserve the original run ID/expiry and link the run-specific
+`verify/summary.json`. Normal report cleanup removes disposable receipts.
+
+Set `ALCHEMY_VERIFY_FRESH=1` for nondeterminism investigations and benchmarks.
+Reuse cannot omit newly selected checks or substitute narrower coverage.
+Supporting local stages have a 60-second deadline; selected units use their test
+deadlines after lane acquisition. Lane waiting has no default deadline; minimal
+Node smoke retains its 30-second deadline.
+
+Source/catalog changes also select the offline
+[localization freshness check](../Docs/LOCALIZATION.md#agent-workflow).
+Translation and final verification follow Contributing; checks/builds never
+invoke a translation service.
 
 ## Test maintenance details
 

@@ -76,6 +76,12 @@ ports, build edition and concurrency details for focused local execution.
 
 ### Browser and Electron commands
 
+Install browser-test Chromium once before the first run:
+
+```sh
+npx playwright install chromium
+```
+
 For current source edits, run `npm run test:e2e:dev -- <spec>`. This uses the shared local test lane and retains compact diagnostics. Preview mode is the default for `test:e2e` and serves the existing build; rebuild before using it to verify source changes. For direct Playwright diagnosis, use `--project=chromium` with an equals sign so a following spec is not consumed as another project name; raw invocations require manual coordination under [the test policy](../../CONTRIBUTING.md#what-to-run-when-you-change).
 
 Named route selections use `npm run test:e2e:route -- <name>` and also default to

@@ -1,5 +1,10 @@
 # Run state and persistence
 
+Session state, command atomicity and persistence capabilities live here.
+[Save compatibility](../src/features/alchemy/shared/storage/MIGRATIONS.md) owns
+format acceptance, file/Cloud transport, fallback writes and deletion modes.
+[Run workflows](./RUN_WORKFLOWS.md) gives editing steps.
+
 ## Common implementation paths
 
 Start with a matching production example and its regression test. For an existing
@@ -34,7 +39,23 @@ when the session ends. Keep those ownership checks when simplifying forwarding.
 
 ## Run state
 
-Each game session owns one authoritative nested gameplay aggregate constructed in `shared/stores/session/gameplay-state.ts`. `gameplay-state-reads.ts` owns explicit-session aggregate reads and subscriptions; `session-gameplay-store.ts` owns a cached presentation read store per session; `gameplay-state-store.ts` is the default-application adapter. Reusable reads, commands, and persistence codecs do not import React or initialize the application. Its `run`, `session`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state, and the aggregate is data-only: draft mutators in `run-session-write-port.ts` (plus `homestead-actions.ts` / `gear-actions.ts`) compose atomic changes. Feature commands receive a deeply readonly `RunTransaction`, with live reads of the same draft. Only store-owned mutation implementations and bootstrap hydration receive the raw `GameplayDraft`; feature commands cannot assign fields or mutate nested collections directly. Feature orchestration should call intent-level commands rather than assemble field updates. `session/profile-store.ts` and `session/gear-store.ts` expose aggregate-backed domain operations; their save conversions live in `persistence/profile-codec.ts` and `persistence/gear-codec.ts`; React profile slices live in `use-profile-store.ts`; they do not own shadow state. The write module, reads, commands, and `run-lifecycle.ts` are the feature-facing seams. Independent runtimes follow [Session ownership](#session-ownership).
+Each game session owns one data-only gameplay aggregate in
+`shared/stores/session/gameplay-state.ts`. Its regions are listed below.
+Reusable reads, commands and codecs neither import React nor initialize the app.
+
+- **Reads:** `gameplay-state-reads.ts` supplies explicit-session reads and
+  subscriptions; `session-gameplay-store.ts` caches each session's presentation
+  projection; `gameplay-state-store.ts` adapts the default application.
+- **Writes:** intent commands compose `run-session-write-port.ts`,
+  `homestead-actions.ts` and `gear-actions.ts`. Features receive live, deeply
+  readonly `RunTransaction` reads. Raw `GameplayDraft` access belongs only to
+  store-owned mutations and bootstrap hydration.
+- **Domain adapters:** `session/profile-store.ts` and `session/gear-store.ts`
+  read the aggregate without shadow state. Their codecs live in `persistence/`;
+  React profile slices use `use-profile-store.ts`.
+
+Use the [capability ports](#session-capability-ports) and `run-lifecycle.ts` for
+feature orchestration; independent runtimes follow [session ownership](#session-ownership).
 
 Committed gameplay is immutable in every build. `createGameplayStore` freezes the
 complete initial aggregate and each new revision before save-status or gameplay
@@ -407,6 +428,12 @@ A replacement durable autosave driver schedules the session's pending revision
 without requiring another gameplay action. With no driver, pending state and
 pre-action display remain protected; explicit Retry can checkpoint directly.
 
+Explicit retry captures the pending career and checkpoint before notifying status
+observers, then selects the latest attached retry driver. Replacement or cancellation
+during notification revokes that request. If its driver detaches or throws before
+starting a save, the session persistence port performs a fresh checkpoint instead;
+retry never repeats the gameplay action or leaves saving dependent on a departed owner.
+
 Player-facing store hooks retain the immutable pre-action progress until saving
 succeeds. Transient navigation, Collection browsing, and inspection remain usable.
 Domain reads continue to see the committed state. Player command entrypoints reject
@@ -415,10 +442,12 @@ settlement commands still resolve synchronously. The renderer groups synchronous
 commits into one immediate checkpoint rather than waiting for the ordinary autosave
 debounce. Presentation and local saving must both settle before another action.
 
-[Write acknowledgement](../src/features/alchemy/shared/storage/MIGRATIONS.md#write-acknowledgement)
-owns primary/recovery fallback, Saving/Retry feedback and retry timing. Retry saves
-the original committed result without repeating gameplay. Restore, clear, write
-protection and disposal invalidate pending completion callbacks as described below.
+[Storage acknowledgement](../src/features/alchemy/shared/storage/MIGRATIONS.md#write-acknowledgement)
+owns write outcomes, fallback and automatic retry timing;
+[UI feedback](./UI.md#pending-saves-and-action-feedback) owns Saving/Retry presentation.
+Retry saves the original result without repeating gameplay. Explicit Retry resets
+its submission latch without changing exit deduplication. Restore, successful clear,
+write protection and disposal revoke stale completion feedback.
 Explicit checkpoints establish a new acknowledgement requirement even when the
 gameplay revision is unchanged, including settings-only changes. Snapshot tokens
 carry that checkpoint version as well as the gameplay revision; an older write
@@ -468,15 +497,12 @@ storage. Validation runs both at admission and inside the storage lane, so queue
 snapshots cannot revive a replaced career. An already executing backend write
 cannot be recalled; replacement saves follow it through the serialized lane.
 
-Each queued submission owns its completion. A coalesced-away submission returns
-`superseded`, never the replacement payload's outcome. Autosave retains unsaved
-work for retry; supersession neither clears an existing storage failure nor
-reports a new one. Only an actually written, current snapshot can acknowledge
-its captured revision. Detaching an autosave owner releases only its scheduling
-and retry registration; pending session feedback survives until a covering save
-or explicit invalidation. Disposing the session cancels feedback acknowledgement
-but still drains authorized exit writes. Save receipts never enter the wire format.
-Low-level transport tests use the storage runtime directly to exercise arbitrary payloads below this session boundary.
+Storage submission outcomes follow [write acknowledgement](../src/features/alchemy/shared/storage/MIGRATIONS.md#write-acknowledgement).
+Supersession neither clears a storage failure nor reports a new one. Detaching an
+autosave owner releases only its scheduling and retry registration; pending session
+feedback survives until a covering save or invalidation. Disposal revokes feedback
+but drains authorized exit writes. Receipts are runtime-only. Low-level transport
+tests exercise arbitrary payloads below this session boundary.
 
 Acknowledged feedback has one session-owned FIFO delivery queue. A covering save
 reserves its batch before publishing idle, so idle observers and nested saves
@@ -486,12 +512,6 @@ or an idle observer pauses the remaining queue until that checkpoint is saved.
 Restore,
 clear, protection, and disposal revoke undelivered callbacks, including callbacks
 registered reentrantly while the queue is draining. Feedback failures are isolated.
-
-Explicit retry captures the pending career and checkpoint before notifying status
-observers, then selects the latest attached retry driver. Replacement or cancellation
-during notification revokes that request. If its driver detaches or throws before
-starting a save, the session persistence port performs a fresh checkpoint instead;
-retry never repeats the gameplay action or leaves saving dependent on a departed owner.
 
 `run-resume-codec.ts` translates the active-run progress and session fields to and from `ActiveRunData`. The encoder selects
 progress, mode geography, and one tagged `activity`; the decoder hydrates that

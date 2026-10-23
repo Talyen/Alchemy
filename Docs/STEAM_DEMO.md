@@ -111,23 +111,9 @@ opens in the overlay only when
 fixed Steam store URL in the browser. Unknown availability is not success:
 overlay activation returns void and can silently do nothing.
 
-The installed steamworks.js 0.4.0 lacks native overlay activation callbacks and
-availability detection. [The pause listener](../desktop/steam-overlay.cjs) uses
-`SteamCallback.GameOverlayActivated` when supported, pauses on `active: true`,
-and leaves the game menu open when the overlay closes. `steamworks.js.init()`
-owns callback pumping; do not add a second timer or call
-`client.callback.runCallbacks()`, which the installed binding does not expose.
-
-The complete solution is a binding with both native capabilities, followed by
-physical Steam validation. The upstream
-[activation callback patch](https://github.com/ceifa/steamworks.js/pull/205) and
-[availability patch](https://github.com/ceifa/steamworks.js/pull/203) remain open
-as checked on 2026-10-02. If a supported release is unavailable when shipping,
-maintain a minimal fork pinned to an exact commit with those two changes. Exclude
-the availability patch's unrelated workshop declaration. Rebuild and verify its
-native binaries for Windows and Linux/Deck (and macOS if shipped); editing
-JavaScript or declarations in the npm package cannot add a native callback.
-Keep its current Steam/cloud APIs and package layout unchanged.
+Native callback and availability support must be implemented and validated in
+packaged Steam builds. The unresolved implementation prerequisite and its dated
+upstream evidence live in the [blocked release plan](./Plans/SteamDemo.md#native-overlay-prerequisite).
 
 Complete [physical Steam acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence)
 on the packaged Windows game and Deck, including custom overlay shortcuts,

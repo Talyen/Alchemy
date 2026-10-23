@@ -16,11 +16,16 @@ Confirm unsafe escapes, unsound generics, broad records, non-exhaustive unions, 
 
 ## Investigation and evidence
 
-For an escape or suspect model, trace where the value originates, what runtime validation establishes, and what consumers assume. Show a value or future supported variant the type accepts incorrectly, or an invariant the model repeatedly forces callers to bypass. A cast on a critical path warrants inspection, not automatic severity.
+Trace value origin, runtime validation and consumer assumptions. Show an invalid
+value or supported future variant the type wrongly accepts, or an invariant that
+repeatedly forces escapes. Fix the producer or validation boundary when possible;
+retain justified assertions when TypeScript cannot express a proven relationship.
+Intentional negative type tests may use `@ts-expect-error`.
 
-Prefer a remedy at the producer or validation boundary when that establishes the invariant for all consumers. Keep a justified assertion when TypeScript cannot express a proven relationship and alternatives obscure it. Negative type tests may intentionally use `@ts-expect-error`; removing them would weaken coverage.
-
-Verify the compiler rejects the invalid construction or requires handling the relevant variant, and verify runtime decoding still enforces the same boundary. Type checking alone cannot establish safe handling of external input. Preserve valid-save compatibility and existing failure semantics.
+Verify that compilation rejects the invalid construction or requires the missing
+variant, and that decoding still enforces the runtime boundary. Preserve valid-save
+compatibility and failure semantics. The [shared evidence contract](README.md#discover-and-confirm)
+applies to suspicious casts as to other candidates.
 
 ## Domain rules
 

@@ -219,7 +219,9 @@ The registry describes measured journeys, not all game features. Preparing a sav
 
 The `campfire-brewing` and `transmutation-journey` cases capture reachable visits before selection. Their required segments measure selection, the saved result, and departure. `crafting-journey` captures an earned legal currency application between careers from the labeled `economy-v1` starting account. It records the exact currency and item identity, targets that item through normal Armory controls, requires currency consumption and a visible result, then salvages the item through its confirmation. These are short transactional journeys, not sustained stress loops; each runs once after warm-up. Replay bundles preserve the checkpoint and completed action path.
 
-Prioritize Alchemist Shop services, progression purchases, and complete Collection inspection next. Use reachable checkpoints and required completed-action/frame segments, as for existing journeys. Keep fixed replay cases for comparing optimizations; use discovery to find new cases, not as evidence that every mechanic is covered.
+When extending coverage, use reachable checkpoints and require completed-action/frame
+segments. Keep fixed replays for comparison; discovery finds cases without proving
+every mechanic covered. The missing-workload table identifies current gaps.
 
 Use `npm run perf -- --help` and `performance/catalog.json` for current scenario
 durations and minimum samples rather than maintaining a second defaults table.
