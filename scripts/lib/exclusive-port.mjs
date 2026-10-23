@@ -6,7 +6,11 @@ export async function acquireExclusivePort(
   port,
   {
     label,
-    timeoutMs = process.env.ALCHEMY_LOCK_WAIT_MS === undefined ? null : Number(process.env.ALCHEMY_LOCK_WAIT_MS),
+    timeoutMs = process.env.ALCHEMY_LOCK_WAIT_MS === undefined
+      ? process.env.GITHUB_ACTIONS === "true"
+        ? null
+        : 30_000
+      : Number(process.env.ALCHEMY_LOCK_WAIT_MS),
     signal,
     onWait = console.log,
     canAcquire = () => true,

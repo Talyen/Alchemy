@@ -38,6 +38,7 @@ describe("verification selection", () => {
     expect(JSON.parse(batch.args.at(-1)!)).toEqual({
       related: ["src/lib/performance/marks.ts", "src/lib/unknown-owner.ts"],
       selectors: ["tests/performance", "tests/lib/performance", "tests/components/error-boundary.test.tsx"],
+      maxWorkers: 1,
     });
     const full = filterPlanCommands(resolveRoutePlan(["scripts/check.mjs"]), new Set(["all-units"]));
     expect(batchUnitCommands(full)).toEqual(full);

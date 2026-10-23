@@ -1,17 +1,20 @@
 #!/usr/bin/env node
 import path from "node:path";
-import { createVitest } from "vitest/node";
 import { defineScript } from "./lib/script-run.mjs";
 import { unitSelection } from "./lib/verification/unit-selection.mjs";
+import { assertHeavyLocalAllowed } from "./lib/verification/local-execution-policy.mjs";
 
 defineScript(import.meta.url, async () => {
-  const { related, selectors } = JSON.parse(process.argv[2]);
+  assertHeavyLocalAllowed("Combined task unit tests");
+  const { related, selectors, maxWorkers } = JSON.parse(process.argv[2]);
   unitSelection(["run", ...selectors], process.cwd());
   process.env.TEST = "true";
   process.env.VITEST = "true";
   process.env.NODE_ENV ??= "test";
+  const { createVitest } = await import("vitest/node");
   const ctx = await createVitest("test", {
     watch: false,
+    ...(maxWorkers === undefined ? {} : { maxWorkers }),
     related: related.length ? related.map((file) => path.resolve(file)) : undefined,
   });
   try {

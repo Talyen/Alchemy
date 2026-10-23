@@ -123,6 +123,7 @@ it("rejects heavy local tests before creating reports or reserving resources, ev
     ["vitest", "run"],
     ["vitest", "related", "src/App.tsx"],
     ["playwright", "test"],
+    [process.execPath, "scripts/run-unit-batch.mjs", "{}"],
   ])
     await expect(runCompact(args, root)).rejects.toThrow("belongs to CI");
   expect(fs.existsSync(path.join(root, "reports"))).toBe(false);
@@ -137,6 +138,7 @@ it("allows bounded unit diagnosis, hosted CI, explicit local overrides and test 
   for (const env of [{ GITHUB_ACTIONS: "true" }, { ALCHEMY_ALLOW_HEAVY_LOCAL: "1" }]) {
     expect(() => assertLocalTestAllowed("vitest", ["run"], env)).not.toThrow();
     expect(() => assertLocalTestAllowed("playwright", ["test"], env)).not.toThrow();
+    expect(() => assertLocalTestAllowed(process.execPath, ["scripts/run-unit-batch.mjs", "{}"], env)).not.toThrow();
     expect(() => assertHeavyLocalAllowed("Full check", env)).not.toThrow();
   }
   expect(() => assertLocalTestAllowed("vitest", ["run", "tests/a.test.ts", "tests/b.test.ts"], local)).not.toThrow();

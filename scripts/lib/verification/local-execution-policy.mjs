@@ -9,6 +9,7 @@ export function assertHeavyLocalAllowed(label, env = process.env) {
 }
 
 export function assertLocalTestAllowed(command, args, env = process.env) {
+  if (args[0] === "scripts/run-unit-batch.mjs") return assertHeavyLocalAllowed("Combined task unit tests", env);
   const tool = command
     .split(/[\\/]/u)
     .at(-1)

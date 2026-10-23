@@ -13,11 +13,15 @@ export function batchUnitCommands(plan) {
     const args =
       offset >= 0 ? command.args.slice(offset + 1) : ["run", ...command.args.slice(command.args.indexOf("--") + 1)];
     const { filter, options } = parseCLI(["vitest", ...args]);
+    if (options.maxWorkers !== undefined) {
+      const workers = Number(options.maxWorkers);
+      selection.maxWorkers = Math.min(selection.maxWorkers ?? workers, workers);
+    }
     selection[command.key === "related" ? "related" : "selectors"].push(
       ...(command.key === "related" ? options.related : filter),
     );
   }
-  for (const key of Object.keys(selection)) selection[key] = [...new Set(selection[key])];
+  for (const key of ["related", "selectors"]) selection[key] = [...new Set(selection[key])];
   const batch = {
     key: "unit-batch",
     label: "combined task unit tests",

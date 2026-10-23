@@ -96,42 +96,56 @@ it("cancels or times out a waiting run while preserving the owner's listener", a
     ).rejects.toThrow("abort");
     await expect(acquireLocalTestLane(owner.port, { timeoutMs: 20, onWait: () => {} })).rejects.toThrow("timed out");
     await expect(acquireLocalTestLane(owner.port, { timeoutMs: 0 })).rejects.toThrow("No work started");
+    vi.stubEnv("ALCHEMY_LOCK_WAIT_MS", undefined);
+    vi.stubEnv("GITHUB_ACTIONS", undefined);
+    const clock = vi.spyOn(Date, "now").mockReturnValueOnce(0).mockReturnValue(30_001);
+    try {
+      await expect(acquireLocalTestLane(owner.port, { onWait: () => {} })).rejects.toThrow("timed out after 30000ms");
+    } finally {
+      clock.mockRestore();
+      vi.unstubAllEnvs();
+    }
   } finally {
     await owner.release();
   }
 });
 
-it("keeps a default waiter alive beyond the old deadline and reports progress until release", async () => {
-  vi.stubEnv("ALCHEMY_LOCK_WAIT_MS", undefined);
-  vi.useFakeTimers({ toFake: ["Date"] });
-  const owner = await acquireLocalTestLane(0);
-  const messages: string[] = [];
-  let released: Promise<void> | undefined;
-  const controller = new AbortController();
-  const deadline = setTimeout(() => controller.abort(), 2_000);
-  try {
-    const next = await acquireLocalTestLane(owner.port, {
-      signal: controller.signal,
-      onWait: (message) => {
-        messages.push(message);
-        if (messages.length === 1) vi.setSystemTime(Date.now() + 61_000);
-        else if (message.includes("still waiting")) released = owner.release();
-      },
-    });
-    await released;
-    await next.release();
-    expect(messages).toEqual([
-      expect.stringContaining("waiting for release"),
-      expect.stringContaining("still waiting"),
-      expect.stringContaining("acquired"),
-    ]);
-  } finally {
-    clearTimeout(deadline);
-    if (!released) await owner.release();
-    vi.useRealTimers();
-    vi.unstubAllEnvs();
-  }
-});
+it.each(["explicit unbounded", "hosted CI"] as const)(
+  "permits %s waits and reports progress until release",
+  async (mode) => {
+    vi.stubEnv("ALCHEMY_LOCK_WAIT_MS", undefined);
+    vi.stubEnv("GITHUB_ACTIONS", mode === "hosted CI" ? "true" : undefined);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    const owner = await acquireLocalTestLane(0);
+    const messages: string[] = [];
+    let released: Promise<void> | undefined;
+    const controller = new AbortController();
+    const deadline = setTimeout(() => controller.abort(), 2_000);
+    try {
+      const next = await acquireLocalTestLane(owner.port, {
+        ...(mode === "explicit unbounded" ? { timeoutMs: null } : {}),
+        signal: controller.signal,
+        onWait: (message) => {
+          messages.push(message);
+          if (messages.length === 1) vi.setSystemTime(Date.now() + 61_000);
+          else if (message.includes("still waiting")) released = owner.release();
+        },
+      });
+      await released;
+      await next.release();
+      expect(messages).toEqual([
+        expect.stringContaining("waiting for release"),
+        expect.stringContaining("still waiting"),
+        expect.stringContaining("acquired"),
+      ]);
+    } finally {
+      clearTimeout(deadline);
+      if (!released) await owner.release();
+      vi.useRealTimers();
+      vi.unstubAllEnvs();
+    }
+  },
+);
 
 it("releases the lane after its owning process terminates without a cleanup hook", async () => {
   const moduleUrl = new URL("../../scripts/lib/verification/local-test-lane.mjs", import.meta.url).href;
