@@ -206,8 +206,9 @@ choice, including the Distill comparison. Content remains compact and centered;
 stack movement eases between heights and respects reduced motion.
 
 Transmutation first shows the selected original card with up to three icon-only
-keyword buttons below it. No alteration is selected initially. Choosing a keyword
-reveals its saved preview beside the original; the arrow centers on the card art,
+keyword buttons below it. The keyword row stays centered under the full comparison,
+with equal gaps above and below it. No alteration is selected initially. Choosing a
+keyword reveals its saved preview beside the original; the arrow centers on the card art,
 independent of titles and controls. Buttons retain translated accessible names,
 inspection tooltips and a visible selected state. Switching keywords updates the
 preview without changing the deck. Back returns to the card picker without RNG or
