@@ -3,8 +3,50 @@ import { makeTestCard } from "../../fixtures/battle";
 import { describe, expect, it, vi } from "vitest";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { simulateBatch, simulateBattle } from "@/lib/balance";
+import { cardById, cloneBattleCard, enemyById } from "@/lib/game-data";
 
 describe("balance simulator", () => {
+  it("declines a fatal Dark Pact when a safe attack can win, matching autoplay", () => {
+    const pact = cloneBattleCard(cardById["dark-pact"]!);
+    const finisher = makeTestCard({
+      id: "safe-finisher",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "holy", amount: 3 }],
+    });
+    const state = {
+      ...battle.createBattleState({
+        runDeck: [pact, finisher],
+        currentEnemy: enemyById.goblin!,
+        playerHealth: 1,
+        maxHealth: 30,
+        totalRooms: 0,
+        appliesFightPacing: false,
+        rng: () => 0.5,
+      }),
+      hand: [pact, finisher],
+      deck: [],
+      mana: 1,
+      enemyHealth: 3,
+      enemyMitigation: { armor: 0, block: 0, forge: 0 },
+      deathsDoorUsed: true,
+      deathsDoorActive: false,
+    };
+    using _opening = vi.spyOn(battle, "resolveBattleStart").mockReturnValue({
+      state,
+      companion: null,
+      outcome: null,
+    });
+
+    const result = simulateBattle({
+      characterId: "warlock",
+      enemyId: "goblin",
+      loadoutMode: "bare",
+      policy: "greedy-effective-damage",
+    });
+    expect(result).toMatchObject({ outcome: "win", playerHealth: 1, wonBeforeEnemyAttack: true });
+    expect(result.cardsPlayed).toEqual({ "safe-finisher": 1 });
+  });
+
   it.each([
     { playerHealth: 10, enemyHealth: 0, deathsDoorActive: false, expected: "win" },
     { playerHealth: 0, enemyHealth: 10, deathsDoorActive: false, expected: "loss" },
