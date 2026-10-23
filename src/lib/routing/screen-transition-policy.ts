@@ -57,21 +57,21 @@ const MAP_TARGETS = [
   ROUTE_SCREENS.REWARDS,
 ] as const;
 
-const META_ONLY_SCREENS = [
+const META_BROWSING_SCREENS = [
   ROUTE_SCREENS.COLLECTION,
   ROUTE_SCREENS.TALENTS,
   ROUTE_SCREENS.HOMESTEAD,
   ROUTE_SCREENS.ARMORY,
-  ROUTE_SCREENS.GAME_OVER,
-  ROUTE_SCREENS.RUN_VICTORY,
 ] as const;
 
 function buildAllowedTransitions(): Record<Screen, readonly Screen[]> {
   const allowed: Record<string, readonly Screen[]> = {
-    [ROUTE_SCREENS.MENU]: [ROUTE_SCREENS.GAME_MODE_SELECT, ...META_DESTINATIONS],
-    [ROUTE_SCREENS.GAME_MODE_SELECT]: [...META_DESTINATIONS, ROUTE_SCREENS.CHARACTER_SELECT],
+    [ROUTE_SCREENS.MENU]: [ROUTE_SCREENS.GAME_MODE_SELECT, ...RUN_LOOP_SHELL_DESTINATIONS],
+    [ROUTE_SCREENS.GAME_OVER]: META_DESTINATIONS,
+    [ROUTE_SCREENS.RUN_VICTORY]: META_DESTINATIONS,
+    [ROUTE_SCREENS.GAME_MODE_SELECT]: [...RUN_LOOP_SHELL_DESTINATIONS, ROUTE_SCREENS.CHARACTER_SELECT],
     [ROUTE_SCREENS.CHARACTER_SELECT]: [
-      ...META_DESTINATIONS,
+      ...RUN_LOOP_SHELL_DESTINATIONS,
       ROUTE_SCREENS.GAME_MODE_SELECT,
       ROUTE_SCREENS.DIFFICULTY_SELECT,
       ROUTE_SCREENS.DRAFT_DECK,
@@ -79,13 +79,13 @@ function buildAllowedTransitions(): Record<Screen, readonly Screen[]> {
       ROUTE_SCREENS.LABYRINTH_MAP,
     ],
     [ROUTE_SCREENS.DIFFICULTY_SELECT]: [
-      ...META_DESTINATIONS,
+      ...RUN_LOOP_SHELL_DESTINATIONS,
       ROUTE_SCREENS.CHARACTER_SELECT,
       ROUTE_SCREENS.DRAFT_DECK,
       ROUTE_SCREENS.BATTLE,
     ],
     [ROUTE_SCREENS.DRAFT_DECK]: [
-      ...META_DESTINATIONS,
+      ...RUN_LOOP_SHELL_DESTINATIONS,
       ROUTE_SCREENS.DIFFICULTY_SELECT,
       ROUTE_SCREENS.BATTLE,
       ROUTE_SCREENS.LABYRINTH_MAP,
@@ -118,7 +118,8 @@ function buildAllowedTransitions(): Record<Screen, readonly Screen[]> {
     [ROUTE_SCREENS.LABYRINTH_MAP]: MAP_TARGETS,
     [ROUTE_SCREENS.WILDWOOD_REMOVAL]: [...RUN_LOOP_SHELL_DESTINATIONS, ROUTE_SCREENS.BATTLE],
   };
-  for (const screen of META_ONLY_SCREENS) allowed[screen] = META_DESTINATIONS;
+  // End Run is available while an active run is being browsed from meta screens.
+  for (const screen of META_BROWSING_SCREENS) allowed[screen] = RUN_LOOP_SHELL_DESTINATIONS;
   for (const screen of RUN_NODE_LEAVE_SCREENS) allowed[screen] = RUN_NODE_LEAVE_DESTINATIONS;
   // Fail fast when a new screen lacks a policy entry instead of crashing on
   // the first transition check with an obscure undefined dereference.

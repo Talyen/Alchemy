@@ -6,6 +6,7 @@ import {
   isScreenTransitionAllowed,
   ROUTE_SCREEN_VALUES,
   ROUTE_SCREENS,
+  SCREEN_PHASE,
 } from "@/lib/routing";
 
 const RUN_NODES = [
@@ -32,8 +33,10 @@ const NODE_LEAVE_SCREENS = [
 ] as const;
 
 describe("screen-transition-policy", () => {
-  it("permits defeat recovery from every run-loop screen", () => {
-    for (const screen of ROUTE_SCREEN_VALUES.filter(isRunLoopScreen)) {
+  it("permits End Run from every run-loop and meta screen", () => {
+    for (const screen of ROUTE_SCREEN_VALUES.filter(
+      (screen) => isRunLoopScreen(screen) || SCREEN_PHASE[screen] === "meta",
+    )) {
       expect(isScreenTransitionAllowed(screen, ROUTE_SCREENS.GAME_OVER), screen).toBe(true);
     }
   });
