@@ -46,7 +46,7 @@ describe("DestinationScreen", () => {
     const showRooms = screen.getByRole("button", { name: "Act I: Show rooms" });
     expect(showRooms.getAttribute("aria-expanded")).toBe("false");
     expect(screen.queryByRole("list", { name: "Room progress" })).toBeNull();
-    await user.click(showRooms);
+    await user.click(screen.getByRole("button", { name: "Act III: Show rooms" }));
     const progress = screen.getByRole("list", { name: "Room progress" });
     expect(progress.children).toHaveLength(8);
     expect(progress.querySelector('[aria-current="step"]')?.textContent).toContain("Room 4: You are here");
@@ -58,7 +58,7 @@ describe("DestinationScreen", () => {
     expect(document.activeElement).toBe(document.body);
     expect(onChoose).not.toHaveBeenCalled();
     await user.tab();
-    expect(document.activeElement).toBe(showRooms);
+    expect(document.activeElement?.getAttribute("aria-controls")).toBe(progress.id);
     await user.keyboard("{Enter}");
     expect(screen.getByRole("list", { name: "Room progress" })).toBeTruthy();
 

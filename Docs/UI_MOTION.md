@@ -10,7 +10,7 @@ individual nodes translate and fade over 420ms, with a short outward stagger for
 the room reveal. The selected act numeral fades as the room trail fans out;
 neighboring acts move to either side without resizing the title or artwork.
 Reversible CSS transitions retarget from the current pose on repeated input.
-Focus is painted on the active circle, never the expanding transparent hit area.
+Keyboard focus is painted on the focused circle, never the expanding transparent hit area.
 The shared reduced/disabled-motion preference settles both views immediately;
 the toggle only changes presentation and never commits room progress.
 
