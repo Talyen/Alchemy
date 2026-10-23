@@ -96,6 +96,13 @@ target every 180ms. Every resolved impact still retains its flash, numbers, and
 sound. These effects never delay input. Each action requests each combat sound family
 at most once. Player and enemy deaths share the slice effect and battle-end delay;
 Death's Door is not defeat, and voluntary run exits remain immediate.
+
+Player and enemy dodges use a mirrored, shallow dip and backward lean on the
+artwork frame, easing back over 460ms without hit recoil or an added effect.
+Health and statuses stay steady. Existing floating Dodge text and sounds remain
+unchanged. Dodge motion never delays input; another dodge replaces the previous
+motion, and reset, death, teardown or reduced/disabled motion cancels it.
+
 The shared death effect uses a straight diagonal cut for portrait halves and
 particle origins, with a pointed white blade flash and restrained warm halo.
 [Battle timing](../src/lib/game-constants/battle-timing.ts) and the effect's styles

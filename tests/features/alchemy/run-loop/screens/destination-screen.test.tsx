@@ -29,9 +29,24 @@ describe("DestinationScreen", () => {
       destinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CAMPFIRE],
     };
 
-    render(<DestinationScreen currentAct={1} rewardState={rewardState} onChoose={onChoose} onPrepare={onPrepare} />);
+    render(
+      <DestinationScreen
+        currentAct={1}
+        destinationIndexInAct={3}
+        completedDestinations={[DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CAMPFIRE, DESTINATIONS.CARD_SHOP]}
+        rewardState={rewardState}
+        onChoose={onChoose}
+        onPrepare={onPrepare}
+      />,
+    );
 
     expect(screen.getByRole("heading", { name: "Choose Destination" })).toBeTruthy();
+    const progress = screen.getByRole("list", { name: "Room progress" });
+    expect(progress.children).toHaveLength(8);
+    expect(progress.querySelector('[aria-current="step"]')?.textContent).toContain("Room 4: You are here");
+    expect(progress.textContent).toContain("Room 1: Combat (completed)");
+    expect(progress.textContent).toContain("Room 5: Unknown");
+    expect(progress.textContent).toContain("Room 8: Boss");
 
     await waitForArtwork();
     const combatBtn = screen.getByRole("button", { name: /combat/i });
@@ -52,12 +67,23 @@ describe("DestinationScreen", () => {
       selectedBossId: "forge-golem",
     };
 
-    render(<DestinationScreen currentAct={currentAct} rewardState={rewardState} onChoose={vi.fn()} />);
+    render(
+      <DestinationScreen
+        currentAct={currentAct}
+        destinationIndexInAct={7}
+        completedDestinations={Array.from({ length: 7 }, () => DESTINATIONS.NORMAL_COMBAT)}
+        rewardState={rewardState}
+        onChoose={vi.fn()}
+      />,
+    );
 
     expect(screen.getByRole("button", { name: `Boss - Act ${actLabel}` })).toBeTruthy();
     expect(screen.getByText(`Boss - Act ${actLabel}`)).toBeTruthy();
     expect(playBattleEvent).toHaveBeenCalledWith("deathsDoor");
     expect(screen.getByText("The Forge Golem")).toBeTruthy();
     expect(screen.queryByRole("heading", { name: "Choose Destination" })).toBeNull();
+    expect(
+      screen.getByRole("list", { name: "Room progress" }).querySelector('[aria-current="step"]')?.textContent,
+    ).toContain("Room 8: You are here");
   });
 });

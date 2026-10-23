@@ -62,6 +62,14 @@ Alchemy's [accessibility stance](#accessibility-stance) defines its actual scope
 
 Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for page structure. Use shared chrome before recreating buttons, progress bars, switches, cards, or tooltips.
 
+`TitledScreenShell.aboveHeader` holds compact context above the heading. Choose
+Destination shows the current eight-room trail there: visited destination icons,
+a small gold star above the current question-mark node, unknown future rooms,
+and the boss crown at the end. Nodes use 1px circles and the destination choices'
+icon size, stroke and colors; Boss destinations use deep purple. The trail's end
+nodes align with the header toolbar icons. It is static and adds no act labels or
+navigation controls.
+
 ## Component conventions
 
 - Use plain prop functions rather than `React.FC`; React 19 components receive `ref` directly as a prop.

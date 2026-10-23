@@ -136,9 +136,9 @@ export const destinationMeta: Record<Destination, ThemedChooserMeta> = {
   },
   "Boss Combat": {
     icon: Crown,
-    accentClassName: "text-red-400",
+    accentClassName: "text-purple-500",
     art: normalEnemyBg,
-    plasmaColorPair: { primary: "#f87171", secondary: "#7f1d1d" },
+    plasmaColorPair: { primary: "#a855f7", secondary: "#3b0764" },
   },
 };
 

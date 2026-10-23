@@ -32,6 +32,7 @@ import { useChangeToken } from "../../../../shared/ui/use-change-token";
 import { ActorTooltip, ArtDeathDoorBorder, ArtTurnActiveBorder, StatsDeathDoorBorder } from "./actor-panel-helpers";
 import { CombatantStatusEffectPresentation } from "./combatant-status-effect-presentation";
 import { CombatantAttackLunge } from "./combatant-attack-lunge";
+import { CombatantDodge } from "./combatant-dodge";
 import type { ActiveCcKeyword } from "@/lib/battle";
 
 interface ArtPanelProps {
@@ -67,6 +68,7 @@ interface ArtPanelProps {
   ccKeyword?: ActiveCcKeyword | null;
   attackToken?: number;
   castToken?: number;
+  dodgeToken?: number;
   plasmaColorPair?: PlasmaColorPair | null;
 }
 
@@ -102,6 +104,7 @@ export function ArtPanel({
   ccKeyword = null,
   attackToken = 0,
   castToken = 0,
+  dodgeToken = 0,
   plasmaColorPair = null,
 }: ArtPanelProps) {
   useGameTranslation();
@@ -145,34 +148,36 @@ export function ArtPanel({
               triggerRef={artWrapperRef}
               visible={tooltipVisible}
             />
-            <ActorArtFrame
-              side={side}
-              artOverlay={artOverlay}
-              title={title}
-              art={art}
-              shimmerId={shimmerId}
-              shimmerActive={shimmerActive}
-              shimmerToken={shimmerToken}
-              onHoverShimmer={onHoverShimmer}
-              surfaceRef={surfaceRef}
-              onInspect={
-                onInspect
-                  ? (trigger) => {
-                      tooltipHandlers.dismiss();
-                      onInspect(trigger);
-                    }
-                  : undefined
-              }
-              isDead={isDead}
-              cardWidthClass={resolvedCardWidthClass}
-              deathsDoorActive={deathsDoorActive}
-              impactCue={impactCue}
-              maxHealth={maxHealth}
-              turnActive={turnActive}
-              turnUrgentHide={turnUrgentHide}
-              ccKeyword={ccKeyword}
-              turnShineColors={turnShineColors}
-            />
+            <CombatantDodge token={dodgeToken} side={side} isDead={isDead}>
+              <ActorArtFrame
+                side={side}
+                artOverlay={artOverlay}
+                title={title}
+                art={art}
+                shimmerId={shimmerId}
+                shimmerActive={shimmerActive}
+                shimmerToken={shimmerToken}
+                onHoverShimmer={onHoverShimmer}
+                surfaceRef={surfaceRef}
+                onInspect={
+                  onInspect
+                    ? (trigger) => {
+                        tooltipHandlers.dismiss();
+                        onInspect(trigger);
+                      }
+                    : undefined
+                }
+                isDead={isDead}
+                cardWidthClass={resolvedCardWidthClass}
+                deathsDoorActive={deathsDoorActive}
+                impactCue={impactCue}
+                maxHealth={maxHealth}
+                turnActive={turnActive}
+                turnUrgentHide={turnUrgentHide}
+                ccKeyword={ccKeyword}
+                turnShineColors={turnShineColors}
+              />
+            </CombatantDodge>
           </div>
           {artCorner}
         </div>
