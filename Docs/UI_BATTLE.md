@@ -234,11 +234,10 @@ Inspection uses two equal columns when 40rem is available, one column otherwise,
 and full width for a sole Trait. Hover/map Traits stay stacked. Inline-size
 containment belongs only on inspection: shrink-to-fit tooltips need intrinsic width.
 
-Enemy hover uses compact Traits: 14px headings, 12px descriptions, 24px icons,
-8px row/inter-trait gaps and 3px between title and description at authored tooltip
-scale 1. These dimensions use `--content-rem` and inherit tooltip scale once,
-excepting the [general small-text baseline](./UI.md#display-sizing).
-Inspection and Labyrinth details retain the default Trait presentation.
+Enemy hover uses the compact [TraitBox](../src/features/alchemy/shared/ui/trait-box.tsx)
+variant, inheriting tooltip scale once. Inspection and Labyrinth details use the
+default variant. Its component owns typography/icon/gap values, including the
+compact exception to the [small-text baseline](./UI.md#display-sizing).
 
 Enemy portrait tooltips show traits only, with no repeated-attack text, ability
 cards, or upcoming-action indicator. `EnemyTraits` renders the same named trait

@@ -6,8 +6,7 @@ authoring source.
 
 ## Shared asset requirements
 
-Edit raw sources and their owning manifests; generated barrels and optimized
-outputs are committed build products. Import art through the curated maps in
+Edit raw sources and their owning manifests. Import art through the curated maps in
 `src/lib/game-data/assets.ts`, never directly from optimized files. Full
 preparation runs through `node scripts/assets.mjs --prepare`; operation-specific
 commands below support narrower iteration. Review generated changes and run the
@@ -123,18 +122,14 @@ the [transfer motion contract](./UI_MOTION.md#battle-motion).
 (spent/dormant compass stack, leaning right) are distinct compositions, not
 mirrors; both retain transparent margins and a 3:4 canvas. Keep their source
 identities separate from the single-card master.
-The battle Mana display uses the separate full/empty crystal masters under
-`Interface/Mana Dock`, selected in `scripts/assets/core-assets.mjs`, centered above
-Draw Pile. Its active outputs are `mana-dock-full.webp` and
-`mana-dock-empty.webp`; these are distinct from the playable Mana Crystals card
-artwork. The manifest also prepares `mana-dock-frame.webp`, which the current
-battle display does not render. Preserve alpha transparency and lossless
-preparation for these selected assets: the frame retains native detail up to
-3840px wide without enlargement, and crystals use 512px outputs. The selected
-Charcoal and Gold Stitched Leather frame has no baked-in sockets.
-[Battle layout](./UI_BATTLE.md#battle-layout) owns dock placement and spent appearance;
-[display sizing](./UI.md#display-sizing) owns shared scale, and
-[battle feedback](./UI_BATTLE.md#battle-feedback) owns resource-change effects.
+The battle Mana display uses separate full/empty crystal masters under
+`Interface/Mana Dock`, selected in [core assets](../scripts/assets/core-assets.mjs),
+not the playable Mana Crystals card artwork. Keep transparent, losslessly prepared
+outputs; the selected frame has no baked-in sockets and is prepared but currently
+not rendered. The manifest owns output sizes and filenames.
+[Battle layout](./UI_BATTLE.md#battle-layout) owns placement and spent appearance;
+[display sizing](./UI.md#display-sizing) owns scale, and
+[battle feedback](./UI_BATTLE.md#battle-feedback) owns change effects.
 
 ## Demo marketing artwork
 
@@ -175,17 +170,11 @@ and then referenced by `src/lib/audio/sound-registry.ts` or the owning audio mod
 - Curated files without a raw source must be listed in `curatedSoundFiles` in
   the same manifest. The optimizer owns the complete directory and removes
   files outside the declared OGG files, their MP3 fallbacks, and its hash manifest.
-- The generated hash manifest records generated versus curated ownership and
-  verifies both source identity and committed output bytes. Ownership tags and
-  MP3 fallback names come from the shared `soundEntryOwner()` /
-  `mp3FallbackName()` helpers in the same manifest so the optimizer and its
-  tests cannot drift.
-- Sound preparation includes generated OGGs, curated OGGs, and MP3 fallbacks in
-  its complete manifest. An unchanged run does not rewrite it. The OGG phase holds
-  manifest publication until MP3 fallbacks and curated entries are merged in, so a
-  mid-run failure never publishes a manifest missing its fallbacks. Failed OGG
-  processing skips fallbacks; manifest publication and retry follow the shared
-  [pipeline rules](#pipeline-overview).
+- The manifest's `soundEntryOwner()` and `mp3FallbackName()` helpers own
+  generated/curated tags and fallback names. Hashes verify source and output bytes.
+- One complete sound manifest includes generated/curated OGGs and MP3 fallbacks;
+  unchanged preparation does not rewrite it. OGG failure skips fallback processing;
+  publication waits for all entries under the shared [pipeline rules](#pipeline-overview).
 - MP3 fallbacks stay committed alongside their OGG source on purpose: Safari
   requests the `*.mp3` URL at runtime and offline/desktop packaging serves
   committed `public/sounds/` bytes, so generating them only at build time

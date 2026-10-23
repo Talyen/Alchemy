@@ -11,8 +11,8 @@ then automatic flip to a fitting side, then shift to stay in bounds), bounded to
 the game's proportional growth without inheriting the stage transform or
 clipped ancestors. Tooltips inherit the [shared content/tooltip scale](./UI.md#display-sizing)
 once, including enemy headers and Traits; Tooltip Size defaults to 100%.
-Standard panels cap at 20 content-scaled rem; enemy panels prefer 32 rem.
-Recompute width bounds when the stage or panel changes size; position-only updates
+Panel widths come from [tooltip presentation](../src/features/alchemy/shared/ui/tooltips/tooltip-panel.tsx)
+and its callers, with a wider enemy variant. Recompute width bounds when the stage or panel changes size; position-only updates
 preserve resolved width to avoid forced layout. Long descriptions can use available
 width; tooltips never scroll or truncate.
 

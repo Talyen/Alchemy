@@ -109,30 +109,22 @@ IDs with the candidate's acceptance evidence. Follow
 Pending publication and physical validation remain in the
 [blocked release plan](./Plans/SteamDemo.md#outstanding-work).
 
-Game-side tests do not qualify mapping delivery, full controller/native PlayStation
-support, Proton behavior, suspend/resume, or a Steam Deck rating. Complete
-[physical acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence)
-before making claims; Valve's [compatibility review](https://partner.steamgames.com/doc/steamhardware/compat)
+[Physical acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence)
+owns device/service qualification and public support claims. Valve's
+[compatibility review](https://partner.steamgames.com/doc/steamhardware/compat)
 also evaluates display and performance.
 
 ### Automated game-side coverage
 
-[Controller input helpers](../tests/e2e/controller-input.ts) send actual Playwright
-keyboard and mouse input. They never repair focus or invoke gameplay handlers.
-Representative journeys cover menu-to-battle, consecutive plays, End Turn,
-victory/rewards/destinations, dialogs, Options selects, secondary screens, and
-cursor scrolling. Focus traversal is bounded and reports cycles. Chromium and
-Electron share the Options journey. Existing display and inspection suites cover
-1280×720 and 1280×800. Use the opt-in [desktop layout review](../tests/layout-review/README.md)
-for screenshots; functional journeys assert geometry directly.
-These checks need no controllers, Steam login, or virtual-device drivers.
+[Controller helpers](../tests/e2e/controller-input.ts) send actual keyboard and
+pointer events; they never repair focus or call gameplay handlers. The
+[E2E guide](../tests/e2e/README.md#controller-equivalent-input) owns journeys,
+geometry checks and CI tiers. Local controller-equivalent checks need no Steam
+login, controllers or virtual-device driver.
 
-Use the existing critical, nightly/full, and desktop CI tiers described in
-[CONTRIBUTING](../CONTRIBUTING.md#e2e-policy). Revalidate the mapping specification
-when adding drag-only actions, text entry, new nonstandard interaction primitives,
-or changing Escape ordering. Changes to published mappings need separate Steam
-validation; physical-device comfort and Deck performance cannot be inferred from
-browser input or workstation FPS.
+Revalidate this mapping when adding drag-only actions, text entry, nonstandard
+interaction primitives or changing Escape ordering. Published mapping changes
+also require [physical Steam acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence).
 
 ## Steam listing baseline (Windows)
 

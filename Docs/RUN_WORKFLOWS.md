@@ -1,10 +1,16 @@
 # Run and save workflows
 
+These are editing sequences; [run state](./RUN_STATE.md) and
+[save compatibility](../src/features/alchemy/shared/storage/MIGRATIONS.md) own the
+contracts. Before handoff, check the affected acceptance/rejection and resume
+behavior, then run [the task gate](../CONTRIBUTING.md#what-to-run-when-you-change).
+
 ## Change persisted save data
 
 1. Decide whether the change needs a version bump or a safe additive default using the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#when-to-increment).
 2. Follow its [required pattern](../src/features/alchemy/shared/storage/MIGRATIONS.md#required-pattern-automated), updating the schema, domain defaults, codecs, and fixtures together. [Defaults and resume normalization](../src/features/alchemy/shared/storage/MIGRATIONS.md#defaults-and-resume-normalization) names the owners; [deletion](../src/features/alchemy/shared/storage/MIGRATIONS.md#deletion) owns clear-save modes.
-3. Verify the [save test expectations](../src/features/alchemy/shared/storage/MIGRATIONS.md#test-expectations) with the relevant save/persistence unit suites (`npm run test:unit -- <test-paths>`), then run the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change). The task gate selects save protection for persisted-state owners. Reuse `tests/helpers/save-candidate-fixtures.ts` for candidate scenarios.
+3. Check [save expectations](../src/features/alchemy/shared/storage/MIGRATIONS.md#test-expectations),
+   reusing `tests/helpers/save-candidate-fixtures.ts` for candidate scenarios.
 
 ---
 
@@ -14,7 +20,8 @@
 2. Update the active-run schema and, for progression fields, `PersistedRunProgress` and `ACTIVE_RUN_PROGRESS_KEYS` in `src/lib/active-run-session/run-progress.ts`, the matching validation schema in `src/lib/validation/save-schemas/run-progress.ts`, and fresh/resume initialization in `run-state-init.ts`. The domain contract owns shared wire/live fields and serialization keys; validation owns recovery defaults. Follow the [shared run-progress contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#shared-run-progress-shape), preserving the distinction between fresh-run defaults and missing-field recovery.
 3. Update `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()` in `run-resume-codec.ts`. This codec is the sole active-run progress/session ↔ `ActiveRunData` translation boundary; shops and interrupted flow keep their focused codec helpers.
 4. Keep `snapshotRun()` / `restoreRun()` as thin lifecycle wrappers and publish boot/resume through one `dispatchRunSessionCommand()`. Defer navigation, audio, and presentation work until after commit.
-5. Run the active-run snapshot/codec tests plus the storage/migration tests named by the save contract using `npm run test:unit -- <test-paths>`. Follow the [verification policy](../CONTRIBUTING.md#what-to-run-when-you-change) for the final gate; the task gate includes dependency-related and save protection.
+5. Check active-run round trips and affected storage recovery with the
+   [save expectations](../src/features/alchemy/shared/storage/MIGRATIONS.md#test-expectations).
 
 ---
 
@@ -37,13 +44,8 @@ Permanent Gear and Armory Trinkets use `recordRunObtainedItem()` at each grant s
 
 ## Add or change post-victory routing (`REWARD_ROUTES`)
 
-The Alchemist encounter bonus grants one Potion after the final reward choice or skip, including encounters with a follow-up bonus card choice.
-
-Follow-up choices include Companion cards, Archery cards from Fletched, Wish cards from Wishkeeper, and Nature cards from Kindred Spoils. The saved `companionChoiceIds` field carries all of these bonus choices. Primary and bonus choices restore against the full card catalog in their saved order, dropping only missing IDs; loading never rerolls choices or reapplies offer-pool or theme eligibility.
-
-An interrupted bonus handoff resumes only the bonus choices: the primary reward and its materials have already committed. Unclaimed rewards whose choices no longer resolve stay on Rewards with Skip available, retaining materials and routing metadata across repeated saves until finalized. Loading never awards materials.
-
-Destination eligibility uses health and maximum health after victory bonuses and the upcoming location’s loot depth. Combat and Wildwood exclude exhausted Boon and permanent-Trinket pools before sampling through the [shared loot policy](./ARMORY.md#loot-tuning). Pass progression from `resolveDraftLootProgress()` when generating new loot; loading pending rewards or shop offers must not reapply progression eligibility.
+Follow [reward handoff rules](./RUN_STATE.md#reward-handoffs) for bonus choices,
+interruption and saved routing; the steps below change the route itself.
 
 - **1. Add route constant** — `src/lib/routing/reward-routes.ts` → `REWARD_ROUTES`, re-exported from `@/lib/routing`
 - **2. Compute route after rewards** — `src/features/alchemy/run-loop/navigation/reward-flow.ts` (`finalizeRewardState` / related; import `@/features/alchemy/run-loop/navigation/reward-flow`)

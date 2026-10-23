@@ -137,8 +137,8 @@ Which control to reach for: `Button` owns text/label actions (Play, Back, Confir
 
 Card and collection artwork, including gear and trinket tiles, reserves a 1px frame across available, selected, disabled, purchased, and shine states, so changing interaction state cannot resize its artwork or row or recenter the screen. The thicker hover and selection outline is an absolute overlay, preserving the thin default border. Hover-only shine uses `card-art-shine`; persistent shine uses `has-shine-border`. Armory item borders are hover-only, with keyboard focus matching hover; the active equipment slot keeps its shine as a selection marker. Both hide the frame color while preserving its space. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
 
-The gold counter and Main Menu logo use the standard 103.5% CSS hover scale over
-200ms ease-out. Battle controls follow [Battle layout](./UI_BATTLE.md#battle-layout).
+The Gold counter and Main Menu logo use the standard hover scale and transition
+from [component styles](../src/styles/components.css). Battle controls follow [Battle layout](./UI_BATTLE.md#battle-layout).
 
 Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
 
@@ -178,7 +178,8 @@ viewport-height minimums to add empty space to ordinary pages.
 Use one 24px gap in content units between a header and its main body. Meaningful
 helper text uses 12px above it and 16px before the primary content. Preserve bounded
 resource, selection and footer reservations needed for stable actions;
-size those reservations in content units. [Talents](./UI_BROWSING.md#talents) has its own header gap.
+size those reservations in content units. [Talents](../src/features/alchemy/meta/screens/talents-screen.tsx)
+retains its tighter header spacing in its layout owner.
 
 Picker measurement containers receive available width independently of rendered
 item count, preventing resize feedback into their own column calculation.

@@ -11,39 +11,26 @@ Approved product scope, edition identity, and transfer behavior belong to
 
 ## Outstanding work
 
-Steam Input layouts remain a specification: no exported configuration IDs or
-live default assignments have been verified. Windows under Proton, Deck performance
-and suspend/resume also remain unverified. Record real identifiers and candidate
-evidence when closing these items.
+No published layout IDs, live default assignments, Proton/Deck performance or
+suspend/resume evidence have been verified. These prerequisites remain open:
 
-- [ ] Configure real demo/full App IDs and depots and verify renderer, package,
-      upload, and wishlist targets under [release setup](../RELEASE_SETUP.md#github-secrets-one-time-setup).
-- [ ] Resolve the [native overlay binding prerequisite](#native-overlay-prerequisite):
-      activation callbacks and availability detection must work in the packaged game.
-      Verify pause/resume and wishlist behavior through Steam, including custom
-      shortcuts and Deck paths; browser or mocked callbacks cannot close this item.
-- [ ] Configure and validate [shared Cloud and progress transfer](../STEAM_DEMO.md#save-transfer),
-      including the released demo sharing target, separate accounts/devices,
-      offline/reconnection, and preservation of source saves and initialization receipts.
-- [ ] Publish and verify [recommended Steam Input layouts](../RELEASE_SETUP.md#configuration-and-validation-status)
-      with real configuration IDs. Complete [physical Windows/controller and Deck acceptance](../STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence),
-      including Proton performance, 1280×800 readability, and suspend/resume; validate
-      the advertised [minimum-spec assumptions](../RELEASE_SETUP.md#steam-listing-baseline-windows).
+- [ ] Configure real demo/full [App IDs, depots and targets](../RELEASE_SETUP.md#github-secrets-one-time-setup).
+- [ ] Resolve the [native overlay binding prerequisite](#native-overlay-prerequisite).
+- [ ] Configure and validate [shared Cloud/progress transfer](../STEAM_DEMO.md#save-transfer),
+      preserving source saves and initialization receipts.
+- [ ] Publish [recommended layouts](../RELEASE_SETUP.md#configuration-and-validation-status)
+      and complete [physical Steam acceptance](../STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence),
+      including [minimum-spec validation](../RELEASE_SETUP.md#steam-listing-baseline-windows).
 - [ ] Obtain unfamiliar-player and listening feedback through the
-      [human playtest procedure](../STEAM_DEMO_CHECKLIST.md#human-playtest).
-      Keep comprehension, perceived difficulty, useful progression and audio comfort
-      unqualified until feedback is reviewed and any required fixes are verified.
-- [ ] Complete Steam install/update/uninstall and build/store review, resolve
-      [notice and provenance requirements](../RELEASE_SETUP.md#player-notices-and-asset-provenance)
-      and [pending copy approvals](#pending-copy-approvals),
-      then perform [candidate sign-off](../STEAM_DEMO_CHECKLIST.md#9-candidate-evidence-and-release-sign-off).
+      [human playtest](../STEAM_DEMO_CHECKLIST.md#human-playtest); verify required fixes.
+- [ ] Complete install/update/uninstall and Steamworks build/store review,
+      [notices/provenance](../RELEASE_SETUP.md#player-notices-and-asset-provenance),
+      [copy approvals](#pending-copy-approvals) and
+      [candidate sign-off](../STEAM_DEMO_CHECKLIST.md#9-candidate-evidence-and-release-sign-off).
 
-Keep results with the exact candidate's release evidence, following the
-[demo checklist](../STEAM_DEMO_CHECKLIST.md); older automated passes do not
-qualify a new candidate or establish physical/service acceptance. Remove this
-plan after the outstanding prerequisites are resolved and sign-off is recorded.
-Public controller/Deck and carryover claims still require that evidence;
-promotion follows the [release procedure](../RELEASE.md#agent-release-flow).
+The checklist owns acceptance procedures, evidence retention and claim limits.
+Record results against the exact candidate; remove this plan only after these
+prerequisites and sign-off are resolved. Promotion follows [release](../RELEASE.md#agent-release-flow).
 
 ## Pending copy approvals
 
