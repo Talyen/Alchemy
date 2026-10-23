@@ -3580,8 +3580,6 @@
   "labels.features.alchemy.run-loop.screens.transmutation-screen.54f53bdb181a": {"text":"This choice is no longer available.","context":"features/alchemy/run-loop/screens/transmutation-screen.tsx","terms":[]},
   "labels.features.alchemy.run-loop.screens.transmutation-screen.a1db02b45c04": {"text":"This alteration is no longer available.","context":"features/alchemy/run-loop/screens/transmutation-screen.tsx","terms":[]},
   "labels.features.alchemy.run-loop.screens.transmutation-screen.d1395c346899": {"text":"Your deck changed. Choose a card again.","context":"features/alchemy/run-loop/screens/transmutation-screen.tsx","terms":[]},
-  "labels.features.alchemy.run-loop.shop.shop-transactions.0a3beddc1bf0": {"text":"Shop visit is no longer active","context":"features/alchemy/run-loop/shop/shop-transactions.ts","terms":[]},
-  "labels.features.alchemy.run-loop.shop.shop-transactions.b0fe86764430": {"text":"Shop action was rejected","context":"features/alchemy/run-loop/shop/shop-transactions.ts","terms":[]},
   "labels.features.alchemy.run-setup.run.content-system-navigation.95ad81e0a43b": {"text":"Starter draft choice is unavailable","context":"features/alchemy/run-setup/run/content-system-navigation.ts","terms":[]},
   "labels.features.alchemy.run-setup.screens.difficulty-select-screen.5e23cf91966d": {"text":"Clear previous Difficulty to unlock","context":"features/alchemy/run-setup/screens/difficulty-select-screen.tsx","terms":[]},
   "labels.features.alchemy.shared.augment-definitions.0acc3a99574b": {"text":"Shadowstep","context":"features/alchemy/shared/augment-definitions.ts","terms":[],"aliasOf":"catalog.augmentDefinitions.playNextCardTwice.label"},

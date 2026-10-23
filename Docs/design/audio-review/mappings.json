@@ -2092,7 +2092,7 @@
       "priority": "P2",
       "evidence": [
         "src/lib/audio/sound-registry.ts",
-        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/run-loop/shop/shop-commands-core.ts",
         "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
       ]
     },
@@ -2109,7 +2109,7 @@
       "priority": "P2",
       "evidence": [
         "src/lib/audio/sound-registry.ts",
-        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/run-loop/shop/shop-commands-core.ts",
         "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
       ]
     },
@@ -2126,7 +2126,7 @@
       "priority": "P2",
       "evidence": [
         "src/lib/audio/sound-registry.ts",
-        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/run-loop/shop/shop-commands-core.ts",
         "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
       ]
     },
@@ -2143,7 +2143,7 @@
       "priority": "P1",
       "evidence": [
         "src/lib/audio/sound-registry.ts",
-        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/run-loop/shop/shop-commands-core.ts",
         "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
       ]
     },
@@ -2160,7 +2160,7 @@
       "priority": "P2",
       "evidence": [
         "src/lib/audio/sound-registry.ts",
-        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/run-loop/shop/shop-commands-core.ts",
         "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
       ]
     },
@@ -2177,7 +2177,7 @@
       "priority": "P2",
       "evidence": [
         "src/lib/audio/sound-registry.ts",
-        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/run-loop/shop/shop-commands-core.ts",
         "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
       ]
     },
@@ -2194,7 +2194,7 @@
       "priority": "P2",
       "evidence": [
         "src/lib/audio/sound-registry.ts",
-        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/run-loop/shop/shop-commands-core.ts",
         "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
       ]
     },
@@ -2211,7 +2211,7 @@
       "priority": "P1",
       "evidence": [
         "src/lib/audio/sound-registry.ts",
-        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/run-loop/shop/shop-commands-core.ts",
         "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
       ]
     },
@@ -2228,7 +2228,7 @@
       "priority": "P2",
       "evidence": [
         "src/lib/audio/sound-registry.ts",
-        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/run-loop/shop/shop-commands-core.ts",
         "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
       ]
     },
@@ -2245,7 +2245,7 @@
       "priority": "P2",
       "evidence": [
         "src/lib/audio/sound-registry.ts",
-        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/run-loop/shop/shop-commands-core.ts",
         "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
       ]
     },
@@ -2262,7 +2262,7 @@
       "priority": "P2",
       "evidence": [
         "src/lib/audio/sound-registry.ts",
-        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/run-loop/shop/shop-commands-core.ts",
         "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
       ]
     },
@@ -2279,7 +2279,7 @@
       "priority": "P2",
       "evidence": [
         "src/lib/audio/sound-registry.ts",
-        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/run-loop/shop/shop-commands-core.ts",
         "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
       ]
     },
@@ -2296,7 +2296,7 @@
       "priority": "P1",
       "evidence": [
         "src/lib/audio/sound-registry.ts",
-        "src/features/alchemy/run-loop/shop/shop-transactions.ts",
+        "src/features/alchemy/run-loop/shop/shop-commands-core.ts",
         "src/features/alchemy/meta/screens/armory/armory-overlays.tsx"
       ]
     },
@@ -2311,7 +2311,7 @@
       "currentState": "silent",
       "note": "Use a success cue only after commit; an existing coin, shared progression, or card cue may already acknowledge a related outcome. Avoid stacking duplicates.",
       "priority": "P2",
-      "evidence": ["src/features/alchemy/run-loop/shop/shop-transactions.ts"]
+      "evidence": ["src/features/alchemy/run-loop/shop/shop-commands-core.ts"]
     },
     {
       "id": "shop-select",

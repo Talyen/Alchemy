@@ -1968,8 +1968,6 @@
   "labels.features.alchemy.run-loop.screens.transmutation-screen.54f53bdb181a": {"text":"この選択肢はもう利用できません。","sourceHash":"f26ce46fce0c3b5063c3e35b99d264d57acd6ea017201abdbe6374e79a3e7f63","reviewed":true},
   "labels.features.alchemy.run-loop.screens.transmutation-screen.a1db02b45c04": {"text":"この変成はもう利用できません。","sourceHash":"30143c69c2377e902c733f2d7d495740fbb40390ba4498d3ea5253cc3e919166","reviewed":true},
   "labels.features.alchemy.run-loop.screens.transmutation-screen.d1395c346899": {"text":"デッキが変更されました。カードを選び直してください。","sourceHash":"d9852204f43fbb7629cc67c81be18ef5632838cc6afd85f696035803da1bbaa0","reviewed":true},
-  "labels.features.alchemy.run-loop.shop.shop-transactions.0a3beddc1bf0": {"text":"店への訪問は終了しています","sourceHash":"cc3c78b71fc0e819008d746a5f1c29dea6a9666df913c7551cfb70692c13bffc","reviewed":true},
-  "labels.features.alchemy.run-loop.shop.shop-transactions.b0fe86764430": {"text":"店での操作が拒否されました","sourceHash":"4bc9417bea16cfeba4b5d3e2f76eb72f11d3eff535865fe4426e86124d7febda","reviewed":true},
   "labels.features.alchemy.run-setup.run.content-system-navigation.95ad81e0a43b": {"text":"開始時のドラフト選択肢は利用できません","sourceHash":"4002a6541df0f793a628df32df5d76f85478560d5a38caae58bbf9c82d168361","reviewed":true},
   "labels.features.alchemy.run-setup.screens.difficulty-select-screen.5e23cf91966d": {"text":"前の難易度をクリアすると解放","sourceHash":"60b66d63d126f9a94b697d5662c33fd17192aef371b570c836a29d7457edd043","reviewed":true},
   "labels.features.alchemy.shared.config.labyrinth-map.12a5299fa792": {"text":"調べる","sourceHash":"5613399e213de82fd528d96ae58560f18a578af1f9bb23912b9e4db75174b4c5","reviewed":true},

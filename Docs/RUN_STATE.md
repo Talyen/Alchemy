@@ -577,14 +577,16 @@ The recap is transient, survives voluntary teardown, and clears on a fresh run.
 
 ## Common implementation paths
 
-Start with a matching production example and its regression test. Extend that
+Start with a matching production example and its regression test. For an existing
+action, edit its domain command; the shared operation already supplies transaction
+and session protection. Do not reconstruct the entire route/controller chain. Extend that
 owner when it already represents the action; add a boundary only when a distinct
 consumer or invariant requires it. These are entry points into existing code,
 not templates to duplicate.
 
 | Change            | Follow this production path                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Executable example                                                                                        |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Merchant purchase | Route command → [merchant commands](../src/features/alchemy/run-loop/shop/merchant-shop-commands.ts) → [shared purchase operation](../src/features/alchemy/run-loop/shop/shop-commands-core.ts) → [shop transaction](../src/features/alchemy/run-loop/shop/shop-transactions.ts). Price, availability, payment and acquisition use the same draft.                                                                                                                                          | [Shop actions](../tests/features/alchemy/run-loop/shop/shop-actions.test.ts)                              |
+| Merchant purchase | Route command → [merchant commands](../src/features/alchemy/run-loop/shop/merchant-shop-commands.ts) → [shared purchase operation](../src/features/alchemy/run-loop/shop/shop-commands-core.ts) (including the transaction guard). Price, availability, payment and acquisition use the same draft.                                                                                                                                                                                         | [Shop actions](../tests/features/alchemy/run-loop/shop/shop-actions.test.ts)                              |
 | Card play         | Battle controller → [battle commands](../src/features/alchemy/shared/stores/commands/battle-commands.ts) → production resolution → committed result → route playback. Supply the offered snapshot; the command rejects stale inputs before consuming RNG.                                                                                                                                                                                                                                   | [Battle input ownership](../tests/features/alchemy/shared/stores/commands/battle-input-ownership.test.ts) |
 | Saved run field   | [Save fields](../src/features/alchemy/shared/stores/persistence/run-profile-save-fields.ts) → [profile codec](../src/features/alchemy/shared/stores/persistence/run-profile-codec.ts) → [resume codec](../src/features/alchemy/shared/stores/persistence/run-resume-codec.ts) → [restore](../src/features/alchemy/shared/stores/persistence/run-restore.ts). Update schema/defaults and fixtures together under [save compatibility](../src/features/alchemy/shared/storage/MIGRATIONS.md). | [Resume roundtrip](../tests/features/alchemy/shared/stores/persistence/run-resume-roundtrip.test.ts)      |
 
@@ -595,6 +597,11 @@ npm run test:unit -- tests/features/alchemy/run-loop/shop/shop-actions.test.ts
 npm run test:unit -- tests/features/alchemy/shared/stores/commands/battle-input-ownership.test.ts
 npm run test:unit -- tests/features/alchemy/shared/stores/persistence/run-resume-roundtrip.test.ts
 ```
+
+Shop purchase/refresh recipes and `runShopTransaction` live together in
+`shop-commands-core.ts`; payment, acquisition, rollback and post-commit feedback
+remain under one transaction. Merchant removal and Alchemist mixing use that
+same guard directly.
 
 Composition wrappers such as `createShopActions` and session capability bindings
 retain a specific role: assembling route authority and revoking retained actions

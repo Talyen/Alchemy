@@ -182,15 +182,66 @@ process.exit(process.env.INTEGRATION_FAIL ? 1 : 0);
   writeFileSync(join(taskPath, "task.txt"), "task\n");
   git(["add", "task.txt"], taskPath);
   git(["commit", "-qm", "test: task change"], taskPath);
-  const integrate = (env = {}) =>
-    spawnSync(process.execPath, [script, "integrate", "--task", "task"], {
+  const integrate = (env = {}) => {
+    const options = {
       env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive, ...env },
-      encoding: "utf8",
-    });
+      encoding: "utf8" as const,
+    };
+    const integrated = spawnSync(process.execPath, [script, "integrate", "--task", "task"], options);
+    if (integrated.status !== 0) return integrated;
+    const finished = spawnSync(process.execPath, [script, "finish", "--task", "task"], options);
+    return { ...finished, stdout: integrated.stdout + finished.stdout, stderr: integrated.stderr + finished.stderr };
+  };
   return { root, script, taskPath, git, integrate, archive };
 }
 
 describe("serialized local integration", () => {
+  it("moves main to a dedicated checkout without changing dirty workspace files or index", () => {
+    const { root, script, taskPath, git, integrate } = integrationFixture();
+    using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
+    writeFileSync(join(root, "shared.txt"), "staged work\n");
+    git(["add", "shared.txt"]);
+    writeFileSync(join(root, "shared.txt"), "unstaged work\n");
+    writeFileSync(join(root, "untracked.txt"), "untracked work\n");
+    const index = readFileSync(join(root, ".git/index"));
+    const before = git(["rev-parse", "main"]);
+    const setup = spawnSync(process.execPath, [script, "setup-integration"], { encoding: "utf8" });
+    expect(setup.status, setup.stderr).toBe(0);
+    const main = join(root, ".worktrees/integration");
+    expect(git(["branch", "--show-current"])).toBe("workspace/main");
+    expect(git(["branch", "--show-current"], main)).toBe("main");
+    expect(git(["rev-parse", "main"])).toBe(before);
+    expect(readFileSync(join(root, ".git/index"))).toEqual(index);
+    expect(readFileSync(join(root, "shared.txt"), "utf8")).toBe("unstaged work\n");
+    expect(git(["show", ":shared.txt"])).toBe("staged work");
+    expect(readFileSync(join(root, "untracked.txt"), "utf8")).toBe("untracked work\n");
+    const repeated = spawnSync(process.execPath, [script, "setup-integration"], { encoding: "utf8" });
+    expect(repeated.status, repeated.stderr).toBe(0);
+    const result = integrate();
+    expect(result.status, result.stderr).toBe(0);
+    expect(git(["rev-parse", "main"])).toBe(git(["rev-parse", "agent/task"]));
+    expect(git(["rev-parse", "HEAD"])).toBe(before);
+    expect(readFileSync(join(root, "shared.txt"), "utf8")).toBe("unstaged work\n");
+    expect(git(["show", ":shared.txt"])).toBe("staged work");
+    expect(readFileSync(join(main, "task.txt"), "utf8")).toBe("task\n");
+    expect(existsSync(taskPath)).toBe(false);
+    expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8"))).toMatchObject({
+      integration: "passed",
+      cleanup: "passed",
+    });
+  }, 20000);
+
+  it("leaves main ownership unchanged when the integration destination already exists", () => {
+    const { root, script, git } = integrationFixture();
+    using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
+    mkdirSync(join(root, ".worktrees/integration"));
+    writeFileSync(join(root, ".worktrees/integration/unfinished"), "preserved");
+    const result = spawnSync(process.execPath, [script, "setup-integration"], { encoding: "utf8" });
+    expect(result.status).toBe(1);
+    expect(git(["branch", "--show-current"])).toBe("main");
+    expect(readFileSync(join(root, ".worktrees/integration/unfinished"), "utf8")).toBe("preserved");
+  }, 20000);
+
   it.skipIf(process.platform === "win32")(
     "integrates and removes a checkout whose path Git would quote",
     () => {
@@ -430,7 +481,14 @@ export async function closeTaskBrowsers() {
         git(["add", "check.cjs"], taskPath);
         git(["commit", "-qm", "test: gate only cleanup"], taskPath);
       }
-      const child = spawn(process.execPath, [script, "integrate", "--task", "task"], {
+      if (phase === "cleanup") {
+        const integrated = spawnSync(process.execPath, [script, "integrate", "--task", "task"], {
+          env: { ...process.env, INTEGRATION_CHECKS: checks },
+          encoding: "utf8",
+        });
+        expect(integrated.status, integrated.stderr).toBe(0);
+      }
+      const child = spawn(process.execPath, [script, phase === "cleanup" ? "finish" : "integrate", "--task", "task"], {
         env: {
           ...process.env,
           CODEX_WORKTREE_ARCHIVE_ROOT: archive,
@@ -464,6 +522,13 @@ export async function closeTaskBrowsers() {
         expect(peerResult.status, peerResult.stdout + peerResult.stderr).toBe(0);
         writeFileSync(release, "release");
         expect(await closed, output).toBe(0);
+        if (phase === "verification") {
+          const finished = spawnSync(process.execPath, [script, "finish", "--task", "task"], {
+            env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive },
+            encoding: "utf8",
+          });
+          expect(finished.status, finished.stderr).toBe(0);
+        }
         expect(readFileSync(join(root, "peer.txt"), "utf8")).toBe("peer\n");
         expect(readFileSync(join(root, "task.txt"), "utf8")).toBe("task\n");
         expect(existsSync(taskPath)).toBe(false);
@@ -525,7 +590,7 @@ it("preserves check evidence and captures before deleting outputs, retaining the
   expect(git(["worktree", "list", "--porcelain"])).not.toContain(taskPath);
   expect(readFileSync(join(peer, "unfinished"), "utf8")).toBe("peer work");
   expect(git(["rev-parse", "agent/task"])).toBe(git(["rev-parse", "main"]));
-  const bundles = readdirSync(join(root, "reports/integrations"));
+  const bundles = readdirSync(join(root, "reports/integrations")).filter((entry) => !entry.endsWith(".json"));
   expect(bundles).toHaveLength(1);
   const evidence = join(root, "reports/integrations", bundles[0]);
   expect(readFileSync(join(evidence, "reports/runs/check-test/run.md"), "utf8")).toBe("passing integration check");
@@ -556,6 +621,11 @@ it.skipIf(process.platform === "win32").each(["escaping artifact", "symlink"])(
     const result = integrate();
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("preserved");
+    expect(result.stderr).toContain("Integration remains complete; cleanup blocked");
+    expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8"))).toMatchObject({
+      integration: "passed",
+      cleanup: "blocked",
+    });
     expect(existsSync(taskPath)).toBe(true);
     expect(readFileSync(join(root, "shared.txt"), "utf8")).toBe("base\n");
     expect(git(["rev-parse", "main"])).toBe(git(["rev-parse", "agent/task"]));
@@ -563,18 +633,23 @@ it.skipIf(process.platform === "win32").each(["escaping artifact", "symlink"])(
   20000,
 );
 
-it("keeps an intermediate integration when requested", () => {
+it("retains the task after integration and records cleanup as a separate pending phase", () => {
   const { root, taskPath, script, git, archive } = integrationFixture();
   using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
 
   writeFileSync(join(root, "main.txt"), "main\n");
   git(["add", "main.txt"]);
   git(["commit", "-qm", "test: main"]);
-  const result = spawnSync(process.execPath, [script, "integrate", "--task", "task", "--keep-worktree"], {
+  const result = spawnSync(process.execPath, [script, "integrate", "--task", "task"], {
     encoding: "utf8",
     env: { ...process.env, CODEX_WORKTREE_ARCHIVE_ROOT: archive },
   });
   expect(result.status, result.stderr).toBe(0);
   expect(existsSync(taskPath)).toBe(true);
   expect(existsSync(archive)).toBe(false);
+  expect(JSON.parse(readFileSync(join(root, "reports/integrations/task.json"), "utf8"))).toMatchObject({
+    integration: "passed",
+    cleanup: "pending",
+  });
+  expect(result.stdout).toContain("finish --task task");
 }, 20000);
