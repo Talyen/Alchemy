@@ -42,9 +42,11 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
   const attempted =
     companionBonus > 0 ? { ...before, flags: { ...before.flags, companionNextAttackBonus: 0 } } : before;
   const consumed = consumeAttackPacketFlags(attempted, selected);
+  const baseDamageBonus =
+    companionBonus + consumed.stunBonus + (consumed.packet.damageType === "physical" ? consumed.physicalBonus : 0);
   const power = computeCardAttackPower(consumed.state, consumed.packet, card, {
     origin: companion ? "companion" : "played-card",
-    baseDamageBonus: companionBonus + (consumed.packet.damageType === "physical" ? consumed.physicalBonus : 0),
+    baseDamageBonus,
   });
   if (
     power.damage <= 0 &&
@@ -70,7 +72,7 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
     {
       manaAtStart: candidate.mana,
       origin: companion ? "companion" : "played-card",
-      baseDamageBonus: companionBonus + (consumed.packet.damageType === "physical" ? consumed.physicalBonus : 0),
+      baseDamageBonus,
     },
     "prepared-only",
   );
@@ -177,6 +179,7 @@ function projectEffects(
   for (const effect of effects) {
     paths = mergeProjections(
       paths.flatMap((path): Projection[] => {
+        if (path.state.playerHealth <= 0) return [path];
         if (effect.kind === "chance")
           return [
             ...projectEffects(
@@ -373,9 +376,13 @@ function projectEffects(
           return [{ ...path, state: { ...path.state, playerHealth: nextHealth } }];
         }
         if (effect.kind === "lose-health") {
-          const nextHealth = Math.max(0, path.state.playerHealth - effect.amount);
-          if (nextHealth === path.state.playerHealth) return [path];
-          return [{ ...path, state: { ...path.state, playerHealth: nextHealth } }];
+          const damaged = dealSelfDamage(path.state, effect.amount, "health", []).state;
+          return [
+            {
+              ...path,
+              state: playerResources.checkHealthThresholds(path.state.playerHealth, damaged.playerHealth, damaged, []),
+            },
+          ];
         }
         if (effect.kind === "self-damage") {
           if (path.state.enemyHealth <= 0 || path.state.playerHealth <= 0) return [path];

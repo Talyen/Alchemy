@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SaveDataSchema, isCombatGoldOverride } from "@/lib/validation";
-import { defaultBattleState } from "@/lib/battle";
+import { applyCardEffects, defaultBattleState } from "@/lib/battle";
 import { isStandardPotionCard } from "@/lib/game-data";
 import { HALF_DIVISOR, TRANSMUTATION_KEYWORD_GROUPS, TRANSMUTATION_PREFIXES, UI_GOLD } from "@/lib/game-constants";
 import { scoreCombatCards } from "../../src/app/playthrough/combat-policy";
@@ -9,6 +9,7 @@ import { savedActivityFixture } from "../fixtures/run-activity";
 import { scoreAvailableReactions } from "@/lib/battle/reaction-score";
 import { patchBattleState, makeTestCard } from "../fixtures/battle";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
+import type { CombatTextEvent } from "@/lib/battle/types";
 
 describe("bugfix trio regressions", () => {
   it("rounds fractional live-combat gold instead of flooring it", () => {
@@ -360,7 +361,7 @@ describe("bugfix trio regressions", () => {
     expect(scoreAvailableReactions(healThenAttack, frozenState)).toBe(15);
   });
 
-  it("projects lose-health and stops subsequent hits on player death", () => {
+  it("projects Health costs through survival mechanics and stops hits only after actual defeat", () => {
     const state = patchBattleState({
       enemyHealth: 20,
       enemyMaxHealth: 20,
@@ -375,8 +376,42 @@ describe("bugfix trio regressions", () => {
         { kind: "damage", damageType: "physical", amount: 5 },
       ],
     });
-    // Losing 5 health kills the 4-HP player, so subsequent physical hit and reactions score 0.
-    expect(scoreAvailableReactions(fatalSacrifice, state)).toBe(0);
+    expect(applyCardEffects(state, fatalSacrifice, []).playerHealth).toBe(1);
+    expect(scoreAvailableReactions(fatalSacrifice, state)).toBe(15);
+    const defeated = { ...state, deathsDoorUsed: true };
+    expect(applyCardEffects(defeated, fatalSacrifice, []).playerHealth).toBe(0);
+    expect(scoreAvailableReactions(fatalSacrifice, defeated)).toBe(0);
+    const healAfterDefeat = {
+      ...fatalSacrifice,
+      effects: [fatalSacrifice.effects[0]!, { kind: "heal" as const, amount: 5 }, fatalSacrifice.effects[1]!],
+    };
+    expect(applyCardEffects(defeated, healAfterDefeat, []).playerHealth).toBe(0);
+    expect(scoreAvailableReactions(healAfterDefeat, defeated)).toBe(0);
+    const revived = { ...defeated, playerStatuses: { ...state.playerStatuses, phoenixFeather: 1 } };
+    expect(applyCardEffects(revived, fatalSacrifice, []).playerHealth).toBeGreaterThan(0);
+    expect(scoreAvailableReactions(fatalSacrifice, revived)).toBe(15);
+  });
+
+  it("includes a prepared Whiplash hit before capping a later reaction at remaining Health", () => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyCC: { stunSkipTurns: 1 },
+      reactions: { thunderclapDamage: 30 },
+      flags: { nextStunAttackBonus: 4 },
+    });
+    const card = makeTestCard({
+      effects: [
+        { kind: "damage", damageType: "stun", amount: 3 },
+        { kind: "damage", damageType: "nature", amount: 1 },
+      ],
+    });
+    const texts: CombatTextEvent[] = [];
+    applyCardEffects(state, card, texts);
+    expect(texts).toContainEqual(expect.objectContaining({ additive: false, amount: 30, healthLost: 22 }));
+    // Seven Stun and one Nature leave 22 Health for Thunderclap.
+    expect(scoreAvailableReactions(card, state)).toBe(22);
   });
 
   it("projects gain-max-mana before max-mana scaled damage calculations", () => {
