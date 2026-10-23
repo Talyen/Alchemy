@@ -54,6 +54,16 @@ model retries and selection heuristics. `--model` selects initial transcription/
 phrases and accepted/rejected retries. Better structural scores do not establish
 complete or accurate lyrics.
 
+## Blood Countess import
+
+Blood Countess's “One More Heartbeat” timings are imported from Trinket's
+`MusicManifest/lyrics/boss_blood_countess.json` at commit `76cacf41a`, paired with
+the unchanged shared `The Blood Countess - Boss Track.mp3` master. Its
+`blood-countess.txt` sheet preserves the performed phrases from that snapshot;
+the original authored sheet was unavailable. `importedFrom` retains the upstream
+snapshot and lyric-sheet hashes, while `lyricsSha256` hashes the local sheet.
+The preview's **Boss song** selector opens the imported snapshot directly.
+
 ## Export another boss
 
 Use distinct evidence directories for Forge Golem, Frostwarden and Iron Bear:

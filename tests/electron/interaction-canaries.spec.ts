@@ -112,6 +112,25 @@ async function lastManaJourney(info: TestInfo, reducedMotion: boolean) {
 }
 
 test(
+  "native overlay pause crosses IPC and leaves battle input usable after dismissal",
+  { tag: "@interaction-canary" },
+  async ({}, info) => {
+    await desktopJourney(info, async (page, app) => {
+      const battle = await seedDrawBattle(page);
+      await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]!.webContents.send("alchemy:external-focus-lost");
+      });
+      await expect(page.getByTestId("game-menu")).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(page.getByTestId("game-menu")).toHaveCount(0);
+      await battle.endTurn();
+      await expect(battle.endTurnBtn).toBeEnabled();
+      await expect(battle.hand.first()).toBeVisible();
+    });
+  },
+);
+
+test(
   "last-Mana draw releases enemy/deck inspection and End Turn in Electron",
   { tag: "@interaction-canary" },
   async ({}, info) => {

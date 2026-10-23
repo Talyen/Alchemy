@@ -1,6 +1,6 @@
 ---
 status: blocked
-reason: Native overlay support, Steamworks configuration, physical acceptance, human feedback, and copy approvals remain unresolved.
+reason: Steam ID verification, Steamworks configuration, physical acceptance, human feedback, and copy approvals remain unresolved.
 updated: 2026-10-23
 ---
 
@@ -8,6 +8,12 @@ updated: 2026-10-23
 
 Approved product scope, edition identity, and transfer behavior belong to
 [Steam demo](../STEAM_DEMO.md). This plan tracks the remaining release prerequisites.
+
+Steam ID verification is pending and no store page exists yet. The original
+AI-created assets' commercial-use entitlement and absence of third-party source
+material were confirmed by the owner on October 23, 2026; see
+[provenance](../../THIRD_PARTY_NOTICES.md). Complete the future
+[AI disclosure](../RELEASE_SETUP.md#steam-ai-disclosure) during page setup.
 
 ## Outstanding work
 
@@ -50,24 +56,17 @@ Menu, recap, marketing and lock revisions remain approved under the demo contrac
 
 ## Native overlay prerequisite
 
-The recorded blocker is steamworks.js 0.4.0 lacking native overlay activation callbacks and
-availability detection. [The pause listener](../../desktop/steam-overlay.cjs) uses
-`SteamCallback.GameOverlayActivated` when supported, pauses on `active: true`,
-and leaves the game menu open when the overlay closes. `steamworks.js.init()`
-owns callback pumping; do not add a second timer or call
-`client.callback.runCallbacks()`, which the installed binding does not expose.
+Alchemy builds the missing callback and availability exports from steamworks.js
+0.4.0 plus two pinned upstream patches. The [native build recipe](../../scripts/steamworks/README.md)
+owns exact revisions, source checksums, platform prerequisites and export qualification.
+It excludes the availability patch's unrelated workshop declaration. Windows
+depots must use a Windows x64 native build; Proton uses that Windows build.
 
-The complete solution is a binding with both native capabilities, followed by
-physical Steam validation. The upstream
-[activation callback patch](https://github.com/ceifa/steamworks.js/pull/205) and
-[availability patch](https://github.com/ceifa/steamworks.js/pull/203) were open
-when last checked on 2026-10-02; recheck upstream before choosing a binding. If a supported release is unavailable when shipping,
-maintain a minimal fork pinned to an exact commit with those two changes. Exclude
-the availability patch's unrelated workshop declaration. Rebuild and verify its
-native binaries for Windows and Linux/Deck (and macOS if shipped); editing
-JavaScript or declarations in the npm package cannot add a native callback.
-Keep its current Steam/cloud APIs and package layout unchanged.
+[The pause listener](../../desktop/steam-overlay.cjs) pauses on native activation
+and leaves the menu open on deactivation. `steamworks.js.init()` owns callback
+pumping; no second timer or callback pump is added. Electron overlay GPU setup
+runs before app readiness.
 
-This item remains blocked until native capability and physical Steam evidence
-exist, including custom overlay shortcuts and Deck paths. Browser tests and
-mocked callbacks cannot establish acceptance.
+Physical packaged Windows/Steam acceptance is still required, including custom
+overlay shortcuts, availability/wishlist fallback and Deck. Browser/mocked
+callbacks and native export qualification cannot close this gate.

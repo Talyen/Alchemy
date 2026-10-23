@@ -20,6 +20,7 @@ export const MUSIC_CATALOG: Readonly<Record<string, Readonly<MusicCatalogEntry>>
   [MUSIC_KEYS.BOSS_FORGE_GOLEM]: { files: ["The Forge Golem.mp3"], bossId: "forge-golem" },
   [MUSIC_KEYS.BOSS_FROSTWARDEN]: { files: ["The Frostwarden.mp3"], bossId: "frostwarden" },
   [MUSIC_KEYS.BOSS_BLIGHT_TREANT]: { files: ["The Blight Treant.mp3"], bossId: "blight-treant" },
+  [MUSIC_KEYS.BOSS_BLOOD_COUNTESS]: { files: ["The Blood Countess - Boss Track.mp3"], bossId: "blood-countess" },
   [MUSIC_KEYS.BOSS_IRON_BEAR]: {
     files: ["The Iron Bear.mp3"],
     bossId: "iron-bear",

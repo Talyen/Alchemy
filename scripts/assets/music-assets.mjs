@@ -38,6 +38,7 @@ export const musicAssets = [
     "Menu 3.mp3",
     "Menu 4.mp3",
     "The Blight Treant.mp3",
+    "The Blood Countess - Boss Track.mp3",
     "The Forge Golem.mp3",
     "The Frostwarden.mp3",
     "The Iron Bear.mp3",

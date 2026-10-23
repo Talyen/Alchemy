@@ -313,11 +313,15 @@ Mirroring follows local writing independently, serialized across both slots with
 only the newest queued payload per slot. Failure cannot delay local acknowledgement.
 Clear cancels queued mirrors and waits for active uploads before Cloud deletion,
 including uploads admitted by a departed renderer. Following reads observe deletion;
-failures release the lane. Candidate, account and recovery policies remain unchanged.
+failures release the lane. Account and recovery policies remain unchanged. Native operations check both
+Steam account/app Cloud settings at execution time; disabled Cloud reads yield
+no candidate and writes/deletions leave its cache untouched.
 
 ## Deletion
 
-Deletion mode is explicit (`"default"` | `"localWipe"`), not inferred from the visible screen:
+Deletion mode is explicit (`"default"` | `"localWipe"`), not inferred from the visible screen.
+Cloud deletion applies only while both Steam Cloud preferences are enabled;
+disabled Cloud leaves its cache untouched and clears only the local profile.
 
 - **`default`:** delete both Cloud mirrors first, then both local slots.
   Cloud deletion failure leaves local data untouched and reports failure,
@@ -373,7 +377,24 @@ ledger is needed.
 ## Demo account identity and transfer
 
 `steamAccountId` is a nullable additive envelope field, defaulting to null. Native
-Steam writes stamp the current account for matching local demo sources. Permanent
+Steam writes stamp the current account. Native local progress and initialization
+receipts live below the edition's userData directory in `steam/<SteamID64>/`, or
+`offline/` when Steam identity is unavailable. Isolated test/playtest profiles
+retain their supplied directory and never use live Steam. The Electron browser
+profile remains edition/device-local, preserving language and display preferences.
+
+One-time legacy migration copies only candidates whose stamped account matches
+the selected account; unowned candidates belong only to offline play. Originals
+remain intact, established target profiles are never supplemented, and the local
+`legacy-migration.json` receipt survives Clear Save Data to prevent resurrection.
+Clear must retain that receipt before deleting snapshots, even when a startup
+migration copied data but failed to retain its receipt. Receipt failure prevents
+deletion and leaves the existing progress intact.
+Local demo transfer checks the matching account directory and the preserved
+legacy demo directory, accepting only matching owner stamps. No renderer-supplied
+path can select another account. No save-schema change is required.
+
+Permanent
 progress import, separate cloud filenames and initialization receipts are owned
 by [Steam demo](../../../../../Docs/STEAM_DEMO.md). Receipts survive Clear Save Data;
 no active run or full-Campaign win credit is imported. Public demo carryover freezes

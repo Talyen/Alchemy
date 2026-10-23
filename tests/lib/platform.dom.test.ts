@@ -54,12 +54,23 @@ describe("desktop runtime", () => {
   });
 
   it("returns Steam capabilities instead of mutating shared state", async () => {
-    installDesktopApi({ steamName: "PlayerOne" });
+    installDesktopApi({ steamName: "PlayerOne", cloudSyncEnabled: true });
 
     await expect(initializeSteam()).resolves.toEqual({
       playerName: "PlayerOne",
       cloudSyncEnabled: true,
     });
+  });
+
+  it("honors disabled Cloud without logging the Steam name", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      installDesktopApi({ steamName: "PrivatePlayer", cloudSyncEnabled: false });
+      await expect(initializeSteam()).resolves.toEqual({ playerName: "PrivatePlayer", cloudSyncEnabled: false });
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it("keeps cloud sync disabled when Steam identity is unavailable", async () => {

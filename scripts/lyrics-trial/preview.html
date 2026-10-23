@@ -112,6 +112,7 @@
         <option value="forge-golem">The Forge Golem</option>
         <option value="frostwarden">The Frostwarden</option>
         <option value="iron-bear">The Iron Bear</option>
+        <option value="blood-countess" data-recording="The Blood Countess - Boss Track">The Blood Countess</option>
       </select></label
     >
     <p>
@@ -166,7 +167,8 @@
       const portrait = document.querySelector("img.portrait");
       portrait.src = `../../src/assets/optimized/${boss.value === "iron-bear" ? "" : "the-"}${boss.value}.webp`;
       portrait.alt = title;
-      audio.src = `../../public/Music/${encodeURIComponent(title)}.mp3`;
+      const recordingName = boss.selectedOptions[0].dataset.recording ?? title;
+      audio.src = `../../public/Music/${encodeURIComponent(recordingName)}.mp3`;
       const requested = parameters.get("alignment");
       const source =
         boss.value !== "blight-treant"

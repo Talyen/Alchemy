@@ -245,6 +245,7 @@ it.each([
     .split("\n")
     .map((line) => JSON.parse(line));
   expect(commands[0].slice(1)).toEqual(["run", "check:bundle"]);
+  expect(commands[1]).toEqual(["scripts/ensure-steamworks.mjs", "--target", "win32-x64"]);
   const args = commands.find((command) => command.includes("--win"));
   expect(args).toEqual(expect.arrayContaining(["--win", "--dir", "--x64", "--publish", "never"]));
   const config = JSON.parse(readFileSync(join(root, "steam/build", `electron-${edition}.json`), "utf8"));

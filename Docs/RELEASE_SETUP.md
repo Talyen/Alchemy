@@ -2,6 +2,10 @@
 
 One-time shipping setup for Alchemy plus recurring gates before public promotion: crash reporting, provenance, signing, secrets, and listing baseline. Active release flow stays in [RELEASE.md](./RELEASE.md). Coding rules: [AGENTS.md](../AGENTS.md).
 
+As of October 23, 2026, no Steam store page exists: Steam ID verification is
+pending. App IDs, depots, page creation and survey submission are future setup
+steps, not missing information on a published listing.
+
 Account and credential setup is one-time; revisit it when configuration or credentials change. Before public promotion, follow the [notice and provenance review](#player-notices-and-asset-provenance), [Steam Input revalidation conditions](#steam-input-default-mapping-controller-playable), and [listing baseline](#steam-listing-baseline-windows). Keep configuration aligned with the release workflow.
 
 ## Desktop crash reporting (one-time setup)
@@ -9,7 +13,8 @@ Account and credential setup is one-time; revisit it when configuration or crede
 Alchemy uses Sentry for error reporting from packaged production desktop releases. Browser development, tests, and
 ordinary local packages do not initialize reporting. Performance traces and continuous logs are disabled, and the
 SDK is configured with `sendDefaultPii: false`. Alchemy does not set a Sentry user or deliberately attach Steam
-identity or save data. Otherwise, events use Sentry's standard Electron error context and breadcrumbs.
+identity or save data. Console breadcrumbs are discarded in both processes to prevent player names or
+serialized save diagnostics from entering reports. Other events use Sentry's standard Electron error context and breadcrumbs.
 
 1. Create an Electron project in Sentry and copy its public DSN.
 2. Add `SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` as GitHub Actions secrets. Scope the
@@ -30,13 +35,33 @@ Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run 
 ## Player notices and asset provenance
 
 Before a public build can be promoted, review [PRIVACY.md](../PRIVACY.md) and
-[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) (canonical provenance register; unknown/incomplete provenance is a release blocker).
+[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) (canonical provenance register). The owner has confirmed AI-created original
+assets, commercial-use entitlement at creation, and no third-party samples/source
+material; the former audio-rights uncertainty is resolved. Retain dependency/font
+notices and review any newly introduced third-party sources.
 
-Before the first public release, obtain legal review of the repository license.
-The current CC BY-NC 4.0 notice covers code and content together, while Creative
-Commons [recommends a software-specific license for code](https://creativecommons.org/faq/).
-Decide and document the code/content split without silently changing existing
-grant terms.
+Keep the project's [license](../LICENSE.md) and third-party font/software notices
+intact. The owner confirmation above resolves the earlier asset-rights questions;
+it does not remove notices supplied with dependencies.
+
+## Steam AI disclosure
+
+When Steam ID verification permits page setup, complete the Content Survey with
+**pre-generated AI content** and no live-generated AI. The owner confirmed on
+October 23, 2026 that all original game content/artwork/assets were created using
+AI tools under commercial-use terms, with no third-party samples/source material.
+Use concise, accurate wording, for example:
+
+> AI tools were used during development to create the game's artwork, music,
+> sound effects, writing and localization. All AI content is pre-generated;
+> the game does not generate AI content during gameplay.
+
+Include AI-assisted localization in the survey when used. Valve's
+[Content Survey](https://partner.steamgames.com/doc/gettingstarted/contentsurvey)
+requires disclosure of shipped player-consumed AI content and adequate rights;
+it does not require a public per-asset rights inventory. Keep the survey current
+if shipped content or generation behavior changes. This draft is not a submitted
+survey or an approved Steam listing.
 
 ## Windows signing readiness
 

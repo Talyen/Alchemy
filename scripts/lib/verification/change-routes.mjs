@@ -143,6 +143,8 @@ const ROUTES = Object.freeze([
       "src/lib/desktop-api.ts",
       "src/lib/platform.ts",
       "scripts/**desktop*",
+      "scripts/ensure-steamworks*",
+      "scripts/steamworks/*.patch",
       "scripts/lib/release/release-checks.mjs",
       "scripts/lib/release/game-edition.mjs",
       "tests/desktop/**",

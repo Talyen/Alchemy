@@ -2,6 +2,10 @@ name: Setup Node and install dependencies
 description: setup-node 24 with the npm cache, then npm ci.
 
 inputs:
+  native-steamworks:
+    description: Install the pinned Rust toolchain for native desktop packaging.
+    required: false
+    default: "false"
   skip-electron-download:
     description: Set to "true" to skip downloading the Electron binary during npm ci.
     required: false
@@ -19,3 +23,7 @@ runs:
       shell: bash
       env:
         ELECTRON_SKIP_BINARY_DOWNLOAD: ${{ inputs.skip-electron-download == 'true' && '1' || '' }}
+
+    - if: inputs.native-steamworks == 'true'
+      run: rustup toolchain install 1.90.0 --profile minimal
+      shell: bash

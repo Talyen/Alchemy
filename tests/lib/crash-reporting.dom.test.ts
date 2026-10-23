@@ -44,6 +44,10 @@ describe("initializeRendererCrashReporting", () => {
 
     expect(initializeRendererCrashReporting()).toBe(true);
     expect(sentryMocks.init).toHaveBeenCalledOnce();
+    const options = sentryMocks.init.mock.calls[0]![0];
+    expect(options.beforeBreadcrumb({ category: "console", message: "Private Steam name or save payload" })).toBeNull();
+    const breadcrumb = { category: "navigation", message: "Battle" };
+    expect(options.beforeBreadcrumb(breadcrumb)).toBe(breadcrumb);
     expect(sentryMocks.setTags).toHaveBeenCalledWith(expect.objectContaining({ process: "renderer" }));
 
     logError("boom", "react", { screen: "battle" }, undefined, undefined, new Error("render exploded"));

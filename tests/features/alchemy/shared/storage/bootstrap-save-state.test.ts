@@ -20,7 +20,7 @@ describe("bootstrapAlchemySaveState", () => {
   });
 
   it("initializes Steam before loading on desktop", async () => {
-    const desktop = setupMockWindowDesktop();
+    const desktop = setupMockWindowDesktop({ cloudSyncEnabled: true });
 
     await bootstrapAlchemySaveState(defaultGameSession);
 
@@ -30,7 +30,7 @@ describe("bootstrapAlchemySaveState", () => {
 
   it("enables cloud mirroring only from successful Steam initialization", async () => {
     const order: string[] = [];
-    const desktop = setupMockWindowDesktop();
+    const desktop = setupMockWindowDesktop({ cloudSyncEnabled: true });
     desktop.writeSave.mockImplementation(async () => {
       order.push("local");
       return true;

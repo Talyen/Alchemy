@@ -142,6 +142,7 @@ it("resolves boss tracks and skips the Iron Bear intro", () => {
   expect(getBossMusicKey("frostwarden")).toBe(MUSIC_KEYS.BOSS_FROSTWARDEN);
   expect(getBossMusicKey("blight-treant")).toBe(MUSIC_KEYS.BOSS_BLIGHT_TREANT);
   expect(getBossMusicKey("iron-bear")).toBe(MUSIC_KEYS.BOSS_IRON_BEAR);
+  expect(getBossMusicKey("blood-countess")).toBe(MUSIC_KEYS.BOSS_BLOOD_COUNTESS);
   expect(getBossMusicKey("unknown-boss")).toBeUndefined();
   player.playMusicImmediate(MUSIC_KEYS.BOSS_IRON_BEAR);
   expect(elements.at(-1)).toMatchObject({ currentTime: 6, loop: true, paused: false });

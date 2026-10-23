@@ -28,7 +28,7 @@
     "audio:review": "node scripts/audio-review.mjs",
     "agent:browser": "node scripts/agent-browser.mjs",
     "predev": "node scripts/prune-transient-artifacts.mjs && node scripts/stop-dev-server.mjs && npm run assets:check:outputs",
-    "predev:desktop": "npm run predev && node scripts/sync-steam-appid.mjs",
+    "predev:desktop": "npm run predev && node scripts/sync-steam-appid.mjs && npm run steam:build-native",
     "dev": "vite",
     "dev:checked": "cross-env ALCHEMY_ENABLE_CHECKER=1 vite",
     "dev:desktop": "concurrently --kill-others --success first \"vite --mode desktop --host 127.0.0.1\" \"node scripts/wait-dev-server.mjs && electron .\"",
@@ -147,7 +147,8 @@
     "i18n:check": "node scripts/localization.mjs check",
     "check:dependencies": "npm audit --audit-level=moderate",
     "test:visual": "cross-env PLAYWRIGHT_VITE_MODE=preview node scripts/run-compact.mjs playwright test --config playwright.visual.config.ts",
-    "check:all": "node scripts/check.mjs --full --all"
+    "check:all": "node scripts/check.mjs --full --all",
+    "steam:build-native": "node scripts/ensure-steamworks.mjs"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.8.0",

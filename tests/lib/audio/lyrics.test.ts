@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
 import lyrics from "@/lib/audio/lyrics/blight-treant.json";
+import bloodCountess from "@/lib/audio/lyrics/blood-countess.json";
 import forgeGolem from "@/lib/audio/lyrics/forge-golem.json";
 import frostwarden from "@/lib/audio/lyrics/frostwarden.json";
 import ironBear from "@/lib/audio/lyrics/iron-bear.json";
@@ -11,6 +12,7 @@ import { MUSIC_KEYS } from "@/lib/game-constants";
 
 it.each([
   [MUSIC_KEYS.BOSS_BLIGHT_TREANT, lyrics, 360],
+  [MUSIC_KEYS.BOSS_BLOOD_COUNTESS, bloodCountess, bloodCountess.audioDuration],
   [MUSIC_KEYS.BOSS_FORGE_GOLEM, forgeGolem, forgeGolem.audioDuration],
   [MUSIC_KEYS.BOSS_FROSTWARDEN, frostwarden, frostwarden.audioDuration],
   [MUSIC_KEYS.BOSS_IRON_BEAR, ironBear, ironBear.audioDuration],

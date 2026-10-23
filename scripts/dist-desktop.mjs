@@ -65,6 +65,14 @@ function main(argv = process.argv.slice(2)) {
   const budget = runStreamCommand("npm", ["run", "check:bundle"], { cwd: root });
   if (budget.error) throw budget.error;
   if (budget.status !== 0) return budget.status ?? 1;
+  for (const target of targets) {
+    const nativeTarget = { win: "win32-x64", linux: "linux-x64", mac: `darwin-${process.arch}` }[target];
+    const native = runStreamCommand(process.execPath, ["scripts/ensure-steamworks.mjs", "--target", nativeTarget], {
+      cwd: root,
+    });
+    if (native.error) throw native.error;
+    if (native.status !== 0) return native.status ?? 1;
+  }
   const builderConfig = {
     ...JSON.parse(readFileSync(join(root, "package.json"), "utf8")).build,
     productName: selected.productName,
