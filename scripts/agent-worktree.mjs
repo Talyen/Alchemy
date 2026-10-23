@@ -444,6 +444,19 @@ export async function main(argv = process.argv.slice(2)) {
     const r = runGit(args, { stdio: "inherit" });
     if (r.status !== 0) process.exit(r.status ?? 1);
     const linked = linkDependencies(root, worktreePath);
+    // Keep the original base across commits, main merges and checkout recreation.
+    // Older retained branches use their common ancestor so existing task work is included.
+    const baseKey = `branch.${branch}.alchemyTaskBase`;
+    const recordedBase = runGit(["config", "--local", "--get", baseKey]);
+    if (recordedBase.status !== 0 && recordedBase.status !== 1)
+      throw new Error("Could not read task base; worktree preserved");
+    if (recordedBase.status === 1) {
+      const initial = runGit(["merge-base", base, branch]);
+      if (initial.status !== 0 || !initial.stdout.trim())
+        throw new Error("Could not record task base; worktree preserved");
+      const saved = runGit(["config", "--local", baseKey, initial.stdout.trim()]);
+      if (saved.status !== 0) throw new Error("Could not record task base; worktree preserved");
+    }
     console.log(`worktree ready: ${worktreePath} on ${branch} (base ${base})`);
     console.log(`  cd "${worktreePath}"  # work in isolation`);
     if (linked) {

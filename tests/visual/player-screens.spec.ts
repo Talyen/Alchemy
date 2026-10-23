@@ -1,5 +1,6 @@
 import { test, expect } from "../fixtures/e2e";
-import { injectActiveBattle, makeCard, makeGoblinBattleState, seedRandom } from "../browser-helpers";
+import { seedRandom } from "../browser-helpers";
+import { openVisualBattle } from "./scenarios";
 import { waitForLayoutSettled } from "../e2e/layout-assertions";
 import { translatedLabel } from "../e2e/localization";
 import { MenuPage } from "../pages/menu-page";
@@ -12,10 +13,7 @@ test.beforeEach(async ({ page }) => {
 
 test("battle and card inspection retain their rendered composition", async ({ page, fastBattle }) => {
   void fastBattle;
-  const cards = [makeCard({ uid: 101 }), makeCard({ id: "block", uid: 102 }), makeCard({ id: "apple", uid: 103 })];
-  await injectActiveBattle(page, makeGoblinBattleState({ hand: cards, deck: cards, appliesFightPacing: false }), {
-    runDeck: cards,
-  });
+  await openVisualBattle(page);
   await waitForLayoutSettled(page);
   await page.mouse.move(0, 0);
   await expect(page).toHaveScreenshot("battle.png");

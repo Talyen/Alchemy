@@ -32,6 +32,13 @@ Route glob matching precompiles `ROUTES` + shared build patterns once instead
 of per file. The `documentation` route covers `Docs/**` so check classification
 (`isDocumentationPath`) and verify routing agree on documentation images.
 
+`check:task` adds the shared `--task` selector; `check:broad` aliases `check --full`;
+`test:unit:all` aliases the unfiltered unit runner. Existing aliases are unchanged.
+Task creation records its base in local Git branch configuration. The selector
+requires that base to be an ancestor of HEAD, unions committed and working paths,
+and retains both rename sides. The local source guard recomputes task membership
+so new files appearing during a run invalidate success.
+
 ## Local verification profiles
 
 `check` runs the task-scoped plan described in [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change). `verify-changed.mjs` filters route commands to selected units and documentation by default; `--unit` omits documentation and `--full` retains report/asset routes. The outer gate adds applicable localization, source/test compilation, formatting and bounded selected-file lint. `check --plan` prints both the outer stages and selected route commands without executing them. Integration invokes that same gate outside the shared integration lock after merging current `main`, then revalidates the pinned commits under the lock before advancement; eligible deterministic commands reuse passing receipts in task and full profiles.

@@ -35,11 +35,13 @@ export function parseChangedPathsArgs(argv, { usage } = {}) {
   }
   if (flags.has("committed") && (paths.length || filePaths || flags.has("diff")))
     throw new Error("Choose explicit paths, --diff, or --committed <revision>");
+  if (flags.has("task") && (paths.length || filePaths || flags.has("diff") || flags.has("committed")))
+    throw new Error("Choose --task, explicit paths, --diff, or --committed <revision>");
   if (filePaths && (paths.length || flags.has("diff")))
     throw new Error("Choose a path selection file, explicit paths, or --diff");
   if (filePaths) paths.push(...filePaths);
   if (paths.length > 0 && flags.has("diff")) throw new Error("Choose explicit paths or --diff, not both.");
-  if (paths.length === 0 && !flags.has("diff") && !flags.has("committed")) {
+  if (paths.length === 0 && !flags.has("diff") && !flags.has("committed") && !flags.has("task")) {
     throw new Error(usage ?? "Provide paths or use --diff.");
   }
   return { flags, paths, revision };
@@ -57,10 +59,30 @@ function diffHeadPaths(rootDir) {
   return [...new Set([...tracked.stdout.split("\0"), ...untracked.stdout.split("\0")].filter(Boolean))];
 }
 
+export function taskSelectionBase(rootDir) {
+  const branch = runGit(rootDir, ["symbolic-ref", "--quiet", "--short", "HEAD"]);
+  if (branch.status !== 0) throw new Error("--task requires a task branch, not detached HEAD");
+  const name = branch.stdout.trim();
+  if (name === "main") throw new Error("--task requires an isolated task checkout; use explicit paths on main");
+  const base = runGit(rootDir, ["config", "--local", "--get", `branch.${name}.alchemyTaskBase`]);
+  const commit = base.stdout.trim();
+  if (base.status !== 0 || !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u.test(commit))
+    throw new Error("No recorded task base. Use explicit paths, or create a task with agent-worktree.mjs create");
+  if (runGit(rootDir, ["merge-base", "--is-ancestor", commit, "HEAD"]).status !== 0)
+    throw new Error("Recorded task base is not an ancestor of HEAD; inspect branch history before checking");
+  return commit;
+}
+
 export function resolveSelectedPaths(rootDir, { flags, paths, revision }) {
   const committed = flags?.has("committed");
   let selected;
-  if (committed) {
+  if (flags?.has("task")) {
+    const base = taskSelectionBase(rootDir);
+    const committedPaths = runGit(rootDir, ["diff", "--no-renames", "--name-only", "-z", base, "HEAD", "--"]);
+    const working = diffHeadPaths(rootDir);
+    if (committedPaths.status !== 0 || !working) throw new Error("Could not inspect complete task changes");
+    selected = [...new Set([...committedPaths.stdout.split("\0").filter(Boolean), ...working])].sort();
+  } else if (committed) {
     const commit = runGit(rootDir, ["rev-parse", "--verify", "--end-of-options", `${revision}^{commit}`]);
     if (commit.status !== 0) throw new Error(`Unknown commit: ${revision}`);
     const result = runGit(rootDir, [

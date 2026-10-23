@@ -6,13 +6,26 @@ Git authorization and local integration. Read known owners directly; use
 
 ## What to run when you change…
 
-Use these three commands for ordinary work:
+Use these commands for ordinary work:
 
-| Need                 | Command                                    |
-| -------------------- | ------------------------------------------ |
-| Check a task         | `npm run check -- <task-owned paths>`      |
-| Run focused units    | `npm run test:unit -- <test-paths>`        |
-| Run broad validation | `npm run check:full -- <task-owned paths>` |
+| Need                                         | Command                               |
+| -------------------------------------------- | ------------------------------------- |
+| Check the whole isolated task                | `npm run check:task`                  |
+| Check selected paths                         | `npm run check -- <task-owned paths>` |
+| Run focused units                            | `npm run test:unit -- <test-paths>`   |
+| Run every unit suite                         | `npm run test:unit:all`               |
+| Add full static checks and applicable builds | `npm run check:broad -- --task`       |
+| Run the three small Node smoke suites        | `npm run test:smoke`                  |
+
+`check:task` selects all committed changes since the task's recorded base, plus
+staged, unstaged and untracked changes in that isolated checkout. Creation records
+the base once; committing or merging main does not reset it. Renames select both
+paths. The gate rechecks task membership before reporting success. Older worktrees
+without a recorded base must use explicit task paths; the selector never guesses.
+`check:broad` accepts the same path selectors as `check`; it adds full static checks
+and applicable builds, while units remain path-selected. `test:unit:all` runs all
+units. Existing commands, including `check:full`, `test:full`, and `npm test`, retain
+their behavior; `npm test` is the small smoke run.
 
 Use `--diff` for working changes only when the entire dirty set belongs to the task.
 A clean diff selects nothing. Use `--committed HEAD` (or another revision) to check
@@ -66,6 +79,12 @@ macOS/Linux. Task sessions and a 1920 × 1080 viewport are automatic. Use
 `set viewport <width> <height>` for responsive checks. Screenshots default to
 `reports/visual-review/`. Final integration preserves the complete `reports/`
 directory and non-build ignored files in its reported integration bundle.
+
+For repeatable screen captures, use `npm run visual:scenario -- --list`, then
+`npm run visual:scenario -- battle --label before`. The command starts a private
+current-source server and isolated browser context, seeds its checkpoint, and
+captures the settled screen. [Visual review](./Docs/UI_VISUAL_REVIEW.md#reproducible-scenarios)
+owns scenario options and original/candidate comparison.
 
 Checks preserve interactive sessions. Final integration closes task browsers and
 removes the completed worktree after releasing the shared integration lock;

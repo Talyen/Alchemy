@@ -11,6 +11,7 @@ import {
   parseChangedPathsArgs,
   resolveSelectedPaths,
   resolvePushPaths,
+  taskSelectionBase,
 } from "./lib/verification/changed-paths.mjs";
 import { registerArtifactSession } from "./lib/artifact-guard.mjs";
 import { pruneExpiredArtifacts } from "./prune-transient-artifacts.mjs";
@@ -86,10 +87,11 @@ export function parseCheckArgs(argv) {
     return resolvePushPaths(ROOT, fs.readFileSync(0, "utf8"));
   }
   const { flags, paths, revision } = parseChangedPathsArgs(argv, {
-    usage: "Provide paths, --diff, or --committed <revision>. Example: npm run check -- --diff",
+    usage: "Provide --task, paths, --diff, or --committed <revision>. Example: npm run check:task",
   });
   for (const flag of flags) {
-    if (!["diff", "committed", "full", "plan"].includes(flag)) throw new Error(`Unknown check option: --${flag}`);
+    if (!["task", "diff", "committed", "full", "plan"].includes(flag))
+      throw new Error(`Unknown check option: --${flag}`);
   }
   return resolveSelectedPaths(ROOT, { flags, paths, revision });
 }
@@ -122,8 +124,21 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   // Keep explicit directory selections unexpanded for the final membership scan.
   const raw = argv.includes("--pre-push") ? null : parseChangedPathsArgs(argv);
   if (raw?.revision) console.log(`Selection: files changed by ${raw.revision}; execution uses the current checkout.`);
+  if (raw?.flags.has("task"))
+    console.log(
+      `Selection: complete task since ${taskSelectionBase(ROOT)}, plus staged, unstaged and untracked paths.`,
+    );
   const guardedPaths = !full && raw ? (raw.paths.length ? raw.paths : paths) : undefined;
-  const digestFn = options.captureDigest ?? (() => captureSourceDigest({ paths: guardedPaths }));
+  let selectionStable = true;
+  const digestFn =
+    options.captureDigest ??
+    (() => {
+      if (raw?.flags.has("task")) {
+        const currentPaths = resolveSelectedPaths(ROOT, raw);
+        if (JSON.stringify(currentPaths) !== JSON.stringify(paths)) selectionStable = false;
+      }
+      return captureSourceDigest({ paths: guardedPaths });
+    });
   if (paths.length === 0) {
     console.log("No changed source to check.");
     return 0;
@@ -371,7 +386,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
 
   const after = digestFn();
   const stable = cache?.finish(outcomes, runId) ?? true;
-  if (!failed && (after.hash !== before.hash || !stable)) {
+  if (!failed && (after.hash !== before.hash || !stable || !selectionStable)) {
     failed = { label: "source staleness", code: 1 };
     steps.push({
       label: "source staleness",

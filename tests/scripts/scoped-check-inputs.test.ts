@@ -81,3 +81,50 @@ it("keeps working and committed selections explicit and rejects typos while reta
   expect(select(["--committed", "HEAD"])).toEqual(["owned/a.ts"]);
   expect(select(["owned/a.ts"])).toEqual(["owned/a.ts"]);
 });
+
+it("checks every task commit and working path against the recorded base even after main advances", () => {
+  const { root, git } = fixture();
+  git("branch", "-M", "main");
+  const base = git("rev-parse", "HEAD").toString().trim();
+  git("checkout", "-b", "agent/scoped-task");
+  git("config", "--local", "branch.agent/scoped-task.alchemyTaskBase", base);
+  const select = () => resolveSelectedPaths(root, parseChangedPathsArgs(["--task"]));
+  const digest = () => captureSourceDigest({ rootDir: root, paths: select(), inputs: ["harness.ts"] }).hash;
+  expect(select()).toEqual([]);
+  fs.writeFileSync(path.join(root, "owned/a.ts"), "first task commit");
+  git("add", ".");
+  git("commit", "-m", "first task change");
+  fs.writeFileSync(path.join(root, "task.ts"), "second task commit");
+  git("add", ".");
+  git("commit", "-m", "second task change");
+  expect(select()).toEqual(["owned/a.ts", "task.ts"]);
+  git("checkout", "main");
+  fs.writeFileSync(path.join(root, "main.ts"), "concurrent main work");
+  git("add", ".");
+  git("commit", "-m", "advance main");
+  git("checkout", "agent/scoped-task");
+  git("merge", "--no-edit", "main");
+  git("mv", "owned/a.ts", "owned/moved.ts");
+  fs.rmSync(path.join(root, "task.ts"));
+  fs.writeFileSync(path.join(root, "new.ts"), "untracked task file");
+  expect(select()).toEqual(["main.ts", "new.ts", "owned/a.ts", "owned/moved.ts", "task.ts"]);
+  const before = digest();
+  fs.writeFileSync(path.join(root, "appeared.ts"), "new scope during check");
+  expect(digest()).not.toBe(before);
+  expect(git("config", "--get", "branch.agent/scoped-task.alchemyTaskBase").toString().trim()).toBe(base);
+});
+
+it("rejects ambiguous or unrecorded task selection instead of narrowing its scope", () => {
+  const { root, git } = fixture();
+  git("branch", "-M", "main");
+  const select = () => resolveSelectedPaths(root, parseChangedPathsArgs(["--task"]));
+  expect(select).toThrow("isolated task checkout");
+  git("checkout", "-b", "agent/task");
+  expect(select).toThrow("No recorded task base");
+  git("config", "--local", "branch.agent/task.alchemyTaskBase", "0".repeat(40));
+  expect(select).toThrow("not an ancestor");
+  for (const extra of [["--diff"], ["owned/a.ts"], ["--committed", "HEAD"]])
+    expect(() => parseChangedPathsArgs(["--task", ...extra])).toThrow("Choose --task");
+  git("checkout", "--detach", "HEAD");
+  expect(select).toThrow("detached HEAD");
+});

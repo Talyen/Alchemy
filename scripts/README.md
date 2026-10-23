@@ -189,6 +189,10 @@ or negotiating ownership. Reuse the chat's existing suitable worktree.
 `--detached` for verification-only runs. Creation links `node_modules` from
 the root checkout automatically when present; run `npm ci` only if package
 dependencies change.
+Creation records the branch's original base commit in local Git configuration
+(`branch.<name>.alchemyTaskBase`). `npm run check:task` includes committed and
+working changes since that base; resuming the retained branch preserves it.
+Missing or invalid bases fail explicitly; use selected paths for older worktrees.
 
 If `agent/<slug>` already exists, creation checks out that retained branch at its
 current commit; `--base` applies only when creating a new branch (or a detached
@@ -279,6 +283,16 @@ inspection blocks the operation. Checkout path restores are guarded with or with
 `--`; a single branch operand remains a branch switch even when a tracked file
 shares its name. Rejection leaves files, the index, branches and stashes untouched. Git clean and push dry runs remain available for inspection. Backups require an explicit, authorized action. Creation instructions return to the
 original checkout before worktree removal.
+
+## Reproducible visual scenarios
+
+`visual-scenario.mjs` validates the scenario, locale, viewport, seed, port and label,
+then runs the shared Playwright fixture through the managed test lane.
+`playwright.scenario.config.ts` uses one Chromium worker, isolated storage, a
+strict private server, reduced motion and a fixed clock. Checkpoints live in
+`tests/visual/scenarios.ts`; the existing pixel baselines reuse the battle fixture.
+Captures and source/settings metadata live under ignored `reports/visual-review/`.
+[Visual review](../Docs/UI_VISUAL_REVIEW.md#reproducible-scenarios) owns usage.
 
 ## Command execution and argument handling
 

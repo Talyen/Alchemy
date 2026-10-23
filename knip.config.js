@@ -43,6 +43,7 @@ export default {
       "playwright.electron.config.ts",
       "playwright.layout-review.config.ts",
       "playwright.visual.config.ts",
+      "playwright.scenario.config.ts",
     ],
   },
   project: ["src/**/*.{ts,tsx}", "scripts/**/*.mjs", "desktop/**/*.cjs", "tests/**/*.{ts,tsx}"],

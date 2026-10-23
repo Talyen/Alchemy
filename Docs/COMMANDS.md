@@ -4,8 +4,8 @@ Canonical detail linked from [REFERENCE.md](./REFERENCE.md).
 
 ## Script Command Reference
 
-Start with `check` for a task, `test:unit` for unit diagnosis, and `check:full`
-for broader validation. [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change)
+Start with `check:task` for an isolated task, `test:unit` for unit diagnosis, and
+`check:broad -- --task` for broader validation. [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change)
 is the sole owner of verification permissions and completion requirements.
 The table locates other operations; `package.json` owns the complete list.
 
@@ -17,9 +17,9 @@ The table locates other operations; `package.json` owns the complete list.
 | Regenerate assets                   | `npm run assets`                    | [Asset workflow](./WORKFLOWS-ASSETS.md) covers narrower operations                                |
 | Check local asset freshness         | `npm run assets:check`              | Read-only; requires selected local Asset Library sources                                          |
 | Check prepared outputs              | `npm run assets:check:outputs`      | Read-only; does not require Asset Library; used by CI                                             |
-| Run local smoke                     | `npm test`                          | Fixed Node-only suites; accepts no test-path arguments                                            |
+| Run local smoke                     | `npm run test:smoke`                | Fixed Node-only suites; accepts no test-path arguments                                            |
 | Run unit tests                      | `npm run test:unit -- <path>`       | Omit paths for the full unit suite; `test:full` is a compatibility alias                          |
-| Check a task during work or handoff | `npm run check -- --diff`           | Add `--plan` to preview selection                                                                 |
+| Check a task during work or handoff | `npm run check:task`                | Whole recorded task, including committed and working changes                                      |
 | Check paths from a committed change | `npm run check -- --committed HEAD` | Selects that commit's paths; executes current checkout                                            |
 | Inspect test reservations           | `npm run test:status`               | Shows managed active and waiting commands; add `--json`                                           |
 | Check source types                  | `npm run typecheck`                 | Source compilation only; see Contributing for gate selection                                      |
@@ -43,6 +43,13 @@ commands and [Plans](./Plans/README.md) for plan creation and completion.
 `npm run docs:check:final` is a non-mutating repository-wide closure check: it
 requires no active or blocked plans and does not finish or delete them.
 See [Contributing](../CONTRIBUTING.md#hooks-and-workflow-hygiene) for plan handoff requirements.
+
+The clearest ordinary verification names are `check:task` (whole isolated task),
+`check:broad -- --task` (selected units plus full static checks and applicable
+builds), `test:unit:all` (all units), and `test:smoke` (three small Node suites).
+All older commands remain supported. [Contributing](../CONTRIBUTING.md#what-to-run-when-you-change)
+owns their scope and path selectors. Use `npm run visual:scenario -- --list` for
+repeatable seeded screen captures.
 
 ## Local development
 

@@ -118,6 +118,13 @@ describe("worktree removal", () => {
     const targetNm = join(root, ".worktrees", "symlink-test", "node_modules");
     expect(existsSync(targetNm)).toBe(true);
     expect(readFileSync(join(targetNm, "marker.txt"), "utf8")).toBe("installed");
+    const base = spawnSync("git", ["config", "--local", "--get", "branch.agent/symlink-test.alchemyTaskBase"], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    const head = spawnSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" });
+    expect(base.status, base.stderr).toBe(0);
+    expect(base.stdout.trim()).toBe(head.stdout.trim());
   });
 });
 

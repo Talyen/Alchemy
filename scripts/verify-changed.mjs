@@ -17,6 +17,7 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 
 const VERIFY_FLAGS = new Set([
   "diff",
+  "task",
   "committed",
   "plan",
   "verbose-plan",
