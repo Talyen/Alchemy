@@ -226,8 +226,19 @@ rendered numeric positions identify highlights, never the effect to mutate.
 
 ### Transmutation keywords and Potion brewing
 
-Transmutation derives compatible alterations from the run deck, independent of class affinities and offerable replacement-card pools. `game-constants/transmutation.ts` owns the three keyword groups and title prefixes. Each visit rolls up to three useful keywords per card: one per compatible group, with unique fallback choices if a group is unavailable. The visit can contain more than three distinct keywords across the deck, but selecting a card shows only its saved compatible choices. Each card's randomly chosen conversions are saved for the visit. All occurrences of the selected source keyword convert without changing existing numeric fields. Unsupported conditions and scaling exclude conversions; additions use native effects, and added effect lines respect Corruption's four-effect-line limit. Keep recursive effects, structured descriptions, distilled marks, and keyword detection consistent when adding new mechanics. Back and reload must preserve exact previews. Transmuted cards carry `transmuted`, `baseTitle`, generated descriptions, and any added tags through hydration; they cannot receive further Transmutation or Corruption.
+[Brewing and Transmutation rules](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions)
+own eligibility, fixed offers, conversion limits and service behavior. To extend them:
 
-Preserve transformed effects and generated descriptions together. Mixed and strengthened Potions remain eligible for later brewing visits; [brewing rules](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions) own Campfire selection and once-per-visit service limits. Strengthened standard Potions can be Transmutation sources; Mixed Potions cannot. The Distill service adds 1 to supported magnitudes, including Wishes, and preserves probabilities, percentage effects, durations, and draw counts. Full-cleanse Potions without healing gain Restore 1 Health. Persist `distilled` marks on description magnitudes so increased values remain green after hydration and mixing. The Distillation talent separately scales eligible Potion benefits during combat under the [Potion potency rules](./TALENT_RULES.md#distinct-talent-and-card-effects).
+- Register keyword groups and title prefixes in `game-constants/transmutation.ts`,
+  and implement useful variants in `lib/alchemist/transmutation.ts`.
+- Keep recursive effects, keyword detection and structured magnitude bindings aligned.
+  Preserve effects, descriptions, `transmuted`, `baseTitle`, added tags and `distilled`
+  marks together through preview, mixing and hydration.
+- Follow the [visit workflow](./RUN_WORKFLOWS.md#campfire-brewing-and-transmutation-visits)
+  for commands and resume. Verify Back/reload retains the exact preview and completed
+  visits cannot reroll or regrant a result.
 
-The former Shatter and Wildfire talents are displayed as Brittle Ice and Flash Fire to distinguish them from the universal reactions. Their saved IDs and effects remain unchanged.
+The Distillation talent's combat scaling is separate from the Distill service;
+see [Potion potency](./TALENT_RULES.md#distinct-talent-and-card-effects).
+Brittle Ice and Flash Fire retain the saved IDs and effects of the former Shatter
+and Wildfire talents, distinguishing them from universal reactions.

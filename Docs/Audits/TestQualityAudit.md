@@ -35,16 +35,22 @@ For overlaps, compare surviving failure detection, layer and CI tier under the
 Verify changed tests detect the intended failure and pass correct behavior. Report
 runtime conditions and repetitions; bounded success is not a zero-flake guarantee.
 
-## Domain rules
+## Investigation leads
 
-- **Ownership:** battle/effects → `tests/lib/battle`, `tests/lib/game-data`; gear → `tests/lib/gear` + store tests; saves/migrations → storage + `tests/architecture/`; orchestration → stores/shell/navigation tests. Reuse page objects (`tests/pages/`) and helpers; introduce support abstractions only when they clarify a real interaction or invariant.
-- **Quality:** assert outcomes (HP deltas, events, reloaded save shape), not implementation details or log fingerprints; no "function exists" assertions; no soft-fails; seeded RNG for battle edges; reuse corrupt/partial save fixtures.
-- **Allowed E2E fixes:** actively retire low- and medium-value journeys under the shared test value policy; add missing high-value critical journeys; shorten waits after deterministic bootstrap; place journeys in the configured tiers without copying them solely for scheduling; stable roles/test ids over text/index hunts; repair isolation; improve diagnostics.
+Assert outcomes such as Health deltas, events and reloaded saves, never function
+existence or log fingerprints. Do not use soft-failing assertions.
 
-## Known signals
+| Signal                                                                                 | Question / supported remedy                                                                                                                                            |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Exact catalog counts, pixel tables, trivial round trips, empty tests or log assertions | What consequential broken behavior would pass? Prefer actual outcomes and the cheapest effective layer; seed combat randomness and reuse corrupt/partial save fixtures |
+| `waitForTimeout`, index chains, text-only localization queries, QA shortcuts           | Can stable roles/test IDs, documented page objects/helpers and state readiness make the journey reliable without bypassing real behavior?                              |
+| Duplicate journeys across tiers, isolated-only success, uncontrolled clocks/state      | Compare distinct failure detection, CI placement and isolation; never copy a journey only for scheduling                                                               |
+| Weak/soft-failing assertions or surprising coverage gaps                               | Use a focused temporary mutation or known regression; broad mutation/coverage sweeps are optional, not automatic requirements                                          |
+| Slow or high-upkeep scenarios                                                          | Retire weak tests within the shared policy, strengthen high-value protection, shorten deterministic waits and improve diagnostics; retain real-timing canaries         |
 
-- `waitForTimeout`/`sleep(` in tests; `.nth(n)` chains or localized-text-only queries; QA-shortcut selectors.
-- Same journey asserted in both `@critical` and a slower tier; specs passing alone but failing after siblings (state leakage).
-- Exact catalog counts, pixel tables, plain-struct round trips, empty/commented tests, hidden soft failures, multi-second unit waits.
-- Assertions on error message text instead of typed kinds; mutation-resilient suites; uncontrolled clocks/RNG/shared state.
-- Coverage gaps (discovery: `npm run test:coverage`) on `src/lib/battle`, `src/lib/gear`, storage, validation branches; `npm run test:e2e:audit` timing/flake reports as supporting evidence.
+Tests follow source owners: battle/effects under `tests/lib/battle` and
+`tests/lib/game-data`, Gear under `tests/lib/gear` plus stores, saves under storage
+and `tests/architecture`, orchestration under stores/shell/navigation.
+Use `tests/pages` and existing helpers; add support abstractions only for a concrete
+interaction/invariant. `npm run test:coverage` and `npm run test:e2e:audit` provide
+supporting discovery evidence, not targets or proof of test value.

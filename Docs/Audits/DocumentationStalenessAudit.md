@@ -25,23 +25,21 @@ Use a contextual link instead of copying a rule. Apply the
 [shared confirmation contract](README.md#discover-and-confirm) when implementation
 and documentation disagree or a statement is accurate only historically.
 
-## Domain rules
+## Investigation leads
 
-**Sources of truth:** `package.json` (scripts, engines, deps); [ARCHITECTURE.md](../ARCHITECTURE.md) (run state, ownership); [CONTRIBUTING.md](../../CONTRIBUTING.md) (hooks, test matrix); [AGENTS.md](../../AGENTS.md) (agent guardrails); `oxlint.config.ts` (import boundaries); `knip.config.js` (deadcode allowlists); `playwright.config.ts` / `playwright.electron.config.ts`; Vite/Electron configs and `desktop/` for build entrypoints.
+| Signal                                               | Verify against                                                                                                 |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Wrong scripts, engines or dependency versions        | `package.json`; flags and factual meaning still require source review                                          |
+| Ownership/layout mismatch                            | [Architecture](../ARCHITECTURE.md) and current `src/lib`, `src/features/alchemy`, `desktop` and `tests` owners |
+| Conflicting workflow policy                          | [Contributing](../../CONTRIBUTING.md) and [AGENTS.md](../../AGENTS.md); keep one owner and link consumers      |
+| Boundary/dead-code claims                            | `oxlint.config.ts` and `knip.config.js`                                                                        |
+| Browser/build setup                                  | Playwright/Vite/Electron configuration and `desktop/` entrypoints                                              |
+| Stale TypeScript snippets                            | Current types, APIs and their consumers                                                                        |
+| Missing prerequisites/recovery, unreachable guidance | Walk the task from its documented entrypoint; check harmful omissions as well as false statements              |
+| Audit logs or dated completed trackers               | Remove under the [shared finish contract](README.md#finish)                                                    |
 
-**Links:** internal `.md` links resolve **relative to the source file**; heading anchors must still exist. Recheck edited links and factual claims against their listed source of truth. External URLs: check only when changing that source and network is available — do not fail solely on an unavailable endpoint.
-
-**Audit hygiene:** follow the [shared finish contract](README.md#finish); remove
-completed execution logs and trackers from guides.
-
-## Known signals
-
-- **Code snippet drift:** fenced `ts`/`tsx` blocks in `Docs/`, `AGENTS.md`, `CONTRIBUTING.md`, READMEs whose type names and APIs no longer exist.
-- **Script/link contract:** `npm run docs:check` continuously checks local Markdown targets, heading anchors, and documented `npm run` names through `scripts/check-documentation-contract.mjs`; inspect flags and factual meaning manually.
-- **Architecture & directory mismatches:** claims in `ARCHITECTURE.md` vs on-disk `src/lib`, `src/features/alchemy`, `desktop/`, `tests/`.
-- **Broken relative links & anchors:** markdown links and `#heading` anchors whose targets are missing.
-- **Version / engine staleness:** Node engine, Electron, Playwright, Vitest versions claimed in docs vs `package.json`.
-- **Audit tracker residue:** embedded run logs or dated status notes under `Docs/Audits/`.
-- **Harmful omissions:** complete-looking workflow, architecture, migration, or command references omit a required step or invariant.
-- **Duplicated policy drift:** the same rule or command is copied across multiple docs and no longer agrees; consolidate under the existing source of truth and link consumers.
-- **Discoverability failure:** correct guidance exists but is not reachable from the documented entry point used for that task.
+`npm run docs:check` checks Markdown targets, heading anchors and documented npm
+names through `scripts/check-documentation-contract.mjs`; it does not establish
+semantic accuracy. Internal links resolve relative to their source. Verify edited
+claims and links at their owners. Check external URLs when changing that source
+and network is available; an unavailable endpoint alone does not fail the review.

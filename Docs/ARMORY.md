@@ -78,7 +78,22 @@ Edit the source weights and progression points in `run-rewards.ts`, then run `np
 
 ## Materials tuning
 
-Homestead material payouts are tuned separately from gear offers in `src/lib/game-constants/materials-economy.ts`. Combat victories use a shared pool independent of enemy identity: Normal encounters pay 3/4/5 materials across bands 1/2/3, Elites pay 5/6/7, and Bosses pay 8/10/12. Campaign uses the current act, Labyrinth the current floor, and Wildwood the current boss number; bands cap at 3. Each bundle of two picks one of all seven materials with equal odds and replacement; odd totals end with a single-material roll. The seeded reward stream owns every roll. `computeCombatMaterialReward` applies scavenger doubling and the herbalist bonus before Homestead find bonuses. Mystery grants use `computeMysteryMaterialReward`. Find bonuses add across nodes, then multiply each matching source quantity once and round with `Math.round`, without extra RNG. Gold find bonuses affect victory and Mystery payouts, excluding other generated Gold and the existing purse. Salvage and run-end accounting never apply find bonuses. The policy in `src/lib/homestead/material-rewards.ts` owns quantity calculation. The seeded report in `reports/loot-progression/materials.html` (built by `npm run balance:loot`) shows mean base payouts per progression band and encounter type; build-dependent modifiers are not simulated.
+[Materials economy](../src/lib/game-constants/materials-economy.ts) owns base payouts
+by encounter type and progression band. Campaign uses the act, Labyrinth the floor,
+and Wildwood the boss number, capped at the final band. Rewards are independent of
+enemy identity; each pair samples one of the seven materials uniformly with replacement,
+and an odd remainder uses one final roll from the seeded rewards stream.
+
+| Stage                          | Rule / owner                                                                                                                                                              |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Combat base and room modifiers | `computeCombatMaterialReward` applies Scavenger doubling and Herbalist before find bonuses                                                                                |
+| Mystery base                   | `computeMysteryMaterialReward` uses the authored grant                                                                                                                    |
+| Homestead find bonuses         | Add matching node bonuses, multiply each source quantity once, then `Math.round`; no extra RNG                                                                            |
+| Exclusions                     | Salvage and run-end accounting never apply find bonuses; Gold find bonuses affect victory and Mystery payouts only, excluding other generated Gold and the existing purse |
+
+[Material reward helpers](../src/lib/homestead/material-rewards.ts) own these calculations.
+`npm run balance:loot` writes `reports/loot-progression/materials.html` with mean
+base payouts by band and encounter type; it does not simulate build-dependent modifiers.
 
 ## Inventory ordering and equipment movement
 

@@ -18,16 +18,30 @@ width; tooltips never scroll or truncate.
 
 - Drive hover through `useHoverVisible()` and `triggerRef`. Card/tile grids that track hover via `useInteractiveCard` pass its `isHovered`, `onHoverStart`, and `onHoverEnd` to the same hook, with `holdMs: TOOLTIP_FADE_MS` and `focusWithinGuard: true` to preserve the exit fade and keyboard inspection.
 - Use `placement="side-start"` or `"side-end"` for explicitly side-anchored panels.
-- Use `allowFlip={false}` when a layout owns a fixed side. Homestead places top-row tooltips below and bottom-row tooltips above, preserving that side as purchase feedback changes panel height. Other tooltips retain automatic flipping by default; horizontal bounds still apply to fixed vertical placement.
-- The dev-only Skip Combat tooltip stays below its toolbar icon. Use `horizontalInset={8}` for this edge control so the standard wide content inset does not shift its label away from the icon. End Turn is a bottom-bar text button without a tooltip.
+- Use `allowFlip={false}` for a layout-owned fixed side; horizontal bounds still apply. Other tooltips flip automatically. Screen-specific choices belong in their UI guide.
 - Use `maxWidthFraction` for small-window bounds.
 - Tooltip entrance fades and moves away from the trigger; exit fades with a return movement. [Component styles](../src/styles/components.css) own the offsets and easing, with durations from [motion constants](../src/lib/game-constants/ui-motion.ts). CSS `@starting-style` supplies the first-render entrance, and transitions reverse smoothly on re-hover. Hover remains immediate for rapid inspection. Keep `--tooltip-exit-duration` in sync with `TOOLTIP_FADE_MS`.
 - Passive tooltip panels are `pointer-events-none`; nested interactive tooltips are unsupported.
-- `PortaledTooltip` also checks document-level pointer and focus input while requested open. Outside input, window blur, and leaving the window dismiss stale panels even when a trigger misses its leave/blur event. Pointer movement and exit preserve keyboard inspection while the trigger has visible keyboard focus in the active window. Click-retained focus does not keep a tooltip open after pointer exit; the hover owner and focus-only visual effects use the same focus-navigation mode as automatic recovery. Outside presses, mouse-wheel scrolling, and window blur still dismiss it. Inert or hidden ancestors dismiss retained tooltip portals even without further input, including during modal exit. Returning to the window or reactivating an ancestor alone does not revive a dismissed panel; fresh pointer inspection or keyboard focus can reveal it again. Hand cards retain their geometry-selected preview across gaps inside the hand. Dismissal preserves the normal exit fade and removes the tooltip's accessibility association.
 - Tooltip panels expose `role="tooltip"`. `PortaledTooltip` associates its stable ID with the trigger and focused controls inside a trigger wrapper through `aria-describedby`, preserving other descriptions and removing only its own association when hidden or unmounted. Locked menu entries and unavailable shop services reveal their reasons on focus; hero keyword pills and the active Companion remain focusable for inspection. Tabs expose their selected state through `aria-pressed`.
 - `PortaledTooltip` retains the complete last visible content through fade-out, including descriptions computed only while hovered. Header and body enter and exit as one panel.
 - State-driven triggers mount the portal only while hovered; exit fades complete via the shared `TOOLTIP_FADE_MS` hold — do not add a second hold alongside `PortaledTooltip`.
 - Fade primitives are consolidated in `src/features/alchemy/shared/ui/use-fade.tsx` (import `FadeSlot`, `useFadePresence`, `useSequentialFadeSwap`, `useHeldWhile` from there directly); placement helpers live in `shared/ui/tooltips/portaled-tooltip-placement.ts`, content slots in `shared/ui/tooltips/tooltip-panel.tsx`. `DisabledTooltip` lives in `shared/ui/tooltips/disabled-tooltip.tsx`.
+
+### Tooltip dismissal
+
+`PortaledTooltip` checks document-level pointer/focus input, so missing trigger
+leave/blur events cannot strand a panel. Hover and focus-only effects share the
+focus-navigation mode used by automatic recovery.
+
+| Event                                               | Result                                                                                                                |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Pointer leaves the trigger/window                   | Dismiss unless the trigger retains visible keyboard focus in the active window; click-retained focus does not qualify |
+| Outside press, mouse-wheel scroll or window blur    | Dismiss even during keyboard inspection                                                                               |
+| Ancestor becomes hidden/inert, including modal exit | Dismiss without waiting for more input                                                                                |
+| Window returns or ancestor reactivates              | Stay dismissed until fresh pointer inspection or keyboard focus                                                       |
+| Pointer crosses a gap inside the hand               | Preserve the geometry-selected card preview                                                                           |
+
+Dismissal retains the exit fade and removes the accessibility association.
 
 ## Overlay lifecycle
 

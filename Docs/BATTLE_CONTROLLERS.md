@@ -137,59 +137,53 @@ owner without retaining the preceding owner's restore subscription.
 
 ## Playback lifetime and gameplay commands
 
-`run-loop/battle/playback-lifetime.ts` owns opening, ready, playing, finishing,
-and cancelled phases, plus the generation, abort signal, timers, transfer
-cancellation, draw counts, and autoplay binding. End-turn input is accepted only
-while ready; manual card plays may overlap card-draw presentation and remain
-available during victory grace. Late completions cannot unlock a newer lifetime
-or restart auto-end-turn in a finishing battle. Lifetime subscriptions publish
-phase changes so End Turn updates when opening or action playback completes,
-even after the final presentation update. React subscribes to binding
-readiness. Each generation is a distinct record containing its phase, abort
-controller, timers, cancellation callbacks, and draw counts. Phase admission
-requires the originating generation ID and reports rejection if an autoplay
-adapter or observer replaces it reentrantly. Callers stop presentation after
-rejection. Raw timer groups stay private; generation-scoped cleanup cannot
-cancel a replacement battle's timers. Autoplay binding replacement separately
-rejects an older bind if its cleanup installs a newer binding.
+`run-loop/battle/playback-lifetime.ts` owns each generation's phase, abort signal,
+timers, cancellation callbacks, draw counts and autoplay binding. Phases are opening,
+ready, playing, finishing and cancelled. React subscribes to binding readiness;
+phase subscriptions update End Turn even after the last presentation update.
 
-Hand reveals acquire a draw lease from this lifetime and release it on success,
-failure, or cancellation. Transfer visibility reads the same pending count; it
-never depends on a dependency object's identity. Card-action draw leases separately
-gate completion of overlapping card plays. Animation-frame waits belong to the
-lifetime and settle on cancellation even if the browser never delivers a frame.
-`playback-task.ts` owns single settlement and resource cleanup for frame waits,
-stable hand measurements, and timed card transfers. Each task registers with the
-existing lifetime, owns its visible transfer and pending callbacks, and releases
-them before completion or cancellation. Scheduling after settlement does nothing;
-cleanup returned by a synchronous completion is released immediately. Callback
-failures reject the task after cleanup rather than leaving a draw suspended.
-Lifetime cancellation revokes the generation before releasing timers, transfers,
-draw leases, and autoplay work, then notifies observers. Cleanup and observer
-failures are reported independently so one adapter cannot strand another task
-or prevent a replacement battle from becoming ready.
-Consumers supply cancellation fallbacks and presentation work; they do not
-reimplement completion flags or unregister/timer/frame cleanup ordering.
-`PlaybackLifetime.capture(generation)` supplies revocable scheduling and cancellation
-capabilities. Transfer and draw dependencies are created for the generation that
-started the sequence; retained dependencies cannot acquire the replacement battle's
-resources. Their UI writes, measurements, completion callbacks, and delayed sounds
-also check that scope. Cancellation releases owned overlays before the replacement
-presentation starts; abandoned continuations cannot clear the new transfer gate.
+### Admission and cancellation
 
-`draw-sequence.ts` owns sequencing; `battle-transfers.ts` adapts DOM measurements,
-sounds, and transfer timers. End-turn cleanup resets hand transfer UI only after
-all animated draws have settled.
+| Event                        | Guarantee                                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| End Turn                     | Accepted only while ready                                                                                                            |
+| Manual card play             | May overlap draws and remain available during victory grace                                                                          |
+| Phase admission              | Requires the originating generation ID; reentrant replacement by an adapter/observer rejects admission and callers stop presentation |
+| Autoplay binding replacement | An older bind rejects if its cleanup installs a newer binding                                                                        |
+| Cancellation                 | Revoke the generation, release timers/transfers/draw leases/autoplay, then notify observers                                          |
+| Late completion              | Cannot unlock a newer generation, cancel its private timers, clear its transfer gate or restart a finishing battle                   |
 
-`battle-session.ts` reconciles committed screen changes. Leaving battle cancels
-the old lifetime; returning displays committed gameplay. A new battle prepared
-before its navigation fade commits retains its opening sequence. Terminal restored
-snapshots settle through the same victory/defeat callbacks as live battles.
-`battle-context.ts` supplies DOM refs and updates the stable controller's inputs
-after each React commit. Store commands own gameplay; hydration consumes legacy
-continuations before the UI observes a battle.
-Session reset cancels and clears presentation without publishing a gameplay
-command or retaining an unused opening snapshot in the run store.
+Cleanup and observer failures are reported independently; one failure cannot strand
+another task or prevent replacement readiness. `PlaybackLifetime.capture(generation)`
+binds scheduling, measurements, UI writes, completion callbacks and delayed sounds
+to their originating generation. Retained dependencies cannot acquire replacement
+resources. Owned overlays release before replacement presentation begins.
+
+### Draw and transfer resources
+
+Hand reveals acquire draw leases and release on success, failure or cancellation.
+Visibility uses the shared pending count, never dependency-object identity;
+card-action leases separately gate overlapping play completion.
+`playback-task.ts` owns single settlement and cleanup for frame waits, stable hand
+measurements and timed transfers. Each registered task releases visible transfers
+and pending callbacks before settlement. Cancelled frame waits settle even when the
+browser delivers no frame. Scheduling after settlement does nothing; cleanup returned
+by synchronous completion releases immediately. Callback errors reject after cleanup.
+Consumers supply presentation and cancellation fallbacks rather than duplicating
+completion flags or cleanup ordering.
+
+`draw-sequence.ts` sequences work; `battle-transfers.ts` adapts DOM measurements,
+sounds and timers. End-turn cleanup resets hand transfers after all draws settle.
+
+### Route lifetime
+
+`battle-session.ts` follows committed screen changes: leaving cancels playback;
+returning displays committed gameplay. A battle prepared before its navigation fade
+commits retains its opening sequence. Terminal restored snapshots use live outcome
+callbacks. `battle-context.ts` supplies refs and refreshes stable-controller inputs
+after each React commit. Hydration consumes legacy continuations before presentation.
+Session reset cancels and clears presentation without a gameplay command or retained
+unused opening snapshot; commands remain the gameplay owner.
 
 ## Playback and automation rules
 

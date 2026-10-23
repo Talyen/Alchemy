@@ -224,63 +224,92 @@ Tie rules: playable-vs-playable ties keep the first candidate in read order — 
 
 ## Write acknowledgement
 
-Normal saves and explicit flushes return `saved`, `failed`, `skipped`, or `superseded`. `saved` means local storage accepted that submitted snapshot in the active slot; a Cloud-mirror failure remains non-fatal. A pending submission replaced by coalescing returns `superseded`, and autosave retains its unacknowledged work for retry. Replacement success cannot acknowledge the discarded payload. `skipped` covers cancellation, protection, or unavailable storage. A failed primary write tries a permitted recovery slot with the same snapshot. An empty permitted-slot set reports `failed`, retaining the retry gate. Serialization and backend failures are logged at the I/O seam and returned to the caller.
+### Submission outcomes
 
-Each storage instance serializes loads, writes, and clears in one operation queue.
-Desktop adapters sharing an IPC endpoint also share a physical operation lane in
-`platform-save-backend.ts`; local reads, writes, deletion and demo receipt operations
-follow submission order across adapters. Failure cannot poison the lane.
-The native `desktop/save-storage.cjs` owner also serializes file operations and
-demo-initialization receipt work in a process-wide lane, shared by both slots.
-IPC reads and deletion wait for earlier ring writes even across renderer reloads;
-following writes cannot overtake deletion. A failed operation releases the lane.
-Native shutdown closes save admission at `will-quit`, after window unload handlers
-can submit their final snapshots, and drains accepted writes before process exit.
-It resumes quitting on the next event-loop turn, after Electron resets the
-cancelled quit's native state, including when the queue was already idle.
-Loads observe preceding completed writes and establish the safe write slot before
-later saves run. Pending saves coalesce only between load barriers. Demo import,
-its local write, and its initialization receipt belong to the load operation;
-a following clear waits for them and then deletes the imported data. Clear
-immediately revokes submitted snapshots and pauses autosave. The session retains
-the unsaved action and its completion callbacks until deletion succeeds. Failed
-deletion resumes autosave with a fresh snapshot and leaves the original action
-protected for retry. Overlapping clears share one pause; work resumes only if
-all fail. Failed loads reject their callers without blocking later storage work. Storage drain and
-backend replacement account for all queued operations. Loads and successful clears
-resume writes only if no newer explicit permission decision occurred after submission;
-selecting recovery does not itself grant write permission. Draining includes pending
-loads and initialization writes. Session drains also wait
-for write failure notifications and progress receipts, including immediate saves
-that have no awaiting caller.
+Normal saves and explicit flushes return these outcomes:
 
-Autosave retains unacknowledged changes until a covering write succeeds. In-memory revisions prevent an older completion from clearing newer progress. When building a snapshot or writing it fails, autosave retries through the existing single timer no sooner than `AUTOSAVE_RETRY_COOLDOWN_MS` after failure (see `src/lib/game-constants/storage.ts`; kept equal to `AUTOSAVE_MAX_WAIT_MS` so the backoff survives shrunken debounces, split so UX timing and retry backoff can diverge later), including when animations are disabled or new changes arrive. Timing math lives in `src/app/autosave-scheduler.ts` with unit coverage; `src/app/autosave-lifecycle.ts` owns debounce selection, snapshot building, completion gating, and subscriptions for both React and headless callers; the React hook adds browser lifecycle listeners. Exit signals may bypass that cooldown, with an exit-once latch per revision so back-to-back exit events write one snapshot. Clear requests pause scheduled autosaves; successful deletion and write protection invalidate pending acknowledgements and cancel scheduled autosaves; disabled persistence and hook cleanup also stop retries. Late timer callbacks and write completions cannot restart cancelled work or flush a disposed lifecycle. No scheduling metadata is persisted.
+| Result       | Meaning                                                                                                                                            |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `saved`      | Local storage accepted this snapshot in the active slot; Cloud failure remains non-fatal                                                           |
+| `superseded` | Coalescing replaced the pending submission; replacement success cannot acknowledge its discarded payload, and autosave retains unacknowledged work |
+| `skipped`    | Cancelled, protected, or storage unavailable                                                                                                       |
+| `failed`     | Serialization/backend failure or no permitted write slot; retain the retry gate and log failures at the I/O seam                                   |
 
-Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest unacknowledged snapshot to `localStorage` via `writeSync`. A successful synchronous flush returns `saved` immediately when the queue is idle. If an older write may still land, the latest snapshot also replaces pending queue work and completion waits for that final write. No await sits between the sync write and the idle check, so check-and-enqueue is atomic on the event loop (see `SaveStorage.saveForExit` in [save-storage.ts](./save-storage.ts), the owner of this ordering; `io.ts` delegates exit saves to that storage instance). Each snapshot serialization stamps its own `lastSavedAt`. `SaveStorage` advances that timestamp beyond its loaded save and prior serialized writes, even when the clock repeats or moves backward, so a newer recovery save cannot lose to an older primary on reload. Primary-to-recovery fallback retries reuse the same serialized payload and timestamp. Desktop IPC uses the same serialized coalescing queue and returns a promise for the actual write outcome. A failed synchronous exit remains retryable through the scheduler retry while mounted. Native shutdown drains file writes accepted before `will-quit` closes admission. Submitting unfinished renderer work before that boundary remains best effort; earlier visibility/pagehide signals provide more time for submission. Terminal saves supersede queued snapshots that have not started writing.
+A failed primary write tries a permitted recovery slot with the same serialized
+payload and timestamp. Only a current covering local write acknowledges an action.
+Runtime checkpoints, epochs, retry drivers and deferred feedback follow
+[session completion](../../../../../Docs/RUN_STATE.md#completed-actions-and-local-saving);
+[UI feedback](../../../../../Docs/UI.md#pending-saves-and-action-feedback) owns Saving/Retry.
+Completion and scheduling metadata are never saved. Acknowledged outcomes survive
+process interruption; submission of unfinished renderer work at shutdown is best effort.
 
-While a load is pending, exit saves queue without attempting a synchronous write:
-slot protection is not yet known. A pending clear skips exit saves. Once loads
-and clears finish, the synchronous exit path remains available.
+### Operation ordering
 
-Only a current, covering local write acknowledges a completed player action;
-failed, skipped and superseded submissions do not. Checkpoint versions, epochs,
-retry-driver lifetime and deferred feedback follow the
-[session completion contract](../../../../../Docs/RUN_STATE.md#completed-actions-and-local-saving).
-[UI feedback](../../../../../Docs/UI.md#pending-saves-and-action-feedback) owns
-Saving/Retry presentation. Completion metadata stays outside the save format.
-Acknowledged outcomes survive process interruption; shutdown flushing of unfinished
-renderer work remains best effort.
+| Owner                             | Serialized work                                                                                                                                       |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Each storage instance             | Loads, writes and clears; loads observe preceding writes and establish permitted slots before following saves; coalescing cannot cross a load barrier |
+| `platform-save-backend.ts`        | Local reads/writes/deletion and demo receipts across adapters sharing an IPC endpoint                                                                 |
+| `desktop/save-storage.cjs`        | File rings and demo initialization receipts across both slots and renderer reloads                                                                    |
+| `desktop/steam-cloud-storage.cjs` | Cloud reads/uploads/deletion across renderer replacement                                                                                              |
 
-Cloud mirroring runs independently after local writing, serialized across both
-slots with the newest queued payload per slot. A mirror failure cannot delay local
-completion. Clear cancels queued mirrors and waits for an active upload before
-Cloud deletion. Candidate selection, account ownership, and recovery policy retain
-the existing contracts.
-The process-wide `desktop/steam-cloud-storage.cjs` lane also serializes Cloud reads,
-uploads, and deletion across renderer replacement. Deletion waits for uploads
-already admitted by a departed renderer, and following reads observe its result.
-Failure releases the Cloud lane for later work; this ordering does not make local
-acknowledgement wait for Cloud.
+Failure releases each lane; failed loads reject their caller without blocking later
+work. Writes cannot overtake deletion. Demo import, its local write and initialization
+receipt belong to one load operation; a following clear waits, then deletes the import.
+Draining and backend replacement account for all queued operations, including loads,
+initialization writes, failure notifications and progress receipts from immediate
+saves with no awaiting caller. Loads and successful clears resume writes only when
+no newer explicit permission decision intervened; selecting recovery grants no permission.
+
+Clear immediately revokes submitted snapshots and pauses autosave while retaining
+the unsaved action and completion callbacks. Failure resumes autosave with a fresh
+snapshot and keeps the action retryable. Overlapping clears share one pause; work
+resumes only if all fail. Deletion modes remain under [Deletion](#deletion).
+
+Native shutdown closes admission at `will-quit`, after unload handlers can submit
+final snapshots, and drains accepted writes. Quitting resumes on the next event-loop
+turn after Electron resets its cancelled-quit state, even if the queue was already idle.
+
+### Autosave and exit
+
+Autosave retains unacknowledged work; older completions cannot clear newer revisions.
+[The scheduler](../../../../../src/app/autosave-scheduler.ts) owns timing;
+[the lifecycle](../../../../../src/app/autosave-lifecycle.ts) supplies debounce selection,
+snapshots, completion gating and subscriptions for React/headless callers. The React
+hook adds browser lifecycle listeners.
+
+- Snapshot/write failure retries through one timer no sooner than
+  `AUTOSAVE_RETRY_COOLDOWN_MS`, even with disabled animations or new changes.
+  [Storage constants](../../../../../src/lib/game-constants/storage.ts) keep retry
+  backoff independent of shrunken debounces and separately tunable from maximum wait.
+- Exit may bypass cooldown, with one submission per revision across repeated exit
+  signals. Terminal saves supersede queued snapshots that have not started writing.
+- Clear pauses scheduling. Successful deletion or write protection invalidates pending
+  acknowledgement and cancels scheduling; disabled persistence and hook cleanup stop
+  retries. Late timers/completions cannot restart cancelled work or flush a disposed lifecycle.
+
+Browser `visibilitychange`, `pagehide` and `beforeunload` synchronously flush the
+latest unacknowledged snapshot through `writeSync`. In
+[`SaveStorage.saveForExit`](./save-storage.ts), the write and idle check contain no
+intervening await. An idle successful write returns `saved`. If an older write may
+still land, the latest snapshot also replaces pending work and completion waits for
+that final queued write.
+A failed sync exit remains retryable while mounted. Desktop IPC returns the actual
+queued outcome. Earlier visibility/pagehide signals allow more time to submit
+unfinished renderer work before native shutdown closes admission.
+
+Exit saves wait behind pending loads without sync writing because slot protection
+is unknown, and skip during clear. The sync path resumes after those barriers.
+Each serialized snapshot gets a `lastSavedAt` later than the loaded save and prior
+serialized writes, even if the clock repeats or reverses, preserving recovery freshness.
+`io.ts` delegates exit ordering to the same storage instance.
+
+### Cloud mirroring
+
+Mirroring follows local writing independently, serialized across both slots with
+only the newest queued payload per slot. Failure cannot delay local acknowledgement.
+Clear cancels queued mirrors and waits for active uploads before Cloud deletion,
+including uploads admitted by a departed renderer. Following reads observe deletion;
+failures release the lane. Candidate, account and recovery policies remain unchanged.
 
 ## Deletion
 
