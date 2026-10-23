@@ -115,6 +115,8 @@ describe("alchemy visit transactions and resume", () => {
     expect(selectTransmutation({ kind: "source", index: 0, card: reordered }, defaultGameSession)).toBe(true);
     const activity = readRunSession(defaultGameSession).activity;
     if (activity.kind !== "transmutation") throw new Error("wrong visit");
+    expect(activity.data.transmutation).toMatchObject({ keyword: null, offerIndex: null });
+    expect(transmuteCard(0, 0, defaultGameSession)).toBeNull();
     const offers = getTransmutationOffers(activity.data);
     const offerIndex = offers.length - 1;
     const preview = offers[offerIndex]!;
