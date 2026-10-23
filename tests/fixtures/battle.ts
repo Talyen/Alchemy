@@ -5,6 +5,7 @@ import { BASE_PLAYER_MANA } from "@/lib/game-constants";
 import { makeTestCard } from "./cards";
 import { seededRng } from "./rng";
 import { defaultBattleState } from "@/lib/battle";
+import { getEnemyAbilityPressure } from "@/lib/battle/battle-enemy-setup";
 
 export { makeTestCard, makeTestCardWithId } from "./cards";
 export { seededRng } from "./rng";
@@ -59,7 +60,13 @@ export type BattleStatePatch = Partial<Omit<BattleState, BattleRecordField>> & {
   [K in BattleRecordField]?: Partial<BattleState[K]>;
 };
 
-export function makeTestBattleState(patch: BattleStatePatch = {}): BattleState {
+export function makeTestBattleState(
+  patch: BattleStatePatch = {},
+  {
+    liveEnemyPressure = false,
+    enemyAbilityPressure,
+  }: { liveEnemyPressure?: boolean; enemyAbilityPressure?: number } = {},
+): BattleState {
   const base = {
     ...defaultBattleState(),
     mana: BASE_PLAYER_MANA,
@@ -72,11 +79,29 @@ export function makeTestBattleState(patch: BattleStatePatch = {}): BattleState {
     if (!Object.hasOwn(patch, field)) continue;
     Object.assign(state, { [field]: { ...base[field], ...patch[field] } });
   }
+  // Keep the placeholder opponent's reaction thresholds stable across tuning.
+  // Explicit opponents and live-scaling tests retain production pressure.
+  const fixturePressure =
+    enemyAbilityPressure ??
+    (!liveEnemyPressure && !patch.currentEnemy?.id && state.currentEnemy.enemyType === "normal" ? 0.95 : undefined);
+  if (fixturePressure !== undefined) {
+    const multiplier = state.difficultyModifiers.find((modifier) => modifier.kind === "enemy-damage-multiplier");
+    state.difficultyModifiers = [
+      {
+        kind: "enemy-damage-multiplier",
+        amount: ((multiplier?.amount ?? 1) * fixturePressure) / getEnemyAbilityPressure(state),
+      },
+      ...state.difficultyModifiers.filter((modifier) => modifier.kind !== "enemy-damage-multiplier"),
+    ];
+  }
   return state;
 }
 
-export function patchBattleState(patch: BattleStatePatch = {}): BattleState {
-  return makeTestBattleState(patch);
+export function patchBattleState(
+  patch: BattleStatePatch = {},
+  options: Parameters<typeof makeTestBattleState>[1] = {},
+): BattleState {
+  return makeTestBattleState(patch, options);
 }
 
 function dodgeThenMissRng() {

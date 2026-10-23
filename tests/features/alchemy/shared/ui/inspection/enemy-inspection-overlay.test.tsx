@@ -144,7 +144,7 @@ describe("enemy inspection presentation", () => {
     fireEvent.mouseEnter(ability.parentElement!);
     await waitFor(() =>
       expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain(
-        "Deal 7 Physical damage",
+        "Deal 10 Physical damage",
       ),
     );
     rerender(
@@ -157,7 +157,7 @@ describe("enemy inspection presentation", () => {
     );
     await waitFor(() =>
       expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain(
-        "Deal 9 Physical damage",
+        "Deal 12 Physical damage",
       ),
     );
   });

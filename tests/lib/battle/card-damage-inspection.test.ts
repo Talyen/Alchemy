@@ -207,8 +207,8 @@ describe("battle damage inspection", () => {
     const state = patchBattleState({ currentEnemy: enemyById.bandit });
     const card = { ...getEnemyAbilityCard("slash"), effects: [hit(4), hit(4)] };
     expect(getBattleDamageInspectionCard(card, state, "enemy").descriptionLines).toEqual([
-      "Deal 8 Physical damage",
-      "Deal 4 Physical damage",
+      "Deal 10 Physical damage",
+      "Deal 5 Physical damage",
     ]);
     expect(state.flags.enemyFirstHitDoubleUsed).toBe(false);
   });

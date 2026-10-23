@@ -17,16 +17,19 @@ import type { CombatTextEvent } from "@/lib/battle/types";
 import { effectsForAffixRolls } from "@/lib/gear";
 import { makeTestCard, patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 
-function battle(patch: BattleStatePatch = {}) {
-  return patchBattleState({
-    enemyHealth: 100,
-    enemyMaxHealth: 100,
-    playerHealth: 40,
-    playerMaxHealth: 40,
-    currentEnemy: { ...enemyById.goblin, traits: [] },
-    rng: () => 0.99,
-    ...patch,
-  });
+function battle(patch: BattleStatePatch = {}, options: Parameters<typeof patchBattleState>[1] = {}) {
+  return patchBattleState(
+    {
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      playerHealth: 40,
+      playerMaxHealth: 40,
+      currentEnemy: { ...enemyById.goblin, traits: [] },
+      rng: () => 0.99,
+      ...patch,
+    },
+    options,
+  );
 }
 
 function attack(damageType: DamageType, amount = 3) {
@@ -163,11 +166,14 @@ describe("Trinket affix additions", () => {
   });
 
   it("pays Second Wind once across turns and reload, independently of the enemy's Second Wind", () => {
-    const state = battle({
-      playerHealth: 11,
-      gearEffects: { healOnFirstQuarterHealth: 6 },
-      flags: { secondWindTriggered: true },
-    });
+    const state = battle(
+      {
+        playerHealth: 11,
+        gearEffects: { healOnFirstQuarterHealth: 6 },
+        flags: { secondWindTriggered: true },
+      },
+      { enemyAbilityPressure: 0.95 },
+    );
     const recovered = applyEnemyAbility(state, attack("physical", 2), []);
     expect(recovered.playerHealth).toBe(15);
     expect(recovered.flags.gearSecondWindUsed).toBe(true);

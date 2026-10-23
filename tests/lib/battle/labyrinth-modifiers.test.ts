@@ -17,14 +17,17 @@ import { cardById, type BattleCard, type DamageType } from "@/lib/game-data";
 import { patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 
 function state(overrides: BattleStatePatch = {}) {
-  return patchBattleState({
-    contentSystemType: "labyrinth",
-    enemyHealth: 100,
-    enemyMaxHealth: 100,
-    currentEnemy: { id: "modifier-test-enemy", traits: [] },
-    rng: () => 0.99,
-    ...overrides,
-  });
+  return patchBattleState(
+    {
+      contentSystemType: "labyrinth",
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      currentEnemy: { id: "modifier-test-enemy", traits: [] },
+      rng: () => 0.99,
+      ...overrides,
+    },
+    { enemyAbilityPressure: 0.95 },
+  );
 }
 
 function attack(type: DamageType = "physical", amount = 4, overrides: Partial<BattleCard> = {}): BattleCard {

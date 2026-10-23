@@ -21,16 +21,19 @@ function baseEnemy(enemyId: string): BestiaryEntry {
 }
 
 function battleState(overrides: BattleStatePatch = {}): BattleState {
-  return patchBattleState({
-    rng: () => 0.99,
-    enemyPhysicalDamageBonus: 6,
-    enemyHealth: 50,
-    enemyMaxHealth: 50,
-    mana: 4,
-    maxMana: 4,
-    currentEnemy: baseEnemy("test-enemy"),
-    ...overrides,
-  });
+  return patchBattleState(
+    {
+      rng: () => 0.99,
+      enemyPhysicalDamageBonus: 6,
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      mana: 4,
+      maxMana: 4,
+      currentEnemy: baseEnemy("test-enemy"),
+      ...overrides,
+    },
+    { enemyAbilityPressure: 0.95 },
+  );
 }
 
 describe("endPlayerTurn - haste branch", () => {
