@@ -75,7 +75,13 @@ tuning select both renderer builds and desktop-family CI checks. The headless pl
 setup action and cancels superseded runs on the same ref.
 
 Documentation and Oxlint inventories exclude isolated `.worktrees/` checkouts,
-reports, and installed dependencies. Broken explicit links, documented npm commands and discovery pointers remain blocking. Inline backticked filenames are explanatory prose, not inferred path contracts; use a Markdown link when a reference must remain valid. Document reachability and skill-index completeness are advisory and never fail the gate. Documentation contract checks share one
+reports, and installed dependencies. Broken inline and reference-style links,
+documented npm commands and discovery pointers remain blocking. Fenced examples
+and inline code do not create link contracts; destinations may use angle brackets
+or balanced parentheses. Inline backticked filenames are explanatory prose, not
+inferred path contracts; use a Markdown link when a reference must remain valid.
+Document reachability and skill-index completeness are advisory and never fail
+the gate. Documentation contract checks share one
 per-file fact walk (explicit links and script names) plus one
 Markdown helper (`lib/agent/markdown-sections.mjs`) and one exemption owner per scope
 (`isHistoryOnlyDoc` / `isReachabilityExempt` in

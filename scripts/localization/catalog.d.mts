@@ -16,7 +16,6 @@ export interface Translation {
 export const TARGETS: string[];
 export function digest(value: unknown): string;
 export function ordered<T>(value: Record<string, T>): Record<string, T>;
-export function parameters(value: string): string[];
 export function tags(value: string): string[];
 export function sourceHash(message: Message, glossary: Record<string, string>, locale: string): string;
 export function validateTranslation(message: Pick<Message, "text">, value: string): void;

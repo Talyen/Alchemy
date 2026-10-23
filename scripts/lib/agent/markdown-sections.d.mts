@@ -1,8 +1,8 @@
 export function readDocumentSection(
   root: string,
   filename: string,
-  heading?: string,
-): { start: number; end: number; text: string };
+  heading?: string | null,
+): { path: string; heading: string | null; start: number; end: number; text: string };
 
 export function headingSlugs(source: string): Set<string>;
 

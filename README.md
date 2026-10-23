@@ -48,17 +48,17 @@ binaries, prepared-asset failures, and running checkouts on separate ports.
 
 ## Develop
 
-| Command                        | Action                                                  |
-| ------------------------------ | ------------------------------------------------------- |
-| `npm run dev`                  | Start Vite dev server                                   |
-| `npm run dev:desktop`          | Start the Electron shell                                |
-| `npm test`                     | Run bounded Node-only smoke tests                       |
-| `npm run test:unit`            | Run the full unit suite; append paths for focused tests |
-| `npm run test:e2e`             | Run Playwright against the existing production build    |
-| `npm run lint`                 | Lint all source files                                   |
-| `npm run check -- --diff`      | Check the current task                                  |
-| `npm run check:full -- --diff` | Run broad local validation                              |
-| `npm run docs:check`           | Validate documentation links, commands, and contracts   |
+| Command               | Action                                                  |
+| --------------------- | ------------------------------------------------------- |
+| `npm run dev`         | Start Vite dev server                                   |
+| `npm run dev:desktop` | Start the Electron shell                                |
+| `npm test`            | Run bounded Node-only smoke tests                       |
+| `npm run test:unit`   | Run the full unit suite; append paths for focused tests |
+| `npm run test:e2e`    | Run Playwright against the existing production build    |
+| `npm run lint`        | Lint all source files                                   |
+| `npm run check`       | Check the current isolated task                         |
+| `npm run check:all`   | Run all units, full static checks, and builds           |
+| `npm run docs:check`  | Validate documentation links, commands, and contracts   |
 
 Install Playwright's browser once before the first local E2E run:
 
@@ -70,9 +70,11 @@ Run `npm run build` before `npm run test:e2e` to test current source. For
 checks against the development server, use `npm run test:e2e:dev`. Focused
 commands and fixture guidance live in the [E2E guide](./tests/e2e/README.md).
 
-Use explicit task-owned paths instead of `--diff` when the checkout contains
-other work. [Contributing](./CONTRIBUTING.md#what-to-run-when-you-change) owns
-verification permissions and completion requirements.
+In an isolated task worktree, `check` selects the task delta and working changes.
+Use explicit task-owned paths in an unrecorded branch or a mixed checkout. Use
+`--diff` only when the entire dirty set belongs to the task.
+[Contributing](./CONTRIBUTING.md#what-to-run-when-you-change) owns verification
+permissions and completion requirements.
 
 Full command catalog (build, desktop, gates, balance sim, perf, clean):
 [`Docs/REFERENCE.md`](./Docs/REFERENCE.md#environment--commands). Path-specific
