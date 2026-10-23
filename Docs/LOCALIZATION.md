@@ -29,7 +29,8 @@ boundaries. Translate catalog names before supplying message parameters; `text`
 interpolates those values verbatim. Generic controls pass already translated props
 and children through, so a German `Stab` (staff) cannot be translated a second
 time as the English attack name. It never changes catalog data, gameplay IDs or comparisons. Language
-switches do not remount the application or dispatch gameplay commands.
+switches preserve progress, RNG, purchases, modified cards and focus without
+remounting the application or dispatching gameplay commands.
 
 Resource amounts use `formatLargeAmount(amount, i18n.locale)` at presentation
 boundaries. Separators and compact units follow the selected game language, with
@@ -97,7 +98,8 @@ same batch format without demanding that all other pending work is finished.
 
 The local check, locked integration, CI static gate and verified builds enforce
 this check. They never call a model or modify translations. If integration
-incorporates changed English, rerun prepare with the same packet path, repair the affected translations and retry.
+incorporates changed English, refresh the same packet and repair affected translations
+in the task worktree before retrying; never translate inside the integration lock.
 Machine checks protect structural validity and freshness, not native-speaker
 quality; AI semantic review remains part of completing the task.
 
@@ -134,38 +136,23 @@ Use the browser acceptance scenarios to check live switching, focus, clipping,
 keyword interactions, and saved combat. Browser/Electron and builds follow the
 execution policy in [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change).
 
-The opt-in localization layout review runs the existing acceptance journeys at 1280×720
-with the current maximum Game Size and Tooltip Size settings. It checks popup and
-control bounds and captures Options tabs, combat, shops and confirmations under
-`reports/localization-layout/` for visual review:
+For focused rendered review, run the acceptance suites at minimum viewport and
+maximum sizing. Enable passing screenshots explicitly when visual evidence is needed:
 
 ```sh
-ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:e2e:dev -- tests/e2e/specs/localization.spec.ts --workers=1
+ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 ALCHEMY_LOCALIZATION_SCREENSHOTS=1 npm run test:e2e:dev -- tests/e2e/specs/localization.spec.ts tests/e2e/specs/localization-gameplay.spec.ts --workers=1
 ```
 
-The deeper gameplay review covers mixed/distilled Potions, transmutation previews
-and generated names, corruption, Homestead purchases, Gear crafting, Labyrinth
-discovery and reward claims. It checks acknowledged checkpoints after closing the
-seeded page, then resumes in a different language and compares saved effects,
-description marks, inventories, resources and RNG. The Homestead journey also
-checks complete translated benefit lines and the edge placement of long tooltips.
-It also covers localized mode/hero/difficulty selection, draft completion,
-keyboard talent allocation and Collection inspection, Mystery choice/reward
-checkpoints, and defeat/final-victory recaps. Difficulty header titles are explicit
-catalog fields; difficulty names and victory subtitles are translated at the screen
-boundary. Boss destinations use a complete message containing the act number.
+[The suites](../tests/e2e/specs/localization-gameplay.spec.ts) exercise translated
+flows and cross-language resume, comparing acknowledged effects, description
+marks, inventories, resources and RNG. The [E2E guide](../tests/e2e/README.md#tags)
+owns smoke/QA tags, CI tiers and screenshot policy; [workflows](../.github/workflows/)
+own scheduling. Expanded English is development-only QA, separate from production
+catalog acceptance.
 
-```sh
-ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:e2e:dev -- tests/e2e/specs/localization-gameplay.spec.ts --workers=1
-```
-
-Every-push CI runs both suites with expanded English, maximum sizing and the
-1280×720 viewport. Failure artifacts retain localization results and screenshots.
-The production demo has its own CI gate and release gate: fresh starter-card play,
-acknowledged save/resume, final Act 1 boss combat and rewards, localized recap,
-hero unlocks, marketing-screen accessible text and return to menu without duplicate
-progression.
-The final-room checkpoint is seeded; this is not an unseeded seven-room playthrough.
+The [demo journeys](../tests/e2e/specs/localization-demo.spec.ts) include starter
+play/save/resume and a seeded final-room checkpoint through recap, hero unlock,
+marketing and menu. That checkpoint does not establish an unseeded full run.
 The demo ending selects bundled promo artwork for every shipped language, with
 English artwork for expanded-English QA. The original English master is retained;
 localized variants edit its seven labels in the same panels. Accessible text and
@@ -182,13 +169,10 @@ ALCHEMY_EDITION=demo ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1 npm run test:e2e -- te
 ALCHEMY_EDITION=demo PLAYWRIGHT_ELECTRON_FULL=1 npm run test:ship:desktop -- tests/electron/localization-demo.spec.ts
 ```
 
-The native demo journey closes and relaunches the actual Electron process using
-one isolated temporary profile per language pair with normal motion. It retains the
-initial language override, switches the resumed battle from Chinese to Russian or
-Japanese to French, then relaunches again and compares saved mechanics,
-full card data and RNG. It waits for the real startup/artwork and battle-input
-gates before interacting. Its profile never touches the player's normal saves.
-Native timing canaries and foreground/hardware qualification remain separate.
+The [native demo journey](../tests/electron/localization-demo.spec.ts) relaunches
+isolated profiles with normal motion and compares saved mechanics, full card
+data and RNG across language changes. Actual startup and input gates remain active;
+native timing and physical Steam qualification require their own evidence.
 
 Review the packaged Electron Options tabs, including desktop display controls,
 at the same settings with (choose a shipped locale ID):

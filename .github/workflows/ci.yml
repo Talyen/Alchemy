@@ -71,6 +71,8 @@ jobs:
               - "vite.config.ts"
               - "tsconfig*.json"
               - "steam/**"
+              - "scripts/ensure-steamworks*"
+              - "scripts/steamworks/*.patch"
               - "scripts/dist-desktop*"
               - "scripts/lib/release/desktop-artifact*"
               - "scripts/lib/release/game-edition.mjs"
@@ -480,6 +482,8 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
+        with:
+          native-steamworks: "true"
 
       - name: Cache Electron binary
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6

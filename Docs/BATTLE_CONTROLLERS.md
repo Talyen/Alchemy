@@ -148,6 +148,8 @@ another task or prevent replacement readiness. `PlaybackLifetime.capture(generat
 binds scheduling, measurements, UI writes, completion callbacks and delayed sounds
 to their originating generation. Retained dependencies cannot acquire replacement
 resources. Owned overlays release before replacement presentation begins.
+Scoped game-time waits own autoplay previews and turn pacing. Preview cancellation
+clears its visual synchronously without clearing a replacement preview.
 
 ### Draw and transfer resources
 
@@ -170,7 +172,8 @@ sounds and timers. End-turn cleanup resets hand transfers after all draws settle
 `battle-session.ts` follows committed screen changes: leaving cancels playback;
 returning displays committed gameplay. A battle prepared before its navigation fade
 commits retains its opening sequence. Terminal restored snapshots use live outcome
-callbacks. `battle-context.ts` supplies refs and refreshes stable-controller inputs
+callbacks. `battle-context.ts` supplies refs and fixed controller dependencies;
+an explicit committed-input ref supplies changing screen and callback values
 after each React commit. Hydration consumes legacy continuations before presentation.
 Session reset cancels and clears presentation without a gameplay command or retained
 unused opening snapshot; commands remain the gameplay owner.

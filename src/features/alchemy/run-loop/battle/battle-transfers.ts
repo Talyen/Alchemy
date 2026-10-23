@@ -93,6 +93,7 @@ export function createBattleTransferDeps(
 
     const drawDeps: HandDrawSequenceDeps = {
       playback: {
+        waitForDelay: (id, ms) => (id === session && isActive() ? scope.wait(ms) : Promise.resolve(false)),
         beginDraw: (id, kind) => (id === session && isActive() ? ctx.playback.beginDraw(id, kind) : () => {}),
         waitForFrame: (id) => (id === session && isActive() ? ctx.playback.waitForFrame(id) : Promise.resolve(false)),
         get pendingDraws() {

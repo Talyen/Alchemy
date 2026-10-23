@@ -90,6 +90,9 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   // committed asset output: tooling route only, no CI gate.
   ["scripts/sync-changelog.mjs", ["tooling"], []],
   ["scripts/sync-steam-appid.mjs", ["tooling"], ["desktop"]],
+  ["scripts/ensure-steamworks.mjs", ["desktop", "tooling"], ["desktop"]],
+  ["scripts/steamworks/overlay.patch", ["desktop", "tooling"], ["desktop"]],
+  ["scripts/steamworks/availability.patch", ["desktop", "tooling"], ["desktop"]],
   ["scripts/smoke-desktop.ps1", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
   ["scripts/lib/release/release-checks.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
   ["desktop/main.cjs", ["desktop"], ["desktop", "desktop_renderer"]],

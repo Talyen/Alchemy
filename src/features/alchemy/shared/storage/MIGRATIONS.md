@@ -54,36 +54,9 @@ Increment the schema version for structural or meaning changes that require a su
 
 Current saves must round-trip valid profile progress, inventories/loadouts, current-run geography, deck modifications, each activity branch, choices, and committed battle results/RNG. Test malformed current fields, an invalid run alongside a valid profile, stale autosaves after run end, and future-candidate precedence. Historical below-baseline tests are retired; `save-migration-guard.test.ts` covers baseline rejection and current recovery.
 
-Battle difficulty modifiers are validated individually during load. Keep valid
-entries and drop malformed ones so the next enemy turn can resolve safely.
-Profile and run XP retain only current keyword IDs; unknown entries cannot
-contribute Talent points or starting Health.
-Unsafe numeric XP entries are dropped independently so valid sibling progress
-survives. Save timestamps use the same safe-integer policy for raw candidate
-ordering and parsed freshness. Crafting currencies must remain safely spendable.
-Damaged card UIDs, titles, and artwork do not remove otherwise usable cards;
-identity repair and catalog hydration restore them. Scheduled battle pulses
-retain the card effect schema's one-to-ten-turn duration limit.
-Saved enemies regain their current native Traits from the catalog and retain
-only current combat encounter Traits. Reward benefits stay in their separate
-field; unsupported saved Traits cannot enter combat.
-
-Run activity and resume codecs preserve a single `activeRun` with one tagged
-`activity`. Opening draws and turns commit before animation. New saves have no
-pending-turn, display-screen, interrupted-flow, or separate optional visit fields.
-Only the selected candidate may request abandonment of a nonterminal snapshot
-marked as an enemy turn;
-the current engine cannot commit a resumable intermediate enemy phase.
-Restore uses current abandonment settlement atomically, then queues the terminal
-snapshot; stale bootstrap results cannot abandon an initialized run. Terminal
-committed battles remain resumable. Unusable selected activity structure drops
-only the run; permanent progress and future-save protection remain intact.
-A damaged Mystery offer retains its tag with null data so restore can exit that
-visit through the existing repair operation.
-An unfinished Campfire with no usable Potion offer rebuilds its standard offers
-once using the saved events stream. A resumed Labyrinth map clears stale pending
-room locks. Invalid or missing battle Gold falls back to valid purse Gold in both
-the battle and profile; a valid zero balance remains authoritative.
+Current-data cases follow [recovery rules](#current-data-recovery). Use them to
+select consequential assertions; existing fixtures and shared validators remain
+the starting point rather than adding one test per field.
 
 ## Discarded presentation fields
 
@@ -138,9 +111,9 @@ safe additive defaults; no schema bump is required. New runs start with empty co
 history and zero earned Gold. Older runs default to empty partial history and unknown
 Gold (`null`): subsequent visits are recorded with an omitted-history marker, while
 Gold remains unknown until a fresh run. Never infer missing earnings from the purse.
-History and earnings round-trip with the active run; loading never records visits or
-replays earnings. The detached `runRecap` ending snapshot is session-only and does not
-resurrect a saved run after death, abandonment, or victory.
+History and earnings round-trip without recording visits or replaying earnings on
+load. [Recap ownership](../../../../../Docs/RUN_STATE.md#run-recap-ownership) governs
+the transient ending snapshot.
 
 ## Defaults and resume normalization
 
@@ -172,6 +145,38 @@ and catalog references; hydration restores runtime cards and manifests. Preserve
 valid modifications, Health, defenses, flags, choices and RNG. Never replay
 starting grants or actions. Retired crystal/recovery and historical Talent
 conversions are not aliases for current fields.
+
+### Current-data recovery
+
+Battle difficulty modifiers are validated individually during load. Keep valid
+entries and drop malformed ones so the next enemy turn can resolve safely.
+Profile and run XP retain only current keyword IDs; unknown entries cannot
+contribute Talent points or starting Health.
+Unsafe numeric XP entries are dropped independently so valid sibling progress
+survives. Save timestamps use the same safe-integer policy for raw candidate
+ordering and parsed freshness. Crafting currencies must remain safely spendable.
+Damaged card UIDs, titles, and artwork do not remove otherwise usable cards;
+identity repair and catalog hydration restore them. Scheduled battle pulses
+retain the card effect schema's one-to-ten-turn duration limit.
+Saved enemies regain their current native Traits from the catalog and retain
+only current combat encounter Traits. Reward benefits stay in their separate
+field; unsupported saved Traits cannot enter combat.
+
+[Activity and committed playback](../../../../../Docs/RUN_STATE.md#committed-battle-playback)
+own the single tagged activity and commit-before-animation model.
+Only the selected candidate may request abandonment of a nonterminal snapshot
+marked as an enemy turn;
+the current engine cannot commit a resumable intermediate enemy phase.
+Restore uses current abandonment settlement atomically, then queues the terminal
+snapshot; stale bootstrap results cannot abandon an initialized run. Terminal
+committed battles remain resumable. Unusable selected activity structure drops
+only the run; permanent progress and future-save protection remain intact.
+A damaged Mystery offer retains its tag with null data so restore can exit that
+visit through the existing repair operation.
+An unfinished Campfire with no usable Potion offer rebuilds its standard offers
+once using the saved events stream. A resumed Labyrinth map clears stale pending
+room locks. Invalid or missing battle Gold falls back to valid purse Gold in both
+the battle and profile; a valid zero balance remains authoritative.
 
 ## Policy: local is authoritative
 
@@ -308,11 +313,15 @@ Mirroring follows local writing independently, serialized across both slots with
 only the newest queued payload per slot. Failure cannot delay local acknowledgement.
 Clear cancels queued mirrors and waits for active uploads before Cloud deletion,
 including uploads admitted by a departed renderer. Following reads observe deletion;
-failures release the lane. Candidate, account and recovery policies remain unchanged.
+failures release the lane. Account and recovery policies remain unchanged. Native operations check both
+Steam account/app Cloud settings at execution time; disabled Cloud reads yield
+no candidate and writes/deletions leave its cache untouched.
 
 ## Deletion
 
-Deletion mode is explicit (`"default"` | `"localWipe"`), not inferred from the visible screen:
+Deletion mode is explicit (`"default"` | `"localWipe"`), not inferred from the visible screen.
+Cloud deletion applies only while both Steam Cloud preferences are enabled;
+disabled Cloud leaves its cache untouched and clears only the local profile.
 
 - **`default`:** delete both Cloud mirrors first, then both local slots.
   Cloud deletion failure leaves local data untouched and reports failure,
@@ -368,7 +377,24 @@ ledger is needed.
 ## Demo account identity and transfer
 
 `steamAccountId` is a nullable additive envelope field, defaulting to null. Native
-Steam writes stamp the current account for matching local demo sources. Permanent
+Steam writes stamp the current account. Native local progress and initialization
+receipts live below the edition's userData directory in `steam/<SteamID64>/`, or
+`offline/` when Steam identity is unavailable. Isolated test/playtest profiles
+retain their supplied directory and never use live Steam. The Electron browser
+profile remains edition/device-local, preserving language and display preferences.
+
+One-time legacy migration copies only candidates whose stamped account matches
+the selected account; unowned candidates belong only to offline play. Originals
+remain intact, established target profiles are never supplemented, and the local
+`legacy-migration.json` receipt survives Clear Save Data to prevent resurrection.
+Clear must retain that receipt before deleting snapshots, even when a startup
+migration copied data but failed to retain its receipt. Receipt failure prevents
+deletion and leaves the existing progress intact.
+Local demo transfer checks the matching account directory and the preserved
+legacy demo directory, accepting only matching owner stamps. No renderer-supplied
+path can select another account. No save-schema change is required.
+
+Permanent
 progress import, separate cloud filenames and initialization receipts are owned
 by [Steam demo](../../../../../Docs/STEAM_DEMO.md). Receipts survive Clear Save Data;
 no active run or full-Campaign win credit is imported. Public demo carryover freezes
@@ -413,3 +439,13 @@ it. No schema-version increment or supported payload transformation is required.
 ## Localized descriptions
 
 The renderer derives localized messages from literal parts, effects and magnitude bindings when they are displayed or extracted. Template IDs and keyword/magnitude slots are not persisted; saved cache metadata cannot replace valid mechanics. Current-format cards, custom wording, Mixed Potion grouping and upgrades remain intact. Unknown legacy templates remain playable in English. The device-local language preference is outside the progress envelope and Steam Cloud; no save-version change is required. See [Localization](../../../../../Docs/LOCALIZATION.md).
+
+## Battle decoding and semantic repair
+
+The wire schema validates structure and scheduled/card collections before semantic
+repair. `DecodedPersistedBattle` deliberately leaves enemy identity, status,
+reaction and flag records untrusted; normalization validates those records and
+then repairs resources, pile identities, and cross-field survival relationships.
+Optional card metadata is omitted when absent, matching the runtime card type.
+The runtime activity layout does not change the serialized reward/destination
+payloads or save version.

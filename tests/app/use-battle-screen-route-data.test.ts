@@ -1,3 +1,4 @@
+import { setRunActivityForTest as setRunProgressActivity } from "../helpers/run-domain-store-test";
 import { battleSnapshot } from "@/lib/battle";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -31,7 +32,7 @@ describe("useBattleScreenRouteData", () => {
     act(() => {
       battlePresentation.getState().setDisplayedBattle(finalFrame);
       mutateGameplayForTest((draft) => {
-        draft.session.activity = { kind: "rewards" };
+        setRunProgressActivity(draft, "rewards");
         draft.session.activeLabyrinthModifiers = [];
         draft.run.activeRun.runBoons = [];
       });

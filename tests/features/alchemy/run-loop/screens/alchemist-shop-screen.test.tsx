@@ -68,8 +68,8 @@ describe("AlchemistShopScreen mix Escape", () => {
     rerender(<AlchemistShopScreen {...props} gold={24} />);
     expect(((await screen.findByRole("button", { name: /^Distill/ })) as HTMLButtonElement).disabled).toBe(true);
     rerender(<AlchemistShopScreen {...props} mixUsed />);
-    expect((screen.getByRole("button", { name: "Mix Potion - Used" }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole("button", { name: "Distill - Used" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole("group", { name: "1 per visit" }).textContent).toContain("Brew complete");
+    expect(screen.queryByRole("button", { name: /^Mix Potion|^Distill/ })).toBeNull();
   });
 
   it("requires two distinct ingredients after deselecting the first potion", async () => {

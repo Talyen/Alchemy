@@ -4,8 +4,13 @@ Alchemy’s original code and content use the license described in
 [LICENSE.md](./LICENSE.md). Third-party software and content retain their own
 licenses; nothing in the Alchemy license overrides those terms.
 
-The current asset register contains unresolved release blockers. Do not treat
-this document's presence as clearance for public distribution.
+On October 23, 2026, Ryan McIntire confirmed that all original game content,
+artwork, music and sound assets were created by him using AI tools, that the
+applicable tools/accounts permitted commercial use at creation, and that no
+third-party samples or source material were used. All AI content is prepared
+during development; the game does not generate AI content during play. This
+owner confirmation supersedes the earlier unresolved audio provenance notes.
+Third-party fonts and software retain the notices below.
 
 ## Software dependencies
 
@@ -30,14 +35,14 @@ Every third-party art, audio, music, or font source must be recorded before a
 public release. Keep one row per source pack or licensor and link the local
 license or receipt when redistribution terms are not public.
 
-| Asset group                                          | Source / licensor                                                                | License or permission                                      | Attribution required    | Local evidence                                                                                                              |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Original Alchemy code, documentation, and visual art | Ryan McIntire                                                                    | CC BY-NC 4.0                                               | Yes                     | [LICENSE.md](./LICENSE.md); project owner confirms all artwork is original                                                  |
-| Inter font (`public/fonts/Inter.woff2`)              | [The Inter Project Authors](https://github.com/rsms/inter/tree/66647c0bb)        | SIL Open Font License 1.1                                  | Preserve license notice | [Local license copy](./public/licenses/inter-ofl.txt)                                                                       |
-| Noto Sans SC (`public/fonts/noto-sans-sc.ttf`)       | [Noto Sans SC authors](https://github.com/google/fonts/tree/main/ofl/notosanssc) | SIL Open Font License 1.1; catalog subset of variable font | Preserve license notice | [Local license copy](./public/licenses/noto-sans-sc-ofl.txt)                                                                |
-| Noto Sans (`public/fonts/noto-sans.ttf`)             | [Noto Sans authors](https://github.com/google/fonts/tree/main/ofl/notosans)      | SIL Open Font License 1.1; catalog subset of variable font | Preserve license notice | [Local license copy](./public/licenses/noto-sans-ofl.txt)                                                                   |
-| Registered and curated game sound effects            | Sources listed by the [sound asset registry](./scripts/assets/sound-assets.mjs)  | Earlier CC0 claim; pack-specific permissions unverified    | Unknown                 | [Approved source ledger](./Docs/design/audio-review/approved-choices.json); redistribution records remain a release blocker |
-| Thirteen Suno-generated music tracks                 | [Track links below](#music-source-links)                                         | Account entitlement at creation/download not verified      | Review applicable terms | Embedded song IDs and creation dates; private subscription/download evidence not yet recorded — release blocker             |
+| Asset group                                          | Source / licensor                                                                | License or permission                                      | Attribution required                         | Local evidence                                                                                       |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Original Alchemy code, documentation, and visual art | Ryan McIntire                                                                    | CC BY-NC 4.0                                               | Yes                                          | [LICENSE.md](./LICENSE.md); Owner confirmation above; artwork created using AI                       |
+| Inter font (`public/fonts/Inter.woff2`)              | [The Inter Project Authors](https://github.com/rsms/inter/tree/66647c0bb)        | SIL Open Font License 1.1                                  | Preserve license notice                      | [Local license copy](./public/licenses/inter-ofl.txt)                                                |
+| Noto Sans SC (`public/fonts/noto-sans-sc.ttf`)       | [Noto Sans SC authors](https://github.com/google/fonts/tree/main/ofl/notosanssc) | SIL Open Font License 1.1; catalog subset of variable font | Preserve license notice                      | [Local license copy](./public/licenses/noto-sans-sc-ofl.txt)                                         |
+| Noto Sans (`public/fonts/noto-sans.ttf`)             | [Noto Sans authors](https://github.com/google/fonts/tree/main/ofl/notosans)      | SIL Open Font License 1.1; catalog subset of variable font | Preserve license notice                      | [Local license copy](./public/licenses/noto-sans-ofl.txt)                                            |
+| Registered and curated game sound effects            | Sources listed by the [sound asset registry](./scripts/assets/sound-assets.mjs)  | Owner-created using AI; commercial use confirmed           | No third-party source attribution identified | [Approved source ledger](./Docs/design/audio-review/approved-choices.json); Owner confirmation above |
+| Thirteen Suno-generated music tracks                 | [Track links below](#music-source-links)                                         | Commercial-use entitlement at creation confirmed           | No third-party source attribution identified | Owner confirmation above; embedded song IDs and creation dates                                       |
 
 Files whose provenance is not represented above are not cleared for public
 distribution merely because they exist in the external Asset Library, `public/`,
@@ -48,28 +53,19 @@ committed; record a stable private evidence location instead.
 The Inter WOFF2 name table identifies version 4.001 and project commit
 `66647c0bb`; the local license copy matches that revision.
 
-The [sound asset registry](./scripts/assets/sound-assets.mjs) owns the current
-generated-source and curated-OGG inventory. The project owner's earlier
-[CC0](https://creativecommons.org/publicdomain/zero/1.0/) statement was recorded
-without pack names or license records. The approved sound replacements now have
-source paths, hashes, and excerpt boundaries in the
-[approved cue mappings](./Docs/design/audio-review/approved-choices.json), with processing inputs retained in those mappings.
-Those records identify recordings and listening decisions; they do not establish
-redistribution permission. Embedded tags such as `Pixel Combat` likewise identify
-a possible source without establishing its license. Resolve pack-specific
-permissions for both retained recordings and imported excerpts before clearing
-the sound effects for distribution.
+The [sound asset registry](./scripts/assets/sound-assets.mjs) and
+[approved cue mappings](./Docs/design/audio-review/approved-choices.json) retain
+source paths, hashes and excerpt boundaries for processing and listening review.
+Those technical records do not imply third-party ownership; the owner confirmation
+above establishes the supplied source and commercial-use history.
 
 ### Music source links
 
 The thirteen selected music masters in the external Asset Library, listed by
 [`music-assets.mjs`](./scripts/assets/music-assets.mjs), embed a Suno song URL,
 a creator account, and a creation timestamp. Prepared copies ship in `public/Music/`.
-These links identify the source but do not
-prove the account's rights for game distribution. Record private evidence of the
-applicable plan and download rights before clearing these tracks for release;
-[Suno's terms](https://suno.com/terms) and [rights guidance](https://help.suno.com/en/articles/2416769)
-distinguish account tiers and creation circumstances.
+These links retain source traceability; the commercial-use confirmation above
+covers the selected tracks.
 
 | Local track             | Embedded source                                                         |
 | ----------------------- | ----------------------------------------------------------------------- |
@@ -96,7 +92,8 @@ Before promoting a public build:
 3. Add required in-game, store-page, or file-level attribution.
 4. Verify packaged dependency notices remain present where their licenses
    require them.
-5. Confirm source-specific permissions for processed sounds and retain the
-   Suno account/download evidence that applies to each music track.
+5. Reconfirm commercial-use terms if new tools, account tiers or third-party
+   source material are introduced; disclose shipped AI content in Steamworks.
 
-An incomplete provenance record is a release blocker.
+The owner confirmation resolves the previously recorded audio-rights uncertainty.
+New third-party sources still require their own permission and notices.

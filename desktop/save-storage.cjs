@@ -3,7 +3,14 @@ const path = require("node:path");
 const { setImmediate } = require("node:timers");
 
 /** Native profile storage outlives every renderer and its session queue. */
-function createDesktopSaveStorage({ slots, demoProgress, isSavePayload, stampOwner, filesystem = fs }) {
+function createDesktopSaveStorage({
+  slots,
+  demoProgress,
+  isSavePayload,
+  stampOwner,
+  preserveInitialization = async () => {},
+  filesystem = fs,
+}) {
   let lane = Promise.resolve();
   let closed = false;
   function enqueue(operation) {
@@ -82,9 +89,11 @@ function createDesktopSaveStorage({ slots, demoProgress, isSavePayload, stampOwn
     });
   }
   async function clear() {
-    if (!(await demoProgress.complete({ localOnly: true }))) return false;
-    // Wipe both rings so an older recovery snapshot cannot restore a cleared profile.
     try {
+      // A failed startup migration must not restore its old source after a later clear.
+      await preserveInitialization();
+      if (!(await demoProgress.complete({ localOnly: true }))) return false;
+      // Wipe both rings so an older recovery snapshot cannot restore a cleared profile.
       for (const paths of Object.values(slots)) {
         for (const filePath of [paths.file, paths.tmp, ...paths.backups]) {
           try {

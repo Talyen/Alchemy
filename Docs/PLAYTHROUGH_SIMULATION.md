@@ -64,6 +64,20 @@ or actual healing. Exact weights belong to the policy in
 or draw gameplay RNG. Other heroes, random/minimalist policies and retained legacy
 careers keep their own scoring; production card rules and offers are unchanged.
 
+## Combat policy
+
+[Combat policy](../src/app/playthrough/combat-policy.ts) owns modern heuristic
+preferences: preserve consumables without current benefit, avoid potentially
+lethal self-costs, and prevent pure defense from indefinitely displacing attacks.
+It reuses live autoplay's conservative self-cost check, not an enemy-damage or
+healing forecast. Defensive history advances only on committed commands and
+resets with attacks, damage-over-time progress, or battle departure. New actors
+start without history; observation alone changes neither scores nor RNG.
+
+Random-playable and legacy careers retain their original decisions; replay follows
+the recorded journal. These career heuristics add no shipping-save fields and do
+not change live autoplay or isolated-battle scoring.
+
 ## Brewing coverage and comparisons
 
 New CLI careers default to `--brewing on`. Use `--brewing off` for a paired
@@ -92,53 +106,16 @@ new-potion or combining choices through production commands. Shop mixing and
 distilling share the production once-per-visit service limit. Campfire brewing
 and resting are mutually exclusive. Observation previews never advance RNG.
 
-The preparation heuristic estimates visible effects: Poison damage times three,
-other direct damage times two, healing times 0.75, Mana/draw times two, maximum
-Mana times five, Wish times four, Gold times 0.25, and status grants at their
-amount. Chance branches use expected value. Scores divide by at least one Mana.
-A mix compares its result with the better ingredient and adds one compression
-point; distilling compares the strengthened result with its input. These values
-are explainable policy estimates, not calibrated win-rate predictions. They do
-not model every talent/affix interaction or future combat sequence.
+Preparation uses visible-effect estimates rather than combat forecasts. The
+[brewing policy](../src/app/playthrough/brewing-policy.ts) owns utility weights,
+compression scoring, purchase caps and inferior-copy filtering;
+[brewing offers](../src/app/playthrough/brewing-offers.ts) owns affordability,
+service reserves and bounded refresh choices. The heuristic favors Rest at low
+Health and useful brewing otherwise. It never examines unseen stock. Its estimates
+do not model every Talent/affix interaction or predict calibrated win rates.
+Random noncombat policy ignores these rankings.
 
-Below half Health, the heuristic prefers campfire rest. Otherwise it favors
-positive brewing improvements. Purchases stop at four brewable Potions, and
-reserve the current service price while useful brewing remains. A weaker copy
-of a Potion already owned in stronger form is declined; novel Potion roles and
-equal-strength ingredients remain eligible. Only visible
-shop prices inform refresh decisions; a refresh requires no useful affordable
-option, room below the four-Potion policy cap, and enough Gold left to buy the
-cheapest visible Potion after reserving service Gold. Inferior stock can prompt
-one bounded search; unseen replacement stock is never examined. Evidence
-separates the potion cap, an available option, and reserved purchase Gold from
-an attempt to seek better stock. Production refresh limits apply. Alchemist destinations receive
-priority when current Gold and ingredients support a useful service; unseen
-stock is never inspected. Random noncombat policy ignores these score rankings.
-
-Heuristic combat policies may end a turn rather than consume a card with no
-current direct benefit and no recognized active Consume reward. This preserves
-full-Health healing and unnecessary cleanses. Random-playable and legacy careers
-retain their dump-hand behavior.
-
-Modern heuristic policies prefer a safe card or end the turn rather than pay a
-potentially lethal Health cost. This uses live autoplay's conservative self-cost
-rule, including Death's Door, Phoenix Feather, chance branches, and repeated
-plays. It does not forecast healing or enemy damage. Random-playable and legacy
-careers keep their previous choices; recorded replay still follows its journal.
-
-Modern heuristic policies prefer an available attack before pure defense that
-would spend all remaining Mana when at or above half Health. Initial emergency
-defense retains its priority. After two completed
-turns without an attack card or enemy Health reduction, an available attack
-outranks such defense even below half Health. Defense with spare Mana, attack
-cards that also defend, and hands with no scored attack keep their existing
-scores. This is a progress heuristic, not a forecast of the next enemy action.
-
-The actor tracks these defensive turns only after committed commands; repeated
-observation does not change scores. Attack cards, damage-over-time progress, and
-leaving battle reset the counter. History starts empty in a new actor; recorded
-replay still follows the journal's decisions. It adds no shipping-save fields or
-RNG draws. Live autoplay and isolated-battle scoring are unchanged.
+### Service evidence
 
 JSON, HTML and agent summaries report distinct shop/campfire visits, per-service
 eligible/affordable/beneficial visits, committed uses, actual spending, result

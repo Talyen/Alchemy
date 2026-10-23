@@ -27,12 +27,31 @@ card effects also follow [Battle handlers](../src/lib/game-data/effects/BATTLE_H
 
 ## Add a new card
 
-1. Define card in the matching topical library — `src/lib/game-data/cards/library/` (`core.ts`, `archery.ts`, `consumables.ts`, `companions.ts`, or `defense.ts`); `cards.ts` assembles these groups
-2. Add effects (discriminated union on `kind`) — same card entry, `effects: [...]`
-3. Add art reference — `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)
-4. Register a nonempty card sound in `src/lib/audio/sound-registry.ts` (`cardSounds`), including for Companion summon cards; follow the [audio checklist](./AUDIO.md#change-checklist). `tests/lib/audio/sound-registry.test.ts` enforces complete focal coverage; intentional silence applies only to the UI/service registrations documented by the audio owner.
-5. Build the entry with `card-builders.ts` (`effectsCard` generates a structured `description` and rendered `descriptionLines` from effects; chance, delayed, conditional, and combined clauses are generated too; a bespoke `describe(effects)` returns typed description lines with explicit magnitude references; `effectsCard` with `consume: true` takes multiple effects; summon cards derive their title from the companion). Raw literals are reserved for genuinely special cards (`mixed-potion`)
-6. Context-aware text — pure text `src/lib/game-data/card-description.ts` (summon lines use Bond levels and the shared `CompanionDamageModifiers`; other amounts stay authored), UI tokens `shared/ui/cards/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`). Universal reactions such as Shatter, Wildfire, Thunderclap, Frostfire, Consecration, Bloodboil, and Venomflash are not card effects: never include their rules or previews in card descriptions or card keyword explanations.
+1. Add the entry to the matching topical library under `src/lib/game-data/cards/library/`;
+   `cards.ts` assembles the groups. Use `effectsCard` from `card-builders.ts` with its
+   effects; ordinary descriptions derive from those effects.
+2. Register art in `src/lib/game-data/assets.ts` through the
+   [asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-game-art); `placeholderCard`
+   is available while drafting.
+3. Register a nonempty focal sound under the [audio checklist](./AUDIO.md#change-checklist),
+   including Companion summons.
+4. Check description/effect parity and typography with `npm run content:audit`,
+   complete [localization](./LOCALIZATION.md#agent-workflow), then use the
+   [task gate](../CONTRIBUTING.md#what-to-run-when-you-change).
+
+**For a new effect kind:** follow [handler authoring](../src/lib/game-data/effects/BATTLE_HANDLERS.md#adding-a-kind).
+**For bespoke wording:** use `describe(effects)` with typed magnitude references
+under the description contract below; raw literals are reserved for special
+cards such as Mixed Potion. Cards with `consume: true` may have multiple effects;
+summon builders derive titles from Companions.
+
+**For contextual text:** `card-description.ts` owns pure descriptions,
+`shared/ui/cards/card-description-ui.tsx` owns UI tokens, and
+`shared/context/card-description-context.tsx` supplies Homestead/Talent context
+from App. Summon lines use Bond and shared Companion damage modifiers; other
+amounts remain authored. Universal reactions belong to
+[game rules](./GAME_RULES.md#universal-reactions), never card effects, descriptions
+or keyword explanations.
 
 Card IDs are stable strings on `BattleCard`, not a separate union. The assembled
 `cardLibrary` rejects duplicate IDs. Removing or renaming IDs follows the
@@ -72,7 +91,9 @@ Standard Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts
 talent's combat potency. Add a new standard Potion to the list deliberately;
 Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
 
-Run `npm run content:audit` before handing off: card text must match effects (canonical description diff in `src/lib/content-validation/card-parity/`) and prose must pass the typography rules (no em dashes; description lines stay period-free).
+[Description parity](../src/lib/content-validation/card-parity/) checks text against
+effects. Typography rejects em dashes and terminal periods in description lines;
+keyword tooltips may use sentence punctuation.
 
 ---
 

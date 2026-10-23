@@ -54,10 +54,11 @@ export function guardProgressAction<Args extends unknown[], Result>(
   const guarded = (...args: Args): Result => {
     const runtime = sessionRuntime(gameSession);
     const completion = runtime.progressCompletion;
-    if (runtime.io.isClearing() || runtime.persistentClearInFlight) return blocked;
     if (
-      (completion.hasRetryDriver || completion.read().kind !== "idle") &&
-      (completion.read().kind !== "idle" || runtime.io.getSaveWriteFailure())
+      !completion.canStartAction(
+        runtime.io.isClearing() || runtime.persistentClearInFlight,
+        runtime.io.getSaveWriteFailure(),
+      )
     )
       return blocked;
     return action(...args);
@@ -82,6 +83,5 @@ export function readSessionRevision(gameSession: GameSession): number {
 
 export function markSessionProgress(gameSession: GameSession, force = false) {
   const runtime = sessionRuntime(gameSession);
-  if (runtime.progressCompletion.read().kind === "idle") runtime.presentationBase = runtime.gameplay.reads.getState();
-  runtime.progressCompletion.mark(runtime.gameplay.reads.getState().revision, force);
+  runtime.progressCompletion.mark(runtime.gameplay.reads.getState().revision, force, runtime.gameplay.reads.getState());
 }

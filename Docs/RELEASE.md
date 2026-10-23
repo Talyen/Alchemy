@@ -107,6 +107,11 @@ ASAR, and renderer policy remain intact; no development server or debug interfac
 is required. Run this check on Windows; renderer builds and unit tests on other
 hosts do not substitute for it.
 
+Windows packaging runs on Windows x64 and compiles the pinned
+[Steamworks overlay patches](../scripts/steamworks/README.md) with Rust 1.90.0
+before invoking electron-builder. Native export qualification requires no Steam
+login; live overlay acceptance remains a separate gate.
+
 Windows packaging explicitly targets x64, matching the Steamworks native binding.
 Package verification reads the executable PE header and rejects other architectures.
 

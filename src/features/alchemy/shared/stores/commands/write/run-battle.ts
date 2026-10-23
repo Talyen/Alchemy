@@ -47,8 +47,8 @@ export function settleBattleVictory(
   companionCards: BattleCard[] | null,
 ): void {
   activeBattle(draft);
-  draft.session.rewardFlow = { state, companionCards, claim: { kind: "idle" } };
-  draft.session.activity = { kind: "rewards" };
+  draft.session.progressClaim = { kind: "idle" };
+  draft.session.activity = { kind: "rewards", data: { state, companionCards } };
 }
 
 /** Commit engine output as a resource change, never as a replacement of the live purse. */

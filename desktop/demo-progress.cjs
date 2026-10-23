@@ -1,16 +1,13 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
-function steamAccountId(client) {
-  try {
-    return client?.localplayer.getSteamId().steamId64.toString() ?? null;
-  } catch {
-    return null;
-  }
-}
+const { steamAccountId, isSteamCloudEnabled } = require("./steam-context.cjs");
 
 function stampSaveOwner(data, client) {
-  const steamAccount = steamAccountId(client);
+  return stampSaveAccount(data, steamAccountId(client));
+}
+
+function stampSaveAccount(data, steamAccount) {
   if (!steamAccount) return data;
   try {
     return JSON.stringify({ ...JSON.parse(data), steamAccountId: steamAccount });
@@ -22,6 +19,7 @@ function stampSaveOwner(data, client) {
 function createDemoProgressBridge({
   directory,
   demoDirectory,
+  legacyDemoDirectory,
   getSteam,
   isSavePayload,
   edition,
@@ -43,9 +41,6 @@ function createDemoProgressBridge({
       throw error;
     }
   }
-  function cloudEnabled(client) {
-    return Boolean(client?.cloud.isEnabledForAccount() && client.cloud.isEnabledForApp());
-  }
   let receiptQueue = Promise.resolve();
   async function complete({ localOnly = false } = {}) {
     if (edition !== "full") return true;
@@ -65,7 +60,8 @@ function createDemoProgressBridge({
     // Cloud-first deletion still requires its receipt before removing mirrors.
     try {
       const client = getSteam();
-      if (cloudEnabled(client) && !(await client.cloud.writeFile(receiptCloudFile, "initialized"))) return localOnly;
+      if (isSteamCloudEnabled(client) && !(await client.cloud.writeFile(receiptCloudFile, "initialized")))
+        return localOnly;
       return true;
     } catch {
       return localOnly;
@@ -79,7 +75,7 @@ function createDemoProgressBridge({
       for (const name of localFiles) if (await exists(path.join(directory, name))) result.fullSaveExists = true;
       const client = getSteam();
       const account = steamAccountId(client);
-      if (cloudEnabled(client)) {
+      if (isSteamCloudEnabled(client)) {
         result.initialized ||= client.cloud.fileExists(receiptCloudFile);
         result.fullSaveExists ||= client.cloud.fileExists("save.json") || client.cloud.fileExists("save-recovery.json");
       }
@@ -96,7 +92,7 @@ function createDemoProgressBridge({
           /* Invalid demo candidates cannot be imported. */
         }
       }
-      if (cloudEnabled(client)) {
+      if (isSteamCloudEnabled(client)) {
         for (const name of ["demo-save.json", "demo-save-recovery.json"]) {
           if (client.cloud.fileExists(name)) {
             const buffer = await client.cloud.readFile(name);
@@ -106,11 +102,13 @@ function createDemoProgressBridge({
         }
       }
       if (platform === "win32") {
-        for (const name of localFiles.filter((name) => !name.endsWith(".tmp"))) {
-          try {
-            add(await fs.readFile(path.join(demoDirectory, name), "utf8"));
-          } catch (error) {
-            if (error.code !== "ENOENT") throw error;
+        for (const source of [...new Set([demoDirectory, legacyDemoDirectory].filter(Boolean))]) {
+          for (const name of localFiles.filter((name) => !name.endsWith(".tmp"))) {
+            try {
+              add(await fs.readFile(path.join(source, name), "utf8"));
+            } catch (error) {
+              if (error.code !== "ENOENT") throw error;
+            }
           }
         }
       }
@@ -121,4 +119,4 @@ function createDemoProgressBridge({
   }
   return { readSource, complete };
 }
-module.exports = { createDemoProgressBridge, steamAccountId, stampSaveOwner };
+module.exports = { createDemoProgressBridge, steamAccountId, stampSaveOwner, stampSaveAccount };

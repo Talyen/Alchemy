@@ -222,64 +222,46 @@ Gear effects are **snapshotted** at battle start. `computeGearManifest(character
 
 Trinket effects snapshot the same way via `computeTrinketManifest` (`src/lib/trinkets.ts`) over run Boons plus the equipped Trinket. Every `TrinketManifest` key is granted by at least one trinket and has a documented battle/run consumer; the key→consumer map lives in the manifest coverage test (`tests/lib/content-validation/trinket-validation.test.ts`) and fails compilation when a key is added or removed without updating it.
 
-Lifegiving grants 1 Health per turn at every rarity and remains eligible for ordinary gear. Fixed roll values do not imply unique-only eligibility; `uniqueOnly` owns that restriction. Emberforged rolls for 1 Forge when positive Burn damage hits an enemy that was not already Burning (Basic: 10%; Astral: 20%). Equipped copies roll independently; probabilities are not summed or capped. Subsequent Burn hits require the enemy's Burn to clear before Emberforged can trigger again. Saved inventory rolls for these two affixes are bounded to their current rarity ranges during normalization, tooltip generation, and battle-manifest construction. Existing combat snapshots retain their captured magnitudes until normal live meta rebinding or the next battle.
+### Affix rules
 
-The ordinary reactive affixes use the event named in their tooltip. Consume Gear and Runic Quill react only to actual Consume. Companion summons leave the battle without Consume and grant none of these rewards. Rotbloom gives one normal Poison tick per equipped copy when a card is Consumed: it deals damage, applies Poison riders, and advances decay without removing the whole stack. Distilled requires Mana actually paid for that card, while Afterglow checks whether it was the last card in hand when played. Bloodward rolls once per Leech restoration and bases its Block on Health actually restored. Smithguard grants Block once per combined Forge award (Basic: 1; Astral: 2); matching copies add their Block. Layered adds its flat bonus only to the first positive Armor grant each player turn, including starting Armor; it does not create Armor by itself. Its saved allowance and Ironroot's separate per-turn limit follow the [Armor gain rules](./GAME_RULES.md#hit-resolution-and-pacing).
+[Affix rows](../src/lib/gear/affix-rows.ts) own names, triggers, magnitudes, roll
+ranges, affinities and slot eligibility. `uniqueOnly`, not a fixed roll value,
+restricts an affix to Uniques. Shared validation requires ordinary affixes to be
+reachable on Basic/Astral Gear, including Mana-affinity Wish effects such as Fateful.
 
-The keyword affixes use the same battle events as cards and talents. Bramblecall checks Thorns before the Nature card resolves; Spitebloom follows successful Thorns retaliation. Gildmend reacts to combat Gold awards, including kill rewards, while Tithebound requires at least 5 Forge at the kill. Bloodroot and Heartshock require actual Leech restoration and check their conditions before that healing. Starcatcher uses the existing next-card cost reduction after a Wish from an empty hand; Starfall resolves a normal Freeze follow-up. Ashkeeper and Lastlight trigger when the card is Consumed, with Lastlight checking Mana before Consume refunds. Counterplate reacts only to Armor lost from an enemy attack. Rootmender grants one Leech restoration on Nature damage to a Poisoned enemy, including triggered damage, and does not stack another restoration with Sylvan's chance. Venomtrail adds flat damage to direct Poison hits and Poison ticks against Bleeding enemies, including detonations. Scarfeast applies to the hero's Physical card attacks below half Health. Hallowguard requires a Holy card attack that damages enemy Health while the hero has no Block. Hallowbreak increases Holy damage against Stunned enemies.
+Typed rows derive `GearEffectManifest`, defaults and effect keys. Keys ending in
+`Chances` retain independent roll lists; other effects sum. Preserve row, slot and
+affix order because seeded generation and proc order depend on them. Duplicate IDs
+are rejected; display-name, range and reachability checks belong to content validation.
+`affix-catalog.ts` adds tooltip keywords without becoming a manifest dependency.
 
-Cleanse, Purge, and Death's Door remain mechanics rather than Alchemy keywords; their new affixes use existing item affinities. Restorative rolls only after Health is actually restored, and Clearheaded and Solace reward each harmful status removed. Spellrending has a 25% chance at either rarity to Purge one enemy benefit at the start of each player turn, including the opening turn; it no longer reacts to Mana spending. Multiple copies add their chance, and no turn allowance is saved; Unraveling and Denouncing reward a successful Purge once, even if it removes multiple benefits. Emberwake deals a Burn follow-up only on Death's Door entry, Lastwatch raises Critical Hit chance only during its grace window, and Rekindled heals on surviving expiry. Ironbriar grants Thorns when Block remains after turn decay. Bristling checks Block after the incoming hit, and Spiteful heals only for the first Thorns retaliation each turn that removes enemy Health.
+Saved rolls normalize to current rarity ranges; a captured battle retains its
+magnitudes until live rebinding or the next battle. Forge procs retain every
+equipped copy rather than summing or capping independent chances. In particular,
+Emberforged checks positive Burn against the pre-hit non-Burning state.
 
-Infected, Ashen Wake, and Cauterize increase existing Bleed/Burn damage over time,
-including detonations, without changing attack hits or initial status application.
-Bloodember shares their periodic bonuses between Burn and Bleed. Frostburn adds
-Freeze attack damage and buildup against Burning enemies. Executioner's and Dazed
-add damage to hero card attacks against enemies below 30% Health or actually Stunned;
-they exclude Companion and triggered follow-up damage. Conditions are checked per hit.
+The following timing/source distinctions supplement the catalog:
 
-Spellguard grants Block before card effects when Mana is actually paid and Block
-was absent before payment. Arcane Ward requires actual Mana gained without Block,
-including new Mana Crystals; normal turn refills grant no Block. Both use ordinary
-Block rewards. Blur adds Dodge only below half Health and respects the Dodge cap.
-Second Wind heals a surviving hero on the first crossing below 25% Health each
-combat, including self-damage. Its spent allowance is separate from enemy Second
-Wind. Deathgrip grants Block on Death's Door entry after the triggering damage.
-Disrupting rolls on a successful Stun and settles one ordinary Purge with its
-normal rewards. Copies add their values and chances. Whiplash readies one Stun
-attack bonus after Dodge; further Dodges refresh it. Non-Stun attacks, Companions,
-secondary actions, and dodged Stun hits preserve it. The charge, recovery allowance,
-and pending entry/Purge rewards use saved combat flags with safe additive defaults.
-These affixes add no per-turn activation allowances.
+| Concern                | Contract                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Consume                | Summons are battle-removed without Consume and earn no Consume rewards. Rotbloom uses one ordinary Poison tick per copy, including decay and riders, not whole-stack removal.                                                                                                                                                                                                                                              |
+| Payment and hand state | Distilled requires Mana actually paid; Afterglow checks the last card in hand at play. Lastlight checks Mana before Consume refunds. Ashkeeper/Lastlight trigger on Consume.                                                                                                                                                                                                                                               |
+| Leech and healing      | Bloodward, Bloodroot and Heartshock require actual restoration; conditions use pre-heal state. Bloodward rolls once and scales Block from Health restored. Rootmender allows triggered Nature damage against Poison and shares one restoration with Sylvan rather than stacking another. Restorative requires actual restoration.                                                                                          |
+| Resource grants        | Smithguard pays once on the combined Forge award; copies add Block. Layered's first positive Armor gain includes opening grants and creates no Armor itself; its allowance is separate from Ironroot under [Armor gain limits](./GAME_RULES.md#hit-resolution-and-pacing).                                                                                                                                                 |
+| Card versus packet     | Bramblecall checks Thorns before the Nature card; Spitebloom follows successful retaliation. Scarfeast, Hallowguard and conditional hero-attack bonuses require their catalog card/Health/Block conditions per hit, excluding Companions and secondary hits. Bloodscent instead uses shared Companion scaling and inspection.                                                                                              |
+| Periodic damage        | Infected, Ashen Wake and Cauterize affect existing DoT ticks/detonations, not initial hits or buildup. Bloodember shares applicable Burn/Bleed periodic bonuses. Venomtrail includes direct Poison, ticks and detonations against Bleed; Frostburn modifies Freeze attack damage and buildup against Burning enemies.                                                                                                      |
+| Wish and Gold          | Gildmend includes combat kill Gold; Tithebound checks Forge at the kill. Starcatcher prepares the ordinary next-card discount after an empty-hand Wish; Starfall is a normal Freeze follow-up.                                                                                                                                                                                                                             |
+| Cleanse and Purge      | Clearheaded/Solace reward each removed harmful status; Unraveling/Denouncing pay once per successful Purge, even when it removes several benefits. Spellrending checks at player-turn start, including opening, with additive copy chances and no saved turn allowance. Cleanse/Purge/Death's Door use existing affinities rather than new keywords.                                                                       |
+| Death's Door           | Emberwake and Deathgrip react on entry after triggering damage; Lastwatch applies during grace; Rekindled requires surviving expiry. Pending entry rewards persist.                                                                                                                                                                                                                                                        |
+| Defensive conditions   | Ironbriar checks Block after turn decay; Bristling after the hit. Spiteful pays only on the first Thorns retaliation removing enemy Health each turn. Counterplate uses Armor actually lost to an enemy attack.                                                                                                                                                                                                            |
+| Mana and Block         | Spellguard checks absent Block before actual Mana payment and grants before card effects. Arcane Ward requires actual Mana gained without Block, including new Crystals but excluding turn refills. Both use ordinary Block rewards.                                                                                                                                                                                       |
+| Recovery and charges   | Blur respects the Dodge cap. Hero Second Wind heals only the first surviving quarter-Health crossing, including self-damage, with a saved allowance separate from the enemy's. Whiplash readies one Stun hit after Dodge; further Dodges refresh, while non-Stun, Companion, secondary and dodged hits preserve it.                                                                                                        |
+| Magnitude modifiers    | Conditional hero-attack bonuses change existing packets without new hits, flags or allowances. Last Bastion modifies positive Block below half Health; Mending modifies positive healing below half Health before multipliers, rechecking Health per heal. Neither creates resources. Spentward preserves contact/Dodge, applies before Block only to enemy attacks while Mana is empty, and respects mitigation bypasses. |
+| Stun and Purge         | Disrupting settles an ordinary Purge after successful Stun, retaining rewards and additive copy chances. Its pending reward and Whiplash/recovery state use safe additive save defaults rather than new per-turn allowances.                                                                                                                                                                                               |
 
-Firstblood, Venomflight, Sunscorched, and Iceguard enlarge hero card attack
-packets at full enemy Health, against Poisoned enemies with Archery, against
-Burning enemies with Holy, and with Block for Freeze respectively. Bloodscent
-instead enlarges Companion hits against Bleeding enemies through shared Companion
-scaling, including its low-Health multiplier and inspection. Hero attack conditions
-are checked per hit; these bonuses do not affect ongoing damage or create follow-up hits.
-Last Bastion enlarges positive Block gains below half Health alongside Warding
-and Forge. Mending enlarges positive healing below half Health before healing
-multipliers; each heal checks Health again. Neither grants resources by itself.
-Spentward reduces incoming enemy attack damage before Block only with no Mana;
-it preserves attack contact and Dodge, excludes DoT and self-damage, and respects
-attacks that ignore mitigation. All eight modify existing combat magnitudes and
-combat-text entries without adding activation allowances or saved flags.
-
-Fateful uses Mana as its secondary affinity so its Wish draw effect can roll on ordinary Mana Gear. Shared content validation checks that every ordinary affix is reachable on at least one Basic or Astral item.
-
-`src/lib/gear/affix-rows.ts` owns the ordered affix definitions. Typed builders
-preserve literal IDs and effect keys; `GearEffectManifest`, numeric defaults,
-`GEAR_EFFECT_KEYS`, and the independent-roll chance keys (effect keys ending in
-`Chances`) all derive from those rows; all other effects sum numerically.
-`affix-catalog.ts` adds visible tooltip keywords without becoming
-a dependency of manifest construction. Preserve row order when editing: seeded
-Gear generation depends on it. Catalog construction rejects duplicate affix IDs;
-shared content validation owns display-name, roll-range, and ordinary-affix reachability checks.
-
-Forge-producing affixes retain every equipped copy. Roll lists preserve slot and
-affix order through aggregation and save/resume. Exact opening grants and proc
-chances belong to the [affix rows](../src/lib/gear/affix-rows.ts) and
-[Unique catalog](../src/lib/gear/unique-catalog.ts).
+[Game rules](./GAME_RULES.md#direct-player-hit-resolution) own shared packet stages;
+[Talent rules](./TALENT_RULES.md#armor-forge-and-gold) own shared resource recipes;
+[Unique items](./UNIQUE_ITEMS.md#combat-semantics) retain signature exceptions.
 
 ## Persistence
 
@@ -300,24 +282,10 @@ covering local save; autosave owns retry.
 
 ## Tests
 
-Gear rule coverage lives in `tests/lib/gear/` (`gear`, `generation`,
-`crafting`, `crafting-ids`, `salvage-yield`,
-`unique-catalog`, `gear-shine`, `affixes`,
-`affix-pool`); aggregate and
-persistence contracts in `tests/features/alchemy/shared/stores/session/gear-*`,
-`tests/features/alchemy/shared/stores/commands/gear-*`, and
-`tests/features/alchemy/shared/storage/gear-save.test.ts`; Armory interaction
-in `tests/features/alchemy/meta/screens/armory-screen*.test.tsx` and
-`tests/features/alchemy/meta/screens/armory/*.test.ts`; catalog rejection checks in
-`tests/lib/content-validation/gear-validation.test.ts` and catalog-wide acceptance in
-`tests/lib/content-validation/content-validation.test.ts`; Unique battle behavior in
-`tests/lib/battle/unique-effects.test.ts`, `unique-damage-bonuses.test.ts`,
-`unique-card-repeats.test.ts`, `unique-card-opportunities.test.ts`,
-`enemy-attack-damage.test.ts`, `damage-forge.test.ts`, and `battle-effect-persistence.test.ts`.
-`src/lib/content-validation/validators-gear.ts` owns the catalog invariants for
-both the unit gate and `npm run content:audit`: pool capacity and reachability,
-distinct affix names, ordered roll ranges, fixed Unique signatures and distinct
-known supporting affixes, generated definitions, and missing-art fallbacks. Use
-CONTRIBUTING's [changed-path gate](../CONTRIBUTING.md#what-to-run-when-you-change) and
-[test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) to select
-checks for the affected risks.
+[Gear units](../tests/lib/gear/) protect generation, crafting, loadouts and salvage;
+[store commands](../tests/features/alchemy/shared/stores/commands/) and
+[Gear saves](../tests/features/alchemy/shared/storage/gear-save.test.ts) protect
+transaction/persistence boundaries. [Armory units](../tests/features/alchemy/meta/screens/armory/)
+protect interaction, ordering and transfers. [Shared content validation](../src/lib/content-validation/validators-gear.ts)
+enforces catalog invariants for units and `content:audit`; [Unique verification](./UNIQUE_ITEMS.md#verification-ownership)
+locates signature protection. Select checks under [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change).

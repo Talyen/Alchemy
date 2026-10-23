@@ -1,3 +1,5 @@
+import { setRewardState } from "@/features/alchemy/shared/stores/commands/write/run-session";
+import { setRunActivityForTest as setRunProgressActivity } from "../../../../../helpers/run-domain-store-test";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
 import { useRunScreenData } from "@/features/alchemy/shared/stores/react/use-run-screen-data";
@@ -15,13 +17,13 @@ it("keeps the reward subscription stable and updates its preview when the stockp
   resetAllTestStores();
   mutateGameplayForTest((draft) => {
     draft.run.initialized = true;
-    draft.session.activity = { kind: "rewards" };
-    draft.session.rewardFlow.state = {
+    setRunProgressActivity(draft, "rewards");
+    setRewardState(draft, {
       ...createEmptyRewardState(),
       choices: [cardById.slash!],
       lastVictoryContentSystem: "campaign",
       lastVictoryEnemyType: "boss",
-    };
+    });
   });
   const { result, rerender } = renderHook(() => useRunScreenData("rewards"));
   expect(result.current.rewardMaterials).toMatchObject({ wood: 4, stone: 4 });

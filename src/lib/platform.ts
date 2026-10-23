@@ -31,8 +31,8 @@ export async function initializeSteam(): Promise<SteamInitialization> {
   try {
     const playerName = await getPlayerName();
     if (!playerName) return { playerName: null, cloudSyncEnabled: false };
-    console.warn(`Steam initialized. Player: ${playerName}`);
-    return { playerName, cloudSyncEnabled: true };
+    const cloudSyncEnabled = (await getDesktopApi()?.steamIsCloudEnabled?.()) === true;
+    return { playerName, cloudSyncEnabled };
   } catch (error) {
     console.warn("Failed to retrieve Steam player name:", error);
     return { playerName: null, cloudSyncEnabled: false };

@@ -1,6 +1,6 @@
 ---
 status: blocked
-reason: Native overlay support, Steamworks configuration, physical acceptance, human feedback, and copy approvals remain unresolved.
+reason: Steam ID verification, Steamworks configuration, physical acceptance, human feedback, and copy approvals remain unresolved.
 updated: 2026-10-23
 ---
 
@@ -9,41 +9,34 @@ updated: 2026-10-23
 Approved product scope, edition identity, and transfer behavior belong to
 [Steam demo](../STEAM_DEMO.md). This plan tracks the remaining release prerequisites.
 
+Steam ID verification is pending and no store page exists yet. The original
+AI-created assets' commercial-use entitlement and absence of third-party source
+material were confirmed by the owner on October 23, 2026; see
+[provenance](../../THIRD_PARTY_NOTICES.md). Complete the future
+[AI disclosure](../RELEASE_SETUP.md#steam-ai-disclosure) during page setup.
+
 ## Outstanding work
 
-Steam Input layouts remain a specification: no exported configuration IDs or
-live default assignments have been verified. Windows under Proton, Deck performance
-and suspend/resume also remain unverified. Record real identifiers and candidate
-evidence when closing these items.
+No published layout IDs, live default assignments, Proton/Deck performance or
+suspend/resume evidence have been verified. These prerequisites remain open:
 
-- [ ] Configure real demo/full App IDs and depots and verify renderer, package,
-      upload, and wishlist targets under [release setup](../RELEASE_SETUP.md#github-secrets-one-time-setup).
-- [ ] Resolve the [native overlay binding prerequisite](#native-overlay-prerequisite):
-      activation callbacks and availability detection must work in the packaged game.
-      Verify pause/resume and wishlist behavior through Steam, including custom
-      shortcuts and Deck paths; browser or mocked callbacks cannot close this item.
-- [ ] Configure and validate [shared Cloud and progress transfer](../STEAM_DEMO.md#save-transfer),
-      including the released demo sharing target, separate accounts/devices,
-      offline/reconnection, and preservation of source saves and initialization receipts.
-- [ ] Publish and verify [recommended Steam Input layouts](../RELEASE_SETUP.md#configuration-and-validation-status)
-      with real configuration IDs. Complete [physical Windows/controller and Deck acceptance](../STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence),
-      including Proton performance, 1280×800 readability, and suspend/resume; validate
-      the advertised [minimum-spec assumptions](../RELEASE_SETUP.md#steam-listing-baseline-windows).
+- [ ] Configure real demo/full [App IDs, depots and targets](../RELEASE_SETUP.md#github-secrets-one-time-setup).
+- [ ] Resolve the [native overlay binding prerequisite](#native-overlay-prerequisite).
+- [ ] Configure and validate [shared Cloud/progress transfer](../STEAM_DEMO.md#save-transfer),
+      preserving source saves and initialization receipts.
+- [ ] Publish [recommended layouts](../RELEASE_SETUP.md#configuration-and-validation-status)
+      and complete [physical Steam acceptance](../STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence),
+      including [minimum-spec validation](../RELEASE_SETUP.md#steam-listing-baseline-windows).
 - [ ] Obtain unfamiliar-player and listening feedback through the
-      [human playtest procedure](../STEAM_DEMO_CHECKLIST.md#human-playtest).
-      Keep comprehension, perceived difficulty, useful progression and audio comfort
-      unqualified until feedback is reviewed and any required fixes are verified.
-- [ ] Complete Steam install/update/uninstall and build/store review, resolve
-      [notice and provenance requirements](../RELEASE_SETUP.md#player-notices-and-asset-provenance)
-      and [pending copy approvals](#pending-copy-approvals),
-      then perform [candidate sign-off](../STEAM_DEMO_CHECKLIST.md#9-candidate-evidence-and-release-sign-off).
+      [human playtest](../STEAM_DEMO_CHECKLIST.md#human-playtest); verify required fixes.
+- [ ] Complete install/update/uninstall and Steamworks build/store review,
+      [notices/provenance](../RELEASE_SETUP.md#player-notices-and-asset-provenance),
+      [copy approvals](#pending-copy-approvals) and
+      [candidate sign-off](../STEAM_DEMO_CHECKLIST.md#9-candidate-evidence-and-release-sign-off).
 
-Keep results with the exact candidate's release evidence, following the
-[demo checklist](../STEAM_DEMO_CHECKLIST.md); older automated passes do not
-qualify a new candidate or establish physical/service acceptance. Remove this
-plan after the outstanding prerequisites are resolved and sign-off is recorded.
-Public controller/Deck and carryover claims still require that evidence;
-promotion follows the [release procedure](../RELEASE.md#agent-release-flow).
+The checklist owns acceptance procedures, evidence retention and claim limits.
+Record results against the exact candidate; remove this plan only after these
+prerequisites and sign-off are resolved. Promotion follows [release](../RELEASE.md#agent-release-flow).
 
 ## Pending copy approvals
 
@@ -63,24 +56,17 @@ Menu, recap, marketing and lock revisions remain approved under the demo contrac
 
 ## Native overlay prerequisite
 
-The recorded blocker is steamworks.js 0.4.0 lacking native overlay activation callbacks and
-availability detection. [The pause listener](../../desktop/steam-overlay.cjs) uses
-`SteamCallback.GameOverlayActivated` when supported, pauses on `active: true`,
-and leaves the game menu open when the overlay closes. `steamworks.js.init()`
-owns callback pumping; do not add a second timer or call
-`client.callback.runCallbacks()`, which the installed binding does not expose.
+Alchemy builds the missing callback and availability exports from steamworks.js
+0.4.0 plus two pinned upstream patches. The [native build recipe](../../scripts/steamworks/README.md)
+owns exact revisions, source checksums, platform prerequisites and export qualification.
+It excludes the availability patch's unrelated workshop declaration. Windows
+depots must use a Windows x64 native build; Proton uses that Windows build.
 
-The complete solution is a binding with both native capabilities, followed by
-physical Steam validation. The upstream
-[activation callback patch](https://github.com/ceifa/steamworks.js/pull/205) and
-[availability patch](https://github.com/ceifa/steamworks.js/pull/203) were open
-when last checked on 2026-10-02; recheck upstream before choosing a binding. If a supported release is unavailable when shipping,
-maintain a minimal fork pinned to an exact commit with those two changes. Exclude
-the availability patch's unrelated workshop declaration. Rebuild and verify its
-native binaries for Windows and Linux/Deck (and macOS if shipped); editing
-JavaScript or declarations in the npm package cannot add a native callback.
-Keep its current Steam/cloud APIs and package layout unchanged.
+[The pause listener](../../desktop/steam-overlay.cjs) pauses on native activation
+and leaves the menu open on deactivation. `steamworks.js.init()` owns callback
+pumping; no second timer or callback pump is added. Electron overlay GPU setup
+runs before app readiness.
 
-This item remains blocked until native capability and physical Steam evidence
-exist, including custom overlay shortcuts and Deck paths. Browser tests and
-mocked callbacks cannot establish acceptance.
+Physical packaged Windows/Steam acceptance is still required, including custom
+overlay shortcuts, availability/wishlist fallback and Deck. Browser/mocked
+callbacks and native export qualification cannot close this gate.

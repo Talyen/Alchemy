@@ -18,20 +18,9 @@ import { getForgeBonusForDamage } from "./player-damage-base";
 import { computeCardPayment } from "./card-cost-rules";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 
-// Live autoplay scoring. Game-design owned: changing these weights changes
-// autoplay and Wish picks in real runs. The balance simulator imports this
-// policy today so reports match the skill floor; if the simulator needs its own
-// tuning, fork a copy under src/lib/balance instead of editing these weights.
-export const AUTOPLAY_EFFECT_SCORE = {
-  defense: 0.5,
-  cleanse: 3,
-  draw: 2,
-  mana: 2,
-  summon: 6,
-  criticalHit: 4,
-  repeatCard: 5,
-  wish: 3,
-} as const;
+import { AUTOPLAY_EFFECT_SCORE } from "./autoplay-weights";
+import { nominalCardValue } from "./autoplay-draft-policy";
+export { AUTOPLAY_EFFECT_SCORE } from "./autoplay-weights";
 
 function scoreEffects(effects: readonly BattleCardEffect[], state: BattleSnapshot, manaRoom: number): number {
   let total = 0;
@@ -80,10 +69,8 @@ function scoreDamageEffect(effect: Extract<BattleCardEffect, { kind: "damage" }>
 
 function playerStatusAmount(
   effect: Extract<BattleCardEffect, { kind: "player-status" }>,
-  state?: BattleSnapshot,
+  state: BattleSnapshot,
 ): number {
-  // Without a snapshot, immediate-defense scoring uses the authored conversion factor.
-  if (!state) return effect.convertCurrentMana ?? effect.perManaCrystal ?? effect.amount;
   if (effect.convertCurrentMana !== undefined) return state.mana * effect.convertCurrentMana;
   if (effect.perManaCrystal !== undefined) return state.maxMana * effect.perManaCrystal;
   return effect.amount;
@@ -91,7 +78,7 @@ function playerStatusAmount(
 
 function playerStatusDefense(
   effect: Extract<BattleCardEffect, { kind: "player-status" }>,
-  state?: BattleSnapshot,
+  state: BattleSnapshot,
 ): number {
   const amount = playerStatusAmount(effect, state);
   if (!effect.statusPool) return effect.status === "block" || effect.status === "armor" ? amount : 0;
@@ -190,31 +177,17 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, manaRoom: 
   }
 }
 
-function immediateDamageFromEffects(effects: readonly BattleCardEffect[], state?: BattleSnapshot): number {
+function immediateDamageFromEffects(effects: readonly BattleCardEffect[], state: BattleSnapshot): number {
   return effects.reduce((total, effect) => {
     if (effect.kind === "damage") {
-      // Live scoring includes Forge on equal-resource attacks; the stateless
-      // draft heuristic cannot scale Block/Armor without a snapshot, so count
-      // those attacks nominally instead of zero (Shield Bash, Blessed Aegis).
-      if (state) return total + scoreDamageEffect(effect, state);
-      if (
-        effect.equalToBlock ||
-        effect.equalToArmor ||
-        effect.forgeBonusPercent !== undefined ||
-        effect.detonateAllBurn ||
-        effect.detonateAllBleed
-      )
-        return total + Math.max(effect.amount, 1);
-      return total + effect.amount;
+      return total + scoreDamageEffect(effect, state);
     }
     if (effect.kind === "random-damage") {
       const nominal = (effect.minAmount + effect.maxAmount) / 2;
-      if (!state) return total + nominal;
       const pool = effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES;
       return total + nominal + averageForgeBonus(state, pool);
     }
     if (effect.kind === "cleanse-player-status-to-damage") {
-      if (!state) return total + 1;
       const stacks = state.playerStatuses[effect.status] ?? 0;
       return total + (stacks > 0 ? stacks + getForgeBonusForDamage(state, effect.damageType) : 0);
     }
@@ -233,10 +206,10 @@ function immediateDamageFromEffects(effects: readonly BattleCardEffect[], state?
 }
 
 export function getImmediateDamage(card: BattleCard, state?: BattleSnapshot): number {
-  return immediateDamageFromEffects(card.effects, state);
+  return state ? immediateDamageFromEffects(card.effects, state) : nominalCardValue(card.effects).damage;
 }
 
-function immediateDefenseFromEffects(effects: readonly BattleCardEffect[], state?: BattleSnapshot): number {
+function immediateDefenseFromEffects(effects: readonly BattleCardEffect[], state: BattleSnapshot): number {
   return effects.reduce((total, effect) => {
     if (effect.kind === "chance") {
       return (
@@ -249,31 +222,24 @@ function immediateDefenseFromEffects(effects: readonly BattleCardEffect[], state
       return total + effect.remainingTurns * immediateDefenseFromEffects(effect.effects, state);
     }
     if (effect.kind === "heal")
-      return (
-        total +
-        (state ? Math.min(effect.amount, Math.max(0, state.playerMaxHealth - state.playerHealth)) : effect.amount)
-      );
+      return total + Math.min(effect.amount, Math.max(0, state.playerMaxHealth - state.playerHealth));
     if (effect.kind === "player-status") return total + playerStatusDefense(effect, state);
     if (effect.kind === "remove-harmful-status") {
-      if (state) {
-        let removable = 0;
-        for (const status of harmfulPlayerStatusIds) if (state.playerStatuses[status] > 0) removable += 1;
-        const count = effect.removeAll ? removable : Math.min(effect.amount ?? 0, removable);
-        return total + count * AUTOPLAY_EFFECT_SCORE.cleanse;
-      }
-      // Stateless heuristic: a full cleanse counts nominally; fixed counts its amount.
-      return total + (effect.amount ?? 1) * AUTOPLAY_EFFECT_SCORE.cleanse;
+      let removable = 0;
+      for (const status of harmfulPlayerStatusIds) if (state.playerStatuses[status] > 0) removable++;
+      const count = effect.removeAll ? removable : Math.min(effect.amount ?? 0, removable);
+      return total + count * AUTOPLAY_EFFECT_SCORE.cleanse;
     }
     if (effect.kind === "remove-player-status" || effect.kind === "cleanse-player-status-to-damage") {
-      return total + (!state || state.playerStatuses[effect.status] > 0 ? AUTOPLAY_EFFECT_SCORE.cleanse : 0);
+      return total + (state.playerStatuses[effect.status] > 0 ? AUTOPLAY_EFFECT_SCORE.cleanse : 0);
     }
-    if (effect.kind === "dodge-next-attack") return total + (state?.flags.dodgeNextAttack ? 0 : 1);
+    if (effect.kind === "dodge-next-attack") return total + (state.flags.dodgeNextAttack ? 0 : 1);
     return total;
   }, 0);
 }
 
 export function getImmediateDefense(card: BattleCard, state?: BattleSnapshot): number {
-  return immediateDefenseFromEffects(card.effects, state);
+  return state ? immediateDefenseFromEffects(card.effects, state) : nominalCardValue(card.effects).defense;
 }
 
 export function getEffectiveDamageScore(card: BattleCard, state: BattleSnapshot): number {

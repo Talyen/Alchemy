@@ -10,7 +10,7 @@ import {
   setMysteryChosenChoice,
   setMysteryEvent,
   setMysteryGrantedGearInstances,
-  setRewardState,
+  setDestinationState,
 } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 import {
@@ -46,7 +46,7 @@ describe("run destination controller actions", () => {
   );
 
   it("claimRewardChoice rejects a choice that is not offered", () => {
-    mutateRunForTest((draft) => setRewardState(draft, createEmptyRewardState()));
+    mutateRunForTest((draft) => setDestinationState(draft, createEmptyRewardState()));
 
     const handlers = createRunFlow(makeFlowHandlerDeps(), defaultGameSession);
     handlers.claimRewardChoice("slash");
@@ -58,7 +58,7 @@ describe("run destination controller actions", () => {
     vi.spyOn(config, "rollFreshBossId").mockReturnValue("mimic");
 
     mutateRunForTest((draft) =>
-      setRewardState(draft, {
+      setDestinationState(draft, {
         ...createEmptyRewardState(),
         destinations: [DESTINATIONS.BOSS_COMBAT],
       }),
@@ -175,7 +175,7 @@ describe("run destination controller actions", () => {
       lastOfferedDestinations: offered,
       destinationRoundsSinceOffered: { [DESTINATIONS.CAMPFIRE]: 0 },
     });
-    mutateRunForTest((draft) => setRewardState(draft, createEmptyRewardState()));
+    mutateRunForTest((draft) => setDestinationState(draft, createEmptyRewardState()));
 
     setRunSession({ activity: { kind: "corruption", data: null } });
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
@@ -200,7 +200,7 @@ describe("run destination controller actions", () => {
       completedDestinations: [],
       lastOfferedDestinations: [],
     });
-    mutateRunForTest((draft) => setRewardState(draft, { ...createEmptyRewardState(), destinations: offered }));
+    mutateRunForTest((draft) => setDestinationState(draft, { ...createEmptyRewardState(), destinations: offered }));
 
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
     createRunFlow(makeFlowHandlerDeps({ navigateTo }), defaultGameSession).handleDestinationChoice(

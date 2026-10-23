@@ -4,6 +4,7 @@ export interface MockDesktopOptions {
   saveCandidates?: string[];
   recoveryCandidates?: string[];
   steamName?: string | null;
+  cloudSyncEnabled?: boolean;
   writeSaveSuccess?: boolean;
   cloudWriteSuccess?: boolean;
   cloudDeleteSuccess?: boolean;
@@ -32,6 +33,9 @@ function createMockAlchemyDesktop(options: MockDesktopOptions = {}) {
     })),
     writeSave: vi.fn().mockResolvedValue(options.writeSaveSuccess ?? true),
     clearSave: vi.fn().mockResolvedValue(true),
+    ...(options.cloudSyncEnabled === undefined
+      ? {}
+      : { steamIsCloudEnabled: vi.fn().mockResolvedValue(options.cloudSyncEnabled) }),
     steamGetName: vi.fn().mockResolvedValue(options.steamName === undefined ? "Tester" : options.steamName),
     steamSetRichPresence:
       options.richPresenceResult === undefined ? vi.fn() : vi.fn().mockResolvedValue(options.richPresenceResult),
