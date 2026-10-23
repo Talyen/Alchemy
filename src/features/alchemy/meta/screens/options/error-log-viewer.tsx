@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useErrorLogStore, type LoggedError } from "@/features/alchemy/shared/stores/react/error-log-store";
 import { ScreenHeaderRow, ScreenShell } from "../../../shared/ui/layout-components";
+import { useCaptureEscapeCancel } from "../../../shared/ui/dialogs/use-modal-escape-dismiss";
 
 function displayContext(context: Record<string, unknown> | undefined, indent?: number): string | undefined {
   try {
@@ -26,6 +27,7 @@ function formatLoggedError(entry: LoggedError): string {
 
 export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
   const i18n = useGameTranslation();
+  useCaptureEscapeCancel(onClose);
   const sourceLabels = {
     react: i18n.text("error-log.source.react", "Interface"),
     global: i18n.text("error-log.source.global", "Application"),
@@ -68,6 +70,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
     <ScreenShell maxWidthClass="max-w-4xl">
       <ScreenHeaderRow
         title={i18n.text("ui.error-log-viewer.1", "Error Log")}
+        onBack={onClose}
         trailing={
           <Button variant="outline" size="sm" onClick={onClose}>
             {i18n.text("ui.error-log-viewer.2", "Close")}

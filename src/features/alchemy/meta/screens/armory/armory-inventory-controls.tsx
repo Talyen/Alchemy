@@ -84,7 +84,7 @@ export function ArmoryInventoryControls({
   useModalEscapeDismiss({
     active: searchExpanded && menu === null,
     id: "armory-inventory-search",
-    priority: ESCAPE_PRIORITY.DIALOG,
+    priority: ESCAPE_PRIORITY.ARMORY_TRANSIENT,
     onEscape: closeSearch,
   });
   useEffect(() => {

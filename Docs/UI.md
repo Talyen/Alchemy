@@ -36,6 +36,14 @@ it; essential meaning must survive mute or playback failure.
 - Equivalent inputs communicate the same result. Unbound keys and noninteractive
   scenery need no reaction. Animation and sound never decide gameplay acceptance.
 
+Back and Escape dismiss the topmost overlay, then step back within the current
+screen, then return to its caller. Armory, Collection, Homestead, Talents and
+Options keep a browsing history separate from the saved run activity. Returning
+to Main Menu clears that history; an active run alone never makes Back resume it.
+Run-origin browsing resumes the current saved activity, and the game menu's
+explicit Return to Run action remains available. Gameplay roots open the game
+menu on Escape rather than undoing committed choices or skipping rewards.
+
 This policy follows the usability rationale in
 [Nielsen Norman Group's visibility principle](https://www.nngroup.com/articles/visibility-system-status/),
 [Designing Game Feel](https://arxiv.org/abs/2011.09201) and
