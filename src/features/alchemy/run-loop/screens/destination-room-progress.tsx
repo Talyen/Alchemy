@@ -1,7 +1,6 @@
 import { Star } from "lucide-react";
-import { useEffect, useId, useState, type CSSProperties } from "react";
+import { useId, useState, type CSSProperties } from "react";
 
-import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { useGameTranslation } from "@/components/use-game-translation";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import { destinationMeta } from "@/features/alchemy/shared/config";
@@ -30,17 +29,6 @@ export function DestinationRoomProgress({
   const actIndex = Math.min(Math.max(currentAct - 1, 0), actCount - 1);
   const actLabel = ["I", "II", "III"][actIndex] ?? String(currentAct);
   const currentRoom = Math.min(destinationIndexInAct, DESTINATIONS_PER_ACT - 1);
-
-  useEffect(() => {
-    if (!expanded) return;
-    return pushEscapeHandler({
-      id,
-      priority: ESCAPE_PRIORITY.SCREEN_OVERLAY,
-      onEscape: () => {
-        setView({ act: currentAct, expanded: false });
-      },
-    });
-  }, [expanded, currentAct, id]);
 
   return (
     <div
