@@ -67,6 +67,12 @@ export const coreAssets = [
     ["Sprig of Growth/Sprig of Growth - Illustrated.png", "crafting-sprig-of-growth.webp"],
     ["Voidstone/Voidstone - Illustrated.png", "crafting-voidstone.webp"],
   ]),
+  // Potion preparation choices use the same portrait preset as ability cards.
+  ...artGroup({ folder: "Actions", preset: ART_PRESETS.card }, [
+    ["Brew Potion/Brew Potion - 1792x2400.jpg", "potion-brew.webp"],
+    ["Mix Potion/Mix Potion - 1792x2400.jpg", "potion-mix.webp"],
+    ["Distill Potion/Distill Potion - 1792x2400.jpg", "potion-distill.webp"],
+  ]),
   // Enemies
   ...artGroup({ folder: "Characters", preset: ART_PRESETS.enemy }, [
     ["Enemies/Skeleton.jpeg", "skeleton.webp"],

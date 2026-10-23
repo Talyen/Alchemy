@@ -26,6 +26,12 @@ export const demoFeatureShowcaseByLocale = {
 } satisfies Record<keyof typeof languages, string>;
 export const armorySalvageArt = assetRefs.armorySalvage;
 
+export const potionBrewingArt = {
+  brew: assetRefs.potionBrew,
+  mix: assetRefs.potionMix,
+  distill: assetRefs.potionDistill,
+} as const;
+
 export const labyrinthShroudedArt = [
   assetRefs.labyrinthShroudedVeiledArch,
   assetRefs.labyrinthShroudedDescendingSteps,
