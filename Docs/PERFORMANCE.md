@@ -118,12 +118,10 @@ counts under [comparison validity](#comparison-validity).
 
 ### Nightly and diagnostics
 
-Nightly derives one seed per mode from the workflow run number, rotating all eight
-heroes per mode over eight runs. Higher bits vary difficulty, reward policy and
-world. Jobs retain seeds/replays; incomplete generated cases fail without easier
-fallbacks. Each mode slot also profiles one fixed transaction journey, together
-covering Campfire brewing, Transmutation and crafting/salvage each run.
-The [memory soak](#gameplay-memory-soak) owns its separate nightly/manual budgets.
+[Nightly](../.github/workflows/nightly.yml) owns mode/hero rotation and profiling
+budgets. Reports retain seeds and replays; incomplete generated cases fail without
+easier fallbacks. The [scenario catalog](../performance/catalog.json) owns fixed
+transaction journeys; the [memory soak](#gameplay-memory-soak) has a separate budget.
 
 Battle `alchemy:battle:*` User Timing marks last for one session. Preparation/reset
 cancels old transfers before clearing them; stale draw/discard callbacks cannot
@@ -257,39 +255,33 @@ and target-device RAM budgets still need separate acceptance.
 
 ### Coverage gaps
 
-The registry describes measured journeys, not all game features. Preparing a save through the playthrough engine happens outside renderer measurement and does not cover the screens visited during generation.
+The [catalog](../performance/catalog.json) describes available workloads; each
+report records what actually completed. Checkpoint generation happens outside
+renderer measurement. Inventory, an available scenario or a reached screen does
+not prove an effect triggered or an interaction was measured.
 
-| Area                | Current measured coverage                                                                                                                          | Missing performance workload                                                                                                                                                         |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Combat              | Fixed battles plus seeded reachable encounters, card and Wish choices, enemy turns                                                                 | Guaranteed coverage of every effect, status interaction, companion, trinket, Unique proc, and boss mechanic; actual triggered-mechanic telemetry and dedicated automatic-turn pacing |
-| Run destinations    | Reward claim, destination selection, card purchase, transmutation, Labyrinth inspection, Wildwood draft                                            | Alchemist Shop purchase/mixing/distilling, Mystery choices/deck pickers, Corruption, trinket/gear shop interactions, and Wildwood removal workloads                                  |
-| Campfire            | Reachable brewing selection, saved result and departure; conditional Rest in the memory soak                                                       | Dedicated rest/healing and guaranteed mixed-Potion selection workloads                                                                                                               |
-| Account progression | Armory equipment/inspection, 200-item filtering/paging, currency targeting, crafting and salvage; Homestead and Talent navigation, Collection tabs | Every currency transformation, Homestead purchases and bonds, Talent purchases, and large complete Collection inspection workloads                                                   |
-| Run lifecycle       | Startup and checkpoint resume; incidental end states in the soak                                                                                   | Measured mode/hero/difficulty selection, victory/defeat rewards, hero unlock, and demo completion journeys                                                                           |
-| Runtime             | Frame gaps, main-thread blocking, input timing, resource snapshots and gameplay soak                                                               | Performance-specific renderer error assertions, hardware GPU present timing, physical audio quality, suspend/resume, Proton, and Steam Deck acceptance                               |
+Important limits remain:
 
-The `campfire-brewing` and `transmutation-journey` cases capture reachable visits before selection. Their required segments measure selection, the saved result, and departure. `crafting-journey` captures an earned legal currency application between careers from the labeled `economy-v1` starting account. It records the exact currency and item identity, targets that item through normal Armory controls, requires currency consumption and a visible result, then salvages the item through its confirmation. These are short transactional journeys, not sustained stress loops; each runs once after warm-up. Replay bundles preserve the checkpoint and completed action path.
+- Combat discovery does not guarantee every mechanic or automatic-turn pacing.
+- Transaction journeys and the soak cover selected services, purchases and end
+  states; they do not establish every destination, account action or demo ending.
+- Frame, input and memory probes do not qualify physical audio, GPU presentation,
+  OS suspend, minimum-spec hardware, Proton or Deck behavior.
 
-When extending coverage, use reachable checkpoints and require completed-action/frame
-segments. Keep fixed replays for comparison; discovery finds cases without proving
-every mechanic covered. The missing-workload table identifies current gaps.
+When extending coverage, require reachable checkpoints and completed-action/frame
+segments. Fixed replays preserve checkpoint and action identity for comparison;
+discovery finds candidates. Durations and minimum samples belong to the catalog
+and `npm run perf -- --help`.
 
-Use `npm run perf -- --help` and `performance/catalog.json` for current scenario
-durations and minimum samples rather than maintaining a second defaults table.
+Reports retain per-run samples, aggregates, environment/display metadata and,
+when requested, traces. Follow summary links to the exact evidence rather than
+inferring coverage from a fixture or a report filename.
 
-Each run writes `runs/<scenario>-<run>.json`, its `-sample.json`,
-`aggregates/<scenario>.json`, `display-env.json` and `environment.json`, plus
-`traces/` in trace mode. Build/repetition and iteration-only overrides follow
-[measurement setup](#measurement-setup).
-
-Judge an optimization by a repeatable improvement in the targeted latency or hitch, compared with observed run-to-run variation. Check relevant neighboring scenarios for regressions; a fixed percentage alone cannot distinguish an improvement from noise.
-
-Preserve player-facing visual fidelity, particle counts, animation timing, and
-sound behavior when optimizing. For rendering changes, compare actual pixels
-under identical inputs; deterministic geometry or draw-output comparisons can
-also protect the affected calculation. Reuse existing parity checks where they
-cover the change. A passing build or better FPS does not establish presentation
-parity; report it as unverified when the necessary comparison is unavailable.
+Judge an optimization by repeatable improvement in the targeted cost relative to
+run-to-run variation, then check affected neighboring scenarios. Preserve visuals,
+particle counts, animation timing and sound. Rendering changes need matched pixel
+comparison or existing parity checks for the affected calculation; better FPS
+and passing builds alone leave presentation parity unverified.
 
 ## Comparison validity
 

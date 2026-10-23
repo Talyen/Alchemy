@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, writeFileSync, readdirSync, rmSync } from "n
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { resolveCheckPlan } from "../../scripts/lib/verification/check-plan.mjs";
 import { runCiLint } from "../../scripts/lint-ci.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");
@@ -40,11 +41,12 @@ describe("canonical verification commands", () => {
   it("uses the same static aggregate locally and in CI", () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> };
     const workflow = readFileSync(join(ROOT, ".github/workflows/ci.yml"), "utf8");
-    const check = readFileSync(join(ROOT, "scripts/check.mjs"), "utf8");
     const lintCi = readFileSync(join(ROOT, "scripts/lint-ci.mjs"), "utf8");
     expect(pkg.scripts["lint:ci"]).toBe("node scripts/lint-ci.mjs");
     expect(lintCi).toContain('"check:static"');
-    expect(check).toContain('["run", "lint:ci"]');
+    expect(resolveCheckPlan(["src/App.tsx"], { rootDir: ROOT, full: true }).steps).toContainEqual(
+      expect.objectContaining({ enabled: true, command: "npm", args: ["run", "lint:ci"] }),
+    );
     expect(workflow).toContain("run: npm run lint:ci");
     expect(workflow).not.toContain("check:test-owners");
     expect(workflow).not.toContain("ci:verify-plan");

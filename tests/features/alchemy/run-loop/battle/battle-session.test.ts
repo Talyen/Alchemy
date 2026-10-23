@@ -144,7 +144,7 @@ describe("createBattleSession", () => {
     performance.clearMarks(name);
     markBattleStage("draw-end");
     markBattleStage("draw-end");
-    session.clearAllBattleTimeouts(playback.id);
+    playback.clearTimers(playback.id);
     expect(performance.getEntriesByName(name, "mark")).toHaveLength(2);
     session.resetBattleSession();
     expect(performance.getEntriesByName(name, "mark")).toHaveLength(0);

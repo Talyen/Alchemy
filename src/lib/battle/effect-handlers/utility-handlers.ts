@@ -1,4 +1,4 @@
-import { createCardUtilityHandlers } from "../card-utility-resolution";
+import { cardHealingAmount, createCardUtilityHandlers } from "../card-utility-resolution";
 import { applyCardHealing, applyPlayerStatusEffect, checkHealthThresholds } from "../status-player";
 import {
   applyHealingWithCombatText,
@@ -16,6 +16,7 @@ import { mergeCombatText } from "../combat-text-events";
 import { getBattleRng, pickRandom } from "@/lib/rng";
 
 export const UTILITY_HANDLERS = createCardUtilityHandlers({
+  healingAmount: cardHealingAmount,
   heal: (state, amount, texts, cardHealing) =>
     cardHealing ? applyCardHealing(state, amount, texts) : applyHealingWithCombatText(state, amount, texts),
   mana: (state, amount, texts, allowOverflow) => gainManaWithCombatText(state, amount, texts, { allowOverflow }),

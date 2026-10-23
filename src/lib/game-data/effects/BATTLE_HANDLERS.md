@@ -91,7 +91,7 @@ Health, Mana, Mana Crystals, Gold, player statuses, cleansing, Armor removal,
 Companion summoning/buffs, and armed action flags. It owns amount calculations,
 Potion potency, conditional eligibility, resource limits, and effect feedback.
 `effect-handlers/utility-handlers.ts` supplies live reactions and seeded status
-choices. Inspection calls the production action resolver with an isolated finite
+choices. Reaction scoring uses the same table with explicit nominal healing, suppressed reward callbacks, and pre-enumerated status choices; it retains probability-weighted correlated alternatives without drawing live RNG. `damage.ts` owns attack flag preparation for both combat and reaction scoring. Inspection calls the production action resolver with an isolated finite
 choice source; it does not assemble another utility or attack recipe.
 
 ## Battle inspection ownership
@@ -203,14 +203,14 @@ retaining existing encounter exceptions. Selection and trait limits are owned by
 
 ## Tests
 
-- [`tests/lib/battle/apply-effects-*.test.ts`](../../../../tests/lib/battle/) — canonical apply-path coverage by concern (`apply-effects.test.ts`, `apply-effects-mana.test.ts`), plus focused `tests/lib/battle/` regression suites (card-play, damage, status, companion, wish, talents, gear, traits).
-- [`tests/lib/battle/effect-handlers.test.ts`](../../../../tests/lib/battle/effect-handlers.test.ts) — unknown-kind warn+return boundary (including inherited object keys), Death's Door, cleanse/multiply, `convertCurrentMana` Block-per-Mana semantics, `ifEnemyStunned` branches, prepared action flags, injected random damage rolls, and `repeat-over-turns`/`chance` queue/branch shapes.
-- [`tests/lib/game-data/effects-registry.test.ts`](../../../../tests/lib/game-data/effects-registry.test.ts) — schema refinements (conditional fields, bounds).
-- [`tests/lib/battle/inspection-resource-rewards.test.ts`](../../../../tests/lib/battle/inspection-resource-rewards.test.ts) — later packets include guaranteed resource rewards and shared chance outcomes; inspection agrees with real plays without mutating state or consuming RNG.
-- [`tests/lib/battle/inspection-utility-sequence.test.ts`](../../../../tests/lib/battle/inspection-utility-sequence.test.ts) — resource and flag ordering agrees with actual card plays without consuming RNG or mutating the inspected battle.
-- [`tests/types/battle-effect-handlers.test-d.ts`](../../../../tests/types/battle-effect-handlers.test-d.ts) — exhaustive typed registration and rejection of mismatched handlers and direct calls.
-- [`tests/lib/game-data/effect-kind-coverage.test.ts`](../../../../tests/lib/game-data/effect-kind-coverage.test.ts) — exact registration of non-recursive effect kinds in battle dispatch.
-- [`tests/lib/game-data/card-builders.test.ts`](../../../../tests/lib/game-data/card-builders.test.ts) — builder output (lines+effects+tags/consume), the explicit-lines escape hatch, and the catalog-wide 1-Mana rule; catalog-wide parity lives in `tests/lib/content-validation/` (`content-validation.test.ts`, `parity-negative.test.ts`).
+[Battle units](../../../../tests/lib/battle/) protect dispatch, runtime semantics
+and ordered resolution. [Registry tests](../../../../tests/lib/game-data/effects-registry.test.ts)
+protect schema refinements, and [kind coverage](../../../../tests/lib/game-data/effect-kind-coverage.test.ts)
+checks exhaustive dispatch. [Type tests](../../../../tests/types/battle-effect-handlers.test-d.ts)
+reject mismatched handlers. [Content validation](../../../../tests/lib/content-validation/)
+protects description parity; the formatter is not its own correctness oracle.
+Inspection tests compare independently expected packets with production plays,
+including uncertainty, resource changes and unchanged live RNG/state.
 
 ## Gear and trinket effects
 

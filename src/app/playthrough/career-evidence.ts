@@ -119,7 +119,7 @@ export function recordCommittedAction(
   ]) {
     if (!Number.isFinite(value) || value < 0) throw new Error(`Invariant: invalid resource ${value}`);
   }
-  if (session.rewardFlow.claim.kind !== "idle") throw new Error("Invariant: orphaned reward/destination claim");
+  if (session.progressClaim.kind !== "idle") throw new Error("Invariant: orphaned reward/destination claim");
   if (readBattle(gameSession).hasActiveBattle && readBattle(gameSession).battleState.turn > maxTurns)
     throw new Error("Incomplete: battle turn budget exhausted");
 

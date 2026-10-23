@@ -33,10 +33,7 @@ interface AttackPacket {
 
 // Builds an immutable candidate; dealDamageToEnemy commits its flag changes
 // only after establishing a positive attack and passing Dodge.
-export function consumeAttackPacketFlags(
-  state: BattleState,
-  effect: DamageEffect,
-): { state: BattleState } & AttackPacket {
+function consumeAttackPacketFlags(state: BattleState, effect: DamageEffect): { state: BattleState } & AttackPacket {
   const convertToPoison = readCombatFlag(state, "nextHitPoison");
   const poisonPacket = convertToPoison ? { ...effect, damageType: "poison" as const } : effect;
   let damageState = convertToPoison ? { ...state, flags: { ...state.flags, nextHitPoison: false } } : state;
@@ -69,6 +66,16 @@ export function consumeAttackPacketFlags(
     damageState = { ...damageState, flags: { ...damageState.flags, nextPhysicalDealsBleed: false } };
   }
   return { state: damageState, packet, physicalBonus, stunBonus, applyPartingCut };
+}
+
+/** Shared immutable attack preparation; hosts retain their own admission and feedback. */
+export function prepareAttackPacket(state: BattleState, effect: DamageEffect, companionBonus = 0) {
+  const consumed = consumeAttackPacketFlags(state, effect);
+  return {
+    ...consumed,
+    baseDamageBonus:
+      companionBonus + consumed.stunBonus + (consumed.packet.damageType === "physical" ? consumed.physicalBonus : 0),
+  };
 }
 
 function applyAttackPacketFollowUps(
@@ -134,10 +141,9 @@ export function dealDamageToEnemy(
   // Attempt-scoped bonuses precede Dodge; next-hit bonuses are spent only on contact.
   const companionBonus = context?.companionAttackBonus?.amount ?? 0;
   if (context?.companionAttackBonus) context.companionAttackBonus.amount = 0;
-  const consumed = consumeAttackPacketFlags(state, resolvedEffect);
+  const consumed = prepareAttackPacket(state, resolvedEffect, companionBonus);
   const { packet, applyPartingCut } = consumed;
-  const baseDamageBonus =
-    companionBonus + consumed.stunBonus + (packet.damageType === "physical" ? consumed.physicalBonus : 0);
+  const { baseDamageBonus } = consumed;
   const armorSuppliesDamage =
     packet.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0 && state.enemyMitigation.armor > 0;
   if (

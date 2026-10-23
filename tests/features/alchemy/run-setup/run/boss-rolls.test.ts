@@ -8,7 +8,7 @@ import { DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
 import { DESTINATIONS, type Screen } from "@/lib/routing";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/session/gameplay-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
-import { setRewardState, setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { setDestinationState, setScreen } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import {
   mutateGameplayForTest,
   setRunProgress,
@@ -103,7 +103,7 @@ describe("boss rolls in run commands", () => {
   ])("resuming $offer with boss $savedBossId uses $worldDraws world draw", ({ offer, savedBossId, worldDraws }) => {
     const deps = startCampaign();
     mutateGameplayForTest((draft) => {
-      setRewardState(draft, { ...createEmptyRewardState([offer]), selectedBossId: savedBossId });
+      setDestinationState(draft, { ...createEmptyRewardState([offer]), selectedBossId: savedBossId });
       setScreen(draft, "destination");
       setScreen(draft, "menu");
     });

@@ -1,3 +1,4 @@
+import { setRunActivityForTest as setRunProgressActivity } from "../../../../../helpers/run-domain-store-test";
 import { describe, expect, it } from "vitest";
 import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
 import { readGameplayState } from "@/features/alchemy/shared/stores/session/gameplay-state-reads";
@@ -26,7 +27,7 @@ function initializeRogue(session: GameSession) {
   dispatchGameplayCommand(
     (draft) => {
       draft.run.activeRun.characterId = "rogue";
-      draft.session.activity = { kind: "destination" };
+      setRunProgressActivity(draft, "destination");
       return acceptCommand();
     },
     undefined,

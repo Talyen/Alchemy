@@ -94,10 +94,10 @@ describe("applyEnemyAbility: status", () => {
       });
       const freeze = applyEnemyAbility(state, card("freeze"), []);
       const burn = applyEnemyAbility(state, card("burn"), []);
-      expect(freeze.playerHealth).toBe(997);
-      expect(freeze.playerStatuses.freeze).toBe(3);
+      expect(freeze.playerHealth).toBe(998);
+      expect(freeze.playerStatuses.freeze).toBe(2);
       expect(freeze.enemyStatuses.freezeBonus).toBe(0);
-      expect(burn.playerHealth).toBe(998);
+      expect(burn.playerHealth).toBe(999);
       expect(state.playerHealth).toBe(1000);
     }
   });

@@ -64,11 +64,10 @@ describe("encounter trait enemy actions", () => {
       ...enemyWith("tempered", "reinforced", "zealot"),
       abilityIds: ["slash", "bash", "frostbolt"],
     };
-    const state = makeTestBattleState({
-      currentEnemy,
-      roomScalingMultiplier: 2,
-      playerHealth: 30,
-    });
+    const state = makeTestBattleState(
+      { currentEnemy, roomScalingMultiplier: 2, playerHealth: 30 },
+      { enemyAbilityPressure: 1 },
+    );
     const result = endPlayerTurn(state);
     expect(result.state.enemyMitigation.forge).toBe(2);
     expect(result.state.enemyMitigation.block).toBe(4);

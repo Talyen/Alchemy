@@ -1,3 +1,4 @@
+import { readRewardActivity } from "@/lib/active-run-session";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import {
   mutateGameplayForTest,
@@ -564,7 +565,7 @@ describe("commitVictoryRewards", () => {
         contentSystemType: "labyrinth",
       }),
     );
-    expect(readGameplayState(defaultGameSession).session.rewardFlow.state).toMatchObject({
+    expect(readRewardActivity(readGameplayState(defaultGameSession).session.activity).state).toMatchObject({
       lastVictoryEnemyType: "boss",
       lastVictoryContentSystem: "labyrinth",
     });

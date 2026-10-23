@@ -7,7 +7,7 @@ Gate composition, CI tiers, and reuse policy live in
 
 | Concern                                   | Implementation owner                                                                                                                                                                                 |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Completion orchestration                  | `check.mjs`                                                                                                                                                                                          |
+| Completion orchestration                  | `check.mjs` + `lib/verification/check-plan.mjs`                                                                                                                                                      |
 | Task and opt-in full test selection       | `verify-changed.mjs` + `run-local-tests.mjs`                                                                                                                                                         |
 | Finished-step exposure/digest reporting   | `lib/run-step.mjs` (shared by `check` + `verify`)                                                                                                                                                    |
 | Path parsing and classification           | `lib/verification/changed-paths.mjs` + `lib/verification/change-routes.mjs`                                                                                                                          |
@@ -28,6 +28,10 @@ single repo-relative spelling, also used by route matching) and `runGit` (the si
 stale-cache overrides); `git-safety-guard.mjs` is the deliberate exception
 because it must exec the real binary past its own shim. Release writes keep
 logged inherit flows via `command-invocation.mjs`; release reads use `runGit`.
+`resolveRoutePlan` returns both coverage commands and build/static/localization classification. `check-plan.mjs` composes the actual completion steps from that result; plan display and execution consume the same step definitions. Git path selection remains separate; the obsolete standalone classification wrapper is removed.
+
+Full-repository and dependency-related selections use one worker to bound JSDOM and subprocess memory on shared hosts. Coverage and test deadlines are unchanged by that scheduling choice.
+
 Route glob matching precompiles `ROUTES` + shared build patterns once instead
 of per file. The `documentation` route covers `Docs/**` so check classification
 (`isDocumentationPath`) and verify routing agree on documentation images.
@@ -52,19 +56,23 @@ The unit runner rejects missing explicit paths before Vitest can ignore a mixed 
 permissions and completion. `check --plan` prints the outer stages and selected
 route commands without executing them.
 
-`verify-changed.mjs` selects changed and dependency-related units plus explicit
-lifecycle, save, desktop and tooling protection. Presentation relies on related
-tests; shared lifecycle seams retain explicit interaction coverage, and unknown
-behavior owners use the conservative fallback. Its default routes are units and
-documentation; `--unit` omits documentation and `--full` retains report/asset routes.
-The outer `check` adds applicable localization, compilation, formatting and lint.
-Formatting/lint batches above 50 files or containing a file above 256,000 bytes
-are deferred to CI and reported.
+`verify-changed.mjs` retains the route catalog for explicit diagnosis and full
+verification. Its default runs documentation contracts only; units are deferred
+to CI. `--unit` selects changed and dependency-related units plus lifecycle, save,
+desktop and tooling protection; `--full` also retains report/asset routes.
+The outer default `check` adds applicable localization, formatting and lint,
+with compilation deferred to CI. Formatting/lint batches above 50 files or
+containing a file above 256,000 bytes are deferred to CI and reported.
 
 `check:all` selects the repository inventory and replaces overlapping unit commands
-with one complete unit run, forced to one worker to bound host resource spikes.
-Other unit commands retain their runner policy. Integration invokes the same gate
-on the pinned combined result; eligible commands follow [receipt rules](#verification-receipt-rules).
+with one complete unit run. Full gates and managed broad unit/browser runs reject
+local execution unless `ALCHEMY_ALLOW_HEAVY_LOCAL=1` is set for an explicitly
+requested local run. `local-execution-policy.mjs` recognizes hosted GitHub Actions
+via `GITHUB_ACTIONS=true`; `CI=true` alone is insufficient because local browser
+aliases also set it. One or two explicit unit files remain available with one
+worker. Policy checks precede lane acquisition and command execution.
+Integration invokes the lightweight gate on the pinned combined result;
+eligible commands follow [receipt rules](#verification-receipt-rules).
 
 `lib/exclusive-port.mjs` supplies cancellable waiting for test and integration
 locks. It retries occupied ports without reclaiming them, reports waiting status,
@@ -130,7 +138,8 @@ an occupied port fails before any HTTP validation. They require an application s
 ## Compatibility commands and test runners
 
 Use [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) for ordinary work.
-These compatibility commands remain available for diagnosis:
+These compatibility commands remain available for diagnosis, subject to the local
+execution policy above:
 
 | Command                      | Scope                                                                    |
 | ---------------------------- | ------------------------------------------------------------------------ |
@@ -138,7 +147,7 @@ These compatibility commands remain available for diagnosis:
 | `check:task`                 | Explicit alias for task-scoped `check`                                   |
 | `check:broad`, `check:full`  | `check --full`: selected units, full static checks and applicable builds |
 | `test:full`, `test:unit:all` | `test:unit`; unfiltered invocation runs all units                        |
-| `verify`                     | Selected units and documentation routes                                  |
+| `verify`                     | Documentation routes; units deferred to CI                               |
 | `verify:unit`                | Selected unit routes only                                                |
 | `verify:full`                | Selected units, documentation and broader report/asset routes            |
 
@@ -259,7 +268,7 @@ Do not trade away path exceptions or diagnostic precision to reduce process coun
 
 ## Component and hook conventions
 
-Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. Name browser-API suites without React `*.dom.test.ts` so their environment is clear and the shared glob selects them. React `*.test.tsx` and `use-*` / `*-hook` suites already select DOM. The include/exclude patterns in `vitest.config.ts` own that classification; the project guard checks actual collection rules for omissions and overlap. Full unit runs share the four-worker ceiling used by related and ship checks, leaving one CPU free on smaller hosts. CLI worker overrides remain available for focused diagnosis.
+Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. Name browser-API suites without React `*.dom.test.ts` so their environment is clear and the shared glob selects them. React `*.test.tsx` and `use-*` / `*-hook` suites already select DOM. The include/exclude patterns in `vitest.config.ts` own that classification; the project guard checks actual collection rules for omissions and overlap. Vitest defaults and ship suites retain the four-worker ceiling, leaving one CPU free on smaller hosts. Completion gates use one worker for full-repository and dependency-related selections. CLI worker overrides remain available for focused diagnosis.
 
 Preserve test import order when a shared harness registers mocks or hooks. Import organization must not move that harness after modules whose dependencies it mocks; use explicit hoisted mocks where feasible. Ordinary explanatory comments are allowed; Oxlint suppressions still require a reason. Keep comments focused on ordering, compatibility, and other reasons that names and tests alone do not explain.
 

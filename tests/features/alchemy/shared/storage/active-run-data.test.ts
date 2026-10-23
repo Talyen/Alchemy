@@ -18,7 +18,7 @@ import {
 } from "@/features/alchemy/shared/stores/persistence/run-resume-codec";
 import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/session/run-state-init";
 import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
-import { setRewardState } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
+import { setDestinationState } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { ANCIENT_ALTAR_MYSTERY_VISIT, makeActiveRunData } from "../stores/session/active-run-data-fixture";
 import { defaultGameSession } from "@/app/application-session";
 function encodeState(): ActiveRunData {
@@ -305,7 +305,7 @@ describe("encodeRunResumeSnapshot", () => {
 
   it("persists destination resume fields", () => {
     mutateGameplayForTest((draft) =>
-      setRewardState(draft, (prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] })),
+      setDestinationState(draft, (prev) => ({ ...prev, destinations: ["Campfire", "Card Shop"] })),
     );
 
     const result = encodeState();

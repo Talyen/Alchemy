@@ -1,3 +1,6 @@
+import { setRewardState } from "@/features/alchemy/shared/stores/commands/write/run-session";
+import { readRewardActivity } from "@/lib/active-run-session";
+import { setRunActivityForTest as setRunProgressActivity } from "../../../../helpers/run-domain-store-test";
 import { shopItemSlotKey } from "@/lib/active-run-session";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import "../../../../helpers/mock-audio";
@@ -44,8 +47,9 @@ function session(mode: "campaign" | "labyrinth", destination: Destination, nodeT
     (draft) => {
       draft.run.activeRun.contentSystemType = mode;
       draft.run.activeRun.runDeck = getStartingDeck("knight");
-      draft.session.activity = { kind: mode === "campaign" ? "destination" : "labyrinth-map" };
-      draft.session.rewardFlow.state = { ...createEmptyRewardState(), destinations: [destination] };
+      setRunProgressActivity(draft, mode === "campaign" ? "destination" : "labyrinth-map");
+      setRewardState(draft, { ...createEmptyRewardState(), destinations: [destination] });
+      setRunProgressActivity(draft, mode === "campaign" ? "destination" : "labyrinth-map");
       if (mode === "labyrinth") {
         const map = gridLabyrinthMapFixture();
         const node =
@@ -108,8 +112,8 @@ it.each(["campaign", "labyrinth"] as const)(
       if (mode === "campaign") {
         expect(committed.run.activeRun.destinationIndexInAct, destination).toBe(1);
         expect(committed.run.activeRun.completedDestinations, destination).toEqual([destination]);
-        expect(committed.session.rewardFlow.state.destinations, destination).toEqual([]);
-        expect(committed.session.rewardFlow.claim, destination).toEqual({ kind: "idle" });
+        expect(readRewardActivity(committed.session.activity).state.destinations, destination).toEqual([]);
+        expect(committed.session.progressClaim, destination).toEqual({ kind: "idle" });
       } else {
         expect(committed.session.activeLabyrinthPendingNode, destination).toBe(before.session.selectedLabyrinthNodeId);
         expect(committed.session.activeLabyrinthModifiers, destination).toEqual(
@@ -188,7 +192,7 @@ it("rejects stale Campaign choices and wrong-mode requests before consuming RNG"
   expect(readGameplayState(game)).toBe(before);
   dispatchGameplayCommand(
     (draft) => {
-      draft.session.activity = { kind: "rewards" };
+      setRunProgressActivity(draft, "rewards");
       return acceptCommand();
     },
     undefined,

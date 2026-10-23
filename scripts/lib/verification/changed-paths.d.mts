@@ -6,18 +6,6 @@ export function resolveSelectedPaths(
   selection: { flags?: Set<string>; paths: string[]; revision?: string },
 ): string[];
 
-export function classifyCheckPaths(
-  root: string,
-  paths: string[],
-): {
-  needsCodeChecks: boolean;
-  lockfile: boolean;
-  desktop: boolean;
-  web: boolean;
-  localization: boolean;
-  routeIds: string[];
-};
-
 export function parseChangedPathsArgs(
   argv: string[],
   options?: { usage?: string },
