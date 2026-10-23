@@ -1,7 +1,5 @@
 # UI Consistency Audit
 
-Merges the former Design System Consistency (06) and UI Interaction & Feedback (16) audits.
-
 **Goal:** Keep visual language and interaction behavior on their shared owners — migrate token/primitive drift, and fix confirmed interaction/feedback defects desktop players feel — without flattening justified game UI.
 
 Use the [shared audit contract](README.md#shared-contract) for scope, confirmation,
@@ -27,11 +25,15 @@ Structural screen twins → Simplification; Playwright rewrites → TestQuality;
 
 ## Investigation and evidence
 
-Trace player tasks through entry, action, feedback, cancellation, and completion. Start with blocked actions, wrong targeting, stuck modes, or misleading state before cosmetic drift. Inspect representative supported viewports and input methods, and compare sibling surfaces against [UI.md](../UI.md), not personal visual preference.
+Trace player tasks through entry, action, feedback, cancellation and completion.
+Prioritize blocked actions, wrong targeting, stuck modes and misleading state.
+Inspect supported viewports/input methods and compare sibling surfaces against
+[UI.md](../UI.md), preserving intentional hand geometry, health bars and Armory packing.
 
-A token or markup difference is a candidate only: establish an unintended visible inconsistency, broken semantic behavior, or independently maintained rule that should use an existing owner. Preserve justified geometry and motion, including the battle hand, health bars, and Armory packing.
-
-Verify interaction fixes in the affected flow, including interruption or repeat input when relevant. Verify visual changes in context rather than from class names alone. Report unavailable live checks; static inspection cannot establish visual correctness.
+A markup/token difference needs a demonstrated visible, semantic or ownership cost.
+Exercise interruption/repeated input where relevant and inspect visual fixes in
+the renderer. Follow the [shared evidence and reporting contract](README.md#shared-contract);
+static inspection cannot establish visual correctness.
 
 ## Domain rules
 

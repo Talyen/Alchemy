@@ -2,6 +2,9 @@
 
 Canonical detail linked from [UI.md](./UI.md).
 
+Screen-specific Homestead purchase feedback lives with its
+[gallery interaction](./UI_BROWSING.md#purchase-motion).
+
 ## Screen fade motion
 
 - **Route change** — `useRenderedScreenTransition` owns the opacity-only page fade. Save payloads follow the committed run activity; audio, battle playback, and presentation teardown follow committed `screen`, not `renderedScreen`.
@@ -72,33 +75,6 @@ available during the swap. The saved result uses the reward settle/shine once on
 live completion and waits for Continue; resumed results skip that reveal effect. Reduced or
 disabled motion preserves selection emphasis without decorative animation.
 
-### Homestead purchases
-
-Interaction, purchase states, and reset behavior belong to the
-[Homestead gallery contract](./UI_BROWSING.md#homestead-gallery).
-
-Homestead purchases retain the old node while saving. Once acknowledged progress
-is available, tooltip sentences and icons remain steady. Changed values reveal
-over 180ms with a slight 2px rise; there is no whole-body fade or delayed swap.
-New/removed rows ease panel height over 180ms. The name stays mounted and the
-edge nearest the node stays anchored; passive tooltips retain their fixed row side.
-The tooltip celebrates acknowledged purchases with a 360ms scale bounce
-(1 → 1.045 → 0.995 → 1), originating at the edge nearest the artwork. It never
-remounts the content or replays on hover; dismissal or a newer purchase cancels
-its animation. The earned star pops to 1.65 scale with a soft gold highlight over 360ms. First
-builds/bonds crossfade opacity layers into color over 400ms without animating
-grayscale filters; later upgrades/bonds pulse an independent gold edge glow over
-450ms. There are no Built/Upgraded/Bonded labels over the artwork.
-Tuning lives in `HOMESTEAD_FEEDBACK` in the shared motion constants.
-
-Feedback tokens belong to accepted purchases, never hydrated levels. Repeated
-valid purchases replace visual targets without waiting for motion. Tooltip
-dismissal settles content; tab/page changes, navigation, and reset cancel local
-animation without cancelling committed purchases. Existing unlock/bond sound
-plays once after acknowledged progress is available. Reduced/disabled motion
-updates values and filled stars immediately without decorative animation. Reset uses the
-standard confirmation/save feedback without a purchase celebration.
-
 ## Battle motion
 
 Living combatant artwork, including companions, scales to 103.5% during its active
@@ -140,7 +116,8 @@ and prevents that preview from committing a card or Wish choice.
 
 Draws fly from the bottom-left Draw Pile into measured hand slots and flip from
 back to front. Discards leave right-to-left, flip onto the bottom-right Discard
-Pile, and scale to its top card. Both follow the earlier shallow curved path,
+Pile, and scale to its top card. Both follow the shallow curved path in
+[transfer motion](../src/features/alchemy/run-loop/battle/presentation/card-transfer-motion.ts),
 with a 500ms base duration accelerated for larger batches. Flights run sequentially;
 each departure starts its sound. The live card identity follows hand reflow.
 Tuning lives in `CARD_TRANSFER_CONFIG`.

@@ -1,7 +1,5 @@
 # Test Quality Audit
 
-Merges the former E2E Test Reliability & Signal (10) and Unit Test Portfolio (17) audits.
-
 **Goal:** Maximize portfolio trustworthiness and defect detection while controlling redundant LOC, runtime, flake, and maintenance cost — across Vitest units and Playwright journeys.
 
 Conventions: [tests/e2e/README.md](../../tests/e2e/README.md) (helpers, tags, fixtures), [CONTRIBUTING.md](../../CONTRIBUTING.md) (changed paths, CI tiers), and [test value](../../CONTRIBUTING.md#test-value-and-coverage-strategy) (coverage selection, consolidation, retirement, and reporting).
@@ -17,22 +15,25 @@ Product interaction defects → UIConsistency; structural test-support mass → 
 
 ## Hard stops
 
-- Follow the shared test value policy and configured gates; diagnose failing journeys before deciding whether their expectations remain valid.
 - No dev-only QA shortcuts (Skip Combat / Unlock All selectors); use documented helpers and flows.
 - Follow [tests/e2e/README.md](../../tests/e2e/README.md) for current fixture and animation-canary requirements; preserve real timing where timing is the behavior under test.
 - Do not re-run full suites to hunt flakes; re-run only the suspect cluster.
 
 ## Investigation and evidence
 
-Map important failure modes to their current tests before adding or deleting coverage. A gap means a concrete risky behavior has no trustworthy assertion, not simply that a line is uncovered. For a suspicious test, identify a plausible broken implementation that would still pass. Use a focused temporary mutation or a known regression when useful, and restore it before handoff; do not require broad mutation testing for every finding.
+Map consequential failure modes to current assertions. For a suspect test, show a
+plausible broken implementation that would pass; use a focused temporary mutation
+or known regression when useful, restoring it before handoff. Broad mutation testing
+is optional.
 
-For flake, inspect failure artifacts and distinguish a product race from timing, isolation, fixture, or environment problems. Reproduce the suspect scenario and relevant ordering or concurrency conditions; an isolated pass does not prove a parallel failure fixed. Never weaken an assertion or add retries just to hide the failure.
+For flake, distinguish product races from timing, fixture, isolation and environment
+failures. Reproduce the relevant ordering/concurrency; one isolated pass cannot
+establish a parallel failure fixed. Do not weaken assertions or add retries to hide it.
 
-Use the shared high-, medium-, and low-value definitions when evaluating additions and retention. Remove encountered low- and medium-value tests by default after checking their purpose and dependencies, or strengthen/move them when inexpensive high-value protection is possible. Unique coverage alone does not require retention or replacement; justify borderline retention and report material accepted risks.
-
-For overlapping tests, compare the failure mode, layer, and CI tier of the surviving assertion. Prioritize false confidence in critical behavior and blocked verification over redundant assertions or naming; apply the shared policy when retiring coverage.
-
-Verify changed tests detect the intended failure and pass on correct behavior. For runtime or flake claims, compare the same scenario and report repetitions and conditions; bounded success is evidence, not a guarantee of zero flakes.
+For overlaps, compare surviving failure detection, layer and CI tier under the
+[test value policy](../../CONTRIBUTING.md#test-value-and-coverage-strategy).
+Verify changed tests detect the intended failure and pass correct behavior. Report
+runtime conditions and repetitions; bounded success is not a zero-flake guarantee.
 
 ## Domain rules
 

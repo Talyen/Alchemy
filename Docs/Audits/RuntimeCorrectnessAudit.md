@@ -1,7 +1,5 @@
 # Runtime Correctness Audit
 
-Merges the former Async & Race (01), Behavior Hardening (02), and Bug Hunting (03) audits.
-
 **Goal:** Find and fix real runtime defects — async lifetime/ordering races, persistence/recovery boundary gaps, idempotency holes, and opportunistic bug hunts — without converting APIs to async "for style" or adding machinery without a demonstrated failure.
 
 ## Scope
@@ -19,17 +17,20 @@ Sibling routing: audio playback handling → SideEffectSurface; typing escapes �
 - No busy-wait stalls on the UI thread; prefer cancellable cleanups and AbortSignals over fire-and-forget writes.
 - Strict Mode double-mount is expected in development — fix real duplicate side effects, not Strict Mode itself.
 - Do not relocate battle simulation into Workers unless architecture already requires it.
-- Do not run unrelated full-repo sweeps; do not rename/restyle or refactor unrelated code while hunting.
 - Do not expand into speculative backlog or touch manifests/assets/audio unless they directly cause the confirmed defect.
 - Use the current command, write, and lifecycle owners in [RUN_STATE.md](../RUN_STATE.md#run-state); do not bypass them with ad-hoc storage or state writes.
 
 ## Investigation and evidence
 
-Follow important transitions from input through validation, mutation, persistence, feedback, and re-entry. Compare expected and actual outcomes at interruption points: rapid repetition, navigation away, failure, reload, and stale completion. Include ordinary synchronous rule defects; async syntax is not required for a finding.
+Trace input → validation → mutation → persistence → feedback → re-entry.
+Exercise rapid repetition, navigation, failure, reload and stale completion.
+Ordinary synchronous rule defects are in scope too.
 
-Confirm a reachable failure or a violated invariant and the guard, transaction, or recovery owner responsible. Distinguish an operation allowed to outlive a screen from a stale operation that can corrupt a newer session. Prioritize irreversible loss and blocked or incorrect progress using the shared contract; a missing cleanup or empty catch has no fixed severity.
-
-Verification should fail for the original defect and exercise the repaired boundary, including failure/re-entry where relevant. For save or RNG defects, compare uninterrupted execution with save/resume, and check failed-command rollback. Ambiguous balance or recovery policy requires evidence and a decision, not an invented fallback.
+Distinguish work allowed to outlive a screen from a stale operation that can
+change a newer session. Identify the responsible guard, transaction or recovery
+owner. For save/RNG defects, compare uninterrupted and resumed execution and
+failed-command rollback. Unresolved balance or recovery intent remains a decision
+under the [shared contract](README.md#shared-contract).
 
 ## Domain rules
 

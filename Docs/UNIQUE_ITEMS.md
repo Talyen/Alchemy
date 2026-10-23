@@ -8,7 +8,8 @@ Collection rules.
 
 ## Affix contract
 
-Every Unique has exactly one exclusive fixed signature and three fixed standard affixes at the current standard Unique/Astral maximum. No item-generation RNG chooses or rolls a Unique's affixes.
+Every Unique has exactly one exclusive fixed signature and three fixed standard affixes at the current standard Unique/Astral maximum. No item-generation RNG chooses or rolls a Unique's affixes. Crafting currencies
+cannot modify Uniques; salvage uses the normal crafting and Homestead definitions.
 
 Generation, inventory normalization, tooltips, and battle manifests use the same canonical affixes. Tooltip templates replace every occurrence of an affix value, including Saintfall's damage and healing. Existing owned items receive the corrected standard rolls without changing identity, ownership, or Collection discovery. A saved battle retains its captured manifest until normal live meta rebinding or a new battle.
 

@@ -23,7 +23,7 @@ Read affected contracts and consumers; update the canonical owner of changed inv
 - [Content](./Docs/CONTENT_AUTHORING.md), [battle rules](./Docs/GAME_RULES.md), [effect handlers](./src/lib/game-data/effects/BATTLE_HANDLERS.md).
 - [Assets](./Docs/WORKFLOWS-ASSETS.md), [Gear](./Docs/ARMORY.md), [unique items](./Docs/UNIQUE_ITEMS.md).
 - [UI](./Docs/UI.md), [audio](./Docs/AUDIO.md), [performance](./Docs/PERFORMANCE.md).
-- [Verification/tests](./CONTRIBUTING.md), [commands](./Docs/REFERENCE.md), [publishing](./Docs/RELEASE.md), [Steam demo](./Docs/STEAM_DEMO.md).
+- [Verification/tests](./CONTRIBUTING.md), [commands](./Docs/COMMANDS.md), [publishing](./Docs/RELEASE.md), [Steam demo](./Docs/STEAM_DEMO.md).
 - Otherwise, use the [documentation map](./README.md#documentation).
 
 Read known owners directly. Otherwise find filenames, scope searches, then read relevant sections/symbols and consumers. Reuse unchanged context; narrow truncated searches. [Agent discovery](./Docs/AGENT_DISCOVERY.md) provides owner ranges, batched topics and `review:diff -- --summary <paths>` for large patch sets.

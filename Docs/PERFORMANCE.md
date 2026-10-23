@@ -10,32 +10,35 @@ Reports capture the actual renderer viewport, including native Electron window d
 
 **Goal:** smooth locked **60 FPS** on a 60 Hz panel. Advisory bands and hitch/stall cutoffs are written for that; this harness does not measure sustained 120–144 FPS headroom (rAF is vsync-capped to the display).
 
+## Workflow
+
+```text
+Measure → identify failing scenario/phase → perf:trace that scenario → optimize → perf:compare before/after
+```
+
+Compare identical workloads and environments, inspect the targeted cost, and
+preserve visual/audio behavior. [Comparison validity](#comparison-validity) defines
+which reports can establish an improvement.
+
 ## Quick start
 
 ```bash
-npm run perf
+npm run perf -- --electron --seed 9
 npm run perf -- --all
-npm run perf -- --suite synthetic --all
-npm run perf -- --suite seeded --electron
-npm run perf -- --suite seeded --seed 9 --electron
 npm run perf -- --replay reports/performance/<run>/replay/seeded-discovery.json --electron
 npm run perf:trace -- --scenario battle-effects
-npm run perf -- --electron --scenario campaign-developed
-npm run perf -- --electron --scenario campfire-brewing
-npm run perf -- --electron --scenario transmutation-journey
-npm run perf -- --electron --scenario crafting-journey
-npm run perf -- --electron --cold --scenario startup-first-use
 npm run perf:compare -- reports/performance/<before> reports/performance/<after>
 npm run perf -- --help
 ```
+
+Choose fixed journeys, synthetic stress or cold startup from the CLI/catalog below.
 
 `reports/current-run.md` and `reports/current-run.json` point to the latest
 report-producing command. Use it to locate an unknown run; it is ephemeral — overwritten on the next
 run — and is not a historical index. `reports/` is otherwise opt-in evidence, not committed history.
 
-Start with the summary when the cause is unclear. Open a relevant result,
-per-run file, or trace directly for a specific hypothesis. Choose evidence
-that answers the question; ordinary FPS questions usually need only the summary.
+Read the summary first; follow its per-run evidence or trace for a specific
+hypothesis. Ordinary FPS questions usually need only the summary.
 
 Open a deep trace in Chrome: DevTools → Performance → Load profile → select the `.json` file.
 
@@ -57,7 +60,7 @@ Short smoke / harness iteration (not for baselines):
 PERF_MEASURE_MS=8000 PERF_MIN_FRAMES=50 npm run perf -- --scenario battle-end-turn --skip-build
 ```
 
-The default is one seeded reachable battle with a fresh recorded seed. Use `--scenario campaign-early` for the fixed Campaign opening battle. `--all` runs the fixed realistic suite; `--suite synthetic --all` runs the earlier isolated stress loops. `--suite seeded` generates one reachable case from the balance playthrough engine with a fresh random uint32 seed. The seed is printed before generation and retained in the case and replay bundle; pass `--seed <uint32>` to reproduce it. Every generated case includes a current-format save checkpoint, encounter provenance, and an inventory of available cards and declared card effect kinds. The checkpoint and replay preserve the complete randomized account. Fixed journeys use their existing fixtures. The developed Campaign and account journeys use a second career, after earning talents and other progression.
+The default is one seeded reachable battle with a fresh recorded seed. Use `--scenario campaign-early` for the fixed Campaign opening battle. `--all` runs the fixed realistic suite; `--suite synthetic --all` runs isolated stress loops. `--suite seeded` generates one reachable case from the balance playthrough engine with a fresh random uint32 seed. The seed is printed before generation and retained in the case and replay bundle; pass `--seed <uint32>` to reproduce it. Every generated case includes a current-format save checkpoint, encounter provenance, and an inventory of available cards and declared card effect kinds. The checkpoint and replay preserve the complete randomized account. Fixed journeys use their existing fixtures. The developed Campaign and account journeys use a second career, after earning talents and other progression.
 
 Discovery starts from the labeled `performance-random-account-v1` fixture: the seeded hero receives a random legal gear loadout across Basic, Astral, and Unique definitions, production affix rolls, one random permanent Trinket, and randomized talent trees and purchase depths. Talent choices obey row prerequisites and point budgets, with a mix of hero affinities and other keywords. Gear placement uses the normal equipment rules, including two-handed and Quiver restrictions. Heroes vary by seed; nightly rotation covers all eight in every mode over eight workflow runs.
 
@@ -216,7 +219,9 @@ The registry describes measured journeys, not all game features. Preparing a sav
 
 The `campfire-brewing` and `transmutation-journey` cases capture reachable visits before selection. Their required segments measure selection, the saved result, and departure. `crafting-journey` captures an earned legal currency application between careers from the labeled `economy-v1` starting account. It records the exact currency and item identity, targets that item through normal Armory controls, requires currency consumption and a visible result, then salvages the item through its confirmation. These are short transactional journeys, not sustained stress loops; each runs once after warm-up. Replay bundles preserve the checkpoint and completed action path.
 
-Prioritize Alchemist Shop services, progression purchases, and complete Collection inspection next. Use reachable checkpoints and required completed-action/frame segments, as for existing journeys. Keep fixed replay cases for comparing optimizations; use discovery to find new cases, not as evidence that every mechanic is covered.
+When extending coverage, use reachable checkpoints and require completed-action/frame
+segments. Keep fixed replays for comparison; discovery finds cases without proving
+every mechanic covered. The missing-workload table identifies current gaps.
 
 Use `npm run perf -- --help` and `performance/catalog.json` for current scenario
 durations and minimum samples rather than maintaining a second defaults table.
@@ -232,17 +237,13 @@ also protect the affected calculation. Reuse existing parity checks where they
 cover the change. A passing build or better FPS does not establish presentation
 parity; report it as unverified when the necessary comparison is unavailable.
 
-## Workflow
-
-```text
-Measure → identify failing scenario/phase → perf:trace that scenario → optimize → perf:compare before/after
-```
+## Comparison validity
 
 `perf:compare` derives duration-normalized rates for hitches, stalls, and long tasks (per 30 s) so runs of unequal duration are compared fairly. Both reports must contain usable environment metadata and valid, complete metrics. Material environment differences (runtime, trace mode, cold mode, platform, CPU architecture, viewport, DPR, refresh rate, browser, target profile, runs per scenario) are rejected with clear compatibility errors. Optional display and browser metadata must be present on both sides when present on either. Duplicate scenario names and invalid measured runs or journey segments reject comparison.
 
 Pooling preserves each run's minimum frame requirement and starts a new phase timeline for each run. An empty or short run cannot be hidden by a larger neighboring run. Invalid samples retain diagnostic numbers but receive red target bands; they never qualify as optimization evidence.
 
-### Finding the work behind a slow frame
+## Finding the work behind a slow frame
 
 Every measured run retains a `runs/<scenario>-<run>-sample.json` containing the full
 frame timeline, phase marks, long tasks, and input events. The summary links to it;
