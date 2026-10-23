@@ -110,8 +110,7 @@ arrows or separate detail screens.
 Build, Upgrade, or Bond costs appear as a plain row with material icons and
 quantities. Build and Upgrade labels are one text size larger than the quantities.
 Missing materials use red quantities without additional feedback text.
-A divider separates purchased bonuses from the next cost. Gold uses the same
-inline icon chip as Homestead materials. The artwork stays focusable for
+A divider separates purchased bonuses from the next cost. The artwork stays focusable for
 inspection but cannot purchase when more materials are needed. A visible Saving
 acknowledgment on the artwork precedes purchased artwork/progress and sound;
 synchronous tier guards reject repeated input. Dismissing the tooltip or changing
