@@ -56,7 +56,7 @@ export function HomesteadTooltipBody({
         {node.discovered ? (
           <>
             {hasBenefits && (
-              <TooltipBody className="mt-2 space-y-1">
+              <TooltipBody className={cn("mt-2 space-y-1", node.level === 0 && "opacity-80 saturate-[0.6]")}>
                 {[...node.bonuses, ...node.production].map((line, index) => (
                   <p key={index} className="min-h-6 leading-6">
                     {i18n.read(() =>

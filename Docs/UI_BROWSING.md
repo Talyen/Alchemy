@@ -91,8 +91,9 @@ controls. Clicking the artwork or pressing Enter/Space on it directly builds,
 upgrades, or bonds the node.
 
 Stars beside the name show purchased levels or bonds. Unbuilt nodes show
-their name, empty stars, first-tier benefits, and purchase cost. Unbonded
-Companions show their name, empty stars, and bond cost.
+their name, empty stars, first-tier benefits, and purchase cost. Preview benefits
+are partially muted while retaining keyword hues; purchased benefits use full color.
+Unbonded Companions show their name, empty stars, and bond cost.
 Purchased nodes show current bonuses and Find 10/20/30/40% more resource quantities,
 with uniform effect-row spacing and no section headers or next-tier comparisons.
 Completed nodes show current benefits without costs; undiscovered Companions show
