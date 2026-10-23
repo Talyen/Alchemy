@@ -12,6 +12,15 @@ audio may reinforce visible acknowledgment and outcomes, but essential meaning
 must survive mute or playback failure. This principle does not require a sound
 for every action or change the intentional silent-content registrations below.
 
+## Change checklist
+
+1. Register new card or companion sounds in the owning sound registry or audio module (`sound-registry.ts`, `COMPANION_SOUND_CARD_IDS`); the exact catalog coverage in `tests/lib/audio/sound-registry.test.ts` requires a nonempty focal registration for new content.
+2. Add or replace source audio through [the asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-sound) and regenerate committed outputs.
+3. Keep host visibility, volume, cache, and failure behavior in the [runtime audio owners](#runtime-contract).
+4. Run focused unit suites with `npm run test:unit -- tests/lib/audio` and any affected lifecycle tests, then the task-scoped local gate. Browser playback verification uses `npm run test:e2e:route -- audio` under the [local execution policy](../CONTRIBUTING.md#what-to-run-when-you-change).
+
+Changed-path and CI tier policy: [CONTRIBUTING.md](../CONTRIBUTING.md#what-to-run-when-you-change).
+
 ## Ownership
 
 | Concern                              | Owner                                                                                                                                                                                 |
@@ -30,49 +39,26 @@ for every action or change the intentional silent-content registrations below.
 
 ## Local lyric alignment experiment
 
-The [boss karaoke experiment](../scripts/lyrics-trial/README.md) runs local
-word alignment against supplied lyrics and provides a standalone preview.
-Phrase-bounded timing snapshots for The Blight Treant, The Forge Golem,
-The Frostwarden and The Iron Bear live in `src/lib/audio/lyrics/`, each tied to
-its recording by SHA-256. `lyrics.ts` registers them by music key. The new lyric
-sheets are retained in `scripts/lyrics-trial/` and match the supplied sheets and
-the MP3 lyric metadata; section labels and sound directions are excluded.
-Unclear Forge Golem chant groups use bracketed vocal cues.
-The experiment remains a separate comparison tool. Generated timings still need
-performance-coverage and audible synchronization review; coverage metadata
-records undetected phrases and unmatched ASR words rather than forcing them
-into the timeline. Treant's existing snapshot has two undetected introductory
-lines and two unmatched ASR words.
+The [alignment tool](../scripts/lyrics-trial/README.md) owns model setup,
+phrase detection, vocal recovery, provenance and known timing gaps. Running it
+creates review candidates; replacing a runtime snapshot requires checking performed
+coverage and audible synchronization. Source sheets, MP3 metadata or structurally
+valid times alone cannot establish accuracy. Uncertain passages use bounded
+`[growls]`, `[chants]` or `[vocalizing]` cues, not asserted words.
 
-Targeted vocal-stem recovery restores Iron Bear's three rejected chorus repeats
-and second "singe through hide" line, plus four missing Frostwarden lines.
-The two adjoining Frostwarden "Melts me" responses are realigned so they no
-longer consume the preceding "What burns me" call. The
-[recovery workflow](../scripts/lyrics-trial/README.md#targeted-vocal-stem-recovery)
-retains source hashes, search windows and model settings. These lines were in
-the supplied sheets; detection and invalid word timings caused their omission.
-Iron Bear's growled bridge, final "remember what you bleed" and one backing
-vocal, Forge Golem's chants, and Frostwarden's "Aaaah" remain unresolved as exact
-word alignments. These passages now display `[growls]`, `[chants]`, or
-`[vocalizing]` in bounded vocal windows. Clear adjoining lyrics retain their word
-timings. Cue boundaries are manually annotated from the separated vocal timeline;
-they describe the passage without asserting its words. This does not establish
-that the supplied words are absent from the recordings.
+Runtime snapshots in `src/lib/audio/lyrics/` register through `lyrics.ts`, tied to
+recordings by SHA-256. `Boss Lyrics` defaults on in the normal settings codec.
+The battle leaf samples the active key and actual media position from
+`readMusicPlayback()`, following seeks and loops; it clears on other tracks,
+pauses, mute and instrumental gaps. One frame callback runs only while enabled
+boss lyrics are mounted; React updates only on visible word/highlight changes.
+No alignment model, decoding or per-word timer runs in the game.
 
-`Boss Lyrics` in Audio settings defaults on and persists through the normal
-settings codec. The battle lyric leaf samples `readMusicPlayback()` from the
-music player, using the active track key and actual media position rather than
-an elapsed wall clock. It clears for other tracks, pauses, mute, and instrumental
-gaps, and follows seeks and loops. Sampling uses one animation-frame callback
-only while an enabled boss with timing data is mounted; React updates only when
-the visible words or highlight change. Words build the phrase as sung, with a
-180ms opacity and small scale pop on entry. Earlier words stay dim and still;
-only the current whole word uses the gold highlight. No alignment models,
-transcription, audio decoding, or per-word timers run in the game.
-Iron Bear timings use the original recording's timestamps, including its
-six-second playback skip; no second offset is applied. Sung words remain in the
-recording's language when the interface language changes. The accessible
-"Song lyrics" label and bracketed vocal cues follow the interface language.
+Words enter with a 180ms opacity/scale pop; prior words dim and stay still, and
+only the current whole word is gold. [Battle UI](./UI_BATTLE.md#boss-lyrics) owns
+placement. Iron Bear uses original recording timestamps including its playback
+skip, without a second offset. Sung words keep the recording's language; the
+accessible label and bracketed vocal cues use the interface language.
 
 ## Runtime contract
 
@@ -190,30 +176,11 @@ nothing. End Turn and Wish selection acknowledge successful commits. Slice death
 quiet paper movement and outcome stingers remain separate beats. Separate actions
 may overlap; no new global voice-stealing policy is introduced.
 
-Trinket's Heal, Holy impact, Gut Punch, control activation, Dodge, Salvage,
-talent-unlock, toggle and short Victory recordings are adopted through the source
-manifest. Corruption uses the dark Life Tap cue; structure improvements use the
-hammer cue and companion bonding retains the positive piano. The short rock
-revision used by Meteor/Earthquake selects 0–1.2 seconds; shared revisions and
-critical/bow processing are recorded by the Asset Library's
-`Sounds/Game Sources/Sound Effects/Shared Revisions/sound_fit_20261015/sources.json`.
-Both games retain their own encoders and user-volume controls. Perceptual and
-hardware mix acceptance remains pending.
-
-The [focused Sound desk](#battle-replacement-auditions)
-covers card and companion cues. Exorcism uses
-Purge; Prayer uses the shorter choir excerpt; Avatar uses the longer
-choir excerpt. The selected files, source hashes and exact excerpt boundaries
-are recorded in [the approved cue mappings](./design/audio-review/approved-choices.json).
-
-## Change checklist
-
-1. Register new card or companion sounds in the owning sound registry or audio module (`sound-registry.ts`, `COMPANION_SOUND_CARD_IDS`); the exact catalog coverage in `tests/lib/audio/sound-registry.test.ts` requires a nonempty focal registration for new content.
-2. Add or replace source audio through [the asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-sound) and regenerate committed outputs.
-3. Keep host visibility, volume, cache, and failure behavior in the runtime audio owners above.
-4. Run focused unit suites with `npm run test:unit -- tests/lib/audio` and any affected lifecycle tests, then the task-scoped local gate. Browser playback verification uses `npm run test:e2e:route -- audio` under the [local execution policy](../CONTRIBUTING.md#what-to-run-when-you-change).
-
-Changed-path and CI tier policy: [CONTRIBUTING.md](../CONTRIBUTING.md#what-to-run-when-you-change).
+Current recording identities, source hashes, processing and excerpt boundaries
+live in [approved cue mappings](./design/audio-review/approved-choices.json) and
+the [sound manifest](../scripts/assets/sound-assets.mjs). Those owners also supply
+battle auditions; this guide does not maintain a second cue inventory. Perceptual
+and hardware mix acceptance still requires listening.
 
 ## Sound desk
 
@@ -261,12 +228,9 @@ Prepare the focused card and companion rows and start a separate review session:
 npm run audio:review -- --battle-focus --serve --port 4318
 ```
 
-Most rows have two short, level-matched candidates and their current cue or silence.
-Exorcism and Prayer each have four options, including their original pair.
-The queue includes Avatar, Exorcism, Sanctified Plate, Tithe, Prayer, Wishing Well,
-Will-o'-Wisp and Library Owl. Companion selections also apply to their summoning
-cards. Enemy abilities use the selected card's focal sound; there are no separate
-enemy or Bestiary sound choices.
+The generated queue shows current cues and short, level-matched alternatives.
+Companion selections also apply to their summoning cards. Enemy abilities use
+the selected card's focal sound; there are no separate enemy or Bestiary choices.
 
 Will-o'-Wisp has one listening decision shared by the companion and summoning
 card. The companion row owns the choice in the focused queue; the summoning
@@ -283,8 +247,6 @@ and hashes directly. Recording and pack names are inferred from filenames and
 labeled as such; catalog provenance is not invented. Malformed existing catalogs,
 missing files and conflicting source identities still fail. Long recordings use
 explicit short excerpts selected from signal levels, with 5 ms edge fades.
-The old Doppler/Weirdness proposal sources are no longer present in the library;
-available casting takes replace them for this review.
 
 ## Review workflow
 
@@ -338,8 +300,8 @@ Matched previews use fixed gain toward −22 dB mean, capped at −1.5 dB peak a
 Both levels are 48 kHz stereo 16-bit PCM copies, with excerpt boundaries visible.
 The production sound pipeline retains its own loudness/OGG/MP3 policy.
 
-The catalog's four stale protected-master paths are listed in the board and report;
-none is selected. Provenance stays attached to candidates. Unattributed library
+The board and report list unselected stale catalog paths. Provenance stays
+attached to candidates. Unattributed library
 entries are explicitly unverified; they are audition references, not cleared
 shipping selections. The library's own listening-review flag is also visible.
 

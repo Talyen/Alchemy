@@ -9,7 +9,6 @@ Find contradictions, harmful omissions in complete-looking workflows, and duplic
 ## Hard stops
 
 - Do not hand-edit `CHANGELOG.md` (owned by release: `sync-changelog.mjs` prerelease + `release-changelog.mjs` postbump).
-- Do not treat dated “Last execution” / Done tables inside audits as source of truth — **delete** those tracker sections when found.
 - Do not rewrite design prose for style-only preferences or turn this into a repo-wide docs rewrite. Restructure a focused section when scattered line edits would preserve ambiguity or hide the current owner.
 - Historical mentions of deleted docs, such as the old PROMPTS.md in `CHANGELOG.md`, are fine — fix live links only.
 
@@ -27,7 +26,8 @@ Verify edited claims, examples, links, and commands against their owners. Walk t
 
 **Links:** internal `.md` links resolve **relative to the source file**; heading anchors must still exist. Recheck edited links and factual claims against their listed source of truth. External URLs: check only when changing that source and network is available — do not fail solely on an unavailable endpoint.
 
-**Audit hygiene:** if an audit contains embedded run logs, Done tables, or “Last execution” trackers, remove them and restore guide shape per [README.md](README.md).
+**Audit hygiene:** follow the [shared finish contract](README.md#finish); remove
+completed execution logs and trackers from guides.
 
 ## Known signals
 

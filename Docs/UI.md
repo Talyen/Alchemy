@@ -83,6 +83,15 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 - `TraitBox` owns unboxed Trait rows, colored icons, keyword descriptions, and title shine across Labyrinth map details and enemy hover/inspection. Traits have no individual border, background, or box padding. Encounter icon themes live in shared configuration and also drive map effects. Enemy Traits and encounter modifiers form one deduplicated list; inspection uses two equal columns at 40rem of available content width, with a single-column fallback and full-width sole Traits. Hover and map Traits stay stacked. Apply inline-size containment only to the inspection layout: shrink-to-fit tooltips need their contents to contribute intrinsic width.
 - Modal interaction and dismissal follow [Overlay lifecycle](./UI_INTERACTION.md#overlay-lifecycle).
 
+`Progress` requires an accessible name (`aria-label` or `aria-labelledby`); `value`
+owns fill width, while `fillStyle` carries extra styling only. `ShineBorder` is
+decorative (`aria-hidden`) and absolute with inherited rounding: its parent must
+be relative and rounded. Empty palettes use neutral shine. Hover, focus and
+persistent shine are border-only, without outer glow; keep borders outside artwork
+clips. [Component styles](../src/styles/components.css) own opacity and transitions.
+Wildcard uses the same static border as other heroes. Turn indicators and
+Death's Door decoration retain border-only shine.
+
 ### Item shine
 
 Astral instance titles and borders derive their shine keywords from the rolled affix descriptions, using the same keyword recognition as tooltip text (`src/lib/keyword-text.ts`). Base affinity only prioritizes present keywords for the three-keyword title limit; it never adds absent keywords.
@@ -138,7 +147,8 @@ Which control to reach for: `Button` owns text/label actions (Play, Back, Confir
 
 Card and collection artwork, including gear and trinket tiles, reserves a 1px frame across available, selected, disabled, purchased, and shine states, so changing interaction state cannot resize its artwork or row or recenter the screen. The thicker hover and selection outline is an absolute overlay, preserving the thin default border. Hover-only shine uses `card-art-shine`; persistent shine uses `has-shine-border`. Armory item borders are hover-only, with keyboard focus matching hover; the active equipment slot keeps its shine as a selection marker. Both hide the frame color while preserving its space. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
 
-The gold counter and the main menu logo use the standard 103.5% CSS hover scale over 200ms ease-out. Individual mana crystals stay at their resting size on hover and play a brief glint masked to their artwork, preserving their independent refresh animations and dim spent appearance. Reduced motion keeps the crystals static. Battle's End Turn is an outline text button above the bottom-right Discard Pile. A valid activation ends the turn immediately, without confirmation. Mana crystals sit above the bottom-left Draw Pile.
+The gold counter and Main Menu logo use the standard 103.5% CSS hover scale over
+200ms ease-out. Battle controls follow [Battle layout](./UI_BATTLE.md#battle-layout).
 
 Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
 
@@ -243,34 +253,8 @@ stage. Authored arbitrary content dimensions must use the content unit; do not
 use raw container-height units as the primary card size. Available-space caps
 are allowed: the battle hand caps card height and compresses its fan into the
 reserved center region.
-The hand rests against the bottom viewport edge, centered with capped spacing and
-responsive card sizing. Draw Pile sits beside the hand's left edge and Discard Pile
-beside its right, both with their pile artwork in the bottom corners. Clicking either
-pile opens only that pile in the shared card viewer. All battle transfer and feedback
-coordinates use the full viewport scene.
-Mana crystals sit centered above Draw Pile in the left bottom column. Their shallow
-curved arrangement, recessed settings, spending, refill, capacity, hover glint, glow,
-and shard effects remain intact. Full crystals retain subdued Mana blue; spent
-crystals are dim grayscale. Increasing counts gradually shrink the crystals and
-effects; the row caps at nine. Beyond nine, the final crystal carries a +N badge.
-Exact current and maximum Mana remain in accessible inspection, without a persistent
-numerical readout.
-The top-right battle cluster shows live Gold before deck inspection, the Autoplay and
-Boons toggles, the dev-only Skip Combat control, and Menu. Gold briefly highlights on
-increases. End Turn is an outline text button above Discard Pile and commits
-immediately after input gates pass. Dev-only Skip Combat uses a labeled skip-forward
-icon and tooltip.
-The hand's bottom dock stays centered and stationary as the hand grows to seven
-cards; smaller hands remain centered with capped spacing. Every resting card
-touches or overlaps the bottom edge; playable card centers stay visible. Hover
-and keyboard focus lift cards for inspection. Hand hover and pointer
-activation use the nearest stable slot center, with boundaries halfway between
-centers, independent of raised artwork and reflow motion. Hidden transfer cards
-cannot receive pointer selection. Keyboard focus uses the native card buttons.
-The player, companion, and enemy groups sit 5% of the full battle viewport height
-lower than their baseline anchor, including health bars and statuses. Enlarged
-actors retain the upward Game Size compensation to keep health and battle controls clear. Backgrounds
-fill the frame.
+Battle-specific hand, Mana, toolbar and actor geometry follows
+[Battle layout](./UI_BATTLE.md#battle-layout).
 
 ## Verification
 
@@ -302,7 +286,9 @@ a failed startup retains the static fallback and can retry on context restoratio
 Hover and leave update the plasma color target immediately. The displayed colors
 use a critically damped transition that retains momentum when retargeted.
 Object highlights remain immediate.
-The glow is 20% dimmer at every nonzero intensity setting, including the static fallback.
+Both renderers apply the same opacity: clamped Background Glow percentage times
+`GLOW_BRIGHTNESS`, owned by
+[KeywordPlasmaBackground](../src/features/alchemy/shared/ui/keyword-plasma-background.tsx).
 The WebGL renderer retains its single render pass, 30 fps pacing, and 1.5 million
 backing-pixel cap. Its existing opacity dithering remains; no higher-resolution
 output pass is used. Banding can still be visible depending on browser compositing
@@ -311,10 +297,8 @@ and the display. Panel technology is not detected.
 ## Display options
 
 Display groups Display Mode (desktop only), Brightness, Game Size,
-and Tooltip Size together. The Background section contains Background Glow and
-Background Particles. Screen Effects and Drifting Lights have been removed,
-including their renderers and saved preferences. Reset to Default restores the
-remaining preferences and device sizes.
+and Tooltip Size together. Background contains Background Glow and Background
+Particles. Reset to Default restores these preferences and device sizes.
 
 ### Pending saves and action feedback
 

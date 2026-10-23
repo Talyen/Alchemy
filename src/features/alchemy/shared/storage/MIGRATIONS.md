@@ -1,10 +1,22 @@
-# Save Migration Guide
+# Save compatibility and storage
 
 Canonical owner for save compatibility, load recovery, write acknowledgement,
 and deletion. Start with the [public save contract](#public-save-contract) for
 storage behavior or the [required pattern](#required-pattern-automated) for a
 schema change. [Run and save workflows](../../../../../Docs/RUN_WORKFLOWS.md)
 cover implementation steps; gameplay tuning belongs to the linked rule owners.
+
+## Public save contract
+
+Local storage is authoritative; Cloud is a mirror. Choose playable candidates by freshness, and preserve unreadable or newer-format data in its existing slot while current play writes a safe slot. A save submission succeeds only when local storage accepts its own snapshot. A submission replaced before writing returns `superseded`; replacement success does not change that result. Completed gameplay actions wait for a local write whose session receipt covers their revision under [write acknowledgement](#write-acknowledgement). Deletion has explicit modes; pending writes must not resurrect deleted data. Load problems fall back to playable data or defaults without a recovery-choice screen.
+
+Read the applicable contract before changing its behavior:
+
+- [Loading and candidate selection](#load-selection), including [load order](#load-order).
+- [Compatibility and future protection](#future-schema-saves), plus [when to increment](#when-to-increment).
+- [Write acknowledgement and autosave](#write-acknowledgement).
+- [Deletion modes](#deletion).
+- [Local/Cloud policy](#policy-local-is-authoritative) and [content repair rules](#implementation-rules).
 
 ## Supported baseline
 
@@ -34,7 +46,9 @@ Increment the schema version for structural or meaning changes that require a su
 3. For a supported transformation, (re)introduce an ordered migration table covering every increment and apply it before current-shape validation. Update schema and hydration defaults together.
 4. Change the save shape, its owning codec, defaults, and fixtures together. For run-profile fields, also update `RUN_PROFILE_SAVE_KEYS`: this explicit tuple has a compile-time completeness check, so adding a `PermanentProgressFields` member fails the build until that key list is updated. Other domains keep their own codec field selections.
 5. Add previous-version fixtures to `tests/fixtures/current-saves.ts` when supported versions diverge. Preserve playable state and progression, not just field presence. The save contract tests pin the development baseline and current defaults; add coverage for every supported increment when migrations become necessary. Gear/currency coverage lives in the `gear-save` / `save-data-schema` suites.
-6. Run relevant save/persistence unit suites with `npm run test:full -- <test-paths>` and the [task-scoped gate](../../../../../CONTRIBUTING.md#what-to-run-when-you-change). The opt-in full verifier selects the complete save/persistence suite; the default local gate does not.
+6. Run relevant save/persistence units with `npm run test:unit -- <test-paths>` and
+   the [task gate](../../../../../CONTRIBUTING.md#what-to-run-when-you-change), which
+   selects save protection for persisted-state owners. Use `--plan` to inspect scope.
 
 ## Test expectations
 
@@ -91,79 +105,38 @@ Choose the intended new-player default. Safe additive fields retain that default
 
 ## Content changes without a save bump
 
-Unauthored card mechanics no longer form part of the effect contract: combat-long
-Companion buffing, Gold-scaled damage, double damage against Burning or fresh
-targets, and conditional Burn detonation. Current Pack Tactics, Tithe,
-Combustion, and Kindling keep their authored effects. Damage schemas reject
-unknown fields so retired selectors cannot silently become ordinary attacks.
-Unauthored Forge-equal damage, Block-spending damage, Block-dependent damage
-types, conditional Freeze Mana restoration, and direct enemy-status card effects
-are also retired. Mana restoration rejects unknown fields so a retired condition
-cannot silently become an unconditional reward. Current damage packets still
-apply status buildup; current Frozen alternatives and resource-scaled cards remain supported.
-Existing incomplete-card and battle repair handles these unsupported development
-snapshots; no historical conversion or save-version bump is required.
+Catalog tuning and compatible defaults do not require a schema bump. Derived
+Talent and Homestead manifests rebuild from purchased IDs; Unique affixes resolve
+from the current catalog. Preserve valid modified card effects, descriptions,
+explicit Consume overrides, identities and pile membership together. Incomplete
+card content follows [current-data repair](#implementation-rules).
 
-Preserve valid current-run card effects, descriptions, and explicit Consume overrides together under the [supported baseline](#supported-baseline). Incomplete card content recovers from the live catalog. Gear/loadout ownership cleanup, native enemy Trait refresh, current catalog filtering, and safe manifest defaults remain current-data repair, not historical migrations. Stored Unique affix rolls are dropped at normalization in favor of the canonical catalog affixes; pre-release material renames (gems to crystal, then crystal to gems) and additions (stone, hide) resolve through schema defaults, not aliases or migrations. Persisted battle scalars and collections repair field-by-field to battle defaults, while enemy identity and display data come from the live catalog. A battle block without any card piles or a known enemy is a fragment, not a fight, and drops the combat session instead of fabricating one; the run remains playable and load reports a battle-repair warning. Battle telemetry is runtime-only and is never persisted.
+Retired mechanics and undeclared manifest/flag keys are discarded under the
+[supported baseline](#supported-baseline), without historical aliases or parallel
+combat rules. Battle defaults repair fields individually. Native enemy identity
+and Traits refresh from the live catalog. A saved battle requires a known enemy
+and at least one card-pile array, even when empty; otherwise drop combat and report
+repair rather than fabricating a fight. The run remains playable.
 
-Unauthored card-play, Consume, and Wish rewards no longer declare manifest
-fields or combat flags. This includes old card-sequence bonuses, direct Consume
-Poison, capped Consume draw, delayed Wish Mana, and Divine Intervention readiness.
-Normalization drops these retired fields; current Talent IDs, active bonuses,
-queued choices, and committed results still resume without replaying rewards.
-No schema version change is required under the pre-release baseline.
+Current combat flags retain their declared boolean or finite nonnegative numeric
+values and lifetimes from [combat-flags.ts](../../../../../src/lib/battle/combat-flags.ts).
+Preserve spent per-turn allowances and until-consumed readiness; never infer them
+from current statuses or replay grants. Missing fields use their declared defaults.
 
-Unauthored damage scaling, proportional Dodge retaliation, status prevention,
-Companion rewards, and first-card-free Talents are also retired. Flashpoint
-remains the only first-card-free Talent; its spent allowance and current Boon,
-Gear, encounter, and prepared-card opportunities still resume normally. Removed
-manifest keys and their combat flags are discarded by the existing declared-key
-normalization. Purchased Talent IDs and Homestead effects rebuild current bonuses.
+Reaction progress is saved separately from turn flags. Preserve earned amounts,
+spent CC opportunities, unmatched Wildfire ticks and Consecration marks. Missing
+progress starts empty; invalid scalars repair independently. Clear CC rewards
+outside active control and Consecration without Bleed; never reconstruct them from
+current buildup. Phase-local Bloodboil/Venomflash facts add no saved counters.
+`pendingCardBleedLeechHealing` defaults to zero and cannot exceed total queued Leech;
+it retains card attribution for Clean Slate, independently of Deep Siphon's eligibility.
 
-Reworked Talents may retain their IDs, while current run restoration rebinds derived manifests from purchased IDs and Homestead effects. Remove retired manifest keys and their gameplay branches instead of preserving legacy battle behavior. Battle normalization keeps only declared Talent and combat-flag keys; their defaults own the supported shape. Combat flags retain valid booleans and finite nonnegative numbers, repairing other values to their declared defaults. Use defaults for compatible additions and retire incompatible development snapshots when required. Shop state adds `freeRefreshUsed` with a false default and field-by-field hydration for older saves; refresh affordability, RNG, and visit limits follow the [shop workflow](../../../../../Docs/WORKFLOWS.md#change-a-shop).
-
-Battle flags default safely, normalize to their declared boolean/number types, and preserve their current values on resume. Their turn/combat/until-consumed lifetimes are owned by [combat-flags.ts](../../../../../src/lib/battle/combat-flags.ts): Archery sequence flags reset each player turn, while Hawk Eye and Riposte readiness survive until consumed and the first-Burn-free allowance lasts for the combat. Never reconstruct readiness from existing status or Dodge state, or replay opening draws/rewards during normalization. New battles initialize fresh flags.
-
-This includes the independent Layered, Ironroot, Vanguard’s Crest, and Obsidian
-Hammer per-turn allowances: loading preserves spent uses,
-while missing flags use their declared defaults. Forge has no deferred spending
-or threshold-reward queue; normalization discards obsolete queues and retired
-manifest fields.
-Current [Forge rules](../../../../../Docs/GAME_RULES.md#persistent-forge) and
-[Gear rules](../../../../../Docs/ARMORY.md#battle-integration) own their mechanics.
-
-Universal reactions store earned damage separately from turn flags. Shatter and
-Frostfire retain independent Freeze opportunities; Thunderclap retains its Stun
-opportunity. Wildfire stores one optional unmatched natural Burn tick and the
-sum of completed, individually rounded pairs. Current-format resume preserves
-all amounts, including spent opportunities. Missing reaction data starts empty,
-retired `shatterUsed` / `wildfireUsed` flags are ignored, and normalization never
-reconstructs progress from CC or Burn. Invalid scalars repair independently;
-CC rewards outside their active CC are cleared. This additive default needs no
-schema-version bump under the pre-release baseline. Consecration adds one
-`consecrated` boolean, default false; hydration preserves a valid mark only while
-Bleed remains. A natural Bleed tick consumes it before riders resolve, and
-clearing/detonating Bleed cancels it. Bloodboil uses phase-local actual tick facts;
-Venomflash uses the packet's pre-hit Poison/Burn and successful ignition. Neither
-adds saved counters or reconstructs progress during load.
-
-`pendingCardBleedLeechHealing` is the explicit-card subset of queued Bleed Leech.
-It defaults to zero, cannot exceed total queued Leech, and preserves attribution
-through ticks, detonations, and resume. It preserves explicit card-healing attribution
-for Clean Slate; Deep Siphon now benefits all player Leech sources.
-
-Companion summon hydration removes an obsolete hidden `consume: true` when the
-card has no explicit Consume description. Keep valid modified effects, descriptions,
-UIDs, costs, and pile membership together. Summons still leave battle independently
-of Consume; an explicitly added Consume keyword remains a legitimate card edit.
-Reworked Talent manifests rebuild from purchased IDs without replaying any awards.
-
-Unauthored flat Stun, per-card flat healing, Companion Bleed bonuses, extra
-Archery hits, fixed extra Wish choices, Wish Gems/Gold, mixing bonuses, free
-refresh entitlements, starting Gold, victory maximum Health, and unused victory
-Gold bonuses are retired. Current catalogs own the remaining manifest fields;
-normalization drops retired keys and restoration rebuilds current bonuses.
-Modified cards and committed results remain valid; supported versions are unchanged.
+Summon hydration removes hidden Consume only when no explicit Consume description
+exists; an explicitly added keyword remains a valid card modification. New battles
+use current constructors. Gameplay meanings remain with
+[Game rules](../../../../../Docs/GAME_RULES.md),
+[Talent rules](../../../../../Docs/TALENT_RULES.md), and
+[Armory](../../../../../Docs/ARMORY.md).
 
 ## Run recap tracking
 
@@ -179,18 +152,6 @@ resurrect a saved run after death, abandonment, or victory.
 ## Defaults and resume normalization
 
 `createDefaultSaveData()` (`storage/defaults.ts`) is the top-level defaults owner: the Zod schema is parsed once into a frozen singleton and every caller receives a fresh clone, so top-level keys and values cannot drift (the save contract test protects cross-load isolation). Domain defaults must still be updated together: `SettingsSaveFieldsSchema` and its `createDefaultSettingsSaveFields` factory (`src/lib/validation/save-schemas/settings.ts`), `createDefaultProfileSaveFields` (`shared/stores/session/profile-store-types.ts`), `createInitialGearState` (`shared/stores/session/gear-state-defaults.ts`), and `createInitialPermanentFields` (`shared/stores/session/run-state-init.ts`), plus both fixture builders (`tests/fixtures/saves.ts` campaign-full, `tests/helpers/save-candidate-fixtures.ts` candidate-minimal). Validation supplies safe current-field defaults. Normalization repairs current-run choices and catalog references; hydration restores runtime cards and manifests. Repair happens in two layers with distinct owners: schema load-repair (`SaveDataSchema` transform in `save-data.ts`: live-combat gold override, autoplay derive, orphan gear-loadout prune) runs first, then codec hydrate-repair (`hydrateGameplayPersistenceFields` in `shared/stores/persistence/persistence-hydration.ts`: unknown-companion prune, homestead effects, unique ownership union). Complete-save restoration composes that helper inside its existing gameplay transaction; `hydrateAlchemyPersistenceFields` is the separate fields-only wrapper, not a nested restore step. Preserve valid saved card modifications, Health, defenses, flags, pending choices, and RNG. Never reapply starting grants or resolve an action during normalization. Keep material defaults and current field names; retired crystal/recovery and historical Talent conversions are no longer accepted as aliases. Live combat gold intentionally overrides the purse when finite and non-negative; that override is not a repair warning.
-
-## Public save contract
-
-Local storage is authoritative; Cloud is a mirror. Choose playable candidates by freshness, and preserve unreadable or newer-format data in its existing slot while current play writes a safe slot. A save submission succeeds only when local storage accepts its own snapshot. A submission replaced before writing returns `superseded`; replacement success does not change that result. Completed gameplay actions wait for a local write whose session receipt covers their revision under [write acknowledgement](#write-acknowledgement). Deletion has explicit modes; pending writes must not resurrect deleted data. Load problems fall back to playable data or defaults without a recovery-choice screen.
-
-Read the applicable contract before changing its behavior:
-
-- [Loading and candidate selection](#load-selection), including [load order](#load-order).
-- [Compatibility and future protection](#future-schema-saves), plus [when to increment](#when-to-increment).
-- [Write acknowledgement and autosave](#write-acknowledgement).
-- [Deletion modes](#deletion).
-- [Local/Cloud policy](#policy-local-is-authoritative) and [content repair rules](#implementation-rules).
 
 ## Policy: local is authoritative
 
@@ -246,6 +207,9 @@ Tie rules: playable-vs-playable ties keep the first candidate in read order — 
 Normal saves and explicit flushes return `saved`, `failed`, `skipped`, or `superseded`. `saved` means local storage accepted that submitted snapshot in the active slot; a Cloud-mirror failure remains non-fatal. A pending submission replaced by coalescing returns `superseded`, and autosave retains its unacknowledged work for retry. Replacement success cannot acknowledge the discarded payload. `skipped` covers cancellation, protection, or unavailable storage. A failed primary write tries a permitted recovery slot with the same snapshot. An empty permitted-slot set reports `failed`, retaining the retry gate. Serialization and backend failures are logged at the I/O seam and returned to the caller.
 
 Each storage instance serializes loads, writes, and clears in one operation queue.
+Desktop adapters sharing an IPC endpoint also share a physical operation lane in
+`platform-save-backend.ts`; local reads, writes, deletion and demo receipt operations
+follow submission order across adapters. Failure cannot poison the lane.
 The native `desktop/save-storage.cjs` owner also serializes file operations and
 demo-initialization receipt work in a process-wide lane, shared by both slots.
 IPC reads and deletion wait for earlier ring writes even across renderer reloads;
@@ -263,7 +227,10 @@ the unsaved action and its completion callbacks until deletion succeeds. Failed
 deletion resumes autosave with a fresh snapshot and leaves the original action
 protected for retry. Overlapping clears share one pause; work resumes only if
 all fail. Failed loads reject their callers without blocking later storage work. Storage drain and
-backend replacement account for all queued operations. Session drains also wait
+backend replacement account for all queued operations. Loads and successful clears
+resume writes only if no newer explicit permission decision occurred after submission;
+selecting recovery does not itself grant write permission. Draining includes pending
+loads and initialization writes. Session drains also wait
 for write failure notifications and progress receipts, including immediate saves
 that have no awaiting caller.
 
@@ -301,7 +268,8 @@ the existing contracts.
 The process-wide `desktop/steam-cloud-storage.cjs` lane also serializes Cloud reads,
 uploads, and deletion across renderer replacement. Deletion waits for uploads
 already admitted by a departed renderer, and following reads observe its result.
-This transport ordering does not delay local write acknowledgement on Cloud.
+Failure releases the Cloud lane for later work; this ordering does not make local
+acknowledgement wait for Cloud.
 
 ## Deletion
 

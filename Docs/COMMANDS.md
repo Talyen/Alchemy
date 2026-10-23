@@ -1,6 +1,7 @@
 # Commands
 
-Canonical detail linked from [REFERENCE.md](./REFERENCE.md).
+Choose an operation here. [Contributing](../CONTRIBUTING.md) owns task checks;
+[Developer reference](./REFERENCE.md) covers failure diagnosis and simulations.
 
 ## Script Command Reference
 

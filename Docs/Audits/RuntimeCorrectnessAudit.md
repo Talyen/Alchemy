@@ -1,7 +1,5 @@
 # Runtime Correctness Audit
 
-Merges the former Async & Race (01), Behavior Hardening (02), and Bug Hunting (03) audits.
-
 **Goal:** Find and fix real runtime defects — async lifetime/ordering races, persistence/recovery boundary gaps, idempotency holes, and opportunistic bug hunts — without converting APIs to async "for style" or adding machinery without a demonstrated failure.
 
 ## Scope

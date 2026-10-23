@@ -16,6 +16,23 @@ Candidate readiness checks and the offline playtest launcher:
 Player-facing copy awaiting approval: [copy review](./STEAM_DEMO_COPY_REVIEW.md).
 Shipping procedures: [release](./RELEASE.md) and [release setup](./RELEASE_SETUP.md).
 
+## Marketing presentation
+
+Wishlist on Steam is an explicit player action; the game never adds a wishlist
+entry automatically. Continue opens marketing after the recap; Main Menu and
+Escape leave it normally. Quit never opens a promotional destination. Invalid or
+placeholder App IDs open nothing. [Input and release evidence](#input-and-release-evidence)
+owns overlay/browser delivery and physical qualification.
+
+The selected master is `2d Assets/Game Sources/Branding/Marketing/Unlock Full Game Demo Promo.jpg`
+in Asset Library, 2752×1536. Contain the complete image at its native ratio between
+the heading and actions; never crop or stretch it. Accessible text repeats its
+seven labels: More Bosses, Wildwood Draft, The Labyrinth, More Heroes, 200+ Talents,
+Trinkets & Uniques, Build a Homestead. Wishlist and Main Menu retain their actions.
+Localized artwork and caption freshness follow
+[localization](./LOCALIZATION.md#qualification-and-steam); source preparation follows
+[assets](./WORKFLOWS-ASSETS.md#demo-marketing-artwork).
+
 ## Edition contract
 
 [game-edition.mjs](../game-edition.mjs) is the shared policy for renderer,
@@ -112,16 +129,9 @@ native binaries for Windows and Linux/Deck (and macOS if shipped); editing
 JavaScript or declarations in the npm package cannot add a native callback.
 Keep its current Steam/cloud APIs and package layout unchanged.
 
-Validate the actual packaged game launched through Steam on Windows and Deck:
-
-- During automatic battle actions, open the default overlay, a remapped keyboard
-  overlay shortcut, and the Deck overlay/controller path. Require the native
-  activation event and game menu, with no continued automatic actions.
-- Close each overlay. The menu must remain open until the player resumes.
-- Open the wishlist with the overlay enabled, disabled, and not yet ready.
-  Require exactly one usable store destination and the game menu in each case.
-- Repeat after suspend/resume and Steam reconnection. Record package version/hash,
-  platform, Steam client version, shortcut/layout, callback evidence, and result.
+Complete [physical Steam acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence)
+on the packaged Windows game and Deck, including custom overlay shortcuts,
+callback-driven pause, wishlist fallback, reconnection and suspend/resume.
 
 Valve documents both
 [activation events and delayed overlay availability](https://partner.steamgames.com/doc/features/overlay#communication-from-the-overlay-to-your-game).

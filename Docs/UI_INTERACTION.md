@@ -9,16 +9,12 @@ Placement follows the Floating UI standard (`@floating-ui/dom`: preferred side,
 then automatic flip to a fitting side, then shift to stay in bounds), bounded to
 `[data-testid="vr-stage"]` with `documentElement` as a fallback, so panels keep
 the game's proportional growth without inheriting the stage transform or
-clipped ancestors. The reference browser retains its original untransformed
-tooltip size: normalize visible game content scale by the reference content
-scale (738 / 1080). Tooltip Size (90–125%, 5% steps; default 100%) multiplies
-that calibrated baseline, scaling text, icons, chrome spacing, and preferred width together.
-Game Size affects all tooltip content, including enemy headers and Traits;
-there is no separate Trait scale. Standard tooltips cap at 20 content-scaled rem
-of width; enemy tooltips prefer 32 content-scaled rem to give Trait descriptions
-room to wrap. Placement recomputes width bounds when the stage or tooltip changes
-size; position-only updates preserve the resolved width to avoid forced layout. Long
-descriptions can use available width to fit; tooltips never scroll or truncate.
+clipped ancestors. Tooltips inherit the [shared content/tooltip scale](./UI.md#display-sizing)
+once, including enemy headers and Traits; Tooltip Size defaults to 100%.
+Standard panels cap at 20 content-scaled rem; enemy panels prefer 32 rem.
+Recompute width bounds when the stage or panel changes size; position-only updates
+preserve resolved width to avoid forced layout. Long descriptions can use available
+width; tooltips never scroll or truncate.
 
 - Drive hover through `useHoverVisible()` and `triggerRef`. Card/tile grids that track hover via `useInteractiveCard` pass its `isHovered`, `onHoverStart`, and `onHoverEnd` to the same hook, with `holdMs: TOOLTIP_FADE_MS` and `focusWithinGuard: true` to preserve the exit fade and keyboard inspection.
 - Use `placement="side-start"` or `"side-end"` for explicitly side-anchored panels.

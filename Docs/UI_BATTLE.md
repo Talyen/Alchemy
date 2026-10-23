@@ -2,14 +2,45 @@
 
 ## Battle layout
 
-Draw Pile and Mana sit beside the left of the centered card hand; Discard Pile
-and End Turn sit beside its right. The three columns form one centered group,
-with the earlier responsive gap between the hand and each side column. Both piles
-open their matching pile viewer. The hand retains its centered
-fan and hover movement, with clearance for its rotated artwork. Mana crystals sit
-centered above Draw Pile, retaining their spending, refill, capacity, overflow,
-glint and blue spill effects. End Turn is an outline text button above Discard Pile
-and commits immediately after input gates pass.
+Draw Pile and Mana, the centered hand, and Discard Pile with End Turn form one
+centered three-column group. Gaps follow
+[the shared battle layout](../src/features/alchemy/shared/config/layout.ts);
+the shared [display-sizing contract](./UI.md#display-sizing) governs scaling.
+
+The hand rests against the bottom viewport edge as a centered fan, with capped
+spacing, responsive card sizing and clearance for rotated artwork. Draw Pile sits beside the hand's left edge and Discard Pile
+beside its right, both with their pile artwork in the bottom corners. Clicking either
+pile opens only that pile in the shared card viewer. All battle transfer and feedback
+coordinates use the full viewport scene.
+
+Mana crystals sit centered above Draw Pile in the left bottom column. Their shallow
+curved arrangement, recessed settings, spending, refill, capacity, hover glint, glow,
+and shard effects remain intact. Full crystals retain subdued Mana blue; spent
+crystals are dim grayscale. Increasing counts gradually shrink the crystals and
+effects; the row caps at nine. Beyond nine, the final crystal carries a +N badge.
+Exact current and maximum Mana remain in accessible inspection, without a persistent
+numerical readout. Hover leaves each crystal at rest and glints only its artwork;
+refresh effects remain independent. Reduced motion keeps crystals static.
+
+The top-right battle cluster shows live Gold, the Autoplay and
+Boons toggles, the dev-only Skip Combat control, and Menu. Gold briefly highlights on
+increases. End Turn is an outline text button above Discard Pile and commits
+immediately after input gates pass, without confirmation. Dev-only Skip Combat uses a labeled skip-forward
+icon and tooltip.
+
+The hand's bottom dock stays centered and stationary as the hand grows to seven
+cards; smaller hands remain centered with capped spacing. Every resting card
+touches or overlaps the bottom edge; playable card centers stay visible. Hover
+and keyboard focus lift cards for inspection. Hand hover and pointer
+activation use the nearest stable slot center, with boundaries halfway between
+centers, independent of raised artwork and reflow motion. Hidden transfer cards
+cannot receive pointer selection. Keyboard focus uses the native card buttons.
+
+Actor anchors use `BATTLE_ACTOR_TOP` plus `BATTLE_ACTOR_VIEWPORT_OFFSET` from
+[layout constants](../src/lib/game-constants/ui-layout.ts).
+[BattleActors](../src/features/alchemy/run-loop/screens/battle-screen/actors.tsx)
+applies upward Game Size compensation, including health bars and statuses, to keep
+health and controls clear. Backgrounds fill the frame.
 
 ## Battle feedback
 
@@ -57,8 +88,9 @@ by 140 ms, settle to 100% by 240 ms, and fade from 1,250 to 1,600 ms.
 Names and numbers share the ordinary combat-feedback upward trajectory. Names
 remain at its final position until their independent lifetime ends. Reserve space for the numeric pop so
 numbers cannot cross names; older actions stack above newer ones. Numeric feedback retains fixed sizing, even during dense rapid sequences. The
-newest group uses the earlier lower portrait anchor; older groups ease upward over
-150ms. Reaction names fit their columns independently.
+newest group uses the portrait anchor defined by
+[combat text](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx);
+older groups ease upward over 150ms. Reaction names fit their columns independently.
 The existing shine sweeps once between 100 and 1,100 ms. Names
 use 1.25 times the numeric base size. One or two simultaneous names use one column;
 three or more use two. Names never wrap or truncate: fit their size to their

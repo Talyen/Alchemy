@@ -1,7 +1,5 @@
 # Test Quality Audit
 
-Merges the former E2E Test Reliability & Signal (10) and Unit Test Portfolio (17) audits.
-
 **Goal:** Maximize portfolio trustworthiness and defect detection while controlling redundant LOC, runtime, flake, and maintenance cost — across Vitest units and Playwright journeys.
 
 Conventions: [tests/e2e/README.md](../../tests/e2e/README.md) (helpers, tags, fixtures), [CONTRIBUTING.md](../../CONTRIBUTING.md) (changed paths, CI tiers), and [test value](../../CONTRIBUTING.md#test-value-and-coverage-strategy) (coverage selection, consolidation, retirement, and reporting).
@@ -28,7 +26,9 @@ Map important failure modes to their current tests before adding or deleting cov
 
 For flake, inspect failure artifacts and distinguish a product race from timing, isolation, fixture, or environment problems. Reproduce the suspect scenario and relevant ordering or concurrency conditions; an isolated pass does not prove a parallel failure fixed. Never weaken an assertion or add retries just to hide the failure.
 
-Use the shared high-, medium-, and low-value definitions when evaluating additions and retention. Remove encountered low- and medium-value tests by default after checking their purpose and dependencies, or strengthen/move them when inexpensive high-value protection is possible. Unique coverage alone does not require retention or replacement; justify borderline retention and report material accepted risks.
+Apply [test value and retirement policy](../../CONTRIBUTING.md#test-value-and-coverage-strategy)
+to this requested maintenance pass. Inspect purpose, dependencies and distinct
+protection before retiring or moving coverage; report material accepted risks.
 
 For overlapping tests, compare the failure mode, layer, and CI tier of the surviving assertion. Prioritize false confidence in critical behavior and blocked verification over redundant assertions or naming; apply the shared policy when retiring coverage.
 

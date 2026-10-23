@@ -1,7 +1,5 @@
 # Simplification Audit
 
-Merges the former Change Locality & Context Efficiency (04), Dead Code (05), Dual-Path Retention (08), Duplicate Feature Surface (09), Inelegant Slop (11), and State Gravity & Ownership (14) audits.
-
 **Goal:** Make the code easier to understand and change safely by removing obsolete work, duplicated policy, and misplaced responsibilities. Reduced surface is useful when it reduces maintenance cost; concise code is not an end in itself.
 
 ## Scope map

@@ -140,7 +140,8 @@ and prevents that preview from committing a card or Wish choice.
 
 Draws fly from the bottom-left Draw Pile into measured hand slots and flip from
 back to front. Discards leave right-to-left, flip onto the bottom-right Discard
-Pile, and scale to its top card. Both follow the earlier shallow curved path,
+Pile, and scale to its top card. Both follow the shallow curved path in
+[transfer motion](../src/features/alchemy/run-loop/battle/presentation/card-transfer-motion.ts),
 with a 500ms base duration accelerated for larger batches. Flights run sequentially;
 each departure starts its sound. The live card identity follows hand reflow.
 Tuning lives in `CARD_TRANSFER_CONFIG`.

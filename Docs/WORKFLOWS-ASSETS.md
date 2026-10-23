@@ -29,61 +29,52 @@ Ordinary development and builds use committed outputs. `predev` and hosted CI ru
 
 ## Art style and generation prompts
 
-Compare artwork changes with the current asset at the destination display size, crop and surrounding UI under [visual review](./UI_VISUAL_REVIEW.md). Use the canonical style references below for illustration treatment; they do not establish screen layout. Keep the current asset when the replacement does not improve the result in the game.
+Compare changes at their destination size, crop and surrounding UI under
+[visual review](./UI_VISUAL_REVIEW.md). Keep the current asset when a replacement
+does not improve the game. Style references include Knight, Wizard and Fireball
+in `src/assets/optimized/`, plus Discordant Dice and Ascension Seal.
 
-Alchemy's visual identity is anchored by its **Master Action-Anime Art Style**.
-Canonical style reference images in the repository include `Knight` (`src/assets/optimized/knight.webp`), `Wizard` (`src/assets/optimized/wizard.webp`), and `Fireball` (`src/assets/optimized/fireball.webp`), as well as approved crafting currencies `Discordant Dice` and `Ascension Seal`.
+Compose one prompt from the shared foundation and the applicable subject block.
+References guide illustration treatment; screen composition follows the UI owners.
+
+```text
+Illustrated in a bold, high-energy action-anime style in the visual tradition of kinetic modern action-anime studios. Sharp, angular exaggeration and dynamic motion implied by diagonal shadow shapes, never literal speed lines. Thick, confident near-black outlines of varying weight, saturated punchy colors, and two or three hard-edged flat shading steps. Minimal blending, no gradients or painterly subtlety. Dramatic perspective, sharp graphic highlight flares, and high-contrast graphic color blocking.
+```
 
 ### Master prompt (Playable Heroes, Bosses, and Enemy encounters)
 
-Use strictly for playable character portraits, boss encounters, and bestiary entries (figures with identity):
-
 ```text
-Illustrated in a bold, high-energy anime style in the visual tradition of the most kinetic modern action-anime studios — sharp, angular exaggeration in the pose, with dynamic motion implied through sharply cut diagonal shadow shapes rather than literal speed lines. Thick, confident black outlines of varying weight, with saturated, punchy colors and minimal color blending — shading built from two to three hard-edged flat color steps rather than gradients. Exaggerated dramatic perspective and slightly elongated limbs for maximum visual energy, sharp graphic highlight flares, and a high-contrast, almost graphic-design sense of color blocking rather than painterly subtlety. The environment itself carries the same bold graphic treatment as the character, filling the full frame — this is not a character on a flat backdrop.
+A figure with a clear identity, an exaggerated dynamic pose and slightly elongated limbs. The environment carries the same bold graphic treatment and fills the frame; never place the character on a flat backdrop.
 ```
 
 ### Card Ability Artwork (Skills, Spells, Attacks, and Defenses)
 
-Use for playable battle cards (`Slash`, `Stab`, `Block`, `Shadowstep`, `Haste`, `Feint`). Keeps the full **Master Action-Anime Art Style** foundation verbatim, while enforcing abstract composition and strictly forbidding specific characters, identifiable faces, or environmental rooms:
-
 ```text
-Illustrated in a bold, high-energy anime style in the visual tradition of the most kinetic modern action-anime studios — sharp, angular exaggeration, with dynamic motion implied through sharply cut diagonal shadow shapes rather than literal speed lines. Thick, confident black outlines of varying weight, with saturated, punchy colors and minimal color blending — shading built from two to three hard-edged flat color steps rather than gradients. Exaggerated dramatic perspective for maximum visual energy, sharp graphic highlight flares, and a high-contrast, almost graphic-design sense of color blocking rather than painterly subtlety.
-
-SUBJECT & COMPOSITION CONSTRAINTS FOR CARDS: Highly stylized, clean, and abstract composition focused on a single iconic action motif or focal subject — NEVER depict specific characters, identifiable faces, pupils, or detailed humanoid bodies. No multi-character narrative fight scenes. If humanoid motion is required, render it strictly as an anonymous, faceless, sharp black ink silhouette or stylized energy figure with zero facial features (as seen in Shadowstep and Haste). Alternatively, focus entirely on an iconic weapon, talisman, shield, or kinetic element (as in Slash, Stab, or Block). The background must be completely abstract, made of sharp diagonal color wedges, geometric light shards, and dynamic energy ribbons filling the frame — no realistic environmental rooms, stone brick walls, floors, or dungeons. Powerful graphic silhouette readability at small card thumbnail sizes.
+A clean abstract composition with one iconic action motif or focal subject, readable at small card thumbnail sizes. No specific characters, identifiable faces, pupils, detailed humanoid bodies or multi-character narrative fights. Render necessary humanoid motion as an anonymous faceless black ink silhouette or stylized energy figure with no facial features. Otherwise focus on a weapon, talisman, shield or kinetic element. Fill the background with diagonal color wedges, geometric light shards and energy ribbons; no realistic rooms, walls, floors or dungeons.
 ```
 
 ### Landscapes, Destinations & Labyrinth environments
 
-Use for full-frame environment artwork, mystery events, Labyrinth nodes, and destination scenes (no character focus):
-
 ```text
-Illustrated in a bold, high-energy anime style in the visual tradition of the most kinetic modern action-anime studios — sharp, angular exaggeration with dynamic motion implied through sharply cut diagonal shadow shapes rather than literal speed lines. Thick, confident black outlines of varying weight, with saturated, punchy color accents and minimal color blending. Shading is built from two to three hard-edged flat color steps rather than gradients. Exaggerated dramatic perspective and stretched architectural proportions create visual energy. Sharp graphic highlight flares on select structural edges and a high-contrast, almost graphic-design sense of color blocking rather than painterly subtlety. The entire environment carries this bold graphic treatment and fills the frame.
+Full-frame environment with no character focus. Exaggerated perspective and stretched architectural proportions convey energy, with selective structural highlight flares. Render fog as broad overlapping opaque cel-shaded shapes with selective ink contours, never airbrushed clouds or smooth gradients.
 ```
-
-_Note on Labyrinth fog variants:_ Render mist/fog as broad, overlapping, opaque cel-shaded shapes with selective ink contours rather than soft airbrushed clouds or smooth gradients.
 
 ### Gear, Equipment & Weapons
 
-Use for weapon, body armor, accessory, and trinket illustrations (3:4 or square canvas, clear silhouette):
-
 ```text
-Illustrated in a bold, high-energy anime style in the visual tradition of the most kinetic modern action-anime studios — sharp, angular exaggeration in the gear design, with dynamic weight and tension implied through sharply cut diagonal shadow shapes. Thick, confident black outlines of varying weight, with saturated, punchy material colors and minimal color blending — shading built from two to three hard-edged flat color steps rather than gradients. Dramatic three-quarter perspective with strong foreshortening, sharp graphic highlight flares on metal, gem, or leather edges, and a high-contrast, graphic-design sense of color blocking. Hand-drawn anime rendering with tactile physical depth, avoiding photorealism, 3D renders, or fine filigree.
+A clear weapon, armor, accessory or trinket silhouette on a 3:4 or square canvas. Dramatic three-quarter perspective and strong foreshortening, angular material design, weight and tension, with sharp highlights on metal, gems or leather. Tactile hand-drawn physical depth; no photorealism, 3D rendering or fine filigree.
 ```
 
 ### Crafting Currencies & Artifacts (Opaque background)
 
-Use for standalone crafting currencies, relics, and card backs with an illustrated dark background:
-
 ```text
-Illustrated in a bold, high-energy anime style in the visual tradition of the most kinetic modern action-anime studios — sharp, angular exaggeration, with dynamic energy implied through sharply cut diagonal shadow shapes rather than literal speed lines. Thick, confident black outlines of varying weight, with saturated, punchy colors and minimal color blending — shading built from two to three hard-edged flat color steps rather than gradients. Exaggerated dramatic perspective for maximum visual energy, sharp graphic highlight flares, and a high-contrast, almost graphic-design sense of color blocking rather than painterly subtlety. One big distinctive object occupying 80-88% of the square on a quiet opaque dark ink/charcoal background. Broad features, minimal decorative micro-texture, 2-3 major hard-edged shade steps. No text, runes, or realistic photography.
+One distinctive object occupying 80–88% of a square on a quiet opaque dark ink/charcoal background. Broad features, minimal decorative microtexture, two or three major shading steps. No text, runes or realistic photography.
 ```
 
 ### Inventory Resources, Mana & UI Icons (Transparent background)
 
-Use for small HUD icons, homestead resources, and battle Mana crystals requiring alpha transparency:
-
 ```text
-Create a single game inventory icon. Square composition, genuinely transparent background with alpha, no ground or backdrop. Subject occupies 80-88% of canvas with safe margin, instantly readable at small icon sizes (16px to 48px). Illustrated in a bold high-energy action anime style: thick confident near-black outlines of varying weight, sharp angular exaggeration, saturated punchy colors, two or three hard-edged flat shading steps, sharply cut diagonal shadow shapes, and one sharp graphic highlight flare. Clean graphic color blocking, no gradients, no photorealism, no painterly texture. Crisp black ink contours and angular cel-shaded planes with broad simple features. Standalone usable asset, not a presentation sheet.
+One standalone inventory icon on a square, genuinely transparent alpha background, with no ground or backdrop. Occupy 80–88% of the canvas with safe margins and an instantly readable silhouette at 16–48px. Broad simple angular cel-shaded planes, crisp ink contours and one sharp highlight flare. No photorealism, painterly texture or presentation sheet.
 ```
 
 ## Add or replace game art
@@ -141,8 +132,21 @@ battle display does not render. Preserve alpha transparency and lossless
 preparation for these selected assets: the frame retains native detail up to
 3840px wide without enlargement, and crystals use 512px outputs. The selected
 Charcoal and Gold Stitched Leather frame has no baked-in sockets.
-[Display sizing](./UI.md#display-sizing) owns the dock layout and spent appearance;
+[Battle layout](./UI_BATTLE.md#battle-layout) owns dock placement and spent appearance;
+[display sizing](./UI.md#display-sizing) owns shared scale, and
 [battle feedback](./UI_BATTLE.md#battle-feedback) owns resource-change effects.
+
+## Demo marketing artwork
+
+Localized promo masters sit beside the English original in Asset Library as
+`Unlock Full Game Demo Promo - <locale>.png`; their prompt set is
+`Unlock Full Game Demo Promo - localization prompts.json`. Replace only the seven
+captions, preserving panels, framing, palette and gold lettering. Review spelling,
+accents, quantity, terminology and fit; reduce lettering within plaques for long
+captions. The asset manifest selects optimized WebP outputs. Runtime language
+selection and the caption freshness gate belong to
+[localization](./LOCALIZATION.md#qualification-and-steam); the selected image and
+containment contract belong to [Steam demo](./STEAM_DEMO.md#marketing-presentation).
 
 ## Add or replace Gear art
 

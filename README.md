@@ -76,8 +76,8 @@ Use explicit task-owned paths in an unrecorded branch or a mixed checkout. Use
 [Contributing](./CONTRIBUTING.md#what-to-run-when-you-change) owns verification
 permissions and completion requirements.
 
-Full command catalog (build, desktop, gates, balance sim, perf, clean):
-[`Docs/REFERENCE.md`](./Docs/REFERENCE.md#environment--commands). Path-specific
+Operations and development commands:
+[Commands](./Docs/COMMANDS.md). Path-specific
 tests, local gates, and CI parity: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 Headless balance simulation (`npm run balance:sim`):
 [`Docs/REFERENCE.md` § Balance simulation](./Docs/REFERENCE.md#balance-simulation).

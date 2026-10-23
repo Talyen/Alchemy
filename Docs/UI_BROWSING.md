@@ -50,21 +50,9 @@ exist. Shared trinket and gear art tiles, including Mystery rewards, shops, and
 run-end items, also rest with the default border and show Shine only on hover or
 keyboard focus. Their existing Shine palettes and item-title colors are preserved.
 
-Hover-only Shine Borders and persistent Shine Borders render as a border only,
-with no outer glow, including their existing focus activation. `ShineBorder`
-owns the animated border; [component styles](../src/styles/components.css) own
-its opacity and transition.
-Wildcard uses the same static `ShineBorder` as every other hero. Keep the border
-outside artwork clips. The border replaces the ordinary gold hover glow without
-changing scale or press feedback. Selection alone retains its existing treatment.
-Purely persistent decoration, turn indicators, and Death’s Door borders render
-the same border-only treatment.
-`ShineBorder` is decorative (`aria-hidden`) and positioned `absolute` with
-`rounded-[inherit]`, so its parent must be `relative` with a rounded corner.
-An empty palette falls back to neutral shine rather than rendering black.
-`Progress` renders a bare progressbar: every call site must pass an accessible
-name (`aria-label`/`aria-labelledby`), and `value` owns the fill width —
-`fillStyle` carries only extra styling such as transitions.
+Shine Borders, neutral fallbacks and `Progress` semantics follow
+[shared components](./UI.md#component-conventions). Collection and reward borders
+keep their palette, scale and press feedback; selection retains its existing state.
 
 ## Mystery reward shelves
 

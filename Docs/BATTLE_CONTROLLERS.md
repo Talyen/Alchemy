@@ -101,7 +101,9 @@ Readiness and saving use [Boot and loading](./ARCHITECTURE.md#boot-and-loading) 
 
 ### Navigation timing
 
-`createScreenNavigation` in `shell/screen-navigation.ts` owns this sequence:
+`transition` is validated, delayed navigation; `navigateTo` is its convenience
+wrapper, and `goToScreen` also clears card hover. Flow navigation clears hover by
+construction. `createScreenNavigation` in `shell/screen-navigation.ts` owns this sequence:
 
 1. Check the guard, then validate the interactive edge against
    `ALLOWED_SCREEN_TRANSITIONS` in `src/lib/routing/screen-transition-policy.ts`.

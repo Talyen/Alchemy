@@ -7,19 +7,12 @@ Optional lookup and measurement tools live in [Agent discovery](./AGENT_DISCOVER
 
 ## Environment & Commands
 
-- **Node.js and npm:** follow the [prerequisites](../README.md#prerequisites); `package.json` owns the supported ranges and `.npmrc` enforces them during installation.
-- **Playwright:** `npx playwright install chromium` once before first `npm run test:e2e`.
-- **GitHub CLI (`gh`):** optional; PR/CI only when the user asks — do not run `gh auth login`.
-- **Git hooks / local gates:** [CONTRIBUTING.md](../CONTRIBUTING.md). Changelog updates happen at release only ([RELEASE.md](./RELEASE.md)).
-- **Steam / ship gates:** [RELEASE.md](./RELEASE.md).
+Start with [README prerequisites](../README.md#prerequisites) for installation,
+[Commands](./COMMANDS.md) for operations, and [Contributing](../CONTRIBUTING.md)
+for verification. `package.json` owns supported versions and script entry points;
+the [scripts map](../scripts/README.md) locates their implementations.
 
-### Tooling ownership
-
-`package.json` owns script entry points. `scripts/lib/verification/change-routes.mjs` owns
-changed-path selection, and [CONTRIBUTING.md](../CONTRIBUTING.md) owns gate
-tiers. Use the [command catalog](./COMMANDS.md) for discovery rather than
-duplicating command lists in subsystem docs. Script implementation owners are mapped in
-[scripts/README.md](../scripts/README.md); `package.json` is the exhaustive command list.
+GitHub CLI is optional and used for requested PR/CI work; do not run `gh auth login`.
 
 ## Failure-first triage
 
@@ -56,7 +49,8 @@ Headless battle simulator for overpowered or underpowered cards, classes, enemie
 
 The simulator shares opening resolution and complete turn resolution with live
 commands. Forced player skips count toward `maxTurns` and never grant an extra
-Companion action. Combat uses the seeded `world` stream; card and Wish decisions
+Companion action. The optional simulator budget limits resolved frames, including
+forced skips; live commands omit that limit. Combat uses the seeded `world` stream; card and Wish decisions
 use a separate policy RNG. Replaying the same decisions from the same battle
 inputs therefore preserves combat outcomes and RNG counters. Existing report
 baselines may change when rerun with these lifecycle and RNG corrections.

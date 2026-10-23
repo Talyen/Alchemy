@@ -198,17 +198,17 @@ When source/catalog inputs change, the local check also runs the offline [locali
 
 ## Test maintenance details
 
-Test retirement is required when the task concerns test maintenance or a test demonstrably obstructs the requested work. Reading or diagnosing nearby tests creates no cleanup obligation. Useful incidental consolidation is allowed when its purpose and dependencies are understood and it stays within the task. When an inexpensive change provides stronger protection, improve the test or move it to a cheaper layer.
-
-Before retirement, check why the test exists, including known regressions, distinct integration risks, and execution tiers. Diagnose failures first: never delete or weaken a test simply to hide a product defect or obtain a green gate. Preserve trustworthy protection for consequential known regressions, save compatibility, critical journeys, and architectural boundaries; their existing test form is not sacred.
-
-No separate permission or one-for-one replacement is required. For material coverage changes, briefly report protection added or reused, justified additions, and protection retired. For overlap, identify surviving protection; for unique coverage retired, explain the specific risk accepted and maintenance tradeoff. Avoid scoring forms and routine essays.
-
-Keep cleanup within the task's needs; do not turn every task into a suite-wide audit. Keep scenarios focused and failures diagnosable. Combining unrelated checks into a giant journey or parameterized matrix does not improve value merely by reducing test declarations. Share fixtures where they preserve a common invariant or prevent drift; keep scenario-specific setup clear.
+[CONTRIBUTING](../CONTRIBUTING.md#test-value-and-coverage-strategy) owns test
+selection, retirement scope and reporting. Keep scenarios focused: combining
+unrelated checks into one journey or matrix does not improve protection. Share
+fixtures when they protect a common invariant and leave scenario-specific setup clear.
 
 For exhaustive orchestration checks such as the affix sweep, retain the scenario coverage while collecting invariant violations into a total and bounded, scenario-specific examples. Avoid thousands of identical matcher calls. Test-local timeouts are failure ceilings, not performance targets; reproduce a slowdown with the full unit suite running separately from browser work before changing global workers, timeouts, or gameplay.
 
-When removing or moving tests, remove support code made unused by retirement and update maintained references and explicit gate selections to match the surviving protection. Include deleted paths in verification scope; changed unit files that no longer exist are not executed, but their route escalations remain. For consolidation, also select the surviving test files; for retirement without replacement, run applicable gates and report material lost protection. Use timing and coverage reports as evidence when useful, without inventing quotas, mandatory measurements, or automatic threshold ratcheting.
+Deleted tests retain their route escalations but are not executed. Select surviving
+replacements as well as deleted paths, and update explicit gate selections. Timing
+and coverage reports can inform maintenance without creating quotas or automatic
+threshold ratcheting.
 
 CLI tests that create package or release artifacts must use temporary project roots,
 including the script dependency closure and output directories. Never create or

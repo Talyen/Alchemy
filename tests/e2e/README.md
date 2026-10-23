@@ -15,11 +15,9 @@ Before adding a journey, identify a distinct, consequential browser-specific
 failure and explain why existing journeys or cheaper unit/DOM tests cannot
 protect it. [Test value and coverage strategy](../../CONTRIBUTING.md#test-value-and-coverage-strategy)
 owns the high-value admission standard, rare exceptions, and active retirement.
-Apply it to journeys encountered during authorized work: remove low- and
-medium-value coverage by default after checking its purpose, dependencies, and
-execution tier, or strengthen/move it when inexpensive high-value protection is
-possible. Nightly placement does not justify weak coverage. Preserve real-timing
-canaries where timing is the behavior under test.
+Follow that owner's retirement scope; ordinary feature work creates no suite-wide
+cleanup obligation. Nightly placement does not justify weak coverage. Preserve
+real-timing canaries where timing is the behavior under test.
 
 Keep passing-journey screenshots in explicit visual acceptance or layout-review
 workflows. Functional checks assert state and geometry without screenshot encoding
@@ -61,8 +59,8 @@ Run a fresh web build first. For an intentional visual change, use
 `npm run test:visual -- --update-snapshots` on macOS, inspect every changed
 image, then rerun without updates. Never update baselines merely to clear a
 failure. Differences and failure diagnostics are retained by CI. Other OSes
-need separately reviewed baselines before running this visual suite. Local
-builds and broad browser suites retain the explicit opt-in policy below.
+need separately reviewed baselines before running this visual suite. Local execution follows
+[CONTRIBUTING](../../CONTRIBUTING.md#what-to-run-when-you-change).
 
 These four baselines protect composition, text fitting and layering that
 functional assertions cannot see; the wider desktop layout-review gallery
@@ -74,7 +72,7 @@ remains the tool for manual review across viewport sizes.
 
 [CONTRIBUTING](../../CONTRIBUTING.md#what-to-run-when-you-change) owns local execution permissions and the task gate. Use [visual review](../../Docs/UI_VISUAL_REVIEW.md) for affected player-facing flows; prefer development mode for current-source UI checks.
 [Browser and Electron commands](#browser-and-electron-commands) own invocation,
-ports, build edition and concurrency details when local execution is requested.
+ports, build edition and concurrency details for focused local execution.
 
 ### Browser and Electron commands
 
@@ -87,7 +85,7 @@ The [route command](../../scripts/run-e2e-route.mjs) owns available names and al
 
 Run browser batches serially or combine specs in one invocation. Browser tests and browser-hosted performance tests start their own server and reject occupied ports, leaving existing processes running. This prevents a run from silently testing another checkout or reusing preview output when development mode was requested; see [Playwright configuration](../playwright-shared.ts).
 
-An explicitly requested local Electron run collects only the desktop bridge and main-menu smoke. Electron tests load the built desktop renderer through the app protocol without starting a preview server; CI and nightly explicitly select the full suite. These tests launch the checkout's Electron runtime. The [packaged Windows startup check](../../Docs/RELEASE.md#packaged-windows-startup-check) separately validates the distributed application.
+The default local Electron command collects only the desktop bridge and main-menu smoke. Electron tests load the built desktop renderer through the app protocol without starting a preview server; CI and nightly explicitly select the full suite. These tests launch the checkout's Electron runtime. The [packaged Windows startup check](../../Docs/RELEASE.md#packaged-windows-startup-check) separately validates the distributed application.
 
 Build current source with `npm run build:desktop` before `npm run test:ship:desktop`;
 the test command installs a missing Electron runtime but does not rebuild the

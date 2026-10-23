@@ -10,7 +10,14 @@ Talent tuning follows repeatability, not merely whether a condition exists. Freq
 
 Current scaling talents use numeric percentage fields. Run restoration rebuilds derived manifests from purchased talent IDs and Homestead effects without replaying opening rewards. Preserve valid current combat flags and progression; retire obsolete manifest fields and incompatible development snapshots under the [save baseline](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
 
-Armored Fists adds half Armor to Physical damage; Shield Slam adds half Block. Nature damage riders use the resolved packet amount and each roll independently. Ignite, Sanctify, Rust, and Tempered Guard use 25% of Forge; Tempered Guard applies once to each positive Block grant, including triggered rewards and Overflow. Overlapping Homestead, talent, and Gear damage conversions use the strongest applicable percentage without adding Forge twice; Burn/Bleed sharing follows the same rule. Last Stand increases Armor gains by 25% strictly below half Health; Desperate Forge follows the [Forge gain rules](#armor-forge-and-gold). Unrelenting doubles Physical damage strictly below half Health. Round fractional combat magnitudes normally, including zero results.
+The [ordered Talent catalog](../src/lib/game-data/talents/talent-rows.ts) owns
+magnitudes and descriptions. Nature riders use the resolved packet amount and
+roll independently. Tempered Guard applies once per positive Block grant,
+including triggered rewards and Overflow. Overlapping Homestead, Talent and Gear
+conversions use the strongest applicable percentage without adding Forge twice;
+Burn/Bleed sharing follows that rule. Below-half conditions are strict. Round
+fractional magnitudes normally, including zero results. Forge awards follow
+[their gain recipe](#armor-forge-and-gold).
 
 Homestead Buildings, Farms, and Research have four increasing tiers; Companion
 Bonds have three. Crystal Garden adds 25 percentage points
@@ -34,6 +41,15 @@ Homestead battle keys in `HOMESTEAD_BATTLE_*_KEYS` are **added** onto talent val
 Incoming `receiveHalf*` resist talents use `scaleReceivedPlayerDamage` in `src/lib/battle/damage-modifiers.ts`. Enemy attacks scale once in `computeMitigatedDamage`; player DoTs scale once in `status-ticks.ts`. Do not also scale in `applyPlayerCombatDamage`.
 
 Run-end keyword cards intentionally show level + XP bar only; the Talents screens own the unspent-point indicator. Dodge earns 1 XP per successful hero Dodge through `awardBattleDodgeXP`, using the battle counter delta in the same command that persists the resolved enemy turn. Ordinary card keyword XP and run-end multipliers still apply. Random damage grants the Physical keyword; a damage-type pool grants every possible type rather than its placeholder type. Never count combat text or award XP again while resuming a pending transition.
+
+## Reset Homestead
+
+Reset Homestead is a session-bound meta intent command. One transaction sums
+current catalog costs for purchased Building, Farm, Research, and Companion tiers,
+refunds the stockpile, clears those levels to defaults, and recomputes/rebinds live
+meta effects. Empty resets reject without a revision or refund. Refunds bypass
+find bonuses and run-earned/recap tallies. Discoveries, Gold, RNG, and resolved
+combat grants remain intact; existing maximum-Health rebinding clamps Health.
 
 ## Talent action rewards
 

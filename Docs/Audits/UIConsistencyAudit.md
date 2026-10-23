@@ -1,7 +1,5 @@
 # UI Consistency Audit
 
-Merges the former Design System Consistency (06) and UI Interaction & Feedback (16) audits.
-
 **Goal:** Keep visual language and interaction behavior on their shared owners — migrate token/primitive drift, and fix confirmed interaction/feedback defects desktop players feel — without flattening justified game UI.
 
 Use the [shared audit contract](README.md#shared-contract) for scope, confirmation,

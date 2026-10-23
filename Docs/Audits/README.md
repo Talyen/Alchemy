@@ -57,7 +57,9 @@ Leave alone unless the owning architecture doc changes: battle RNG injection; pe
 
 ## Verification
 
-Verify with the path-scoped gates for the touched area in [CONTRIBUTING.md](../../CONTRIBUTING.md). Prefer existing gates over invented absolute metrics; audit heuristics are not additional gates. When toolchain pieces are absent, state exactly which checks were skipped and why — never fail an audit solely because Electron, Steam credentials, or a full ship build is unavailable.
+[CONTRIBUTING](../../CONTRIBUTING.md#what-to-run-when-you-change) owns gate
+selection and execution permissions. Audit heuristics add no gates. Report missing
+toolchain or platform checks and their limits under [Finish](#finish).
 
 Standing conventions: [CONTRIBUTING.md](../../CONTRIBUTING.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [AGENTS.md](../../AGENTS.md). Optional measurable sweep: `npm run audit:all` (`npm run content:audit` is a content-catalog check, outside this pack).
 
