@@ -1,6 +1,6 @@
 ---
 status: blocked
-reason: Native overlay support, Steamworks configuration, and physical controller/Deck and Cloud acceptance remain unresolved.
+reason: Native overlay support, Steamworks configuration, physical acceptance, human feedback, and copy approvals remain unresolved.
 updated: 2026-10-23
 ---
 
@@ -29,9 +29,13 @@ evidence when closing these items.
       with real configuration IDs. Complete [physical Windows/controller and Deck acceptance](../STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence),
       including Proton performance, 1280×800 readability, and suspend/resume; validate
       the advertised [minimum-spec assumptions](../RELEASE_SETUP.md#steam-listing-baseline-windows).
+- [ ] Obtain unfamiliar-player and listening feedback through the
+      [human playtest procedure](../STEAM_DEMO_CHECKLIST.md#human-playtest).
+      Keep comprehension, perceived difficulty, useful progression and audio comfort
+      unqualified until feedback is reviewed and any required fixes are verified.
 - [ ] Complete Steam install/update/uninstall and build/store review, resolve
       [notice and provenance requirements](../RELEASE_SETUP.md#player-notices-and-asset-provenance)
-      and [pending copy approvals](../STEAM_DEMO_COPY_REVIEW.md#pending-copy-approvals),
+      and [pending copy approvals](#pending-copy-approvals),
       then perform [candidate sign-off](../STEAM_DEMO_CHECKLIST.md#9-candidate-evidence-and-release-sign-off).
 
 Keep results with the exact candidate's release evidence, following the
@@ -40,6 +44,22 @@ qualify a new candidate or establish physical/service acceptance. Remove this
 plan after the outstanding prerequisites are resolved and sign-off is recorded.
 Public controller/Deck and carryover claims still require that evidence;
 promotion follows the [release procedure](../RELEASE.md#agent-release-flow).
+
+## Pending copy approvals
+
+| Location                                                      | Exact current copy                                                                     |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Packaged application name                                     | `Alchemy Demo`                                                                         |
+| Full-game startup after successful demo progress import       | `Your earned demo progress has been imported. Start a new adventure in the full game.` |
+| Import notice action                                          | `Dismiss`                                                                              |
+| Pending local save, either edition                            | `Saving…`                                                                              |
+| Failed local primary and recovery save writes, either edition | `Couldn’t save`                                                                        |
+| Failed-save action                                            | `Retry`                                                                                |
+
+Sources: [application identity](../../game-edition.mjs), [import notice](../../src/App.tsx) and
+[save-write notice](../../src/app/save-write-notice.tsx).
+
+Menu, recap, marketing and lock revisions remain approved under the demo contract.
 
 ## Native overlay prerequisite
 

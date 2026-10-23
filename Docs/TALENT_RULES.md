@@ -20,10 +20,10 @@ Burn/Bleed sharing follows that rule. Below-half conditions are strict. Round
 fractional magnitudes normally, including zero results. Forge awards follow
 [their gain recipe](#armor-forge-and-gold).
 
-Homestead Buildings, Farms, and Research have four increasing tiers; Companion
-Bonds have three. Crystal Garden adds 25 percentage points
-per tier to Freeze damage scaling from current Mana. Leyline has a 5/10/15/20%
-chance to waive Mana payment on an otherwise affordable play. It rolls only on a committed
+Homestead Buildings, Farms and Research have four tiers; Companion Bonds have
+three. The [Homestead catalog](../src/lib/homestead/data.ts) owns tier magnitudes.
+Crystal Garden scales Freeze damage from current Mana. Leyline can waive Mana
+payment on an otherwise affordable play. It rolls only on a committed
 positive-Mana-cost play, preserves unused cost discounts on success, and never
 refunds Mana or previews a random free cost. A waived payment also spends no
 Block through Winter’s Credit. Unaffordable attempts cannot roll.
@@ -33,7 +33,7 @@ Potion damage/healing, without increasing draw counts or Mana restoration.
 Blacksmith’s Burn contribution uses the strongest Forge percentage across
 Homestead and talents, never their sum. Shop removal
 and Potion mixing apply Homestead discounts in both the price and transaction.
-Detect Magic converts 3/6/10/15% of eligible Basic equipment outcomes to Astral
+Detect Magic can convert eligible Basic equipment outcomes to Astral
 after ordinary progression weighting; it preserves total equipment probability,
 Unique outcomes, and Astral eligibility. Existing generated items are unchanged.
 
@@ -72,7 +72,7 @@ a defeated hero cannot open a healing Emergency Wish from Quickfletched.
 - **Card play rewards** — Thermal Vent rolls for Forge on each Burn card play, before its effects; successful Forge uses ordinary gain bonuses. Automatically played cards qualify; repeats and scheduled effects do not roll the play reward again. Faith Barrier is a Holy-damage reward, not a card-play reward. Sacred Shield remains a separate 10%-of-Block Holy damage bonus.
 - **Automatic card rewards and discounts** — Dance of Blades grants Whistle's Companion action after summoning or buffing, and Mortar and Pestle damage after a Potion. These use the ordinary play reward paths. Mortar and Pestle also triggers for each duplicated Potion use. First-card allowances retain their established priority. After those allowances, Unique free-card effects and flat encounter/returned-card discounts apply before spending armed next-card discounts; a card already reduced to zero preserves Divine Favor and other armed next-card discounts.
 - **Play rewards** — Iron Guard rolls on each positive resolved Physical Health-damage packet and grants Armor equal to that damage. Thornskin, Bramblegrowth, and Photosynthesis roll independently on positive Nature damage and grant Armor, Thorns, or Health equal to the resolved packet. Briar Patch and Toxic Pollen roll independently to apply a derived Bleed or Poison hit for a fraction of that packet (see [Typed talent procs](#triggered-and-copied-damage)), resolved through normal mitigation.
-- **Shop and opening grants** — Apothecary Membership reduces standard Potion purchase prices by 5 Gold. Ecosystem draws one Nature card before the ordinary opening hand.
+- **Shop and opening grants** — Apothecary Membership discounts standard Potion purchases. Ecosystem's Nature draw precedes the ordinary opening hand.
 - **Remaining resources and Block** — Armor Siphon steals only Armor remaining when its reward resolves, including after earlier play rewards deplete Armor. Skirmisher adds 1 generic damage to Archery cards while the player has no Block.
 - **Card sequences** — Follow-through counts normal Archery card plays during the player turn and adds 1 damage to every original damage effect on the second Archery card. Repeated effects copy the resolved bonus; Companion actions, scheduled pulses, and damage echoes do not requalify. The next player turn clears the sequence.
 - **Repeatable rewards** — Genuine Consume independently rolls Second Helping for a draw, Last Supper for Forge, Combustible for Burn detonation and Leftovers for Gold; Aftertaste restores Health. Last Supper has no hand-size condition. Second Helping uses normal drawing, including Emergency Wish on an eligible empty draw. Summon cards leave battle without Consume and therefore need no reward exceptions. A repeated card still Consumes only once.

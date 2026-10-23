@@ -32,13 +32,6 @@ Route glob matching precompiles `ROUTES` + shared build patterns once instead
 of per file. The `documentation` route covers `Docs/**` so check classification
 (`isDocumentationPath`) and verify routing agree on documentation images.
 
-`check:task` adds the shared `--task` selector; `check:broad` aliases `check --full`;
-`test:unit:all` aliases the unfiltered unit runner. Existing aliases are unchanged.
-`check:all` selects the repository inventory and replaces overlapping selected-unit
-commands with one complete unit run, alongside full static checks and builds.
-That complete unit pass uses one worker to bound host resource spikes; ordinary
-unit commands retain their existing worker policy.
-
 ### Task selection
 
 Bare `check` (including `--plan` or `--full`) defaults to task selection.
@@ -55,19 +48,29 @@ The unit runner rejects missing explicit paths before Vitest can ignore a mixed 
 
 ## Local verification profiles
 
-The task gate selects changed and dependency-related units, explicit lifecycle,
-save, desktop or tooling protection, source/test compilation, localization freshness
-for source/catalog inputs, documentation contracts, and selected-file formatting
-and lint. Presentation files rely on related tests; lifecycle hooks and shared
-behavior seams retain explicit interaction coverage. Unknown behavior owners keep
-the conservative fallback. Markdown-only tasks run documentation checks and formatting.
-Formatting and lint batches above 50 files or containing a file above 256,000 bytes
-are deferred to CI and reported. Broader checks add full static validation,
-applicable builds, bundle budgets and preview smoke.
+[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns gate scope,
+permissions and completion. `check --plan` prints the outer stages and selected
+route commands without executing them.
 
-`check` runs the task-scoped plan described in [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change). `verify-changed.mjs` filters route commands to selected units and documentation by default; `--unit` omits documentation and `--full` retains report/asset routes. The outer gate adds applicable localization, source/test compilation, formatting and bounded selected-file lint. `check --plan` prints both the outer stages and selected route commands without executing them. Integration invokes that same gate outside the shared integration lock after merging current `main`, then revalidates the pinned commits under the lock before advancement; eligible deterministic commands reuse passing receipts in task and full profiles.
+`verify-changed.mjs` selects changed and dependency-related units plus explicit
+lifecycle, save, desktop and tooling protection. Presentation relies on related
+tests; shared lifecycle seams retain explicit interaction coverage, and unknown
+behavior owners use the conservative fallback. Its default routes are units and
+documentation; `--unit` omits documentation and `--full` retains report/asset routes.
+The outer `check` adds applicable localization, compilation, formatting and lint.
+Formatting/lint batches above 50 files or containing a file above 256,000 bytes
+are deferred to CI and reported.
 
-`lib/exclusive-port.mjs` supplies cancellable waiting for the test lane and integration lock. It retries occupied ports without reclaiming them, reports acquisition and periodic waiting status, and supports AbortSignal cancellation. Waiting policy and optional deadlines live in [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change). Normal release or process termination frees the OS-owned listener. Raw test invocations and watch/debug sessions remain outside the test lane; it does not coordinate unrelated host workloads.
+`check:all` selects the repository inventory and replaces overlapping unit commands
+with one complete unit run, forced to one worker to bound host resource spikes.
+Other unit commands retain their runner policy. Integration invokes the same gate
+on the pinned combined result; eligible commands follow [receipt rules](#verification-receipt-rules).
+
+`lib/exclusive-port.mjs` supplies cancellable waiting for test and integration
+locks. It retries occupied ports without reclaiming them, reports waiting status,
+and supports AbortSignal cancellation. Normal release or process termination
+frees the OS-owned listener. [Runner details](#compatibility-commands-and-test-runners)
+own scheduling classes, deadlines and diagnostic options.
 
 ## CI and documentation contracts
 
@@ -126,16 +129,21 @@ an occupied port fails before any HTTP validation. They require an application s
 
 ## Compatibility commands and test runners
 
-`npm test` prints its scope and runs only three fixed Node smoke suites; `test:full` is a compatibility alias
-for `test:unit`. Existing `verify`, `verify:unit`, and `verify:full` remain available for
-selection diagnosis: `verify` selects units and documentation, `verify:unit`
-restricts that selection to units, and `verify:full` adds broader route checks.
-Use [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) for ordinary commands.
-`check:broad` / `check:full` retain selected units with full static checks and
-applicable builds; `check:all` includes every unit suite. `check:task` remains an
-explicit alias for bare `check`.
-Pre-push retains outgoing-path selection and source/cleanliness guards and uses
-the same task gate.
+Use [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) for ordinary work.
+These compatibility commands remain available for diagnosis:
+
+| Command                      | Scope                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------ |
+| `npm test`                   | Three fixed Node smoke suites; prints that limited scope                 |
+| `check:task`                 | Explicit alias for task-scoped `check`                                   |
+| `check:broad`, `check:full`  | `check --full`: selected units, full static checks and applicable builds |
+| `test:full`, `test:unit:all` | `test:unit`; unfiltered invocation runs all units                        |
+| `verify`                     | Selected units and documentation routes                                  |
+| `verify:unit`                | Selected unit routes only                                                |
+| `verify:full`                | Selected units, documentation and broader report/asset routes            |
+
+`check:all` includes every unit suite; [local profiles](#local-verification-profiles)
+own its runner behavior. Pre-push selection and guards follow [Git hooks](#git-hook-implementation).
 
 The compact runner rejects nonexistent path-shaped selectors before `vitest run`,
 including mixed valid/missing file selections. Legacy bare substring filters remain
@@ -181,8 +189,6 @@ DOM suites use [the JSDOM environment](../tests/jsdom-environment.ts), which
 temporarily removes Node storage descriptors before browser globals are installed
 and restores them during teardown. JSDOM owns both local and session storage;
 Node Web Storage flags and a Node storage file are unnecessary for these tests.
-
-The task gate selects save/persistence units for save changes, desktop boundary units for desktop changes, tooling/architecture units for tooling changes, and dependency-related coverage for other implementation changes. The full completion gate additionally selects report/asset checks, full static checks, lockfile consistency, applicable builds, bundle budgets and preview smoke.
 
 Authoritative working-tree discovery disables Git's filesystem monitor and untracked cache per command (`-c core.fsmonitor=false -c core.untrackedCache=false`). Discovery failures are not a clean checkout. Checks preserve run-attributed diagnostics. Default checks guard task selections and declared local harness inputs; full and pre-push checks retain checkout-wide guards. Unrelated runtime edits do not invalidate a scoped local check.
 
@@ -346,19 +352,8 @@ Release validation remains deliberately redundant because it protects published 
 
 ## Connected interaction runner
 
-[Interaction coverage](../tests/interaction/README.md) maps every screen to its
-lifecycle family and documents deterministic replay. `npm run test:interactions`
-runs the seven connected families with 16 fixed seeds and up to 40 actions each.
-The normal CI unit suite includes those cases. Nightly unit coverage sets
-`ALCHEMY_INTERACTION_TIER=nightly` for 128 distinct seeds and up to 120 actions;
-it does not rerun push seeds. Failures and seed manifests live in the existing
-run-attributed reports directory. `--family`, `--seed`, `--replay`, `--day` and
-`--shrink` support reproduction and bounded trace reduction.
-
-Use these tests for asynchronous completion, cancellation and stale callbacks;
-retain real commands and gate logic. Replace low-value helper-call assertions
-when connected outcome coverage supersedes them. Electron interaction canaries
-run in the existing desktop CI tier, with deeper variants nightly. No additional
-browser engine or worker/shard expansion is required. Local execution follows
-the [gate policy](../CONTRIBUTING.md#what-to-run-when-you-change), including its authorization for
-bounded rendered UI review and focused browser checks.
+[Interaction coverage](../tests/interaction/README.md) owns families, seed budgets,
+replay/shrink commands, artifacts and Electron canaries. The ordinary CI unit suite
+includes the fixed cases; nightly sets `ALCHEMY_INTERACTION_TIER=nightly` for its
+distinct deeper seeds. Local execution follows
+[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change).
