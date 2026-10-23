@@ -29,6 +29,7 @@ export const SettingsSaveFieldsSchema = z.object({
   muteInBackground: z.boolean().catch(true),
   bossLyricsEnabled: z.boolean().catch(true),
   autoEndTurn: z.boolean().catch(true),
+  autoEquip: z.boolean().catch(true),
   rememberAutoplayPreference: z.boolean().catch(false),
   autoplayEnabled: z.boolean().catch(false),
 });

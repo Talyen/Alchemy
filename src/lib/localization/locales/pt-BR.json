@@ -2258,6 +2258,8 @@
   "ui.options-panels.7": {"text":"Tamanho do jogo","sourceHash":"993358e666745e74e39c74ee1d389ecb83fbc8c95c1a1f7770a37939dac2d1f8","reviewed":true},
   "ui.options-panels.8": {"text":"Tamanho das dicas","sourceHash":"cf17e12023ed2eb748c7ca81157508696ac1e5eec61feb4cb66e2548638450ac","reviewed":true},
   "ui.options-panels.9": {"text":"Fundo","sourceHash":"a469d5a31500b5b03b7c4e9bf594b4af0534861974530049f93817cb72a8ad50","reviewed":true},
+  "ui.options-panels.auto-equip": {"text":"Equipar automaticamente","sourceHash":"6c46ed52464aa8709fe473b247721200dd4055c8a2b9d1d9483c0dc5c5718a0e","reviewed":true},
+  "ui.options-panels.auto-equip-description": {"text":"Equipe novos equipamentos e amuletos em espaços vazios.","sourceHash":"9b8104a002b8a8a0c9ad98fc4dc4b3557d738de2995bd78cb967044778b0c056","reviewed":true},
   "ui.paged-picker-grid.1": {"text":"Nenhum item corresponde à busca e aos filtros.","sourceHash":"922e0775b5ddc04c461bf147321a424200f6cbcf402276f9572b49df706511a1","reviewed":true},
   "ui.potion-comparison.1": {"text":"Comparação da mistura","sourceHash":"840710d11046b483b2780a686b385b05a16a7612bb2840e7f5932f36d3dd05da","reviewed":true},
   "ui.purchasable-shop-tile.1": {"text":"Comprado","sourceHash":"069a7e0190158a58fa4b23005895333dc2ff9edf7257c9e2d50ebc70850a6caf","reviewed":true},

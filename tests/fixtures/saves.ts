@@ -43,6 +43,8 @@ export interface HomesteadSaveFixture {
   muteInBackground: boolean;
   bossLyricsEnabled: boolean;
   autoEndTurn: boolean;
+  autoEquip: boolean;
+  hasSeenArmory: boolean;
   rememberAutoplayPreference: boolean;
   autoplayEnabled: boolean;
   completedDifficulties: Record<string, string[]>;
@@ -87,6 +89,8 @@ export function saveEnvelopeFixture(overrides: Record<string, unknown> = {}) {
     muteInBackground: true,
     bossLyricsEnabled: true,
     autoEndTurn: true,
+    autoEquip: true,
+    hasSeenArmory: false,
     activeRun: null,
     completedDifficulties: {
       knight: [],

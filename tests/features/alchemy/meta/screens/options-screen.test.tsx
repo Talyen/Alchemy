@@ -105,6 +105,24 @@ describe("OptionsScreen", () => {
     expect(setRememberAutoplayPreference).toHaveBeenCalledWith(true);
   });
 
+  it("lets players disable default-on Auto Equip", async () => {
+    const setAutoEquip = vi.fn();
+    render(
+      <OptionsScreen
+        {...defaultProps}
+        preferences={{
+          ...defaultProps.preferences,
+          actions: { ...defaultProps.preferences.actions, setAutoEquip },
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Gameplay" }));
+    const toggle = await screen.findByRole("switch", { name: /Auto Equip/ });
+    expect(toggle.getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(toggle);
+    expect(setAutoEquip).toHaveBeenCalledExactlyOnceWith(false);
+  });
+
   it("routes clear-save confirmation actions through save data", async () => {
     const onConfirmClearSave = vi.fn();
     const onCloseClearSaveConfirm = vi.fn();

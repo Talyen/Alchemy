@@ -2258,6 +2258,8 @@
   "ui.options-panels.7": {"text":"Масштаб игры","sourceHash":"8849636f93a998e4723459426ac4fec3e04e243590c8f670408e0a375dc95675","reviewed":true},
   "ui.options-panels.8": {"text":"Масштаб подсказок","sourceHash":"064930014da03a25adeb58dea8ebf66fbf9b564917492c84da129735abd5eef2","reviewed":true},
   "ui.options-panels.9": {"text":"Фон","sourceHash":"7e92fe54fcff20bc1b6d64aeb3c83addd45235115191d231f03ac5eb83a558ae","reviewed":true},
+  "ui.options-panels.auto-equip": {"text":"Автоэкипировка","sourceHash":"8178e927c7013b58e45dbaf3e0451e8cd08bda3d07c7d570600b0b4a2f213410","reviewed":true},
+  "ui.options-panels.auto-equip-description": {"text":"Надевать новое снаряжение и талисманы в свободные ячейки.","sourceHash":"f7ce6c3f326ffd026125451a0eee076adfc8597d593c3c25ed947306bacb72db","reviewed":true},
   "ui.paged-picker-grid.1": {"text":"Нет предметов по вашему поиску и фильтрам.","sourceHash":"f2d4a685113f7ee71bd194aa34351bf5af62cf9ea9ad6ab58cefc40756bf3b20","reviewed":true},
   "ui.potion-comparison.1": {"text":"Сравнение смеси","sourceHash":"6da725bbb986eb15e1e278bf967e8e763c32726e758cff7f1f79f6736fd257b7","reviewed":true},
   "ui.purchasable-shop-tile.1": {"text":"Куплено","sourceHash":"c04b7ca0604fefabda22f4fb110b4921773d1a02217cfdf2565ced0f7c5ea559","reviewed":true},

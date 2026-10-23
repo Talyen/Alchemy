@@ -2258,6 +2258,8 @@
   "ui.options-panels.7": {"text":"Spielgröße","sourceHash":"4e8e01ce57ed9ddcb0d942691d7b4c31c662ded11434d5f4512f3ee85dd196fe","reviewed":true},
   "ui.options-panels.8": {"text":"Tooltipgröße","sourceHash":"d253d549f53ab6c45327c3312d7cd1964f62c93cfba871dd4e797c0cf4328632","reviewed":true},
   "ui.options-panels.9": {"text":"Hintergrund","sourceHash":"b88e1475b99412e38d523093b01545b3c1353fd2dcf00ede51510cc18c7f45fc","reviewed":true},
+  "ui.options-panels.auto-equip": {"text":"Automatisch ausrüsten","sourceHash":"d51912c644c7073161953bd9e21cacf8251389e5750033e8c65a0b41cc0e4ac4","reviewed":true},
+  "ui.options-panels.auto-equip-description": {"text":"Neue Ausrüstung und Schmuckstücke auf freien Plätzen anlegen.","sourceHash":"bbef0e013201165dc2a3128b2bb47de31c535c8c9629bdbdb90a876a085d49ca","reviewed":true},
   "ui.paged-picker-grid.1": {"text":"Keine Gegenstände entsprechen deiner Suche und deinen Filtern.","sourceHash":"ad8b5e2ff97dfc993fd5f8201baa1cd499d3077fe0cdb0ee2a5dfeae29f30389","reviewed":true},
   "ui.potion-comparison.1": {"text":"Gebräuvergleich","sourceHash":"4710103c691960ae532504d8db28d4b35c817fb812a128b4a64ab3120de65493","reviewed":true},
   "ui.purchasable-shop-tile.1": {"text":"Gekauft","sourceHash":"dec4a24396a73681c19cbb46dc2ad3fbf8344f1d811f49bc9bb7753f776012f3","reviewed":true},

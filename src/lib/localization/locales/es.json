@@ -2258,6 +2258,8 @@
   "ui.options-panels.7": {"text":"Tamaño del juego","sourceHash":"752cf04a745d1b7b5c51f949776e9dce557f708bce13524a8f81eaa91d97c9a3","reviewed":true},
   "ui.options-panels.8": {"text":"Tamaño de descripciones","sourceHash":"cf3a1aa49be73585c66ce2c04495250dbe84fdef84f1fc9c0b27a4686ba4ebae","reviewed":true},
   "ui.options-panels.9": {"text":"Fondo","sourceHash":"c1ab95b6e64d17d329d9bd3eb88b9fe29299cca86ca5f5389391b134667e1573","reviewed":true},
+  "ui.options-panels.auto-equip": {"text":"Equipar automáticamente","sourceHash":"e4663fbcd0812544694dfd4b4e1b3e40963b3f5206fc9e51288b2b0922daf3bb","reviewed":true},
+  "ui.options-panels.auto-equip-description": {"text":"Equipa el equipo y los abalorios recién obtenidos en ranuras vacías.","sourceHash":"05e89fc55aac265f15c61355637f32e6b82a78a0280fd84cfcbbba54373553a2","reviewed":true},
   "ui.paged-picker-grid.1": {"text":"Ningún objeto coincide con tu búsqueda y filtros.","sourceHash":"06359efd769aaac9aad2912f64cf61dcf475de162a111de09ee26009f6e14590","reviewed":true},
   "ui.potion-comparison.1": {"text":"Comparación de elaboración","sourceHash":"511070e626d52100b0fb7840be7fefb35358c33ca997b73a386f2be46375c127","reviewed":true},
   "ui.purchasable-shop-tile.1": {"text":"Comprado","sourceHash":"16f2ec5a957d8a167c74763f2137715e70d2723fdb200a48071fd4bfca6250a1","reviewed":true},

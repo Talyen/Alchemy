@@ -330,7 +330,7 @@ describe("equipment shop actions", () => {
     }
   });
   describe("equipment shop", () => {
-    it("persists gold, purchase slot, and gear inventory in one commit", () => {
+    it("persists the purchase, Auto Equip, and maximum Health in one commit", () => {
       const instance: GearInstance = {
         instanceId: "shop-armor",
         definitionId: "leather-armor-basic",
@@ -357,9 +357,10 @@ describe("equipment shop actions", () => {
         [instance.instanceId],
       );
       expect(readGearState(defaultGameSession).inventories.knight).toContainEqual(instance);
+      expect(readGearState(defaultGameSession).loadouts.knight.body).toBe(instance.instanceId);
       expect(readActiveRun(defaultGameSession).runObtainedItems).toEqual([{ kind: "gear", instance }]);
 
-      expect(readActiveRun(defaultGameSession).runMaxHealth).toBe(30);
+      expect(readActiveRun(defaultGameSession).runMaxHealth).toBe(37);
       expect(readActiveRun(defaultGameSession).runPlayerHealth).toBe(30);
     });
 

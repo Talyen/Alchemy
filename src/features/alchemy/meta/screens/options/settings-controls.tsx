@@ -163,11 +163,13 @@ export function SettingsSlider({
 export function SettingsToggle({
   icon: Icon,
   label,
+  description,
   checked,
   onChange,
 }: {
   icon: LucideIcon;
   label: string;
+  description?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
@@ -180,10 +182,19 @@ export function SettingsToggle({
         className={cn("options-settings-label-content min-w-0 flex-1 cursor-pointer", controlLabelClass)}
       >
         <SettingsIcon icon={Icon} />
-        <span>{label}</span>
+        <span>
+          <span>{label}</span>
+          {description && (
+            <span id={`${id}-description`} className={cn("block", controlDescriptionClass)}>
+              {description}
+            </span>
+          )}
+        </span>
       </label>
       <Switch
         id={id}
+        aria-label={label}
+        aria-describedby={description ? `${id}-description` : undefined}
         checked={checked}
         onCheckedChange={(next) => {
           onChange(next);

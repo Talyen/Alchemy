@@ -2,6 +2,7 @@ import { characters, type CharacterId, type DifficultyId } from "@/lib/game-data
 import type { CollectionTab } from "@/features/alchemy/shared/types";
 
 export interface ProfileSaveFields {
+  hasSeenArmory: boolean;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
@@ -20,6 +21,7 @@ function createEmptyCompletedDifficulties(): Record<CharacterId, DifficultyId[]>
 
 export function createDefaultProfileSaveFields(): ProfileSaveFields {
   return {
+    hasSeenArmory: false,
     discoveredCardIds: [],
     encounteredEnemyIds: [],
     discoveredTrinketIds: [],

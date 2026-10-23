@@ -28,3 +28,12 @@ export function useGearCombatRestrictions() {
 export function useGearArmorySlice(): GearArmorySlice {
   return useGameplayStateStore((state) => state.gear);
 }
+
+export function useArmoryIntroductionPending(): boolean {
+  return useGameplayStateStore(
+    (state) =>
+      !state.profile.hasSeenArmory &&
+      (state.gear.ownedTrinketIds.length > 0 ||
+        Object.values(state.gear.inventories).some((items) => items.length > 0)),
+  );
+}

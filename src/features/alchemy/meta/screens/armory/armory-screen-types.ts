@@ -28,6 +28,7 @@ export interface ArmoryItemActions {
 export interface ArmoryScreenProps
   extends Omit<GearArmorySlice, "craftingCurrencies">, Omit<ArmoryRouteCommands, "onApplyCurrency"> {
   finishedRunCharacters: CharacterId[];
+  initialCharacterId?: CharacterId;
   combatRestrictions: GearCombatRestrictions;
   afterProgressSaved?: (feedback: () => void) => void;
   isProgressSavePending?: () => boolean;

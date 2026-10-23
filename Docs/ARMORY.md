@@ -23,6 +23,16 @@ contract and controller seams.
 
 ## Data model
 
+New Gear and permanent Trinkets automatically fill a compatible empty slot on the
+receiving Hero when **Options → Gameplay → Auto Equip** is enabled (the default).
+Acquisition never replaces equipped items or displaces the other hand, and combat
+reservations still apply. Rewards, shops, and Mystery grants use the same atomic
+acquisition path; Boons remain run effects. Turning the option on does not equip
+previously collected items. After the first equippable item, the main-menu Armory
+button uses the Talents-style border until the player opens Armory with equipment
+to manage. That introduction is saved with the profile. Armory opens on the current
+Hero.
+
 `src/lib/gear/definitions.ts`, `crafting.ts`, and `crafting-ids.ts` are authoritative. Item titles live with definitions (`getGearInstanceTitle`), and canonical affix resolution is centralized in `getGearInstanceAffixes`. Affix pool/roll helpers live in `affix-pool.ts` so generation and crafting depend down. Durable invariants:
 
 - A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and an `affixes` array. Basic and Astral items persist their rolls; Unique items keep that array empty and resolve canonical affixes from the catalog. Instances never embed definition objects or art URLs.

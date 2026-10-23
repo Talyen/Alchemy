@@ -55,6 +55,12 @@ export function setAlchemyVisit(
 export function setScreen(draft: GameplayDraft, action: Screen | ((previous: Screen) => Screen)): void {
   const screen = typeof action === "function" ? action(draft.run.navigation.screen) : action;
   draft.run.navigation.screen = screen;
+  if (
+    screen === "armory" &&
+    (draft.gear.ownedTrinketIds.length > 0 || Object.values(draft.gear.inventories).some((items) => items.length > 0))
+  ) {
+    draft.profile.hasSeenArmory = true;
+  }
 }
 
 export function resetNavigation(draft: GameplayDraft): void {

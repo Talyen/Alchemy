@@ -2258,6 +2258,8 @@
   "ui.options-panels.7": {"text":"游戏尺寸","sourceHash":"2cbf15907d1c69590567291fc466e9242581dc103466f864d1142786dd7cb622","reviewed":true},
   "ui.options-panels.8": {"text":"提示尺寸","sourceHash":"02b412fadfe563bac284f5cae16332422ac11c6c54ca65efb49878503593a4af","reviewed":true},
   "ui.options-panels.9": {"text":"背景","sourceHash":"92e78284ff604bde2937095efaa7f36c62946de335b054d5ebd95ade24d53463","reviewed":true},
+  "ui.options-panels.auto-equip": {"text":"自动装备","sourceHash":"ee573946904f5ac740f6952251e2411aaca5ddd979ed379a51456872906c289d","reviewed":true},
+  "ui.options-panels.auto-equip-description": {"text":"将新获得的装备和饰品装备到空栏位。","sourceHash":"b1fbb466e9a3e57696667823a07a71676e33362dc0713a1c9b6976bbe067f4f2","reviewed":true},
   "ui.paged-picker-grid.1": {"text":"没有符合搜索与筛选条件的物品。","sourceHash":"e04ecf7ee389429a7bb268db6c30474d6e43d89b1dade8acb72a323f9d79af26","reviewed":true},
   "ui.potion-comparison.1": {"text":"调制对比","sourceHash":"b39c33a0877169373a3ecae24c0dc9205d063ea977fa7410f9f19a7f4ec51937","reviewed":true},
   "ui.purchasable-shop-tile.1": {"text":"已购买","sourceHash":"db09132c1d79a36e7ab822e8a838c34e1a821acf9cba762b6cc2d62d0bb15dba","reviewed":true},

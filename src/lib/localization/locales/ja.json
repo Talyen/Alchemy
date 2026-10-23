@@ -2258,6 +2258,8 @@
   "ui.options-panels.7": {"text":"ゲームサイズ","sourceHash":"736a4b8aecae063b757bdb694d76bcf6e484f290bb7faaf00b0d9a560419a13b","reviewed":true},
   "ui.options-panels.8": {"text":"ツールチップサイズ","sourceHash":"bf38d0039ecded33e40718e941db744574fc477624629cb5fa68a60449aea72b","reviewed":true},
   "ui.options-panels.9": {"text":"背景","sourceHash":"c1a05460c85c931d93e467497df5b91e7da5f7efe95b753e18f5be89a1015d68","reviewed":true},
+  "ui.options-panels.auto-equip": {"text":"自動装備","sourceHash":"24ebfeeb491dfa4822eca80f4c0b75a3a6711a7430ef391b15a87e8c1b7ff4d6","reviewed":true},
+  "ui.options-panels.auto-equip-description": {"text":"新しく入手した装備と装身具を空きスロットに装備します。","sourceHash":"d7dd15cd10fdef2367dfb6bdf30f28c30d3b9d9b3836bb5f93554a8a4aea2d35","reviewed":true},
   "ui.paged-picker-grid.1": {"text":"検索とフィルターに一致するアイテムはありません。","sourceHash":"63248a1d67b5a40e2b9a6af3981a34aa42c90d683e0b5e190aa16b81177a02d4","reviewed":true},
   "ui.potion-comparison.1": {"text":"調合の比較","sourceHash":"4e8b9cd80ea8cfd4c008ec8bc68c976f3d8c6ce1da700df2a7f147956403f484","reviewed":true},
   "ui.purchasable-shop-tile.1": {"text":"購入済み","sourceHash":"d9ef0e9c23497a8fcce78a614dd7cb94ebdddbed5e2b13b20e4c3ffb5cc60301","reviewed":true},

@@ -55,6 +55,7 @@ export function createSettingsStore(
       setMuteInBackground: (muteInBackground) => set({ muteInBackground }),
       setBossLyricsEnabled: (bossLyricsEnabled) => set({ bossLyricsEnabled }),
       setAutoEndTurn: (autoEndTurn) => set({ autoEndTurn }),
+      setAutoEquip: (autoEquip) => set({ autoEquip }),
       setRememberAutoplayPreference: (rememberAutoplayPreference) =>
         set((state) => ({
           rememberAutoplayPreference,

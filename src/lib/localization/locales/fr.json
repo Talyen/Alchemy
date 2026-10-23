@@ -2258,6 +2258,8 @@
   "ui.options-panels.7": {"text":"Taille du jeu","sourceHash":"1ea44be6162cd2c13569f28f6f0cd3e3b81f4ed1aa1769954f5022ec4c4fb11f","reviewed":true},
   "ui.options-panels.8": {"text":"Taille des infobulles","sourceHash":"be3836026dff4e3065843a3e112b403480fbb0474dc1cea04bd4dfd975d6bfe1","reviewed":true},
   "ui.options-panels.9": {"text":"Arrière-plan","sourceHash":"6ce07f868a6529f9dd1be432008dcb16b2452fed455181e995e8b68195acd501","reviewed":true},
+  "ui.options-panels.auto-equip": {"text":"Équipement automatique","sourceHash":"956f44cf6b3e4eee970e79ac2820839aa6ed3381d460dd91f53507a03624e098","reviewed":true},
+  "ui.options-panels.auto-equip-description": {"text":"Équiper les nouveaux équipements et bibelots dans les emplacements vides.","sourceHash":"8c51e076d28fe06b07c8d2a7501d0be8803e3a519efaf50d83a1765fae374429","reviewed":true},
   "ui.paged-picker-grid.1": {"text":"Aucun objet ne correspond à votre recherche et à vos filtres.","sourceHash":"e072460e85279aad485c3d6903229bc92a394ec1c9b9c25c86147ec686bbefc6","reviewed":true},
   "ui.potion-comparison.1": {"text":"Comparaison de préparation","sourceHash":"c81a6303460774299b53d93bb80aa854c115f12154e85ae44e11412a82ceaa25","reviewed":true},
   "ui.purchasable-shop-tile.1": {"text":"Acheté","sourceHash":"003fb58619f144941189c745f08cf0f9726027eddd818933bc6f0b70319142d8","reviewed":true},
