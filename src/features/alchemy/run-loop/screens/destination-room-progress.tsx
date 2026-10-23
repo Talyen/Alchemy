@@ -1,4 +1,4 @@
-import { UserRound } from "lucide-react";
+import { Star } from "lucide-react";
 
 import { useGameTranslation } from "@/components/use-game-translation";
 import { destinationMeta } from "@/features/alchemy/shared/config";
@@ -19,15 +19,15 @@ export function DestinationRoomProgress({
   return (
     <ol
       aria-label={i18n.text("ui.room-progress.label", "Room progress")}
-      className="mx-auto flex w-full max-w-[calc(32.5*var(--content-rem,1rem))] items-center font-sans text-lg sm:text-xl"
+      className="mx-auto flex w-full max-w-2xl items-center px-3 font-sans text-lg sm:text-xl"
     >
       {Array.from({ length: DESTINATIONS_PER_ACT }, (_, index) => {
         const current = index === currentRoom;
         const completed = index < currentRoom ? completedDestinations[index] : undefined;
         const boss = index === DESTINATIONS_PER_ACT - 1;
         const destination = completed ?? (boss ? DESTINATIONS.BOSS_COMBAT : undefined);
-        const meta = destination ? destinationMeta[destination] : undefined;
-        const Icon = current ? UserRound : meta?.icon;
+        const meta = !current && destination ? destinationMeta[destination] : undefined;
+        const Icon = meta?.icon;
         const room = index + 1;
         const label = current
           ? i18n.text("ui.room-progress.current", "Room {{room}}: You are here", { room })
@@ -50,11 +50,14 @@ export function DestinationRoomProgress({
             <span
               aria-hidden="true"
               className={cn(
-                "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-current bg-background font-bold",
-                current ? "text-gold-pale" : meta ? meta.accentClassName : "text-muted-foreground/35",
+                "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-current bg-background font-bold",
+                meta ? meta.accentClassName : "text-muted-foreground/35",
               )}
             >
               {Icon ? <Icon className="shrink-0" /> : "?"}
+              {current ? (
+                <Star className="absolute -top-4 left-1/2 size-3 -translate-x-1/2 fill-current text-gold-pale" />
+              ) : null}
             </span>
             {!boss && <span aria-hidden="true" className="h-px min-w-0 flex-1 bg-border/70" />}
           </li>

@@ -43,7 +43,7 @@ describe("DestinationScreen", () => {
     expect(screen.getByRole("heading", { name: "Choose Destination" })).toBeTruthy();
     const progress = screen.getByRole("list", { name: "Room progress" });
     expect(progress.children).toHaveLength(8);
-    expect(progress.querySelector('[aria-current="step"]')?.textContent).toBe("Room 4: You are here");
+    expect(progress.querySelector('[aria-current="step"]')?.textContent).toContain("Room 4: You are here");
     expect(progress.textContent).toContain("Room 1: Combat (completed)");
     expect(progress.textContent).toContain("Room 5: Unknown");
     expect(progress.textContent).toContain("Room 8: Boss");
@@ -84,6 +84,6 @@ describe("DestinationScreen", () => {
     expect(screen.queryByRole("heading", { name: "Choose Destination" })).toBeNull();
     expect(
       screen.getByRole("list", { name: "Room progress" }).querySelector('[aria-current="step"]')?.textContent,
-    ).toBe("Room 8: You are here");
+    ).toContain("Room 8: You are here");
   });
 });
