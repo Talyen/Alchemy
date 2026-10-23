@@ -526,6 +526,9 @@ it("preserves check evidence and captures before deleting outputs, retaining the
     "original verification evidence",
   );
   expect(readFileSync(join(evidence, "reports/visual-review/screen.png"), "utf8")).toBe("selected capture");
+  expect(readFileSync(join(evidence, "ignored"), "utf8")).toBe("local evidence");
+  expect(existsSync(join(evidence, "node_modules"))).toBe(false);
+  expect(result.stdout).toContain("Cleanup preview:");
   expect(JSON.parse(readFileSync(join(evidence, "integration.json"), "utf8")).commit).toBe(git(["rev-parse", "main"]));
   expect(readFileSync(join(root, "reports/browser-closed"), "utf8")).toBe("closed");
   expect(result.stdout).toContain("Preserved integration evidence:");

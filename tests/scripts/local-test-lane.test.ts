@@ -1,10 +1,18 @@
 import net from "node:net";
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
 import { expect, it, vi } from "vitest";
-import { acquireLocalTestLane, usesLocalTestLane } from "../../scripts/lib/verification/local-test-lane.mjs";
+import {
+  acquireLocalTestLane,
+  usesLocalTestLane,
+  acquireTestResources,
+  testResourceStatus,
+  testResourceClass,
+} from "../../scripts/lib/verification/local-test-lane.mjs";
 
 async function reclaimReleasedPort(port: number) {
   // A sibling fixture can receive this ephemeral port after release. Only
@@ -165,4 +173,47 @@ it("shares the lane between unit and browser commands while leaving small non-te
   const { scripts } = JSON.parse(fs.readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
   expect(scripts["test:unit"]).toBe(scripts["test:full"]);
   expect(scripts["test:e2e:timings"]).toContain("node scripts/run-compact.mjs playwright test");
+});
+
+it("admits a focused unit alongside broad work, exposes a cancellable queue and retains the broad owner", async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "test-resources-"));
+  const broad = await acquireTestResources("vitest", ["run"], process.cwd(), { directory, broadPort: 0 });
+  const focused = await acquireTestResources("vitest", ["run", "tests/example.test.ts"], process.cwd(), {
+    directory,
+    focusedPort: 0,
+  });
+  const controller = new AbortController();
+  const occupied = testResourceStatus(directory).find((record) => record.kind === "broad")!;
+  try {
+    expect(
+      testResourceStatus(directory)
+        .map((record) => record.kind)
+        .sort(),
+    ).toEqual(["broad", "focused"]);
+    await expect(
+      acquireTestResources("playwright", ["test"], process.cwd(), {
+        directory,
+        broadPort: occupied.port,
+        signal: controller.signal,
+        onWait: () => {
+          expect(testResourceStatus(directory).filter((record) => record.state === "waiting")).toHaveLength(1);
+          controller.abort();
+        },
+      }),
+    ).rejects.toThrow("abort");
+    expect(testResourceStatus(directory)).toHaveLength(2);
+    await expect(acquireLocalTestLane(occupied.port, { timeoutMs: 0 })).rejects.toThrow("No work started");
+    for (const args of [
+      ["run"],
+      ["related", "src/example.ts"],
+      ["run", "tests"],
+      ["run", "tests/a.test.ts", "--coverage"],
+    ])
+      expect(testResourceClass("vitest", args)).toBe("broad");
+  } finally {
+    await focused.release();
+    await broad.release();
+    expect(testResourceStatus(directory)).toEqual([]);
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
 });

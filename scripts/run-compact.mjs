@@ -5,7 +5,7 @@ import { failureSummary, completionCounts } from "./lib/compact-output.mjs";
 import { runCommandAsync, runStreamCommand } from "./lib/run-command.mjs";
 import { defineScript, UsageError } from "./lib/script-run.mjs";
 import {
-  acquireLocalTestLane,
+  acquireTestResources,
   isInteractiveTestCommand,
   usesLocalTestLane,
 } from "./lib/verification/local-test-lane.mjs";
@@ -26,7 +26,17 @@ export async function runCompact(argv, rootDir = ROOT) {
   if (live) argv = argv.slice(1);
   const [command, ...args] = argv;
   if (!command || command.startsWith("--")) throw new UsageError(USAGE);
-  const lane = usesLocalTestLane(command, args) ? await acquireLocalTestLane() : null;
+  if (path.basename(command).replace(/\.(?:cmd|exe)$/u, "") === "vitest") {
+    const scope =
+      args[0] === "related"
+        ? "dependency-related unit tests"
+        : args.length === 1 && args[0] === "run"
+          ? "complete unit suite"
+          : "filtered/configured unit tests";
+    console.log(`Scope: ${process.env.npm_lifecycle_event ?? "vitest"}: ${scope}; no builds or browser acceptance.`);
+  }
+  const lane = usesLocalTestLane(command, args) ? await acquireTestResources(command, args, rootDir) : null;
+  if (lane?.kind === "focused") args.push("--maxWorkers=1");
   try {
     return await runCompactCommand(command, args, rootDir, live);
   } finally {

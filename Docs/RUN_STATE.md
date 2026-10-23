@@ -575,6 +575,31 @@ ending and room identity, deck, Boons, earned Gold) before making activity inact
 capability supplies the recap; card inspection selects its deck on ending screens.
 The recap is transient, survives voluntary teardown, and clears on a fresh run.
 
+## Common implementation paths
+
+Start with a matching production example and its regression test. Extend that
+owner when it already represents the action; add a boundary only when a distinct
+consumer or invariant requires it. These are entry points into existing code,
+not templates to duplicate.
+
+| Change            | Follow this production path                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Executable example                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Merchant purchase | Route command → [merchant commands](../src/features/alchemy/run-loop/shop/merchant-shop-commands.ts) → [shared purchase operation](../src/features/alchemy/run-loop/shop/shop-commands-core.ts) → [shop transaction](../src/features/alchemy/run-loop/shop/shop-transactions.ts). Price, availability, payment and acquisition use the same draft.                                                                                                                                          | [Shop actions](../tests/features/alchemy/run-loop/shop/shop-actions.test.ts)                              |
+| Card play         | Battle controller → [battle commands](../src/features/alchemy/shared/stores/commands/battle-commands.ts) → production resolution → committed result → route playback. Supply the offered snapshot; the command rejects stale inputs before consuming RNG.                                                                                                                                                                                                                                   | [Battle input ownership](../tests/features/alchemy/shared/stores/commands/battle-input-ownership.test.ts) |
+| Saved run field   | [Save fields](../src/features/alchemy/shared/stores/persistence/run-profile-save-fields.ts) → [profile codec](../src/features/alchemy/shared/stores/persistence/run-profile-codec.ts) → [resume codec](../src/features/alchemy/shared/stores/persistence/run-resume-codec.ts) → [restore](../src/features/alchemy/shared/stores/persistence/run-restore.ts). Update schema/defaults and fixtures together under [save compatibility](../src/features/alchemy/shared/storage/MIGRATIONS.md). | [Resume roundtrip](../tests/features/alchemy/shared/stores/persistence/run-resume-roundtrip.test.ts)      |
+
+Run a matching example directly, then use the task gate for changed paths:
+
+```sh
+npm run test:unit -- tests/features/alchemy/run-loop/shop/shop-actions.test.ts
+npm run test:unit -- tests/features/alchemy/shared/stores/commands/battle-input-ownership.test.ts
+npm run test:unit -- tests/features/alchemy/shared/stores/persistence/run-resume-roundtrip.test.ts
+```
+
+Composition wrappers such as `createShopActions` and session capability bindings
+retain a specific role: assembling route authority and revoking retained actions
+when the session ends. Keep those ownership checks when simplifying forwarding.
+
 ## Session capability ports
 
 Use this reference for access and orchestration. Under `shared/stores/`, committed reads and runtime internals live in `session/`, React hooks in `react/`, commands and writes in `commands/`, and save codecs in `persistence/`.

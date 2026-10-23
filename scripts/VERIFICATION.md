@@ -62,15 +62,15 @@ tuning select both renderer builds and desktop-family CI checks. The headless pl
 setup action and cancels superseded runs on the same ref.
 
 Documentation and Oxlint inventories exclude isolated `.worktrees/` checkouts,
-reports, and installed dependencies. Broken references and discovery pointers remain blocking. Document reachability and skill-index completeness are advisory and never fail the gate. Documentation contract checks share one
-per-file fact walk (`links`, backticked candidates, script names) plus one
+reports, and installed dependencies. Broken explicit links, documented npm commands and discovery pointers remain blocking. Inline backticked filenames are explanatory prose, not inferred path contracts; use a Markdown link when a reference must remain valid. Document reachability and skill-index completeness are advisory and never fail the gate. Documentation contract checks share one
+per-file fact walk (explicit links and script names) plus one
 Markdown helper (`lib/agent/markdown-sections.mjs`) and one exemption owner per scope
-(`isHistoryOnlyDoc` / `isHistoricalDoc` / `isReachabilityExempt` in
+(`isHistoryOnlyDoc` / `isReachabilityExempt` in
 `check-documentation-contract.mjs`).
-Current-file checks cover E2E paths as well as other source references. Keep current workflow rules and unresolved issues rather than instruction histories.
-Repository-relative matching uses forward slashes on every platform; only release
-notes retain historical-file exemptions, while active plans are exempt from owner
-path contracts.
+Explicit links can protect E2E paths as well as other source references. Keep current workflow rules and unresolved issues rather than instruction histories.
+Repository-relative matching uses forward slashes on every platform. Release
+notes retain historical command-name exemptions; explicit links in maintained
+documents remain checked.
 
 ## Build and test selection
 
@@ -95,7 +95,7 @@ Input identity covers tracked and untracked nonignored files, root environment f
 
 ## Compatibility commands and test runners
 
-`npm test` is retained minimal Node smoke; `test:full` is a compatibility alias
+`npm test` prints its scope and runs only three fixed Node smoke suites; `test:full` is a compatibility alias
 for `test:unit`. Existing `verify`, `verify:unit`, and `verify:full` remain available for
 selection diagnosis: `verify` selects units and documentation, `verify:unit`
 restricts that selection to units, and `verify:full` adds broader route checks.
@@ -107,13 +107,17 @@ Use `rg --files tests` to locate unfamiliar suite paths. Vitest arguments are
 filters: a passing mixed selection can ignore a misspelled path while another
 matches, so confirm the reported file count before claiming that scope passed.
 
-One-shot Vitest and Playwright commands through `run-compact.mjs`, including
-full/focused unit tests and the full verifier's related/changed selections, share
-one local test lane with the ship unit runner across checkouts on the same host.
-An occupied lane waits for release without a default timeout, so ordinary contention
-does not fail verification. Waiting reports progress every 30 seconds and is
-cancellable. Set `ALCHEMY_LOCK_WAIT_MS` for an explicit deadline in milliseconds
-(`0` fails immediately). No protected work starts before acquisition.
+One-shot Vitest and Playwright commands through `run-compact.mjs` share a host-wide
+budget. Broad units, related selections, directories, coverage and browser runs
+retain the existing broad lane. One focused Vitest invocation selecting one or two
+explicit `*.test.ts`/`*.test.tsx` files without additional flags may run alongside
+it in a separate reservation, forced to one worker. A second run of either class
+waits without a default timeout. `npm run test:status` lists active owners and
+waiting work (PID, checkout, command, start time); `--json` returns the same data.
+Status ignores dead processes and never reclaims their listeners. Raw/watch runs
+and commands started by older checkouts are outside the status inventory.
+Waiting reports progress every 30 seconds and is cancellable. Set
+`ALCHEMY_LOCK_WAIT_MS` for an explicit deadline (`0` fails immediately).
 The minimal Node smoke does not acquire this lane. Raw CLI and watch/debug
 sessions bypass it and must be coordinated manually. The runner defaults native
 bundler threads to one; the four-worker Vitest ceiling remains unchanged. An
@@ -204,7 +208,7 @@ Hook tests pass changing inputs through `renderHook(callback, { initialProps })`
 
 ## Git hook implementation
 
-`lefthook` pre-push invokes only `npm run check -- --pre-push`, forwarding Git’s ref/object-ID pairs through stdin. The gate selects the union of outgoing changes, including removed paths; a new remote ref selects its full tree. Deleted remote refs require no checks. Large selections travel through a JSON path file; the opt-in full verifier falls back to the complete unit suite when related-test arguments exceed platform limits. Outgoing commits must match the checked-out HEAD, and unavailable base revisions fail explicitly. When source checks are needed, pre-push requires a clean checkout (including nonignored untracked files) so tests cannot pass against an uncommitted fix. Ordinary task checks still support dirty work. Local `--diff` continues to select working-tree changes, retaining both sides of renames for risk selection and falling back to HEAD’s changes when clean. Pre-commit formats staged files selected by `scripts/lib/verification/prettier-paths.mjs`; commit-msg runs commitlint. Install hooks with `npm run prepare`.
+`lefthook` pre-push invokes only `npm run check -- --pre-push`, forwarding Git’s ref/object-ID pairs through stdin. The gate selects the union of outgoing changes, including removed paths; a new remote ref selects its full tree. Deleted remote refs require no checks. Large selections travel through a JSON path file; the opt-in full verifier falls back to the complete unit suite when related-test arguments exceed platform limits. Outgoing commits must match the checked-out HEAD, and unavailable base revisions fail explicitly. When source checks are needed, pre-push requires a clean checkout (including nonignored untracked files) so tests cannot pass against an uncommitted fix. Ordinary task checks still support dirty work. Local `--diff` selects working-tree changes only, retaining both sides of renames for risk selection. A clean diff selects nothing. `--committed <revision>` explicitly selects one commit, including its deletions. Unknown explicit paths fail instead of yielding empty test coverage. Pre-commit formats staged files selected by `scripts/lib/verification/prettier-paths.mjs`; commit-msg runs commitlint. Install hooks with `npm run prepare`.
 
 Execution plans under `Docs/Plans/` are workflow artifacts, not product correctness gates. Follow the [plan lifecycle](../Docs/Plans/README.md) to finish and remove only task-owned plans, then validate with `npm run docs:check` (also included in the opt-in full gate). `npm run docs:check:final` is an explicit repository-wide closure check; another task's active plan does not require cancellation or block ordinary handoff.
 

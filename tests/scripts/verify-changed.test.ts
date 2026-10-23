@@ -68,7 +68,7 @@ describe("verification selection", () => {
     using _scopeCleanup = createCleanup(() => fs.rmSync(root, { recursive: true, force: true }));
 
     const filename = path.join(root, "paths.json");
-    const paths = ["src/a space.ts", "src/another.ts"];
+    const paths = ["src/App.tsx", "scripts/check.mjs"];
     fs.writeFileSync(filename, JSON.stringify(paths));
     expect(parseVerifyArgs(["--paths-file", filename, "--plan"]).paths).toEqual(paths);
     expect(() => parseVerifyArgs(["--paths-file", filename, "--diff"])).toThrow("Choose");

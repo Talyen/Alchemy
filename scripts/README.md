@@ -235,7 +235,8 @@ cleanup must not discard work.
 
 After releasing the shared integration lock, final integration closes the current
 task's managed browser sessions, preserves review evidence, then deletes and
-unregisters only the named task worktree while retaining the task lock.
+unregisters only the named task worktree while retaining the task lock. The command
+prints its finish plan before integration and a cleanup preview before removal.
 Cleanup permits later main commits only when they still contain the integrated
 task commit. `--keep-worktree` skips this final teardown. Cleanup rechecks its branch, commit,
 clean status, unfinished Git operations, registration and lock state; submodules
@@ -244,21 +245,19 @@ failure leaves the completed integration in place and reports the blocker.
 
 The checkout first moves atomically to a temporary directory under
 `~/.codex/worktree-archives/Alchemy/` so failed unregistration can restore it.
-Before staging, the latest `reports/current-run` pointers, their run bundle and
-directly linked artifacts, and `reports/visual-review/` are copied into a unique
-`reports/integrations/` bundle in the original checkout. Reused run bundles are
-included. The printed path and `integration.json` identify the original checkout
-and integrated commit; relative report paths retain their layout within the bundle.
-Managed browser screenshots use `reports/visual-review/` by default; put selected
-captures from other tools there too. Unsupported entries, escaping paths, symlinks
-or copy failures preserve the worktree and report a cleanup blocker. These bundles
-use ordinary report retention and explicit cleanup; they are not a design archive.
-After unregistration, the temporary directory is deleted immediately, including
-remaining ignored files and build outputs. Successful integration retains no archived
-checkout. The task branch remains available through
-`git worktree add <original-path> <branch>`; ignored and other local-only files are
-deleted except for the preserved review evidence. Use `--keep-worktree` when other
-local files are still needed.
+Before staging, the complete `reports/` directory and every other ignored file
+outside reproducible output roots are copied to a unique `reports/integrations/`
+bundle in the original checkout. This includes localization packets, captures,
+run logs, task notes and directly linked evidence. `integration.json` records the
+original checkout, integrated commit and preserved paths. Linked run artifacts
+outside `reports/` are preserved too. Explicit links that escape the checkout or
+symlinks inside preserved evidence block removal and leave the checkout intact.
+The disposable roots are `node_modules/`, `dist/`, `dist-demo/`, `dist-desktop/`,
+`release-desktop/`, `coverage/`, `test-results/`, `playwright-report/`, `.vite/`, and
+`.worktrees/`. Move any irreplaceable output from those roots into `reports/`.
+After unregistration the temporary checkout is deleted. Its task branch remains
+available through `git worktree add <original-path> <branch>`. Use `--keep-worktree`
+to retain the checkout and browser sessions for continued inspection.
 `CODEX_WORKTREE_ARCHIVE_ROOT` can select an external staging directory; moving
 across filesystems fails without deleting the source. If cleanup fails after
 integration, inspect the reported checkout or staging directory; `recovery.json`

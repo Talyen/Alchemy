@@ -9,6 +9,9 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 
 if (isMainModule(import.meta.url)) {
   if (process.argv.length > 2) throw new Error("Local smoke is fixed. Use test:unit for full or focused unit tests.");
+  console.log(
+    "Scope: npm test runs 3 Node smoke suites only. Use npm run test:unit -- <test-paths> for focused units, or npm run check -- <task-paths> for task completion.",
+  );
   setPriority(0, constants.priority.PRIORITY_BELOW_NORMAL);
   const require = createRequire(import.meta.url);
   const result = await runTaskCommand(

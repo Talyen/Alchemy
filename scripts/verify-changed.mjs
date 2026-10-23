@@ -17,6 +17,7 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 
 const VERIFY_FLAGS = new Set([
   "diff",
+  "committed",
   "plan",
   "verbose-plan",
   "verbose",
@@ -27,14 +28,14 @@ const VERIFY_FLAGS = new Set([
 ]);
 
 export function parseVerifyArgs(argv) {
-  const { flags, paths } = parseChangedPathsArgs(argv, {
-    usage: "Provide paths or use --diff. Example: npm run verify -- --diff --plan",
+  const { flags, paths, revision } = parseChangedPathsArgs(argv, {
+    usage: "Provide paths, --diff, or --committed <revision>. Example: npm run verify -- --diff --plan",
   });
   for (const flag of flags) {
     if (!VERIFY_FLAGS.has(flag)) throw new Error(`Unknown verify option: --${flag}`);
   }
   if (flags.has("unit") && flags.has("full")) throw new Error("Choose --unit or --full");
-  return { flags, paths: resolveSelectedPaths(ROOT, { flags, paths }) };
+  return { flags, paths: resolveSelectedPaths(ROOT, { flags, paths, revision }) };
 }
 
 export function filterPlanCommands(plan, flags) {
@@ -115,10 +116,9 @@ export function main(argv = process.argv.slice(2)) {
       `Run: ${runId}; scope: ${flags.has("full") ? "broader verification" : flags.has("unit") ? "focused units" : "task units and documentation"}`,
     );
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
-    if (!flags.has("full"))
-      console.log(
-        "Scope: selected units and documentation; check adds types and supporting diagnostics. CI and platform acceptance are separate.",
-      );
+    console.log(
+      "Scope: route-selected checks only. Use check for the completion gate with types, formatting and lint; check:full adds full static validation and applicable builds.",
+    );
     if (flags.has("plan")) return 0;
 
     // The ordinary outer check caches this deterministic aggregate and guards

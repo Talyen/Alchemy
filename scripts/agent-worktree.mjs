@@ -55,7 +55,19 @@ function preserveIntegrationEvidence(main, task, branch, head) {
   };
   const pointer = evidencePath("reports/current-run.json");
   const run = fs.existsSync(pointer) ? JSON.parse(fs.readFileSync(pointer, "utf8")) : null;
-  const selected = new Set(["reports/current-run.json", "reports/current-run.md", "reports/visual-review"]);
+  const selected = new Set(["reports"]);
+  const ignored = execFileSync(
+    "git",
+    [...UNCACHED_GIT_OPTIONS, "ls-files", "--others", "--ignored", "--exclude-standard", "-z"],
+    { cwd: task, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+  )
+    .split("\0")
+    .filter(Boolean);
+  // Dependencies and reproducible outputs can be rebuilt. Preserve every other
+  // ignored file, including localization drafts and ad-hoc investigation notes.
+  const disposable =
+    /^(?:node_modules(?:\/|$)|dist(?:-demo|-desktop)?(?:\/|$)|release-desktop(?:\/|$)|coverage(?:\/|$)|test-results(?:\/|$)|playwright-report(?:\/|$)|\.vite(?:\/|$)|\.worktrees(?:\/|$))/u;
+  for (const file of ignored) if (!disposable.test(file) && !file.startsWith("reports/")) selected.add(file);
   if (run) {
     if (!/^[a-z0-9-]+$/u.test(run.runId)) throw new Error("Invalid evidence run ID; checkout preserved");
     selected.add(`reports/runs/${run.runId}`);
@@ -65,8 +77,14 @@ function preserveIntegrationEvidence(main, task, branch, head) {
       selected.add(bundle ? bundle[0].replace(/\/$/u, "") : artifact.path);
     }
   }
-  const existing = [...new Set([...selected].map((relative) => path.relative(task, evidencePath(relative))))].filter(
-    (relative) => fs.existsSync(path.join(task, relative)),
+  const candidates = [...new Set([...selected].map((relative) => path.relative(task, evidencePath(relative))))];
+  const existing = candidates.filter(
+    (relative) =>
+      fs.existsSync(path.join(task, relative)) &&
+      !candidates.some((parent) => parent !== relative && relative.startsWith(parent + path.sep)),
+  );
+  console.log(
+    `Cleanup preview: close task browsers; preserve reports and ${ignored.filter((file) => !disposable.test(file) && !file.startsWith("reports/")).length} other local files; remove ${task}; retain ${branch}. Use --keep-worktree to keep the checkout and browsers.`,
   );
   if (!existing.length) return;
   let parent = main;
@@ -147,7 +165,7 @@ export function removeIntegratedWorktree(main, task, branch, head) {
   }
   fs.unlinkSync(path.join(checkout, ".git"));
   fs.rmSync(recovery, { recursive: true });
-  console.log("Removed completed worktree " + task + ", including local-only files; retained branch " + branch);
+  console.log("Removed completed worktree " + task + ", after preserving task artifacts; retained branch " + branch);
 }
 
 function usage() {
@@ -290,6 +308,11 @@ export async function main(argv = process.argv.slice(2)) {
           }
         }
       };
+      console.log(
+        hasFlag("--keep-worktree")
+          ? `Finish plan: integrate ${task}; keep worktree and task browsers.`
+          : `Finish plan: integrate ${task}; close task browsers; preserve reports and non-build ignored files in reports/integrations; remove worktree; retain branch. Add --keep-worktree to continue inspection.`,
+      );
       let taskHead;
       for (;;) {
         const snapshotLock = await acquireExclusivePort(port, { label: "Integration lock" });

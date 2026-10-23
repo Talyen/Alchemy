@@ -16,6 +16,7 @@ import {
   validatePluralForms,
   resolveAliases,
   translationPackets,
+  editableTranslationPackets,
   validateBatch,
 } from "./localization/catalog.mjs";
 
@@ -121,14 +122,26 @@ try {
     throw new Error(
       "Usage: localization.mjs prepare [tasks.json]|finish <tasks.json>|extract|tasks|apply <results.json>|check",
     );
-  const packetFile = path.resolve(process.argv[3] ?? path.join(ROOT, "reports/localization/tasks.json"));
+  const reviewComplete = process.argv.includes("--reviewed");
+  const extra = process.argv.slice(3);
+  if (
+    extra.some((arg) => arg.startsWith("--") && arg !== "--reviewed") ||
+    extra.filter((arg) => !arg.startsWith("--")).length > 1 ||
+    (reviewComplete && !["finish", "apply"].includes(command))
+  )
+    throw new Error("Use prepare [packet.json], or finish <packet.json> --reviewed after semantic review");
+  const inputFile = extra.find((arg) => !arg.startsWith("--"));
+  if (["finish", "apply"].includes(command) && !inputFile) throw new Error("A translation result file is required");
+  if (!["prepare", "finish", "apply"].includes(command) && inputFile)
+    throw new Error(`${command} accepts no file argument`);
+  const packetFile = path.resolve(inputFile ?? path.join(ROOT, "reports/localization/tasks.json"));
   const savedPacket = command === "prepare" && fs.existsSync(packetFile) ? fs.readFileSync(packetFile, "utf8") : null;
   const drafts = savedPacket === null ? [] : JSON.parse(savedPacket);
   const { messages, issues } = await extractMessages();
   const glossary = read("glossary");
   // Refresh drafts before writing derived catalogs, so malformed packets leave
   // both the working file and catalogs untouched.
-  const packets =
+  let packets =
     command === "prepare" || command === "tasks"
       ? translationPackets(
           {
@@ -139,6 +152,7 @@ try {
           drafts,
         )
       : null;
+  if (command === "prepare") packets = editableTranslationPackets(packets);
   if (command === "extract" || command === "prepare") {
     await write("en", messages);
     for (const locale of TARGETS)
@@ -167,19 +181,22 @@ try {
         `${packets.reduce((total, packet) => total + Object.keys(packet.results).length, 0)} pending translations across ${packets.length} locales: ${packetFile}`,
       );
       console.log(
-        `Translate the results and review their meaning separately; set reviewed to true only after review. Then run npm run i18n:finish -- ${packetFile}`,
+        `Edit only result strings/forms, then review them against the prepared English and glossary. After semantic review run npm run i18n:finish -- ${packetFile} --reviewed`,
       );
     }
   } else if (command === "tasks") {
     process.stdout.write(serialize(packets));
   } else if (command === "apply" || command === "finish") {
-    if (!process.argv[3]) throw new Error("A translation result file is required");
-    const input = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
-    const next = validateBatch(input, {
-      messages,
-      glossary,
-      catalogs: Object.fromEntries(TARGETS.map((locale) => [locale, read(locale)])),
-    });
+    const input = JSON.parse(fs.readFileSync(packetFile, "utf8"));
+    const next = validateBatch(
+      input,
+      {
+        messages,
+        glossary,
+        catalogs: Object.fromEntries(TARGETS.map((locale) => [locale, read(locale)])),
+      },
+      { reviewed: reviewComplete },
+    );
     // Validate every locale before replacing any catalog.
     for (const [locale, entries] of Object.entries(next)) await write(locale, entries);
     await write("runtime", runtimeCatalog(messages, glossary));

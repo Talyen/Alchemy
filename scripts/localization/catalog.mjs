@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import languages from "../../src/lib/localization/locales/languages.json" with { type: "json" };
 
-export const INSTRUCTIONS =
+const INSTRUCTIONS =
   "alchemy-localization-v1: translate complete messages; preserve meaning, negation, conditions, named parameters and semantic tags; use glossary consistently with grammatical inflection; review before apply";
 export const TARGETS = Object.keys(languages).filter((locale) => locale !== "en");
 export const digest = (value) => crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -134,7 +134,23 @@ export function translationPackets({ messages, glossary, catalogs }, drafts = []
       throw new Error("Invalid or duplicate draft locale; existing packet preserved");
     if (!packet.results || typeof packet.results !== "object" || Array.isArray(packet.results))
       throw new Error("Expected draft results keyed by message ID; existing packet preserved");
-    saved.set(packet.locale, packet.results);
+    saved.set(
+      packet.locale,
+      Object.fromEntries(
+        Object.entries(packet.results).map(([id, result]) => [
+          id,
+          typeof result === "string" || (result && !Object.hasOwn(result, "sourceHash"))
+            ? {
+                ...(typeof result === "string"
+                  ? { text: result }
+                  : { ...result, text: result.text ?? result.forms?.other }),
+                sourceHash: packet.messages?.[id]?.sourceHash,
+                reviewed: false,
+              }
+            : result,
+        ]),
+      ),
+    );
   }
   return TARGETS.flatMap((locale) => {
     const previous = catalogs[locale] ?? {};
@@ -202,7 +218,24 @@ export function translationPackets({ messages, glossary, catalogs }, drafts = []
   });
 }
 
-export function validateBatch(input, { messages, glossary, catalogs }) {
+// Editable packets carry freshness in their generated message context. Authors
+// edit only strings/forms; the explicit reviewed option attests the separate
+// semantic pass, never a machine assessment of translation quality.
+export function editableTranslationPackets(packets) {
+  return packets.map((packet) => ({
+    ...packet,
+    glossary: Object.fromEntries(
+      Object.entries(packet.glossary).filter(([term]) =>
+        Object.values(packet.messages).some((message) => message.terms?.includes(term)),
+      ),
+    ),
+    results: Object.fromEntries(
+      Object.entries(packet.results).map(([id, result]) => [id, result.forms ? { forms: result.forms } : result.text]),
+    ),
+  }));
+}
+
+export function validateBatch(input, { messages, glossary, catalogs }, { reviewed = false } = {}) {
   const packets = Array.isArray(input) ? input : [input];
   const next = {};
   for (const packet of packets) {
@@ -216,7 +249,22 @@ export function validateBatch(input, { messages, glossary, catalogs }) {
       messages,
       glossary: glossary[locale],
       locale,
-      results,
+      results: Object.fromEntries(
+        Object.entries(results).map(([id, result]) => {
+          const editable = typeof result === "string" || (result && !Object.hasOwn(result, "sourceHash"));
+          if (editable && !packet.messages?.[id]?.sourceHash) throw new Error(`Missing prepared source context: ${id}`);
+          return [
+            id,
+            {
+              ...(typeof result === "string"
+                ? { text: result }
+                : { ...result, text: result?.text ?? result?.forms?.other }),
+              ...(editable ? { sourceHash: packet.messages[id].sourceHash } : {}),
+              ...(reviewed ? { reviewed: true } : {}),
+            },
+          ];
+        }),
+      ),
       previous: catalogs[locale],
     });
   }

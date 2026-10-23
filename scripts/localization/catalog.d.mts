@@ -13,7 +13,6 @@ export interface Translation {
   sourceHash: string;
   reviewed: boolean;
 }
-export const INSTRUCTIONS: string;
 export const TARGETS: string[];
 export function digest(value: unknown): string;
 export function ordered<T>(value: Record<string, T>): Record<string, T>;
@@ -58,4 +57,15 @@ export function translationPackets(
   messages: Record<string, Message & { sourceHash: string; previous: string | null }>;
   results: Record<string, Translation>;
 }>;
-export function validateBatch(input: unknown, context: WorkflowInput): Record<string, Record<string, Translation>>;
+export function editableTranslationPackets(packets: ReturnType<typeof translationPackets>): Array<{
+  locale: string;
+  instructions: string;
+  glossary: Record<string, string>;
+  messages: Record<string, Message & { sourceHash: string; previous: string | null }>;
+  results: Record<string, string | { forms: Record<string, string> }>;
+}>;
+export function validateBatch(
+  input: unknown,
+  context: WorkflowInput,
+  options?: { reviewed?: boolean },
+): Record<string, Record<string, Translation>>;

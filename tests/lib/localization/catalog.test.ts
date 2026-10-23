@@ -7,6 +7,7 @@ import {
   relatedTerms,
   TARGETS,
   translationPackets,
+  editableTranslationPackets,
   validateBatch,
 } from "../../../scripts/localization/catalog.mjs";
 
@@ -288,4 +289,54 @@ describe("bundled catalog encoding", () => {
     ])
       expect(() => unpackCatalogs(invalid)).toThrow();
   });
+});
+
+it("applies editable strings only after explicit review and rejects stale English or glossary context", () => {
+  const context = { messages, glossary: Object.fromEntries(TARGETS.map((locale) => [locale, glossary])), catalogs: {} };
+  const packet = editableTranslationPackets(translationPackets(context)).find((entry) => entry.locale === "de")!;
+  packet.results.attack = valid().text;
+  expect(packet.glossary).toEqual({ damage: "Schaden" });
+  expect(() => validateBatch(packet, context)).toThrow("not been reviewed");
+  expect(validateBatch(packet, context, { reviewed: true }).de?.attack).toEqual(valid());
+  expect(translationPackets(context, packet).find((entry) => entry.locale === "de")?.results.attack?.text).toBe(
+    valid().text,
+  );
+  expect(() =>
+    validateBatch(
+      packet,
+      { ...context, messages: { attack: { ...message, text: "New English" } } },
+      { reviewed: true },
+    ),
+  ).toThrow("Outdated");
+  expect(() =>
+    validateBatch(
+      packet,
+      { ...context, glossary: { ...context.glossary, de: { damage: "Changed" } } },
+      { reviewed: true },
+    ),
+  ).toThrow("Outdated");
+  packet.results.attack = "No named amount parameter";
+  expect(() => validateBatch(packet, context, { reviewed: true })).toThrow();
+});
+
+it("derives plural display text from editable forms and rejects missing required categories", () => {
+  const plural = {
+    text: "{{count}} items",
+    context: "Quantity",
+    plural: true,
+    forms: { one: "{{count}} item", other: "{{count}} items" },
+  };
+  const context = {
+    messages: { quantity: plural },
+    glossary: Object.fromEntries(TARGETS.map((locale) => [locale, {}])),
+    catalogs: {},
+  };
+  const packet = editableTranslationPackets(translationPackets(context)).find((entry) => entry.locale === "de")!;
+  packet.results.quantity = { forms: { one: "{{count}} Ding", other: "{{count}} Dinge" } };
+  expect(validateBatch(packet, context, { reviewed: true }).de?.quantity?.text).toBe("{{count}} Dinge");
+  expect(translationPackets(context, packet).find((entry) => entry.locale === "de")?.results.quantity?.forms).toEqual(
+    packet.results.quantity.forms,
+  );
+  packet.results.quantity = { forms: { other: "{{count}} Dinge" } };
+  expect(() => validateBatch(packet, context, { reviewed: true })).toThrow();
 });

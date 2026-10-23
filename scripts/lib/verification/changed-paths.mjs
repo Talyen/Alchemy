@@ -1,7 +1,7 @@
 import { expandRepositoryPaths, runGit } from "../repository-paths.mjs";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 
-import { changedGitPaths } from "./current-run.mjs";
 import { isDocumentationPath, resolveRoutes, SHARED_BUILD_PATTERNS } from "./change-routes.mjs";
 import { globToRegExp } from "../glob-pattern.mjs";
 
@@ -11,8 +11,16 @@ export function parseChangedPathsArgs(argv, { usage } = {}) {
   const flags = new Set();
   const paths = [];
   let filePaths;
+  let revision;
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
+    if (arg === "--committed") {
+      revision = argv[++index];
+      if (!revision || revision.startsWith("-") || flags.has("committed"))
+        throw new Error("--committed requires one Git revision");
+      flags.add("committed");
+      continue;
+    }
     if (arg === "--paths-file") {
       const filename = argv[++index];
       if (!filename || filename.startsWith("--") || filePaths) throw new Error("--paths-file requires one filename");
@@ -25,14 +33,16 @@ export function parseChangedPathsArgs(argv, { usage } = {}) {
     if (arg.startsWith("--")) flags.add(arg.slice(2));
     else paths.push(arg);
   }
+  if (flags.has("committed") && (paths.length || filePaths || flags.has("diff")))
+    throw new Error("Choose explicit paths, --diff, or --committed <revision>");
   if (filePaths && (paths.length || flags.has("diff")))
     throw new Error("Choose a path selection file, explicit paths, or --diff");
   if (filePaths) paths.push(...filePaths);
   if (paths.length > 0 && flags.has("diff")) throw new Error("Choose explicit paths or --diff, not both.");
-  if (paths.length === 0 && !flags.has("diff")) {
+  if (paths.length === 0 && !flags.has("diff") && !flags.has("committed")) {
     throw new Error(usage ?? "Provide paths or use --diff.");
   }
-  return { flags, paths };
+  return { flags, paths, revision };
 }
 
 /**
@@ -47,12 +57,13 @@ function diffHeadPaths(rootDir) {
   return [...new Set([...tracked.stdout.split("\0"), ...untracked.stdout.split("\0")].filter(Boolean))];
 }
 
-export function resolveSelectedPaths(rootDir, { flags, paths }) {
-  const useDiff = flags?.has("diff") ?? false;
-  let selected = paths.length > 0 ? paths : useDiff ? diffHeadPaths(rootDir) : changedGitPaths(rootDir);
-  if (!selected) throw new Error(useDiff ? "git diff failed" : "git status failed");
-  if (paths.length === 0 && selected.length === 0) {
-    const committed = runGit(rootDir, [
+export function resolveSelectedPaths(rootDir, { flags, paths, revision }) {
+  const committed = flags?.has("committed");
+  let selected;
+  if (committed) {
+    const commit = runGit(rootDir, ["rev-parse", "--verify", "--end-of-options", `${revision}^{commit}`]);
+    if (commit.status !== 0) throw new Error(`Unknown commit: ${revision}`);
+    const result = runGit(rootDir, [
       "diff-tree",
       "--root",
       "-m",
@@ -61,12 +72,27 @@ export function resolveSelectedPaths(rootDir, { flags, paths }) {
       "--name-only",
       "-z",
       "-r",
-      "HEAD",
+      commit.stdout.trim(),
     ]);
-    if (committed.status !== 0) throw new Error("Could not inspect HEAD changes");
-    selected = [...new Set(committed.stdout.split("\0").filter(Boolean))];
+    if (result.status !== 0) throw new Error(`Could not inspect commit: ${revision}`);
+    selected = [...new Set(result.stdout.split("\0").filter(Boolean))];
+  } else {
+    selected = paths.length ? paths : diffHeadPaths(rootDir);
+    if (!selected) throw new Error("git diff failed");
   }
-  return expandRepositoryPaths(rootDir, selected);
+  const expanded = expandRepositoryPaths(rootDir, selected);
+  if (!committed)
+    for (const file of expanded) {
+      if (existsSync(path.join(rootDir, file))) continue;
+      // Deleted tracked files and committed deletions remain selectable. A typo
+      // has neither an index entry nor history and must never yield a green gate.
+      const tracked = runGit(rootDir, ["ls-files", "--error-unmatch", "--", `:(literal)${file}`]);
+      if (tracked.status === 0) continue;
+      const history = runGit(rootDir, ["log", "-1", "--format=%H", "--", `:(literal)${file}`]);
+      if (history.status !== 0 || !history.stdout.trim())
+        throw new Error(`Selected path does not exist and is not a known deletion: ${file}`);
+    }
+  return expanded;
 }
 
 /** Select the actual updates supplied by Git's pre-push hook, including deletions/renames. */

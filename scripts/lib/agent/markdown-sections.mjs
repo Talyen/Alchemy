@@ -76,11 +76,6 @@ export function headingSlugs(source) {
   return slugs;
 }
 
-/** Source with fenced code blocks removed (backticked paths inside examples are not repo refs). */
-export function stripFencedBlocks(source) {
-  return Array.from(unfencedLines(source.split("\n")), ({ line }) => line).join("\n");
-}
-
 /** Read a heading-delimited section of a repo document, ignoring headings inside fenced blocks. */
 export function readDocumentSection(rootDir, relativePath, heading = null) {
   const source = fs.readFileSync(path.join(rootDir, relativePath), "utf8");

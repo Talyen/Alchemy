@@ -6,6 +6,4 @@ export function readDocumentSection(
 
 export function headingSlugs(source: string): Set<string>;
 
-export function stripFencedBlocks(source: string): string;
-
 export function extractMarkdownLinkTargets(source: string): Array<{ target: string; index: number }>;

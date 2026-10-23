@@ -1,6 +1,9 @@
 export function resolvePushPaths(root: string, input: string): string[];
 
-export function resolveSelectedPaths(root: string, selection: { flags?: Set<string>; paths: string[] }): string[];
+export function resolveSelectedPaths(
+  root: string,
+  selection: { flags?: Set<string>; paths: string[]; revision?: string },
+): string[];
 
 export function classifyCheckPaths(
   root: string,
@@ -20,4 +23,5 @@ export function parseChangedPathsArgs(
 ): {
   flags: Set<string>;
   paths: string[];
+  revision?: string;
 };

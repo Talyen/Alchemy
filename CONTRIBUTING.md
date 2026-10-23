@@ -14,7 +14,9 @@ Use these three commands for ordinary work:
 | Run focused units    | `npm run test:unit -- <test-paths>`        |
 | Run broad validation | `npm run check:full -- <task-owned paths>` |
 
-Use `--diff` instead of task paths when the entire dirty set belongs to the task.
+Use `--diff` for working changes only when the entire dirty set belongs to the task.
+A clean diff selects nothing. Use `--committed HEAD` (or another revision) to check
+paths changed by one commit explicitly; execution uses the current checkout. Unknown paths fail; Git-recognized deletions stay selectable.
 Add `--plan` to preview selected checks. Include deleted paths; omit unit paths
 only when you intend to run all units. Retained command aliases are documented in
 [the implementation reference](./scripts/VERIFICATION.md#compatibility-commands-and-test-runners).
@@ -49,9 +51,11 @@ comparison and affected interactions. Finalize text in the task worktree, then
 [translate and review](./Docs/LOCALIZATION.md#agent-workflow) before final checks
 and integration. Checks and builds never invoke a translation service.
 
-Tests share a host-wide lane; occupied lanes wait and remain cancellable. Never
-terminate another task's run. Raw CLI/watch commands bypass that lane and require
-manual coordination. For test filters, verify the reported file count: Vitest can
+Tests share a host-wide budget: one broad run plus one focused unit run with one
+worker. A focused run selects one or two explicit test files without extra flags.
+Use `npm run test:status` to see managed owners and waiting work. Occupied
+reservations wait and remain cancellable; never terminate another task's run.
+Raw CLI/watch commands bypass the budget and require manual coordination. For test filters, verify the reported file count: Vitest can
 ignore a misspelled path when another filter matches. [Runner details](./scripts/VERIFICATION.md#compatibility-commands-and-test-runners)
 cover deadlines, contention and overrides.
 
@@ -60,7 +64,8 @@ cover deadlines, contention and overrides.
 Use `npm run agent:browser -- <action and arguments>` for interactive review on
 macOS/Linux. Task sessions and a 1920 × 1080 viewport are automatic. Use
 `set viewport <width> <height>` for responsive checks. Screenshots default to
-`reports/visual-review/` and are preserved during final integration.
+`reports/visual-review/`. Final integration preserves the complete `reports/`
+directory and non-build ignored files in its reported integration bundle.
 
 Checks preserve interactive sessions. Final integration closes task browsers and
 removes the completed worktree after releasing the shared integration lock;

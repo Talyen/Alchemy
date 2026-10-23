@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, expect, it } from "vitest";
+import { resolveSelectedPaths, parseChangedPathsArgs } from "../../scripts/lib/verification/changed-paths.mjs";
 import { captureSourceDigest } from "../../scripts/check.mjs";
 
 const roots: string[] = [];
@@ -61,4 +62,22 @@ it("rejects selected deletions, changed symlink targets and a different HEAD", (
   expect(digest()).not.toBe(linked);
   git("commit", "--allow-empty", "-m", "next head");
   expect(digest()).not.toBe(before);
+});
+
+it("keeps working and committed selections explicit and rejects typos while retaining deletions", () => {
+  const { root, git } = fixture();
+  const select = (args: string[]) => resolveSelectedPaths(root, parseChangedPathsArgs(args));
+  expect(select(["--diff"])).toEqual([]);
+  expect(select(["--committed", "HEAD"])).toContain("owned/a.ts");
+  expect(() => select(["owned/typo.ts"])).toThrow("not a known deletion");
+  expect(() => select(["--committed", "missing-ref"])).toThrow("Unknown commit");
+  expect(() => select(["--committed", "HEAD", "--diff"])).toThrow("Choose");
+  fs.rmSync(path.join(root, "owned/a.ts"));
+  expect(select(["owned/a.ts"])).toEqual(["owned/a.ts"]);
+  expect(select(["--diff"])).toEqual(["owned/a.ts"]);
+  git("add", "-u");
+  git("commit", "-m", "remove owned file");
+  expect(select(["--diff"])).toEqual([]);
+  expect(select(["--committed", "HEAD"])).toEqual(["owned/a.ts"]);
+  expect(select(["owned/a.ts"])).toEqual(["owned/a.ts"]);
 });

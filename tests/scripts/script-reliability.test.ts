@@ -485,7 +485,7 @@ describe("script execution reliability", () => {
   it("fails verification discovery explicitly when Git cannot read the repository", () => {
     const root = fixture();
     expect(changedGitPaths(root)).toBeNull();
-    expect(() => resolveSelectedPaths(root, { paths: [] })).toThrow("git status failed");
+    expect(() => resolveSelectedPaths(root, { paths: [] })).toThrow("git diff failed");
     expect(() => listRepositoryFiles(root)).toThrow("Could not list repository files");
     expect(() => resolvePushPaths(root, "")).toThrow("Could not inspect push revisions");
   });
@@ -505,17 +505,18 @@ describe("script execution reliability", () => {
     );
     git(root, "add", ".");
     commit(root);
-    // A clean tree falls back to the HEAD commit, never older history.
-    expect(resolveSelectedPaths(root, { flags: diff, paths: [] }).sort()).toEqual(
+    expect(resolveSelectedPaths(root, { flags: diff, paths: [] })).toEqual([]);
+    expect(resolveSelectedPaths(root, { flags: new Set(["committed"]), paths: [], revision: "HEAD" }).sort()).toEqual(
       ["game.ts", "staged.ts", "untracked.ts"].sort(),
     );
     const shallow = fixture();
     git(root, "clone", "--quiet", "--depth=1", pathToFileURL(root).href, shallow);
     expect(git(shallow, "rev-parse", "--is-shallow-repository")).toBe("true");
-    // Without parent history, the HEAD fallback conservatively selects its entire tree.
-    expect(resolveSelectedPaths(shallow, { flags: diff, paths: [] }).sort()).toEqual(
-      ["game.ts", "history.ts", "staged.ts", "untracked.ts"].sort(),
-    );
+    // An explicit shallow HEAD selection conservatively includes its entire tree.
+    expect(resolveSelectedPaths(shallow, { flags: diff, paths: [] })).toEqual([]);
+    expect(
+      resolveSelectedPaths(shallow, { flags: new Set(["committed"]), paths: [], revision: "HEAD" }).sort(),
+    ).toEqual(["game.ts", "history.ts", "staged.ts", "untracked.ts"].sort());
   });
 
   it("keeps deleted paths for verification while fallback search reads only surviving files", () => {

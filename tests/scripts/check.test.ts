@@ -200,7 +200,7 @@ describe("full source-aware completion gate", () => {
 
   it("lets static checks own docs:check on executable changes only", async () => {
     const executable: unknown[][] = [];
-    await runCheck(["src/App.tsx", "Docs/guide.md"], {
+    await runCheck(["src/App.tsx", "Docs/REFERENCE.md"], {
       runner: vi.fn((...args: unknown[]) => {
         executable.push(args);
         return 0;
@@ -211,7 +211,7 @@ describe("full source-aware completion gate", () => {
     expect(verify?.[2]).toContain("--skip-docs-check");
 
     const docsOnly: unknown[][] = [];
-    await runCheck(["Docs/guide.md"], {
+    await runCheck(["Docs/REFERENCE.md"], {
       runner: vi.fn((...args: unknown[]) => {
         docsOnly.push(args);
         return 0;

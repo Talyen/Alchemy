@@ -97,7 +97,7 @@ it("checks localization inputs but skips tooling-only and test-only edits", asyn
   for (const [file, localized] of [
     ["scripts/check.mjs", false],
     ["tests/scripts/check.test.ts", false],
-    ["src/lib/game-data/cards/index.ts", true],
+    ["src/lib/game-data/cards/library/archery.ts", true],
     ["src/lib/localization/locales/fr.json", true],
     ["steam/store-copy.source.json", true],
   ] as const) {

@@ -85,13 +85,13 @@ export function parseCheckArgs(argv) {
     if (process.stdin.isTTY) throw new Error("--pre-push requires Git hook input on stdin");
     return resolvePushPaths(ROOT, fs.readFileSync(0, "utf8"));
   }
-  const { flags, paths } = parseChangedPathsArgs(argv, {
-    usage: "Provide paths or use --diff. Example: npm run check -- --diff",
+  const { flags, paths, revision } = parseChangedPathsArgs(argv, {
+    usage: "Provide paths, --diff, or --committed <revision>. Example: npm run check -- --diff",
   });
   for (const flag of flags) {
-    if (!["diff", "full", "plan"].includes(flag)) throw new Error(`Unknown check option: --${flag}`);
+    if (!["diff", "committed", "full", "plan"].includes(flag)) throw new Error(`Unknown check option: --${flag}`);
   }
-  return resolveSelectedPaths(ROOT, { flags, paths });
+  return resolveSelectedPaths(ROOT, { flags, paths, revision });
 }
 
 function defaultRunner(label, command, args, env) {
@@ -116,8 +116,12 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const runner = options.runner ?? defaultRunner;
   const paths = parseCheckArgs(argv);
   const full = argv.includes("--full");
+  console.log(
+    `Scope: ${full ? "broad completion gate: selected tests, full static validation and applicable builds" : "task completion gate: selected tests, types, localization, formatting and lint"}.`,
+  );
   // Keep explicit directory selections unexpanded for the final membership scan.
   const raw = argv.includes("--pre-push") ? null : parseChangedPathsArgs(argv);
+  if (raw?.revision) console.log(`Selection: files changed by ${raw.revision}; execution uses the current checkout.`);
   const guardedPaths = !full && raw ? (raw.paths.length ? raw.paths : paths) : undefined;
   const digestFn = options.captureDigest ?? (() => captureSourceDigest({ paths: guardedPaths }));
   if (paths.length === 0) {

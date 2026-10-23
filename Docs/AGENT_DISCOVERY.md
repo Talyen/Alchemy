@@ -38,6 +38,9 @@ Use `rg -l '<pattern>' <owner-directory>` when only filenames are needed;
 `rg -n` is for matching lines. Narrow a truncated search rather than repeating it
 with a larger dump.
 
+Use explicit Markdown links for maintained file contracts. Inline code such as
+`proposed-future-module.ts` is explanatory text and does not promise that a file exists.
+
 No context session or separate search index needs maintaining. Use `npm --silent
 run <command>` to omit npm banners from discovery, review and verification.
 
@@ -73,7 +76,7 @@ checkouts; omit paths to review the whole dirty set. Review commands do not acce
 
 ## Verification
 
-[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns the task gate and execution permissions. Use `npm run check -- <paths>`; add `--plan` to inspect selected commands without running them. Owner lookup locates documentation and does not select tests.
+[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns the task gate and execution permissions. Use `npm run check -- <paths>`; add `--plan` to inspect selected commands without running them. Owner lookup locates documentation and does not select tests. `--diff` selects only working changes; use `--committed HEAD` for the latest commit. Explicit verification paths must exist or be Git-recognized deletions.
 
 [`runs:show`](./REFERENCE.md#failure-first-triage) includes primary evidence paths
 so a failed run's digest can be opened directly. Compact failure summaries
