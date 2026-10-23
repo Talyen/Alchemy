@@ -94,7 +94,9 @@ export function HomesteadTooltipBody({
                     value1: i18n.displayText(costLabel),
                   })}
                 >
-                  <span className="text-muted-foreground">{i18n.displayText(node.action)}</span>
+                  <span className={cn("text-muted-foreground", node.action !== "Bond" && "text-base")}>
+                    {i18n.displayText(node.action)}
+                  </span>
                   <span className="inline-flex items-center gap-3" aria-hidden="true">
                     {materials.map((material) => (
                       <span

@@ -101,7 +101,8 @@ their discovery requirement. The wallet stays in the gallery, which has no upgra
 arrows or separate detail screens.
 
 Build, Upgrade, or Bond costs appear as a plain row with material icons and
-quantities. Missing materials use red quantities without additional feedback text.
+quantities. Build and Upgrade labels are one text size larger than the quantities.
+Missing materials use red quantities without additional feedback text.
 A divider separates purchased bonuses from the next cost. Gold uses the same
 inline icon chip as Homestead materials. The artwork stays focusable for
 inspection but cannot purchase when more materials are needed. A visible Saving
