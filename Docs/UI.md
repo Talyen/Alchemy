@@ -63,12 +63,14 @@ Alchemy's [accessibility stance](#accessibility-stance) defines its actual scope
 Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for page structure. Use shared chrome before recreating buttons, progress bars, switches, cards, or tooltips.
 
 `TitledScreenShell.aboveHeader` holds compact context above the heading. Choose
-Destination shows the current eight-room trail there: visited destination icons,
-a gold circle with a centered gold star for the current room, unknown future rooms,
-and the boss crown at the end. Nodes use 1px circles and the destination choices'
-icon size, stroke and colors; Boss destinations use deep purple. The trail's end
-nodes align with the header toolbar icons. It is static and adds no act labels or
-navigation controls.
+Destination shows small I / II / III act circles there (only I in the demo).
+Clicking the highlighted current act unfolds it into the current eight-room
+trail on the same line, with neighboring acts sliding aside. Click the trail or
+press Escape to collapse it. Visited rooms keep their destination icons; a gold
+star marks the current room, future rooms are unknown, and the boss crown uses
+deep purple. Nodes have 1px borders and retain the destination icons' size and
+stroke. The row sits slightly above the header, and transition/focus treatment
+stays on individual circles, preserving the title and artwork positions.
 
 ## Component conventions
 

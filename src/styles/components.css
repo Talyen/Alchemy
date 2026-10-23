@@ -1,4 +1,135 @@
 @layer components {
+  .destination-progress {
+    --progress-node: calc(2.25 * var(--content-rem, 1rem));
+    --progress-act-step: calc(3 * var(--content-rem, 1rem));
+    --progress-travel-duration: 420ms;
+    --progress-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .destination-progress-stage {
+    position: relative;
+    height: var(--progress-node);
+  }
+
+  .destination-progress-rail {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: 1px;
+    width: calc((var(--progress-act-count) - 1) * var(--progress-act-step));
+    transform: translateX(-50%);
+    background: color-mix(in srgb, var(--color-border) 70%, transparent);
+    transition: width var(--progress-travel-duration) var(--progress-ease);
+    pointer-events: none;
+  }
+
+  .destination-progress-position {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateX(var(--progress-collapsed-x));
+    pointer-events: none;
+    transition:
+      transform var(--progress-travel-duration) var(--progress-ease),
+      opacity 140ms ease-out;
+  }
+
+  .destination-progress-node {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: var(--progress-node);
+    height: var(--progress-node);
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    background: var(--color-background);
+    transition: transform 220ms var(--progress-ease);
+  }
+
+  .destination-progress-room {
+    opacity: 0;
+  }
+
+  .destination-progress-room .destination-progress-node {
+    transform: scale(0.86);
+  }
+
+  .destination-progress[data-expanded="true"] .destination-progress-rail {
+    width: calc(100% - var(--progress-node));
+  }
+
+  .destination-progress[data-expanded="true"] .destination-progress-position {
+    transform: translateX(var(--progress-expanded-x));
+  }
+
+  .destination-progress[data-expanded="true"] .destination-progress-active-act {
+    opacity: 0;
+  }
+
+  .destination-progress[data-expanded="true"] .destination-progress-active-act .destination-progress-node {
+    transform: scale(0.86);
+  }
+
+  .destination-progress[data-expanded="true"] .destination-progress-room {
+    opacity: 1;
+    transition-delay: calc(30ms + var(--progress-node-delay));
+  }
+
+  .destination-progress[data-expanded="true"] .destination-progress-room .destination-progress-node {
+    transform: scale(1);
+  }
+
+  .destination-progress-toggle {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    left: calc(
+      50% + (var(--progress-act-index) - (var(--progress-act-count) - 1) / 2) * var(--progress-act-step) -
+        var(--progress-node) / 2
+    );
+    width: var(--progress-node);
+    height: var(--progress-node);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .destination-progress[data-expanded="true"] .destination-progress-toggle {
+    left: calc(var(--progress-act-index) * var(--progress-act-step));
+    width: calc(100% - (var(--progress-act-count) - 1) * var(--progress-act-step));
+  }
+
+  .destination-progress-toggle:focus-visible {
+    outline: none;
+  }
+
+  .destination-progress:has(.destination-progress-toggle:hover) .destination-progress-current-node {
+    border-color: var(--color-gold-pale);
+  }
+
+  .destination-progress:has(.destination-progress-toggle:focus-visible):where(html[data-focus-navigation="true"] *)
+    .destination-progress-current-node {
+    outline: 2px solid var(--color-gold-pale);
+    outline-offset: 3px;
+  }
+
+  @media (pointer: coarse) {
+    .destination-progress-toggle::after {
+      content: "";
+      position: absolute;
+      inset: -4px 0;
+    }
+  }
+
+  .destination-progress[data-reduced-motion="true"] *,
+  .destination-progress[data-reduced-motion="true"] *::after {
+    transition: none;
+  }
+
   .alchemy-shell {
     background-color: var(--color-shell-bg);
     border-color: var(--color-shell-border);

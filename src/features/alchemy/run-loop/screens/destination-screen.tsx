@@ -63,6 +63,7 @@ export function DestinationScreen({
       maxWidthClass={bossOnly ? "max-w-3xl" : chooserRowShellWidthClass}
       aboveHeader={
         <DestinationRoomProgress
+          currentAct={currentAct}
           destinationIndexInAct={destinationIndexInAct}
           completedDestinations={completedDestinations}
         />

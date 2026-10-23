@@ -5,6 +5,15 @@ Canonical detail linked from [UI.md](./UI.md).
 Screen-specific Homestead purchase feedback lives with its
 [gallery interaction](./UI_BROWSING.md#purchase-motion).
 
+Choose Destination's act/room toggle keeps its 36px circles at a fixed size while
+individual nodes translate and fade over 420ms, with a short outward stagger for
+the room reveal. The selected act numeral fades as the room trail fans out;
+neighboring acts move to either side without resizing the title or artwork.
+Reversible CSS transitions retarget from the current pose on repeated input.
+Focus is painted on the active circle, never the expanding transparent hit area.
+The shared reduced/disabled-motion preference settles both views immediately;
+the toggle only changes presentation and never commits room progress.
+
 ## Screen fade motion
 
 - **Route change** — `useRenderedScreenTransition` owns the opacity-only page fade. Save payloads follow the committed run activity; audio, battle playback, and presentation teardown follow committed `screen`, not `renderedScreen`.
