@@ -2,7 +2,7 @@
 
 This standalone experiment aligns supplied boss lyrics to their shipped
 recordings. Phrase-bounded output supplies the Battle UI timing snapshots for
-The Blight Treant, The Forge Golem, The Frostwarden and The Iron Bear; see
+The Blight Treant, The Forge Golem, The Frostwarden, The Iron Bear and The Blood Countess; see
 [Audio workflow](../../Docs/AUDIO.md#local-lyric-alignment-experiment).
 Running this tool does not itself replace that checked-in snapshot. Its placeholder layout
 places lyrics centered between the combatants and the hand. Words appear as
@@ -90,6 +90,14 @@ flagged words alone does not establish a better or complete transcription.
 The cached full transcript is reused only for the same recording hash.
 
 ## Other boss songs
+
+Blood Countess's “One More Heartbeat” timings are imported from Trinket's
+`MusicManifest/lyrics/boss_blood_countess.json` at commit `76cacf41a`, paired with
+the unchanged shared `The Blood Countess - Boss Track.mp3` master. Its
+`blood-countess.txt` sheet preserves the performed phrases from that snapshot;
+the original authored sheet was unavailable. `importedFrom` retains the upstream
+snapshot and lyric-sheet hashes, while `lyricsSha256` hashes the local sheet.
+The preview's **Boss song** selector opens the imported snapshot directly.
 
 The supplied `forge-golem.txt`, `frostwarden.txt` and `iron-bear.txt` match the
 lyric metadata embedded in their shipped MP3s. Section labels, singer labels

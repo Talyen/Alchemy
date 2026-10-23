@@ -33,11 +33,16 @@ for every action or change the intentional silent-content registrations below.
 The [boss karaoke experiment](../scripts/lyrics-trial/README.md) runs local
 word alignment against supplied lyrics and provides a standalone preview.
 Phrase-bounded timing snapshots for The Blight Treant, The Forge Golem,
-The Frostwarden and The Iron Bear live in `src/lib/audio/lyrics/`, each tied to
+The Frostwarden, The Iron Bear and The Blood Countess live in `src/lib/audio/lyrics/`, each tied to
 its recording by SHA-256. `lyrics.ts` registers them by music key. The new lyric
 sheets are retained in `scripts/lyrics-trial/` and match the supplied sheets and
 the MP3 lyric metadata; section labels and sound directions are excluded.
 Unclear Forge Golem chant groups use bracketed vocal cues.
+Blood Countess's “One More Heartbeat” recording and 58 timed phrases are imported
+from Trinket commit `76cacf41a`. Its local lyric sheet preserves the imported
+performed phrases because the original authored sheet was not retained.
+The snapshot's `importedFrom` metadata preserves the upstream snapshot hash and
+original lyric-sheet hash; `lyricsSha256` identifies the local performed sheet.
 The experiment remains a separate comparison tool. Generated timings still need
 performance-coverage and audible synchronization review; coverage metadata
 records undetected phrases and unmatched ASR words rather than forcing them
