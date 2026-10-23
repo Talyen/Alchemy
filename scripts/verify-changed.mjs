@@ -12,6 +12,7 @@ import { defineScript } from "./lib/script-run.mjs";
 import { runCommand } from "./lib/run-command.mjs";
 import { createVerificationCache } from "./lib/verification/verification-cache.mjs";
 import { selectContext } from "./lib/agent/agent-context.mjs";
+import { batchUnitCommands } from "./lib/verification/unit-batch.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -127,7 +128,7 @@ export function main(argv = process.argv.slice(2)) {
     const { flags, paths } = parseVerifyArgs(argv);
     // check.mjs passes --skip-docs-check when its CI-static stage will run
     // docs:check itself, so one gate never pays for documentation checks twice.
-    const plan = filterPlanCommands(resolveRoutePlan(paths), flags);
+    const plan = batchUnitCommands(filterPlanCommands(resolveRoutePlan(paths), flags));
     console.log(
       `Run: ${runId}; scope: ${flags.has("full") ? "broader verification" : flags.has("unit") ? "focused units" : "task units and documentation"}`,
     );

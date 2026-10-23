@@ -48,6 +48,14 @@ picker for rejected-command recovery and pending-save admission.
 
 ## Rendered accessibility and visual regression
 
+Localization keeps all shipped languages in live switching/resume, Options and
+shop/menu presentation checks, including separate Cyrillic, Japanese and Chinese
+font loading. The nine gameplay settlement journeys each use one shipped-language
+representative and expanded-English QA instead of repeating identical mechanics
+in every language. Pushes retain one representative per risk; nightly/release add
+all-language presentation and development QA. Generated descriptions, saved
+progress, translated accessible targets and layout remain asserted in those flows.
+
 `specs/accessibility.spec.ts` runs axe WCAG A/AA checks on the live menu,
 Options, Battle and card inspection. It complements focus journeys and JSX lint;
 passing automated checks does not establish complete screen-reader usability.

@@ -205,6 +205,7 @@ it("gates every localization risk once and keeps QA coverage out of production s
   expect(report.errors).toEqual([]);
   const journeys = new Map<string, Spec[]>();
   const locales = new Set<string>();
+  const gameplay = new Map<string, string[]>();
   const collect = (suite: Suite) => {
     for (const spec of suite.specs ?? []) {
       expect(spec.tags).toContain("localization");
@@ -221,12 +222,20 @@ it("gates every localization risk once and keeps QA coverage out of production s
         ? spec.title
         : spec.title.replace(/^(de|zh-Hans|ru|es|pt-BR|ja|fr|en-XA) /u, "");
       journeys.set(risk, [...(journeys.get(risk) ?? []), spec]);
+      if (suite.title && /^(de|zh-Hans|ru|es|pt-BR|ja|fr|en-XA)$/u.test(suite.title)) {
+        gameplay.set(risk, [...(gameplay.get(risk) ?? []), locale!]);
+      }
     }
     for (const child of suite.suites ?? []) collect(child);
   };
   collect(report);
   expect([...locales].sort()).toEqual(["de", "es", "fr", "ja", "pt-BR", "ru", "zh-Hans"]);
   expect(journeys.size).toBeGreaterThan(0);
+  expect(gameplay.size).toBe(9);
+  for (const [risk, languages] of gameplay) {
+    expect(languages, risk).toHaveLength(2);
+    expect(languages, risk).toContain("en-XA");
+  }
   for (const [risk, variants] of journeys) {
     expect(
       variants.filter((spec) => spec.tags.includes("localization-smoke")),

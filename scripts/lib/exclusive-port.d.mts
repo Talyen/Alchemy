@@ -5,5 +5,6 @@ export function acquireExclusivePort(
     timeoutMs?: number | null;
     signal?: AbortSignal;
     onWait?: (message: string) => void;
+    canAcquire?: () => boolean;
   },
 ): Promise<{ port: number; release: () => Promise<void> }>;

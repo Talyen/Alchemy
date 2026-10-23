@@ -65,7 +65,8 @@ and integration. Checks and builds never invoke a translation service.
 The runner schedules tests automatically and prints the selected lane. One broad
 run and one focused unit run can execute together; focused runs use one worker,
 including when filtering by test name or selecting a reporter. Reservations wait
-and remain cancellable. Never terminate another task's run. Use `test:status`
+in registration order and remain cancellable. A task's overlapping unit selections
+share one Vitest session and reservation. Never terminate another task's run. Use `test:status`
 only to diagnose contention. Raw CLI/watch commands bypass managed scheduling.
 [Runner details](./scripts/VERIFICATION.md#compatibility-commands-and-test-runners)
 are for diagnosing scheduling and advanced filters.

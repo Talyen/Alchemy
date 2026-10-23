@@ -219,3 +219,41 @@ it("admits a focused unit alongside broad work, exposes a cancellable queue and 
     fs.rmSync(directory, { recursive: true, force: true });
   }
 });
+
+it("admits live waiters in order, skips canceled and dead tickets, and holds a batch until release", async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "test-queue-"));
+  const owner = await acquireTestResources("playwright", ["test"], process.cwd(), { directory, broadPort: 0 });
+  const port = testResourceStatus(directory)[0]!.port;
+  const options = { directory, broadPort: port, timeoutMs: 3_000, onWait: () => {} };
+  const canceled = new AbortController();
+  const first = acquireTestResources("node", ["scripts/run-unit-batch.mjs"], process.cwd(), options);
+  const middle = acquireTestResources("playwright", ["test"], process.cwd(), { ...options, signal: canceled.signal });
+  const last = acquireTestResources("vitest", ["run"], process.cwd(), options);
+  fs.writeFileSync(
+    path.join(directory, "dead.json"),
+    JSON.stringify({
+      ...testResourceStatus(directory)[0],
+      pid: 2147483647,
+      state: "waiting",
+      since: "2000-01-01",
+      ticket: "dead",
+    }),
+  );
+  canceled.abort();
+  await expect(middle).rejects.toThrow("abort");
+  await owner.release();
+  const batch = await first;
+  try {
+    expect(usesLocalTestLane(process.execPath, ["scripts/run-unit-batch.mjs", "{}"])).toBe(true);
+    expect(testResourceStatus(directory).filter((record) => record.state === "active")).toMatchObject([
+      { command: ["node", "scripts/run-unit-batch.mjs"] },
+    ]);
+    await expect(acquireLocalTestLane(port, { timeoutMs: 0 })).rejects.toThrow("No work started");
+    expect(testResourceStatus(directory).filter((record) => record.state === "waiting")).toHaveLength(1);
+  } finally {
+    await batch.release();
+    await (await last).release();
+    expect(testResourceStatus(directory)).toEqual([]);
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});

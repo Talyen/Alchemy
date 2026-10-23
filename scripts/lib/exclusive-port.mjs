@@ -9,6 +9,7 @@ export async function acquireExclusivePort(
     timeoutMs = process.env.ALCHEMY_LOCK_WAIT_MS === undefined ? null : Number(process.env.ALCHEMY_LOCK_WAIT_MS),
     signal,
     onWait = console.log,
+    canAcquire = () => true,
   } = {},
 ) {
   if (timeoutMs !== null && (!Number.isFinite(timeoutMs) || timeoutMs < 0))
@@ -20,6 +21,7 @@ export async function acquireExclusivePort(
     signal?.throwIfAborted();
     const server = net.createServer((socket) => socket.destroy());
     try {
+      if (!canAcquire()) throw Object.assign(new Error("Earlier reservation is waiting"), { code: "EADDRINUSE" });
       await new Promise((resolve, reject) => {
         server.once("error", reject);
         server.listen({ host: "127.0.0.1", port, exclusive: true }, resolve);

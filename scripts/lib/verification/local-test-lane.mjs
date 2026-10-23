@@ -19,6 +19,7 @@ export function isInteractiveTestCommand(args) {
 
 export function usesLocalTestLane(command, args) {
   if (isInteractiveTestCommand(args)) return false;
+  if (args[0] === "scripts/run-unit-batch.mjs") return true;
   const tool = command
     .split(/[\\/]/u)
     .at(-1)
@@ -51,8 +52,12 @@ export async function acquireTestResources(
   const kind = testResourceClass(command, args);
   const port = kind === "focused" ? focusedPort : broadPort;
   fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
-  const filename = path.join(directory, `${process.pid}-${randomUUID()}.json`);
+  const filename = path.join(
+    directory,
+    `${process.hrtime.bigint().toString().padStart(24, "0")}-${process.pid}-${randomUUID()}.json`,
+  );
   const record = {
+    ticket: path.basename(filename),
     pid: process.pid,
     cwd,
     kind,
@@ -69,7 +74,15 @@ export async function acquireTestResources(
   write();
   let lane;
   try {
-    lane = await acquireExclusivePort(port, { ...options, label: `Local ${kind} test lane` });
+    lane = await acquireExclusivePort(port, {
+      ...options,
+      label: `Local ${kind} test lane`,
+      // Only the oldest live waiter may attempt the bind. The listener remains
+      // authoritative, including for older checkouts without queue admission.
+      canAcquire: () =>
+        testResourceStatus(directory).find((entry) => entry.state === "waiting" && entry.port === port)?.ticket ===
+        record.ticket,
+    });
     record.port = lane.port;
     record.state = "active";
     write();
@@ -117,5 +130,5 @@ export function testResourceStatus(directory = STATUS_DIRECTORY) {
         return [];
       }
     })
-    .sort((a, b) => a.since.localeCompare(b.since));
+    .sort((a, b) => a.since.localeCompare(b.since) || (a.ticket ?? "").localeCompare(b.ticket ?? ""));
 }

@@ -20,8 +20,31 @@ import {
 import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/verification/test-commands.mjs";
 import { formatRouteHintLine, routeHintForPath } from "../../scripts/lib/agent/route-hints.mjs";
 import { formatPlan, filterPlanCommands, parseVerifyArgs } from "../../scripts/verify-changed.mjs";
+import { batchUnitCommands } from "../../scripts/lib/verification/unit-batch.mjs";
 
 describe("verification selection", () => {
+  it("combines related, owner and changed coverage without losing unknown dependencies or non-unit gates", () => {
+    const plan = batchUnitCommands(
+      resolveRoutePlan([
+        "src/lib/performance/marks.ts",
+        "src/lib/unknown-owner.ts",
+        "tests/components/error-boundary.test.tsx",
+        "tests/performance/discovery-case.test.ts",
+        "CONTRIBUTING.md",
+      ]),
+    );
+    expect(plan.commands.map((command) => command.key).sort()).toEqual(["docs-check", "unit-batch"]);
+    const batch = plan.commands.find((command) => command.key === "unit-batch")!;
+    expect(JSON.parse(batch.args.at(-1)!)).toEqual({
+      related: ["src/lib/performance/marks.ts", "src/lib/unknown-owner.ts"],
+      selectors: ["tests/performance", "tests/lib/performance", "tests/components/error-boundary.test.tsx"],
+    });
+    const full = filterPlanCommands(resolveRoutePlan(["scripts/check.mjs"]), new Set(["all-units"]));
+    expect(batchUnitCommands(full)).toEqual(full);
+    expect(resolveRoutePlan(["performance/battle-setup.ts"]).commands.map((command) => command.key)).toEqual([
+      "unit-performance",
+    ]);
+  });
   it("normalizes absolute and relative files and expands directories before selecting coverage", () => {
     const file = "src/features/alchemy/shared/storage/io.ts";
     expect(resolveRoutePlan([path.resolve(file), "./" + file])).toEqual(resolveRoutePlan([file]));

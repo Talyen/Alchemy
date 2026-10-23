@@ -363,7 +363,12 @@ export function resolveRoutePlan(paths) {
   const tooling = routes.find((candidate) => candidate.id === "tooling");
   const relatedInputs = normalized.filter(
     (filePath) =>
-      !isUnitTest(filePath) && isRelatedInput(filePath) && !(tooling && matchesCandidate(tooling, filePath)),
+      !isUnitTest(filePath) &&
+      isRelatedInput(filePath) &&
+      !(tooling && matchesCandidate(tooling, filePath)) &&
+      // Profiling drivers have a complete explicit unit owner. Runtime marks
+      // under src/ retain graph selection for their gameplay consumers.
+      !(keys.has("unit-performance") && filePath.startsWith("performance/")),
   );
   if (changedTests.length === 0) keys.delete("unit-changed");
   if (relatedInputs.length === 0) keys.delete("related");

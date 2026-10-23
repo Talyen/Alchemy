@@ -4,6 +4,7 @@ import path from "node:path";
 import { listRepositoryFiles } from "../repository-paths.mjs";
 
 const REUSABLE_COMMANDS = new Set([
+  "unit-batch",
   "related",
   "unit-changed",
   "unit-save",
