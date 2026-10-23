@@ -23,6 +23,7 @@ import { INLINE_ARGS_BYTES } from "./lib/verification/selection-budgets.mjs";
 import { filterPrettierPaths } from "./lib/verification/prettier-paths.mjs";
 import { resolveRoutes } from "./lib/verification/change-routes.mjs";
 import { createVerificationCache } from "./lib/verification/verification-cache.mjs";
+import { assertHeavyLocalAllowed } from "./lib/verification/local-execution-policy.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -121,7 +122,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const paths = parseCheckArgs(argv);
   const full = argv.includes("--full");
   console.log(
-    `Scope: ${full ? "broad completion gate: selected tests, full static validation and applicable builds" : "task completion gate: selected tests, types, localization, formatting and lint"}.`,
+    `Scope: ${full ? "broad completion gate: selected tests, full static validation and applicable builds" : "lightweight task gate: localization, documentation, selected-file formatting and lint; tests and compilation deferred to CI"}.`,
   );
   // Keep explicit directory selections unexpanded for the final membership scan.
   const raw = argv.includes("--pre-push") ? null : parseChangedPathsArgs(argv);
@@ -223,8 +224,8 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       label: "source and test types",
       command: "npm",
       args: ["run", "typecheck:all"],
-      enabled: !full && selection.needsCodeChecks,
-      reason: full ? "included in full static checks" : "documentation-only change",
+      enabled: false,
+      reason: full ? "included in full static checks" : ciReason,
     },
     {
       key: "local-format",
@@ -326,6 +327,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     const { main: verify } = await import("./verify-changed.mjs");
     return verify([...verifyArgs, "--plan"]);
   }
+  if (full && !options.runner) assertHeavyLocalAllowed("Full completion gate");
   const before = digestFn();
   const cache =
     options.runner || !selection.needsCodeChecks
