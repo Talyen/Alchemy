@@ -137,7 +137,11 @@ exclude human reading time and cannot certify comprehension or audio comfort.
 
 Automated controller tests send Steam Input's intended keyboard/pointer events;
 isolated Electron tests do not connect to Steamworks or real Cloud profiles.
-A fake two-device backend is not evidence of live synchronization.
+A fake two-device backend is not evidence of live synchronization. Browser input,
+mocked callbacks and workstation FPS cannot qualify mapping delivery, native
+controller/PlayStation support, Proton, suspend/resume, Deck ratings or public
+carryover claims. Keep those claims unqualified until the relevant device/service
+evidence below exists.
 
 For a Windows candidate launched through Steam, record package version/hash,
 Windows and Steam client versions, and published controller layout ID. Exercise

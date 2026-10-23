@@ -156,15 +156,11 @@ separate cutoffs.
 
 ### Unique item interactions
 
-Tithe and Faith Barrier scale their Gold and Block rewards from enemy Health
-actually lost to Holy damage. Lucky Clover uses the same basis for Nature damage,
-including follow-ups and Thunderstone. Overkill and fully prevented hits cannot
-fund these rewards; lethal hits still can. Proc chances and ordinary reward
-bonuses remain unchanged. Other damage conversions and resource rewards retain
-their existing damage basis.
-
-[UNIQUE_ITEMS](./UNIQUE_ITEMS.md#combat-semantics) owns signatures, automatic-play
-limits, repeated damage, Blackfletch detonation, and saved battle-local opportunities.
+[Healing/resource rewards](./TALENT_RULES.md#selective-feedback-rewards) and
+[Gold rewards](./TALENT_RULES.md#armor-forge-and-gold) own Holy/Nature payout bases,
+including actual Health loss, overkill and lethal-hit eligibility.
+[Unique items](./UNIQUE_ITEMS.md#combat-semantics) own signatures, automatic-play
+limits, repeated damage, Blackfletch detonation and saved opportunities.
 
 ### Strategic card conditions
 
