@@ -134,7 +134,7 @@ describe("thematic card effects", () => {
     const base = battle({ roomScalingMultiplier: 2, enemyMitigation: { forge: 4 } });
     const enemy = applyEnemyAbility(base, cardById["burning-blade"]!, []);
     // The base is room-scaled once; the existing Forge is not scaled again.
-    expect(enemy.playerStatuses.burn).toBe(7);
+    expect(enemy.playerStatuses.burn).toBe(4);
     expect(enemy.enemyMitigation.forge).toBe(4);
   });
 

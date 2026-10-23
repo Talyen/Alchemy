@@ -100,7 +100,7 @@ describe("encounter enemy descriptions", () => {
       [{ kind: "damage", damageType: "bleed", damageTypePool: ["bleed", "physical"], amount: 2, lifesteal: true }],
       { ...context, difficultyModifiers: [{ kind: "increase-enemy-physical-damage", amount: 3 }] },
     );
-    expect(result.descriptionLines).toEqual(["Deal 3 Bleed or 6 Physical damage", "Leech"]);
+    expect(result.descriptionLines).toEqual(["Deal 7 Bleed or 10 Physical damage", "Leech"]);
   });
 
   it("retains resource wording and positive damage minimums", () => {

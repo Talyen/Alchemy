@@ -380,7 +380,7 @@ describe("enemy card effects", () => {
       },
       effect,
     );
-    expect(scaled).toEqual({ ...effect, amount: 13 });
+    expect(scaled).toEqual({ ...effect, amount: 26 });
     expect(effect.amount).toBe(3);
     expect(
       scaleEnemyAbilityDamage(

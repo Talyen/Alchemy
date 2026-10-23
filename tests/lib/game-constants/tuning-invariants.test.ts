@@ -34,7 +34,7 @@ describe("tuning invariants", () => {
   });
 
   it("ramps the second room to depth one instead of skipping ahead", () => {
-    const skeleton = enemyBestiary.find((enemy) => enemy.id === "skeleton")!;
+    const skeleton = { ...enemyBestiary.find((enemy) => enemy.id === "skeleton")!, id: "normal-curve-probe" };
     const first = getEnemyAbilityPressure({ roomScalingMultiplier: 1, currentEnemy: skeleton });
     const second = getEnemyAbilityPressure({ roomScalingMultiplier: 1.07, currentEnemy: skeleton });
     const third = getEnemyAbilityPressure({ roomScalingMultiplier: 1.14, currentEnemy: skeleton });

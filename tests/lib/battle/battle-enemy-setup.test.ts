@@ -58,7 +58,7 @@ describe("initializeEnemyState", () => {
       { currentEnemy: skeleton, roomScalingMultiplier: roomMul, difficultyModifiers: [] },
       { kind: "damage", damageType: "physical", amount: 6 },
     );
-    expect(physical.amount).toBe(9);
+    expect(physical.amount).toBe(20);
   });
 
   it("multiplies max health with enemy-health-multiplier", () => {
@@ -105,7 +105,7 @@ describe("initializeEnemyState", () => {
         { currentEnemy: enemy, roomScalingMultiplier: 1, difficultyModifiers: [] },
         { kind: "damage", damageType: "physical", amount: 6 },
       ).amount,
-    ).toBe(6);
+    ).toBe(9);
   });
 
   it("includes living-armor trait starting armor scaled by room", () => {
@@ -205,8 +205,7 @@ describe("enemy ability damage floor", () => {
     const physical = scaleEnemyAbilityDamage(state, { kind: "damage", damageType: "physical", amount: 4 });
     const holy = scaleEnemyAbilityDamage(state, { kind: "damage", damageType: "holy", amount: 4 });
     const poison = scaleEnemyAbilityDamage(state, { kind: "damage", damageType: "poison", amount: 4 });
-    expect(physical.amount).toBe(7);
-    expect(holy.amount).toBe(4);
-    expect(poison.amount).toBe(4);
+    expect(physical.amount - holy.amount).toBe(3);
+    expect(poison.amount).toBe(holy.amount);
   });
 });

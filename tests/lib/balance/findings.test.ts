@@ -70,13 +70,20 @@ describe("evaluateBalanceFindings", () => {
     const model = emptyModel();
     model.enemies = [
       { id: "skeleton", rates: rates(cell({ winRate: 0.85 }), cell({ winRate: 0.85 }), cell({ winRate: 0.85 })) },
+      { id: "bandit", rates: rates(cell({ winRate: 0.981 }), cell({ winRate: 0.981 }), cell({ winRate: 0.981 })) },
       { id: "mimic", rates: rates(cell({ winRate: 0.97 }), cell({ winRate: 0.97 }), cell({ winRate: 0.97 })) },
       { id: "iron-bear", rates: rates(cell({ winRate: 0.65 }), cell({ winRate: 0.65 }), cell({ winRate: 0.65 })) },
+      {
+        id: "blood-countess",
+        rates: rates(cell({ winRate: 0.901 }), cell({ winRate: 0.901 }), cell({ winRate: 0.901 })),
+      },
+      { id: "goblin", rates: rates(cell({ winRate: 0.98 }), cell({ winRate: 0.9 }), cell({ winRate: 0.95 })) },
+      { id: "frostwarden", rates: rates(cell({ winRate: 0.9 }), cell({ winRate: 0.7 }), cell({ winRate: 0.8 })) },
     ];
     const findings = evaluateBalanceFindings(model).findings;
     const bearHint = findings.find((entry) => entry.id === "iron-bear")?.causeHint;
     for (const trait of enemyById["iron-bear"].traits) expect(bearHint).toContain(trait.description);
-    for (const id of ["skeleton", "mimic", "iron-bear"]) {
+    for (const id of ["skeleton", "bandit", "mimic", "iron-bear", "blood-countess"]) {
       expect(
         findings
           .filter((finding) => finding.id === id && finding.bucket === "typeWinRate")
@@ -84,6 +91,9 @@ describe("evaluateBalanceFindings", () => {
           .sort(),
       ).toEqual(["early", "late", "mid"]);
     }
+    expect(
+      findings.some((finding) => ["goblin", "frostwarden"].includes(finding.id) && finding.bucket === "typeWinRate"),
+    ).toBe(false);
   });
 
   it.each([
@@ -309,8 +319,16 @@ describe("evaluateBalanceFindings", () => {
     expect(findings.totalBeforeCap).toBe(10);
     expect(findings.omitted).toBe(7);
     expect(findings.shownByBucket.anomaly).toBe(3);
-    expect(renderBalanceFindingsHtml(findings, model)).toContain("cap 3");
-    expect(JSON.parse(renderBalanceFindingsJson(findings, model, options)).bands.cap).toBe(3);
+    const html = renderBalanceFindingsHtml(findings, model);
+    expect(html).toContain("cap 3");
+    expect(html).toContain("Normal 90–98%, Elite 80–95%, Boss 70–90%");
+    const bands = JSON.parse(renderBalanceFindingsJson(findings, model, options)).bands;
+    expect(bands.cap).toBe(3);
+    expect(bands.winRateByType).toEqual({
+      normal: { min: 0.9, max: 0.98 },
+      elite: { min: 0.8, max: 0.95 },
+      boss: { min: 0.7, max: 0.9 },
+    });
   });
 
   it("collapses class matchups and still surfaces other issue types under the cap", () => {

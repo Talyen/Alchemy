@@ -20,9 +20,9 @@ export const LENGTH_BAND_BY_TYPE: Record<EnemyTypeBand, { min: number; max: numb
 };
 
 export const WIN_RATE_BAND_BY_TYPE: Record<EnemyTypeBand, { min: number; max: number }> = {
-  normal: { min: 0.9, max: 0.999 },
+  normal: { min: 0.9, max: 0.98 },
   elite: { min: 0.8, max: 0.95 },
-  boss: { min: 0.7, max: 0.999 },
+  boss: { min: 0.7, max: 0.9 },
 };
 
 export const ANOMALY_FINDING_THRESHOLDS = ANOMALY_THRESHOLD_BY_PRESET;
