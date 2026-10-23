@@ -515,10 +515,10 @@ for (const locale of acceptanceLocales) {
                 .some((item) => item.affixes.length === 1),
             ).toBe(true);
             await reviewLayout(fresh, `${locale} crafting result`);
-            await localizedCheckpoint(fresh, locale === "ru" ? "zh-Hans" : "ru", async (resumed) => {
+            await localizedCheckpoint(fresh, "ru", async (resumed) => {
               await expect(
                 resumed.getByRole("button", {
-                  name: translatedLabel(locale === "ru" ? "zh-Hans" : "ru", "Armory"),
+                  name: translatedLabel("ru", "Armory"),
                   exact: true,
                 }),
               ).toBeVisible();
