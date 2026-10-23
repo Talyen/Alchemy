@@ -64,7 +64,7 @@ export function initializeBattle(draft: GameplayDraft, request: BattleStartReque
   );
   enterBattle(draft, opening.state);
   commitResolvedBattle(draft, { ...opening.state, gold: startingGold }, opening.state);
-  if (run.contentSystemType !== "labyrinth" && draft.session.rewardFlow.claim.kind !== "destination") {
+  if (run.contentSystemType !== "labyrinth" && draft.session.progressClaim.kind !== "destination") {
     const destination =
       enemy.enemyType === "boss"
         ? DESTINATIONS.BOSS_COMBAT

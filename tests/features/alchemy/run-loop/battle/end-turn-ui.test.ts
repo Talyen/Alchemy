@@ -72,6 +72,12 @@ function makeUi(rejectDraw = false, onDraw?: (ctx: BattleControllerContext) => v
         return ctx.playback.pendingDraws;
       },
       waitForFrame: async () => true,
+      waitForDelay: async (_id: number, ms: number) => {
+        await new Promise((resolve) => {
+          setTimeout(resolve, ms);
+        });
+        return true;
+      },
     },
     animateDrawnHand: async () => {
       if (rejectDraw) throw new Error("draw failed");

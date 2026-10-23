@@ -56,3 +56,6 @@ export {
 } from "./run-activity";
 
 export { ACTIVE_RUN_PROGRESS_KEYS, type PersistedRunProgress } from "./run-progress";
+
+export { readRewardActivity, destinationActivityData } from "./run-activity";
+export type { RewardActivityData, DestinationActivityData } from "./run-activity";

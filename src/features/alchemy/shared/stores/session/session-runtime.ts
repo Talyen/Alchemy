@@ -36,13 +36,12 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
     options.runtimeInputs,
   );
   const gameplay = createGameplayStore(generateRunSeed, lifetime.isActive);
-  const progressCompletion = new ProgressCompletion(lifetime.isActive);
+  const progressCompletion = new ProgressCompletion<ReturnType<typeof gameplay.reads.getState>>(lifetime.isActive);
   const settings = createSettingsStore(lifetime.isActive, lifetime.track, () => {
     if (!progressCompletion.hasRetryDriver && progressCompletion.read().kind === "idle") return;
-    if (progressCompletion.read().kind === "idle") runtime.presentationBase = gameplay.reads.getState();
     // Settings have no gameplay revision. Revoke older acknowledgements before
     // observers can capture the changed settings in a new save snapshot.
-    progressCompletion.mark(gameplay.reads.getState().revision, true);
+    progressCompletion.mark(gameplay.reads.getState().revision, true, gameplay.reads.getState());
   });
   const feedback = isolateSessionFeedback(
     bindRuntimeMethods<SessionFeedback>(
@@ -84,7 +83,6 @@ function createRuntime(options: GameSessionOptions, allowPlatformStorage: boolea
   lifetime.track(progressCompletion.subscribeRestore(() => lifecycle.restore()));
   const runtime = {
     gameplay,
-    presentationBase: gameplay.reads.getState(),
     settings,
     settingsCodec: createSettingsPersistenceCodec(settings),
     io,

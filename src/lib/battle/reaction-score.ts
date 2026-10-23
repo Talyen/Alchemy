@@ -7,16 +7,16 @@ import {
   type BattleCard,
   type BattleCardEffect,
 } from "@/lib/game-data";
-import { MIN_MAX_MANA_FLOOR } from "../game-constants";
 import { gainMana } from "./resource-state";
 import { createPlayerResourceResolver } from "./player-resource-resolution";
-import { halveRounded } from "./amount-helpers";
-import { consumeAttackPacketFlags } from "./damage";
+import { createCardUtilityHandlers } from "./card-utility-resolution";
+import type { EffectHandler } from "./effect-handlers/handler-types";
+import { prepareAttackPacket } from "./damage";
 import { computeCardAttackPower, computeCardDamageToEnemy } from "./damage-calc";
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import { resolveSecondaryAction } from "./action-context";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
-import { canShatter, consumeReactionOpportunity, getPostHitReactionPayoffs } from "./elemental-reactions";
+import { applyShatter, canShatter, consumeReactionOpportunity, getPostHitReactionPayoffs } from "./elemental-reactions";
 import { projectEnemyDotDamage } from "./dot-resolve";
 import { addPlayerStatus, setEnemyStatus } from "./status-state";
 import { dealSelfDamage } from "./status-helpers";
@@ -41,9 +41,8 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
   const companionBonus = companion ? before.flags.companionNextAttackBonus : 0;
   const attempted =
     companionBonus > 0 ? { ...before, flags: { ...before.flags, companionNextAttackBonus: 0 } } : before;
-  const consumed = consumeAttackPacketFlags(attempted, selected);
-  const baseDamageBonus =
-    companionBonus + consumed.stunBonus + (consumed.packet.damageType === "physical" ? consumed.physicalBonus : 0);
+  const consumed = prepareAttackPacket(attempted, selected, companionBonus);
+  const { baseDamageBonus } = consumed;
   const power = computeCardAttackPower(consumed.state, consumed.packet, card, {
     origin: companion ? "companion" : "played-card",
     baseDamageBonus,
@@ -58,13 +57,7 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
   )
     return { ...path, state: attempted };
   const shatter = consumed.packet.damageType === "physical" && canShatter(before);
-  const candidate = shatter
-    ? {
-        ...consumed.state,
-        enemyMitigation: { ...consumed.state.enemyMitigation, block: 0, armor: 0 },
-        reactions: { ...consumed.state.reactions, shatterDamage: 0 },
-      }
-    : consumed.state;
+  const candidate = shatter ? applyShatter(consumed.state, []) : consumed.state;
   const resolved = computeCardDamageToEnemy(
     candidate,
     consumed.packet,
@@ -114,15 +107,6 @@ function projectHit(path: Projection, card: BattleCard, effect: DamageEffect): P
 /** Random-type cards can have many equivalent paths; merge them before the next effect. */
 const FLAG_KEY_ORDER = Object.keys(FLAG_DEFINITIONS);
 
-const FLAG_EFFECT_KEYS: Partial<Record<BattleCardEffect["kind"], keyof BattleState["flags"]>> = {
-  "next-hit-crit": "nextHitCrit",
-  "next-hit-leech": "nextHitLeech",
-  "next-archery-free": "nextArcheryCardFree",
-  "next-hit-poison": "nextHitPoison",
-  "play-next-card-twice": "playNextCardTwice",
-  "dodge-next-attack": "dodgeNextAttack",
-};
-
 function projectionKey(state: BattleState): string {
   const enemyStatuses = ENEMY_STATUS_DISPLAY_ORDER.map((key) => state.enemyStatuses[key]).join(",");
   const playerStatuses = PLAYER_STATUS_DISPLAY_ORDER.map((key) => state.playerStatuses[key]).join(",");
@@ -168,6 +152,40 @@ const playerResources = createPlayerResourceResolver({
   afterHealing: (state) => state,
   drawHoly: (state) => state,
   forgeReady: () => {},
+});
+
+// These are deliberate score approximations. The production utility owner still
+// owns effect ordering, conversions, resource floors, and prepared flags.
+const utilityHandlers = createCardUtilityHandlers({
+  healingAmount: (_state, _card, effect) => effect.amount,
+  heal: (state, amount) => ({ ...state, playerHealth: Math.min(state.playerMaxHealth, state.playerHealth + amount) }),
+  mana: (state, amount, _texts, overflow) => gainMana(state, amount, overflow),
+  manaGainRewards: (state) => state,
+  healthCost: (state, amount) => {
+    const damaged = dealSelfDamage(state, amount, "health", []).state;
+    return playerResources.checkHealthThresholds(state.playerHealth, damaged.playerHealth, damaged, []);
+  },
+  crystalLoss: (state) => state,
+  status: playerResources.applyPlayerStatusEffect,
+  chooseStatus: () => {
+    throw new Error("Scoring must branch before utility resolution");
+  },
+  cleanse: (state, amount) => {
+    const statuses = { ...state.playerStatuses };
+    let removed = 0;
+    for (const status of harmfulPlayerStatusIds) {
+      if (removed >= amount) break;
+      if (statuses[status] > 0) {
+        statuses[status] = 0;
+        removed++;
+      }
+    }
+    return { ...state, playerStatuses: statuses };
+  },
+  cleanseStatus: (state, status) => ({ ...state, playerStatuses: { ...state.playerStatuses, [status]: 0 } }),
+  // Gold and summons are valued nominally by autoplay-policy, not reaction scoring.
+  gold: (state) => state,
+  summon: (state) => state,
 });
 
 function projectEffects(
@@ -244,25 +262,6 @@ function projectEffects(
             }),
           ];
         }
-        if (effect.kind === "remove-enemy-armor") {
-          const currentArmor = path.state.enemyMitigation.armor;
-          if (currentArmor <= 0) return [path];
-          const nextArmor = effect.halve
-            ? halveRounded(currentArmor)
-            : effect.removeAll
-              ? 0
-              : Math.max(0, currentArmor - (effect.amount ?? 0));
-          if (nextArmor === currentArmor) return [path];
-          return [
-            {
-              ...path,
-              state: {
-                ...path.state,
-                enemyMitigation: { ...path.state.enemyMitigation, armor: nextArmor },
-              },
-            },
-          ];
-        }
         if (effect.kind === "multiply-enemy-status") {
           const current = path.state.enemyStatuses[effect.status] ?? 0;
           if (current <= 0 || effect.factor === 1) return [path];
@@ -281,108 +280,20 @@ function projectEffects(
             },
           ];
         }
-        if (effect.kind === "remove-player-status") {
-          if ((path.state.playerStatuses[effect.status] ?? 0) <= 0) return [path];
-          return [
-            {
-              ...path,
-              state: {
-                ...path.state,
-                playerStatuses: {
-                  ...path.state.playerStatuses,
-                  [effect.status]: 0,
-                },
-              },
-            },
-          ];
-        }
-        if (effect.kind === "remove-harmful-status") {
-          const limit = effect.removeAll ? harmfulPlayerStatusIds.length : (effect.amount ?? 0);
-          if (limit <= 0) return [path];
-          let removed = 0;
-          const nextStatuses = { ...path.state.playerStatuses };
-          for (const statusId of harmfulPlayerStatusIds) {
-            if (removed >= limit) break;
-            if (nextStatuses[statusId] > 0) {
-              nextStatuses[statusId] = 0;
-              removed++;
-            }
-          }
-          if (removed === 0) return [path];
-          return [
-            {
-              ...path,
-              state: {
-                ...path.state,
-                playerStatuses: nextStatuses,
-              },
-            },
-          ];
-        }
         if (effect.kind === "player-status") {
           const pool = effect.statusPool?.length ? effect.statusPool : [effect.status];
           const probability = path.probability / pool.length;
           return pool.map((status) => {
-            let amount = effect.amount;
-            let nextMana = path.state.mana;
-            if (effect.convertCurrentMana !== undefined) {
-              amount = manaAtStart * effect.convertCurrentMana;
-              nextMana = 0;
-            } else if (effect.perManaCrystal !== undefined) {
-              amount = effect.perManaCrystal * path.state.maxMana;
-            }
-            if (status === "forge" && effect.forgeAmount !== undefined) {
-              amount = effect.forgeAmount;
-            }
+            // A resolved pool branch must not be sampled again by the utility owner.
+            const { statusPool: _pool, ...selected } = effect;
             return {
               ...path,
               probability,
-              state: playerResources.applyPlayerStatusEffect(
-                { ...path.state, mana: nextMana },
-                { ...effect, status, amount },
-                [],
-              ),
+              state: utilityHandlers["player-status"](path.state, card, { ...selected, status }, 1, [], {
+                manaAtStart,
+              }),
             };
           });
-        }
-        if (effect.kind === "restore-mana") {
-          return [{ ...path, state: gainMana(path.state, effect.amount, effect.allowOverflow) }];
-        }
-        if (effect.kind === "lose-mana") {
-          const nextMana = Math.max(0, path.state.mana - effect.amount);
-          if (nextMana === path.state.mana) return [path];
-          return [{ ...path, state: { ...path.state, mana: nextMana } }];
-        }
-        if (effect.kind === "gain-max-mana") {
-          return [
-            {
-              ...path,
-              state: {
-                ...path.state,
-                maxMana: path.state.maxMana + effect.amount,
-                mana: path.state.mana + effect.amount,
-              },
-            },
-          ];
-        }
-        if (effect.kind === "lose-max-mana") {
-          const maxMana = Math.max(MIN_MAX_MANA_FLOOR, path.state.maxMana - effect.amount);
-          if (maxMana === path.state.maxMana) return [path];
-          return [{ ...path, state: { ...path.state, maxMana, mana: Math.min(maxMana, path.state.mana) } }];
-        }
-        if (effect.kind === "heal") {
-          const nextHealth = Math.min(path.state.playerMaxHealth, path.state.playerHealth + effect.amount);
-          if (nextHealth === path.state.playerHealth) return [path];
-          return [{ ...path, state: { ...path.state, playerHealth: nextHealth } }];
-        }
-        if (effect.kind === "lose-health") {
-          const damaged = dealSelfDamage(path.state, effect.amount, "health", []).state;
-          return [
-            {
-              ...path,
-              state: playerResources.checkHealthThresholds(path.state.playerHealth, damaged.playerHealth, damaged, []),
-            },
-          ];
         }
         if (effect.kind === "self-damage") {
           if (path.state.enemyHealth <= 0 || path.state.playerHealth <= 0) return [path];
@@ -392,21 +303,18 @@ function projectEffects(
             statusType && healthLost > 0 ? addPlayerStatus(nextState, statusType, healthLost) : nextState;
           return [{ ...path, state: withStatus }];
         }
-        const flagKey = FLAG_EFFECT_KEYS[effect.kind];
-        if (flagKey) {
-          return [
-            {
-              ...path,
-              state: {
-                ...path.state,
-                flags: {
-                  ...path.state.flags,
-                  [flagKey]: true,
-                },
-              },
-            },
-          ];
+        if (
+          effect.kind !== "heal" &&
+          effect.kind !== "gain-gold" &&
+          effect.kind !== "summon-companion" &&
+          Object.hasOwn(utilityHandlers, effect.kind)
+        ) {
+          const apply = utilityHandlers[effect.kind as keyof typeof utilityHandlers] as EffectHandler;
+          return [{ ...path, state: apply(path.state, card, effect, 1, [], { manaAtStart }) }];
         }
+        // Nominal healing intentionally excludes card-specific/potion bonuses.
+        if (effect.kind === "heal")
+          return [{ ...path, state: utilityHandlers.heal(path.state, card, effect, 1, [], { manaAtStart }) }];
         if (effect.kind === "companion-action" && path.state.activeCompanion) {
           const companion = path.state.activeCompanion;
           const companionCard: BattleCard = {

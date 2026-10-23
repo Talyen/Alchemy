@@ -20,6 +20,7 @@ export interface BattlePlaybackBind {
 
 export interface PlaybackScope {
   readonly isCurrent: () => boolean;
+  readonly wait: (ms: number, signal?: AbortSignal, onCancel?: () => void) => Promise<boolean>;
   readonly registerCancel: (callback: () => void) => () => void;
   readonly setTimeout: (callback: () => void, ms: number) => () => void;
   readonly setGameTimeout: (callback: () => void, ms: number) => () => void;
@@ -94,6 +95,17 @@ export class PlaybackLifetime {
     );
   }
 
+  canPlayCard(): boolean {
+    return this.canAcceptInput(true);
+  }
+  canEndTurn(): boolean {
+    return this.canAcceptInput();
+  }
+
+  waitForDelay(id: number, ms: number): Promise<boolean> {
+    return this.capture(id).wait(ms);
+  }
+
   private setPhase(generation: PlaybackGeneration, phase: PlaybackPhase): boolean {
     if (this.current !== generation) return false;
     if (generation.phase !== phase) {
@@ -157,18 +169,40 @@ export class PlaybackLifetime {
       };
       return gameDelay ? generation.timers.setGameTimeout(run, ms) : generation.timers.setTimeout(run, ms);
     };
+    const registerCancel = (callback: () => void) => {
+      if (isCurrent()) {
+        generation.cancellations.add(callback);
+        return () => {
+          generation.cancellations.delete(callback);
+        };
+      }
+      runPlaybackCleanup(callback);
+      return () => {};
+    };
     return Object.freeze({
       isCurrent,
-      registerCancel: (callback: () => void) => {
-        if (isCurrent()) {
-          generation.cancellations.add(callback);
-          return () => {
-            generation.cancellations.delete(callback);
-          };
-        }
-        runPlaybackCleanup(callback);
-        return () => {};
-      },
+      registerCancel,
+      wait: (ms: number, signal?: AbortSignal, onCancel?: () => void) =>
+        runPlaybackTask(
+          registerCancel,
+          () => {
+            onCancel?.();
+            return false;
+          },
+          (task) => {
+            const cancel = () => task.complete(false, onCancel);
+            if (signal?.aborted) {
+              cancel();
+              return;
+            }
+            signal?.addEventListener("abort", cancel, { once: true });
+            task.own(() => signal?.removeEventListener("abort", cancel));
+            task.schedule(
+              (callback) => schedule(callback, ms, true),
+              () => task.complete(isCurrent()),
+            );
+          },
+        ),
       setTimeout: (callback: () => void, ms: number) => schedule(callback, ms, false),
       setGameTimeout: (callback: () => void, ms: number) => schedule(callback, ms, true),
     });

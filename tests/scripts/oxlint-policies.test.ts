@@ -416,6 +416,7 @@ it("runs type-aware correctness checks through the installed companion", () => {
   }
 });
 
+// Two native CLI launches each have a 15-second subprocess budget.
 it("loads the complexity audit with advisory warnings while normal lint stays unchanged", () => {
   const code = `export function branch(value: number) {
 ${Array.from({ length: 12 }, (_, i) => `if (value === ${i}) return ${i};`).join("\n")}
@@ -429,7 +430,7 @@ ${"value += 1;\n".repeat(52)}return value;
       audit.some((message) => message.ruleId === rule),
       rule,
     ).toBe(true);
-});
+}, 35_000);
 
 it("ignores other worktrees and rejects stale suppression comments", () => {
   const [ignored, messages] = lintFixtures(

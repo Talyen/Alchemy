@@ -1,6 +1,10 @@
+import type { BattleCard } from "@/lib/game-data";
 import { recordRunRoom } from "./run-recap";
 import {
   emptyHydratedMysteryVisit,
+  readRewardActivity,
+  destinationActivityData,
+  type RewardState,
   readActivityData,
   type HydratedMysteryVisit,
   type RunActivityData,
@@ -9,7 +13,7 @@ import {
 import { enterWildwoodReward } from "@/lib/content-systems/wildwood/gauntlet";
 import { DESTINATIONS, type Destination, type Screen } from "@/lib/routing";
 import type { GameplayDraft } from "../../session/gameplay-command";
-import { createInitialSessionFields, type RunRewardFlow, type RunSessionFields } from "../../session/run-domain-types";
+import { createInitialSessionFields, type RunSessionFields } from "../../session/run-domain-types";
 import type { FieldUpdate } from "../../session/transaction-internal";
 import { defineDraftSetter } from "../../session/transaction-internal";
 import { setCompletedDestinations, setDestinationIndexInAct, setDestinationOfferState } from "./run-progress";
@@ -34,9 +38,18 @@ export function setHasActiveRun(draft: GameplayDraft, active: boolean): void {
 }
 
 /** Domain commands establish resumable progress before presentation changes. */
-export function setRunProgressActivity(draft: GameplayDraft, kind: RunProgressActivityKind): void {
+export function setRunProgressActivity(
+  draft: GameplayDraft,
+  kind: RunProgressActivityKind | "rewards" | "destination",
+): void {
   if (draft.session.activity.kind !== "inactive" && draft.session.activity.kind !== kind) {
-    draft.session.activity = { kind };
+    const reward = readRewardActivity(draft.session.activity);
+    draft.session.activity =
+      kind === "rewards"
+        ? { kind, data: reward }
+        : kind === "destination"
+          ? { kind, data: destinationActivityData(reward.state) }
+          : { kind };
   }
 }
 
@@ -69,13 +82,27 @@ export function resetNavigation(draft: GameplayDraft): void {
 
 // ── Reward flow ──────────────────────────────────────────────────────────────
 
-function defineRewardFlowSetter<K extends keyof RunRewardFlow>(field: K) {
-  return defineDraftSetter((draft: GameplayDraft) => draft.session.rewardFlow, field);
+export function setRewardState(draft: GameplayDraft, action: FieldUpdate<RewardState>): void {
+  const previous = readRewardActivity(draft.session.activity);
+  const state = typeof action === "function" ? action(previous.state) : action;
+  draft.session.activity = { kind: "rewards", data: { state, companionCards: previous.companionCards } };
 }
 
-export const setRewardState = defineRewardFlowSetter("state");
+/** Updating an offer cannot construct a reward phase or retain stale choices. */
+export function setDestinationState(draft: GameplayDraft, action: FieldUpdate<RewardState>): void {
+  const previous = readRewardActivity(draft.session.activity).state;
+  const state = typeof action === "function" ? action(previous) : action;
+  draft.session.activity = { kind: "destination", data: destinationActivityData(state) };
+}
 
-export const setCompanionRewardCards = defineRewardFlowSetter("companionCards");
+export function setCompanionRewardCards(draft: GameplayDraft, companionCards: BattleCard[] | null): void {
+  if (draft.session.activity.kind === "rewards") draft.session.activity.data.companionCards = companionCards;
+  else if (companionCards)
+    draft.session.activity = {
+      kind: "rewards",
+      data: { state: readRewardActivity(draft.session.activity).state, companionCards },
+    };
+}
 
 export const setRunEndMaterials = defineSessionSetter("runEndMaterials");
 
@@ -89,41 +116,42 @@ export function setCorruptionResult(draft: GameplayDraft, result: RunActivityDat
 }
 
 export function beginRewardClaim(draft: GameplayDraft): boolean {
-  if (draft.session.rewardFlow.claim.kind !== "idle") return false;
-  draft.session.rewardFlow.claim = { kind: "reward" };
+  if (draft.session.progressClaim.kind !== "idle") return false;
+  draft.session.progressClaim = { kind: "reward" };
   return true;
 }
 
 export function releaseRewardClaim(draft: GameplayDraft): void {
-  if (draft.session.rewardFlow.claim.kind === "reward") draft.session.rewardFlow.claim = { kind: "idle" };
+  if (draft.session.progressClaim.kind === "reward") draft.session.progressClaim = { kind: "idle" };
 }
 
 export function beginDestinationClaim(draft: GameplayDraft, destination: Destination): boolean {
-  const flow = draft.session.rewardFlow;
-  if (flow.claim.kind !== "idle" || !flow.state.destinations.includes(destination)) return false;
-  flow.claim = { kind: "destination", destination };
+  const state = readRewardActivity(draft.session.activity).state;
+  if (draft.session.progressClaim.kind !== "idle" || !state.destinations.includes(destination)) return false;
+  draft.session.progressClaim = { kind: "destination", destination, offer: destinationActivityData(state) };
   return true;
 }
 
 export function cancelDestinationClaim(draft: GameplayDraft): void {
-  if (draft.session.rewardFlow.claim.kind === "destination") draft.session.rewardFlow.claim = { kind: "idle" };
+  if (draft.session.progressClaim.kind === "destination") draft.session.progressClaim = { kind: "idle" };
 }
 
 export function commitDestinationClaim(draft: GameplayDraft, destination: Destination): boolean {
   const transient = draft.session;
-  if (transient.rewardFlow.claim.kind !== "destination" || transient.rewardFlow.claim.destination !== destination)
+  if (transient.progressClaim.kind !== "destination" || transient.progressClaim.destination !== destination)
     return false;
-  if (!transient.rewardFlow.state.destinations.includes(destination)) {
+  const offer = transient.progressClaim.offer;
+  if (!offer.destinations.includes(destination)) {
     cancelDestinationClaim(draft);
     return false;
   }
   if (draft.run.activeRun.lastOfferedDestinations.length === 0) {
     setDestinationOfferState(draft, {
-      lastOfferedDestinations: [...transient.rewardFlow.state.destinations],
+      lastOfferedDestinations: [...offer.destinations],
       roundsSinceOffered: { ...draft.run.activeRun.destinationRoundsSinceOffered },
     });
   }
-  setRewardState(draft, (previous) => ({ ...previous, destinations: [] }));
+  if (transient.activity.kind === "destination") transient.activity.data.destinations = [];
   cancelDestinationClaim(draft);
   setCompletedDestinations(draft, (previous) => [...previous, destination]);
   setDestinationIndexInAct(draft, (previous) => previous + 1);
@@ -135,23 +163,18 @@ export function commitDestinationClaim(draft: GameplayDraft, destination: Destin
 function abandonDestinationVisit(draft: GameplayDraft, destination: Destination): void {
   const transient = draft.session;
 
-  if (transient.rewardFlow.claim.kind === "destination" && transient.rewardFlow.claim.destination === destination) {
+  if (transient.progressClaim.kind === "destination" && transient.progressClaim.destination === destination) {
     cancelDestinationClaim(draft);
   } else if (draft.run.activeRun.completedDestinations.at(-1) === destination) {
     setCompletedDestinations(draft, (previous) => previous.slice(0, -1));
     setDestinationIndexInAct(draft, (previous) => Math.max(0, previous - 1));
   }
 
-  if (transient.rewardFlow.state.destinations.length === 0) {
-    const restored = [...draft.run.activeRun.lastOfferedDestinations];
-    if (restored.length > 0) {
-      setRewardState(draft, (previous) => ({ ...previous, destinations: restored }));
-    }
-  }
-
-  if (destination === DESTINATIONS.CORRUPTION) {
-    setCorruptionResult(draft, null);
-  }
+  const previous = readRewardActivity(transient.activity).state;
+  const destinations = previous.destinations.length
+    ? previous.destinations
+    : [...draft.run.activeRun.lastOfferedDestinations];
+  setDestinationState(draft, { ...previous, destinations });
 }
 
 export function abandonCorruptionDestinationVisit(draft: GameplayDraft): void {

@@ -1,3 +1,4 @@
+import { readRewardActivity } from "@/lib/active-run-session";
 import { getBossById } from "@/features/alchemy/shared/config";
 import type { BattleStarted, BattleStartRequest } from "@/features/alchemy/shared/stores/commands/battle-start-types";
 import type { GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
@@ -93,7 +94,7 @@ export function enterRunRoom(request: RunRoomRequest, gameSession: GameSession):
           !beginDestinationClaim(draft, request.destination)
         )
           return unavailable();
-        const bossId = draft.session.rewardFlow.state.selectedBossId;
+        const bossId = readRewardActivity(draft.session.activity).state.selectedBossId;
         const battleRequest =
           request.destination === DESTINATIONS.BOSS_COMBAT && bossId && getBossById(bossId)
             ? { kind: "boss-by-id" as const, options: { bossId } }

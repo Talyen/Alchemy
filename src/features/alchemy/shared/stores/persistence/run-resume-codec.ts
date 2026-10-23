@@ -12,10 +12,8 @@ import {
   type ActiveRunData,
   type RunActivity,
   type PersistedRunActivity,
-  type RewardState,
 } from "@/lib/active-run-session";
 import { battleSnapshot } from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 import type { RunSessionFields } from "../session/run-domain-types";
 import {
@@ -62,7 +60,7 @@ function projectActivity(session: RunSessionFields): RunResumeProjection["activi
       const { choices: _choices, ...defaults } = createEmptyRewardState();
       return {
         kind: "rewards",
-        data: serializePendingReward(session.rewardFlow.state, session.rewardFlow.companionCards) ?? {
+        data: serializePendingReward(activity.data.state, activity.data.companionCards) ?? {
           ...defaults,
           rewardType: "card",
           choiceIds: [],
@@ -71,7 +69,7 @@ function projectActivity(session: RunSessionFields): RunResumeProjection["activi
       };
     }
     case "destination": {
-      const state = session.rewardFlow.state;
+      const state = activity.data;
       return {
         kind: "destination",
         data: {
@@ -138,8 +136,6 @@ export function encodeRunResumeSnapshot(source: RunResumeSource): ActiveRunData 
 export function decodeRunResumeSnapshot(activeRun: ActiveRunData, generateSeed?: () => number) {
   const saved = activeRun.activity;
   let activity: RunActivity;
-  let rewardState: RewardState | null = null;
-  let companionRewardCards: BattleCard[] | null = null;
   switch (saved.kind) {
     case "shop":
       activity = { kind: saved.kind, data: hydrateShopState(saved.data) };
@@ -158,14 +154,17 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData, generateSeed?:
       break;
     case "rewards": {
       const restored = restorePendingRewardBundle(saved.data);
-      rewardState = restored.rewardState ?? createEmptyRewardState();
-      companionRewardCards = restored.companionRewardCards;
-      activity = { kind: "rewards" };
+      activity = {
+        kind: "rewards",
+        data: {
+          state: restored.rewardState ?? createEmptyRewardState(),
+          companionCards: restored.companionRewardCards,
+        },
+      };
       break;
     }
     case "destination":
-      rewardState = { ...createEmptyRewardState(), ...saved.data };
-      activity = { kind: "destination" };
+      activity = { kind: "destination", data: saved.data };
       break;
     case "battle":
     case "campfire":
@@ -190,8 +189,6 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData, generateSeed?:
       activeLabyrinthRewardModifiers: activeRun.activeLabyrinthRewardModifiers,
       wildwoodDraft: activeRun.wildwoodDraft,
       starterDraftChoices: activeRun.starterDraftChoices,
-      rewardState,
-      companionRewardCards,
       activity,
     },
   };

@@ -1,3 +1,11 @@
+import type { BattleCard } from "@/lib/game-data";
+import {
+  readRewardActivity,
+  destinationActivityData,
+  type RewardState,
+  type RunActivity,
+} from "@/lib/active-run-session";
+import { setRunProgressActivity } from "@/features/alchemy/shared/stores/commands/write/run-session";
 import { vi } from "vitest";
 import {
   acceptCommand,
@@ -180,10 +188,11 @@ export function setRunProgress(partial: Partial<RunStateFields>, replace = false
 }
 
 export function setRunSession(
-  partial: Partial<RunSessionFields> & {
+  partial: Partial<Omit<RunSessionFields, "activity">> & {
+    activity?: RunActivity | { kind: "rewards" | "destination" | "labyrinth-map" };
     hasActiveRun?: boolean;
-    rewardState?: RunSessionFields["rewardFlow"]["state"];
-    companionRewardCards?: RunSessionFields["rewardFlow"]["companionCards"];
+    rewardState?: RewardState;
+    companionRewardCards?: BattleCard[] | null;
     rewardClaimInFlight?: boolean;
     pendingDestinationClaim?: import("@/lib/routing").Destination | null;
   },
@@ -193,18 +202,36 @@ export function setRunSession(
     if (replace) Object.assign(draft.session, createInitialSessionFields());
     if (partial.hasActiveRun !== undefined) {
       setHasActiveRun(draft, partial.hasActiveRun);
-      if (partial.hasActiveRun && draft.session.activity.kind === "idle")
-        draft.session.activity = { kind: "destination" };
+      if (partial.hasActiveRun && draft.session.activity.kind === "idle") setRunProgressActivity(draft, "destination");
     }
+    if (partial.activity && partial.activity.kind !== "inactive" && draft.session.activity.kind === "inactive")
+      setHasActiveRun(draft, true);
     if (partial.rewardState !== undefined) setRewardState(draft, partial.rewardState);
     if (partial.companionRewardCards !== undefined) setCompanionRewardCards(draft, partial.companionRewardCards);
     if (partial.rewardClaimInFlight !== undefined)
-      draft.session.rewardFlow.claim = { kind: partial.rewardClaimInFlight ? "reward" : "idle" };
+      draft.session.progressClaim = { kind: partial.rewardClaimInFlight ? "reward" : "idle" };
     if (partial.pendingDestinationClaim !== undefined)
-      draft.session.rewardFlow.claim = partial.pendingDestinationClaim
-        ? { kind: "destination", destination: partial.pendingDestinationClaim }
+      draft.session.progressClaim = partial.pendingDestinationClaim
+        ? {
+            kind: "destination",
+            destination: partial.pendingDestinationClaim,
+            offer: destinationActivityData(readRewardActivity(draft.session.activity).state),
+          }
         : { kind: "idle" };
+    if (
+      partial.activity &&
+      !("data" in partial.activity) &&
+      (partial.activity.kind === "rewards" || partial.activity.kind === "destination")
+    )
+      setRunProgressActivity(draft, partial.activity.kind);
     for (const key of SESSION_KEYS) {
+      if (
+        key === "activity" &&
+        partial.activity &&
+        !("data" in partial.activity) &&
+        (partial.activity.kind === "rewards" || partial.activity.kind === "destination")
+      )
+        continue;
       if (key in partial && partial[key] !== undefined) {
         const value = partial[key];
         (draft.session as unknown as Record<string, unknown>)[key] =
@@ -214,4 +241,29 @@ export function setRunSession(
       }
     }
   });
+}
+
+/** Construct phase-owned reward fixtures through the same activity transition. */
+export function rewardActivityForTest(
+  draft: import("@/features/alchemy/shared/stores/session/gameplay-command").GameplayDraft,
+) {
+  setRunProgressActivity(draft, "rewards");
+  const activity = draft.session.activity;
+  if (activity.kind !== "rewards") throw new Error("Reward fixture requires an active run");
+  return activity.data;
+}
+export function rewardStateForTest(
+  draft: import("@/features/alchemy/shared/stores/session/gameplay-command").GameplayDraft,
+) {
+  return rewardActivityForTest(draft).state;
+}
+
+/** Direct activity fixtures establish run lifetime as well as their phase. */
+export function setRunActivityForTest(
+  transaction: RunTransaction,
+  kind: Parameters<typeof setRunProgressActivity>[1],
+): void {
+  const draft = transactionDraft(transaction);
+  if (draft.session.activity.kind === "inactive") draft.session.activity = { kind: "idle" };
+  setRunProgressActivity(draft, kind);
 }

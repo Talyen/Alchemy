@@ -8,7 +8,7 @@ import { type HiddenHandCardKeys } from "./playable-hand";
 import type { PlaybackLifetime } from "./playback-lifetime";
 
 export interface HandDrawSequenceDeps {
-  playback: Pick<PlaybackLifetime, "beginDraw" | "pendingDraws" | "waitForFrame">;
+  playback: Pick<PlaybackLifetime, "beginDraw" | "pendingDraws" | "waitForFrame" | "waitForDelay">;
   isSessionActive: (session: number) => boolean;
   animateDrawnHand: (cards: BattleCard[], allHandCards: BattleCard[], session: number) => Promise<void>;
   setTransferInProgress: (active: boolean) => void;

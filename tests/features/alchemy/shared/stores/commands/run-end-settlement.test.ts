@@ -1,3 +1,4 @@
+import { setRewardState } from "@/features/alchemy/shared/stores/commands/write/run-session";
 import { createSaveBackend } from "../../../../../helpers/save-backend";
 import { afterEach, expect, it, vi } from "vitest";
 import {
@@ -146,14 +147,14 @@ it("settles the final reward and permanent progression together before victory p
   dispatchGameplayCommand(
     (draft) => {
       draft.run.activeRun.currentAct = ACTS_PER_RUN;
-      draft.session.activity = { kind: "rewards" };
-      draft.session.rewardFlow.state = {
+      setRunProgressActivity(draft, "rewards");
+      setRewardState(draft, {
         ...createEmptyRewardState(),
         choices: [card],
         materials: { ...emptyInventory(), wood: 3 },
         lastVictoryEnemyType: "boss",
         lastVictoryContentSystem: "campaign",
-      };
+      });
       return acceptCommand();
     },
     undefined,

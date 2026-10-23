@@ -1,3 +1,4 @@
+import { setRewardState } from "@/features/alchemy/shared/stores/commands/write/run-session";
 import "../../../../../helpers/mock-audio";
 import { initializeShopForTest } from "../../../../../helpers/visit-initialization";
 import "../../../../../helpers/mock-flush-save";
@@ -46,7 +47,7 @@ describe("loot progression at run boundaries", () => {
   it("keeps Campaign loot depth stable before and after the destination transition commits", () => {
     setRunProgress({ currentAct: 1, destinationIndexInAct: 2, gold: 999 });
     mutateGameplayForTest((draft) => {
-      draft.session.rewardFlow.state = createEmptyRewardState([DESTINATIONS.GEAR_SHOP]);
+      setRewardState(draft, createEmptyRewardState([DESTINATIONS.GEAR_SHOP]));
       expect(beginDestinationClaim(draft, DESTINATIONS.GEAR_SHOP)).toBe(true);
     });
     expect(progress().depth).toBe(4);
@@ -106,7 +107,7 @@ describe("loot progression at run boundaries", () => {
       draft.session.activity = { kind: "idle" };
       draft.run.navigation.screen = "rewards";
       setRunProgressActivity(draft, "rewards");
-      draft.session.rewardFlow.state = { ...createEmptyRewardState(), rewardType: "gear", choices };
+      setRewardState(draft, { ...createEmptyRewardState(), rewardType: "gear", choices });
     });
     const rngBefore = readActiveRun(defaultGameSession).rng;
     for (let attempt = 0; attempt < 2; attempt += 1) {

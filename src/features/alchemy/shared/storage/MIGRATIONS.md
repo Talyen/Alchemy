@@ -418,3 +418,13 @@ it. No schema-version increment or supported payload transformation is required.
 ## Localized descriptions
 
 The renderer derives localized messages from literal parts, effects and magnitude bindings when they are displayed or extracted. Template IDs and keyword/magnitude slots are not persisted; saved cache metadata cannot replace valid mechanics. Current-format cards, custom wording, Mixed Potion grouping and upgrades remain intact. Unknown legacy templates remain playable in English. The device-local language preference is outside the progress envelope and Steam Cloud; no save-version change is required. See [Localization](../../../../../Docs/LOCALIZATION.md).
+
+## Battle decoding and semantic repair
+
+The wire schema validates structure and scheduled/card collections before semantic
+repair. `DecodedPersistedBattle` deliberately leaves enemy identity, status,
+reaction and flag records untrusted; normalization validates those records and
+then repairs resources, pile identities, and cross-field survival relationships.
+Optional card metadata is omitted when absent, matching the runtime card type.
+The runtime activity layout does not change the serialized reward/destination
+payloads or save version.

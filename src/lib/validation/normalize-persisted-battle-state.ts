@@ -176,10 +176,8 @@ function clampNonNegative(value: number, fallback: number): number {
   return Number.isFinite(value) && value >= 0 && value < Number.MAX_SAFE_INTEGER ? value : fallback;
 }
 
-function normalizeNonNegativeRecord<K extends string>(
-  defaults: Record<K, number>,
-  saved: Partial<Record<K, number>> | undefined,
-): Record<K, number> {
+function normalizeNonNegativeRecord<K extends string>(defaults: Record<K, number>, input: unknown): Record<K, number> {
+  const saved = isRecord(input) ? input : {};
   const merged = { ...defaults };
   for (const key of Object.keys(defaults) as K[]) {
     const value = saved?.[key];
@@ -227,19 +225,23 @@ function restoreEnemyTraits(value: unknown, enemy: BestiaryEntry | undefined): E
   ];
 }
 
-function normalizeEnemy(
-  savedEnemy: BattleSnapshot["currentEnemy"] | undefined,
-  defaultEnemy: BattleSnapshot["currentEnemy"],
-): BattleSnapshot["currentEnemy"] {
-  const catalogEnemy = savedEnemy && isEnemyId(savedEnemy.id) ? enemyById[savedEnemy.id] : undefined;
+function isSavedAbilityRoster(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) &&
+    value.length === 3 &&
+    new Set(value).size === 3 &&
+    value.every((id: unknown) => typeof id === "string" && Boolean(findEnemyAbilityCard(id)))
+  );
+}
+
+function normalizeEnemy(input: unknown, defaultEnemy: BattleSnapshot["currentEnemy"]): BattleSnapshot["currentEnemy"] {
+  const savedEnemy = isRecord(input) ? input : undefined;
+  const catalogEnemy =
+    savedEnemy && typeof savedEnemy.id === "string" && isEnemyId(savedEnemy.id) ? enemyById[savedEnemy.id] : undefined;
   const savedAbilityIds = savedEnemy?.abilityIds;
-  const abilityIds =
-    Array.isArray(savedAbilityIds) &&
-    savedAbilityIds.length === 3 &&
-    new Set(savedAbilityIds).size === 3 &&
-    savedAbilityIds.every((id) => typeof id === "string" && findEnemyAbilityCard(id))
-      ? savedAbilityIds
-      : (catalogEnemy?.abilityIds ?? defaultEnemy.abilityIds);
+  const abilityIds = isSavedAbilityRoster(savedAbilityIds)
+    ? savedAbilityIds
+    : (catalogEnemy?.abilityIds ?? defaultEnemy.abilityIds);
   return {
     ...(catalogEnemy ?? defaultEnemy),
     abilityIds,
@@ -247,11 +249,8 @@ function normalizeEnemy(
   };
 }
 
-function normalizeCombatFlags(
-  defaults: BattleSnapshot["flags"],
-  saved: Partial<BattleSnapshot["flags"]> | undefined,
-): BattleSnapshot["flags"] {
-  const stored: Record<string, unknown> = saved ?? {};
+function normalizeCombatFlags(defaults: BattleSnapshot["flags"], saved: unknown): BattleSnapshot["flags"] {
+  const stored = isRecord(saved) ? saved : {};
   return Object.fromEntries(
     Object.entries(defaults).map(([key, fallback]) => {
       const value = Object.hasOwn(stored, key) ? stored[key] : undefined;
@@ -364,7 +363,7 @@ function normalizeWishChoices(state: BattleSnapshot) {
   return { wishOptions: nextWishOptions, wishQueue: remainingQueue };
 }
 
-function normalizeSurvival(state: BattleSnapshot, saved: Partial<BattleSnapshot>, defaults: BattleSnapshot) {
+function normalizeSurvival(state: BattleSnapshot, saved: DecodedPersistedBattle, defaults: BattleSnapshot) {
   const savedSurvival: { deathsDoorActive?: unknown; deathsDoorUsed?: unknown } = saved;
   // Load-path truncation (not battle Math.round): turn must stay an integer ≥1.
   const turn =
@@ -386,7 +385,19 @@ function normalizeSurvival(state: BattleSnapshot, saved: Partial<BattleSnapshot>
   };
 }
 
-export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): BattleSnapshot {
+/** Structurally decoded fields still contain untrusted manifest/identity records. */
+export type DecodedPersistedBattle = Omit<
+  Partial<BattleSnapshot>,
+  "currentEnemy" | "playerStatuses" | "enemyStatuses" | "flags" | "reactions"
+> & {
+  currentEnemy?: unknown;
+  playerStatuses?: unknown;
+  enemyStatuses?: unknown;
+  flags?: unknown;
+  reactions?: unknown;
+};
+
+export function normalizePersistedBattleState(saved: DecodedPersistedBattle): BattleSnapshot {
   // Defaults own the persisted shape; retired fields and runtime dependencies
   // must not survive merely because the wire schema tolerates unknown keys.
   const defaults = battleSnapshot(defaultBattleState());

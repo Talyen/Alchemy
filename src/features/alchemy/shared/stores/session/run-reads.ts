@@ -1,5 +1,5 @@
 import { type GameSession } from "@/features/alchemy/shared/stores/session/game-session-types";
-import { isActiveRunActivity, runActivityScreen } from "@/lib/active-run-session";
+import { readRewardActivity, isActiveRunActivity, runActivityScreen } from "@/lib/active-run-session";
 import {
   battleSnapshot,
   defaultBattleState,
@@ -16,7 +16,12 @@ import { deepFreeze } from "./store-utils";
 
 export type { ActiveRunReadView } from "./run-state-init";
 export type RunProfileReadView = Readonly<PermanentProgressFields>;
-export type RunSessionReadView = Readonly<RunSessionFields> & { readonly hasActiveRun: boolean };
+export type RunSessionReadView = Readonly<RunSessionFields> & {
+  readonly hasActiveRun: boolean;
+  readonly rewardFlow: import("@/lib/active-run-session").RewardActivityData & {
+    claim: { kind: "idle" | "reward" } | { kind: "destination"; destination: import("@/lib/routing").Destination };
+  };
+};
 export interface BattleReadView {
   readonly hasActiveBattle: boolean;
   readonly battleState: BattleSnapshot;
@@ -38,7 +43,17 @@ export function readRunProfile(gameSession: GameSession): RunProfileReadView {
 }
 export function readRunSession(gameSession: GameSession): RunSessionReadView {
   const session = readGameplayState(gameSession).session;
-  return { ...session, hasActiveRun: isActiveRunActivity(session.activity) };
+  return {
+    ...session,
+    rewardFlow: {
+      ...readRewardActivity(session.activity),
+      claim:
+        session.progressClaim.kind === "destination"
+          ? { kind: "destination", destination: session.progressClaim.destination }
+          : session.progressClaim,
+    },
+    hasActiveRun: isActiveRunActivity(session.activity),
+  };
 }
 export function readBattle(gameSession: GameSession): BattleReadView {
   return selectBattle(readGameplayState(gameSession));

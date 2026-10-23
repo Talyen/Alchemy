@@ -2,11 +2,6 @@ import { expandRepositoryPaths, runGit } from "../repository-paths.mjs";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-import { isDocumentationPath, resolveRoutes, SHARED_BUILD_PATTERNS } from "./change-routes.mjs";
-import { globToRegExp } from "../glob-pattern.mjs";
-
-const COMPILED_SHARED_BUILD_PATTERNS = SHARED_BUILD_PATTERNS.map(globToRegExp);
-
 export function parseChangedPathsArgs(argv, { usage } = {}) {
   const flags = new Set();
   const paths = [];
@@ -164,35 +159,4 @@ export function resolvePushPaths(rootDir, input) {
   // Expand through the shared path owner like the non-push selection so both
   // return normalized repo-relative paths (deleted paths are retained).
   return expandRepositoryPaths(rootDir, [...paths].sort());
-}
-
-export function classifyCheckPaths(rootDir, paths) {
-  const expanded = expandRepositoryPaths(rootDir, paths);
-  const codePaths = expanded.filter((filePath) => !isDocumentationPath(filePath));
-  const routes = resolveRoutes(codePaths.length > 0 ? codePaths : expanded);
-  const ids = new Set(routes.map((route) => route.id));
-  const needsCodeChecks = codePaths.length > 0;
-  const lockfile = codePaths.some((filePath) => filePath === "package.json" || filePath === "package-lock.json");
-  const sharedBuild = codePaths.some((filePath) =>
-    COMPILED_SHARED_BUILD_PATTERNS.some((expression) => expression.test(filePath)),
-  );
-  // Extraction scans source literals and derives descriptions from runtime modules.
-  // Test/tooling-only changes do not affect those catalogs; integration and
-  // pre-push still select this gate for every changed localization input.
-  const localization = codePaths.some((filePath) =>
-    /^(?:src\/.*\.[cm]?[jt]sx?$|src\/lib\/localization\/|scripts\/localization(?:[./])|steam\/|public\/fonts\/|package(?:-lock)?\.json$|vite\.config\.ts$)/u.test(
-      filePath,
-    ),
-  );
-  const desktop = ids.has("desktop") || sharedBuild;
-  const web =
-    sharedBuild ||
-    ids.has("runtime") ||
-    ids.has("assets") ||
-    codePaths.some((filePath) =>
-      /^(src\/|public\/|index\.html$|vite\.config\.ts$|vercel\.json$|package\.json$|package-lock\.json$)/u.test(
-        filePath,
-      ),
-    );
-  return { needsCodeChecks, lockfile, desktop, web, localization, routeIds: [...ids] };
 }

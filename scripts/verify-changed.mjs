@@ -13,6 +13,7 @@ import { runCommand } from "./lib/run-command.mjs";
 import { createVerificationCache } from "./lib/verification/verification-cache.mjs";
 import { selectContext } from "./lib/agent/agent-context.mjs";
 import { batchUnitCommands } from "./lib/verification/unit-batch.mjs";
+import { assertHeavyLocalAllowed } from "./lib/verification/local-execution-policy.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -64,9 +65,7 @@ export function filterPlanCommands(plan, flags) {
   if (!flags.has("full"))
     return {
       ...plan,
-      commands: plan.commands.filter(
-        (command) => command.key === "related" || command.key.startsWith("unit-") || command.key === DOCS_CHECK_KEY,
-      ),
+      commands: plan.commands.filter((command) => command.key === DOCS_CHECK_KEY),
     };
   if (flags.has("skip-docs-check")) {
     return { ...plan, commands: plan.commands.filter((command) => command.key !== DOCS_CHECK_KEY) };
@@ -130,13 +129,14 @@ export function main(argv = process.argv.slice(2)) {
     // docs:check itself, so one gate never pays for documentation checks twice.
     const plan = batchUnitCommands(filterPlanCommands(resolveRoutePlan(paths), flags));
     console.log(
-      `Run: ${runId}; scope: ${flags.has("full") ? "broader verification" : flags.has("unit") ? "focused units" : "task units and documentation"}`,
+      `Run: ${runId}; scope: ${flags.has("full") ? "broader verification" : flags.has("unit") ? "selected units" : "documentation only; unit tests deferred to CI"}`,
     );
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
     console.log(
       "Scope: route-selected checks only. Use check for task completion; check:all includes every unit suite, full static validation and builds.",
     );
     if (flags.has("plan")) return 0;
+    if (flags.has("full") || flags.has("unit")) assertHeavyLocalAllowed("Route-selected test verification");
 
     // The ordinary outer check caches this deterministic aggregate and guards
     // its inputs once. Full verification includes artifact-producing commands,
