@@ -76,13 +76,17 @@ suppresses any hover shimmer; saving and the existing outgoing fade proceed
 independently, with no second shine or added wait. Each reward-choice identity
 starts fresh. Reduced or disabled motion keeps the selected frame and dimming.
 
-Transmutation keyword choices use opaque fills, 24px icons, hover/focus illumination,
+Transmutation keyword choices use opaque fills, hover/focus illumination,
 press feedback, and a selected 2px shine border in the keyword palette. The preview
-card and its title swap together through `FadeSlot`; the original stays steady.
-Transmute stays disabled until the current preview artwork is ready. Choices remain
-available during the swap. The saved result uses the reward settle/shine once on
-live completion and waits for Continue; resumed results skip that reveal effect. Reduced or
-disabled motion preserves selection emphasis without decorative animation.
+artwork stays mounted; only its title swaps through `FadeSlot`. An accepted keyword
+change colors the comparison arrow and emits a brief glow, rising during the
+label's exit and fading during its entry using the same motion token and easing.
+The arrow never scales. Another choice restarts the glow; rejected choices and
+saved-preview resume do not trigger it. Reduced or disabled motion keeps the
+keyword tint and selection emphasis without the glow. Transmute stays enabled
+between valid keyword choices and commits the latest selection independently of
+the label animation. The saved result uses the reward settle/shine once on live
+completion and waits for Continue; resumed results skip that reveal effect.
 
 ## Battle motion
 

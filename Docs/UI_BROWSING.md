@@ -219,7 +219,8 @@ Transmutation first shows the selected original card beside an empty, question-m
 slot, using the same dashed frame as Potion Brewing. Up to three icon-only keyword
 buttons stay centered below the full comparison, with equal gaps above and below. No alteration is selected initially. Choosing a
 keyword fills the empty slot with its saved preview; the arrow centers on the card art,
-independent of titles and controls. Keyword buttons keep translated accessible names
+independent of titles and controls. Choosing a keyword colors the arrow and gives it
+a brief glow synchronized with the label fade. Keyword buttons keep translated accessible names
 and a visible selected state, without hover tooltips. Inspect the card for its effects.
 Switching keywords keeps preview artwork mounted and fades only its label. Back returns to the
 card picker without RNG or deck changes. Transmute is visible before a choice and

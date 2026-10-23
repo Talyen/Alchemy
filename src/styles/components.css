@@ -165,6 +165,20 @@
     background-color: color-mix(in srgb, currentColor 15%, transparent);
   }
 
+  .transmutation-arrow-glow {
+    animation: transmutation-arrow-glow calc(var(--motion-fade-duration) * 2) var(--motion-fade-ease);
+  }
+
+  @keyframes transmutation-arrow-glow {
+    0%,
+    100% {
+      filter: drop-shadow(0 0 0 currentColor);
+    }
+    50% {
+      filter: drop-shadow(0 0 8px currentColor);
+    }
+  }
+
   .transmutation-keyword-choice {
     --surface-frame-border-width: 2px;
     border: 2px solid color-mix(in srgb, currentColor 35%, var(--color-background));
