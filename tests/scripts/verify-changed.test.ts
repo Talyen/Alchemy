@@ -18,6 +18,7 @@ import {
   validateRouteCatalog,
 } from "../../scripts/lib/verification/change-routes.mjs";
 import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/verification/test-commands.mjs";
+import { VITEST_MAX_WORKERS } from "../../scripts/lib/verification/test-concurrency.mjs";
 import { formatRouteHintLine, routeHintForPath } from "../../scripts/lib/agent/route-hints.mjs";
 import { formatPlan, filterPlanCommands, parseVerifyArgs } from "../../scripts/verify-changed.mjs";
 
@@ -46,7 +47,7 @@ describe("verification selection", () => {
       "scripts/run-compact.mjs",
       "vitest",
       "related",
-      "--maxWorkers=4",
+      `--maxWorkers=${VITEST_MAX_WORKERS}`,
       "src/lib/battle/damage-calc.ts",
       "--run",
       "--passWithNoTests",
@@ -117,7 +118,7 @@ describe("verification selection", () => {
       "scripts/run-compact.mjs",
       "vitest",
       "related",
-      "--maxWorkers=4",
+      `--maxWorkers=${VITEST_MAX_WORKERS}`,
       runtimePath,
       "--run",
       "--passWithNoTests",

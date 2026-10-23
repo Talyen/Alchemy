@@ -156,7 +156,10 @@ Waiting reports progress every 30 seconds and is cancellable. Set
 `ALCHEMY_LOCK_WAIT_MS` for an explicit deadline (`0` fails immediately).
 The minimal Node smoke does not acquire this lane. Raw CLI and watch/debug
 sessions bypass it and must be coordinated manually. The runner defaults native
-bundler threads to one; the four-worker Vitest ceiling remains unchanged. An
+bundler threads to one. Vitest defaults to four workers; set
+`ALCHEMY_TEST_MAX_WORKERS=1` for task verification on an overloaded host.
+The override accepts only integers from 1 to 4 and keeps test selection, timeouts
+and resource reservations unchanged. An
 unrelated overloaded host can still cause failures: preserve the failed result
 and inspect collection and host resources before retrying or changing timeouts.
 Implementation: [local test lane](./lib/verification/local-test-lane.mjs).
