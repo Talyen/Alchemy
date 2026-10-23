@@ -220,7 +220,7 @@ it("admits a focused unit alongside broad work, exposes a cancellable queue and 
   }
 });
 
-it("admits live waiters in order, skips canceled and dead tickets, and holds a batch until release", async () => {
+it("admits waiters in order, skips canceled and reused-PID tickets, and holds a batch until release", async () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "test-queue-"));
   const owner = await acquireTestResources("playwright", ["test"], process.cwd(), { directory, broadPort: 0 });
   const port = testResourceStatus(directory)[0]!.port;
@@ -233,7 +233,7 @@ it("admits live waiters in order, skips canceled and dead tickets, and holds a b
     path.join(directory, "dead.json"),
     JSON.stringify({
       ...testResourceStatus(directory)[0],
-      pid: 2147483647,
+      pid: process.pid,
       state: "waiting",
       since: "2000-01-01",
       ticket: "dead",
@@ -243,6 +243,7 @@ it("admits live waiters in order, skips canceled and dead tickets, and holds a b
   await expect(middle).rejects.toThrow("abort");
   await owner.release();
   const batch = await first;
+  fs.rmSync(path.join(directory, "dead.json"));
   try {
     expect(usesLocalTestLane(process.execPath, ["scripts/run-unit-batch.mjs", "{}"])).toBe(true);
     expect(testResourceStatus(directory).filter((record) => record.state === "active")).toMatchObject([

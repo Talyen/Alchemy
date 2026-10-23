@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import net from "node:net";
 import { randomUUID } from "node:crypto";
 import { acquireExclusivePort } from "../exclusive-port.mjs";
 import { unitSelection } from "./unit-selection.mjs";
@@ -43,6 +44,23 @@ const STATUS_DIRECTORY = path.join(
   `alchemy-test-resources-${process.getuid?.() ?? os.userInfo().username}`,
 );
 
+function ownsTicket(record) {
+  return new Promise((resolve) => {
+    const socket = net.connect({ host: "127.0.0.1", port: record.leasePort });
+    let response = "";
+    const finish = (live) => {
+      socket.destroy();
+      resolve(live);
+    };
+    socket.setTimeout(1_000, () => finish(false));
+    socket.on("data", (chunk) => {
+      response += chunk;
+    });
+    socket.once("end", () => finish(response === record.ticket));
+    socket.once("error", () => finish(false));
+  });
+}
+
 export async function acquireTestResources(
   command,
   args,
@@ -71,23 +89,44 @@ export async function acquireTestResources(
     fs.writeFileSync(temporary, JSON.stringify(record), { mode: 0o600 });
     fs.renameSync(temporary, filename);
   };
-  write();
   let lane;
+  let lease;
   try {
+    // A PID may be reused after a crash. The private listener proves that the
+    // waiting process still owns this exact ticket; the OS releases it on exit.
+    lease = await acquireExclusivePort(0, {
+      signal: options.signal,
+      label: "Test reservation lease",
+      onConnection: (socket) => socket.end(record.ticket),
+    });
+    record.leasePort = lease.port;
+    write();
     lane = await acquireExclusivePort(port, {
       ...options,
       label: `Local ${kind} test lane`,
-      // Only the oldest live waiter may attempt the bind. The listener remains
-      // authoritative, including for older checkouts without queue admission.
-      canAcquire: () =>
-        testResourceStatus(directory).find((entry) => entry.state === "waiting" && entry.port === port)?.ticket ===
-        record.ticket,
+      // Legacy clients still respect the exclusive listener. Queue ordering
+      // applies to clients with leases, without trusting stale legacy records.
+      canAcquire: async () => {
+        for (const entry of testResourceStatus(directory).filter(
+          (entry) =>
+            entry.state === "waiting" &&
+            entry.port === port &&
+            Number.isInteger(entry.leasePort) &&
+            entry.leasePort > 0 &&
+            entry.leasePort < 65536 &&
+            typeof entry.ticket === "string",
+        )) {
+          if (await ownsTicket(entry)) return entry.ticket === record.ticket;
+        }
+        return false;
+      },
     });
     record.port = lane.port;
     record.state = "active";
     write();
   } catch (error) {
     await lane?.release();
+    await lease?.release();
     fs.rmSync(filename, { force: true });
     throw error;
   }
@@ -97,6 +136,7 @@ export async function acquireTestResources(
       try {
         await lane.release();
       } finally {
+        await lease.release();
         fs.rmSync(filename, { force: true });
       }
     },
@@ -122,8 +162,7 @@ export function testResourceStatus(directory = STATUS_DIRECTORY) {
           !["focused", "broad"].includes(record.kind)
         )
           return [];
-        // Status files never own a lock. Ignore dead processes without reclaiming
-        // listeners or deleting another process's records.
+        // Liveness here is advisory; queue admission also checks the ticket lease.
         process.kill(record.pid, 0);
         return [record];
       } catch {

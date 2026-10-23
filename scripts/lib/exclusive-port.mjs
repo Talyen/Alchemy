@@ -10,6 +10,7 @@ export async function acquireExclusivePort(
     signal,
     onWait = console.log,
     canAcquire = () => true,
+    onConnection = (socket) => socket.destroy(),
   } = {},
 ) {
   if (timeoutMs !== null && (!Number.isFinite(timeoutMs) || timeoutMs < 0))
@@ -19,9 +20,10 @@ export async function acquireExclusivePort(
   let nextStatus = started;
   for (;;) {
     signal?.throwIfAborted();
-    const server = net.createServer((socket) => socket.destroy());
+    const server = net.createServer(onConnection);
     try {
-      if (!canAcquire()) throw Object.assign(new Error("Earlier reservation is waiting"), { code: "EADDRINUSE" });
+      if (!(await canAcquire()))
+        throw Object.assign(new Error("Earlier reservation is waiting"), { code: "EADDRINUSE" });
       await new Promise((resolve, reject) => {
         server.once("error", reject);
         server.listen({ host: "127.0.0.1", port, exclusive: true }, resolve);

@@ -25,6 +25,7 @@ export function acquireTestResources(
 ): Promise<{ kind: "focused" | "broad"; release: () => Promise<void> }>;
 export function testResourceStatus(directory?: string): Array<{
   ticket?: string;
+  leasePort?: number;
   pid: number;
   cwd: string;
   kind: "focused" | "broad";
