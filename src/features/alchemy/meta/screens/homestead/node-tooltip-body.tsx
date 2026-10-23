@@ -4,10 +4,12 @@ import { Fragment, useLayoutEffect, useRef, useState, type CSSProperties } from 
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { HOMESTEAD_FEEDBACK } from "@/lib/game-constants";
-import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
-import { HomesteadResourceArtwork } from "../../../shared/ui/material-icons";
+import { keywordDefinitions } from "@/lib/game-data";
+import { MATERIAL_IDS, materialLabels, type MaterialId, type MaterialInventory } from "@/lib/homestead/types";
+import { goldTextColor, HomesteadResourceArtwork, matTextColor } from "../../../shared/ui/material-icons";
 import { TooltipBody, TooltipSeparator } from "../../../shared/ui/tooltips/tooltip-panel";
 import { renderTextWithMaterials } from "./helpers";
+import { HomesteadBonusIcon } from "./bonus-icons";
 import type { HomesteadNodeModel } from "./node-model";
 
 export function HomesteadTooltipBody({
@@ -38,6 +40,7 @@ export function HomesteadTooltipBody({
   }, []);
   const materials = MATERIAL_IDS.filter((material) => (node.cost?.[material] ?? 0) > 0);
   const hasBenefits = node.bonuses.length > 0 || node.production.length > 0;
+  const previewClass = node.level === 0 ? "opacity-80 saturate-[0.6]" : undefined;
   const costLabel = materials
     .map((material) => `${node.cost![material]} ${i18n.displayText(materialLabels[material])}`)
     .join(", ");
@@ -56,26 +59,49 @@ export function HomesteadTooltipBody({
         {node.discovered ? (
           <>
             {hasBenefits && (
-              <TooltipBody className={cn("mt-2 space-y-1", node.level === 0 && "opacity-80 saturate-[0.6]")}>
+              <TooltipBody className="mt-2 space-y-1">
                 {[...node.bonuses, ...node.production].map((line, index) => (
-                  <p key={index} className="min-h-6 leading-6">
-                    {i18n.read(() =>
-                      renderTextWithMaterials(line, {
-                        renderPlain: (text, key) => (
-                          <Fragment key={key}>
-                            {text
-                              .split(/(\d+(?:\.\d+)?%?)/)
-                              .map((part, index) =>
-                                /^\d/.test(part) ? (
-                                  <TooltipValue key={index} value={part} animate={animate} />
-                                ) : (
-                                  <Fragment key={index}>{part}</Fragment>
-                                ),
+                  <p key={index} className="flex min-h-6 items-start gap-2 leading-6">
+                    <HomesteadBonusIcon node={node} line={line} production={index >= node.bonuses.length} />
+                    <span className="min-w-0">
+                      {i18n.read(() =>
+                        renderTextWithMaterials(line, {
+                          renderResource: (text, resource, key) => (
+                            <span
+                              key={key}
+                              className={cn(
+                                resource === "gold" ? goldTextColor : matTextColor[resource as MaterialId],
+                                "font-semibold",
+                                previewClass,
                               )}
-                          </Fragment>
-                        ),
-                      }),
-                    )}
+                            >
+                              {text}
+                            </span>
+                          ),
+                          renderKeyword: (text, keyword, key) => (
+                            <span
+                              key={key}
+                              className={cn(keywordDefinitions[keyword].colorClass, "font-semibold", previewClass)}
+                            >
+                              {text}
+                            </span>
+                          ),
+                          renderPlain: (text, key) => (
+                            <span key={key} className={previewClass}>
+                              {text
+                                .split(/(\d+(?:\.\d+)?%?)/)
+                                .map((part, index) =>
+                                  /^\d/.test(part) ? (
+                                    <TooltipValue key={index} value={part} animate={animate} />
+                                  ) : (
+                                    <Fragment key={index}>{part}</Fragment>
+                                  ),
+                                )}
+                            </span>
+                          ),
+                        }),
+                      )}
+                    </span>
                   </p>
                 ))}
               </TooltipBody>

@@ -251,7 +251,7 @@ describe("HomesteadScreen", () => {
     expect(screen.queryByRole("img", { name: "Wolf" })).toBeNull();
   });
 
-  it("shows Hide alone for Hunter's Lodge and renders Wishing Well Gold in a resource chip", async () => {
+  it("shows Hide alone for Hunter's Lodge and Wishing Well's Gold benefit with matching artwork", async () => {
     render(
       <HomesteadScreen
         {...defaultProps}
@@ -269,8 +269,7 @@ describe("HomesteadScreen", () => {
     expect(well.textContent).toContain("Find 10% more Gold");
     expect(well.textContent).not.toContain("Gems");
     const gold = within(well).getByRole("img", { name: "Gold" });
-    expect(gold.parentElement?.textContent).toBe("Gold");
-    expect(gold.parentElement?.classList.contains("rounded-full")).toBe(true);
+    expect(gold.closest("p")?.textContent).toBe("Find 10% more Gold");
   });
 
   it("confirms reset, holds its refund until saved, and permits buying the same tier again", async () => {
@@ -352,7 +351,7 @@ describe("HomesteadScreen", () => {
     expect(panel.animate).toHaveBeenCalledTimes(1);
     const physical = within(panel).getByText("Physical");
     const sentence = physical.closest("p");
-    const resource = within(panel).getByText("Find", { exact: false }).querySelector("img");
+    const resource = within(panel).getByRole("img", { name: "Iron" });
     act(() => vi.advanceTimersByTime(60));
     fireEvent.click(nodeTile());
     rerender(
@@ -369,7 +368,7 @@ describe("HomesteadScreen", () => {
     expect(within(panel).getByText("Blacksmith")).toBe(title);
     expect(within(panel).getByText("Physical")).toBe(physical);
     expect(physical.closest("p")).toBe(sentence);
-    expect(within(panel).getByText("Find", { exact: false }).querySelector("img")).toBe(resource);
+    expect(within(panel).getByRole("img", { name: "Iron" })).toBe(resource);
     expect(panel.querySelector(".homestead-value-update")?.textContent).toBe("2");
     expect(panel.querySelector("[data-homestead-transition]")?.firstElementChild?.getAttribute("style")).toBeNull();
     expect(screen.queryByText(/^(Built|Upgraded|Bonded)$/)).toBeNull();

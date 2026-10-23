@@ -92,7 +92,14 @@ upgrades, or bonds the node.
 
 Stars beside the name show purchased levels or bonds. Unbuilt nodes show
 their name, empty stars, first-tier benefits, and purchase cost. Preview benefits
-are partially muted while retaining keyword hues; purchased benefits use full color.
+have partially muted text while retaining keyword hues; purchased benefits use full color.
+Each effect row starts with one 20px icon aligned to its first line. Icons reuse
+keyword shapes and colors, including damage-reduction effects; mixed effects use
+their first authored keyword. Potion potency uses a round flask in Herbs green,
+discounts use a Gold price tag, and Astral chance uses a wand in Gems blue.
+Material bonuses use their first resource's artwork in the same leading slot,
+with colored resource names in the text and no repeated artwork. Icons retain
+their color in preview states.
 Unbonded Companions show their name, empty stars, and bond cost.
 Purchased nodes show current bonuses and Find 10/20/30/40% more resource quantities,
 with uniform effect-row spacing and no section headers or next-tier comparisons.
