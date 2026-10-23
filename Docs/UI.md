@@ -64,12 +64,14 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 
 `TitledScreenShell.aboveHeader` holds compact context above the heading. Choose
 Destination shows small I / II / III act circles there (only I in the demo).
-Clicking the highlighted current act unfolds it into the current eight-room
+Clicking any act unfolds the current act into its eight-room
 trail on the same line, with neighboring acts sliding aside. Click the trail or
 press Escape to collapse it. Visited rooms keep their destination icons; a gold
 star marks the current room, future rooms are unknown, and the boss crown uses
 deep purple. Nodes have 1px borders and retain the destination icons' size and
-stroke. The row sits slightly above the header, and transition/focus treatment
+stroke. Both views use the same spacing between every node. The current node has
+a subtle glow matching its border, with no hover color change.
+The row sits slightly above the header, and transition/focus treatment
 stays on individual circles, preserving the title and artwork positions.
 
 ## Component conventions

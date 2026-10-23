@@ -1,7 +1,7 @@
 @layer components {
   .destination-progress {
     --progress-node: calc(2.25 * var(--content-rem, 1rem));
-    --progress-act-step: calc(3 * var(--content-rem, 1rem));
+    --progress-step: calc((100% - var(--progress-node)) / (var(--progress-node-count) - 1));
     --progress-travel-duration: 420ms;
     --progress-ease: cubic-bezier(0.22, 1, 0.36, 1);
   }
@@ -16,7 +16,7 @@
     top: 50%;
     left: 50%;
     height: 1px;
-    width: calc((var(--progress-act-count) - 1) * var(--progress-act-step));
+    width: calc((var(--progress-act-count) - 1) * var(--progress-step));
     transform: translateX(-50%);
     background: color-mix(in srgb, var(--color-border) 70%, transparent);
     transition: width var(--progress-travel-duration) var(--progress-ease);
@@ -53,6 +53,12 @@
     opacity: 0;
   }
 
+  .destination-progress-current-node {
+    box-shadow:
+      0 0 calc(0.375 * var(--content-rem, 1rem)) color-mix(in srgb, currentColor 30%, transparent),
+      0 0 calc(0.75 * var(--content-rem, 1rem)) color-mix(in srgb, currentColor 15%, transparent);
+  }
+
   .destination-progress-room .destination-progress-node {
     transform: scale(0.86);
   }
@@ -82,43 +88,54 @@
     transform: scale(1);
   }
 
-  .destination-progress-toggle {
+  .destination-progress-toggle,
+  .destination-progress-act-trigger {
     position: absolute;
     z-index: 1;
     top: 0;
-    left: calc(
-      50% + (var(--progress-act-index) - (var(--progress-act-count) - 1) / 2) * var(--progress-act-step) -
-        var(--progress-node) / 2
-    );
     width: var(--progress-node);
     height: var(--progress-node);
     padding: 0;
     border: 0;
     background: transparent;
     cursor: pointer;
+    pointer-events: auto;
+  }
+
+  .destination-progress-toggle {
+    left: calc(
+      50% + (var(--progress-act-index) - (var(--progress-act-count) - 1) / 2) * var(--progress-step) -
+        var(--progress-node) / 2
+    );
+  }
+
+  .destination-progress-act-trigger {
+    left: calc(50% - var(--progress-node) / 2);
   }
 
   .destination-progress[data-expanded="true"] .destination-progress-toggle {
-    left: calc(var(--progress-act-index) * var(--progress-act-step));
-    width: calc(100% - (var(--progress-act-count) - 1) * var(--progress-act-step));
+    left: calc(var(--progress-act-index) * var(--progress-step));
+    width: calc(100% - (var(--progress-act-count) - 1) * var(--progress-step));
   }
 
-  .destination-progress-toggle:focus-visible {
+  .destination-progress-toggle:focus-visible,
+  .destination-progress-act-trigger:focus-visible {
     outline: none;
   }
 
-  .destination-progress:has(.destination-progress-toggle:hover) .destination-progress-current-node {
-    border-color: var(--color-gold-pale);
-  }
-
   .destination-progress:has(.destination-progress-toggle:focus-visible):where(html[data-focus-navigation="true"] *)
-    .destination-progress-current-node {
+    .destination-progress-current-node,
+  .destination-progress-act:has(.destination-progress-act-trigger:focus-visible):where(
+      html[data-focus-navigation="true"] *
+    )
+    .destination-progress-node {
     outline: 2px solid var(--color-gold-pale);
     outline-offset: 3px;
   }
 
   @media (pointer: coarse) {
-    .destination-progress-toggle::after {
+    .destination-progress-toggle::after,
+    .destination-progress-act-trigger::after {
       content: "";
       position: absolute;
       inset: -4px 0;
