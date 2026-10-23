@@ -163,7 +163,7 @@ export function BrewPotionPanel({
     <BattleCardButton card={card} ariaLabel={label} shimmerActive={false} shimmerToken={undefined} className={width} />
   );
   return (
-    <div className="flex w-full max-w-4xl flex-col items-center gap-5">
+    <div className={cn("flex w-full max-w-4xl flex-col items-center", variant === "alchemist" ? "gap-6" : "gap-5")}>
       {variant === "campfire" && (
         <h2 className="text-xl">
           {i18n.displayText(
