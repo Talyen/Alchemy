@@ -352,8 +352,6 @@ keep local actions on relative paths. [.github/dependabot.yml](../.github/depend
 groups weekly Actions updates into reviewable pull requests; updates still pass
 the normal CI gates before merging.
 
-[Bugbot](../.cursor/BUGBOT.md) remains an optional post-push review aid for gameplay, save, and battle-rule changes; it is not a required status check.
-
 Release validation remains deliberately redundant because it protects published artifacts. See [RELEASE.md](../Docs/RELEASE.md).
 
 ## Connected interaction runner
