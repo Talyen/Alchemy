@@ -52,6 +52,34 @@ describe("combat feedback lifetime", () => {
     expect(feedback.store.getState().enemyImpactCue!.recoil).toBe(true);
   });
 
+  it("signals each dodging frame once per action without adding hit feedback or changing its notice", () => {
+    const feedback = makeFeedback();
+    const playerDodge = { target: "player", kind: "notice", stat: "dodge", text: "Dodge" } as const;
+    const enemyDodge = { ...playerDodge, target: "enemy" } as const;
+    feedback.showCombatTexts([playerDodge, playerDodge]);
+    expect(feedback.store.getState()).toMatchObject({
+      playerDodgeToken: 1,
+      enemyDodgeToken: 0,
+      playerImpactCue: null,
+      enemyImpactCue: null,
+      playerShaking: false,
+      enemyShaking: false,
+    });
+    expect(feedback.store.getState().floatingCombatBursts).toHaveLength(1);
+    expect(feedback.store.getState().floatingCombatBursts[0]!.entries).toEqual([expect.objectContaining(playerDodge)]);
+    feedback.showCombatTexts([playerDodge, enemyDodge]);
+    expect(feedback.store.getState()).toMatchObject({ playerDodgeToken: 2, enemyDodgeToken: 1 });
+    feedback.showCombatTexts([...hit]);
+    expect(feedback.store.getState()).toMatchObject({ playerDodgeToken: 2, enemyDodgeToken: 1 });
+    feedback.clearFloatingCombatTexts();
+    expect(feedback.store.getState()).toMatchObject({ playerDodgeToken: 0, enemyDodgeToken: 0 });
+    feedback.showCombatTexts([enemyDodge]);
+    expect(feedback.store.getState().enemyDodgeToken).toBe(1);
+    feedback.reset();
+    expect(feedback.store.getState()).toEqual(createCombatFeedbackState());
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("bounds rejection feedback and cancels its lifetime on teardown", () => {
     const feedback = makeFeedback();
     expect(feedback.rejectCardPlay("slash-1", true)).toBe(true);

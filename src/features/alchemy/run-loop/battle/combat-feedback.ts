@@ -28,6 +28,8 @@ export interface CombatFeedbackState {
   enemyAttackToken: number;
   playerCastToken: number;
   enemyCastToken: number;
+  playerDodgeToken: number;
+  enemyDodgeToken: number;
 }
 
 export interface CombatFeedbackActions {
@@ -55,6 +57,8 @@ export function createCombatFeedbackState(): CombatFeedbackState {
     enemyAttackToken: 0,
     playerCastToken: 0,
     enemyCastToken: 0,
+    playerDodgeToken: 0,
+    enemyDodgeToken: 0,
   };
 }
 
@@ -135,6 +139,9 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
         const lifetimeMs = Math.max(COMBAT_TEXT_MIN_LIFETIME_MS, resolveGameDelay(COMBAT_TEXT_LIFETIME_MS));
         const prepared = prepareCombatFeedback(events, ++actionId, timestamp, lifetimeMs);
         if (prepared.bursts.length === 0 && prepared.reactions.length === 0) return;
+        const dodged = new Set(
+          events.filter((event) => event.kind === "notice" && event.stat === "dodge").map((event) => event.target),
+        );
         const impacts: Partial<Pick<CombatFeedbackState, "playerImpactCue" | "enemyImpactCue">> = {};
         for (const key of ["playerImpactCue", "enemyImpactCue"] as const) {
           const visual = prepared.impacts[key];
@@ -154,7 +161,13 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
               .filter((entry) => entry.target === target && timestamp < entry.firstShownAt + entry.lifetimeMs)
               .slice(-COMBAT_TEXT_MAX_BURSTS_PER_RAIL),
           );
-          return { floatingCombatBursts: result.bursts, reactionAnnouncements, ...impacts };
+          return {
+            floatingCombatBursts: result.bursts,
+            reactionAnnouncements,
+            ...impacts,
+            playerDodgeToken: state.playerDodgeToken + Number(dodged.has("player")),
+            enemyDodgeToken: state.enemyDodgeToken + Number(dodged.has("enemy")),
+          };
         });
         // Subscribers may clear presentation while the update is being published.
         if (sequence !== generation) return;
@@ -184,6 +197,8 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
           reactionAnnouncements: [],
           playerImpactCue: null,
           enemyImpactCue: null,
+          playerDodgeToken: 0,
+          enemyDodgeToken: 0,
         }));
       },
     },
