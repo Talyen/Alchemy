@@ -15,7 +15,12 @@ Screen-specific Homestead purchase feedback lives with its
 
 Screen and `FadeSlot` reveals wait for the mounted images to load and decode through `useArtworkReady`, then allow a layout frame before starting the fade. While preparing a reveal, the gate also tracks artwork inserted after layout measurement and changed image sources; stale decode completions cannot reveal or hide the replacement. `FadeSlot` uses the initial-reveal mode: later artwork waits individually without hiding or making the already visible screen inert again. The observer continues to track replacement sources and removed images. Startup preloading is a warm-up, not proof that a later mounted image is paint-ready. Failed or timed-out images stay hidden for that mount so they cannot pop in after the screen is revealed. Reserve intrinsic artwork dimensions when image height determines layout, including the menu logo.
 
-The pre-React splash uses the parser-blocking external script `public/startup-preferences.js` before its markup to apply preferences and scale. Localized phrase rotation starts in `src/app/startup-splash.ts` after catalogs and the selected language are ready. Keep startup scripts external for the packaged desktop policy, which blocks inline JavaScript.
+The pre-React splash uses the parser-blocking external script
+`public/startup-preferences.js` before its markup to apply preferences and scale.
+Localized phrase rotation starts in `src/app/startup-splash.ts` once catalogs and
+the selected language are ready. Its caption is 12px at the reference viewport
+and scales proportionally with the game. Startup scripts remain external under
+the packaged desktop policy, which blocks inline JavaScript.
 
 Startup preloading and mounted artwork share [image readiness](../src/lib/preload/image-readiness.ts), which owns load/decode completion, the timeout, and listener cleanup. The reveal gate retains each image's wait until its source changes or it leaves the screen; unrelated DOM changes do not restart its deadline.
 

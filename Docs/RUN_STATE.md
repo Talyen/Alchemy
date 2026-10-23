@@ -386,9 +386,13 @@ activity initialization, encounter traits, history/progression, and seeded RNG
 commit together. Rejection and initialization errors preserve the previous root
 and revision. The returned screen and detached opening battle feedback contain
 no gameplay mutation callbacks; shell navigation and feedback run after entry.
-A presentation error does not undo accepted room entry. Save wire fields and
-resume decoding remain unchanged. `room-visit-initialization.ts` supplies the
-transaction-only visit recipes to that owner. Screen and shop command contracts
+A presentation error does not undo accepted room entry.
+
+Campaign claims its destination inside the transaction so loot depth includes the
+entering room; Labyrinth records its node before opening combat. The shell schedules
+Battle before presenting opening feedback, so an immediate Companion outcome can
+supersede it, including routing directly to Rewards before the Battle fade commits.
+`room-visit-initialization.ts` supplies transaction-only visit recipes to that owner. Screen and shop command contracts
 expose player actions without initialization. Rendering, remounting, and presenting
 Mystery never sample visit RNG or replace committed activity.
 
@@ -423,20 +427,18 @@ The renderer marks persisted gameplay commits as pending before publishing them.
 `trackProgress`, `retryProgress`, and `afterProgressSaved`. A checkpoint carries
 the gameplay revision and a runtime epoch; only a covering local write in that
 epoch acknowledges completion. The save envelope does not gain scheduling data.
-Pending acknowledgements, deferred feedback, and storage cancellation belong to
-the session, independently of autosave subscription lifetimes. `trackProgress`
-registers a retry driver with its own idempotent release; the newest live driver
-handles Retry, falling back to the preceding driver when released. Releasing a
-driver cannot cancel another driver's registration or acknowledge unsaved work.
-A replacement durable autosave driver schedules the session's pending revision
-without requiring another gameplay action. With no driver, pending state and
-pre-action display remain protected; explicit Retry can checkpoint directly.
+Acknowledgements, deferred feedback and storage cancellation are session-owned,
+independent of autosave subscriptions. `trackProgress` registers an idempotently
+released retry driver. The newest live driver handles Retry; releasing it restores
+the preceding driver without affecting other registrations or acknowledging work.
+A replacement durable driver schedules pending progress without another gameplay
+action. Without one,
+pending state and pre-action display remain protected; Retry checkpoints directly.
 
-Explicit retry captures the pending career and checkpoint before notifying status
-observers, then selects the latest attached retry driver. Replacement or cancellation
-during notification revokes that request. If its driver detaches or throws before
-starting a save, the session persistence port performs a fresh checkpoint instead;
-retry never repeats the gameplay action or leaves saving dependent on a departed owner.
+Retry captures the career/checkpoint before status notification, then uses the
+latest driver. Replacement or cancellation during notification revokes the request.
+If the driver detaches or throws before saving, persistence checkpoints directly.
+Retry always saves the committed outcome without repeating gameplay.
 
 Player-facing store hooks retain the immutable pre-action progress until saving
 succeeds. Transient navigation, Collection browsing, and inspection remain usable.
@@ -449,27 +451,26 @@ debounce. Presentation and local saving must both settle before another action.
 [Storage acknowledgement](../src/features/alchemy/shared/storage/MIGRATIONS.md#write-acknowledgement)
 owns write outcomes, fallback and automatic retry timing;
 [UI feedback](./UI.md#pending-saves-and-action-feedback) owns Saving/Retry presentation.
-Retry saves the original result without repeating gameplay. Explicit Retry resets
-its submission latch without changing exit deduplication. Restore, successful clear,
-write protection and disposal revoke stale completion feedback.
-Explicit checkpoints establish a new acknowledgement requirement even when the
-gameplay revision is unchanged, including settings-only changes. Snapshot tokens
-carry that checkpoint version as well as the gameplay revision; an older write
-can finish successfully without releasing a newer checkpoint's gate or feedback.
-Requesting deletion pauses autosave and revokes submitted snapshots immediately,
-while retaining the pending action, pre-action display, and completion callbacks.
-If deletion fails, that action remains protected and retryable; autosave resumes
-with a fresh snapshot of the current career, including settings-only changes.
-Only successful deletion discards the paused work. Overlapping clears keep writes
-paused until all finish; any successful deletion discards the old work.
-Restore replaces the acknowledgment epoch only at commit and keeps save protection
-armed continuously until the replacement snapshot is saved. A failed restore retains
-the previous epoch, pending action, and deferred feedback. Successful restore also
-invalidates autosave scheduling before observers schedule replacement work, so a
-late pre-restore write cannot cancel replacement retries. The session persistence
-interruption subscription distinguishes storage pause, failure, deletion, write
-protection, and committed restores. A newly attached autosave client reads the
-current deletion gate before scheduling work.
+Explicit Retry resets its submission latch without changing exit deduplication.
+Explicit checkpoints, including settings-only changes, require a new acknowledgement
+even at the same gameplay revision. Snapshot tokens carry both versions; an older
+successful write cannot release a newer gate or its feedback.
+
+### Completion lifecycle
+
+| Event                          | Pending progress and feedback                                                                                        | Save scheduling                                                                                                |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Deletion requested             | Retain the action, pre-action display and completion callbacks; revoke submitted snapshots                           | Pause autosave; newly attached clients read the deletion gate before scheduling                                |
+| All overlapping deletions fail | Keep the action protected and retryable                                                                              | Resume with a fresh current-career snapshot, including settings-only changes                                   |
+| Any deletion succeeds          | Discard the old pending work and stale feedback                                                                      | Keep writes paused until every overlapping deletion finishes                                                   |
+| Restore commits                | Replace the acknowledgement epoch at commit; protect the replacement continuously until saved; revoke stale feedback | Invalidate old scheduling before observers schedule replacement work, so late writes cannot cancel new retries |
+| Restore fails                  | Retain the previous epoch, pending action and deferred feedback                                                      | Retain the existing save protection                                                                            |
+| Write protection               | Revoke stale feedback and submitted snapshots                                                                        | Cancel autosave scheduling                                                                                     |
+| Disposal                       | Revoke feedback and capabilities                                                                                     | Reject new work; drain already-submitted saves                                                                 |
+
+The persistence interruption subscription distinguishes storage pause, failure,
+deletion, write protection and committed restores.
+
 Completed actions survive process termination after local acknowledgement. This
 promise does not cover power loss, subsequent filesystem failure, or browser eviction.
 

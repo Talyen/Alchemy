@@ -44,14 +44,14 @@ Alchemy's [accessibility stance](#accessibility-stance) defines its actual scope
 
 ## Guide index
 
-| Topic                                                             | Guide                              |
-| ----------------------------------------------------------------- | ---------------------------------- |
-| Shared components, buttons, sizing, colors, accessibility         | This page                          |
-| Hover tooltips, modal input, focus and dismissal                  | [Interaction](./UI_INTERACTION.md) |
-| Screen fades, battle and equipment motion                         | [Motion](./UI_MOTION.md)           |
-| Combat feedback, deck and enemy inspection, Corrupted text        | [Battle UI](./UI_BATTLE.md)        |
-| Collection, Homestead, Armory, rewards, Wishes, Options and recap | [Browsing](./UI_BROWSING.md)       |
-| Discovery, map layout and room inspection                         | [Labyrinth](./UI_LABYRINTH.md)     |
+| Topic                                                                      | Guide                              |
+| -------------------------------------------------------------------------- | ---------------------------------- |
+| Shared components, buttons, sizing, colors, accessibility                  | This page                          |
+| Hover tooltips, modal input, focus and dismissal                           | [Interaction](./UI_INTERACTION.md) |
+| Screen fades, battle and equipment motion                                  | [Motion](./UI_MOTION.md)           |
+| Combat feedback, deck and enemy inspection, Corrupted text                 | [Battle UI](./UI_BATTLE.md)        |
+| Collection, Homestead, Talents, Armory, rewards, Wishes, Options and recap | [Browsing](./UI_BROWSING.md)       |
+| Discovery, map layout and room inspection                                  | [Labyrinth](./UI_LABYRINTH.md)     |
 
 ## Placement and boundaries
 
@@ -176,37 +176,18 @@ Keep full available-space geometry for Battle, Armory, and Labyrinth. Do not use
 viewport-height minimums to add empty space to ordinary pages.
 
 Use one 24px gap in content units between a header and its main body. Meaningful
-helper text uses 12px above it and 16px before the primary content. Talents uses
-one 16px header gap, with no additional pane top padding. Preserve bounded
-resource, selection, and talent-footer reservations needed for stable actions;
-size those reservations in content units.
+helper text uses 12px above it and 16px before the primary content. Preserve bounded
+resource, selection and footer reservations needed for stable actions;
+size those reservations in content units. [Talents](./UI_BROWSING.md#talents) has its own header gap.
 
-Card Shop removal keeps its height-aware picker inside a centered, content-scaled
-maximum height and standard page gutters. Its available fitting area can shrink
-on short windows without stretching the footer toward taller window edges.
-
-Collection and Homestead center real items in wrapping rows, without layout-only
-fillers. Both reserve two portrait rows and a pagination slot on every tab and
-page, keeping headers, tabs, and pagination stationary while the complete group
-stays screen-centered. Shorter grids center within that reserved area;
-single-page tabs leave the pagination slot empty. Picker measurement containers
-must receive available width independently of their rendered card count, so
-resizing cannot feed a narrower row back into its own column calculation.
-
-Homestead's artwork sizing, purchase states, and reset interaction follow the
-[Homestead gallery contract](./UI_BROWSING.md#homestead-gallery).
-
-Desktop Main Menu pairs Quit on the bottom left with Options on the right. Quit
-uses a rose-colored Power icon; browser Options remains centered. Demo completion
-uses standard page gutters and fits its complete image into the remaining area.
-The loading caption preserves 12px at the reference viewport and follows the
-game's proportional scale from there. Error Log scroll caps use stage units.
+Picker measurement containers receive available width independently of rendered
+item count, preventing resize feedback into their own column calculation.
+Screen-specific geometry belongs in [Browsing](./UI_BROWSING.md),
+[Battle](./UI_BATTLE.md) and [Labyrinth](./UI_LABYRINTH.md).
 
 ## Display sizing
 
 On macOS, both desktop fullscreen modes fill the entire display, including the area beside the camera notch, using Electron simple fullscreen. They stay on the current desktop rather than opening a native fullscreen Space. Windowed mode restores the standard movable, resizable window. Do not request native or HTML fullscreen on macOS: it reserves a black strip at the notch.
-
-Talents on the end-run screen and Mystery rewards keep fixed-width boxes in centered, balanced rows. Use the fewest rows that fit (up to five boxes per row), distribute counts with at most one box of difference, and place larger rows first. Recalculate when available width or Game Size changes.
 
 The virtual stage owns available-space geometry and battle coordinates. It
 always fills the available viewport without letterboxing. Viewport dimensions
@@ -229,13 +210,6 @@ Hover tooltips follow visible game content scale divided by the retained authore
 baseline (738 / 1080), multiplied by Tooltip Size (90–125%, 5% steps). Tooltip
 Size remains a relative adjustment; it does not change game layout or impose a
 separate growth curve. Text, icons, spacing, and panels inherit that scale once.
-
-Enemy hover Traits use the explicit compact presentation: 14px headings, 12px
-descriptions, 24px icons, 8px row and inter-trait gaps, and 3px between the title
-and description at authored tooltip scale 1. This is an exception
-to the general small-text baseline. These dimensions use `--content-rem` and
-inherit the shared tooltip scale once. Enemy inspection and Labyrinth chamber
-details retain the default Trait presentation.
 
 The stage's `--content-scale` is visible content scale divided by stage scale.
 Inline Tailwind theme tokens and `--content-rem` size text, controls, cards,
@@ -261,13 +235,7 @@ Zero intensity hides both; motion-disabled preferences stay unanimated. Hover co
 retarget smoothly while object highlights respond immediately.
 [Canvas rendering](./UI_MOTION.md#canvas-rendering) owns failure, cleanup and rendering limits.
 
-## Display options
-
-Display groups Display Mode (desktop only), Brightness, Game Size,
-and Tooltip Size together. Background contains Background Glow and Background
-Particles. Reset to Default restores these preferences and device sizes.
-
-### Pending saves and action feedback
+## Pending saves and action feedback
 
 Persisted actions acknowledge input immediately with Saving… and `aria-busy`.
 Completion feedback, changed progress values, and onward progression wait for a

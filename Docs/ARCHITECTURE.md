@@ -158,17 +158,10 @@ input-snapshot identity and playback lifetime. Use
 
 The [session capability reference](./RUN_STATE.md#session-capability-ports) lists controller, route, and domain entry points together. Use the [battle path](#battle-path), [shop commands](#shop-commands), and [run setup ownership](#run-setup-ownership) sections for their distinct execution contracts.
 
-Campaign and Labyrinth room entry share `run-loop/run/room-entry-commands.ts`.
-`enterRunRoom` validates the offered destination or selected reachable node, then
-commits its activity, encounter traits, seeded initialization, room history, and
-progress in one transaction. Campaign keeps its destination claim inside that
-transaction so loot depth includes the entering room. Labyrinth records its node
-before resolving opening combat. Failed initialization publishes nothing.
-`labyrinth-controller.ts` delegates selected-node entry to that command;
-`shell/labyrinth-node-routing.ts` and the Campaign flow receive detached results.
-`run-destination-handlers.ts` schedules the display before presenting opening
-battle feedback, allowing an immediate Companion outcome to supersede Battle.
-Presentation failure or cancellation leaves complete, resumable gameplay.
+Campaign and Labyrinth enter rooms through `run-loop/run/room-entry-commands.ts`.
+`labyrinth-controller.ts` delegates selected-node entry; `shell/labyrinth-node-routing.ts`
+and Campaign flow receive detached results. [Activity ownership](./RUN_STATE.md#activity-and-rewards)
+defines atomic entry and opening-outcome ordering.
 
 ### Run loop overview
 

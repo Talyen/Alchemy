@@ -260,10 +260,9 @@ initialization writes, failure notifications and progress receipts from immediat
 saves with no awaiting caller. Loads and successful clears resume writes only when
 no newer explicit permission decision intervened; selecting recovery grants no permission.
 
-Clear immediately revokes submitted snapshots and pauses autosave while retaining
-the unsaved action and completion callbacks. Failure resumes autosave with a fresh
-snapshot and keeps the action retryable. Overlapping clears share one pause; work
-resumes only if all fail. Deletion modes remain under [Deletion](#deletion).
+Clear follows the session's [completion lifecycle](../../../../../Docs/RUN_STATE.md#completion-lifecycle):
+snapshots are revoked immediately, pending progress survives failure, and overlapping
+clears share one pause. [Deletion](#deletion) owns backend order and modes.
 
 Native shutdown closes admission at `will-quit`, after unload handlers can submit
 final snapshots, and drains accepted writes. Quitting resumes on the next event-loop
