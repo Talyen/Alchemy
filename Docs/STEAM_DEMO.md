@@ -95,12 +95,10 @@ public carryover is promised, freeze that supported baseline under the
 
 ## Input and release evidence
 
-Steam Input translates controller actions to ordinary keyboard/pointer events.
-Use **F7 for previous focus**, avoiding Steam's Shift+Tab overlay shortcut; Tab
-remains next focus. F7 traverses existing eligible controls within the active
-dialog or screen. Native gamepad polling, glyphs and rumble are outside scope.
-Published layouts and hardware validation remain governed by
-[release setup](./RELEASE_SETUP.md#steam-input-default-mapping-controller-playable).
+Steam Input uses the existing keyboard/pointer interfaces under the
+[interaction contract](./UI_INTERACTION.md#keyboard-and-steam-input-navigation).
+[Release setup](./RELEASE_SETUP.md#mapping-specification) owns recommended output
+mappings and publication; native polling, glyphs and rumble remain outside scope.
 
 Native Steam overlay activation and the default Shift+Tab chord open the game
 menu during an active battle, stopping automatic battle actions until the player
@@ -115,23 +113,16 @@ Native callback and availability support must be implemented and validated in
 packaged Steam builds. The unresolved implementation prerequisite and its dated
 upstream evidence live in the [blocked release plan](./Plans/SteamDemo.md#native-overlay-prerequisite).
 
-Complete [physical Steam acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence)
-on the packaged Windows game and Deck, including custom overlay shortcuts,
-callback-driven pause, wishlist fallback, reconnection and suspend/resume.
-
-Valve documents both
-[activation events and delayed overlay availability](https://partner.steamgames.com/doc/features/overlay#communication-from-the-overlay-to-your-game).
-Custom shortcuts and Deck paths remain a release blocker until native binding
-and hardware evidence are available. Browser or mocked callback tests cannot
-close this gate.
+[Physical Steam acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence)
+owns packaged Windows/controller/Deck evidence and public claim limits. Valve's
+[overlay contract](https://partner.steamgames.com/doc/features/overlay#communication-from-the-overlay-to-your-game)
+explains native activation and delayed availability. The [release plan](./Plans/SteamDemo.md)
+tracks unresolved prerequisites.
 
 Every release builds both editions, retains independent verified artifacts and
 uploads to separate App IDs/depots. Public Steam promotion remains manual, with
 independent rollback. A failed publishing-job retry downloads the producer's
 immutable artifact IDs rather than rebuilding.
 
-Required external evidence: real App IDs/depots, Steam install/update, actual
-published layout IDs, controller journeys, Deck Proton performance and 1280×800
-readability, suspend/resume, overlay interruption and cross-app cloud import.
-No controller/Deck rating or public carryover claim follows from automated tests
-alone. Notices/provenance and Steamworks review remain pre-promotion gates.
+Candidate sign-off follows the [demo checklist](./STEAM_DEMO_CHECKLIST.md#9-candidate-evidence-and-release-sign-off),
+including notices, provenance and Steamworks review before public promotion.

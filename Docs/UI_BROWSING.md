@@ -136,8 +136,8 @@ stays selected and cleared tiers can be purchased again.
 
 Homestead artwork keeps its native aspect ratio without cropping. Landscape
 nodes retain the larger Homestead-specific width and the
-[shared two-row reservation](#collection-and-armory-browsing). Artwork uses the shared 3px
-hover/focus outline and 103.5% scale with `card-interactive-no-glow`. Affordable
+[shared two-row reservation](#collection-and-armory-browsing). Artwork uses the shared
+hover/focus outline and scale with `card-interactive-no-glow`. Affordable
 nodes add only a tight, static outer gold halo at rest, retaining the neutral
 border until hover/focus, without pulse, shimmer, or shine. Affordability updates
 after spending and is suppressed while a purchase is saving. Nodes stay grayscale
@@ -259,11 +259,6 @@ Crafting-strip, reward, and salvage-preview currency artwork uses 5 content rem 
 Selecting an item for salvage immediately ends targeting and clears its cursor and highlights. Confirm, Cancel, and Escape return to browsing. The dialog uses the heading “Salvage,” a wrapping shining item name in “Salvaging [item] will yield:”, a portrait, full-size currency rewards, and an equipped-character warning where applicable. Confirmations focus Cancel, contain keyboard focus, and disable actions during exit.
 
 Crafting consumes one currency per activation. Escape cancels targeting; invalid targets explain their restriction in tooltips and after selection. Success shows actual before/after affix descriptions in a dismissible panel pinned inside the viewport, a brief item pulse, and count feedback only when quantities change.
-
-## Talents
-
-Talents uses one 16px header gap without additional pane top padding.
-Run-end Talent boxes follow the [reward row layout](#run-journey-recap).
 
 ## Run journey recap
 
