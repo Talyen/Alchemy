@@ -48,13 +48,13 @@ export const SHARED_BUILD_PATTERNS = Object.freeze([
 ]);
 
 // Gate-level "documentation-only" definition: every Markdown file plus the
-// Docs/, .agents/, and .cursor/ trees. Mirrors the documentation route's
+// Docs/ and .agents/ trees. Mirrors the documentation route's
 // contract patterns below (including Docs/** for non-Markdown files under
 // Docs/) so check classification and verify routing agree — non-Markdown files
 // under Docs/ (images, archived plans) still skip code builds in check
 // classification.
 function isDocumentationPath(filePath) {
-  return filePath.endsWith(".md") || /^(Docs|\.agents|\.cursor)\//u.test(filePath);
+  return filePath.endsWith(".md") || /^(Docs|\.agents)\//u.test(filePath);
 }
 
 const ROUTES = Object.freeze([
@@ -76,7 +76,7 @@ const ROUTES = Object.freeze([
   ),
   route(
     "documentation",
-    ["*.md", "**/*.md", "Docs/**", ".agents/**", ".cursor/**"],
+    ["*.md", "**/*.md", "Docs/**", ".agents/**"],
     ["docs-check"],
     [doc("CONTRIBUTING.md", "What to run when you change…", "verification policy")],
     "CONTRIBUTING.md",

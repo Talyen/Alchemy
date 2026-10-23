@@ -35,7 +35,6 @@ const INFRA_PREFIXES = [
   "Docs/",
   ".github/",
   ".agents/",
-  ".cursor/",
   "tests/",
   // Release ranges can include commits from before the Oxlint migration.
   "eslint/",

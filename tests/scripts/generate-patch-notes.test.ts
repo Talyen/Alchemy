@@ -42,7 +42,7 @@ describe("generate-patch-notes", () => {
         "Introduce six salvage crafting currencies with store persistence and armory application UI.",
         "Add save migrations plus E2E and unit tests for crafting.",
         "",
-        "Co-authored-by: Cursor <cursoragent@cursor.com>",
+        "Co-authored-by: Contributor <contributor@example.com>",
       ].join("\n"),
     });
     expect(lines).toContain(
