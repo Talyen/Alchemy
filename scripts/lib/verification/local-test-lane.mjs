@@ -102,7 +102,7 @@ export async function acquireTestResources(
       onConnection: (socket) => socket.end(record.ticket),
     });
     record.leasePort = lease.port;
-    let change = new AbortController();
+    let change = new globalThis.AbortController();
     watcher = fs.watch(directory, { persistent: false }, () => change.abort());
     watcher.on("error", () => {
       watcher.close();
@@ -121,7 +121,7 @@ export async function acquireTestResources(
           signal?.throwIfAborted();
           if (!observed.signal.aborted) throw error;
         } finally {
-          if (observed.signal.aborted && change === observed) change = new AbortController();
+          if (observed.signal.aborted && change === observed) change = new globalThis.AbortController();
         }
       },
       // Legacy clients still respect the exclusive listener. Queue ordering
