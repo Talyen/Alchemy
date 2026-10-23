@@ -1,5 +1,5 @@
 import { Star } from "lucide-react";
-import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useState, type CSSProperties } from "react";
 
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { useGameTranslation } from "@/components/use-game-translation";
@@ -22,7 +22,6 @@ export function DestinationRoomProgress({
 }) {
   const i18n = useGameTranslation();
   const id = useId();
-  const toggle = useRef<HTMLButtonElement>(null);
   const reduceMotion = useReducedMotionPreference();
   const [view, setView] = useState({ act: currentAct, expanded: false });
   const expanded = view.act === currentAct && view.expanded;
@@ -38,7 +37,6 @@ export function DestinationRoomProgress({
       priority: ESCAPE_PRIORITY.SCREEN_OVERLAY,
       onEscape: () => {
         setView({ act: currentAct, expanded: false });
-        toggle.current?.focus({ preventScroll: true });
       },
     });
   }, [expanded, currentAct, id]);
@@ -148,7 +146,6 @@ export function DestinationRoomProgress({
           })}
         </ol>
         <button
-          ref={toggle}
           type="button"
           className="destination-progress-toggle"
           // Focus belongs to one circular node, rather than this expanding hit area.

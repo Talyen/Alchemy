@@ -6,6 +6,7 @@ import { DESTINATIONS } from "@/lib/routing";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { playBattleEvent } from "@/lib/audio";
 import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
+import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
 
 vi.mock("@/lib/audio", () => ({
   playBattleEvent: vi.fn(),
@@ -14,6 +15,7 @@ vi.mock("@/lib/audio", () => ({
 
 describe("DestinationScreen", () => {
   installReadyArtworkForTests();
+  installFocusInputForTests();
 
   afterEach(() => {
     cleanup();
@@ -53,8 +55,10 @@ describe("DestinationScreen", () => {
     expect(progress.textContent).toContain("Room 8: Boss");
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("list", { name: "Room progress" })).toBeNull();
-    expect(document.activeElement).toBe(showRooms);
+    expect(document.activeElement).toBe(document.body);
     expect(onChoose).not.toHaveBeenCalled();
+    await user.tab();
+    expect(document.activeElement).toBe(showRooms);
     await user.keyboard("{Enter}");
     expect(screen.getByRole("list", { name: "Room progress" })).toBeTruthy();
 
