@@ -27,7 +27,7 @@ function lines(text: string | undefined) {
 }
 
 export function getUpgradeNode(item: GoalItem, level: number, inventory: MaterialInventory): HomesteadNodeModel {
-  const tier = level > 0 ? item.data.tiers[Math.min(level - 1, item.data.tiers.length - 1)] : undefined;
+  const tier = item.data.tiers[Math.max(0, Math.min(level - 1, item.data.tiers.length - 1))];
   const cost = getNextTierCost(item.data, level);
   return {
     id: item.data.id,

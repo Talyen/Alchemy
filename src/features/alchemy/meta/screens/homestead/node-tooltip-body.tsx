@@ -37,6 +37,7 @@ export function HomesteadTooltipBody({
     return () => observer.disconnect();
   }, []);
   const materials = MATERIAL_IDS.filter((material) => (node.cost?.[material] ?? 0) > 0);
+  const hasBenefits = node.bonuses.length > 0 || node.production.length > 0;
   const costLabel = materials
     .map((material) => `${node.cost![material]} ${i18n.displayText(materialLabels[material])}`)
     .join(", ");
@@ -54,7 +55,7 @@ export function HomesteadTooltipBody({
       <div ref={contentRef} className="flow-root">
         {node.discovered ? (
           <>
-            {node.level > 0 && (
+            {hasBenefits && (
               <TooltipBody className="mt-2 space-y-1">
                 {[...node.bonuses, ...node.production].map((line, index) => (
                   <p key={index} className="min-h-6 leading-6">
@@ -81,12 +82,12 @@ export function HomesteadTooltipBody({
             )}
             {node.cost && (
               <>
-                {node.level > 0 && <TooltipSeparator className="my-3" />}
+                {hasBenefits && <TooltipSeparator className="my-3" />}
                 <div
                   role="group"
                   className={cn(
                     "flex min-h-6 items-center justify-between gap-4 text-sm leading-6",
-                    node.level === 0 && "mt-3",
+                    !hasBenefits && "mt-3",
                   )}
                   aria-label={i18n.text("ui.node-tooltip-body.1", "{{value0}} cost: {{value1}}", {
                     value0: i18n.displayText(node.action),

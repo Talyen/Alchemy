@@ -90,8 +90,9 @@ Tooltips contain no controls and receive no focus; Tab moves between gallery
 controls. Clicking the artwork or pressing Enter/Space on it directly builds,
 upgrades, or bonds the node.
 
-Stars beside the name show purchased levels or bonds. Unbuilt/unbonded nodes show
-only their name, empty stars, and purchase cost, without first-tier previews.
+Stars beside the name show purchased levels or bonds. Unbuilt nodes show
+their name, empty stars, first-tier benefits, and purchase cost. Unbonded
+Companions show their name, empty stars, and bond cost.
 Purchased nodes show current bonuses and Find 10/20/30/40% more resource quantities,
 with uniform effect-row spacing and no section headers or next-tier comparisons.
 Completed nodes show current benefits without costs; undiscovered Companions show

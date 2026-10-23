@@ -60,7 +60,7 @@ describe("HomesteadScreen", () => {
     vi.useRealTimers();
   });
 
-  it("shows only build costs before purchase and reveals bonuses and progress after saving once", async () => {
+  it("previews build bonuses and reveals purchased progress after saving once", async () => {
     let saved: (() => void) | undefined;
     const afterProgressSaved = (feedback: () => void) => {
       saved = feedback;
@@ -69,8 +69,8 @@ describe("HomesteadScreen", () => {
     const panel = await inspect();
     panel.animate = vi.fn();
     expect(defaultProps.onConstructBuilding).not.toHaveBeenCalled();
-    expect(panel.textContent).not.toContain("Physical damage");
-    expect(panel.textContent).not.toContain("Find");
+    expect(panel.textContent).toContain("Physical damage is increased by 1");
+    expect(panel.textContent).toContain("Find 10% more");
     expect(within(panel).getByRole("img", { name: "Level 0 of 4" })).toBeTruthy();
     expect(within(panel).queryByRole("button")).toBeNull();
     const tile = nodeTile();
