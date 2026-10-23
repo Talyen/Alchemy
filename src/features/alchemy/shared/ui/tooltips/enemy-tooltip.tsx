@@ -41,7 +41,7 @@ export function EnemyTooltip({
           enemyDescriptionContext={enemyDescriptionContext}
           entry={entry}
           modifiers={labyrinthModifiers}
-          variant="compact"
+          variant="tooltip"
         />
       ) : (
         <TooltipBody>
