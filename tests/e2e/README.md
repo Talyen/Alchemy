@@ -46,14 +46,6 @@ picker for rejected-command recovery and pending-save admission.
 
 ## Rendered accessibility and visual regression
 
-Localization keeps all shipped languages in live switching/resume, Options and
-shop/menu presentation checks, including separate Cyrillic, Japanese and Chinese
-font loading. The nine gameplay settlement journeys each use one shipped-language
-representative and expanded-English QA instead of repeating identical mechanics
-in every language. Pushes retain one representative per risk; nightly/release add
-all-language presentation and development QA. Generated descriptions, saved
-progress, translated accessible targets and layout remain asserted in those flows.
-
 `specs/accessibility.spec.ts` runs axe WCAG A/AA checks on the live menu,
 Options, Battle and card inspection. It complements focus journeys and JSX lint;
 passing automated checks does not establish complete screen-reader usability.
@@ -228,15 +220,18 @@ Localization functional coverage has a separate every-push job, independent of
 critical gameplay. `localizationCoverage(locale, representative)` assigns one
 shipped language to gate each journey via `@localization-smoke`; the three script
 font checks also gate pushes. This samples all seven shipped translations in 15
-cases instead of the 99-case development matrix. Locale battle/resume checks have
+cases. Locale battle/resume checks have
 one owner here and do not carry `@critical`.
 
-Nightly/release production shards retain all shipped-locale variants. Their distinct
-protection is translated geometry, generated descriptions, movable keyword slots,
+Nightly/release retain all shipped locales for live switching/resume, Options and
+shop/menu presentation, including Cyrillic, Japanese and Chinese font loading.
+The nine gameplay settlement journeys each use one shipped-language representative
+and expanded-English QA rather than repeating mechanics in every language. They
+retain generated descriptions, movable keyword slots, translated accessible targets
 and cross-language saves; unit/DOM tests own mechanics and catalog correctness.
 Both workflows also call the expanded-English acceptance workflow, which runs
 only `@localization-qa` against development source because QA catalogs are absent
-from production. The full 99 cases remain covered across those jobs.
+from production. These jobs cover 33 production cases and 12 QA cases.
 `ALCHEMY_LOCALIZATION_LAYOUT_REVIEW=1` enables minimum-viewport, maximum-size
 geometry and reachability checks. Passing screenshots additionally require
 `ALCHEMY_LOCALIZATION_SCREENSHOTS=1` for an explicit visual review; functional CI
