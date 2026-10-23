@@ -1968,8 +1968,6 @@
   "labels.features.alchemy.run-loop.screens.transmutation-screen.54f53bdb181a": {"text":"Этот выбор больше недоступен.","sourceHash":"9c55ccabd6d64c9381a747ede9a4c6454b6ab519895814b91e4aa4a950064923","reviewed":true},
   "labels.features.alchemy.run-loop.screens.transmutation-screen.a1db02b45c04": {"text":"Это изменение больше недоступно.","sourceHash":"a4748ee001a89eabed26f8b8e49e483c612f04549603e0697ffef879bd8dd2ed","reviewed":true},
   "labels.features.alchemy.run-loop.screens.transmutation-screen.d1395c346899": {"text":"Ваша колода изменилась. Выберите карту заново.","sourceHash":"a0cdd218d94e7c416b59ac68d73cf7f6ef1d3b5cc13b5a90a1ba3d461cfc8c2f","reviewed":true},
-  "labels.features.alchemy.run-loop.shop.shop-transactions.0a3beddc1bf0": {"text":"Посещение магазина завершено","sourceHash":"fd5777409d69f2ef2189fa0e48c10d9835c324fbdb234582c9e285009967af4e","reviewed":true},
-  "labels.features.alchemy.run-loop.shop.shop-transactions.b0fe86764430": {"text":"Действие в магазине отклонено","sourceHash":"ff8ee0915dacb2a11be715343afd7e42ce3fb7a42add7f348fb3b03b30aeae3e","reviewed":true},
   "labels.features.alchemy.run-setup.run.content-system-navigation.95ad81e0a43b": {"text":"Выбор стартовой карты недоступен","sourceHash":"3bd81adea01167df836b3c78a3897a4236cb5db885ec5fe7bb09767b3c202d89","reviewed":true},
   "labels.features.alchemy.run-setup.screens.difficulty-select-screen.5e23cf91966d": {"text":"Пройдите предыдущую сложность, чтобы открыть","sourceHash":"c69a6b16952fdc314d04aeecd6c831a611df88d36357e1d7c1a3794d70067733","reviewed":true},
   "labels.features.alchemy.shared.config.labyrinth-map.12a5299fa792": {"text":"Исследовать","sourceHash":"63eb3866c2bb860a258a4d5250773cc09e766442a8d3cb75c46449b006d524bf","reviewed":true},

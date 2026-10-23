@@ -90,8 +90,17 @@ Tooltips contain no controls and receive no focus; Tab moves between gallery
 controls. Clicking the artwork or pressing Enter/Space on it directly builds,
 upgrades, or bonds the node.
 
-Stars beside the name show purchased levels or bonds. Unbuilt/unbonded nodes show
-only their name, empty stars, and purchase cost, without first-tier previews.
+Stars beside the name show purchased levels or bonds. Unbuilt nodes show
+their name, empty stars, first-tier benefits, and purchase cost. Preview benefits
+have partially muted text while retaining keyword hues; purchased benefits use full color.
+Each effect row starts with one 20px icon aligned to its first line. Icons reuse
+keyword shapes and colors, including damage-reduction effects; mixed effects use
+their first authored keyword. Potion potency uses a round flask in Herbs green,
+discounts use a Gold price tag, and Astral chance uses a wand in Gems blue.
+Material bonuses use their first resource's artwork in the same leading slot,
+with colored resource names in the text and no repeated artwork. Icons retain
+their color in preview states.
+Unbonded Companions show their name, empty stars, and bond cost.
 Purchased nodes show current bonuses and Find 10/20/30/40% more resource quantities,
 with uniform effect-row spacing and no section headers or next-tier comparisons.
 Completed nodes show current benefits without costs; undiscovered Companions show
@@ -99,9 +108,9 @@ their discovery requirement. The wallet stays in the gallery, which has no upgra
 arrows or separate detail screens.
 
 Build, Upgrade, or Bond costs appear as a plain row with material icons and
-quantities. Missing materials use red quantities without additional feedback text.
-A divider separates purchased bonuses from the next cost. Gold uses the same
-inline icon chip as Homestead materials. The artwork stays focusable for
+quantities. Build and Upgrade labels are one text size larger than the quantities.
+Missing materials use red quantities without additional feedback text.
+A divider separates purchased bonuses from the next cost. The artwork stays focusable for
 inspection but cannot purchase when more materials are needed. A visible Saving
 acknowledgment on the artwork precedes purchased artwork/progress and sound;
 synchronous tier guards reject repeated input. Dismissing the tooltip or changing

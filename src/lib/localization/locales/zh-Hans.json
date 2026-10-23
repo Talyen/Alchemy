@@ -1968,8 +1968,6 @@
   "labels.features.alchemy.run-loop.screens.transmutation-screen.54f53bdb181a": {"text":"此选项已不可用。","sourceHash":"830bfb8f91f274cd3be345b2ebeb3d15ee455d472ec5160708245bc3cc919613","reviewed":true},
   "labels.features.alchemy.run-loop.screens.transmutation-screen.a1db02b45c04": {"text":"此改动已不可用。","sourceHash":"28245f2a6ebe64cb64412b3cb1e5c5d8ae5499a464b80d03e0ca1d9fb4b0d53e","reviewed":true},
   "labels.features.alchemy.run-loop.screens.transmutation-screen.d1395c346899": {"text":"你的牌组已改变。请重新选择卡牌。","sourceHash":"28dc5945018f1d17a6cc3d3085bc83544a1282aead2aaea31d87bccedf047d7e","reviewed":true},
-  "labels.features.alchemy.run-loop.shop.shop-transactions.0a3beddc1bf0": {"text":"商店访问已结束","sourceHash":"ca72a300150ba65e3cbb4e92fd8c6bcd1b1aceab33aa242e925a6571d16064d6","reviewed":true},
-  "labels.features.alchemy.run-loop.shop.shop-transactions.b0fe86764430": {"text":"商店操作被拒绝","sourceHash":"020904dc265c5199acb805cb539a5ff4861b03853f05191dc1dc17f6241c8e83","reviewed":true},
   "labels.features.alchemy.run-setup.run.content-system-navigation.95ad81e0a43b": {"text":"初始牌组选项不可用","sourceHash":"d3b64e76cea2537f783994b691f595a59f2dc099792bcd76d0c1d21623949ba4","reviewed":true},
   "labels.features.alchemy.run-setup.screens.difficulty-select-screen.5e23cf91966d": {"text":"完成上一难度即可解锁","sourceHash":"51b1a103a937fa77a21b7c0e76da52927181fd20e34d9c0526c78c5077939fc6","reviewed":true},
   "labels.features.alchemy.shared.config.labyrinth-map.12a5299fa792": {"text":"调查","sourceHash":"d2d629165124b6a93af984be57e1c0c82e4a68b80f2f657ea8818f65584cad31","reviewed":true},

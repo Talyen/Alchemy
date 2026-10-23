@@ -7,8 +7,8 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const currentFile = fileURLToPath(import.meta.url);
-const root = path.resolve(path.dirname(currentFile), "..");
-const WORKTREE_ROOT = path.join(root, ".worktrees");
+let root = path.resolve(path.dirname(currentFile), "..");
+let WORKTREE_ROOT = path.join(root, ".worktrees");
 const UNCACHED_GIT_OPTIONS = ["-c", "core.untrackedCache=false", "-c", "core.fsmonitor=false"];
 const UNFINISHED_GIT_STATES = [
   "MERGE_HEAD",
@@ -84,9 +84,9 @@ function preserveIntegrationEvidence(main, task, branch, head) {
       !candidates.some((parent) => parent !== relative && relative.startsWith(parent + path.sep)),
   );
   console.log(
-    `Cleanup preview: close task browsers; preserve reports and ${ignored.filter((file) => !disposable.test(file) && !file.startsWith("reports/")).length} other local files; remove ${task}; retain ${branch}. Use --keep-worktree to keep the checkout and browsers.`,
+    `Cleanup preview: close task browsers; preserve reports and ${ignored.filter((file) => !disposable.test(file) && !file.startsWith("reports/")).length} other local files; remove ${task}; retain ${branch}. Omit finish to keep the checkout and browsers.`,
   );
-  if (!existing.length) return;
+  if (!existing.length) return null;
   let parent = main;
   for (const segment of ["reports", "integrations"]) {
     parent = path.join(parent, segment);
@@ -117,6 +117,7 @@ function preserveIntegrationEvidence(main, task, branch, head) {
     throw error;
   }
   console.log("Preserved integration evidence: " + destination);
+  return destination;
 }
 
 // Stage the checkout for rollback if unregistration fails. Successful cleanup
@@ -140,7 +141,7 @@ export function removeIntegratedWorktree(main, task, branch, head) {
     if (fs.existsSync(git("-C", task, "rev-parse", "--path-format=absolute", "--git-path", state)))
       throw new Error("Unfinished Git operation preserved");
   if (/^160000 /m.test(git("-C", task, "ls-files", "--stage"))) throw new Error("Submodule worktree preserved");
-  preserveIntegrationEvidence(main, task, branch, head);
+  const evidence = preserveIntegrationEvidence(main, task, branch, head);
   const root = path.resolve(
     process.env.CODEX_WORKTREE_ARCHIVE_ROOT ??
       path.join(os.homedir(), ".codex", "worktree-archives", path.basename(main)),
@@ -166,12 +167,15 @@ export function removeIntegratedWorktree(main, task, branch, head) {
   fs.unlinkSync(path.join(checkout, ".git"));
   fs.rmSync(recovery, { recursive: true });
   console.log("Removed completed worktree " + task + ", after preserving task artifacts; retained branch " + branch);
+  return evidence;
 }
 
 function usage() {
   console.log(`Usage:
   node scripts/agent-worktree.mjs create --task <slug> [--base <branch>] [--detached]
   node scripts/agent-worktree.mjs integrate --task <slug> [--keep-worktree]
+  node scripts/agent-worktree.mjs finish --task <slug>
+  node scripts/agent-worktree.mjs setup-integration
   node scripts/agent-worktree.mjs remove --task <slug> [--force]
   node scripts/agent-worktree.mjs list
   node scripts/agent-worktree.mjs prune
@@ -179,6 +183,9 @@ function usage() {
 Creates isolated worktrees under .worktrees/<slug> on branch agent/<slug>.
 Use one worktree per implementation chat to avoid shared-checkout races.
 Add --detached for verification-only detached HEAD.
+setup-integration moves main to .worktrees/integration; preserves the original
+checkout's files/index on a workspace branch. Run once when adopting this layout.
+integrate verifies and advances main; finish preserves evidence and removes the task.
 `);
 }
 
@@ -208,9 +215,9 @@ export function linkDependencies(mainRoot, targetWorktree) {
 export async function main(argv = process.argv.slice(2)) {
   const [cmd, ...rest] = argv;
 
-  if (["create", "integrate", "remove", "list", "prune"].includes(cmd)) {
+  if (["create", "integrate", "finish", "setup-integration", "remove", "list", "prune"].includes(cmd)) {
     const valueOptions =
-      cmd === "create" ? ["--task", "--base"] : ["remove", "integrate"].includes(cmd) ? ["--task"] : [];
+      cmd === "create" ? ["--task", "--base"] : ["remove", "integrate", "finish"].includes(cmd) ? ["--task"] : [];
     const flagOptions =
       cmd === "create"
         ? ["--detached"]
@@ -257,6 +264,23 @@ export async function main(argv = process.argv.slice(2)) {
     process.exit(0);
   }
 
+  // Commands work from any checkout, while task paths and evidence stay rooted
+  // in the original workspace rather than the dedicated main checkout.
+  const shared = runGit(["rev-parse", "--path-format=absolute", "--git-common-dir"]);
+  if (shared.status === 0 && path.basename(shared.stdout.trim()) === ".git") {
+    root = path.resolve(path.dirname(shared.stdout.trim()));
+    WORKTREE_ROOT = path.join(root, ".worktrees");
+  }
+  const canonicalScript = path.join(WORKTREE_ROOT, "integration", "scripts", "agent-worktree.mjs");
+  if (currentFile === path.join(root, "scripts", "agent-worktree.mjs") && fs.existsSync(canonicalScript)) {
+    const owner = runGit(["-C", path.dirname(path.dirname(canonicalScript)), "symbolic-ref", "--quiet", "HEAD"]);
+    if (owner.status === 0 && owner.stdout.trim() === "refs/heads/main") {
+      const delegated = spawnSync(process.execPath, [canonicalScript, ...argv], { cwd: root, stdio: "inherit" });
+      if (delegated.status !== 0) process.exitCode = delegated.status ?? 1;
+      return;
+    }
+  }
+
   if (cmd === "list") {
     const r = runGit(["worktree", "list"], { stdio: "inherit" });
     process.exit(r.status ?? 1);
@@ -267,9 +291,10 @@ export async function main(argv = process.argv.slice(2)) {
     process.exit(r.status ?? 1);
   }
 
-  if (cmd === "integrate") {
-    const task = slugify(getArg("--task") ?? "");
-    if (!task) throw new Error("missing or invalid --task slug");
+  if (["integrate", "finish", "setup-integration"].includes(cmd)) {
+    const task = cmd === "setup-integration" ? "integration" : slugify(getArg("--task") ?? "");
+    if (!task || (task === "integration" && cmd !== "setup-integration"))
+      throw new Error("missing, reserved or invalid --task slug");
     const git = (cwd, args, raw = false) => {
       const result = spawnSync("git", [...UNCACHED_GIT_OPTIONS, ...args], { cwd, encoding: "utf8" });
       if (result.status !== 0) throw new Error(result.stderr || `git ${args[0]} failed`);
@@ -289,9 +314,47 @@ export async function main(argv = process.argv.slice(2)) {
       const records = git(root, ["worktree", "list", "--porcelain", "-z"], true).split("\0\0");
       const mainRecord = records.find((record) => record.split("\0").includes("branch refs/heads/main"));
       if (!mainRecord) throw new Error("main must have a registered checkout; nothing integrated.");
-      const mainPath = mainRecord.split("\0")[0].slice("worktree ".length);
-      const taskPath = path.join(mainPath, ".worktrees", task);
-      const taskRecord = records.find((record) => record.split("\0").includes(`worktree ${taskPath}`));
+      const mainPath = path.resolve(mainRecord.split("\0")[0].slice("worktree ".length));
+      if (cmd === "setup-integration") {
+        const lock = await acquireExclusivePort(port, { label: "Integration lock" });
+        try {
+          const dedicated = path.join(WORKTREE_ROOT, "integration");
+          if (mainPath === dedicated) {
+            console.log(`Integration checkout ready: ${dedicated}`);
+            return;
+          }
+          if (mainPath !== root) throw new Error("main already belongs to another checkout; no branches changed");
+          if (fs.existsSync(dedicated)) throw new Error("Integration destination exists; inspect it before setup");
+          for (const marker of UNFINISHED_GIT_STATES) {
+            if (fs.existsSync(path.resolve(root, git(root, ["rev-parse", "--git-path", marker]))))
+              throw new Error("Resolve the unfinished Git operation before integration setup");
+          }
+          let workspace = "workspace/main";
+          let suffix = 1;
+          while (spawnSync("git", ["show-ref", "--verify", `refs/heads/${workspace}`], { cwd: root }).status === 0)
+            workspace = `workspace/main-${suffix++}`;
+          const head = git(root, ["rev-parse", "main"]);
+          git(root, ["branch", workspace, head]);
+          // Repoint HEAD only: checkout would risk changing staged/unstaged files.
+          git(root, ["symbolic-ref", "HEAD", `refs/heads/${workspace}`]);
+          try {
+            git(root, ["worktree", "add", dedicated, "main"]);
+          } catch (error) {
+            git(root, ["symbolic-ref", "HEAD", "refs/heads/main"]);
+            throw error;
+          }
+          linkDependencies(root, dedicated);
+          console.log(`Integration checkout ready: ${dedicated}`);
+          console.log(`Original workspace preserved on ${workspace}; files and index unchanged.`);
+          return;
+        } finally {
+          await lock.release();
+        }
+      }
+      const taskPath = path.join(WORKTREE_ROOT, task);
+      const taskRecord = records.find(
+        (record) => path.resolve(record.split("\0")[0].slice("worktree ".length)) === taskPath,
+      );
       if (!taskRecord?.split("\0").includes(`branch refs/heads/agent/${task}`)) {
         throw new Error("Task must be a registered worktree on its expected agent branch.");
       }
@@ -308,11 +371,41 @@ export async function main(argv = process.argv.slice(2)) {
           }
         }
       };
-      console.log(
-        hasFlag("--keep-worktree")
-          ? `Finish plan: integrate ${task}; keep worktree and task browsers.`
-          : `Finish plan: integrate ${task}; close task browsers; preserve reports and non-build ignored files in reports/integrations; remove worktree; retain branch. Add --keep-worktree to continue inspection.`,
-      );
+      const stateDirectory = path.join(root, "reports", "integrations");
+      for (const directory of [path.join(root, "reports"), stateDirectory]) {
+        if (fs.lstatSync(directory, { throwIfNoEntry: false })?.isSymbolicLink())
+          throw new Error("Integration state directory is a symlink; checkout preserved");
+        fs.mkdirSync(directory, { recursive: true });
+      }
+      const stateFile = path.join(stateDirectory, `${task}.json`);
+      const saveState = (state) => {
+        const temporary = `${stateFile}.${process.pid}.tmp`;
+        fs.writeFileSync(temporary, JSON.stringify(state, null, 2) + "\n");
+        fs.renameSync(temporary, stateFile);
+      };
+      if (cmd === "finish") {
+        clean(taskPath, `agent/${task}`);
+        const head = git(taskPath, ["rev-parse", "HEAD"]);
+        git(root, ["merge-base", "--is-ancestor", head, "main"]);
+        try {
+          const browsers = path.join(taskPath, "scripts/lib/agent-browser-session.mjs");
+          if (fs.existsSync(browsers)) {
+            const { closeTaskBrowsers } = await import(pathToFileURL(browsers).href);
+            await closeTaskBrowsers(taskPath);
+          }
+          const evidence = removeIntegratedWorktree(root, taskPath, `agent/${task}`, head);
+          saveState({ task, commit: head, integration: "passed", cleanup: "passed", evidence });
+          console.log(`Task finished. State: ${stateFile}`);
+        } catch (error) {
+          saveState({ task, commit: head, integration: "passed", cleanup: "blocked", error: error.message });
+          throw new Error(
+            `Integration remains complete; cleanup blocked: ${error.message}. Retry: node scripts/agent-worktree.mjs finish --task ${task}`,
+            { cause: error },
+          );
+        }
+        return;
+      }
+      console.log(`Integration phase: verify and advance main; retain task checkout and browsers.`);
       let taskHead;
       for (;;) {
         const snapshotLock = await acquireExclusivePort(port, { label: "Integration lock" });
@@ -362,14 +455,8 @@ export async function main(argv = process.argv.slice(2)) {
         }
       }
       console.log(`Integrated ${task} into local main at ${taskHead}; no push performed.`);
-      if (!hasFlag("--keep-worktree")) {
-        const browsers = path.join(taskPath, "scripts/lib/agent-browser-session.mjs");
-        if (fs.existsSync(browsers)) {
-          const { closeTaskBrowsers } = await import(pathToFileURL(browsers).href);
-          await closeTaskBrowsers(taskPath);
-        }
-        removeIntegratedWorktree(mainPath, taskPath, `agent/${task}`, taskHead);
-      }
+      saveState({ task, commit: taskHead, integration: "passed", cleanup: "pending", checkout: taskPath });
+      console.log(`State: ${stateFile}. Finish: node scripts/agent-worktree.mjs finish --task ${task}`);
     } finally {
       await taskLock.release();
     }
@@ -384,7 +471,7 @@ export async function main(argv = process.argv.slice(2)) {
       process.exit(1);
     }
     const task = slugify(taskRaw);
-    if (!task) {
+    if (!task || task === "integration") {
       console.error("invalid --task slug");
       process.exit(1);
     }
@@ -409,7 +496,7 @@ export async function main(argv = process.argv.slice(2)) {
 
     if (fs.existsSync(worktreePath)) {
       console.error(`worktree already exists: ${worktreePath}`);
-      console.error(`remove with: node scripts/agent-worktree.mjs remove --task ${task}`);
+      console.error("Reuse this checkout for the same task, or choose a new --task slug.");
       process.exit(1);
     }
 
@@ -465,7 +552,7 @@ export async function main(argv = process.argv.slice(2)) {
       console.log("  npm ci  # install dependencies before verification");
     }
     console.log(`  cd "${root}"  # return before cleanup`);
-    console.log(`  node scripts/agent-worktree.mjs remove --task ${task}  # after merging to main`);
+    console.log(`  node scripts/agent-worktree.mjs finish --task ${task}  # after reviewing integration`);
     process.exit(0);
   }
 
@@ -477,7 +564,7 @@ export async function main(argv = process.argv.slice(2)) {
       process.exit(1);
     }
     const task = slugify(taskRaw);
-    if (!task) {
+    if (!task || task === "integration") {
       console.error("invalid --task slug");
       process.exit(1);
     }

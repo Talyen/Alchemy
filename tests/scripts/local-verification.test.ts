@@ -68,6 +68,21 @@ it("selects changed and related unit coverage without admitting non-unit gates",
   expect(commands.some((command) => command.key === "unit-local")).toBe(false);
 });
 
+it("replaces overlapping selected unit runs with one complete suite for repository-wide checks", () => {
+  const plan = resolveRoutePlan([
+    "scripts/check.mjs",
+    "scripts/assets.mjs",
+    "src/features/alchemy/shared/storage/io.ts",
+  ]);
+  const commands = filterPlanCommands(plan, new Set(["full", "all-units"])).commands;
+  expect(
+    commands
+      .filter((command) => command.key === "related" || command.key.startsWith("unit-"))
+      .map((command) => command.key),
+  ).toEqual(["unit-all"]);
+  expect(commands.some((command) => command.key === "assets-check")).toBe(true);
+});
+
 it("checks documentation automatically without unrelated units, localization or static work", async () => {
   const calls: string[] = [];
   expect(

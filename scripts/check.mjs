@@ -11,7 +11,7 @@ import {
   parseChangedPathsArgs,
   resolveSelectedPaths,
   resolvePushPaths,
-  taskSelectionBase,
+  taskComparisonBase,
 } from "./lib/verification/changed-paths.mjs";
 import { registerArtifactSession } from "./lib/artifact-guard.mjs";
 import { pruneExpiredArtifacts } from "./prune-transient-artifacts.mjs";
@@ -81,6 +81,7 @@ export function captureSourceDigest({ paths: selected, rootDir = ROOT, inputs = 
 }
 
 export function parseCheckArgs(argv) {
+  if (argv.every((arg) => ["--plan", "--full"].includes(arg))) argv = ["--task", ...argv];
   if (argv.includes("--pre-push")) {
     if (argv.length !== 1) throw new Error("--pre-push cannot be combined with other selections");
     if (process.stdin.isTTY) throw new Error("--pre-push requires Git hook input on stdin");
@@ -90,7 +91,7 @@ export function parseCheckArgs(argv) {
     usage: "Provide --task, paths, --diff, or --committed <revision>. Example: npm run check:task",
   });
   for (const flag of flags) {
-    if (!["task", "diff", "committed", "full", "plan"].includes(flag))
+    if (!["task", "diff", "committed", "full", "all", "plan"].includes(flag))
       throw new Error(`Unknown check option: --${flag}`);
   }
   return resolveSelectedPaths(ROOT, { flags, paths, revision });
@@ -115,6 +116,7 @@ function defaultRunner(label, command, args, env) {
 }
 
 export async function runCheck(argv = process.argv.slice(2), options = {}) {
+  if (argv.every((arg) => ["--plan", "--full"].includes(arg))) argv = ["--task", ...argv];
   const runner = options.runner ?? defaultRunner;
   const paths = parseCheckArgs(argv);
   const full = argv.includes("--full");
@@ -125,9 +127,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const raw = argv.includes("--pre-push") ? null : parseChangedPathsArgs(argv);
   if (raw?.revision) console.log(`Selection: files changed by ${raw.revision}; execution uses the current checkout.`);
   if (raw?.flags.has("task"))
-    console.log(
-      `Selection: complete task since ${taskSelectionBase(ROOT)}, plus staged, unstaged and untracked paths.`,
-    );
+    console.log(`Selection: task delta since shared main ancestor ${taskComparisonBase(ROOT)}, plus working paths.`);
   const guardedPaths = !full && raw ? (raw.paths.length ? raw.paths : paths) : undefined;
   let selectionStable = true;
   const digestFn =
@@ -171,6 +171,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   // Static checks rerun docs:check via lint:ci, so verification skips its own
   // copy on executable changes; documentation-only changes keep it here.
   if (full) verifyArgs.push("--full");
+  if (argv.includes("--all")) verifyArgs.push("--all-units");
   if (full && selection.needsCodeChecks) verifyArgs.push("--skip-docs-check");
   const skipBuilds = !full || process.env.ALCHEMY_CHECK_SKIP_BUILD === "1";
   const ciReason = "CI-only in the default local gate";

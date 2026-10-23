@@ -82,7 +82,7 @@ it("keeps working and committed selections explicit and rejects typos while reta
   expect(select(["owned/a.ts"])).toEqual(["owned/a.ts"]);
 });
 
-it("checks every task commit and working path against the recorded base even after main advances", () => {
+it("checks task commits and working paths without absorbing incorporated main changes", () => {
   const { root, git } = fixture();
   git("branch", "-M", "main");
   const base = git("rev-parse", "HEAD").toString().trim();
@@ -107,7 +107,7 @@ it("checks every task commit and working path against the recorded base even aft
   git("mv", "owned/a.ts", "owned/moved.ts");
   fs.rmSync(path.join(root, "task.ts"));
   fs.writeFileSync(path.join(root, "new.ts"), "untracked task file");
-  expect(select()).toEqual(["main.ts", "new.ts", "owned/a.ts", "owned/moved.ts", "task.ts"]);
+  expect(select()).toEqual(["new.ts", "owned/a.ts", "owned/moved.ts", "task.ts"]);
   const before = digest();
   fs.writeFileSync(path.join(root, "appeared.ts"), "new scope during check");
   expect(digest()).not.toBe(before);
