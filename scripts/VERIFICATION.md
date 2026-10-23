@@ -34,8 +34,14 @@ of per file. The `documentation` route covers `Docs/**` so check classification
 
 `check:task` adds the shared `--task` selector; `check:broad` aliases `check --full`;
 `test:unit:all` aliases the unfiltered unit runner. Existing aliases are unchanged.
-Task creation records its base in local Git branch configuration. The selector
-requires that base to be an ancestor of HEAD, unions committed and working paths,
+`check:all` selects the repository inventory and replaces overlapping selected-unit
+commands with one complete unit run, alongside full static checks and builds.
+That complete unit pass uses one worker to bound host resource spikes; ordinary
+unit commands retain their existing worker policy.
+Bare `check` (including `--plan` or `--full`) defaults to task selection.
+Task creation records its original base in local Git branch configuration. The
+selector validates that provenance, then compares HEAD against its merge base with
+current local main and unions those task changes with working paths,
 and retains both rename sides. The local source guard recomputes task membership
 so new files appearing during a run invalidate success.
 
@@ -106,18 +112,23 @@ Input identity covers tracked and untracked nonignored files, root environment f
 for `test:unit`. Existing `verify`, `verify:unit`, and `verify:full` remain available for
 selection diagnosis: `verify` selects units and documentation, `verify:unit`
 restricts that selection to units, and `verify:full` adds broader route checks.
-Use `check` for ordinary work so the supporting gates are included automatically.
+Use [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) for ordinary commands.
+`check:broad` / `check:full` retain selected units with full static checks and
+applicable builds; `check:all` includes every unit suite. `check:task` remains an
+explicit alias for bare `check`.
 Pre-push retains outgoing-path selection and source/cleanliness guards and uses
 the same task gate.
 
-Use `rg --files tests` to locate unfamiliar suite paths. Vitest arguments are
-filters: a passing mixed selection can ignore a misspelled path while another
-matches, so confirm the reported file count before claiming that scope passed.
+The compact runner rejects nonexistent path-shaped selectors before `vitest run`,
+including mixed valid/missing file selections. Legacy bare substring filters remain
+supported; use actual files or directories for exact scope. The runner prints its
+scheduling class and forces focused runs to one worker, overriding worker flags.
+Related-source selection retains Vitest's own graph selection.
 
 One-shot Vitest and Playwright commands through `run-compact.mjs` share a host-wide
 budget. Broad units, related selections, directories, coverage and browser runs
 retain the existing broad lane. One focused Vitest invocation selecting one or two
-explicit `*.test.ts`/`*.test.tsx` files without additional flags may run alongside
+explicit `*.test.ts`/`*.test.tsx` files, with optional name filters, reporters or other bounded options may run alongside
 it in a separate reservation, forced to one worker. A second run of either class
 waits without a default timeout. `npm run test:status` lists active owners and
 waiting work (PID, checkout, command, start time); `--json` returns the same data.

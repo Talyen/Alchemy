@@ -65,7 +65,7 @@ Each invocation writes a unique directory under `reports/visual-review/<label>/`
 with `screen.png`, seeded browser `storage.json`, `capture.json` recording the
 actual browser version and headings, and `scenario.json` identifying
 settings, commit, dirty paths and success/failure. Failed runs retain available
-diagnostics and must not be used as accepted captures. Integration preserves this
+diagnostics and must not be used as accepted captures. Task finishing preserves this
 review evidence. These are opt-in captures, not new automatic pixel baselines.
 
 The runner uses existing save fixtures, seeded cosmetic randomness, a fixed clock,

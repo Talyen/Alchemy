@@ -146,7 +146,8 @@
     "i18n:apply": "node scripts/localization.mjs apply",
     "i18n:check": "node scripts/localization.mjs check",
     "check:dependencies": "npm audit --audit-level=moderate",
-    "test:visual": "cross-env PLAYWRIGHT_VITE_MODE=preview node scripts/run-compact.mjs playwright test --config playwright.visual.config.ts"
+    "test:visual": "cross-env PLAYWRIGHT_VITE_MODE=preview node scripts/run-compact.mjs playwright test --config playwright.visual.config.ts",
+    "check:all": "node scripts/check.mjs --full --all"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.8.0",

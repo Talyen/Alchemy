@@ -37,11 +37,16 @@ export function parseChangedPathsArgs(argv, { usage } = {}) {
     throw new Error("Choose explicit paths, --diff, or --committed <revision>");
   if (flags.has("task") && (paths.length || filePaths || flags.has("diff") || flags.has("committed")))
     throw new Error("Choose --task, explicit paths, --diff, or --committed <revision>");
+  if (
+    flags.has("all") &&
+    (paths.length || filePaths || flags.has("task") || flags.has("diff") || flags.has("committed"))
+  )
+    throw new Error("Choose --all or a task/path selection");
   if (filePaths && (paths.length || flags.has("diff")))
     throw new Error("Choose a path selection file, explicit paths, or --diff");
   if (filePaths) paths.push(...filePaths);
   if (paths.length > 0 && flags.has("diff")) throw new Error("Choose explicit paths or --diff, not both.");
-  if (paths.length === 0 && !flags.has("diff") && !flags.has("committed") && !flags.has("task")) {
+  if (paths.length === 0 && !flags.has("diff") && !flags.has("committed") && !flags.has("task") && !flags.has("all")) {
     throw new Error(usage ?? "Provide paths or use --diff.");
   }
   return { flags, paths, revision };
@@ -73,11 +78,22 @@ export function taskSelectionBase(rootDir) {
   return commit;
 }
 
+export function taskComparisonBase(rootDir) {
+  taskSelectionBase(rootDir); // Original provenance must remain valid after merges.
+  const base = runGit(rootDir, ["merge-base", "main", "HEAD"]);
+  if (base.status !== 0 || !base.stdout.trim()) throw new Error("Could not compare task with local main");
+  return base.stdout.trim();
+}
+
 export function resolveSelectedPaths(rootDir, { flags, paths, revision }) {
   const committed = flags?.has("committed");
   let selected;
-  if (flags?.has("task")) {
-    const base = taskSelectionBase(rootDir);
+  if (flags?.has("all")) {
+    const inventory = runGit(rootDir, ["ls-files", "--cached", "--others", "--exclude-standard", "-z"]);
+    if (inventory.status !== 0) throw new Error("Could not inspect repository files");
+    selected = [...new Set(inventory.stdout.split("\0").filter(Boolean))].sort();
+  } else if (flags?.has("task")) {
+    const base = taskComparisonBase(rootDir);
     const committedPaths = runGit(rootDir, ["diff", "--no-renames", "--name-only", "-z", base, "HEAD", "--"]);
     const working = diffHeadPaths(rootDir);
     if (committedPaths.status !== 0 || !working) throw new Error("Could not inspect complete task changes");

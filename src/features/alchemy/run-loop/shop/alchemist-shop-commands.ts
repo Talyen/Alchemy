@@ -17,6 +17,7 @@ import { ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID } from "@/lib/game-cons
 import { getStandardPotionPool, isMixedPotionCard, isPotionCard, type BattleCard } from "@/lib/game-data";
 import { isValidDeckIndex } from "@/lib/utils";
 import {
+  runShopTransaction,
   cardSlotKeyOf,
   createGetRefreshPrice,
   createShopPurchaseActions,
@@ -24,7 +25,6 @@ import {
 } from "./shop-commands-core";
 import { computeMixPotionPrice, draftShopDiscounts, getShopBuyPrice, readShopDiscounts } from "./shop-pricing";
 import { applyStrongSpiritsToPotions, resampleCardShopOfferings } from "./shop-state-init";
-import { runShopTransaction } from "./shop-transactions";
 
 export function createAlchemistShopCommands(gameSession: GameSession) {
   const { buy: buyPotion, getBuyPrice: getPotionBuyPrice } = createShopPurchaseActions(

@@ -6,7 +6,7 @@ import fs from "node:fs";
 import { summarizeAndReportFailure, summarizeStepResult } from "./lib/run-step.mjs";
 import { resolveRoutePlan } from "./lib/verification/change-routes.mjs";
 import { parseChangedPathsArgs, resolveSelectedPaths } from "./lib/verification/changed-paths.mjs";
-import { DOCS_CHECK_KEY } from "./lib/verification/test-commands.mjs";
+import { COMMANDS, DOCS_CHECK_KEY } from "./lib/verification/test-commands.mjs";
 import { ensureRunId, writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { defineScript } from "./lib/script-run.mjs";
 import { runCommand } from "./lib/run-command.mjs";
@@ -26,6 +26,7 @@ const VERIFY_FLAGS = new Set([
   "skip-docs-check",
   "full",
   "unit",
+  "all-units",
 ]);
 
 export function parseVerifyArgs(argv) {
@@ -40,6 +41,20 @@ export function parseVerifyArgs(argv) {
 }
 
 export function filterPlanCommands(plan, flags) {
+  if (flags.has("all-units")) {
+    plan = {
+      ...plan,
+      commands: [
+        {
+          key: "unit-all",
+          ...COMMANDS["unit-all"],
+          args: [...COMMANDS["unit-all"].args, "--", "--maxWorkers=1"],
+          reason: "repository-wide checks run every unit once with one worker to bound host resource use",
+        },
+        ...plan.commands.filter((command) => command.key !== "related" && !command.key.startsWith("unit-")),
+      ],
+    };
+  }
   if (flags.has("unit"))
     return {
       ...plan,
@@ -118,7 +133,7 @@ export function main(argv = process.argv.slice(2)) {
     );
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
     console.log(
-      "Scope: route-selected checks only. Use check for the completion gate with types, formatting and lint; check:full adds full static validation and applicable builds.",
+      "Scope: route-selected checks only. Use check for task completion; check:all includes every unit suite, full static validation and builds.",
     );
     if (flags.has("plan")) return 0;
 

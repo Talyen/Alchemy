@@ -183,106 +183,80 @@ expiry. Inspect unfinished experiments before deleting them explicitly.
 
 ## Worktree / git safety
 
-Use one isolated worktree per implementation chat, without polling other chats
-or negotiating ownership. Reuse the chat's existing suitable worktree.
-`node scripts/agent-worktree.mjs create --task <slug>` (`.worktrees/<slug>` on `agent/<slug>`, from committed local `main` by default);
-`--detached` for verification-only runs. Creation links `node_modules` from
-the root checkout automatically when present; run `npm ci` only if package
-dependencies change.
-Creation records the branch's original base commit in local Git configuration
-(`branch.<name>.alchemyTaskBase`). `npm run check:task` includes committed and
-working changes since that base; resuming the retained branch preserves it.
-Missing or invalid bases fail explicitly; use selected paths for older worktrees.
-
-If `agent/<slug>` already exists, creation checks out that retained branch at its
-current commit; `--base` applies only when creating a new branch (or a detached
-checkout). Inspect the resulting branch and commit before reviewing or editing.
-Use a fresh slug for new work when the retained branch belongs to an earlier task;
-when intentionally continuing it, incorporate current `main` in the task worktree
-before relying on its documentation or source.
-
-Run worktree management commands from the original checkout. Removal validates
-the exact registered worktree; an unregistered directory requires inspection
-and explicit `--force`. An empty normalized task name is rejected.
-
-Task-scoped commits and local integration into `main` are authorized by
-[AGENTS.md](../AGENTS.md#working-style); pushes and PRs still require a request.
-Commit only reviewed task-owned changes with the required release trailer, then run:
+[AGENTS.md](../AGENTS.md) owns authorization and task isolation;
+[CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns verification.
+The ordinary sequence, from the original workspace, is:
 
 ```sh
+node scripts/agent-worktree.mjs create --task <slug>
+# Implement, check and commit in .worktrees/<slug>.
 node scripts/agent-worktree.mjs integrate --task <slug>
+# Review the integrated result, then preserve evidence and close the task.
+node scripts/agent-worktree.mjs finish --task <slug>
 ```
 
-Integration uses an exclusive loopback port derived from the shared Git directory,
-so all worktrees share one OS-released lock. Contention waits for release with
-periodic status and cancellation, using the same waiting policy as the
-[test lane](../CONTRIBUTING.md#what-to-run-when-you-change). An explicit deadline
-can still fail before acquisition; no owner is reclaimed. The command
-requires registered task and `main` checkouts with no dirty files or unfinished Git
-operations. Safety reads bypass Git's filesystem monitor and untracked cache
-without changing repository settings. A per-task lock prevents duplicate integrations of the same task. Under the shared
-lock, integration captures current local `main` and merges it into the task. It
-releases the shared lock before running `npm run check -- <combined changed paths>`
-(including both sides of renames), then reacquires it and rechecks branch,
-cleanliness and both commits before fast-forwarding `main`. If another task
-advanced main, it incorporates that commit and verifies the new combined result
-again. Test-lane waits never hold the shared integration lock. It never pushes or switches
-checkout branches. Verification uses the merged task's shared Node command launcher
-so npm runs without shell interpretation on Windows too. Only protection the selector cannot infer needs an additional focused run.
-An active bisect in either checkout also blocks integration before either branch advances.
+Creation starts `agent/<slug>` from committed local main and links dependencies.
+The branch's `alchemyTaskBase` records original provenance; task checks compare
+against the latest shared ancestor with main. Existing branches resume their
+current commit. Use a new slug for new work, or incorporate main when deliberately
+resuming old work. `--base` selects a different starting point for a new branch;
+`--detached` creates a verification-only checkout. `integration` is reserved.
+Commands locate the original workspace from the shared Git directory, including
+when invoked from a task. The original workspace's management entry point forwards
+to the dedicated main checkout so retained workspace source can stay unchanged.
 
-Resolve understood merge conflicts in the task worktree, commit the resolution,
-and retry; ambiguous conflicts or dirty `main` are blockers to report to the user.
-Failures preserve task work and leave `main` unchanged. Never bypass serialization
-with a manual update to `main`. Keep unintegrated work committed and recoverable;
-cleanup must not discard work.
+### Dedicated integration checkout
 
-After releasing the shared integration lock, final integration closes the current
-task's managed browser sessions, preserves review evidence, then deletes and
-unregisters only the named task worktree while retaining the task lock. The command
-prints its finish plan before integration and a cleanup preview before removal.
-Cleanup permits later main commits only when they still contain the integrated
-task commit. `--keep-worktree` skips this final teardown. Cleanup rechecks its branch, commit,
-clean status, unfinished Git operations, registration and lock state; submodules
-block automatic cleanup. Failed verification never removes a worktree. A cleanup
-failure leaves the completed integration in place and reports the blocker.
+One-time adoption uses `node scripts/agent-worktree.mjs setup-integration`.
+This explicitly moves main ownership to `.worktrees/integration`: the original
+workspace receives a new `workspace/main` branch (or an unused numbered variant)
+at the same commit. Only its symbolic HEAD changes; staged, unstaged and untracked
+files and the index are preserved. Unfinished Git operations block setup.
+Setup rolls HEAD back if worktree creation fails and is idempotent after success.
+The original workspace can intentionally lag main. Read current committed source
+in the dedicated checkout; run task checks in task checkouts and separately
+authorized push/release commands in the dedicated main checkout.
+Do not run this migration as part of ordinary task creation or switch another
+checkout's branch. The dedicated checkout is for integration; implement in task
+worktrees. Until adoption, integration supports the old clean-main layout.
 
-The checkout first moves atomically to a temporary directory under
-`~/.codex/worktree-archives/Alchemy/` so failed unregistration can restore it.
-Before staging, the complete `reports/` directory and every other ignored file
-outside reproducible output roots are copied to a unique `reports/integrations/`
-bundle in the original checkout. This includes localization packets, captures,
-run logs, task notes and directly linked evidence. `integration.json` records the
-original checkout, integrated commit and preserved paths. Linked run artifacts
-outside `reports/` are preserved too. Explicit links that escape the checkout or
-symlinks inside preserved evidence block removal and leave the checkout intact.
-The disposable roots are `node_modules/`, `dist/`, `dist-demo/`, `dist-desktop/`,
-`release-desktop/`, `coverage/`, `test-results/`, `playwright-report/`, `.vite/`, and
-`.worktrees/`. Move any irreplaceable output from those roots into `reports/`.
-After unregistration the temporary checkout is deleted. Its task branch remains
-available through `git worktree add <original-path> <branch>`. Use `--keep-worktree`
-to retain the checkout and browser sessions for continued inspection.
-`CODEX_WORKTREE_ARCHIVE_ROOT` can select an external staging directory; moving
-across filesystems fails without deleting the source. If cleanup fails after
-integration, inspect the reported checkout or staging directory; `recovery.json`
-records the original path, branch and commit.
+### Integration and finish phases
 
-Use `node scripts/agent-worktree.mjs integrate --task <slug> --keep-worktree` for
-intermediate integration when requested work, a preview or an experiment still
-needs the checkout. Final integration cleans up by default. Report cleanup status
-alongside integration and verification results.
+Integration holds a per-task lock. Under the shared repository lock it snapshots
+main and merges it into the clean task, releases the shared lock to verify the
+combined result, then reacquires it to revalidate both branches, commits and clean
+status before fast-forwarding main. If main advanced, it merges and checks again.
+Unfinished Git operations, including bisects, block advancement. Failures preserve
+work. Locks are OS-owned loopback listeners; waits are cancellable and never
+reclaim another owner. Test waits never hold the shared integration lock.
+Resolve understood conflicts in the task and retry. Never update main manually.
+Integration retains the task checkout and browsers; `--keep-worktree` remains a
+compatibility flag. No command pushes.
 
-After handoff, stop: no completion broadcasts,
-acknowledgments, polling, or waking completed chats. Only a concrete unresolved
-dependency or conflict warrants a bounded chat exchange.
+`reports/integrations/<slug>.json` records integration and cleanup separately.
+`finish` requires the unchanged, clean task commit to be contained in main. It
+closes only task browsers, preserves the complete `reports/` directory and other
+non-build ignored files in a unique evidence bundle, then removes only that
+registered checkout. The task branch remains. A failure prints a finish retry
+command and leaves integration complete; inspect the state file and reported
+recovery path before retrying.
 
-`scripts/bin/git` shims destructive git through
-`git-safety-guard.mjs` (rejects destructive commands against dirty checkouts); `setup-git-safety.mjs` installs the PATH hook.
-Inspection must honor the caller's Git options and checkout; failed
-inspection blocks the operation. Checkout path restores are guarded with or without
-`--`; a single branch operand remains a branch switch even when a tracked file
-shares its name. Rejection leaves files, the index, branches and stashes untouched. Git clean and push dry runs remain available for inspection. Backups require an explicit, authorized action. Creation instructions return to the
-original checkout before worktree removal.
+Cleanup rejects changed/locked registrations, unfinished work, submodules,
+symlinks in evidence and links escaping the task. It stages the checkout under
+`~/.codex/worktree-archives/Alchemy/` before unregistering, restoring it if
+unregistration fails. `CODEX_WORKTREE_ARCHIVE_ROOT` overrides that external staging
+root; cross-filesystem moves fail without deleting the source. `recovery.json`
+records the original checkout, branch and commit. Evidence stays in the original
+workspace's reported bundle; its `integration.json` lists preserved paths.
+Disposable roots are `node_modules/`, `dist/`, `dist-demo/`, `dist-desktop/`,
+`release-desktop/`, `coverage/`, `test-results/`, `playwright-report/`, `.vite/`,
+and `.worktrees/`; move irreplaceable files from them into `reports/` before finish.
+
+The legacy `remove` command retains its explicit removal semantics; prefer
+`finish` for completed tasks. Never force-remove unfinished work or delete task
+branches. `scripts/bin/git` routes destructive Git operations through
+`git-safety-guard.mjs`; `setup-git-safety.mjs` installs the PATH hook. Failed safety
+inspection blocks the command without changing files, index, refs or stashes.
 
 ## Reproducible visual scenarios
 

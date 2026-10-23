@@ -101,7 +101,7 @@ export function createRunFlowEngine(input: RunFlowEngineDeps, outcomeInput: RunO
     handleStarterDraftPick: contentNav.handleStarterDraftPick,
     handleDifficultySelect: contentNav.handleDifficultySelect,
     handleBackFromDifficultySelect: contentNav.handleBackFromDifficultySelect,
-    returnToBattle: () => contentNav.resumeRun(),
+    returnToBattle: contentNav.resumeRun,
     goToScreen: navigateTo,
     handleDestinationChoice: flowHandlers.handleDestinationChoice,
     skipRewards: flowHandlers.skipRewards,

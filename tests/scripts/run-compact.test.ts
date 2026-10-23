@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { runCommand } from "../../scripts/lib/run-command.mjs";
 import { completionCounts, runCompact } from "../../scripts/run-compact.mjs";
+import { unitSelection } from "../../scripts/lib/verification/unit-selection.mjs";
 
 const roots: string[] = [];
 beforeEach(() => vi.stubEnv("ALCHEMY_OUTPUT_CAPTURED", undefined));
@@ -90,4 +91,20 @@ it("streams explicit live output without changing the child arguments or exit st
     ),
   ).toBe(7);
   expect(fs.existsSync(path.join(root, "reports/compact"))).toBe(false);
+});
+
+it("rejects a missing path in a mixed unit selection before starting a process or reserving a lane", async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "compact-unit-selection-"));
+  roots.push(root);
+  fs.mkdirSync(path.join(root, "tests"));
+  fs.writeFileSync(path.join(root, "tests/real.test.ts"), "");
+  await expect(runCompact(["vitest", "run", "tests/real.test.ts", "tests/typo.test.ts"], root)).rejects.toThrow(
+    "Unit test path does not exist: tests/typo.test.ts",
+  );
+  expect(fs.existsSync(path.join(root, "reports"))).toBe(false);
+  expect(
+    unitSelection(["run", "tests/real.test.ts", "--exclude", "tests/missing.test.ts", "-t", "name / filter"], root)
+      .selectors,
+  ).toEqual(["tests/real.test.ts"]);
+  expect(unitSelection(["run", "real.test.ts"], root)).toEqual({ selectors: ["real.test.ts"], focused: false });
 });
