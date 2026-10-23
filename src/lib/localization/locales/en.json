@@ -690,7 +690,7 @@
   "catalog.cardLibrary.bread.line0": {"text":"Restore 6 Health","context":"Game catalog: cardLibrary.bread description","aliasOf":"description.82c6a67b41298ce5","values":{"value0":6},"terms":["Health"]},
   "catalog.cardLibrary.bread.line1": {"text":"Consume","context":"Game catalog: cardLibrary.bread description","aliasOf":"description.f5658490977dada6","values":{},"terms":["Consume"]},
   "catalog.cardLibrary.bread.title": {"text":"Bread","context":"Game catalog: cardLibrary.bread.title","terms":[]},
-  "catalog.cardLibrary.briar-shield.line0": {"text":"Gain 1 Block","context":"Game catalog: cardLibrary.briar-shield description","aliasOf":"description.3982b18759b2f2f9","values":{"value0":1},"terms":["Block"]},
+  "catalog.cardLibrary.briar-shield.line0": {"text":"Gain 2 Block","context":"Game catalog: cardLibrary.briar-shield description","aliasOf":"description.3982b18759b2f2f9","values":{"value0":2},"terms":["Block"]},
   "catalog.cardLibrary.briar-shield.line1": {"text":"Gain 3 Thorns","context":"Game catalog: cardLibrary.briar-shield description","aliasOf":"description.ac7152be6719ca2c","values":{"value0":3},"terms":["Thorns"]},
   "catalog.cardLibrary.briar-shield.title": {"text":"Briar Shield","context":"Game catalog: cardLibrary.briar-shield.title","terms":[]},
   "catalog.cardLibrary.burning-blade.line0": {"text":"Deal 1 Burn damage, increased by half your Forge","context":"Game catalog: cardLibrary.burning-blade description","aliasOf":"description.2e08ac0aa6ec9a2e","values":{"value0":1},"terms":["Burn","Forge"]},

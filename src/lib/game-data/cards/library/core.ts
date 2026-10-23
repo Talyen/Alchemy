@@ -209,7 +209,7 @@ export const coreCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "briar-shield",
     effects: [
-      { kind: "player-status", status: "block", amount: 1 },
+      { kind: "player-status", status: "block", amount: 2 },
       { kind: "player-status", status: "thorns", amount: 3 },
     ],
   }),

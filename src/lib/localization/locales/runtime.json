@@ -2790,7 +2790,7 @@
   "catalog.cardLibrary.bounty-shot.line2": {"id":"description.6299bb9c9ab5205c","values":{}},
   "catalog.cardLibrary.bread.line0": {"id":"description.82c6a67b41298ce5","values":{"value0":6}},
   "catalog.cardLibrary.bread.line1": {"id":"description.f5658490977dada6","values":{}},
-  "catalog.cardLibrary.briar-shield.line0": {"id":"description.3982b18759b2f2f9","values":{"value0":1}},
+  "catalog.cardLibrary.briar-shield.line0": {"id":"description.3982b18759b2f2f9","values":{"value0":2}},
   "catalog.cardLibrary.briar-shield.line1": {"id":"description.ac7152be6719ca2c","values":{"value0":3}},
   "catalog.cardLibrary.burning-blade.line0": {"id":"description.2e08ac0aa6ec9a2e","values":{"value0":1}},
   "catalog.cardLibrary.burning-blade.title": {"id":"description.2bbc6b092591ab6f","values":{}},
