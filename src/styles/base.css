@@ -39,10 +39,10 @@ html:lang(zh-Hans) {
 }
 
 @layer base {
-  /* Match label cap height and semibold weight; artwork may override dimensions. */
+  /* Match the inherited font size; artwork may override dimensions. */
   .lucide {
-    width: 0.9em;
-    height: 0.9em;
+    width: 1em;
+    height: 1em;
     flex-shrink: 0;
     stroke-width: 2.5;
   }

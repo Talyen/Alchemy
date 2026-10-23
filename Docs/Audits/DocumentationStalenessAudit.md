@@ -9,34 +9,37 @@ Find contradictions, harmful omissions in complete-looking workflows, and duplic
 ## Hard stops
 
 - Do not hand-edit `CHANGELOG.md` (owned by release: `sync-changelog.mjs` prerelease + `release-changelog.mjs` postbump).
-- Do not treat dated “Last execution” / Done tables inside audits as source of truth — **delete** those tracker sections when found.
 - Do not rewrite design prose for style-only preferences or turn this into a repo-wide docs rewrite. Restructure a focused section when scattered line edits would preserve ambiguity or hide the current owner.
 - Historical mentions of deleted docs, such as the old PROMPTS.md in `CHANGELOG.md`, are fine — fix live links only.
 
 ## Investigation and evidence
 
-Follow the entry point a reader would use for a real task, then compare its instructions and claims with current owners and executable behavior. Check omissions as well as false statements: missing recovery steps, hidden prerequisites, or an unreachable canonical owner can mislead without a broken link.
+Walk the entry point for a real task, comparing instructions with current owners
+and executable behavior. Check hidden prerequisites, recovery steps and unreachable
+owners as well as false statements. Explain what a reader would do incorrectly
+and its consequence; prioritize data risk, bypassed gates and blocked work.
 
-Explain what a reader would do incorrectly and the consequence. Prioritize instructions that risk data, bypass required gates, or block work over stale incidental counts and formatting. Historical statements can remain accurate for their time; distinguish them from current instructions. When implementation and docs conflict, investigate intent before deciding which side needs correction.
+Verify changed claims, snippets and commands at their owners. Exercise the workflow
+where safe; never publish or run destructive commands merely to check prose.
+Use a contextual link instead of copying a rule. Apply the
+[shared confirmation contract](README.md#discover-and-confirm) when implementation
+and documentation disagree or a statement is accurate only historically.
 
-Verify edited claims, examples, links, and commands against their owners. Walk the affected workflow where safe; do not run destructive or publishing commands just to validate documentation. Prefer a link to a canonical rule over another copied rule, and preserve enough context for the reader to know when to follow it.
+## Investigation leads
 
-## Domain rules
+| Signal                                               | Verify against                                                                                                 |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Wrong scripts, engines or dependency versions        | `package.json`; flags and factual meaning still require source review                                          |
+| Ownership/layout mismatch                            | [Architecture](../ARCHITECTURE.md) and current `src/lib`, `src/features/alchemy`, `desktop` and `tests` owners |
+| Conflicting workflow policy                          | [Contributing](../../CONTRIBUTING.md) and [AGENTS.md](../../AGENTS.md); keep one owner and link consumers      |
+| Boundary/dead-code claims                            | `oxlint.config.ts` and `knip.config.js`                                                                        |
+| Browser/build setup                                  | Playwright/Vite/Electron configuration and `desktop/` entrypoints                                              |
+| Stale TypeScript snippets                            | Current types, APIs and their consumers                                                                        |
+| Missing prerequisites/recovery, unreachable guidance | Walk the task from its documented entrypoint; check harmful omissions as well as false statements              |
+| Audit logs or dated completed trackers               | Remove under the [shared finish contract](README.md#finish)                                                    |
 
-**Sources of truth:** `package.json` (scripts, engines, deps); [ARCHITECTURE.md](../ARCHITECTURE.md) (run state, ownership); [CONTRIBUTING.md](../../CONTRIBUTING.md) (hooks, test matrix); [AGENTS.md](../../AGENTS.md) (agent guardrails); `oxlint.config.ts` (import boundaries); `knip.config.js` (deadcode allowlists); `playwright.config.ts` / `playwright.electron.config.ts`; Vite/Electron configs and `desktop/` for build entrypoints.
-
-**Links:** internal `.md` links resolve **relative to the source file**; heading anchors must still exist. Recheck edited links and factual claims against their listed source of truth. External URLs: check only when changing that source and network is available — do not fail solely on an unavailable endpoint.
-
-**Audit hygiene:** if an audit contains embedded run logs, Done tables, or “Last execution” trackers, remove them and restore guide shape per [README.md](README.md).
-
-## Known signals
-
-- **Code snippet drift:** fenced `ts`/`tsx` blocks in `Docs/`, `AGENTS.md`, `CONTRIBUTING.md`, READMEs whose type names and APIs no longer exist.
-- **Script/link contract:** `npm run docs:check` continuously checks local Markdown targets, heading anchors, and documented `npm run` names through `scripts/check-documentation-contract.mjs`; inspect flags and factual meaning manually.
-- **Architecture & directory mismatches:** claims in `ARCHITECTURE.md` vs on-disk `src/lib`, `src/features/alchemy`, `desktop/`, `tests/`.
-- **Broken relative links & anchors:** markdown links and `#heading` anchors whose targets are missing.
-- **Version / engine staleness:** Node engine, Electron, Playwright, Vitest versions claimed in docs vs `package.json`.
-- **Audit tracker residue:** embedded run logs or dated status notes under `Docs/Audits/`.
-- **Harmful omissions:** complete-looking workflow, architecture, migration, or command references omit a required step or invariant.
-- **Duplicated policy drift:** the same rule or command is copied across multiple docs and no longer agrees; consolidate under the existing source of truth and link consumers.
-- **Discoverability failure:** correct guidance exists but is not reachable from the documented entry point used for that task.
+`npm run docs:check` checks Markdown targets, heading anchors and documented npm
+names through `scripts/check-documentation-contract.mjs`; it does not establish
+semantic accuracy. Internal links resolve relative to their source. Verify edited
+claims and links at their owners. Check external URLs when changing that source
+and network is available; an unavailable endpoint alone does not fail the review.

@@ -218,35 +218,12 @@ own the external setup; release authorization remains unchanged.
 
 ## Language rollout
 
-Until Alchemy has its own audience data, use Steam-wide language usage as a
-provisional prioritization signal. The combined-platform
-[September 2026 Steam survey](https://store.steampowered.com/hwsurvey/Steam-Hardware-Software-Survey-Welcome-to-Steam)
-reports the following interface-language shares:
+The shipped registry is the current selection. Steam-wide usage informed its
+initial order; it is a provisional signal, not evidence of Alchemy sales or
+player fluency. Use regional wishlists, traffic and community feedback when
+available, following [Valve's guidance](https://partner.steamgames.com/doc/store/localization).
 
-| Bundled language     | Survey share |
-| -------------------- | -----------: |
-| English              |       34.20% |
-| Simplified Chinese   |       31.39% |
-| Russian              |        9.05% |
-| Spanish–Spain        |        4.08% |
-| Brazilian Portuguese |        3.70% |
-| German               |        2.48% |
-| Japanese             |        2.41% |
-| French               |        2.08% |
-
-These shares sum to 89.39% of survey respondents' selected interface languages;
-they do not estimate Alchemy sales, incremental reach or player language fluency.
-Participation is optional and anonymous, and monthly shares fluctuate. Recheck the
-survey before committing the launch scope.
-
-The bundled selection reflects our inference from the survey, not a claim about
-deckbuilder purchasing behavior.
-Spanish–Latin America and European Portuguese are separate locales; do not count
-them as qualified by the Spanish–Spain and Brazilian catalogs.
-
-Keep future candidate languages disabled until their complete catalogs, AI semantic
-review, fonts, save/resume and rendered layouts pass. Each bundled language still
-requires the real Steam/Windows release gate above before its Steam support is
-advertised. Once a store page exists, use regional wishlists,
-traffic and community feedback to revise this order, as recommended by
-[Valve's localization guidance](https://partner.steamgames.com/doc/store/localization).
+Keep candidate languages disabled until catalogs, AI semantic review, fonts,
+save/resume and rendered layouts pass. Advertising support also requires the
+real Steam/Windows qualification above. Spanish–Latin America and European
+Portuguese are separate locales, not covered by Spanish–Spain and Brazilian catalogs.

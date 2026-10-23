@@ -48,14 +48,10 @@ cannot interrupt another observer or the action's resource cleanup. Disposal rev
 remaining captured listeners and queued publications before resetting private state;
 that final cleanup does not notify consumers of the closed session.
 
-At interaction time, those callbacks resolve gameplay before presentation:
-
-```text
-BattleScreen action → supplied battle command → command draft → lib/battle
-                    → committed snapshot + detached frames → presentation playback
-BattleScreenRoute → useBattleScreenRouteData → displayed frame, active combat, or retained outgoing display
-                  → useBattlePlayback → autoplay / auto-end-turn / playback binding
-```
+Commands follow the [architecture battle path](./ARCHITECTURE.md#battle-path)
+and [committed playback contract](./RUN_STATE.md#committed-battle-playback).
+The route selects display data through `useBattleScreenRouteData` and binds
+playback/automation through `useBattlePlayback`.
 
 - `useAlchemyRunController` exposes battle **commands** on `routeCommands.battle`. Battle **display** is local to `BattleScreenRoute` via `useBattleScreenRouteData`, which selects the current presentation frame or active combat and retains its outgoing data during settlement and fades. `createBattleSession` publishes the terminal presentation frame before calling an outcome command; clearing feedback cannot replace the outgoing enemy or hand with default data.
 - Autoplay / auto-end-turn **ticks** live in `useBattlePlayback` on that route. Session autoplay on/off lives in `useBattleController`. Playback how-to: [WORKFLOWS § Change battle playback](./WORKFLOWS.md#change-battle-playback).
@@ -80,15 +76,9 @@ Companions and drawing in the engine; the start command settles its Gold delta
 against the live purse and records earnings in the same transaction before
 publishing presentation feedback. Random boss selection and explicit
 boss validation remain separate commands.
-Campaign and Labyrinth enter through `enterRunRoom`, composing the same battle
-initialization operation with room progress and traits inside one transaction.
-The shell schedules Battle after acceptance and then calls `presentBattleStart`
-with detached opening feedback. If a Companion immediately ends combat, its
-outcome navigation supersedes the Battle request; history already exists when
-victory or defeat settles. Destination and Labyrinth map routing allow Rewards
-directly when opening combat ends before the Battle fade commits.
-Initialization errors roll back room entry; later
-presentation errors retain the complete committed room.
+Campaign and Labyrinth compose that initialization through `enterRunRoom` under
+[activity ownership](./RUN_STATE.md#activity-and-rewards). After acceptance, the
+shell calls `presentBattleStart` with detached opening feedback.
 
 Readiness and saving use [Boot and loading](./ARCHITECTURE.md#boot-and-loading) and the [Persistence API](./RUN_STATE.md#persistence-api).
 
@@ -101,7 +91,9 @@ Readiness and saving use [Boot and loading](./ARCHITECTURE.md#boot-and-loading) 
 
 ### Navigation timing
 
-`createScreenNavigation` in `shell/screen-navigation.ts` owns this sequence:
+`transition` is validated, delayed navigation; `navigateTo` is its convenience
+wrapper, and `goToScreen` also clears card hover. Flow navigation clears hover by
+construction. `createScreenNavigation` in `shell/screen-navigation.ts` owns this sequence:
 
 1. Check the guard, then validate the interactive edge against
    `ALLOWED_SCREEN_TRANSITIONS` in `src/lib/routing/screen-transition-policy.ts`.
@@ -135,56 +127,105 @@ owner without retaining the preceding owner's restore subscription.
 
 ## Playback lifetime and gameplay commands
 
-`run-loop/battle/playback-lifetime.ts` owns opening, ready, playing, finishing,
-and cancelled phases, plus the generation, abort signal, timers, transfer
-cancellation, draw counts, and autoplay binding. End-turn input is accepted only
-while ready; manual card plays may overlap card-draw presentation and remain
-available during victory grace. Late completions cannot unlock a newer lifetime
-or restart auto-end-turn in a finishing battle. Lifetime subscriptions publish
-phase changes so End Turn updates when opening or action playback completes,
-even after the final presentation update. React subscribes to binding
-readiness. Each generation is a distinct record containing its phase, abort
-controller, timers, cancellation callbacks, and draw counts. Phase admission
-requires the originating generation ID and reports rejection if an autoplay
-adapter or observer replaces it reentrantly. Callers stop presentation after
-rejection. Raw timer groups stay private; generation-scoped cleanup cannot
-cancel a replacement battle's timers. Autoplay binding replacement separately
-rejects an older bind if its cleanup installs a newer binding.
+`run-loop/battle/playback-lifetime.ts` owns each generation's phase, abort signal,
+timers, cancellation callbacks, draw counts and autoplay binding. Phases are opening,
+ready, playing, finishing and cancelled. React subscribes to binding readiness;
+phase subscriptions update End Turn even after the last presentation update.
 
-Hand reveals acquire a draw lease from this lifetime and release it on success,
-failure, or cancellation. Transfer visibility reads the same pending count; it
-never depends on a dependency object's identity. Card-action draw leases separately
-gate completion of overlapping card plays. Animation-frame waits belong to the
-lifetime and settle on cancellation even if the browser never delivers a frame.
-`playback-task.ts` owns single settlement and resource cleanup for frame waits,
-stable hand measurements, and timed card transfers. Each task registers with the
-existing lifetime, owns its visible transfer and pending callbacks, and releases
-them before completion or cancellation. Scheduling after settlement does nothing;
-cleanup returned by a synchronous completion is released immediately. Callback
-failures reject the task after cleanup rather than leaving a draw suspended.
-Lifetime cancellation revokes the generation before releasing timers, transfers,
-draw leases, and autoplay work, then notifies observers. Cleanup and observer
-failures are reported independently so one adapter cannot strand another task
-or prevent a replacement battle from becoming ready.
-Consumers supply cancellation fallbacks and presentation work; they do not
-reimplement completion flags or unregister/timer/frame cleanup ordering.
-`PlaybackLifetime.capture(generation)` supplies revocable scheduling and cancellation
-capabilities, including cancellable game-time waits. Autoplay preview and turn pacing use these waits; preview cancellation clears its own visual synchronously and leaves replacement previews intact. Fixed controller dependencies stay fixed while an explicit committed-input ref supplies changing screen and callback values. Transfer and draw dependencies are created for the generation that
-started the sequence; retained dependencies cannot acquire the replacement battle's
-resources. Their UI writes, measurements, completion callbacks, and delayed sounds
-also check that scope. Cancellation releases owned overlays before the replacement
-presentation starts; abandoned continuations cannot clear the new transfer gate.
+### Admission and cancellation
 
-`draw-sequence.ts` owns sequencing; `battle-transfers.ts` adapts DOM measurements,
-sounds, and transfer timers. End-turn cleanup resets hand transfer UI only after
-all animated draws have settled.
+| Event                        | Guarantee                                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| End Turn                     | Accepted only while ready                                                                                                            |
+| Manual card play             | May overlap draws and remain available during victory grace                                                                          |
+| Phase admission              | Requires the originating generation ID; reentrant replacement by an adapter/observer rejects admission and callers stop presentation |
+| Autoplay binding replacement | An older bind rejects if its cleanup installs a newer binding                                                                        |
+| Cancellation                 | Revoke the generation, release timers/transfers/draw leases/autoplay, then notify observers                                          |
+| Late completion              | Cannot unlock a newer generation, cancel its private timers, clear its transfer gate or restart a finishing battle                   |
 
-`battle-session.ts` reconciles committed screen changes. Leaving battle cancels
-the old lifetime; returning displays committed gameplay. A new battle prepared
-before its navigation fade commits retains its opening sequence. Terminal restored
-snapshots settle through the same victory/defeat callbacks as live battles.
-`battle-context.ts` supplies DOM refs and updates the stable controller's inputs
-after each React commit. Store commands own gameplay; hydration consumes legacy
-continuations before the UI observes a battle.
-Session reset cancels and clears presentation without publishing a gameplay
-command or retaining an unused opening snapshot in the run store.
+Cleanup and observer failures are reported independently; one failure cannot strand
+another task or prevent replacement readiness. `PlaybackLifetime.capture(generation)`
+binds scheduling, measurements, UI writes, completion callbacks and delayed sounds
+to their originating generation. Retained dependencies cannot acquire replacement
+resources. Owned overlays release before replacement presentation begins.
+Scoped game-time waits own autoplay previews and turn pacing. Preview cancellation
+clears its visual synchronously without clearing a replacement preview.
+
+### Draw and transfer resources
+
+Hand reveals acquire draw leases and release on success, failure or cancellation.
+Visibility uses the shared pending count, never dependency-object identity;
+card-action leases separately gate overlapping play completion.
+`playback-task.ts` owns single settlement and cleanup for frame waits, stable hand
+measurements and timed transfers. Each registered task releases visible transfers
+and pending callbacks before settlement. Cancelled frame waits settle even when the
+browser delivers no frame. Scheduling after settlement does nothing; cleanup returned
+by synchronous completion releases immediately. Callback errors reject after cleanup.
+Consumers supply presentation and cancellation fallbacks rather than duplicating
+completion flags or cleanup ordering.
+
+`draw-sequence.ts` sequences work; `battle-transfers.ts` adapts DOM measurements,
+sounds and timers. End-turn cleanup resets hand transfers after all draws settle.
+
+### Route lifetime
+
+`battle-session.ts` follows committed screen changes: leaving cancels playback;
+returning displays committed gameplay. A battle prepared before its navigation fade
+commits retains its opening sequence. Terminal restored snapshots use live outcome
+callbacks. `battle-context.ts` supplies refs and fixed controller dependencies;
+an explicit committed-input ref supplies changing screen and callback values
+after each React commit. Hydration consumes legacy continuations before presentation.
+Session reset cancels and clears presentation without a gameplay command or retained
+unused opening snapshot; commands remain the gameplay owner.
+
+## Playback and automation rules
+
+### Autoplay selection and scheduling
+
+`battle/playable-hand.ts` owns Card/Wish picks (`findBestPlayableHandCard`,
+`findBestWishChoice`). Autoplay excludes potentially lethal self-costs, then chooses the highest
+`getEffectiveDamageScore`, breaking ties leftward. At half Health or below it
+restricts hand picks to defensive cards when any are playable. Wishes prefer
+safe choices, fall back to the whole offer if none are safe, and preview on hover.
+`src/lib/battle/autoplay-policy.ts` owns live scoring and is shared by the balance
+simulator; independent simulation policies stay in the simulator.
+
+`use-battle-autoplay.ts` selects a ready action; `battle/autoplay-driver.ts`
+(`driveAutoplay`) schedules one loop without owning selection or input gates.
+Readiness/retry updates cannot shorten the post-play pause, measured from successful
+play start. Transfer time counts toward it; a longer transfer adds no extra pause.
+Teardown cancels either wait. Recheck current playback gates before the next play.
+
+Previews are uncommitted. The route forwards the driver's abort signal and live
+eligibility check to the card handler. Disabling autoplay or unmounting cancels
+preview; after its delay recheck session/input eligibility before committing.
+Cancelled work cannot clear a newer preview.
+
+### Manual input, draws and automatic turn ending
+
+Manual plays commit immediately during other draws or hand reflow; only incoming
+hidden cards and actual turn transitions are unavailable. Resolve cards by stable
+hand identity. Preserve immutable hidden-hand keys and callback binding.
+Autoplay, auto-end-turn and End Turn share `isBattlePlaybackBlocked` in
+`battle/playback-gate.ts`. Each action goes through `presentCombatTexts` in
+`battle/controller-utils.ts` under [battle feedback](./UI_BATTLE.md#battle-feedback).
+
+Concurrent draws preserve one another's hidden cards and transfers; settlement
+checks current battle state. Explicitly schedule auto-end after draws/resume,
+independently of React battle-state ticks. Opening Menu cancels the countdown;
+closing it starts a fresh normal countdown only if eligible. On expiry, recheck
+current playback gates and hand playability.
+
+Wishes wait for active card transfers. Draw-and-Wish cards show draws first;
+queued Wishes also wait for the prior chosen card to reach the hand. Use the
+existing transfer-in-progress signal without delaying gameplay commits.
+
+### Outcome timing
+
+Defeat settles synchronously in transition `prepare`; only navigation waits.
+Retain the terminal frame through delay/fade under [data flow](#data-flow).
+Keep [battle timing](../src/lib/game-constants/battle-timing.ts) aligned with
+`combatant-attack-lunge` in [keyframes](../src/styles/keyframes.css) and the shake
+delay in [theme styles](../src/styles/theme.css). [Battle motion](./UI_MOTION.md#battle-motion)
+owns death, survival and lunge composition. Mid-enemy-turn reload skips playback
+under [committed battle recovery](./RUN_STATE.md#committed-battle-playback).

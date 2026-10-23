@@ -20,47 +20,38 @@ card, healing meter, changed value, or selected state can communicate the outcom
 
 ## Every player action receives feedback
 
-Every supported player action must produce a timely, perceivable response that
-acknowledges the input and communicates its outcome. Visible feedback is the
-baseline; audio may reinforce it. Essential meaning must remain understandable
-with sound muted. Apply this core design principle to all UI, UX, and gameplay
-design, implementation, and review.
+Every supported pointer, keyboard and gameplay action needs a timely, visible
+response that acknowledges input and communicates its outcome. Audio may reinforce
+it; essential meaning must survive mute or playback failure.
 
-- Cover pointer actions, keyboard activation, focus and navigation, selection, dismissal, and gameplay actions. Equivalent input methods must communicate the same result.
-- A changed screen, visible focus or selected state, updated value, or clear gameplay reaction can satisfy the principle. Reuse shared feedback before adding effects; add extra effects only when they improve clarity.
-- Acknowledge delayed actions promptly, show that work is pending, then communicate completion or failure. Distinguish input acknowledgment from successful completion.
-- Explain rejected or ineffective actions. Disabled controls must communicate unavailability and its reason through existing inspection or focus patterns without implying success. Valid actions with no effect still need acknowledgment; follow the existing [battle feedback](./UI_BATTLE.md#battle-feedback) conventions for their presentation.
-- Match feedback strength to importance and frequency. Keep repeated actions readable without overwhelming animation or sound; group related outcomes where existing presentation rules allow it.
-- Preserve meaning under existing motion preferences, mute settings, and audio failures. Static state changes can carry the same meaning as motion. Follow the existing [accessibility stance](#accessibility-stance), [motion](./UI_MOTION.md), and [audio contract](./AUDIO.md#runtime-contract).
-- Feedback must reflect resolved gameplay. Animation or sound completion must never determine whether an accepted action commits; preserve the [turn presentation](./GAME_RULES.md#state-turns-and-randomness) contract.
-- Unbound keys and clicks on noninteractive scenery require no reaction.
+- Use changed state, focus, selection, resource values or resolved gameplay to
+  communicate success. A selected tab can rely on its selected state and press feedback.
+- For delayed work, acknowledge input promptly, show pending state, then success
+  or failure. A purchase-success cue must never acknowledge insufficient Gold.
+- Explain rejected or ineffective actions through existing feedback/inspection.
+  Disabled controls expose their reason on inspection or focus. Valid no-effect
+  actions follow [battle feedback](./UI_BATTLE.md#battle-feedback).
+- Match feedback strength to consequence and frequency, using shared effects and
+  grouping. Preserve meaning with existing motion preferences and muted or failed audio.
+- Equivalent inputs communicate the same result. Unbound keys and noninteractive
+  scenery need no reaction. Animation and sound never decide gameplay acceptance.
 
-### Examples
-
-| Action                                    | Expected feedback                                                                                                                                              |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Select a tab                              | The active tab and displayed content visibly change; selecting the current tab can rely on its existing selected state and press feedback.                     |
-| Attempt a purchase with insufficient Gold | The unavailable purchase and required Gold are clear, with a reason available on inspection or focus; do not play a purchase-success cue.                      |
-| Play a card                               | Acknowledge the play and show the resolved card movement, resource changes, and affected combatants' outcomes, using the existing battle feedback conventions. |
-| End Turn                                  | Acknowledge the accepted action and make the discard, enemy, and next-hand sequence visible; gameplay commits independently of playback.                       |
-| Craft an item                             | Show pending state if needed, then the resulting item and spent materials; explain rejection or failure without presenting a successful craft.                 |
-
-### Why this matters
-
-- **Confidence and control:** timely feedback lets players tell whether input registered, understand the current state, and choose their next action. It reduces uncertainty and repeated clicks caused by uncertainty. [Nielsen Norman Group, Visibility of System Status](https://www.nngroup.com/articles/visibility-system-status/)
-- **Game feel and learning:** clear reactions connect actions to consequences and communicate the importance of game events. Pichlmair and Johansen's survey describes feedback amplification as supporting clarity and player empowerment; in Alchemy, these cues should help players understand outcomes as well as feel their impact. [Designing Game Feel: A Survey](https://arxiv.org/abs/2011.09201)
-- **Perceivability:** complementary visual and audio cues help players perceive information when one channel is unavailable. The visual baseline is Alchemy's chosen policy, informed by this guidance; it does not imply adoption of the full guideline set. [Xbox Accessibility Guideline 103: Additional channels for visual and audio cues](https://learn.microsoft.com/en-us/xbox/accessibility/xbox-accessibility-guidelines/103)
+This policy follows the usability rationale in
+[Nielsen Norman Group's visibility principle](https://www.nngroup.com/articles/visibility-system-status/),
+[Designing Game Feel](https://arxiv.org/abs/2011.09201) and
+[Xbox's complementary-channel guidance](https://learn.microsoft.com/en-us/xbox/accessibility/xbox-accessibility-guidelines/103).
+Alchemy's [accessibility stance](#accessibility-stance) defines its actual scope.
 
 ## Guide index
 
-| Topic                                                             | Guide                              |
-| ----------------------------------------------------------------- | ---------------------------------- |
-| Shared components, buttons, sizing, colors, accessibility         | This page                          |
-| Hover tooltips, modal input, focus and dismissal                  | [Interaction](./UI_INTERACTION.md) |
-| Screen fades, battle and equipment motion                         | [Motion](./UI_MOTION.md)           |
-| Combat feedback, deck and enemy inspection, Corrupted text        | [Battle UI](./UI_BATTLE.md)        |
-| Collection, Homestead, Armory, rewards, Wishes, Options and recap | [Browsing](./UI_BROWSING.md)       |
-| Discovery, map layout and room inspection                         | [Labyrinth](./UI_LABYRINTH.md)     |
+| Topic                                                                      | Guide                              |
+| -------------------------------------------------------------------------- | ---------------------------------- |
+| Shared components, buttons, sizing, colors, accessibility                  | This page                          |
+| Hover tooltips, modal input, focus and dismissal                           | [Interaction](./UI_INTERACTION.md) |
+| Screen fades, battle and equipment motion                                  | [Motion](./UI_MOTION.md)           |
+| Combat feedback, deck and enemy inspection, Corrupted text                 | [Battle UI](./UI_BATTLE.md)        |
+| Collection, Homestead, Talents, Armory, rewards, Wishes, Options and recap | [Browsing](./UI_BROWSING.md)       |
+| Discovery, map layout and room inspection                                  | [Labyrinth](./UI_LABYRINTH.md)     |
 
 ## Placement and boundaries
 
@@ -79,9 +70,18 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 - Generic interactive primitives preserve standard ARIA roles, names, values, keyboard behavior, and disabled states. Eligible talent nodes use native buttons for Enter and Space; keyword trees without portrait art remain selectable using a blank portrait and the keyword icon.
 - `Surface` is the shared interactive card/tile owner (`onClick` works for both `button` and `div` renderings; prefer `as="button"` for actions). Callbacks receive the chosen element's click event; keyboard activation of a div dispatches a click. `PortaledTooltip` with `TooltipPanel` owns tooltip chrome. `ShineText` with `GearItemTitle`/`TrinketItemTitle` (both in `gear-item-title.tsx`) own keyword/item shine typography. Gradient text resets inherited text strokes to keep letter interiors clean; use a dark drop shadow for contrast. Nonempty keyword palettes include the shared white shine highlight, including palettes with multiple keywords.
 - Item title and affix palettes follow [item shine](#item-shine).
-- Shop prices (over card art and inside buttons) use unboxed icon and amount standardized on `text-xl font-semibold text-gold-pale tabular-nums` with a 24px (`h-6 w-6`) coin icon. Over card art, prices float directly on the illustration using multi-layered black contour drop-shadows (`drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] drop-shadow-[0_0_2px_rgba(0,0,0,0.95)]`) without background containers or art fades; inside buttons, prices flow naturally as inline text matching the button's typography. Unaffordable prices transition to `text-muted-foreground`.
-- `TraitBox` owns unboxed Trait rows, colored icons, keyword descriptions, and title shine across Labyrinth map details and enemy hover/inspection. Traits have no individual border, background, or box padding. Encounter icon themes live in shared configuration and also drive map effects. Enemy Traits and encounter modifiers form one deduplicated list; inspection uses two equal columns at 40rem of available content width, with a single-column fallback and full-width sole Traits. Hover and map Traits stay stacked. Apply inline-size containment only to the inspection layout: shrink-to-fit tooltips need their contents to contribute intrinsic width.
+- Shop-specific price presentation follows [Browsing UI](./UI_BROWSING.md#shop-prices).
+- `TraitBox` supplies shared Trait presentation; [enemy inspection](./UI_BATTLE.md#enemy-inspection) owns its layout across hover, inspection and map details.
 - Modal interaction and dismissal follow [Overlay lifecycle](./UI_INTERACTION.md#overlay-lifecycle).
+
+`Progress` requires an accessible name (`aria-label` or `aria-labelledby`); `value`
+owns fill width, while `fillStyle` carries extra styling only. `ShineBorder` is
+decorative (`aria-hidden`) and absolute with inherited rounding: its parent must
+be relative and rounded. Empty palettes use neutral shine. Hover, focus and
+persistent shine are border-only, without outer glow; keep borders outside artwork
+clips. [Component styles](../src/styles/components.css) own opacity and transitions.
+Wildcard uses the same static border as other heroes. Turn indicators and
+Death's Door decoration retain border-only shine.
 
 ### Item shine
 
@@ -95,17 +95,16 @@ Astral definition-only previews use base affinities; Unique definition borders u
 
 ## Icons
 
-Lucide icons default to `0.9em` square and a `2.5` stroke in `src/styles/base.css`,
-matching label cap height and semibold weight. Put text size on the shared icon/label
+Lucide icons default to `1em` square and a `2.5` stroke in `src/styles/base.css`,
+matching the inherited text font size. Put text size on the shared icon/label
 container so both scale together; omit icon width and height utilities for text
 controls. Explicit dimensions are reserved for artwork, status markers, and
 comparison diagrams. Icon-only buttons set their font size through `Button`.
 
 ## UI gold palette
 
-General interface gold uses one warm family: base `#cd9b51`, light `#e6c58e`,
-deep `#986b32`, and pale `#f3e4ca`. `UI_GOLD` in
-`src/lib/game-constants/ui-colors.ts` owns the hex values needed by plasma;
+General interface gold uses one warm base/light/deep/pale family.
+[`UI_GOLD`](../src/lib/game-constants/ui-colors.ts) owns the hex values needed by plasma;
 `src/styles/theme.css` mirrors them as `gold-base/light/deep/pale` utilities.
 Architecture smoke enforces parity. Primary controls use base gold, availability
 borders pulse light → deep → light, and prices and warm headings use pale gold.
@@ -138,11 +137,13 @@ Which control to reach for: `Button` owns text/label actions (Play, Back, Confir
 
 Card and collection artwork, including gear and trinket tiles, reserves a 1px frame across available, selected, disabled, purchased, and shine states, so changing interaction state cannot resize its artwork or row or recenter the screen. The thicker hover and selection outline is an absolute overlay, preserving the thin default border. Hover-only shine uses `card-art-shine`; persistent shine uses `has-shine-border`. Armory item borders are hover-only, with keyboard focus matching hover; the active equipment slot keeps its shine as a selection marker. Both hide the frame color while preserving its space. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
 
-The gold counter and the main menu logo use the standard 103.5% CSS hover scale over 200ms ease-out. Individual mana crystals stay at their resting size on hover and play a brief glint masked to their artwork, preserving their independent refresh animations and dim spent appearance. Reduced motion keeps the crystals static. Battle's End Turn is an outline text button above the bottom-right Discard Pile. A valid activation ends the turn immediately, without confirmation. Mana crystals sit above the bottom-left Draw Pile.
+The gold counter and Main Menu logo use the standard 103.5% CSS hover scale over
+200ms ease-out. Battle controls follow [Battle layout](./UI_BATTLE.md#battle-layout).
 
 Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
 
-Labyrinth's rectangular art nodes reuse `Surface`, shared shimmer, and Shine Border. Hover, keyboard focus, and selection enlarge only the emphasized tile to 106%; unknown tiles stay neutral. Completed art remains subdued. Reduced motion makes emphasis immediate and shine static. See [Labyrinth map](./UI_LABYRINTH.md#labyrinth-map) for discovery and movement.
+Labyrinth nodes reuse `Surface`, shimmer and Shine Border under the
+[map interaction and presentation contract](./UI_LABYRINTH.md#labyrinth-map).
 
 ## Accessibility stance
 
@@ -175,37 +176,18 @@ Keep full available-space geometry for Battle, Armory, and Labyrinth. Do not use
 viewport-height minimums to add empty space to ordinary pages.
 
 Use one 24px gap in content units between a header and its main body. Meaningful
-helper text uses 12px above it and 16px before the primary content. Talents uses
-one 16px header gap, with no additional pane top padding. Preserve bounded
-resource, selection, and talent-footer reservations needed for stable actions;
-size those reservations in content units.
+helper text uses 12px above it and 16px before the primary content. Preserve bounded
+resource, selection and footer reservations needed for stable actions;
+size those reservations in content units. [Talents](./UI_BROWSING.md#talents) has its own header gap.
 
-Card Shop removal keeps its height-aware picker inside a centered, content-scaled
-maximum height and standard page gutters. Its available fitting area can shrink
-on short windows without stretching the footer toward taller window edges.
-
-Collection and Homestead center real items in wrapping rows, without layout-only
-fillers. Both reserve two portrait rows and a pagination slot on every tab and
-page, keeping headers, tabs, and pagination stationary while the complete group
-stays screen-centered. Shorter grids center within that reserved area;
-single-page tabs leave the pagination slot empty. Picker measurement containers
-must receive available width independently of their rendered card count, so
-resizing cannot feed a narrower row back into its own column calculation.
-
-Homestead's artwork sizing, purchase states, and reset interaction follow the
-[Homestead gallery contract](./UI_BROWSING.md#homestead-gallery).
-
-Desktop Main Menu pairs Quit on the bottom left with Options on the right. Quit
-uses a rose-colored Power icon; browser Options remains centered. Demo completion
-uses standard page gutters and fits its complete image into the remaining area.
-The loading caption preserves 12px at the reference viewport and follows the
-game's proportional scale from there. Error Log scroll caps use stage units.
+Picker measurement containers receive available width independently of rendered
+item count, preventing resize feedback into their own column calculation.
+Screen-specific geometry belongs in [Browsing](./UI_BROWSING.md),
+[Battle](./UI_BATTLE.md) and [Labyrinth](./UI_LABYRINTH.md).
 
 ## Display sizing
 
 On macOS, both desktop fullscreen modes fill the entire display, including the area beside the camera notch, using Electron simple fullscreen. They stay on the current desktop rather than opening a native fullscreen Space. Windowed mode restores the standard movable, resizable window. Do not request native or HTML fullscreen on macOS: it reserves a black strip at the notch.
-
-Talents on the end-run screen and Mystery rewards keep fixed-width boxes in centered, balanced rows. Use the fewest rows that fit (up to five boxes per row), distribute counts with at most one box of difference, and place larger rows first. Recalculate when available width or Game Size changes.
 
 The virtual stage owns available-space geometry and battle coordinates. It
 always fills the available viewport without letterboxing. Viewport dimensions
@@ -229,13 +211,6 @@ baseline (738 / 1080), multiplied by Tooltip Size (90–125%, 5% steps). Tooltip
 Size remains a relative adjustment; it does not change game layout or impose a
 separate growth curve. Text, icons, spacing, and panels inherit that scale once.
 
-Enemy hover Traits use the explicit compact presentation: 14px headings, 12px
-descriptions, 24px icons, 8px row and inter-trait gaps, and 3px between the title
-and description at authored tooltip scale 1. This is an exception
-to the general small-text baseline. These dimensions use `--content-rem` and
-inherit the shared tooltip scale once. Enemy inspection and Labyrinth chamber
-details retain the default Trait presentation.
-
 The stage's `--content-scale` is visible content scale divided by stage scale.
 Inline Tailwind theme tokens and `--content-rem` size text, controls, cards,
 spacing, and panels once. Percentage anchors and layout regions follow the
@@ -243,34 +218,8 @@ stage. Authored arbitrary content dimensions must use the content unit; do not
 use raw container-height units as the primary card size. Available-space caps
 are allowed: the battle hand caps card height and compresses its fan into the
 reserved center region.
-The hand rests against the bottom viewport edge, centered with capped spacing and
-responsive card sizing. Draw Pile sits beside the hand's left edge and Discard Pile
-beside its right, both with their pile artwork in the bottom corners. Clicking either
-pile opens only that pile in the shared card viewer. All battle transfer and feedback
-coordinates use the full viewport scene.
-Mana crystals sit centered above Draw Pile in the left bottom column. Their shallow
-curved arrangement, recessed settings, spending, refill, capacity, hover glint, glow,
-and shard effects remain intact. Full crystals retain subdued Mana blue; spent
-crystals are dim grayscale. Increasing counts gradually shrink the crystals and
-effects; the row caps at nine. Beyond nine, the final crystal carries a +N badge.
-Exact current and maximum Mana remain in accessible inspection, without a persistent
-numerical readout.
-The top-right battle cluster shows live Gold before deck inspection, the Autoplay and
-Boons toggles, the dev-only Skip Combat control, and Menu. Gold briefly highlights on
-increases. End Turn is an outline text button above Discard Pile and commits
-immediately after input gates pass. Dev-only Skip Combat uses a labeled skip-forward
-icon and tooltip.
-The hand's bottom dock stays centered and stationary as the hand grows to seven
-cards; smaller hands remain centered with capped spacing. Every resting card
-touches or overlaps the bottom edge; playable card centers stay visible. Hover
-and keyboard focus lift cards for inspection. Hand hover and pointer
-activation use the nearest stable slot center, with boundaries halfway between
-centers, independent of raised artwork and reflow motion. Hidden transfer cards
-cannot receive pointer selection. Keyboard focus uses the native card buttons.
-The player, companion, and enemy groups sit 5% of the full battle viewport height
-lower than their baseline anchor, including health bars and statuses. Enlarged
-actors retain the upward Game Size compensation to keep health and battle controls clear. Backgrounds
-fill the frame.
+Battle-specific hand, Mana, toolbar and actor geometry follows
+[Battle layout](./UI_BATTLE.md#battle-layout).
 
 ## Verification
 
@@ -281,42 +230,12 @@ or browser-journey work also follows [tests/e2e/README.md](../tests/e2e/README.m
 
 ## Plasma availability
 
-`KeywordPlasmaBackground` uses the single WebGL renderer entry point in
-`keyword-plasma.ts`. A failed context/shader setup or lost context shows a static
-CSS gradient with the same interaction colors, focal offset, blending, and
-intensity. Hide that gradient while WebGL is available to avoid doubling the
-glow. Context restoration rebuilds resources once; do not poll or keep a second
-animated Canvas backend. Zero intensity hides both layers, and motion-disabled
-preferences keep their existing unanimated appearance without color-animation
-frames. Availability belongs to the renderer lifecycle; failures are logged,
-not shown in a player-facing dialog.
+Plasma has one WebGL renderer with a matching static CSS fallback when unavailable.
+Zero intensity hides both; motion-disabled preferences stay unanimated. Hover colors
+retarget smoothly while object highlights respond immediately.
+[Canvas rendering](./UI_MOTION.md#canvas-rendering) owns failure, cleanup and rendering limits.
 
-Renderer construction owns rollback until it returns its disposer. Canvas setup
-failure cancels scheduled frames and releases installed observers/listeners; plasma
-setup also releases allocated shaders, buffers, and programs. Disposal is
-idempotent and attempts all renderer cleanup even when a wake adapter fails.
-Context replacement revokes the old renderer before invoking host callbacks.
-Startup, teardown, and availability observer failures are logged independently;
-a failed startup retains the static fallback and can retry on context restoration.
-
-Hover and leave update the plasma color target immediately. The displayed colors
-use a critically damped transition that retains momentum when retargeted.
-Object highlights remain immediate.
-The glow is 20% dimmer at every nonzero intensity setting, including the static fallback.
-The WebGL renderer retains its single render pass, 30 fps pacing, and 1.5 million
-backing-pixel cap. Its existing opacity dithering remains; no higher-resolution
-output pass is used. Banding can still be visible depending on browser compositing
-and the display. Panel technology is not detected.
-
-## Display options
-
-Display groups Display Mode (desktop only), Brightness, Game Size,
-and Tooltip Size together. The Background section contains Background Glow and
-Background Particles. Screen Effects and Drifting Lights have been removed,
-including their renderers and saved preferences. Reset to Default restores the
-remaining preferences and device sizes.
-
-### Pending saves and action feedback
+## Pending saves and action feedback
 
 Persisted actions acknowledge input immediately with Saving… and `aria-busy`.
 Completion feedback, changed progress values, and onward progression wait for a

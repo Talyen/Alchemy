@@ -1,7 +1,5 @@
 # Test Quality Audit
 
-Merges the former E2E Test Reliability & Signal (10) and Unit Test Portfolio (17) audits.
-
 **Goal:** Maximize portfolio trustworthiness and defect detection while controlling redundant LOC, runtime, flake, and maintenance cost — across Vitest units and Playwright journeys.
 
 Conventions: [tests/e2e/README.md](../../tests/e2e/README.md) (helpers, tags, fixtures), [CONTRIBUTING.md](../../CONTRIBUTING.md) (changed paths, CI tiers), and [test value](../../CONTRIBUTING.md#test-value-and-coverage-strategy) (coverage selection, consolidation, retirement, and reporting).
@@ -17,33 +15,42 @@ Product interaction defects → UIConsistency; structural test-support mass → 
 
 ## Hard stops
 
-- Follow the shared test value policy and configured gates; diagnose failing journeys before deciding whether their expectations remain valid.
 - No dev-only QA shortcuts (Skip Combat / Unlock All selectors); use documented helpers and flows.
 - Follow [tests/e2e/README.md](../../tests/e2e/README.md) for current fixture and animation-canary requirements; preserve real timing where timing is the behavior under test.
 - Do not re-run full suites to hunt flakes; re-run only the suspect cluster.
 
 ## Investigation and evidence
 
-Map important failure modes to their current tests before adding or deleting coverage. A gap means a concrete risky behavior has no trustworthy assertion, not simply that a line is uncovered. For a suspicious test, identify a plausible broken implementation that would still pass. Use a focused temporary mutation or a known regression when useful, and restore it before handoff; do not require broad mutation testing for every finding.
+Map consequential failure modes to current assertions. For a suspect test, show a
+plausible broken implementation that would pass; use a focused temporary mutation
+or known regression when useful, restoring it before handoff. Broad mutation testing
+is optional.
 
-For flake, inspect failure artifacts and distinguish a product race from timing, isolation, fixture, or environment problems. Reproduce the suspect scenario and relevant ordering or concurrency conditions; an isolated pass does not prove a parallel failure fixed. Never weaken an assertion or add retries just to hide the failure.
+For flake, distinguish product races from timing, fixture, isolation and environment
+failures. Reproduce the relevant ordering/concurrency; one isolated pass cannot
+establish a parallel failure fixed. Do not weaken assertions or add retries to hide it.
 
-Use the shared high-, medium-, and low-value definitions when evaluating additions and retention. Remove encountered low- and medium-value tests by default after checking their purpose and dependencies, or strengthen/move them when inexpensive high-value protection is possible. Unique coverage alone does not require retention or replacement; justify borderline retention and report material accepted risks.
+For overlaps, compare surviving failure detection, layer and CI tier under the
+[test value policy](../../CONTRIBUTING.md#test-value-and-coverage-strategy).
+Verify changed tests detect the intended failure and pass correct behavior. Report
+runtime conditions and repetitions; bounded success is not a zero-flake guarantee.
 
-For overlapping tests, compare the failure mode, layer, and CI tier of the surviving assertion. Prioritize false confidence in critical behavior and blocked verification over redundant assertions or naming; apply the shared policy when retiring coverage.
+## Investigation leads
 
-Verify changed tests detect the intended failure and pass on correct behavior. For runtime or flake claims, compare the same scenario and report repetitions and conditions; bounded success is evidence, not a guarantee of zero flakes.
+Assert outcomes such as Health deltas, events and reloaded saves, never function
+existence or log fingerprints. Do not use soft-failing assertions.
 
-## Domain rules
+| Signal                                                                                 | Question / supported remedy                                                                                                                                            |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Exact catalog counts, pixel tables, trivial round trips, empty tests or log assertions | What consequential broken behavior would pass? Prefer actual outcomes and the cheapest effective layer; seed combat randomness and reuse corrupt/partial save fixtures |
+| `waitForTimeout`, index chains, text-only localization queries, QA shortcuts           | Can stable roles/test IDs, documented page objects/helpers and state readiness make the journey reliable without bypassing real behavior?                              |
+| Duplicate journeys across tiers, isolated-only success, uncontrolled clocks/state      | Compare distinct failure detection, CI placement and isolation; never copy a journey only for scheduling                                                               |
+| Weak/soft-failing assertions or surprising coverage gaps                               | Use a focused temporary mutation or known regression; broad mutation/coverage sweeps are optional, not automatic requirements                                          |
+| Slow or high-upkeep scenarios                                                          | Retire weak tests within the shared policy, strengthen high-value protection, shorten deterministic waits and improve diagnostics; retain real-timing canaries         |
 
-- **Ownership:** battle/effects → `tests/lib/battle`, `tests/lib/game-data`; gear → `tests/lib/gear` + store tests; saves/migrations → storage + `tests/architecture/`; orchestration → stores/shell/navigation tests. Reuse page objects (`tests/pages/`) and helpers; introduce support abstractions only when they clarify a real interaction or invariant.
-- **Quality:** assert outcomes (HP deltas, events, reloaded save shape), not implementation details or log fingerprints; no "function exists" assertions; no soft-fails; seeded RNG for battle edges; reuse corrupt/partial save fixtures.
-- **Allowed E2E fixes:** actively retire low- and medium-value journeys under the shared test value policy; add missing high-value critical journeys; shorten waits after deterministic bootstrap; place journeys in the configured tiers without copying them solely for scheduling; stable roles/test ids over text/index hunts; repair isolation; improve diagnostics.
-
-## Known signals
-
-- `waitForTimeout`/`sleep(` in tests; `.nth(n)` chains or localized-text-only queries; QA-shortcut selectors.
-- Same journey asserted in both `@critical` and a slower tier; specs passing alone but failing after siblings (state leakage).
-- Exact catalog counts, pixel tables, plain-struct round trips, empty/commented tests, hidden soft failures, multi-second unit waits.
-- Assertions on error message text instead of typed kinds; mutation-resilient suites; uncontrolled clocks/RNG/shared state.
-- Coverage gaps (discovery: `npm run test:coverage`) on `src/lib/battle`, `src/lib/gear`, storage, validation branches; `npm run test:e2e:audit` timing/flake reports as supporting evidence.
+Tests follow source owners: battle/effects under `tests/lib/battle` and
+`tests/lib/game-data`, Gear under `tests/lib/gear` plus stores, saves under storage
+and `tests/architecture`, orchestration under stores/shell/navigation.
+Use `tests/pages` and existing helpers; add support abstractions only for a concrete
+interaction/invariant. `npm run test:coverage` and `npm run test:e2e:audit` provide
+supporting discovery evidence, not targets or proof of test value.

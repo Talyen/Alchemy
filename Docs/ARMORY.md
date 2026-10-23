@@ -42,7 +42,11 @@ Hero.
 - Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata. Placement presets in `base-items.ts` bind legal slots and hand rules together. One-handed melee weapons and wands may occupy `main-hand` or `off-hand`; two-handers and ranged weapons stay main-hand only (ranged pairs with a quiver off-hand).
 - `loadout-operations.ts` owns one private hand-pair resolver shared by slot validation, equipping, and saved-loadout repair. Equipping preserves the incoming hand by displacing a conflicting item; save repair preserves main-hand by clearing an invalid off-hand. Quiver requirements reject incompatible selections (including a shield beside a bow or a melee weapon beside a Quiver). Equipping body armor or accessories preserves valid hand pairs. The Armory grid checks legality through `isGearCompatibleWithLoadoutSlot`; `equipGear` applies the same resolution. `pruneOrphanGearLoadouts` removes orphan and duplicate references before validating each hero's hand pair; invalid off-hand references do not reserve another hero's equipment. Save parsing repairs each slot separately so a malformed slot cannot erase valid neighboring equipment; removing, salvaging, or transferring a bow also unequips its unsupported Quiver without removing the Quiver from inventory.
 - Gear slots are `main-hand`, `off-hand`, `body`, `left-accessory`, and `right-accessory`. Both Accessory slots accept Rings or Amulets. The Armory lays these out over `left-accessory | trinket | right-accessory`; the dedicated Trinket slot accepts only permanent Trinkets.
-- **Unique** is a third Gear rarity (alongside basic and astral). Each base item has exactly one named Unique with one exclusive signature and three fixed standard supporting affixes. Signature affixes supply the item's default ID and title; `unique-catalog.ts` keeps explicit overrides where item and affix identities differ. Supporting rolls always use the standard Unique/Astral maximum from the affix catalog; the signature has its own fixed magnitude. Generation, tooltips, manifests, and saved-item normalization share these canonical affixes, and saved Unique instances store no rolls at all — older saves carrying stored rolls converge on the catalog at load without changing identity, ownership, or Collection discovery. Crafting currencies cannot modify uniques. Unique salvage follows the crafting and homestead salvage definitions. Collection tracks discovered unique definition IDs independently of current inventory, so salvage does not hide an already-found unique.
+- **Unique** is the third Gear rarity alongside Basic and Astral. Each base has
+  one named Unique; saved instances retain identity and resolve canonical fixed
+  affixes. [Unique items](./UNIQUE_ITEMS.md#affix-contract) owns signature/supporting
+  affixes, roll normalization and crafting restrictions. Collection discovery
+  survives salvage.
 - Uniqueness is inventory-scoped: a unique definition is excluded from shops and rewards while any character still holds an instance. Salvaging it returns that definition to the drop pool. Reward and shop screens never offer the same unique twice, and never pair a unique with another item of the same base item.
 
 Presentation follows [UI item shine](./UI.md#item-shine). Pass affix identity and normalized values together so tooltip text and max-roll shine use the same item data.
@@ -74,7 +78,22 @@ Edit the source weights and progression points in `run-rewards.ts`, then run `np
 
 ## Materials tuning
 
-Homestead material payouts are tuned separately from gear offers in `src/lib/game-constants/materials-economy.ts`. Combat victories use a shared pool independent of enemy identity: Normal encounters pay 3/4/5 materials across bands 1/2/3, Elites pay 5/6/7, and Bosses pay 8/10/12. Campaign uses the current act, Labyrinth the current floor, and Wildwood the current boss number; bands cap at 3. Each bundle of two picks one of all seven materials with equal odds and replacement; odd totals end with a single-material roll. The seeded reward stream owns every roll. `computeCombatMaterialReward` applies scavenger doubling and the herbalist bonus before Homestead find bonuses. Mystery grants use `computeMysteryMaterialReward`. Find bonuses add across nodes, then multiply each matching source quantity once and round with `Math.round`, without extra RNG. Gold find bonuses affect victory and Mystery payouts, excluding other generated Gold and the existing purse. Salvage and run-end accounting never apply find bonuses. The policy in `src/lib/homestead/material-rewards.ts` owns quantity calculation. The seeded report in `reports/loot-progression/materials.html` (built by `npm run balance:loot`) shows mean base payouts per progression band and encounter type; build-dependent modifiers are not simulated.
+[Materials economy](../src/lib/game-constants/materials-economy.ts) owns base payouts
+by encounter type and progression band. Campaign uses the act, Labyrinth the floor,
+and Wildwood the boss number, capped at the final band. Rewards are independent of
+enemy identity; each pair samples one of the seven materials uniformly with replacement,
+and an odd remainder uses one final roll from the seeded rewards stream.
+
+| Stage                          | Rule / owner                                                                                                                                                              |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Combat base and room modifiers | `computeCombatMaterialReward` applies Scavenger doubling and Herbalist before find bonuses                                                                                |
+| Mystery base                   | `computeMysteryMaterialReward` uses the authored grant                                                                                                                    |
+| Homestead find bonuses         | Add matching node bonuses, multiply each source quantity once, then `Math.round`; no extra RNG                                                                            |
+| Exclusions                     | Salvage and run-end accounting never apply find bonuses; Gold find bonuses affect victory and Mystery payouts only, excluding other generated Gold and the existing purse |
+
+[Material reward helpers](../src/lib/homestead/material-rewards.ts) own these calculations.
+`npm run balance:loot` writes `reports/loot-progression/materials.html` with mean
+base payouts by band and encounter type; it does not simulate build-dependent modifiers.
 
 ## Inventory ordering and equipment movement
 
@@ -139,7 +158,7 @@ Homestead mutation timing remains unchanged.
   - Save repair imports its rule owners directly, without depending on crafting.
 - **Aggregate** — `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec), `gear-actions.ts` (draft mutations including inventory salvage), and `gear-session-command.ts` (HP-sync wrapper)
 - **Screen** — Armory route (`meta-routes.tsx`) → `routeCommands.meta.armory` → `armory-screen.tsx`
-- **Battle** — `computeGearManifest` → `BattleState.gearEffects`; rebound on live meta mutation
+- **Battle** — [manifest integration](#battle-integration)
 - **Persistence** — `subscribeAlchemyPersistence` / `buildAlchemySaveDataFromStores` + immediate `flushSaveAfterGearMutation` (fire-and-forget; autosave owns retry)
 
 ### Read paths
@@ -147,7 +166,6 @@ Homestead mutation timing remains unchanged.
 - **Armory access** — the Main Menu always offers Armory, including before any Gear or Trinkets are owned. Combat preserves browsing but makes the battling hero’s Armory tab read-only through `useGearCombatRestrictions`; see [Combat equipment restrictions](#combat-equipment-restrictions).
 - **`ArmoryScreen`** — reads Gear, Trinket ownership/equipment, and crafting currencies via `useGearArmorySlice`, combat reservations via `useGearCombatRestrictions`, plus finished-run characters.
 - **Interaction policy** — `armory-item-state.ts` owns inventory/equipment click decisions alongside targeting affordances. Equipped slots retain locked browsing; inventory tiles retain reservation and compatibility guards. `use-armory-targeting-state.ts` owns mutually exclusive idle, salvage, currency, and salvage-confirmation modes through intent callbacks. Store commands still validate authoritative mutations.
-- **Battle** — `computeGearManifest` is applied at battle start and rebound onto the live `BattleState` whenever gear, talents, or homestead change.
 - **Run start** — `run-start-command.ts` snapshots `computeGearManifest.maxHealth` into `RunStartSnapshot.gearMaxHealthBonus`.
 
 ### Write paths
@@ -188,7 +206,7 @@ Crafting and dev spawning accept profile-lifetime randomness, defaulting to
 its career crafting source through the same `applyCurrencyToGear` command.
 Rewards and shops grant instances and permanent Trinkets through
 `deck-mutations.ts` within their existing commands, retaining discovery and run
-recap accounting. Acquisition never auto-equips or creates a Boon.
+recap accounting. Acquisition follows the [Auto Equip policy](#data-model); it never creates a Boon.
 
 ### Salvage materials
 
@@ -258,19 +276,23 @@ a dependency of manifest construction. Preserve row order when editing: seeded
 Gear generation depends on it. Catalog construction rejects duplicate affix IDs;
 shared content validation owns display-name, roll-range, and ordinary-affix reachability checks.
 
+Forge-producing affixes retain every equipped copy. Roll lists preserve slot and
+affix order through aggregation and save/resume. Exact opening grants and proc
+chances belong to the [affix rows](../src/lib/gear/affix-rows.ts) and
+[Unique catalog](../src/lib/gear/unique-catalog.ts).
+
 ## Persistence
 
-Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alchemy/shared/storage/persistence.ts`), which assembles the full save snapshot (settings + profile + gear + run-profile fields, plus versions and the active run). Five of those fields are Gear-owned:
+The [Gear codec](../src/features/alchemy/shared/stores/persistence/gear-codec.ts)
+owns saved inventories, loadouts, owned/equipped Trinkets and crafting currencies.
+Instances save IDs and rolls under the [data model](#data-model), never definitions
+or art URLs. Shape changes follow [save compatibility](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
-- **`gearInventories`** — `Record<CharacterId, GearInstance[]>` — per-character inventories.
-- **`gearLoadouts`** — `Record<CharacterId, GearLoadout>` — pruned of orphan references.
-- **`ownedTrinketIds`** — Unique permanent Trinket definition IDs.
-- **`equippedTrinkets`** — Per-character equipped Trinket ID, normalized for exclusivity.
-- **`craftingCurrencies`** — `Record<CraftingCurrencyId, number>`.
-
-Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md) and `src/lib/validation/metadata.ts` own the supported floor and current version. Gear shape changes follow that migration contract: safe additive fields may use schema defaults, while transforms require a versioned migration.
-
-`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes through `subscribeAlchemyPersistence`, which combines settings changes with the committed gameplay-session revision signal. The renderer groups synchronous commits into an immediate save checkpoint; action completion waits for local acknowledgement under [completed actions and local saving](./RUN_STATE.md#completed-actions-and-local-saving). The scheduler also owns debounce, maximum wait, and retry timing. `buildAlchemySaveDataFromStores(session)` derives the active run and permanent fields together, detaches the payload, and records its session receipt. Immediate writes and autosave acknowledge through the same IO seam. Armory route actions delegate to the intent commands in `shared/stores/commands/gear-commands.ts`, which call `flushSaveAfterGearMutation` (`run-lifecycle.ts`) after successful mutations.
+Gear intent commands own successful mutation checkpoints through
+`flushSaveAfterGearMutation`; routes cannot replace that boundary. Immediate writes
+and autosave use the same detached, session-owned snapshot and acknowledgement path
+under [the persistence API](./RUN_STATE.md#persistence-api). Completion waits for a
+covering local save; autosave owns retry.
 
 ## Unique combat effects
 
@@ -299,5 +321,3 @@ known supporting affixes, generated definitions, and missing-art fallbacks. Use
 CONTRIBUTING's [changed-path gate](../CONTRIBUTING.md#what-to-run-when-you-change) and
 [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) to select
 checks for the affected risks.
-
-Forge-producing affixes retain every equipped copy: Tempered adds 1/2 opening Forge; Forged rolls 25/50% for 1 Forge per successful Stun; Cinderfed rolls 25/50% per consumed Burn card; Trailforged rolls 10/20% per Companion action damaging a Burning enemy. Roll lists preserve slot and affix order through aggregation and save/resume. Everkeen, Oathkeeper, The Patient Edge and The Golden Crucible carry 2 starting Forge; Everkeen’s supporting Forged roll is 50%.

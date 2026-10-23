@@ -16,34 +16,33 @@ Confirm unsafe escapes, unsound generics, broad records, non-exhaustive unions, 
 
 ## Investigation and evidence
 
-For an escape or suspect model, trace where the value originates, what runtime validation establishes, and what consumers assume. Show a value or future supported variant the type accepts incorrectly, or an invariant the model repeatedly forces callers to bypass. A cast on a critical path warrants inspection, not automatic severity.
+Trace value origin, runtime validation and consumer assumptions. Show an invalid
+value or supported future variant the type wrongly accepts, or an invariant that
+repeatedly forces escapes. Fix the producer or validation boundary when possible;
+retain justified assertions when TypeScript cannot express a proven relationship.
+Intentional negative type tests may use `@ts-expect-error`.
 
-Prefer a remedy at the producer or validation boundary when that establishes the invariant for all consumers. Keep a justified assertion when TypeScript cannot express a proven relationship and alternatives obscure it. Negative type tests may intentionally use `@ts-expect-error`; removing them would weaken coverage.
+Verify that compilation rejects the invalid construction or requires the missing
+variant, and that decoding still enforces the runtime boundary. Preserve valid-save
+compatibility and failure semantics. The [shared evidence contract](README.md#discover-and-confirm)
+applies to suspicious casts as to other candidates.
 
-Verify the compiler rejects the invalid construction or requires handling the relevant variant, and verify runtime decoding still enforces the same boundary. Type checking alone cannot establish safe handling of external input. Preserve valid-save compatibility and existing failure semantics.
+## Investigation leads
 
-## Domain rules
+Prioritize battle, persistence, hydration and screen-transition boundaries. These
+signals require a traced invalid value or dishonest invariant under the shared contract.
 
-- Prefer type guards, narrowing, and discriminated unions over `as` casts.
-- Fix mismatches hidden by suppressions when they are unsound; retain intentional negative type tests and justified tool directives under repository rules.
-- Establish why a value is present before removing a non-null assertion. Narrow at the owner or handle absence according to the domain contract; optional chaining that silently drops required work is not a fix.
-- Module / bootstrap entrypoints may keep hard failures; orchestration should not crash on corrupt input — validate at the boundary.
-- `any` mainly at serialization edges; validate decoded saves via Zod schemas — not runtime casts after the fact.
-- External and JSON data is `unknown` until a boundary validates it; types must not claim fields or variants that decoding does not establish.
-- Prefer exhaustive switches and domain-specific unions over string bags, broad `Record<string, unknown>`, and boolean/optional-property combinations.
-- Test builders used to create production state must preserve production invariants or deliberately expose an explicitly unsafe fixture boundary.
-- Judge success by stronger truthful invariants and clearer consumers, not declining escape counts. Enforced compiler and lint gates remain authoritative.
+| Signal                                              | Question and remedy                                                                                                                                                                     |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `any`, double casts, suppressions                   | Does validation establish the claimed type? External/JSON values start as `unknown`; fix the producer/boundary rather than casting. Retain justified directives and negative type tests |
+| Non-null assertions (`!.`)                          | Why is the value present? Narrow at its owner or handle absence under the domain contract; optional chaining must not silently discard required work                                    |
+| Generic constraints, keyed writes, broad records    | Can an unsupported value reach a consumer? Prefer truthful domain types and narrowing                                                                                                   |
+| Boolean/optional-property bags, incomplete switches | Can invalid states be constructed or new variants silently ignored? Prefer discriminated unions and exhaustive consumers                                                                |
+| Raw string/enum decoding                            | Do runtime schemas enforce every claimed variant? Keep Zod at save/load boundaries                                                                                                      |
+| Fixture casts                                       | Do builders preserve production invariants or expose a deliberate unsafe boundary?                                                                                                      |
+| Hard failures                                       | Entrypoints/bootstrap may fail loudly; orchestration validates corrupt external input rather than crashing                                                                              |
 
-## Known signals
-
-- **Trend counts:** `node scripts/audit-type-escapes.mjs` (also via `npm run audit:all`) — per-category counts and top files; use counts to locate changes worth inspecting, not to demand a downward trend. Never a gate.
-- **`any`:** `\bany\b` in non-test `src`.
-- **Suppressions & double casts:** `@ts-expect-error` / `oxlint-disable` / `as unknown as`. `@ts-ignore` in `src` is an Oxlint error (`typescript/ban-ts-comment`).
-- **Non-null assertions:** `!.` in non-test `src`.
-- **Unsafe assertions on persistence/battle:** hits in `shared/storage/`, `save-schemas/`, `screen-transition-policy.ts`, `use-screen-transitions.ts`, battle transition modules, and `src/lib/battle`.
-- **Raw enum / string decoding:** stringly unions without Zod or exhaustive checks at hydrate boundaries.
-- **Unsound generic/record models:** generic constraints, keyed writes, index signatures, or broad records permit values the runtime owner cannot handle.
-- **Invalid-state bags:** several optional properties or booleans encode mutually exclusive modes without a discriminant.
-- **Non-exhaustive consumption:** switches or lookup tables silently accept new variants without a compiler-enforced owner.
-- **Dishonest external types:** JSON, storage, IPC, or environment values are asserted directly to a domain type without validation.
-- **Fixture escapes:** shared test builders cast partial objects into production state and can conceal invalid states used by live orchestration tests.
+`node scripts/audit-type-escapes.mjs` (also `npm run audit:all`) locates category
+trends and top files; counts are advisory, never a reduction target or gate.
+`@ts-ignore` in `src` is already an Oxlint error. Judge results by truthful
+invariants and clearer consumers; compiler/lint gates remain authoritative.

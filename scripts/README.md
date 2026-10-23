@@ -94,47 +94,32 @@ and co-edit trends through the [Simplification audit](../Docs/Audits/Simplificat
 
 ## Test / E2E
 
-`npm run test:e2e:route -- <route> [extra Playwright arguments]`;
-`test:ship:unit`, `test:e2e:audit` (full timings), `perf`, `balance:sim`, `ci:summarize`.
-All `E2E_ROUTES` entries use the single `test:e2e:route` command; individual
-`test:e2e:<name>` scripts do not exist. `tests/scripts/run-e2e-route.test.ts`
-pins that interface. The route names `shop-screen` and `homestead-screen`
-remain accepted as aliases for `shop` and `homestead`.
-`ci-summarize.mjs --vitest/--playwright/--all` is the single CI summary entry;
-workflows call it directly with the matching flag. A lone positional path is
-inferred from its filename (playwright-containing paths summarize Playwright).
-Report parsing lives in
-`lib/verification/vitest-summary.mjs` and `lib/verification/playwright-summary.mjs`; both share the
-`lib/verification/report-summary.mjs` skeleton (budgets, first-line truncation, runner-error
-and overflow sections, missing-report wording) via one table-driven publisher.
-`summarize*Report` headers are
-stats-authoritative while `collectPlaywrightTests` is the walked audit model
-for slowest-tables (`topSlowestTests` is shared with `analyze-e2e.mjs`) — on inconsistent reports the header and the tables can
-differ by design. Malformed reports must fail rather than appear to be
-successful zero-test runs. Supplied counters must be non-negative integers;
-unknown assertion outcomes also fail the summary and retain CI diagnostics.
+Invocation, fixtures and routes belong to the [E2E guide](../tests/e2e/README.md).
+[Performance](../Docs/PERFORMANCE.md) and [playthroughs](../Docs/PLAYTHROUGH_SIMULATION.md)
+own their respective workflows.
 
-`run-performance.mjs` delegates to `lib/performance/performance-runner.mjs`, which owns profiling options and validates them before builds
-or downloads. Measurements and interpretation follow [PERFORMANCE](../Docs/PERFORMANCE.md).
+| Concern                                    | Implementation owner                                                                                                                                |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Named browser routes and aliases           | `run-e2e-route.mjs`; all `E2E_ROUTES` use `test:e2e:route -- <name>`, including `shop-screen` → `shop` and `homestead-screen` → `homestead` aliases |
+| CI summary entry                           | `ci-summarize.mjs --vitest/--playwright/--all`; a positional filename containing `playwright` selects that format                                   |
+| Report parsing and bounded publication     | `lib/verification/vitest-summary.mjs`, `playwright-summary.mjs`, shared `report-summary.mjs`                                                        |
+| Frame profiling                            | `run-performance.mjs` → `lib/performance/performance-runner.mjs`                                                                                    |
+| Headless career CLI and worker             | `run-playthrough.mjs` → `lib/playthrough/playthrough-runner.mjs`; `run-playthrough-worker.mjs` → `lib/playthrough/career-worker.mjs`                |
+| Balance, loot and content-report bootstrap | `lib/vite-report-server.mjs` (middleware-mode Vite)                                                                                                 |
 
-Balance and loot reports share the middleware-mode Vite bootstrap in
-`lib/vite-report-server.mjs` (also used by `content-audit.mjs`, which is now an
-import-safe `defineScript` entry); both are import-safe `defineScript` entries and
-both leave a run receipt. Report paths resolve from the script root, not the
-invoking CWD. One-shot suite/build/profiling CLIs
-(`run-ship-unit`, `run-e2e-route`, `run-performance`, `build-verified`,
-`run-prettier`, `audit` dispatcher) use `runTaskCommand` to retain complete logs
-and print compact summaries. Supported `--live` / `--verbose` options select
-streaming output when needed.
+Summary headers use supplied stats; walked assertions supply slowest tables via
+`collectPlaywrightTests` and shared `topSlowestTests`, so inconsistent inputs may
+produce differing header/table totals. Malformed reports, negative/noninteger
+counters and unknown assertion outcomes fail with retained diagnostics.
 
-`run-playthrough.mjs` delegates to `lib/playthrough/playthrough-runner.mjs`;
-`run-playthrough-worker.mjs` delegates to `lib/playthrough/career-worker.mjs`.
-The entry points retain CLI lifecycle and artifact registration; implementations
-are import-safe. Performance comparison models and scenarios remain in `performance/`.
-
-Playthrough and performance-case workers use `runCommandAsync` so deadlines and
-cancellation stop their process trees. Interrupted playthroughs keep their
-journal prefix and starting-state evidence for replay.
+Command entries retain CLI lifecycle/artifact registration; their implementations
+are import-safe. Balance, loot and content-audit entries use `defineScript` and
+leave run receipts, resolving report paths from the script root. One-shot suite,
+build and profiling CLIs use [shared command execution](#command-execution-and-argument-handling)
+for compact summaries, full logs and supported streaming options. Profiling validates
+options before builds/downloads. Career/performance-case workers use `runCommandAsync`
+to stop process trees on deadline/cancellation; interrupted careers retain their
+journal prefix and starting-state evidence. Performance models/scenarios stay in `performance/`.
 
 ## Development
 

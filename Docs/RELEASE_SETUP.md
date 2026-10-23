@@ -102,19 +102,18 @@ are separate actions. Holding confirm does not repeatedly activate controls.
 
 ### Configuration and validation status
 
-The mappings above are a specification, not published Steam configurations.
-No exported configuration IDs or live default assignments have been verified in
-this checkout. With authenticated Steam access, author/export recommended layouts
-for the supported controller types, publish their default assignments, and record
-real identifiers and validation evidence here. Never invent identifiers or infer
-publication from passing browser tests. Consult
+With authenticated Steam access, author/export recommended layouts for supported
+controller types, publish their default assignments, and record actual configuration
+IDs with the candidate's acceptance evidence. Follow
 [Valve's developer setup](https://partner.steamgames.com/doc/features/steam_controller/getting_started_for_devs).
+Pending publication and physical validation remain in the
+[blocked release plan](./Plans/SteamDemo.md#outstanding-work).
 
-Until actual runtime/configuration evidence exists, do not claim full controller
-support, native PlayStation support, or a Steam Deck Playable/Verified rating from
-these tests. Valve's formal rating also evaluates runtime, display, and performance;
-see [compatibility review](https://partner.steamgames.com/doc/steamhardware/compat).
-The Windows build's behavior under Proton and Deck suspend/resume remain unverified.
+Game-side tests do not qualify mapping delivery, full controller/native PlayStation
+support, Proton behavior, suspend/resume, or a Steam Deck rating. Complete
+[physical acceptance](./STEAM_DEMO_CHECKLIST.md#physical-steam-acceptance-evidence)
+before making claims; Valve's [compatibility review](https://partner.steamgames.com/doc/steamhardware/compat)
+also evaluates display and performance.
 
 ### Automated game-side coverage
 
