@@ -31,6 +31,7 @@
   "battle.feedback.gems": ["Gems","Edelsteine","宝石","Самоцветы","Gemas","Gemas","宝石","Gemmes"],
   "battle.feedback.haste": ["Haste","Eile","迅捷","Спешка","Celeridad","Aceleração","加速","Hâte"],
   "battle.feedback.scheduled": ["Scheduled","Vorgemerkt","已安排","Запланировано","Programado","Agendado","予約済み","Programmé"],
+  "battle.hand-overflow": ["Hand Overflow","Überzählige Handkarten","手牌溢出","Переполнение руки","Exceso de cartas en la mano","Excesso de cartas na mão","手札の超過分","Cartes en surplus"],
   "battle.immune": ["Immune to {{label}}","Immun gegen {{label}}","免疫{{label}}","Иммунитет: {{label}}","Inmune a {{label}}","Imune a {{label}}","{{label}}無効","Immunité : {{label}}"],
   "battle.inspect-pile": ["Inspect {{pile}} · {{count}} cards","{{pile}} ansehen · {{count}} Karten","查看{{pile}} · {{count}}张牌","Осмотреть {{pile}} · {{count}} карт","Inspeccionar {{pile}} · {{count}} cartas","Inspecionar {{pile}} · {{count}} cartas","{{pile}}を見る・{{count}}枚","Inspecter {{pile}} · {{count}} cartes"],
   "battle.prepared": ["{{label}} prepared","{{label}} vorbereitet","已准备{{label}}","Подготовлено: {{label}}","{{label}} preparado","{{label}} preparado","{{label}}を準備","Préparation : {{label}}"],

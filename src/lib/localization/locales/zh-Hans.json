@@ -20,6 +20,7 @@
   "battle.feedback.gems": {"text":"宝石","sourceHash":"09b00eafb786d67566972d48136ce875c2b2851e7fa3ccd7b91fbf5100a38cea","reviewed":true},
   "battle.feedback.haste": {"text":"迅捷","sourceHash":"cead92752e401a9268085115648d5ce526421df25dad5a541803bdef363d12d4","reviewed":true},
   "battle.feedback.scheduled": {"text":"已安排","sourceHash":"3104799a9c5899eb49c00c976d1f9d7579338001b098449ba7e38840ed43ec78","reviewed":true},
+  "battle.hand-overflow": {"text":"手牌溢出","sourceHash":"e92a3f0089870f05361ad495dec9e1717731eac39cccfe0fd0b9fa05782b416e","reviewed":true},
   "battle.immune": {"text":"免疫{{label}}","sourceHash":"58b889b9f83571f55fce070d8c21f102d534c64ef96faf96a161c9a40507ad74","reviewed":true},
   "battle.inspect-pile": {"text":"查看{{pile}} · {{count}}张牌","sourceHash":"4a1ed7c61b74a589fb8a7abbf3d8e8a323d2aad6635e332ba1db7a1806008218","reviewed":true},
   "battle.prepared": {"text":"已准备{{label}}","sourceHash":"64518cf5927ffa4879ef896dd1e5dd796f98ea01f344c0fc962c35c31227f4f1","reviewed":true},

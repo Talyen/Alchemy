@@ -20,6 +20,7 @@
   "battle.feedback.gems": {"text":"Gemas","sourceHash":"a2ef09bc5f6e9582d11a11fc128fbc215fbbfc65f70806bcc5d3fd2f2eb88cf2","reviewed":true},
   "battle.feedback.haste": {"text":"Aceleração","sourceHash":"062dc807a5c65f794b81ed55e166fe6fd3517449e05ac2c3dc46a13408cc5a8f","reviewed":true},
   "battle.feedback.scheduled": {"text":"Agendado","sourceHash":"2ab77659fc211b0bba50dddd001f8d31b744f1dc4233bbcef168905e77824379","reviewed":true},
+  "battle.hand-overflow": {"text":"Excesso de cartas na mão","sourceHash":"bcbabe3fccaa4b657813a6f604820203e8f5dde1b9557e0602745d8f163349a3","reviewed":true},
   "battle.immune": {"text":"Imune a {{label}}","sourceHash":"8533b75cf69f9e6e18938d76b295f325c51a461d674e5d74e2974406f7e92202","reviewed":true},
   "battle.inspect-pile": {"text":"Inspecionar {{pile}} · {{count}} cartas","sourceHash":"0dee0b57bb310389e913e04efa180c752ec8295bdd3aca7dacb1c9851f8c4c96","reviewed":true},
   "battle.prepared": {"text":"{{label}} preparado","sourceHash":"c6d6dde0609ea8c0a7f85e4544a70d2177c7db76c28fc3dceb3df7bb39ba9978","reviewed":true},

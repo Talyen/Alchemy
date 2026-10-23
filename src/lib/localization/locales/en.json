@@ -20,6 +20,7 @@
   "battle.feedback.gems": {"text":"Gems","context":"features/alchemy/shared/utils/battle.ts","terms":["Gems"]},
   "battle.feedback.haste": {"text":"Haste","context":"features/alchemy/shared/utils/battle.ts","terms":[]},
   "battle.feedback.scheduled": {"text":"Scheduled","context":"features/alchemy/shared/utils/battle.ts","terms":[]},
+  "battle.hand-overflow": {"text":"Hand Overflow","context":"features/alchemy/shared/ui/inspection/card-inspection-overlay.tsx","terms":[]},
   "battle.immune": {"text":"Immune to {{label}}","context":"features/alchemy/shared/utils/battle.ts","parameters":{"label":"label"},"terms":[]},
   "battle.inspect-pile": {"text":"Inspect {{pile}} · {{count}} cards","context":"features/alchemy/run-loop/battle/presentation/ui/resources.tsx","parameters":{"pile":"label","count":"count"},"terms":[]},
   "battle.prepared": {"text":"{{label}} prepared","context":"features/alchemy/shared/utils/battle.ts","parameters":{"label":"label"},"terms":[]},

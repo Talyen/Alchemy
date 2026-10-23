@@ -14,10 +14,9 @@ const EMPTY_LABELS: Record<CardInspectionView, string> = {
   discard: "Empty Discard Pile",
 };
 
-export interface CardInspectionCollection {
-  id: CardInspectionView;
-  cards: readonly BattleCard[];
-}
+export type CardInspectionCollection =
+  | { id: "draw"; cards: readonly BattleCard[]; overflowCards?: readonly BattleCard[] }
+  | { id: Exclude<CardInspectionView, "draw">; cards: readonly BattleCard[] };
 
 interface CardInspectionOverlayProps {
   open: boolean;
@@ -33,6 +32,8 @@ export function CardInspectionOverlay(props: CardInspectionOverlayProps) {
   const heldSelected = useHeldWhile(props.open, props.selected ?? "deck");
   const collection = props.collections.find((entry) => entry.id === heldSelected) ?? props.collections[0];
   const cards = collection?.cards ?? [];
+  const overflowCards = collection?.id === "draw" ? (collection.overflowCards ?? []) : [];
+  const hasOverflow = overflowCards.length > 0;
   return (
     <InspectionOverlayShell
       open={props.open}
@@ -50,18 +51,34 @@ export function CardInspectionOverlay(props: CardInspectionOverlayProps) {
       returnFocusRef={props.returnFocusRef}
       overlayClassName={cn(
         "card-inspection-overlay flex items-center justify-center p-6",
-        cards.length === 0 && "card-inspection-overlay-empty",
+        cards.length === 0 && !hasOverflow && "card-inspection-overlay-empty",
       )}
     >
-      {cards.length === 0 ? (
+      {cards.length === 0 && !hasOverflow ? (
         <InspectionEmptyState icon={Layers} label={i18n.displayText(EMPTY_LABELS[heldSelected])} />
-      ) : (
+      ) : cards.length > 0 ? (
         <InspectionCardGrid
           cards={cards}
           descriptionContext={props.descriptionContext}
           resetKey={`${heldSelected}:${props.open}`}
         />
-      )}
+      ) : null}
+      {hasOverflow ? (
+        <section
+          className={cn(cards.length > 0 && "mt-6")}
+          aria-label={i18n.text("battle.hand-overflow", "Hand Overflow")}
+        >
+          <h3 className="mb-3 text-center text-lg text-muted-foreground">
+            {i18n.text("battle.hand-overflow", "Hand Overflow")}
+          </h3>
+          <InspectionCardGrid
+            cards={overflowCards}
+            descriptionContext={props.descriptionContext}
+            resetKey={`overflow:${props.open}`}
+            sort={false}
+          />
+        </section>
+      ) : null}
     </InspectionOverlayShell>
   );
 }

@@ -10,7 +10,8 @@ the shared [display-sizing contract](./UI.md#display-sizing) governs scaling.
 The hand rests against the bottom viewport edge as a centered fan, with capped
 spacing, responsive card sizing and clearance for rotated artwork. Draw Pile sits beside the hand's left edge and Discard Pile
 beside its right, both with their pile artwork in the bottom corners. Clicking either
-pile opens only that pile in the shared card viewer. All battle transfer and feedback
+pile opens that pile in the shared card viewer. Draw Pile also includes Hand Overflow
+when cards are waiting for room. All battle transfer and feedback
 coordinates use the full viewport scene.
 
 Mana crystals sit centered above Draw Pile in the left bottom column. Their shallow
@@ -144,6 +145,11 @@ The Mana area stays still, and all effects follow displayed battle frames withou
 gating accepted gameplay. Initial mount and resume settle without effect replay;
 reduced motion settles immediately, and presentation reset cancels pending exits.
 
+Cards entering Hand Overflow briefly shake only the Draw Pile artwork and play
+the card-rejection sound. Each batch receives one cue, including fresh opening
+draws. Retained overflow, delivery into the hand, and saved-battle mount stay quiet.
+Reduced or disabled motion suppresses the shake while preserving sound settings.
+
 ## Boss lyrics
 
 Timed boss lyrics sit centered across the space between the combatants and the
@@ -184,7 +190,10 @@ defines execution seams, uncertainty limits, and effect-authoring requirements.
 
 The stacked-cards toolbar icon opens the run Deck during drafting, non-battle run
 screens, and meta detours from that run. Battle has no Deck toolbar button; clicking
-Draw Pile or Discard Pile opens only that pile. Each viewer has a centered title
+Draw Pile or Discard Pile opens that pile. Draw Pile includes a separate Hand Overflow
+section only while cards are queued, preserving their arrival order and individual
+modifications. The section remains available when the draw pile is empty. Other
+collections retain their alphabetical ordering. Each viewer has a centered title
 (Deck, Draw Pile, or Discard Pile) with no collection tabs.
 Titled screen headers place Deck on the left alongside any Back control and Menu
 on the right, with the title centered between them. The icon has no tooltip.

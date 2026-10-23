@@ -20,6 +20,7 @@
   "battle.feedback.gems": {"text":"Самоцветы","sourceHash":"d52b709b1fb2973c9b841be5ef18e3b3cc5aadca7079f45209ef0148adec49d6","reviewed":true},
   "battle.feedback.haste": {"text":"Спешка","sourceHash":"70d3c384c28b7a29f28766f176811b58a33b660462f543920c6741df3638cf47","reviewed":true},
   "battle.feedback.scheduled": {"text":"Запланировано","sourceHash":"eb13761873d1ad6dc56574cbb4c220cf881b65bf118c2cd0b331acb1bc0a20e3","reviewed":true},
+  "battle.hand-overflow": {"text":"Переполнение руки","sourceHash":"9f223369cf9c9185e9532d5ffca6bdb477311f76055aca6ef02c64181064bff4","reviewed":true},
   "battle.immune": {"text":"Иммунитет: {{label}}","sourceHash":"f18d497863274f6e9ff21dd37e2d2b8334a8d3ce78de68fbe2327cb253c6eed8","reviewed":true},
   "battle.inspect-pile": {"text":"Осмотреть {{pile}} · {{count}} карт","sourceHash":"7d35d9c1cad62ce3703336e9b5c8c3af8ea69a889910e34498f7238f914a06b3","reviewed":true},
   "battle.prepared": {"text":"Подготовлено: {{label}}","sourceHash":"7d1d4644bd359c65c330d07236506b54836e8e515db15ef49f92a002dcb9488a","reviewed":true},

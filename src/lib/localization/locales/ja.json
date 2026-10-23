@@ -20,6 +20,7 @@
   "battle.feedback.gems": {"text":"宝石","sourceHash":"a9afd947d9b1d05e0990b1e3e366c963999fad2d1e820888eb1ccd4b125980d6","reviewed":true},
   "battle.feedback.haste": {"text":"加速","sourceHash":"ffa1304a14006a8ab8f4189076da6024838bed25bc1bc84b70b1293921d58477","reviewed":true},
   "battle.feedback.scheduled": {"text":"予約済み","sourceHash":"4864cecc74e8471204e81b257b6899ebaefc2338d5fb0a276b74c4ca7c876f78","reviewed":true},
+  "battle.hand-overflow": {"text":"手札の超過分","sourceHash":"13584a21e16240f6b1d168c17e23d64b10e4f133b49d626d4d8c84d8e41d8e9a","reviewed":true},
   "battle.immune": {"text":"{{label}}無効","sourceHash":"431a2f95448e078c04a63e7e146719f219298ec9d7802fcc4eef62e0df7ccf8b","reviewed":true},
   "battle.inspect-pile": {"text":"{{pile}}を見る・{{count}}枚","sourceHash":"caba33c156c753404fccbfc4d7babaea483e3408b4d3447cecc078d194056753","reviewed":true},
   "battle.prepared": {"text":"{{label}}を準備","sourceHash":"9c6c4ef081c0c6c3189d6654e01eab786951cd1af763121fcf8d7504904185d8","reviewed":true},

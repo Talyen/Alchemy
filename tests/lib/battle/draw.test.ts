@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
+import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import {
   addCardToHandOrQueue,
@@ -52,6 +53,69 @@ it("defaultBattleState isolates nested combat state so one battle cannot alter t
 });
 
 describe("drawCards — edge cases", () => {
+  it.each(["ordinary", "keyword", "random"] as const)(
+    "refills immediately after the final %s draw without drawing or reshuffling overflow",
+    (kind) => {
+      const finalCard = makeCard("final", {
+        uid: 1,
+        effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
+      });
+      const discard = [makeCard("discard-a", { uid: 2 }), makeCard("discard-b", { uid: 3 })];
+      const waiting = [makeCard("waiting", { uid: 4 })];
+      const hand = Array.from({ length: MAX_HAND_SIZE }, (_, uid) => makeCard(`held-${uid}`, { uid: 10 + uid }));
+      const rng = vi.fn(() => 0);
+      const state = makeTestBattleState({ deck: [finalCard], discard, hand, pendingHandCards: waiting, rng });
+      const before = structuredClone({ deck: state.deck, discard, hand, waiting });
+      Object.freeze(state.deck);
+      Object.freeze(discard);
+      const next =
+        kind === "ordinary"
+          ? drawCards(state.deck, discard, hand, 1, 50, rng, waiting)
+          : kind === "keyword"
+            ? drawKeywordCard(state, "physical", { refillFromDiscard: false })
+            : takeRandomCardFromDeck(state)!;
+      expect(next.deck.map((card) => card.id).sort()).toEqual(["discard-a", "discard-b"]);
+      expect(next.discard).toEqual([]);
+      if ("pendingHandCards" in next) {
+        expect(next.pendingHandCards.map((card) => card.id)).toEqual(["waiting", "final"]);
+        expect(next.hand).toEqual(hand);
+      } else {
+        expect(next.card.id).toBe("final");
+        expect(state.pendingHandCards).toBe(waiting);
+      }
+      expect({ deck: state.deck, discard, hand, waiting }).toEqual(before);
+      expect(rng).toHaveBeenCalledTimes(kind === "ordinary" ? 1 : 2);
+    },
+  );
+
+  it("refills an empty draw pile when a played card enters discard", () => {
+    const queued = makeCard("waiting", { uid: 20 });
+    const state = makeTestBattleState({ pendingHandCards: [queued], deck: [], discard: [] });
+    const played = makeCard("played", { uid: 30, consume: false });
+    const next = handlePostPlayCardDestination(state, played);
+    expect(next.deck).toEqual([played]);
+    expect(next.discard).toEqual([]);
+    expect(next.pendingHandCards).toEqual([queued]);
+    expect(state.deck).toEqual([]);
+    expect(state.discard).toEqual([]);
+  });
+
+  it("refills from the discarded hand before the enemy phase", () => {
+    const hand = [makeCard("held-a"), makeCard("held-b"), makeCard("held-c")];
+    const state = makeTestBattleState({
+      deck: [],
+      hand,
+      discard: [],
+      rng: () => 0,
+      enemyCC: { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 },
+    });
+    const next = endPlayerTurn(state);
+    expect(next.kind).toBe("skipped");
+    if (next.kind === "haste") throw new Error("Expected an enemy turn");
+    expect(next.enemyTurnStartState.deck.map((card) => card.id).sort()).toEqual(["held-a", "held-b", "held-c"]);
+    expect(next.enemyTurnStartState.discard).toEqual([]);
+  });
+
   it("mid-draw reshuffles discard when deck runs out", () => {
     const deck = [makeTestCardWithId("d1")];
     const discard = [makeTestCardWithId("d2"), makeTestCardWithId("d3"), makeTestCardWithId("d4")];
@@ -255,6 +319,7 @@ describe("player turn transition", () => {
     const state = regressionBattle({
       hand: Array.from({ length: 7 }, (_, i) => ({ ...arrow(i), consume: false })),
       pendingHandCards: Array.from({ length: 15 }, (_, i) => arrow(100 + i)),
+      deck: Array.from({ length: 12 }, (_, i) => makeCard("block", { uid: 300 + i })),
       discard: [arrow(12)],
       nextCardUid: 200,
       gearEffects: { recoverLastArcheryCard: 1 },

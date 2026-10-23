@@ -134,12 +134,12 @@ export function useCardInspection({
       { id: "deck", cards: data.runDeck },
       ...(data.hasActiveBattle
         ? [
-            { id: "draw" as const, cards: data.drawPile },
+            { id: "draw" as const, cards: data.drawPile, overflowCards: data.battleState.pendingHandCards },
             { id: "discard" as const, cards: data.discardPile },
           ]
         : []),
     ],
-    [data.runDeck, data.hasActiveBattle, data.drawPile, data.discardPile],
+    [data.runDeck, data.hasActiveBattle, data.drawPile, data.discardPile, data.battleState.pendingHandCards],
   );
   const battleDescriptionContext = useMemo(
     () => ({

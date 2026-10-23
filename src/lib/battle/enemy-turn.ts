@@ -4,7 +4,7 @@ import { battleSnapshot } from "./battle-snapshot";
 import { hasEncounterBenefit } from "./encounter-trait-state";
 import type { BattleResolutionContext } from "./types";
 import { processCompanionTurnStart } from "./companion";
-import { deliverPendingHandCards } from "./draw";
+import { deliverPendingHandCards, refillEmptyDrawPile } from "./draw";
 import { applyHealingWithCombatText } from "./player-rewards";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
@@ -48,13 +48,15 @@ function finalizePlayerTurn(
 }
 
 function beginEnemyPhase(state: BattleState): BattleState {
-  return deliverPendingHandCards({
-    ...state,
-    turnPhase: "enemy",
-    flags: { ...state.flags, darkRecoveryMana: state.mana === 0 ? state.talentEffects.manaAfterEmptyTurn : 0 },
-    hand: [],
-    discard: [...state.discard, ...state.hand],
-  });
+  return deliverPendingHandCards(
+    refillEmptyDrawPile({
+      ...state,
+      turnPhase: "enemy",
+      flags: { ...state.flags, darkRecoveryMana: state.mana === 0 ? state.talentEffects.manaAfterEmptyTurn : 0 },
+      hand: [],
+      discard: [...state.discard, ...state.hand],
+    }),
+  );
 }
 
 function resolveHasteTurn(state: BattleState) {

@@ -20,6 +20,7 @@
   "battle.feedback.gems": {"text":"Edelsteine","sourceHash":"3db049fd49b450c2b77e60749e58e8a25b9a3e9df1af0c61cd48e359fdd90b7b","reviewed":true},
   "battle.feedback.haste": {"text":"Eile","sourceHash":"fa1b6df9dd10a01cadeff0f9ef80a16a39053848219019002055bd6618c415f3","reviewed":true},
   "battle.feedback.scheduled": {"text":"Vorgemerkt","sourceHash":"08aa28c0d69680717d1fc06134ef6aa3d993f61d86fceca99db52d0e199bd3b1","reviewed":true},
+  "battle.hand-overflow": {"text":"Überzählige Handkarten","sourceHash":"86ae4767f39352bdbb5895d55ffa20fe4b5e3b3b15b667bd677205147724aaf2","reviewed":true},
   "battle.immune": {"text":"Immun gegen {{label}}","sourceHash":"65c9935571ae97ebec2347ca2331b19008bfdb4b3aed7ca8cbfdbaa392363cb0","reviewed":true},
   "battle.inspect-pile": {"text":"{{pile}} ansehen · {{count}} Karten","sourceHash":"5f26cb209dc1540406c2fd45aedfb314f7152062ba94f2717fb9ffed2ea8d813","reviewed":true},
   "battle.prepared": {"text":"{{label}} vorbereitet","sourceHash":"7fca2889826d64a59a71b2251f69dc51f57319ed6afe90b45e742e496c4248d3","reviewed":true},

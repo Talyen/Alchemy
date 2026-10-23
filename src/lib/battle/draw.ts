@@ -41,6 +41,11 @@ function refillDeck(
   return { deck: shuffle(discard, rng), discard: [] };
 }
 
+export function refillEmptyDrawPile(state: BattleState): BattleState {
+  if (state.deck.length > 0 || state.discard.length === 0) return state;
+  return { ...state, deck: shuffle(state.discard, getBattleRng(state)), discard: [] };
+}
+
 function distributeHandCards(hand: BattleCard[], queued: BattleCard[]) {
   const slots = Math.max(0, MAX_HAND_SIZE - hand.length);
   return { hand: [...hand, ...queued.slice(0, slots)], pendingHandCards: queued.slice(slots) };
@@ -93,9 +98,10 @@ export function drawCards(
     uid += 1;
   }
 
+  const refilled = amount > 0 ? refillDeck(nextDeck, nextDiscard, rng) : null;
   return {
-    deck: nextDeck,
-    discard: nextDiscard,
+    deck: refilled?.deck ?? nextDeck,
+    discard: refilled?.discard ?? nextDiscard,
     ...distributeHandCards(hand, queuedCards),
     nextCardUid: uid,
     uidChanges,
@@ -117,10 +123,11 @@ export function takeRandomCardFromDeck(state: BattleState): {
   const deck = refilled.deck === state.deck ? [...refilled.deck] : refilled.deck;
   const rawCard = takeRandomItem(deck, battleRng);
   if (!rawCard) return null;
+  const remaining = refillDeck(deck, refilled.discard, battleRng);
   return {
     card: { ...rawCard, uid: state.nextCardUid },
-    deck,
-    discard: refilled.discard,
+    deck: remaining?.deck ?? deck,
+    discard: remaining?.discard ?? refilled.discard,
     nextCardUid: state.nextCardUid + 1,
     uniqueGear: remapDrawnCardBenefits(state, [{ previous: rawCard.uid, next: state.nextCardUid }]),
   };
@@ -175,7 +182,7 @@ export function drawKeywordCard(
 ): BattleState {
   const ready = deliverPendingHandCards(state);
   const readyRng = getBattleRng(ready);
-  // Twin-casting only tutors from the deck itself; ordinary draws reshuffle.
+  // Twin-casting does not refill before looking for an eligible card.
   const refilled =
     options.refillFromDiscard === false
       ? ready.deck.length > 0
@@ -195,12 +202,14 @@ export function drawKeywordCard(
   const deckCard = refilled.deck[index];
   if (!deckCard) return { ...ready, deck: refilled.deck, discard: refilled.discard };
   const card = { ...deckCard, uid: ready.nextCardUid };
+  const remainingDeck = refilled.deck.filter((_, i) => i !== index);
+  const remaining = refillDeck(remainingDeck, refilled.discard, readyRng);
   return reportDraw(
     ready,
     {
       ...ready,
-      deck: refilled.deck.filter((_, i) => i !== index),
-      discard: refilled.discard,
+      deck: remaining?.deck ?? remainingDeck,
+      discard: remaining?.discard ?? refilled.discard,
       ...distributeHandCards(ready.hand, [...ready.pendingHandCards, card]),
       nextCardUid: ready.nextCardUid + 1,
       uniqueGear: remapDrawnCardBenefits(ready, [{ previous: deckCard.uid, next: card.uid }]),

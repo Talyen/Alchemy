@@ -20,6 +20,7 @@
   "battle.feedback.gems": {"text":"Gemmes","sourceHash":"0bb70158d3d151a83371c46ca8d0b1ac25efa27915e91e794a86950b0992cfdf","reviewed":true},
   "battle.feedback.haste": {"text":"Hâte","sourceHash":"936a301366dc395fd30e3b74049caa91c9d129654f641fec55906a58e2456dd8","reviewed":true},
   "battle.feedback.scheduled": {"text":"Programmé","sourceHash":"7960eee92d8cf64a94bbdebcf1cc2c31bbbb7430503d5ff34bfd66a91dbdf537","reviewed":true},
+  "battle.hand-overflow": {"text":"Cartes en surplus","sourceHash":"96be2d34abb588821e41dd6362cd3e76668821ada7140913a044931e5bb399b1","reviewed":true},
   "battle.immune": {"text":"Immunité : {{label}}","sourceHash":"9ec80e749a30279ce0e562ca2c9e3fe1c31af9603f89388628119842c4b8b7c8","reviewed":true},
   "battle.inspect-pile": {"text":"Inspecter {{pile}} · {{count}} cartes","sourceHash":"66ad719b4c1e4ccd85740d1c679a69b8a5c9274846eb5d943cafe617d2fef636","reviewed":true},
   "battle.prepared": {"text":"Préparation : {{label}}","sourceHash":"c301ab4fcc3dbc14d86c46eee1ea8d9130506f8a3afca16fe53b8f0c3c22a0a2","reviewed":true},

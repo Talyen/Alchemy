@@ -74,10 +74,12 @@ describe("run card inspection", () => {
     const consumed = makeTestCard({ id: "apple", uid: 1, consume: true });
     const drawn = makeTestCard({ id: "slash", uid: 2 });
     const generated = makeTestCard({ id: "block", uid: 3 });
+    const overflow = makeTestCard({ id: "heal", uid: 4 });
     mutateGameplayForTest((draft) => {
       draft.run.activeRun.runDeck = [consumed, drawn];
       getBattleForTest(draft).battleState.deck = [drawn];
       getBattleForTest(draft).battleState.discard = [generated];
+      getBattleForTest(draft).battleState.pendingHandCards = [overflow];
     });
     const before = readGameplayState(defaultGameSession);
     const { result } = renderHook(() => useCardInspection(base));
@@ -89,6 +91,9 @@ describe("run card inspection", () => {
       ["block"],
     ]);
     act(() => result.current.close());
+    expect(result.current.collections.find((collection) => collection.id === "draw")?.overflowCards).toEqual([
+      overflow,
+    ]);
     expect(readGameplayState(defaultGameSession)).toBe(before);
   });
 
