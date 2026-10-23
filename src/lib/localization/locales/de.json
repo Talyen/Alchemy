@@ -2120,7 +2120,6 @@
   "ui.brew-potion-panel.d4": {"text":"Keine geeigneten Tränke.","sourceHash":"506337022461f69b8369824fec11004cec17bb9fb14929ffea757495657e7fcf","reviewed":true},
   "ui.brew-potion-panel.d5": {"text":"Keine Trankrezepte verfügbar.","sourceHash":"7ad964afa7b6387559816d19d7b57563b5714ffbb8773287d977521000ee13a7","reviewed":true},
   "ui.brew-potion-panel.d6": {"text":"Zwei geeignete Tränke erforderlich.","sourceHash":"f1e42591e454ecefcf38fa5a85f93eba4f42c8338200126349aa29736c0c6b33","reviewed":true},
-  "ui.brew-potion-panel.d9": {"text":" · {{value0}} Gold","sourceHash":"94d260585707045d3b7c03b6ea6173f3dadc0a188e02afa3ca33024c882813b5","reviewed":true},
   "ui.brew-potion-panel.s1": {"text":"Nicht genug Gold. Das Brauen kostet <part0/> Gold.","sourceHash":"14526464a49126d111a256307fe949a2acb0d6813cf3cc1700dab57e08d3265f","reviewed":true},
   "ui.campfire-screen.1": {"text":"Lagerfeuer","sourceHash":"34c329a24bd23abd10a5a594f05721d169c97478a0025abdc1270ded88659db0","reviewed":true},
   "ui.campfire-screen.4": {"text":"Ein zufälliger Trank wurde deinem Laufdeck hinzugefügt.","sourceHash":"3910da9b16f72127e1a89512dbbdb6e1c21ec840efc395c9092eb443f00639cd","reviewed":true},

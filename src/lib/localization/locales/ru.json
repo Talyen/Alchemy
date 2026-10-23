@@ -2120,7 +2120,6 @@
   "ui.brew-potion-panel.d4": {"text":"Нет подходящих зелий.","sourceHash":"79312ceb479fa589e262789aef428ab07edeb81c1befcc0d2ad7d6076b9fac98","reviewed":true},
   "ui.brew-potion-panel.d5": {"text":"Нет доступных рецептов зелий.","sourceHash":"754834ac102917a202967fd00042d711747163eef40bb6cabc401483483046e3","reviewed":true},
   "ui.brew-potion-panel.d6": {"text":"Нужны два подходящих зелья.","sourceHash":"8d920ba311523399c1289e5923b5c58001716e8e5694fc49f55baaa90fba71a7","reviewed":true},
-  "ui.brew-potion-panel.d9": {"text":" · {{value0}} золота","sourceHash":"c9ac6565f5726bc1570caf7f2a9c07219638af2e6e1383b1b32e158fafb613c9","reviewed":true},
   "ui.brew-potion-panel.s1": {"text":"Недостаточно золота. Варка стоит <part0/> золота.","sourceHash":"34cb4b6fcc693531dce059047f5a877616cc0be68dbb2515be59f74262db97d4","reviewed":true},
   "ui.campfire-screen.1": {"text":"Костёр","sourceHash":"59bbc0615fc7b5317037fcd6967008fabb7e79b46da019084028f58b39a779ae","reviewed":true},
   "ui.campfire-screen.4": {"text":"Случайное зелье добавлено в колоду забега.","sourceHash":"27f1ceb0b43623a2c482d0ce7d8ed05ec2da4d12f5f1ce4020ac7dce277b8cf0","reviewed":true},

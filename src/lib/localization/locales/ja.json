@@ -2120,7 +2120,6 @@
   "ui.brew-potion-panel.d4": {"text":"対象となるポーションがありません。","sourceHash":"0dcd5a58fe8411e57bd224866e14fcc40468d2c7c49442c5f6a704ae2667c7eb","reviewed":true},
   "ui.brew-potion-panel.d5": {"text":"利用できるポーションのレシピがありません。","sourceHash":"56aeec1a754a6981dfbc2d02845cf865f5e280b0b7f054bee41c3a3dba054416","reviewed":true},
   "ui.brew-potion-panel.d6": {"text":"使用可能なポーションが二つ必要です。","sourceHash":"e55c1396a6757128f8d46881b7ce9fd5daef069161759dec601e712a9090de19","reviewed":true},
-  "ui.brew-potion-panel.d9": {"text":" ・{{value0}}ゴールド","sourceHash":"adf36890fffd55f03afb4c61a87e885ba74c8e29d3312f2b1f196cbbf6715329","reviewed":true},
   "ui.brew-potion-panel.s1": {"text":"ゴールド不足。調合には<part0/>ゴールド必要です。","sourceHash":"783d5eed2fa9e048bc8b132d6ce6b34dd8d5be142877a5c124dc11727b0ddd1f","reviewed":true},
   "ui.campfire-screen.1": {"text":"焚き火","sourceHash":"3fa5758beb31e7f82ff29ad942ade39d8617c431f90d1c21bad5eb34d1498a83","reviewed":true},
   "ui.campfire-screen.4": {"text":"ランのデッキにランダムなポーションが追加されました。","sourceHash":"e9c8bd79396bc0dcb289fd552f0bcc7ecc95230ff7b6db4e3389dd85615df146","reviewed":true},

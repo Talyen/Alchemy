@@ -1,5 +1,6 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { AlchemistShopScreen } from "@/features/alchemy/run-loop/screens/alchemist-shop-screen";
 import { cardById } from "@/lib/game-data";
@@ -7,6 +8,7 @@ import { installDisabledAnimationsForTests } from "../../../../helpers/animation
 import { installShopScreenIntersectionObserver } from "../../../../helpers/shop-screen-ui-mocks";
 
 beforeAll(installShopScreenIntersectionObserver);
+installReadyArtworkForTests();
 vi.mock(
   "@/features/alchemy/run-loop/shop/ui/purchasable-shop-item",
   () => import("../../../../helpers/shop-screen-ui-mocks"),
@@ -65,16 +67,19 @@ describe("Alchemist brewing navigation", () => {
     rerender(<AlchemistShopScreen {...p} mixUsed distillUsed />);
     expect(screen.getByRole("button", { name: "Brew" }).getAttribute("aria-disabled")).not.toBe("true");
   });
-  it("waits for persistence before showing Brew success", () => {
+  it("waits for persistence before showing Brew success", async () => {
     const pending: Array<() => void> = [];
     const p = props();
     const onBrewPotion = vi.fn(() => potion);
     render(<AlchemistShopScreen {...p} onBrewPotion={onBrewPotion} afterProgressSaved={(run) => pending.push(run)} />);
     click("Potion Brewing");
     click("Brew");
-    click("Select shop card");
+    click("Choose a Potion");
+    await waitForArtwork();
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Choose Health Potion" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(onBrewPotion).not.toHaveBeenCalled();
-    click("Brew · 25 Gold");
+    click("Brew");
     expect(onBrewPotion).toHaveBeenCalledExactlyOnceWith(0);
     expect(screen.queryByRole("button", { name: "Continue" })).toBeNull();
     act(() => pending.shift()!());
@@ -93,7 +98,7 @@ describe("Alchemist brewing navigation", () => {
     click("Potion Brewing");
     click("Distill");
     fireEvent.click(screen.getAllByRole("button", { name: "Select shop card" })[0]!);
-    click("Distill · 25 Gold");
+    click("Distill");
     fireEvent.keyDown(window, { key: "Escape" });
     act(() => pending.shift()!());
     expect(screen.getByRole("heading", { name: "Potion Brewing" })).toBeTruthy();

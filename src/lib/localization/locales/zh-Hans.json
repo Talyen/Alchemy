@@ -2120,7 +2120,6 @@
   "ui.brew-potion-panel.d4": {"text":"没有合适的药水。","sourceHash":"f93d13b392eff64025b4c6054f82400599d434d6635e233b839976b7c176e60b","reviewed":true},
   "ui.brew-potion-panel.d5": {"text":"没有可用的药水配方。","sourceHash":"f8480059ceff632aaf2ca34f643cf002508b5492cec3f954ac7a5fd7b9695e12","reviewed":true},
   "ui.brew-potion-panel.d6": {"text":"需要两瓶符合条件的药水。","sourceHash":"e6111976b1fd836b23ef2f596de07dab0034fd8ff4ec48f177fac80d5795f069","reviewed":true},
-  "ui.brew-potion-panel.d9": {"text":" · {{value0}}金币","sourceHash":"185625c9f0bcc7a84be552879bbf256b25c4759cab2969ed59346809ff2edd80","reviewed":true},
   "ui.brew-potion-panel.s1": {"text":"金币不足。调制需要<part0/>金币。","sourceHash":"3a49bb8b115e3d318892b31049bc4e7e2bd006f4571adf669418c3e953ad5fe1","reviewed":true},
   "ui.campfire-screen.1": {"text":"篝火","sourceHash":"f41db077959cd6c29cd23d17bf2ff4cb4d347fe720ab81c18692e24ea667fc09","reviewed":true},
   "ui.campfire-screen.4": {"text":"已向本次冒险牌组添加一瓶随机药水。","sourceHash":"a561ab95e4325c7fd92fc0e086277570b5bc07f9621d42f2f08892582e7782e2","reviewed":true},
