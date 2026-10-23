@@ -10,6 +10,7 @@ import { type BattleCard, isPotionCard } from "@/lib/game-data";
 import { strengthenPotion, type BrewOperation } from "@/lib/alchemist/brewing";
 import { tryCreateMixedPotion } from "@/lib/alchemist";
 import { cn } from "@/lib/utils";
+import { collectionTileWidthClass } from "../../shared/config";
 import { BattleCardButton } from "../../shared/ui/cards/card-button";
 import { SelectableCard } from "../../shared/ui/cards/selectable-card";
 import { CardSelectionGrid } from "../../shared/ui/cards/card-selection-grid";
@@ -24,7 +25,6 @@ import { useCaptureEscapeCancel } from "../../shared/ui/dialogs/use-modal-escape
 export interface BrewPotionPanelHandle {
   back: () => void;
 }
-const PREPARATION_CARD_WIDTH = "w-[calc(12*var(--content-rem,1rem))]";
 const EMPTY_OFFERS: BattleCard[] = [];
 export function BrewPotionPanel({
   ref,
@@ -38,6 +38,7 @@ export function BrewPotionPanel({
   onConfirm,
   isProgressSavePending = () => false,
   onBack,
+  onContinue,
 }: {
   ref?: Ref<BrewPotionPanelHandle>;
   deck: BattleCard[];
@@ -50,6 +51,7 @@ export function BrewPotionPanel({
   onConfirm: (operation: BrewOperation) => BattleCard | null;
   isProgressSavePending?: () => boolean;
   onBack: () => void;
+  onContinue?: (() => void) | undefined;
 }) {
   const i18n = useGameTranslation();
   const [selected, setSelected] = useState<number[]>([]);
@@ -58,12 +60,19 @@ export function BrewPotionPanel({
   const recipeSlot = useRef<HTMLButtonElement>(null);
   const priceId = useId();
   const recipeBrew = kind === "new" && variant === "alchemist";
+  const preparationWidthClass =
+    variant === "alchemist" ? collectionTileWidthClass : "w-[calc(12*var(--content-rem,1rem))]";
   const [error, setError] = useState<"deck" | "potion" | "brew" | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [selectionDeck, setSelectionDeck] = useState(deck);
   const [selectionOffers, setSelectionOffers] = useState(offers);
 
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const continueRef = useRef<HTMLButtonElement>(null);
+  const completed = Boolean(onContinue);
+  useLayoutEffect(() => {
+    if (completed) focusControl(continueRef.current);
+  }, [completed]);
   if (!submitted && (selectionDeck !== deck || selectionOffers !== offers)) {
     setSelectionDeck(deck);
     setSelectionOffers(offers);
@@ -89,7 +98,7 @@ export function BrewPotionPanel({
       onBack();
       return;
     }
-    if (selected.some((index) => index >= 0)) {
+    if (!recipeBrew && selected.some((index) => index >= 0)) {
       setSelected([]);
       setError(null);
     } else onBack();
@@ -187,7 +196,7 @@ export function BrewPotionPanel({
   return (
     <div
       data-potion-preparation
-      className={cn("flex w-full max-w-4xl flex-col items-center", variant === "alchemist" ? "gap-6" : "gap-5")}
+      className={cn("flex w-full flex-col items-center", variant === "alchemist" ? "gap-6" : "max-w-4xl gap-5")}
     >
       {variant === "campfire" && (
         <h2 className="text-xl">
@@ -226,7 +235,7 @@ export function BrewPotionPanel({
               <div
                 key={index}
                 data-potion-choice={index}
-                className={cn(PREPARATION_CARD_WIDTH, "touch-none")}
+                className={cn(preparationWidthClass, "shrink-0 touch-none")}
                 onPointerDown={(event) => drag.onPointerDown(index, event)}
                 onPointerMove={drag.onPointerMove}
                 onPointerUp={drag.onPointerUp}
@@ -248,7 +257,12 @@ export function BrewPotionPanel({
               </div>
             ))}
           </div>
-          <PaginationControls page={pagination.page} totalPages={pagination.totalPages} onPageChange={setPage} />
+          <PaginationControls
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={setPage}
+            reserveSpace={variant === "alchemist"}
+          />
         </>
       ) : (
         <CardSelectionGrid
@@ -270,8 +284,8 @@ export function BrewPotionPanel({
               {slot === 1 && <Plus aria-hidden="true" className="h-6 w-6 text-muted-foreground" />}
               <div
                 className={cn(
-                  PREPARATION_CARD_WIDTH,
-                  "relative aspect-[3/4] rounded-shell-card",
+                  preparationWidthClass,
+                  "relative aspect-[3/4] shrink-0 rounded-shell-card",
                   drag.dropTarget === slot &&
                     (kind === "new"
                       ? "outline-2 outline-offset-4 outline-emerald-300"
@@ -340,7 +354,7 @@ export function BrewPotionPanel({
                 aria-hidden="true"
                 className={cn("h-9 w-9", kind === "strengthen" ? "text-amber-300" : "text-violet-300")}
               />
-              <div className={cn(PREPARATION_CARD_WIDTH, "relative aspect-[3/4]")}>
+              <div className={cn(preparationWidthClass, "relative aspect-[3/4] shrink-0")}>
                 {result ? (
                   resultCard(
                     result,
@@ -385,32 +399,51 @@ export function BrewPotionPanel({
           )}
         </p>
       )}
-      <div className="flex items-start justify-center gap-3">
-        <Button size={variant === "alchemist" ? "lg" : "default"} variant="outline" onClick={back}>
-          {i18n.text("ui.brew-potion-panel.6", "Back")}
-        </Button>
-        {(kind !== "new" || variant === "alchemist") && (
-          <div className="flex flex-col items-center gap-3">
-            <Button
-              size={variant === "alchemist" ? "lg" : "default"}
-              ref={confirmRef}
-              aria-describedby={price > 0 || variant === "alchemist" ? priceId : undefined}
-              disabled={submitted || recipeOpen || !result || !afford || isProgressSavePending()}
-              onClick={() => confirm(operation)}
-            >
-              {i18n.displayText(
-                kind === "new"
-                  ? i18n.text("shop.brewing.brew", "Brew")
-                  : kind === "combine"
-                    ? i18n.text("ui.brew-potion-panel.d7", "Mix")
-                    : i18n.text("ui.brew-potion-panel.d8", "Distill"),
+      <div className="grid">
+        <div
+          className={cn("col-start-1 row-start-1 flex items-start justify-center gap-3", onContinue && "invisible")}
+          inert={Boolean(onContinue)}
+          aria-hidden={onContinue ? true : undefined}
+        >
+          <Button
+            size={variant === "alchemist" ? "lg" : "default"}
+            variant="outline"
+            className={variant === "alchemist" ? "min-w-32" : undefined}
+            onClick={back}
+          >
+            {i18n.text("ui.brew-potion-panel.6", "Back")}
+          </Button>
+          {(kind !== "new" || variant === "alchemist") && (
+            <div className="flex flex-col items-center gap-3">
+              <Button
+                size={variant === "alchemist" ? "lg" : "default"}
+                ref={confirmRef}
+                className={variant === "alchemist" ? "min-w-32" : undefined}
+                aria-describedby={price > 0 || variant === "alchemist" ? priceId : undefined}
+                disabled={submitted || recipeOpen || !result || !afford || isProgressSavePending()}
+                onClick={() => confirm(operation)}
+              >
+                {i18n.displayText(
+                  kind === "new"
+                    ? i18n.text("shop.brewing.brew", "Brew")
+                    : kind === "combine"
+                      ? i18n.text("ui.brew-potion-panel.d7", "Mix")
+                      : i18n.text("ui.brew-potion-panel.d8", "Distill"),
+                )}
+              </Button>
+              {(price > 0 || variant === "alchemist") && (
+                <div id={priceId} className="flex h-10 items-center justify-center">
+                  <GoldCost amount={price} affordable={afford} />
+                </div>
               )}
+            </div>
+          )}
+        </div>
+        {onContinue && (
+          <div className="col-start-1 row-start-1 flex items-start justify-center">
+            <Button ref={continueRef} size="lg" className="min-w-56" onClick={onContinue}>
+              {i18n.text("shop.brewing.continue", "Continue")}
             </Button>
-            {(price > 0 || variant === "alchemist") && (
-              <div id={priceId}>
-                <GoldCost amount={price} affordable={afford} />
-              </div>
-            )}
           </div>
         )}
       </div>

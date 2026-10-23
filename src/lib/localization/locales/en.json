@@ -4357,7 +4357,7 @@
   "shop.brewing.back": {"text":"Back","context":"features/alchemy/run-loop/screens/alchemist-shop-screen.tsx","terms":[]},
   "shop.brewing.brew": {"text":"Brew","context":"features/alchemy/run-loop/screens/brew-potion-panel.tsx","terms":[]},
   "shop.brewing.brew-title": {"text":"Brew Potion","context":"features/alchemy/run-loop/screens/alchemist-shop-screen.tsx","terms":[]},
-  "shop.brewing.continue": {"text":"Continue","context":"features/alchemy/run-loop/screens/alchemist-shop-screen.tsx","terms":[],"aliasOf":"run-end.continue"},
+  "shop.brewing.continue": {"text":"Continue","context":"features/alchemy/run-loop/screens/brew-potion-panel.tsx","terms":[],"aliasOf":"run-end.continue"},
   "shop.brewing.distill": {"text":"Distill","context":"features/alchemy/run-loop/screens/alchemist-shop-screen.tsx","terms":[]},
   "shop.brewing.distill-title": {"text":"Distill Potion","context":"features/alchemy/run-loop/screens/alchemist-shop-screen.tsx","terms":[]},
   "shop.brewing.menu-title": {"text":"Potion Brewing","context":"features/alchemy/run-loop/screens/alchemist-shop-screen.tsx","terms":[]},
