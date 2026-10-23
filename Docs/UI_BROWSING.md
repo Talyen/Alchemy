@@ -2,7 +2,18 @@
 
 Shared conventions: [UI](./UI.md).
 
+## Main Menu
+
+Desktop pairs Quit on the bottom left with Options on the right. Quit uses a
+rose-colored Power icon; browser Options stays centered. Demo completion uses
+standard page gutters and [contains the complete marketing image](./STEAM_DEMO.md#marketing-presentation).
+
 ## Collection and Armory browsing
+
+Collection and Homestead center real items in wrapping rows without fillers.
+Reserve two rows and a pagination slot on every tab/page, keeping the complete
+group centered and its header, tabs and pagination stationary. Center shorter
+grids within that area; single-page tabs leave the pagination slot empty.
 
 Collection measures available grid width and scaled tile size. Page size is two
 rows times the resolved column count, capped at four columns for Heroes, Cards,
@@ -69,7 +80,8 @@ Each Mystery choice shows its rewards above its action button. Keep the event ar
 at the standard landscape size, cards at the standard inspection size, and Boons
 and Gear at the standard Collection size. Portrait rewards keep their 3:4 aspect
 ratio; shelves wrap instead of reducing artwork sizes. Resource pills and XP stay
-with their choice, including previewed Homestead bonuses.
+with their choice, including previewed Homestead bonuses. Reward boxes follow the
+[balanced-row layout](#run-journey-recap).
 
 Hover or keyboard focus inspects a reward without choosing the outcome. Only the
 choice button commits the original offer. Known cards and Boons show their normal
@@ -123,8 +135,8 @@ save acknowledgment, using shared Saving/Retry feedback. The current tab/page
 stays selected and cleared tiers can be purchased again.
 
 Homestead artwork keeps its native aspect ratio without cropping. Landscape
-nodes retain the larger Homestead-specific width and fixed two-row geometry,
-keeping headers, tabs, and pagination stationary. Artwork uses the shared 3px
+nodes retain the larger Homestead-specific width and the
+[shared two-row reservation](#collection-and-armory-browsing). Artwork uses the shared 3px
 hover/focus outline and 103.5% scale with `card-interactive-no-glow`. Affordable
 nodes add only a tight, static outer gold halo at rest, retaining the neutral
 border until hover/focus, without pulse, shimmer, or shine. Affordability updates
@@ -158,8 +170,10 @@ standard confirmation/save feedback without a purchase celebration.
 
 ## Card-removal browsing
 
-Shop card removal reserves a fixed available-height card area between its header
-and pagination/actions. It shows two rows when they fit and one otherwise, keeping
+Shop card removal uses a centered, content-scaled maximum height and standard page
+gutters. Its fixed available-height card area sits between the header and
+pagination/actions; short windows shrink that area, while tall windows keep the
+footer with the content. It shows two rows when they fit and one otherwise, keeping
 card size readable and the header and actions stationary across pages. Only the
 card area scrolls if even one row cannot fit. The removal header replaces the shop
 header, gold counter, and instruction text; the Remove action retains its gold cost.
@@ -207,6 +221,9 @@ keep the same spacing.
 
 ## Options
 
+Display groups Display Mode (desktop only), Brightness, Game Size and Tooltip
+Size. Background groups Background Glow and Background Particles.
+
 Gameplay Options contains Auto-End Turn and Remember Auto-Battle Preference. The former Controls instructions are removed. Failed local saves show the shared non-modal warning and Retry action; progression waits for local acknowledgement under [pending saves and action feedback](./UI.md#pending-saves-and-action-feedback).
 
 Options opened from either end-run outcome returns to that same recap through Back or Escape, including after changing Game Size.
@@ -221,7 +238,7 @@ fixed-width slider percentages. Slider and dropdown rows stack below 36
 content-scaled rem of panel width. Options centers a shared tab area sized by its tallest panel. Inactive panels
 remain in the same grid cell, invisible and inert, so switching tabs preserves
 the header and control positions. The page scrolls when the content exceeds the
-available height.
+available height. Error Log scroll caps use stage units.
 
 ## Armory crafting and salvage
 
@@ -243,7 +260,17 @@ Selecting an item for salvage immediately ends targeting and clears its cursor a
 
 Crafting consumes one currency per activation. Escape cancels targeting; invalid targets explain their restriction in tooltips and after selection. Success shows actual before/after affix descriptions in a dismissible panel pinned inside the viewport, a brief item pulse, and count feedback only when quantities change.
 
+## Talents
+
+Talents uses one 16px header gap without additional pane top padding.
+Run-end Talent boxes follow the [reward row layout](#run-journey-recap).
+
 ## Run journey recap
+
+Talents on the end-run screen and Mystery rewards use fixed-width boxes in centered,
+balanced rows. Use the fewest rows that fit, up to five boxes per row, with larger
+rows first and counts differing by at most one. Recalculate for available width
+or Game Size changes.
 
 Journey’s End focuses on earned rewards and progression, without a room trail or
 Act/node summary. Deck and Boon inspection retain their normal labels and shared

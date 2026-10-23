@@ -13,7 +13,7 @@ completion credit is granted. Edition locks appear only as bold red
 
 Candidate readiness checks and the offline playtest launcher:
 [demo checklist](./STEAM_DEMO_CHECKLIST.md).
-Player-facing copy awaiting approval: [copy review](./STEAM_DEMO_COPY_REVIEW.md).
+Player-facing copy awaiting approval: [copy review](./Plans/SteamDemo.md#pending-copy-approvals).
 Shipping procedures: [release](./RELEASE.md) and [release setup](./RELEASE_SETUP.md).
 
 ## Marketing presentation
