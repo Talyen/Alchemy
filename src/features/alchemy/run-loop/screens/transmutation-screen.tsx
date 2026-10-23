@@ -260,14 +260,7 @@ export function TransmutationScreen({
               </div>
               <MoveRight aria-hidden="true" className="col-start-2 row-start-1 h-10 w-10 self-center text-gold-pale" />
               {preview ? (
-                <FadeSlot
-                  swapKey={previewKey}
-                  onReady={setReadyPreviewKey}
-                  className={cn(
-                    viewCardWidthClass,
-                    "col-start-3 row-span-2 row-start-1 grid grid-rows-subgrid justify-items-center",
-                  )}
-                >
+                <>
                   <BattleCardButton
                     card={preview}
                     comparisonCard={source}
@@ -275,15 +268,19 @@ export function TransmutationScreen({
                       value0: i18n.read(() => getCardDisplayTitle(preview)),
                     })}
                     className={viewCardWidthClass}
-                    wrapperClassName="flex"
+                    wrapperClassName="col-start-3 row-start-1 flex"
                     shineColor={getCardInspectionShineColors(preview)}
                     shimmerActive={false}
                     shimmerToken={undefined}
                   />
-                  <div className={cn(controlLabelClass, "w-full")}>
+                  <FadeSlot
+                    swapKey={previewKey}
+                    onReady={setReadyPreviewKey}
+                    className={cn(controlLabelClass, viewCardWidthClass, "col-start-3 row-start-2")}
+                  >
                     <CardTitle card={preview} />
-                  </div>
-                </FadeSlot>
+                  </FadeSlot>
+                </>
               ) : (
                 <div
                   aria-hidden="true"
@@ -323,26 +320,25 @@ export function TransmutationScreen({
             <Button size="lg" variant="outline" disabled={locked} onClick={back}>
               {i18n.text("ui.transmutation-screen.10", "Back")}
             </Button>
-            {keyword && (
-              <Button
-                size="lg"
-                variant="primary"
-                disabled={
-                  locked ||
-                  !preview ||
-                  !previewReady ||
-                  !canTransmuteCard(
-                    selection?.choices.filter((choice) => choice.keyword === preview.transmuted) ?? [],
-                    source,
-                    selection?.sourceIndex ?? undefined,
-                    runDeck,
-                  )
-                }
-                onClick={confirm}
-              >
-                {i18n.text("ui.transmutation-screen.11", "Transmute")}
-              </Button>
-            )}
+            <Button
+              size="lg"
+              variant="primary"
+              disabled={
+                locked ||
+                !keyword ||
+                !preview ||
+                !previewReady ||
+                !canTransmuteCard(
+                  selection?.choices.filter((choice) => choice.keyword === preview.transmuted) ?? [],
+                  source,
+                  selection?.sourceIndex ?? undefined,
+                  runDeck,
+                )
+              }
+              onClick={confirm}
+            >
+              {i18n.text("ui.transmutation-screen.11", "Transmute")}
+            </Button>
           </div>
         )}
         {(error || staleSource) && (

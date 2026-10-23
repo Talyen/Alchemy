@@ -137,7 +137,7 @@ describe("Transmutation flow", () => {
     render(<Harness />);
     click("Slash");
     expect(visit().transmutation).toMatchObject({ keyword: null, offerIndex: null });
-    expect(screen.queryByRole("button", { name: "Transmute" })).toBeNull();
+    expect((screen.getByRole("button", { name: "Transmute" }) as HTMLButtonElement).disabled).toBe(true);
     click("Choose Burn");
     expect(visit().transmutation).toMatchObject({ keyword: "burn", offerIndex: 1 });
     expect(screen.queryByRole("button", { name: "Choose Companion" })).toBeNull();
@@ -172,8 +172,10 @@ describe("Transmutation flow", () => {
     click("Slash");
     expect(screen.getByRole("button", { name: "Original: Slash" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /^Preview:/ })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Transmute" })).toBeNull();
+    expect((screen.getByRole("button", { name: "Transmute" }) as HTMLButtonElement).disabled).toBe(true);
     expect(visit().transmutation).toMatchObject({ keyword: null, offerIndex: null });
+    click("Transmute");
+    expect(onExchange).not.toHaveBeenCalled();
     expect(transmuteCard(0, 0, defaultGameSession)).toBeNull();
     const choices = within(screen.getByRole("group", { name: "Alterations" })).getAllByRole("button");
     expect(choices).toHaveLength(3);
