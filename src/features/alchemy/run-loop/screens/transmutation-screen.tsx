@@ -254,29 +254,8 @@ export function TransmutationScreen({
                 shimmerActive={false}
                 shimmerToken={undefined}
               />
-              <div className={cn(controlLabelClass, viewCardWidthClass, "col-start-1 row-start-2 min-h-[2lh]")}>
+              <div className={cn(controlLabelClass, viewCardWidthClass, "col-start-1 row-start-2")}>
                 <CardTitle card={source} />
-              </div>
-              <div
-                className="col-start-1 row-start-3 flex flex-wrap justify-center gap-3"
-                role="group"
-                aria-label={i18n.text("ui.transmutation-screen.6", "Alterations")}
-              >
-                {selection?.choices
-                  .filter((choice) => canTransmuteCard([choice], source, selection?.sourceIndex ?? undefined, runDeck))
-                  .map((choice) => (
-                    <KeywordTag
-                      key={choice.keyword}
-                      keywordId={choice.keyword}
-                      pill
-                      choice
-                      iconOnly
-                      showTooltip
-                      selected={keyword === choice.keyword}
-                      disabled={locked}
-                      onSelect={() => select({ kind: "keyword", keyword: choice.keyword })}
-                    />
-                  ))}
               </div>
               {preview && (
                 <>
@@ -304,12 +283,33 @@ export function TransmutationScreen({
                       shimmerActive={false}
                       shimmerToken={undefined}
                     />
-                    <div className={cn(controlLabelClass, "min-h-[2lh] w-full")}>
+                    <div className={cn(controlLabelClass, "w-full")}>
                       <CardTitle card={preview} />
                     </div>
                   </FadeSlot>
                 </>
               )}
+            </div>
+            <div
+              className="flex flex-wrap justify-center gap-3"
+              role="group"
+              aria-label={i18n.text("ui.transmutation-screen.6", "Alterations")}
+            >
+              {selection?.choices
+                .filter((choice) => canTransmuteCard([choice], source, selection?.sourceIndex ?? undefined, runDeck))
+                .map((choice) => (
+                  <KeywordTag
+                    key={choice.keyword}
+                    keywordId={choice.keyword}
+                    pill
+                    choice
+                    iconOnly
+                    showTooltip
+                    selected={keyword === choice.keyword}
+                    disabled={locked}
+                    onSelect={() => select({ kind: "keyword", keyword: choice.keyword })}
+                  />
+                ))}
             </div>
           </>
         )}
