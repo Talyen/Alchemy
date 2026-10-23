@@ -94,11 +94,17 @@ describe("ErrorLogViewer", () => {
       useErrorLogStore.getState().pushError({ message: `Failure ${index}`, source: "global" });
     }
     render(<ErrorLogViewer onClose={vi.fn()} />);
-    await user.click(screen.getByRole("button", { name: "Copy All" }));
+    // Limit accessible-name computation to the controls instead of all 100 entry buttons.
+    const controls = within(screen.getByText("100 errors").parentElement!);
+    await user.click(controls.getByRole("button", { name: "Copy All" }));
     expect(screen.getByText("Copied · 100 errors")).toBeTruthy();
     act(() => useErrorLogStore.getState().pushError({ message: "New failure", source: "global" }));
     expect(screen.getByText("100 errors")).toBeTruthy();
     expect(screen.queryByText(/Copied ·/)).toBeNull();
+    expect(screen.queryByText("Failure 0")).toBeNull();
+    expect(screen.getByText("Failure 1")).toBeTruthy();
+    expect(screen.getByText("Failure 99")).toBeTruthy();
+    expect(screen.getByText("New failure")).toBeTruthy();
   });
 
   it("reports clipboard rejection without clearing the log", async () => {
