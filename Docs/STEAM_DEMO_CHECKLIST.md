@@ -94,7 +94,7 @@ Use [audio](./AUDIO.md) and [performance](./PERFORMANCE.md).
 
 - [ ] Act 1 ends with Victory and then The Journey Continues; Main Menu exits normally. Defeat/abandonment show Journey's End.
 - [ ] Wishlist controls open exactly one usable full-game destination under the [wishlist contract](./STEAM_DEMO.md#input-and-release-evidence); Quit has no promotional side effect.
-- [ ] Review completion copy, full-game locks and the [pending copy approvals](./STEAM_DEMO_COPY_REVIEW.md#pending-copy-approvals).
+- [ ] Review completion copy, full-game locks and the [pending copy approvals](./Plans/SteamDemo.md#pending-copy-approvals).
 - [ ] Set the release date and event deadlines; prepare a gameplay-led trailer and announcement with checked links and the actual endpoint.
 - [ ] If outreach is approved, prepare the build, keys, concise pitch and known limitations. Sending outreach requires its own authorization.
 - [ ] Assign feedback/crash monitoring and hotfix/rollback ownership; retain a known-good build under the release procedure.
@@ -137,7 +137,11 @@ exclude human reading time and cannot certify comprehension or audio comfort.
 
 Automated controller tests send Steam Input's intended keyboard/pointer events;
 isolated Electron tests do not connect to Steamworks or real Cloud profiles.
-A fake two-device backend is not evidence of live synchronization.
+A fake two-device backend is not evidence of live synchronization. Browser input,
+mocked callbacks and workstation FPS cannot qualify mapping delivery, native
+controller/PlayStation support, Proton, suspend/resume, Deck ratings or public
+carryover claims. Keep those claims unqualified until the relevant device/service
+evidence below exists.
 
 For a Windows candidate launched through Steam, record package version/hash,
 Windows and Steam client versions, and published controller layout ID. Exercise

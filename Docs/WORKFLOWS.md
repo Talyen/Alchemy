@@ -34,17 +34,31 @@ owns gate selection; named suites below are useful verification entry points.
 
 ## Add permanent Gear
 
-Item model, generation, Uniques, and write paths: [ARMORY.md](./ARMORY.md) (data model, write paths, battle integration, persistence).
+Follow [Armory](./ARMORY.md#data-model) for the data model and
+[write paths](./ARMORY.md#write-paths) for acquisition and Health synchronization.
 
-1. Add base item metadata in `src/lib/gear/base-items.ts` (slots, two-hand rule, affinity keywords, available rarities, thematic homestead `salvageByRarity`). Salvage consumes `salvageValue` on the generated definition.
-2. Register Gear art via the [asset workflow § Add or replace Gear art](./WORKFLOWS-ASSETS.md#add-or-replace-gear-art) (naming/slot violations throw during sync). A base without art still builds its definitions with fallback art so loot and saves keep working, but the gap fails `content:audit` and the gear validation tests — never ship an ordinary definition without generated barrel art (Uniques reuse their base item's Astral art).
-3. Register the base item's Unique in `src/lib/gear/unique-catalog.ts`, with one exclusive fixed signature and three fixed standard supporting affixes. Every base item needs one Unique; ordinary variant generation does not create it. Follow [Unique affix and combat contracts](./UNIQUE_ITEMS.md) for signature implementation and interaction documentation.
-4. For new affixes, append definitions in `src/lib/gear/affix-rows.ts` with stable IDs, `keywordId`, effect keys, value ranges, and eligible slots. Keep `keywordId` aligned with affinity weighting; effect keys and numeric manifest defaults derive from the catalog. Independent-roll chance effects are recognized by the `Chances` suffix in their effect key (derived in `gear-effect-manifest.ts`); every other effect sums numerically. Display/roll helpers live in `affixes.ts`, pool filtering in `affix-pool.ts`, and description formatting in `formatAffixDescription` (`affix-catalog.ts`), shared by tooltips and the unique catalog. Percent-based bonuses use `ROLL_PERCENT`, never the resist-only `ROLL_RESIST`.
-5. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change. Unique instances store no affix rolls — only identity — with reads resolving `getUniqueAffixes()`.
-6. Run `npm run content:audit` (enforces the affix-catalog, pool, and Unique invariants in `validators-gear.ts`) and `npm run balance:loot` when loot weights or depth curves change. New affixes must also satisfy the `uniqueOnly` fixed-roll rule and the description typography rule.
-7. Check affected Gear behavior, including existing Unique catalog coverage and save compatibility for instance or loadout shape changes. HP-sync write paths: [ARMORY.md § Write paths](./ARMORY.md#write-paths). Rewards store the exact `GearInstance` and never re-roll on acceptance; never put definition objects or art URLs into saves.
+1. Define the base in `src/lib/gear/base-items.ts`: legal slots/hand preset,
+   affinities, rarities and thematic `salvageByRarity`. Generated definitions own
+   the final `salvageValue`.
+2. Register [Gear art](./WORKFLOWS-ASSETS.md#add-or-replace-gear-art) and regenerate
+   outputs. Missing ordinary art retains fallback definitions for saves/loot but
+   fails validation; Uniques reuse their base's Astral art.
+3. Add the base's Unique in `src/lib/gear/unique-catalog.ts` under the
+   [fixed-affix contract](./UNIQUE_ITEMS.md#affix-contract).
+4. Check affected generation/acquisition, then run `npm run content:audit` and the
+   [task gate](../CONTRIBUTING.md#what-to-run-when-you-change). Loot-weight/depth
+   changes also use `npm run balance:loot`.
 
----
+**If adding an affix:** append its stable ID, keyword, effects, ranges and slots in
+[affix rows](../src/lib/gear/affix-rows.ts). Follow [manifest/proc rules](./ARMORY.md#affix-rules),
+`uniqueOnly` restrictions and typography. Pool helpers live in `affix-pool.ts`;
+`formatAffixDescription` in `affix-catalog.ts` is shared by tooltips/Uniques.
+Use `ROLL_PERCENT` for percentages; `ROLL_RESIST` is resistance-only.
+
+**If changing instance/loadout shape:** update schema, defaults, codec and fixtures
+under [save compatibility](../src/features/alchemy/shared/storage/MIGRATIONS.md).
+Rewards retain the exact rolled instance; acceptance never rerolls it or saves
+its definition/art URLs.
 
 ## Change a shop
 
@@ -104,19 +118,41 @@ Start with [battle controllers](./BATTLE_CONTROLLERS.md#battle-path).
 
 ## Adding a new screen
 
-1. Add the screen to `ROUTE_SCREENS` in `src/lib/routing/screens.ts`; `Screen` and the runtime value list derive from it.
-2. Classify it in `src/lib/routing/run-screen-router.ts` (`SCREEN_PHASE`) and add every legal interactive edge in `src/lib/routing/screen-transition-policy.ts`. Run-loop lists derive from `SCREEN_PHASE`; `use-screen-transitions.ts` owns delay/immediate/commit timing, not taxonomy.
-   Ordinary edges cover new-run setup and player actions. Returning to an existing run uses `resumeRun` and its validated saved screen through `resumeTo`; do not add every resumable screen as an ordinary edge from menus or meta screens.
-3. Create the component under `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/`, and export it from that directory's `index.ts`.
-4. Use `TitledScreenShell` from `shared/ui/layout-components.tsx`; `ScreenShell` is transparent and layout-only. `TitledScreenShell` owns the full-stage overflow wrapper so plasma shows through, and the app stage owns the background. Reserve `alchemy-shell` for contained panels. Main Menu and Battle are exceptions; choosers use widths from `shared/config/layout.ts`. The global menu button lives in `App.tsx`, so screens wire no menu props.
-5. Wire the route in the matching phase table under `src/app/screen-routes/` (`meta-routes`, `run-setup-routes`, `run-loop-routes`, or `run-end-routes`). Register a statically imported component; `SCREEN_ROUTES` checks completeness and mounts it through React.
-6. For activity-backed run screens, add the exact display selector in `shared/stores/session/run-screen-data.ts` and its capability hook in `use-run-screen-data.ts`. Those hooks retain outgoing data during fades; Battle keeps its dedicated [route display hook](./BATTLE_CONTROLLERS.md#battle-path). When the visit also clears its payload within the screen, use `useHeldWhile` and a shell fallback, following `app/screen-routes/mystery-screen-route.tsx`.
-7. Add required actions through the existing controller composition. `shell/route-commands.ts` derives its command types from those factories and limits the battle surface exposed to routes; do not add a second handwritten method inventory. Route display stays separate from commands. If route context props must change, update their owner in `src/app/screen-routes/route-ctx.ts` and its callers; `index.tsx` re-exports that contract.
-8. For a new gameplay activity, update `lib/active-run-session/run-activity.ts` and its initialization, then encode/decode resumable data through the [resume workflow](./RUN_WORKFLOWS.md#change-mid-run-resume-activerundata). A route alone does not establish an activity or saved location.
-9. Wire the navigation trigger at the caller of `goToScreen("<name>")`. For run activities, also update the production-flow adapter and legal choices in `src/app/playthrough/` so headless careers can proceed. Review affected route mocks, save fixtures, and browser helpers against the new contracts; verify initialization and current-format resume with focused unit tests.
-10. Classify the route in `SCREEN_FAMILIES` in `tests/interaction/screen-coverage.ts` and update the [interaction screen map](../tests/interaction/README.md#screen-and-boundary-map) with its lifecycle family and retained protection. This exhaustive registration does not by itself prove action coverage; choose tests under the shared [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy).
+1. Add the route to `ROUTE_SCREENS` in `src/lib/routing/screens.ts`, classify it in
+   `run-screen-router.ts` (`SCREEN_PHASE`), and add legal interactive edges in
+   `screen-transition-policy.ts`. Derived unions/lists need no parallel registration.
+2. Create/export the component in its `meta`, `run-setup` or `run-loop` screen
+   directory. Use [shared page shells](./UI.md#placement-and-boundaries), choosers'
+   `shared/config/layout.ts` widths and the app-owned menu. Main Menu/Battle retain
+   their layout exceptions; `alchemy-shell` is for contained panels.
+3. Register the statically imported component in the matching `src/app/screen-routes/`
+   phase table. `SCREEN_ROUTES` checks completeness and React mounts the component.
+4. Compose actions through existing controllers; `shell/route-commands.ts` derives
+   their signatures. Keep display separate from commands. Context changes belong
+   in `src/app/screen-routes/route-ctx.ts` and its consumers, not another method list.
+5. Wire the caller's navigation trigger and classify the route in `SCREEN_FAMILIES`
+   in `tests/interaction/screen-coverage.ts`; update the [screen map](../tests/interaction/README.md#screen-and-boundary-map).
+   Check affected wiring and meaningful behavior under the shared test policy.
 
-Restore/hydration bypasses the interactive transition table. Cold startup opens the main menu while preserving the validated saved activity; Continue resumes that activity through the resume policy. Screen components subscribing to Zustand stores should select narrow slices or use `useShallow` to prevent render churn during high-frequency combat ticks.
+**For activity-backed screens:** add the exact selector in
+`shared/stores/session/run-screen-data.ts` and its hook in `use-run-screen-data.ts`.
+Those hooks retain outgoing data during fades; Battle uses its
+[dedicated hook](./BATTLE_CONTROLLERS.md#battle-path). A visit clearing its own payload
+also needs `useHeldWhile` and a shell fallback, as in
+`app/screen-routes/mystery-screen-route.tsx`.
+
+**For a new gameplay activity:** update `lib/active-run-session/run-activity.ts`,
+initialization and the [resume codec](./RUN_WORKFLOWS.md#change-mid-run-resume-activerundata).
+Update `src/app/playthrough/` adapters/legal choices and affected route mocks, save
+fixtures and browser helpers. Verify initialization and current-format resume;
+a route alone establishes no durable activity.
+
+Use `resumeRun`/`resumeTo` for validated saved locations rather than adding menu
+edges to every resumable screen. Restore bypasses interactive edges and cold boot
+opens Menu; Continue opens saved activity. [Navigation timing](./BATTLE_CONTROLLERS.md#navigation-timing)
+owns delay/commit behavior. Select narrow store slices (`useShallow` where needed)
+to avoid combat-driven render churn. Family registration identifies protection,
+not exhaustive action coverage.
 
 ---
 

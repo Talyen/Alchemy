@@ -28,19 +28,18 @@ own illustration style and importing.
   candidate convincingly improves the original, keep the original and report
   the unsuccessful attempt. Discard rejected directions rather than polish them.
 
-Screenshots establish what rendered. Tests establish protected behavior. Neither
-establishes aesthetic quality. Keep review findings brief and concrete; no visual
-receipt, score, mandatory pilot, reference registry or per-text-block report is required.
-Temporary captures belong in ignored reports/output; do not create design archives.
+Use screenshots to inspect rendering and tests to protect behavior; assess visual
+quality through the comparison itself. Report concrete improvements, affected
+interaction checks and any missing validation briefly. Keep temporary captures
+in ignored reports/output.
 
 ## Browser authorization
 
 [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) owns execution permissions. Use its [managed preview workflow](../CONTRIBUTING.md#agent-preview-ownership), reusing a suitable preview and preserving other tasks' servers, browsers and occupied lanes.
 
-Visual work needs rendered review before it can be called complete. If rendering
-is blocked, report the missing review and its limits; do not claim visual
-validation from source or passing tests. Ordinary local checks do not require
-visual receipts or nonvisual declarations for source changes.
+Complete rendered review for visible changes. If rendering is blocked, report
+that limitation; source inspection and passing tests establish only their own
+scope. Other source changes follow the ordinary task gate.
 
 ## Reproducible scenarios
 
