@@ -22,7 +22,7 @@ Prioritize by consequence, exposure, and confidence: data loss, exploitable boun
 
 Choose the most maintainable complete causal remedy. Consider deletion, reuse, simplification, and restoring an existing owner before adding a mechanism; these are options, not a mandatory sequence. Fewer lines, declarations, casts, or test declarations alone are not success criteria. Choose coverage and retirement under the [test value policy](../../CONTRIBUTING.md#test-value-and-coverage-strategy). Explain a structural tradeoff when material; small obvious fixes need no design essay or LOC forecast.
 
-Follow confirmed causes through callers, callees, siblings, tests, schemas, docs, and config. Assign one primary audit to a finding; connected fixes and regression coverage stay together even when they cross audit scopes. Do not run an uncited sibling sweep or report the same issue several times. Preserve compatibility, intentional variants, and repository boundaries; never weaken gates or diagnostics to make a finding disappear.
+Follow confirmed causes through callers, callees, siblings, tests, schemas, docs, and config. Assign one primary audit to a finding; connected fixes and regression coverage stay together even when they cross audit scopes. Do not run an uncited sibling sweep or report the same issue several times. Preserve compatibility, intentional variants and repository boundaries. Never weaken gates or diagnostics to hide a finding; change authoring sources and regenerate outputs instead of hand-editing generated files.
 
 Implement justified fixes within the user's authorization, including structural remedies when supported by evidence and verification. Follow the repository's skill routing for new contracts. If a consequential product, compatibility, or architecture choice remains unresolved, present the evidence and concrete options; continue independent work. Audit headings do not grant authority for unrelated balance, copy, layout, save-policy, or dependency changes, and do not require reapproval of already authorized work.
 
@@ -57,7 +57,9 @@ Leave alone unless the owning architecture doc changes: battle RNG injection; pe
 
 ## Verification
 
-Verify with the path-scoped gates for the touched area in [CONTRIBUTING.md](../../CONTRIBUTING.md). Prefer existing gates over invented absolute metrics; audit heuristics are not additional gates. When toolchain pieces are absent, state exactly which checks were skipped and why — never fail an audit solely because Electron, Steam credentials, or a full ship build is unavailable.
+[CONTRIBUTING](../../CONTRIBUTING.md#what-to-run-when-you-change) owns gate
+selection and execution permissions. Audit heuristics add no gates. Report missing
+toolchain or platform checks and their limits under [Finish](#finish).
 
 Standing conventions: [CONTRIBUTING.md](../../CONTRIBUTING.md), [ARCHITECTURE.md](../ARCHITECTURE.md), [AGENTS.md](../../AGENTS.md). Optional measurable sweep: `npm run audit:all` (`npm run content:audit` is a content-catalog check, outside this pack).
 

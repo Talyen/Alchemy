@@ -68,9 +68,10 @@ module as storage:
   codecs into the versioned envelope and performs bootstrap hydration; it does
   not own gameplay rules. Platform backends live at the I/O seam.
 
-[Persistence API](./RUN_STATE.md#persistence-api) owns the detailed contract;
-[change persisted data](./RUN_WORKFLOWS.md#change-persisted-save-data) owns the
-editing sequence. These directory roles do not change the saved format.
+[Persistence API](./RUN_STATE.md#persistence-api) owns session snapshots and codecs;
+[save compatibility](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract)
+owns storage behavior. [Change persisted data](./RUN_WORKFLOWS.md#change-persisted-save-data)
+owns the editing sequence. These directory roles do not change the saved format.
 
 ## Directory layout (`src/features/alchemy/`)
 
@@ -82,11 +83,23 @@ editing sequence. These directory roles do not change the saved format.
 
 `shared/ui/tooltips/` owns tooltip placement, panels, and item popups; `shared/ui/inspection/` owns card and enemy inspection overlays and their grid/sorting helpers. `shared/ui/cards/` owns card rendering and selection used across screens. `shared/ui/dialogs/` owns modal shells, focus ownership/navigation, portal roots, and dialog dismissal; hooks without a cohesive subsystem stay directly in `shared/ui/`; battle-only panels and playback visuals live under `run-loop/battle/presentation/` (`ui/` for panels and effects). Unit tests mirror these owners. Collection-only presentation lives in `meta/screens/collection/`; shop purchase and service widgets live in `run-loop/shop/ui/`. Mystery outcome badges live beside their screens in `run-loop/screens/mystery/`; Options panels, controls, and the error-log viewer live in `meta/screens/options/`. Display scaling belongs to `shared/ui/use-virtual-resolution.ts`; the general latest-value ref hook belongs to `shared/ui/use-latest-ref.ts`. Import shared UI directly from its owning module rather than a catch-all barrel.
 
-Import lib catalogs through their Oxlint-enforced barrels (`@/lib/game-data`, `@/lib/battle`, `@/lib/validation`, `@/lib/content-validation`). Feature stores and screens use on-disk paths (for example `@/features/alchemy/shared/stores/session/run-reads`). Feature UI reads static catalogs through [`shared/config/game-data-catalog.ts`](../src/features/alchemy/shared/config/game-data-catalog.ts). Content parity helpers live under `@/lib/content-validation/card-parity` (the only sanctioned deep path: relative imports inside the package plus test deep imports, which sit outside boundary lint; every other `src/` import goes through the barrel). Naming rule for the three similarly-named lib areas: authored-content correctness (card text matches effects, catalogs are consistent) belongs in `content-validation`; persisted save shapes, normalization, and migrations belong in `validation`; mode logic (labyrinth/wildwood map generation, encounter-trait picking) belongs in `content-systems`. Tests sit outside boundary lint and may deep-import battle leaves (for example `@/lib/battle/encounter-trait-events`); `src/` must use the `@/lib/battle` barrel. Battle state contracts (`battle/types.ts` and `battle/types/state-types.ts`) are type-only; they cannot import or re-export executable rules. Internal callers import mechanics from their owners: `health-state.ts` for Health, healing and death prevention; `status-state.ts` for status writes; `enemy-mitigation-state.ts` for enemy defenses; `encounter-trait-state.ts` for immutable trait lookups; `resource-state.ts` for Mana and Gold; and `damage-modifiers.ts` for damage scaling. Snapshot serialization and crowd-control eligibility live in `battle-snapshot.ts` and `crowd-control-policy.ts`. This keeps low-level state contracts independent of gameplay and makes rule dependencies explicit. The battle barrel exports the gameplay surface only — hit-pipeline staging helpers (`remapDrawnCardBenefits`, `playerStatusDelta`, `mitigatePlayerCombatDamage`, `scaleReceivedPlayerDamage`) and single-use tooling (`regrowEnemyThorns`) stay importable by relative path inside `src/lib/battle/` but are not barrel exports.
+Import lib catalogs through their Oxlint-enforced barrels (`@/lib/game-data`,
+`@/lib/battle`, `@/lib/validation`, `@/lib/content-validation`). Feature stores and
+screens use on-disk paths. Feature UI reads static catalogs through
+[`game-data-catalog.ts`](../src/features/alchemy/shared/config/game-data-catalog.ts),
+kept off the token `config/` barrel so layout imports stay catalog-free.
+`content-validation/card-parity` is the sanctioned source deep-import exception;
+tests sit outside boundary lint and may import leaves.
 
-> Token-barrel exception: keep `game-data-catalog.ts` off the token `config/` barrel so layout/token imports stay catalog-free.
+Battle state contracts are type-only and cannot import or re-export executable
+rules. Internal mechanics use their owning leaves; the battle barrel exposes the
+public gameplay surface. [Game rules](./GAME_RULES.md#direct-player-hit-resolution)
+and [effect handlers](../src/lib/game-data/effects/BATTLE_HANDLERS.md) locate those
+rules. `content-validation` checks authored content; `validation` parses and
+repairs saves; `content-systems` owns mode generation and encounter selection.
 
-`shared/run-flow/` is the neutral seam for destination sampling and starter-draft helpers so `run-setup` and `run-loop` do not import each other (Oxlint-enforced).
+`shared/run-flow/` is the neutral seam for destination sampling and starter drafts,
+keeping `run-setup` and `run-loop` independent under Oxlint.
 
 ## Run phase
 
@@ -94,101 +107,52 @@ Import lib catalogs through their Oxlint-enforced barrels (`@/lib/game-data`, `@
 
 ## Run setup ownership
 
-`run-setup/run/content-system-navigation.ts` owns content-system selection,
-character/difficulty routing. `run-resume-navigation.ts` owns current-run resume;
-`new-run-initialization.ts` prepares new runs and drafts in commands before navigation. Run-start snapshots belong to
-`run-start-command.ts`; Wildcard starter-draft sampling belongs to
-`shared/run-flow/starter-draft.ts`.
-`new-run-initialization.ts` owns Campaign launch: run setup, discovery, destination offers, pending-character cleanup, and opening combat
-commit in one command. Initialization failure rolls all of them back. After
-commit, it schedules Battle before presenting opening feedback, so an immediate
-Companion outcome supersedes that request. Presentation failure retains a
-complete resumable battle. Novice starts explicitly choose Skeleton; difficulty
-selection uses the normal encounter pool.
-Wildwood post-entry progression belongs to
-`run-loop/run/wildwood-gauntlet-flow.ts`. The persisted draft/resume differences
-between Campaign, Labyrinth, and Wildwood are covered by the [content-system
-workflow](./WORKFLOWS.md#content-system-behavior).
+| Responsibility                                   | Owner under `src/features/alchemy/`                                        |
+| ------------------------------------------------ | -------------------------------------------------------------------------- |
+| Mode, hero and difficulty routing                | `run-setup/run/content-system-navigation.ts`                               |
+| Current-run resume                               | `run-setup/run/run-resume-navigation.ts`                                   |
+| New-run initialization and Campaign launch       | `run-setup/run/new-run-initialization.ts`                                  |
+| Run-start snapshots                              | `shared/stores/commands/run-start-command.ts`                              |
+| Wildcard starter draft                           | `shared/run-flow/starter-draft.ts`                                         |
+| Wildwood post-entry progression                  | `run-loop/run/wildwood-gauntlet-flow.ts`                                   |
+| Pure destination eligibility and weighted offers | `shared/run-flow/resolve-available-destinations.ts`, `destination-flow.ts` |
+| Transaction-owned offer generation               | `shared/stores/commands/destination-offer-command.ts`                      |
 
-The main menu offers Continue when a run is unfinished, otherwise Play. Continue delegates to `content-system-navigation.resumeRun` through route props. A requested mode cannot replace an active run. End Run in the existing red menu action cancels pending battle/navigation work, finalizes earned progression once, clears the current run, and always shows Journey’s End without confirmation; continuation follows the [run recap UI](./UI_BROWSING.md#run-journey-recap), including earned hero unlocks. Ordinary defeat and victory retain their outcome screens. Drafting belongs to the active run; finishing its starter draft is the only supported re-application of a start snapshot. Domain commands own the activity's resume location; display navigation, including Menu/meta visits, never replaces it. Run-start and progression commands establish their next activity before presentation begins. There are no parked slots or recency fields.
+Initialization commits deck, discovery, offers, activity and opening combat together;
+failure rolls all of them back. Schedule Battle before opening feedback so an
+immediate Companion outcome can supersede it. Novice Campaign starts with Skeleton;
+difficulty selection uses the normal encounter pool.
 
-Destination eligibility is pure in `shared/run-flow/resolve-available-destinations.ts`;
-weighted offer construction lives in `shared/run-flow/destination-flow.ts`.
-`shared/stores/commands/destination-offer-command.ts` derives act, room history, Health,
-Gold, and collection eligibility from the open transaction. Run start, resume
-repair, and progression use that owner; victory supplies its plain eligibility
-context to reward calculation, which uses settled Health and Gold. Domain
-commands never call a shell reader or accept partial overrides for eligibility.
-Offer history, reward state, and command-bound RNG counters commit together;
-destination generation is not exposed through navigation capabilities.
+New-run initialization clears pending character setup and commits a complete start
+before presentation. A requested mode cannot replace an unfinished run. Finishing
+that run's starter draft is the only supported re-application of its start snapshot.
+
+Commands derive destination eligibility from the open transaction; shells supply
+no reader or partial overrides. Victory calculation uses settled Health/Gold and
+the upcoming loot depth. Offer history and RNG commit with the offer.
+[Activity ownership](./RUN_STATE.md#activity-and-rewards),
+[mode behavior](./GAME_RULES.md#saved-runs-and-shared-progression), and
+[content-system changes](./WORKFLOWS.md#content-system-behavior) own the remaining rules.
 
 ## Battle path
 
-Gameplay resolves before presentation; playback uses committed results.
+```text
+BattleScreen action → routeCommands.battle → store command → lib/battle
+                    → committed snapshot + detached feedback → playback
+```
 
-`lib/battle/battle-start.ts` owns opening Companion actions (including Eager Pack)
-and the subsequent hand draw. `resolveBattleStart` returns data-only state and
-Companion feedback; live start commands own progression, opening Gold settlement,
-and presentation notices. `resolveTurnSequence` internally owns progression through forced
-player skips and runs the next Companion only when player input returns. The
-balance simulator uses both operations; its policy selects cards and Wishes but
-never assembles turn stages. A simulator round budget limits resolved turn
-frames, including forced skips; live commands omit that limit.
+Store commands in `shared/stores/commands/battle-commands.ts` own Card, Wish and
+End Turn admission, progression and publication. Standalone starts use
+`battle-start-commands.ts`; room entry composes its initialization operation.
+The engine's `resolveBattleAction` and `resolveBattleStart` serve live commands
+and simulation with an explicit `BattleResolutionContext`.
 
-`battle/player-rewards.ts` owns the coupled player reward reactions (Health,
-Mana, Gold, Block, Armor, cleanse, and defeat payouts), including the base
-Health update and its combat-text feedback; defeat healing uses
-that base update without restarting the full healing reaction chain. Import
-`battle/combat-text-events.ts` for text aggregation and `battle/enemy-healing.ts`
-for enemy healing. Combat text is feedback, not a gameplay rule owner.
-
-- **Card play:** UI → `useBattleController`'s `handleCardClick` → bound `battle.playCard` capability → `commitCardPlay` → committed snapshot and combat feedback.
-- **Wish choice:** UI → `handleWishChoice` → bound `battle.chooseWish` capability → `commitBattleWish` → committed chosen card and remaining Wish queue.
-- **End Turn:** UI → `handleEndTurn` → bound `battle.endTurn` capability → `commitEndTurn` → committed result and XP → `playTurnFrames` for presentation only.
-
-Those store commands call `resolveBattleAction(snapshot, action, context)` with
-the typed `BattleAction` request from `battle/battle-actions.ts`: `card` carries
-`cardId`, `index`, and optional play options; `wish` carries `cardId`; `end-turn`
-may carry a simulation turn budget. The context supplies command-bound world RNG.
-
-`resolveBattleAction` in `battle/battle-actions.ts` owns acceptance and resolution
-for Card, Wish, and end-turn requests in both live commands and simulation. Its
-discriminated result separates rejection from accepted gameplay; rejected actions
-retain snapshot identity and consume no RNG. Phase, defeat, pending Wish, offered
-choice, card payment, and turn-budget validation happen before execution. Card
-previews reuse the same card validation. Pending Wishes may settle after enemy
-defeat or while controlled; explicit Card options preserve victory-grace plays,
-but neither permits a new enemy turn. Live commands award XP, discover cards,
-and settle resources only after acceptance. The convenience Card, Wish, and turn
-resolvers delegate to that boundary and keep their data-only return shapes.
-Hosts supply an explicit `BattleResolutionContext`; only snapshot data and combat
-feedback return. Low-level Card, Wish, and turn mechanics remain internal to the
-engine rather than barrel exports.
-
-`battle/card-play.ts` owns hand validation, payment, and the ordinary play sequence.
-`battle/card-play-effects.ts` resolves effects, repeats, and subsequent Talent
-and trinket rewards for ordinary and Dodge-triggered plays. `battle/card-consume.ts` owns discard/exhaust routing and Consume rewards.
-Callers keep effect resolution, encounter reactions, and Consume routing in
-explicit order. Automatic play bypasses ordinary payment.
-
-`battle/enemy-damage-mitigation.ts` owns enemy damage preparation and the player's
-Block, Armor, and damage reductions. `battle/enemy-attack-damage.ts` applies the
-result to Health and resolves defensive rewards, Leech, retaliation, and pending
-reactions. Its existing damage entry points remain the caller-facing surface.
-
-Direct player hits use source-specific recipes in `lib/battle/hit-resolution.ts`
-and its lower `follow-up-hit-resolution.ts` tier. `player-hit-core.ts` carries source
-intent (`HitRequest`) and captures eligibility and Health results (`HitFacts`) before
-nested reactions. Card play binds an execution-only empty-draw callback so low-level
-Stun and Bleed draw rewards can request Emergency Wish without importing its
-orchestrator; snapshots strip that callback along with RNG and action context.
-Attack orchestration keeps Dodge, reserved bonuses, numeric preparation,
-whole-packet follow-ups, and retaliation. Card reaction stages cannot call back into
-attack orchestration. The [hit-source matrix](./GAME_RULES.md#direct-player-hit-resolution)
-describes the current ordering and scaling differences. Retirement of legacy
-recipes follows the [save baseline](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
-
-Controller construction, route props, and playback: [Battle controllers](./BATTLE_CONTROLLERS.md#battle-path).
+[Game rules](./GAME_RULES.md#direct-player-hit-resolution) own hit recipes,
+cutoffs, RNG order and source-specific reactions.
+[Run state](./RUN_STATE.md#committed-battle-playback) owns snapshot publication;
+[Battle controllers](./BATTLE_CONTROLLERS.md#battle-path) owns controller props,
+input-snapshot identity and playback lifetime. Use
+[the playback workflow](./WORKFLOWS.md#change-battle-playback) to change that wiring.
 
 ## Controller entry points
 
@@ -208,85 +172,74 @@ Presentation failure or cancellation leaves complete, resumable gameplay.
 
 ### Run loop overview
 
-`run-loop/` splits each outcome into three layers: pure computation in
-`navigation/` (`reward-flow`, `reward-offers`, `victory-flow`, `mystery-flow`, `reward-math`),
-store commits in domain command modules (`reward-commands`, `victory-commands`, `destination-commands`, `progression-commands`, `wildwood-commands`, and `run-end-commands`), and
-navigation plus sound in `run/run-flow.ts`, with separate victory/defeat handlers needed before battle construction.
-`shell/run-flow-engine.ts` wires the factories to route actions. Reading order
-for a change: `run-flow.ts` → its
-`*-commands` → the `navigation/` pure function. Victory Gold is settled once in
-`reward-math.ts` through `victory-flow.ts`; the saved purse and every reward
-screen derive from that same settlement. `reward-flow.ts` receives the settled
-Gold payout and only assembles reward states.
-`progression-commands.ts` owns non-combat visit exits. Callers supply the
-expected activity; the command rejects mismatched activities and unfinished
-Mystery choices. Automatic Campfire rest, room completion, next destination
-sampling, history, RNG, and the durable next activity commit together. Untouched
-Corruption restores the Campaign picker or leaves the Labyrinth node unconsumed;
-used Corruption completes the room. Presentation only navigates to the returned
-committed screen. Act advancement remains inside reward claiming rather than a
-separate shell action. The renderer and headless playthrough bind exits to the
-activity that offered the action.
+| Layer                                            | Owner under `src/features/alchemy/`                                                                    |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Pure outcome and reward calculation              | `run-loop/navigation/` (`reward-flow`, `reward-offers`, `victory-flow`, `mystery-flow`, `reward-math`) |
+| Atomic progression and grants                    | Domain `*-commands.ts` modules beside those flows                                                      |
+| Navigation and feedback                          | `run-loop/run/run-flow.ts` and outcome handlers                                                        |
+| Factory composition                              | `shell/run-flow-engine.ts`                                                                             |
+| Battle presentation lifetime and draw sequencing | `run-loop/battle/playback-lifetime.ts`, `draw-sequence.ts`, `battle-transfers.ts`                      |
+| Resolved action feedback                         | `run-loop/battle/controller-utils.ts` (`presentCombatTexts`)                                           |
 
-`reward-offers.ts` owns category eligibility, hoard guarantees, and seeded
-choice sampling. It returns a typed offer without run settlement fields;
-`reward-flow.ts` adds the reward state defaults, settled Gold, Materials, destinations,
-and post-claim routing.
+For a flow change, start at `run-flow.ts`, follow its command, then its pure
+calculation. `reward-math.ts` settles victory Gold through `victory-flow.ts`;
+`reward-flow.ts` assembles the reward state from that settled amount.
+`reward-offers.ts` owns eligibility and seeded sampling, without run settlement.
 
-Single owners to know: `shared/stores/commands/write/run-progress.ts` owns run-earned Material
-and currency tallies; `alchemy/no-run-earned-add-materials` enforces their write boundary;
-`battle/playback-gate.ts` owns the shared Card, Wish, and auto-end-turn gate
-(`isBattlePlaybackBlocked`, `usePlaybackBlocked`). `use-battle-autoplay.ts` selects
-a ready action with its live commit guard; the React-free `autoplay-driver.ts`
-owns retries, pacing, and cancellation through one action loop. `battle/playback-lifetime.ts`
-owns explicit playback phases, binding readiness, cancellation, timers, transfers, and draw counts.
-`battle/draw-sequence.ts` sequences hand reveals against that lifetime; draw ownership
-is shared even when callers copy dependencies to strengthen a screen guard.
-`battle/battle-transfers.ts` supplies DOM measurements, sound, and timed transfer wiring.
-`battle/battle-session.ts` adapts that lifetime to presentation and delegates turn
-commit to `shared/stores/commands/battle-commands.ts`; restore hydrates committed snapshots after save-version gating. Battle start
-uses `shared/stores/commands/battle-start-commands.ts` and then arms presentation. Fight feedback (floating numbers + shake + sound) is
-unified in `presentCombatTexts` in `battle/controller-utils.ts`; card overlay
-layers live beside their leaves (`card-ghost-overlay.tsx`,
-`card-transfer-overlay.tsx`).
+`progression-commands.ts` owns non-combat exits: expected-activity validation,
+room completion, history, RNG and the next activity commit together. Untouched
+Corruption remains available; used Corruption completes the room. Act advancement
+belongs to reward claiming. Renderer and headless callers bind exits to the activity
+that offered them. See [run workflows](./RUN_WORKFLOWS.md) for editing steps and
+[Battle controllers](./BATTLE_CONTROLLERS.md) for presentation cancellation.
 
 ## Shop commands
 
-`shop-shelf.tsx` owns the shared shelf props, item identity, and Card, Gear, and Trinket tile selection. Shop screens add their own services; routes use the same `items`, `getPrice`, and `onBuy` props for every shelf.
+| Responsibility                                         | Owner in `run-loop/shop/` |
+| ------------------------------------------------------ | ------------------------- |
+| Session-bound route capabilities                       | `create-shop-actions.ts`  |
+| Shop-specific player actions                           | `*-shop-commands.ts`      |
+| Purchase validation, shared pricing and refresh recipe | `shop-commands-core.ts`   |
+| Current progression effects and quotes                 | `shop-pricing.ts`         |
+| Pure shelf sampling                                    | `shop-state-init.ts`      |
+| Shared shelf props and tile selection                  | `shop-shelf.tsx`          |
 
-`create-shop-actions.ts` composes the matching `*-shop-commands.ts` modules and
-binds them once to a `GameSession`. Callers supply no Talent or Homestead
-manifests. `shop-pricing.ts` derives effects from current session
-progression for quotes and from the open transaction for mutations. Purchases,
-services, refresh chances, and Gear sampling therefore use the
-same progression as payment and visit state, including after upgrades, resets,
-or save restoration. Refresh quotes read the live visit; callers supply no cached
-refresh allowance or progression overrides. Retained capabilities do not need to be recreated.
-`shop-commands-core.ts` owns shared purchase actions and live price helpers.
-Each shop supplies typed shelf selection, item identity, pricing, and acquisition
-rules; the shared purchase owner uses that pricing rule for both displayed quotes
-and commits. Purchase commands accept only a slot key, resolving, pricing, and
-acquiring the live shelf item inside the transaction.
-Pure shelf samplers live in `shop-state-init.ts`. `run-loop/run/room-visit-initialization.ts`
-owns transaction-only initialization for shops, Campfire, Transmutation, and Mystery.
-Only `room-entry-commands.ts` may import that owner (Oxlint and import-boundary gates enforce this).
-Room entry commits complete visits before navigation. Screen mount effects and retained
-shop/route capabilities cannot initialize or replace visits, reset purchases or refresh
-allowances, or reroll saved offers. Resume hydrates existing visit data; damaged
-Transmutation choices use the screen's existing unavailable-visit exit. `shop-commands-core.ts` owns
-purchase validation and the complete refresh recipe; the activity
-selects pricing and the typed `setRunActivityData` write target. Callers supply
-shop-specific sampling and acquisition rules without wiring separate state writers.
-`runShopTransaction` owns guarded dispatch and success feedback:
-payment, benefits, and visit changes commit together, and stale commands for
-another shop are rejected. Gear writes inside that transaction follow
-[Armory write paths](./ARMORY.md#write-paths).
+`run-loop/run/room-visit-initialization.ts` initializes shops and other visits only
+through `room-entry-commands.ts`, enforced by import boundaries. Room entry commits
+a complete visit before navigation; rendering and retained route capabilities cannot
+initialize or reroll it. Resume restores the active activity independently of the
+presentation screen.
 
-Only the active visit is encoded by `encodeRunResumeSnapshot`; presentation
-navigation does not select the shelf to save. Kind `"merchant"` is the
-player-facing **Card Shop**. For the editing sequence, refresh behavior, typed
-shelf assignment, and modifier ordering, follow
-[Change a shop](./WORKFLOWS.md#change-a-shop).
+### Shop transaction rules
+
+`runShopTransaction` guards validation, payment, acquisition and visit writes.
+Commands bind a session and take a shelf slot key (instance ID for equipment),
+then derive item, price and Talent/Homestead effects from the live transaction.
+Quotes read current progression; callers supply no cached manifests, allowance or
+price override. SFX runs only after confirmed success. Kind `merchant` means Card Shop.
+
+Slot identity helpers stay independent of command/audio modules.
+Preserve the per-visit `firstPurchaseUsed` reset. Compose `mutateGearWithRunHealthSync` with
+the open transaction; the dispatching Gear wrapper is for the outer boundary.
+[Armory write paths](./ARMORY.md#write-paths) owns that composition.
+
+Refreshes use `createShopRefreshAction` and a `shop-state-init.ts` sampler:
+
+- Activity selects pricing and write target. Before RNG, validate remaining
+  refreshes and affordability at the displayed price.
+- Restock rolls only for affordable positive-price refreshes with its free refresh
+  unused. A success waives payment but still spends a refresh slot.
+- The sampler applies offering modifiers, including potency, before returning a
+  typed shelf that preserves service/purchase flags. Only success clears purchased
+  slots and consumes a refresh; rejection never samples.
+- Avoid current offers when alternatives permit. Equipment compares bases across
+  rarities and preserves room themes. Nearly exhausted pools still fill the shelf
+  while maximizing novel offers.
+
+Potion mixing scales amounts in every chance branch, preserving probabilities and
+all alternative descriptions. Same-ID ingredients double only with matching effects;
+different-potency copies retain both effect lists so ingredient order cannot change
+potency. [Change a shop](./WORKFLOWS.md#change-a-shop) gives editing steps.
 
 ## Settings and meta profile
 
@@ -304,22 +257,25 @@ Gameplay progression remains in the [aggregate regions](./RUN_STATE.md#run-state
 
 ## Permanent Gear (`gear-store`)
 
-Owned Gear and per-character loadouts live in `shared/stores/session/gear-store.ts`. Pure rules live under `src/lib/gear/`; per-command draft views and health-sync wrappers live in `gear-session-command.ts` (`GearDraftView` with deeply readonly collection views and guarded mutation methods, explicit write tracking — no snapshot comparison). `gear-state-defaults.ts` owns `createInitialGearState` and save-field defaults independently of live mutation code; `gear-actions.ts` owns draft mutators. Player actions live in `gear-commands.ts`; routes and headless playthroughs cannot supply draft callbacks or save-flush adapters. Salvage owns removal and all payouts in `salvageGearInTransaction`, outside the generic draft view. Import boundaries keep Gear mutation internals store-owned. Gear is meta progression, not copied into active-run data; battle snapshots `BattleState.gearEffects` and live meta mutations rebind via `rebindLiveRunMeta`. Feature code reads through `gear-store.ts`. Screen, mutations, and HP-sync: [ARMORY.md](./ARMORY.md). Authoring new items: [WORKFLOWS § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
+Pure rules live in `src/lib/gear/`; session reads in `shared/stores/session/gear-store.ts`;
+intent commands in `shared/stores/commands/gear-commands.ts`; save conversion in
+`shared/stores/persistence/gear-codec.ts`. [Armory](./ARMORY.md) owns acquisition,
+combat reservations, Health rebinding and persistence. Use
+[Add permanent Gear](./WORKFLOWS.md#add-permanent-gear) for authoring.
 
 ## Types
 
-Gameplay write operations own incoming data at the transaction boundary. Direct
-values and functional updater results are copied before domain mutators can
-retain them, so later caller edits cannot change the draft or committed state,
-and committing cannot freeze caller-owned objects. Existing readonly transaction
-views resolve to their owned snapshots, preserving unchanged updater identity.
-The same boundary copier handles incoming values and detached command results;
-Gear inventory insertion and initialization use it as well. Functions remain
-explicit capabilities (for example command-bound RNG), rather than data to copy.
+`GameplayState` defines the [aggregate regions](./RUN_STATE.md#run-state).
+The [capability reference](./RUN_STATE.md#session-capability-ports) locates reads,
+commands and route surfaces; the [transaction contract](./RUN_STATE.md#command-atomicity)
+owns input/result detachment. Run-progress contracts live independently of validation
+in `lib/active-run-session/run-progress.ts`; validation checks those contracts and
+owns recovery defaults. Fresh constructors remain in `run-state-init.ts` and
+`shared/run-flow/run-start.ts`.
 
-`GameplayState` in `gameplay-state.ts` defines the [aggregate regions](./RUN_STATE.md#run-state). Read, write, command, and screen contracts are listed in the [capability reference](./RUN_STATE.md#session-capability-ports); persistence types are in the [codec contract](./RUN_STATE.md#persistence-api).
-
-Run-progress contracts and the exhaustive `ACTIVE_RUN_PROGRESS_KEYS` projection live in `lib/active-run-session/run-progress.ts`, independently of save validation. `lib/validation` owns saved-run parsing and recovery; its schemas check the domain contracts. Initial progress and permanent fields, `generateRandomRunSeed`, and `pickActiveRunView` live in `run-state-init.ts`; `run-domain-types.ts` defines session, battle, and run-data fields. `profile-store-types.ts` owns its domain (completion buckets derived from the character registry); `gear-state-defaults.ts` owns the initial gear state. `stores/persistence/gear-codec.ts`, `profile-codec.ts`, and `settings-codec.ts` own their save conversions independently of live reads and actions. Fresh-run snapshots live in `shared/run-flow/run-start.ts`. Shared numeric manifest defaults use `createNumericManifest` from `manifest-utils.ts`. Talent IDs, presentation, and bonuses share the ordered `talents/talent-rows.ts` catalog. Its authored bonus shapes derive `TalentEffectManifest` and neutral defaults; `manifest-defaults.ts` registers only Homestead-only fields and special defaults. Numeric additions use explicit `add(amount)` values, while ordinary values set and arrays concatenate.
+[Content authoring](./CONTENT_AUTHORING.md#add-a-new-talent) owns manifest derivation,
+ordered catalogs and special defaults. Keep signatures derived from their composition
+owner instead of maintaining parallel method or field inventories.
 
 ## Import boundaries
 
@@ -389,31 +345,15 @@ overlapping the minimum loading window and continuing after reveal if needed.
 
 Path-specific test commands: [CONTRIBUTING.md § What to run](../CONTRIBUTING.md#what-to-run-when-you-change).
 
-Manual End Run clears resumable activity and pending work immediately. The battle
-route retains its outgoing display snapshot until the fade completes, while
-active combat is removed from gameplay. Commands cannot resolve that retained
-frame, and saves cannot include it. Outcome playback hands its final frame to
-presentation before victory or defeat settlement. The next battle initializes
-fresh state.
+Run termination and outgoing display retention follow
+[run teardown](./RUN_WORKFLOWS.md#run-teardown) and
+[committed playback](./RUN_STATE.md#committed-battle-playback).
 
 ## Headless playthrough tooling
 
-The [playthrough runner](./PLAYTHROUGH_SIMULATION.md) lives in `src/app/playthrough/` and is loaded only by Node tooling. It composes feature read ports and production action flows against an explicit independent game session. Child processes provide fresh-process replay and an external watchdog; session isolation also works within one process. Production battle start/card/Wish and autosave operations are shared with the UI; the harness owns policy, evidence, and assertions. It must not implement game rules or mutate the gameplay aggregate directly.
-
-`career-runtime.ts` owns each career’s deterministic seed, ID counter, and clock.
-Recorded replay inputs never replace process-wide `Date.now` or `crypto`. The
-application keeps one default session; independent consumers use
-[`createGameSession`](./RUN_STATE.md#session-ownership) and pass its handle through
-controller factories, reads, commands, and persistence.
-
-`actor.ts` routes each observation to `meta-offers.ts` or `run-offers.ts` after constructing the production controller. `choice-catalog.ts` owns recorded choice identities and their executable commands for the current observation; duplicate identities fail instead of replacing a command. Offer builders score and register legal choices but do not commit gameplay until the selected choice executes.
-
-Run outcomes and navigation share one construction owner: `createRunOutcomes`
-exposes `connect(actions)`. Both UI and headless shells supply presentation
-capabilities; domain commands own destination eligibility and sampling.
-Hover-clearing navigation is wrapped once in the shell.
-
-Route and shop command types derive from their composition factories. The route
-surface excludes battle initialization and cancellation; screens borrow only their
-phase's commands. Changes to command signatures update consumers without a second
-handwritten capability inventory.
+`src/app/playthrough/` is loaded only by Node tooling. It binds production commands,
+reads and autosave to an explicit independent game session; it owns policy and
+evidence, never game rules or direct aggregate writes. Renderer and headless shells
+share `createRunOutcomes().connect(actions)` with their own presentation capabilities.
+[Headless playthroughs](./PLAYTHROUGH_SIMULATION.md) owns runtime injection, replay,
+choice identity, implementation owners and evidence limits.

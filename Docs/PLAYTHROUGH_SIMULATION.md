@@ -56,15 +56,13 @@ cohesion and lightweight immediate utility. Heroes with no fixed keywords, such
 as Wildcard, use the deck-conditioned fallback without receiving an authored
 starting deck or keyword catalog.
 
-Modern Wildcard starter drafting also checks deck roles. The first two reusable
-attacks gain 12 and 6 policy points; a first reusable defensive card gains 6.
-Companions add three times their base turn-start preparation utility. A first
-Companion with recurring damage, healing, draw, Mana, or status grants gains 8
-points; each summon already drafted subtracts 12 because only one Companion can
-be active. These are visible-card heuristics, not forecasts of
-future encounters or actual healing. They do not inspect hidden offers or draw
-gameplay RNG. Other heroes, random/minimalist policies, and legacy careers retain
-their previous scoring. Card rules and production draft offers are unchanged.
+Wildcard starter drafting favors an initial reusable attack/defense base and one
+useful Companion, then penalizes redundant summons because only one Companion can
+be active. These are visible-card heuristics, not forecasts of future encounters
+or actual healing. Exact weights belong to the policy in
+[`draft-policy.ts`](../src/app/playthrough/draft-policy.ts). They never inspect hidden offers
+or draw gameplay RNG. Other heroes, random/minimalist policies and retained legacy
+careers keep their own scoring; production card rules and offers are unchanged.
 
 ## Brewing coverage and comparisons
 

@@ -1,4 +1,4 @@
-# Alchemy — Game rules and glossary
+# Alchemy — Game rules
 
 Canonical owner for game rules, content-system behavior, and shared domain terms. Coding rules: [AGENTS.md](../AGENTS.md). Run state: [ARCHITECTURE.md](./ARCHITECTURE.md). How-to checklists: [WORKFLOWS.md](./WORKFLOWS.md). Command catalog: [COMMANDS.md](./COMMANDS.md).
 
@@ -144,7 +144,8 @@ separate cutoffs.
 - **Half-Health bonuses** — talents described as active below 50% Health require strictly less than half of the relevant maximum Health, including Armor, Forge, Physical/Bleed damage, and Leech bonuses. Exactly half Health does not qualify.
 - **Fatal action cutoffs** — a fatal Health cost or retaliation stops subsequent card effects, including nested chance outcomes and queued effects. Death's Door and Phoenix Feather count as survival. Drain pending reactions from pre-card rewards before manual or automatic card effects begin. Fatal Cinder Skin during enemy status ticks stops the later ticks and the enemy ability, including when the enemy would otherwise skip its turn.
 - **Lethality payouts** — a kill via any damage source (main hits, follow-up typed hits, stun/freeze procs, wish triggers, DoT ticks, bleed/poison detonation, mana-crystal burn) pays the same rewards exactly once per health transition: Bone Charm heal + gear kill rewards via `payKillPayouts` (`src/lib/battle/player-rewards.ts`). Enemy DoT ticks and detonates share `applyEnemyDotDamage` in `src/lib/battle/dot-resolve.ts` so Divine Aegis and armor decay cannot skip a source. Documented exceptions stay source-specific (e.g. Lucky Clover gold is off freeze-proc kills).
-- **Kill rewards** — Toxic Profit has a 10% chance to steal 4 Gold when defeating a Poisoned enemy through a hit, triggered damage, tick, or detonation, including a lethal hit that first inflicts Poison. The saved `killRewardsPaid` flag prevents nested damage reactions from paying the same enemy’s kill rewards twice.
+- **Kill rewards** — Toxic Profit has a 10% chance to steal 4 Gold when defeating a Poisoned enemy through a hit, triggered damage, tick, or detonation, including a lethal hit that first inflicts Poison. The saved `killRewardsPaid` flag prevents nested damage reactions from paying the same enemy’s kill rewards twice. Kill healing uses the base
+  restore/cleanse path without restarting the full healing reaction chain.
 
 #### Status ticks and detonation
 
@@ -172,37 +173,23 @@ attack, a different reusable defensive or healing card, and one flexible card
 on every pick. Offers exclude already drafted cards. Wildwood retains its
 separate draft rules.
 
-Fangs costs 1 Mana and always deals 2 Bleed damage with Leech. Thorn Whip costs
-1 Mana, deals 3 Nature damage, and grants 1 Thorns. Enemies using these cards
-share their effects, with the usual enemy scaling and traits.
+Card effects, costs, starting decks and repertoire IDs live in the
+[card catalog](../src/lib/game-data/cards.ts) and
+[character catalog](../src/lib/game-data/characters.ts). The following execution
+rules supplement those definitions:
 
-Rogue starts with Feint in place of Serrated Edge, retaining Steal, Blackjack,
-and Shadowstep. Feint costs 1 Mana, prepares a Dodge of the next attack packet,
-and draws two cards. It returns to the discard rather than Consuming, so it can
-provide recurring evasion; repeated plays do not stack Dodge charges. Shadowstep
-still Consumes and can double Feint's draw. Damage over time and undodgeable
-reactions retain their existing rules.
-
-Ranger starts with Sap Arrow in place of Bounty Shot. Its 2 Nature damage and
-Leech provide repeatable healing in exchange for Bounty Shot's Gold generation.
-Both cards cost 1 Mana and retain Archery; Bounty Shot remains in the offer pool.
-
-Shield Bash gains 2 Block, then deals Stun damage equal to half its live Block,
-rounded to the nearest whole number; it does not spend Block. Mana payment and
-its reactions finish first, and the Block gain precedes the hit, including Dodge
-and reactive damage. Rejected plays spend neither resource. Maul deals one
-randomly chosen 3 Bleed or Stun damage hit.
-Ice Shot deals 2 Freeze, or 4 Freeze against an already Frozen target; it preserves
-Frozen and its Archery tag but no longer grants free Archery. Existing free-Archery
-preparations retain their normal consumption. Hawk Eye readies the next positive
-player attack for a Crit after Freeze or Stun.
-
-Fox, Maul, Pounce, Serrated Edge, and Smite use the seeded battle RNG to choose
-their damage type before the hit; player, Companion, and enemy versions use the
-same pool semantics. Forge, mitigation, buildup, and hit reactions use the
-selected type. Recorded repeat packets retain the resolved amount/type and
-cannot spend Block again; replaying the card's effects evaluates the random
-choice again. Other card mechanics and enemy repertoires are unchanged.
+- Feint prepares one Dodge charge; repeated plays do not stack charges. It uses
+  ordinary discard, draw and repeat rules. Damage over time and undodgeable
+  reactions remain unaffected.
+- Shield Bash grants Block before calculating its live-Block damage. Mana payment
+  and retaliation settle first; rejected plays spend nothing. Existing Block is
+  not spent by the hit.
+- Random damage pools select the type before the hit for heroes, Companions and
+  enemies. Forge, mitigation, buildup and reactions use that type. Recorded repeat
+  packets retain their resolved amount/type; replaying effects draws a fresh type.
+  Neither path can spend a card's Block payment again.
+- Conditional Frozen damage preserves Freeze and normal Archery classification;
+  existing free-card preparations retain their ordinary consumption rules.
 
 Healing feedback shows the effective pre-cap amount, including overflow, after
 all applicable modifiers and rounding. Actual restoration and overflow remain
@@ -224,6 +211,16 @@ Simulation-only instrumentation and measurement semantics live in [Balance simul
 - **Turn presentation** — the accepted End Turn action resolves and commits before discard, enemy, draw, and Companion feedback plays. Companion turn-start effects resolve after the enemy and next-hand rules, before the next player action; delaying or cancelling their visual feedback cannot cancel their gameplay. Card and opening-hand results likewise commit before animation. Autoplay and automatic End Turn remain separate user preferences. Autoplay ends the turn when no safe card remains; manual automatic End Turn still leaves playable lethal cards for the player to decide.
 - **Battle RNG** — live combat draws the persisted `world` run stream through `BattleResolutionContext` (see [run randomness](./RUN_STATE.md#run-randomness) for command wiring). Engine consumers use `getBattleRng(state)`, never direct `state.rng` access or `Math.random()`; RNG setup helpers own the execution-only callback seam; committed and saved `BattleSnapshot` values never contain it. Tests use `createRunStreamRng`; the balance simulator uses `createRunStateRng` over a local `RunRngState` (both use the same mixer as `stepRunRng`). Simulator card and Wish decisions use a separate seed-derived policy RNG and never advance combat counters. `createBattleState` may pass explicit RNG in unit tests. All dice draw from `@/lib/rng` and stay in `[0, 1)`; out-of-range draws and empty ranges throw instead of biasing. Chance helpers share one probability core (`rollChance`; `rollPercent` is the 0–100 wrapper). Small math lives in `@/lib/math` (`clamp`, `clamp01`, `lerp`).
 
+#### Action admission
+
+`resolveBattleAction` validates phase, defeat, pending Wishes, offered choice,
+payment and optional turn budget before execution. Rejection preserves snapshot
+identity and consumes no RNG; live XP, discovery and resource settlement follow
+acceptance. Card previews reuse its validation. Pending Wishes can settle after
+enemy defeat or while controlled; explicit Card options allow victory-grace plays.
+Neither permits another enemy turn. Convenience resolvers delegate to this boundary
+and return data-only results; low-level mechanics remain internal to the engine.
+
 #### Card classification
 
 - **Card classification** — `src/lib/battle/card-classification.ts` owns attack, damage-type, and keyword queries. Damage classification includes direct damage, random damage, and cleanse-to-damage, including every type in a damage pool, both chance branches, and scheduled effects. Random damage without an explicit pool includes all damage types, matching its runtime rolls. Keyword queries use the same effect-derived keywords and tags shown on cards; tags alone do not make a card an attack. Effect execution, replay selection, and target selection retain their own semantics.
@@ -236,7 +233,7 @@ Classification queries use [Card classification](#card-classification).
 - **Status ownership** — `addPlayerStatus` delegates assignment to `setPlayerStatus`, so both absolute updates and deltas cap pending enemy Bleed Leech when changing Bleed. Explicit Armor loss uses `removePlayerArmor` so Reactive Guard cannot be skipped. Player Forge grants resolve authored amounts and independent +1 talent bonuses once, then Smithguard and Everkeen reactions; bonus Forge cannot recursively activate gain bonuses. Initialization and hydration retain raw state construction.
 - **Damage module ownership** — `player-damage-base.ts` constructs player damage packets from base amounts, Forge, and flat typed bonuses. `player-damage-multipliers.ts` owns additive multipliers and first-Burn bonus flags. `damage-calc.ts` orders those stages, then applies pacing, critical strikes, mitigation, and final resolution. `player-defensive-reactions.ts` owns Block/Health-triggered defensive rewards; `enemy-attack-damage.ts` retains incoming-hit orchestration and reaction ordering.
 - **Armor gain limits** — Layered adds its flat Armor bonus only to the first positive Armor grant each player turn, including opening grants and reactions. Ironroot grants Armor only for the first Nature card played each player turn, including automatic plays. Each limit has its own persisted combat flag and resets at the next player turn; save/resume cannot refresh either allowance.
-- **Deep Siphon** — all positive player Leech healing packets restore 1 additional Health, including Companion, incidental, and deferred Bleed Leech. Apply the bonus once per payout after Desperate/Gear scaling and before Blood Feast and Affliction Siphon. Card-origin attribution remains for Clean Slate.
+- **Leech bonuses** — [Healing and Leech](./TALENT_RULES.md#healing-and-leech) owns Deep Siphon’s payout order and card attribution.
 - **Meteor** — deals 7 Burn damage, loses 1 temporary Mana, and is Consumed. Its ordinary card cost still applies. It does not remove a Mana Crystal or trigger Mana Flare.
 - **Resource scaling** — Talent bonuses from Forge, Armor, and Block, including below-half-Health Armor gains, use percentage fields in the talent manifest. Retired boolean overrides are absent from defaults and ignored during load. Homestead and Gear retain their distinct permissions and never add the same Forge contribution twice.
 - **Homestead** — Wheat Field restores purchased-tier Health after each combat, stacking with post-combat recovery and clamping to maximum Health in every mode. Orchard adds purchased-tier starting Thorns alongside gear/encounter grants; resume never repeats starting grants. Crystal Garden adds 25 percentage points per tier to Freeze damage scaling from current Mana, stacking with talents and using normal damage-resolution timing. Homestead resource bonuses increase eligible reward quantities by 10 percentage points per node tier; they never grant per-room or run-end resources.
@@ -311,6 +308,8 @@ remain unchanged.
 - Consume removal requires one self-contained effect: healing up to 8, flat Block/Armor/Thorns up to 2, or simple damage no larger than its type baseline. Haste, Wishes, Mana generation, Companions, recursive effects, and conditional/scaling effects are excluded. Save an explicit `consume: false` override and remove the Consume line. Existing saved corruption results retain their shape; `delta` remains the numeric direction for numerical changes and is `1` for other outcomes.
 - Labyrinth Corruption chambers play by the same altar rules at the same support-room rate. Leaving before corrupting returns to the maze with the chamber still open; walking past it skips it the same way. Each chamber rolls one green bonus: Steady Sigil, Pure Altar, Echoing Altar, Blood Rite, or Twin Offering (one visit, two gifts, still corrupted once). Blood Rite increases Leech gifts and favors Bleed within the conversion outcomes; other damage types remain possible.
 
+Numeric corruption also updates matching delayed repeats of the changed effect, so the later turn agrees with the card description. A shared damage number, such as Serrated Edge's Physical-or-Bleed amount, updates both alternatives without consuming the numeric target for a separately described effect. Wishing Well's visible Gold number maps to its Gold branch while its unnumbered Wish remains fixed; Powerful Wish uses the same numeric mapping. Unrelated repeated effects retain their values.
+
 ## Content systems
 
 ### Saved runs and shared progression
@@ -350,6 +349,22 @@ Wildwood boss victories use the same boss Gold and shared Material payout rules 
 Campaign and Labyrinth while retaining Wildwood's reward choices and next-boss
 flow. The existing Victory screen shows both currencies, and run-end summaries
 include collected Materials and crafting currencies.
+
+### Mystery visits
+
+Mystery Boon choices prefer distinct unowned Boons across alternatives, but an unchosen alternative cannot exhaust the pool: reuse an available Boon across mutually exclusive choices before falling back to Astral Gear. Multiple grants within one choice remain distinct.
+
+Before Astral Gear becomes eligible, Mystery selection excludes an entire event if any choice would need an Astral fallback: an owned or repeated named Boon, an authored Astral grant, or too few unowned Boons for its named and random grants. Random grants reserve the named Boons in their own choice, even when those named effects appear later. Already offered and saved visits keep their resolved rewards; this gate applies only when selecting a new event.
+
+The committed `mysteryChosenChoice` records Material amounts actually awarded, including Homestead find bonuses, for the reward summary and save/resume. Keep the offered event's base amounts unchanged and apply bonuses only at the grant. `applyMysteryEffect` returns the actual Material award in `MysteryEffectResult`; navigation records that result without reconstructing it from inventory differences.
+
+Save the complete resolved Mystery offer after Boon substitution and Labyrinth modifiers. Resume uses that offer directly, so an event-pool edit cannot change a choice the player already saw. The chosen choice remains a separate record of rewards actually granted.
+
+Mystery choice commands accept only a choice object from the current resolved visit. Retained callbacks from an earlier visit, even one with the same event, cannot apply effects to the new visit. Resolve effects from the stored offer so the displayed choice and awarded outcome stay together. Choice and card-pick callbacks return whether the command was accepted; rejected actions keep the screen open, show a concise error, and suppress success feedback.
+
+`removeCard` removes a random deck card immediately with no picker. The old player-choice removal picker and `mysteryPendingRemoval` are retired.
+
+Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect` kinds stay on the union and handlers for authoring even when no live event uses them.
 
 ### Labyrinth exploration
 
@@ -459,7 +474,8 @@ not restore the current visit's service use.
 Distill adds 1 to supported beneficial numerical magnitudes, including Wishes;
 cost, Consume, probabilities, draw counts, durations, and percentage effects stay
 unchanged. Panacea restores 2 Health alongside its full cleanse; each distillation
-adds 1 Health. Increased values are green in card hover tooltips, including after
+adds 1 Health. A full-cleanse Potion without healing gains Restore 1 Health when
+distilled. Increased values are green in card hover tooltips, including after
 reload. The Distillation talent's combat potency bonus is separate from the
 Distill service.
 

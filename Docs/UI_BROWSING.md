@@ -50,21 +50,18 @@ exist. Shared trinket and gear art tiles, including Mystery rewards, shops, and
 run-end items, also rest with the default border and show Shine only on hover or
 keyboard focus. Their existing Shine palettes and item-title colors are preserved.
 
-Hover-only Shine Borders and persistent Shine Borders render as a border only,
-with no outer glow, including their existing focus activation. `ShineBorder`
-owns the animated border; [component styles](../src/styles/components.css) own
-its opacity and transition.
-Wildcard uses the same static `ShineBorder` as every other hero. Keep the border
-outside artwork clips. The border replaces the ordinary gold hover glow without
-changing scale or press feedback. Selection alone retains its existing treatment.
-Purely persistent decoration, turn indicators, and Death’s Door borders render
-the same border-only treatment.
-`ShineBorder` is decorative (`aria-hidden`) and positioned `absolute` with
-`rounded-[inherit]`, so its parent must be `relative` with a rounded corner.
-An empty palette falls back to neutral shine rather than rendering black.
-`Progress` renders a bare progressbar: every call site must pass an accessible
-name (`aria-label`/`aria-labelledby`), and `value` owns the fill width —
-`fillStyle` carries only extra styling such as transitions.
+Shine Borders, neutral fallbacks and `Progress` semantics follow
+[shared components](./UI.md#component-conventions). Collection and reward borders
+keep their palette, scale and press feedback; selection retains its existing state.
+
+## Shop prices
+
+Prices use the shared [GoldCost](../src/features/alchemy/shared/ui/display-elements.tsx)
+coin/amount treatment and muted unaffordable state. Over artwork they float directly
+on the illustration with dark contour shadows, without containers or art fades;
+inside buttons they inherit button typography.
+[PurchasableShopTile](../src/features/alchemy/run-loop/shop/ui/purchasable-shop-tile.tsx)
+owns the over-art placement and shadow recipe.
 
 ## Mystery reward shelves
 
@@ -117,10 +114,6 @@ synchronous tier guards reject repeated input. Dismissing the tooltip or changin
 tabs cannot cancel or repeat an accepted purchase. Errors appear only on failure
 and remain visible outside the tooltip.
 
-Purchase feedback and reduced-motion behavior follow
-[Homestead purchase motion](./UI_MOTION.md#homestead-purchases). Feedback belongs
-to the accepted purchase and never replays from hydrated levels.
-
 Reset Homestead uses the same circular-arrow header action and neutral
 confirmation as Reset Talents, immediately before the menu button. It resets
 Buildings, Farm, Research, and Companion bonds and refunds purchased tier costs
@@ -139,6 +132,30 @@ after spending and is suppressed while a purchase is saving. Nodes stay grayscal
 until their first purchase, then remain colored even when the next purchase is
 unaffordable. Undiscovered Companions remain grayscale.
 
+### Purchase motion
+
+Homestead purchases retain the old node while saving. Once acknowledged progress
+is available, tooltip sentences and icons remain steady. Changed values reveal
+with a slight rise; there is no whole-body fade or delayed swap.
+New/removed rows ease panel height with the same transition. The name stays mounted and the
+edge nearest the node stays anchored; passive tooltips retain their fixed row side.
+The tooltip celebrates acknowledged purchases with a scale bounce, originating at the edge nearest the artwork. It never
+remounts the content or replays on hover; dismissal or a newer purchase cancels
+its animation. The earned star pops with a soft gold highlight. First
+builds/bonds crossfade opacity layers into color without animating
+grayscale filters; later upgrades/bonds pulse an independent gold edge glow. There are no Built/Upgraded/Bonded labels over the artwork.
+Exact durations live in [`HOMESTEAD_FEEDBACK`](../src/lib/game-constants/ui-motion.ts);
+bounce geometry belongs to [node artwork](../src/features/alchemy/meta/screens/homestead/node-artwork.tsx)
+and [component styles](../src/styles/components.css).
+
+Feedback tokens belong to accepted purchases, never hydrated levels. Repeated
+valid purchases replace visual targets without waiting for motion. Tooltip
+dismissal settles content; tab/page changes, navigation, and reset cancel local
+animation without cancelling committed purchases. Existing unlock/bond sound
+plays once after acknowledged progress is available. Reduced/disabled motion
+updates values and filled stars immediately without decorative animation. Reset uses the
+standard confirmation/save feedback without a purchase celebration.
+
 ## Card-removal browsing
 
 Shop card removal reserves a fixed available-height card area between its header
@@ -153,6 +170,24 @@ Before choosing at Campfire, a heart in the Health keyword color and the actual
 recovery amount appear below Rest, including zero at full Health. Campaign
 destination headers say Choose Destination without an act indicator. The named
 boss entrance keeps its existing title; reward screens say Victory.
+
+### Campfire and Transmutation
+
+[Brewing rules](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions)
+determine the available service. Campfire mixing lets the player choose two
+eligible instances, inspect the preview and Confirm Mix. With fewer than two,
+activating one of the three fixed offers grants it immediately. Screen and command
+enforce the same choice. Alchemist shows Mix Potion and Distill as separate services.
+
+Transmutation previews the selected source's first compatible keyword immediately.
+Up to three keyword buttons above the original-to-preview comparison select saved
+alterations. Back returns to the card picker without RNG or deck changes. Transmute
+commits the validated preview. After a covering save, show its inspectable result,
+play the card-reward chime once and wait for Continue. Pending/failed saves lock
+choices under [Saving/Retry feedback](./UI.md#pending-saves-and-action-feedback).
+Completed resume shows the saved result and Continue without another alteration or
+chime. Continue never regrants the card. Visits with no valid alteration, or a
+completed visit missing its result, advance after offer initialization.
 
 ## Rewards and Wishes
 

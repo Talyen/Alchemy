@@ -4,15 +4,27 @@ Alchemy is a fantasy roguelite deckbuilder. Use plain language and player-facing
 
 ## Working style
 
-- Inspect status and relevant diffs before editing. Start mixed checkouts with `npm --silent run review:status`, then scope patches to task paths. Preserve unrelated work; re-read concurrently edited files.
-- Use one isolated worktree per implementation chat, starting from committed local `main`. Reuse this chat's suitable worktree or run `node scripts/agent-worktree.mjs create --task <slug>` from the original checkout. Dependencies are linked automatically; run `npm ci` only when dependencies change.
-- Read current committed main in `.worktrees/integration` once that layout is set up; the original workspace can intentionally lag on its workspace branch. Run task checks in the task checkout, and separately authorized pushes/releases in the main checkout.
-- Complete the requested behavior and small understood blockers. Avoid broad cleanup and run [audits](./Docs/Audits/README.md) only on request. Reuse existing owners and libraries; preserve external contracts.
-- [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) is the sole owner of verification permissions, gate selection and completion requirements. Use its four ordinary commands; tooling references are only needed for diagnosis.
-- Review the final diff, commit only task-owned paths, then run `node scripts/agent-worktree.mjs integrate --task <slug>` from the original checkout. Task commits and local integration are authorized; pushes, PRs, publication and destructive cleanup need a separate request. The [integration tool](./scripts/README.md#worktree--git-safety) serializes main snapshot/merge and advancement, verifying the pinned combined result outside the shared lock and retrying if main advances. Never bypass it or overwrite dirty work. Resolve understood conflicts in the task worktree and retry; report ambiguous conflicts. With the dedicated integration checkout, unrelated original-workspace edits do not block integration.
-- Never discard work with destructive Git commands. The [Git safety guard](./scripts/README.md#worktree--git-safety) blocks unsafe commands without stashing or changing files.
+- Inspect status and relevant diffs before editing. Start mixed checkouts with `npm --silent run review:status`, scope patches to task paths, and re-read concurrently edited files.
+- Complete the requested behavior and small understood blockers. Reuse existing owners and libraries; preserve external contracts. Run [audits](./Docs/Audits/README.md) only on request and avoid unrelated cleanup.
 - Work independently. Message another chat only for a concrete unresolved dependency or conflict that repository inspection cannot answer. Do not send routine messages, poll other chats or wake completed chats.
-- Start unclear failures with a compact digest and a specific hypothesis under [failure-first triage](./Docs/REFERENCE.md#failure-first-triage). Keep only unresolved recurring issues in [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md); do not archive completed tasks or instruction decisions.
+- Start unclear failures with a compact digest and a hypothesis under [failure-first triage](./Docs/REFERENCE.md#failure-first-triage). Keep only unresolved recurring issues in [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md).
+
+## Task lifecycle
+
+1. Reuse this chat's suitable isolated worktree or run `node scripts/agent-worktree.mjs create --task <slug>` from the original workspace. Start implementation from committed local `main`; dependencies are linked, so run `npm ci` only when they change.
+2. Read current main in `.worktrees/integration`; the original workspace may intentionally lag on its workspace branch. Implement and check in the task checkout. [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) owns verification permissions, gate selection and completion requirements; use its four ordinary commands.
+3. Review the final diff and commit only task-owned paths. Use Conventional Commits and the `User-Facing` trailer under [release policy](./Docs/RELEASE.md#changelog-release-time-only); do not edit `CHANGELOG.md`.
+4. Run `node scripts/agent-worktree.mjs integrate --task <slug>` from the original workspace. The [integration tool](./scripts/README.md#integration-and-finish-phases) merges current main, checks the pinned combined result outside the shared lock, then advances main under the lock, retrying if main changes. Resolve understood conflicts in the task and retry; report ambiguous ones. Never bypass the tool.
+5. Review integration, then run `node scripts/agent-worktree.mjs finish --task <slug>` from the original workspace. It preserves evidence, closes task browsers and removes the worktree while retaining its branch. Keep it open while further requested work or a preview needs it. Keep unintegrated work committed and recoverable.
+
+Preserve unrelated work in every checkout. Never switch another checkout's branch,
+overwrite dirty main, discard edits, force-remove worktrees or delete task branches.
+The [Git safety guard](./scripts/README.md#worktree--git-safety) blocks unsafe commands
+without changing files or stashes. Unrelated original-workspace edits do not block integration.
+Task commits and local integration are authorized; pushes, PRs, publication and
+destructive cleanup require a separate request. Run authorized pushes/releases in
+the dedicated main checkout. [The worktree reference](./scripts/README.md#worktree--git-safety)
+covers setup and recovery.
 
 ## Find the owner
 
@@ -23,7 +35,7 @@ Read affected contracts and consumers; update the canonical owner of changed inv
 - [Content](./Docs/CONTENT_AUTHORING.md), [battle rules](./Docs/GAME_RULES.md), [effect handlers](./src/lib/game-data/effects/BATTLE_HANDLERS.md).
 - [Assets](./Docs/WORKFLOWS-ASSETS.md), [Gear](./Docs/ARMORY.md), [unique items](./Docs/UNIQUE_ITEMS.md).
 - [UI](./Docs/UI.md), [audio](./Docs/AUDIO.md), [performance](./Docs/PERFORMANCE.md).
-- [Verification/tests](./CONTRIBUTING.md), [commands](./Docs/REFERENCE.md), [publishing](./Docs/RELEASE.md), [Steam demo](./Docs/STEAM_DEMO.md).
+- [Verification/tests](./CONTRIBUTING.md), [commands](./Docs/COMMANDS.md), [publishing](./Docs/RELEASE.md), [Steam demo](./Docs/STEAM_DEMO.md).
 - Otherwise, use the [documentation map](./README.md#documentation).
 
 Read known owners directly. Otherwise find filenames, scope searches, then read relevant sections/symbols and consumers. Reuse unchanged context; narrow truncated searches. [Agent discovery](./Docs/AGENT_DISCOVERY.md) provides owner ranges, batched topics and `review:diff -- --summary <paths>` for large patch sets.
@@ -43,10 +55,10 @@ Read known owners directly. Otherwise find filenames, scope searches, then read 
 
 ## Review and handoff
 
-Review the final diff and integration. Express behavior through names/types/tests; comments explain non-obvious reasons, ordering or compatibility. Justify Oxlint suppressions.
-
-Use [architect](./.agents/skills/architect/SKILL.md) for new or structurally revised cross-boundary contracts. Other [skills](./.agents/skills/README.md) apply only to their workflows; ordinary verification follows CONTRIBUTING directly.
-
-Use the task worktree; do not switch another checkout's branch. Local `main` lives in the dedicated `.worktrees/integration` checkout; the original workspace may remain dirty on its workspace branch. Integration only verifies and advances main. After reviewing the result, run `node scripts/agent-worktree.mjs finish --task <slug>` to preserve evidence, close task browsers and remove that task's worktree, retaining its branch. Skip finishing while further requested work or a preview still needs it. The [worktree reference](./scripts/README.md#worktree--git-safety) covers one-time setup and recovery. Keep unintegrated work committed and recoverable; never force-remove worktrees or delete branches. Pushes, PRs, publication, and destructive cleanup require separate authorization. Use Conventional Commits and the `User-Facing` trailer ([release policy](./Docs/RELEASE.md#changelog-release-time-only)); do not edit `CHANGELOG.md`.
+Express behavior through names, types and tests. Comments explain non-obvious
+reasons, ordering or compatibility; justify Oxlint suppressions.
+Use [architect](./.agents/skills/architect/SKILL.md) for new or structurally revised
+cross-boundary contracts; other [skills](./.agents/skills/README.md) apply only to
+their workflows. Follow the [task lifecycle](#task-lifecycle) through integration review and finish.
 
 Report completion, checks run, limitations, incidental fixes, material test retirements and unresolved decisions. Omit logs and diff dumps. Then stop.

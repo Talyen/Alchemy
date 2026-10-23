@@ -1,7 +1,5 @@
 # UI Consistency Audit
 
-Merges the former Design System Consistency (06) and UI Interaction & Feedback (16) audits.
-
 **Goal:** Keep visual language and interaction behavior on their shared owners — migrate token/primitive drift, and fix confirmed interaction/feedback defects desktop players feel — without flattening justified game UI.
 
 Use the [shared audit contract](README.md#shared-contract) for scope, confirmation,
@@ -27,23 +25,27 @@ Structural screen twins → Simplification; Playwright rewrites → TestQuality;
 
 ## Investigation and evidence
 
-Trace player tasks through entry, action, feedback, cancellation, and completion. Start with blocked actions, wrong targeting, stuck modes, or misleading state before cosmetic drift. Inspect representative supported viewports and input methods, and compare sibling surfaces against [UI.md](../UI.md), not personal visual preference.
+Trace player tasks through entry, action, feedback, cancellation and completion.
+Prioritize blocked actions, wrong targeting, stuck modes and misleading state.
+Inspect supported viewports/input methods and compare sibling surfaces against
+[UI.md](../UI.md), preserving intentional hand geometry, health bars and Armory packing.
 
-A token or markup difference is a candidate only: establish an unintended visible inconsistency, broken semantic behavior, or independently maintained rule that should use an existing owner. Preserve justified geometry and motion, including the battle hand, health bars, and Armory packing.
+A markup/token difference needs a demonstrated visible, semantic or ownership cost.
+Exercise interruption/repeated input where relevant and inspect visual fixes in
+the renderer. Follow the [shared evidence and reporting contract](README.md#shared-contract);
+static inspection cannot establish visual correctness.
 
-Verify interaction fixes in the affected flow, including interruption or repeat input when relevant. Verify visual changes in context rather than from class names alone. Report unavailable live checks; static inspection cannot establish visual correctness.
+## Investigation leads
 
-## Domain rules
+| Signal                                                                          | Question                                                                                                                                                         |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Arbitrary sizes/colors, parallel button/card markup, conflicting spacing/easing | Is there a visible or semantic cost versus the shared Radix/CVA/Tailwind primitives and neighboring tokens? Check double padding and preserve justified variants |
+| Incompatible hover/focus/selected/disabled/pending feedback                     | Does every accepted/rejected action communicate its actual result and remain completable?                                                                        |
+| Overlapping modal, tooltip or targeting handlers                                | Are activation, capture, cursor/body restoration, cancellation and Escape ownership coherent? Browser implicit capture release may satisfy cleanup               |
+| Blur/visibility changes leaving modes armed                                     | Exercise Armory/battle cancellation and desktop lifecycle; targeting cursors must follow the pointer without intercepting it                                     |
+| Clickable non-controls, missing names or keyboard behavior                      | Preserve semantic roles, programmatic states, dialog focus and the [accessibility stance](../UI.md#accessibility-stance), even when tests do not query them      |
+| Small windows or motion changes                                                 | Are controls reachable and scroll lock/restoration correct? Preserve existing completion, dismissal and destructive-action protections                           |
 
-- **Interaction:** dialogs and modes retain their documented completion/cancellation paths and destructive-action protections. Check capture ownership, pointer cancellation, cursor/body restoration, ghost clicks, and conflicting modes. Browser implicit capture release can satisfy cleanup; verify behavior rather than requiring a matching API call.
-- **Feedback:** visible click response; progress/disabled during async work; victory/defeat and claim flows remain completable/dismissible.
-- **Keyboard/focus:** preserve semantic controls, programmatic names/states, and shared keyboard behavior whether or not tests query them. Follow [UI.md accessibility stance](../UI.md#accessibility-stance), including existing Armory confirmation focus behavior; do not infer new product requirements from audit heuristics.
-- **Responsive/motion:** controls reachable at supported viewports; scroll lock/restore correct; Electron blur/deactivate must not leave targeting armed.
-- **Tokens:** prefer existing shadcn/Radix wrappers, CVA variants, Tailwind theme variables used by neighbors; no double padding on already-padded surfaces; targeting cursors must follow the pointer without intercepting input.
-
-## Known signals
-
-- Arbitrary Tailwind literals (`w-[…]`, `p-[…]`, `text-[…]`) beside tokens; raw hex/`rgb(`/`hsl(` in TSX or `src/styles`; parallel button/card markup beside primitives; repeated shadow/border recipes.
-- Sibling controls with incompatible focus/selected/disabled/loading states; conflicting breakpoints/easing/durations in one surface family; inconsistent icon treatment.
-- Overlapping targeting, tooltip, and modal handlers; tooltips intercepting clicks; primary actions without `isProcessing` guards; overlays without Escape wiring.
-- Window `blur`/`visibilitychange` leaving modes armed (check Armory + battle targeting, `desktop/`); clickable non-controls and unnamed icon actions; body/container scroll left locked after overlay exit.
+Search leads include raw hex/`rgb`/`hsl`, arbitrary Tailwind utilities beside tokens,
+repeated shadow/border recipes, ghost clicks and stranded async actions. Confirm the
+actual interaction rather than demanding a particular API or local processing flag.

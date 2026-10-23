@@ -38,14 +38,32 @@ of per file. The `documentation` route covers `Docs/**` so check classification
 commands with one complete unit run, alongside full static checks and builds.
 That complete unit pass uses one worker to bound host resource spikes; ordinary
 unit commands retain their existing worker policy.
+
+### Task selection
+
 Bare `check` (including `--plan` or `--full`) defaults to task selection.
 Task creation records its original base in local Git branch configuration. The
 selector validates that provenance, then compares HEAD against its merge base with
 current local main and unions those task changes with working paths,
 and retains both rename sides. The local source guard recomputes task membership
-so new files appearing during a run invalidate success.
+so new files appearing during a run invalidate success. Merging main excludes
+changes contributed only by other tasks; the original recorded base remains provenance.
+Unrecorded task branches require explicit paths. `--diff` selects the complete dirty
+set and is suitable only when all of it belongs to the task; `--committed HEAD`
+selects one commit's paths. Execution always uses the current checkout.
+The unit runner rejects missing explicit paths before Vitest can ignore a mixed selection.
 
 ## Local verification profiles
+
+The task gate selects changed and dependency-related units, explicit lifecycle,
+save, desktop or tooling protection, source/test compilation, localization freshness
+for source/catalog inputs, documentation contracts, and selected-file formatting
+and lint. Presentation files rely on related tests; lifecycle hooks and shared
+behavior seams retain explicit interaction coverage. Unknown behavior owners keep
+the conservative fallback. Markdown-only tasks run documentation checks and formatting.
+Formatting and lint batches above 50 files or containing a file above 256,000 bytes
+are deferred to CI and reported. Broader checks add full static validation,
+applicable builds, bundle budgets and preview smoke.
 
 `check` runs the task-scoped plan described in [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change). `verify-changed.mjs` filters route commands to selected units and documentation by default; `--unit` omits documentation and `--full` retains report/asset routes. The outer gate adds applicable localization, source/test compilation, formatting and bounded selected-file lint. `check --plan` prints both the outer stages and selected route commands without executing them. Integration invokes that same gate outside the shared integration lock after merging current `main`, then revalidates the pinned commits under the lock before advancement; eligible deterministic commands reuse passing receipts in task and full profiles.
 
@@ -105,12 +123,6 @@ checks before packaging or signing.
 
 Preview smoke checks start and close their own server through Vite’s preview API;
 an occupied port fails before any HTTP validation. They require an application script and nonempty JavaScript/CSS responses with matching content types, plus a served MP3 matching authored bytes. HTML fallbacks cannot stand in for missing resources. CI browser artifacts include music and run this smoke check after download.
-
-### Verification cache
-
-`lib/verification/verification-cache.mjs` implements the [reuse policy](../CONTRIBUTING.md#verification-reuse). A command can establish a receipt on its first run. Ordinary checks share one input scan pair across their deterministic stages, including selected units/docs; nested verification does not scan again. Documentation-only checks do not scan dependencies or reuse receipts. Full verification retains per-unit receipts because its aggregate also produces assets and reports. Reuse requires an observed duration of at least five seconds and must save more than twice the measured input-scan cost. The exact executable and ordered argument list identify coverage.
-
-Input identity covers tracked and untracked nonignored files, root environment files and npm configuration, installed dependency file identities, Node executable/version/platform, checkout location, and environment. File identities include mode, size, nanosecond modification/change times, and inode; this is local filesystem reuse, not a portable content-addressed build cache. Dependency caches are excluded. Managed worktrees resolve their linked `node_modules` to the actual installation before scanning it. Linked source or external package symlinks, unreadable inputs, a missing npm install receipt, or changed inputs disable reuse. Fresh successes replace receipts atomically; failures invalidate them. Reuse preserves the original run ID and expiry. Each verifier writes a run-specific `verify/summary.json`, linked by the outer completion report.
 
 ## Compatibility commands and test runners
 
@@ -173,42 +185,59 @@ Authoritative working-tree discovery disables Git's filesystem monitor and untra
 
 ## Verification receipt rules
 
-Local task and full checks reuse passing results for deterministic unit selections
-and supporting type, localization, format and lint diagnostics when their exact
-commands and inputs match. This includes repeated checks before handoff, during
-integration and at pre-push in the same checkout. Committing unchanged files does
-not invalidate a receipt; changes to source, dependency identities, configuration,
-environment or checkout do. Documentation-only checks do not scan dependencies or reuse receipts. CI always runs fresh. Builds, browser runs, assets
-and report-producing gates always execute.
+`lib/verification/verification-cache.mjs` implements the
+[reuse policy](../CONTRIBUTING.md#verification-reuse). Deterministic unit selections
+and supporting type, localization, format and lint checks can reuse a passing
+receipt when the exact executable, ordered arguments and inputs match. This covers
+handoff, integration and pre-push in the same checkout. Builds, browsers, assets,
+report-producing checks and CI always execute. Documentation-only checks neither
+scan dependencies nor reuse receipts.
 
-Receipts expire after one hour without extending on reuse. Reuse is accepted only
-when it saves more than twice the input-scan cost and the original command took
-at least five seconds. Reports identify the original passing run; failures and
-input drift invalidate receipts. Managed worktrees support the root checkout's
-linked dependency installation. Normal report cleanup removes disposable receipts.
+Receipts expire after one hour, without renewal on reuse. The original run must
+have taken at least five seconds and reuse must save more than twice the scan cost.
+A first run may establish a receipt; ordinary deterministic stages share one scan
+pair, including nested verification. Full verification retains per-unit receipts
+because its aggregate also produces reports/assets.
 
-Set `ALCHEMY_VERIFY_FRESH=1` for fresh observations, including nondeterminism
-investigations and benchmark comparisons. [Cache implementation details](#verification-cache)
-document input identity. Reuse is an optimization, never permission to omit a
-newly selected check or substitute narrower coverage.
+Input identity includes:
 
-Supporting local stages have a 60-second deadline. Selected units use their test deadlines after acquiring the shared lane; lane waiting has no default deadline. Minimal Node smoke retains its 30-second deadline.
+- Tracked/untracked nonignored files, root environment files and npm configuration.
+- Installed dependency identities (excluding caches), resolving linked worktree
+  `node_modules` to the actual installation.
+- Node executable/version/platform, checkout location and environment.
 
-When source/catalog inputs change, the local check also runs the offline [localization freshness gate](../Docs/LOCALIZATION.md#agent-workflow). Agents settle experimental wording in their isolated worktree, then update translations before final verification and integration; checks and builds never invoke a translation service.
+File identity uses mode, size, nanosecond modification/change times and inode;
+receipts are local filesystem reuse, not portable content-addressed caches.
+Linked source/external package symlinks, unreadable inputs, a missing install receipt
+or changed inputs disable reuse. Committing unchanged files does not invalidate it.
+Fresh successes replace receipts atomically; failures/input drift invalidate them.
+Reports preserve the original run ID/expiry and link the run-specific
+`verify/summary.json`. Normal report cleanup removes disposable receipts.
+
+Set `ALCHEMY_VERIFY_FRESH=1` for nondeterminism investigations and benchmarks.
+Reuse cannot omit newly selected checks or substitute narrower coverage.
+Supporting local stages have a 60-second deadline; selected units use their test
+deadlines after lane acquisition. Lane waiting has no default deadline; minimal
+Node smoke retains its 30-second deadline.
+
+Source/catalog changes also select the offline
+[localization freshness check](../Docs/LOCALIZATION.md#agent-workflow).
+Translation and final verification follow Contributing; checks/builds never
+invoke a translation service.
 
 ## Test maintenance details
 
-Test retirement is required when the task concerns test maintenance or a test demonstrably obstructs the requested work. Reading or diagnosing nearby tests creates no cleanup obligation. Useful incidental consolidation is allowed when its purpose and dependencies are understood and it stays within the task. When an inexpensive change provides stronger protection, improve the test or move it to a cheaper layer.
-
-Before retirement, check why the test exists, including known regressions, distinct integration risks, and execution tiers. Diagnose failures first: never delete or weaken a test simply to hide a product defect or obtain a green gate. Preserve trustworthy protection for consequential known regressions, save compatibility, critical journeys, and architectural boundaries; their existing test form is not sacred.
-
-No separate permission or one-for-one replacement is required. For material coverage changes, briefly report protection added or reused, justified additions, and protection retired. For overlap, identify surviving protection; for unique coverage retired, explain the specific risk accepted and maintenance tradeoff. Avoid scoring forms and routine essays.
-
-Keep cleanup within the task's needs; do not turn every task into a suite-wide audit. Keep scenarios focused and failures diagnosable. Combining unrelated checks into a giant journey or parameterized matrix does not improve value merely by reducing test declarations. Share fixtures where they preserve a common invariant or prevent drift; keep scenario-specific setup clear.
+[CONTRIBUTING](../CONTRIBUTING.md#test-value-and-coverage-strategy) owns test
+selection, retirement scope and reporting. Keep scenarios focused: combining
+unrelated checks into one journey or matrix does not improve protection. Share
+fixtures when they protect a common invariant and leave scenario-specific setup clear.
 
 For exhaustive orchestration checks such as the affix sweep, retain the scenario coverage while collecting invariant violations into a total and bounded, scenario-specific examples. Avoid thousands of identical matcher calls. Test-local timeouts are failure ceilings, not performance targets; reproduce a slowdown with the full unit suite running separately from browser work before changing global workers, timeouts, or gameplay.
 
-When removing or moving tests, remove support code made unused by retirement and update maintained references and explicit gate selections to match the surviving protection. Include deleted paths in verification scope; changed unit files that no longer exist are not executed, but their route escalations remain. For consolidation, also select the surviving test files; for retirement without replacement, run applicable gates and report material lost protection. Use timing and coverage reports as evidence when useful, without inventing quotas, mandatory measurements, or automatic threshold ratcheting.
+Deleted tests retain their route escalations but are not executed. Select surviving
+replacements as well as deleted paths, and update explicit gate selections. Timing
+and coverage reports can inform maintenance without creating quotas or automatic
+threshold ratcheting.
 
 CLI tests that create package or release artifacts must use temporary project roots,
 including the script dependency closure and output directories. Never create or
