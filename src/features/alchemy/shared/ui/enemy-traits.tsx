@@ -29,8 +29,7 @@ export function EnemyTraits({
     <div className={cn(layout === "inspection" && "@container")}>
       <div
         className={cn(
-          "grid grid-cols-1",
-          variant === "compact" ? "gap-[calc(0.5*var(--content-rem,1rem))]" : "gap-3",
+          "grid grid-cols-1 gap-3",
           layout === "inspection" && traits.size > 1 && "@min-[40rem]:grid-cols-2",
         )}
       >
