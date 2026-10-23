@@ -2,7 +2,6 @@
 import path from "node:path";
 import { createVitest } from "vitest/node";
 import { defineScript } from "./lib/script-run.mjs";
-import { VITEST_MAX_WORKERS } from "./lib/verification/test-concurrency.mjs";
 import { unitSelection } from "./lib/verification/unit-selection.mjs";
 
 defineScript(import.meta.url, async () => {
@@ -13,7 +12,6 @@ defineScript(import.meta.url, async () => {
   process.env.NODE_ENV ??= "test";
   const ctx = await createVitest("test", {
     watch: false,
-    maxWorkers: VITEST_MAX_WORKERS,
     related: related.length ? related.map((file) => path.resolve(file)) : undefined,
   });
   try {
