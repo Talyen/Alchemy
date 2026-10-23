@@ -39,7 +39,7 @@ describe("initializeEnemyState", () => {
 
   it("applies boss HP multiplier and boss regeneration", () => {
     const result = initializeEnemyState(blightTreant, 1, []);
-    expect(result.enemyMaxHealth).toBe(81);
+    expect(result.enemyMaxHealth).toBe(128);
     expect(result.enemyRegeneration).toBe(ENEMY_BOSS_REGENERATION);
   });
 
@@ -90,9 +90,9 @@ describe("initializeEnemyState", () => {
     }
   });
 
-  it("reduces new boss Health by ten percent while preserving normal and elite Health", () => {
-    expect(initializeEnemyState(getEnemy("blood-countess"), 9, []).enemyMaxHealth).toBe(211);
-    expect(initializeEnemyState(getEnemy("frostwarden"), 9, []).enemyMaxHealth).toBe(200);
+  it("applies boss Health scaling after progression and content tuning", () => {
+    expect(initializeEnemyState(getEnemy("blood-countess"), 9, []).enemyMaxHealth).toBe(281);
+    expect(initializeEnemyState(getEnemy("frostwarden"), 9, []).enemyMaxHealth).toBe(267);
     expect(initializeEnemyState(skeleton, 1, []).enemyMaxHealth).toBe(54);
     expect(initializeEnemyState(getEnemy("will-o-wisp"), 1, []).enemyMaxHealth).toBe(79);
   });
