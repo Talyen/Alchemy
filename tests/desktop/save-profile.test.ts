@@ -1,11 +1,16 @@
 import { createRequire } from "node:module";
-import { mkdtemp, mkdir, readFile, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile, unlink, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 
 const require = createRequire(import.meta.url);
-const { saveProfileDirectory, createSaveSlots, migrateLegacySaveProfile } = require("../../desktop/save-profile.cjs");
+const {
+  saveProfileDirectory,
+  createSaveSlots,
+  migrateLegacySaveProfile,
+  retainLegacyMigrationReceipt,
+} = require("../../desktop/save-profile.cjs");
 const { createDesktopSaveStorage } = require("../../desktop/save-storage.cjs");
 const { isSavePayload } = require("../../desktop/security.cjs");
 const directories: string[] = [];
@@ -35,6 +40,7 @@ it("isolates Steam accounts, offline progress and receipts while preserving attr
       slots: createSaveSlots(directory, ["save.json", "save-recovery.json"]),
       isSavePayload,
       stampOwner: (data: string) => data,
+      preserveInitialization: () => retainLegacyMigrationReceipt(directory),
       demoProgress: { complete: async () => true },
     });
   }
@@ -42,6 +48,8 @@ it("isolates Steam accounts, offline progress and receipts while preserving attr
   expect((await storage(bob).read()).candidates).toEqual([]);
   expect((await storage(offline).read()).candidates).toEqual([]);
   await writeFile(path.join(alice, "demo-initialization.json"), "initialized");
+  // Simulate the receipt write failing after startup copied its snapshots.
+  await unlink(path.join(alice, "legacy-migration.json"));
   expect(await storage(alice).clear()).toBe(true);
   await migrateLegacySaveProfile({ base, directory: alice, account: "111", isSavePayload });
   expect((await storage(alice).read()).candidates).toEqual([]);
@@ -60,4 +68,27 @@ it("never lets a newer legacy backup replace an established account profile", as
   await migrateLegacySaveProfile({ base, directory, account: "111", isSavePayload });
   await expect(readFile(path.join(directory, "save.json.bak.1"))).rejects.toMatchObject({ code: "ENOENT" });
   expect(await readFile(path.join(directory, "save.json"), "utf8")).toBe("established progress");
+});
+
+it("retains local progress when its initialization receipt cannot be preserved", async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "alchemy-clear-receipt-"));
+  directories.push(directory);
+  const slots = createSaveSlots(directory, ["save.json", "save-recovery.json"]);
+  await writeFile(slots.primary.file, "acknowledged progress");
+  const store = createDesktopSaveStorage({
+    slots,
+    isSavePayload,
+    stampOwner: (data: string) => data,
+    demoProgress: { complete: async () => true },
+    preserveInitialization: async () => {
+      throw new Error("receipt disk write failed");
+    },
+  });
+  const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    expect(await store.clear()).toBe(false);
+    expect(await readFile(slots.primary.file, "utf8")).toBe("acknowledged progress");
+  } finally {
+    logged.mockRestore();
+  }
 });

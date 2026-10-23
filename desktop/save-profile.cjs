@@ -21,6 +21,13 @@ function createSaveSlots(directory, cloudFiles) {
   );
 }
 
+async function retainLegacyMigrationReceipt(directory) {
+  await fs.mkdir(directory, { recursive: true });
+  await fs.writeFile(path.join(directory, "legacy-migration.json"), "migrated", { flag: "wx" }).catch((error) => {
+    if (error.code !== "EEXIST") throw error;
+  });
+}
+
 // Copy only attributable legacy candidates, leaving originals and current saves intact.
 // The receipt survives Clear Save Data so a cleared profile cannot reimport old files.
 async function migrateLegacySaveProfile({ base, directory, account, isSavePayload }) {
@@ -74,9 +81,7 @@ async function migrateLegacySaveProfile({ base, directory, account, isSavePayloa
         }
       }
     }
-  await fs.writeFile(receipt, "migrated", { flag: "wx" }).catch((error) => {
-    if (error.code !== "EEXIST") throw error;
-  });
+  await retainLegacyMigrationReceipt(directory);
 }
 
-module.exports = { saveProfileDirectory, createSaveSlots, migrateLegacySaveProfile };
+module.exports = { saveProfileDirectory, createSaveSlots, migrateLegacySaveProfile, retainLegacyMigrationReceipt };

@@ -25,7 +25,12 @@ const { createDesktopSaveStorage, registerSaveShutdown } = require("./save-stora
 const { createSteamCloudStorage } = require("./steam-cloud-storage.cjs");
 const { createDemoProgressBridge, stampSaveOwner, stampSaveAccount } = require("./demo-progress.cjs");
 const { steamAccountId, isSteamCloudEnabled } = require("./steam-context.cjs");
-const { saveProfileDirectory, createSaveSlots, migrateLegacySaveProfile } = require("./save-profile.cjs");
+const {
+  saveProfileDirectory,
+  createSaveSlots,
+  migrateLegacySaveProfile,
+  retainLegacyMigrationReceipt,
+} = require("./save-profile.cjs");
 const TEST_PROFILE_ISOLATED =
   app.commandLine.hasSwitch("user-data-dir") || (!app.isPackaged && Boolean(process.env.ALCHEMY_ELECTRON_TEST_PROFILE));
 // Background automation is restricted to isolated development profiles.
@@ -104,6 +109,7 @@ async function initializeSaveStorage() {
     demoProgress,
     isSavePayload,
     stampOwner: (data) => stampSaveAccount(data, account),
+    preserveInitialization: TEST_PROFILE_ISOLATED ? undefined : () => retainLegacyMigrationReceipt(directory),
   });
   registerSaveShutdown(app, saveStorage);
   steamCloudStorage = createSteamCloudStorage({

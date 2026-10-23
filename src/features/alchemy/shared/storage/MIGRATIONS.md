@@ -382,6 +382,9 @@ One-time legacy migration copies only candidates whose stamped account matches
 the selected account; unowned candidates belong only to offline play. Originals
 remain intact, established target profiles are never supplemented, and the local
 `legacy-migration.json` receipt survives Clear Save Data to prevent resurrection.
+Clear must retain that receipt before deleting snapshots, even when a startup
+migration copied data but failed to retain its receipt. Receipt failure prevents
+deletion and leaves the existing progress intact.
 Local demo transfer checks the matching account directory and the preserved
 legacy demo directory, accepting only matching owner stamps. No renderer-supplied
 path can select another account. No save-schema change is required.

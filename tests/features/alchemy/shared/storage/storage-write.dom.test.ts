@@ -169,7 +169,11 @@ describe("storage io", () => {
   it("fails closed without clearing local saves when Steam Cloud delete fails during normal play", async () => {
     const playablePayload = JSON.stringify(currentSchemaCampaignSave());
 
-    const desktop = setupMockWindowDesktop({ saveCandidates: [playablePayload], steamName: "PlayerOne" });
+    const desktop = setupMockWindowDesktop({
+      saveCandidates: [playablePayload],
+      steamName: "PlayerOne",
+      cloudSyncEnabled: true,
+    });
     desktop.steamCloudDelete.mockResolvedValue(false);
 
     const loaded = await bootstrapAlchemySaveState(defaultGameSession);
@@ -182,7 +186,11 @@ describe("storage io", () => {
   it("wipes local saves on deliberate reset even when Steam Cloud delete fails", async () => {
     const playablePayload = JSON.stringify(currentSchemaCampaignSave());
 
-    const desktop = setupMockWindowDesktop({ saveCandidates: [playablePayload], steamName: "PlayerOne" });
+    const desktop = setupMockWindowDesktop({
+      saveCandidates: [playablePayload],
+      steamName: "PlayerOne",
+      cloudSyncEnabled: true,
+    });
     desktop.steamCloudDelete.mockResolvedValue(false);
 
     const loaded = await bootstrapAlchemySaveState(defaultGameSession);
