@@ -49,6 +49,9 @@ defineSequenceFamily("visits", (seed) => {
         kind: "alchemist",
         data: {
           potions: [],
+          brewOffers: [],
+          brewUsed: false,
+          distillUsed: false,
           mixUsed: false,
           refreshesLeft: 1,
           purchasedSlotKeys: [],

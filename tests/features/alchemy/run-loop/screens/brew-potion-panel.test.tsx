@@ -49,7 +49,7 @@ describe("Brew selection safety", () => {
     expect(document.activeElement).toBe(
       input === "keyboard" ? screen.getByRole("button", { name: "Distill" }) : document.body,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Choose Another Potion" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.queryByRole("button", { name: "Inspect brew result: Health Potion" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Select Mana Potion" }));
     fireEvent.click(screen.getByRole("button", { name: "Distill" }));
@@ -106,12 +106,36 @@ describe("Brew selection safety", () => {
     if (kind === "strengthen") {
       expect(screen.getByRole("button", { name: "Original: Health Potion" })).toBeTruthy();
       expect(screen.queryByRole("button", { name: "Select Health Potion" })).toBeNull();
-      const choose = screen.getByRole("button", { name: "Choose Another Potion" }) as HTMLButtonElement;
-      expect(choose.disabled).toBe(true);
+      expect(screen.queryByRole("button", { name: "Choose Another Potion" })).toBeNull();
     }
     expect((screen.getByRole("button", { name: action }) as HTMLButtonElement).disabled).toBe(true);
     expect(onConfirm).toHaveBeenCalledExactlyOnceWith(
       kind === "strengthen" ? { kind, index: 0 } : { kind, indices: [0, 1] },
     );
+  });
+  it("drops distinct ingredients into named slots and swaps rather than duplicates", () => {
+    const onConfirm = vi.fn(() => null);
+    const { container } = render(
+      <BrewPotionPanel
+        kind="combine"
+        deck={[cardById["health-potion"]!, cardById["mana-potion"]!, cardById["stoneskin-potion"]!]}
+        onConfirm={onConfirm}
+        onBack={() => {}}
+      />,
+    );
+    const drag = (title: string, slot: number) => {
+      const source = screen.getByRole("button", { name: `Select ${title}` }).parentElement!;
+      const target = container.querySelector(`[data-mix-slot="${slot}"]`)!;
+      fireEvent.dragStart(source, { dataTransfer: { setData: vi.fn() } });
+      fireEvent.dragOver(target, { dataTransfer: {} });
+      fireEvent.drop(target);
+      fireEvent.dragEnd(source);
+    };
+    drag("Health Potion", 1);
+    expect((screen.getByRole("button", { name: "Mix" }) as HTMLButtonElement).disabled).toBe(true);
+    drag("Mana Potion", 0);
+    drag("Health Potion", 0);
+    fireEvent.click(screen.getByRole("button", { name: "Mix" }));
+    expect(onConfirm).toHaveBeenCalledExactlyOnceWith({ kind: "combine", indices: [0, 1] });
   });
 });

@@ -239,7 +239,11 @@ function AlchemistShopScreenRoute({ routeCommands }: RunLoopRouteCtx) {
       runDeck={r.runDeck}
       items={r.alchemistState.potions}
       refreshesLeft={r.alchemistState.refreshesLeft}
+      brewOffers={r.alchemistState.brewOffers}
+      brewUsed={r.alchemistState.brewUsed}
       mixUsed={r.alchemistState.mixUsed}
+      distillUsed={r.alchemistState.distillUsed}
+      onBrewPotion={commands.brewPotion}
       purchasedSlotKeys={r.alchemistState.purchasedSlotKeys}
       getPrice={commands.getPotionBuyPrice}
       mixPrice={commands.getMixPrice()}

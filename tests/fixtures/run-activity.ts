@@ -27,6 +27,9 @@ const DEFAULT_ALCHEMIST_STATE = {
   freeRefreshUsed: false,
   firstPurchaseUsed: false,
   purchasedSlotKeys: [],
+  brewOffers: [],
+  brewUsed: false,
+  distillUsed: false,
   mixUsed: false,
 } satisfies Extract<PersistedRunActivity, { kind: "alchemist" }>["data"];
 const DEFAULT_TRINKET_SHOP_STATE = {

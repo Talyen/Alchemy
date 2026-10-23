@@ -124,7 +124,12 @@ export function normalizeActiveRunData(data: ValidatedActiveRunData): ValidatedA
     const repaired = repairShopOfferings(activity.data.potions, activity.data.purchasedSlotKeys, isRecoverableCard);
     activity = {
       ...activity,
-      data: { ...activity.data, potions: repaired.items, purchasedSlotKeys: repaired.purchasedSlotKeys },
+      data: {
+        ...activity.data,
+        potions: repaired.items,
+        brewOffers: filterLiveCards(activity.data.brewOffers).filter(isStandardPotionCard),
+        purchasedSlotKeys: repaired.purchasedSlotKeys,
+      },
     };
   }
   if (activity.kind === "mystery" && mysteryVisit) activity = { ...activity, data: mysteryVisit };

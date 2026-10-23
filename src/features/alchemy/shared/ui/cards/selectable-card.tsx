@@ -27,6 +27,7 @@ interface SelectableCardBaseProps {
   interactionKey?: string;
   shineColor?: readonly string[] | undefined;
   disabled?: boolean | undefined;
+  suppressTooltip?: boolean | undefined;
 
   onHoverChange?: ((hovered: boolean) => void) | undefined;
 }
@@ -109,6 +110,7 @@ function SelectableCardSurface({
   shimmerToken,
   shineColor,
   disabled,
+  suppressTooltip,
 }: Omit<SelectableCardBaseProps, "interactionKey"> & {
   hover: HoverBinding | undefined;
   shimmerActive: boolean;
@@ -137,6 +139,7 @@ function SelectableCardSurface({
     wrapperClassName: "relative flex justify-center",
     shimmerActive,
     shimmerToken,
+    suppressTooltip,
   };
 
   if (hover) {

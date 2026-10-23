@@ -461,11 +461,16 @@ option). The deck determines which brewing action is available. Rest and Brew
 share one use per visit, with no resource cost for Brew. Potions remain in the run
 deck after Consume. Rest-only room bonuses apply only to Rest.
 
-The Alchemist shop sells ordinary Potions and offers Mix Potion and Distill,
-sharing one service use per visit at the 40 Gold mixing price before discounts.
+The Alchemist shop sells ordinary Potions separately from its Potion Brewing menu.
+Brew, Mix, and Distill each have one independent use per visit, each costing 40 Gold
+before mixing discounts. Brew grants one of three fixed standard Potion offers
+(including a recovery/defense option); Mix combines two chosen deck instances;
+Distill strengthens one chosen instance. Only final confirmation charges Gold and
+uses that service. Back deselects a Potion before returning to the menu. Mix accepts
+click selection and dragging into either of two distinct ingredient slots.
 All seven standard Potions can be distilled. Mixed and previously strengthened
 Potions remain eligible for brewing at later visits; refreshing or reloading does
-not restore the current visit's service use.
+not restore any of the current visit's spent services or reroll Brew offers.
 
 Distill adds 1 to supported beneficial numerical magnitudes, including Wishes;
 cost, Consume, probabilities, draw counts, durations, and percentage effects stay

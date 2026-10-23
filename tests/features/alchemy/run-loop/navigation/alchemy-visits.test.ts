@@ -198,6 +198,9 @@ describe("alchemy visit transactions and resume", () => {
         kind: "alchemist",
         data: {
           potions: [],
+          brewOffers: [],
+          brewUsed: false,
+          distillUsed: false,
           mixUsed: false,
           refreshesLeft: 1,
           purchasedSlotKeys: [],
@@ -238,6 +241,9 @@ describe("alchemy visit transactions and resume", () => {
         kind: "alchemist",
         data: {
           potions: [],
+          brewOffers: [],
+          brewUsed: false,
+          distillUsed: false,
           mixUsed: false,
           refreshesLeft: 1,
           purchasedSlotKeys: [],

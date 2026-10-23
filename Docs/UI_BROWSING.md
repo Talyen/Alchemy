@@ -191,7 +191,15 @@ boss entrance keeps its existing title; reward screens say Victory.
 determine the available service. Campfire mixing lets the player choose two
 eligible instances, inspect the preview and Confirm Mix. With fewer than two,
 activating one of the three fixed offers grants it immediately. Screen and command
-enforce the same choice. Alchemist shows Mix Potion and Distill as separate services.
+enforce the same choice.
+
+Alchemist keeps shopping separate from Potion Brewing. Its Brew, Mix and Distill
+artwork tiles carry prices and matching label/icon hover borders; each service has
+its own spent state. The service name becomes the main screen heading. Mix shows
+equal-size ingredient choices and two Potion-icon slots leading to the result;
+clicks and drags select distinct deck instances. Back first deselects the current
+choice, including the Distill comparison. Content remains compact and centered;
+stack movement eases between heights and respects reduced motion.
 
 Transmutation previews the selected source's first compatible keyword immediately.
 Up to three keyword buttons above the original-to-preview comparison select saved

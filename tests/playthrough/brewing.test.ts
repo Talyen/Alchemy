@@ -189,7 +189,7 @@ describe("headless brewing through production commands", () => {
     dispatchGameplayCommand(
       (draft) => {
         setRunDeck(draft, stronger);
-        setRunActivityData(draft, "alchemist", { ...activity.data, mixUsed: true });
+        setRunActivityData(draft, "alchemist", { ...activity.data, mixUsed: true, distillUsed: true, brewUsed: true });
         return acceptCommand();
       },
       undefined,

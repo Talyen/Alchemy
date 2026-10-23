@@ -8,6 +8,7 @@ import {
   type ShopState,
   type TrinketShopState,
 } from "@/lib/active-run-session";
+import { createCampfirePotionOffers } from "@/lib/alchemist/brewing";
 import { doublePotionPotency } from "@/lib/alchemist";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { labyrinthCardShopPool } from "@/lib/content-systems/labyrinth/room-rules";
@@ -154,6 +155,7 @@ export function createInitialAlchemistState(
 ): AlchemistState {
   return {
     ...emptyAlchemistState(),
+    brewOffers: applyStrongSpiritsToPotions(createCampfirePotionOffers(rng), modifiers),
     potions: applyStrongSpiritsToPotions(
       selectRewardCards(deck, getStandardPotionPool(), ALCHEMIST_POTIONS_OFFERED, [], rng),
       modifiers,

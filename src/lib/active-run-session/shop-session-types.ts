@@ -24,7 +24,10 @@ export type ShopState = RefreshableShopFields & {
 
 export type AlchemistState = RefreshableShopFields & {
   potions: BattleCard[];
+  brewOffers: BattleCard[];
+  brewUsed: boolean;
   mixUsed: boolean;
+  distillUsed: boolean;
 };
 
 export type TrinketShopState = RefreshableShopFields & {
@@ -55,7 +58,10 @@ export function emptyShopState(): ShopState {
 export function emptyAlchemistState(): AlchemistState {
   return {
     potions: [],
+    brewOffers: [],
+    brewUsed: false,
     mixUsed: false,
+    distillUsed: false,
     ...emptyRefreshableFields(ALCHEMIST_REFRESHES),
   };
 }

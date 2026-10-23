@@ -155,7 +155,10 @@ const ShopObjectSchema = createShopObjectSchema({
 
 const AlchemistObjectSchema = createShopObjectSchema({
   potions: z.array(z.unknown()),
+  brewOffers: savedCardArraySchema("alchemistState.brewOffers").catch([]),
+  brewUsed: z.boolean().catch(false),
   mixUsed: z.boolean().catch(false),
+  distillUsed: z.boolean().catch(false),
 }).transform((state) => {
   const repaired = repairSavedShopCards(state.potions, state.purchasedSlotKeys, "alchemistState.potions");
   return { ...state, potions: repaired.cards, purchasedSlotKeys: repaired.purchasedSlotKeys };

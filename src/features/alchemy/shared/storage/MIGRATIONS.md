@@ -449,3 +449,11 @@ then repairs resources, pile identities, and cross-field survival relationships.
 Optional card metadata is omitted when absent, matching the runtime card type.
 The runtime activity layout does not change the serialized reward/destination
 payloads or save version.
+
+## Independent Alchemist services
+
+Alchemist visits retain `brewOffers` plus independent `brewUsed`, `mixUsed`, and
+`distillUsed` flags. New visits roll three fixed Brew offers from the shops RNG;
+refreshes preserve them and all spent flags. Hydration preserves current saved
+offers and flags; missing additive fields default to an empty recipe list and
+unused services without replaying randomness. No schema bump is required.
