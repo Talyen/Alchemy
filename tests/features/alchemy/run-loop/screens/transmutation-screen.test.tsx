@@ -205,7 +205,7 @@ describe("Transmutation flow", () => {
   });
 
   it.each([false, true])(
-    "only commits the latest preview after rapid switching (animations disabled: %s)",
+    "stays enabled and immediately commits the latest choice during label changes (animations disabled: %s)",
     async (disabled) => {
       if (disabled) localStorage.setItem("alchemy-disable-animations", "true");
       render(<Harness />);
@@ -221,11 +221,8 @@ describe("Transmutation flow", () => {
       choose(last);
       choose(first);
       choose(last);
-      expect((screen.getByRole("button", { name: "Transmute" }) as HTMLButtonElement).disabled).toBe(true);
-      click("Transmute");
-      expect(onExchange).not.toHaveBeenCalled();
+      expect((screen.getByRole("button", { name: "Transmute" }) as HTMLButtonElement).disabled).toBe(false);
       expect(readActiveRun(defaultGameSession).runDeck).toEqual(before);
-      await previewReady();
       expect(screen.getByRole("button", { name: `Preview: ${last.title}` })).toBeTruthy();
       click("Transmute");
       expect(readActiveRun(defaultGameSession).runDeck[0]).toEqual(last);

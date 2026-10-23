@@ -43,7 +43,6 @@ export function TransmutationScreen({
   const [committedHere, setCommittedHere] = useState(false);
   const [resultSaved, setResultSaved] = useState(false);
   const [resultReady, setResultReady] = useState(false);
-  const [readyPreviewKey, setReadyPreviewKey] = useState<string | number | null>(null);
   const resultAcknowledged = useRef(false);
   const continueButtonRef = useRef<HTMLButtonElement>(null);
   const continued = useRef(false);
@@ -65,7 +64,6 @@ export function TransmutationScreen({
   const showResult = completed && resultSaved && !!visit.result;
   const phase = showResult ? "result" : !source ? "source" : "preview";
   const previewKey = `${selection?.sourceIndex}:${selection?.offerIndex}`;
-  const previewReady = readyPreviewKey === previewKey;
   const preview =
     selection?.offerIndex === null || selection?.offerIndex === undefined ? undefined : offers[selection.offerIndex];
   const previousPhase = useRef(phase);
@@ -122,7 +120,6 @@ export function TransmutationScreen({
     if (locked || isProgressSavePending() || committingRef.current || continued.current) return;
     restoreFocus.current = keyboardInput.current && panelRef.current?.contains(document.activeElement) === true;
     if (onSelect(command)) {
-      if (command.kind !== "keyword") setReadyPreviewKey(null);
       playUISound("transmuteSelect");
       setError("");
     } else {
@@ -141,7 +138,6 @@ export function TransmutationScreen({
       committingRef.current ||
       continued.current ||
       staleSource ||
-      !previewReady ||
       selection?.sourceIndex === null ||
       selection?.sourceIndex === undefined ||
       selection.offerIndex === null ||
@@ -275,7 +271,6 @@ export function TransmutationScreen({
                   />
                   <FadeSlot
                     swapKey={previewKey}
-                    onReady={setReadyPreviewKey}
                     className={cn(controlLabelClass, viewCardWidthClass, "col-start-3 row-start-2")}
                   >
                     <CardTitle card={preview} />
@@ -327,7 +322,6 @@ export function TransmutationScreen({
                 locked ||
                 !keyword ||
                 !preview ||
-                !previewReady ||
                 !canTransmuteCard(
                   selection?.choices.filter((choice) => choice.keyword === preview.transmuted) ?? [],
                   source,
