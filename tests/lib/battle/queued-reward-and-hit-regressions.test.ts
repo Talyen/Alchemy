@@ -38,10 +38,11 @@ describe("queued rewards and hit ordering", () => {
       rng: () => 0,
     });
     const after = applyEnemyAbility(state, cardById.slash!, []);
-    expect(after.discard.filter((card) => card.id === burn.id)).toHaveLength(1);
+    expect(after.deck.map((card) => card.id)).toEqual([burn.id]);
+    expect(after.discard).toEqual([]);
     expect((repeat ? after.pendingHandCards : after.hand).map((card) => card.id)).toEqual([freeze.id]);
     if (repeat) expect(after.hand).toEqual(state.hand);
-    expect(after.deck).toHaveLength(0);
+    expect(after.deck).toHaveLength(1);
   });
 
   it.each([0, 1])("preserves hit-earned Forge alongside the original %i Forge", (forge) => {

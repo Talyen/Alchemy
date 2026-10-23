@@ -71,6 +71,9 @@ describe("Campfire Rest or Brew", () => {
     fireEvent.click(mix);
     expect(p.onBrew).toHaveBeenCalledExactlyOnceWith({ kind: "combine", indices: [0, 1] });
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("heading", { name: "Mix Potion" })).toBeTruthy();
+    expect(mix.disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("button", { name: /^Rest$/ })).toBeTruthy();
   });
   it("shows the restored result and Loot without allowing another action", () => {

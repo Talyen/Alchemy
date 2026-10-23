@@ -71,6 +71,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
         },
         alchemist: {
           buyPotion: fn(),
+          brewPotion: fn(),
           refresh: fn(),
           mixPotions: fn(),
           strengthenPotion: fn(),

@@ -131,7 +131,8 @@ describe("Poison, Stun, and Wish Talent reworks", () => {
     const next = playCard(state, card);
 
     expect(next.mana).toBe(9);
-    expect(next.discard).toHaveLength(1);
+    expect(next.deck).toEqual([card]);
+    expect(next.discard).toEqual([]);
     expect(next.enemyStatuses[_keyword]).toBe(8);
   });
 

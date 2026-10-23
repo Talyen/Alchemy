@@ -351,7 +351,7 @@ for (const locale of acceptanceLocales) {
           await expect.poll(async () => (await readSavedGame(page)).activeRun?.activity.kind).toBe("campfire");
           await localizedCheckpoint(page, locale, async (fresh) => {
             await fresh.getByRole("button", { name: label("Brew Potion"), exact: true }).click();
-            const choices = fresh.getByTestId("card-selection-grid").getByRole("button");
+            const choices = fresh.locator("[data-potion-choice] button");
             await choices.nth(0).click();
             await choices.nth(1).click();
             await reviewLayout(fresh, `${locale} mix preview`);
@@ -363,7 +363,7 @@ for (const locale of acceptanceLocales) {
               { kind: "heal", amount: 9 },
               { kind: "restore-mana", amount: 3 },
             ]);
-            const result = fresh.getByTestId("card-selection-grid");
+            const result = fresh.locator("[data-potion-preparation]");
             await expect(result).toHaveCount(0);
             await reviewLayout(fresh, `${locale} mixed Potion`);
             await crossLanguageResume(fresh, locale, "Campfire");
@@ -374,11 +374,12 @@ for (const locale of acceptanceLocales) {
           await page.getByRole("button", { name: "Alchemist's Shop", exact: true }).click();
           await expect.poll(async () => (await readSavedGame(page)).activeRun?.activity.kind).toBe("alchemist");
           await localizedCheckpoint(page, locale, async (fresh) => {
+            await fresh.getByRole("button", { name: label("Potion Brewing"), exact: true }).click();
             await fresh
               .getByRole("button")
               .filter({ has: fresh.getByText(label("Distill"), { exact: true }) })
               .click();
-            await fresh.getByTestId("card-selection-grid").getByRole("button").first().click();
+            await fresh.locator("[data-potion-choice] button").first().click();
             await reviewLayout(fresh, `${locale} distillation comparison`);
             await fresh
               .getByRole("button")

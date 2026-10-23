@@ -91,10 +91,10 @@ it("closes Error Log consistently with Close, Back and Escape without leaving Op
     );
   }
   render(<Harness />);
-  fireEvent.click(screen.getByRole("button", { name: "Close", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "Close" }));
   expect(closeLog).toHaveBeenCalledOnce();
   expect(leaveOptions).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole("button", { name: "Back", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "Back" }));
   fireEvent.keyDown(window, { key: "Escape" });
   expect(closeLog).toHaveBeenCalledTimes(3);
   expect(leaveOptions).not.toHaveBeenCalled();
@@ -124,12 +124,17 @@ it("closes the game menu before clearing Armory search with Escape", () => {
           currentScreen="armory"
           anchorRect={null}
           onMainMenu={vi.fn()}
+          onCollection={vi.fn()}
+          onTalents={vi.fn()}
+          onHomestead={vi.fn()}
+          onArmory={vi.fn()}
+          onOptions={vi.fn()}
         />
       </>
     );
   }
   render(<Harness />);
-  fireEvent.click(screen.getByRole("button", { name: "Open menu", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
   fireEvent.keyDown(window, { key: "Escape" });
   expect(filtersChanged).not.toHaveBeenCalled();
   expect(closeMenu).toHaveBeenCalledOnce();
@@ -169,7 +174,7 @@ it("uses Transmutation preview Back for Escape instead of opening the game menu"
   fireEvent.keyDown(window, { key: "Escape" });
   expect(toggleMenu).not.toHaveBeenCalled();
   expect(select).toHaveBeenCalledExactlyOnceWith({ kind: "back" });
-  fireEvent.click(screen.getByRole("button", { name: "Back", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "Back" }));
   expect(select).toHaveBeenCalledTimes(2);
   expect(select).toHaveBeenLastCalledWith({ kind: "back" });
 });

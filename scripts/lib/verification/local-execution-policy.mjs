@@ -17,6 +17,17 @@ export function assertLocalTestAllowed(command, args, env = process.env) {
   if (tool === "npx") return assertLocalTestAllowed(args[0] ?? "", args.slice(1), env);
   if (!["vitest", "playwright"].includes(tool)) return;
   if (args.includes("--help") || args.includes("-h") || args.includes("--list")) return;
+  // The documented single-screen capture is a bounded development preview.
+  // Keep arbitrary browser suites and runner overrides behind the CI policy.
+  if (
+    tool === "playwright" &&
+    env.ALCHEMY_VISUAL_SCENARIO_FILE &&
+    args[0] === "test" &&
+    args[1] === "--config=playwright.scenario.config.ts" &&
+    args[2] === "--project=chromium" &&
+    (args.length === 3 || (args.length === 4 && args[3] === "--headed"))
+  )
+    return;
   if (tool === "vitest" && testResourceClass(command, args) === "focused") return;
   assertHeavyLocalAllowed(`${tool} broad or browser verification`, env);
 }

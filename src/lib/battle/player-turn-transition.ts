@@ -159,14 +159,16 @@ function performDrawAndResetPhase(
   deathsDoorNeedsRecoveryTurn: boolean,
   options?: { preserveBlock?: boolean; manaAtTurnEnd?: number },
 ): BattleState {
-  const returningIndex =
-    state.gearEffects.recoverLastArcheryCard > 0 && state.uniqueGear.lastArcheryUid !== null
-      ? state.discard.findIndex((card) => card.uid === state.uniqueGear.lastArcheryUid)
-      : -1;
-  const recovered = returningIndex >= 0 ? state.discard[returningIndex] : undefined;
-  const discard = recovered ? state.discard.filter((_, i) => i !== returningIndex) : state.discard;
+  const returningUid = state.gearEffects.recoverLastArcheryCard > 0 ? state.uniqueGear.lastArcheryUid : null;
+  const returningIndex = returningUid === null ? -1 : state.discard.findIndex((card) => card.uid === returningUid);
+  // An empty draw pile can already have refilled from discard before this turn.
+  // Recover that same card before ordinary draws so its one-play discount survives.
+  const deckIndex =
+    returningUid !== null && returningIndex < 0 ? state.deck.findIndex((card) => card.uid === returningUid) : -1;
+  const recovered = returningIndex >= 0 ? state.discard[returningIndex] : state.deck[deckIndex];
+  const discard = returningIndex >= 0 ? state.discard.filter((_, i) => i !== returningIndex) : state.discard;
   const nextDraw = drawCards(
-    state.deck,
+    deckIndex >= 0 ? state.deck.filter((_, i) => i !== deckIndex) : state.deck,
     discard,
     state.hand,
     CARDS_PER_TURN,

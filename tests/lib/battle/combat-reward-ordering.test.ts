@@ -65,7 +65,8 @@ describe("combat reward ordering", () => {
       expect(result.playerHealth).toBe(deathsDoorUsed ? 0 : 1);
       expect(result.wishOptions !== null).toBe(!deathsDoorUsed);
       expect(result.mana).toBe(deathsDoorUsed ? 0 : 1);
-      expect(result.discard).toContainEqual(card);
+      expect(result.deck).toEqual([card]);
+      expect(result.discard).toEqual([]);
       expect(result.exhausted).toEqual([]);
     },
   );

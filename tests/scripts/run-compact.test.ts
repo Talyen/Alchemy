@@ -144,3 +144,18 @@ it("allows bounded unit diagnosis, hosted CI, explicit local overrides and test 
   expect(() => assertLocalTestAllowed("vitest", ["run", "tests/a.test.ts", "tests/b.test.ts"], local)).not.toThrow();
   expect(() => assertLocalTestAllowed("playwright", ["test", "--list"], local)).not.toThrow();
 });
+
+it("allows only the managed single-scenario preview without granting broad browser execution", () => {
+  const capture = ["test", "--config=playwright.scenario.config.ts", "--project=chromium"];
+  const env = { ALCHEMY_VISUAL_SCENARIO_FILE: "/task/reports/visual-review/scenario.json" };
+  expect(() => assertLocalTestAllowed("playwright", capture, {})).toThrow("belongs to CI");
+  for (const args of [capture, [...capture, "--headed"]])
+    expect(() => assertLocalTestAllowed("playwright", args, env)).not.toThrow();
+  for (const args of [
+    ["test"],
+    ["test", "--config=playwright.config.ts", "--project=chromium"],
+    [...capture, "--workers=4"],
+    [...capture, "--repeat-each=10"],
+  ])
+    expect(() => assertLocalTestAllowed("playwright", args, env)).toThrow("belongs to CI");
+});

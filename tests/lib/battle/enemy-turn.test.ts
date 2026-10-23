@@ -139,14 +139,15 @@ describe("endPlayerTurn - standard branch", () => {
     expect(result.state.enemyHealth).toBe(45);
   });
 
-  it("moves the hand into discard when the enemy phase begins", () => {
+  it("refills the empty draw pile from the hand when the enemy phase begins", () => {
     const held = makeTestCard({ id: "held" });
     const state = battleState({ hand: [held], discard: [] });
     const result = endPlayerTurn(state);
     expect(result.kind).not.toBe("haste");
     if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
     expect(result.enemyTurnStartState.hand).toEqual([]);
-    expect(result.enemyTurnStartState.discard.some((card) => card.id === "held")).toBe(true);
+    expect(result.enemyTurnStartState.deck).toEqual([held]);
+    expect(result.enemyTurnStartState.discard).toEqual([]);
   });
 });
 

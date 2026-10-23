@@ -43,7 +43,7 @@ const props = () => ({
   onStrengthenPotion: vi.fn(() => null),
   onContinue: () => {},
 });
-const click = (name: string) => fireEvent.click(screen.getAllByRole("button", { name, exact: true }).at(-1)!);
+const click = (name: string) => fireEvent.click(screen.getAllByRole("button", { name }).at(-1)!);
 describe("Alchemist brewing navigation", () => {
   installDisabledAnimationsForTests();
   afterEach(() => {
@@ -84,7 +84,7 @@ describe("Alchemist brewing navigation", () => {
     expect(screen.queryByRole("button", { name: "Continue" })).toBeNull();
     act(() => pending.shift()!());
     expect(screen.getByRole("button", { name: "Choose a Potion" }).querySelector("img")?.alt).toBe("Health Potion");
-    expect(screen.queryByRole("button", { name: "Brew", exact: true })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Brew" })).toBeNull();
     click("Continue");
     expect(screen.getByRole("heading", { name: "Potion Brewing" })).toBeTruthy();
   });

@@ -194,7 +194,7 @@ describe("alchemy visit transactions and resume", () => {
     expect(snapshotRun(defaultGameSession)).toEqual(before);
   });
 
-  it("shop strengthening shares price, rejects insufficient Gold atomically, and spends the one service", () => {
+  it("shop strengthening shares price, rejects insufficient Gold atomically, and spends Distill once", () => {
     setRunSession({
       activity: {
         kind: "alchemist",
@@ -219,7 +219,7 @@ describe("alchemy visit transactions and resume", () => {
     setRunProgress({ gold: 80 });
     expect(shop.strengthenPotion(1)?.effects).toEqual([{ kind: "heal", amount: 9 }]);
     expect(readRunProfile(defaultGameSession).gold).toBe(40);
-    expect(shop.mixPotions(1, 2)).toBeNull();
+    expect(shop.strengthenPotion(2)).toBeNull();
     reload();
     expect(shop.strengthenPotion(2)).toBeNull();
   });

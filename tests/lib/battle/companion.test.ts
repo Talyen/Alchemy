@@ -384,7 +384,8 @@ it.each(["pack-tactics", "wolf-companion"])(
       0,
     ).state;
     expect(refreshed.hand).toEqual([expect.objectContaining({ id: "next-draw" })]);
-    expect(refreshed.deck).toEqual([]);
+    expect(refreshed.deck).toEqual(id === "pack-tactics" ? [card] : []);
+    expect(refreshed.discard).toEqual([]);
   },
 );
 

@@ -30,12 +30,13 @@ test("Options retains readable controls in English and German", async ({ page })
   await menu.openOptions();
   await waitForLayoutSettled(page);
   await page.mouse.move(0, 0);
-  await expect(page).toHaveScreenshot("options-en.png");
+  // Retain diagnostics for both locales when an intentional shared change differs.
+  await expect.soft(page).toHaveScreenshot("options-en.png");
   await page.evaluate(() => localStorage.setItem("alchemy-language-v1", "de"));
   await page.reload();
   await page.getByRole("button", { name: translatedLabel("de", "Options"), exact: true }).click();
   await expect(page.getByRole("heading", { name: translatedLabel("de", "Options"), exact: true })).toBeVisible();
   await waitForLayoutSettled(page);
   await page.mouse.move(0, 0);
-  await expect(page).toHaveScreenshot("options-de.png");
+  await expect.soft(page).toHaveScreenshot("options-de.png");
 });

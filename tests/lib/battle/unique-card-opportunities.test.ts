@@ -7,9 +7,11 @@ import * as uniqueGearBattle from "../../fixtures/unique-gear-battle";
 describe("Unique Gear unique card opportunities", () => {
   const { battle, attack, play } = uniqueGearBattle;
 
-  it("Returning Flight recovers the existing card before a reshuffle and discounts only its next play", () => {
+  it("Returning Flight recovers the existing card after an eager refill and discounts only its next play", () => {
     const card = attack("physical", { tags: ["archery"] });
     const state = play(battle({ gearEffects: { recoverLastArcheryCard: 1 } }), card);
+    expect(state.deck).toEqual([card]);
+    expect(state.discard).toEqual([]);
     const next = advanceToPlayerTurn(state);
     expect(next.hand).toHaveLength(1);
     expect(next.discard).toHaveLength(0);

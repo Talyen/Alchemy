@@ -459,7 +459,8 @@ describe("createBattleCardPlay", () => {
     clickCard(handleCardClick, { ...slash, uid: 4 }, 0);
 
     expect(readBattle(defaultGameSession).battleState.hand.length).toBe(0);
-    expect(readBattle(defaultGameSession).battleState.discard).toHaveLength(1);
+    expect(readBattle(defaultGameSession).battleState.deck).toEqual([{ ...slash, uid: 4 }]);
+    expect(readBattle(defaultGameSession).battleState.discard).toEqual([]);
     expect(readBattle(defaultGameSession).battleState.mana).toBe(2);
     expectAwardedCard(awardCardXP, "slash");
     expect(onBattleVictory).toHaveBeenCalledOnce();
