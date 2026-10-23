@@ -2,7 +2,7 @@ import { useGameTranslation } from "@/components/use-game-translation";
 
 import { cn } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
-import { MoveRight } from "lucide-react";
+import { CircleQuestionMark, MoveRight } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
@@ -241,10 +241,7 @@ export function TransmutationScreen({
         ) : (
           <>
             <div
-              className={cn(
-                "grid items-start justify-items-center gap-x-8 gap-y-3",
-                preview ? "grid-cols-[1fr_auto_1fr]" : "grid-cols-1",
-              )}
+              className="grid grid-cols-[1fr_auto_1fr] items-start justify-items-center gap-x-8 gap-y-3"
               aria-label={i18n.text("ui.transmutation-screen.7", "Transmutation comparison")}
             >
               <BattleCardButton
@@ -261,37 +258,42 @@ export function TransmutationScreen({
               <div className={cn(controlLabelClass, viewCardWidthClass, "col-start-1 row-start-2")}>
                 <CardTitle card={source} />
               </div>
-              {preview && (
-                <>
-                  <MoveRight
-                    aria-hidden="true"
-                    className="col-start-2 row-start-1 h-10 w-10 self-center text-gold-pale"
+              <MoveRight aria-hidden="true" className="col-start-2 row-start-1 h-10 w-10 self-center text-gold-pale" />
+              {preview ? (
+                <FadeSlot
+                  swapKey={previewKey}
+                  onReady={setReadyPreviewKey}
+                  className={cn(
+                    viewCardWidthClass,
+                    "col-start-3 row-span-2 row-start-1 grid grid-rows-subgrid justify-items-center",
+                  )}
+                >
+                  <BattleCardButton
+                    card={preview}
+                    comparisonCard={source}
+                    ariaLabel={i18n.text("ui.transmutation-screen.9", "Preview: {{value0}}", {
+                      value0: i18n.read(() => getCardDisplayTitle(preview)),
+                    })}
+                    className={viewCardWidthClass}
+                    wrapperClassName="flex"
+                    shineColor={getCardInspectionShineColors(preview)}
+                    shimmerActive={false}
+                    shimmerToken={undefined}
                   />
-                  <FadeSlot
-                    swapKey={previewKey}
-                    onReady={setReadyPreviewKey}
-                    className={cn(
-                      viewCardWidthClass,
-                      "col-start-3 row-span-2 row-start-1 grid grid-rows-subgrid justify-items-center",
-                    )}
-                  >
-                    <BattleCardButton
-                      card={preview}
-                      comparisonCard={source}
-                      ariaLabel={i18n.text("ui.transmutation-screen.9", "Preview: {{value0}}", {
-                        value0: i18n.read(() => getCardDisplayTitle(preview)),
-                      })}
-                      className={viewCardWidthClass}
-                      wrapperClassName="flex"
-                      shineColor={getCardInspectionShineColors(preview)}
-                      shimmerActive={false}
-                      shimmerToken={undefined}
-                    />
-                    <div className={cn(controlLabelClass, "w-full")}>
-                      <CardTitle card={preview} />
-                    </div>
-                  </FadeSlot>
-                </>
+                  <div className={cn(controlLabelClass, "w-full")}>
+                    <CardTitle card={preview} />
+                  </div>
+                </FadeSlot>
+              ) : (
+                <div
+                  aria-hidden="true"
+                  className={cn(
+                    viewCardWidthClass,
+                    "col-start-3 row-start-1 flex aspect-[3/4] items-center justify-center rounded-shell-card border border-dashed border-border text-muted-foreground",
+                  )}
+                >
+                  <CircleQuestionMark className="h-10 w-10" />
+                </div>
               )}
             </div>
             <div
@@ -308,7 +310,6 @@ export function TransmutationScreen({
                     pill
                     choice
                     iconOnly
-                    showTooltip
                     selected={keyword === choice.keyword}
                     disabled={locked}
                     onSelect={() => select({ kind: "keyword", keyword: choice.keyword })}
