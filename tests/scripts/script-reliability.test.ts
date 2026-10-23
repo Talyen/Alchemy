@@ -18,6 +18,7 @@ import { runAudits } from "../../scripts/audit-all.mjs";
 import { parsePerformanceArgs } from "../../scripts/run-performance.mjs";
 import { parseSyncArgs } from "../../scripts/sync-generated.mjs";
 import { parseAssetArgs } from "../../scripts/assets.mjs";
+import { isolatedTestResources } from "../helpers/isolated-test-resources";
 
 const ROOT = process.cwd();
 const temporary: string[] = [];
@@ -159,9 +160,8 @@ describe("script execution reliability", () => {
 
   it("fails the ship gate when its test process is interrupted", () => {
     const source = `import cp from 'node:child_process';
-      import net from 'node:net';
       import { syncBuiltinESMExports } from 'node:module';
-      net.createServer = () => ({once() {}, listen(_options, ready) { ready(); }, address() { return {port: 0}; }, close(done) { done(); }});
+      ${isolatedTestResources}
       cp.spawnSync = () => { console.log('interrupted test process'); return {status:null,signal:'SIGTERM'}; };
       syncBuiltinESMExports();
       process.argv.push('--live');

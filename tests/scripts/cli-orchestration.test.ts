@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { resolveViteBin } from "../../scripts/lib/command-invocation.mjs";
 
 import { parsePerformanceArgs } from "../../scripts/run-performance.mjs";
+import { isolatedTestResources } from "../helpers/isolated-test-resources";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
 const temporary: string[] = [];
@@ -29,7 +30,6 @@ function probe(script: string, args: string[], cwd: string, interception: string
       "-e",
       `import cp from 'node:child_process';
        import fs from 'node:fs';
-       import net from 'node:net';
        import { syncBuiltinESMExports } from 'node:module';
        ${interception}
        syncBuiltinESMExports();
@@ -75,7 +75,7 @@ describe("CLI launch paths", () => {
       script,
       [...args],
       fixture(),
-      `net.createServer = () => ({once() {}, listen(_options, ready) { ready(); }, address() { return {port: 0}; }, close(done) { done(); }});
+      `${isolatedTestResources}
        cp.spawn = cp.spawnSync = (_command, args, options) => {
          console.log('PROBE ' + JSON.stringify({cwd: options.cwd, args}));
          throw new Error('subprocess intercepted');
