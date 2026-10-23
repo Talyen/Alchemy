@@ -72,6 +72,12 @@ word intervals. `--allow-incomplete` excludes the whole invalid phrase and recor
 it in `rejectedTimingPhrases`; raw evidence retains the rejected words. Preview the
 exported snapshot to judge exactly what the game would display.
 
+For non-Treant candidates, change only the snapshot fetch URL in the ignored
+`reports/boss-lyrics/index.html` copy to `./forge-golem/candidate.json` (or the
+matching candidate path), then select that boss. The unmodified preview reads
+`src/lib/audio/lyrics/<boss>.json`, so selecting a boss alone does not review a
+new export. Keep the original recording as playback audio.
+
 Keep times relative to the original recording. Iron Bear's playback skip is
 already represented by the media clock and must not receive a second offset.
 
