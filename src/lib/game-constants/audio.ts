@@ -9,6 +9,8 @@ export const MUSIC_KEYS = {
   BOSS_BLIGHT_TREANT: "boss-blight-treant",
   BOSS_IRON_BEAR: "boss-iron-bear",
   BOSS_BLOOD_COUNTESS: "boss-blood-countess",
+  BOSS_SERAPH: "boss-seraph",
+  BOSS_STONE_TITAN: "boss-stone-titan",
 } as const;
 
 export const FADE_OUT_DURATION_MS = 300;

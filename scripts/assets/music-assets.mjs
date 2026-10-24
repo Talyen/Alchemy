@@ -42,5 +42,7 @@ export const musicAssets = [
     "The Forge Golem.mp3",
     "The Frostwarden.mp3",
     "The Iron Bear.mp3",
+    "The Seraph - Be Not Afraid - Boss Song.mp3",
+    "The Stone Titan - Stone Reclaims - Boss Song.mp3",
   ]),
 ];
