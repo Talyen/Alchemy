@@ -14,6 +14,8 @@ manually against this pinned revision and Alchemy's current conventions.
 
 ## Review the affected screen
 
+Avoid taglines, avoid helper text, avoid secondary labels - if a screen needs them to make sense, fix the layout instead.
+
 [Visual review](../../../Docs/UI_VISUAL_REVIEW.md) owns design quality and rendered comparison requirements. Read the relevant [UI owner](../../../Docs/UI.md) sections, then inspect the current screen before choosing a change.
 
 Use the existing primitives and compare the candidate in matched game states. For artwork, follow the [asset workflow](../../../Docs/WORKFLOWS-ASSETS.md#art-style-and-generation-prompts) and inspect its actual destination size and crop. Exercise affected interactions and localized layouts.
