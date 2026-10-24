@@ -91,7 +91,9 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
     await page.addInitScript(installCaptureRuntime);
     await page.clock.install({ time: new Date("2026-01-01T00:00:00.000Z") });
     await scenarios.openTrailerScene(page, clip, checkpoint);
-    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1));
+    // Leave room for protocol travel while the staging clock is still running.
+    // A one-millisecond margin can already be in the past on the next command.
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
     await page.context().storageState({ path: path.join(out, `${clip.id}.storage.json`) });
     const startState = await page
       .locator("[data-testid='player-health'],[data-testid='enemy-health'],[data-testid='mana-panel']")
