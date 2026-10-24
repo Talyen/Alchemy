@@ -8,6 +8,8 @@ Alchemy's accessibility stance. Screen wiring checklists remain in
 
 ## Show, don't tell
 
+Avoid taglines, avoid helper text, avoid secondary labels - if a screen needs them to make sense, fix the layout instead.
+
 Aim for a minimalist, polished game UI. Default to concise labels, interactive
 cards, visible selection and resource changes, and clear outcomes. Do not add
 instructional text, descriptive paragraphs, or redundant success messages to
@@ -196,8 +198,7 @@ header, body, and action group when it fits, and scrolls vertically when needed.
 Keep full available-space geometry for Battle, Armory, and Labyrinth. Do not use
 viewport-height minimums to add empty space to ordinary pages.
 
-Use one 24px gap in content units between a header and its main body. Meaningful
-helper text uses 12px above it and 16px before the primary content. Preserve bounded
+Use one 24px gap in content units between a header and its main body. Preserve bounded
 resource, selection and footer reservations needed for stable actions;
 size those reservations in content units. [Talents](../src/features/alchemy/meta/screens/talents-screen.tsx)
 retains its tighter header spacing in its layout owner.

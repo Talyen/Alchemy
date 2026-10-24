@@ -44,6 +44,7 @@ Read known owners directly. Otherwise find filenames, scope searches, then read 
 
 - Player-facing text changes must keep every shipped language current before integration. Settle draft wording in the task worktree, then use [localization](./.agents/skills/localization/SKILL.md) to translate and review the final wording.
 - Visible changes use [frontend-design](./.agents/skills/frontend-design/SKILL.md) and its [visual review requirements](./Docs/UI_VISUAL_REVIEW.md). Preserve useful feedback, essential mechanics and accessible names; keep copy concise. Use `npm run agent:browser` for rendered review under [preview ownership](./CONTRIBUTING.md#agent-preview-ownership).
+- Avoid taglines, avoid helper text, avoid secondary labels - if a screen needs them to make sense, fix the layout instead.
 - For common mutation work, start with [the production examples](./Docs/RUN_STATE.md#common-implementation-paths). Outside `shared/stores/`, use capability ports. Feature adapters call intent commands; command owners compose `dispatchRunSessionCommand()` and `run-session-write-port.ts` operations.
 - Pass run/battle controllers through route/shell props. Only `AppScreenChromeProvider` and `CardDescriptionProvider` are allowed providers; presentation state may use `ui-store`.
 - `BattleState` is immutable. Gameplay uses seeded `world` RNG and `Math.round` for combat magnitudes. Shared tuning belongs in `src/lib/game-constants/`; content magnitudes stay with definitions.
