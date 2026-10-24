@@ -146,7 +146,9 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
     for (const file of fs
       .readdirSync(videoDirectory)
       .filter((file) => clip.boss && file.startsWith(`${clip.boss}-idle-`) && file.endsWith(".mp4"))) {
-      const video = probe(path.join(videoDirectory, file)).streams.find((stream) => stream.codec_type === "video");
+      const video = probe(path.join(videoDirectory, file), { countFrames: false }).streams.find(
+        (stream) => stream.codec_type === "video",
+      );
       if (video?.r_frame_rate === video?.avg_frame_rate) {
         const [numerator, denominator] = video.r_frame_rate.split("/").map(Number);
         if (numerator > 0 && denominator > 0)
@@ -272,7 +274,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
           ),
         );
         console.log(
-          `Capture ${clip.id}: ${frame / settings.fps}/${clip.duration}s (${width}×${height}, ${settings.fps} fps)`,
+          `Capture ${clip.id}: ${frame / settings.fps}/${clip.duration}s (${width}×${height}, ${settings.fps} fps); phase ms ${JSON.stringify(Object.fromEntries(Object.entries(costs).map(([key, value]) => [key, Math.round(value)])))}`,
         );
       }
       if (errors.length) throw new Error(`Renderer error: ${errors.join("; ")}`);

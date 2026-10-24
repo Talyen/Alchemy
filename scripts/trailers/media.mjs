@@ -25,10 +25,10 @@ export function writeJson(file, value) {
 export function ffmpegPath() {
   return process.env.ALCHEMY_TRAILER_FFMPEG || "ffmpeg";
 }
-export function probe(file) {
+export function probe(file, { countFrames = true } = {}) {
   const result = spawnSync(
     process.env.ALCHEMY_TRAILER_FFPROBE || "ffprobe",
-    ["-v", "error", "-count_frames", "-show_streams", "-show_format", "-of", "json", file],
+    ["-v", "error", ...(countFrames ? ["-count_frames"] : []), "-show_streams", "-show_format", "-of", "json", file],
     { encoding: "utf8", maxBuffer: 2 * 1024 * 1024 },
   );
   if (result.error || result.status !== 0) throw new Error(`ffprobe failed: ${result.error?.message ?? result.stderr}`);
@@ -65,7 +65,7 @@ export function startEncoder(file, { width, height, fps }) {
       "-c:v",
       "libx264",
       "-preset",
-      "fast",
+      "ultrafast",
       "-crf",
       "0",
       // Every source frame must be independently seekable during editing.
@@ -82,7 +82,7 @@ export function startEncoder(file, { width, height, fps }) {
       "-color_trc",
       "bt709",
       "-threads",
-      "1",
+      "2",
       "-fps_mode",
       "cfr",
       file,
