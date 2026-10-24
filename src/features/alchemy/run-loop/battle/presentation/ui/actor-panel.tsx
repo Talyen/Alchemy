@@ -17,7 +17,6 @@ import {
   battleEnemyCardWidthClass,
   battlePortraitHeightClass,
   cardArtImageClass,
-  cardHoverScaleClass,
   cardSurfaceClass,
   landscapeArtImageClass,
   sectionTitleClass,
@@ -168,6 +167,7 @@ export function ArtPanel({
                 title={title}
                 art={art}
                 idleClips={idleClips}
+                mirrorArt={side === "enemy" && currentEnemy?.id === "stone-titan"}
                 shimmerId={shimmerId}
                 shimmerActive={shimmerActive}
                 shimmerToken={shimmerToken}
@@ -219,6 +219,7 @@ function ActorArtFrame({
   title,
   art,
   idleClips,
+  mirrorArt,
   shimmerId,
   shimmerActive,
   shimmerToken,
@@ -240,6 +241,7 @@ function ActorArtFrame({
   title: string;
   art: string;
   idleClips?: readonly string[] | undefined;
+  mirrorArt: boolean;
   shimmerId: string;
   shimmerActive: boolean;
   shimmerToken: number | undefined;
@@ -264,6 +266,7 @@ function ActorArtFrame({
         ? landscapeArtImageClass
         : cardArtImageClass,
     battlePortraitHeightClass,
+    mirrorArt && "-scale-x-100",
   );
   const { pulse, sparksOverflow } = useImpactPulse(impactCue);
   const recoilRef = useRef<HTMLDivElement>(null);
@@ -323,8 +326,6 @@ function ActorArtFrame({
           className={cn(
             "combatant-art relative",
             cardSurfaceClass,
-            !isDead && cardHoverScaleClass,
-            turnActive && !isDead && "combatant-turn-active",
             cardWidthClass ?? battleCardWidthClass,
             "border",
             isDead ? "border-transparent" : "border-border/80",

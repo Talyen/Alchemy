@@ -55,7 +55,9 @@ visible video frame for the existing sliced-portrait effect.
 
 Animated portraits use the clips' full 16:9 composition. Their extra width retains
 the same base artwork height as the hero's 3:4 portrait and other enemies' 4:3
-portraits, including the existing turn/hover scaling. Collections, Destination,
+portraits. Hero and enemy frames keep that height through turn changes and hover;
+the shining border indicates the active turn. Stone Titan's battle artwork is
+mirrored, including idle playback and the frozen defeat image. Collections, Destination,
 Labyrinth, inspection and bosses without clips retain their static artwork.
 
 ## Battle feedback
