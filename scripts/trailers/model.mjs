@@ -28,7 +28,9 @@ const target = z
   })
   .strict()
   .refine(
-    (v) => Number(Boolean(v.role && v.name)) + Number(Boolean(v.testId)) + Number(Boolean(v.selector)) === 1,
+    (v) =>
+      Boolean(v.role) === Boolean(v.name) &&
+      Number(Boolean(v.role && v.name)) + Number(Boolean(v.testId)) + Number(Boolean(v.selector)) === 1,
     "Specify one role/name, testId, or selector target",
   );
 const action = z

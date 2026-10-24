@@ -133,6 +133,8 @@ describe("trailer edit admission and synchronization", () => {
     const target = structuredClone(authored);
     target.clips[0].actions[0].target = { role: "button", name: "Play", selector: "button" };
     expect(() => parseRecipe(target)).toThrow("Specify one");
+    target.clips[0].actions[0].target = { role: "button", selector: "button" };
+    expect(() => parseRecipe(target)).toThrow("Specify one");
   });
 
   it("accounts for transition overlap in exact frames without changing timing for drafts or social formats", () => {
