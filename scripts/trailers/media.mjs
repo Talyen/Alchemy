@@ -34,6 +34,17 @@ export function probe(file) {
   if (result.error || result.status !== 0) throw new Error(`ffprobe failed: ${result.error?.message ?? result.stderr}`);
   return JSON.parse(result.stdout);
 }
+/** Reject a wrong-size screenshot before encoding can conceal it by scaling. */
+export function assertFrameDimensions(buffer, width, height) {
+  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  if (
+    buffer.length < 24 ||
+    !buffer.subarray(0, 8).equals(signature) ||
+    buffer.readUInt32BE(16) !== width ||
+    buffer.readUInt32BE(20) !== height
+  )
+    throw new Error(`Screenshot must contain native ${width}×${height} PNG pixels`);
+}
 export function startEncoder(file, { width, height, fps }) {
   const child = spawn(
     ffmpegPath(),
@@ -74,8 +85,6 @@ export function startEncoder(file, { width, height, fps }) {
       "1",
       "-fps_mode",
       "cfr",
-      "-s",
-      `${width}x${height}`,
       file,
     ],
     { stdio: ["pipe", "ignore", "pipe"] },
@@ -95,6 +104,7 @@ export function startEncoder(file, { width, height, fps }) {
   child.stdin.on("error", () => {});
   return {
     async frame(buffer) {
+      assertFrameDimensions(buffer, width, height);
       if (child.exitCode !== null) await completion;
       if (!child.stdin.write(buffer))
         await Promise.race([

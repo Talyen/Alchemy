@@ -161,7 +161,10 @@ bit-identical pixels across different browser, OS, font or GPU versions; the bun
 records its source and browser version. Sound and frame clocks must agree;
 misaligned cues fail capture instead of silently producing a music-only edit.
 
-For each capture, frame count, dimensions and frame rate are checked with ffprobe.
+For each capture, the browser raster density is pinned and checked; every PNG's
+actual pixel dimensions must match the requested source before encoding. The
+encoder cannot resize a screenshot to conceal a mismatch. Frame count, encoded
+dimensions and frame rate are also checked with ffprobe.
 Receipts retain the actual performed input labels, bounds, pointer travel and card
 acceptance times, native lyric positions, idle-video playback samples, sound cues, source
 hash, browser version and beginning/middle/end frame hashes. A failed capture

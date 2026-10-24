@@ -110,6 +110,16 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
   try {
     page = await context.newPage();
     const cdp = await context.newCDPSession(page);
+    // An additional CDP session can start with default device metrics. Pin its
+    // raster density explicitly instead of relying on context emulation alone.
+    await cdp.send("Emulation.setDeviceMetricsOverride", {
+      width: settings.viewport.width,
+      height: settings.viewport.height,
+      deviceScaleFactor: draft ? 1 : settings.scale,
+      mobile: false,
+      screenWidth: settings.viewport.width,
+      screenHeight: settings.viewport.height,
+    });
     page.setDefaultTimeout(15000);
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("console", (message) => {
@@ -119,6 +129,9 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
     await page.addInitScript(installCaptureRuntime);
     await page.clock.install({ time: new Date("2026-01-01T00:00:00.000Z") });
     await scenarios.openTrailerScene(page, { ...clip, lyrics: music !== null }, checkpoint);
+    const rasterScale = await page.evaluate(() => globalThis.devicePixelRatio);
+    if (rasterScale !== (draft ? 1 : settings.scale))
+      throw new Error("Browser raster density does not match the capture request");
     // Leave room for protocol travel while the staging clock is still running.
     // A one-millisecond margin can already be in the past on the next command.
     await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
@@ -227,6 +240,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
         fromSurface: true,
         captureBeyondViewport: false,
         optimizeForSpeed: true,
+        clip: { x: 0, y: 0, ...settings.viewport, scale: 1 },
       });
       const png = Buffer.from(data, "base64");
       mark("screenshot");
@@ -300,6 +314,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
       file: path.basename(output),
       sha256: hashFile(output),
       settings: { width, height, fps: settings.fps },
+      rasterScale,
       frameCount,
       elapsedPhaseMs: costs,
       method: "offline-js-css-video-sampling",

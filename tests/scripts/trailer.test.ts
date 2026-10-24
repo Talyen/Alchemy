@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { assertFrameDimensions } from "../../scripts/trailers/media.mjs";
 import { describe, expect, it, vi } from "vitest";
 import { compileTimeline, mapSoundEvents, nativeMusicOffsets, parseRecipe } from "../../scripts/trailers/model.mjs";
 import { installCaptureRuntime, sampleVisualTime } from "../../scripts/trailers/browser-runtime.mjs";
@@ -6,6 +7,14 @@ import { installCaptureRuntime, sampleVisualTime } from "../../scripts/trailers/
 const authored = JSON.parse(fs.readFileSync(new URL("../../trailers/boss-spotlight.json", import.meta.url), "utf8"));
 
 describe("trailer edit admission and synchronization", () => {
+  it("rejects a 1080p screenshot before it can be passed off as a 4K source", () => {
+    const png = Buffer.alloc(24);
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(png);
+    png.writeUInt32BE(1920, 16);
+    png.writeUInt32BE(1080, 20);
+    expect(() => assertFrameDimensions(png, 3840, 2160)).toThrow("native 3840×2160");
+    expect(() => assertFrameDimensions(png, 1920, 1080)).not.toThrow();
+  });
   it("holds paused preload videos and the outgoing last frame while switching playback once", async () => {
     class Video extends EventTarget {
       src: string;
