@@ -92,7 +92,7 @@ describe("Open Field generation", () => {
         } else if (node.type !== "entrance") {
           expect(node.enemyId).toBeUndefined();
           expect(node.modifiers).toEqual([]);
-          expect(node.rewardModifiers).toHaveLength(node.type === "transmutation" ? 0 : 1);
+          expect(node.rewardModifiers).toHaveLength(1);
         }
       }
     }
