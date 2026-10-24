@@ -12,6 +12,10 @@ vi.mock("../../scripts/assets/asset-manifest.mjs", async (importOriginal) => ({
   staticAssets: [selection.asset],
 }));
 vi.mock("../../scripts/assets/gear-assets.mjs", () => ({ gearAssets: [] }));
+vi.mock("../../scripts/assets/boss-idle-assets.mjs", () => ({
+  bossIdleAssets: [],
+  validateBossIdleRegistry: vi.fn(),
+}));
 vi.mock("../../scripts/assets/music-assets.mjs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../scripts/assets/music-assets.mjs")>()),
   musicAssets: [],
@@ -64,7 +68,7 @@ beforeEach(async () => {
       .png()
       .toBuffer(),
   );
-  for (const folder of ["public/Music", "public/sounds"]) {
+  for (const folder of ["public/Music", "public/sounds", "src/assets/boss-idles"]) {
     await mkdir(path.join(fixture.root, folder), { recursive: true });
     await writeFile(path.join(fixture.root, folder, ".asset-hashes.json"), "{}\n");
   }
