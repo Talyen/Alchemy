@@ -243,7 +243,7 @@ const sections = [
     "Status hierarchy & stacking",
     [
       numeric("statusSize", "Status size multiplier", 0.5, 1.2, 0.01, "×"),
-      numeric("statusPeak", "Status peak scale", 1, 2.3, 0.01, "×"),
+      numeric("statusPeak", "Stationary status peak scale", 1, 2.3, 0.01, "×"),
       toggle("statusStatic", "Keep status feedback stationary"),
       choice("placement", "Status placement", {
         center: "Centered with results",
@@ -498,6 +498,27 @@ function changeField(field, input) {
   render();
 }
 
+function sequenceDuration() {
+  const sequence = scenarios[state.scenario];
+  return Math.max(
+    sequence.duration,
+    ...[state.a, state.b].flatMap((config) =>
+      sequence.events.map(
+        ([at, entries]) =>
+          at +
+          Math.max(
+            ...entries.map((item) =>
+              item.kind === "reaction"
+                ? config.reactionMs
+                : config.lifetime + (item.kind === "impact" ? config.mergeCap : 0),
+            ),
+          ) +
+          200,
+      ),
+    ),
+  );
+}
+
 function refreshControls() {
   for (const input of document.querySelectorAll("[data-key]")) {
     const value = state.b[input.dataset.key];
@@ -516,8 +537,8 @@ function refreshControls() {
   $("#scenario").value = state.scenario;
   $("#speed").value = state.speed;
   $("#static").checked = state.static;
-  $("#time").max = scenarios[state.scenario].duration;
-  $("#duration").textContent = `${scenarios[state.scenario].duration / 1000} s`;
+  $("#time").max = sequenceDuration();
+  $("#duration").textContent = `${sequenceDuration() / 1000} s`;
   $("#pause").textContent = state.playing ? "Pause" : "Play";
 }
 
@@ -820,7 +841,7 @@ function tick(now) {
   const elapsed = previous === null ? 0 : Math.min(100, now - previous);
   previous = now;
   state.time += elapsed * state.speed;
-  const duration = scenarios[state.scenario].duration;
+  const duration = sequenceDuration();
   if (state.time >= duration) {
     if (state.loop) state.time %= duration;
     else {
@@ -853,7 +874,7 @@ $("#replay").addEventListener("click", replay);
 $("#pause").addEventListener("click", () => {
   if (state.playing) pause();
   else {
-    if (state.time >= scenarios[state.scenario].duration) state.time = 0;
+    if (state.time >= sequenceDuration()) state.time = 0;
     play();
   }
 });
