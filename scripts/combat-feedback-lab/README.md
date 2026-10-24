@@ -26,6 +26,11 @@ and group pushes are representative, not pixel parity. Audio, portrait recoil,
 and card flights are outside this tool. Validate a chosen treatment in the live
 battle screen before claiming visual acceptance.
 
+Trinket defines an emphasis typography tier, but its ordinary damage presenter
+classifies damage as `directDamage` even when the Critical marker is set. The
+baseline therefore keeps normal damage typography for Criticals; size and weight
+remain adjustable for exploring alternatives.
+
 Canonical Alchemy owners:
 
 - [Numeric animation](../../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx)

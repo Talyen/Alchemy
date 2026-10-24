@@ -97,8 +97,8 @@ const trinket = {
   mergeExtension: 120,
   mergeCap: 300,
   mergePulse: 0.1,
-  criticalSize: 34 / 28,
-  criticalHeavy: true,
+  criticalSize: 1,
+  criticalHeavy: false,
   shine: "all",
   font: "rounded",
   reactionRiseStart: 200,
@@ -879,8 +879,9 @@ $("#pause").addEventListener("click", () => {
   }
 });
 $("#time").addEventListener("input", (event) => {
+  const time = Number(event.target.value);
   pause();
-  state.time = Number(event.target.value);
+  state.time = time;
   render();
 });
 $("#scenario").addEventListener("change", (event) => {
