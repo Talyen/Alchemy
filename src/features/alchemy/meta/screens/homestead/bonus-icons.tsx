@@ -68,7 +68,7 @@ export function HomesteadBonusIcon({
   return (
     <span className="inline-flex h-6 w-5 shrink-0 items-center justify-center">
       {"resource" in icon ? (
-        <HomesteadResourceArtwork resource={icon.resource} size="sm" className="h-5 w-5" />
+        <HomesteadResourceArtwork resource={icon.resource} className="max-w-none" />
       ) : (
         <icon.Icon aria-hidden="true" className={cn("h-5 w-5", icon.colorClass)} />
       )}
