@@ -200,7 +200,7 @@ export function HomesteadNodeArtwork({
                   aria-hidden="true"
                   style={feedbackStyle}
                   className={cn(
-                    "h-3.5 w-3.5",
+                    "h-4 w-4",
                     feedback && animateTooltip && !reducedMotion && index === node.level - 1 && "homestead-earned-star",
                     index < node.level ? "fill-gold-light text-gold-light" : "text-muted-foreground/40",
                   )}

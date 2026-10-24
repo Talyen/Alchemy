@@ -102,7 +102,8 @@ upgrades, or bonds the node.
 Stars beside the name show purchased levels or bonds. Unbuilt nodes show
 their name, empty stars, first-tier benefits, and purchase cost. Preview benefits
 have partially muted text while retaining keyword hues; purchased benefits use full color.
-Each effect row starts with one 20px icon aligned to its first line. Icons reuse
+Each effect row starts with one icon aligned to its first line: 20px for effects
+and 24px for resources, matching the Build/Upgrade cost artwork. Icons reuse
 keyword shapes and colors, including damage-reduction effects; mixed effects use
 their first authored keyword. Potion potency uses a round flask in Herbs green,
 discounts use a Gold price tag, and Astral chance uses a wand in Gems blue.
