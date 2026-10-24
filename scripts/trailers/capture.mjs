@@ -468,6 +468,10 @@ export async function captureRecipe({ root, recipe, out, draft = false, source, 
   let browser;
   try {
     await server.listen();
+    // Prepare the eager client graph before navigation starts its timeout.
+    // SSR staging warms a separate graph and leaves the first browser boot cold.
+    await Promise.all([server.warmupRequest("/src/startup.ts"), server.warmupRequest("/src/main.tsx")]);
+    await server.environments.client.waitForRequestsIdle();
     const address = server.httpServer.address();
     const origin = `http://127.0.0.1:${address.port}`;
     browser = await chromium.launch({
