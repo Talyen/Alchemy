@@ -534,9 +534,11 @@ for (const locale of acceptanceLocales) {
           delete map.nodes["labyrinth-floor-1-n0"]!.enemyId;
           await injectLabyrinthRun(page, { labyrinthMap: map });
           await localizedCheckpoint(page, locale, async (fresh) => {
-            await fresh.locator('[data-labyrinth-node="labyrinth-floor-1-n0"] button').click();
+            const room = fresh.locator('[data-labyrinth-node="labyrinth-floor-1-n0"] button');
+            await room.hover();
+            await expect(fresh.locator('[role="tooltip"][data-visible]')).toContainText(label("Campfire"));
             await reviewLayout(fresh, `${locale} Labyrinth chamber`);
-            await fresh.getByRole("button", { name: label("Enter"), exact: true }).click();
+            await room.click();
             await fresh.getByRole("button", { name: label("Rest"), exact: true }).click();
             await fresh.getByRole("button", { name: label("Continue"), exact: true }).click();
             await expect

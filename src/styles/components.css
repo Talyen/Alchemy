@@ -1012,19 +1012,6 @@
   }
 }
 
-@keyframes labyrinth-inspector-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.labyrinth-inspector-in {
-  animation: labyrinth-inspector-in 200ms ease-out;
-}
-
 [data-artwork-pending] {
   opacity: 0;
   visibility: hidden;

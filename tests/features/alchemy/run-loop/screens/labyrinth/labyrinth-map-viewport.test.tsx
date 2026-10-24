@@ -15,7 +15,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function renderViewport(selectedNodeId: string) {
+function renderViewport() {
   vi.stubGlobal(
     "ResizeObserver",
     class {
@@ -29,11 +29,7 @@ function renderViewport(selectedNodeId: string) {
     map,
     heroArt: "/knight.webp",
     nodes: floorNodes(map, map.currentFloor),
-    selectedNodeId,
-    onEnter: vi.fn(),
-    onDescend: vi.fn(),
     onSelect: vi.fn(),
-    onDeselect: vi.fn(),
   };
   const view = render(<LabyrinthMapViewport {...props} />);
   return {
@@ -47,25 +43,29 @@ function renderViewport(selectedNodeId: string) {
   };
 }
 
-it("dismisses the detail pane when pressing an undiscovered node", () => {
-  const props = renderViewport("labyrinth-floor-1-n0");
-  const undiscovered = document.querySelector('[data-labyrinth-node][data-state="undiscovered"]');
-  expect(undiscovered).toBeTruthy();
-  fireEvent.pointerDown(undiscovered!);
-  expect(props.onDeselect).toHaveBeenCalledOnce();
+it("shows encounter details on hover and keyboard focus, without inspecting the hero or hidden rooms", () => {
+  const props = renderViewport();
+  const room = document.querySelector<HTMLElement>('[data-labyrinth-node="labyrinth-floor-1-n0"] button')!;
+  fireEvent.mouseEnter(room);
+  expect(document.querySelector('[role="tooltip"]')?.textContent).toContain("Goblin");
   expect(props.onSelect).not.toHaveBeenCalled();
-});
-
-it("keeps the detail pane when pressing another discovered node", () => {
-  const props = renderViewport("labyrinth-floor-1-n0");
-  const discovered = document.querySelector('[data-labyrinth-node="labyrinth-floor-1-n14"]');
-  expect(discovered?.getAttribute("data-state")).not.toBe("undiscovered");
-  fireEvent.pointerDown(discovered!);
-  expect(props.onDeselect).not.toHaveBeenCalled();
+  fireEvent.mouseLeave(room);
+  cleanup();
+  renderViewport();
+  const hero = document.querySelector<HTMLElement>('[aria-current="location"]')!;
+  fireEvent.mouseEnter(hero);
+  expect(document.querySelector('[role="tooltip"]')).toBeNull();
+  const hidden = document.querySelector<HTMLElement>('[data-state="undiscovered"] button')!;
+  fireEvent.mouseEnter(hidden);
+  expect(document.querySelector('[role="tooltip"]')).toBeNull();
+  fireEvent.keyDown(document.body, { key: "Tab" });
+  const boss = document.querySelector<HTMLElement>(".labyrinth-boss")!;
+  act(() => boss.focus());
+  expect(document.querySelector('[role="tooltip"]')?.textContent).toContain("The Forge Golem");
 });
 
 it("keeps varied fog independent of hidden encounters and replaces it upon discovery", () => {
-  const props = renderViewport("labyrinth-floor-1-n0");
+  const props = renderViewport();
   const hidden = Array.from(document.querySelectorAll<HTMLElement>('[data-labyrinth-node][data-state="undiscovered"]'));
   // Returning from a destination remounts the map with rooms already reachable.
   const reachable = document.querySelector('[data-labyrinth-node][data-state="reachable"]')!;
@@ -127,7 +127,7 @@ it("keeps varied fog independent of hidden encounters and replaces it upon disco
 });
 
 it("distinguishes pointer focus from keyboard map inspection and clears it on scrolling", () => {
-  renderViewport("");
+  renderViewport();
   const tile = document.querySelector<HTMLElement>('[data-labyrinth-node][data-state="undiscovered"]')!;
   const button = tile.querySelector("button")!;
   fireEvent.pointerDown(button);

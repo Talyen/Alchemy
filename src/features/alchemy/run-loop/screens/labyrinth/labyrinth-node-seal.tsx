@@ -2,6 +2,10 @@ import { isFocusNavigationEnabled } from "@/features/alchemy/shared/ui/dialogs/f
 import { useGameTranslation } from "@/components/use-game-translation";
 
 import { memo, useState } from "react";
+import { useHoverVisible } from "@/features/alchemy/shared/ui/use-hover-visible";
+import { PortaledTooltip } from "@/features/alchemy/shared/ui/tooltips/portaled-tooltip";
+import { TOOLTIP_FADE_MS } from "@/lib/game-constants";
+import { LabyrinthNodeTooltip } from "./labyrinth-node-tooltip";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { SHINE_PALETTES } from "@/features/alchemy/shared/config/shine-palettes";
 import { Surface } from "@/features/alchemy/shared/ui/surface";
@@ -19,7 +23,6 @@ interface Props {
   visual: LabyrinthNodeVisualState;
   current: boolean;
   heroArt: string;
-  selected: boolean;
   emphasized: boolean;
   x: number;
   y: number;
@@ -35,7 +38,6 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
   visual,
   current,
   heroArt,
-  selected,
   emphasized,
   x,
   y,
@@ -69,7 +71,25 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
     // Adjust before commit so the incoming image never first paints without its fog backdrop.
     setReveal({ art, discovered, crossfade, fogVisible: crossfade });
   }
-  const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("labyrinth", node.id);
+  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("labyrinth", node.id);
+  const {
+    triggerRef,
+    wrapperRef,
+    visible,
+    showPopup,
+    onMouseEnter,
+    onMouseMove,
+    onMouseLeave,
+    onFocusCapture,
+    onBlurCapture,
+  } = useHoverVisible<HTMLButtonElement>({
+    isHovered,
+    onHoverStart,
+    onHoverEnd,
+    holdMs: TOOLTIP_FADE_MS,
+    focusWithinGuard: true,
+    interactive: discovered && !current,
+  });
   const status = current
     ? i18n.text("labyrinth.node-status-0", "you are here")
     : visual === "cleared"
@@ -89,6 +109,8 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
 
   return (
     <div
+      ref={wrapperRef}
+      onMouseMove={onMouseMove}
       data-labyrinth-node={node.id}
       data-state={visual}
       data-current={current}
@@ -100,26 +122,26 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
         as="button"
         ariaLabel={i18n.displayText(label)}
         ariaCurrent={current ? "location" : undefined}
-        ariaPressed={selected}
+        buttonRef={triggerRef}
         ariaDisabled={!discovered}
         onClick={() => {
           if (discovered) onSelect(node.id);
         }}
         onMouseEnter={() => {
-          onHoverStart();
+          onMouseEnter();
           onHover(node.id);
         }}
         onMouseLeave={() => {
-          onHoverEnd();
+          onMouseLeave();
           onHover(null);
         }}
         onFocus={() => {
           if (!isFocusNavigationEnabled()) return;
-          onHoverStart();
+          onFocusCapture();
           onFocus(node.id);
         }}
         onBlur={() => {
-          onHoverEnd();
+          onBlurCapture();
           onFocus(null);
         }}
         shimmerActive={shimmerActive}
@@ -168,6 +190,11 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
           />
         ) : null}
       </Surface>
+      {showPopup ? (
+        <PortaledTooltip triggerRef={triggerRef} visible={visible} placement="side-start">
+          <LabyrinthNodeTooltip node={node} />
+        </PortaledTooltip>
+      ) : null}
     </div>
   );
 });
