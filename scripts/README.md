@@ -12,6 +12,14 @@ helpers live together in `assets/`, with TypeScript declarations beside their
 modules. Sound desk mapping, media, server and board modules live in `audio-review/`;
 `audio-review.mjs` remains its command entry point. `lib/agent/`, `lib/release/`, `lib/verification/`, `lib/performance/`, and `lib/playthrough/` group subsystem implementations; general process and repository helpers remain directly in `lib/`.
 
+## Trailer production
+
+`trailer.mjs` owns automated media production. `trailers/` contains the strict edit
+model, offline capture runtime, FFmpeg encoding/mixing and isolated Remotion
+renderer/dependencies. `tests/trailers/scenarios.ts` reuses production content and
+the browser staging helpers. [Trailer production](../Docs/TRAILERS.md) owns recipes,
+quality targets, setup and retained bundles; these tools do not enter the game build.
+
 ## Assets
 
 [WORKFLOWS-ASSETS](../Docs/WORKFLOWS-ASSETS.md) owns authoring commands and the

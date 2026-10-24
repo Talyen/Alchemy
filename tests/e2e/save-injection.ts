@@ -111,7 +111,7 @@ async function injectLocalStorage(page: Page, save: Record<string, unknown>, mer
   );
 }
 
-function buildActiveRunSave(overrides: Record<string, unknown>) {
+export function buildActiveRunSave(overrides: Record<string, unknown>) {
   const {
     discoveredCardIds,
     encounteredEnemyIds,

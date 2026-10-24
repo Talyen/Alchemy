@@ -7,7 +7,7 @@ import type { Page } from "@playwright/test";
 // Mirrors SOUNDS_BASE_PATH casing in game-constants/audio.ts.
 const SFX_SRC_MARKER = "/sounds/";
 
-async function pretendPlayerHost(page: Page): Promise<void> {
+export async function pretendPlayerHost(page: Page): Promise<void> {
   await page.addInitScript(() => {
     const userAgent = navigator.userAgent;
     Object.defineProperty(navigator, "webdriver", { configurable: true, get: () => false });

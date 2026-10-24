@@ -114,6 +114,8 @@ Start with the document for your question:
 support current tools. Keep durable rules in their current owner and remove
 completed task records rather than archiving them.
 
+For automated gameplay capture and cinematic video exports, see [Trailer production](./Docs/TRAILERS.md).
+
 ### Keeping documentation useful
 
 Put each rule in one owner and link directly to it from indexes and workflows.

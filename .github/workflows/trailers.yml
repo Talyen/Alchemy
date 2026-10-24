@@ -1,0 +1,62 @@
+name: Gameplay trailer production
+
+on:
+  workflow_dispatch:
+    inputs:
+      recipe:
+        description: Committed recipe under trailers/
+        type: string
+        default: trailers/boss-spotlight.json
+      format:
+        description: Delivery format
+        type: choice
+        options: [steam, vertical, square]
+        default: steam
+      draft:
+        description: Lower-resolution review copy
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trailer-production-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  produce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup
+      - name: Install media tools and Chromium
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          npm run trailer -- setup
+          npx playwright install --with-deps chromium
+      - name: Produce trailer
+        env:
+          TRAILER_RECIPE: ${{ inputs.recipe }}
+          TRAILER_FORMAT: ${{ inputs.format }}
+          TRAILER_DRAFT: ${{ inputs.draft }}
+        shell: bash
+        run: |
+          case "$TRAILER_RECIPE" in
+            trailers/*.json) ;;
+            *) echo "Recipe must be a committed JSON file under trailers/" >&2; exit 2 ;;
+          esac
+          if [[ "$TRAILER_RECIPE" == *..* ]]; then exit 2; fi
+          args=(make --recipe "$TRAILER_RECIPE" --format "$TRAILER_FORMAT" --bundle output/trailers/production)
+          if [[ "$TRAILER_DRAFT" == true ]]; then args+=(--draft); fi
+          npm run trailer -- "${args[@]}"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: alchemy-trailer-${{ inputs.format }}-${{ github.sha }}
+          path: output/trailers/production/
+          retention-days: 30
+          if-no-files-found: warn
+          compression-level: 0

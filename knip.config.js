@@ -25,6 +25,8 @@ export default {
     "src/App.tsx",
     // Loaded by the isolated Node worker through Vite SSR.
     "src/app/playthrough/{career,fixtures,report}.ts",
+    // Staging adapters loaded by the media CLI through Vite SSR.
+    "tests/trailers/scenarios.ts",
     // Loaded through Vite SSR by the balance and loot report CLI runner.
     "src/lib/balance/index.ts",
     "src/lib/game-data/index.ts",
@@ -48,6 +50,8 @@ export default {
   },
   project: ["src/**/*.{ts,tsx}", "scripts/**/*.mjs", "desktop/**/*.cjs", "tests/**/*.{ts,tsx}"],
   ignoreIssues: {
+    // Exported staging adapter contract is consumed through Vite SSR by the CLI.
+    "tests/trailers/scenarios.ts": ["exports"],
     // Compatibility barrel for active-run persistence types + serializers.
     "src/lib/active-run-session/index.ts": ["exports", "types"],
     "src/lib/gear/types.ts": ["exports", "types"],

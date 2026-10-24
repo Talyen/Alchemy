@@ -23,6 +23,7 @@ ordinary verification workflow and permissions. This reference lists other opera
 | Simulate careers            | `npm run balance:playthrough`      | [Headless playthroughs](./PLAYTHROUGH_SIMULATION.md)                                              |
 | Compare loot offers         | `npm run balance:loot`             | [Loot tuning](./ARMORY.md#loot-tuning)                                                            |
 | Profile frames and hitches  | `npm run perf`                     | [Performance guide](./PERFORMANCE.md)                                                             |
+| Produce gameplay trailers   | `npm run trailer -- help`          | [Automated capture, cinematic edits and Steam exports](./TRAILERS.md)                             |
 | Find recent check evidence  | `npm run runs:show -- --last 10`   | Run IDs, outcomes and artifact locations                                                          |
 | Reset local diagnostics     | `npm run clean`                    | Cleanup details below                                                                             |
 | Publish a release           | `npm run release`                  | Gates, commit/tag, push and CI watch; follow [Release](./RELEASE.md)                              |

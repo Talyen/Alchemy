@@ -1,0 +1,156 @@
+# Automated gameplay trailers
+
+The trailer pipeline stages real gameplay in an isolated Chromium profile, captures
+frames offline, and renders a directed edit with Remotion and FFmpeg. No player
+save, normal browser profile, desktop window or full video editor is required.
+Local commands do not upload or publish videos.
+
+## Setup and first trailer
+
+Install the repository dependencies, then the separate, pinned media tools:
+
+```sh
+npm run trailer -- setup
+npm run trailer -- doctor
+npm run trailer -- plan --recipe trailers/boss-spotlight.json
+```
+
+Install FFmpeg with libx264 and AAC encoding plus ffprobe on the capture machine
+(`brew install ffmpeg` on macOS). Install the repository's Playwright Chromium
+with `npx playwright install chromium` if it is missing. On Linux use the
+appropriate Playwright system dependencies too. `ALCHEMY_TRAILER_FFMPEG` and
+`ALCHEMY_TRAILER_FFPROBE` can select explicit executable paths.
+
+On the shared Mac, media production uses the bounded host lane from
+`/Users/ryanmcintire/Developer/.coordination/README.md`. For example:
+
+```sh
+python3 /Users/ryanmcintire/Developer/.coordination/heavy_lane.py \
+  --owner <thread-id> --wait 30 --timeout 900 -- \
+  npm run trailer -- make --recipe trailers/boss-spotlight.json
+```
+
+`--draft` captures at device scale 1 and renders at half the delivery dimensions.
+Frame rate, actions, music positions and edit timing stay identical. Drafts are
+explicitly identified in the receipts. A draft is not production-quality evidence.
+The same commands work on a dedicated Linux/macOS capture machine without the
+shared Mac lane wrapper. Rendering uses one worker. It decodes the masters once into a temporary lossless
+PNG frame cache, then composes directly from images; no lower-resolution proxy
+is substituted for 4K sources. Successful exports remove that temporary cache.
+
+The manual **Gameplay trailer production** GitHub Actions workflow provisions an
+Ubuntu runner and stores the complete result as a private workflow artifact for
+30 days. It runs only on explicit dispatch, never on pushes or PRs. Its offline
+capture does not need a real-time GPU recording rate; review platform rendering
+before accepting that runner as a visual baseline. Nothing publishes to Steam or
+social media. The workflow can later be moved to a dedicated GPU runner.
+
+## Capture once, revise the edit
+
+```sh
+npm run trailer -- capture --recipe trailers/boss-spotlight.json --bundle output/trailers/my-capture
+npm run trailer -- render --bundle output/trailers/my-capture
+npm run trailer -- render --bundle output/trailers/my-capture --recipe trailers/my-edit.json --label tighter-cut
+npm run trailer -- render --bundle output/trailers/my-capture --format vertical
+npm run trailer -- inspect --bundle output/trailers/my-capture
+```
+
+Wrap capture/render in the host lane on the shared Mac, as above. Existing files
+are never overwritten. Use `--label` for another export of the same format; use a
+fresh bundle for changed capture instructions. A render validates clip hashes,
+capture instructions, source frame rate and soundtrack identity before reuse.
+The complete bundle is portable: music, lyrics, logo, font, sound cues, raw clips,
+resolved recipe, source identity, receipts and review stills travel together.
+Keep the whole bundle outside Git. The default `output/trailers/` destination is outside diagnostic age pruning and
+ordinary cleanup. Task finishing preserves these files in its integration evidence
+bundle; copy retained production masters somewhere durable for long-term storage.
+
+## Direction recipe
+
+[`trailers/boss-spotlight.json`](../trailers/boss-spotlight.json) is the working example.
+The strict schema is owned by `scripts/trailers/model.mjs`; `plan` prints the
+resolved timeline and fails invalid inputs before launching a browser.
+
+- **Capture:** logical viewport, device scale and 30 or 60 samples per second.
+  Default 1920×1080 at scale 2 captures 3840×2160 without changing the game's
+  logical layout. Captures retain lossless H.264 4:4:4 at CRF 0 with every frame
+  independently seekable. This avoids quality loss and long-GOP seek costs
+  before the final delivery encode.
+- **Clips:** named boss, menu, heroes, Collection, Homestead, Armory, Options or
+  checkpoint scenes, seed, hero, duration and timed inputs. Boss staging uses
+  production starting cards and a production boss destination; there are no
+  invented cards, forced damage or changes to combat rules. For developed builds,
+  select `scene: "checkpoint"` and a `checkpoint` path containing a current-format
+  save. Checkpoints must match the captured source revision's save format.
+- **Inputs:** `play-card` chooses the first visible enabled card; `click` and
+  `hover` use one exact role/name, test ID or CSS selector, plus optional index.
+  `move-away` clears hover. Missing, disabled, covered or inert targets fail the
+  capture. Clicks and hovers use real pointer events; `play-card` focuses the chosen
+  hand card and activates it with Enter to avoid moving hover targets. Captures
+  require the played hand identity to leave or enter its transfer animation.
+  Missing acknowledgments fail rather than recording a rejected click as a play.
+  Inputs do not dispatch state mutations. Times are relative to the staged clip,
+  in seconds.
+- **Shots:** clip, source `in`, output duration and optional speed. `framing`
+  accepts `steam`, `vertical` and `square` camera paths. Each path has `from` and
+  `to`, with normalized focus `x`/`y` and `zoom` from 1–4. Smooth easing connects
+  the endpoints; bounds prevent black edges. Zoom 2 can use a 4K source at 1080p
+  without upscaling. Greater zoom depends on the source art's detail.
+- **Transitions:** incoming `cut`, `dissolve` or `wipe`; duration is in seconds.
+  Dissolves/wipes overlap the preceding shot and shorten the total timeline by
+  that amount. The first shot cannot overlap. `plan` reports exact frame starts.
+- **Music:** a registered boss track, source offset, gain and fades. Offsets refer
+  to the original recording, including Iron Bear's opening; the game's playback
+  skip is not added a second time. Lyric snapshots must match the track's SHA-256.
+  Lyrics use the soundtrack clock and remain independent of camera movements and
+  visual cuts. The overlay clears instrumental gaps and highlights the sung word.
+- **End card:** duration and text. Text is recipe data, separate from shipped UI
+  translations; choose localized wording in a separate recipe when needed.
+
+The original audio-host guard is preserved. The isolated capture page uses the
+existing test player-host adapter and records Audio play/pause requests without
+sounding them. Sound-effect files, offsets, gain, stop times and cue timestamps are
+then mixed against the edited timeline. Normal gameplay audio is unchanged.
+
+## Quality and verification
+
+The renderer samples JavaScript timers/rAF, CSS/Web Animations and video positions
+on a controlled clock. It captures each frame before advancing. This is offline
+presentation sampling, not a claim that the Mac sustains 4K60 in real time or a
+bit-identical recording of a live player's rendering. Review new animation types
+and unfamiliar embedded media before adding them to approved trailer recipes.
+No snapshot uses disabled/reduced animations. Reproducible inputs do not guarantee
+bit-identical pixels across different browser, OS, font or GPU versions; the bundle
+records its source and browser version. Sound and frame clocks must agree;
+misaligned cues fail capture instead of silently producing a music-only edit.
+
+For each capture, frame count, dimensions and frame rate are checked with ffprobe.
+Receipts retain the actual performed input labels and bounds, sound cues, source
+hash, browser version and beginning/middle/end frame hashes. A failed capture
+retains its diagnostics and partial output but cannot be rendered as successful.
+Each final export is checked for H.264, 4:2:0, exact dimensions/frame count/rate,
+AAC stereo and 48 kHz audio. Opening, gameplay and end-card stills are rendered
+alongside it. Watch and listen to the full final video: file checks cannot prove
+readable framing, useful action, lyric accuracy or audible synchronization.
+
+| Delivery             | Dimensions                   | Target                                               |
+| -------------------- | ---------------------------- | ---------------------------------------------------- |
+| Steam                | 1920×1080, 16:9              | 60 fps by default, H.264 High, approximately 20 Mbps |
+| Vertical social edit | 1080×1920                    | Same source timing, independently directed framing   |
+| Square social edit   | 1080×1080                    | Same source timing, independently directed framing   |
+| Audio                | AAC stereo, 48 kHz, 320 kbps | Mix target -14 LUFS, -1 dBTP; listen before approval |
+| Color                | SDR Rec.709, 8-bit 4:2:0     | Correct conversion/tagging through Remotion          |
+
+The encoding bitrate and loudness values are production choices, not platform
+mandates. [Valve's current specification](https://partner.steamgames.com/doc/store/trailer)
+recommends uploads up to 1920×1080 at 30/29.97 or 60/59.94 fps, high bitrate
+(5,000+ Kbps), H.264 and AAC, and 16:9. Its example preset uses 20 Mbps video.
+4K capture is for reframing and retained source quality; Steam delivery stays 1080p.
+The first Steam trailer should communicate recognizable gameplay quickly with
+the HUD visible and work with sound muted. Steam generates its own six-second
+microtrailer from six moments in the first listed video.
+
+Use the same tools and recipes on another machine for production; no Mac-only
+capture API is required. Provisioning a cloud account, dispatching CI, uploading
+or publishing assets is a separate operation. Broad repository checks remain
+CI-owned under [Contributing](../CONTRIBUTING.md).

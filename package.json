@@ -148,7 +148,8 @@
     "check:dependencies": "npm audit --audit-level=moderate",
     "test:visual": "cross-env PLAYWRIGHT_VITE_MODE=preview node scripts/run-compact.mjs playwright test --config playwright.visual.config.ts",
     "check:all": "node scripts/check.mjs --full --all",
-    "steam:build-native": "node scripts/ensure-steamworks.mjs"
+    "steam:build-native": "node scripts/ensure-steamworks.mjs",
+    "trailer": "node scripts/trailer.mjs"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.8.0",
