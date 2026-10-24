@@ -88,7 +88,12 @@ export function createLabyrinthController(gameSession: GameSession): LabyrinthCo
           return rejectCommand("Labyrinth descent is unavailable", undefined);
         setLabyrinthMap(
           draft,
-          expandBeyondBoss(snapshotTransactionValue(map), nodeId, createDraftRunRandomSource(draft, "world")),
+          expandBeyondBoss(
+            snapshotTransactionValue(map),
+            nodeId,
+            createDraftRunRandomSource(draft, "world"),
+            snapshotTransactionValue(draft.run.activeRun.runDeck),
+          ),
         );
         setSelectedLabyrinthNodeId(draft, null);
 

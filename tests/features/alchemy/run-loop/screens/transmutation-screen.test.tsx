@@ -106,6 +106,44 @@ afterEach(() => {
 });
 
 describe("Transmutation flow", () => {
+  it("Prismatic Crucible initializes fixed choices and commits an alteration beyond the first three once", async () => {
+    setRunProgress({ contentSystemType: "labyrinth" });
+    setRunSession({ activity: { kind: "destination" }, activeLabyrinthRewardModifiers: ["prismatic-crucible"] });
+    initializeAlchemyVisit("transmutation", defaultGameSession);
+    const initial = structuredClone(visit().transmutation!.choices);
+    initializeAlchemyVisit("transmutation", defaultGameSession);
+    expect(visit().transmutation!.choices).toEqual(initial);
+    render(<Harness />);
+    const preview = await chooseAlteration();
+    expect(visit().transmutation!.offerIndex).toBeGreaterThan(2);
+    click("Transmute");
+    expect(readActiveRun(defaultGameSession).runDeck[0]).toEqual(preview);
+    expect(transmuteCard(0, visit().transmutation!.offerIndex!, defaultGameSession)).toBeNull();
+    expect(readActiveRun(defaultGameSession).runDeck[0]).toEqual(preview);
+  });
+
+  it("keyword crucibles apply on Labyrinth entry while Campaign keeps the same saved RNG and choices", () => {
+    const rng = createRunRngState(1234);
+    setRunProgress({ contentSystemType: "campaign", rng });
+    setRunSession({ activity: { kind: "destination" }, activeLabyrinthRewardModifiers: ["prismatic-crucible"] });
+    initializeAlchemyVisit("transmutation", defaultGameSession);
+    const normal = structuredClone(visit().transmutation!.choices);
+    const normalRng = structuredClone(readActiveRun(defaultGameSession).rng);
+    setRunProgress({ rng });
+    setRunSession({ activity: { kind: "destination" }, activeLabyrinthRewardModifiers: [] });
+    initializeAlchemyVisit("transmutation", defaultGameSession);
+    expect(visit().transmutation!.choices).toEqual(normal);
+    expect(readActiveRun(defaultGameSession).rng).toEqual(normalRng);
+    setRunProgress({ contentSystemType: "labyrinth", rng });
+    setRunSession({ activity: { kind: "destination" }, activeLabyrinthRewardModifiers: ["burn-crucible"] });
+    initializeAlchemyVisit("transmutation", defaultGameSession);
+    expect(
+      visit()
+        .transmutation!.choices.find((choice) => choice.keyword === "burn")
+        ?.alterations.some((entry) => entry.sourceIndex === 0),
+    ).toBe(true);
+  });
+
   it("requires a choice from the remaining fixed offers when Companion becomes unavailable", async () => {
     const source = cardById.slash!;
     const deck = [source, cardById["wolf-companion"]!];

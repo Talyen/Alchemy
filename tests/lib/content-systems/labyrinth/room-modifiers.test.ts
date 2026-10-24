@@ -48,7 +48,7 @@ describe("Labyrinth modifier catalog", () => {
     const map = generateLabyrinthMap(seededRng(28));
     expect(LabyrinthMapSchema.parse(JSON.parse(JSON.stringify(map)))).toEqual(map);
     for (const node of Object.values(map.nodes)) {
-      if (node.type !== "entrance") expect(node.rewardModifiers).toHaveLength(node.type === "transmutation" ? 0 : 1);
+      if (node.type !== "entrance") expect(node.rewardModifiers).toHaveLength(1);
     }
   });
 });

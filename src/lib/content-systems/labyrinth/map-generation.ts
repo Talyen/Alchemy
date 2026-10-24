@@ -1,6 +1,6 @@
 import { isLootEligible } from "@/lib/loot";
 import { pickRandom, rngInt, shuffle } from "@/lib/rng";
-import { enemiesByType, enemyById, type EnemyType } from "@/lib/game-data";
+import { enemiesByType, enemyById, type BattleCard, type EnemyType } from "@/lib/game-data";
 
 import type { LabyrinthFloor, LabyrinthGridPosition, LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
 import { LABYRINTH_SUPPORT_TYPES, labyrinthFloorId, labyrinthNodeId } from "./data";
@@ -120,6 +120,7 @@ function makeNode(input: {
   rng: () => number;
   enemyId?: string;
   lootDepth: number;
+  deck?: readonly BattleCard[];
 }): LabyrinthNode {
   const type = availableNodeType(input.type, input.lootDepth);
   const combatType = type === "combat" || type === "elite" || type === "boss" ? type : null;
@@ -135,7 +136,7 @@ function makeNode(input: {
           input.enemyId ? (enemyById[input.enemyId]?.traits.map((trait) => trait.id) ?? []) : [],
         )
       : [],
-    rewardModifiers: getRewardModifiersForNodeType(input.rng, type, input.lootDepth),
+    rewardModifiers: getRewardModifiersForNodeType(input.rng, type, input.lootDepth, input.deck),
     cleared: type === "entrance",
   };
   if (input.enemyId) node.enemyId = input.enemyId;
@@ -162,6 +163,7 @@ function generateFloor(
   rng: () => number,
   usedEnemies: ReadonlySet<string>,
   completedRooms = 0,
+  deck?: readonly BattleCard[],
 ): { floor: LabyrinthFloor; nodes: LabyrinthNode[]; entryId: string } {
   const positions = generateFloorPositions(rng);
   const origin = positions[0] ?? { row: 0, col: 0 };
@@ -195,6 +197,7 @@ function generateFloor(
       gridPosition: gridPos,
       lootDepth: lootDepthAt(gridPos),
       rng,
+      ...(deck ? { deck } : {}),
       ...(enemyId ? { enemyId } : {}),
     });
   });
@@ -206,8 +209,8 @@ function generateFloor(
   };
 }
 
-export function generateLabyrinthMap(rng: () => number): LabyrinthMap {
-  const first = generateFloor(1, rng, new Set());
+export function generateLabyrinthMap(rng: () => number, deck?: readonly BattleCard[]): LabyrinthMap {
+  const first = generateFloor(1, rng, new Set(), 0, deck);
   return {
     currentFloor: 1,
     currentNodeId: first.entryId,
@@ -216,7 +219,12 @@ export function generateLabyrinthMap(rng: () => number): LabyrinthMap {
   };
 }
 
-export function expandBeyondBoss(map: LabyrinthMap, bossId: string, rng: () => number): LabyrinthMap {
+export function expandBeyondBoss(
+  map: LabyrinthMap,
+  bossId: string,
+  rng: () => number,
+  deck?: readonly BattleCard[],
+): LabyrinthMap {
   if (!canDescendFromLabyrinthNode(map, bossId)) return map;
 
   const depth = map.currentFloor + 1;
@@ -231,6 +239,7 @@ export function expandBeyondBoss(map: LabyrinthMap, bossId: string, rng: () => n
     rng,
     usedEnemyIds(map),
     Object.values(map.nodes).filter((node) => node.cleared && node.type !== "entrance").length,
+    deck,
   );
   return {
     ...map,

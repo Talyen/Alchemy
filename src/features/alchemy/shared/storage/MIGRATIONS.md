@@ -412,7 +412,10 @@ survive reload; eligible Potions may be brewed again at later visits under the
 
 `AlchemyVisit.transmutation` additionally saves each keyword choice's exact
 alterations, including source snapshots/indices, selected source keywords, and
-result cards, plus the current source/keyword/preview selection. Hydration
+result cards, plus the current source/keyword/preview selection. Prismatic
+Crucible selections may reference any compatible keyword beyond the normal
+three offers; validation bounds indices by the registered Transmutation keywords.
+This widens accepted selections without changing the saved shape. Hydration
 restores every source/result card. Completed Transmutation follows the saved-result and missing-result
 [interaction contract](../../../../../Docs/UI_BROWSING.md#campfire-and-transmutation). Retired
 replacement-card offers repair to an uninitialized selection, not a parallel

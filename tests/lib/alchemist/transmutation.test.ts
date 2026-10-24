@@ -3,7 +3,14 @@ import { expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle";
 import { makeState } from "../../fixtures/battle";
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
-import { cardById, cardLibrary, cloneBattleCard, getCardKeywords, type KeywordId } from "@/lib/game-data";
+import {
+  cardById,
+  cardLibrary,
+  cloneBattleCard,
+  getCardKeywords,
+  isCompanionSummonCard,
+  type KeywordId,
+} from "@/lib/game-data";
 import { createTransmutationOffers, canTransmuteCard, getTransmutationVariants } from "@/lib/alchemist/transmutation";
 import { TRANSMUTATION_KEYWORD_GROUPS, TRANSMUTATION_PREFIXES } from "@/lib/game-constants";
 import { createSeededRng } from "@/lib/rng";
@@ -13,6 +20,11 @@ import { corruptCard } from "@/lib/corruption";
 import { strengthenPotion } from "@/lib/alchemist/brewing";
 import { createMixedPotion, doublePotionPotency } from "@/lib/alchemist";
 import { chance, describedCard, repeated, roundTrip } from "./fixtures";
+import { LABYRINTH_TRAITS, transmutationModifierKeyword } from "@/lib/content-systems/labyrinth/trait-catalog";
+import { getRewardModifiersForNodeType, isLabyrinthTraitEligible } from "@/lib/content-systems/labyrinth/modifiers";
+import { eligibleEncounterTraitIds } from "@/lib/content-systems/encounter-traits";
+import { ActiveRunDataSchema } from "@/lib/validation/save-schemas/active-run";
+import { hydrateAlchemyVisit } from "@/lib/active-run-session/alchemy-visits";
 
 function numericFields(value: unknown, path = ""): Record<string, number> {
   if (!value || typeof value !== "object") return {};
@@ -22,6 +34,101 @@ function numericFields(value: unknown, path = ""): Record<string, number> {
     ),
   );
 }
+
+it("Prismatic Crucible saves every compatible keyword and preserves a later selection through reload", () => {
+  const deck = [cardById.slash!, cardById.heal!, { ...cardById.block!, corrupted: true }];
+  const choices = createTransmutationOffers(deck, createSeededRng(2), ["prismatic-crucible"]);
+  deck.forEach((card, sourceIndex) => {
+    const expected = TRANSMUTATION_KEYWORD_GROUPS.flat().filter(
+      (keyword) => getTransmutationVariants(card, keyword, deck).length,
+    );
+    expect(
+      choices
+        .filter((choice) => choice.alterations.some((entry) => entry.sourceIndex === sourceIndex))
+        .map((choice) => choice.keyword)
+        .sort(),
+    ).toEqual(expected.sort());
+  });
+  const offered = choices.filter((choice) => choice.alterations.some((entry) => entry.sourceIndex === 0));
+  expect(offered.length).toBeGreaterThan(3);
+  const offerIndex = offered.length - 1;
+  const visit = {
+    offers: [],
+    result: null,
+    original: null,
+    completed: false,
+    transmutation: { choices, sourceIndex: 0, source: deck[0]!, keyword: offered[offerIndex]!.keyword, offerIndex },
+  };
+  const restored = ActiveRunDataSchema.parse(
+    JSON.parse(
+      JSON.stringify({
+        characterId: "knight",
+        runDeck: deck,
+        runPlayerHealth: 30,
+        runMaxHealth: 30,
+        activity: { kind: "transmutation", data: visit },
+      }),
+    ),
+  );
+  expect(restored.activity.kind).toBe("transmutation");
+  if (restored.activity.kind !== "transmutation") throw new Error("Lost visit");
+  expect(hydrateAlchemyVisit(restored.activity.data)).toEqual(visit);
+  expect(createTransmutationOffers(deck, createSeededRng(2), ["prismatic-crucible"])).toEqual(choices);
+});
+
+it("keyword crucibles guarantee each supported keyword without losing normal choices or offering invalid alterations", () => {
+  const deck = [
+    cardById.slash!,
+    cardById.heal!,
+    cardById.block!,
+    describedCard([{ kind: "damage", damageType: "holy", amount: 4 }]),
+    describedCard([{ kind: "gain-gold", amount: 4 }]),
+    describedCard([{ kind: "player-status", status: "armor", amount: 4 }]),
+    cardLibrary.find(isCompanionSummonCard)!,
+  ];
+  const pool = eligibleEncounterTraitIds("labyrinth", "reward").filter((id) =>
+    isLabyrinthTraitEligible(id, "transmutation"),
+  );
+  expect(pool).toHaveLength(TRANSMUTATION_KEYWORD_GROUPS.flat().length + 1);
+  expect(pool.flatMap((id) => transmutationModifierKeyword(id) ?? []).sort()).toEqual(
+    [...TRANSMUTATION_KEYWORD_GROUPS.flat()].sort(),
+  );
+  for (const id of pool) {
+    expect(LABYRINTH_TRAITS[id as keyof typeof LABYRINTH_TRAITS].labyrinthNodes).toEqual(["transmutation"]);
+    const keyword = transmutationModifierKeyword(id);
+    if (!keyword) continue;
+    const choices = createTransmutationOffers(deck, createSeededRng(2), [id]);
+    expect(choices.find((choice) => choice.keyword === keyword)?.alterations.length, keyword).toBeGreaterThan(0);
+    deck.forEach((card, sourceIndex) => {
+      const offered = choices.filter((choice) => choice.alterations.some((entry) => entry.sourceIndex === sourceIndex));
+      const compatible = TRANSMUTATION_KEYWORD_GROUPS.flat().filter(
+        (key) => getTransmutationVariants(card, key, deck).length,
+      );
+      expect(offered).toHaveLength(Math.min(3, compatible.length));
+      expect(offered.some((choice) => choice.keyword === keyword)).toBe(compatible.includes(keyword));
+      for (const choice of offered) {
+        const alteration = choice.alterations.find((entry) => entry.sourceIndex === sourceIndex)!;
+        expect(getTransmutationVariants(card, choice.keyword, deck)).toContainEqual({
+          sourceKeyword: alteration.sourceKeyword,
+          result: alteration.result,
+        });
+      }
+    });
+  }
+  const starter = [cardById.slash!];
+  const eligible = pool.filter((id) => {
+    const keyword = transmutationModifierKeyword(id);
+    return !keyword || starter.some((card) => getTransmutationVariants(card, keyword, starter).length);
+  });
+  expect(eligible).not.toContain("companion-crucible");
+  expect(eligible).not.toContain("physical-crucible");
+  expect(
+    eligible.flatMap((_, index) =>
+      getRewardModifiersForNodeType(() => (index + 0.5) / eligible.length, "transmutation", 1, starter),
+    ),
+  ).toEqual(eligible);
+  expect(getRewardModifiersForNodeType(() => 0.5, "transmutation", 1, [])).toEqual(["prismatic-crucible"]);
+});
 
 it("infuses Archery damage without changing Exorcism's Health cost", () => {
   const source = cardById.exorcism!;
