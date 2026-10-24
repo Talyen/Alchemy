@@ -1,4 +1,11 @@
-export const battleCardWidthClass = "w-[calc(19.5075*var(--content-rem,1rem))]";
+// Share the hero's inner art height, allowing for the Surface's 1px border on each side.
+export const battleActorSizingStyle = {
+  "--battle-hero-width": "calc(19.5075 * var(--content-rem, 1rem))",
+  "--battle-portrait-height": "calc((var(--battle-hero-width) - 2px) * 4 / 3)",
+};
+export const battleCardWidthClass = "w-[var(--battle-hero-width)]";
+export const battleAnimatedEnemyCardWidthClass = "w-[calc(var(--battle-portrait-height)*16/9_+_2px)]";
+export const battlePortraitHeightClass = "h-[var(--battle-portrait-height)]";
 
 export const battleCompanionWidthClass = "w-[calc(12.6225*var(--content-rem,1rem))]";
 

@@ -46,6 +46,21 @@ The optional Sound desk browses replacement candidates only when given an explic
 [Sound desk guide](../scripts/audio-review/README.md). Existing snapshots can reopen
 without a library. No preparation command reads a default library in Documents.
 
+## Boss battle idle clips
+
+Selected MP4 masters live in `assets/sources/Animations/Bosses/` and are listed in
+`scripts/assets/boss-idle-assets.mjs`. Run `node scripts/optimize-boss-idles.mjs`
+for narrow preparation, or add `--check` for read-only source/output freshness.
+The ordinary asset preparation and checks include this pipeline too. Preparation
+remuxes the original video stream without re-encoding, strips audio and moves
+MP4 metadata to the beginning for playback. Commit masters, prepared files under
+`src/assets/boss-idles/`, and their hash manifest together.
+
+`src/lib/game-data/boss-idle-assets.ts` explicitly maps prepared URLs to boss IDs.
+Battle presentation alone consumes this map. Videos never join `allGameArt` or
+startup image loading; only the current boss's two playback buffers load clips.
+Other views continue using the normal static catalog artwork.
+
 ## Art style and generation prompts
 
 Compare changes at their destination size, crop and surrounding UI under

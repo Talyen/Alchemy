@@ -1,4 +1,5 @@
 import { GameMessage } from "@/components/localization";
+import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import { useGameTranslation } from "@/components/use-game-translation";
 import type { EnemyDescriptionContext } from "@/lib/battle";
 import { type CSSProperties, type ReactNode, type Ref, useLayoutEffect, useRef } from "react";
@@ -6,12 +7,15 @@ import { type CSSProperties, type ReactNode, type Ref, useLayoutEffect, useRef }
 import { COMBAT_IMPACT_NORMAL_HEALTH_RATIO, COMBAT_IMPACT_HEAVY_HEALTH_RATIO } from "@/lib/game-constants";
 import { Progress } from "@/components/ui/progress";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
-import type { BestiaryEntry } from "@/lib/game-data";
+import { bossIdleClips, type BestiaryEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import {
+  battleActorSizingStyle,
+  battleAnimatedEnemyCardWidthClass,
   battleCardWidthClass,
   battleEnemyCardWidthClass,
+  battlePortraitHeightClass,
   cardArtImageClass,
   cardHoverScaleClass,
   cardSurfaceClass,
@@ -33,6 +37,7 @@ import { ActorTooltip, ArtDeathDoorBorder, ArtTurnActiveBorder, StatsDeathDoorBo
 import { CombatantStatusEffectPresentation } from "./combatant-status-effect-presentation";
 import { CombatantAttackLunge } from "./combatant-attack-lunge";
 import { CombatantDodge } from "./combatant-dodge";
+import { BossIdleArt } from "./boss-idle-art";
 import type { ActiveCcKeyword } from "@/lib/battle";
 
 interface ArtPanelProps {
@@ -108,6 +113,9 @@ export function ArtPanel({
   plasmaColorPair = null,
 }: ArtPanelProps) {
   useGameTranslation();
+  const reducedMotion = useReducedMotionPreference();
+  const idleClips =
+    !reducedMotion && side === "enemy" && isBoss && currentEnemy ? bossIdleClips[currentEnemy.id] : undefined;
   const healthToken = useChangeToken(health);
   const healthPercent = maxHealth > 0 ? (health / maxHealth) * 100 : 0;
   const {
@@ -118,11 +126,16 @@ export function ArtPanel({
   usePlasmaInteraction(plasmaColorPair, tooltipVisible);
 
   const resolvedCardWidthClass =
-    cardWidthClass ?? (side === "enemy" ? battleEnemyCardWidthClass : battleCardWidthClass);
+    cardWidthClass ??
+    (idleClips?.length
+      ? battleAnimatedEnemyCardWidthClass
+      : side === "enemy"
+        ? battleEnemyCardWidthClass
+        : battleCardWidthClass);
   const artWrapClass = cn("relative overflow-visible", isBoss && side === "player" && "origin-bottom scale-[1.3]");
 
   return (
-    <div className="relative flex flex-col items-center gap-3">
+    <div className="relative flex flex-col items-center gap-3" style={battleActorSizingStyle as CSSProperties}>
       <CombatantAttackLunge
         attackToken={attackToken}
         castToken={castToken}
@@ -154,6 +167,7 @@ export function ArtPanel({
                 artOverlay={artOverlay}
                 title={title}
                 art={art}
+                idleClips={idleClips}
                 shimmerId={shimmerId}
                 shimmerActive={shimmerActive}
                 shimmerToken={shimmerToken}
@@ -204,6 +218,7 @@ function ActorArtFrame({
   artOverlay,
   title,
   art,
+  idleClips,
   shimmerId,
   shimmerActive,
   shimmerToken,
@@ -224,6 +239,7 @@ function ActorArtFrame({
   artOverlay?: ReactNode;
   title: string;
   art: string;
+  idleClips?: readonly string[] | undefined;
   shimmerId: string;
   shimmerActive: boolean;
   shimmerToken: number | undefined;
@@ -241,6 +257,14 @@ function ActorArtFrame({
   ccKeyword?: ActiveCcKeyword | null;
 }) {
   const i18n = useGameTranslation();
+  const imageClassName = cn(
+    idleClips?.length
+      ? "aspect-video rounded-shell-hero object-cover"
+      : side === "enemy"
+        ? landscapeArtImageClass
+        : cardArtImageClass,
+    battlePortraitHeightClass,
+  );
   const { pulse, sparksOverflow } = useImpactPulse(impactCue);
   const recoilRef = useRef<HTMLDivElement>(null);
   const lastRecoilSequence = useRef(0);
@@ -319,17 +343,22 @@ function ActorArtFrame({
             shineColor={turnShineColors}
           />
           {deathsDoorActive ? <ArtDeathDoorBorder /> : null}
-          {isDead ? (
-            <SliceDeath
-              imageUrl={art}
-              alt={title}
-              imageClassName={side === "enemy" ? landscapeArtImageClass : cardArtImageClass}
+          {idleClips?.length ? (
+            <BossIdleArt
+              key={idleClips[0]}
+              clips={idleClips}
+              art={art}
+              title={title}
+              isDead={isDead}
+              imageClassName={imageClassName}
             />
+          ) : isDead ? (
+            <SliceDeath imageUrl={art} alt={title} imageClassName={imageClassName} />
           ) : (
             <img
               src={art}
               alt={title}
-              className={cn("block w-full", side === "enemy" ? landscapeArtImageClass : cardArtImageClass)}
+              className={cn("block w-full", imageClassName)}
               loading="eager"
               decoding="async"
             />

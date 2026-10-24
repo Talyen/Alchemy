@@ -16,7 +16,7 @@ export function resolveRootDir(importMetaUrl) {
   return path.resolve(path.dirname(fileURLToPath(importMetaUrl)), "..");
 }
 
-/** Manifest path for a managed output directory (`art` | `sounds` | `music`). */
+/** Manifest path for a managed output directory (`art` | `sounds` | `music` | `bossIdles`). */
 export function getManagedManifestPath(rootDir, managedKey) {
   return path.join(rootDir, MANAGED_DIRS[managedKey].dir, MANIFEST_BASENAME);
 }
@@ -51,10 +51,10 @@ export async function writeStagedOutput(outputPath, transform) {
 }
 
 /**
- * Single runner for manifest-backed asset pipelines (art, music, and the OGG
+ * Single runner for manifest-backed asset pipelines (art, music, boss idles, and the OGG
  * phase of sounds). Callers own discovery plus per-entry transformation; this
  * runner owns freshness state, bounded concurrency, failure normalization,
- * manifest publication, and orphan sweeps so the three optimizers share one
+ * manifest publication, and orphan sweeps so the optimizers share one
  * shape.
  *
  * @param {{

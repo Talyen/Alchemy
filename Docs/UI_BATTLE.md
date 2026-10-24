@@ -43,6 +43,21 @@ Actor anchors use `BATTLE_ACTOR_TOP` plus `BATTLE_ACTOR_VIEWPORT_OFFSET` from
 applies upward Game Size compensation, including health bars and statuses, to keep
 health and controls clear. Backgrounds fill the frame.
 
+## Boss idle artwork
+
+Battle portraits for Blight Treant, Blood Countess, Seraph and Stone Titan play
+muted idle clips continuously. Each next clip is selected randomly excluding the
+current clip. Two video elements preload the next clip and retain the outgoing
+last frame until its replacement is playing. This cosmetic selection never uses
+the world's gameplay RNG. Hidden tabs pause playback; reduced/disabled motion and
+unavailable video playback use the usual static artwork. Defeat freezes the
+visible video frame for the existing sliced-portrait effect.
+
+Animated portraits use the clips' full 16:9 composition. Their extra width retains
+the same base artwork height as the hero's 3:4 portrait and other enemies' 4:3
+portraits, including the existing turn/hover scaling. Collections, Destination,
+Labyrinth, inspection and bosses without clips retain their static artwork.
+
 ## Battle feedback
 
 Resolved actions show compact bursts over each affected combatant. Floating

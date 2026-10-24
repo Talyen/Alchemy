@@ -6,6 +6,7 @@ vi.mock("../../scripts/assets/check-asset-outputs.mjs", () => ({ checkAssetOutpu
 vi.mock("../../scripts/optimize-assets.mjs", () => ({ optimizeAssets: vi.fn() }));
 vi.mock("../../scripts/optimize-sounds.mjs", () => ({ optimizeSounds: vi.fn() }));
 vi.mock("../../scripts/optimize-music.mjs", () => ({ optimizeMusic: vi.fn() }));
+vi.mock("../../scripts/optimize-boss-idles.mjs", () => ({ optimizeBossIdles: vi.fn() }));
 vi.mock("../../scripts/sync-art-barrels.mjs", () => ({ syncArtBarrels: vi.fn() }));
 vi.mock("../../scripts/sync-version-metadata.mjs", () => ({ syncVersionMetadata: vi.fn() }));
 
@@ -14,6 +15,7 @@ const { checkAssetOutputs } = await import("../../scripts/assets/check-asset-out
 const { optimizeAssets } = await import("../../scripts/optimize-assets.mjs");
 const { optimizeSounds } = await import("../../scripts/optimize-sounds.mjs");
 const { optimizeMusic } = await import("../../scripts/optimize-music.mjs");
+const { optimizeBossIdles } = await import("../../scripts/optimize-boss-idles.mjs");
 const { syncArtBarrels } = await import("../../scripts/sync-art-barrels.mjs");
 const { syncVersionMetadata } = await import("../../scripts/sync-version-metadata.mjs");
 const { checkPreparedAssets } = await import("../../scripts/check-prepared-assets.mjs");
@@ -23,7 +25,7 @@ describe("checkPreparedAssets", () => {
     vi.stubEnv("ALCHEMY_SKIP_ASSETS", "");
     vi.mocked(checkIconAssets).mockReset().mockResolvedValue(undefined);
     vi.mocked(checkAssetOutputs).mockReset().mockResolvedValue(undefined);
-    for (const optimize of [optimizeAssets, optimizeSounds, optimizeMusic]) {
+    for (const optimize of [optimizeAssets, optimizeSounds, optimizeMusic, optimizeBossIdles]) {
       vi.mocked(optimize).mockReset().mockResolvedValue({ ok: true });
     }
     vi.mocked(syncArtBarrels).mockReset().mockResolvedValue(undefined);
@@ -39,7 +41,14 @@ describe("checkPreparedAssets", () => {
 
   it("checks every pipeline, art barrel, and version metadata in read-only mode", async () => {
     await expect(checkPreparedAssets()).resolves.toBeUndefined();
-    for (const check of [optimizeAssets, optimizeSounds, optimizeMusic, syncArtBarrels, syncVersionMetadata]) {
+    for (const check of [
+      optimizeAssets,
+      optimizeSounds,
+      optimizeMusic,
+      optimizeBossIdles,
+      syncArtBarrels,
+      syncVersionMetadata,
+    ]) {
       expect(check).toHaveBeenCalledWith({ check: true });
     }
   });
@@ -48,7 +57,8 @@ describe("checkPreparedAssets", () => {
     await expect(checkPreparedAssets({ outputsOnly: true })).resolves.toBeUndefined();
     expect(checkAssetOutputs).toHaveBeenCalledOnce();
     expect(checkIconAssets).toHaveBeenCalledWith(expect.any(String), { outputsOnly: true });
-    for (const optimize of [optimizeAssets, optimizeSounds, optimizeMusic]) expect(optimize).not.toHaveBeenCalled();
+    for (const optimize of [optimizeAssets, optimizeSounds, optimizeMusic, optimizeBossIdles])
+      expect(optimize).not.toHaveBeenCalled();
     expect(syncArtBarrels).toHaveBeenCalledWith({ check: true });
   });
 
@@ -72,6 +82,7 @@ describe("checkPreparedAssets", () => {
     await expect(checkPreparedAssets({ outputsOnly: true })).rejects.toThrow(
       /stale icon[\s\S]*changed media bytes[\s\S]*stale barrel[\s\S]*stale version/,
     );
-    for (const optimize of [optimizeAssets, optimizeSounds, optimizeMusic]) expect(optimize).not.toHaveBeenCalled();
+    for (const optimize of [optimizeAssets, optimizeSounds, optimizeMusic, optimizeBossIdles])
+      expect(optimize).not.toHaveBeenCalled();
   });
 });

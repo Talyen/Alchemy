@@ -14,7 +14,7 @@ const ciCap = process.env.CI ? 4 : 6;
 
 /**
  * Single concurrency knob for every asset pipeline. ALCHEMY_ASSET_CONCURRENCY
- * overrides all three so a debug value of 1 actually serializes ffmpeg too.
+ * overrides the parallel pipelines; boss idles always remux one clip at a time.
  */
 export function resolveAssetConcurrency(fallback) {
   const override = Number(process.env.ALCHEMY_ASSET_CONCURRENCY ?? "");
@@ -85,6 +85,7 @@ export function soundTransformSettings(sourceExt) {
 }
 
 export const MUSIC_SETTINGS = Object.freeze({ mode: "copy" });
+export const BOSS_IDLE_SETTINGS = Object.freeze({ codec: "copy", stripAudio: true, faststart: true });
 export const MANIFEST_BASENAME = ".asset-hashes.json";
 
 /**
@@ -98,6 +99,7 @@ export const MANAGED_DIRS = Object.freeze({
   art: Object.freeze({ dir: "src/assets/optimized" }),
   sounds: Object.freeze({ dir: "public/sounds" }),
   music: Object.freeze({ dir: "public/Music" }),
+  bossIdles: Object.freeze({ dir: "src/assets/boss-idles" }),
 });
 
 export const GENERATED_OUTPUTS = Object.freeze({

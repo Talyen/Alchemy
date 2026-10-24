@@ -1,0 +1,72 @@
+{
+  "blight-treant-idle-1.mp4": {
+    "hash": "9280a836e312764124bff94ef0fe0283",
+    "outputHash": "29e80db570cee2c8840b153cd82050c4",
+    "selectionHash": "22396d9a8f08b838b887ee93592bb52fb1ba9985afdb72912ffcd7a8a4ddc87a"
+  },
+  "blight-treant-idle-2.mp4": {
+    "hash": "64afb0c0cd81a211dd5c52447fdafe58",
+    "outputHash": "3fb971d50c47e04a63f8ba9766f52385",
+    "selectionHash": "754c619e64538532a5772a57d4e9cfd15827245f67b9bcdef530acf679f09bc2"
+  },
+  "blight-treant-idle-3.mp4": {
+    "hash": "a1ddd1698a9d5cc8f1fe3563ff59e99f",
+    "outputHash": "8002473207cece5a4dddb30f59493caa",
+    "selectionHash": "e765075964d02ad82292ab32fae54666d1ecde7016b4ed191fecbb320267e579"
+  },
+  "blood-countess-idle-1.mp4": {
+    "hash": "f879d860a9890e24bfcd0d43d45fdd37",
+    "outputHash": "13338bff5b5361abb860d27d20d32ed9",
+    "selectionHash": "82e0ec98347a67cf67081ac9818b5b773ba16fd0191c613d8ae394bafc1cfc1d"
+  },
+  "blood-countess-idle-2.mp4": {
+    "hash": "f8f0edd09e732ec34efed460acb53687",
+    "outputHash": "7c51295eeac3b3921643ca56767abc96",
+    "selectionHash": "59090e47346e4d99ba790d43d0eb423364127fd49236c727e195353240491a14"
+  },
+  "blood-countess-idle-3.mp4": {
+    "hash": "da044fa686948d1deebe83d69cc06fe1",
+    "outputHash": "cc0a62fdfe6de410e2f597d4641e056a",
+    "selectionHash": "6b77e266d9be6ad96e757ae7be61001a55bff99fca1d91b5d4d0bfab513ae5bb"
+  },
+  "blood-countess-idle-4.mp4": {
+    "hash": "0cf6e7daa6047849aaaa593747e0ff00",
+    "outputHash": "eba12b278318fe120f7f8d29abc57eda",
+    "selectionHash": "840938f803510f1f4abc2fec63cb17aa6266203ff19e5357563a843e79aa78d6"
+  },
+  "blood-countess-idle-5.mp4": {
+    "hash": "e184d451514152195e56affab7e4a08c",
+    "outputHash": "2630b0644cf9dbcde6411dbfd4737404",
+    "selectionHash": "16dd01fbde40c71355aaab3826627734ddb01a357d177a83b308bd2934e6f73e"
+  },
+  "seraph-idle-1.mp4": {
+    "hash": "572334a2c3714bcc91ba752e883cc9d2",
+    "outputHash": "8292bc53b37a43092bd2beb4b0adfd60",
+    "selectionHash": "61388b11e1c712721835756c62185254fb86a0aee4ff3a2ca8331d9578fd24ea"
+  },
+  "seraph-idle-2.mp4": {
+    "hash": "0fac3366c952f966a44c8d5681c4bf4b",
+    "outputHash": "3f369eb60ee01ac069b5897472d22b3d",
+    "selectionHash": "0549891a8975a6cb70b489187327fe3a494a5db611f71d7f5aa8142abe5fdb54"
+  },
+  "seraph-idle-3.mp4": {
+    "hash": "04d27f3ced5de2b83a8246466379f856",
+    "outputHash": "7a2421dc7475fadee21d66f6e8626dca",
+    "selectionHash": "78e5d9e815bb981326dd520b0047f63117fe600b68a2e5fd4786f2b906d627d2"
+  },
+  "stone-titan-idle-1.mp4": {
+    "hash": "143a2e2fb9782bb3bb29bb0daadf46fe",
+    "outputHash": "d9c444450d9cd3c42e1a6ccc8ab0f156",
+    "selectionHash": "0e028b48ad867380ccb06f768cdf9a2989abe127f8f2adb0f04965ffe3f8802e"
+  },
+  "stone-titan-idle-2.mp4": {
+    "hash": "498ecc0b2dabc5eb28c0d81e298260bb",
+    "outputHash": "aaba3f288d44273262f0acc7e3c21480",
+    "selectionHash": "da15e8ee0a10329a3d4104d5c4c04ac6678ca8609d47a3de3f97c861176e4bb5"
+  },
+  "stone-titan-idle-3.mp4": {
+    "hash": "7772cf50a7e2ffedb40108323ac408ba",
+    "outputHash": "9e1da612403315665609233e1a47ec4f",
+    "selectionHash": "62fd60b8b44ab0f14b08ad3b559e3be91d4a5f9b732107f2765ab849417dc45e"
+  }
+}

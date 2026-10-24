@@ -1,8 +1,10 @@
 import { optimizeAssets } from "../optimize-assets.mjs";
 import { optimizeMusic } from "../optimize-music.mjs";
 import { optimizeSounds } from "../optimize-sounds.mjs";
+import { optimizeBossIdles } from "../optimize-boss-idles.mjs";
 
 const OPTIMIZE_PIPELINES = {
+  bossIdles: { label: "Boss idles", run: optimizeBossIdles },
   art: {
     label: "Art",
     run: optimizeAssets,

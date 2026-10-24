@@ -2,6 +2,7 @@ import path from "node:path";
 import { staticAssets, validateAssetRegistry } from "./asset-manifest.mjs";
 import { gearAssets } from "./gear-assets.mjs";
 import { musicAssets, validateMusicRegistry } from "./music-assets.mjs";
+import { bossIdleAssets, validateBossIdleRegistry } from "./boss-idle-assets.mjs";
 import {
   curatedSoundFiles,
   generatedSoundAssets,
@@ -13,6 +14,7 @@ import {
   MANAGED_DIRS,
   MANIFEST_BASENAME,
   MUSIC_SETTINGS,
+  BOSS_IDLE_SETTINGS,
   CURATED_SOUND_SETTINGS,
   MP3_FALLBACK_SETTINGS,
   soundTransformSettings,
@@ -22,7 +24,13 @@ import { artTransformSettings } from "../optimize-assets.mjs";
 import { requireAssetSources } from "./asset-sources.mjs";
 
 export async function preflightSelectedSources() {
-  await requireAssetSources([...staticAssets, ...gearAssets, ...generatedSoundAssets, ...musicAssets]);
+  await requireAssetSources([
+    ...staticAssets,
+    ...gearAssets,
+    ...generatedSoundAssets,
+    ...musicAssets,
+    ...bossIdleAssets,
+  ]);
 }
 
 /** Check committed selections, settings and bytes; never inspect external sources. */
@@ -31,8 +39,10 @@ export async function checkAssetOutputs(rootDir) {
   await validateAssetRegistry(art);
   await validateSoundAssetRegistry();
   await validateMusicRegistry(musicAssets);
+  await validateBossIdleRegistry();
   const oggs = [...generatedSoundAssets.map(({ target }) => target), ...curatedSoundFiles];
   const selections = {
+    bossIdles: bossIdleAssets.map((asset) => ({ asset, settings: BOSS_IDLE_SETTINGS })),
     art: art.map((asset) => ({ asset, settings: artTransformSettings(asset) })),
     music: musicAssets.map((asset) => ({ asset, settings: MUSIC_SETTINGS })),
     sounds: [
