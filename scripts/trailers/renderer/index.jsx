@@ -13,7 +13,6 @@ import {
   continueRender,
   cancelRender,
 } from "remotion";
-import { lyricAt } from "../model.mjs";
 
 const asset = (file) => staticFile(file);
 const ease = (t) => t * t * (3 - 2 * t);
@@ -48,39 +47,6 @@ function Shot({ shot, clip }) {
   );
 }
 
-function Lyrics({ lines, offset, end }) {
-  const frame = useCurrentFrame();
-  const { fps, width, height } = useVideoConfig();
-  if (frame >= end) return null;
-  const words = lyricAt(lines, offset + frame / fps);
-  if (!words.length) return null;
-  return (
-    <div
-      style={{
-        position: "absolute",
-        bottom: height * 0.065,
-        left: width * 0.06,
-        right: width * 0.06,
-        textAlign: "center",
-        fontSize: width * (height > width ? 0.043 : 0.025),
-        fontWeight: 650,
-        lineHeight: 1.35,
-        color: "#fff8e7",
-        textShadow: "0 2px 8px #000, 0 0 20px #000",
-        padding: "12px 20px",
-        background: "radial-gradient(ellipse, #080b10bd 0%, #080b1000 72%)",
-      }}
-    >
-      {words.map((word, index) => (
-        <span key={index} style={{ color: word.active ? "#f5cb75" : "#fff8e7", opacity: word.active ? 1 : 0.85 }}>
-          {index > 0 ? " " : ""}
-          {word.text}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 function Trailer({ timeline, bundle, recipe }) {
   const [fontHandle] = useState(() => delayRender("Loading trailer font"));
   useEffect(() => {
@@ -102,42 +68,41 @@ function Trailer({ timeline, bundle, recipe }) {
           <Shot shot={shot} clip={bundle.clips[shot.clip]} />
         </Sequence>
       ))}
-      {recipe.music.lyrics && (
-        <Lyrics lines={bundle.lyrics.lines} offset={recipe.music.offset} end={timeline.endCardFrom} />
-      )}
-      <Sequence from={timeline.endCardFrom}>
-        <AbsoluteFill
-          style={{
-            alignItems: "center",
-            justifyContent: "center",
-            background: "radial-gradient(ellipse at center, #28302a 0%, #0c1215 55%, #05080a 100%)",
-            opacity: endProgress,
-          }}
-        >
-          <Img
-            src={asset(bundle.assets.logo)}
+      {recipe.endCard.duration > 0 && (
+        <Sequence from={timeline.endCardFrom}>
+          <AbsoluteFill
             style={{
-              width: "74%",
-              maxHeight: "48%",
-              objectFit: "contain",
-              transform: `scale(${0.96 + 0.04 * endProgress})`,
-              filter: "drop-shadow(0 12px 25px #0008)",
-            }}
-          />
-          <div
-            style={{
-              color: "#f5d99c",
-              fontSize: timeline.width * 0.035,
-              letterSpacing: "0.06em",
-              marginTop: timeline.height * 0.04,
-              textAlign: "center",
-              padding: "0 8%",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "radial-gradient(ellipse at center, #28302a 0%, #0c1215 55%, #05080a 100%)",
+              opacity: endProgress,
             }}
           >
-            {recipe.endCard.text}
-          </div>
-        </AbsoluteFill>
-      </Sequence>
+            <Img
+              src={asset(bundle.assets.logo)}
+              style={{
+                width: "74%",
+                maxHeight: "48%",
+                objectFit: "contain",
+                transform: `scale(${0.96 + 0.04 * endProgress})`,
+                filter: "drop-shadow(0 12px 25px #0008)",
+              }}
+            />
+            <div
+              style={{
+                color: "#f5d99c",
+                fontSize: timeline.width * 0.035,
+                letterSpacing: "0.06em",
+                marginTop: timeline.height * 0.04,
+                textAlign: "center",
+                padding: "0 8%",
+              }}
+            >
+              {recipe.endCard.text}
+            </div>
+          </AbsoluteFill>
+        </Sequence>
+      )}
     </AbsoluteFill>
   );
 }

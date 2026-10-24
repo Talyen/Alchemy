@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "id": "blood-countess-battle",
+  "capture": {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "scale": 2,
+    "fps": 60
+  },
+  "music": {
+    "boss": "blood-countess",
+    "offset": 20.68,
+    "lyrics": true,
+    "fadeIn": 0,
+    "fadeOut": 0.5
+  },
+  "clips": [
+    {
+      "id": "blood-countess",
+      "scene": "boss",
+      "boss": "blood-countess",
+      "hero": "knight",
+      "seed": 42,
+      "duration": 30,
+      "actions": [
+        {
+          "at": 1,
+          "kind": "hover",
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 0
+          }
+        },
+        {
+          "at": 3,
+          "kind": "hover",
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 1
+          }
+        },
+        {
+          "at": 5,
+          "kind": "play-card"
+        },
+        {
+          "at": 6.5,
+          "kind": "move-away"
+        },
+        {
+          "at": 8,
+          "kind": "hover",
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 1
+          }
+        },
+        {
+          "at": 10,
+          "kind": "play-card"
+        },
+        {
+          "at": 11,
+          "kind": "move-away"
+        },
+        {
+          "at": 12,
+          "kind": "click",
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        },
+        {
+          "at": 16,
+          "kind": "hover",
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 0
+          }
+        },
+        {
+          "at": 18,
+          "kind": "hover",
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 1
+          }
+        },
+        {
+          "at": 20,
+          "kind": "play-card"
+        },
+        {
+          "at": 21,
+          "kind": "move-away"
+        },
+        {
+          "at": 22.5,
+          "kind": "hover",
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 0
+          }
+        },
+        {
+          "at": 24.5,
+          "kind": "play-card"
+        },
+        {
+          "at": 25.5,
+          "kind": "move-away"
+        },
+        {
+          "at": 26.5,
+          "kind": "click",
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        }
+      ]
+    }
+  ],
+  "shots": [
+    {
+      "clip": "blood-countess",
+      "duration": 30
+    }
+  ],
+  "endCard": {
+    "duration": 0,
+    "text": "Alchemy"
+  }
+}

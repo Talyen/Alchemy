@@ -53,6 +53,24 @@ capture does not need a real-time GPU recording rate; review platform rendering
 before accepting that runner as a visual baseline. Nothing publishes to Steam or
 social media. The workflow can later be moved to a dedicated GPU runner.
 
+## Blood Countess battle prototype
+
+`trailers/blood-countess-battle.json` records exactly 30 seconds of battle at the
+normal full-screen framing. It uses her current five idle animations, her own
+music starting at the first verse, the native battle lyric display, and natural
+card inspections and plays. There are no cuts, camera moves or end card. The
+pointer travels over multiple sampled frames and pauses on cards for roughly
+two seconds; its appearance is hidden while hover feedback remains visible.
+
+```sh
+npm run trailer -- capture --recipe trailers/blood-countess-battle.json --bundle output/trailers/countess
+npm run trailer -- render --bundle output/trailers/countess
+```
+
+Use separate bounded host-lane leases on the shared Mac, as above. This continuous
+shot encodes directly from the sampled master without a second browser composition
+or temporary PNG cache. Directed compilations still use Remotion.
+
 ## Capture once, revise the edit
 
 ```sh
@@ -67,6 +85,9 @@ Wrap capture/render in the host lane on the shared Mac, as above. Existing files
 are never overwritten. Use `--label` for another export of the same format; use a
 fresh bundle for changed capture instructions. A render validates clip hashes,
 capture instructions, source frame rate and soundtrack identity before reuse.
+Native lyrics are part of the captured battle: changing a clip's position against
+the music requires recapture. Separate clip IDs allow the same staged encounter
+to be captured at different music positions in a montage.
 The complete bundle is portable: music, lyrics, logo, font, sound cues, raw clips,
 resolved recipe, source identity, receipts and review stills travel together.
 Keep the whole bundle outside Git. The default `output/trailers/` destination is outside diagnostic age pruning and
@@ -93,8 +114,11 @@ resolved timeline and fails invalid inputs before launching a browser.
 - **Inputs:** `play-card` chooses the first visible enabled card; `click` and
   `hover` use one exact role/name, test ID or CSS selector, plus optional index.
   `move-away` clears hover. Missing, disabled, covered or inert targets fail the
-  capture. Clicks and hovers use real pointer events; `play-card` focuses the chosen
-  hand card and activates it with Enter to avoid moving hover targets. Captures
+  capture. All inputs use real pointer events. `moveDuration` (default 0.3 seconds)
+  moves the hidden pointer smoothly before its action time. Hand targets use stable
+  slot geometry so fan rotation and hover lift do not select the adjacent card.
+  Automatic `play-card` prefers the inspected card if playable, then the first
+  playable card. Captures
   require the played hand identity to leave or enter its transfer animation.
   Missing acknowledgments fail rather than recording a rejected click as a play.
   Inputs do not dispatch state mutations. Times are relative to the staged clip,
@@ -110,9 +134,14 @@ resolved timeline and fails invalid inputs before launching a browser.
 - **Music:** a registered boss track, source offset, gain and fades. Offsets refer
   to the original recording, including Iron Bear's opening; the game's playback
   skip is not added a second time. Lyric snapshots must match the track's SHA-256.
-  Lyrics use the soundtrack clock and remain independent of camera movements and
-  visual cuts. The overlay clears instrumental gaps and highlights the sung word.
-- **End card:** duration and text. Text is recipe data, separate from shipped UI
+  `lyrics: true` records the game's own lyric display at its fixed battle position,
+  between the actors and hand. Lyrics never appear on menus or as a trailer overlay.
+  The isolated audio clock follows the final soundtrack position while the actual
+  audio is mixed later. Each battle must match the soundtrack boss and play at
+  normal speed. Reusing one clip at conflicting music times fails admission;
+  use separate clip IDs and recapture for those positions. Instrumental gaps and
+  word highlighting come from the existing game component.
+- **End card:** duration and text; duration 0 omits it for battle-only prototypes. Text is recipe data, separate from shipped UI
   translations; choose localized wording in a separate recipe when needed.
 
 The original audio-host guard is preserved. The isolated capture page uses the
@@ -133,7 +162,8 @@ records its source and browser version. Sound and frame clocks must agree;
 misaligned cues fail capture instead of silently producing a music-only edit.
 
 For each capture, frame count, dimensions and frame rate are checked with ffprobe.
-Receipts retain the actual performed input labels and bounds, sound cues, source
+Receipts retain the actual performed input labels, bounds, pointer travel and card
+acceptance times, native lyric positions, idle-video playback samples, sound cues, source
 hash, browser version and beginning/middle/end frame hashes. A failed capture
 retains its diagnostics and partial output but cannot be rendered as successful.
 Each final export is checked for H.264, 4:2:0, exact dimensions/frame count/rate,

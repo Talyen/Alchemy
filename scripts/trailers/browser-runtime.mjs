@@ -1,10 +1,38 @@
 /** Runs only inside the isolated recording page; production code stays untouched. */
 export function installCaptureRuntime() {
   const { window } = globalThis;
-  const state = { start: null, sounds: [], animations: new Map(), videos: new Map(), initialized: false };
+  const state = {
+    start: null,
+    sounds: [],
+    animations: new Map(),
+    videos: new Map(),
+    initialized: false,
+    music: null,
+    videoFrameRates: {},
+  };
   const NativeAudio = window.Audio;
   window.Audio = class extends NativeAudio {
+    capturePosition = 0;
+    captureAt = globalThis.performance.now();
+    capturePaused = true;
+    get paused() {
+      return this.capturePaused;
+    }
+    get currentTime() {
+      if (this.capturePaused) return this.capturePosition;
+      const now = globalThis.performance.now();
+      if (state.music && state.start !== null && new URL(this.src).pathname === state.music.src)
+        return state.music.offset + (now - state.start) / 1000;
+      return this.capturePosition + (now - this.captureAt) / 1000;
+    }
+    set currentTime(position) {
+      this.capturePosition = position;
+      this.captureAt = globalThis.performance.now();
+    }
     play() {
+      this.capturePosition = this.currentTime;
+      this.captureAt = globalThis.performance.now();
+      this.capturePaused = false;
       if (this.src.includes("/sounds/") && state.start !== null) {
         const event = {
           src: new URL(this.src).pathname,
@@ -21,6 +49,8 @@ export function installCaptureRuntime() {
     pause() {
       if (this.captureEvent && this.captureEvent.end === null && state.start !== null)
         this.captureEvent.end = (globalThis.performance.now() - state.start) / 1000;
+      this.capturePosition = this.currentTime;
+      this.capturePaused = true;
       this.captureEvent = null;
       super.pause();
     }
@@ -97,7 +127,11 @@ export async function sampleVisualTime(timeMs) {
       state.pauseVideo(video);
       const elapsed = entry.base + (entry.playing ? ((timeMs - entry.at) / 1000) * video.playbackRate : 0);
       const ended = entry.playing && !video.loop && elapsed >= video.duration && !entry.ended;
-      const position = video.loop ? elapsed % video.duration : Math.min(elapsed, Math.max(0, video.duration - 0.00001));
+      let position = video.loop ? elapsed % video.duration : Math.min(elapsed, Math.max(0, video.duration - 0.00001));
+      const fps = state.videoFrameRates?.[new URL(video.src, globalThis.location?.href ?? "http://localhost").pathname];
+      // Repeated native frames need no additional decoder seek. A tiny interior
+      // offset avoids landing just before a frame boundary after time rounding.
+      if (fps) position = Math.min(video.duration - 0.00001, (Math.floor((position + 0.0000001) * fps) + 0.001) / fps);
       if (Math.abs(video.currentTime - position) >= 0.0001)
         await new Promise((resolve, reject) => {
           const done = () => {

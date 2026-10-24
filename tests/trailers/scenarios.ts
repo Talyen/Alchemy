@@ -16,6 +16,7 @@ interface Scene {
   boss?: string;
   hero: CharacterId;
   seed: number;
+  lyrics?: boolean;
 }
 
 export function trailerAssets(boss: string) {
@@ -36,8 +37,8 @@ export async function openTrailerScene(page: Page, clip: Scene, checkpoint?: Rec
   if (checkpoint) {
     await injectExactSave(page, {
       ...checkpoint,
-      bossLyricsEnabled: false,
-      musicVolume: 0,
+      bossLyricsEnabled: clip.lyrics ?? false,
+      musicVolume: 70,
       muteInBackground: false,
       sfxVolume: 70,
       masterVolume: 100,
@@ -71,8 +72,8 @@ export async function openTrailerScene(page: Page, clip: Scene, checkpoint?: Rec
     });
     await injectExactSave(page, {
       ...save,
-      bossLyricsEnabled: false,
-      musicVolume: 0,
+      bossLyricsEnabled: clip.lyrics ?? false,
+      musicVolume: 70,
       sfxVolume: 70,
       masterVolume: 100,
       muteInBackground: false,
@@ -87,8 +88,8 @@ export async function openTrailerScene(page: Page, clip: Scene, checkpoint?: Rec
   } else {
     const menu = new MenuPage(page);
     await menu.gotoWithUnlockedMeta({
-      bossLyricsEnabled: false,
-      musicVolume: 0,
+      bossLyricsEnabled: clip.lyrics ?? false,
+      musicVolume: 70,
       sfxVolume: 70,
       masterVolume: 100,
       muteInBackground: false,

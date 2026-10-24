@@ -1,7 +1,9 @@
 import fs from "node:fs";
+import { performance } from "node:perf_hooks";
 import path from "node:path";
 import { createServer } from "vite";
 import { chromium } from "@playwright/test";
+import { nativeMusicOffsets } from "./model.mjs";
 import { installCaptureRuntime, sampleVisualTime } from "./browser-runtime.mjs";
 import { hashFile, hashValue, probe, startEncoder, writeJson } from "./media.mjs";
 
@@ -14,15 +16,21 @@ function locatorFor(page, target) {
   return locator.nth(target.index);
 }
 
-async function performAction(page, action) {
-  if (action.kind === "move-away") {
-    await page.mouse.move(0, 0);
-    return { kind: action.kind };
-  }
+async function prepareAction(page, action) {
+  if (action.kind === "move-away") return { point: { x: 20, y: 80 }, kind: action.kind };
   let locator;
   if (action.kind === "play-card" && !action.target) {
     const cards = page.locator("[aria-label^='Play ']");
-    for (const card of await cards.all())
+    // Prefer the card the player just inspected, then another playable card.
+    const candidates = await cards.all();
+    const hovered = [];
+    const remaining = [];
+    for (const card of candidates) {
+      if (await card.evaluate((element) => element.closest("[data-hand-slot]")?.hasAttribute("data-hovered")))
+        hovered.push(card);
+      else remaining.push(card);
+    }
+    for (const card of [...hovered, ...remaining])
       if (
         (await card.isEnabled()) &&
         (await card.isVisible()) &&
@@ -38,28 +46,48 @@ async function performAction(page, action) {
   const bounds = await locator.boundingBox();
   if (!bounds) throw new Error("Action target has no bounds");
   const label = (await locator.getAttribute("aria-label")) ?? (await locator.textContent());
-  const cardKey =
-    action.kind === "play-card"
-      ? await locator.evaluate((element) => element.closest("[data-hand-slot]")?.getAttribute("data-hand-slot"))
-      : null;
-  const point = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+  const hand = await locator.evaluate((element) => {
+    const slot = element.closest("[data-hand-slot]");
+    if (!slot) return null;
+    const bounds = slot.getBoundingClientRect();
+    return {
+      key: slot.getAttribute("data-hand-slot"),
+      x: bounds.x + bounds.width / 2,
+      y: Math.min(globalThis.innerHeight - 20, bounds.bottom - 20),
+    };
+  });
+  const point = hand ? { x: hand.x, y: hand.y } : { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
   if (
-    !(await locator.evaluate((element, point) => {
-      const hit = globalThis.document.elementFromPoint(point.x, point.y);
-      return hit && (element === hit || element.contains(hit)) && !element.closest("[inert]");
-    }, point))
+    !(await locator.evaluate(
+      (element, { point, hand }) => {
+        const hit = globalThis.document.elementFromPoint(point.x, point.y);
+        return (
+          hit &&
+          !hit.closest("[inert]") &&
+          (hand ? Boolean(hit.closest("[data-hand-slot]")) : element === hit || element.contains(hit))
+        );
+      },
+      { point, hand },
+    ))
   )
     throw new Error(`Action target is covered: ${label}`);
-  await page.mouse.move(point.x, point.y);
-  if (action.kind === "play-card") {
-    if (!cardKey) throw new Error("Play-card target is not in the hand");
-    await locator.focus();
-    await page.keyboard.press("Enter");
-  } else if (action.kind !== "hover") await page.mouse.click(point.x, point.y);
-  return { kind: action.kind, label, bounds, ...(cardKey ? { cardKey } : {}) };
+  if (action.kind === "play-card" && !hand?.key) throw new Error("Play-card target is not in the hand");
+  return {
+    kind: action.kind,
+    label,
+    bounds,
+    point,
+    ...(hand?.key ? { inspectedCardKey: hand.key } : {}),
+    ...(action.kind === "play-card" ? { cardKey: hand.key } : {}),
+  };
 }
 
-async function captureClip({ browser, scenarios, clip, settings, origin, out, root, draft }) {
+async function performAction(page, prepared) {
+  if (prepared.kind === "hover" || prepared.kind === "move-away") return;
+  await page.mouse.click(prepared.point.x, prepared.point.y);
+}
+
+async function captureClip({ browser, scenarios, clip, settings, origin, out, root, draft, music }) {
   const output = path.join(out, `${clip.id}.mp4`);
   const receiptFile = path.join(out, `${clip.id}.json`);
   // A partial capture is diagnostic evidence, never a reusable successful clip.
@@ -90,7 +118,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
     });
     await page.addInitScript(installCaptureRuntime);
     await page.clock.install({ time: new Date("2026-01-01T00:00:00.000Z") });
-    await scenarios.openTrailerScene(page, clip, checkpoint);
+    await scenarios.openTrailerScene(page, { ...clip, lyrics: music !== null }, checkpoint);
     // Leave room for protocol travel while the staging clock is still running.
     // A one-millisecond margin can already be in the past on the next command.
     await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
@@ -98,9 +126,28 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
     const startState = await page
       .locator("[data-testid='player-health'],[data-testid='enemy-health'],[data-testid='mana-panel']")
       .allTextContents();
-    await page.evaluate(() => {
-      globalThis.__trailerCapture.start = globalThis.performance.now();
-    });
+    await page.addStyleTag({ content: "*, *::before, *::after { cursor: none !important; }" });
+    await page.mouse.move(20, 80);
+    const videoFrameRates = {};
+    const videoDirectory = path.join(root, "src/assets/boss-idles");
+    for (const file of fs
+      .readdirSync(videoDirectory)
+      .filter((file) => clip.boss && file.startsWith(`${clip.boss}-idle-`) && file.endsWith(".mp4"))) {
+      const video = probe(path.join(videoDirectory, file)).streams.find((stream) => stream.codec_type === "video");
+      if (video?.r_frame_rate === video?.avg_frame_rate) {
+        const [numerator, denominator] = video.r_frame_rate.split("/").map(Number);
+        if (numerator > 0 && denominator > 0)
+          videoFrameRates[`/src/assets/boss-idles/${file}`] = numerator / denominator;
+      }
+    }
+    await page.evaluate(
+      ({ music, videoFrameRates }) => {
+        globalThis.__trailerCapture.start = globalThis.performance.now();
+        globalThis.__trailerCapture.music = music;
+        globalThis.__trailerCapture.videoFrameRates = videoFrameRates;
+      },
+      { music, videoFrameRates },
+    );
     await page.evaluate(sampleVisualTime, 0);
     const width = settings.viewport.width * (draft ? 1 : settings.scale);
     const height = settings.viewport.height * (draft ? 1 : settings.scale);
@@ -111,14 +158,54 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
     let priorTime = 0;
     let actionIndex = 0;
     const sampled = [];
+    const costs = { clock: 0, input: 0, visuals: 0, screenshot: 0, encode: 0 };
+    const presentation = [];
+    let pointer = { x: 20, y: 80 };
+    let pending = null;
     for (let frame = 0; frame < frameCount; frame++) {
+      let phaseStart = performance.now();
+      const mark = (phase) => {
+        const now = performance.now();
+        costs[phase] += now - phaseStart;
+        phaseStart = now;
+      };
       const time = Math.round((frame * 1000) / settings.fps);
       if (time > priorTime) await page.clock.runFor(time - priorTime);
       priorTime = time;
-      while (actionIndex < actions.length && actions[actionIndex].at <= frame / settings.fps) {
-        const action = actions[actionIndex++];
-        performed.push({ at: frame / settings.fps, ...(await performAction(page, action)) });
+      mark("clock");
+      const seconds = frame / settings.fps;
+      const next = actions[actionIndex];
+      if (!pending && next && seconds >= Math.max(0, next.at - next.moveDuration))
+        pending = {
+          input: await prepareAction(page, next),
+          from: { ...pointer },
+          start: seconds,
+          end: next.at,
+          moveFrames: 0,
+        };
+      if (pending) {
+        const progress =
+          seconds >= pending.end ? 1 : Math.max(0, (seconds - pending.start) / (pending.end - pending.start));
+        const eased = progress * progress * (3 - 2 * progress);
+        pointer = {
+          x: pending.from.x + (pending.input.point.x - pending.from.x) * eased,
+          y: pending.from.y + (pending.input.point.y - pending.from.y) * eased,
+        };
+        await page.mouse.move(pointer.x, pointer.y);
+        pending.moveFrames++;
+        if (seconds >= pending.end) {
+          await performAction(page, pending.input);
+          performed.push({
+            at: seconds,
+            movementFrom: pending.start,
+            moveFrames: pending.moveFrames,
+            ...pending.input,
+          });
+          pending = null;
+          actionIndex++;
+        }
       }
+      mark("input");
       await page.evaluate(sampleVisualTime, time);
       for (const input of performed.filter((input) => input.cardKey && input.acceptedAt === undefined)) {
         const stillInHand = await page.evaluate(
@@ -131,6 +218,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
         if (!stillInHand) input.acceptedAt = frame / settings.fps;
         else if (frame / settings.fps - input.at > 0.75) throw new Error(`Card input was not accepted: ${input.label}`);
       }
+      mark("visuals");
       // The general screenshot API waits for stable frames and encodes compact
       // PNGs. Direct capture preserves the sampled frame and uses fast lossless
       // compression; image quality and timing are unchanged.
@@ -141,16 +229,38 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
         optimizeForSpeed: true,
       });
       const png = Buffer.from(data, "base64");
+      mark("screenshot");
       await encoder.frame(png);
+      mark("encode");
       if (frame === 0 || frame === Math.floor(frameCount / 2) || frame === frameCount - 1) {
         const name = `${clip.id}-${frame}.png`;
         fs.writeFileSync(path.join(out, name), png);
         sampled.push({ frame, sha256: hashFile(path.join(out, name)), file: name });
       }
-      if (frame % settings.fps === 0)
+      if (frame % settings.fps === 0) {
+        presentation.push(
+          await page.evaluate(
+            (at) => ({
+              at,
+              battle: Boolean(globalThis.document.querySelector("[data-testid='battle-scene']")),
+              lyrics: globalThis.document.querySelector("[data-testid='boss-lyrics']")?.textContent ?? null,
+              lyricBounds: (() => {
+                const rect = globalThis.document.querySelector("[data-testid='boss-lyrics']")?.getBoundingClientRect();
+                return rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null;
+              })(),
+              videos: [...globalThis.document.querySelectorAll("video")].map((video) => ({
+                src: new URL(video.src).pathname,
+                time: video.currentTime,
+                playing: globalThis.__trailerCapture.videos.get(video)?.playing ?? false,
+              })),
+            }),
+            frame / settings.fps,
+          ),
+        );
         console.log(
           `Capture ${clip.id}: ${frame / settings.fps}/${clip.duration}s (${width}×${height}, ${settings.fps} fps)`,
         );
+      }
       if (errors.length) throw new Error(`Renderer error: ${errors.join("; ")}`);
     }
     if (actionIndex !== actions.length) throw new Error("Not all directed actions were executed");
@@ -175,6 +285,10 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
       video.r_frame_rate !== `${settings.fps}/1`
     )
       throw new Error("Capture frame count, dimensions, or frame rate mismatch");
+    if (clip.scene === "boss" && presentation.some((sample) => !sample.battle))
+      throw new Error("Directed battle left the battle screen during capture");
+    if (music?.expectLyrics && !presentation.some((sample) => sample.lyrics?.trim()))
+      throw new Error("Native battle lyrics were not observed; check the selected soundtrack interval");
     const endState = await page
       .locator("[data-testid='player-health'],[data-testid='enemy-health'],[data-testid='mana-panel']")
       .allTextContents();
@@ -187,10 +301,13 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
       sha256: hashFile(output),
       settings: { width, height, fps: settings.fps },
       frameCount,
+      elapsedPhaseMs: costs,
       method: "offline-js-css-video-sampling",
       startState,
       endState,
       actions: performed,
+      nativeMusic: music,
+      presentation,
       sounds,
       sampled,
       metadata,
@@ -234,7 +351,11 @@ export async function captureRecipe({ root, recipe, out, draft = false, source }
     await server.listen();
     const address = server.httpServer.address();
     const origin = `http://127.0.0.1:${address.port}`;
-    browser = await chromium.launch({ headless: true, args: ["--autoplay-policy=no-user-gesture-required"] });
+    browser = await chromium.launch({
+      channel: "chromium",
+      headless: true,
+      args: ["--autoplay-policy=no-user-gesture-required"],
+    });
     const scenarios = await server.ssrLoadModule("/tests/trailers/scenarios.ts");
     const assets = scenarios.trailerAssets(recipe.music.boss);
     const musicSource = path.resolve(root, assets.music);
@@ -247,6 +368,7 @@ export async function captureRecipe({ root, recipe, out, draft = false, source }
     fs.copyFileSync(path.resolve(root, `.${assets.logo}`), path.join(out, "assets/logo.webp"));
     fs.copyFileSync(path.join(root, "public/fonts/Inter.woff2"), path.join(out, "assets/Inter.woff2"));
     writeJson(path.join(out, "assets/lyrics.json"), lyrics);
+    const offsets = nativeMusicOffsets(recipe);
     const clips = {};
     for (const clip of recipe.clips)
       clips[clip.id] = await captureClip({
@@ -258,6 +380,17 @@ export async function captureRecipe({ root, recipe, out, draft = false, source }
         out: path.join(out, "clips"),
         root,
         draft,
+        music:
+          offsets[clip.id] === undefined
+            ? null
+            : {
+                offset: offsets[clip.id],
+                expectLyrics: lyrics.lines.some(
+                  (line) =>
+                    line.timings[0] < offsets[clip.id] + clip.duration && line.timings.at(-1) > offsets[clip.id],
+                ),
+                src: new URL(assets.music.replace(/^public/u, ""), origin).pathname,
+              },
       });
     for (const clip of Object.values(clips)) {
       for (const sound of clip.sounds) {

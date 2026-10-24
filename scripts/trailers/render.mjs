@@ -2,24 +2,26 @@ import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { chromium } from "@playwright/test";
-import { compileTimeline, mapSoundEvents, parseRecipe } from "./model.mjs";
+import { compileTimeline, mapSoundEvents, nativeMusicOffsets, parseRecipe } from "./model.mjs";
 import { checkedAsset, hashFile, hashValue, probe, runFfmpeg, writeJson } from "./media.mjs";
 
 const requireTools = createRequire(new URL("./package.json", import.meta.url));
 export async function renderRecipe({ root, out, recipe, format = "steam", draft = false, label = "" }) {
   const { bundle } = requireTools("@remotion/bundler");
-  const { selectComposition, renderMedia, renderStill } = requireTools("@remotion/renderer");
+  const { selectComposition, renderMedia } = requireTools("@remotion/renderer");
   const capture = JSON.parse(fs.readFileSync(path.join(out, "capture.json"), "utf8"));
   recipe = parseRecipe(recipe ?? capture.recipe);
   if (capture.draft && !draft)
     throw new Error("Draft source cannot produce a production export; recapture without --draft");
   if (hashValue(recipe.capture) !== hashValue(capture.recipe.capture))
     throw new Error("Capture settings changed; record a new bundle");
+  const offsets = nativeMusicOffsets(recipe);
   for (const clip of recipe.clips) {
     const recorded = capture.clips[clip.id];
     if (
       !recorded ||
       recorded.recipeHash !== hashValue(clip) ||
+      recorded.nativeMusic?.offset !== offsets[clip.id] ||
       recorded.settings.fps !== recipe.capture.fps ||
       hashFile(checkedAsset(out, `clips/${recorded.file}`)) !== recorded.sha256
     )
@@ -39,94 +41,136 @@ export async function renderRecipe({ root, out, recipe, format = "steam", draft 
   if (fs.existsSync(output)) throw new Error(`Output exists: ${output}; retain it and choose --label for another edit`);
   fs.mkdirSync(path.join(root, "scratch"), { recursive: true });
   const renderDir = fs.mkdtempSync(path.join(root, "scratch/trailer-render-"));
-  const publicDir = path.join(renderDir, "public");
-  fs.mkdirSync(publicDir);
-  fs.cpSync(path.join(out, "assets"), path.join(publicDir, "assets"), { recursive: true });
-  const serveUrl = await bundle({
-    entryPoint: path.join(root, "scripts/trailers/renderer/index.jsx"),
-    publicDir,
-    outDir: path.join(renderDir, "bundle"),
-    onProgress: () => {},
-  });
-  // Decode each master once. Native per-frame video extraction is expensive
-  // for 4K 4:4:4 sources; a lossless PNG cache keeps camera composition in the
-  // browser without repeated decoder work or a lower-resolution proxy.
-  const renderCapture = { ...capture, clips: { ...capture.clips } };
-  for (const id of new Set(timeline.shots.map((shot) => shot.clip))) {
-    const directory = path.join(serveUrl, "public/frames", id);
-    fs.mkdirSync(directory, { recursive: true });
-    const ranges = timeline.shots
-      .filter((shot) => shot.clip === id)
-      .map((shot) => ({
-        start: shot.sourceStartFrame,
-        end: Math.min(
-          capture.clips[id].frameCount - 1,
-          Math.floor(shot.sourceStartFrame + (shot.durationInFrames - 1) * shot.speed),
-        ),
-      }))
-      .sort((a, b) => a.start - b.start);
-    const merged = [];
-    for (const range of ranges) {
-      const previous = merged.at(-1);
-      if (previous && range.start <= previous.end + 1) previous.end = Math.max(previous.end, range.end);
-      else merged.push({ ...range });
-    }
-    for (const range of merged)
-      await runFfmpeg([
-        "-i",
-        checkedAsset(out, `clips/${capture.clips[id].file}`),
-        "-an",
-        "-vf",
-        `select=between(n\\,${range.start}\\,${range.end})`,
-        "-frames:v",
-        String(range.end - range.start + 1),
-        "-c:v",
-        "png",
-        "-compression_level",
-        "1",
-        "-threads",
-        "1",
-        "-fps_mode",
-        "passthrough",
-        "-start_number",
-        String(range.start),
-        path.join(directory, "%06d.png"),
-      ]);
-    const files = fs.readdirSync(directory);
-    if (files.length !== merged.reduce((sum, range) => sum + range.end - range.start + 1, 0))
-      throw new Error(`Decoded frame count mismatch for ${id}`);
-    renderCapture.clips[id] = { ...capture.clips[id], frames: `frames/${id}` };
-    console.log(`Prepared ${id}: ${files.length} lossless frames`);
-  }
-  const inputProps = { timeline, bundle: renderCapture, recipe };
-  const browserExecutable = chromium.executablePath();
-  const composition = await selectComposition({ serveUrl, id: "AlchemyTrailer", inputProps, browserExecutable });
   const silent = path.join(renderDir, "silent.mp4");
-  let reported = -1;
-  await renderMedia({
-    composition,
-    serveUrl,
-    inputProps,
-    browserExecutable,
-    outputLocation: silent,
-    codec: "h264",
-    videoBitrate: "20M",
-    pixelFormat: "yuv420p",
-    x264Preset: "slow",
-    colorSpace: "bt709",
-    muted: true,
-    concurrency: 1,
-    offthreadVideoThreads: 1,
-    offthreadVideoCacheSizeInBytes: 128 * 1024 * 1024,
-    imageFormat: "png",
-    onProgress: ({ progress }) => {
-      const percent = Math.floor(progress * 10) * 10;
-      if (percent !== reported) {
-        reported = percent;
-        console.log(`Render ${format}: ${percent}%`);
+  const only = timeline.shots[0];
+  const direct =
+    timeline.shots.length === 1 &&
+    recipe.endCard.duration === 0 &&
+    only.speed === 1 &&
+    only.transitionFrames === 0 &&
+    [only.camera.from, only.camera.to].every((camera) => camera.zoom === 1 && camera.x === 0.5 && camera.y === 0.5) &&
+    capture.clips[only.clip].settings.width / capture.clips[only.clip].settings.height ===
+      timeline.width / timeline.height;
+  if (direct) {
+    // A continuous battle needs no compositing. Encode its sampled frames directly,
+    // avoiding a second browser and a large temporary PNG cache.
+    await runFfmpeg([
+      "-ss",
+      String(only.in),
+      "-i",
+      checkedAsset(out, `clips/${capture.clips[only.clip].file}`),
+      "-an",
+      "-frames:v",
+      String(timeline.durationInFrames),
+      "-vf",
+      `scale=${timeline.width}:${timeline.height}:flags=lanczos:in_color_matrix=bt709:out_color_matrix=bt709,format=yuv420p`,
+      "-c:v",
+      "libx264",
+      "-profile:v",
+      "high",
+      "-preset",
+      "slow",
+      "-b:v",
+      "20M",
+      "-colorspace",
+      "bt709",
+      "-color_primaries",
+      "bt709",
+      "-color_trc",
+      "bt709",
+      "-threads",
+      "1",
+      silent,
+    ]);
+  } else {
+    const publicDir = path.join(renderDir, "public");
+    fs.mkdirSync(publicDir);
+    fs.cpSync(path.join(out, "assets"), path.join(publicDir, "assets"), { recursive: true });
+    const serveUrl = await bundle({
+      entryPoint: path.join(root, "scripts/trailers/renderer/index.jsx"),
+      publicDir,
+      outDir: path.join(renderDir, "bundle"),
+      onProgress: () => {},
+    });
+    // Decode each master once. Native per-frame video extraction is expensive
+    // for 4K 4:4:4 sources; a lossless PNG cache keeps camera composition in the
+    // browser without repeated decoder work or a lower-resolution proxy.
+    const renderCapture = { ...capture, clips: { ...capture.clips } };
+    for (const id of new Set(timeline.shots.map((shot) => shot.clip))) {
+      const directory = path.join(serveUrl, "public/frames", id);
+      fs.mkdirSync(directory, { recursive: true });
+      const ranges = timeline.shots
+        .filter((shot) => shot.clip === id)
+        .map((shot) => ({
+          start: shot.sourceStartFrame,
+          end: Math.min(
+            capture.clips[id].frameCount - 1,
+            Math.floor(shot.sourceStartFrame + (shot.durationInFrames - 1) * shot.speed),
+          ),
+        }))
+        .sort((a, b) => a.start - b.start);
+      const merged = [];
+      for (const range of ranges) {
+        const previous = merged.at(-1);
+        if (previous && range.start <= previous.end + 1) previous.end = Math.max(previous.end, range.end);
+        else merged.push({ ...range });
       }
-    },
-  });
+      for (const range of merged)
+        await runFfmpeg([
+          "-i",
+          checkedAsset(out, `clips/${capture.clips[id].file}`),
+          "-an",
+          "-vf",
+          `select=between(n\\,${range.start}\\,${range.end})`,
+          "-frames:v",
+          String(range.end - range.start + 1),
+          "-c:v",
+          "png",
+          "-compression_level",
+          "1",
+          "-threads",
+          "1",
+          "-fps_mode",
+          "passthrough",
+          "-start_number",
+          String(range.start),
+          path.join(directory, "%06d.png"),
+        ]);
+      const files = fs.readdirSync(directory);
+      if (files.length !== merged.reduce((sum, range) => sum + range.end - range.start + 1, 0))
+        throw new Error(`Decoded frame count mismatch for ${id}`);
+      renderCapture.clips[id] = { ...capture.clips[id], frames: `frames/${id}` };
+      console.log(`Prepared ${id}: ${files.length} lossless frames`);
+    }
+    const inputProps = { timeline, bundle: renderCapture, recipe };
+    const browserExecutable = chromium.executablePath();
+    const composition = await selectComposition({ serveUrl, id: "AlchemyTrailer", inputProps, browserExecutable });
+    let reported = -1;
+    await renderMedia({
+      composition,
+      serveUrl,
+      inputProps,
+      browserExecutable,
+      outputLocation: silent,
+      codec: "h264",
+      videoBitrate: "20M",
+      pixelFormat: "yuv420p",
+      x264Preset: "slow",
+      colorSpace: "bt709",
+      muted: true,
+      concurrency: 1,
+      offthreadVideoThreads: 1,
+      offthreadVideoCacheSizeInBytes: 128 * 1024 * 1024,
+      imageFormat: "png",
+      onProgress: ({ progress }) => {
+        const percent = Math.floor(progress * 10) * 10;
+        if (percent !== reported) {
+          reported = percent;
+          console.log(`Render ${format}: ${percent}%`);
+        }
+      },
+    });
+  }
   const sounds = mapSoundEvents(timeline, capture.clips).filter((sound) => sound.duration > 0 && sound.volume > 0);
   const args = [
     "-i",
@@ -165,6 +209,8 @@ export async function renderRecipe({ root, out, recipe, format = "steam", draft 
     String(duration),
     "-c:v",
     "copy",
+    "-bsf:v",
+    "h264_metadata=colour_primaries=1:transfer_characteristics=1:matrix_coefficients=1",
     "-c:a",
     "aac",
     "-b:a",
@@ -199,21 +245,25 @@ export async function renderRecipe({ root, out, recipe, format = "steam", draft 
     audio?.channels !== 2
   )
     throw new Error("Final export failed technical validation");
-  for (const [label, frame] of [
+  const reviewFrames = [
     ["opening", 0],
     ["gameplay", Math.min(timeline.endCardFrom - 1, Math.round(timeline.fps * 5))],
-    ["end-card", timeline.endCardFrom + Math.floor((timeline.durationInFrames - timeline.endCardFrom) * 0.7)],
-  ]) {
-    await renderStill({
-      composition,
-      serveUrl,
-      inputProps,
-      browserExecutable,
-      output: path.join(out, `${outputName}-${label}.png`),
-      frame,
-      imageFormat: "png",
-    });
-  }
+    recipe.endCard.duration > 0
+      ? ["end-card", timeline.endCardFrom + Math.floor((timeline.durationInFrames - timeline.endCardFrom) * 0.7)]
+      : ["ending", timeline.durationInFrames - 1],
+  ];
+  for (const [label, frame] of reviewFrames)
+    await runFfmpeg([
+      "-i",
+      output,
+      "-vf",
+      `select=eq(n\\,${frame})`,
+      "-frames:v",
+      "1",
+      "-threads",
+      "1",
+      path.join(out, `${outputName}-${label}.png`),
+    ]);
   const receipt = {
     version: 1,
     file: path.basename(output),
@@ -228,6 +278,7 @@ export async function renderRecipe({ root, out, recipe, format = "steam", draft 
     metadata,
     quality: {
       capture: capture.draft ? "draft" : "production",
+      composition: direct ? "continuous source encode" : "Remotion composition",
       sampling: "offline 60/30 Hz; not a real-time performance measurement",
       targetVideoBitrate: "20M",
       loudnessTargetLUFS: -14,

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { describe, expect, it, vi } from "vitest";
-import { compileTimeline, lyricAt, mapSoundEvents, parseRecipe } from "../../scripts/trailers/model.mjs";
+import { compileTimeline, mapSoundEvents, nativeMusicOffsets, parseRecipe } from "../../scripts/trailers/model.mjs";
 import { installCaptureRuntime, sampleVisualTime } from "../../scripts/trailers/browser-runtime.mjs";
 
 const authored = JSON.parse(fs.readFileSync(new URL("../../trailers/boss-spotlight.json", import.meta.url), "utf8"));
@@ -71,6 +71,12 @@ describe("trailer edit admission and synchronization", () => {
       await sampleVisualTime(now);
       expect(ended).toBe(1);
       expect(active.currentTime).toBeCloseTo(1);
+      (
+        fakeWindow as typeof fakeWindow & { __trailerCapture: { videoFrameRates: Record<string, number> } }
+      ).__trailerCapture.videoFrameRates = { "/waiting.mp4": 10 };
+      now = 1750;
+      await sampleVisualTime(now);
+      expect(waiting.currentTime).toBeCloseTo(0.6, 2);
     } finally {
       vi.unstubAllGlobals();
     }
@@ -156,15 +162,64 @@ describe("trailer edit admission and synchronization", () => {
     expect(events).toEqual([{ file: "impact.mp3", at: 0.5, end: 10, volume: 0.5, duration: 1.5, speed: 2 }]);
   });
 
-  it("reveals lyrics from soundtrack timestamps and clears instrumental gaps", () => {
-    const lines = [{ text: "Iron Bear", timings: [30, 31, 31.5, 33] }];
-    expect(lyricAt(lines, 29.99)).toEqual([]);
-    expect(lyricAt(lines, 30.5)).toEqual([{ text: "Iron", active: true }]);
-    expect(lyricAt(lines, 31.25)).toEqual([{ text: "Iron", active: false }]);
-    expect(lyricAt(lines, 32)).toEqual([
-      { text: "Iron", active: false },
-      { text: "Bear", active: true },
-    ]);
-    expect(lyricAt(lines, 33)).toEqual([]);
+  it("pins native lyrics to captured battle time and rejects edits that would desynchronize them", () => {
+    const recipe = parseRecipe(authored);
+    expect(nativeMusicOffsets(recipe)).toEqual({ "forge-golem": 30, "forge-golem-return": 32.4 });
+    recipe.shots[3].clip = "forge-golem";
+    expect(() => nativeMusicOffsets(recipe)).toThrow("separate clip IDs");
+    recipe.shots[3].clip = "forge-golem-return";
+    recipe.shots[0].speed = 2;
+    expect(() => nativeMusicOffsets(recipe)).toThrow("normal playback speed");
+    recipe.music.lyrics = false;
+    expect(nativeMusicOffsets(recipe)).toEqual({});
+  });
+
+  it("advances native music playback using sampled time while paused audio stays still", async () => {
+    let now = 0;
+    const fakeWindow = {
+      Audio: class {
+        src = "http://localhost/Music/countess.mp3";
+        pause() {}
+      },
+    };
+    vi.stubGlobal("window", fakeWindow);
+    vi.stubGlobal("performance", { now: () => now });
+    try {
+      installCaptureRuntime();
+      const state = (
+        fakeWindow as typeof fakeWindow & {
+          __trailerCapture: { start: number; music: { src: string; offset: number } };
+        }
+      ).__trailerCapture;
+      state.start = 0;
+      state.music = { src: "/Music/countess.mp3", offset: 20.68 };
+      const music = new fakeWindow.Audio() as typeof fakeWindow.Audio.prototype & {
+        currentTime: number;
+        paused: boolean;
+        play: () => Promise<void>;
+      };
+      await music.play();
+      expect(music.paused).toBe(false);
+      now = 1250;
+      expect(music.currentTime).toBeCloseTo(21.93);
+      music.pause();
+      now = 5000;
+      expect(music.paused).toBe(true);
+      expect(music.currentTime).toBeCloseTo(21.93);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("keeps the Blood Countess prototype exactly thirty seconds of continuous battle", () => {
+    const recipe = parseRecipe(
+      JSON.parse(fs.readFileSync(new URL("../../trailers/blood-countess-battle.json", import.meta.url), "utf8")),
+    );
+    const timeline = compileTimeline(recipe);
+    expect(timeline.durationInFrames).toBe(1800);
+    expect(recipe.endCard.duration).toBe(0);
+    expect(timeline.shots).toHaveLength(1);
+    expect(timeline.shots[0].camera).toEqual({ from: { x: 0.5, y: 0.5, zoom: 1 }, to: { x: 0.5, y: 0.5, zoom: 1 } });
+    expect(nativeMusicOffsets(recipe)).toEqual({ "blood-countess": 20.68 });
   });
 });

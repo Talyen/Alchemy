@@ -36,6 +36,7 @@ const action = z
     at: z.number().nonnegative(),
     kind: z.enum(["click", "hover", "move-away", "play-card"]),
     target: target.optional(),
+    moveDuration: z.number().min(0).max(2).default(0.3),
   })
   .strict()
   .refine((v) => ["move-away", "play-card"].includes(v.kind) || v.target, "Click and hover need a target");
@@ -105,7 +106,7 @@ const recipeSchema = z
       .min(1),
     endCard: z
       .object({
-        duration: z.number().min(1).max(10).default(3),
+        duration: z.number().min(0).max(10).default(3),
         text: z.string().min(1).max(100).default("Wishlist on Steam"),
       })
       .strict()
@@ -142,6 +143,7 @@ export function parseRecipe(value) {
     )
       throw new Error("Transition must be shorter than both shots");
   }
+  nativeMusicOffsets(recipe);
   return recipe;
 }
 
@@ -178,13 +180,23 @@ export function compileTimeline(recipe, format = "steam", draft = false) {
   };
 }
 
-/** Each lyric follows the soundtrack source position, independently of visual edits. */
-export function lyricAt(lines, time) {
-  const line = lines.find((l) => time >= l.timings[0] && time < l.timings.at(-1));
-  if (!line) return [];
-  return line.text
-    .split(" ")
-    .flatMap((text, i) => (time < line.timings[i * 2] ? [] : [{ text, active: time < line.timings[i * 2 + 1] }]));
+/** Native battle lyrics are burned into source frames and must match the final soundtrack. */
+export function nativeMusicOffsets(recipe) {
+  const offsets = {};
+  if (!recipe.music.lyrics) return offsets;
+  for (const shot of compileTimeline(recipe).shots) {
+    const clip = recipe.clips.find((entry) => entry.id === shot.clip);
+    if (clip.scene !== "boss" && clip.scene !== "checkpoint") continue;
+    if (clip.boss !== recipe.music.boss)
+      throw new Error(`${clip.id}: native lyrics need the battle boss to match the soundtrack`);
+    if (shot.speed !== 1) throw new Error(`${clip.id}: native lyrics require normal playback speed`);
+    const offset = recipe.music.offset + shot.from / recipe.capture.fps - shot.in;
+    if (offset < 0) throw new Error(`${clip.id}: native lyric clock starts before the soundtrack`);
+    if (offsets[clip.id] !== undefined && Math.abs(offsets[clip.id] - offset) > 0.000001)
+      throw new Error(`${clip.id}: separate clip IDs are needed for different native lyric timings`);
+    offsets[clip.id] = offset;
+  }
+  return offsets;
 }
 
 export function mapSoundEvents(timeline, clips) {

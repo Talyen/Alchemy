@@ -65,7 +65,7 @@ export async function runTrailer(argv = process.argv.slice(2)) {
   npm run trailer -- render --bundle <directory> [--recipe <edited-file>] [--format steam|vertical|square] [--draft] [--label <edit-name>]
   npm run trailer -- inspect --bundle <directory>
 Production captures default to 3840×2160 at 60 offline samples/s. --draft captures 1920×1080 and renders half-size; fps and timing stay unchanged.
-Existing clips and exports are preserved. To revise an edit, use render with --label. Changed capture instructions require a fresh capture bundle.
+Existing clips and exports are preserved. To revise an edit, use render with --label. Changed capture instructions or native lyric timing require a fresh capture bundle.
 Capture/render are intentional media-production jobs. On the shared Mac, wrap make/capture/render with the host heavy_lane.py helper; see Docs/TRAILERS.md.`);
     return;
   }

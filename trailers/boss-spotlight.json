@@ -73,6 +73,63 @@
       ]
     },
     {
+      "id": "forge-golem-return",
+      "scene": "boss",
+      "boss": "forge-golem",
+      "hero": "knight",
+      "duration": 16,
+      "actions": [
+        {
+          "at": 1,
+          "kind": "hover",
+          "target": {
+            "role": "button",
+            "name": "Play Sunder"
+          }
+        },
+        {
+          "at": 2,
+          "kind": "play-card",
+          "target": {
+            "role": "button",
+            "name": "Play Sunder"
+          }
+        },
+        {
+          "at": 3,
+          "kind": "move-away"
+        },
+        {
+          "at": 4.5,
+          "kind": "play-card",
+          "target": {
+            "role": "button",
+            "name": "Play Shield Bash"
+          }
+        },
+        {
+          "at": 6,
+          "kind": "move-away"
+        },
+        {
+          "at": 8,
+          "kind": "click",
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        },
+        {
+          "at": 14,
+          "kind": "play-card"
+        },
+        {
+          "at": 15,
+          "kind": "move-away"
+        }
+      ]
+    },
+    {
       "id": "heroes",
       "scene": "heroes",
       "duration": 4
@@ -112,7 +169,7 @@
       }
     },
     {
-      "clip": "forge-golem",
+      "clip": "forge-golem-return",
       "in": 8,
       "duration": 8,
       "transition": {
