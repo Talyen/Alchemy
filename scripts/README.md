@@ -209,6 +209,10 @@ Setup rolls HEAD back if worktree creation fails and is idempotent after success
 The original workspace can intentionally lag main. Read current committed source
 in the dedicated checkout; run task checks in task checkouts and separately
 authorized push/release commands in the dedicated main checkout.
+The original workspace's `npm run dev` delegates to the checkout owning local
+`main`; `scripts/dev.mjs` is a self-contained bootstrap that delegates both
+preparation and serving to main's current launcher. Use `npm run dev:local` for
+an explicit workspace preview. Task worktrees keep checkout-local development.
 Do not run this migration as part of ordinary task creation or switch another
 checkout's branch. The dedicated checkout is for integration; implement in task
 worktrees. Until adoption, integration supports the old clean-main layout.
