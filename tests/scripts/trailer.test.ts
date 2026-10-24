@@ -238,12 +238,12 @@ describe("trailer edit admission and synchronization", () => {
     }
   });
 
-  it("keeps the Blood Countess prototype exactly thirty seconds of continuous battle", () => {
+  it("keeps the Blood Countess prototype exactly one minute of continuous battle", () => {
     const recipe = parseRecipe(
       JSON.parse(fs.readFileSync(new URL("../../trailers/blood-countess-battle.json", import.meta.url), "utf8")),
     );
     const timeline = compileTimeline(recipe);
-    expect(timeline.durationInFrames).toBe(1800);
+    expect(timeline.durationInFrames).toBe(3600);
     expect(recipe.endCard.duration).toBe(0);
     expect(timeline.shots).toHaveLength(1);
     expect(timeline.shots[0].camera).toEqual({ from: { x: 0.5, y: 0.5, zoom: 1 }, to: { x: 0.5, y: 0.5, zoom: 1 } });

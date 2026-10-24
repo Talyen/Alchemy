@@ -14,6 +14,13 @@ vi.mock("@/lib/audio", async (importOriginal) => ({
 }));
 
 beforeEach(() => {
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      disconnect() {}
+    },
+  );
   installCatalogs(catalogs);
   vi.useFakeTimers();
   useSettingsStore.getState().setBossLyricsEnabled(true);
@@ -22,6 +29,7 @@ beforeEach(() => {
 afterEach(async () => {
   cleanup();
   vi.useRealTimers();
+  vi.unstubAllGlobals();
   useSettingsStore.getState().setBossLyricsEnabled(true);
   await localization.changeLanguage("en");
 });

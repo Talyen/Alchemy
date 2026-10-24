@@ -6,7 +6,7 @@
       "width": 1920,
       "height": 1080
     },
-    "scale": 2,
+    "scale": 1,
     "fps": 60
   },
   "music": {
@@ -23,103 +23,315 @@
       "boss": "blood-countess",
       "hero": "knight",
       "seed": 42,
-      "duration": 30,
+      "duration": 60,
       "actions": [
         {
-          "at": 1,
+          "at": 0.67,
           "kind": "hover",
+          "moveDuration": 0.2,
           "target": {
             "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
             "index": 0
           }
         },
         {
-          "at": 3,
+          "at": 2,
           "kind": "hover",
+          "moveDuration": 0.2,
           "target": {
             "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
             "index": 1
           }
         },
         {
-          "at": 5,
-          "kind": "play-card"
+          "at": 3.33,
+          "kind": "play-card",
+          "moveDuration": 0.2
         },
         {
-          "at": 6.5,
-          "kind": "move-away"
+          "at": 4.33,
+          "kind": "move-away",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 5.33,
+          "kind": "hover",
+          "moveDuration": 0.2,
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 1
+          }
+        },
+        {
+          "at": 6.67,
+          "kind": "play-card",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 7.33,
+          "kind": "move-away",
+          "moveDuration": 0.2
         },
         {
           "at": 8,
-          "kind": "hover",
-          "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 1
-          }
-        },
-        {
-          "at": 10,
-          "kind": "play-card"
-        },
-        {
-          "at": 11,
-          "kind": "move-away"
-        },
-        {
-          "at": 12,
           "kind": "click",
+          "moveDuration": 0.2,
           "target": {
             "role": "button",
             "name": "End Turn"
           }
         },
         {
-          "at": 16,
+          "at": 11.67,
           "kind": "hover",
+          "moveDuration": 0.2,
           "target": {
             "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
             "index": 0
           }
         },
         {
-          "at": 18,
+          "at": 13,
           "kind": "hover",
+          "moveDuration": 0.2,
           "target": {
             "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
             "index": 1
           }
         },
         {
-          "at": 20,
-          "kind": "play-card"
+          "at": 14.33,
+          "kind": "play-card",
+          "moveDuration": 0.2
         },
         {
-          "at": 21,
-          "kind": "move-away"
+          "at": 15.33,
+          "kind": "move-away",
+          "moveDuration": 0.2
         },
         {
-          "at": 22.5,
+          "at": 16.33,
           "kind": "hover",
+          "moveDuration": 0.2,
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 1
+          }
+        },
+        {
+          "at": 17.67,
+          "kind": "play-card",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 18.33,
+          "kind": "move-away",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 19,
+          "kind": "click",
+          "moveDuration": 0.2,
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        },
+        {
+          "at": 22.67,
+          "kind": "hover",
+          "moveDuration": 0.2,
           "target": {
             "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
             "index": 0
           }
         },
         {
-          "at": 24.5,
-          "kind": "play-card"
+          "at": 24,
+          "kind": "hover",
+          "moveDuration": 0.2,
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 1
+          }
         },
         {
-          "at": 25.5,
-          "kind": "move-away"
+          "at": 25.33,
+          "kind": "play-card",
+          "moveDuration": 0.2
         },
         {
-          "at": 26.5,
+          "at": 26.33,
+          "kind": "move-away",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 27.33,
+          "kind": "hover",
+          "moveDuration": 0.2,
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 1
+          }
+        },
+        {
+          "at": 28.67,
+          "kind": "play-card",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 29.33,
+          "kind": "move-away",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 30,
           "kind": "click",
+          "moveDuration": 0.2,
           "target": {
             "role": "button",
             "name": "End Turn"
           }
+        },
+        {
+          "at": 33.67,
+          "kind": "hover",
+          "moveDuration": 0.2,
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 0
+          }
+        },
+        {
+          "at": 35,
+          "kind": "hover",
+          "moveDuration": 0.2,
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 1
+          }
+        },
+        {
+          "at": 36.33,
+          "kind": "play-card",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 37.33,
+          "kind": "move-away",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 38.33,
+          "kind": "hover",
+          "moveDuration": 0.2,
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 1
+          }
+        },
+        {
+          "at": 39.67,
+          "kind": "play-card",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 40.33,
+          "kind": "move-away",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 41,
+          "kind": "click",
+          "moveDuration": 0.2,
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        },
+        {
+          "at": 44.67,
+          "kind": "hover",
+          "moveDuration": 0.2,
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 0
+          }
+        },
+        {
+          "at": 46,
+          "kind": "hover",
+          "moveDuration": 0.2,
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 1
+          }
+        },
+        {
+          "at": 47.33,
+          "kind": "play-card",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 48.33,
+          "kind": "move-away",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 49.33,
+          "kind": "hover",
+          "moveDuration": 0.2,
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 1
+          }
+        },
+        {
+          "at": 50.67,
+          "kind": "play-card",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 51.33,
+          "kind": "move-away",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 52,
+          "kind": "click",
+          "moveDuration": 0.2,
+          "target": {
+            "role": "button",
+            "name": "End Turn"
+          }
+        },
+        {
+          "at": 55.67,
+          "kind": "hover",
+          "moveDuration": 0.2,
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 0
+          }
+        },
+        {
+          "at": 57,
+          "kind": "hover",
+          "moveDuration": 0.2,
+          "target": {
+            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
+            "index": 1
+          }
+        },
+        {
+          "at": 58.33,
+          "kind": "play-card",
+          "moveDuration": 0.2
+        },
+        {
+          "at": 59.33,
+          "kind": "move-away",
+          "moveDuration": 0.2
         }
       ]
     }
@@ -127,7 +339,7 @@
   "shots": [
     {
       "clip": "blood-countess",
-      "duration": 30
+      "duration": 60
     }
   ],
   "endCard": {

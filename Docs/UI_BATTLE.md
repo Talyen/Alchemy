@@ -169,8 +169,12 @@ Reduced or disabled motion suppresses the shake while preserving sound settings.
 
 ## Boss lyrics
 
-Timed boss lyrics sit centered across the space between the combatants and the
-hand, without intercepting card input. Words appear as sung with a brief fade
+Timed boss lyrics sit inside the boss portrait, centered near its bottom edge,
+without intercepting inspection or card input. Each complete phrase is measured
+before its words appear: text grows up to 36px and shrinks to fit a single line
+inside the frame, including room for its animation. Font loading and portrait
+resizing recompute the fit; hand changes do not move the anchor.
+Words appear as sung with a brief fade
 and small pop; earlier words remain dim until the phrase ends. The gold highlight
 switches directly between whole words. Instrumental gaps stay clear. Audio
 settings owns the default-on **Boss Lyrics** switch; timing data and playback

@@ -55,12 +55,16 @@ social media. The workflow can later be moved to a dedicated GPU runner.
 
 ## Blood Countess battle prototype
 
-`trailers/blood-countess-battle.json` records exactly 30 seconds of battle at the
+`trailers/blood-countess-battle.json` records exactly 60 seconds of battle at the
 normal full-screen framing. It uses her current five idle animations, her own
 music starting at the first verse, the native battle lyric display, and natural
 card inspections and plays. There are no cuts, camera moves or end card. The
-pointer travels over multiple sampled frames and pauses on cards for roughly
-two seconds; its appearance is hidden while hover feedback remains visible.
+pointer travels over 0.2 seconds and pauses on cards for roughly 1.3 seconds
+(50% faster decisions than the original prototype); its appearance is hidden
+while hover feedback remains visible. Enemy responses retain normal timing.
+This continuous Mac prototype captures native 1920×1080 at 60 fps, matching Steam
+delivery without upscaling. Set capture scale to 2 for a 4K source on a production
+worker with a longer recording window. Lyrics stay inside the boss portrait.
 
 ```sh
 npm run trailer -- capture --recipe trailers/blood-countess-battle.json --bundle output/trailers/countess

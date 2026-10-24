@@ -19,6 +19,7 @@ import {
 import { ShakingArtPanel, ShakingCompanionPanel } from "../../battle/presentation/actor-vfx";
 import { getActiveCcKeyword } from "@/features/alchemy/shared/utils";
 import type { BattleFeedbackProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
+import { BossLyrics } from "./boss-lyrics";
 
 export function BattleActors({
   presentation,
@@ -115,6 +116,7 @@ export function BattleActors({
           inspectionOpen={enemyInspectionOpen ?? false}
           activeLabyrinthModifiers={activeLabyrinthModifiers}
           isBoss={isBoss}
+          artOverlay={isBoss && !enemyDead ? <BossLyrics bossId={battleState.currentEnemy.id} /> : null}
           turnActive={!isPlayerTurn && !enemyDead}
           turnUrgentHide={enemyDead}
           ccKeyword={enemyCcKeyword}

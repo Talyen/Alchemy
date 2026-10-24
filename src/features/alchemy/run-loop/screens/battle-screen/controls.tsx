@@ -7,7 +7,6 @@ import { battleBottomColumnClass } from "@/features/alchemy/shared/config";
 import type { BattlePresentationStore } from "../../battle/battle-presentation-store";
 
 import { battleBottomBarClass } from "@/features/alchemy/shared/config";
-import { BossLyrics } from "./boss-lyrics";
 import { BattleHand } from "./hand";
 import type { BattleActionsProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 import type { BattleSnapshot } from "@/lib/battle";
@@ -38,7 +37,6 @@ export function BattleBottomBar({
 
   return (
     <section className={battleBottomBarClass} data-battle-bottom-bar>
-      {battleState.currentEnemy.enemyType === "boss" ? <BossLyrics bossId={battleState.currentEnemy.id} /> : null}
       <div className={battleBottomColumnClass}>
         <ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} presentation={presentation} />
         <PilePanel
