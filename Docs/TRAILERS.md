@@ -83,8 +83,22 @@ npm run trailer -- inspect --bundle output/trailers/my-capture
 
 Wrap capture/render in the host lane on the shared Mac, as above. Existing files
 are never overwritten. Use `--label` for another export of the same format; use a
-fresh bundle for changed capture instructions. A render validates clip hashes,
-capture instructions, source frame rate and soundtrack identity before reuse.
+fresh bundle for changed capture instructions. If capture is interrupted after a
+master finishes, use this command under a host-lane lease:
+
+```sh
+npm run trailer -- recover --bundle <directory>
+```
+
+Capture writes provenance at startup
+and journals its actual inputs, native UI samples and sound cues before media
+indexing. Recovery validates complete frame/packet counts and finalizes that
+journal. For older bundles lacking a journal, it can reconstruct a clearly labeled
+trace from the retained starting save; the original master stays untouched, and
+health-text pixels must match its retained opening/middle/ending PNGs exactly.
+Incomplete media or a mismatched replay fails recovery.
+
+A render validates clip hashes, capture instructions, source frame rate and soundtrack identity before reuse.
 Native lyrics are part of the captured battle: changing a clip's position against
 the music requires recapture. Separate clip IDs allow the same staged encounter
 to be captured at different music positions in a montage.
@@ -164,7 +178,10 @@ misaligned cues fail capture instead of silently producing a music-only edit.
 For each capture, the browser raster density is pinned and checked; every PNG's
 actual pixel dimensions must match the requested source before encoding. The
 encoder cannot resize a screenshot to conceal a mismatch. Frame count, encoded
-dimensions and frame rate are also checked with ffprobe.
+dimensions and frame rate are also checked with ffprobe. Intra-only sources use
+container frame counts and independent packet counts, avoiding a second full 4K
+decode during capture finalization. Export performs the full decode and fails on
+media decoding errors.
 Receipts retain the actual performed input labels, bounds, pointer travel and card
 acceptance times, native lyric positions, idle-video playback samples, sound cues, source
 hash, browser version and beginning/middle/end frame hashes. A failed capture

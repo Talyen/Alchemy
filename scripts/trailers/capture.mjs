@@ -1,11 +1,21 @@
 import fs from "node:fs";
+import { spawnSync } from "node:child_process";
 import { performance } from "node:perf_hooks";
 import path from "node:path";
 import { createServer } from "vite";
 import { chromium } from "@playwright/test";
 import { nativeMusicOffsets } from "./model.mjs";
 import { installCaptureRuntime, sampleVisualTime } from "./browser-runtime.mjs";
-import { hashFile, hashValue, probe, startEncoder, writeJson } from "./media.mjs";
+import {
+  assertFrameDimensions,
+  ffmpegPath,
+  hashFile,
+  hashValue,
+  probe,
+  startEncoder,
+  validateSourceVideo,
+  writeJson,
+} from "./media.mjs";
 
 function locatorFor(page, target) {
   const locator = target.role
@@ -87,15 +97,82 @@ async function performAction(page, prepared) {
   await page.mouse.click(prepared.point.x, prepared.point.y);
 }
 
-async function captureClip({ browser, scenarios, clip, settings, origin, out, root, draft, music }) {
+function finalizeClip(output, receipt) {
+  const metadata = probe(output, { countFrames: false, countPackets: true });
+  const video = metadata.streams.find((stream) => stream.codec_type === "video");
+  validateSourceVideo(video, receipt.settings, receipt.frameCount);
+  const sha256 = hashFile(output);
+  if (receipt.sha256 && receipt.sha256 !== sha256) throw new Error("Retained master differs from its recorded hash");
+  return { ...receipt, sha256, metadata };
+}
+
+function healthPixels(file, bounds, scale) {
+  const x = Math.floor(bounds.x * scale),
+    y = Math.floor(bounds.y * scale);
+  const width = Math.ceil(bounds.width * scale),
+    height = Math.ceil(bounds.height * scale);
+  const result = spawnSync(
+    ffmpegPath(),
+    [
+      "-v",
+      "error",
+      "-i",
+      file,
+      "-vf",
+      `crop=${width}:${height}:${x}:${y},format=rgb24`,
+      "-frames:v",
+      "1",
+      "-f",
+      "md5",
+      "-",
+    ],
+    { encoding: "utf8" },
+  );
+  if (result.status !== 0) throw new Error(`Could not compare recovered health pixels: ${result.stderr}`);
+  return result.stdout.trim();
+}
+
+async function captureClip({ browser, scenarios, clip, settings, origin, out, root, draft, music, recover = false }) {
   const output = path.join(out, `${clip.id}.mp4`);
   const receiptFile = path.join(out, `${clip.id}.json`);
   // A partial capture is diagnostic evidence, never a reusable successful clip.
-  if (fs.existsSync(output) || fs.existsSync(receiptFile))
+  if (!recover && (fs.existsSync(output) || fs.existsSync(receiptFile)))
     throw new Error(`Capture already exists: ${clip.id}. Choose a fresh bundle or use render.`);
-  const checkpoint = clip.checkpoint
+  const journalFile = path.join(out, `${clip.id}.journal.json`);
+  const retainedTrace = fs.existsSync(journalFile) ? journalFile : receiptFile;
+  if (recover && fs.existsSync(retainedTrace)) {
+    const journal = JSON.parse(fs.readFileSync(retainedTrace, "utf8"));
+    const scale = draft ? 1 : settings.scale;
+    if (
+      journal.settings.width !== settings.viewport.width * scale ||
+      journal.settings.height !== settings.viewport.height * scale ||
+      journal.settings.fps !== settings.fps ||
+      journal.frameCount !== Math.round(clip.duration * settings.fps)
+    )
+      throw new Error("Recovery journal settings differ from the requested capture");
+    if (journal.recipeHash !== hashValue(clip)) throw new Error("Recovery instructions differ from recorded inputs");
+    const receipt = finalizeClip(output, journal);
+    writeJson(receiptFile, receipt);
+    return receipt;
+  }
+  let checkpoint = clip.checkpoint
     ? JSON.parse(fs.readFileSync(path.resolve(root, clip.checkpoint), "utf8"))
     : undefined;
+  if (recover) {
+    const storage = JSON.parse(fs.readFileSync(path.join(out, `${clip.id}.storage.json`), "utf8"));
+    const saved = storage.origins
+      .flatMap((origin) => origin.localStorage)
+      .find((entry) => entry.name === "alchemy-save-v1");
+    if (!saved) throw new Error("Recovery needs the retained starting save");
+    checkpoint = JSON.parse(saved.value);
+    const metadata = probe(output, { countFrames: false, countPackets: true });
+    const video = metadata.streams.find((stream) => stream.codec_type === "video");
+    if (
+      Number(video?.nb_frames) !== Math.round(clip.duration * settings.fps) ||
+      Number(video?.nb_read_packets) !== Number(video.nb_frames)
+    )
+      throw new Error("Recovery requires a complete retained master");
+  }
   const context = await browser.newContext({
     baseURL: origin,
     viewport: settings.viewport,
@@ -135,7 +212,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
     // Leave room for protocol travel while the staging clock is still running.
     // A one-millisecond margin can already be in the past on the next command.
     await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
-    await page.context().storageState({ path: path.join(out, `${clip.id}.storage.json`) });
+    await page.context().storageState({ path: path.join(out, `${clip.id}${recover ? ".replay" : ""}.storage.json`) });
     const startState = await page
       .locator("[data-testid='player-health'],[data-testid='enemy-health'],[data-testid='mana-panel']")
       .allTextContents();
@@ -166,7 +243,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
     await page.evaluate(sampleVisualTime, 0);
     const width = settings.viewport.width * (draft ? 1 : settings.scale);
     const height = settings.viewport.height * (draft ? 1 : settings.scale);
-    encoder = startEncoder(output, { width, height, fps: settings.fps });
+    if (!recover) encoder = startEncoder(output, { width, height, fps: settings.fps });
     const actions = [...clip.actions].sort((a, b) => a.at - b.at);
     const performed = [];
     const frameCount = Math.round(clip.duration * settings.fps);
@@ -237,21 +314,35 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
       // The general screenshot API waits for stable frames and encodes compact
       // PNGs. Direct capture preserves the sampled frame and uses fast lossless
       // compression; image quality and timing are unchanged.
-      const { data } = await cdp.send("Page.captureScreenshot", {
-        format: "png",
-        fromSurface: true,
-        captureBeyondViewport: false,
-        optimizeForSpeed: true,
-        clip: { x: 0, y: 0, ...settings.viewport, scale: 1 },
-      });
-      const png = Buffer.from(data, "base64");
-      mark("screenshot");
-      await encoder.frame(png);
-      mark("encode");
-      if (frame === 0 || frame === Math.floor(frameCount / 2) || frame === frameCount - 1) {
-        const name = `${clip.id}-${frame}.png`;
-        fs.writeFileSync(path.join(out, name), png);
-        sampled.push({ frame, sha256: hashFile(path.join(out, name)), file: name });
+      const reviewFrame = frame === 0 || frame === Math.floor(frameCount / 2) || frame === frameCount - 1;
+      if (!recover || reviewFrame) {
+        const { data } = await cdp.send("Page.captureScreenshot", {
+          format: "png",
+          fromSurface: true,
+          captureBeyondViewport: false,
+          optimizeForSpeed: true,
+          clip: { x: 0, y: 0, ...settings.viewport, scale: 1 },
+        });
+        const png = Buffer.from(data, "base64");
+        assertFrameDimensions(png, width, height);
+        mark("screenshot");
+        if (encoder) await encoder.frame(png);
+        mark("encode");
+        if (reviewFrame) {
+          const name = `${clip.id}-${frame}.png`;
+          const original = path.join(out, name);
+          if (recover) {
+            assertFrameDimensions(fs.readFileSync(original), width, height);
+            const replay = path.join(out, `${clip.id}-replay-${frame}.png`);
+            fs.writeFileSync(replay, png);
+            for (const testId of ["player-health", "enemy-health"]) {
+              const bounds = await page.getByTestId(testId).boundingBox();
+              if (!bounds || healthPixels(original, bounds, rasterScale) !== healthPixels(replay, bounds, rasterScale))
+                throw new Error(`Recovered health pixels differ at frame ${frame}: ${testId}`);
+            }
+          } else fs.writeFileSync(original, png);
+          sampled.push({ frame, sha256: hashFile(original), file: name });
+        }
       }
       if (frame % settings.fps === 0) {
         presentation.push(
@@ -282,7 +373,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
     if (actionIndex !== actions.length) throw new Error("Not all directed actions were executed");
     if (performed.some((input) => input.cardKey && input.acceptedAt === undefined))
       throw new Error("Clip ended before the last card play was accepted");
-    await encoder.finish();
+    if (encoder) await encoder.finish();
     encoder = null;
     const sounds = await page.evaluate(
       (duration) => globalThis.__trailerCapture.sounds.map((sound) => ({ ...sound, end: sound.end ?? duration })),
@@ -292,15 +383,6 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
       throw new Error("Sound cue clock diverged from the captured frame timeline");
     if (clip.actions.some((action) => action.kind === "play-card") && !sounds.length)
       throw new Error("No sound cues observed for directed card plays");
-    const metadata = probe(output);
-    const video = metadata.streams.find((stream) => stream.codec_type === "video");
-    if (
-      Number(video?.nb_read_frames) !== frameCount ||
-      video.width !== width ||
-      video.height !== height ||
-      video.r_frame_rate !== `${settings.fps}/1`
-    )
-      throw new Error("Capture frame count, dimensions, or frame rate mismatch");
     if (clip.scene === "boss" && presentation.some((sample) => !sample.battle))
       throw new Error("Directed battle left the battle screen during capture");
     if (music?.expectLyrics && !presentation.some((sample) => sample.lyrics?.trim()))
@@ -308,13 +390,12 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
     const endState = await page
       .locator("[data-testid='player-health'],[data-testid='enemy-health'],[data-testid='mana-panel']")
       .allTextContents();
-    const receipt = {
+    const journal = {
       version: 1,
       id: clip.id,
       recipeHash: hashValue(clip),
       checkpointHash: checkpoint ? hashValue(checkpoint) : null,
       file: path.basename(output),
-      sha256: hashFile(output),
       settings: { width, height, fps: settings.fps },
       rasterScale,
       frameCount,
@@ -327,8 +408,18 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
       presentation,
       sounds,
       sampled,
-      metadata,
+      ...(recover
+        ? {
+            recovery: {
+              traceOrigin: "replayed from retained starting save; original video unchanged",
+              matchedHealthPixelsAtFrames: sampled.map((sample) => sample.frame),
+            },
+          }
+        : {}),
     };
+    // Save actual interaction/sound evidence before any expensive media work.
+    writeJson(journalFile, journal);
+    const receipt = finalizeClip(output, journal);
     writeJson(receiptFile, receipt);
     return receipt;
   } catch (error) {
@@ -346,7 +437,8 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
   }
 }
 
-export async function captureRecipe({ root, recipe, out, draft = false, source }) {
+export async function captureRecipe({ root, recipe, out, draft = false, source, recover = false }) {
+  if (!recover) writeJson(path.join(out, "capture-start.json"), { recipe, draft, source });
   fs.mkdirSync(path.join(out, "clips"), { recursive: true });
   const dependencies = Object.keys(
     JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).dependencies,
@@ -397,6 +489,7 @@ export async function captureRecipe({ root, recipe, out, draft = false, source }
         out: path.join(out, "clips"),
         root,
         draft,
+        recover,
         music:
           offsets[clip.id] === undefined
             ? null

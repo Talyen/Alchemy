@@ -45,6 +45,7 @@ export async function openTrailerScene(page: Page, clip: Scene, checkpoint?: Rec
     });
     await navigateToGame(page);
     if (checkpoint.activeRun) await resumeInjectedRun(page);
+    if (clip.boss) await waitForBattleReady(page);
   } else if (clip.scene === "boss") {
     // A production boss destination constructs the battle and its opening draw.
     // No test cards, stat overrides, fast mode, or forced damage are used.

@@ -25,15 +25,39 @@ export function writeJson(file, value) {
 export function ffmpegPath() {
   return process.env.ALCHEMY_TRAILER_FFMPEG || "ffmpeg";
 }
-export function probe(file, { countFrames = true } = {}) {
+export function probe(file, { countFrames = true, countPackets = false } = {}) {
   const result = spawnSync(
     process.env.ALCHEMY_TRAILER_FFPROBE || "ffprobe",
-    ["-v", "error", ...(countFrames ? ["-count_frames"] : []), "-show_streams", "-show_format", "-of", "json", file],
+    [
+      "-v",
+      "error",
+      ...(countFrames ? ["-count_frames"] : []),
+      ...(countPackets ? ["-count_packets"] : []),
+      "-show_streams",
+      "-show_format",
+      "-of",
+      "json",
+      file,
+    ],
     { encoding: "utf8", maxBuffer: 2 * 1024 * 1024 },
   );
   if (result.error || result.status !== 0) throw new Error(`ffprobe failed: ${result.error?.message ?? result.stderr}`);
   return JSON.parse(result.stdout);
 }
+/** Intra-only capture emits one video packet per sampled frame. */
+export function validateSourceVideo(video, settings, frameCount) {
+  if (
+    Number(video?.nb_frames) !== frameCount ||
+    Number(video?.nb_read_packets) !== frameCount ||
+    video.width !== settings.width ||
+    video.height !== settings.height ||
+    video.codec_name !== "h264" ||
+    video.pix_fmt !== "yuv444p" ||
+    video.r_frame_rate !== `${settings.fps}/1`
+  )
+    throw new Error("Capture packet/frame count, dimensions, or frame rate mismatch");
+}
+
 /** Reject a wrong-size screenshot before encoding can conceal it by scaling. */
 export function assertFrameDimensions(buffer, width, height) {
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -126,7 +150,7 @@ export function startEncoder(file, { width, height, fps }) {
   };
 }
 export async function runFfmpeg(args) {
-  const child = spawn(ffmpegPath(), ["-hide_banner", "-loglevel", "error", "-n", ...args], {
+  const child = spawn(ffmpegPath(), ["-hide_banner", "-loglevel", "error", "-xerror", "-n", ...args], {
     stdio: ["ignore", "ignore", "pipe"],
   });
   let diagnostic = "";

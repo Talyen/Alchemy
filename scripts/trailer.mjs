@@ -15,7 +15,7 @@ const requireTools = createRequire(new URL("./trailers/package.json", import.met
 
 function parseArgs(argv) {
   const [command = "help", ...args] = argv;
-  if (!["help", "setup", "doctor", "plan", "capture", "render", "make", "inspect"].includes(command))
+  if (!["help", "setup", "doctor", "plan", "capture", "recover", "render", "make", "inspect"].includes(command))
     throw new UsageError(`Unknown trailer command: ${command}`);
   const options = { command, format: "steam", draft: false };
   for (let index = 0; index < args.length; index++) {
@@ -32,7 +32,8 @@ function parseArgs(argv) {
   if (!OUTPUTS[options.format]) throw new UsageError("--format must be steam, vertical, or square");
   if (options.label && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(options.label))
     throw new UsageError("--label must be lowercase words separated by hyphens");
-  if (["render", "inspect"].includes(command) && !options.bundle) throw new UsageError(`${command} needs --bundle`);
+  if (["render", "recover", "inspect"].includes(command) && !options.bundle)
+    throw new UsageError(`${command} needs --bundle`);
   return options;
 }
 
@@ -63,6 +64,7 @@ export async function runTrailer(argv = process.argv.slice(2)) {
   npm run trailer -- make [--recipe <file>] [--bundle <new-directory>] [--draft] [--format steam|vertical|square]
   npm run trailer -- capture [--recipe <file>] [--bundle <new-directory>] [--draft]
   npm run trailer -- render --bundle <directory> [--recipe <edited-file>] [--format steam|vertical|square] [--draft] [--label <edit-name>]
+  npm run trailer -- recover --bundle <directory>
   npm run trailer -- inspect --bundle <directory>
 Production captures default to 3840×2160 at 60 offline samples/s. --draft captures 1920×1080 and renders half-size; fps and timing stay unchanged.
 Existing clips and exports are preserved. To revise an edit, use render with --label. Changed capture instructions or native lyric timing require a fresh capture bundle.
@@ -84,6 +86,21 @@ Capture/render are intentional media-production jobs. On the shared Mac, wrap ma
     return;
   }
   const out = options.bundle ? path.resolve(options.bundle) : null;
+  if (options.command === "recover") {
+    doctor();
+    if (fs.existsSync(path.join(out, "capture.json"))) throw new UsageError("Bundle is already complete; use render");
+    const start = JSON.parse(fs.readFileSync(path.join(out, "capture-start.json"), "utf8"));
+    await captureRecipe({
+      root: ROOT,
+      out,
+      recipe: parseRecipe(start.recipe),
+      draft: start.draft,
+      source: start.source,
+      recover: true,
+    });
+    console.log(`Recovered bundle: ${out}`);
+    return;
+  }
   if (options.command === "inspect") {
     const capture = JSON.parse(fs.readFileSync(path.join(out, "capture.json"), "utf8"));
     console.log(

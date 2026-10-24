@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { assertFrameDimensions } from "../../scripts/trailers/media.mjs";
+import { assertFrameDimensions, validateSourceVideo } from "../../scripts/trailers/media.mjs";
 import { describe, expect, it, vi } from "vitest";
 import { compileTimeline, mapSoundEvents, nativeMusicOffsets, parseRecipe } from "../../scripts/trailers/model.mjs";
 import { installCaptureRuntime, sampleVisualTime } from "../../scripts/trailers/browser-runtime.mjs";
@@ -14,6 +14,22 @@ describe("trailer edit admission and synchronization", () => {
     png.writeUInt32BE(1080, 20);
     expect(() => assertFrameDimensions(png, 3840, 2160)).toThrow("native 3840×2160");
     expect(() => assertFrameDimensions(png, 1920, 1080)).not.toThrow();
+  });
+  it("rejects a truncated master using container frame and packet counts", () => {
+    const settings = { width: 3840, height: 2160, fps: 60 };
+    const video = {
+      width: 3840,
+      height: 2160,
+      codec_name: "h264",
+      pix_fmt: "yuv444p",
+      r_frame_rate: "60/1",
+      nb_frames: "1800",
+      nb_read_packets: "1800",
+    };
+    expect(() => validateSourceVideo(video, settings, 1800)).not.toThrow();
+    expect(() => validateSourceVideo({ ...video, nb_read_packets: "1799" }, settings, 1800)).toThrow(
+      "packet/frame count",
+    );
   });
   it("holds paused preload videos and the outgoing last frame while switching playback once", async () => {
     class Video extends EventTarget {
