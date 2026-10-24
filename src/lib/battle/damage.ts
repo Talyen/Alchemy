@@ -20,6 +20,7 @@ import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
 import { observeAttackPower } from "./resolution-observer";
+import { isPlayerDefeated } from "./battle-outcome";
 
 type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
 
@@ -174,13 +175,20 @@ export function dealDamageToEnemy(
     canShatter(state) &&
     computeCardAttackPower(consumed.state, packet, card, { ...context, baseDamageBonus }).damage > 0;
   const shatterDamage = shatter ? state.reactions.shatterDamage : 0;
-  const damageState = shatter ? applyShatter(consumed.state, combatTexts) : consumed.state;
+  const beforePurge = shatter ? applyShatter(consumed.state, combatTexts) : consumed.state;
+  // Purge removes the defense before this hit can absorb into it. Its own
+  // damage and retaliation may also end combat before mitigation starts.
+  const damageState = resolvePendingBattleReactions(
+    resolvePlayerHit(beforePurge, { source: "attack-purge" }, combatTexts),
+    combatTexts,
+  );
+  if (damageState.enemyHealth <= 0 || isPlayerDefeated(damageState)) return damageState;
 
   if (state.observer) {
     const power = computeCardAttackPower(damageState, packet, card, { ...context, baseDamageBonus }, false).damage;
     const armorBonus =
       packet.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0
-        ? state.enemyMitigation.armor * (context?.damageMultiplier ?? 1)
+        ? damageState.enemyMitigation.armor * (context?.damageMultiplier ?? 1)
         : 0;
     observeAttackPower(state, packet, power + armorBonus);
     if (packet.damageType !== "physical" && consumed.physicalBonus > 0 && power + armorBonus > 0) {
@@ -229,6 +237,7 @@ export function dealDamageToEnemy(
     combatTexts,
     resolvePendingBattleReactions,
   );
+  if (isPlayerDefeated(result)) return result;
   const payoffs = reactionEligible ? getPostHitReactionPayoffs(state, result, packet.damageType, healthDamage) : [];
   if (
     reactionEligible &&

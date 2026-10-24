@@ -118,6 +118,9 @@ and deeply frozen by `deepFreeze`. A shallow `Object.freeze` does not qualify.
 This retains immutable structural sharing across playback frames without
 freezing or retaining mutable caller-owned branches. Menu and meta navigation remain
 independent of activity, so an unfinished battle stays resumable there.
+Copies retain null-prototype dictionaries, symbol and non-enumerable data fields,
+aliases and cycles. Hidden accessors reject without executing, just like enumerable
+accessors; copying cannot silently drop them before publication validation.
 
 Live reads and screen data expose `runProfile.gold` as `gold`. `profile` never owns gameplay currency. Homestead and talent mutations rebind live Health and battle manifests through the owning command. Battle VFX live separately in `run-loop/battle/` (state in `battle-presentation-store.ts`, overlays in `presentation/` leaves) and are not persisted.
 
