@@ -120,7 +120,7 @@ describe.each([
   const manifestPath = path.join(output, ".asset-hashes.json");
   const manifestWrites = () => vi.mocked(writeFile).mock.calls.filter(([file]) => file === manifestPath);
 
-  it("publishes a complete manifest and follows moved sources without writes or reprocessing", async () => {
+  it("reuses unchanged masters and preserves outputs when a selected source moves", async () => {
     await expect(optimize()).resolves.toEqual({ ok: true });
     expect(manifestWrites()).toHaveLength(1);
     const before = await readFile(manifestPath, "utf8");
@@ -130,8 +130,13 @@ describe.each([
     vi.mocked(writeFile).mockClear();
     vi.mocked(copyFile).mockClear();
     fixture.transform.mockClear();
-    await rename(path.join(source, `a.${input}`), path.join(source, `renamed.${input}`));
     await expect(optimize()).resolves.toEqual({ ok: true });
+    expect(await readFile(manifestPath, "utf8")).toBe(before);
+    expect(manifestWrites()).toHaveLength(0);
+    expect(copyFile).not.toHaveBeenCalled();
+    expect(fixture.transform).not.toHaveBeenCalled();
+    await rename(path.join(source, `a.${input}`), path.join(source, `renamed.${input}`));
+    await expect(optimize()).rejects.toThrow("Restore it under assets/sources");
     expect(await readFile(manifestPath, "utf8")).toBe(before);
     expect(manifestWrites()).toHaveLength(0);
     expect(copyFile).not.toHaveBeenCalled();
