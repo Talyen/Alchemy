@@ -28,310 +28,267 @@
         {
           "at": 0.67,
           "kind": "hover",
-          "moveDuration": 0.2,
+          "moveDuration": 0.3,
           "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 0
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
           }
         },
         {
-          "at": 2,
-          "kind": "hover",
-          "moveDuration": 0.2,
-          "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 1
-          }
-        },
-        {
-          "at": 3.33,
+          "at": 2.0,
           "kind": "play-card",
-          "moveDuration": 0.2
+          "moveDuration": 0
+        },
+        {
+          "at": 3.0,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
         },
         {
           "at": 4.33,
-          "kind": "move-away",
-          "moveDuration": 0.2
+          "kind": "play-card",
+          "moveDuration": 0
         },
         {
           "at": 5.33,
           "kind": "hover",
-          "moveDuration": 0.2,
+          "moveDuration": 0.3,
           "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 1
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
           }
         },
         {
-          "at": 6.67,
+          "at": 6.66,
           "kind": "play-card",
-          "moveDuration": 0.2
+          "moveDuration": 0
         },
         {
-          "at": 7.33,
-          "kind": "move-away",
-          "moveDuration": 0.2
+          "at": 7.66,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
         },
         {
-          "at": 8,
+          "at": 8.99,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 10.5,
           "kind": "click",
-          "moveDuration": 0.2,
+          "moveDuration": 0.3,
           "target": {
             "role": "button",
             "name": "End Turn"
           }
         },
         {
-          "at": 11.67,
+          "at": 14.67,
           "kind": "hover",
-          "moveDuration": 0.2,
+          "moveDuration": 0.3,
           "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 0
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
           }
         },
         {
-          "at": 13,
-          "kind": "hover",
-          "moveDuration": 0.2,
-          "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 1
-          }
-        },
-        {
-          "at": 14.33,
+          "at": 16.0,
           "kind": "play-card",
-          "moveDuration": 0.2
+          "moveDuration": 0
         },
         {
-          "at": 15.33,
-          "kind": "move-away",
-          "moveDuration": 0.2
-        },
-        {
-          "at": 16.33,
+          "at": 17.0,
           "kind": "hover",
-          "moveDuration": 0.2,
+          "moveDuration": 0.3,
           "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 1
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
           }
-        },
-        {
-          "at": 17.67,
-          "kind": "play-card",
-          "moveDuration": 0.2
         },
         {
           "at": 18.33,
-          "kind": "move-away",
-          "moveDuration": 0.2
+          "kind": "play-card",
+          "moveDuration": 0
         },
         {
-          "at": 19,
+          "at": 19.33,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 20.66,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 21.66,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 22.99,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 24.5,
           "kind": "click",
-          "moveDuration": 0.2,
+          "moveDuration": 0.3,
           "target": {
             "role": "button",
             "name": "End Turn"
-          }
-        },
-        {
-          "at": 22.67,
-          "kind": "hover",
-          "moveDuration": 0.2,
-          "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 0
-          }
-        },
-        {
-          "at": 24,
-          "kind": "hover",
-          "moveDuration": 0.2,
-          "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 1
-          }
-        },
-        {
-          "at": 25.33,
-          "kind": "play-card",
-          "moveDuration": 0.2
-        },
-        {
-          "at": 26.33,
-          "kind": "move-away",
-          "moveDuration": 0.2
-        },
-        {
-          "at": 27.33,
-          "kind": "hover",
-          "moveDuration": 0.2,
-          "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 1
           }
         },
         {
           "at": 28.67,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 30.0,
           "kind": "play-card",
-          "moveDuration": 0.2
+          "moveDuration": 0
         },
         {
-          "at": 29.33,
-          "kind": "move-away",
-          "moveDuration": 0.2
+          "at": 31.0,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
         },
         {
-          "at": 30,
+          "at": 32.33,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 33.33,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 34.66,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 35.66,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
+        },
+        {
+          "at": 36.99,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 38.5,
           "kind": "click",
-          "moveDuration": 0.2,
+          "moveDuration": 0.3,
           "target": {
             "role": "button",
             "name": "End Turn"
           }
         },
         {
-          "at": 33.67,
+          "at": 42.67,
           "kind": "hover",
-          "moveDuration": 0.2,
+          "moveDuration": 0.3,
           "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 0
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
           }
         },
         {
-          "at": 35,
-          "kind": "hover",
-          "moveDuration": 0.2,
-          "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 1
-          }
-        },
-        {
-          "at": 36.33,
+          "at": 44.0,
           "kind": "play-card",
-          "moveDuration": 0.2
+          "moveDuration": 0
         },
         {
-          "at": 37.33,
-          "kind": "move-away",
-          "moveDuration": 0.2
-        },
-        {
-          "at": 38.33,
+          "at": 45.0,
           "kind": "hover",
-          "moveDuration": 0.2,
+          "moveDuration": 0.3,
           "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 1
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
           }
         },
         {
-          "at": 39.67,
+          "at": 46.33,
           "kind": "play-card",
-          "moveDuration": 0.2
-        },
-        {
-          "at": 40.33,
-          "kind": "move-away",
-          "moveDuration": 0.2
-        },
-        {
-          "at": 41,
-          "kind": "click",
-          "moveDuration": 0.2,
-          "target": {
-            "role": "button",
-            "name": "End Turn"
-          }
-        },
-        {
-          "at": 44.67,
-          "kind": "hover",
-          "moveDuration": 0.2,
-          "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 0
-          }
-        },
-        {
-          "at": 46,
-          "kind": "hover",
-          "moveDuration": 0.2,
-          "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 1
-          }
+          "moveDuration": 0
         },
         {
           "at": 47.33,
-          "kind": "play-card",
-          "moveDuration": 0.2
-        },
-        {
-          "at": 48.33,
-          "kind": "move-away",
-          "moveDuration": 0.2
-        },
-        {
-          "at": 49.33,
           "kind": "hover",
-          "moveDuration": 0.2,
+          "moveDuration": 0.3,
           "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 1
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
           }
         },
         {
-          "at": 50.67,
+          "at": 48.66,
           "kind": "play-card",
-          "moveDuration": 0.2
+          "moveDuration": 0
         },
         {
-          "at": 51.33,
-          "kind": "move-away",
-          "moveDuration": 0.2
+          "at": 49.66,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
         },
         {
-          "at": 52,
+          "at": 50.99,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 52.5,
           "kind": "click",
-          "moveDuration": 0.2,
+          "moveDuration": 0.3,
           "target": {
             "role": "button",
             "name": "End Turn"
           }
         },
         {
-          "at": 55.67,
+          "at": 56.67,
           "kind": "hover",
-          "moveDuration": 0.2,
+          "moveDuration": 0.3,
           "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 0
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
           }
         },
         {
-          "at": 57,
-          "kind": "hover",
-          "moveDuration": 0.2,
-          "target": {
-            "selector": "[data-hand-slot]:not([data-hand-hidden]) button[aria-label^='Play ']",
-            "index": 1
-          }
-        },
-        {
-          "at": 58.33,
+          "at": 58.0,
           "kind": "play-card",
-          "moveDuration": 0.2
+          "moveDuration": 0
         },
         {
-          "at": 59.33,
-          "kind": "move-away",
-          "moveDuration": 0.2
+          "at": 59.0,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "cardPriority": ["Anvil", "Plate Mail", "Sunder", "Spiked Shield", "Block", "Shield Bash", "Bash"]
+          }
         }
       ]
     }

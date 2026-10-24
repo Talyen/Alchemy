@@ -14,7 +14,7 @@ import {
   MANAGED_DIRS,
   MANIFEST_BASENAME,
   MUSIC_SETTINGS,
-  BOSS_IDLE_SETTINGS,
+  bossIdleTransformSettings,
   CURATED_SOUND_SETTINGS,
   MP3_FALLBACK_SETTINGS,
   soundTransformSettings,
@@ -42,7 +42,7 @@ export async function checkAssetOutputs(rootDir) {
   await validateBossIdleRegistry();
   const oggs = [...generatedSoundAssets.map(({ target }) => target), ...curatedSoundFiles];
   const selections = {
-    bossIdles: bossIdleAssets.map((asset) => ({ asset, settings: BOSS_IDLE_SETTINGS })),
+    bossIdles: bossIdleAssets.map((asset) => ({ asset, settings: bossIdleTransformSettings(asset) })),
     art: art.map((asset) => ({ asset, settings: artTransformSettings(asset) })),
     music: musicAssets.map((asset) => ({ asset, settings: MUSIC_SETTINGS })),
     sounds: [

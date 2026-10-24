@@ -4,6 +4,7 @@ import { performance } from "node:perf_hooks";
 import path from "node:path";
 import { createServer } from "vite";
 import { chromium } from "@playwright/test";
+import { pointerPath, samplePointer, prepareAction, pointerCorridor, performAction } from "./direction.mjs";
 import { nativeMusicOffsets } from "./model.mjs";
 import { installCaptureRuntime, sampleVisualTime } from "./browser-runtime.mjs";
 import {
@@ -16,86 +17,6 @@ import {
   validateSourceVideo,
   writeJson,
 } from "./media.mjs";
-
-function locatorFor(page, target) {
-  const locator = target.role
-    ? page.getByRole(target.role, { name: target.name, exact: true })
-    : target.testId
-      ? page.getByTestId(target.testId)
-      : page.locator(target.selector);
-  return locator.nth(target.index);
-}
-
-async function prepareAction(page, action) {
-  if (action.kind === "move-away") return { point: { x: 20, y: 80 }, kind: action.kind };
-  let locator;
-  if (action.kind === "play-card" && !action.target) {
-    const cards = page.locator("[aria-label^='Play ']");
-    // Prefer the card the player just inspected, then another playable card.
-    const candidates = await cards.all();
-    const hovered = [];
-    const remaining = [];
-    for (const card of candidates) {
-      if (await card.evaluate((element) => element.closest("[data-hand-slot]")?.hasAttribute("data-hovered")))
-        hovered.push(card);
-      else remaining.push(card);
-    }
-    for (const card of [...hovered, ...remaining])
-      if (
-        (await card.isEnabled()) &&
-        (await card.isVisible()) &&
-        (await card.evaluate((element) => !element.classList.contains("hand-card-unplayable")))
-      ) {
-        locator = card;
-        break;
-      }
-    if (!locator) throw new Error("No playable card at the directed moment; adjust the shot's inputs");
-  } else locator = locatorFor(page, action.target);
-  if (!(await locator.isVisible()) || (action.kind !== "hover" && !(await locator.isEnabled())))
-    throw new Error(`Unavailable action target: ${JSON.stringify(action)}`);
-  const bounds = await locator.boundingBox();
-  if (!bounds) throw new Error("Action target has no bounds");
-  const label = (await locator.getAttribute("aria-label")) ?? (await locator.textContent());
-  const hand = await locator.evaluate((element) => {
-    const slot = element.closest("[data-hand-slot]");
-    if (!slot) return null;
-    const bounds = slot.getBoundingClientRect();
-    return {
-      key: slot.getAttribute("data-hand-slot"),
-      x: bounds.x + bounds.width / 2,
-      y: Math.min(globalThis.innerHeight - 20, bounds.bottom - 20),
-    };
-  });
-  const point = hand ? { x: hand.x, y: hand.y } : { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
-  if (
-    !(await locator.evaluate(
-      (element, { point, hand }) => {
-        const hit = globalThis.document.elementFromPoint(point.x, point.y);
-        return (
-          hit &&
-          !hit.closest("[inert]") &&
-          (hand ? Boolean(hit.closest("[data-hand-slot]")) : element === hit || element.contains(hit))
-        );
-      },
-      { point, hand },
-    ))
-  )
-    throw new Error(`Action target is covered: ${label}`);
-  if (action.kind === "play-card" && !hand?.key) throw new Error("Play-card target is not in the hand");
-  return {
-    kind: action.kind,
-    label,
-    bounds,
-    point,
-    ...(hand?.key ? { inspectedCardKey: hand.key } : {}),
-    ...(action.kind === "play-card" ? { cardKey: hand.key } : {}),
-  };
-}
-
-async function performAction(page, prepared) {
-  if (prepared.kind === "hover" || prepared.kind === "move-away") return;
-  await page.mouse.click(prepared.point.x, prepared.point.y);
-}
 
 function finalizeClip(output, receipt) {
   const metadata = probe(output, { countFrames: false, countPackets: true });
@@ -254,6 +175,11 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
     const presentation = [];
     let pointer = { x: 20, y: 80 };
     let pending = null;
+    const deliberateCards = actions.some((action) => action.target?.cardPriority);
+    let inspection = null;
+    let hoveredKey = null;
+    const hoverChanges = [];
+
     for (let frame = 0; frame < frameCount; frame++) {
       let phaseStart = performance.now();
       const mark = (phase) => {
@@ -267,30 +193,56 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
       mark("clock");
       const seconds = frame / settings.fps;
       const next = actions[actionIndex];
-      if (!pending && next && seconds >= Math.max(0, next.at - next.moveDuration))
+      if (!pending && next && seconds >= Math.max(0, next.at - next.moveDuration)) {
+        const input = await prepareAction(page, next);
+        const corridorY = await pointerCorridor(page);
         pending = {
-          input: await prepareAction(page, next),
-          from: { ...pointer },
+          input,
+          path: pointerPath(pointer, input.point, corridorY),
+          corridorY,
           start: seconds,
           end: next.at,
           moveFrames: 0,
         };
+      }
       if (pending) {
         const progress =
           seconds >= pending.end ? 1 : Math.max(0, (seconds - pending.start) / (pending.end - pending.start));
         const eased = progress * progress * (3 - 2 * progress);
-        pointer = {
-          x: pending.from.x + (pending.input.point.x - pending.from.x) * eased,
-          y: pending.from.y + (pending.input.point.y - pending.from.y) * eased,
-        };
+        pointer = samplePointer(pending.path, eased);
         await page.mouse.move(pointer.x, pointer.y);
         pending.moveFrames++;
         if (seconds >= pending.end) {
+          if (
+            deliberateCards &&
+            pending.input.cardKey &&
+            (!inspection || inspection.key !== pending.input.cardKey || seconds - inspection.at < 1)
+          )
+            throw new Error(
+              `Card play needs a deliberate one-second inspection of the same card: ${pending.input.label}`,
+            );
+          if (deliberateCards && pending.input.cardKey) {
+            const title = pending.input.label.replace(/^Play /u, "");
+            if (!(await page.locator('[role="tooltip"][data-visible]').filter({ hasText: title }).isVisible()))
+              throw new Error(`The inspected card tooltip was not visible before playing: ${title}`);
+            pending.input.inspectedFor = seconds - inspection.at;
+          }
           await performAction(page, pending.input);
+          if (pending.input.kind === "hover" && pending.input.inspectedCardKey)
+            inspection = { key: pending.input.inspectedCardKey, at: seconds };
+          if (pending.input.cardKey) {
+            // Clear the hand before its reflow can hover a different card under
+            // the stationary pointer. No sampled frame sees that incidental hover.
+            pointer = { x: pending.input.point.x, y: pending.corridorY ?? 80 };
+            await page.mouse.move(pointer.x, pointer.y);
+            inspection = null;
+          }
           performed.push({
             at: seconds,
             movementFrom: pending.start,
             moveFrames: pending.moveFrames,
+            path: pending.path,
+            ...(pending.input.cardKey ? { retreat: pointer } : {}),
             ...pending.input,
           });
           pending = null;
@@ -309,6 +261,18 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
         );
         if (!stillInHand) input.acceptedAt = frame / settings.fps;
         else if (frame / settings.fps - input.at > 0.75) throw new Error(`Card input was not accepted: ${input.label}`);
+      }
+      const hovered = await page.evaluate(
+        () =>
+          globalThis.document
+            .querySelector("[data-hand-slot][data-hovered]:not([data-hand-hidden])")
+            ?.getAttribute("data-hand-slot") ?? null,
+      );
+      if (deliberateCards && hovered && hovered !== inspection?.key && hovered !== pending?.input.inspectedCardKey)
+        throw new Error(`Pointer hovered an unintended card at ${seconds}s: ${hovered}`);
+      if (hovered !== hoveredKey) {
+        hoverChanges.push({ at: seconds, key: hovered });
+        hoveredKey = hovered;
       }
       mark("visuals");
       // The general screenshot API waits for stable frames and encodes compact
@@ -368,6 +332,14 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
               videos: [...globalThis.document.querySelectorAll("video")].map((video) => ({
                 src: new URL(video.src).pathname,
                 time: video.currentTime,
+                width: video.videoWidth,
+                height: video.videoHeight,
+                objectFit: globalThis.getComputedStyle(video).objectFit,
+                opacity: globalThis.getComputedStyle(video).opacity,
+                bounds: (() => {
+                  const rect = video.getBoundingClientRect();
+                  return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+                })(),
                 playing: globalThis.__trailerCapture.videos.get(video)?.playing ?? false,
               })),
             }),
@@ -402,6 +374,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
       .allTextContents();
     const journal = {
       version: 1,
+      hoverChanges,
       id: clip.id,
       recipeHash: hashValue(clip),
       checkpointHash: checkpoint ? hashValue(checkpoint) : null,

@@ -3,7 +3,7 @@ import type languages from "@/lib/localization/locales/languages.json";
 import * as assetRefs from "./assets.generated";
 import { gearArtByDefinitionId } from "./catalog-art";
 export { gearArtByDefinitionId } from "./catalog-art";
-export { bossIdleClips } from "./boss-idle-assets";
+export { bossIdleClips, type BossIdleClip } from "./boss-idle-assets";
 
 export * from "./assets.generated";
 

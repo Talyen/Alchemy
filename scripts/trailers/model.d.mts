@@ -9,6 +9,7 @@ export interface Target {
   testId?: string;
   selector?: string;
   index: number;
+  cardPriority?: string[];
 }
 export interface Clip {
   id: string;

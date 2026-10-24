@@ -25,13 +25,18 @@ const target = z
     testId: z.string().min(1).optional(),
     selector: z.string().min(1).optional(),
     index: z.number().int().nonnegative().default(0),
+    cardPriority: z.array(z.string().min(1)).min(1).optional(),
   })
   .strict()
   .refine(
     (v) =>
       Boolean(v.role) === Boolean(v.name) &&
-      Number(Boolean(v.role && v.name)) + Number(Boolean(v.testId)) + Number(Boolean(v.selector)) === 1,
-    "Specify one role/name, testId, or selector target",
+      Number(Boolean(v.role && v.name)) +
+        Number(Boolean(v.testId)) +
+        Number(Boolean(v.selector)) +
+        Number(Boolean(v.cardPriority)) ===
+        1,
+    "Specify one role/name, testId, selector, or cardPriority target",
   );
 const action = z
   .object({

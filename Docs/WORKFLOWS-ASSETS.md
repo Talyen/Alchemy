@@ -52,13 +52,26 @@ Selected MP4 masters live in `assets/sources/Animations/Bosses/` and are listed 
 `scripts/assets/boss-idle-assets.mjs`. Run `node scripts/optimize-boss-idles.mjs`
 for narrow preparation, or add `--check` for read-only source/output freshness.
 The ordinary asset preparation and checks include this pipeline too. Preparation
-remuxes the original video stream without re-encoding, strips audio and moves
-MP4 metadata to the beginning for playback. Commit masters, prepared files under
-`src/assets/boss-idles/`, and their hash manifest together.
+uses the bundled FFmpeg and a system `ffprobe` (install FFmpeg to supply it).
+Source/output freshness checks do not invoke `ffprobe` or encode video. Use
+`--boss blood-countess` to prepare one boss in a bounded media-production job;
+completed masters are checkpointed so later jobs reuse them. On the shared Mac,
+wrap preparation with the host lane described in [trailers](./TRAILERS.md).
+
+Preparation computes motion-compensated 60 fps once at the master's native
+1920×1080 resolution, then area-filters 1280×720 and 640×360 variants from that
+uncompressed stream. H.264 CRF 17, 4:2:0, no audio and fast-start MP4 metadata keep
+normal hardware video playback available. Tail padding supplies interpolation's
+lookahead, while output trimming preserves the source duration rounded to the nearest
+60 fps frame. Original masters stay untouched. Review hair, hands and seams in
+motion: interpolation synthesizes frames and can introduce distortion. Commit masters, prepared files
+under `src/assets/boss-idles/`, and their hash manifest together.
 
 `src/lib/game-data/boss-idle-assets.ts` explicitly maps prepared URLs to boss IDs.
 Battle presentation alone consumes this map. Videos never join `allGameArt` or
 startup image loading; only the current boss's two playback buffers load clips.
+Each clip lists ascending resolution variants. Battle presentation selects by the
+transformed frame size and display density, changing quality at a clip boundary.
 Other views continue using the normal static catalog artwork.
 
 ## Art style and generation prompts

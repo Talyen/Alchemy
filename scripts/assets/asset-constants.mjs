@@ -85,7 +85,19 @@ export function soundTransformSettings(sourceExt) {
 }
 
 export const MUSIC_SETTINGS = Object.freeze({ mode: "copy" });
-export const BOSS_IDLE_SETTINGS = Object.freeze({ codec: "copy", stripAudio: true, faststart: true });
+export const BOSS_IDLE_SETTINGS = Object.freeze({
+  codec: "libx264",
+  crf: 17,
+  preset: "slow",
+  fps: 60,
+  interpolation: "minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bilat:me=hexbs:search_param=16:vsbmc=1",
+  downsample: "area",
+  stripAudio: true,
+  faststart: true,
+});
+export function bossIdleTransformSettings(asset) {
+  return { ...BOSS_IDLE_SETTINGS, width: asset.width };
+}
 export const MANIFEST_BASENAME = ".asset-hashes.json";
 
 /**

@@ -47,14 +47,32 @@ health and controls clear. Backgrounds fill the frame.
 
 Battle portraits for Blight Treant, Blood Countess, Seraph and Stone Titan play
 muted idle clips continuously. Each next clip is selected randomly excluding the
-current clip. Two video elements preload the next clip and retain the outgoing
-last frame until its replacement is playing. This cosmetic selection never uses
+current clip. Two video elements preload the next clip. Playback starts its
+replacement 240 ms before the end, retains the outgoing image until the incoming
+decoder is ready, then blends opacity for 180 ms. Native looping keeps the
+outgoing video moving if loading or a busy main thread delays that handoff. The
+outgoing buffer is paused and rewound before reuse, including when the next
+selection has the same URL.
+Only the short blend plays both decoders. This cosmetic selection never uses
 the world's gameplay RNG. Hidden tabs pause playback; reduced/disabled motion and
 unavailable video playback use the usual static artwork. Defeat freezes the
 visible video frame for the existing sliced-portrait effect.
 
-Animated portraits use the clips' full 16:9 composition. Their extra width retains
-the same base artwork height as the hero's 3:4 portrait and other enemies' 4:3
+Prepared clips contain 60 fps motion interpolation, computed offline, and filtered
+640/1280/1920-pixel variants. The player selects the smallest width covering the
+portrait's actual transformed width times display density, capped at the 1920-pixel
+master resolution. Resizing or changing displays updates the waiting buffer; the
+visible clip finishes without a resolution switch or seek. No runtime optical
+flow, canvas downsampling, or per-frame React updates are used. Interpolation
+cannot correct motion artifacts already present in the authored clips, and short
+blends soften rather than reconstruct mismatched poses.
+
+Animated portraits use the clips' full 16:9 composition with `contain` scaling. A
+small matte inset keeps the complete rectangular video clear of the rounded
+frame corners. The static fallback disappears when playback starts, leaving a
+plain matte around the video rather than a second portrait. Neither video nor its
+static fallback uses cover/crop scaling. Their extra width retains the same base
+frame height as the hero's 3:4 portrait and other enemies' 4:3
 portraits. Hero and enemy frames keep that height through turn changes and hover;
 the shining border indicates the active turn. Stone Titan's battle artwork is
 mirrored, including idle playback and the frozen defeat image. Collections, Destination,

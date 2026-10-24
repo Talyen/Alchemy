@@ -7,7 +7,7 @@ import { type CSSProperties, type ReactNode, type Ref, useLayoutEffect, useRef }
 import { COMBAT_IMPACT_NORMAL_HEALTH_RATIO, COMBAT_IMPACT_HEAVY_HEALTH_RATIO } from "@/lib/game-constants";
 import { Progress } from "@/components/ui/progress";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
-import { bossIdleClips, type BestiaryEntry } from "@/lib/game-data";
+import { bossIdleClips, type BossIdleClip, type BestiaryEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import {
@@ -240,7 +240,7 @@ function ActorArtFrame({
   artOverlay?: ReactNode;
   title: string;
   art: string;
-  idleClips?: readonly string[] | undefined;
+  idleClips?: readonly BossIdleClip[] | undefined;
   mirrorArt: boolean;
   shimmerId: string;
   shimmerActive: boolean;
@@ -261,7 +261,7 @@ function ActorArtFrame({
   const i18n = useGameTranslation();
   const imageClassName = cn(
     idleClips?.length
-      ? "aspect-video rounded-shell-hero object-cover"
+      ? "aspect-video rounded-shell-hero object-contain"
       : side === "enemy"
         ? landscapeArtImageClass
         : cardArtImageClass,
@@ -346,7 +346,7 @@ function ActorArtFrame({
           {deathsDoorActive ? <ArtDeathDoorBorder /> : null}
           {idleClips?.length ? (
             <BossIdleArt
-              key={idleClips[0]}
+              key={idleClips[0].variants[0].src}
               clips={idleClips}
               art={art}
               title={title}

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { pointerPath, samplePointer } from "../../scripts/trailers/direction.mjs";
 import { assertFrameDimensions, validateSourceVideo } from "../../scripts/trailers/media.mjs";
 import { describe, expect, it, vi } from "vitest";
 import { compileTimeline, mapSoundEvents, nativeMusicOffsets, parseRecipe } from "../../scripts/trailers/model.mjs";
@@ -249,4 +250,25 @@ describe("trailer edit admission and synchronization", () => {
     expect(timeline.shots[0].camera).toEqual({ from: { x: 0.5, y: 0.5, zoom: 1 }, to: { x: 0.5, y: 0.5, zoom: 1 } });
     expect(nativeMusicOffsets(recipe)).toEqual({ "blood-countess": 20.68 });
   });
+});
+
+it("keeps card-to-card travel above the fan and stays still to play an inspected card", () => {
+  const from = { x: 700, y: 1040 },
+    to = { x: 1150, y: 1040 };
+  const route = pointerPath(from, to, 580);
+  for (let frame = 0; frame <= 60; frame++) {
+    const point = samplePointer(route, frame / 60);
+    if (point.x > from.x && point.x < to.x) expect(point.y).toBeLessThanOrEqual(580);
+  }
+  expect(pointerPath(from, from, 580)).toEqual([from, from]);
+  expect(samplePointer(route, 1)).toEqual(to);
+});
+
+it("admits ordered card inspection without allowing ambiguous target sources", () => {
+  const recipe = structuredClone(authored);
+  recipe.clips[0].actions[0].target = { cardPriority: ["Anvil", "Sunder", "Bash"] };
+  expect(parseRecipe(recipe).clips[0].actions[0].target?.cardPriority).toEqual(["Anvil", "Sunder", "Bash"]);
+  recipe.clips[0].actions[0].target.role = "button";
+  recipe.clips[0].actions[0].target.name = "Play Bash";
+  expect(() => parseRecipe(recipe)).toThrow("Specify one");
 });

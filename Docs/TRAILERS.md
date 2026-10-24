@@ -59,9 +59,20 @@ social media. The workflow can later be moved to a dedicated GPU runner.
 normal full-screen framing. It uses her current five idle animations, her own
 music starting at the first verse, the native battle lyric display, and natural
 card inspections and plays. There are no cuts, camera moves or end card. The
-pointer travels over 0.2 seconds and pauses on cards for roughly 1.3 seconds
-(50% faster decisions than the original prototype); its appearance is hidden
-while hover feedback remains visible. Enemy responses retain normal timing.
+pointer travels above the hand over 0.3 seconds, enters the selected card
+vertically and pauses for roughly 1.3 seconds (50% faster decisions than the
+original prototype). It anchors focus on the inspected card, clicks without
+moving to another card, then leaves the hand immediately before cards reflow
+beneath it. Its appearance is hidden while hover feedback
+remains visible. Enemy responses retain normal timing.
+
+The Knight inspects and plays available cards in this authored priority:
+Anvil, Plate Mail, Sunder, Spiked Shield, Block, Shield Bash, Bash. This places
+Forge and permanent Armor before attacks, armor removal before later damage,
+and Block generation before Shield Bash. Four cards are played per full turn
+when available. This is a directed starter-deck sequence, not a general combat AI.
+Each play must match the inspected hand identity after at least one second of
+inspection; recording fails if that condition or card acceptance is missing.
 This continuous Mac prototype captures native 1920×1080 at 60 fps, matching Steam
 delivery without upscaling. Set capture scale to 2 for a 4K source on a production
 worker with a longer recording window. Lyrics stay inside the boss portrait.
@@ -139,6 +150,14 @@ resolved timeline and fails invalid inputs before launching a browser.
   playable card. Captures
   require the played hand identity to leave or enter its transfer animation.
   Missing acknowledgments fail rather than recording a rejected click as a play.
+  A hover target can use `cardPriority: ["Anvil", "Sunder", "Bash"]` to inspect
+  the first currently playable card in that list. The following untargeted
+  `play-card` prefers the inspected card. Recipes using ordered inspection
+  require a one-second dwell on the same hand identity before clicking.
+  Pointer paths travel above the fan to avoid incidental hovers, and card plays
+  anchor focus on the intended card for its native mouse click, then immediately
+  clear the pointer from the reflowing hand. Receipts include paths
+  and every sampled change in the hovered hand identity.
   Inputs do not dispatch state mutations. Times are relative to the staged clip,
   in seconds.
 - **Shots:** clip, source `in`, output duration and optional speed. `framing`
@@ -153,7 +172,7 @@ resolved timeline and fails invalid inputs before launching a browser.
   to the original recording, including Iron Bear's opening; the game's playback
   skip is not added a second time. Lyric snapshots must match the track's SHA-256.
   `lyrics: true` records the game's own lyric display at its fixed battle position,
-  between the actors and hand. Lyrics never appear on menus or as a trailer overlay.
+  near the bottom inside the boss portrait. Lyrics never appear on menus or as a trailer overlay.
   The isolated audio clock follows the final soundtrack position while the actual
   audio is mixed later. Each battle must match the soundtrack boss and play at
   normal speed. Reusing one clip at conflicting music times fails admission;
