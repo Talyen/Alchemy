@@ -58,6 +58,10 @@ tick. Rimeheart checks pre-hit Block when deciding whether Freeze damage grants
 Block. The Final Spark requires a card with damage effects; Smelling Salts does
 not spend its repeat opportunity.
 
+Wardbreaker resolves its Purge and any Purge retaliation before calculating the
+triggering hit's mitigation. Removed Armor and Block cannot absorb that hit;
+Dodge preserves the Purge opportunity.
+
 ## Verification ownership
 
 [Catalog tests](../tests/lib/gear/unique-catalog.test.ts) protect canonical rolls,

@@ -4,6 +4,7 @@ import { applyDrawResult, drawFromState } from "./draw";
 import { gainManaWithCombatText } from "./player-rewards";
 import type { BattleState, CombatTextEvent } from "./types";
 import { damageEnemyHealth } from "./health-state";
+import { mergeCombatText } from "./combat-text-events";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 
 /** Eligibility is captured before reactions; Health belongs to the actual target of this hit. */
@@ -15,6 +16,18 @@ export interface HitFacts {
   readonly resolvedDamage: number;
   readonly healthDamage: number;
   readonly critical: boolean;
+}
+
+export function reportEnemyHitDamage(facts: HitFacts, damageType: DamageType, texts: CombatTextEvent[]): void {
+  if (facts.resolvedDamage <= 0) return;
+  mergeCombatText(texts, {
+    target: "enemy",
+    kind: "damage",
+    stat: damageType,
+    amount: facts.resolvedDamage,
+    ...(facts.healthDamage !== facts.resolvedDamage ? { healthLost: facts.healthDamage } : {}),
+    ...(facts.critical && facts.healthDamage > 0 ? { critical: true } : {}),
+  });
 }
 
 export function applyHitHealth(state: BattleState, resolvedDamage: number, eligibility = state, critical = false) {
