@@ -17,6 +17,20 @@ proposals: Balanced, Quiet & readable, and Punchy & compact. Seven deterministic
 sequences exercise single hits, Criticals, fast and spaced repeats, mixed outcomes,
 reaction names, and crowded actions. Static feedback applies to both lanes.
 
+Balanced now uses 32px text (down from 37.8px), independent paths, and queued
+launches. Damage and healing share the center queue; benefits and setbacks use
+the lower-left and lower-right queues. Names have a separate upper queue. Status
+entries stay stationary and use a quieter pop. No incoming entry moves a previous
+entry's path. The queue samples their projected visible footprints and delays the
+new entry until there is clearance; minimum launch interval and clearance are
+adjustable. Each entry receives its full lifetime after launch. Busy sequences
+can wait longer; the queue readout and extended timeline expose that tradeoff.
+
+Revision 2 keeps the previous browser settings under their original storage key
+and starts a fresh comparison. Exported revision 1 settings can still be imported.
+Legacy push modes remain available for comparison; each push now retains its own
+transition progress rather than restarting all earlier pushes on every arrival.
+
 This developer tool uses local artwork and fonts without a build or dependencies.
 It does not change gameplay or saves. Timing/scale baselines were read from
 Alchemy `ac4c10cd1` and Trinket `65c079a36`; they are snapshots, not imports of live

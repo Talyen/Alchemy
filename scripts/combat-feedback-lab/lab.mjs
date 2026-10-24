@@ -43,6 +43,8 @@ const alchemy = {
   maxGroups: 3,
   statusLimit: 0,
   pushMs: 150,
+  queueGap: 180,
+  queueClearance: 6,
   mergeWindow: 250,
   mergeExtension: 0,
   mergeCap: 0,
@@ -109,6 +111,12 @@ const trinket = {
 };
 const balanced = {
   ...alchemy,
+  baseSize: 32,
+  grouping: "queued",
+  placement: "corners",
+  statusSize: 0.8,
+  statusPeak: 1.2,
+  statusStatic: true,
   initial: 0.9,
   peak: 1.85,
   hold: 1.55,
@@ -144,7 +152,7 @@ const presets = {
   },
   balanced: {
     name: "Balanced · recommended",
-    description: "Short slowing rise with Alchemy’s size, grouping, and emphasis",
+    description: "Smaller text · independent paths · queued launches · status corners",
     config: balanced,
   },
   restrained: {
@@ -168,7 +176,7 @@ const presets = {
   },
   punchy: {
     name: "Punchy & compact",
-    description: "Trinket’s fast impact with Alchemy’s grouped results and type",
+    description: "Fast impact · independent queued entries · Alchemy typography",
     config: {
       ...balanced,
       peak: 2.05,
@@ -240,7 +248,7 @@ const sections = [
     ],
   ],
   [
-    "Status hierarchy & stacking",
+    "Launch queue & status corners",
     [
       numeric("statusSize", "Status size multiplier", 0.5, 1.2, 0.01, "×"),
       numeric("statusPeak", "Stationary status peak scale", 1, 2.3, 0.01, "×"),
@@ -249,7 +257,13 @@ const sections = [
         center: "Centered with results",
         corners: "Benefits left · setbacks right",
       }),
-      choice("grouping", "Stack by", { action: "Whole action", regions: "Individual entries in each region" }),
+      choice("grouping", "Entry motion", {
+        queued: "Independent paths · launch queue",
+        action: "Legacy · whole action pushes",
+        regions: "Legacy · individual region pushes",
+      }),
+      numeric("queueGap", "Minimum time between launches", 60, 1000, 10, "ms"),
+      numeric("queueClearance", "Clearance between visible entries", 0, 20, 1, "px"),
       numeric("maxGroups", "Maximum action / reaction groups", 1, 5),
       numeric("statusLimit", "Status entries per region (0 = all)", 0, 6),
       numeric("stackGap", "Space between groups", 0, 30, 1, "px"),
@@ -323,7 +337,7 @@ const scenarios = {
   },
 };
 
-const storageKey = "alchemy-combat-feedback-lab-v1";
+const storageKey = "alchemy-combat-feedback-lab-v2";
 const state = {
   a: { ...alchemy },
   b: { ...balanced },
@@ -355,7 +369,7 @@ function validatedConfig(value) {
 }
 
 function restore(value) {
-  if (value.version !== 1) throw new Error("Unsupported settings version");
+  if (![1, 2].includes(value.version)) throw new Error("Unsupported settings version");
   const a = validatedConfig(value.a);
   const b = validatedConfig(value.b);
   state.a = a;
@@ -381,7 +395,7 @@ try {
 
 function snapshot() {
   return {
-    version: 1,
+    version: 2,
     a: state.a,
     b: state.b,
     presetA: state.presetA,
@@ -499,23 +513,9 @@ function changeField(field, input) {
 }
 
 function sequenceDuration() {
-  const sequence = scenarios[state.scenario];
   return Math.max(
-    sequence.duration,
-    ...[state.a, state.b].flatMap((config) =>
-      sequence.events.map(
-        ([at, entries]) =>
-          at +
-          Math.max(
-            ...entries.map((item) =>
-              item.kind === "reaction"
-                ? config.reactionMs
-                : config.lifetime + (item.kind === "impact" ? config.mergeCap : 0),
-            ),
-          ) +
-          200,
-      ),
-    ),
+    scenarios[state.scenario].duration,
+    ...[state.a, state.b].flatMap((config) => plannedItems(config, Infinity).map((item) => item.expiry + 200)),
   );
 }
 
@@ -544,7 +544,7 @@ function refreshControls() {
 
 // Resolve only events already reached by the shared clock. Scrubbing backward
 // rebuilds the same history, including evictions, rather than revealing future sums.
-function itemsAt(config, time) {
+function buildItems(config, time) {
   const items = [];
   let id = 0;
   for (const [action, [at, entries]] of scenarios[state.scenario].events.entries()) {
@@ -566,12 +566,16 @@ function itemsAt(config, time) {
       if (match) {
         if (entry.value !== null) match.value += entry.value;
         match.updated = at;
+        if (entry.critical && (!match.critical || config.mergeExtension > 0))
+          match.criticalAt = Math.max(at, match.launchAt ?? at);
         match.critical ||= entry.critical;
-        if (entry.critical && config.mergeExtension > 0) match.criticalAt = at;
         if (region === "impact")
-          match.expiry = Math.min(match.expiry + config.mergeExtension, match.at + config.lifetime + config.mergeCap);
+          match.expiry = Math.min(
+            match.expiry + config.mergeExtension,
+            (match.launchAt ?? match.at) + config.lifetime + config.mergeCap,
+          );
       } else {
-        items.push({
+        const item = {
           ...entry,
           region,
           id: id++,
@@ -582,7 +586,9 @@ function itemsAt(config, time) {
           expiry: at + (entry.kind === "reaction" ? config.reactionMs : config.lifetime),
           digits: String(entry.value ?? "").length + 1,
           evicted: false,
-        });
+        };
+        if (config.grouping === "queued") scheduleLaunch(item, items, config);
+        items.push(item);
       }
     }
     const live = items.filter((item) => !item.evicted && item.expiry > at);
@@ -596,7 +602,7 @@ function itemsAt(config, time) {
       for (const item of live)
         if (item.kind === "reaction" && announcements.indexOf(item.action) >= config.maxGroups) item.evicted = true;
     }
-    if (config.statusLimit > 0) {
+    if (config.statusLimit > 0 && config.grouping !== "queued") {
       for (const region of ["benefit", "setback"]) {
         const corner = live
           .filter((item) => item.region === region)
@@ -605,11 +611,68 @@ function itemsAt(config, time) {
       }
     }
   }
-  return items.filter((item) => !item.evicted && item.expiry > time);
+  return items;
+}
+
+// A plan is cached for each reached event prefix, so scrubbing cannot expose
+// future totals and collision sampling does not run on every animation frame.
+const planCache = new Map();
+function plannedItems(config, time) {
+  const reached = scenarios[state.scenario].events.filter(([at]) => at <= time).length;
+  const key = JSON.stringify([config, state.scenario, state.static, reached]);
+  if (!planCache.has(key)) {
+    if (planCache.size >= 80) planCache.delete(planCache.keys().next().value);
+    planCache.set(key, buildItems(config, time));
+  }
+  return planCache.get(key);
+}
+function itemsAt(config, time) {
+  return plannedItems(config, time).filter(
+    (item) => !item.evicted && item.expiry > time && (item.launchAt ?? item.at) <= time,
+  );
+}
+function queueLane(item, config) {
+  if (item.kind === "reaction") return "announcement";
+  return item.kind === "status" && config.placement === "corners" ? item.region : "impact";
+}
+function footprint(item, config, time) {
+  const sample = motionAt(item, config, time);
+  const multiplier =
+    item.kind === "reaction" ? config.reactionSize : item.kind === "status" ? config.statusSize : config.criticalSize;
+  return { ...sample, height: config.baseSize * 1.15 * sample.scale * multiplier + 4 };
+}
+function scheduleLaunch(item, previous, config) {
+  const lane = queueLane(item, config);
+  const ahead = previous.filter((other) => !other.evicted && queueLane(other, config) === lane);
+  const last = ahead.at(-1);
+  let launch = Math.max(item.at, last ? last.launchAt + config.queueGap : item.at);
+  const duration = item.kind === "reaction" ? config.reactionMs : config.lifetime;
+  const latestEnd = Math.max(launch, ...ahead.map((other) => other.expiry));
+  const clearAt = (candidate) => {
+    const proposed = { ...item, launchAt: candidate, expiry: candidate + duration };
+    for (const other of ahead) {
+      if (other.expiry <= candidate) continue;
+      if (state.static) return false;
+      const end = Math.min(other.expiry, proposed.expiry);
+      for (let t = candidate; t < end; t += 15) {
+        const old = footprint(other, config, t);
+        const next = footprint(proposed, config, t);
+        if (old.opacity < 0.15 || next.opacity < 0.15) continue;
+        if (Math.abs(old.rise - next.rise) < (old.height + next.height) / 2 + config.queueClearance) return false;
+      }
+    }
+    return true;
+  };
+  // Changing membership never changes a launch already assigned. Congestion
+  // delays the new entry instead of adding a second upward displacement.
+  while (launch < latestEnd && !clearAt(launch)) launch += 15;
+  item.launchAt = launch;
+  item.expiry = launch + duration;
+  if (item.critical) item.criticalAt = launch;
 }
 
 function motionAt(item, c, time) {
-  const elapsed = time - item.at;
+  const elapsed = time - (item.launchAt ?? item.at);
   const name = item.kind === "reaction";
   const quiet = item.kind === "status" && c.statusStatic;
   const fade = name ? c.reactionFadeMs : c.fadeMs;
@@ -686,9 +749,16 @@ function layoutAt(items, c, time, width) {
   const baseY = 240;
   const size = c.baseSize;
   const layouts = new Map();
-  if (c.grouping === "action") {
+  if (c.grouping === "queued") {
+    for (const item of items) {
+      const lane = queueLane(item, c);
+      const x = lane === "benefit" ? width / 2 - 85 : lane === "setback" ? width / 2 + 85 : width / 2;
+      const y = lane === "announcement" ? 164 : lane === "impact" ? baseY : 335;
+      layouts.set(item.id, { x, y });
+    }
+  } else if (c.grouping === "action") {
     const actions = [...new Set(items.map((item) => item.action))].sort((a, b) => b - a);
-    let offset = 0;
+    const pushes = [];
     for (const action of actions) {
       const entries = items.filter((item) => item.action === action);
       const numbers = entries.filter((item) => item.kind !== "reaction");
@@ -697,13 +767,11 @@ function layoutAt(items, c, time, width) {
       const rows = Math.ceil(numbers.length / columns);
       const rowHeight = size * 1.5 * Math.max(c.peak, 1.2) + 4;
       const height = Math.max(rowHeight, rows * rowHeight) + (names.length ? size * c.reactionSize * 1.2 + 12 : 0);
-      const newerTimes = actions
-        .filter((a) => a > action)
-        .map((a) => Math.min(...items.filter((item) => item.action === a).map((item) => item.at)));
-      const push =
-        state.static || !newerTimes.length || c.pushMs === 0
-          ? 1
-          : ease((time - Math.max(...newerTimes)) / c.pushMs, "out");
+      const push = pushes.reduce(
+        (sum, entry) =>
+          sum + entry.distance * (state.static || c.pushMs === 0 ? 1 : ease((time - entry.at) / c.pushMs, "out")),
+        0,
+      );
       numbers.forEach((item, index) => {
         const corner = c.placement === "corners" && item.kind === "status";
         const x = corner
@@ -711,21 +779,16 @@ function layoutAt(items, c, time, width) {
           : width / 2 + (columns === 2 ? (index % 2 ? 74 : -74) : 0);
         const y = corner
           ? 335 - Math.floor(index / 2) * 42
-          : baseY - offset * push + (Math.floor(index / columns) - (rows - 1) / 2) * rowHeight;
+          : baseY - push + (Math.floor(index / columns) - (rows - 1) / 2) * rowHeight;
         layouts.set(item.id, { x, y });
       });
       names.forEach((item, index) =>
         layouts.set(item.id, {
           x: width / 2,
-          y:
-            baseY -
-            offset * push -
-            (Math.max(1, rows) * rowHeight) / 2 -
-            size * 0.6 -
-            index * size * c.reactionSize * 1.2,
+          y: baseY - push - (Math.max(1, rows) * rowHeight) / 2 - size * 0.6 - index * size * c.reactionSize * 1.2,
         }),
       );
-      offset += height + c.stackGap;
+      pushes.push({ distance: height + c.stackGap, at: Math.min(...entries.map((item) => item.at)) });
     }
   } else {
     for (const region of ["impact", "benefit", "setback", "announcement"]) {
@@ -754,6 +817,12 @@ function renderLane(lane) {
   const host = $(`#lane-${lane} .feedback`);
   const items = itemsAt(c, state.time);
   const layouts = layoutAt(items, c, state.time, stage.clientWidth);
+  const waiting = plannedItems(c, state.time).filter(
+    (item) => !item.evicted && (item.launchAt ?? item.at) > state.time,
+  );
+  $(`#queue-${lane}`).textContent = waiting.length
+    ? `${waiting.length} queued · next in ${Math.ceil(Math.min(...waiting.map((item) => item.launchAt)) - state.time)} ms`
+    : "Queue clear";
   const live = new Set(items.map((item) => item.id));
   for (const [id, node] of nodes[lane])
     if (!live.has(id)) {
@@ -804,6 +873,7 @@ function renderLane(lane) {
     node.style.top = `${y}px`;
     node.style.transform = `translate(-50%, -50%) scale(${m.scale * factor})`;
     node.style.fontSize = `${c.baseSize}px`;
+    node.style.lineHeight = c.grouping === "queued" ? "1.15" : "1.5";
     node.style.fontFamily =
       c.font === "inter" ? "Inter, sans-serif" : 'ui-rounded, "SF Pro Rounded", system-ui, sans-serif';
     node.style.fontWeight = item.critical && c.criticalHeavy ? "900" : "700";
@@ -899,6 +969,7 @@ $("#loop").addEventListener("change", (event) => {
 });
 $("#static").addEventListener("change", (event) => {
   state.static = event.target.checked;
+  refreshControls();
   save();
   render();
 });
@@ -952,4 +1023,4 @@ refreshControls();
 render();
 
 // Pure sampling helpers also support a bounded browser inspection of the lab.
-globalThis.combatFeedbackLab = { snapshot, itemsAt, motionAt, presets, scenarios };
+globalThis.combatFeedbackLab = { snapshot, itemsAt, motionAt, layoutAt, plannedItems, presets, scenarios };
