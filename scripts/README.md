@@ -12,6 +12,10 @@ helpers live together in `assets/`, with TypeScript declarations beside their
 modules. Sound desk mapping, media, server and board modules live in `audio-review/`;
 `audio-review.mjs` remains its command entry point. `lib/agent/`, `lib/release/`, `lib/verification/`, `lib/performance/`, and `lib/playthrough/` group subsystem implementations; general process and repository helpers remain directly in `lib/`.
 
+The standalone [combat feedback lab](./combat-feedback-lab/README.md) compares
+Alchemy, Trinket, and proposed animation presets with synchronized playback,
+individual controls, and portable settings. It runs without a game build.
+
 ## Trailer production
 
 `trailer.mjs` owns automated media production. `trailers/` contains the strict edit
