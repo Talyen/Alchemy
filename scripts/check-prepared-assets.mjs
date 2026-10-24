@@ -36,7 +36,7 @@ export async function checkPreparedAssets({ outputsOnly = false } = {}) {
   }
   console.log(
     outputsOnly
-      ? "Prepared outputs are consistent (raw-source freshness is checked locally)."
+      ? "Prepared outputs are consistent (source masters were not checked)."
       : "Prepared asset outputs are current.",
   );
 }

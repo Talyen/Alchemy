@@ -45,7 +45,7 @@ license or receipt when redistribution terms are not public.
 | Thirteen Suno-generated music tracks                 | [Track links below](#music-source-links)                                         | Commercial-use entitlement at creation confirmed           | No third-party source attribution identified | Owner confirmation above; embedded song IDs and creation dates                                       |
 
 Files whose provenance is not represented above are not cleared for public
-distribution merely because they exist in the external Asset Library, `public/`,
+distribution merely because they exist in `assets/sources/`, `public/`,
 or `src/assets/optimized/`. Add the applicable row and preserve its evidence before
 shipping. Secrets, purchase receipts, and private license keys must not be
 committed; record a stable private evidence location instead.
@@ -61,7 +61,7 @@ above establishes the supplied source and commercial-use history.
 
 ### Music source links
 
-The thirteen selected music masters in the external Asset Library, listed by
+The selected music masters in `assets/sources/`, listed by
 [`music-assets.mjs`](./scripts/assets/music-assets.mjs), embed a Suno song URL,
 a creator account, and a creation timestamp. Prepared copies ship in `public/Music/`.
 These links retain source traceability; the commercial-use confirmation above

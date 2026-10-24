@@ -72,7 +72,11 @@ function reportMarkdown(report) {
 export async function generateAudioReview({ libraryRoot, checkOnly = false, choicesPath, battleFocus = false } = {}) {
   const output = reviewOutput(battleFocus);
   const manifest = JSON.parse(await readFile(path.join(root, "Docs/design/audio-review/mappings.json"), "utf8"));
-  libraryRoot = path.resolve(libraryRoot ?? manifest.libraryRootDefault);
+  if (!libraryRoot)
+    throw new Error(
+      "Sound desk candidate browsing requires --library <Sounds directory>. Production assets use assets/sources and need no external library.",
+    );
+  libraryRoot = path.resolve(libraryRoot);
   const { catalog, metadataSource } = await readLibraryCatalog(
     libraryRoot,
     manifest.families.flatMap((family) => family.candidates),

@@ -110,7 +110,6 @@ function fixture() {
   const manifest: ReviewManifest = {
     schemaVersion: 1,
     direction: "Tactile fantasy",
-    libraryRootDefault: "/library",
     reviewPolicy: "Unheard",
     families: [
       {

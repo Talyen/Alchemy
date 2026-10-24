@@ -25,7 +25,7 @@ placeholder App IDs open nothing. [Input and release evidence](#input-and-releas
 owns overlay/browser delivery and physical qualification.
 
 The selected master is `2d Assets/Game Sources/Branding/Marketing/Unlock Full Game Demo Promo.jpg`
-in Asset Library, 2752×1536. Contain the complete image at its native ratio between
+under `assets/sources/`, 2752×1536. Contain the complete image at its native ratio between
 the heading and actions; never crop or stretch it. Accessible text repeats its
 seven labels: More Bosses, Wildwood Draft, The Labyrinth, More Heroes, 200+ Talents,
 Trinkets & Uniques, Build a Homestead. Wishlist and Main Menu retain their actions.

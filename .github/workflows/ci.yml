@@ -149,6 +149,7 @@ jobs:
               - "scripts/lib/release/release-checks.mjs"
               - "scripts/smoke-desktop*"
             assets:
+              - "assets/sources/**"
               - ".node-version"
               - ".npmrc"
               - ".github/**"
@@ -460,8 +461,8 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - uses: ./.github/actions/setup
-      - name: Assert committed outputs match preparation
-        run: npm run assets:check:outputs
+      - name: Assert repository sources and committed outputs match preparation
+        run: npm run assets:check
 
   desktop-build:
     needs: [changes, ship-gate]

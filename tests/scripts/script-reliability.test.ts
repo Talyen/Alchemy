@@ -655,7 +655,7 @@ describe("script execution reliability", () => {
     const root = fixture();
     fs.cpSync(path.join(ROOT, "scripts"), path.join(root, "scripts"), { recursive: true });
     fs.symlinkSync(path.join(ROOT, "node_modules"), path.join(root, "node_modules"), "junction");
-    const source = path.join(root, "Raw Assets/Music/theme.ogg");
+    const source = path.join(root, "assets/sources/Music/theme.ogg");
     fs.mkdirSync(path.dirname(source), { recursive: true });
     fs.writeFileSync(source, "authored music");
     fs.writeFileSync(
@@ -666,7 +666,7 @@ describe("script execution reliability", () => {
       spawnSync(process.execPath, [path.join(root, "scripts", script), ...args], {
         cwd: root,
         encoding: "utf8",
-        env: { ...process.env, ASSET_LIBRARY_ROOT: path.join(root, "Raw Assets") },
+        env: { ...process.env, ASSET_LIBRARY_ROOT: path.join(root, "nonexistent external library") },
       });
 
     const stale = run("optimize-music.mjs", "--check");
@@ -683,7 +683,17 @@ describe("script execution reliability", () => {
     expect([output, manifest].map((file) => fs.readFileSync(file))).toEqual(before);
   });
 
-  it("generates icons from the selected library master and records outputs that verify without that library", async () => {
+  it("requires an explicit library for optional replacement sound auditions", () => {
+    const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/audio-review.mjs"), "--check"], {
+      cwd: ROOT,
+      encoding: "utf8",
+      env: { ...process.env, ASSET_LIBRARY_ROOT: "/nonexistent/shared-library" },
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("requires --library <Sounds directory>");
+  });
+
+  it("generates icons from the repository master and records outputs that verify without sources", async () => {
     const root = fixture();
     fs.cpSync(path.join(ROOT, "scripts"), path.join(root, "scripts"), { recursive: true });
     fs.symlinkSync(path.join(ROOT, "node_modules"), path.join(root, "node_modules"), "junction");
@@ -694,7 +704,7 @@ describe("script execution reliability", () => {
         .readFileSync(registry, "utf8")
         .replace(/export const iconSource = "[^"]+";/u, 'export const iconSource = "chosen/icon.png";'),
     );
-    const library = path.join(root, "external library");
+    const library = path.join(root, "assets/sources");
     fs.mkdirSync(path.join(library, "chosen"), { recursive: true });
     await sharp({ create: { width: 32, height: 32, channels: 4, background: "red" } })
       .png()
@@ -706,15 +716,7 @@ describe("script execution reliability", () => {
     });
     expect(generated.status, generated.stderr).toBe(0);
     const receipt = path.join(root, "desktop/icons/.asset-hashes.json");
-    const before = fs.readFileSync(receipt);
-    fs.renameSync(path.join(library, "chosen/icon.png"), path.join(library, "renamed.png"));
-    const recovered = spawnSync(process.execPath, [path.join(root, "scripts/generate-icons.mjs")], {
-      cwd: root,
-      encoding: "utf8",
-      env: { ...process.env, ASSET_LIBRARY_ROOT: library },
-    });
-    expect(recovered.status, recovered.stderr).toBe(0);
-    expect(fs.readFileSync(receipt)).toEqual(before);
+    expect(fs.existsSync(receipt)).toBe(true);
     fs.rmSync(library, { recursive: true });
     const checked = spawnSync(
       process.execPath,

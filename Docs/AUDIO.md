@@ -187,6 +187,8 @@ and hardware mix acceptance still requires listening.
 The standalone [Sound desk guide](../scripts/audio-review/README.md) owns
 preparation, listening queues, choice import/export and preview validation.
 `npm run audio:review -- --serve-only` reopens an existing local snapshot.
+Preparing replacement auditions requires an explicit `--library <Sounds directory>`;
+production sound preparation uses committed `assets/sources/` masters.
 Audition choices do not install production replacements.
 
 ## Battle replacement auditions

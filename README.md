@@ -69,7 +69,7 @@ Repository ownership and feature layout:
 - `src/features/alchemy/` — game features and session infrastructure (`meta`, `run-setup`, `run-loop`, `shell`, `shared`)
 - `tests/` — unit tests grouped by source owner; browser specs in `tests/e2e/specs/`, Electron checks in `tests/electron/`, and desktop unit tests in `tests/desktop/`; shared fixtures, page objects, and helpers support multiple suites
 - `performance/` — browser and desktop measurement scenarios and reporting tools; runtime instrumentation lives in `src/lib/performance/`
-- Asset Library (external), `src/assets/`, `public/` — raw masters, bundled assets, and public assets; [asset workflows](./Docs/WORKFLOWS-ASSETS.md) identify generated outputs
+- `assets/sources/`, `src/assets/`, `public/` — raw masters, bundled assets, and public assets; [asset workflows](./Docs/WORKFLOWS-ASSETS.md) identify generated outputs
 - `scripts/` — command entry points, asset registries and pipeline helpers in `scripts/assets/`, and other shared tooling in `scripts/lib/`; see the [script implementation map](./scripts/README.md)
 - `lint/` — custom lint rules and import-boundary definitions composed by `oxlint.config.ts`
 - `Docs/`, `.agents/` — canonical project documentation, audit procedures, plans, and agent skills and lessons

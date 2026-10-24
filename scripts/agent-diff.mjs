@@ -8,7 +8,7 @@ import { INLINE_ARGS_BYTES } from "./lib/verification/selection-budgets.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const GENERATED =
-  /(?:^Raw Assets\/|^src\/assets\/optimized\/|^public\/(?:sounds|Music)\/|\.generated\.|(?:^|\/)\.asset-hashes\.json$|^src\/lib\/game-data\/gear-art\.ts$|(?:^|\/)package-lock\.json$)/u;
+  /(?:^assets\/sources\/|^src\/assets\/optimized\/|^public\/(?:sounds|Music)\/|\.generated\.|(?:^|\/)\.asset-hashes\.json$|^src\/lib\/game-data\/gear-art\.ts$|(?:^|\/)package-lock\.json$)/u;
 
 function git(root, args, accepted = [0]) {
   // Status may refresh index metadata; a review must not take optional write locks.

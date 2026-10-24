@@ -7,16 +7,18 @@ owns installed media. Choices and previews do not change either.
 ## Prepare and reopen
 
 ```sh
-npm run audio:review -- --serve
+npm run audio:review -- --library "/full/path/to/Sounds" --serve
 npm run audio:review -- --serve-only
-npm run audio:review -- --check
+npm run audio:review -- --library "/full/path/to/Sounds" --check
 ```
 
 Open [localhost:4317](http://127.0.0.1:4317/); stop the server with Ctrl+C.
 `--serve` regenerates, while `--serve-only` reopens the last snapshot. Regenerate
 after mapping or catalog changes. `--check` validates coverage, selected paths and
-hashes without writing previews. Use `--library '/full/path/to/Sounds'` to relocate
-the library and `--port 4318` when the port is occupied. Keep the port when
+hashes without writing previews. Preparing a snapshot requires an explicit
+`--library <Sounds directory>`; there is no default external library or background
+sync. Production assets use committed `assets/sources/` masters. Use `--port 4318`
+when the port is occupied. Keep the port when
 reopening to retain browser-local choices. Snapshots under ignored
 `reports/audio-review/` follow [transient cleanup](../README.md#cleanup-clean--explicit-reset-prunetransient--expiry).
 
@@ -40,7 +42,7 @@ Current sequences omit silent/unused registrations; Your choices labels the
 recommendation used for undecided rows.
 
 ```sh
-npm run audio:review -- --choices '/full/path/to/export.json'
+npm run audio:review -- --library "/full/path/to/Sounds" --choices '/full/path/to/export.json'
 ```
 
 Import merges into an ignored snapshot retained by regeneration. Valid browser
@@ -55,7 +57,7 @@ visible error.
 ## Battle replacement auditions
 
 ```sh
-npm run audio:review -- --battle-focus --serve --port 4318
+npm run audio:review -- --library "/full/path/to/Sounds" --battle-focus --serve --port 4318
 ```
 
 Focused files and browser choices are separate under `reports/audio-review/battle-focus/`.

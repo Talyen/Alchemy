@@ -92,7 +92,7 @@ will run it through the static aggregate.
 collection, so the boundary subset is not double-run on every full static
 invocation. Generated-output validation stays layered by design: fast
 `sync-generated --check` (barrels + version), `assets:check:outputs` (prepared
-outputs without the library), local `assets:check` (raw-source freshness), and the pre-build guard in `build-verified.mjs` share one
+outputs without source reads), `assets:check` (repository source freshness), and the pre-build guard in `build-verified.mjs` share one
 `syncGenerated` implementation.
 
 Shared command launch, script lifecycle, and package metadata helpers select both
@@ -319,7 +319,7 @@ boundaries as well as runtime imports.
 | `npm run check:static`            | Generated outputs, formatting, source/test types, and Oxlint (fast local static; no boundary subset double-run)                              |
 | `npm run lint:ci`                 | The canonical every-push static aggregate: `check:static`, docs, dead code, import boundaries, architecture smoke, and Playwright collection |
 | `npm run build` / `build:desktop` | Pure generated-output-validating web or desktop build                                                                                        |
-| `npm run assets:check`            | Read-only local Asset Library source freshness check                                                                                         |
+| `npm run assets:check`            | Read-only repository asset source freshness check                                                                                            |
 | `npm run test:e2e:critical`       | Every-push representative player journeys                                                                                                    |
 
 Independent static checks finish even when a sibling fails, including the nested
@@ -331,8 +331,8 @@ when its diagnostic format is unrecognized, retain bounded output from both ends
 instead of reducing the summary to its exit footer.
 
 Pre-push also validates committed asset integrity: asset-related selections run
-`npm run assets:check` and require the selected local library sources; other
-selections run `npm run assets:check:outputs` without the library. Ordinary
+`npm run assets:check` and read the selected committed source masters; other
+selections run `npm run assets:check:outputs` without source reads. Ordinary
 task-scoped `check` does not add either asset check.
 
 Builds only validate generated outputs and never prepare or rewrite tracked
@@ -340,7 +340,7 @@ sources. `npm run dev` validates committed outputs through its `predev` lifecycl
 explicit `sync:*` and asset authoring commands when intentionally regenerating
 outputs for a build.
 
-Every pull request and push to `main` runs the static aggregate, full Vitest, one web build plus preview smoke, the critical browser suite, and representative production localization acceptance in an independent job. Nightly and release retain all shipped locales for shared presentation flows, representative gameplay settlement journeys, and expanded-English development acceptance. Prepared assets, desktop packaging, and Electron tests remain path-gated. Dependency setup skips Electron downloads by default; only packaging and Electron test jobs install the binary. Installed Electron binaries use exact lockfile-specific caches without fallback to an older dependency set. Browser setup installs OS dependencies even when browser binaries are cached. Prepared-output integrity jobs use committed selections and outputs without Asset Library. CI topology is owned solely by `.github/workflows/`; local test selection is owned by the broad categories in `scripts/lib/verification/change-routes.mjs`.
+Every pull request and push to `main` runs the static aggregate, full Vitest, one web build plus preview smoke, the critical browser suite, and representative production localization acceptance in an independent job. Nightly and release retain all shipped locales for shared presentation flows, representative gameplay settlement journeys, and expanded-English development acceptance. Prepared assets, desktop packaging, and Electron tests remain path-gated. Dependency setup skips Electron downloads by default; only packaging and Electron test jobs install the binary. Installed Electron binaries use exact lockfile-specific caches without fallback to an older dependency set. Browser setup installs OS dependencies even when browser binaries are cached. Asset integrity jobs verify committed source masters, selections and prepared outputs without an external library. CI topology is owned solely by `.github/workflows/`; local test selection is owned by the broad categories in `scripts/lib/verification/change-routes.mjs`.
 
 Static and unit CI jobs use one-commit checkouts; history-dependent tests create
 their own fixture repositories. Change detection and release ancestry jobs retain

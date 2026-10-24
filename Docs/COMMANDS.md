@@ -15,8 +15,8 @@ ordinary verification workflow and permissions. This reference lists other opera
 | Develop in Electron         | `npm run dev:desktop`              | Starts the desktop shell                                                                          |
 | Build the web renderer      | `npm run build`                    | Validates generated outputs; does not rewrite them or run typecheck                               |
 | Regenerate assets           | `npm run assets`                   | [Asset workflow](./WORKFLOWS-ASSETS.md) covers narrower operations                                |
-| Check local asset freshness | `npm run assets:check`             | Read-only; requires selected local Asset Library sources                                          |
-| Check prepared outputs      | `npm run assets:check:outputs`     | Read-only; does not require Asset Library; used by CI                                             |
+| Check local asset freshness | `npm run assets:check`             | Read-only; reads committed masters under `assets/sources/`                                        |
+| Check prepared outputs      | `npm run assets:check:outputs`     | Read-only; validates prepared files without reading source masters                                |
 | Inspect test reservations   | `npm run test:status`              | Shows managed active and waiting commands; add `--json`                                           |
 | Run a browser journey       | `npm run test:e2e:route -- <name>` | [E2E guide](../tests/e2e/README.md#running-focused-checks); preview mode requires a current build |
 | Simulate isolated battles   | `npm run balance:sim`              | [Battle simulation](./REFERENCE.md#balance-simulation)                                            |
@@ -42,9 +42,9 @@ Use `npm run visual:scenario -- --list` for repeatable seeded screen captures.
 ## Local development
 
 `npm run dev` and `npm run dev:desktop` validate committed prepared outputs through
-their `predev` lifecycle. The external Asset Library is needed for authoring and
-raw-source freshness checks, not ordinary development. If validation reports stale
-outputs, follow [asset preparation](./WORKFLOWS-ASSETS.md#local-library-and-ci)
+their `predev` lifecycle. Asset authoring and source freshness checks use committed
+masters under `assets/sources/`; no external library is required. If validation reports stale
+outputs, follow [asset preparation](./WORKFLOWS-ASSETS.md#repository-sources-and-ci)
 rather than bypassing the check.
 
 If Electron's binary download was skipped or the installation is incomplete, run
@@ -80,7 +80,7 @@ directory within an edition, so run them sequentially.
 
 **Local build and checker overrides:**
 
-- `ASSET_LIBRARY_ROOT` — overrides the local Asset Library location; defaults to `~/Documents/Asset Library`.
+- `ASSET_LIBRARY_ROOT` is ignored. Production preparation always uses this checkout's `assets/sources/`; optional Sound desk browsing accepts `--library <Sounds directory>`.
 - `ALCHEMY_SKIP_ASSETS=1` — only for direct asset-preparation invocation; semantics owned by
   [`WORKFLOWS-ASSETS.md`](./WORKFLOWS-ASSETS.md#skip-mode-and-verification).
 - `ALCHEMY_ENABLE_CHECKER=1` — opt-in to the in-Vite `vite-plugin-checker` typecheck (off by default so `npm run dev` stays snappy; use `npm run typecheck:watch`, `npm run dev:checked`, or this flag when you need live type errors). Run `npm run predev` before `npm run dev:checked`, which starts Vite directly without the committed-output validation lifecycle. `ALCHEMY_SKIP_CHECKER=1` is a hard off used by the Playwright preview server.

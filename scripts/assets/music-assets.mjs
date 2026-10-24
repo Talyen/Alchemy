@@ -25,7 +25,7 @@ export async function validateMusicRegistry(files) {
   return files;
 }
 
-// Explicit selection keeps the shared library independent of this game's soundtrack.
+// Explicit selection defines this game's soundtrack independently of external libraries.
 export const musicAssets = [
   ...assetGroup({ folder: "Sounds/Game Sources/Music", settings: {} }, ["Battle 1.mp3"]),
   ...assetGroup({ folder: "Sounds/Game Sources/Projects/Alchemy/Music", settings: {} }, ["Battle 2.mp3"]),

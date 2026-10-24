@@ -1,7 +1,6 @@
 {
   "schemaVersion": 1,
   "direction": "Tactile fantasy",
-  "libraryRootDefault": "/Users/ryanmcintire/Documents/Asset Library/Sounds",
   "reviewPolicy": "Current references reflect installed registrations. Approved cue mappings remain working inputs in approved-choices.json; discard completed exports and review histories.",
   "families": [
     {

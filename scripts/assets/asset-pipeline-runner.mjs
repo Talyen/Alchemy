@@ -22,7 +22,7 @@ export function getManagedManifestPath(rootDir, managedKey) {
 }
 
 /**
- * Repository-local output directories and manifests; raw sources resolve separately through Asset Library.
+ * Repository-local output directories and manifests; raw masters resolve within assets/sources.
  */
 export function resolvePipelinePaths(importMetaUrl, { managedKey }) {
   const rootDir = resolveRootDir(importMetaUrl);

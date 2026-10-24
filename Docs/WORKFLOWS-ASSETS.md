@@ -13,18 +13,38 @@ commands below support narrower iteration. Review generated changes and run the
 read-only freshness check before handoff. Pipeline maintenance must also preserve the
 failure and freshness contracts below.
 
-## Local library and CI
+## Repository sources and CI
 
-Both games default to `~/Documents/Asset Library`; set `ASSET_LIBRARY_ROOT` for a different local location. Sources are library-relative paths beneath `2d Assets/Game Sources`, `Sounds/Game Sources`, or `Video/Game Sources`. Artwork is organized by subject under Characters, Actions, Items, Places, Interface, Animation, and Branding. Alternate versions share a subject folder with descriptive filenames; each game's manifests select the version it uses. Audio and video retain their existing organization. New approved revisions use distinct filenames and are adopted explicitly through each game's selection manifest.
+Alchemy's selected source masters are committed under `assets/sources/`. Preparation,
+source checks, icon generation, development and builds need no external asset library.
+The folder retains the selected `2d Assets/Game Sources` and `Sounds/Game Sources`
+paths so existing selections and transform receipts keep their identities. The
+source resolver is checkout-relative, ignores `ASSET_LIBRARY_ROOT`, and rejects
+source references or resolved symlinks escaping the repository source directory.
+Moving the repository requires no path configuration.
 
-Run `npm run assets` after source/selection edits, then `npm run assets:check`. App icons retain their focused `npm run generate:icons` command; source and output checks include its preparation record. Narrow optimizers remain available. Download selected files in Finder when iCloud has offloaded them. Full preparation reads all selected sources before publishing or pruning anything; missing sources preserve existing outputs. Asset-related pushes require a local source check.
+To adopt an asset from any external library, explicitly copy the chosen master into
+`assets/sources/`, update its owning selection manifest if needed, then run
+`npm run assets` and `npm run assets:check`. Review and commit the master, selection,
+and prepared outputs together. App icons retain `npm run generate:icons`; source
+and output checks include its preparation record. Narrow optimizers remain available.
+External edits, moves, renames and deletions never update Alchemy's copies. Do not
+use symlinks to import masters. Renaming a repository source requires updating its
+selection; missing selected sources fail before full preparation publishes or prunes.
 
 `generate:icons` accepts only `--help`/`-h`; unsupported arguments fail before source
 reads or output writes. Use `assets:check` for read-only icon validation.
 
-Selected files may be moved between folders or renamed within the configured library without updating manifests. Preparation, narrow optimizers, local source checks, and icon generation automatically search for missing paths and resolve the original bytes using the existing preparation receipt. Same-name alternatives never substitute for the recorded revision; byte-identical duplicates use a deterministic path. Recovery does not move files, rewrite selections, or change prepared outputs. Searches stay inside `ASSET_LIBRARY_ROOT` and do not follow symlinks. Unreadable or iCloud-offloaded files still need downloading; deleted or changed sources, missing receipts, and changed selections/recipes fail safely. Moving the entire library still requires updating `ASSET_LIBRARY_ROOT`.
+Ordinary development and builds use committed prepared outputs. `predev` runs
+`npm run assets:check:outputs`; asset CI runs `npm run assets:check` against the
+committed source masters without regenerating media. Output-only checks remain
+available for packaging. Receipts retain source/settings hashes, selection
+fingerprints and output hashes.
 
-Ordinary development and builds use committed outputs. `predev` and hosted CI run `npm run assets:check:outputs`; this deliberately does not establish raw-source freshness. CI neither downloads the library nor regenerates media. Prepared manifests retain independent source/settings hashes, selection fingerprints, and output hashes.
+The optional Sound desk browses replacement candidates only when given an explicit
+`--library <Sounds directory>`; it does not install production assets. See the
+[Sound desk guide](../scripts/audio-review/README.md). Existing snapshots can reopen
+without a library. No preparation command reads a default library in Documents.
 
 ## Art style and generation prompts
 
@@ -78,7 +98,7 @@ One standalone inventory icon on a square, genuinely transparent alpha backgroun
 
 ## Add or replace game art
 
-1. Put the raw master in the local Asset Library and use a library-relative source reference.
+1. Copy the approved raw master into `assets/sources/` and use a path relative to that folder.
 2. Register source, target, width, and quality in the topical manifest under
    `scripts/assets/` (`core`, `content`, `card`, or `talent`) using presets from `scripts/assets/asset-constants.mjs` (`ART_PRESETS`). Talent portraits belong in `talent-assets.mjs`.
 3. Run `npm run assets:optimize:art` followed by `npm run sync:art` for
@@ -99,7 +119,7 @@ Do not add exports to generated files by hand. The hash schema salt lives in
 
 ## Resource and battle UI masters
 
-Production authoring sources live in the iCloud-backed local Asset Library. Keep pending approval
+Production authoring sources are versioned under `assets/sources/`. Keep pending approval
 material only while its decision is open; once selected work is installed, remove
 superseded studies, approval transcripts and duplicate sources. Use ignored
 `output/` or `scratch/` for temporary experiments. Current tool inputs are listed
@@ -133,7 +153,7 @@ not rendered. The manifest owns output sizes and filenames.
 
 ## Demo marketing artwork
 
-Localized promo masters sit beside the English original in Asset Library as
+Localized promo masters sit beside the English original under `assets/sources/` as
 `Unlock Full Game Demo Promo - <locale>.png`; their prompt set is
 `Unlock Full Game Demo Promo - localization prompts.json`. Replace only the seven
 captions, preserving panels, framing, palette and gold lettering. Review spelling,
@@ -145,7 +165,7 @@ containment contract belong to [Steam demo](./STEAM_DEMO.md#marketing-presentati
 
 ## Add or replace Gear art
 
-1. Name source files `{Name} - {Basic|Astral}.jpeg` in Asset Library and select them in `scripts/assets/gear-assets.mjs` (PNG and
+1. Name source files `{Name} - {Basic|Astral}.jpeg` under `assets/sources/` and select them in `scripts/assets/gear-assets.mjs` (PNG and
    `.jpg` variants accepted by the optimizer; filename slugging lives in
    `scripts/assets/gear-filenames.mjs`).
 2. Run `npm run assets:optimize:art`.
@@ -186,7 +206,7 @@ preparation command before handoff.
 
 ## Add or replace music
 
-Select library-relative sources and stable output filenames in `scripts/assets/music-assets.mjs`, then run
+Select paths relative to `assets/sources/` and stable output filenames in `scripts/assets/music-assets.mjs`, then run
 `npm run assets:optimize:music`. Music is copied without transcoding into
 `public/Music/`. The optimizer removes files without a corresponding source;
 there is no curated-source exception for music. Filenames are validated for
@@ -216,7 +236,7 @@ outputs after source changes.
 Before handoff, run the read-only freshness check. It validates source/settings
 hashes, output bytes, manifest inventories, orphan files, and generated code,
 including version metadata. It never converts, copies, writes, or deletes assets.
-It requires the selected Asset Library sources locally. CI uses `npm run assets:check:outputs`, which checks selection/settings fingerprints, output bytes, inventories and generated code without reading raw sources. Regenerate stale outputs explicitly with `npm run assets`:
+It reads selected masters from `assets/sources/`; asset CI runs the same check. `npm run assets:check:outputs` checks selection/settings fingerprints, output bytes, inventories and generated code without reading masters. Regenerate stale outputs explicitly with `npm run assets`:
 
 ```sh
 npm run assets:check
@@ -247,16 +267,16 @@ git diff -- src/assets/optimized public/sounds public/Music \
   src/lib/game-data/assets.generated.ts src/lib/game-data/catalog-art.ts
 ```
 
-Commit the intended generated outputs and selection manifest changes. Raw masters stay outside Git.
+Commit the intended generated outputs and selection manifest changes. Raw masters are committed under `assets/sources/`.
 
 ## Pipeline overview
 
-| Asset kind    | Authoring source                       | Generated output                       | Registry / consumer                                   |
-| ------------- | -------------------------------------- | -------------------------------------- | ----------------------------------------------------- |
-| Game art      | Asset Library + `scripts/assets/*.mjs` | `src/assets/optimized/`                | `assets.generated.ts` → `src/lib/game-data/assets.ts` |
-| Gear art      | Asset Library + `gear-assets.mjs`      | Optimized WebP                         | `catalog-art.ts` → Gear definitions by stable ID      |
-| Sound effects | Asset Library + sound manifest         | `public/sounds/` OGG and MP3 fallbacks | `src/lib/audio/sound-registry.ts`                     |
-| Music         | Asset Library + music selection        | `public/Music/`                        | Audio owners under `src/lib/audio/`                   |
+| Asset kind    | Authoring source                           | Generated output                       | Registry / consumer                                   |
+| ------------- | ------------------------------------------ | -------------------------------------- | ----------------------------------------------------- |
+| Game art      | `assets/sources/` + `scripts/assets/*.mjs` | `src/assets/optimized/`                | `assets.generated.ts` → `src/lib/game-data/assets.ts` |
+| Gear art      | `assets/sources/` + `gear-assets.mjs`      | Optimized WebP                         | `catalog-art.ts` → Gear definitions by stable ID      |
+| Sound effects | `assets/sources/` + sound manifest         | `public/sounds/` OGG and MP3 fallbacks | `src/lib/audio/sound-registry.ts`                     |
+| Music         | `assets/sources/` + music selection        | `public/Music/`                        | Audio owners under `src/lib/audio/`                   |
 
 Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run sync:version`) is owned by the release pipeline ([RELEASE_SETUP](./RELEASE_SETUP.md)); it is not an art authoring source. Full preparation refreshes it as an independent step alongside the art barrels, so a failed art sync never blocks the version stamp and vice versa — failures from either are reported together.
 
@@ -275,16 +295,16 @@ Each pipeline publishes its complete hash manifest only after all of its process
 succeeds. Discovery or processing failures preserve the previous manifest and skip
 orphan deletion. Successful output files may still advance during a failed run;
 output hashes are checked on retry. `assets:check` reports stale outputs without
-changing them. Unreadable selected sources fail before processing; their diagnostic identifies the library-relative path and retains the filesystem error as its cause.
+changing them. Unreadable selected sources fail before processing; their diagnostic identifies the source-relative path and retains the filesystem error as its cause.
 
 ## Authoring models
 
 Three authoring shapes coexist by design:
 
-- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Art manifests use `artGroup()` from `scripts/assets/art-group.mjs` to share a folder relative to `2d Assets/Game Sources`, an `ART_PRESETS` entry, and optional transparency requirements across explicit `[sourceFilename, targetFilename, optionalPresetOverride]` rows. Nested source paths are allowed; targets remain explicit basenames. Adding files to the library never adds selections. Every target is explicitly registered and validated for duplicate targets and export names; shared sources may produce distinct targets. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/assets/asset-constants.mjs`.
-- **Explicit Gear and Music selections** — `scripts/assets/gear-assets.mjs` expands each selected item into Basic and Astral art using the canonical Gear filename owner. Music and sound manifests use `assetGroup()` from `scripts/assets/asset-group.mjs`: string selections retain source basenames (sounds use `.ogg`), while tuples pin renamed targets. `artGroup()` uses that same expansion with art presets. Selections never scan directories. Adding files to Asset Library does not change a game's inventory. Every output directory is fully managed; unregistered outputs are swept only after successful preparation. All current sound masters live in Asset Library; OGG masters are copied unchanged and receive MP3 fallbacks.
+- **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Art manifests use `artGroup()` from `scripts/assets/art-group.mjs` to share a folder relative to `2d Assets/Game Sources`, an `ART_PRESETS` entry, and optional transparency requirements across explicit `[sourceFilename, targetFilename, optionalPresetOverride]` rows. Nested source paths are allowed; targets remain explicit basenames. Adding files to the source folder never adds selections. Every target is explicitly registered and validated for duplicate targets and export names; shared sources may produce distinct targets. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/assets/asset-constants.mjs`.
+- **Explicit Gear and Music selections** — `scripts/assets/gear-assets.mjs` expands each selected item into Basic and Astral art using the canonical Gear filename owner. Music and sound manifests use `assetGroup()` from `scripts/assets/asset-group.mjs`: string selections retain source basenames (sounds use `.ogg`), while tuples pin renamed targets. `artGroup()` uses that same expansion with art presets. Selections never scan directories. Adding files to `assets/sources/` does not change the selected inventory. Every output directory is fully managed; unregistered outputs are swept only after successful preparation. All current sound masters live under `assets/sources/`; OGG masters are copied unchanged and receive MP3 fallbacks.
 
-- **Sound manifest** — `scripts/assets/sound-assets.mjs` lists `generatedSoundAssets` (selected WAV and OGG masters) plus the legacy `curatedSoundFiles` fallback (currently empty; all production masters are external). Conversion and fallback behavior follow [sound preparation](#add-or-replace-sound). The optimizer owns `public/sounds/` and tags each hash manifest entry with `owner: generated|curated`.
+- **Sound manifest** — `scripts/assets/sound-assets.mjs` lists `generatedSoundAssets` (selected WAV and OGG masters) plus the legacy `curatedSoundFiles` fallback (currently empty; all production masters are repo-local). Conversion and fallback behavior follow [sound preparation](#add-or-replace-sound). The optimizer owns `public/sounds/` and tags each hash manifest entry with `owner: generated|curated`.
 
 ## Content freshness and filesystem failures
 
@@ -325,7 +345,7 @@ transactional rollback.
 
 The fast generated check requires every static target and all four Gear slot
 backgrounds, and checks that every referenced optimized asset is a regular file.
-It does not decode or hash media, run conversions, or require Asset Library.
+It does not decode or hash media, run conversions, or read source masters.
 Full preparation and `assets:check` remain responsible for raw-source freshness
 and the complete selected per-item Gear inventory. Filesystem failures retain
 their original errors; structural errors identify the manifest and offending

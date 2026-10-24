@@ -103,7 +103,7 @@ const ROUTES = Object.freeze([
   route(
     "assets",
     [
-      "Raw Assets/**",
+      "assets/sources/**",
       "scripts/assets/**",
       "scripts/**asset*.mjs",
       "scripts/optimize-*.mjs",

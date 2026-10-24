@@ -36,7 +36,7 @@ export function resolveCheckPlan(
   const definitions = [
     {
       key: "asset-sources",
-      label: assetPush ? "local asset source freshness" : "committed asset integrity",
+      label: assetPush ? "repository asset source freshness" : "committed asset integrity",
       command: "npm",
       args: ["run", assetPush ? "assets:check" : "assets:check:outputs"],
       enabled: prePush,

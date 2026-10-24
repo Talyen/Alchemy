@@ -44,7 +44,7 @@ provides optional lookup over these owners.
 | Performance scenarios and runner                    | `performance/`, `scripts/lib/performance/`                                                          | [Performance](./PERFORMANCE.md)                                                                     |
 | Desktop bridge, packaging and Steam                 | `desktop/`, `src/lib/desktop-api.ts`, `src/lib/platform.ts`, `steam/`, `scripts/lib/release/`       | [Release](./RELEASE.md), [Steam demo](./STEAM_DEMO.md)                                              |
 | Verification and import rules                       | `tests/`, `scripts/lib/verification/`, `lint/`                                                      | [Contributing](../CONTRIBUTING.md), [verification implementation](../scripts/VERIFICATION.md)       |
-| Asset masters, prepared art and public media        | External Asset Library, `src/assets/`, `public/`, `scripts/assets/`                                 | [Assets](./WORKFLOWS-ASSETS.md)                                                                     |
+| Asset masters, prepared art and public media        | `assets/sources/`, `src/assets/`, `public/`, `scripts/assets/`                                      | [Assets](./WORKFLOWS-ASSETS.md)                                                                     |
 
 Tests mirror their source owners under `tests/`. Cross-subsystem interaction,
 architecture, browser, Electron and playthrough suites retain their distinct

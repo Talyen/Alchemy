@@ -1,7 +1,7 @@
 import { copyFile } from "node:fs/promises";
 import path from "node:path";
 
-import { resolveAssetSource, requireAssetSources } from "./assets/asset-library.mjs";
+import { resolveAssetSource, requireAssetSources } from "./assets/asset-sources.mjs";
 import { selectionHash, processFreshEntry } from "./assets/asset-manifest-cache.mjs";
 import {
   ASSET_SCHEMA_VERSION,
@@ -33,7 +33,7 @@ export async function optimizeMusic({ check = false } = {}) {
     return { ok: false, error: msg };
   }
   await validateMusicRegistry(files);
-  await requireAssetSources(files, { manifestPath, settingsFor: () => MUSIC_SETTINGS });
+  await requireAssetSources(files);
 
   await ensureOutputDir(outputDir, { check });
 

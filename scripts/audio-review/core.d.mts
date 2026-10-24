@@ -26,7 +26,6 @@ export interface ReviewManifest {
   battleFocus?: string[];
   schemaVersion: number;
   direction: string;
-  libraryRootDefault: string;
   reviewPolicy: string;
   families: Array<{
     id: string;

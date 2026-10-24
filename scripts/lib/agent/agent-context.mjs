@@ -68,7 +68,7 @@ export const CONTEXT_TASKS = {
     entrypoints: ["src/lib/loot/policy.ts", "src/features/alchemy/run-loop/navigation/reward-flow.ts"],
   },
   assets: {
-    matches: /(?:assets|optimize-|sync-generated|public\/(?:Music|sounds)|Raw Assets)/,
+    matches: /(?:assets|optimize-|sync-generated|public\/(?:Music|sounds)|assets\/sources)/,
     docs: [owner("Docs/WORKFLOWS-ASSETS.md")],
     entrypoints: ["scripts/assets.mjs"],
   },

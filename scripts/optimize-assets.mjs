@@ -3,7 +3,7 @@ import path from "node:path";
 import sharp from "sharp";
 
 import { gearAssets } from "./assets/gear-assets.mjs";
-import { resolveAssetSource, requireAssetSources } from "./assets/asset-library.mjs";
+import { resolveAssetSource, requireAssetSources } from "./assets/asset-sources.mjs";
 import { selectionHash } from "./assets/asset-manifest-cache.mjs";
 import { staticAssets, validateAssetRegistry } from "./assets/asset-manifest.mjs";
 import { processFreshEntry } from "./assets/asset-manifest-cache.mjs";
@@ -104,7 +104,7 @@ async function optimizeAsset(asset, storedEntry, check) {
 export async function optimizeAssets({ check = false } = {}) {
   const allAssets = [...staticAssets, ...gearAssets];
   await validateAssetRegistry(allAssets);
-  await requireAssetSources(allAssets, { manifestPath, settingsFor: artTransformSettings });
+  await requireAssetSources(allAssets);
 
   await ensureOutputDir(outputDir, { check });
 
