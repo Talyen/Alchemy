@@ -355,6 +355,16 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
                 const rect = globalThis.document.querySelector("[data-testid='boss-lyrics']")?.getBoundingClientRect();
                 return rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null;
               })(),
+              bossBounds: (() => {
+                const rect = globalThis.document
+                  .querySelector("[data-testid='battle-enemy-art-panel']")
+                  ?.getBoundingClientRect();
+                return rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null;
+              })(),
+              lyricOverflow: (() => {
+                const lyrics = globalThis.document.querySelector("[data-testid='boss-lyrics']");
+                return lyrics ? lyrics.scrollWidth > lyrics.clientWidth : false;
+              })(),
               videos: [...globalThis.document.querySelectorAll("video")].map((video) => ({
                 src: new URL(video.src).pathname,
                 time: video.currentTime,
