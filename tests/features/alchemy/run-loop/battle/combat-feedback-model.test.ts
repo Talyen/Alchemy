@@ -3,6 +3,7 @@ import type { CombatTextEvent } from "@/lib/battle";
 import type { CombatTextBurst } from "@/features/alchemy/shared/types";
 import { prepareCombatFeedback } from "@/features/alchemy/run-loop/battle/combat-feedback-model";
 import { consolidateCombatBursts } from "@/features/alchemy/run-loop/battle/combat-feedback-merge";
+import { combatTextLane } from "@/features/alchemy/run-loop/battle/combat-feedback-motion";
 
 function burst(id: number, events: CombatTextEvent[], now = 0): CombatTextBurst {
   return prepareCombatFeedback(events, id, now, 1100).bursts[0]!;
@@ -85,6 +86,30 @@ describe("combat feedback preparation and merging", () => {
     expect(zero.bursts[0]!.entries[0]).toMatchObject({ ...hit, amount: 0, displayText: "0" });
     expect(prepareCombatFeedback([], 3, 20, 1100)).toEqual({ bursts: [], impacts: {}, reactions: [] });
   });
+});
+
+it("preserves primary/corner intent through display totals and rapid burst merging", () => {
+  const direct: CombatTextEvent = { target: "player", kind: "status", stat: "block", amount: 5, feedback: "primary" };
+  const proc: CombatTextEvent = { ...direct, amount: 2, feedback: "secondary" };
+  const current = burst(1, [direct, proc]);
+  expect(current.entries).toHaveLength(2);
+  expect(current.entries.map(combatTextLane)).toEqual(["impact", "benefit"]);
+  const merged = consolidateCombatBursts([current], [burst(2, [proc], 10)], 10);
+  expect(merged.bursts[0]!.entries).toMatchObject([
+    { amount: 5, feedback: "primary" },
+    { amount: 4, feedback: "secondary" },
+  ]);
+  const damage = prepareCombatFeedback(
+    [
+      { ...hit, feedback: "primary" },
+      { ...hit, amount: 3, feedback: "secondary" },
+    ],
+    3,
+    0,
+    1100,
+  ).bursts[0]!;
+  expect(damage.entries).toHaveLength(2);
+  expect(damage.entries.map(combatTextLane)).toEqual(["impact", "setback"]);
 });
 
 it("totals reaction damage for display while retaining packet facts for impacts and input events", () => {

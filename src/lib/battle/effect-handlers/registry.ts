@@ -26,10 +26,16 @@ export const EFFECT_APPLY_BY_KIND: EffectHandlers = {
   ...STATUS_HANDLERS,
   ...UTILITY_HANDLERS,
   ...SIMPLE_HANDLERS,
-  "companion-action": (state, _card, effect, potionMult, combatTexts) => {
+  "companion-action": (state, _card, effect, potionMult, combatTexts, context) => {
     let nextState = state;
     for (let action = 0; action < applyPotionMultiplier(effect.amount, potionMult); action += 1) {
-      nextState = resolveCompanionTurnStart(nextState, combatTexts, applyCardEffects);
+      nextState = resolveCompanionTurnStart(nextState, combatTexts, (current, card, texts, companionContext) =>
+        applyCardEffects(current, card, texts, {
+          ...companionContext,
+          manaAtStart: current.mana,
+          feedback: context?.feedback,
+        }),
+      );
     }
     return nextState;
   },
@@ -115,7 +121,13 @@ function resolveSingleEffect(
   }
 
   if (effect.kind === "repeat-over-turns") {
-    mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "scheduled", text: "" });
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "notice",
+      stat: "scheduled",
+      text: "",
+      ...(context.feedback ? { feedback: context.feedback } : {}),
+    });
     return {
       ...state,
       pendingTurnStartEffects: [
@@ -190,7 +202,13 @@ export function applyCardEffects(
 ): BattleState {
   // Earlier turn-start actions share the output rail, but cannot acknowledge
   // this card or Companion's ineffective action on its behalf.
-  context = { ...context, forgeTriggers: new Set<string>() };
+  context = {
+    ...context,
+    forgeTriggers: new Set<string>(),
+    feedback:
+      context.feedback ??
+      (context.origin === "played-card" ? "primary" : context.origin || state.action ? "secondary" : undefined),
+  };
   const effectTexts: CombatTextEvent[] = [];
   const potionMult =
     isPotionCard(card) && card.consume && !state.action?.repeatActive
@@ -205,14 +223,30 @@ export function applyCardEffects(
   );
   const primary = card.effects[0];
   if (
-    effectTexts.length === 0 &&
+    !effectTexts.some((event) => event.feedback === context.feedback) &&
     !isPlayerDefeated(state) &&
     primary &&
     (hasEffectApplyHandler(primary.kind) || isRecursiveBattleCardEffectKind(primary.kind))
   ) {
     const feedback = ineffectiveEffectFeedback(primary);
-    if (feedback && (feedback.target === "player" || state.enemyHealth > 0)) mergeCombatText(effectTexts, feedback);
+    if (feedback && (feedback.target === "player" || state.enemyHealth > 0))
+      mergeCombatText(effectTexts, { ...feedback, ...(context.feedback ? { feedback: context.feedback } : {}) });
   }
-  for (const event of effectTexts) mergeCombatText(combatTexts, event);
+  // Direct emitters mark authored outcomes before any proc can merge into them.
+  // Damage/healing take precedence; otherwise the first successful authored result
+  // acknowledges the action. Costs and triggered rewards never win by magnitude.
+  const meaningful = (event: CombatTextEvent) => event.kind === "notice" || event.amount !== 0;
+  const direct = effectTexts.filter((event) => event.feedback === "primary");
+  const hasImpact = direct.some((event) => meaningful(event) && (event.kind === "damage" || event.kind === "heal"));
+  const first = direct.find(meaningful) ?? direct[0];
+  for (const event of effectTexts) {
+    if (!context.feedback) {
+      mergeCombatText(combatTexts, event);
+      continue;
+    }
+    const main =
+      event.feedback === "primary" && (hasImpact ? event.kind === "damage" || event.kind === "heal" : event === first);
+    mergeCombatText(combatTexts, { ...event, feedback: main ? "primary" : "secondary" });
+  }
   return result;
 }

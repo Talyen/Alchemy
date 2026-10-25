@@ -18,13 +18,19 @@ export interface HitFacts {
   readonly critical: boolean;
 }
 
-export function reportEnemyHitDamage(facts: HitFacts, damageType: DamageType, texts: CombatTextEvent[]): void {
+export function reportEnemyHitDamage(
+  facts: HitFacts,
+  damageType: DamageType,
+  texts: CombatTextEvent[],
+  feedback?: CombatTextEvent["feedback"],
+): void {
   if (facts.resolvedDamage <= 0) return;
   mergeCombatText(texts, {
     target: "enemy",
     kind: "damage",
     stat: damageType,
     amount: facts.resolvedDamage,
+    ...(feedback ? { feedback } : {}),
     ...(facts.healthDamage !== facts.resolvedDamage ? { healthLost: facts.healthDamage } : {}),
     ...(facts.critical && facts.healthDamage > 0 ? { critical: true } : {}),
   });
@@ -66,6 +72,7 @@ export type CardHitRequest = Readonly<{
   resolvedDamage: number;
   critical?: boolean;
   origin?: CardEffectResolutionContext["origin"];
+  feedback?: CombatTextEvent["feedback"];
   onDamageDealt?: ((amount: number) => void) | undefined;
 }>;
 

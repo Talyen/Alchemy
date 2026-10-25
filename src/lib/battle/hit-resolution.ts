@@ -148,7 +148,7 @@ function resolveCardHit(
     // Bloodrush can invoke an Emergency Wish whose retaliation is fatal.
     // Retain feedback for the landed hit without starting its later riders.
     nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy", combatTexts);
-    reportEnemyHitDamage(facts, effect.damageType, combatTexts);
+    reportEnemyHitDamage(facts, effect.damageType, combatTexts, request.feedback);
     return nextState;
   }
 
@@ -180,7 +180,7 @@ function resolveCardHit(
 
   nextState = applyElementalDamageManaRestore(nextState, effect.damageType, facts.healthDamage, combatTexts);
 
-  reportEnemyHitDamage(facts, effect.damageType, combatTexts);
+  reportEnemyHitDamage(facts, effect.damageType, combatTexts, request.feedback);
 
   if (
     modifiedDamage > 0 &&

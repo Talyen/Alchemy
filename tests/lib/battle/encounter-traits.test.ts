@@ -53,9 +53,9 @@ describe("encounter trait enemy actions", () => {
     const next = processEncounterTraitActionDamage(state, texts);
     expect(next.playerHealth).toBe(0);
     expect(next.playerStatuses).toMatchObject({ poison: 1, bleed: 0, burn: 0, freeze: 0, stun: 0 });
-    expect(texts.filter((text) => text.kind === "damage" && text.target === "player").map((text) => text.stat)).toEqual(
-      ["poison", "bleed"],
-    );
+    expect(
+      texts.filter((text) => text.kind === "damage" && text.target === "player").map((text) => text.stat),
+    ).toMatchObject(["poison", "bleed"]);
     expect({ ...state, rng: undefined }).toEqual(before);
   });
 

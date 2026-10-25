@@ -82,7 +82,9 @@ describe("Cull the Weak", () => {
       const result = play(battle({ enemyHealth: health, talentEffects: cull }), leech);
       expect(result.state.enemyHealth).toBe(health - damage);
       expect(result.state.playerHealth).toBe(10 + healing);
-      expect(result.combatTexts).toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: damage });
+      expect(result.combatTexts).toContainEqual(
+        expect.objectContaining({ target: "enemy", kind: "damage", stat: "physical", amount: damage }),
+      );
       expect(result.combatTexts).not.toContainEqual(expect.objectContaining({ stat: "holy" }));
     },
   );
@@ -92,7 +94,9 @@ describe("Cull the Weak", () => {
     const result = play(battle({ enemyHealth: 54, talentEffects: cull }), card);
     expect(result.state.enemyHealth).toBe(36);
     expect(result.state.playerHealth).toBe(19);
-    expect(result.combatTexts).toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 18 });
+    expect(result.combatTexts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "physical", amount: 18 }),
+    );
   });
 
   it("uses additive percentages and ordinary rounding and mitigation, excluding companion and incidental hits", () => {

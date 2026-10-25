@@ -122,7 +122,9 @@ it("Burn bonuses against Bleeding enemies apply to card damage and ticks", () =>
   expect(computeCardDamageToEnemy(state, effect, makeTestCard({ effects: [effect] })).modifiedDamage).toBe(15);
   const texts: CombatTextEvent[] = [];
   expect(tickEnemyStatuses(state, texts).enemyHealth).toBe(77);
-  expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 15, periodic: true });
+  expect(texts).toContainEqual(
+    expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 15, periodic: true }),
+  );
 });
 
 it("depleting Block retaliates with Stun damage and buildup", () => {
@@ -213,7 +215,7 @@ it.each([0, MAX_HAND_SIZE])("Runic Quill reports its draw with %i cards already 
   const texts: CombatTextEvent[] = [];
   const next = handlePostPlayCardDestination(state, card, { combatTexts: texts });
   expect(next.hand.length + next.pendingHandCards.length).toBe(handSize + 1);
-  expect(texts).toContainEqual({ target: "player", kind: "status", stat: "draw", amount: 1 });
+  expect(texts).toContainEqual(expect.objectContaining({ target: "player", kind: "status", stat: "draw", amount: 1 }));
 });
 
 it("does not grant armorOnConsume when playing a summon-companion card", () => {

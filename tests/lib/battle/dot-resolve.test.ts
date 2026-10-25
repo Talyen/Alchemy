@@ -73,9 +73,15 @@ describe("detonateEnemyStatuses", () => {
     const texts = makeTexts();
     const next = detonateEnemyStatuses(state, ["burn", "bleed", "poison"], texts);
     expect(next.enemyHealth).toBe(69);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "poison", amount: 11 });
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 10 });
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 10 });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "poison", amount: 11 }),
+    );
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 10 }),
+    );
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "bleed", amount: 10 }),
+    );
   });
 
   it("applies the Burn bonus against a bleeding enemy to Burn detonation", () => {
@@ -88,7 +94,9 @@ describe("detonateEnemyStatuses", () => {
     const next = detonateEnemyStatuses(state, ["burn"], texts);
     expect(next.enemyHealth).toBe(18);
     expect(next.enemyStatuses.burn).toBe(0);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 12 });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 12 }),
+    );
   });
 
   it.each(["burn", "poison"] as const)("keeps queued Bleed leech when detonating only %s", (status) => {
@@ -126,8 +134,12 @@ describe("detonateEnemyStatuses", () => {
     expect(next.enemyHealth).toBe(20);
     expect(next.enemyStatuses.bleed).toBe(0);
     expect(next.enemyStatuses.poison).toBe(0);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 6 });
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "poison", amount: 4 });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "bleed", amount: 6 }),
+    );
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "poison", amount: 4 }),
+    );
   });
 
   it("pays pending bleed leech against actual health lost, then clears the pending amount", () => {
@@ -142,7 +154,9 @@ describe("detonateEnemyStatuses", () => {
     expect(next.enemyHealth).toBe(24);
     expect(next.pendingBleedLeechHealing).toBe(0);
     expect(next.playerHealth).toBe(22);
-    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "player", kind: "heal", stat: "health", amount: 2 }),
+    );
   });
 });
 

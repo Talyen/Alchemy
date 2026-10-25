@@ -229,6 +229,9 @@ function resolveCardPlay(
     manaSpent,
   });
   const resolved = resolvePendingBattleReactions(nextState, combatTexts);
+  // Payment, pre-play talents and post-play rewards share this action's receipt,
+  // but only the effect interpreter can mark an intended card outcome as primary.
+  for (const event of combatTexts) event.feedback ??= "secondary";
   if (previousEmptyDraw) return { state: resolved, combatTexts };
   const { onEmptyDraw: _onEmptyDraw, ...completed } = resolved;
   return { state: completed, combatTexts };

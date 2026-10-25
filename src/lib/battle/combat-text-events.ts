@@ -25,7 +25,12 @@ export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: Comba
   if (!shouldShowCombatText(nextEvent)) return;
 
   const existing = combatTexts.find((event) => {
-    if (event.target !== nextEvent.target || event.stat !== nextEvent.stat || event.kind !== nextEvent.kind)
+    if (
+      event.target !== nextEvent.target ||
+      event.stat !== nextEvent.stat ||
+      event.kind !== nextEvent.kind ||
+      event.feedback !== nextEvent.feedback
+    )
       return false;
     if (event.kind === "notice" && nextEvent.kind === "notice")
       return event.text === nextEvent.text && event.signal === nextEvent.signal;

@@ -76,7 +76,9 @@ describe("Dodge gear affixes", () => {
     const texts = makeCombatTexts();
     const result = enemyHit(state, 8, texts);
     expect(result.playerStatuses.armor).toBe(5);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "armor", amount: 5 });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "player", kind: "status", stat: "armor", amount: 5 }),
+    );
   });
 
   it("deals Physical and Bleed damage on Dodge", () => {
@@ -269,7 +271,7 @@ describe("enemy Dodge", () => {
       flags: state.flags,
       deck: state.deck,
     });
-    expect(texts).toEqual([{ target: "enemy", kind: "notice", stat: "dodge", text: "Dodge" }]);
+    expect(texts).toMatchObject([{ target: "enemy", kind: "notice", stat: "dodge", text: "Dodge" }]);
   });
 
   it("does not Dodge DoT ticks", () => {

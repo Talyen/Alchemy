@@ -127,7 +127,9 @@ describe("draw and status interaction regressions", () => {
       const texts: CombatTextEvent[] = [];
       const next = source === "tick" ? tickEnemyPoison(state, texts) : detonateEnemyStatuses(state, ["poison"], texts);
       expect(next.enemyMitigation.armor).toBe(0);
-      expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "armor", amount: 2, impact: false });
+      expect(texts).toContainEqual(
+        expect.objectContaining({ target: "enemy", kind: "damage", stat: "armor", amount: 2, impact: false }),
+      );
     },
   );
 });

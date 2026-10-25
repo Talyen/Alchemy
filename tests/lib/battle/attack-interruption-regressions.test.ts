@@ -57,6 +57,8 @@ describe("attack interruptions", () => {
     expect(next.enemyHealth).toBe(27);
     expect(next.enemyStatuses.poison).toBe(0);
     expect(next.gold).toBe(state.gold);
-    expect(combatTexts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 2 });
+    expect(combatTexts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "bleed", amount: 2 }),
+    );
   });
 });

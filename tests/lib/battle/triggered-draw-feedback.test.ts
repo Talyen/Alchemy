@@ -43,7 +43,7 @@ describe("triggered card draw feedback", () => {
     });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.hand).toEqual([expect.objectContaining({ id: "wolf-companion" })]);
-    expect(result.combatTexts).toContainEqual(drawText(1));
+    expect(result.combatTexts).toContainEqual(expect.objectContaining(drawText(1)));
   });
 
   it("reports the Archery card drawn on Dodge", () => {
@@ -59,7 +59,7 @@ describe("triggered card draw feedback", () => {
       texts,
     );
     expect(next.hand).toEqual([expect.objectContaining({ id: "bounty-shot" })]);
-    expect(texts).toContainEqual(drawText(1));
+    expect(texts).toContainEqual(expect.objectContaining(drawText(1)));
   });
 
   it.each(["eagle-eye", "hunters-bond", "archery-gear"])("reports %s card-play draws", (source) => {
@@ -81,7 +81,7 @@ describe("triggered card draw feedback", () => {
     });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.hand).toEqual([expect.objectContaining({ id: drawnCard.id })]);
-    expect(result.combatTexts).toContainEqual(drawText(1));
+    expect(result.combatTexts).toContainEqual(expect.objectContaining(drawText(1)));
   });
 
   it.each([0, MAX_HAND_SIZE])("reports Wish draws with %i cards in hand", (handSize) => {
@@ -95,7 +95,7 @@ describe("triggered card draw feedback", () => {
     const texts: CombatTextEvent[] = [];
     const next = applyWishEffect(state, undefined, 1, texts);
     expect(next.hand.length + next.pendingHandCards.length).toBe(handSize + 2);
-    expect(texts).toContainEqual(drawText(2));
+    expect(texts).toContainEqual(expect.objectContaining(drawText(2)));
   });
 
   it.each(["attack", "follow-up", "tick", "detonation"])("reports Bloodrush draws from a Bleed %s", (source) => {
@@ -120,7 +120,7 @@ describe("triggered card draw feedback", () => {
           ? tickEnemyStatuses(state, texts)
           : detonateEnemyStatuses(state, ["bleed"], texts));
     expect(next.hand).toEqual([expect.objectContaining({ id: drawnCard.id })]);
-    expect(result?.combatTexts ?? texts).toContainEqual(drawText(1));
+    expect(result?.combatTexts ?? texts).toContainEqual(expect.objectContaining(drawText(1)));
   });
 
   it.each([0, MAX_HAND_SIZE])("reports Radiant Guard's Holy draw with %i cards in hand", (handSize) => {
@@ -132,7 +132,7 @@ describe("triggered card draw feedback", () => {
     const texts: CombatTextEvent[] = [];
     const next = addPlayerStatusWithCombatText(state, "block", 2, texts);
     expect(next.hand.length + next.pendingHandCards.length).toBe(handSize + 1);
-    expect(texts).toContainEqual(drawText(1));
+    expect(texts).toContainEqual(expect.objectContaining(drawText(1)));
   });
 
   it("reports Twin Casting's draw into a full hand queue", () => {
@@ -147,7 +147,7 @@ describe("triggered card draw feedback", () => {
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.hand).toHaveLength(MAX_HAND_SIZE);
     expect(result.state.pendingHandCards).toEqual([expect.objectContaining({ id: "frostbolt" })]);
-    expect(result.combatTexts).toContainEqual(drawText(1));
+    expect(result.combatTexts).toContainEqual(expect.objectContaining(drawText(1)));
   });
 
   it("does not report a Twin Casting draw when only discard contains a matching card", () => {

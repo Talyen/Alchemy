@@ -113,7 +113,7 @@ describe("applyWishEffect", () => {
     const texts: CombatTextEvent[] = [];
     const next = applyWishEffect(state, cardById.wish!, 2, texts);
     expect(next.gold).toBe(16);
-    expect(texts.filter((text) => text.stat === "gold")).toEqual([
+    expect(texts.filter((text) => text.stat === "gold")).toMatchObject([
       { target: "player", kind: "status", stat: "gold", amount: 16 },
     ]);
   });
