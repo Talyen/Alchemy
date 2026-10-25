@@ -2,14 +2,8 @@ import { companionLibrary, type CompanionDamageModifiers } from "./companions";
 import { getCompanionDescriptionLines } from "./cards/companion-turn-description";
 import type { BattleCard } from "./types";
 
-/** Transient inspection only. Execute/save only card; attackPreview is a display projection. */
-export interface CardDescriptionInspection {
-  card: BattleCard;
-  attackPreview?: { card: BattleCard; lineIndices: number[] };
-}
-
 export interface CardDescriptionContext {
-  inspectBattleCard?: (card: BattleCard) => CardDescriptionInspection;
+  inspectBattleCard?: (card: BattleCard) => BattleCard;
   companionDamageModifiers?: CompanionDamageModifiers;
   companionBondLevels?: Record<string, number>;
 }

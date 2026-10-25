@@ -31,7 +31,6 @@
   "brewing.choose-two": {"text":"Choisir deux Potions","sourceHash":"b44c40bf97f17dc64108d6322e08f17b8a725fd974c2ef0c31fdac12daf353ba","reviewed":true},
   "brewing.clear-slot": {"text":"Retirer la Potion de l’emplacement {{slot}}","sourceHash":"c2e4910b884ff62e82dce52c6e9fa7d11180cb91502b229e11ba192d3779347d","reviewed":true},
   "brewing.empty-slot": {"text":"Emplacement de Potion {{slot}} vide","sourceHash":"591a01bcf198976a3c5e2a1329aafc12fe6fe9724a8ce3343a01bd7b29186a5c","reviewed":true},
-  "card.attack-preview": {"text":"Puissance d’attaque","sourceHash":"458df9f0257a7f78aed730326023aa900e1bcbd292f6404cd6ed86d1b226b2a8","reviewed":true},
   "card.corrupted-title": {"text":"{{name}} <corruption>de corruption</corruption>","sourceHash":"a567f23be8e1cd4828a7f59fbdbaccbf722747c9e5bb368b9bc68a9e383aebd5","reviewed":true},
   "card.new": {"text":"NOUVEAU","sourceHash":"6187b91f40a545c8128eaaeb4ed29b633e7dfdb0ef60d23c58a35ba1f709144c","reviewed":true},
   "card.transmuted.archery": {"text":"{{name}} <modifier>de précision</modifier>","sourceHash":"73c5f110c7b12b34228388add41b5b2f56fa824df689f065dd542c38532db946","reviewed":true},
