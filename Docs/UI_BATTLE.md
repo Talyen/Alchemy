@@ -74,8 +74,8 @@ so a second portrait never shows around the video. Neither video nor its static
 fallback uses cover/crop scaling. Their extra width retains the same base
 frame height as the hero's 3:4 portrait and other enemies' 4:3
 portraits. Hero and enemy frames keep that height through turn changes and hover;
-the shining border indicates the active turn. Stone Titan's battle artwork is
-mirrored, including idle playback and the frozen defeat image. Collections, Destination,
+the shining border indicates the active turn. Earth Elemental and Stone Titan battle artwork is
+mirrored toward the hero, including available idle playback and the defeat image. Collections, Destination,
 Labyrinth, inspection and bosses without clips retain their static artwork.
 
 ## Battle feedback
@@ -147,7 +147,7 @@ label and sound cue. Merging into an already critical entry neither restarts its
 pulse nor extends its lifetime; exact curves live in
 [battle styles](../src/styles/battle-scene.css).
 
-The Balanced treatment uses 32px base text, an 85 ms pop to 1.85×, a settle to
+The Balanced treatment uses 38.4px base text, an 85 ms pop to 1.85×, a settle to
 1.55×, and a smooth shrink toward 1.2×. Travel begins at 240 ms, slows over 810 ms,
 and ends 76 scaled pixels above the launch point. Numeric entries last 1050 ms
 with a smooth final 280 ms fade. Benefits and setbacks use 80% of the base size.

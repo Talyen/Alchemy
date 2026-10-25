@@ -167,7 +167,9 @@ export function ArtPanel({
                 title={title}
                 art={art}
                 idleClips={idleClips}
-                mirrorArt={side === "enemy" && currentEnemy?.id === "stone-titan"}
+                mirrorArt={
+                  side === "enemy" && (currentEnemy?.id === "stone-titan" || currentEnemy?.id === "earth-elemental")
+                }
                 shimmerId={shimmerId}
                 shimmerActive={shimmerActive}
                 shimmerToken={shimmerToken}

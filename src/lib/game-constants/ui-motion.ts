@@ -26,7 +26,7 @@ export const COMBAT_IMPACT_HEAVY_HEALTH_RATIO = 0.2;
 export const CARD_REJECTION_FEEDBACK_MS = 260;
 export const COMBAT_TEXT_LIFETIME_MS = 1050;
 export const COMBAT_TEXT_MIN_LIFETIME_MS = 400;
-export const COMBAT_TEXT_BASE_SIZE_PX = 32;
+export const COMBAT_TEXT_BASE_SIZE_PX = 38.4;
 export const COMBAT_TEXT_MOTION = {
   initialScale: 0.9,
   peakScale: 1.85,
