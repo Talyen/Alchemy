@@ -1,94 +1,64 @@
 import { useGameTranslation } from "@/components/use-game-translation";
-
-import { createElement, useLayoutEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-
-import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
-import { clamp01, cn } from "@/lib/utils";
-import { COMBAT_TEXT_BASE_SIZE_PX, COMBAT_TEXT_MAX_BURSTS_PER_RAIL } from "@/lib/game-constants";
-
+import { createElement, type ReactNode } from "react";
+import { motion } from "motion/react";
+import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
+import { cn } from "@/lib/utils";
+import {
+  COMBAT_TEXT_BASE_SIZE_PX,
+  COMBAT_TEXT_LIFETIME_MS,
+  REACTION_TEXT_LIFETIME_MS,
+  COMBAT_TEXT_MOTION as M,
+} from "@/lib/game-constants";
 import { ReactionTextRail } from "./reaction-text";
-import type { CombatTextBurst, FloatingCombatText, ReactionAnnouncement } from "../../../../shared/types";
+import type {
+  CombatTextBurst,
+  FloatingCombatText,
+  ReactionAnnouncement,
+  CombatTextLane,
+} from "../../../../shared/types";
 import {
   getCombatTextColorClass,
   getCombatTextIcon,
   getCombatTextLeadingIcon,
   getCombatTextAccessibleLabel,
 } from "../../../../shared/utils/index";
+import { combatTextFrame, combatTextLane } from "../../combat-feedback-motion";
 
-const FCT_POP_SCALE = 2.0;
-const FCT_HOLD_SCALE = 1.8;
-const FCT_POP_DURATION = 0.2;
-const FCT_HOLD_DURATION = 0.2;
-const FCT_SHRINK_DURATION = 0.5;
-const FCT_RISE_DURATION = 0.7;
-const FCT_RISE_DISTANCE_PX = 240;
-const FCT_FADE_DURATION = 0.25;
-
-const FCT_ANIMATION_PROPS = (() => {
-  const tPopPeak = FCT_POP_DURATION * 0.75;
-  const tPopEnd = FCT_POP_DURATION;
-  const tHoldEnd = tPopEnd + FCT_HOLD_DURATION;
-  const totalDuration = tHoldEnd + FCT_RISE_DURATION;
-
-  const tShrinkEnd = Math.min(totalDuration, tHoldEnd + FCT_SHRINK_DURATION);
-  const tFadeStart = Math.max(tHoldEnd, totalDuration - FCT_FADE_DURATION);
-
-  const riseSteps = Array.from({ length: 11 }, (_, i) => tHoldEnd + (i / 10) * (totalDuration - tHoldEnd));
-
-  const rawTimestamps = Array.from(
-    new Set([0, tPopPeak, tPopEnd, tHoldEnd, tShrinkEnd, tFadeStart, ...riseSteps, totalDuration]),
-  ).sort((a, b) => a - b);
-
-  const lerp = (start: number, end: number, progress: number) => start + (end - start) * clamp01(progress);
-
-  const getRiseEaseIn = (p: number) => Math.pow(clamp01(p), 3);
-
-  const scaleAt = (t: number) => {
-    if (t <= 0) return 0.5;
-    if (t <= tPopPeak) return lerp(0.5, FCT_POP_SCALE, t / tPopPeak);
-    if (t <= tPopEnd) return lerp(FCT_POP_SCALE, FCT_HOLD_SCALE, (t - tPopPeak) / (tPopEnd - tPopPeak));
-    if (t <= tHoldEnd) return FCT_HOLD_SCALE;
-    const shrinkProg = Math.min(1, (t - tHoldEnd) / FCT_SHRINK_DURATION);
-    return lerp(FCT_HOLD_SCALE, 1.0, shrinkProg);
-  };
-
-  const yAt = (t: number) => {
-    if (t <= tHoldEnd) return 0;
-    const riseProg = (t - tHoldEnd) / FCT_RISE_DURATION;
-    return -FCT_RISE_DISTANCE_PX * getRiseEaseIn(riseProg);
-  };
-
-  const opacityAt = (t: number) => {
-    if (t <= tFadeStart) return 1.0;
-    if (t >= totalDuration) return 0.0;
-    const fadeProg = (t - tFadeStart) / (totalDuration - tFadeStart);
-    return lerp(1.0, 0.0, fadeProg);
-  };
-
-  const times = rawTimestamps.map((t) => Number((t / totalDuration).toFixed(4)));
-  const scaleKeyframes = rawTimestamps.map((t) => Number(scaleAt(t).toFixed(3)));
-  const yKeyframes = rawTimestamps.map((t) => Number(yAt(t).toFixed(2)));
-  const opacityKeyframes = rawTimestamps.map((t) => Number(opacityAt(t).toFixed(3)));
-
+function animationFor(lane: CombatTextLane, lifetimeMs: number) {
+  const times = [
+    ...new Set(
+      [
+        0,
+        50,
+        85,
+        90,
+        140,
+        160,
+        170,
+        240,
+        770,
+        1000,
+        1050,
+        1250,
+        lifetimeMs,
+        ...Array.from({ length: Math.ceil(lifetimeMs / M.sampleMs) }, (_, i) => i * M.sampleMs),
+      ].filter((time) => time <= lifetimeMs),
+    ),
+  ].sort((a, b) => a - b);
+  const frames = times.map((time) => combatTextFrame(lane, time, lifetimeMs));
   return {
-    initial: { y: 0, opacity: 1, scale: 0.5 },
-    animate: {
-      scale: scaleKeyframes,
-      y: yKeyframes,
-      opacity: opacityKeyframes,
-      transition: {
-        duration: totalDuration,
-        times,
-        ease: "linear" as const,
-      },
-    },
+    scale: frames.map((frame) => frame.scale),
+    "--combat-text-rise": frames.map((frame) => frame.y),
+    opacity: frames.map((frame) => frame.opacity),
+    transition: { duration: lifetimeMs / 1000, times: times.map((time) => time / lifetimeMs), ease: "linear" as const },
   };
-})();
-
-const { y: FLOAT_Y, ...NUMERIC_ANIMATION } = FCT_ANIMATION_PROPS.animate;
-const FLOAT_ANIMATION = { y: FLOAT_Y, transition: NUMERIC_ANIMATION.transition };
-const FLOAT_STATIC = { y: 0 };
+}
+const animations = {
+  impact: animationFor("impact", COMBAT_TEXT_LIFETIME_MS),
+  benefit: animationFor("benefit", COMBAT_TEXT_LIFETIME_MS),
+  setback: animationFor("setback", COMBAT_TEXT_LIFETIME_MS),
+  announcement: animationFor("announcement", REACTION_TEXT_LIFETIME_MS),
+};
 
 export function CombatTextRail({
   bursts,
@@ -97,139 +67,96 @@ export function CombatTextRail({
   bursts: CombatTextBurst[];
   reactions?: ReactionAnnouncement[];
 }) {
-  useGameTranslation();
-  const reducedMotion = useReducedMotion();
-  const staticMotion = reducedMotion === true || isAnimationDisabled();
-  const newestRef = useRef<HTMLDivElement>(null);
-  const [positioned, setPositioned] = useState(false);
-  const [newestHeight, setNewestHeight] = useState(0);
-  const groups = new Map<
-    string,
-    { id: string; firstShownAt: number; burst?: CombatTextBurst; reaction?: ReactionAnnouncement }
-  >();
-  for (const burst of bursts) groups.set(burst.id, { id: burst.id, firstShownAt: burst.firstShownAt, burst });
-  for (const reaction of reactions) {
-    const group = groups.get(reaction.burstId);
-    if (group) group.reaction = reaction;
-    else groups.set(reaction.burstId, { id: reaction.burstId, firstShownAt: reaction.firstShownAt, reaction });
-  }
-  const visibleGroups = [...groups.values()]
-    .sort((a, b) => a.firstShownAt - b.firstShownAt)
-    .slice(-COMBAT_TEXT_MAX_BURSTS_PER_RAIL);
-  const newestId = visibleGroups.at(-1)?.id;
-
-  useLayoutEffect(() => {
-    // Let the first numeric measurement settle before exposing its portrait anchor.
-    const frame = requestAnimationFrame(() => setPositioned(true));
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
-  useLayoutEffect(() => {
-    const newest = newestRef.current;
-    if (!newest) return;
-    const measure = () =>
-      setNewestHeight((previous) => (newest.offsetHeight === previous ? previous : newest.offsetHeight));
-    measure();
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
-    observer?.observe(newest);
-    return () => observer?.disconnect();
-  }, [newestId]);
-
+  const staticMotion = useReducedMotionPreference();
+  const staticRows = new Map<CombatTextLane, number>();
+  const nextStaticRow = (lane: CombatTextLane) => {
+    const row = staticRows.get(lane) ?? 0;
+    staticRows.set(lane, row + 1);
+    return staticMotion ? row : 0;
+  };
   return (
-    <div className="pointer-events-none absolute inset-0 z-30 w-full">
-      <div
-        className="absolute inset-x-0 flex -translate-y-full flex-col items-center gap-3"
-        style={{
-          visibility: positioned ? "visible" : "hidden",
-          top: "calc(50% - 3rem)",
-          marginTop: newestHeight,
-        }}
-      >
-        <AnimatePresence mode="popLayout">
-          {visibleGroups.map((group) => (
-            <motion.div
-              key={group.id}
-              layout={staticMotion ? false : "position"}
-              transition={{ layout: { duration: 0.15, ease: "easeOut" } }}
-              ref={group.id === newestId ? newestRef : undefined}
-              data-testid="combat-text-burst"
-              data-burst-id={group.id}
-              data-first-shown-at={group.firstShownAt}
-              data-target={group.burst?.target ?? group.reaction?.target}
-              className="relative w-full shrink-0"
-              initial={false}
-              exit={{ opacity: 0, transition: { duration: staticMotion ? 0 : 0.1 } }}
-            >
-              <motion.div
-                data-testid="combat-feedback-action"
-                className="flex w-full flex-col items-center gap-3"
-                initial={staticMotion ? false : FLOAT_STATIC}
-                animate={staticMotion ? FLOAT_STATIC : FLOAT_ANIMATION}
-              >
-                {group.reaction && <ReactionTextRail announcements={[group.reaction]} />}
-                <CombatNumbers burst={group.burst} staticMotion={staticMotion} />
-              </motion.div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
+    <div
+      className="pointer-events-none absolute inset-0 z-30 w-full"
+      style={{ fontSize: `calc(${COMBAT_TEXT_BASE_SIZE_PX}px * var(--content-scale, 1))` }}
+    >
+      {bursts.map((burst) => {
+        const entries = burst.entries.filter((entry) => entry.presentation?.phase !== "waiting");
+        if (!entries.length) return null;
+        return (
+          <div
+            key={burst.id}
+            data-testid="combat-text-burst"
+            data-burst-id={burst.id}
+            data-first-shown-at={burst.firstShownAt}
+            data-target={burst.target}
+            className="absolute inset-0"
+          >
+            {entries.map((entry) => {
+              const lane = entry.presentation?.lane ?? combatTextLane(entry);
+              return (
+                <FeedbackFlight key={entry.id} lane={lane} staticMotion={staticMotion} staticRow={nextStaticRow(lane)}>
+                  <CombatTextEntry entry={entry} staticMotion={staticMotion} />
+                </FeedbackFlight>
+              );
+            })}
+          </div>
+        );
+      })}
+      {reactions
+        .filter((reaction) => reaction.presentation?.phase !== "waiting")
+        .map((reaction) => (
+          <FeedbackFlight
+            key={reaction.id}
+            lane="announcement"
+            staticMotion={staticMotion}
+            staticRow={nextStaticRow("announcement")}
+          >
+            <ReactionTextRail announcements={[reaction]} />
+          </FeedbackFlight>
+        ))}
     </div>
   );
 }
 
-function CombatNumbers({ burst, staticMotion }: { burst: CombatTextBurst | undefined; staticMotion: boolean }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState(0);
-  let numericCount = 0;
-  let noticeCount = 0;
-  for (const entry of burst?.entries ?? []) {
-    if (entry.kind === "notice") noticeCount += 1;
-    else numericCount += 1;
-  }
-  const rows = noticeCount + (numericCount > 3 ? Math.ceil(numericCount / 2) : numericCount);
-  // Reserve the numeric pop before measurement, avoiding a zero-height jump.
-  const initialHeight = `calc(${rows * COMBAT_TEXT_BASE_SIZE_PX * 1.5 * FCT_POP_SCALE}px * var(--content-scale, 1) + ${Math.max(0, rows - 1) * 4 * FCT_POP_SCALE}px)`;
-  useLayoutEffect(() => {
-    const node = ref.current;
-    if (!node || !burst) return;
-    const measure = () => {
-      setHeight((previous) => (previous === node.offsetHeight ? previous : node.offsetHeight));
-    };
-    measure();
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
-    observer?.observe(node);
-    if (node.parentElement) observer?.observe(node.parentElement);
-    document.fonts?.addEventListener("loadingdone", measure);
-    return () => {
-      observer?.disconnect();
-      document.fonts?.removeEventListener("loadingdone", measure);
-    };
-  }, [burst]);
+function FeedbackFlight({
+  lane,
+  staticMotion,
+  staticRow,
+  children,
+}: {
+  lane: CombatTextLane;
+  staticMotion: boolean;
+  staticRow: number;
+  children: ReactNode;
+}) {
+  const firstFrame = combatTextFrame(
+    lane,
+    0,
+    lane === "announcement" ? REACTION_TEXT_LIFETIME_MS : COMBAT_TEXT_LIFETIME_MS,
+  );
+  const initial = { scale: firstFrame.scale, opacity: firstFrame.opacity, "--combat-text-rise": firstFrame.y };
+  const quiet = lane === "benefit" || lane === "setback";
   return (
     <div
-      className="relative flex w-full items-center justify-center"
+      data-feedback-lane={lane}
+      className="absolute"
       style={{
-        height: height > 0 ? height * FCT_POP_SCALE : initialHeight,
-        fontSize: `calc(${COMBAT_TEXT_BASE_SIZE_PX}px * var(--content-scale, 1))`,
+        left: lane === "benefit" ? "20%" : lane === "setback" ? "80%" : "50%",
+        top: `calc(${quiet ? 86 : 40}% - ${lane === "announcement" ? M.reactionOffsetPx : 0}px * var(--content-scale, 1) - ${staticRow * 1.5}em)`,
+        transform: "translate(-50%, -50%)",
+        width: lane === "announcement" ? "100%" : "max-content",
+        fontSize: quiet ? `${M.statusSize}em` : undefined,
       }}
     >
-      {burst && (
-        <motion.div
-          ref={ref}
-          className={cn(
-            "grid w-max justify-items-center gap-x-4 gap-y-1 font-bold tracking-wide",
-            "transform-gpu will-change-transform [backface-visibility:hidden]",
-            "[filter:drop-shadow(0_0_1px_rgb(0,0,0))_drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]",
-            numericCount > 3 && "grid-cols-2",
-          )}
-          initial={staticMotion ? false : { opacity: 1, scale: 0.5 }}
-          animate={staticMotion ? { opacity: 1, scale: 1 } : NUMERIC_ANIMATION}
-        >
-          {burst.entries.map((entry) => (
-            <CombatTextEntry key={entry.id} entry={entry} staticMotion={staticMotion} />
-          ))}
-        </motion.div>
-      )}
+      <motion.div
+        data-testid="combat-feedback-action"
+        className="flex w-full items-center justify-center [line-height:1.15] font-bold tracking-wide [filter:drop-shadow(0_0_1px_rgb(0,0,0))_drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]"
+        initial={staticMotion ? false : initial}
+        style={{ translate: "0 calc(var(--combat-text-rise, 0) * 1px * var(--content-scale, 1))" }}
+        animate={staticMotion ? { scale: 1, "--combat-text-rise": 0, opacity: 1 } : animations[lane]}
+      >
+        {children}
+      </motion.div>
     </div>
   );
 }
@@ -246,7 +173,6 @@ function CombatTextEntry({ entry, staticMotion }: { entry: FloatingCombatText; s
       data-stat={entry.stat}
       className={cn(
         "inline-flex items-center justify-center gap-1.5 whitespace-nowrap",
-        entry.kind === "notice" && "col-span-full",
         getCombatTextColorClass(entry),
         entry.kind === "damage" &&
           entry.critical &&

@@ -11,7 +11,8 @@ ordinary verification workflow and permissions. This reference lists other opera
 
 | Task                        | Command                            | Notes                                                                                             |
 | --------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Develop in the browser      | `npm run dev`                      | Validates committed assets, then starts Vite                                                      |
+| Develop in the browser      | `npm run dev`                      | From the original workspace, serves current local `main`; task worktrees serve their own source   |
+| Preview this checkout       | `npm run dev:local`                | Validates committed assets, then starts Vite in this checkout                                     |
 | Develop in Electron         | `npm run dev:desktop`              | Starts the desktop shell                                                                          |
 | Build the web renderer      | `npm run build`                    | Validates generated outputs; does not rewrite them or run typecheck                               |
 | Regenerate assets           | `npm run assets`                   | [Asset workflow](./WORKFLOWS-ASSETS.md) covers narrower operations                                |
@@ -42,8 +43,16 @@ Use `npm run visual:scenario -- --list` for repeatable seeded screen captures.
 
 ## Local development
 
-`npm run dev` and `npm run dev:desktop` validate committed prepared outputs through
-their `predev` lifecycle. Asset authoring and source freshness checks use committed
+From the original workspace, `npm run dev` delegates to the checkout that owns
+local `main`, even when the workspace branch lags. It prints the served checkout
+and commit; Vite watches that checkout as integrations arrive. No fetch, merge,
+or build is needed. Task worktrees retain their own previews. Use `npm run dev:local`
+to explicitly preview the current checkout, including the original workspace's edits.
+If no checkout owns `main`, the root launcher fails rather than serving stale source.
+
+`npm run dev`, `npm run dev:local`, and `npm run dev:desktop` validate committed
+prepared outputs in the served checkout before starting. Desktop and checked
+development remain checkout-local. Asset authoring and source freshness checks use committed
 masters under `assets/sources/`; no external library is required. If validation reports stale
 outputs, follow [asset preparation](./WORKFLOWS-ASSETS.md#repository-sources-and-ci)
 rather than bypassing the check.
@@ -84,7 +93,7 @@ directory within an edition, so run them sequentially.
 - `ASSET_LIBRARY_ROOT` is ignored. Production preparation always uses this checkout's `assets/sources/`; optional Sound desk browsing accepts `--library <Sounds directory>`.
 - `ALCHEMY_SKIP_ASSETS=1` — only for direct asset-preparation invocation; semantics owned by
   [`WORKFLOWS-ASSETS.md`](./WORKFLOWS-ASSETS.md#skip-mode-and-verification).
-- `ALCHEMY_ENABLE_CHECKER=1` — opt-in to the in-Vite `vite-plugin-checker` typecheck (off by default so `npm run dev` stays snappy; use `npm run typecheck:watch`, `npm run dev:checked`, or this flag when you need live type errors). Run `npm run predev` before `npm run dev:checked`, which starts Vite directly without the committed-output validation lifecycle. `ALCHEMY_SKIP_CHECKER=1` is a hard off used by the Playwright preview server.
+- `ALCHEMY_ENABLE_CHECKER=1` — opt-in to the in-Vite `vite-plugin-checker` typecheck (off by default so `npm run dev` stays snappy; use `npm run typecheck:watch`, `npm run dev:checked`, or this flag when you need live type errors). Run `npm run predev:local` before `npm run dev:checked`, which starts Vite directly without the committed-output validation lifecycle. `ALCHEMY_SKIP_CHECKER=1` is a hard off used by the Playwright preview server.
 - `ALCHEMY_SKIP_SOURCEMAP=1` — opt-out of hidden sourcemaps for `mode=desktop` builds when fast local iterate is preferred; rejected for releases with Sentry reporting. `npm run clean -- --builds` removes existing build outputs and their maps.
 - `ALCHEMY_CHECK_SKIP_BUILD=1` — skip web/desktop builds, their bundle budgets, and preview smoke in the opt-in `npm run check:full`; the default `check` already omits them. CI and ship gates still build.
 

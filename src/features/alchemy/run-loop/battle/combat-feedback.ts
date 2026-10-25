@@ -4,14 +4,14 @@ import {
   COMBAT_RECOIL_COOLDOWN_MS,
   COMBAT_TEXT_LIFETIME_MS,
   COMBAT_TEXT_MIN_LIFETIME_MS,
-  COMBAT_TEXT_MAX_BURSTS_PER_RAIL,
-  REACTION_TEXT_LIFETIME_MS,
   SHAKE_DURATION_MS,
 } from "@/lib/game-constants";
 import { resolveGameDelay, TimerGroup } from "@/lib/animation/game-timer";
 import type { CombatImpactCue, CombatTextBurst, ReactionAnnouncement } from "../../shared/types";
 import { consolidateCombatBursts } from "./combat-feedback-merge";
 import { prepareCombatFeedback } from "./combat-feedback-model";
+import { advanceCombatFeedback, scheduleCombatFeedback, nextCombatFeedbackDeadline } from "./combat-feedback-queue";
+import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 
 type Combatant = "player" | "enemy" | "companion";
 
@@ -82,10 +82,35 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
   let generation = 0;
   let actionId = 0;
   let impactSequence = 0;
+  let textPlanRevision = 0;
+  let cancelTextDeadline: (() => void) | undefined;
 
   function cancelTexts() {
     generation += 1;
     textTimers.clearAll();
+    cancelTextDeadline = undefined;
+    textPlanRevision += 1;
+  }
+
+  function armTextDeadline(deadline: number, sequence: number) {
+    cancelTextDeadline?.();
+    cancelTextDeadline = undefined;
+    if (!Number.isFinite(deadline) || sequence !== generation) return;
+    cancelTextDeadline = textTimers.setTimeout(
+      () => {
+        if (sequence !== generation) return;
+        cancelTextDeadline = undefined;
+        const revision = ++textPlanRevision;
+        let next = Infinity;
+        update((state) => {
+          const advanced = advanceCombatFeedback(state.floatingCombatBursts, state.reactionAnnouncements, now());
+          next = nextCombatFeedbackDeadline(advanced.floatingCombatBursts, advanced.reactionAnnouncements);
+          return advanced;
+        });
+        if (sequence === generation && revision === textPlanRevision) armTextDeadline(next, sequence);
+      },
+      Math.max(0, deadline - now()),
+    );
   }
 
   function shake(side: Combatant) {
@@ -139,6 +164,7 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
         const lifetimeMs = Math.max(COMBAT_TEXT_MIN_LIFETIME_MS, resolveGameDelay(COMBAT_TEXT_LIFETIME_MS));
         const prepared = prepareCombatFeedback(events, ++actionId, timestamp, lifetimeMs);
         if (prepared.bursts.length === 0 && prepared.reactions.length === 0) return;
+        const revision = ++textPlanRevision;
         const dodged = new Set(
           events.filter((event) => event.kind === "notice" && event.stat === "dodge").map((event) => event.target),
         );
@@ -152,43 +178,36 @@ export function createCombatFeedback({ update, isVisible, now }: CombatFeedbackD
             impacts[key] = { ...visual, recoil, sequence: ++impactSequence };
           }
         }
-        let added: CombatTextBurst[] = [];
+        let deadline = Infinity;
         update((state) => {
-          const result = consolidateCombatBursts(state.floatingCombatBursts, prepared.bursts, timestamp);
-          added = result.added;
-          const reactionAnnouncements = (["player", "enemy"] as const).flatMap((target) =>
-            [...state.reactionAnnouncements, ...prepared.reactions]
-              .filter((entry) => entry.target === target && timestamp < entry.firstShownAt + entry.lifetimeMs)
-              .slice(-COMBAT_TEXT_MAX_BURSTS_PER_RAIL),
+          const current = advanceCombatFeedback(state.floatingCombatBursts, state.reactionAnnouncements, timestamp);
+          const result = consolidateCombatBursts(current.floatingCombatBursts, prepared.bursts, timestamp);
+          const reactions = prepared.reactions.flatMap((reaction) =>
+            reaction.reactionIds.map((reactionId) => ({
+              ...reaction,
+              id: `${reaction.id}-${reactionId}`,
+              reactionIds: [reactionId],
+            })),
           );
+          const scheduled = scheduleCombatFeedback(
+            result.bursts,
+            [...current.reactionAnnouncements, ...reactions],
+            timestamp,
+            lifetimeMs,
+            shouldReduceMotion(),
+          );
+          deadline = nextCombatFeedbackDeadline(scheduled.floatingCombatBursts, scheduled.reactionAnnouncements);
           return {
-            floatingCombatBursts: result.bursts,
-            reactionAnnouncements,
+            ...scheduled,
             ...impacts,
             playerDodgeToken: state.playerDodgeToken + Number(dodged.has("player")),
             enemyDodgeToken: state.enemyDodgeToken + Number(dodged.has("enemy")),
           };
         });
-        // Subscribers may clear presentation while the update is being published.
-        if (sequence !== generation) return;
-        if (added.length > 0) {
-          const ids = new Set(added.map((burst) => burst.id));
-          textTimers.setTimeout(() => {
-            if (sequence !== generation) return;
-            update((state) => ({
-              floatingCombatBursts: state.floatingCombatBursts.filter((burst) => !ids.has(burst.id)),
-            }));
-          }, lifetimeMs);
-        }
-        if (prepared.reactions.length > 0) {
-          const ids = new Set(prepared.reactions.map((entry) => entry.id));
-          textTimers.setTimeout(() => {
-            if (sequence !== generation) return;
-            update((state) => ({
-              reactionAnnouncements: state.reactionAnnouncements.filter((entry) => !ids.has(entry.id)),
-            }));
-          }, REACTION_TEXT_LIFETIME_MS);
-        }
+        // A subscriber may reset or admit newer text during publication. Its
+        // queue, rather than this older plan, owns the next deadline.
+        if (sequence !== generation || revision !== textPlanRevision) return;
+        armTextDeadline(deadline, sequence);
       },
       clearFloatingCombatTexts: () => {
         cancelTexts();

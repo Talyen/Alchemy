@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Alchemy · Combat feedback lab</title>
+    <link rel="stylesheet" href="lab.css" />
+    <script type="module" src="lab.mjs"></script>
+  </head>
+  <body>
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">ALCHEMY · DESIGN TOOLS</p>
+        <h1>Combat feedback lab</h1>
+      </div>
+      <div class="file-actions">
+        <button id="export" type="button">Export settings</button
+        ><label class="file-button"
+          >Import settings<input id="import" type="file" accept="application/json,.json"
+        /></label>
+      </div>
+    </header>
+    <main>
+      <section class="transport" aria-label="Playback">
+        <label>Sequence<select id="scenario"></select></label>
+        <button id="replay" class="primary" type="button">Replay both</button>
+        <button id="pause" type="button">Play</button>
+        <label
+          >Speed<select id="speed">
+            <option value="0.25">¼ speed</option>
+            <option value="0.5">½ speed</option>
+            <option value="1" selected>Normal</option>
+            <option value="1.5">1½ speed</option>
+          </select></label
+        >
+        <label class="check"><input id="loop" type="checkbox" />Repeat</label>
+        <label class="check"><input id="static" type="checkbox" />Static feedback</label>
+      </section>
+      <section class="comparison" aria-label="Synchronized comparison">
+        <article class="lane" id="lane-a">
+          <div class="lane-header">
+            <div>
+              <span class="lane-letter">A</span><label>Reference<select id="preset-a"></select></label>
+            </div>
+            <button id="pin" type="button">Use B as reference</button>
+          </div>
+          <p class="preset-description" id="description-a"></p>
+          <div class="stage" aria-label="Reference animation">
+            <div class="portrait">
+              <img src="../../src/assets/optimized/the-blight-treant.webp" alt="The Blight Treant" />
+              <div class="health"><span></span></div>
+            </div>
+            <div class="feedback" aria-hidden="true"></div>
+            <span class="target-name">The Blight Treant</span>
+          </div>
+          <div class="lane-summary" id="summary-a"></div>
+          <div class="queue-status" id="queue-a">Queue clear</div>
+        </article>
+        <article class="lane" id="lane-b">
+          <div class="lane-header">
+            <div>
+              <span class="lane-letter">B</span><label>Candidate<select id="preset-b"></select></label>
+            </div>
+            <button id="reset" type="button">Reset preset</button>
+          </div>
+          <p class="preset-description" id="description-b"></p>
+          <div class="stage" aria-label="Candidate animation">
+            <div class="portrait">
+              <img src="../../src/assets/optimized/the-blight-treant.webp" alt="The Blight Treant" />
+              <div class="health"><span></span></div>
+            </div>
+            <div class="feedback" aria-hidden="true"></div>
+            <span class="target-name">The Blight Treant</span>
+          </div>
+          <div class="lane-summary" id="summary-b"></div>
+          <div class="queue-status" id="queue-b">Queue clear</div>
+        </article>
+      </section>
+      <div class="timeline">
+        <label for="time">Time <output id="time-value">0 ms</output></label
+        ><input id="time" type="range" min="0" max="3200" step="1" value="0" /><span id="duration">3.2 s</span>
+      </div>
+      <div class="tuning-header">
+        <h2>Tune candidate B</h2>
+        <p id="status" role="status" aria-live="polite">Settings save in this browser.</p>
+      </div>
+      <section class="controls" id="controls" aria-label="Candidate settings"></section>
+      <details class="scope">
+        <summary>Prototype scope and baseline fidelity</summary>
+        <p>
+          This is a standalone design tool using Alchemy artwork and representative icons. It never reads or changes a
+          save. Alchemy and Trinket presets reproduce their source timing and scale curves; Trinket’s points are
+          represented as CSS pixels on the same portrait so movement can be compared. Native fonts, raster fitting,
+          exact production packing, audio, portrait recoil, and card flights are not reproduced. Stacking and merging
+          simulate each policy; validate a chosen design in the game before adopting it. Baselines: Alchemy ac4c10cd1;
+          Trinket 65c079a36.
+        </p>
+        <p>
+          Use the repeated-hit sequences to compare merge policies, the mixed sequence for status hierarchy, and the
+          dense sequence for stacking. All visible controls affect candidate B. Scrubbing pauses playback.
+        </p>
+      </details>
+    </main>
+  </body>
+</html>

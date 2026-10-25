@@ -133,7 +133,7 @@ describe("combat feedback lifetime", () => {
     expect(feedback.store.getState()).toEqual(createCombatFeedbackState());
     expect(vi.getTimerCount()).toBe(0);
   });
-  it("keeps reaction names independent of merged numbers, bounds overflow, and cancels all name timers", () => {
+  it("keeps reaction names independent of merged numbers and cancels queued names", () => {
     const feedback = makeFeedback();
     const notice = {
       target: "enemy",
@@ -154,8 +154,104 @@ describe("combat feedback lifetime", () => {
     vi.advanceTimersByTime(REACTION_TEXT_LIFETIME_MS - COMBAT_TEXT_LIFETIME_MS);
     expect(feedback.store.getState().reactionAnnouncements).toEqual([]);
     for (let i = 0; i < 5; i++) feedback.showCombatTexts([notice]);
-    expect(feedback.store.getState().reactionAnnouncements).toHaveLength(3);
+    expect(feedback.store.getState().reactionAnnouncements).toHaveLength(5);
     feedback.reset();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+describe("independent combat feedback launches", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
+  it("keeps the newer launch deadline when a subscriber admits another result during publication", () => {
+    const feedback = makeFeedback();
+    let admitted = false;
+    feedback.store.subscribe((state) => {
+      if (!admitted && state.floatingCombatBursts.length) {
+        admitted = true;
+        feedback.showCombatTexts([{ target: "enemy", kind: "heal", stat: "health", amount: 8 }]);
+      }
+    });
+    feedback.showCombatTexts([...hit]);
+    const healing = feedback.store
+      .getState()
+      .floatingCombatBursts.flatMap((burst) => burst.entries)
+      .find((entry) => entry.kind === "heal")!;
+    expect(healing.presentation!.phase).toBe("waiting");
+    vi.advanceTimersByTime(healing.presentation!.launchAt - Date.now());
+    expect(
+      feedback.store
+        .getState()
+        .floatingCombatBursts.flatMap((burst) => burst.entries)
+        .find((entry) => entry.kind === "heal")!.presentation!.phase,
+    ).toBe("visible");
+    feedback.reset();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("queues healing behind damage while both corners start independently and keeps the launched path stable", () => {
+    const feedback = makeFeedback();
+    feedback.showCombatTexts([
+      ...hit,
+      { target: "enemy", kind: "heal", stat: "health", amount: 8 },
+      { target: "enemy", kind: "status", stat: "block", amount: 6 },
+      { target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" },
+    ]);
+    const entries = feedback.store.getState().floatingCombatBursts[0]!.entries;
+    const damage = entries.find((entry) => entry.kind === "damage")!;
+    const healing = entries.find((entry) => entry.kind === "heal")!;
+    expect(damage.presentation).toMatchObject({ lane: "impact", phase: "visible" });
+    expect(healing.presentation).toMatchObject({ lane: "impact", phase: "waiting" });
+    expect(entries.find((entry) => entry.stat === "block")!.presentation).toMatchObject({
+      lane: "benefit",
+      phase: "visible",
+    });
+    expect(entries.find((entry) => entry.stat === "freeze")!.presentation).toMatchObject({
+      lane: "setback",
+      phase: "visible",
+    });
+    const originalPath = damage.presentation;
+    const launch = healing.presentation!.launchAt;
+    vi.advanceTimersByTime(100);
+    feedback.showCombatTexts([...hit]);
+    expect(
+      feedback.store.getState().floatingCombatBursts[0]!.entries.find((entry) => entry.kind === "damage")!.presentation,
+    ).toBe(originalPath);
+    vi.advanceTimersByTime(launch - Date.now());
+    expect(
+      feedback.store
+        .getState()
+        .floatingCombatBursts.flatMap((burst) => burst.entries)
+        .find((entry) => entry.kind === "heal")!.presentation!.phase,
+    ).toBe("visible");
+    vi.advanceTimersByTime(COMBAT_TEXT_LIFETIME_MS - 1);
+    expect(
+      feedback.store
+        .getState()
+        .floatingCombatBursts.flatMap((burst) => burst.entries)
+        .some((entry) => entry.kind === "heal"),
+    ).toBe(true);
+    vi.advanceTimersByTime(1);
+    expect(feedback.store.getState().floatingCombatBursts).toEqual([]);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("bounds pending feedback without evicting active text, then clears every launch on reset", () => {
+    const feedback = makeFeedback();
+    feedback.showCombatTexts([...hit]);
+    const active = feedback.store.getState().floatingCombatBursts[0]!.entries[0]!.presentation;
+    for (let i = 0; i < 40; i++) feedback.showCombatTexts([{ ...hit[0], additive: false }]);
+    const entries = feedback.store.getState().floatingCombatBursts.flatMap((burst) => burst.entries);
+    expect(entries.filter((entry) => entry.presentation!.phase === "waiting")).toHaveLength(12);
+    expect(entries[0]!.presentation).toBe(active);
+    expect(Math.max(...entries.map((entry) => entry.presentation!.launchAt)) - Date.now()).toBeLessThan(15000);
+    feedback.clearFloatingCombatTexts();
+    vi.advanceTimersByTime(20000);
+    expect(feedback.store.getState().floatingCombatBursts).toEqual([]);
     expect(vi.getTimerCount()).toBe(0);
   });
 });

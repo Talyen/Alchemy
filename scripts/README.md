@@ -12,6 +12,10 @@ helpers live together in `assets/`, with TypeScript declarations beside their
 modules. Sound desk mapping, media, server and board modules live in `audio-review/`;
 `audio-review.mjs` remains its command entry point. `lib/agent/`, `lib/release/`, `lib/verification/`, `lib/performance/`, and `lib/playthrough/` group subsystem implementations; general process and repository helpers remain directly in `lib/`.
 
+The standalone [combat feedback lab](./combat-feedback-lab/README.md) compares
+Alchemy, Trinket, and proposed animation presets with synchronized playback,
+individual controls, and portable settings. It runs without a game build.
+
 ## Trailer production
 
 `trailer.mjs` owns automated media production. `trailers/` contains the strict edit
@@ -209,6 +213,10 @@ Setup rolls HEAD back if worktree creation fails and is idempotent after success
 The original workspace can intentionally lag main. Read current committed source
 in the dedicated checkout; run task checks in task checkouts and separately
 authorized push/release commands in the dedicated main checkout.
+The original workspace's `npm run dev` delegates to the checkout owning local
+`main`; `scripts/dev.mjs` is a self-contained bootstrap that delegates both
+preparation and serving to main's current launcher. Use `npm run dev:local` for
+an explicit workspace preview. Task worktrees keep checkout-local development.
 Do not run this migration as part of ordinary task creation or switch another
 checkout's branch. The dedicated checkout is for integration; implement in task
 worktrees. Until adoption, integration supports the old clean-main layout.
