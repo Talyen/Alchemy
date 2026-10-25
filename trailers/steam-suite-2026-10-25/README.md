@@ -1,5 +1,27 @@
 # Steam trailer production suite
 
+## Active brief — October 25, 22:00 UTC
+
+Earlier full films and opening recipes below are historical experiments. The
+next candidate records the actual main menu, a deliberate Continue input and a
+chronological Countess battle from an isolated, modest six-talent/Basic-gear save.
+Countess music starts at song 18.68, with full battlefield reveal before the first
+vocal at 20.68. Other features belong in the later finale. No extra tooltip panel,
+corner instructions, unrelated early inserts or differently scaled UI dissolves.
+Purposeful camera motion must use continuous subpixel sampling of the same live
+frame, with a return to full battlefield context before the action payoff.
+
+`countess-menu-story-v1.json` is the bounded 12.68-second direction test. Matched
+fade, soft light-sweep and ink-mask intro variants reuse its identical footage,
+music, Continue input and cut points. Deliver the first sample before the batch.
+
+New capture acquisition uses CRF 16 H.264 4:4:4 with inter-frame compression,
+`veryfast`, two-second GOPs, 64 Mbps maximum rate and a 128 Mbit buffer. Small UI
+keeps full chroma resolution; this trades absolute pixel identity for bounded
+storage. Source frames still undergo exact cadence/count validation. The runner
+budgets encoded bytes, VBV buffer, retained PNG checks and assets above its 18 GiB
+reserve. Old source masters are never silently converted or overwritten.
+
 Production project: `output/trailers/alchemy-directors-cut-2026-10-25` in the
 original workspace. It contains independent current-main capture bundles,
 editable JSON timelines, separate PNG overlays and closing graphics, original

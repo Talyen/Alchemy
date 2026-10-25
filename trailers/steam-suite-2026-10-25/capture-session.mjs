@@ -6,7 +6,7 @@ import { captureRecipe } from "../../scripts/trailers/capture.mjs";
 import { parseRecipe } from "../../scripts/trailers/model.mjs";
 import { captureSourceDigest } from "../../scripts/check.mjs";
 import { runGit } from "../../scripts/lib/repository-paths.mjs";
-import { hashValue, hashFile } from "../../scripts/trailers/media.mjs";
+import { hashValue, hashFile, CAPTURE_ENCODER_POLICY } from "../../scripts/trailers/media.mjs";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const args = process.argv.slice(2);
@@ -32,10 +32,17 @@ const seconds = captureWindows
 const stats = fs.statfsSync(out);
 const free = stats.bavail * stats.bsize;
 const pixels = recipe.capture.viewport.width * recipe.capture.viewport.height * recipe.capture.scale ** 2;
-const estimate = (seconds * 150 * 1024 * 1024 * pixels) / (3840 * 2160);
+const outputs = captureWindows ? Object.values(captureWindows).flat().length : recipe.clips.length;
+// VBV-bound video plus a full buffer, three retained PNG checks per output,
+// copied soundtrack/assets and container overhead. No frame dump is produced.
+const estimate =
+  (seconds * CAPTURE_ENCODER_POLICY.maxBitrate) / 8 +
+  outputs * (CAPTURE_ENCODER_POLICY.bufferBits / 8 + 3 * pixels * 4.1 + 24 * 1024 ** 2);
 if (free - estimate < 18 * 1024 ** 3)
   throw new Error("Capture budget would leave less than 18 GiB free; reduce bounded windows before recording");
 const source = captureSourceDigest({ rootDir: root });
+source.captureEncoder = CAPTURE_ENCODER_POLICY;
+source.storageBudget = { estimatedBytes: Math.ceil(estimate), freeBytes: free, reserveBytes: 18 * 1024 ** 3 };
 source.commit = runGit(root, ["rev-parse", "HEAD"]).stdout.trim();
 const motionFile = path.join(root, "src/lib/game-constants/ui-motion.ts");
 const actorFile = path.join(root, "src/features/alchemy/run-loop/battle/presentation/ui/actor-panel.tsx");

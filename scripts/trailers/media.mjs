@@ -44,7 +44,16 @@ export function probe(file, { countFrames = true, countPackets = false } = {}) {
   if (result.error || result.status !== 0) throw new Error(`ffprobe failed: ${result.error?.message ?? result.stderr}`);
   return JSON.parse(result.stdout);
 }
-/** Intra-only capture emits one video packet per sampled frame. */
+export const CAPTURE_ENCODER_POLICY = Object.freeze({
+  preset: "veryfast",
+  crf: 16,
+  maxBitrate: 64_000_000,
+  bufferBits: 128_000_000,
+  gopSeconds: 2,
+  pixelFormat: "yuv444p",
+});
+
+/** Every sampled frame must survive encoding, independent of GOP structure. */
 export function validateSourceVideo(video, settings, frameCount) {
   if (
     Number(video?.nb_frames) !== frameCount ||
@@ -89,14 +98,19 @@ export function startEncoder(file, { width, height, fps }) {
       "-c:v",
       "libx264",
       "-preset",
-      "ultrafast",
+      CAPTURE_ENCODER_POLICY.preset,
       "-crf",
-      "0",
-      // Every source frame must be independently seekable during editing.
+      String(CAPTURE_ENCODER_POLICY.crf),
+      "-maxrate",
+      String(CAPTURE_ENCODER_POLICY.maxBitrate),
+      "-bufsize",
+      String(CAPTURE_ENCODER_POLICY.bufferBits),
+      // Accurate decoder seeking preserves edit points without storing every
+      // frame as a full independent image. Keep chroma detail for small UI text.
       "-g",
-      "1",
+      String(fps * CAPTURE_ENCODER_POLICY.gopSeconds),
       "-vf",
-      "scale=out_color_matrix=bt709:out_range=tv,format=yuv444p",
+      `scale=out_color_matrix=bt709:out_range=tv,format=${CAPTURE_ENCODER_POLICY.pixelFormat}`,
       "-x264-params",
       "colorprim=bt709:transfer=bt709:colormatrix=bt709",
       "-colorspace",
