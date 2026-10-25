@@ -45,7 +45,7 @@ describe("Consecration", () => {
     const result = tickEnemyStatuses(marked, texts);
     expect(result.enemyHealth).toBe(82); // two Holy hits, Bleed 8, Holy bonus 2
     expect(result.reactions.consecrated).toBe(false);
-    expect(reactions(texts)).toEqual(["consecration"]);
+    expect(reactions(texts)).toMatchObject(["consecration"]);
     expect(tickEnemyStatuses(result, []).enemyHealth).toBe(82);
     expect(start.reactions.consecrated).toBe(false);
   });
@@ -83,7 +83,7 @@ describe("Consecration", () => {
     expect(first.reactions.consecrated).toBe(false);
     const texts: CombatTextEvent[] = [];
     tickEnemyStatuses(hit(first, "holy"), texts);
-    expect(reactions(texts)).toEqual(["consecration"]);
+    expect(reactions(texts)).toMatchObject(["consecration"]);
   });
 
   it("isolates eligible Companion attacks from secondary repeats", () => {
@@ -119,7 +119,7 @@ describe("Bloodboil", () => {
       base({ enemyStatuses: { burn: 1, bleed: 4 }, reactions: { consecrated: true } }),
       texts,
     );
-    expect(reactions(texts)).toEqual(["consecration", "bloodboil"]);
+    expect(reactions(texts)).toMatchObject(["consecration", "bloodboil"]);
     expect(result.enemyHealth).toBe(93); // Burn 1, Bleed 4, Consecration 1, Bloodboil 1
     expect(result.enemyStatuses).toMatchObject({ burn: 0, bleed: 0 });
     expect(result.reactions.wildfirePendingTickDamage).toBe(1); // bonus does not fund Wildfire
@@ -131,7 +131,9 @@ describe("Bloodboil", () => {
     expect(result.enemyHealth).toBe(85);
     expect(result.enemyStatuses.burn).toBe(4);
     expect(result.reactions.wildfirePendingTickDamage).toBe(8);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 3, additive: false });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "burn", amount: 3, additive: false }),
+    );
   });
 
   it("does not combine separate phases or detonations", () => {
@@ -170,7 +172,7 @@ describe("Venomflash", () => {
     const first = applyCardEffects(state, combustion, texts);
     expect(first.enemyHealth).toBe(95); // Burn hit 1, detonation 1, Venomflash 3.
     expect(first.enemyStatuses).toMatchObject({ poison: 12, burn: 0 });
-    expect(reactions(texts)).toEqual(["venomflash"]);
+    expect(reactions(texts)).toMatchObject(["venomflash"]);
     const secondTexts: CombatTextEvent[] = [];
     expect(applyCardEffects(first, combustion, secondTexts).enemyHealth).toBe(90);
     expect(reactions(secondTexts)).toEqual(["venomflash"]);
@@ -185,7 +187,7 @@ describe("Venomflash", () => {
     const first = hit(state, "burn", texts);
     expect(first.enemyHealth).toBe(93);
     expect(first.enemyStatuses).toMatchObject({ poison: 12, burn: 4 });
-    expect(reactions(texts)).toEqual(["venomflash"]);
+    expect(reactions(texts)).toMatchObject(["venomflash"]);
     const repeated: CombatTextEvent[] = [];
     expect(hit(first, "burn", repeated).enemyHealth).toBe(89);
     expect(reactions(repeated)).toEqual([]);
@@ -221,7 +223,7 @@ describe("Venomflash", () => {
     const state = base();
     const texts: CombatTextEvent[] = [];
     expect(applyCardEffects(state, card, texts).enemyHealth).toBe(77);
-    expect(reactions(texts)).toEqual(["venomflash"]);
+    expect(reactions(texts)).toMatchObject(["venomflash"]);
     const snapshot = structuredClone({ ...state, rng: undefined });
     const scoredState = {
       ...state,
@@ -254,7 +256,7 @@ describe("Venomflash", () => {
     expect(result.state.flags.killRewardsPaid).toBe(true);
     tickEnemyStatuses(result.state, texts);
     expect(texts).toEqual([]);
-    expect(reactions(result.combatTexts)).toEqual(["venomflash"]);
+    expect(reactions(result.combatTexts)).toMatchObject(["venomflash"]);
   });
 
   it("does not let ordinary Gear/talent follow-ups prepare attack reactions", () => {

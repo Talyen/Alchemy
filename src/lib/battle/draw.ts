@@ -146,11 +146,22 @@ export function drawFromState(state: BattleState, amount: number) {
   );
 }
 
-function reportDraw(state: BattleState, nextState: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
+function reportDraw(
+  state: BattleState,
+  nextState: BattleState,
+  combatTexts?: CombatTextEvent[],
+  feedback?: CombatTextEvent["feedback"],
+): BattleState {
   const received =
     nextState.hand.length + nextState.pendingHandCards.length - state.hand.length - state.pendingHandCards.length;
   if (received > 0 && combatTexts) {
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "draw", amount: received });
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "draw",
+      amount: received,
+      ...(feedback ? { feedback } : {}),
+    });
   }
   return nextState;
 }
@@ -159,6 +170,7 @@ export function applyDrawResult(
   state: BattleState,
   draw: ReturnType<typeof drawCards>,
   combatTexts?: CombatTextEvent[],
+  feedback?: CombatTextEvent["feedback"],
 ): BattleState {
   return reportDraw(
     state,
@@ -172,6 +184,7 @@ export function applyDrawResult(
       uniqueGear: remapDrawnCardBenefits(state, draw.uidChanges),
     },
     combatTexts,
+    feedback,
   );
 }
 

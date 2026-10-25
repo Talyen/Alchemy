@@ -110,7 +110,7 @@ it("keeps next-hit Poison through a failed chance and spends it on only the firs
   const result = playBattleCardResolved(missed, attack.id, 0);
   expect(result.state.enemyStatuses.poison).toBe(2);
   expect(result.state.flags.nextHitPoison).toBe(false);
-  expect(result.combatTexts.filter((text) => text.kind === "damage").map((text) => text.stat)).toEqual([
+  expect(result.combatTexts.filter((text) => text.kind === "damage").map((text) => text.stat)).toMatchObject([
     "poison",
     "physical",
   ]);

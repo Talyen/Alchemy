@@ -104,10 +104,18 @@ its sign. Sums exceeding that width become separate entries. Partial matches
 create a new burst only for unmatched entries. Expired/evicted entries cannot
 return. The same window applies to reduced/disabled motion.
 
-Each entry follows its own path. Damage, healing, Block loss, and Dodge share a
-center launch queue; benefits use the lower-left corner and setbacks the lower-right.
-Resource costs and removals belong to setbacks. Cleanse, immunity, and preparations
-belong to benefits; Purge and harmful control notices belong to setbacks. Status
+Each entry follows its own path. Intended card damage and healing use the center
+launch queue. For cards without a meaningful direct hit or heal, the first meaningful
+authored result appears centrally: Block is primary for Spiked Shield, with Thorns
+secondary. An ineffective first effect yields to a later successful authored result;
+costs and triggered rewards never become primary merely because their number is larger.
+Direct emitters mark intent before aggregation, keeping a proc separate even when it
+grants the same status. Secondary benefits use the lower-left corner and setbacks
+the lower-right. Corner placement reserves the label's actual width and peak pop
+footprint inside the measured portrait, rather than fixed fractions of portrait width.
+Resource costs and removals belong to setbacks. Secondary Cleanse, immunity, and preparations
+belong to benefits; Purge and harmful control notices belong to setbacks. Unattributed
+turn feedback retains its existing damage, healing, Block-loss and Dodge center route. Status
 entries use a smaller, stationary pop. Within an action, notices precede losses
 and gains; each lane preserves arrival order. Impact and audio cues remain immediate
 and follow actual incoming events, never accumulated display totals.
@@ -133,7 +141,7 @@ owns entry rendering. The shared
 [motion sampler](../src/features/alchemy/run-loop/battle/combat-feedback-motion.ts)
 drives both clearance planning and rendered curves.
 
-Within each resolved action, damaging packets of the same type and recipient
+Within each resolved action, damaging packets of the same type, recipient and intent
 produce one numeric total, including non-additive reaction damage and natural
 ticks. Resource removals and Health costs remain separate. Preserve original
 packets for gameplay, audio, and impact strength; visual aggregation never turns

@@ -21,7 +21,7 @@ function resolveEnemyStatusCcTrigger(
 }
 
 export const STATUS_HANDLERS = {
-  "multiply-enemy-status": (state, _card, effect, _potionMult, combatTexts) => {
+  "multiply-enemy-status": (state, _card, effect, _potionMult, combatTexts, context) => {
     const current = state.enemyStatuses[effect.status];
     if (current <= 0) return state;
     // Multiplication adds stacks subject to resistance, but is not another
@@ -35,6 +35,7 @@ export const STATUS_HANDLERS = {
       kind: "multiply",
       stat: effect.status,
       amount: nextState.enemyStatuses[effect.status] - current,
+      ...(context?.feedback ? { feedback: context.feedback } : {}),
     });
 
     return resolveEnemyStatusCcTrigger(state, nextState, effect.status, combatTexts);
@@ -49,6 +50,7 @@ export const STATUS_HANDLERS = {
       { kind: "remove-player-status", status: effect.status },
       1,
       combatTexts,
+      context,
     );
     const amount = applyPotionMultiplier(stacks, potionMult);
 

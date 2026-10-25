@@ -73,7 +73,9 @@ describe("damage status riders", () => {
     const result = applyDamageStatuses(state, { kind: "damage", damageType: "stun", amount: 5 }, 5, texts);
     expect(result.enemyStatuses.stun).toBe(0);
     expect(result.enemyCC.stunSkipTurns).toBe(1);
-    expect(texts).toContainEqual({ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" }),
+    );
   });
 
   it.each([
@@ -95,8 +97,13 @@ describe("damage status riders", () => {
       expect(result.enemyCC.freezeSkipTurns).toBe(turns);
       expect(result.enemyCC.cooldown).toBe(0);
       expect(result.enemyHealth).toBe(health);
-      expect(texts).toContainEqual({ target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" });
-      if (damage) expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: damage });
+      expect(texts).toContainEqual(
+        expect.objectContaining({ target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" }),
+      );
+      if (damage)
+        expect(texts).toContainEqual(
+          expect.objectContaining({ target: "enemy", kind: "damage", stat: "physical", amount: damage }),
+        );
     },
   );
 
@@ -114,7 +121,9 @@ describe("damage status riders", () => {
     expect(result.enemyCC.freezeSkipTurns).toBe(0);
     expect(result.enemyCC.cooldown).toBe(cooldown);
     expect(result.enemyHealth).toBe(30);
-    expect(texts).not.toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 6 });
+    expect(texts).not.toContainEqual(
+      expect.objectContaining({ target: "enemy", kind: "damage", stat: "physical", amount: 6 }),
+    );
   });
 
   it("still Freezes a Glacial Body enemy when its threshold is met", () => {
@@ -173,7 +182,9 @@ describe("damage status riders", () => {
     });
     const texts: CombatTextEvent[] = [];
     expect(applyPoisonTalentRiders(state, 5, texts).playerHealth).toBe(21);
-    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 3 });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "player", kind: "heal", stat: "health", amount: 3 }),
+    );
   });
 
   it.each<{ name: string; patch: BattleStatePatch; health: number; enemyHealth: number; gold: number }>([
@@ -219,12 +230,14 @@ describe("damage status riders", () => {
     expect(result.enemyHealth).toBe(enemyHealth);
     expect(result.playerHealth).toBe(health);
     expect(result.gold).toBe(gold);
-    expect(texts).toContainEqual({
-      target: "enemy",
-      kind: "damage",
-      stat: "bleed",
-      amount: 8,
-    });
+    expect(texts).toContainEqual(
+      expect.objectContaining({
+        target: "enemy",
+        kind: "damage",
+        stat: "bleed",
+        amount: 8,
+      }),
+    );
     const repeated = applyDamageStatuses(result, effect, 5, [], result.enemyHealth, { critical: true });
     expect(repeated.playerHealth).toBe(health);
     expect(repeated.gold).toBe(gold);

@@ -152,7 +152,7 @@ describe("combat reward ordering", () => {
     expect(result.playerStatuses).toMatchObject({ armor: 4, poison });
     expect(result.gold).toBe(gold);
     expect(rng).toHaveBeenCalledTimes(2);
-    expect(texts.map((text) => text.stat)).toEqual([
+    expect(texts.map((text) => text.stat)).toMatchObject([
       "armor",
       ...(poison === 0 ? ["poison"] : []),
       ...(gold > 0 ? ["gold"] : []),

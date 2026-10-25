@@ -158,7 +158,7 @@ export function dealDamageToEnemy(
     observeAttackPower(state, packet, 0);
     return state;
   }
-  const dodged = tryDodgePlayerAttackPacket(state, combatTexts);
+  const dodged = tryDodgePlayerAttackPacket(state, combatTexts, context?.feedback);
   if (dodged) {
     // A dodge deals no damage, so dodged packets stay out of the resolved
     // damage that Unique repeats and Archery echoes replay. The attempt still
@@ -228,6 +228,7 @@ export function dealDamageToEnemy(
       resolvedDamage: modifiedDamage,
       critical,
       origin: context?.origin,
+      ...(context?.feedback ? { feedback: context.feedback } : {}),
       ...(context?.forgeTriggers ? { forgeTriggers: context.forgeTriggers } : {}),
       onDamageDealt: (amount) => {
         healthDamage = amount;

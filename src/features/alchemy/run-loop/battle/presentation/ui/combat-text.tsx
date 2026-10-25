@@ -155,6 +155,10 @@ function FeedbackFlight({
     "--combat-text-fan": firstFrame.fan,
   };
   const quiet = lane === "benefit" || lane === "setback";
+  // Percent translations measure the label itself, not the portrait. Reserve its
+  // peak pop footprint so both narrow heroes and wide bosses sit at the corner.
+  const cornerGrowth = staticMotion ? 0 : (combatTextFrame("benefit", 50, COMBAT_TEXT_LIFETIME_MS).scale - 1) * 50;
+  const cornerInset = "calc(6px * var(--content-scale, 1))";
   const route = combatTextRoute(lane, spread);
   const rowOffset = staticMotion ? 0 : route.row;
   const fan =
@@ -167,9 +171,17 @@ function FeedbackFlight({
       data-feedback-spread={spread}
       className="absolute"
       style={{
-        left: lane === "benefit" ? "20%" : lane === "setback" ? "80%" : "50%",
-        top: `calc(${quiet ? 86 : 40}% - ${lane === "announcement" ? M.reactionOffsetPx : 0}px * var(--content-scale, 1) ${lane === "announcement" ? "+" : "-"} ${staticRow * 1.5}em + ${rowOffset}px * var(--content-scale, 1))`,
-        transform: "translate(-50%, -50%)",
+        left: lane === "benefit" ? cornerInset : lane === "setback" ? undefined : "50%",
+        right: lane === "setback" ? cornerInset : undefined,
+        top: quiet
+          ? undefined
+          : `calc(40% - ${lane === "announcement" ? M.reactionOffsetPx : 0}px * var(--content-scale, 1) ${lane === "announcement" ? "+" : "-"} ${staticRow * 1.5}em + ${rowOffset}px * var(--content-scale, 1))`,
+        bottom: quiet
+          ? `calc(${cornerInset} + ${staticRow * 1.5}em - ${rowOffset}px * var(--content-scale, 1))`
+          : undefined,
+        transform: quiet
+          ? `translate(${lane === "benefit" ? cornerGrowth : -cornerGrowth}%, -${cornerGrowth}%)`
+          : "translate(-50%, -50%)",
         width: lane === "announcement" ? "100%" : "max-content",
         fontSize: quiet ? `${M.statusSize}em` : undefined,
       }}

@@ -17,9 +17,12 @@ import { getBattleRng, pickRandom } from "@/lib/rng";
 
 export const UTILITY_HANDLERS = createCardUtilityHandlers({
   healingAmount: cardHealingAmount,
-  heal: (state, amount, texts, cardHealing) =>
-    cardHealing ? applyCardHealing(state, amount, texts) : applyHealingWithCombatText(state, amount, texts),
-  mana: (state, amount, texts, allowOverflow) => gainManaWithCombatText(state, amount, texts, { allowOverflow }),
+  heal: (state, amount, texts, cardHealing, feedback) =>
+    cardHealing
+      ? applyCardHealing(state, amount, texts, { feedback })
+      : applyHealingWithCombatText(state, amount, texts, { feedback }),
+  mana: (state, amount, texts, allowOverflow, feedback) =>
+    gainManaWithCombatText(state, amount, texts, { allowOverflow, feedback }),
   manaGainRewards: applyManaGainRewards,
   healthCost: (state, amount, texts) => {
     const damaged = dealSelfDamage(state, amount, "health", texts).state;
@@ -27,15 +30,22 @@ export const UTILITY_HANDLERS = createCardUtilityHandlers({
   },
   crystalLoss: (state, amount, texts) =>
     resolveFollowUpHit(state, { source: "talent-fixed", damageType: "burn", amount }, texts),
-  status: applyPlayerStatusEffect,
+  status: (state, effect, texts, feedback) => applyPlayerStatusEffect(state, effect, texts, { feedback }),
   chooseStatus: (pool, state) => pickRandom(pool, getBattleRng(state)),
-  cleanse: removeHarmfulPlayerStatuses,
-  cleanseStatus: (state, status, texts) => {
+  cleanse: (state, amount, texts, feedback) => removeHarmfulPlayerStatuses(state, amount, texts, { feedback }),
+  cleanseStatus: (state, status, texts, feedback) => {
     if (state.playerStatuses[status] <= 0) return state;
-    mergeCombatText(texts, { target: "player", kind: "notice", stat: status, signal: "cleanse", text: "" });
+    mergeCombatText(texts, {
+      target: "player",
+      kind: "notice",
+      stat: status,
+      signal: "cleanse",
+      text: "",
+      ...(feedback ? { feedback } : {}),
+    });
     return applyCleanseHeals(setPlayerStatus(state, status, 0), texts);
   },
-  gold: addGoldWithCombatText,
+  gold: (state, amount, texts, feedback) => addGoldWithCombatText(state, amount, texts, { feedback }),
   summon: (state, texts) =>
     state.gearEffects.blockOnCompanionSummon > 0
       ? applyBlockReward(state, state.gearEffects.blockOnCompanionSummon, texts)

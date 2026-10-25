@@ -134,7 +134,12 @@ export type CombatTextStat =
   | "scheduled"
   | "effect";
 
-export interface NumericCombatTextEvent {
+interface CombatTextIntent {
+  /** Display intent only: authored card outcomes versus costs, riders and triggered rewards. */
+  feedback?: "primary" | "secondary";
+}
+
+export interface NumericCombatTextEvent extends CombatTextIntent {
   target: CombatTextTarget;
   kind: Exclude<CombatTextKind, "notice">;
   stat: CombatTextStat;
@@ -148,7 +153,7 @@ export interface NumericCombatTextEvent {
   periodic?: boolean;
 }
 
-interface NoticeCombatTextEvent {
+interface NoticeCombatTextEvent extends CombatTextIntent {
   target: CombatTextTarget;
   kind: "notice";
   stat: CombatTextStat;
@@ -156,7 +161,7 @@ interface NoticeCombatTextEvent {
   signal?: "prepared" | "cleanse" | "purge" | "immune";
 }
 
-interface ReactionCombatTextEvent {
+interface ReactionCombatTextEvent extends CombatTextIntent {
   target: CombatTextTarget;
   kind: "notice";
   stat: CombatTextStat;

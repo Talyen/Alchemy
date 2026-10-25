@@ -22,7 +22,9 @@ it.each([
     const texts = makeCombatTexts();
     const result = dealDamage(state, card, texts);
     expect(result.playerHealth).toBe(23);
-    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 3 });
+    expect(texts).toContainEqual(
+      expect.objectContaining({ target: "player", kind: "heal", stat: "health", amount: 3 }),
+    );
     expect(state.playerHealth).toBe(20);
   },
 );

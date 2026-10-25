@@ -12,13 +12,16 @@ const out = (t: number) => 1 - (1 - clamp(t)) ** 3;
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 export function combatTextLane(event: CombatTextEvent): Exclude<CombatTextLane, "announcement"> {
-  if (event.kind === "heal" || (event.kind === "notice" && event.stat === "dodge")) return "impact";
-  if (event.kind === "damage") {
+  if (event.feedback === "primary") return "impact";
+  if (event.feedback !== "secondary" && (event.kind === "heal" || (event.kind === "notice" && event.stat === "dodge")))
+    return "impact";
+  if (event.kind === "damage" && event.feedback !== "secondary") {
     return event.impact !== false &&
       (event.stat === "health" || event.stat === "block" || DAMAGE_TYPES.some((type) => type === event.stat))
       ? "impact"
       : "setback";
   }
+  if (event.kind === "damage") return "setback";
   const harmful = harmfulPlayerStatusIds.some((stat) => stat === event.stat) || event.stat === "deathsDoor";
   if (event.kind === "notice") {
     if (

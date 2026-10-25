@@ -322,7 +322,7 @@ describe("Wildfire preparation and resolution", () => {
     const texts: CombatTextEvent[] = [];
     const result = hit(prepared, attack("nature", 1), texts);
     expect(result.enemyHealth).toBe(prepared.enemyHealth - 7);
-    expect(notices(texts)).toEqual(["Thunderclap", "Wildfire"]);
+    expect(notices(texts)).toMatchObject(["Thunderclap", "Wildfire"]);
     expect(result.enemyCC.stunSkipTurns).toBe(1);
     expect(result.enemyStatuses.burn).toBe(2);
     expect(result.reactions).toMatchObject({ thunderclapDamage: 0, wildfireDamage: 0 });

@@ -10,6 +10,7 @@ export function combatTextDisplay(event: CombatTextEvent): string {
 }
 
 function combinedEntry(existing: FloatingCombatText, incoming: FloatingCombatText): FloatingCombatText | undefined {
+  if (existing.feedback !== incoming.feedback) return;
   if (existing.target !== incoming.target || existing.kind !== incoming.kind || existing.stat !== incoming.stat) return;
   if (existing.kind === "notice" && incoming.kind === "notice") {
     if (existing.signal === incoming.signal && existing.text === incoming.text) return existing;

@@ -53,7 +53,7 @@ describe("combat perk regressions", () => {
     const combatTexts: Parameters<typeof applyEnemyHealingWithCombatText>[2] = [];
     const healed = applyEnemyHealingWithCombatText(state, 8, combatTexts, { skipFightPacing: true });
     expect(healed.enemyHealth).toBe(100);
-    expect(combatTexts).toEqual([{ target: "enemy", kind: "heal", stat: "health", amount: 2 }]);
+    expect(combatTexts).toMatchObject([{ target: "enemy", kind: "heal", stat: "health", amount: 2 }]);
 
     const fullHealthTexts: typeof combatTexts = [];
     expect(applyEnemyHealingWithCombatText(healed, 8, fullHealthTexts)).toBe(healed);
