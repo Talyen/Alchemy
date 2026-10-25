@@ -31,6 +31,7 @@
   "brewing.choose-two": {"text":"Choose two Potions","context":"features/alchemy/run-loop/screens/brew-potion-panel.tsx","terms":[]},
   "brewing.clear-slot": {"text":"Remove Potion from slot {{slot}}","context":"features/alchemy/run-loop/screens/brew-potion-panel.tsx","parameters":{"slot":"slot + 1"},"terms":[]},
   "brewing.empty-slot": {"text":"Empty Potion slot {{slot}}","context":"features/alchemy/run-loop/screens/brew-potion-panel.tsx","parameters":{"slot":"slot + 1"},"terms":[]},
+  "card.attack-preview": {"text":"Attack power","context":"features/alchemy/shared/ui/tooltips/card-popup.tsx","terms":[]},
   "card.corrupted-title": {"text":"<corruption>Corrupted</corruption> {{name}}","context":"features/alchemy/shared/ui/cards/card-description-ui.tsx","parameters":{"name":"title"},"terms":[]},
   "card.new": {"text":"NEW","context":"features/alchemy/shared/ui/cards/card-description-ui.tsx","terms":[]},
   "card.transmuted.archery": {"text":"<modifier>Aimed</modifier> {{name}}","context":"Transmuted card title; name is the localized base title","terms":[]},

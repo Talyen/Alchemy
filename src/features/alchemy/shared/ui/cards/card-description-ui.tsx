@@ -71,16 +71,19 @@ export function DescriptionLines({
   idPrefix,
   card,
   newLineIndices,
+  onlyLines,
 }: {
   lines: string[];
   idPrefix: string;
   newLineIndices?: ReadonlySet<number> | undefined;
+  onlyLines?: readonly number[] | undefined;
   card?: Pick<BattleCard, "effects" | "description">;
 }) {
   const i18n = useGameTranslation();
   const rendered =
     card?.effects && card.description ? renderCardDescription(card.effects, card.description) : undefined;
   const content = lines.map((line, lineIndex) => {
+    if (onlyLines && !onlyLines.includes(lineIndex)) return null;
     // Context-aware summon lines can differ from the saved description. Only
     // use effect-bound marks when the exact canonical line still corresponds.
     const bound = rendered?.descriptionLines[lineIndex] === line ? rendered.localizedLines[lineIndex] : undefined;

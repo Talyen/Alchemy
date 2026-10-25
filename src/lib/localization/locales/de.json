@@ -31,6 +31,7 @@
   "brewing.choose-two": {"text":"Zwei Tränke wählen","sourceHash":"0d805c50ffb610ac673c980141f294735ac702617732863e74c02f058a7e8091","reviewed":true},
   "brewing.clear-slot": {"text":"Trank aus Platz {{slot}} entfernen","sourceHash":"f72ad50f33fc817dc6b73a14c87dfb581940edff210d86e1ac92a83c2edb526a","reviewed":true},
   "brewing.empty-slot": {"text":"Leerer Trankplatz {{slot}}","sourceHash":"872809b2d5d376b25fde10152a1fc7203e716f7f99471ac46fe0d4c45af06210","reviewed":true},
+  "card.attack-preview": {"text":"Angriffsstärke","sourceHash":"ab7841f194ceb5bab7dd8e0ff2bea979bb28bbda0ae95a0da54e267c4978f849","reviewed":true},
   "card.corrupted-title": {"text":"{{name}} <corruption>der Verderbnis</corruption>","sourceHash":"75a35506d401900a1f39b6aa691b164864dc36a625bb0fa480c74b3f84fc0b58","reviewed":true},
   "card.new": {"text":"NEU","sourceHash":"e6f253b532d3666173983bdc59e54f25bc97155639f219a042f67090e3dfbd77","reviewed":true},
   "card.transmuted.archery": {"text":"{{name}} <modifier>des Zielens</modifier>","sourceHash":"50b107c9a89171d6965757db2b876a0caf33eecb38dc3b6dd5c0e8770ba72ca4","reviewed":true},
