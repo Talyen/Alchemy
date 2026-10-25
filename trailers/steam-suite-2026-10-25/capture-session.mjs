@@ -6,7 +6,7 @@ import { captureRecipe } from "../../scripts/trailers/capture.mjs";
 import { parseRecipe } from "../../scripts/trailers/model.mjs";
 import { captureSourceDigest } from "../../scripts/check.mjs";
 import { runGit } from "../../scripts/lib/repository-paths.mjs";
-import { hashValue } from "../../scripts/trailers/media.mjs";
+import { hashValue, hashFile } from "../../scripts/trailers/media.mjs";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const args = process.argv.slice(2);
@@ -31,11 +31,20 @@ const seconds = captureWindows
   : recipe.clips.reduce((sum, clip) => sum + clip.duration, 0);
 const stats = fs.statfsSync(out);
 const free = stats.bavail * stats.bsize;
-const estimate = seconds * (recipe.capture.scale === 2 ? 150 : 50) * 1024 * 1024;
+const pixels = recipe.capture.viewport.width * recipe.capture.viewport.height * recipe.capture.scale ** 2;
+const estimate = (seconds * 150 * 1024 * 1024 * pixels) / (3840 * 2160);
 if (free - estimate < 18 * 1024 ** 3)
   throw new Error("Capture budget would leave less than 18 GiB free; reduce bounded windows before recording");
 const source = captureSourceDigest({ rootDir: root });
 source.commit = runGit(root, ["rev-parse", "HEAD"]).stdout.trim();
+const motionFile = path.join(root, "src/lib/game-constants/ui-motion.ts");
+const actorFile = path.join(root, "src/features/alchemy/run-loop/battle/presentation/ui/actor-panel.tsx");
+source.visualFixes = {
+  combatTextBaseSize: Number(/COMBAT_TEXT_BASE_SIZE_PX = ([\d.]+)/u.exec(fs.readFileSync(motionFile, "utf8"))?.[1]),
+  earthElementalBattleMirroring: fs.readFileSync(actorFile, "utf8").includes('currentEnemy?.id === "earth-elemental"'),
+  motionSourceSha256: hashFile(motionFile),
+  actorSourceSha256: hashFile(actorFile),
+};
 if (captureWindows) {
   source.performanceRecipeHash = hashValue(recipe);
   source.performanceClipHash = hashValue(recipe.clips[0]);

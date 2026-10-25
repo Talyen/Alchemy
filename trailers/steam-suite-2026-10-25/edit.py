@@ -82,7 +82,7 @@ def graphics():
         bg.convert("RGB").save(target / f"end-{name}.png")
     titles = {}
     for timeline in (PROJECT / "timelines").glob("*.json"):
-        for shot in read(timeline)["shots"]:
+        for shot in read(timeline).get("shots", []):
             if shot.get("title"):
                 titles[shot["title"]] = shot.get("accent", "gold")
     for text, accent in titles.items():
@@ -98,16 +98,19 @@ def graphics():
 
 def sources():
     catalog = {}
-    for bundle in ["protected-library", "canary", "countess-performance", "current-selects", "detail-selects", "wizard-turn", "combat-stories", "countess-v2-main", "countess-v2-details-a", "countess-v2-details-b"]:
-        location = PROJECT / "sources" / bundle
+    for location in sorted((PROJECT / "sources").iterdir()):
+        bundle = location.name
         if not (location / "capture.json").exists():
             continue
         capture = read(location / "capture.json")
         for key, clip in capture["clips"].items():
+            recipe_id=clip.get("sourceWindow",{}).get("replayClip",key)
+            definition=next((x for x in capture["recipe"]["clips"] if x["id"]==recipe_id),{})
             catalog[f"{bundle}/{key}"] = {
                 "path": str(location / "clips" / clip["file"]),
                 "bundle": str(location), "receipt": clip,
                 "source": capture["source"], "duration": clip["frameCount"] / clip["settings"]["fps"],
+                "scene":definition.get("scene"),"boss":definition.get("boss"),
             }
     return catalog
 
@@ -156,6 +159,20 @@ def render(timeline, revision):
     if output.exists():
         raise RuntimeError(f"Retain {output.name}; use a new revision")
     used = {s["source"] for s in timeline["shots"] if s.get("source")}
+    rules=timeline.get("productionRules",{})
+    if rules.get("lockedCamera"):
+        assert all(s.get("zoom",[1,1])[0]==s.get("zoom",[1,1])[1] for s in timeline["shots"]), "Animated camera prohibited"
+    if rules.get("noCornerTitles"):
+        assert not any(s.get("title") for s in timeline["shots"]), "Corner captions prohibited"
+    if rules.get("countessMusicVideo"):
+        assert timeline["music"]["file"]=="audio/countess.mp3" and timeline["music"].get("in",0)==0
+        for key in used:
+            clip=catalog[key]
+            if clip["boss"]:
+                assert clip["boss"]=="blood-countess" and clip["receipt"].get("nativeMusic"), "Boss needs its own native song and lyric clock"
+            if clip["scene"] in ["boss","combat","checkpoint"]:
+                fixes=clip["source"].get("visualFixes",{})
+                assert fixes.get("combatTextBaseSize")==38.4 and fixes.get("earthElementalBattleMirroring"), "Fresh battle footage must include the game fixes"
     for key in used:
         if digest(catalog[key]["path"]) != catalog[key]["receipt"]["sha256"]:
             raise RuntimeError(f"Source master differs from its capture receipt: {key}")
@@ -195,7 +212,9 @@ def render(timeline, revision):
         filters = ["[0:v]setpts=PTS-STARTPTS"]
         z0, z1 = shot.get("zoom", [1, 1])
         cx, cy = shot.get("focus", [.5, .5])
-        if z0 != 1 or z1 != 1:
+        if z0 == z1 and z0 != 1:
+            filters[0] += f",crop=w='floor(iw/{z0}/32)*32':h='floor(ih/{z0}/18)*18':x='floor(max(0,min(iw-ow,iw*{cx}-ow/2))/2)*2':y='floor(max(0,min(ih-oh,ih*{cy}-oh/2))/2)*2',scale=1920:1080:flags=lanczos:out_color_matrix=bt709"
+        elif z0 != 1 or z1 != 1:
             z = f"{z0}+({z1-z0})*on/{max(1,frames-1)}"
             filters[0] += f",zoompan=z='{z}':x='max(0,min(iw-iw/zoom,iw*{cx}-iw/zoom/2))':y='max(0,min(ih-ih/zoom,ih*{cy}-ih/zoom/2))':d=1:s=1920x1080:fps=60"
         else:

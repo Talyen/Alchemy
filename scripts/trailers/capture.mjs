@@ -478,6 +478,12 @@ async function captureClip({
     const endState = await page
       .locator("[data-testid='player-health'],[data-testid='enemy-health'],[data-testid='mana-panel']")
       .allTextContents();
+    const endStorage = await context.storageState();
+    const endSave = endStorage.origins
+      .flatMap((origin) => origin.localStorage)
+      .find((entry) => entry.name === "alchemy-save-v1");
+    const endCheckpointFile = `${clip.id}.end-save.json`;
+    if (endSave) writeJson(path.join(out, endCheckpointFile), JSON.parse(endSave.value));
     const journal = {
       version: 1,
       hoverChanges,
@@ -493,6 +499,9 @@ async function captureClip({
       ...(pinVideoStart ? { mediaPhase: "active native video buffers pinned to frame zero before sampling" } : {}),
       startState,
       endState,
+      ...(endSave
+        ? { endCheckpoint: { file: endCheckpointFile, sha256: hashFile(path.join(out, endCheckpointFile)) } }
+        : {}),
       actions: performed,
       nativeMusic: music,
       presentation,
