@@ -29,6 +29,11 @@ describe("worktree removal", () => {
     const script = join(root, "scripts", "agent-worktree.mjs");
     mkdirSync(join(root, "scripts"));
     copyFileSync(join(process.cwd(), "scripts", "agent-worktree.mjs"), script);
+    mkdirSync(join(root, "scripts/lib"), { recursive: true });
+    copyFileSync(
+      join(process.cwd(), "scripts/lib/worktree-storage.mjs"),
+      join(root, "scripts/lib/worktree-storage.mjs"),
+    );
     const saved = join(root, ".worktrees", "force", "work.txt");
     mkdirSync(join(root, ".worktrees", "force"), { recursive: true });
     writeFileSync(saved, "uncommitted work");
@@ -44,6 +49,11 @@ describe("worktree removal", () => {
     const script = join(root, "scripts", "agent-worktree.mjs");
     mkdirSync(join(root, "scripts"));
     copyFileSync(join(process.cwd(), "scripts", "agent-worktree.mjs"), script);
+    mkdirSync(join(root, "scripts/lib"), { recursive: true });
+    copyFileSync(
+      join(process.cwd(), "scripts/lib/worktree-storage.mjs"),
+      join(root, "scripts/lib/worktree-storage.mjs"),
+    );
     for (const command of ["list", "prune"]) {
       const result = spawnSync(process.execPath, [script, command], {
         cwd: root,
@@ -61,6 +71,11 @@ describe("worktree removal", () => {
     const script = join(root, "scripts", "agent-worktree.mjs");
     mkdirSync(join(root, "scripts"));
     copyFileSync(join(process.cwd(), "scripts", "agent-worktree.mjs"), script);
+    mkdirSync(join(root, "scripts/lib"), { recursive: true });
+    copyFileSync(
+      join(process.cwd(), "scripts/lib/worktree-storage.mjs"),
+      join(root, "scripts/lib/worktree-storage.mjs"),
+    );
     const saved = join(root, ".worktrees", "kept", "work.txt");
     mkdirSync(join(root, ".worktrees", "kept"), { recursive: true });
     writeFileSync(saved, "uncommitted work");
@@ -82,6 +97,11 @@ describe("worktree removal", () => {
     const script = join(root, "scripts", "agent-worktree.mjs");
     mkdirSync(join(root, "scripts"));
     copyFileSync(join(process.cwd(), "scripts", "agent-worktree.mjs"), script);
+    mkdirSync(join(root, "scripts/lib"), { recursive: true });
+    copyFileSync(
+      join(process.cwd(), "scripts/lib/worktree-storage.mjs"),
+      join(root, "scripts/lib/worktree-storage.mjs"),
+    );
     expect(spawnSync("git", ["init", "-q"], { cwd: root }).status).toBe(0);
 
     const equalsForm = spawnSync(process.execPath, [script, "remove", "--task=missing"], { encoding: "utf8" });
@@ -101,6 +121,11 @@ describe("worktree removal", () => {
     const script = join(root, "scripts", "agent-worktree.mjs");
     mkdirSync(join(root, "scripts"));
     copyFileSync(join(process.cwd(), "scripts", "agent-worktree.mjs"), script);
+    mkdirSync(join(root, "scripts/lib"), { recursive: true });
+    copyFileSync(
+      join(process.cwd(), "scripts/lib/worktree-storage.mjs"),
+      join(root, "scripts/lib/worktree-storage.mjs"),
+    );
     mkdirSync(join(root, "node_modules"));
     writeFileSync(join(root, "node_modules", "marker.txt"), "installed");
     expect(spawnSync("git", ["init", "-q", "-b", "main"], { cwd: root }).status).toBe(0);
@@ -127,12 +152,17 @@ describe("worktree removal", () => {
     expect(base.stdout.trim()).toBe(head.stdout.trim());
   });
 
-  it("creates code-only worktrees without removing masters from the original checkout", () => {
+  it("creates default code-only worktrees without removing masters from the original checkout", () => {
     const root = mkdtempSync(join(tmpdir(), "alchemy-code-only-"));
     using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
     mkdirSync(join(root, "scripts"));
     const script = join(root, "scripts/agent-worktree.mjs");
     copyFileSync(join(process.cwd(), "scripts/agent-worktree.mjs"), script);
+    mkdirSync(join(root, "scripts/lib"), { recursive: true });
+    copyFileSync(
+      join(process.cwd(), "scripts/lib/worktree-storage.mjs"),
+      join(root, "scripts/lib/worktree-storage.mjs"),
+    );
     const git = (...args: string[]) => {
       const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
       expect(result.status, result.stderr).toBe(0);
@@ -143,11 +173,20 @@ describe("worktree removal", () => {
     git("config", "user.email", "test@example.test");
     mkdirSync(join(root, "assets/sources"), { recursive: true });
     mkdirSync(join(root, "src/assets/optimized"), { recursive: true });
+    copyFileSync(join(process.cwd(), "package.json"), join(root, "package.json"));
+    copyFileSync(
+      join(process.cwd(), "scripts/check-prepared-assets.mjs"),
+      join(root, "scripts/check-prepared-assets.mjs"),
+    );
+    for (const directory of ["public/Music", "public/sounds"]) {
+      mkdirSync(join(root, directory), { recursive: true });
+      writeFileSync(join(root, directory, "ready.bin"), "prepared");
+    }
     writeFileSync(join(root, "assets/sources/master.png"), "master");
     writeFileSync(join(root, "src/assets/optimized/ready.webp"), "prepared");
     git("add", ".");
     git("commit", "-qm", "initial");
-    const result = spawnSync(process.execPath, [script, "create", "--task", "small", "--code-only"], {
+    const result = spawnSync(process.execPath, [script, "create", "--task", "small"], {
       cwd: root,
       encoding: "utf8",
     });
@@ -178,7 +217,9 @@ function integrationFixture(suffix = "") {
   mkdirSync(join(root, "scripts"));
   const script = join(root, "scripts", "agent-worktree.mjs");
   copyFileSync(join(process.cwd(), "scripts", "agent-worktree.mjs"), script);
-  mkdirSync(join(root, "scripts", "lib"));
+  mkdirSync(join(root, "scripts/lib"), { recursive: true });
+  copyFileSync(join(process.cwd(), "scripts/lib/worktree-storage.mjs"), join(root, "scripts/lib/worktree-storage.mjs"));
+  mkdirSync(join(root, "scripts", "lib"), { recursive: true });
   copyFileSync(
     join(process.cwd(), "scripts", "lib", "command-invocation.mjs"),
     join(root, "scripts", "lib", "command-invocation.mjs"),
@@ -698,3 +739,15 @@ it("retains the task after integration and records cleanup as a separate pending
   });
   expect(result.stdout).toContain("finish --task task");
 }, 20000);
+
+it("verifies automatic storage defaults and independent tracked clones", { timeout: 30_000 }, () => {
+  const result = spawnSync(
+    process.execPath,
+    [
+      join(process.cwd(), "tests/fixtures/worktree-storage-check.mjs"),
+      join(process.cwd(), "scripts/lib/worktree-storage.mjs"),
+    ],
+    { encoding: "utf8", timeout: 25_000 },
+  );
+  expect(result.status, result.stdout + result.stderr).toBe(0);
+});

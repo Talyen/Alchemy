@@ -218,6 +218,26 @@ to the dedicated main checkout so retained workspace source can stay unchanged.
 
 ### Dedicated integration checkout
 
+New task checkouts default to omitting `assets/sources/` when the target
+revision supports output-only development/build validation and has prepared art,
+music and sounds. Committed runtime media, generated code, test inputs and desktop
+icons remain present. Older/incomplete revisions use full assets. Use
+`create --task <slug> --full-assets` for asset production, or run
+`git sparse-checkout disable` in a task before source checks/preparation/authoring.
+`--code-only` remains an alias for automatic defaults; it cannot be combined with
+`--full-assets`. Missing-source preparation preserves outputs and prints restoration guidance.
+
+Large retained tracked assets (at least 256 KiB) automatically use per-file APFS
+copy-on-write from clean same-commit files in the dedicated main checkout (primary
+before adoption). No peer task is a source. An optional Python standard-library
+bridge calls Apple's `clonefile` directly; unavailable Python, unsupported
+platforms/volumes, dirty/mismatched sources and checkout filters use ordinary Git.
+Clones are checked against target blob bytes/modes. Git owns fresh indexes and
+normal status/stat checks; dependencies/build databases are not copied. Git's
+registration/index locks arbitrate concurrent creation. The report includes omitted
+and cloned logical bytes and population/first-status time, not unique physical
+savings on APFS. Existing task checkouts retain their configuration.
+
 One-time adoption uses `node scripts/agent-worktree.mjs setup-integration`.
 This explicitly moves main ownership to `.worktrees/integration`: the original
 workspace receives a new `workspace/main` branch (or an unused numbered variant)
