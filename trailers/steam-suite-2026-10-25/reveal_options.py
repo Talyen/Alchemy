@@ -12,6 +12,8 @@ from PIL import Image, ImageDraw, ImageFont
 parser = argparse.ArgumentParser()
 parser.add_argument('--project', type=Path, required=True)
 parser.add_argument('--revision', default='v1')
+parser.add_argument('--only', choices=['A', 'B', 'C'])
+parser.add_argument('--reveal-seconds', type=float, default=.42)
 args = parser.parse_args()
 p = args.project.resolve()
 rev = args.revision
@@ -20,7 +22,9 @@ assets = p / 'graphics/transitions' / f'09-countess-reveals-{rev}'
 out.mkdir(parents=True, exist_ok=True)
 assets.mkdir(parents=True, exist_ok=True)
 W, H, FPS, N = 1920, 1080, 60, 204
-duration, reveal = N / FPS, .42
+duration, reveal = N / FPS, args.reveal_seconds
+assert .1 <= reveal <= .65, "Reveal must finish before the native Continue input"
+reveal_frames = int(np.ceil(reveal * FPS))
 source = p / 'sources/menu-story-capture-v2/clips/menu-story.mp4'
 receipt = json.loads((source.parent / 'menu-story.json').read_text())
 sha = lambda file: hashlib.sha256(Path(file).read_bytes()).hexdigest()
@@ -88,6 +92,8 @@ common = ['-c:v', 'libx264', '-preset', 'fast', '-crf', '16', '-maxrate', '20M',
           '-bsf:v', 'h264_metadata=colour_primaries=1:transfer_characteristics=1:matrix_coefficients=1', '-threads', '2']
 variants = []
 for kind, name in [('A', 'clean-fade'), ('B', 'soft-light-sweep'), ('C', 'ink-reveal')]:
+    if args.only and kind != args.only:
+        continue
     target = out / f'alchemy-reveal-{kind}-{name}-{rev}-1080p60.mp4'
     decoder = subprocess.Popen(['ffmpeg', '-v', 'error', '-threads', '1', '-i', str(source), '-an',
                                 '-vf', 'scale=1920:1080:flags=lanczos,format=rgb24', '-frames:v', str(N),
@@ -107,9 +113,9 @@ for kind, name in [('A', 'clean-fade'), ('B', 'soft-light-sweep'), ('C', 'ink-re
                 raise RuntimeError('Incomplete source frame')
             rgb = np.frombuffer(raw, np.uint8).reshape(H, W, 3)
             result, alpha = treatment(rgb, frame, kind)
-            if frame >= 26:
+            if frame >= reveal_frames:
                 tail.update(result.tobytes())
-            if frame <= 26:
+            if frame <= reveal_frames:
                 masks.append(np.rint(alpha * 255).astype(np.uint8))
             encoder.stdin.write(result.tobytes())
         encoder.stdin.close()
@@ -134,32 +140,34 @@ for kind, name in [('A', 'clean-fade'), ('B', 'soft-light-sweep'), ('C', 'ink-re
 assert len({v['postRevealInputHash'] for v in variants}) == 1
 assert len({v['audioPacketsHash'] for v in variants}) == 1
 
-# Labels are review wrapper graphics, absent from the individual cinematic samples.
-header = Image.new('RGBA', (1920, 480), (0, 0, 0, 0))
-draw = ImageDraw.Draw(header)
-font = ImageFont.truetype(str(p / 'graphics/Inter.woff2'), 30)
-for i, label in enumerate(['A  CLEAN FADE', 'B  SOFT LIGHT SWEEP', 'C  INK REVEAL']):
-    draw.text((i * 640 + 320, 42), label, anchor='mm', font=font, fill='#ead7b7')
-header_file = assets / 'comparison-labels.png'
-header.save(header_file)
-comparison = out / f'alchemy-reveal-ABC-comparison-{rev}.mp4'
-inputs = [item for v in variants for item in ['-i', p / v['file']]]
-ff([*inputs, '-loop', '1', '-framerate', 60, '-i', header_file, '-filter_complex_threads', 1,
-    '-filter_complex', '[0:v]scale=640:360:flags=lanczos[a];[1:v]scale=640:360:flags=lanczos[b];[2:v]scale=640:360:flags=lanczos[c];[a][b][c]hstack=inputs=3,pad=1920:480:0:96:color=0x10100f[panel];[panel][3:v]overlay=0:0:shortest=1,format=yuv420p,setparams=range=limited:color_primaries=bt709:color_trc=bt709:colorspace=bt709[v]',
-    '-map', '[v]', '-map', '0:a', '-frames:v', N, '-t', duration, *common, '-c:a', 'copy', '-movflags', '+faststart', comparison])
-ff(['-i', comparison, '-f', 'null', '-'])
+comparison = None
+if len(variants) == 3:
+    # Labels are review wrapper graphics, absent from the individual cinematic samples.
+    header = Image.new('RGBA', (1920, 480), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(header)
+    font = ImageFont.truetype(str(p / 'graphics/Inter.woff2'), 30)
+    for i, label in enumerate(['A  CLEAN FADE', 'B  SOFT LIGHT SWEEP', 'C  INK REVEAL']):
+        draw.text((i * 640 + 320, 42), label, anchor='mm', font=font, fill='#ead7b7')
+    header_file = assets / 'comparison-labels.png'
+    header.save(header_file)
+    comparison = out / f'alchemy-reveal-ABC-comparison-{rev}.mp4'
+    inputs = [item for v in variants for item in ['-i', p / v['file']]]
+    ff([*inputs, '-loop', '1', '-framerate', 60, '-i', header_file, '-filter_complex_threads', 1,
+        '-filter_complex', '[0:v]scale=640:360:flags=lanczos[a];[1:v]scale=640:360:flags=lanczos[b];[2:v]scale=640:360:flags=lanczos[c];[a][b][c]hstack=inputs=3,pad=1920:480:0:96:color=0x10100f[panel];[panel][3:v]overlay=0:0:shortest=1,format=yuv420p,setparams=range=limited:color_primaries=bt709:color_trc=bt709:colorspace=bt709[v]',
+        '-map', '[v]', '-map', '0:a', '-frames:v', N, '-t', duration, *common, '-c:a', 'copy', '-movflags', '+faststart', comparison])
+    ff(['-i', comparison, '-f', 'null', '-'])
 
-sheet = Image.new('RGB', (1600, 3 * 265), '#10100f')
+sheet = Image.new('RGB', (1600, len(variants) * 265), '#10100f')
 draw = ImageDraw.Draw(sheet)
 small = ImageFont.truetype(str(p / 'graphics/Inter.woff2'), 20)
 for row, v in enumerate(variants):
-    for col, time in enumerate([.1, .2, .3, .45]):
+    for col, time in enumerate([reveal*.25, reveal*.5, reveal*.75, reveal+.05]):
         file = out / f'{v["option"]}-{time:.2f}.png'
         ff(['-ss', time, '-i', p / v['file'], '-frames:v', 1, file])
         im = Image.open(file).convert('RGB').resize((400, 225), Image.Resampling.LANCZOS)
         sheet.paste(im, (col * 400, row * 265))
         draw.text((col * 400 + 10, row * 265 + 232), f'{v["option"]} · {time:.2f}s', font=small, fill='#ead7b7')
-contact = out / f'reveal-ABC-contact-{rev}.jpg'
+contact = out / (f'reveal-{args.only}-slower-contact-{rev}.jpg' if args.only else f'reveal-ABC-contact-{rev}.jpg')
 sheet.save(contact, quality=94)
 record = {'scope': 'Intro reveal preference test; not a Steam final or a new full trailer',
           'duration': duration, 'frames': N, 'fps': FPS, 'revealSeconds': reveal,
@@ -167,8 +175,8 @@ record = {'scope': 'Intro reveal preference test; not a Steam final or a new ful
           'nativeSongRange': [18.68, 18.68 + duration], 'commonAudio': str(audio.relative_to(p)),
           'reviewOnlyTailFadeSeconds': .06, 'nativeContinueAt': .7,
           'onlyRevealChanges': True, 'postRevealFramesIdenticalBeforeEncode': True,
-          'audioPacketsIdentical': True, 'variants': variants, 'comparison': str(comparison.relative_to(p)),
-          'comparisonDimensions': [1920, 480], 'comparisonLabelsOutsideGameView': True,
+          'audioPacketsIdentical': True, 'variants': variants, 'comparison': str(comparison.relative_to(p)) if comparison else None,
+          'comparisonDimensions': [1920, 480] if comparison else None, 'comparisonLabelsOutsideGameView': True,
           'contact': str(contact.relative_to(p)), 'editableAlphaMasks': str(assets.relative_to(p)),
           'unchangedBody': 'Original12.17secondA candidate/camera stays intact; these3.4secondexcerpts stopbeforeitsactionzoom.',
           'listeningApproval': False}
