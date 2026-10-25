@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "id": "countess-menu-story-v1",
+  "capture": {
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "scale": 2,
+    "fps": 60
+  },
+  "music": {
+    "boss": "blood-countess",
+    "offset": 18.68,
+    "lyrics": true,
+    "fadeIn": 0,
+    "fadeOut": 0
+  },
+  "clips": [
+    {
+      "id": "menu-story",
+      "scene": "menu",
+      "boss": "blood-countess",
+      "hero": "knight",
+      "seed": 42,
+      "duration": 12.683333333333334,
+      "checkpoint": "/Users/ryanmcintire/Developer/Alchemy/output/trailers/alchemy-directors-cut-2026-10-25/sources/vocal-story-build-v3/countess-ready.json",
+      "actions": [
+        {
+          "at": 0.7,
+          "kind": "click",
+          "moveDuration": 0.25,
+          "target": {
+            "role": "button",
+            "name": "Continue"
+          }
+        },
+        {
+          "at": 0.85,
+          "kind": "move-away",
+          "moveDuration": 0.1
+        },
+        {
+          "at": 3.25,
+          "kind": "hover",
+          "moveDuration": 0.25,
+          "target": {
+            "role": "button",
+            "name": "Play Block"
+          }
+        },
+        {
+          "at": 4.383333333333333,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 5.116666666666667,
+          "kind": "hover",
+          "moveDuration": 0.25,
+          "target": {
+            "role": "button",
+            "name": "Play Spiked Shield"
+          }
+        },
+        {
+          "at": 6.166666666666667,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 7.116666666666666,
+          "kind": "hover",
+          "moveDuration": 0.25,
+          "target": {
+            "role": "button",
+            "name": "Play Shield Bash"
+          }
+        },
+        {
+          "at": 8.383333333333333,
+          "kind": "play-card",
+          "moveDuration": 0
+        },
+        {
+          "at": 10.033333333333333,
+          "kind": "hover",
+          "moveDuration": 0.25,
+          "target": {
+            "role": "button",
+            "name": "Play Sunder"
+          }
+        },
+        {
+          "at": 11.116666666666667,
+          "kind": "play-card",
+          "moveDuration": 0
+        }
+      ]
+    }
+  ],
+  "shots": [
+    {
+      "clip": "menu-story",
+      "in": 0,
+      "duration": 12.683333333333334,
+      "speed": 1,
+      "framing": {},
+      "transition": {
+        "kind": "cut",
+        "duration": 0
+      }
+    }
+  ],
+  "endCard": {
+    "duration": 0,
+    "text": "Opening excerpt"
+  }
+}

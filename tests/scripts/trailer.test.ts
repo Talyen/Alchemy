@@ -372,6 +372,18 @@ describe("trailer edit admission and synchronization", () => {
     expect(timeline.shots[0].camera).toEqual({ from: { x: 0.5, y: 0.5, zoom: 1 }, to: { x: 0.5, y: 0.5, zoom: 1 } });
     expect(nativeMusicOffsets(recipe)).toEqual({ "blood-countess": 20.68 });
   });
+
+  it("carries the native lyric clock through a menu take that resumes a saved boss", () => {
+    const recipe = JSON.parse(
+      fs.readFileSync(new URL("../../trailers/blood-countess-battle.json", import.meta.url), "utf8"),
+    );
+    recipe.music.offset = 18.68;
+    recipe.clips[0].scene = "menu";
+    recipe.clips[0].checkpoint = "isolated-countess-ready.json";
+    expect(nativeMusicOffsets(parseRecipe(recipe))).toEqual({ "blood-countess": 18.68 });
+    delete recipe.clips[0].checkpoint;
+    expect(nativeMusicOffsets(parseRecipe(recipe))).toEqual({});
+  });
 });
 
 it("keeps card-to-card travel above the fan and stays still to play an inspected card", () => {
