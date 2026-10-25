@@ -79,6 +79,37 @@ describe("preloadImage", () => {
     expect(mockImageInstances).toHaveLength(1);
   });
 
+  it("releases abandoned decoding without allowing it to replace a newer warmup", async () => {
+    const src = uniqueUrl();
+    const first = new AbortController();
+    const second = new AbortController();
+    const one = preloadImage(src, first.signal);
+    const two = preloadImage(src, second.signal);
+    let finishDecode!: () => void;
+    mockImageInstances[0].decode.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishDecode = resolve;
+        }),
+    );
+    mockImageInstances[0].onload();
+    first.abort();
+    await one;
+    expect(mockImageInstances[0].src).toBe(src);
+    second.abort();
+    await two;
+    expect(mockImageInstances[0].src).toBe("");
+    const replacement = preloadImage(src);
+    finishDecode();
+    await Promise.resolve();
+    const concurrent = preloadImage(src);
+    expect(mockImageInstances).toHaveLength(2);
+    mockImageInstances[1].onload();
+    await Promise.all([replacement, concurrent]);
+    await preloadImage(src);
+    expect(mockImageInstances).toHaveLength(2);
+  });
+
   it.each(["load", "decode", "timeout"] as const)("releases a failed %s warmup and allows a retry", async (failure) => {
     vi.useFakeTimers();
     const src = uniqueUrl();

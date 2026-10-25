@@ -6,6 +6,7 @@ interface PendingImageLoad {
   promise: Promise<void>;
   image: HTMLImageElement;
   cancel: () => void;
+  waiters: number;
 }
 
 const pendingLoads = new Map<string, PendingImageLoad>();
@@ -38,25 +39,31 @@ function rememberReady(src: string, image: HTMLImageElement): void {
   readyImages.set(src, image);
 }
 
-function waitForPending(pending: Promise<void>, signal?: AbortSignal): Promise<void> {
-  if (!signal) return pending;
-  if (signal.aborted) return Promise.resolve();
+function waitForPending(src: string, pending: PendingImageLoad, signal?: AbortSignal): Promise<void> {
+  pending.waiters += 1;
   return new Promise<void>((resolve) => {
-    const cleanup = () => signal.removeEventListener("abort", onAbort);
-    const onAbort = () => {
-      cleanup();
-      resolve();
-    };
+    let settled = false;
     const done = () => {
-      cleanup();
+      if (settled) return;
+      settled = true;
+      signal?.removeEventListener("abort", done);
+      pending.waiters -= 1;
+      // Completed loads have already moved into readyImages. Only abandoned
+      // work is released; another borrower's warmup must continue uninterrupted.
+      if (pending.waiters === 0 && pendingLoads.get(src) === pending) {
+        pendingLoads.delete(src);
+        pending.cancel();
+        pending.image.removeAttribute("src");
+      }
       resolve();
     };
-    signal.addEventListener("abort", onAbort, { once: true });
-    void pending.then(done, done);
+    signal?.addEventListener("abort", done, { once: true });
+    void pending.promise.then(done, done);
+    if (signal?.aborted) done();
   });
 }
 
-/** Warm the shared image cache; aborting a waiter never cancels the shared fetch. */
+/** Warm artwork upfront; only the last cancelled borrower releases a pending load. */
 export function preloadImage(src: string, signal?: AbortSignal): Promise<void> {
   if (!src || signal?.aborted) return Promise.resolve();
   const ready = readyImages.get(src);
@@ -66,7 +73,7 @@ export function preloadImage(src: string, signal?: AbortSignal): Promise<void> {
     return Promise.resolve();
   }
   const pending = pendingLoads.get(src);
-  if (pending) return waitForPending(pending.promise, signal);
+  if (pending) return waitForPending(src, pending, signal);
 
   const epoch = resetSignal;
   const image = new Image();
@@ -81,8 +88,9 @@ export function preloadImage(src: string, signal?: AbortSignal): Promise<void> {
     if (!loaded) image.removeAttribute("src");
     else rememberReady(src, image);
   });
-  pendingLoads.set(src, { promise, image, cancel: () => lifetime.abort() });
-  return waitForPending(promise, signal);
+  const load = { promise, image, cancel: () => lifetime.abort(), waiters: 0 };
+  pendingLoads.set(src, load);
+  return waitForPending(src, load, signal);
 }
 
 export async function preloadImagesInBatches(
