@@ -293,7 +293,9 @@ async function captureClip({
           if (pending.input.cardKey) {
             // Clear the hand before its reflow can hover a different card under
             // the stationary pointer. No sampled frame sees that incidental hover.
-            pointer = { x: pending.input.point.x, y: pending.corridorY ?? 80 };
+            // Newly earned status icons can occupy the hand corridor. Park in
+            // the existing move-away margin so feedback never opens a tooltip.
+            pointer = { x: 20, y: 80 };
             await page.mouse.move(pointer.x, pointer.y);
             inspection = null;
           }
