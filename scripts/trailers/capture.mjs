@@ -422,6 +422,9 @@ async function captureClip({
                 ),
               ].map((node) => node.textContent),
               battle: Boolean(globalThis.document.querySelector("[data-testid='battle-scene']")),
+              visibleTooltips: [...globalThis.document.querySelectorAll('[role="tooltip"][data-visible]')]
+                .filter((node) => Number(globalThis.getComputedStyle(node).opacity) > 0)
+                .map((node) => node.textContent),
               lyrics: globalThis.document.querySelector("[data-testid='boss-lyrics']")?.textContent ?? null,
               lyricBounds: (() => {
                 const rect = globalThis.document.querySelector("[data-testid='boss-lyrics']")?.getBoundingClientRect();
