@@ -276,6 +276,13 @@ report offensive power before defenses and critical strikes; intermediate state
 still reflects defenses and prepared critical consequences for later packets.
 Random critical strikes and Dodge remain excluded from displayed inspection.
 
+Tooltips retain the authored effect rules, including Block/Armor ratios, Forge
+scaling, conditions, conversions and costs. A separate attack-preview section
+shows changed offensive observations; it never replaces those rules or repeats
+utility effects as extra actions. Unknown attack outcomes omit the computed
+section. The inspection view is transient: its rule card remains the playable
+card, and the attack projection must never be executed or saved.
+
 `inspection-outcomes.ts` branches finite decisions into complete correlated
 worlds, without consuming gameplay RNG. Fractional procs and dependent damage
 retain ranges; disagreeing facts never fall back to the initial snapshot as

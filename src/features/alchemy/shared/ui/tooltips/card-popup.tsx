@@ -2,7 +2,7 @@ import { useGameTranslation } from "@/components/use-game-translation";
 
 import { type ReactNode, type RefObject } from "react";
 
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard, CardDescriptionInspection } from "@/lib/game-data";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
 import { DescriptionLines } from "../cards/card-description-ui";
@@ -18,6 +18,7 @@ export function DetailPopup({
   descriptionNodes,
   newLineIndices,
   card,
+  attackPreview,
   triggerRef,
   visible,
   padding,
@@ -31,6 +32,7 @@ export function DetailPopup({
   descriptionNodes?: ReactNode[] | undefined;
   newLineIndices?: ReadonlySet<number> | undefined;
   card?: Pick<BattleCard, "effects" | "description"> | undefined;
+  attackPreview?: CardDescriptionInspection["attackPreview"];
   triggerRef: RefObject<HTMLElement | null>;
   visible: boolean;
   padding?: number | undefined;
@@ -56,6 +58,17 @@ export function DetailPopup({
         newLineIndices={newLineIndices}
         {...(card ? { card } : {})}
       />
+      {attackPreview ? (
+        <div className="mt-3 border-t border-foreground/15 pt-2" data-testid="card-attack-preview">
+          <TooltipSubheader>{i18n.text("card.attack-preview", "Attack power")}</TooltipSubheader>
+          <DescriptionLines
+            lines={attackPreview.card.descriptionLines}
+            idPrefix={`${idPrefix}-attack-preview`}
+            card={attackPreview.card}
+            onlyLines={attackPreview.lineIndices}
+          />
+        </div>
+      ) : null}
       {descriptionNodes?.map((node, i) => (
         <TooltipBody key={i}>{i18n.displayText(node)}</TooltipBody>
       ))}

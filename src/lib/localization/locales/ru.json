@@ -31,6 +31,7 @@
   "brewing.choose-two": {"text":"Выберите два зелья","sourceHash":"0dc49bddf828edd90eaa06104204bc96c99cd1756efec535747c348ea36d2a44","reviewed":true},
   "brewing.clear-slot": {"text":"Убрать зелье из ячейки {{slot}}","sourceHash":"a55978c06c200bc571dd564f95068305e183a6c4217dd31133aab9dc654db16d","reviewed":true},
   "brewing.empty-slot": {"text":"Пустая ячейка зелья {{slot}}","sourceHash":"cd4cb91ce88a8973b932e0ee464dcba1e10c314c0e7c06618419bcebcb00db3f","reviewed":true},
+  "card.attack-preview": {"text":"Сила атаки","sourceHash":"7aa46c51020d3b5dbc94d68008a44642c241136c7dd657ba76be4968ea700821","reviewed":true},
   "card.corrupted-title": {"text":"<corruption>Порча</corruption>: {{name}}","sourceHash":"5e0ac3b5622e81265cf98a5939bf88edbd70d99a6e03b86aeeed550ad623190a","reviewed":true},
   "card.new": {"text":"НОВОЕ","sourceHash":"80cecc5623a8e201667396a10e05211c69f845e24fdd1466e576c8de9644a5e1","reviewed":true},
   "card.transmuted.archery": {"text":"<modifier>Прицел</modifier>: {{name}}","sourceHash":"144e45d1c50e1f6e1d64823b83d5cd993c4606aee3ce95169baacd013b8daeb5","reviewed":true},

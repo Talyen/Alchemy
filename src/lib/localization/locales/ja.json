@@ -31,6 +31,7 @@
   "brewing.choose-two": {"text":"ポーションを二つ選択","sourceHash":"522a81292e5ea2e84988d122f7f043320c9a3f998801664adacc08cabab5a82f","reviewed":true},
   "brewing.clear-slot": {"text":"スロット{{slot}}からポーションを外す","sourceHash":"69f4f17deac1805b834f63bb6bb03c3bb1aef32694b828c9c25b052dc48aa064","reviewed":true},
   "brewing.empty-slot": {"text":"空のポーションスロット{{slot}}","sourceHash":"067ca6c2803317cd02131701f1de56f42e5af854714ab976c10f2604c58ef27b","reviewed":true},
+  "card.attack-preview": {"text":"攻撃力","sourceHash":"d19e622b7835241a2942d6271eff9e07bbc3bbab1e4ec7c46726a3356b426af5","reviewed":true},
   "card.corrupted-title": {"text":"<corruption>堕落した</corruption>{{name}}","sourceHash":"cbdb54d73dac1c539151dc64e280a25bcaff953bcd885cd86d7ce39acd92f510","reviewed":true},
   "card.new": {"text":"新規","sourceHash":"fb1bf800ae2886bfe3f543a5205f31c5853f7d2efdb84186d632781c38c69637","reviewed":true},
   "card.transmuted.archery": {"text":"<modifier>狙いを定めた</modifier>{{name}}","sourceHash":"8714a9a4055c07e4ea52fdc76fa9815f350ee8ff8ac6e31c0f99254ed9a6f370","reviewed":true},

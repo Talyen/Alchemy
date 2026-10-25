@@ -163,10 +163,11 @@ function CardHoverPopup({
   padding?: number | undefined;
 }) {
   const i18n = useGameTranslation();
-  const inspectedCard = useMemo(
-    () => (visible ? (descriptionContext.inspectBattleCard?.(card) ?? card) : card),
+  const inspection = useMemo(
+    () => (visible ? descriptionContext.inspectBattleCard?.(card) : undefined),
     [visible, card, descriptionContext],
   );
+  const inspectedCard = inspection?.card ?? card;
   const descriptionLines = useMemo(
     () => (visible ? getEffectiveCardDescriptionLines(inspectedCard, descriptionContext) : []),
     [visible, inspectedCard, descriptionContext],
@@ -175,7 +176,7 @@ function CardHoverPopup({
     if (!visible || !comparisonCard) return undefined;
     const remaining = new Map<string, number>();
     for (const line of getEffectiveCardDescriptionLines(
-      descriptionContext.inspectBattleCard?.(comparisonCard) ?? comparisonCard,
+      descriptionContext.inspectBattleCard?.(comparisonCard).card ?? comparisonCard,
       descriptionContext,
     )) {
       remaining.set(line, (remaining.get(line) ?? 0) + 1);
@@ -201,6 +202,7 @@ function CardHoverPopup({
       plasmaColorPair={plasmaColorPair}
       {...(padding !== undefined ? { padding } : {})}
       card={inspectedCard}
+      attackPreview={inspection?.attackPreview}
     />
   );
 }
