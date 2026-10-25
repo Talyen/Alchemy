@@ -57,6 +57,42 @@ English titles are external base-video recipe data, separate from shipped UI
 translations. Additional language versions can use separate timelines/overlays.
 No source gameplay, game wording or locale catalog is changed.
 
+## Directed Countess revision
+
+V1 is retained as a baseline. `countess-directed-v2.json` stages three deliberate
+turns from song time zero, placing the third turn's Shield Bash near the final
+chorus lyric. The attack and its real consequence replace a neutral closing
+deal. No health, damage, deck or game rules are overridden.
+
+`capture-session.mjs` reuses the canonical capture owner. It pins native video
+buffers to frame zero before sampling, records per-second health/lyric evidence,
+and can replay the same inputs while recording only specified native 4K windows.
+`countess-windows-v2-a.json` and `-b.json` bound those detail batches; each replay
+stops after its last required window. No full 4K performance is duplicated.
+The runner reserves an estimated 18 GiB disk floor. Incomplete selected captures
+stay diagnostic; they are never accepted by full-master recovery.
+
+```sh
+node trailers/steam-suite-2026-10-25/capture-session.mjs \
+  --recipe trailers/steam-suite-2026-10-25/countess-directed-v2.json \
+  --bundle /absolute/project/sources/countess-v2-main
+node trailers/steam-suite-2026-10-25/capture-session.mjs \
+  --recipe trailers/steam-suite-2026-10-25/countess-details-v2.json \
+  --windows trailers/steam-suite-2026-10-25/countess-windows-v2-a.json \
+  --bundle /absolute/project/sources/countess-v2-details-a
+```
+
+Use a separate bounded host lease for each command. Repeat the selected command
+with window batch B and a fresh `countess-v2-details-b` directory. Before editing,
+compare each replay's health and native lyric samples to the main take. Detail
+receipts carry their exact song offsets, native dimensions, frame counts and
+source-window provenance. The custom finisher can then alternate vocal closeups,
+decision inserts and full tactical context without replacing native lyrics.
+
+`review_assets.py` makes separate 720p30 chat copies under 20 MB, contact sheets
+from full-resolution exports, and actual-frame posters. It verifies the proxy's
+AAC packets match the master. Delivery compression never changes master FPS.
+
 Valve's [current trailer guidance](https://partner.steamgames.com/doc/store/trailer)
 specifies delivery up to 1920×1080, supports 60 fps and prefers H.264/AAC. The
 editorial brief follows its gameplay-first and silent-comprehension guidance:

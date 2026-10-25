@@ -1,0 +1,39 @@
+{
+  "countess-v2": [
+    {
+      "id": "vocal-opening",
+      "start": 20.5,
+      "end": 24.25
+    },
+    {
+      "id": "vocal-invitation",
+      "start": 33.5,
+      "end": 39.5
+    },
+    {
+      "id": "vocal-challenge",
+      "start": 49.2,
+      "end": 52.75
+    },
+    {
+      "id": "vocal-heartbeat",
+      "start": 55.7,
+      "end": 59.25
+    },
+    {
+      "id": "vocal-rest",
+      "start": 61.8,
+      "end": 66.75
+    },
+    {
+      "id": "vocal-throne",
+      "start": 70.8,
+      "end": 77.5
+    },
+    {
+      "id": "final-decision",
+      "start": 77.5,
+      "end": 84.5
+    }
+  ]
+}

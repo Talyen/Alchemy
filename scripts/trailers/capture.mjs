@@ -67,13 +67,51 @@ function healthPixels(file, bounds, scale) {
   return result.stdout.trim();
 }
 
-async function captureClip({ browser, scenarios, clip, settings, origin, out, root, draft, music, recover = false }) {
+async function captureClip({
+  browser,
+  scenarios,
+  clip,
+  settings,
+  origin,
+  out,
+  root,
+  draft,
+  music,
+  recover = false,
+  captureWindows,
+  pinVideoStart = false,
+}) {
   const output = path.join(out, `${clip.id}.mp4`);
   const receiptFile = path.join(out, `${clip.id}.json`);
   // A partial capture is diagnostic evidence, never a reusable successful clip.
   if (!recover && (fs.existsSync(output) || fs.existsSync(receiptFile)))
     throw new Error(`Capture already exists: ${clip.id}. Choose a fresh bundle or use render.`);
   const journalFile = path.join(out, `${clip.id}.journal.json`);
+  const windows = captureWindows?.map(({ id, start, end }, index, all) => {
+    const startFrame = Math.round(start * settings.fps);
+    const endFrame = Math.round(end * settings.fps);
+    if (
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(id) ||
+      !Number.isFinite(start) ||
+      !Number.isFinite(end) ||
+      start < 0 ||
+      end > clip.duration ||
+      start >= end ||
+      Math.abs(startFrame / settings.fps - start) > 0.000001 ||
+      Math.abs(endFrame / settings.fps - end) > 0.000001 ||
+      (index > 0 && start < all[index - 1].end) ||
+      all.findIndex((window) => window.id === id) !== index ||
+      recover
+    )
+      throw new Error(
+        "Selected capture windows need unique IDs, ordered non-overlapping frame-aligned ranges, and a fresh capture",
+      );
+    const file = path.join(out, `${id}.mp4`);
+    if (fs.existsSync(file) || fs.existsSync(path.join(out, `${id}.json`)))
+      throw new Error(`Selected capture already exists: ${id}; preserve it and choose a fresh bundle`);
+    return { id, start, end, startFrame, endFrame, file, encoder: null, sampled: [] };
+  });
+  if (windows && !windows.length) throw new Error("Selected capture needs at least one window");
   const retainedTrace = fs.existsSync(journalFile) ? journalFile : receiptFile;
   if (recover && fs.existsSync(retainedTrace)) {
     const journal = JSON.parse(fs.readFileSync(retainedTrace, "utf8"));
@@ -168,17 +206,24 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
       }
     }
     await page.evaluate(
-      ({ music, videoFrameRates }) => {
+      ({ music, videoFrameRates, pinVideoStart }) => {
         globalThis.__trailerCapture.start = globalThis.performance.now();
         globalThis.__trailerCapture.music = music;
         globalThis.__trailerCapture.videoFrameRates = videoFrameRates;
+        if (pinVideoStart) {
+          for (const video of globalThis.document.querySelectorAll("video")) {
+            const entry = globalThis.__trailerCapture.videoEntry(video, 0);
+            video.currentTime = 0;
+            Object.assign(entry, { at: 0, base: 0, ended: false });
+          }
+        }
       },
-      { music, videoFrameRates },
+      { music, videoFrameRates, pinVideoStart },
     );
     await sampleFrame(page, 0);
     const width = settings.viewport.width * (draft ? 1 : settings.scale);
     const height = settings.viewport.height * (draft ? 1 : settings.scale);
-    if (!recover) encoder = startEncoder(output, { width, height, fps: settings.fps });
+    if (!recover && !windows) encoder = startEncoder(output, { width, height, fps: settings.fps });
     const actions = [...clip.actions].sort((a, b) => a.at - b.at);
     const performed = [];
     const frameCount = Math.round(clip.duration * settings.fps);
@@ -306,8 +351,15 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
       // The general screenshot API waits for stable frames and encodes compact
       // PNGs. Direct capture preserves the sampled frame and uses fast lossless
       // compression; image quality and timing are unchanged.
+      const window = windows?.find((range) => frame >= range.startFrame && frame < range.endFrame);
+      const windowFrame = window ? frame - window.startFrame : null;
+      const windowReview =
+        window &&
+        [0, Math.floor((window.endFrame - window.startFrame) / 2), window.endFrame - window.startFrame - 1].includes(
+          windowFrame,
+        );
       const reviewFrame = frame === 0 || frame === Math.floor(frameCount / 2) || frame === frameCount - 1;
-      if (!recover || reviewFrame) {
+      if ((!recover && (!windows || window)) || reviewFrame) {
         const { data } = await cdp.send("Page.captureScreenshot", {
           format: "png",
           fromSurface: true,
@@ -319,6 +371,27 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
         assertFrameDimensions(png, width, height);
         mark("screenshot");
         if (encoder) await encoder.frame(png);
+        if (window) {
+          if (!window.encoder) {
+            window.startState = await page
+              .locator("[data-testid='player-health'],[data-testid='enemy-health'],[data-testid='mana-panel']")
+              .allTextContents();
+            window.encoder = startEncoder(window.file, { width, height, fps: settings.fps });
+          }
+          await window.encoder.frame(png);
+          if (windowReview) {
+            const name = `${window.id}-${windowFrame}.png`;
+            fs.writeFileSync(path.join(out, name), png);
+            window.sampled.push({ frame: windowFrame, sha256: hashFile(path.join(out, name)), file: name });
+          }
+          if (frame === window.endFrame - 1) {
+            await window.encoder.finish();
+            window.encoder = null;
+            window.endState = await page
+              .locator("[data-testid='player-health'],[data-testid='enemy-health'],[data-testid='mana-panel']")
+              .allTextContents();
+          }
+        }
         mark("encode");
         if (reviewFrame) {
           const name = `${clip.id}-${frame}.png`;
@@ -341,6 +414,11 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
           await page.evaluate(
             (at) => ({
               at,
+              health: [
+                ...globalThis.document.querySelectorAll(
+                  "[data-testid='player-health'],[data-testid='enemy-health'],[data-testid='mana-panel']",
+                ),
+              ].map((node) => node.textContent),
               battle: Boolean(globalThis.document.querySelector("[data-testid='battle-scene']")),
               lyrics: globalThis.document.querySelector("[data-testid='boss-lyrics']")?.textContent ?? null,
               lyricBounds: (() => {
@@ -412,6 +490,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
       frameCount,
       elapsedPhaseMs: costs,
       method: "offline-js-css-video-sampling",
+      ...(pinVideoStart ? { mediaPhase: "active native video buffers pinned to frame zero before sampling" } : {}),
       startState,
       endState,
       actions: performed,
@@ -431,11 +510,58 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
     };
     // Save actual interaction/sound evidence before any expensive media work.
     writeJson(journalFile, journal);
+    if (windows) {
+      const selections = windows.map((window) => {
+        const localTime = (value) => value - window.start;
+        const selected = {
+          ...journal,
+          id: window.id,
+          file: path.basename(window.file),
+          recipeHash: hashValue({ clip, captureWindow: { id: window.id, start: window.start, end: window.end } }),
+          frameCount: window.endFrame - window.startFrame,
+          sourceWindow: { replayClip: clip.id, start: window.start, end: window.end, recipeHash: journal.recipeHash },
+          startState: window.startState,
+          endState: window.endState,
+          sampled: window.sampled,
+          nativeMusic: music ? { ...music, offset: music.offset + window.start } : null,
+          actions: performed
+            .filter((input) => input.at >= window.start && input.at < window.end)
+            .map((input) => ({
+              ...input,
+              at: localTime(input.at),
+              movementFrom: localTime(input.movementFrom),
+              ...(input.acceptedAt === undefined ? {} : { acceptedAt: localTime(input.acceptedAt) }),
+            })),
+          presentation: presentation
+            .filter((sample) => sample.at >= window.start && sample.at < window.end)
+            .map((sample) => ({ ...sample, at: localTime(sample.at) })),
+          combatFeedback: combatFeedback
+            .filter((sample) => sample.at >= window.start && sample.at < window.end)
+            .map((sample) => ({ ...sample, at: localTime(sample.at) })),
+          hoverChanges: hoverChanges
+            .filter((sample) => sample.at >= window.start && sample.at < window.end)
+            .map((sample) => ({ ...sample, at: localTime(sample.at) })),
+          sounds: sounds
+            .filter((sound) => sound.at < window.end && sound.end > window.start)
+            .map((sound) => ({
+              ...sound,
+              at: Math.max(0, localTime(sound.at)),
+              end: Math.min(window.end - window.start, localTime(sound.end)),
+              offset: (sound.offset ?? 0) + Math.max(0, window.start - sound.at),
+            })),
+        };
+        const receipt = finalizeClip(window.file, selected);
+        writeJson(path.join(out, `${window.id}.json`), receipt);
+        return receipt;
+      });
+      return { selections };
+    }
     const receipt = finalizeClip(output, journal);
     writeJson(receiptFile, receipt);
     return receipt;
   } catch (error) {
     if (encoder) await encoder.abort();
+    for (const window of windows ?? []) if (window.encoder) await window.encoder.abort();
     if (page) await page.screenshot({ path: path.join(out, `${clip.id}.failure.png`), timeout: 5000 }).catch(() => {});
     writeJson(path.join(out, `${clip.id}.failure.json`), {
       error: error.stack ?? String(error),
@@ -449,8 +575,25 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
   }
 }
 
-export async function captureRecipe({ root, recipe, out, draft = false, source, recover = false, clipIds }) {
-  if (!recover) writeJson(path.join(out, "capture-start.json"), { recipe, draft, source });
+export async function captureRecipe({
+  root,
+  recipe,
+  out,
+  draft = false,
+  source,
+  recover = false,
+  clipIds,
+  captureWindows,
+  pinVideoStart = false,
+}) {
+  if (!recover)
+    writeJson(path.join(out, "capture-start.json"), {
+      recipe,
+      draft,
+      source,
+      pinVideoStart,
+      ...(captureWindows ? { captureWindows } : {}),
+    });
   fs.mkdirSync(path.join(out, "clips"), { recursive: true });
   const dependencies = Object.keys(
     JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).dependencies,
@@ -498,7 +641,7 @@ export async function captureRecipe({ root, recipe, out, draft = false, source, 
     const clips = {};
     for (const clip of recipe.clips) {
       const receiptFile = path.join(out, "clips", `${clip.id}.json`);
-      if (!recover && fs.existsSync(receiptFile)) {
+      if (!recover && !captureWindows && fs.existsSync(receiptFile)) {
         const recorded = JSON.parse(fs.readFileSync(receiptFile, "utf8"));
         if (recorded.recipeHash !== hashValue(clip) || recorded.nativeMusic?.offset !== offsets[clip.id])
           throw new Error(`Retained capture instructions differ: ${clip.id}`);
@@ -507,7 +650,7 @@ export async function captureRecipe({ root, recipe, out, draft = false, source, 
       }
       if (clipIds && !clipIds.includes(clip.id)) continue;
       console.log(`Capturing ${clip.id}: ${clip.duration}s`);
-      clips[clip.id] = await captureClip({
+      const captured = await captureClip({
         browser,
         scenarios,
         clip,
@@ -517,6 +660,8 @@ export async function captureRecipe({ root, recipe, out, draft = false, source, 
         root,
         draft,
         recover,
+        captureWindows: captureWindows?.[clip.id],
+        pinVideoStart,
         music:
           offsets[clip.id] === undefined
             ? null
@@ -529,6 +674,8 @@ export async function captureRecipe({ root, recipe, out, draft = false, source, 
                 src: new URL(assets.music.replace(/^public/u, ""), origin).pathname,
               },
       });
+      if (captured.selections) for (const selected of captured.selections) clips[selected.id] = selected;
+      else clips[clip.id] = captured;
     }
     for (const clip of Object.values(clips)) {
       for (const sound of clip.sounds) {
@@ -550,7 +697,12 @@ export async function captureRecipe({ root, recipe, out, draft = false, source, 
       source,
       browserVersion: browser.version(),
       clips,
-      complete: Object.keys(clips).length === recipe.clips.length,
+      complete: captureWindows
+        ? Object.values(captureWindows)
+            .flat()
+            .every((window) => clips[window.id])
+        : Object.keys(clips).length === recipe.clips.length,
+      ...(captureWindows ? { captureMode: "selected-windows", captureWindows } : {}),
       music: { file: "assets/music.mp3", sha256: hashFile(musicSource), duration: lyrics.audioDuration },
       lyrics,
       assets: { logo: "assets/logo.webp", font: "assets/Inter.woff2" },

@@ -98,7 +98,7 @@ def graphics():
 
 def sources():
     catalog = {}
-    for bundle in ["protected-library", "canary", "countess-performance", "current-selects", "detail-selects", "wizard-turn", "combat-stories"]:
+    for bundle in ["protected-library", "canary", "countess-performance", "current-selects", "detail-selects", "wizard-turn", "combat-stories", "countess-v2-main", "countess-v2-details-a", "countess-v2-details-b"]:
         location = PROJECT / "sources" / bundle
         if not (location / "capture.json").exists():
             continue
