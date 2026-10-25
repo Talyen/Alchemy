@@ -35,7 +35,7 @@ export function trailerAssets(boss: string) {
   return { music: `public/Music/${file}`, logo: menuLogo };
 }
 
-const trailerMaterials = { wood: 24, stone: 14, iron: 18, food: 16, herbs: 12, hide: 9, gems: 4 };
+const trailerMaterials = { wood: 24, stone: 14, iron: 18, food: 24, herbs: 12, hide: 9, gems: 4 };
 const trailerHeroes: CharacterId[] = ["knight", "rogue", "ranger", "wizard", "alchemist", "warlock", "druid"];
 
 function trailerRunSave(overrides: Record<string, unknown>) {

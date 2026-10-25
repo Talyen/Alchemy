@@ -147,7 +147,7 @@ The Armory take equips an actual available item through the production inventory
 UI. The shop take purchases an actual generated offer. The Homestead take builds
 through its purchase control and production material costs. Staged progression,
 Gold, discoveries and inventory are explicitly authored checkpoints in an isolated
-browser profile. The meta profile has 95 Gold; 24 Wood, 14 Stone, 18 Iron, 16 Food, 12 Herbs,
+browser profile. The meta profile has 95 Gold; 24 Wood, 14 Stone, 18 Iron, 24 Food, 12 Herbs,
 9 Hide and 4 Gems; a few earned buildings, farms and bonds; three basic gear
 items; and partial discoveries. Shops start with 85 Gold. No 999-resource
 fixtures or full-inventory debug profile appears in the footage.
