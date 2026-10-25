@@ -20,14 +20,18 @@ function makeRoot() {
 }
 
 describe("clean-dev-artifacts helpers", () => {
-  it("lists only existing default artifact dirs unless builds is requested", () => {
+  it("preserves evidence and environments unless their explicit selectors are requested", () => {
     const root = makeRoot();
     mkdirSync(join(root, "playwright-report"), { recursive: true });
     mkdirSync(join(root, "dist"), { recursive: true });
+    mkdirSync(join(root, "node_modules/.vite"), { recursive: true });
+    mkdirSync(join(root, ".cache/lyrics/venv"), { recursive: true });
     writeFileSync(join(root, "playwright-report", "index.html"), "x");
 
-    expect(listArtifactDirsToRemove(root)).toEqual([join(root, "playwright-report")]);
-    expect(listArtifactDirsToRemove(root, { builds: true })).toEqual([
+    expect(listArtifactDirsToRemove(root)).toEqual([join(root, "node_modules/.vite")]);
+    expect(listArtifactDirsToRemove(root, { builds: true, reports: true, caches: true })).toEqual([
+      join(root, "node_modules/.vite"),
+      join(root, ".cache"),
       join(root, "playwright-report"),
       join(root, "dist"),
     ]);
@@ -61,9 +65,9 @@ describe("clean-dev-artifacts helpers", () => {
     mkdirSync(join(root, "reports"));
 
     const targets = listArtifactDirsToRemove(root, { builds: true });
-    expect(targets).toEqual([join(root, "reports")]);
+    expect(targets).toEqual([]);
     for (const target of targets) removePath(target);
-    expect(existsSync(join(root, "reports"))).toBe(false);
+    expect(existsSync(join(root, "reports"))).toBe(true);
     expect(existsSync(join(dependencies, ".vite", "cache.json"))).toBe(true);
   });
 });

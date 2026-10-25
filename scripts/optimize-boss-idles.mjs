@@ -5,7 +5,12 @@ import path from "node:path";
 import ffmpegPath from "ffmpeg-static";
 import { bossIdleAssets, bossIdleMasters, validateBossIdleRegistry } from "./assets/boss-idle-assets.mjs";
 import { resolveAssetSource, requireAssetSources } from "./assets/asset-sources.mjs";
-import { ASSET_SCHEMA_VERSION, BOSS_IDLE_SETTINGS, bossIdleTransformSettings } from "./assets/asset-constants.mjs";
+import {
+  ASSET_SCHEMA_VERSION,
+  BOSS_IDLE_SETTINGS,
+  BOSS_IDLE_CONCURRENCY,
+  bossIdleTransformSettings,
+} from "./assets/asset-constants.mjs";
 import {
   commitManifest,
   loadManifest,
@@ -31,8 +36,8 @@ export async function optimizeBossIdles({ check = false, boss } = {}) {
   const previous = await loadManifest(manifestPath);
   const next = { ...previous };
   let publication = Promise.resolve();
-  // Two independent optical-flow jobs fit the host budget. Publish their manifests serially.
-  await mapPool(masters, check ? 1 : 2, async (master) => {
+  // Publish complete masters serially; low-memory also serializes optical flow.
+  await mapPool(masters, check ? 1 : BOSS_IDLE_CONCURRENCY, async (master) => {
     const sourcePath = resolveAssetSource(master.source);
     const variants = bossIdleAssets.filter((asset) => asset.source === master.source);
     const entries = await Promise.all(

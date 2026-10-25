@@ -2,6 +2,7 @@ import { optimizeAssets } from "../optimize-assets.mjs";
 import { optimizeMusic } from "../optimize-music.mjs";
 import { optimizeSounds } from "../optimize-sounds.mjs";
 import { optimizeBossIdles } from "../optimize-boss-idles.mjs";
+import { LOW_MEMORY_ASSETS } from "./asset-constants.mjs";
 
 const OPTIMIZE_PIPELINES = {
   bossIdles: { label: "Boss idles", run: optimizeBossIdles },
@@ -21,7 +22,16 @@ const OPTIMIZE_PIPELINES = {
 
 export async function runAllOptimizePipelinesSettled(options) {
   const pipelines = Object.entries(OPTIMIZE_PIPELINES);
-  const results = await Promise.allSettled(pipelines.map(async ([, pipeline]) => pipeline.run(options)));
+  const results = [];
+  if (LOW_MEMORY_ASSETS) {
+    for (const [, pipeline] of pipelines) {
+      const [result] = await Promise.allSettled([Promise.resolve().then(() => pipeline.run(options))]);
+      results.push(result);
+    }
+  } else {
+    const batch = await Promise.allSettled(pipelines.map(async ([, pipeline]) => pipeline.run(options)));
+    results.push(...batch);
+  }
   return results.map((result, index) => ({ key: pipelines[index][0], ...result }));
 }
 

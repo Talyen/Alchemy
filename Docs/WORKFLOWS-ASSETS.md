@@ -46,6 +46,17 @@ The optional Sound desk browses replacement candidates only when given an explic
 [Sound desk guide](../scripts/audio-review/README.md). Existing snapshots can reopen
 without a library. No preparation command reads a default library in Documents.
 
+## Preparation memory
+
+`ALCHEMY_ASSET_PROFILE=low-memory npm run assets` runs the media pipelines
+sequentially, caps art jobs at two, gives Sharp one thread per image and a 16 MB
+operation cache, and interpolates one boss master at a time. Normal preparation
+keeps its existing parallelism. `ALCHEMY_ASSET_CONCURRENCY` can lower low-memory
+parallelism further but cannot raise its cap. Profiles change scheduling only:
+image dimensions, quality, transparency, video codec/frame cadence and audio
+settings remain the canonical settings below. Keep heavy production within the
+shared host lane; this preset does not authorize a local build or profiling run.
+
 ## Boss battle idle clips
 
 Selected MP4 masters live in `assets/sources/Animations/Bosses/` and are listed in

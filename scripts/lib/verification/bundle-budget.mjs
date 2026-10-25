@@ -12,3 +12,14 @@ export const BUDGETS = {
 };
 
 export const CHUNK_SIZE_WARNING_KB = 640;
+
+// Main 22d7e9d20 prepared media: 276.8 MiB video, 97.3 MiB music,
+// 23.6 MiB artwork and 4.9 MiB SFX. Include public/ in renderer accounting.
+// These are shipping-byte budgets, not decoded RAM or download compression.
+export const STORAGE_BUDGETS = Object.freeze({
+  renderer: 450 * 1024 * 1024,
+  video: 310 * 1024 * 1024,
+  music: 110 * 1024 * 1024,
+  images: 30 * 1024 * 1024,
+  sounds: 8 * 1024 * 1024,
+});

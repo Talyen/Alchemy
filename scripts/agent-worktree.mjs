@@ -36,6 +36,7 @@ function runGit(args, opts = {}) {
     cwd: root,
     encoding: "utf8",
     stdio: opts.stdio ?? "pipe",
+    input: opts.input,
   });
   return result;
 }
@@ -65,9 +66,13 @@ function preserveIntegrationEvidence(main, task, branch, head) {
     .filter(Boolean);
   // Dependencies and reproducible outputs can be rebuilt. Preserve every other
   // ignored file, including localization drafts and ad-hoc investigation notes.
-  const disposable =
-    /^(?:node_modules(?:\/|$)|dist(?:-demo|-desktop)?(?:\/|$)|release-desktop(?:\/|$)|coverage(?:\/|$)|test-results(?:\/|$)|playwright-report(?:\/|$)|\.vite(?:\/|$)|\.worktrees(?:\/|$))/u;
-  for (const file of ignored) if (!disposable.test(file) && !file.startsWith("reports/")) selected.add(file);
+  const disposable = (relative) =>
+    /(?:^|\/)node_modules(?:\/|$)/u.test(relative) ||
+    /^(?:\.cache|dist(?:-demo|-desktop)?|release-desktop(?:-demo)?|coverage|test-results|playwright-report|\.vite|\.worktrees)(?:\/|$)/u.test(
+      relative,
+    ) ||
+    /^reports\/boss-lyrics\/venv(?:\/|$)/u.test(relative);
+  for (const file of ignored) if (!disposable(file) && !file.startsWith("reports/")) selected.add(file);
   if (run) {
     if (!/^[a-z0-9-]+$/u.test(run.runId)) throw new Error("Invalid evidence run ID; checkout preserved");
     selected.add(`reports/runs/${run.runId}`);
@@ -84,7 +89,7 @@ function preserveIntegrationEvidence(main, task, branch, head) {
       !candidates.some((parent) => parent !== relative && relative.startsWith(parent + path.sep)),
   );
   console.log(
-    `Cleanup preview: close task browsers; preserve reports and ${ignored.filter((file) => !disposable.test(file) && !file.startsWith("reports/")).length} other local files; remove ${task}; retain ${branch}. Omit finish to keep the checkout and browsers.`,
+    `Cleanup preview: close task browsers; preserve evidence without rebuildable dependencies and ${ignored.filter((file) => !disposable(file) && !file.startsWith("reports/")).length} other local files; remove ${task}; retain ${branch}. Omit finish to keep the checkout and browsers.`,
   );
   if (!existing.length) return null;
   let parent = main;
@@ -96,13 +101,16 @@ function preserveIntegrationEvidence(main, task, branch, head) {
   }
   const destination = fs.mkdtempSync(path.join(parent, `${branch.replaceAll("/", "-")}-${head.slice(0, 12)}-`));
   const copy = (source, target) => {
+    if (disposable(path.relative(task, source).replaceAll(path.sep, "/"))) return;
     const stat = fs.lstatSync(source);
     if (stat.isDirectory()) {
       fs.mkdirSync(target, { recursive: true });
       for (const entry of fs.readdirSync(source)) copy(path.join(source, entry), path.join(target, entry));
     } else if (stat.isFile()) {
       fs.mkdirSync(path.dirname(target), { recursive: true });
-      fs.copyFileSync(source, target);
+      // Independent copy-on-write files save physical space where supported;
+      // unsupported filesystems fall back to the ordinary copy operation.
+      fs.copyFileSync(source, target, fs.constants.COPYFILE_FICLONE);
     } else throw new Error("Unsupported evidence entry; checkout preserved");
     fs.utimesSync(target, stat.atime, stat.mtime);
   };
@@ -172,7 +180,7 @@ export function removeIntegratedWorktree(main, task, branch, head) {
 
 function usage() {
   console.log(`Usage:
-  node scripts/agent-worktree.mjs create --task <slug> [--base <branch>] [--detached]
+  node scripts/agent-worktree.mjs create --task <slug> [--base <branch>] [--detached] [--code-only]
   node scripts/agent-worktree.mjs integrate --task <slug> [--keep-worktree]
   node scripts/agent-worktree.mjs finish --task <slug>
   node scripts/agent-worktree.mjs setup-integration
@@ -183,6 +191,8 @@ function usage() {
 Creates isolated worktrees under .worktrees/<slug> on branch agent/<slug>.
 Use one worktree per implementation chat to avoid shared-checkout races.
 Add --detached for verification-only detached HEAD.
+Add --code-only to omit assets/sources from this worktree. Prepared game assets stay available.
+Restore masters in that checkout with: git sparse-checkout disable
 setup-integration moves main to .worktrees/integration; preserves the original
 checkout's files/index on a workspace branch. Run once when adopting this layout.
 integrate verifies and advances main; finish preserves evidence and removes the task.
@@ -212,6 +222,22 @@ export function linkDependencies(mainRoot, targetWorktree) {
   return false;
 }
 
+function configureCodeOnlyWorktree(worktreePath) {
+  // Worktree-local sparse configuration keeps the original and peer checkouts full.
+  // --no-checkout on creation avoids materializing masters just to remove them.
+  const result = runGit(["-C", worktreePath, "sparse-checkout", "set", "--no-cone", "--stdin"], {
+    input: "/*\n!/assets/sources/\n",
+  });
+  if (result.status !== 0)
+    throw new Error(`Code-only checkout setup failed; worktree preserved at ${worktreePath}: ${result.stderr}`);
+  // --no-checkout leaves the index empty; populate it through the sparse rules.
+  // A merge-style read refuses conflicting local files rather than overwriting them.
+  const checkout = runGit(["-C", worktreePath, "read-tree", "-mu", "HEAD"]);
+  if (checkout.status !== 0)
+    throw new Error(`Code-only materialization failed; worktree preserved at ${worktreePath}: ${checkout.stderr}`);
+  console.log("  asset masters omitted; restore with git sparse-checkout disable before asset authoring");
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const [cmd, ...rest] = argv;
 
@@ -220,7 +246,7 @@ export async function main(argv = process.argv.slice(2)) {
       cmd === "create" ? ["--task", "--base"] : ["remove", "integrate", "finish"].includes(cmd) ? ["--task"] : [];
     const flagOptions =
       cmd === "create"
-        ? ["--detached"]
+        ? ["--detached", "--code-only"]
         : cmd === "remove"
           ? ["--force"]
           : cmd === "integrate"
@@ -476,6 +502,7 @@ export async function main(argv = process.argv.slice(2)) {
       process.exit(1);
     }
     const detached = hasFlag("--detached");
+    const codeOnly = hasFlag("--code-only");
     const base = getArg("--base") ?? "main";
     const worktreePath = path.join(WORKTREE_ROOT, task);
     const branch = `agent/${task}`;
@@ -503,10 +530,11 @@ export async function main(argv = process.argv.slice(2)) {
     fs.mkdirSync(WORKTREE_ROOT, { recursive: true });
 
     if (detached) {
-      const args = ["worktree", "add", "--detach", worktreePath, base];
+      const args = ["worktree", "add", ...(codeOnly ? ["--no-checkout"] : []), "--detach", worktreePath, base];
       console.log(`▸ git ${args.join(" ")}`);
       const r = runGit(args, { stdio: "inherit" });
       if (r.status !== 0) process.exit(r.status ?? 1);
+      if (codeOnly) configureCodeOnlyWorktree(worktreePath);
       const linked = linkDependencies(root, worktreePath);
       console.log(`detached worktree ready: ${worktreePath} at ${base} (verification only)`);
       console.log(`  cd "${worktreePath}"`);
@@ -524,12 +552,13 @@ export async function main(argv = process.argv.slice(2)) {
 
     const args =
       branchExists.status === 0
-        ? ["worktree", "add", worktreePath, branch]
-        : ["worktree", "add", "-b", branch, worktreePath, base];
+        ? ["worktree", "add", ...(codeOnly ? ["--no-checkout"] : []), worktreePath, branch]
+        : ["worktree", "add", ...(codeOnly ? ["--no-checkout"] : []), "-b", branch, worktreePath, base];
 
     console.log(`▸ git ${args.join(" ")}`);
     const r = runGit(args, { stdio: "inherit" });
     if (r.status !== 0) process.exit(r.status ?? 1);
+    if (codeOnly) configureCodeOnlyWorktree(worktreePath);
     const linked = linkDependencies(root, worktreePath);
     // Keep the original base across commits, main merges and checkout recreation.
     // Older retained branches use their common ancestor so existing task work is included.

@@ -35,6 +35,7 @@ export const SHARED_BUILD_PATTERNS = Object.freeze([
   "scripts/build-verified.mjs",
   "scripts/check-bundle-budget.mjs",
   "scripts/lib/verification/bundle-budget.mjs",
+  "scripts/lib/storage-footprint.mjs",
   "scripts/lib/command-invocation.mjs",
   "scripts/lib/run-command.mjs",
   "scripts/lib/script-run.mjs",

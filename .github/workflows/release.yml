@@ -289,6 +289,7 @@ jobs:
           path: |
             release-desktop/
             release-notes/${{ github.ref_name }}.md
+            reports/storage/package-full.json
           retention-days: 7
           compression-level: 0
           if-no-files-found: error
@@ -381,6 +382,7 @@ jobs:
           path: |
             release-desktop-demo/
             release-notes/${{ github.ref_name }}.md
+            reports/storage/package-demo.json
           retention-days: 7
           compression-level: 0
           if-no-files-found: error

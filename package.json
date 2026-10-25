@@ -117,6 +117,7 @@
     "typecheck:all": "node scripts/run-compact.mjs concurrently \"tsc --noEmit\" \"tsc -p tsconfig.test.json --noEmit\"",
     "typecheck:all:verbose": "concurrently \"tsc --noEmit\" \"tsc -p tsconfig.test.json --noEmit\"",
     "check:bundle": "node scripts/check-bundle-budget.mjs",
+    "storage:report": "node scripts/storage-report.mjs",
     "lint:ci": "node scripts/lint-ci.mjs",
     "format": "node scripts/run-prettier.mjs --write",
     "ensure:electron": "node scripts/ensure-electron.mjs",

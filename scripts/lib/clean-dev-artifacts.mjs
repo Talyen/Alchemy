@@ -12,19 +12,27 @@ export const TRANSIENT_ARTIFACT_DIRS = Object.freeze([
   "reports",
 ]);
 
-/** Always-safe report / cache dirs relative to the project root. */
-export const DEFAULT_ARTIFACT_DIRS = Object.freeze([...TRANSIENT_ARTIFACT_DIRS, "node_modules/.vite"]);
+/** Rebuildable caches; linked dependency ancestors are never traversed. */
+export const DEFAULT_ARTIFACT_DIRS = Object.freeze(["node_modules/.vite", "scripts/trailers/node_modules/.cache"]);
+
+/** Opt-in environments and model caches, separate from retained evidence. */
+export const TOOL_CACHE_DIRS = Object.freeze([".cache"]);
 
 /** Heavier rebuildable outputs; only removed with `--builds` / `--all`. */
 export const BUILD_ARTIFACT_DIRS = Object.freeze(["dist", "dist-demo", "release-desktop", "release-desktop-demo"]);
 
 /**
  * @param {string} rootDir
- * @param {{ builds?: boolean }} [options]
+ * @param {{ builds?: boolean, reports?: boolean, caches?: boolean }} [options]
  * @returns {string[]} Absolute paths that currently exist and should be removed.
  */
 export function listArtifactDirsToRemove(rootDir, options = {}) {
-  const relativeDirs = options.builds ? [...DEFAULT_ARTIFACT_DIRS, ...BUILD_ARTIFACT_DIRS] : [...DEFAULT_ARTIFACT_DIRS];
+  const relativeDirs = [
+    ...DEFAULT_ARTIFACT_DIRS,
+    ...(options.caches ? TOOL_CACHE_DIRS : []),
+    ...(options.reports ? TRANSIENT_ARTIFACT_DIRS : []),
+    ...(options.builds ? BUILD_ARTIFACT_DIRS : []),
+  ];
 
   return relativeDirs.flatMap((relative) => {
     const segments = relative.split("/");

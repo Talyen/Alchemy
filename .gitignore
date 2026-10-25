@@ -15,6 +15,7 @@ reports [0-9]*/
 scratch/
 /output/
 .vite/
+.cache/
 tsconfig.tsbuildinfo
 screenshot-*
 NUL
