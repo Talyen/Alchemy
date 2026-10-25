@@ -4,6 +4,7 @@ import {
   CARD_REJECTION_FEEDBACK_MS,
   COMBAT_RECOIL_COOLDOWN_MS,
   COMBAT_TEXT_LIFETIME_MS,
+  COMBAT_TEXT_MOTION,
   REACTION_TEXT_LIFETIME_MS,
   SHAKE_DURATION_MS,
 } from "@/lib/game-constants";
@@ -240,18 +241,65 @@ describe("independent combat feedback launches", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("bounds pending feedback without evicting active text, then clears every launch on reset", () => {
+  it("retains every emission, caps lag at 180 ms, and never evicts an active flight", () => {
     const feedback = makeFeedback();
     feedback.showCombatTexts([...hit]);
     const active = feedback.store.getState().floatingCombatBursts[0]!.entries[0]!.presentation;
     for (let i = 0; i < 40; i++) feedback.showCombatTexts([{ ...hit[0], additive: false }]);
     const entries = feedback.store.getState().floatingCombatBursts.flatMap((burst) => burst.entries);
-    expect(entries.filter((entry) => entry.presentation!.phase === "waiting")).toHaveLength(12);
+    expect(entries).toHaveLength(41);
+    expect(entries.filter((entry) => entry.presentation!.phase === "waiting")).toHaveLength(40);
     expect(entries[0]!.presentation).toBe(active);
-    expect(Math.max(...entries.map((entry) => entry.presentation!.launchAt)) - Date.now()).toBeLessThan(15000);
+    expect(Math.max(...entries.map((entry) => entry.presentation!.launchAt)) - Date.now()).toBeLessThanOrEqual(
+      COMBAT_TEXT_MOTION.maximumQueueDelayMs,
+    );
+    expect(entries.map((entry) => entry.presentation!.spread)).toContain(-1);
+    expect(entries.map((entry) => entry.presentation!.spread)).toContain(1);
+    vi.advanceTimersByTime(COMBAT_TEXT_MOTION.maximumQueueDelayMs);
+    expect(feedback.store.getState().floatingCombatBursts.flatMap((burst) => burst.entries)).toHaveLength(41);
+    vi.advanceTimersByTime(COMBAT_TEXT_LIFETIME_MS - 1);
+    expect(feedback.store.getState().floatingCombatBursts.flatMap((burst) => burst.entries)).toHaveLength(40);
+    vi.advanceTimersByTime(1);
+    expect(feedback.store.getState().floatingCombatBursts).toEqual([]);
     feedback.clearFloatingCombatTexts();
     vi.advanceTimersByTime(20000);
     expect(feedback.store.getState().floatingCombatBursts).toEqual([]);
     expect(vi.getTimerCount()).toBe(0);
   });
+});
+
+it("finishes a six-hit mixed burst within two seconds without retargeting launched text", () => {
+  vi.useFakeTimers();
+  const feedback = makeFeedback();
+  const started = Date.now();
+  try {
+    for (let index = 0; index < 6; index++) {
+      const before = feedback.store.getState().floatingCombatBursts.flatMap((burst) => burst.entries);
+      const active = before.filter((entry) => entry.presentation!.phase === "visible");
+      const oldIDs = new Set(before.map((entry) => entry.id));
+      feedback.showCombatTexts([
+        { ...hit[0], stat: index % 2 ? "burn" : "physical", additive: false },
+        { target: "enemy", kind: "heal", stat: "health", amount: 4, additive: false },
+        { target: "enemy", kind: "damage", stat: "block", amount: 3, additive: false },
+      ]);
+      const after = feedback.store.getState().floatingCombatBursts.flatMap((burst) => burst.entries);
+      for (const old of active) expect(after.find((entry) => entry.id === old.id)?.presentation).toBe(old.presentation);
+      for (const entry of after.filter((entry) => !oldIDs.has(entry.id))) {
+        expect(entry.presentation!.launchAt - Date.now()).toBeLessThanOrEqual(180);
+        expect(entry.presentation!.lifetimeMs).toBe(COMBAT_TEXT_LIFETIME_MS);
+      }
+      if (index < 5) vi.advanceTimersByTime(140);
+    }
+    const all = feedback.store.getState().floatingCombatBursts.flatMap((burst) => burst.entries);
+    expect(all).toHaveLength(18);
+    expect(
+      Math.max(...all.map((entry) => entry.presentation!.launchAt + entry.presentation!.lifetimeMs)) - started,
+    ).toBeLessThanOrEqual(2000);
+    vi.advanceTimersByTime(2000 - (Date.now() - started));
+    expect(feedback.store.getState().floatingCombatBursts).toEqual([]);
+    expect(vi.getTimerCount()).toBe(0);
+  } finally {
+    feedback.reset();
+    vi.useRealTimers();
+  }
 });

@@ -124,8 +124,8 @@ This applies to all shared ShineText consumers and the corrupted-title shine.
 Reaction names retain their independent 1600 ms lifetime and keyword shine.
 They pop, settle, rise up to 76 scaled pixels, then hold and fade. Each localized
 name fits the portrait width without wrapping or truncation. Numeric and name
-queues coordinate clearance in the center band; a later name cannot launch across
-an already rising number. Merging numbers never restarts a name or extends its
+queues prefer clearance in the center band, allowing overlap rather than delaying
+feedback beyond 180 ms. Dense names receive fixed extra rows. Merging numbers never restarts a name or extends its
 lifetime. Reduced/disabled motion keeps the keyword colors without travel.
 [Reaction text](../src/features/alchemy/run-loop/battle/presentation/ui/reaction-text.tsx)
 owns fitting and styling; [combat text](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx)
@@ -156,14 +156,16 @@ All coordinates and travel follow Game Size and remain above card flights.
 The [feedback owner](../src/features/alchemy/run-loop/battle/combat-feedback.ts)
 assigns each entry a waiting/visible phase, launch time, and post-launch lifetime.
 The [queue](../src/features/alchemy/run-loop/battle/combat-feedback-queue.ts) samples
-projected visible footprints with 6px clearance and a minimum 180 ms interval.
-New arrivals never push or restart visible text. Waiting entries may compact into
-vacated slots; each target/corner and the coordinated center band retain at most
-12 waiting entries, dropping the oldest pending entries under sustained overload.
-Visible entries keep their full lifetime. One owner timer advances launches and
+projected visible footprints with a preferred 6px clearance and 80 ms launch interval.
+Every entry launches within 180 ms of arrival, even when that permits overlap.
+The first two nearby numeric arrivals stay centered; denser arrivals alternate
+left and right, drifting outward from 16 to 36 scaled pixels. Damage and healing
+prefer opposite sides when mixed. Fan distance is capped to the portrait width.
+Corners and names receive fixed extra rows. Each path is chosen once: new arrivals
+never push, restart, shorten, or evict existing text. All waiting entries are retained
+and every entry keeps its full post-launch lifetime. One owner timer advances launches and
 expiry, and reset/unmount cancels it. Queues never block card input or playback.
-Reduced/disabled motion removes pop and travel and serializes entries in the same
-lane; the existing minimum-readable-lifetime policy remains in effect.
+Reduced/disabled motion removes pop and travel and uses separate static rows; the existing minimum-readable-lifetime policy remains in effect.
 
 Dark outlines and shadows stay static for contrast against artwork. Only the brief
 Critical gold glow fades through its bounded filter animation in

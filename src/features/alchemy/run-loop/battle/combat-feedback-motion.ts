@@ -52,7 +52,8 @@ export function combatTextFrame(lane: CombatTextLane, elapsed: number, lifetimeM
   else scale = lerp(M.holdScale, M.finalScale, smooth((elapsed - M.riseStartMs) / M.shrinkMs));
   const rise = lane === "impact" || lane === "announcement" ? M.risePx * out((elapsed - M.riseStartMs) / M.riseMs) : 0;
   const fadeMs = lane === "announcement" ? 350 : M.fadeMs;
-  return { scale, y: -rise, opacity: 1 - smooth((elapsed - (lifetimeMs - fadeMs)) / fadeMs) };
+  const fan = lane === "impact" ? M.fanStartPx + M.fanDriftPx * out(elapsed / M.fanMs) : 0;
+  return { scale, y: -rise, fan, opacity: 1 - smooth((elapsed - (lifetimeMs - fadeMs)) / fadeMs) };
 }
 
 export function combatTextFootprint(lane: CombatTextLane, elapsed: number, lifetimeMs: number) {

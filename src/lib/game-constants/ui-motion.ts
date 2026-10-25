@@ -27,7 +27,6 @@ export const CARD_REJECTION_FEEDBACK_MS = 260;
 export const COMBAT_TEXT_LIFETIME_MS = 1050;
 export const COMBAT_TEXT_MIN_LIFETIME_MS = 400;
 export const COMBAT_TEXT_BASE_SIZE_PX = 32;
-export const COMBAT_TEXT_MAX_WAITING_PER_LANE = 12;
 export const COMBAT_TEXT_MOTION = {
   initialScale: 0.9,
   peakScale: 1.85,
@@ -43,7 +42,14 @@ export const COMBAT_TEXT_MOTION = {
   fadeMs: 280,
   statusSize: 0.8,
   reactionSize: 1.25,
-  minimumLaunchGapMs: 180,
+  minimumLaunchGapMs: 80,
+  maximumQueueDelayMs: 180,
+  nearbyLaunchWindowMs: 360,
+  fanStartPx: 16,
+  fanDriftPx: 20,
+  fanMs: 400,
+  reactionRowPx: 32,
+  statusRowPx: 24,
   clearancePx: 6,
   sampleMs: 15,
 } as const;

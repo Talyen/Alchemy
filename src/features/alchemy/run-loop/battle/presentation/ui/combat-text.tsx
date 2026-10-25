@@ -49,6 +49,7 @@ function animationFor(lane: CombatTextLane, lifetimeMs: number) {
   return {
     scale: frames.map((frame) => frame.scale),
     "--combat-text-rise": frames.map((frame) => frame.y),
+    "--combat-text-fan": frames.map((frame) => frame.fan),
     opacity: frames.map((frame) => frame.opacity),
     transition: { duration: lifetimeMs / 1000, times: times.map((time) => time / lifetimeMs), ease: "linear" as const },
   };
@@ -77,7 +78,10 @@ export function CombatTextRail({
   return (
     <div
       className="pointer-events-none absolute inset-0 z-30 w-full"
-      style={{ fontSize: `calc(${COMBAT_TEXT_BASE_SIZE_PX}px * var(--content-scale, 1))` }}
+      style={{
+        fontSize: `calc(${COMBAT_TEXT_BASE_SIZE_PX}px * var(--content-scale, 1))`,
+        containerType: "inline-size",
+      }}
     >
       {bursts.map((burst) => {
         const entries = burst.entries.filter((entry) => entry.presentation?.phase !== "waiting");
@@ -94,7 +98,13 @@ export function CombatTextRail({
             {entries.map((entry) => {
               const lane = entry.presentation?.lane ?? combatTextLane(entry);
               return (
-                <FeedbackFlight key={entry.id} lane={lane} staticMotion={staticMotion} staticRow={nextStaticRow(lane)}>
+                <FeedbackFlight
+                  key={entry.id}
+                  lane={lane}
+                  spread={entry.presentation?.spread ?? 0}
+                  staticMotion={staticMotion}
+                  staticRow={nextStaticRow(lane)}
+                >
                   <CombatTextEntry entry={entry} staticMotion={staticMotion} />
                 </FeedbackFlight>
               );
@@ -108,6 +118,7 @@ export function CombatTextRail({
           <FeedbackFlight
             key={reaction.id}
             lane="announcement"
+            spread={reaction.presentation?.spread ?? 0}
             staticMotion={staticMotion}
             staticRow={nextStaticRow("announcement")}
           >
@@ -120,11 +131,13 @@ export function CombatTextRail({
 
 function FeedbackFlight({
   lane,
+  spread,
   staticMotion,
   staticRow,
   children,
 }: {
   lane: CombatTextLane;
+  spread: -2 | -1 | 0 | 1 | 2;
   staticMotion: boolean;
   staticRow: number;
   children: ReactNode;
@@ -134,15 +147,36 @@ function FeedbackFlight({
     0,
     lane === "announcement" ? REACTION_TEXT_LIFETIME_MS : COMBAT_TEXT_LIFETIME_MS,
   );
-  const initial = { scale: firstFrame.scale, opacity: firstFrame.opacity, "--combat-text-rise": firstFrame.y };
+  const initial = {
+    scale: firstFrame.scale,
+    opacity: firstFrame.opacity,
+    "--combat-text-rise": firstFrame.y,
+    "--combat-text-fan": firstFrame.fan,
+  };
   const quiet = lane === "benefit" || lane === "setback";
+  const rowOffset = staticMotion
+    ? 0
+    : lane === "announcement"
+      ? (spread < 0 ? -spread * 2 - 1 : spread * 2) * M.reactionRowPx
+      : quiet
+        ? spread === -1
+          ? -M.statusRowPx
+          : spread === 1
+            ? -M.statusRowPx * 2
+            : 0
+        : 0;
+  const fan =
+    staticMotion || lane !== "impact"
+      ? "0px"
+      : `calc(${spread} * min(calc(var(--combat-text-fan, 0) * 1px * var(--content-scale, 1)), max(0px, calc((100cqw - ${M.peakScale * 100}%) / 2 - 8px * var(--content-scale, 1)))))`;
   return (
     <div
       data-feedback-lane={lane}
+      data-feedback-spread={spread}
       className="absolute"
       style={{
         left: lane === "benefit" ? "20%" : lane === "setback" ? "80%" : "50%",
-        top: `calc(${quiet ? 86 : 40}% - ${lane === "announcement" ? M.reactionOffsetPx : 0}px * var(--content-scale, 1) - ${staticRow * 1.5}em)`,
+        top: `calc(${quiet ? 86 : 40}% - ${lane === "announcement" ? M.reactionOffsetPx : 0}px * var(--content-scale, 1) - ${staticRow * 1.5}em + ${rowOffset}px * var(--content-scale, 1))`,
         transform: "translate(-50%, -50%)",
         width: lane === "announcement" ? "100%" : "max-content",
         fontSize: quiet ? `${M.statusSize}em` : undefined,
@@ -152,7 +186,7 @@ function FeedbackFlight({
         data-testid="combat-feedback-action"
         className="flex w-full items-center justify-center [line-height:1.15] font-bold tracking-wide [filter:drop-shadow(0_0_1px_rgb(0,0,0))_drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]"
         initial={staticMotion ? false : initial}
-        style={{ translate: "0 calc(var(--combat-text-rise, 0) * 1px * var(--content-scale, 1))" }}
+        style={{ translate: `${fan} calc(var(--combat-text-rise, 0) * 1px * var(--content-scale, 1))` }}
         animate={staticMotion ? { scale: 1, "--combat-text-rise": 0, opacity: 1 } : animations[lane]}
       >
         {children}

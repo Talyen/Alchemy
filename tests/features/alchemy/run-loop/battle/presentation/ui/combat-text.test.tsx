@@ -123,12 +123,18 @@ it("does not mount queued text early and preserves the active flight when anothe
     1050,
   );
   const first = prepared.bursts[0]!;
-  first.entries[0]!.presentation = { lane: "impact", launchAt: 0, lifetimeMs: 1050, phase: "visible" };
+  first.entries[0]!.presentation = { lane: "impact", launchAt: 0, lifetimeMs: 1050, phase: "visible", spread: 0 };
   const pending = {
     ...first.entries[0]!,
     id: "pending",
     displayText: "+8",
-    presentation: { lane: "impact" as const, launchAt: 690, lifetimeMs: 1050, phase: "waiting" as const },
+    presentation: {
+      lane: "impact" as const,
+      launchAt: 180,
+      lifetimeMs: 1050,
+      phase: "waiting" as const,
+      spread: 1 as const,
+    },
   };
   const { container, rerender } = render(<CombatTextRail bursts={[first]} />);
   const flight = container.querySelector('[data-testid="combat-feedback-action"]');
@@ -147,4 +153,6 @@ it("does not mount queued text early and preserves the active flight when anothe
   );
   expect(container.querySelectorAll('[data-testid="combat-text"]')).toHaveLength(2);
   expect(container.querySelector('[data-testid="combat-feedback-action"]')).toBe(flight);
+  expect(flight?.closest("[data-feedback-spread]")?.getAttribute("data-feedback-spread")).toBe("0");
+  expect(container.querySelector('[data-feedback-spread="1"]')).not.toBeNull();
 });

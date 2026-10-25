@@ -62,6 +62,8 @@ export interface CombatTextPresentation {
   launchAt: number;
   lifetimeMs: number;
   phase: "waiting" | "visible";
+  /** Chosen once; new arrivals never retarget an active flight. */
+  spread?: -2 | -1 | 0 | 1 | 2;
 }
 
 export type FloatingCombatText = CombatTextEvent & {

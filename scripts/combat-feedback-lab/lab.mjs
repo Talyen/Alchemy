@@ -43,7 +43,9 @@ const alchemy = {
   maxGroups: 3,
   statusLimit: 0,
   pushMs: 150,
-  queueGap: 180,
+  queueGap: 80,
+  queueMaxDelay: 180,
+  fanDistance: 36,
   queueClearance: 6,
   mergeWindow: 250,
   mergeExtension: 0,
@@ -258,12 +260,14 @@ const sections = [
         corners: "Benefits left · setbacks right",
       }),
       choice("grouping", "Entry motion", {
-        queued: "Independent paths · launch queue",
+        queued: "Independent paths · bounded stagger",
         action: "Legacy · whole action pushes",
         regions: "Legacy · individual region pushes",
       }),
       numeric("queueGap", "Minimum time between launches", 60, 1000, 10, "ms"),
-      numeric("queueClearance", "Clearance between visible entries", 0, 20, 1, "px"),
+      numeric("queueClearance", "Preferred clearance", 0, 20, 1, "px"),
+      numeric("queueMaxDelay", "Maximum delay after each hit", 0, 300, 10, "ms"),
+      numeric("fanDistance", "Dense-hit outward drift", 0, 60, 2, "px"),
       numeric("maxGroups", "Maximum action / reaction groups", 1, 5),
       numeric("statusLimit", "Status entries per region (0 = all)", 0, 6),
       numeric("stackGap", "Space between groups", 0, 30, 1, "px"),
@@ -337,7 +341,7 @@ const scenarios = {
   },
 };
 
-const storageKey = "alchemy-combat-feedback-lab-v2";
+const storageKey = "alchemy-combat-feedback-lab-v3";
 const state = {
   a: { ...alchemy },
   b: { ...balanced },
@@ -369,7 +373,7 @@ function validatedConfig(value) {
 }
 
 function restore(value) {
-  if (![1, 2].includes(value.version)) throw new Error("Unsupported settings version");
+  if (![1, 2, 3].includes(value.version)) throw new Error("Unsupported settings version");
   const a = validatedConfig(value.a);
   const b = validatedConfig(value.b);
   state.a = a;
@@ -395,7 +399,7 @@ try {
 
 function snapshot() {
   return {
-    version: 2,
+    version: 3,
     a: state.a,
     b: state.b,
     presetA: state.presetA,
@@ -595,7 +599,7 @@ function buildItems(config, time) {
     const actionIDs = [...new Set(live.map((item) => item.action))].sort((a, b) => b - a);
     if (config.grouping === "action") {
       for (const item of live) if (actionIDs.indexOf(item.action) >= config.maxGroups) item.evicted = true;
-    } else {
+    } else if (config.grouping !== "queued") {
       const announcements = [
         ...new Set(live.filter((item) => item.kind === "reaction").map((item) => item.action)),
       ].sort((a, b) => b - a);
@@ -645,9 +649,10 @@ function scheduleLaunch(item, previous, config) {
   const lane = queueLane(item, config);
   const ahead = previous.filter((other) => !other.evicted && queueLane(other, config) === lane);
   const last = ahead.at(-1);
-  let launch = Math.max(item.at, last ? last.launchAt + config.queueGap : item.at);
+  const deadline = item.at + config.queueMaxDelay;
+  let launch = Math.min(deadline, Math.max(item.at, last ? last.launchAt + config.queueGap : item.at));
   const duration = item.kind === "reaction" ? config.reactionMs : config.lifetime;
-  const latestEnd = Math.max(launch, ...ahead.map((other) => other.expiry));
+  const latestEnd = Math.min(deadline, Math.max(launch, ...ahead.map((other) => other.expiry)));
   const clearAt = (candidate) => {
     const proposed = { ...item, launchAt: candidate, expiry: candidate + duration };
     for (const other of ahead) {
@@ -663,9 +668,26 @@ function scheduleLaunch(item, previous, config) {
     }
     return true;
   };
-  // Changing membership never changes a launch already assigned. Congestion
-  // delays the new entry instead of adding a second upward displacement.
-  while (launch < latestEnd && !clearAt(launch)) launch += 15;
+  // No arrival retargets or evicts an active flight. Timely feedback takes
+  // precedence over clearance when several results need to appear together.
+  while (launch < latestEnd && !clearAt(launch)) launch = Math.min(deadline, launch + 15);
+  const recent = ahead.filter((other) => other.launchAt + 360 >= launch);
+  const previousSide = recent.findLast((other) => other.spread)?.spread;
+  item.spread = !recent.length
+    ? 0
+    : lane === "announcement"
+      ? [-1, 1, -2, 2][(recent.length - 1) % 4]
+      : lane === "impact" &&
+          item.type === "heal" &&
+          recent.some((other) => other.kind === "impact" && other.type !== "heal")
+        ? 1
+        : lane === "impact" && item.type !== "heal" && recent.some((other) => other.type === "heal")
+          ? -1
+          : lane === "impact" && recent.length < 2
+            ? 0
+            : previousSide === -1
+              ? 1
+              : -1;
   item.launchAt = launch;
   item.expiry = launch + duration;
   if (item.critical) item.criticalAt = launch;
@@ -754,7 +776,22 @@ function layoutAt(items, c, time, width) {
       const lane = queueLane(item, c);
       const x = lane === "benefit" ? width / 2 - 85 : lane === "setback" ? width / 2 + 85 : width / 2;
       const y = lane === "announcement" ? 164 : lane === "impact" ? baseY : 335;
-      layouts.set(item.id, { x, y });
+      const spread = item.spread ?? 0;
+      const elapsed = time - (item.launchAt ?? item.at);
+      const fan =
+        state.static || lane !== "impact" ? 0 : spread * c.fanDistance * (4 / 9 + (5 / 9) * ease(elapsed / 400, "out"));
+      const row = state.static
+        ? 0
+        : lane === "announcement"
+          ? (spread < 0 ? -spread * 2 - 1 : spread * 2) * 32
+          : lane === "impact"
+            ? 0
+            : spread === -1
+              ? -24
+              : spread === 1
+                ? -48
+                : 0;
+      layouts.set(item.id, { x: x + fan, y: y + row });
     }
   } else if (c.grouping === "action") {
     const actions = [...new Set(items.map((item) => item.action))].sort((a, b) => b - a);

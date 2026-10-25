@@ -21,13 +21,15 @@ Balanced now uses 32px text (down from 37.8px), independent paths, and queued
 launches. Damage and healing share the center queue; benefits and setbacks use
 the lower-left and lower-right queues. Names have a separate upper queue. Status
 entries stay stationary and use a quieter pop. No incoming entry moves a previous
-entry's path. The queue samples their projected visible footprints and delays the
-new entry until there is clearance; minimum launch interval and clearance are
-adjustable. Each entry receives its full lifetime after launch. Busy sequences
-can wait longer; the queue readout and extended timeline expose that tradeoff.
+entry's path. The queue prefers clearance and an 80 ms stagger, but launches every
+entry within 180 ms of arrival. Dense numeric arrivals fan left and right, with
+damage and healing preferring opposite sides; corners and names use fixed rows.
+Overlap is allowed when the deadline arrives. No queued or visible entry is evicted,
+and each receives its full lifetime after launch. Queue delay, clearance, and fan
+distance are adjustable.
 
-Revision 2 keeps the previous browser settings under their original storage key
-and starts a fresh comparison. Exported revision 1 settings can still be imported.
+Revision 3 keeps previous browser settings under their original storage keys
+and starts a fresh comparison. Exported revision 1 and 2 settings can still be imported.
 Legacy push modes remain available for comparison; each push now retains its own
 transition progress rather than restarting all earlier pushes on every arrival.
 
