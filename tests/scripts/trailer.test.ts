@@ -2,12 +2,31 @@ import fs from "node:fs";
 import { pointerPath, samplePointer } from "../../scripts/trailers/direction.mjs";
 import { assertFrameDimensions, validateSourceVideo } from "../../scripts/trailers/media.mjs";
 import { describe, expect, it, vi } from "vitest";
-import { compileTimeline, mapSoundEvents, nativeMusicOffsets, parseRecipe } from "../../scripts/trailers/model.mjs";
+import {
+  compileRenderChunks,
+  compileTimeline,
+  mapSoundEvents,
+  nativeMusicOffsets,
+  parseRecipe,
+} from "../../scripts/trailers/model.mjs";
 import { installCaptureRuntime, sampleVisualTime } from "../../scripts/trailers/browser-runtime.mjs";
 
 const authored = JSON.parse(fs.readFileSync(new URL("../../trailers/boss-spotlight.json", import.meta.url), "utf8"));
 
 describe("trailer edit admission and synchronization", () => {
+  it("covers the complete cinematic edit exactly once across bounded render chunks", () => {
+    const recipe = parseRecipe(
+      JSON.parse(fs.readFileSync(new URL("../../trailers/alchemy-cinematic.json", import.meta.url), "utf8")),
+    );
+    const timeline = compileTimeline(recipe);
+    const chunks = compileRenderChunks(timeline);
+    expect(timeline.durationInFrames).toBe(3834);
+    expect(chunks).toHaveLength(6);
+    expect(chunks[0]).toEqual({ index: 1, from: 0, to: 719 });
+    expect(chunks.at(-1)).toEqual({ index: 6, from: 3600, to: 3833 });
+    expect(chunks.reduce((total, range) => total + range.to - range.from + 1, 0)).toBe(timeline.durationInFrames);
+    for (let index = 1; index < chunks.length; index++) expect(chunks[index].from).toBe(chunks[index - 1].to + 1);
+  });
   it("keeps Motion's native fade on the gameplay clock when compositor time is far ahead", async () => {
     let now = 1000;
     class NativeAnimation {

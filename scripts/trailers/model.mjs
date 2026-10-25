@@ -246,3 +246,13 @@ export function mapSoundEvents(timeline, clips) {
     });
   });
 }
+
+/** Inclusive frame ranges keep every frame when a long edit is rendered in bounded jobs. */
+export function compileRenderChunks(timeline) {
+  const frames = timeline.fps * 12;
+  return Array.from({ length: Math.ceil(timeline.durationInFrames / frames) }, (_, index) => ({
+    index: index + 1,
+    from: index * frames,
+    to: Math.min(timeline.durationInFrames - 1, (index + 1) * frames - 1),
+  }));
+}

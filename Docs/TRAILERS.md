@@ -47,6 +47,20 @@ frames on demand through a private local frame server with a 64 MiB memory cache
 They retain native source resolution without expanding the full edit to temporary
 PNG files. Successful exports remove their remaining temporary composition files.
 
+Long compositions keep verified 12-second render chunks under the bundle's
+`edits/` directory. `plan` lists their inclusive frame ranges. For a bounded job,
+render one numbered chunk with `render --chunk 1`; repeat for the remaining
+chunks using the same recipe/format/label, then use `render --assemble` to join
+and mix the complete film. Each command uses its own host-lane lease. Normal
+`render` also reuses verified chunks and renders any missing ones. Chunk receipts
+check edit identity, source hashes, frame counts and dimensions before reuse.
+Incomplete temporary chunks are never accepted. A new edit gets a separate cache.
+
+The local frame server decodes source video sequentially, pauses through pipe
+backpressure, and bounds its lossless PNG cache to 64 MiB. Uncompressed PNG
+transport trades local bandwidth for less CPU work; decoded source pixels stay
+identical. No reduced-resolution proxy is substituted. Sources remain unchanged.
+
 The manual **Gameplay trailer production** GitHub Actions workflow provisions an
 Ubuntu runner and stores the complete result as a private workflow artifact for
 30 days. It runs only on explicit dispatch, never on pushes or PRs. Its offline
@@ -204,7 +218,7 @@ resolved timeline and fails invalid inputs before launching a browser.
   `lyrics: true` records the game's own lyric display at its fixed battle position,
   near the bottom inside the boss portrait. Lyrics never appear on menus or as a trailer overlay.
   The isolated audio clock follows the final soundtrack position while the actual
-  audio is mixed later. Each battle must match the soundtrack boss and play at
+  audio is mixed later. Each synchronized battle must match the soundtrack boss and play at
   normal speed. Reusing one clip at conflicting music times fails admission;
   use separate clip IDs and recapture for those positions. Instrumental gaps and
   word highlighting come from the existing game component.

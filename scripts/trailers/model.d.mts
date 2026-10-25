@@ -67,6 +67,9 @@ export const BOSS_IDS: readonly string[];
 export const OUTPUTS: Record<"steam" | "vertical" | "square", { width: number; height: number }>;
 export function parseRecipe(value: unknown): Recipe;
 export function compileTimeline(recipe: Recipe, format?: string, draft?: boolean): Timeline;
+export function compileRenderChunks(
+  timeline: Pick<Timeline, "fps" | "durationInFrames">,
+): Array<{ index: number; from: number; to: number }>;
 export function nativeMusicOffsets(recipe: Recipe): Record<string, number>;
 export function mapSoundEvents(
   timeline: Timeline,

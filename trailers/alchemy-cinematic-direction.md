@@ -148,7 +148,7 @@ UI. The shop take purchases an actual generated offer. The Homestead take builds
 through its purchase control and production material costs. Staged progression,
 Gold, discoveries and inventory are explicitly authored checkpoints in an isolated
 browser profile. The meta profile has 95 Gold; 24 Wood, 14 Stone, 18 Iron, 24 Food, 12 Herbs,
-9 Hide and 4 Gems; a few earned buildings, farms and bonds; three basic gear
+9 Hide and 4 Gems; a few existing buildings, farms and bonds; three basic gear
 items; and partial discoveries. Shops start with 85 Gold. No 999-resource
 fixtures or full-inventory debug profile appears in the footage.
 They represent valid game situations rather than a continuous
@@ -180,7 +180,10 @@ The renderer checks source hashes, dimensions and native lyric timing. Only clip
 used by the edit are required, so a partial library can produce a small canary
 before the full assembly. Exact source frames are decoded on demand through a
 local frame server, retaining native resolution while bounding memory and avoiding
-a multi-gigabyte temporary PNG expansion. Source masters and earlier exports stay
+a multi-gigabyte temporary PNG expansion. Long edits keep verified 12-second
+render chunks: use `render --chunk 1` through the last chunk reported by `plan`,
+then `render --assemble`. Each job uses a separate bounded host lane.
+Source masters and earlier exports stay
 untouched. New gameplay inputs or new starting situations require a new take.
 
 ## Review gates
