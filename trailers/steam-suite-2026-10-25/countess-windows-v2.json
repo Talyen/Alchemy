@@ -1,8 +1,13 @@
 {
   "countess-v2": [
     {
+      "id": "opening-portrait",
+      "start": 0,
+      "end": 1.5
+    },
+    {
       "id": "vocal-opening",
-      "start": 20.5,
+      "start": 18,
       "end": 24.25
     },
     {
@@ -31,8 +36,8 @@
       "end": 77.5
     },
     {
-      "id": "final-decision",
-      "start": 77.5,
+      "id": "final-refrain",
+      "start": 81.1,
       "end": 84.5
     }
   ]
