@@ -114,13 +114,22 @@ export async function prepareAction(page, action) {
 export async function pointerCorridor(page) {
   return page.evaluate(() => {
     const slots = [...globalThis.document.querySelectorAll("[data-hand-slot]:not([data-hand-hidden])")];
-    // Use the hand container as well as the lifted artwork: hit testing is owned
-    // by the whole fan, including visually empty space above individual cards.
+    // Travel in the actual gap below status chips and above the whole fan.
+    // A large fixed offset above the hand crosses newly earned status tooltips.
     const tops = slots.flatMap((slot) => [
       slot.parentElement.getBoundingClientRect().top,
       slot.querySelector("button").getBoundingClientRect().top,
     ]);
-    return slots.length ? Math.max(80, Math.min(...tops) - 40) : null;
+    if (!slots.length) return null;
+    const corridor = Math.min(...tops) - 8;
+    const statusBottom = Math.max(
+      0,
+      ...[
+        ...globalThis.document.querySelectorAll('[data-testid="player-statuses"],[data-testid="enemy-statuses"]'),
+      ].map((node) => node.getBoundingClientRect().bottom),
+    );
+    if (corridor <= statusBottom + 4) throw new Error("No clear pointer gap between statuses and the hand");
+    return corridor;
   });
 }
 

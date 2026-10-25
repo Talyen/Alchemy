@@ -239,6 +239,8 @@ async function captureClip({
     let inspection = null;
     let hoveredKey = null;
     const hoverChanges = [];
+    const tooltipChanges = [];
+    let tooltipSignature = "";
 
     for (let frame = 0; frame < frameCount; frame++) {
       let phaseStart = performance.now();
@@ -325,6 +327,9 @@ async function captureClip({
         else if (frame / settings.fps - input.at > 0.75) throw new Error(`Card input was not accepted: ${input.label}`);
       }
       const observed = await page.evaluate(() => ({
+        tooltips: [...globalThis.document.querySelectorAll('[role="tooltip"][data-visible]')]
+          .filter((node) => Number(globalThis.getComputedStyle(node).opacity) > 0)
+          .map((node) => node.textContent),
         hovered:
           globalThis.document
             .querySelector("[data-hand-slot][data-hovered]:not([data-hand-hidden])")
@@ -342,6 +347,11 @@ async function captureClip({
         }),
       }));
       const hovered = observed.hovered;
+      const nextTooltipSignature = JSON.stringify(observed.tooltips);
+      if (nextTooltipSignature !== tooltipSignature) {
+        tooltipChanges.push({ at: seconds, texts: observed.tooltips });
+        tooltipSignature = nextTooltipSignature;
+      }
       if (observed.feedback.length) combatFeedback.push({ at: seconds, entries: observed.feedback });
       if (deliberateCards && hovered && hovered !== inspection?.key && hovered !== pending?.input.inspectedCardKey)
         throw new Error(`Pointer hovered an unintended card at ${seconds}s: ${hovered}`);
@@ -492,6 +502,7 @@ async function captureClip({
     const journal = {
       version: 1,
       hoverChanges,
+      tooltipChanges,
       id: clip.id,
       recipeHash: hashValue(clip),
       checkpointHash: checkpoint ? hashValue(checkpoint) : null,
