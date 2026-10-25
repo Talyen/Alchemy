@@ -98,7 +98,7 @@ def graphics():
 
 def sources():
     catalog = {}
-    for bundle in ["protected-library", "canary", "countess-performance", "current-selects", "detail-selects", "wizard-turn"]:
+    for bundle in ["protected-library", "canary", "countess-performance", "current-selects", "detail-selects", "wizard-turn", "combat-stories"]:
         location = PROJECT / "sources" / bundle
         if not (location / "capture.json").exists():
             continue
@@ -199,8 +199,8 @@ def render(timeline, revision):
             z = f"{z0}+({z1-z0})*on/{max(1,frames-1)}"
             filters[0] += f",zoompan=z='{z}':x='max(0,min(iw-iw/zoom,iw*{cx}-iw/zoom/2))':y='max(0,min(ih-ih/zoom,ih*{cy}-ih/zoom/2))':d=1:s=1920x1080:fps=60"
         else:
-            filters[0] += ",scale=1920:1080:flags=lanczos"
-        filters[0] += ",setsar=1,format=yuv420p[v]"
+            filters[0] += ",scale=1920:1080:flags=lanczos:out_color_matrix=bt709"
+        filters[0] += ",setsar=1,format=yuv420p,setparams=range=limited:color_primaries=bt709:color_trc=bt709:colorspace=bt709[v]"
         last = "v"
         if shot.get("title"):
             title = PROJECT / "graphics" / (hashlib.sha256(shot["title"].encode()).hexdigest()[:12] + ".png")
@@ -227,7 +227,9 @@ def render(timeline, revision):
     pcm = audio(timeline, catalog, revision)
     concat = segments / "concat.txt"
     concat.write_text("".join(f"file '{str((segments/f'{i:03}.mp4').resolve())}'\n" for i in range(len(timeline["shots"]))))
-    ff(["-f", "concat", "-safe", 0, "-i", concat, "-i", pcm, "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-ar", 48000, "-ac", 2, "-t", cursor, "-movflags", "+faststart", output])
+    # Match the canonical trailer renderer: concatenation must retain explicit
+    # H.264 VUI color metadata even after zoompan or RGB graphic composition.
+    ff(["-f", "concat", "-safe", 0, "-i", concat, "-i", pcm, "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-bsf:v", "h264_metadata=colour_primaries=1:transfer_characteristics=1:matrix_coefficients=1", "-c:a", "aac", "-b:a", "192k", "-ar", 48000, "-ac", 2, "-t", cursor, "-movflags", "+faststart", output])
     write(output.with_suffix(".json"), {"sha256": digest(output), "timeline": timeline, "resolvedShots": editorial, "sourceRevisions": {k: v["source"] for k,v in catalog.items() if k in {s.get('source') for s in timeline['shots']}}, "sampling": "Offline sampled 60 fps, not a live performance benchmark", "audio": str(pcm.relative_to(PROJECT))})
     print(f"Final: {output}", flush=True)
 

@@ -6,7 +6,7 @@ editable JSON timelines, separate PNG overlays and closing graphics, original
 music, native sound cues, PCM mixes, reusable encoded shots, final MP4s and review
 evidence. Protected prototype footage is linked, never duplicated or modified.
 
-The five treatments are **The Perfect Turn**, **A Run Through Alchemy**,
+The five treatments are **Every Card Counts**, **A Run Through Alchemy**,
 **A Home Worth Fighting For**, **The Boss Gauntlet**, and **One More Heartbeat**.
 The Countess performance starts at song time zero, keeps the game's native
 lyrics, and runs through the first full chorus. Other footage has native lyrics
@@ -31,18 +31,27 @@ rendering. Existing final filenames cannot be overwritten; use a new revision.
 ```sh
 python3 scripts/edit.py graphics --project /absolute/path/to/project
 python3 scripts/edit.py render --project /absolute/path/to/project \
-  --timeline 01-the-perfect-turn --revision v2
+  --timeline 01-every-card-counts --revision v2
 python3 scripts/edit.py review --project /absolute/path/to/project \
-  --timeline 01-the-perfect-turn --revision v2
+  --timeline 01-every-card-counts --revision v2
 ```
 
 Run capture, rendering and full decode review inside the bounded shared host
 lane documented in [TRAILERS](../../Docs/TRAILERS.md). The Python finishing tool
-needs Pillow, NumPy and FFmpeg/ffprobe; the prepared project carries its Inter
+needs Pillow, NumPy and FFmpeg/ffprobe; `countess_review.py` also uses SciPy for
+independent audio-clock correlation. The prepared project carries its Inter
 font. Captures and finals are offline sampled 60 fps, not live performance
 benchmarks. Full decode, codec/frame assertions, boundary images and loudness
 measurements do not establish subjective creative quality or listening approval.
 Read the output project's final creative review before selecting a store trailer.
+
+The captured Wizard turn takes damage after its offensive sequence, so the
+initial “Perfect Turn” working title was replaced with “Every Card Counts.”
+`combat-stories.json` adds complete Knight and Druid turns with enemy responses.
+The five short 4K detail takes keep menu reframing crisp; the Armory crop stays
+wide enough to retain its heading and equipped slot. Canary review caught missing
+color primaries after zoom composition; the finisher now applies explicit frame
+color parameters and the canonical renderer's H.264 metadata bitstream filter.
 
 English titles are external base-video recipe data, separate from shipped UI
 translations. Additional language versions can use separate timelines/overlays.

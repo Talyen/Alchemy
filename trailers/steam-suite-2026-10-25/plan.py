@@ -8,7 +8,7 @@ from pathlib import Path
 def shot(name, duration, start=.2, title=None, zoom=None, **extra):
     detail = {
         "card-shop": ([1.3, 1.4], [.5, .45]),
-        "armory-loadout": ([1.2, 1.3], [.5, .49]),
+        "armory-loadout": ([1.1, 1.16], [.48, .47]),
         "homestead-build": ([1.28, 1.36], [.5, .47]),
         "homestead-companions": ([1.28, 1.36], [.5, .47]),
         "talents-block": ([1.22, 1.28], [.5, .47]),
@@ -46,7 +46,7 @@ def create(project):
 
     timelines = [
         {
-            "id": "01-the-perfect-turn", "name": "The Perfect Turn",
+            "id": "01-every-card-counts", "name": "Every Card Counts",
             "intent": "One complete three-spell turn establishes cause and consequence before showing ways to develop the next build.",
             "music": {"file": "audio/Battle 3.mp3", "in": .19, "fade": 2.0},
             "shots": [
@@ -63,10 +63,10 @@ def create(project):
             "intent": "A broad journey through battle, purchases, route decisions, persistent growth and a boss challenge. Staged valid checkpoints, not a claimed uninterrupted run.",
             "music": {"file": "audio/Battle 1.mp3", "in": 10.12, "fade": 2.2},
             "shots": [
+                shot("labyrinth-route",4.9,title="CHOOSE YOUR PATH"),
                 {"source":"wizard-turn/wizard-turn","in":0,"duration":7.9},
                 shot("card-shop",4.9,title="MAKE EVERY CHOICE COUNT",zoom=[1.03,1.12]),
                 shot("potion-brewing",4.9,zoom=[1.05,1.14]),
-                shot("labyrinth-route",4.9,title="CHOOSE YOUR PATH"),
                 shot("armory-loadout",4.9,zoom=[1.03,1.1]),
                 shot("homestead-build",4.9,title="BUILD BEYOND THE RUN",zoom=[1.02,1.1]),
                 shot("talents-block",4.9,zoom=[1.02,1.1]),
@@ -80,25 +80,25 @@ def create(project):
             "music": {"file":"audio/Menu 3.mp3","in":.48,"fade":3},
             "sfx": .7,
             "shots": [
-                {"source":"wizard-turn/wizard-turn","in":0,"duration":7.9,"title":"A HOME WORTH FIGHTING FOR"},
+                shot("treant-druid",5.1,title="A HOME WORTH FIGHTING FOR"),
                 shot("campfire-rest",4.9,zoom=[1.04,1.12]),
                 shot("homestead-build",5.1,title="BUILD BEYOND THE RUN",zoom=[1.02,1.1]),
                 shot("homestead-companions",5.1,title="FIND AN ALLY",zoom=[1.03,1.1]),
                 shot("armory-loadout",4.9,zoom=[1.03,1.1]),
                 shot("talents-block",4.9,zoom=[1.02,1.1]),
-                shot("treant-druid",5.1),end(),
+                {"source":"combat-stories/druid-counterplay","in":0,"duration":16},end(),
             ],
         },
         {
             "id": "04-the-boss-gauntlet", "name": "The Boss Gauntlet",
-            "intent": "A compact battle-first challenge reel. Complete inputs and impacts against four visually distinct bosses; no feature menus.",
+            "intent": "A battle-first challenge reel. Two complete defensive turns include enemy responses; short Seraph and Countess accents add contrasting threats.",
             "music": {"file":"audio/Battle 3.mp3","in":32.2,"fade":1.8},
             "shots": [
-                shot("titan-knight",5.1,start=0,title="FACE THE BOSSES"),
-                shot("treant-druid",5.1,start=0),
+                {"source":"combat-stories/knight-fortress","in":0,"duration":16,"title":"STAND YOUR GROUND"},
                 shot("seraph-wizard",5.1,start=0),
+                {"source":"combat-stories/druid-counterplay","in":0,"duration":16},
                 shot("countess-neutral",5.1,start=0),
-                {"source":"wizard-turn/wizard-turn","in":8,"duration":8},end("blood"),
+                end("blood"),
             ],
         },
         {
