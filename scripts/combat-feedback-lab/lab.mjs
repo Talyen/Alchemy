@@ -553,7 +553,9 @@ function buildItems(config, time) {
   let id = 0;
   for (const [action, [at, entries]] of scenarios[state.scenario].events.entries()) {
     if (at > time) break;
-    for (const entry of entries) {
+    for (const entry of config.grouping === "queued"
+      ? [...entries].sort((a, b) => Number(b.kind === "reaction") - Number(a.kind === "reaction"))
+      : entries) {
       const region = entry.kind === "reaction" ? "announcement" : entry.kind === "impact" ? "impact" : entry.region;
       const match =
         entry.kind === "reaction"
@@ -650,27 +652,8 @@ function scheduleLaunch(item, previous, config) {
   const ahead = previous.filter((other) => !other.evicted && queueLane(other, config) === lane);
   const last = ahead.at(-1);
   const deadline = item.at + config.queueMaxDelay;
-  let launch = Math.min(deadline, Math.max(item.at, last ? last.launchAt + config.queueGap : item.at));
+  const launch = Math.min(deadline, Math.max(item.at, last ? last.launchAt + config.queueGap : item.at));
   const duration = item.kind === "reaction" ? config.reactionMs : config.lifetime;
-  const latestEnd = Math.min(deadline, Math.max(launch, ...ahead.map((other) => other.expiry)));
-  const clearAt = (candidate) => {
-    const proposed = { ...item, launchAt: candidate, expiry: candidate + duration };
-    for (const other of ahead) {
-      if (other.expiry <= candidate) continue;
-      if (state.static) return false;
-      const end = Math.min(other.expiry, proposed.expiry);
-      for (let t = candidate; t < end; t += 15) {
-        const old = footprint(other, config, t);
-        const next = footprint(proposed, config, t);
-        if (old.opacity < 0.15 || next.opacity < 0.15) continue;
-        if (Math.abs(old.rise - next.rise) < (old.height + next.height) / 2 + config.queueClearance) return false;
-      }
-    }
-    return true;
-  };
-  // No arrival retargets or evicts an active flight. Timely feedback takes
-  // precedence over clearance when several results need to appear together.
-  while (launch < latestEnd && !clearAt(launch)) launch = Math.min(deadline, launch + 15);
   const recent = ahead.filter((other) => other.launchAt + 360 >= launch);
   const previousSide = recent.findLast((other) => other.spread)?.spread;
   item.spread = !recent.length
@@ -690,7 +673,77 @@ function scheduleLaunch(item, previous, config) {
               : -1;
   item.launchAt = launch;
   item.expiry = launch + duration;
+  {
+    const obstacles = previous.filter((other) => !other.evicted);
+    const normal =
+      item.type === "heal"
+        ? [1, 2, 3, 4, 5, 0, -1, -2, -3, -4, -5, 6, 7, 8, 9]
+        : [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, 6, 7, 8, 9];
+    const routes =
+      lane === "impact"
+        ? [...normal, ...Array.from({ length: (Math.ceil(obstacles.length / 3) + 1) * 3 }, (_, i) => 10 + i)]
+        : lane === "announcement"
+          ? [0, -1, 1, -2, 2]
+          : [0, -1, 1, -2, 2, -3, 3];
+    let bestScore = Infinity;
+    for (const route of routes) {
+      let score = Math.abs(route) * 0.001;
+      const candidate = { ...item, spread: route };
+      for (let elapsed = 0; elapsed < duration; elapsed += 15) {
+        const at = launch + elapsed;
+        const next = queuedFootprint(candidate, config, at);
+        for (const old of obstacles) {
+          if (at < old.launchAt || at >= old.expiry) continue;
+          const prior = queuedFootprint(old, config, at);
+          if (next.opacity < 0.15 || prior.opacity < 0.15) continue;
+          const width = Math.max(
+            0,
+            Math.min(next.x + next.width / 2, prior.x + prior.width / 2) -
+              Math.max(next.x - next.width / 2, prior.x - prior.width / 2),
+          );
+          const height = Math.max(
+            0,
+            Math.min(next.y + next.height / 2, prior.y + prior.height / 2) -
+              Math.max(next.y - next.height / 2, prior.y - prior.height / 2),
+          );
+          const covered = (width * height) / Math.min(next.width * next.height, prior.width * prior.height);
+          score += covered + (covered > 0.8 ? 1000 : 0);
+        }
+      }
+      if (score < bestScore) {
+        item.spread = route;
+        bestScore = score;
+      }
+    }
+  }
   if (item.critical) item.criticalAt = launch;
+}
+
+function queuedRoute(lane, spread = 0) {
+  const distance = Math.abs(spread);
+  if (lane === "impact" && spread >= 10)
+    return { side: [-1, 0, 1][(spread - 10) % 3], reach: 2, row: 120 + Math.floor((spread - 10) / 3) * 16 };
+  if (lane === "impact")
+    return {
+      side: spread >= 6 ? 0 : Math.sign(spread),
+      reach: distance % 2 === 0 ? 2 : 1,
+      row: (distance >= 6 ? distance - 5 : Math.max(0, distance - 1)) * 24,
+    };
+  const ordinal = spread < 0 ? -spread * 2 - 1 : spread * 2;
+  return { side: 0, reach: 0, row: ordinal * (lane === "announcement" ? 32 : -24) };
+}
+
+function queuedFootprint(item, config, time) {
+  const frame = footprint(item, config, time);
+  const lane = queueLane(item, config);
+  const route = queuedRoute(lane, item.spread);
+  const width =
+    item.kind === "reaction" ? 280 : config.baseSize * (0.56 * (item.digits ?? String(item.value).length) + 1.13);
+  const reach = config.fanDistance * (4 / 9 + (5 / 9) * ease((time - item.launchAt) / 400, "out")) * route.reach;
+  const fan = route.side * Math.min(reach, Math.max(0, (280 - width * config.peak) / 2 - 8));
+  const x = fan + (lane === "benefit" ? -85 : lane === "setback" ? 85 : 0);
+  const row = route.row + (lane === "announcement" ? -76 : lane === "impact" ? 0 : 95);
+  return { ...frame, x, y: row - frame.rise, width: width * frame.scale + 6 };
 }
 
 function motionAt(item, c, time) {
@@ -776,21 +829,9 @@ function layoutAt(items, c, time, width) {
       const lane = queueLane(item, c);
       const x = lane === "benefit" ? width / 2 - 85 : lane === "setback" ? width / 2 + 85 : width / 2;
       const y = lane === "announcement" ? 164 : lane === "impact" ? baseY : 335;
-      const spread = item.spread ?? 0;
-      const elapsed = time - (item.launchAt ?? item.at);
-      const fan =
-        state.static || lane !== "impact" ? 0 : spread * c.fanDistance * (4 / 9 + (5 / 9) * ease(elapsed / 400, "out"));
-      const row = state.static
-        ? 0
-        : lane === "announcement"
-          ? (spread < 0 ? -spread * 2 - 1 : spread * 2) * 32
-          : lane === "impact"
-            ? 0
-            : spread === -1
-              ? -24
-              : spread === 1
-                ? -48
-                : 0;
+      const route = queuedRoute(lane, item.spread);
+      const fan = state.static || lane !== "impact" ? 0 : queuedFootprint(item, c, time).x;
+      const row = state.static ? 0 : route.row;
       layouts.set(item.id, { x: x + fan, y: y + row });
     }
   } else if (c.grouping === "action") {

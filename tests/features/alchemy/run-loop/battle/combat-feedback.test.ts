@@ -217,8 +217,15 @@ describe("independent combat feedback launches", () => {
     });
     const originalPath = damage.presentation;
     const launch = healing.presentation!.launchAt;
-    vi.advanceTimersByTime(100);
+    const queuedPath = healing.presentation;
+    vi.advanceTimersByTime(Math.floor((launch - Date.now()) / 2));
     feedback.showCombatTexts([...hit]);
+    expect(
+      feedback.store
+        .getState()
+        .floatingCombatBursts.flatMap((burst) => burst.entries)
+        .find((entry) => entry.kind === "heal")!.presentation,
+    ).toEqual(queuedPath);
     expect(
       feedback.store.getState().floatingCombatBursts[0]!.entries.find((entry) => entry.kind === "damage")!.presentation,
     ).toBe(originalPath);
@@ -241,6 +248,20 @@ describe("independent combat feedback launches", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it("gives simultaneous reaction damage types separate paths around the names", () => {
+    const feedback = makeFeedback();
+    feedback.showCombatTexts([
+      { target: "enemy", kind: "notice", stat: "burn", text: "", signal: "reaction", reactionId: "frostfire" },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 12, additive: false },
+      { target: "enemy", kind: "damage", stat: "freeze", amount: 8, additive: false },
+    ]);
+    const entries = feedback.store.getState().floatingCombatBursts.flatMap((burst) => burst.entries);
+    expect(entries).toHaveLength(2);
+    expect(new Set(entries.map((entry) => entry.presentation!.spread)).size).toBe(2);
+    expect(entries.every((entry) => entry.presentation!.launchAt - Date.now() <= 180)).toBe(true);
+    feedback.reset();
+  });
+
   it("retains every emission, caps lag at 180 ms, and never evicts an active flight", () => {
     const feedback = makeFeedback();
     feedback.showCombatTexts([...hit]);
@@ -253,12 +274,17 @@ describe("independent combat feedback launches", () => {
     expect(Math.max(...entries.map((entry) => entry.presentation!.launchAt)) - Date.now()).toBeLessThanOrEqual(
       COMBAT_TEXT_MOTION.maximumQueueDelayMs,
     );
-    expect(entries.map((entry) => entry.presentation!.spread)).toContain(-1);
-    expect(entries.map((entry) => entry.presentation!.spread)).toContain(1);
+    expect(entries.some((entry) => (entry.presentation!.spread ?? 0) < 0)).toBe(true);
+    expect(entries.some((entry) => (entry.presentation!.spread ?? 0) > 0)).toBe(true);
     vi.advanceTimersByTime(COMBAT_TEXT_MOTION.maximumQueueDelayMs);
     expect(feedback.store.getState().floatingCombatBursts.flatMap((burst) => burst.entries)).toHaveLength(41);
     vi.advanceTimersByTime(COMBAT_TEXT_LIFETIME_MS - 1);
-    expect(feedback.store.getState().floatingCombatBursts.flatMap((burst) => burst.entries)).toHaveLength(40);
+    expect(
+      feedback.store
+        .getState()
+        .floatingCombatBursts.flatMap((burst) => burst.entries)
+        .map((entry) => entry.id),
+    ).toContain(entries.at(-1)!.id);
     vi.advanceTimersByTime(1);
     expect(feedback.store.getState().floatingCombatBursts).toEqual([]);
     feedback.clearFloatingCombatTexts();

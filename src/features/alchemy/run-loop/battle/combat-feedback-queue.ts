@@ -1,6 +1,6 @@
-import { COMBAT_TEXT_MOTION as M } from "@/lib/game-constants";
+import { COMBAT_TEXT_BASE_SIZE_PX, COMBAT_TEXT_MOTION as M } from "@/lib/game-constants";
 import type { CombatTextBurst, CombatTextPresentation, ReactionAnnouncement } from "../../shared/types";
-import { combatTextFootprint, combatTextLane } from "./combat-feedback-motion";
+import { combatTextFootprint, combatTextLane, combatTextRoute } from "./combat-feedback-motion";
 
 interface QueueItem {
   id: string;
@@ -8,47 +8,101 @@ interface QueueItem {
   receivedAt: number;
   presentation: CombatTextPresentation;
   family: "damage" | "heal" | "other";
+  width: number;
+  scheduled: boolean;
 }
 const endsAt = (item: CombatTextPresentation) => item.launchAt + item.lifetimeMs;
 
-function firstClearLaunch(item: QueueItem, ahead: QueueItem[], now: number, staticMotion: boolean) {
+function staggeredLaunch(item: QueueItem, ahead: QueueItem[], now: number) {
   const last = ahead.findLast((other) => other.presentation.lane === item.presentation.lane);
   const deadline = Math.max(now, item.receivedAt + M.maximumQueueDelayMs);
-  let launch = Math.min(deadline, Math.max(now, last ? last.presentation.launchAt + M.minimumLaunchGapMs : now));
-  const clear = (candidate: number) =>
-    ahead.every(({ presentation: old }) => {
-      if (endsAt(old) <= candidate) return true;
-      if (staticMotion) return old.lane !== item.presentation.lane;
-      const end = Math.min(endsAt(old), candidate + item.presentation.lifetimeMs);
-      for (let t = Math.max(candidate, old.launchAt); t < end; t += M.sampleMs) {
-        const previous = combatTextFootprint(old.lane, t - old.launchAt, old.lifetimeMs);
-        const next = combatTextFootprint(item.presentation.lane, t - candidate, item.presentation.lifetimeMs);
-        if (previous.opacity < 0.15 || next.opacity < 0.15) continue;
-        const previousY = previous.y - (old.lane === "announcement" ? M.reactionOffsetPx : 0);
-        const nextY = next.y - (item.presentation.lane === "announcement" ? M.reactionOffsetPx : 0);
-        if (Math.abs(previousY - nextY) < (previous.height + next.height) / 2 + M.clearancePx) return false;
-      }
-      return true;
-    });
-  // Clearance is a preference. Feedback must stay close to its hit, even in a dense burst.
-  while (launch < deadline && !clear(launch)) launch += M.sampleMs;
-  return Math.min(launch, deadline);
+  return Math.min(deadline, Math.max(now, last ? last.presentation.launchAt + M.minimumLaunchGapMs : now));
 }
 
-function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): -2 | -1 | 0 | 1 | 2 {
+type Spread = NonNullable<CombatTextPresentation["spread"]>;
+
+function footprint(item: QueueItem, launchAt: number, spread: Spread, at: number) {
+  const plan = item.presentation;
+  const frame = combatTextFootprint(plan.lane, at - launchAt, plan.lifetimeMs);
+  const impact = plan.lane === "impact";
+  const route = combatTextRoute(plan.lane, spread);
+  const row = route.row - (plan.lane === "announcement" ? M.reactionOffsetPx : 0);
+  const maximumFan = Math.max(0, (280 - item.width * M.peakScale) / 2 - 8);
+  const x = impact
+    ? route.side * Math.min(frame.fan * route.reach, maximumFan)
+    : plan.lane === "benefit"
+      ? -84
+      : plan.lane === "setback"
+        ? 84
+        : 0;
+  return {
+    x,
+    y: frame.y + row + (plan.lane === "benefit" || plan.lane === "setback" ? 96.6 : 0),
+    width: item.width * frame.scale + M.clearancePx,
+    height: frame.height + M.clearancePx,
+    opacity: frame.opacity,
+  };
+}
+
+function spreadFor(item: QueueItem, ahead: QueueItem[], launchAt: number): Spread {
   const recent = ahead.filter(
     (other) =>
       other.presentation.lane === item.presentation.lane &&
       other.presentation.launchAt + M.nearbyLaunchWindowMs >= launchAt,
   );
-  if (!recent.length) return 0;
-  if (item.presentation.lane === "announcement") return ([-1, 1, -2, 2] as const)[(recent.length - 1) % 4]!;
+  const routes: Spread[] =
+    item.presentation.lane === "announcement"
+      ? [0, -1, 1, -2, 2]
+      : item.presentation.lane !== "impact"
+        ? [0, -1, 1, -2, 2, -3, 3]
+        : item.family === "heal" && recent.some((other) => other.family === "damage")
+          ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, -1, -2, -3, -4, -5]
+          : item.family === "damage" && recent.some((other) => other.family === "heal")
+            ? [-1, -2, -3, -4, -5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5]
+            : [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, 6, 7, 8, 9];
   if (item.presentation.lane === "impact") {
-    if (item.family === "heal" && recent.some((other) => other.family === "damage")) return 1;
-    if (item.family === "damage" && recent.some((other) => other.family === "heal")) return -1;
-    if (recent.length < 2) return 0;
+    // Dense bursts can use extra fixed rows instead of reusing an occupied path.
+    routes.push(...Array.from({ length: (Math.ceil(ahead.length / 3) + 1) * 3 }, (_, index) => 10 + index));
   }
-  return recent.findLast((other) => other.presentation.spread)?.presentation.spread === -1 ? 1 : -1;
+  const samples = [];
+  for (let elapsed = 0; elapsed < item.presentation.lifetimeMs; elapsed += M.sampleMs) {
+    const at = launchAt + elapsed;
+    const previous = ahead
+      .filter((old) => at >= old.presentation.launchAt && at < endsAt(old.presentation))
+      .map((old) => footprint(old, old.presentation.launchAt, old.presentation.spread ?? 0, at))
+      .filter((frame) => frame.opacity >= 0.15);
+    samples.push({ at, previous });
+  }
+  let best = routes[0]!;
+  let bestScore = Infinity;
+  // Only the new flight receives a route. Cache existing footprints so dense
+  // arrival batches do not repeatedly sample the same older animations.
+  for (const route of routes) {
+    let score = Math.abs(route) * 0.001;
+    for (const sample of samples) {
+      const next = footprint(item, launchAt, route, sample.at);
+      if (next.opacity < 0.15) continue;
+      for (const previous of sample.previous) {
+        const width = Math.max(
+          0,
+          Math.min(next.x + next.width / 2, previous.x + previous.width / 2) -
+            Math.max(next.x - next.width / 2, previous.x - previous.width / 2),
+        );
+        const height = Math.max(
+          0,
+          Math.min(next.y + next.height / 2, previous.y + previous.height / 2) -
+            Math.max(next.y - next.height / 2, previous.y - previous.height / 2),
+        );
+        const covered = (width * height) / Math.min(next.width * next.height, previous.width * previous.height);
+        score += covered + (covered > 0.8 ? 1000 : 0);
+      }
+    }
+    if (score < bestScore) {
+      best = route;
+      bestScore = score;
+    }
+  }
+  return best;
 }
 
 /** Owns pending launches and expiry without moving, restarting, or extending visible entries. */
@@ -65,6 +119,14 @@ export function scheduleCombatFeedback(
         id: entry.id,
         target: burst.target,
         receivedAt: burst.firstShownAt,
+        scheduled: entry.presentation !== undefined,
+        width:
+          COMBAT_TEXT_BASE_SIZE_PX *
+          (0.56 *
+            ((entry.reservedDigits ??
+              (entry.kind === "notice" ? entry.displayText.length : String(Math.abs(entry.amount)).length)) +
+              (/^[+-]/.test(entry.displayText) ? 1 : 0)) +
+            1.13),
         family:
           entry.kind === "heal"
             ? ("heal" as const)
@@ -83,7 +145,9 @@ export function scheduleCombatFeedback(
       id: reaction.id,
       target: reaction.target,
       receivedAt: reaction.firstShownAt,
+      scheduled: reaction.presentation !== undefined,
       family: "other" as const,
+      width: 280,
       presentation: reaction.presentation ?? {
         lane: "announcement" as const,
         launchAt: now,
@@ -95,7 +159,7 @@ export function scheduleCombatFeedback(
   const lanes = new Map<string, QueueItem[]>();
   for (const item of items) {
     if (item.presentation.phase === "visible" && endsAt(item.presentation) <= now) continue;
-    const key = `${item.target}-${item.presentation.lane === "announcement" ? "impact" : item.presentation.lane}`;
+    const key = item.target;
     const lane = lanes.get(key) ?? [];
     lane.push(item);
     lanes.set(key, lane);
@@ -108,14 +172,18 @@ export function scheduleCombatFeedback(
     // bounds the backlog; dense arrivals may overlap instead of falling behind combat.
     const waiting = lane
       .filter((item) => item.presentation.phase === "waiting")
-      .sort((a, b) => a.receivedAt - b.receivedAt);
+      .sort(
+        (a, b) =>
+          a.receivedAt - b.receivedAt ||
+          Number(b.presentation.lane === "announcement") - Number(a.presentation.lane === "announcement"),
+      );
     const ahead = [...visible].sort((a, b) => a.presentation.launchAt - b.presentation.launchAt);
     for (const item of waiting) {
-      const launchAt = firstClearLaunch(item, ahead, now, staticMotion);
+      const launchAt = item.scheduled ? item.presentation.launchAt : staggeredLaunch(item, ahead, now);
       const presentation: CombatTextPresentation = {
         ...item.presentation,
         launchAt,
-        spread: item.presentation.spread ?? spreadFor(item, ahead, launchAt),
+        spread: item.presentation.spread ?? (staticMotion ? 0 : spreadFor(item, ahead, launchAt)),
         phase: launchAt <= now ? "visible" : "waiting",
       };
       plans.set(item.id, presentation);

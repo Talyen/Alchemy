@@ -158,10 +158,14 @@ assigns each entry a waiting/visible phase, launch time, and post-launch lifetim
 The [queue](../src/features/alchemy/run-loop/battle/combat-feedback-queue.ts) samples
 projected visible footprints with a preferred 6px clearance and 80 ms launch interval.
 Every entry launches within 180 ms of arrival, even when that permits overlap.
-The first two nearby numeric arrivals stay centered; denser arrivals alternate
-left and right, drifting outward from 16 to 36 scaled pixels. Damage and healing
-prefer opposite sides when mixed. Fan distance is capped to the portrait width.
-Corners and names receive fixed extra rows. Each path is chosen once: new arrivals
+New numeric flights compare projected footprints before selecting a fixed center
+or diagonal path. Wider paths add vertical separation, protecting different damage
+types from receiving the same path when their queue deadlines coincide. Complete
+masking receives priority over smaller overlaps. Damage and healing prefer opposite
+sides when mixed. Fan distance is capped to the portrait width.
+Corners and names receive fixed extra rows. Crowded numeric bursts can use extra
+rows rather than reuse an occupied path; all regions of a recipient share the
+covering check while keeping their own launch stagger. Each path is chosen once: new arrivals
 never push, restart, shorten, or evict existing text. All waiting entries are retained
 and every entry keeps its full post-launch lifetime. One owner timer advances launches and
 expiry, and reset/unmount cancels it. Queues never block card input or playback.

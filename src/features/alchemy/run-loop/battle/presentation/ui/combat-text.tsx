@@ -15,6 +15,7 @@ import type {
   FloatingCombatText,
   ReactionAnnouncement,
   CombatTextLane,
+  CombatTextPresentation,
 } from "../../../../shared/types";
 import {
   getCombatTextColorClass,
@@ -22,7 +23,7 @@ import {
   getCombatTextLeadingIcon,
   getCombatTextAccessibleLabel,
 } from "../../../../shared/utils/index";
-import { combatTextFrame, combatTextLane } from "../../combat-feedback-motion";
+import { combatTextFrame, combatTextLane, combatTextRoute } from "../../combat-feedback-motion";
 
 function animationFor(lane: CombatTextLane, lifetimeMs: number) {
   const times = [
@@ -137,7 +138,7 @@ function FeedbackFlight({
   children,
 }: {
   lane: CombatTextLane;
-  spread: -2 | -1 | 0 | 1 | 2;
+  spread: NonNullable<CombatTextPresentation["spread"]>;
   staticMotion: boolean;
   staticRow: number;
   children: ReactNode;
@@ -154,21 +155,12 @@ function FeedbackFlight({
     "--combat-text-fan": firstFrame.fan,
   };
   const quiet = lane === "benefit" || lane === "setback";
-  const rowOffset = staticMotion
-    ? 0
-    : lane === "announcement"
-      ? (spread < 0 ? -spread * 2 - 1 : spread * 2) * M.reactionRowPx
-      : quiet
-        ? spread === -1
-          ? -M.statusRowPx
-          : spread === 1
-            ? -M.statusRowPx * 2
-            : 0
-        : 0;
+  const route = combatTextRoute(lane, spread);
+  const rowOffset = staticMotion ? 0 : route.row;
   const fan =
     staticMotion || lane !== "impact"
       ? "0px"
-      : `calc(${spread} * min(calc(var(--combat-text-fan, 0) * 1px * var(--content-scale, 1)), max(0px, calc((100cqw - ${M.peakScale * 100}%) / 2 - 8px * var(--content-scale, 1)))))`;
+      : `calc(${route.side} * min(calc(var(--combat-text-fan, 0) * ${route.reach}px * var(--content-scale, 1)), max(0px, calc((100cqw - ${M.peakScale * 100}%) / 2 - 8px * var(--content-scale, 1)))))`;
   return (
     <div
       data-feedback-lane={lane}
@@ -176,7 +168,7 @@ function FeedbackFlight({
       className="absolute"
       style={{
         left: lane === "benefit" ? "20%" : lane === "setback" ? "80%" : "50%",
-        top: `calc(${quiet ? 86 : 40}% - ${lane === "announcement" ? M.reactionOffsetPx : 0}px * var(--content-scale, 1) - ${staticRow * 1.5}em + ${rowOffset}px * var(--content-scale, 1))`,
+        top: `calc(${quiet ? 86 : 40}% - ${lane === "announcement" ? M.reactionOffsetPx : 0}px * var(--content-scale, 1) ${lane === "announcement" ? "+" : "-"} ${staticRow * 1.5}em + ${rowOffset}px * var(--content-scale, 1))`,
         transform: "translate(-50%, -50%)",
         width: lane === "announcement" ? "100%" : "max-content",
         fontSize: quiet ? `${M.statusSize}em` : undefined,

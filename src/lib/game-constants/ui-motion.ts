@@ -49,6 +49,7 @@ export const COMBAT_TEXT_MOTION = {
   fanDriftPx: 20,
   fanMs: 400,
   reactionRowPx: 32,
+  impactRowPx: 24,
   statusRowPx: 24,
   clearancePx: 6,
   sampleMs: 15,

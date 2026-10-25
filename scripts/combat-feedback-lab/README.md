@@ -22,8 +22,9 @@ launches. Damage and healing share the center queue; benefits and setbacks use
 the lower-left and lower-right queues. Names have a separate upper queue. Status
 entries stay stationary and use a quieter pop. No incoming entry moves a previous
 entry's path. The queue prefers clearance and an 80 ms stagger, but launches every
-entry within 180 ms of arrival. Dense numeric arrivals fan left and right, with
-damage and healing preferring opposite sides; corners and names use fixed rows.
+entry within 180 ms of arrival. New numeric paths compare projected footprints and use diagonal offsets with
+vertical separation to avoid complete covering. Damage and healing prefer
+opposite sides; corners and names use fixed rows.
 Overlap is allowed when the deadline arrives. No queued or visible entry is evicted,
 and each receives its full lifetime after launch. Queue delay, clearance, and fan
 distance are adjustable.

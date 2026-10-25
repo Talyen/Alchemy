@@ -56,6 +56,31 @@ export function combatTextFrame(lane: CombatTextLane, elapsed: number, lifetimeM
   return { scale, y: -rise, fan, opacity: 1 - smooth((elapsed - (lifetimeMs - fadeMs)) / fadeMs) };
 }
 
+/** One route definition for collision planning and the CSS flight. */
+export function combatTextRoute(lane: CombatTextLane, spread = 0) {
+  const distance = Math.abs(spread);
+  if (lane === "impact" && spread >= 10)
+    return {
+      side: [-1, 0, 1][(spread - 10) % 3]!,
+      reach: 2,
+      row: M.impactRowPx * 5 + Math.floor((spread - 10) / 3) * 16,
+    };
+  if (lane === "impact")
+    return {
+      side: spread >= 6 ? 0 : Math.sign(spread),
+      reach: distance % 2 === 0 ? 2 : 1,
+      row: (distance >= 6 ? distance - 5 : Math.max(0, distance - 1)) * M.impactRowPx,
+    };
+  return {
+    side: 0,
+    reach: 0,
+    row:
+      lane === "announcement"
+        ? (spread < 0 ? -spread * 2 - 1 : spread * 2) * M.reactionRowPx
+        : -(spread < 0 ? -spread * 2 - 1 : spread * 2) * M.statusRowPx,
+  };
+}
+
 export function combatTextFootprint(lane: CombatTextLane, elapsed: number, lifetimeMs: number) {
   const frame = combatTextFrame(lane, elapsed, lifetimeMs);
   const multiplier = lane === "announcement" ? M.reactionSize : lane === "impact" ? 1 : M.statusSize;
