@@ -86,14 +86,16 @@ its sign. Sums exceeding that width become separate entries. Partial matches
 create a new burst only for unmatched entries. Expired/evicted entries cannot
 return. The same window applies to reduced/disabled motion.
 
-Notices come first, damage/loss next, healing/gains last, with stable order within
-each group. Up to three numeric entries use one centered column; larger bursts
-use two columns, with notices spanning both. Impact and audio cues follow each
-incoming action's actual events, never accumulated display totals. Resource
-payments and removals do not invent damage impacts.
+Each entry follows its own path. Damage, healing, Block loss, and Dodge share a
+center launch queue; benefits use the lower-left corner and setbacks the lower-right.
+Resource costs and removals belong to setbacks. Cleanse, immunity, and preparations
+belong to benefits; Purge and harmful control notices belong to setbacks. Status
+entries use a smaller, stationary pop. Within an action, notices precede losses
+and gains; each lane preserves arrival order. Impact and audio cues remain immediate
+and follow actual incoming events, never accumulated display totals.
 
-Universal reactions show their localized names above the numbers in the same
-portrait-anchored action group, without a standalone damage-type icon or a repeated
+Universal reactions show their localized names above the numbers, each with an
+independent portrait-anchored flight, without a standalone damage-type icon or a repeated
 bonus amount. Reaction IDs select the shared names and keyword palettes:
 Shatter uses Freeze/Physical, Frostfire Freeze/Burn, Thunderclap Stun/Nature,
 Wildfire Burn/Nature, Consecration Bleed/Holy, Bloodboil Burn/Bleed, and Venomflash
@@ -101,18 +103,17 @@ Poison/Burn. Reuse keyword text shine with a dark drop shadow. Transparent gradi
 text must reset inherited text strokes: an outline can cut through its letter interiors.
 This applies to all shared ShineText consumers and the corrupted-title shine.
 
-Reaction names have a lifetime independent of numeric bursts. They pop, settle,
-rise with numeric feedback, then hold the final position until expiry while fading. Reserve space for the numeric pop, stack older actions above
-newer ones, and keep numeric size fixed during dense sequences. Names fit each column
-independently, accounting for pop scale, without wrapping/truncation: one or two names
-use one column, three or more use two. New groups may evict the oldest at the shared
-per-target limit. Merging numbers never restarts name motion or extends lifetime.
-Reduced/disabled motion shows static keyword-colored names for the same duration.
-Names never block play; teardown cancels timers and portrait tracking.
+Reaction names retain their independent 1600 ms lifetime and keyword shine.
+They pop, settle, rise up to 76 scaled pixels, then hold and fade. Each localized
+name fits the portrait width without wrapping or truncation. Numeric and name
+queues coordinate clearance in the center band; a later name cannot launch across
+an already rising number. Merging numbers never restarts a name or extends its
+lifetime. Reduced/disabled motion keeps the keyword colors without travel.
 [Reaction text](../src/features/alchemy/run-loop/battle/presentation/ui/reaction-text.tsx)
-owns size/pop curves; [combat text](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx)
-owns anchors/repositioning; [motion constants](../src/lib/game-constants/ui-motion.ts)
-and [battle styles](../src/styles/battle-scene.css) own lifetimes and the single shine sweep.
+owns fitting and styling; [combat text](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx)
+owns entry rendering. The shared
+[motion sampler](../src/features/alchemy/run-loop/battle/combat-feedback-motion.ts)
+drives both clearance planning and rendered curves.
 
 Within each resolved action, damaging packets of the same type and recipient
 produce one numeric total, including non-additive reaction damage and natural
@@ -128,21 +129,28 @@ label and sound cue. Merging into an already critical entry neither restarts its
 pulse nor extends its lifetime; exact curves live in
 [battle styles](../src/styles/battle-scene.css).
 
-Each action appears immediately above card flights, anchored to its moving portrait.
-Measured layout moves earlier bursts upward without changing their values or
-restarting their animations. Keep at most three active bursts per target; overflow
-fades the oldest early without truncating the new action's types or queuing feedback.
-Reduced motion or disabled animations remove pop, travel, and animated repositioning.
-Use the existing game-delay policy and minimum readable lifetime; teardown cancels
-all lifetimes and tracking stops when no bursts remain or the layer unmounts.
+The Balanced treatment uses 32px base text, an 85 ms pop to 1.85×, a settle to
+1.55×, and a smooth shrink toward 1.2×. Travel begins at 240 ms, slows over 810 ms,
+and ends 76 scaled pixels above the launch point. Numeric entries last 1050 ms
+with a smooth final 280 ms fade. Benefits and setbacks use 80% of the base size.
+All coordinates and travel follow Game Size and remain above card flights.
 
-Preserve text and icon sizing, portrait-relative placement, and static dark outlines
-and shadows for contrast against artwork. Exact geometry, typography, and animation
-curves live in [combat text](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx);
-lifetimes and limits live in [motion constants](../src/lib/game-constants/ui-motion.ts).
-Do not duplicate outline elements; ordinary dark shadows stay static. Only the
-brief critical gold glow fades, through its bounded filter animation in
-[battle styles](../src/styles/battle-scene.css). Implementation and playback
+The [feedback owner](../src/features/alchemy/run-loop/battle/combat-feedback.ts)
+assigns each entry a waiting/visible phase, launch time, and post-launch lifetime.
+The [queue](../src/features/alchemy/run-loop/battle/combat-feedback-queue.ts) samples
+projected visible footprints with 6px clearance and a minimum 180 ms interval.
+New arrivals never push or restart visible text. Waiting entries may compact into
+vacated slots; each target/corner and the coordinated center band retain at most
+12 waiting entries, dropping the oldest pending entries under sustained overload.
+Visible entries keep their full lifetime. One owner timer advances launches and
+expiry, and reset/unmount cancels it. Queues never block card input or playback.
+Reduced/disabled motion removes pop and travel and serializes entries in the same
+lane; the existing minimum-readable-lifetime policy remains in effect.
+
+Dark outlines and shadows stay static for contrast against artwork. Only the brief
+Critical gold glow fades through its bounded filter animation in
+[battle styles](../src/styles/battle-scene.css). Exact tuning lives in
+[motion constants](../src/lib/game-constants/ui-motion.ts). Implementation and playback
 ordering follow [the battle workflow](./WORKFLOWS.md#change-battle-playback).
 
 Divine Intervention opens or queues an ordinary Wish under the [Talent rules](./TALENT_RULES.md#wishes-and-mana), using the existing [Wish interaction](./UI_BROWSING.md#rewards-and-wishes).

@@ -3,7 +3,6 @@ import type { CombatTextEvent } from "@/lib/battle";
 import type { CombatTextBurst } from "@/features/alchemy/shared/types";
 import { prepareCombatFeedback } from "@/features/alchemy/run-loop/battle/combat-feedback-model";
 import { consolidateCombatBursts } from "@/features/alchemy/run-loop/battle/combat-feedback-merge";
-import { COMBAT_TEXT_MAX_BURSTS_PER_RAIL } from "@/lib/game-constants";
 
 function burst(id: number, events: CombatTextEvent[], now = 0): CombatTextBurst {
   return prepareCombatFeedback(events, id, now, 1100).bursts[0]!;
@@ -38,27 +37,26 @@ describe("combat feedback preparation and merging", () => {
     expect({ current, incoming }).toEqual(snapshot);
   });
 
-  it("retries after rail eviction so damage merged into an evicted burst is still shown", () => {
-    const current = Array.from({ length: COMBAT_TEXT_MAX_BURSTS_PER_RAIL }, (_, index) =>
+  it("retains receipts until the entry queue admits or evicts their pending text", () => {
+    const current = Array.from({ length: 3 }, (_, index) =>
       burst(index, [index === 0 ? hit : { ...heal, additive: false }]),
     );
     const snapshot = structuredClone(current);
     const incoming = burst(100, [hit, { ...heal, additive: false }], 10);
     const result = consolidateCombatBursts(current, [incoming], 10);
-    expect(result.bursts).toEqual([...current.slice(1), incoming]);
-    expect(result.added).toEqual([incoming]);
+    expect(result.bursts).toHaveLength(4);
+    expect(result.bursts[0]!.entries[0]).toMatchObject({ amount: 10, displayText: "-10" });
+    expect(result.added[0]!.entries).toEqual([incoming.entries[1]]);
     expect(current).toEqual(snapshot);
   });
 
-  it("drops expired bursts and preserves the other rail when making space", () => {
+  it("drops expired receipts while preserving live entries on both targets", () => {
     const player = burst(200, [{ ...hit, target: "player" }]);
-    const enemy = Array.from({ length: COMBAT_TEXT_MAX_BURSTS_PER_RAIL }, (_, index) =>
-      burst(index, [{ ...hit, additive: false }]),
-    );
+    const enemy = Array.from({ length: 3 }, (_, index) => burst(index, [{ ...hit, additive: false }]));
     const expired = burst(300, [heal], -1100);
     const incoming = burst(400, [{ ...hit, additive: false }], 10);
     const result = consolidateCombatBursts([expired, player, ...enemy], [incoming], 10);
-    expect(result.bursts).toEqual([player, ...enemy.slice(1), incoming]);
+    expect(result.bursts).toEqual([player, ...enemy, incoming]);
   });
 
   it("retains priority and target order, hides zero events, and uses one zero fallback", () => {

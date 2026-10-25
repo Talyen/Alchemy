@@ -1,5 +1,5 @@
 import { mergeCombatText, type CombatTextEvent } from "@/lib/battle";
-import { COMBAT_TEXT_MERGE_WINDOW_MS, COMBAT_TEXT_MAX_BURSTS_PER_RAIL } from "@/lib/game-constants";
+import { COMBAT_TEXT_MERGE_WINDOW_MS } from "@/lib/game-constants";
 import type { CombatTextBurst, FloatingCombatText } from "../../shared/types";
 
 export function combatTextDisplay(event: CombatTextEvent): string {
@@ -69,21 +69,7 @@ export function consolidateCombatBursts(
   let bursts = current.filter((burst) => now < burst.firstShownAt + burst.lifetimeMs);
   const added: CombatTextBurst[] = [];
   for (const burst of incoming) {
-    let result = mergeIntoExisting(bursts, burst, now);
-    if (result.unmatched.length > 0) {
-      let targetCount = 0;
-      for (const prior of bursts) if (prior.target === burst.target) targetCount += 1;
-      // Reserve the new burst's slot before merging so eviction cannot discard a fresh hit.
-      const needsEviction = targetCount >= COMBAT_TEXT_MAX_BURSTS_PER_RAIL;
-      while (targetCount >= COMBAT_TEXT_MAX_BURSTS_PER_RAIL) {
-        const oldest = bursts.findIndex((prior) => prior.target === burst.target);
-        bursts.splice(oldest, 1);
-        targetCount -= 1;
-      }
-      // Retry against the original, unmerged survivors only after eviction.
-      // Otherwise the first result already contains every merge exactly once.
-      if (needsEviction) result = mergeIntoExisting(bursts, burst, now);
-    }
+    const result = mergeIntoExisting(bursts, burst, now);
     bursts = result.bursts;
     if (result.unmatched.length > 0) {
       const next = { ...burst, entries: result.unmatched };

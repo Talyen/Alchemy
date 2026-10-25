@@ -13,7 +13,7 @@ const protectedHit: CombatTextBurst = {
 };
 
 describe("CombatTextRail", () => {
-  it("retains the centered Death's Door skull without adding text", () => {
+  it("retains the Death's Door skull in setback feedback without adding text", () => {
     const { container } = render(<CombatTextRail bursts={[protectedHit]} />);
     expect(container.querySelector("svg.lucide-skull")).not.toBeNull();
     expect(container.querySelector(".text-red-200")).not.toBeNull();
@@ -107,10 +107,44 @@ it("shows a named reaction and one Critical-inclusive total without a lone react
   );
   const name = container.querySelector('[data-reaction="shatter"]');
   expect(name?.textContent).toBe("Shatter");
-  expect(name?.closest('[data-testid="combat-feedback-action"]')).toBe(
+  expect(name?.closest('[data-testid="combat-feedback-action"]')).not.toBe(
     container.querySelector('[data-testid="combat-text"]')?.closest('[data-testid="combat-feedback-action"]'),
   );
   expect((name!.firstElementChild as HTMLElement).style.webkitTextStroke).toBe("0px");
   expect(name?.querySelector("svg")).toBeNull();
   expect(container.querySelectorAll("svg")).toHaveLength(1);
+});
+
+it("does not mount queued text early and preserves the active flight when another entry arrives", () => {
+  const prepared = prepareCombatFeedback(
+    [{ target: "enemy", kind: "damage", stat: "physical", amount: 9 }],
+    1,
+    0,
+    1050,
+  );
+  const first = prepared.bursts[0]!;
+  first.entries[0]!.presentation = { lane: "impact", launchAt: 0, lifetimeMs: 1050, phase: "visible" };
+  const pending = {
+    ...first.entries[0]!,
+    id: "pending",
+    displayText: "+8",
+    presentation: { lane: "impact" as const, launchAt: 690, lifetimeMs: 1050, phase: "waiting" as const },
+  };
+  const { container, rerender } = render(<CombatTextRail bursts={[first]} />);
+  const flight = container.querySelector('[data-testid="combat-feedback-action"]');
+  rerender(<CombatTextRail bursts={[{ ...first, entries: [...first.entries, pending] }]} />);
+  expect(container.querySelectorAll('[data-testid="combat-text"]')).toHaveLength(1);
+  expect(container.querySelector('[data-testid="combat-feedback-action"]')).toBe(flight);
+  rerender(
+    <CombatTextRail
+      bursts={[
+        {
+          ...first,
+          entries: [...first.entries, { ...pending, presentation: { ...pending.presentation, phase: "visible" } }],
+        },
+      ]}
+    />,
+  );
+  expect(container.querySelectorAll('[data-testid="combat-text"]')).toHaveLength(2);
+  expect(container.querySelector('[data-testid="combat-feedback-action"]')).toBe(flight);
 });
