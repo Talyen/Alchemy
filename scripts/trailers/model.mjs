@@ -77,13 +77,34 @@ const recipeSchema = z
         z
           .object({
             id: identifier,
-            scene: z.enum(["boss", "menu", "heroes", "collection", "homestead", "armory", "options", "checkpoint"]),
+            scene: z.enum([
+              "boss",
+              "combat",
+              "menu",
+              "heroes",
+              "modes",
+              "collection",
+              "homestead",
+              "armory",
+              "talents",
+              "options",
+              "destination",
+              "shop",
+              "alchemist",
+              "campfire",
+              "corruption",
+              "labyrinth",
+              "draft",
+              "checkpoint",
+            ]),
             boss: z.enum(BOSS_IDS).optional(),
+            lyrics: z.boolean().optional(),
             hero: z.enum(["knight", "rogue", "ranger", "wizard", "alchemist", "warlock", "druid"]).default("knight"),
             checkpoint: z.string().optional(),
             seed: z.number().int().min(0).max(4294967295).default(42),
             duration: z.number().positive().max(120),
             actions: z.array(action).default([]),
+            prepare: z.array(target).optional(),
           })
           .strict(),
       )
@@ -194,6 +215,7 @@ export function nativeMusicOffsets(recipe) {
   for (const shot of compileTimeline(recipe).shots) {
     const clip = recipe.clips.find((entry) => entry.id === shot.clip);
     if (clip.scene !== "boss" && clip.scene !== "checkpoint") continue;
+    if (clip.lyrics === false) continue;
     if (clip.boss !== recipe.music.boss)
       throw new Error(`${clip.id}: native lyrics need the battle boss to match the soundtrack`);
     if (shot.speed !== 1) throw new Error(`${clip.id}: native lyrics require normal playback speed`);
@@ -223,4 +245,14 @@ export function mapSoundEvents(timeline, clips) {
       ];
     });
   });
+}
+
+/** Inclusive frame ranges keep every frame when a long edit is rendered in bounded jobs. */
+export function compileRenderChunks(timeline) {
+  const frames = timeline.fps * 12;
+  return Array.from({ length: Math.ceil(timeline.durationInFrames / frames) }, (_, index) => ({
+    index: index + 1,
+    from: index * frames,
+    to: Math.min(timeline.durationInFrames - 1, (index + 1) * frames - 1),
+  }));
 }

@@ -2,12 +2,92 @@ import fs from "node:fs";
 import { pointerPath, samplePointer } from "../../scripts/trailers/direction.mjs";
 import { assertFrameDimensions, validateSourceVideo } from "../../scripts/trailers/media.mjs";
 import { describe, expect, it, vi } from "vitest";
-import { compileTimeline, mapSoundEvents, nativeMusicOffsets, parseRecipe } from "../../scripts/trailers/model.mjs";
+import {
+  compileRenderChunks,
+  compileTimeline,
+  mapSoundEvents,
+  nativeMusicOffsets,
+  parseRecipe,
+} from "../../scripts/trailers/model.mjs";
 import { installCaptureRuntime, sampleVisualTime } from "../../scripts/trailers/browser-runtime.mjs";
 
 const authored = JSON.parse(fs.readFileSync(new URL("../../trailers/boss-spotlight.json", import.meta.url), "utf8"));
 
 describe("trailer edit admission and synchronization", () => {
+  it("covers the complete cinematic edit exactly once across bounded render chunks", () => {
+    const recipe = parseRecipe(
+      JSON.parse(fs.readFileSync(new URL("../../trailers/alchemy-cinematic.json", import.meta.url), "utf8")),
+    );
+    const timeline = compileTimeline(recipe);
+    const chunks = compileRenderChunks(timeline);
+    expect(timeline.durationInFrames).toBe(3834);
+    expect(chunks).toHaveLength(6);
+    expect(chunks[0]).toEqual({ index: 1, from: 0, to: 719 });
+    expect(chunks.at(-1)).toEqual({ index: 6, from: 3600, to: 3833 });
+    expect(chunks.reduce((total, range) => total + range.to - range.from + 1, 0)).toBe(timeline.durationInFrames);
+    for (let index = 1; index < chunks.length; index++) expect(chunks[index].from).toBe(chunks[index - 1].to + 1);
+  });
+  it("keeps Motion's native fade on the gameplay clock when compositor time is far ahead", async () => {
+    let now = 1000;
+    class NativeAnimation {
+      currentTime = 0;
+      playState = "running";
+      nativeStart = 0;
+      effect = { getComputedTiming: () => ({ endTime: 1050 }) };
+      get startTime() {
+        return this.nativeStart;
+      }
+      set startTime(value: number) {
+        this.nativeStart = value;
+        this.playState = "running";
+      }
+      pause() {
+        this.playState = "paused";
+      }
+      finish() {
+        this.playState = "finished";
+      }
+    }
+    const live: NativeAnimation[] = [];
+    class Element {
+      animate() {
+        const result = new NativeAnimation();
+        live.push(result);
+        return result;
+      }
+    }
+    const fakeWindow = {
+      Audio: class {
+        pause() {}
+      },
+    };
+    vi.stubGlobal("window", fakeWindow);
+    vi.stubGlobal("performance", { now: () => now });
+    vi.stubGlobal("Animation", NativeAnimation);
+    vi.stubGlobal("Element", Element);
+    vi.stubGlobal("document", { getAnimations: () => live, querySelectorAll: () => [] });
+    try {
+      installCaptureRuntime();
+      const state = (fakeWindow as typeof fakeWindow & { __trailerCapture: { start: number; initialized: boolean } })
+        .__trailerCapture;
+      state.start = 1000;
+      state.initialized = true;
+      now = 1500;
+      const animation = new Element().animate();
+      expect(animation.playState).toBe("paused");
+      animation.startTime = now;
+      expect(animation.playState).toBe("paused");
+      now = 1900;
+      await sampleVisualTime(900);
+      expect(animation.currentTime).toBe(400);
+      expect(animation.playState).toBe("paused");
+      now = 2550;
+      await sampleVisualTime(1550);
+      expect(animation.playState).toBe("finished");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
   it("rejects a 1080p screenshot before it can be passed off as a 4K source", () => {
     const png = Buffer.alloc(24);
     Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(png);

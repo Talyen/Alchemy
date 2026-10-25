@@ -15,11 +15,13 @@ export interface Clip {
   id: string;
   scene: string;
   boss?: string;
+  lyrics?: boolean;
   hero: string;
   seed: number;
   checkpoint?: string;
   duration: number;
   actions: Array<{ at: number; kind: string; target?: Target; moveDuration: number }>;
+  prepare?: Target[];
 }
 export interface Shot {
   clip: string;
@@ -65,6 +67,9 @@ export const BOSS_IDS: readonly string[];
 export const OUTPUTS: Record<"steam" | "vertical" | "square", { width: number; height: number }>;
 export function parseRecipe(value: unknown): Recipe;
 export function compileTimeline(recipe: Recipe, format?: string, draft?: boolean): Timeline;
+export function compileRenderChunks(
+  timeline: Pick<Timeline, "fps" | "durationInFrames">,
+): Array<{ index: number; from: number; to: number }>;
 export function nativeMusicOffsets(recipe: Recipe): Record<string, number>;
 export function mapSoundEvents(
   timeline: Timeline,

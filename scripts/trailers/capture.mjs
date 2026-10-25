@@ -187,6 +187,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
     const sampled = [];
     const costs = { clock: 0, input: 0, visuals: 0, screenshot: 0, encode: 0 };
     const presentation = [];
+    const combatFeedback = [];
     let pointer = { x: 20, y: 80 };
     let pending = null;
     const deliberateCards = actions.some((action) => action.target?.cardPriority);
@@ -276,12 +277,25 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
         if (!stillInHand) input.acceptedAt = frame / settings.fps;
         else if (frame / settings.fps - input.at > 0.75) throw new Error(`Card input was not accepted: ${input.label}`);
       }
-      const hovered = await page.evaluate(
-        () =>
+      const observed = await page.evaluate(() => ({
+        hovered:
           globalThis.document
             .querySelector("[data-hand-slot][data-hovered]:not([data-hand-hidden])")
             ?.getAttribute("data-hand-slot") ?? null,
-      );
+        feedback: [...globalThis.document.querySelectorAll("[data-testid='combat-feedback-action']")].map((node) => {
+          const style = globalThis.getComputedStyle(node);
+          return {
+            text: node.textContent,
+            target: node.closest("[data-target]")?.getAttribute("data-target"),
+            lane: node.parentElement.getAttribute("data-feedback-lane"),
+            opacity: Number(style.opacity),
+            scale: style.transform,
+            rise: style.getPropertyValue("--combat-text-rise"),
+          };
+        }),
+      }));
+      const hovered = observed.hovered;
+      if (observed.feedback.length) combatFeedback.push({ at: seconds, entries: observed.feedback });
       if (deliberateCards && hovered && hovered !== inspection?.key && hovered !== pending?.input.inspectedCardKey)
         throw new Error(`Pointer hovered an unintended card at ${seconds}s: ${hovered}`);
       if (hovered !== hoveredKey) {
@@ -403,6 +417,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
       actions: performed,
       nativeMusic: music,
       presentation,
+      combatFeedback,
       sounds,
       sampled,
       ...(recover
@@ -434,7 +449,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
   }
 }
 
-export async function captureRecipe({ root, recipe, out, draft = false, source, recover = false }) {
+export async function captureRecipe({ root, recipe, out, draft = false, source, recover = false, clipIds }) {
   if (!recover) writeJson(path.join(out, "capture-start.json"), { recipe, draft, source });
   fs.mkdirSync(path.join(out, "clips"), { recursive: true });
   const dependencies = Object.keys(
@@ -442,6 +457,7 @@ export async function captureRecipe({ root, recipe, out, draft = false, source, 
   ).filter((name) => !["@sentry/electron", "steamworks.js"].includes(name));
   const server = await createServer({
     root,
+    define: { "import.meta.env.DEV": "false" },
     cacheDir: path.join(root, "scratch/trailer-vite-cache"),
     // A recording is pinned to its starting source. File changes and lazy
     // dependency optimization must not hot-reload an in-progress encounter.
@@ -480,7 +496,17 @@ export async function captureRecipe({ root, recipe, out, draft = false, source, 
     writeJson(path.join(out, "assets/lyrics.json"), lyrics);
     const offsets = nativeMusicOffsets(recipe);
     const clips = {};
-    for (const clip of recipe.clips)
+    for (const clip of recipe.clips) {
+      const receiptFile = path.join(out, "clips", `${clip.id}.json`);
+      if (!recover && fs.existsSync(receiptFile)) {
+        const recorded = JSON.parse(fs.readFileSync(receiptFile, "utf8"));
+        if (recorded.recipeHash !== hashValue(clip) || recorded.nativeMusic?.offset !== offsets[clip.id])
+          throw new Error(`Retained capture instructions differ: ${clip.id}`);
+        clips[clip.id] = finalizeClip(path.join(out, "clips", recorded.file), recorded);
+        continue;
+      }
+      if (clipIds && !clipIds.includes(clip.id)) continue;
+      console.log(`Capturing ${clip.id}: ${clip.duration}s`);
       clips[clip.id] = await captureClip({
         browser,
         scenarios,
@@ -503,6 +529,7 @@ export async function captureRecipe({ root, recipe, out, draft = false, source, 
                 src: new URL(assets.music.replace(/^public/u, ""), origin).pathname,
               },
       });
+    }
     for (const clip of Object.values(clips)) {
       for (const sound of clip.sounds) {
         const relative = decodeURIComponent(sound.src).replace(/^\//u, "");
@@ -523,6 +550,7 @@ export async function captureRecipe({ root, recipe, out, draft = false, source, 
       source,
       browserVersion: browser.version(),
       clips,
+      complete: Object.keys(clips).length === recipe.clips.length,
       music: { file: "assets/music.mp3", sha256: hashFile(musicSource), duration: lyrics.audioDuration },
       lyrics,
       assets: { logo: "assets/logo.webp", font: "assets/Inter.woff2" },

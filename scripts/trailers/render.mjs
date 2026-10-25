@@ -2,11 +2,21 @@ import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { chromium } from "@playwright/test";
-import { compileTimeline, mapSoundEvents, nativeMusicOffsets, parseRecipe } from "./model.mjs";
+import { serveSourceFrames } from "./frame-server.mjs";
+import { compileRenderChunks, compileTimeline, mapSoundEvents, nativeMusicOffsets, parseRecipe } from "./model.mjs";
 import { checkedAsset, hashFile, hashValue, probe, runFfmpeg, writeJson } from "./media.mjs";
 
 const requireTools = createRequire(new URL("./package.json", import.meta.url));
-export async function renderRecipe({ root, out, recipe, format = "steam", draft = false, label = "" }) {
+export async function renderRecipe({
+  root,
+  out,
+  recipe,
+  format = "steam",
+  draft = false,
+  label = "",
+  chunk,
+  assemble = false,
+}) {
   const { bundle } = requireTools("@remotion/bundler");
   const { selectComposition, renderMedia } = requireTools("@remotion/renderer");
   const capture = JSON.parse(fs.readFileSync(path.join(out, "capture.json"), "utf8"));
@@ -16,7 +26,8 @@ export async function renderRecipe({ root, out, recipe, format = "steam", draft 
   if (hashValue(recipe.capture) !== hashValue(capture.recipe.capture))
     throw new Error("Capture settings changed; record a new bundle");
   const offsets = nativeMusicOffsets(recipe);
-  for (const clip of recipe.clips) {
+  const used = new Set(recipe.shots.map((shot) => shot.clip));
+  for (const clip of recipe.clips.filter((clip) => used.has(clip.id))) {
     const recorded = capture.clips[clip.id];
     if (
       !recorded ||
@@ -83,94 +94,129 @@ export async function renderRecipe({ root, out, recipe, format = "steam", draft 
       silent,
     ]);
   } else {
-    const publicDir = path.join(renderDir, "public");
-    fs.mkdirSync(publicDir);
-    fs.cpSync(path.join(out, "assets"), path.join(publicDir, "assets"), { recursive: true });
-    const serveUrl = await bundle({
-      entryPoint: path.join(root, "scripts/trailers/renderer/index.jsx"),
-      publicDir,
-      outDir: path.join(renderDir, "bundle"),
-      onProgress: () => {},
+    const ranges = compileRenderChunks(timeline);
+    if (chunk !== undefined && (!Number.isInteger(chunk) || chunk < 1 || chunk > ranges.length))
+      throw new Error(`Choose a render chunk from 1 to ${ranges.length}`);
+    const editKey = hashValue({
+      timeline,
+      recipe,
+      ranges,
+      rendererModule: hashFile(new URL(import.meta.url)),
+      clips: [...used].map((id) => [id, capture.clips[id].sha256]),
+      renderer: hashFile(path.join(root, "scripts/trailers/renderer/index.jsx")),
+      decoder: hashFile(new URL("./frame-server.mjs", import.meta.url)),
+      assets: Object.values(capture.assets).map((file) => [file, hashFile(checkedAsset(out, file))]),
+      tools: hashFile(path.join(root, "scripts/trailers/package-lock.json")),
     });
-    // Decode each master once. Native per-frame video extraction is expensive
-    // for 4K 4:4:4 sources; a lossless PNG cache keeps camera composition in the
-    // browser without repeated decoder work or a lower-resolution proxy.
-    const renderCapture = { ...capture, clips: { ...capture.clips } };
-    for (const id of new Set(timeline.shots.map((shot) => shot.clip))) {
-      const directory = path.join(serveUrl, "public/frames", id);
-      fs.mkdirSync(directory, { recursive: true });
-      const ranges = timeline.shots
-        .filter((shot) => shot.clip === id)
-        .map((shot) => ({
-          start: shot.sourceStartFrame,
-          end: Math.min(
-            capture.clips[id].frameCount - 1,
-            Math.floor(shot.sourceStartFrame + (shot.durationInFrames - 1) * shot.speed),
-          ),
-        }))
-        .sort((a, b) => a.start - b.start);
-      const merged = [];
-      for (const range of ranges) {
-        const previous = merged.at(-1);
-        if (previous && range.start <= previous.end + 1) previous.end = Math.max(previous.end, range.end);
-        else merged.push({ ...range });
-      }
-      for (const range of merged)
-        await runFfmpeg([
-          "-i",
-          checkedAsset(out, `clips/${capture.clips[id].file}`),
-          "-an",
-          "-vf",
-          `select=between(n\\,${range.start}\\,${range.end})`,
-          "-frames:v",
-          String(range.end - range.start + 1),
-          "-c:v",
-          "png",
-          "-compression_level",
-          "1",
-          "-threads",
-          "1",
-          "-fps_mode",
-          "passthrough",
-          "-start_number",
-          String(range.start),
-          path.join(directory, "%06d.png"),
-        ]);
-      const files = fs.readdirSync(directory);
-      if (files.length !== merged.reduce((sum, range) => sum + range.end - range.start + 1, 0))
-        throw new Error(`Decoded frame count mismatch for ${id}`);
-      renderCapture.clips[id] = { ...capture.clips[id], frames: `frames/${id}` };
-      console.log(`Prepared ${id}: ${files.length} lossless frames`);
-    }
-    const inputProps = { timeline, bundle: renderCapture, recipe };
-    const browserExecutable = chromium.executablePath();
-    const composition = await selectComposition({ serveUrl, id: "AlchemyTrailer", inputProps, browserExecutable });
-    let reported = -1;
-    await renderMedia({
-      composition,
-      serveUrl,
-      inputProps,
-      browserExecutable,
-      outputLocation: silent,
-      codec: "h264",
-      videoBitrate: "20M",
-      pixelFormat: "yuv420p",
-      x264Preset: "slow",
-      colorSpace: "bt709",
-      muted: true,
-      concurrency: 1,
-      offthreadVideoThreads: 1,
-      offthreadVideoCacheSizeInBytes: 128 * 1024 * 1024,
-      imageFormat: "png",
-      onProgress: ({ progress }) => {
-        const percent = Math.floor(progress * 10) * 10;
-        if (percent !== reported) {
-          reported = percent;
-          console.log(`Render ${format}: ${percent}%`);
+    const chunkDir = path.join(out, "edits", `${format}${draft ? "-draft" : ""}-${editKey.slice(0, 16)}`);
+    fs.mkdirSync(chunkDir, { recursive: true });
+    const chunkFile = (range) => path.join(chunkDir, `${String(range.index).padStart(3, "0")}.mp4`);
+    const verified = (range) => {
+      const file = chunkFile(range);
+      const receipt = `${file}.json`;
+      if (!fs.existsSync(file) && !fs.existsSync(receipt)) return false;
+      if (!fs.existsSync(file) || !fs.existsSync(receipt)) throw new Error(`Unverified render chunk: ${file}`);
+      const prior = JSON.parse(fs.readFileSync(receipt, "utf8"));
+      if (
+        prior.editKey !== editKey ||
+        prior.from !== range.from ||
+        prior.to !== range.to ||
+        prior.sha256 !== hashFile(file)
+      )
+        throw new Error(`Render chunk differs from its verified receipt: ${file}`);
+      return true;
+    };
+    const selected = chunk === undefined ? ranges : ranges.filter((range) => range.index === chunk);
+    if (!assemble) {
+      const missing = selected.filter((range) => !verified(range));
+      if (missing.length) {
+        const publicDir = path.join(renderDir, "public");
+        fs.mkdirSync(publicDir);
+        fs.cpSync(path.join(out, "assets"), path.join(publicDir, "assets"), { recursive: true });
+        const serveUrl = await bundle({
+          entryPoint: path.join(root, "scripts/trailers/renderer/index.jsx"),
+          publicDir,
+          outDir: path.join(renderDir, "bundle"),
+          onProgress: () => {},
+        });
+        const frames = await serveSourceFrames(out, capture.clips);
+        try {
+          const renderCapture = {
+            ...capture,
+            clips: Object.fromEntries(
+              Object.entries(capture.clips).map(([id, clip]) => [id, { ...clip, frameUrl: `${frames.url}/${id}` }]),
+            ),
+          };
+          const inputProps = { timeline, bundle: renderCapture, recipe };
+          const browserExecutable = chromium.executablePath();
+          const composition = await selectComposition({
+            serveUrl,
+            id: "AlchemyTrailer",
+            inputProps,
+            browserExecutable,
+          });
+          for (const range of missing) {
+            const partial = path.join(renderDir, `chunk-${range.index}.mp4`);
+            let reported = -1;
+            await renderMedia({
+              composition,
+              serveUrl,
+              inputProps,
+              browserExecutable,
+              outputLocation: partial,
+              frameRange: [range.from, range.to],
+              codec: "h264",
+              videoBitrate: "20M",
+              pixelFormat: "yuv420p",
+              x264Preset: "slow",
+              colorSpace: "bt709",
+              muted: true,
+              concurrency: 1,
+              imageFormat: "png",
+              onProgress: ({ progress }) => {
+                const percent = Math.floor(progress * 10) * 10;
+                if (percent !== reported) {
+                  reported = percent;
+                  console.log(`Render ${format} chunk ${range.index}/${ranges.length}: ${percent}%`);
+                }
+              },
+            });
+            const metadata = probe(partial);
+            const video = metadata.streams.find((stream) => stream.codec_type === "video");
+            if (
+              Number(video?.nb_read_frames) !== range.to - range.from + 1 ||
+              video.width !== timeline.width ||
+              video.height !== timeline.height ||
+              video.r_frame_rate !== `${timeline.fps}/1`
+            )
+              throw new Error(`Rendered chunk frame count or dimensions differ: ${range.index}`);
+            const sha256 = hashFile(partial);
+            fs.renameSync(partial, chunkFile(range));
+            writeJson(`${chunkFile(range)}.json`, { editKey, ...range, sha256, metadata });
+          }
+        } finally {
+          await frames.close();
         }
-      },
-    });
+      }
+      if (chunk !== undefined) {
+        fs.rmSync(renderDir, { recursive: true });
+        console.log(`Render chunk ${chunk}/${ranges.length} complete: ${chunkFile(selected[0])}`);
+        return { chunk, chunks: ranges.length, editKey, directory: chunkDir };
+      }
+    }
+    for (const range of ranges)
+      if (!verified(range))
+        throw new Error(
+          `Render chunk ${range.index}/${ranges.length} is missing; capture no new gameplay, render that chunk first`,
+        );
+    const list = path.join(renderDir, "chunks.ffconcat");
+    fs.writeFileSync(
+      list,
+      ranges.map((range) => `file '${chunkFile(range).replaceAll("'", "'\\''")}'`).join("\n") + "\n",
+    );
+    await runFfmpeg(["-f", "concat", "-safe", "0", "-i", list, "-an", "-c:v", "copy", silent]);
   }
+
   const sounds = mapSoundEvents(timeline, capture.clips).filter((sound) => sound.duration > 0 && sound.volume > 0);
   const args = [
     "-i",
