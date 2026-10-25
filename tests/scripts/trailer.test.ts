@@ -32,7 +32,7 @@ describe("trailer edit admission and synchronization", () => {
       "packet/frame count",
     );
   });
-  it("holds paused preload videos and the outgoing last frame while switching playback once", async () => {
+  it("samples rounded capture clocks and preserves paused buffer rewinds across clip changes", async () => {
     class Video extends EventTarget {
       src: string;
       paused = true;
@@ -97,12 +97,33 @@ describe("trailer edit admission and synchronization", () => {
       await sampleVisualTime(now);
       expect(ended).toBe(1);
       expect(active.currentTime).toBeCloseTo(1);
+      const state = fakeWindow as typeof fakeWindow & {
+        __trailerCapture: { videoFrameRates: Record<string, number> };
+      };
+      state.__trailerCapture.videoFrameRates = { "/waiting.mp4": 60 };
+      // Playwright's clock rounds 60 Hz samples to integer milliseconds. A
+      // 533 ms sample still represents frame 32, rather than repeating frame 31.
+      now = 1617;
+      await sampleVisualTime(now);
+      expect(waiting.currentTime).toBeCloseTo(31.001 / 60, 5);
+      now = 1633;
+      await sampleVisualTime(now);
+      expect(waiting.currentTime).toBeCloseTo(32.001 / 60, 5);
       (
         fakeWindow as typeof fakeWindow & { __trailerCapture: { videoFrameRates: Record<string, number> } }
       ).__trailerCapture.videoFrameRates = { "/waiting.mp4": 10 };
       now = 1750;
       await sampleVisualTime(now);
       expect(waiting.currentTime).toBeCloseTo(0.6, 2);
+      state.__trailerCapture.videoFrameRates = { "/waiting.mp4": 60 };
+      now = 18067;
+      active.currentTime = 0;
+      waiting.currentTime = 0;
+      await waiting.play();
+      now = 18283;
+      await sampleVisualTime(now);
+      expect(active.currentTime).toBe(0);
+      expect(waiting.currentTime).toBeCloseTo(13.001 / 60, 5);
     } finally {
       vi.unstubAllGlobals();
     }

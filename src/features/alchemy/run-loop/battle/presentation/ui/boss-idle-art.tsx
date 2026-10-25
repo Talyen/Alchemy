@@ -5,8 +5,6 @@ import { SliceDeath } from "./slice-death";
 
 const BLEND_MS = 180;
 const OVERLAP_SECONDS = 0.24;
-const VIDEO_INSET = 0.03;
-const VIDEO_SCALE = 1 - 2 * VIDEO_INSET;
 
 function chooseClip(clips: readonly BossIdleClip[], previous?: BossIdleClip): BossIdleClip {
   const choices = clips.filter((clip) => clip !== previous);
@@ -70,7 +68,7 @@ export function BossIdleArt({
     if (!element) return;
     const measure = () => {
       // The rectangle includes the game's virtual viewport transform; contentRect does not.
-      pixels.current = element.getBoundingClientRect().width * VIDEO_SCALE * window.devicePixelRatio;
+      pixels.current = element.getBoundingClientRect().width * window.devicePixelRatio;
       setPlayback((previous) => {
         if (!previous.sources[0]!.src)
           return {
@@ -168,18 +166,12 @@ export function BossIdleArt({
       canvas.height = video.videoHeight;
       const context = canvas.getContext("2d");
       if (context) {
-        context.fillStyle = "black";
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        const insetX = canvas.width * VIDEO_INSET,
-          insetY = canvas.height * VIDEO_INSET;
-        const width = canvas.width * VIDEO_SCALE,
-          height = canvas.height * VIDEO_SCALE;
         const outgoing = playback.outgoing == null ? null : videos.current[playback.outgoing];
         if (outgoing && outgoing.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-          context.drawImage(outgoing, insetX, insetY, width, height);
+          context.drawImage(outgoing, 0, 0, canvas.width, canvas.height);
           context.globalAlpha = Number(getComputedStyle(video).opacity);
         }
-        context.drawImage(video, insetX, insetY, width, height);
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
         image = canvas.toDataURL();
       }
     }
@@ -211,11 +203,8 @@ export function BossIdleArt({
             preload="auto"
             aria-hidden="true"
             tabIndex={-1}
-            className="pointer-events-none absolute object-contain"
+            className="pointer-events-none absolute inset-0 h-full w-full object-contain"
             style={{
-              inset: `${VIDEO_INSET * 100}%`,
-              width: `${VIDEO_SCALE * 100}%`,
-              height: `${VIDEO_SCALE * 100}%`,
               zIndex: playback.visible === slot ? 2 : 1,
               opacity: playback.visible === slot || playback.outgoing === slot ? 1 : 0,
               transition: `opacity ${BLEND_MS}ms linear`,

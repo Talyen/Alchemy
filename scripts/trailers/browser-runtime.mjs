@@ -125,13 +125,17 @@ export async function sampleVisualTime(timeMs) {
       const entry = state.videoEntry(video, timeMs);
       if (!state.initialized) Object.assign(entry, { at: timeMs, base: video.currentTime });
       state.pauseVideo(video);
-      const elapsed = entry.base + (entry.playing ? ((timeMs - entry.at) / 1000) * video.playbackRate : 0);
+      // Paused buffers can be rewound by the game without changing their URL.
+      const elapsed = entry.playing
+        ? entry.base + ((timeMs - entry.at) / 1000) * video.playbackRate
+        : video.currentTime;
       const ended = entry.playing && !video.loop && elapsed >= video.duration && !entry.ended;
       let position = video.loop ? elapsed % video.duration : Math.min(elapsed, Math.max(0, video.duration - 0.00001));
       const fps = state.videoFrameRates?.[new URL(video.src, globalThis.location?.href ?? "http://localhost").pathname];
-      // Repeated native frames need no additional decoder seek. A tiny interior
-      // offset avoids landing just before a frame boundary after time rounding.
-      if (fps) position = Math.min(video.duration - 0.00001, (Math.floor((position + 0.0000001) * fps) + 0.001) / fps);
+      // Both the sample and clip-start clocks round to integer milliseconds;
+      // their difference can be almost 1 ms short of a native frame boundary.
+      // Absorb that error, then seek just inside the chosen frame.
+      if (fps) position = Math.min(video.duration - 0.00001, (Math.floor((position + 0.0010001) * fps) + 0.001) / fps);
       if (Math.abs(video.currentTime - position) >= 0.0001)
         await new Promise((resolve, reject) => {
           const done = () => {

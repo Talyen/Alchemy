@@ -67,11 +67,11 @@ flow, canvas downsampling, or per-frame React updates are used. Interpolation
 cannot correct motion artifacts already present in the authored clips, and short
 blends soften rather than reconstruct mismatched poses.
 
-Animated portraits use the clips' full 16:9 composition with `contain` scaling. A
-small matte inset keeps the complete rectangular video clear of the rounded
-frame corners. The static fallback disappears when playback starts, leaving a
-plain matte around the video rather than a second portrait. Neither video nor its
-static fallback uses cover/crop scaling. Their extra width retains the same base
+Animated portraits use the clips' full 16:9 composition with `contain` scaling,
+filling the frame edge to edge. Only the frame's rounded corners mask the video;
+there is no matte inset. The static fallback disappears when playback starts,
+so a second portrait never shows around the video. Neither video nor its static
+fallback uses cover/crop scaling. Their extra width retains the same base
 frame height as the hero's 3:4 portrait and other enemies' 4:3
 portraits. Hero and enemy frames keep that height through turn changes and hover;
 the shining border indicates the active turn. Stone Titan's battle artwork is
