@@ -11,45 +11,47 @@ import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 const hit = (amount = 6): BattleCardEffect => ({ kind: "damage", damageType: "physical", amount });
 
 describe("rule-preserving tooltip inspection", () => {
-  it.each([0, 6, 20])(
-    "keeps Shield Bash's rule and separately previews its own Block gain at %i starting Block",
-    (block) => {
-      const card = cardById["shield-bash"]!;
-      const rng = vi.fn(() => {
-        throw new Error("live RNG consumed");
-      });
-      const state = patchBattleState({ hand: [card], mana: 3, playerStatuses: { block }, rng });
-      const before = JSON.stringify({ card, state });
-      const result = getBattleCardDescriptionInspection(card, state);
-      expect(result.card).toBe(card);
-      expect(result.card.descriptionLines).toEqual(["Gain 2 Block", "Deal Stun damage equal to half your Block"]);
-      expect(result.attackPreview?.lineIndices).toEqual([1]);
-      expect(result.attackPreview?.card.descriptionLines[1]).toBe(`Deal ${Math.round((block + 2) / 2)} Stun damage`);
-      expect(JSON.stringify({ card, state })).toBe(before);
-      expect(rng).not.toHaveBeenCalled();
-    },
-  );
-
-  it("includes known bonuses but excludes enemy defenses, Dodge and Critical outcomes from the preview", () => {
+  it.each([0, 6, 20])("keeps Shield Bash's scaling rule at %i starting Block", (block) => {
     const card = cardById["shield-bash"]!;
     const rng = vi.fn(() => {
       throw new Error("live RNG consumed");
     });
+    const state = patchBattleState({ hand: [card], mana: 3, playerStatuses: { block }, rng });
+    const before = JSON.stringify({ card, state });
+    const result = getBattleCardDescriptionInspection(card, state);
+    expect(result.descriptionLines).toEqual(["Gain 2 Block", "Deal Stun damage equal to half your Block"]);
+    expect(result.effects).toEqual(card.effects);
+    expect(JSON.stringify({ card, state })).toBe(before);
+    expect(rng).not.toHaveBeenCalled();
+  });
+
+  it("adjusts known gear and talent bonuses inside the original fixed-damage sentence", () => {
+    const card = effectsCard({ id: "plain", art: "", effects: [hit(3)] });
     const state = patchBattleState({
-      hand: [card],
-      mana: 3,
+      gearEffects: { flatPhysicalDamage: 1 },
+      talentEffects: { flatPhysicalDamage: 1 },
+    });
+    expect(card.descriptionLines).toEqual(["Deal 3 Physical damage"]);
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual(["Deal 5 Physical damage"]);
+    expect(card.effects).toEqual([hit(3)]);
+  });
+
+  it("excludes enemy defenses, Dodge and Critical outcomes from fixed attack numbers", () => {
+    const card = effectsCard({ id: "plain", art: "", effects: [hit(3)] });
+    const rng = vi.fn(() => {
+      throw new Error("live RNG consumed");
+    });
+    const state = patchBattleState({
       currentEnemy: enemyById["will-o-wisp"],
-      playerStatuses: { block: 6, forge: 3 },
+      gearEffects: { flatPhysicalDamage: 1 },
+      talentEffects: { flatPhysicalDamage: 1 },
       enemyMitigation: { block: 50, armor: 20 },
       flags: { nextHitCrit: true },
       rng,
     });
-    const result = getBattleCardDescriptionInspection(card, state);
-    expect(result.card.effects).toBe(card.effects);
-    expect(result.card.descriptionLines[1]).toContain("half your Block");
-    expect(result.attackPreview?.card.descriptionLines[1]).toBe("Deal 7 Stun damage");
-    expect(state.flags.nextHitCrit).toBe(true);
-    expect(state.enemyMitigation).toMatchObject({ block: 50, armor: 20 });
+    const before = JSON.stringify(state);
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual(["Deal 5 Physical damage"]);
+    expect(JSON.stringify(state)).toBe(before);
     expect(rng).not.toHaveBeenCalled();
   });
 
@@ -57,28 +59,33 @@ describe("rule-preserving tooltip inspection", () => {
     { kind: "damage", damageType: "physical", amount: 0, equalToArmor: true },
     { kind: "damage", damageType: "stun", amount: 3, forgeBonusPercent: 50 },
     { kind: "damage", damageType: "physical", amount: 3, damageTypeIfTargetFrozen: "freeze", amountIfTargetFrozen: 8 },
+    { kind: "damage", damageType: "physical", amount: 3, doubleIfEnemyBleeding: true },
+    { kind: "damage", damageType: "burn", amount: 3, tripleIfEnemyNotBurning: true },
   ] as const)("retains the complete $damageType scaling/conditional rule", (effect) => {
     const card = effectsCard({ id: "formula", art: "", effects: [effect] });
     const result = getBattleCardDescriptionInspection(
       card,
-      patchBattleState({ playerStatuses: { armor: 8, forge: 6 }, enemyCC: { freezeSkipTurns: 1 } }),
+      patchBattleState({
+        playerStatuses: { armor: 8, forge: 6 },
+        enemyCC: { freezeSkipTurns: 1 },
+        enemyStatuses: { bleed: 2 },
+      }),
     );
-    expect(result.card.descriptionLines).toEqual(card.descriptionLines);
-    expect(result.card.effects[0]).toEqual(effect);
-    expect(result.attackPreview?.card.descriptionLines).not.toEqual(card.descriptionLines);
+    expect(result.descriptionLines).toEqual(card.descriptionLines);
+    expect(result.effects[0]).toEqual(effect);
   });
 
-  it("does not add a redundant preview to an unchanged attack", () => {
-    const card = effectsCard({ id: "plain", art: "", effects: [hit()] });
-    expect(getBattleCardDescriptionInspection(card, patchBattleState())).toEqual({ card });
+  it("does not append triggered follow-ups or duplicate the original effect sentence", () => {
+    const card = cardById.fireball!;
+    const result = getBattleCardDescriptionInspection(card, patchBattleState({ flags: { nextHitPhysicalBonus: 4 } }));
+    expect(result.descriptionLines).toEqual(card.descriptionLines);
+    expect(result.effects).toEqual(card.effects);
   });
 
-  it("preserves rules without inventing a preview when an unknown draw can change the attack", () => {
+  it("keeps authored numbers when an unresolved draw can change the attack", () => {
     const card = effectsCard({ id: "draw-attack", art: "", effects: [{ kind: "draw-cards", amount: 1 }, hit()] });
-    const state = patchBattleState({ deck: [makeTestCard()] });
-    const result = getBattleCardDescriptionInspection(card, state);
-    expect(result.card).toBe(card);
-    expect(result.attackPreview).toBeUndefined();
+    const result = getBattleCardDescriptionInspection(card, patchBattleState({ deck: [makeTestCard()] }));
+    expect(result.descriptionLines).toEqual(card.descriptionLines);
   });
 });
 

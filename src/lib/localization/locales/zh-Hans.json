@@ -31,7 +31,6 @@
   "brewing.choose-two": {"text":"选择两瓶药水","sourceHash":"b80830e0478064a8f45118c0d59e6cabb919ff134034a564297b3051e373a4b4","reviewed":true},
   "brewing.clear-slot": {"text":"移除槽位{{slot}}中的药水","sourceHash":"e95997c42075ec2263b244e97dc9af2607bd8a58bac08249ee97dc61d79eb06b","reviewed":true},
   "brewing.empty-slot": {"text":"空药水槽位{{slot}}","sourceHash":"7beeade0968720831da01f9e57fbcde245ddae90edd3a1eedc9c636284fcf642","reviewed":true},
-  "card.attack-preview": {"text":"攻击力","sourceHash":"ad9118d41b6e386ff59f2703f79b08bb9dc25c01868b8f7192b2d8ebb9f1aea9","reviewed":true},
   "card.corrupted-title": {"text":"<corruption>腐化</corruption>{{name}}","sourceHash":"349d296eb2ef360c83e8b7457c8f2cd9d826c839201eb08c0ca2d5cc0bde3319","reviewed":true},
   "card.new": {"text":"新","sourceHash":"9278fece2ed088675eb1c877bbdc3340e7e46ebcc773e37c3ddeab0f02e762b7","reviewed":true},
   "card.transmuted.archery": {"text":"<modifier>瞄准</modifier>{{name}}","sourceHash":"8bcc448e0c9ff26aa5b93c5fd248e4542aa15512a868de0d9fbe3c86e4bf4af3","reviewed":true},

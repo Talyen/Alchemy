@@ -31,7 +31,6 @@
   "brewing.choose-two": {"text":"Elige dos Pociones","sourceHash":"fb85265b790a283fa6ff46c4e0d8ab10e56b2c5bf81884bd2ff0c22594203089","reviewed":true},
   "brewing.clear-slot": {"text":"Quitar Poción de la ranura {{slot}}","sourceHash":"c9f6ecb04c8177c9de6d016483cb47b48e486f56f8990ab9fc308a60ebbfd766","reviewed":true},
   "brewing.empty-slot": {"text":"Ranura de Poción vacía {{slot}}","sourceHash":"54b9d4164badd1e5091e5e07b09f645a2f9f2ea48e0cd58d74bf0096c5077b5e","reviewed":true},
-  "card.attack-preview": {"text":"Potencia de ataque","sourceHash":"d2901b8c6c1aec8d4afdaec48c31c4eee92ea5ee2bc003edb51d9387dfef7117","reviewed":true},
   "card.corrupted-title": {"text":"<corruption>Corrupción</corruption>: {{name}}","sourceHash":"856d6395cd81e4aeef56350bd3f659969dbcddfacd58cb235024205ddbad5ab9","reviewed":true},
   "card.new": {"text":"NUEVO","sourceHash":"eb7b0fa53e92ea8b32971a1e535c4881299ebe32ecda619800a4c377a107889b","reviewed":true},
   "card.transmuted.archery": {"text":"<modifier>Puntería</modifier>: {{name}}","sourceHash":"2ba339f0399fe2334fc34e947968ac5bb1ff375222b6e41514fcbcb49a674f5f","reviewed":true},

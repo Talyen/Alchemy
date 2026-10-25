@@ -10,7 +10,6 @@ import {
   type BattleCardEffect,
   type CardEffectAddress,
   type CardMagnitudeReference,
-  type CardDescriptionInspection,
 } from "@/lib/game-data";
 import { resolveInspectedCardPlay } from "./card-play";
 import { battleSnapshot } from "./battle-snapshot";
@@ -198,42 +197,35 @@ export function getBattleDamageInspectionCard(
   return inspectBattleCardDamage(card, snapshot, side).card;
 }
 
-/** Keep authored rules separate from offensive observations, including scaling and conditions. */
+/** Adjust fixed attack literals in-place without replacing scaling or conditional rules. */
 export function getBattleCardDescriptionInspection(
   card: BattleCard,
   snapshot: BattleSnapshot,
   side: "player" | "enemy" = "player",
-): CardDescriptionInspection {
+): BattleCard {
   const rules = side === "enemy" && isEnemyAbilityCard(card) ? getEncounterEnemyAbility(card, snapshot) : card;
   const inspected = inspectBattleCardDamage(card, snapshot, side);
-  const preview = inspected.card;
-  // Unknown draws/reactions must not turn unresolved nominal amounts into promises.
-  const unresolvedAttack = [...inspected.outcomes].some(([path, outcome]) => {
-    if (outcome.kind !== "unknown") return false;
-    const [effectIndex, ...effectPath] = path.split(".").map(Number);
-    const effect = getCardEffect(card.effects, { effectIndex: effectIndex!, effectPath });
-    return (
-      effect?.kind === "damage" ||
-      effect?.kind === "random-damage" ||
-      effect?.kind === "cleanse-player-status-to-damage"
-    );
-  });
-  if (unresolvedAttack) return { card: rules };
-  const lineIndices = getCardDescription(preview).flatMap((line, index) =>
-    line.role === "effect" &&
-    line.parts.some(
-      (part) =>
-        typeof part !== "string" &&
-        part.references.some((reference) => reference.kind === "damage" || reference.kind === "random-damage"),
+  function inlineKnownAmount(effect: BattleCardEffect, path: number[]): BattleCardEffect {
+    const view = mapEffectChildren(effect, (child, index) => inlineKnownAmount(child, [...path, index]));
+    if (
+      effect.kind !== "damage" ||
+      effect.equalToBlock ||
+      effect.equalToArmor ||
+      effect.forgeBonusPercent !== undefined ||
+      effect.damageTypeIfTargetFrozen ||
+      effect.doubleIfEnemyBleeding ||
+      effect.tripleIfEnemyNotBurning ||
+      effect.damageTypePool
     )
-      ? [index]
-      : [],
-  );
-  const differs =
-    preview.descriptionLines.length !== rules.descriptionLines.length ||
-    preview.descriptionLines.some((line, index) => line !== rules.descriptionLines[index]);
-  return {
-    card: rules,
-    ...(differs && lineIndices.length ? { attackPreview: { card: preview, lineIndices } } : {}),
-  };
+      return view;
+    const outcome = inspected.outcomes.get(path.join("."));
+    // The first packet is the intended attack. Follow-ups stay owned by their
+    // existing status/tooltips, and unknown alternatives retain the authored rule.
+    const attack = outcome?.kind === "exact" ? outcome.packets[0] : undefined;
+    return attack?.kind === "damage" && attack.damageType === effect.damageType
+      ? { ...effect, amount: attack.amount }
+      : view;
+  }
+  const effects = rules.effects.map((effect, index) => inlineKnownAmount(effect, [index]));
+  return withCardDescription({ ...rules, effects }, getCardDescription(rules));
 }
