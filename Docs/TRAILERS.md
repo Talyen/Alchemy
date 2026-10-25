@@ -42,9 +42,10 @@ recipe can take longer than one 15-minute lease when both phases are combined.
 Frame rate, actions, music positions and edit timing stay identical. Drafts are
 explicitly identified in the receipts. A draft is not production-quality evidence.
 The same commands work on a dedicated Linux/macOS capture machine without the
-shared Mac lane wrapper. Rendering uses one worker. It decodes the masters once into a temporary lossless
-PNG frame cache, then composes directly from images; no lower-resolution proxy
-is substituted for 4K sources. Successful exports remove that temporary cache.
+shared Mac lane wrapper. Rendering uses one worker. Directed compilations decode exact lossless source
+frames on demand through a private local frame server with a 64 MiB memory cache.
+They retain native source resolution without expanding the full edit to temporary
+PNG files. Successful exports remove their remaining temporary composition files.
 
 The manual **Gameplay trailer production** GitHub Actions workflow provisions an
 Ubuntu runner and stores the complete result as a private workflow artifact for
@@ -52,6 +53,35 @@ Ubuntu runner and stores the complete result as a private workflow artifact for
 capture does not need a real-time GPU recording rate; review platform rendering
 before accepting that runner as a visual baseline. Nothing publishes to Steam or
 social media. The workflow can later be moved to a dedicated GPU runner.
+
+## Cinematic feature compilation
+
+[The directing script](../trailers/alchemy-cinematic-direction.md) explains the
+research, shot-by-shot paper cut, 28 separate 4.5-second takes, capture truth rules,
+and revision workflow for [the cinematic recipe](../trailers/alchemy-cinematic.json).
+The first cut mixes real battle with heroes, drafting, cards, shops, brewing,
+Campfires, Corruption, Labyrinth, modes, Armory, Talents, Homestead and Companions.
+Source takes are 4K60; Steam delivery is 1080p60. Camera paths and transitions are
+applied during composition, leaving the independent masters unchanged.
+
+Capture a few takes per resource lease with `capture --clips id,id --bundle <path>`.
+Repeat against the same source and recipe to build the library incrementally;
+completed takes are validated and reused. Omit `--clips` to capture the remaining
+takes. Partial bundles can render an edit using only their available clips.
+`capture.json` records whether all planned takes are present. Existing exports
+require a new `--label`, so revisions never overwrite an earlier cut.
+
+Battle takes normally synchronize their own native lyrics. Set a take's
+`lyrics: false` for neutral coverage or a different boss under the shared music
+bed. This makes those takes freely reorderable. A synchronized take must be
+recaptured when its final music position changes. No trailer lyric overlay is used.
+
+The capture-only runtime synchronizes newly created WAAPI animations and Motion's
+explicit start times with the gameplay clock. This prevents opacity from finishing
+on the compositor's wall clock while gameplay is paused. Per-frame combat feedback
+samples record opacity, scale and travel for review. No production animation,
+combat text, game rule or playback timing is changed. Recording serves the game
+with release feature flags, so development spawn controls are absent.
 
 ## Blood Countess battle prototype
 

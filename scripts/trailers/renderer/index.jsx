@@ -38,9 +38,13 @@ function Shot({ shot, clip }) {
       }}
     >
       <Img
-        src={asset(
-          `${clip.frames}/${String(Math.min(clip.frameCount - 1, Math.floor(shot.sourceStartFrame + frame * shot.speed))).padStart(6, "0")}.png`,
-        )}
+        src={
+          clip.frameUrl
+            ? `${clip.frameUrl}/${Math.min(clip.frameCount - 1, Math.floor(shot.sourceStartFrame + frame * shot.speed))}.png`
+            : asset(
+                `${clip.frames}/${String(Math.min(clip.frameCount - 1, Math.floor(shot.sourceStartFrame + frame * shot.speed))).padStart(6, "0")}.png`,
+              )
+        }
         style={{ position: "absolute", width: videoWidth, height: videoHeight, left, top, maxWidth: "none" }}
       />
     </AbsoluteFill>

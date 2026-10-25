@@ -56,6 +56,33 @@ export function installCaptureRuntime() {
     }
   };
   window.__trailerCapture = state;
+  if (globalThis.Element && globalThis.Animation) {
+    const animate = globalThis.Element.prototype.animate;
+    const startTime = Object.getOwnPropertyDescriptor(globalThis.Animation.prototype, "startTime");
+    globalThis.Element.prototype.animate = function (...args) {
+      const animation = animate.apply(this, args);
+      if (state.start !== null) {
+        animation.pause();
+        animation.currentTime = 0;
+        state.animations.set(animation, { at: globalThis.performance.now() - state.start, base: 0 });
+      }
+      return animation;
+    };
+    if (startTime?.set)
+      Object.defineProperty(globalThis.Animation.prototype, "startTime", {
+        ...startTime,
+        set(value) {
+          if (state.start !== null && value !== null) {
+            // Motion assigns performance.now() as WAAPI's startTime. With a
+            // paused JS clock that belongs to a different timeline than the
+            // browser compositor, which can finish opacity before sampling.
+            state.animations.set(this, { at: Number(value) - state.start, base: 0 });
+            this.pause();
+            this.currentTime = 0;
+          } else startTime.set.call(this, value);
+        },
+      });
+  }
   if (globalThis.HTMLVideoElement) {
     const prototype = globalThis.HTMLVideoElement.prototype;
     const play = prototype.play;

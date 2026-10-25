@@ -15,11 +15,13 @@ export interface Clip {
   id: string;
   scene: string;
   boss?: string;
+  lyrics?: boolean;
   hero: string;
   seed: number;
   checkpoint?: string;
   duration: number;
   actions: Array<{ at: number; kind: string; target?: Target; moveDuration: number }>;
+  prepare?: Target[];
 }
 export interface Shot {
   clip: string;

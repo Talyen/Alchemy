@@ -1,0 +1,854 @@
+{
+  "version": 1,
+  "id": "alchemy-cinematic-first-cut",
+  "capture": {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "scale": 2,
+    "fps": 60
+  },
+  "music": {
+    "boss": "blood-countess",
+    "offset": 20.68,
+    "lyrics": true,
+    "volume": 0.8,
+    "fadeIn": 0.05,
+    "fadeOut": 1.5
+  },
+  "clips": [
+    {
+      "id": "countess-hook",
+      "scene": "boss",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "role": "button",
+            "name": "Play Sunder"
+          }
+        },
+        {
+          "at": 1.85,
+          "kind": "play-card",
+          "moveDuration": 0
+        }
+      ],
+      "boss": "blood-countess"
+    },
+    {
+      "id": "heroes-roster",
+      "scene": "heroes",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "role": "button",
+            "name": "Select Knight"
+          }
+        }
+      ]
+    },
+    {
+      "id": "heroes-wizard",
+      "scene": "heroes",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "role": "button",
+            "name": "Select Wizard"
+          }
+        }
+      ]
+    },
+    {
+      "id": "draft-choice",
+      "scene": "draft",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Select \"]"
+          }
+        },
+        {
+          "at": 2,
+          "kind": "click",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Select \"]"
+          }
+        }
+      ]
+    },
+    {
+      "id": "cards-library",
+      "scene": "collection",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "prepare": [
+        {
+          "role": "button",
+          "name": "Cards"
+        }
+      ],
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Inspect \"]"
+          }
+        }
+      ]
+    },
+    {
+      "id": "bestiary-library",
+      "scene": "collection",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "prepare": [
+        {
+          "role": "button",
+          "name": "Bestiary"
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "trinkets-library",
+      "scene": "collection",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "prepare": [
+        {
+          "role": "button",
+          "name": "Trinkets"
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "uniques-library",
+      "scene": "collection",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "prepare": [
+        {
+          "role": "button",
+          "name": "Uniques"
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "wizard-battle",
+      "scene": "combat",
+      "duration": 4.5,
+      "hero": "wizard",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Play \"]:not([disabled]):not(.hand-card-unplayable)"
+          }
+        },
+        {
+          "at": 1.85,
+          "kind": "play-card",
+          "moveDuration": 0
+        }
+      ]
+    },
+    {
+      "id": "campaign-route",
+      "scene": "destination",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "role": "button",
+            "name": "Card Shop"
+          }
+        }
+      ]
+    },
+    {
+      "id": "card-shop",
+      "scene": "shop",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Buy \"]:not([disabled])"
+          }
+        },
+        {
+          "at": 2,
+          "kind": "click",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Buy \"]:not([disabled])"
+          }
+        }
+      ]
+    },
+    {
+      "id": "potion-brewing",
+      "scene": "alchemist",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "prepare": [
+        {
+          "role": "button",
+          "name": "Potion Brewing"
+        }
+      ],
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "role": "button",
+            "name": "Brew"
+          }
+        }
+      ]
+    },
+    {
+      "id": "potion-shop",
+      "scene": "alchemist",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": []
+    },
+    {
+      "id": "campfire-rest",
+      "scene": "campfire",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": []
+    },
+    {
+      "id": "corruption-risk",
+      "scene": "corruption",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": []
+    },
+    {
+      "id": "labyrinth-route",
+      "scene": "labyrinth",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "role": "button",
+            "name": "Combat chamber, reachable, enterable"
+          }
+        }
+      ]
+    },
+    {
+      "id": "three-modes",
+      "scene": "modes",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "role": "button",
+            "name": "The Labyrinth"
+          }
+        }
+      ]
+    },
+    {
+      "id": "armory-loadout",
+      "scene": "armory",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "target": {
+            "role": "button",
+            "name": "Longsword"
+          }
+        },
+        {
+          "at": 2,
+          "kind": "click",
+          "target": {
+            "role": "button",
+            "name": "Longsword"
+          }
+        },
+        {
+          "at": 2.6,
+          "kind": "move-away"
+        }
+      ]
+    },
+    {
+      "id": "armory-gear",
+      "scene": "armory",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "target": {
+            "role": "button",
+            "name": "Greatsword"
+          }
+        }
+      ]
+    },
+    {
+      "id": "talents-overview",
+      "scene": "talents",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "role": "button",
+            "name": "Select Burn Talents"
+          }
+        }
+      ]
+    },
+    {
+      "id": "talents-block",
+      "scene": "talents",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "prepare": [
+        {
+          "role": "button",
+          "name": "Select Block Talents"
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "homestead-build",
+      "scene": "homestead",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Build Blacksmith\"]"
+          }
+        },
+        {
+          "at": 2,
+          "kind": "click",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Build Blacksmith\"]"
+          }
+        }
+      ]
+    },
+    {
+      "id": "homestead-farm",
+      "scene": "homestead",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "prepare": [
+        {
+          "role": "button",
+          "name": "Farm"
+        }
+      ],
+      "actions": []
+    },
+    {
+      "id": "homestead-companions",
+      "scene": "homestead",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "prepare": [
+        {
+          "role": "button",
+          "name": "Companions"
+        }
+      ],
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "target": {
+            "selector": "[aria-label^=\"Bond \"]:not([disabled])"
+          }
+        },
+        {
+          "at": 2,
+          "kind": "click",
+          "target": {
+            "selector": "[aria-label^=\"Bond \"]:not([disabled])"
+          }
+        }
+      ]
+    },
+    {
+      "id": "treant-druid",
+      "scene": "boss",
+      "duration": 4.5,
+      "hero": "druid",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Play \"]:not([disabled]):not(.hand-card-unplayable)"
+          }
+        },
+        {
+          "at": 1.85,
+          "kind": "play-card",
+          "moveDuration": 0
+        }
+      ],
+      "boss": "blight-treant",
+      "lyrics": false
+    },
+    {
+      "id": "seraph-wizard",
+      "scene": "boss",
+      "duration": 4.5,
+      "hero": "wizard",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Play \"]:not([disabled]):not(.hand-card-unplayable)"
+          }
+        },
+        {
+          "at": 1.85,
+          "kind": "play-card",
+          "moveDuration": 0
+        }
+      ],
+      "boss": "seraph",
+      "lyrics": false
+    },
+    {
+      "id": "titan-knight",
+      "scene": "boss",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Play \"]:not([disabled]):not(.hand-card-unplayable)"
+          }
+        },
+        {
+          "at": 1.85,
+          "kind": "play-card",
+          "moveDuration": 0
+        }
+      ],
+      "boss": "stone-titan",
+      "lyrics": false
+    },
+    {
+      "id": "countess-finale",
+      "scene": "boss",
+      "duration": 4.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "role": "button",
+            "name": "Play Sunder"
+          }
+        },
+        {
+          "at": 1.85,
+          "kind": "play-card",
+          "moveDuration": 0
+        }
+      ],
+      "boss": "blood-countess"
+    }
+  ],
+  "shots": [
+    {
+      "clip": "countess-hook",
+      "in": 0.25,
+      "duration": 4
+    },
+    {
+      "clip": "heroes-roster",
+      "in": 0.5,
+      "duration": 3,
+      "framing": {
+        "steam": {
+          "from": {
+            "x": 0.5,
+            "y": 0.5,
+            "zoom": 1
+          },
+          "to": {
+            "x": 0.5,
+            "y": 0.5,
+            "zoom": 1.12
+          }
+        }
+      }
+    },
+    {
+      "clip": "draft-choice",
+      "in": 0.5,
+      "duration": 3,
+      "framing": {
+        "steam": {
+          "from": {
+            "x": 0.5,
+            "y": 0.52,
+            "zoom": 1.1
+          },
+          "to": {
+            "x": 0.5,
+            "y": 0.52,
+            "zoom": 1.16
+          }
+        }
+      }
+    },
+    {
+      "clip": "cards-library",
+      "in": 0.5,
+      "duration": 3,
+      "framing": {
+        "steam": {
+          "from": {
+            "x": 0.48,
+            "y": 0.5,
+            "zoom": 1.14
+          },
+          "to": {
+            "x": 0.52,
+            "y": 0.5,
+            "zoom": 1.14
+          }
+        }
+      }
+    },
+    {
+      "clip": "wizard-battle",
+      "in": 0.5,
+      "duration": 3.5
+    },
+    {
+      "clip": "card-shop",
+      "in": 0.5,
+      "duration": 3,
+      "framing": {
+        "steam": {
+          "from": {
+            "x": 0.5,
+            "y": 0.5,
+            "zoom": 1
+          },
+          "to": {
+            "x": 0.5,
+            "y": 0.5,
+            "zoom": 1.12
+          }
+        }
+      }
+    },
+    {
+      "clip": "potion-brewing",
+      "in": 0.5,
+      "duration": 3.2,
+      "framing": {
+        "steam": {
+          "from": {
+            "x": 0.5,
+            "y": 0.48,
+            "zoom": 1.1
+          },
+          "to": {
+            "x": 0.5,
+            "y": 0.48,
+            "zoom": 1.17
+          }
+        }
+      }
+    },
+    {
+      "clip": "campfire-rest",
+      "in": 0.5,
+      "duration": 3,
+      "framing": {
+        "steam": {
+          "from": {
+            "x": 0.5,
+            "y": 0.5,
+            "zoom": 1.05
+          },
+          "to": {
+            "x": 0.5,
+            "y": 0.49,
+            "zoom": 1.12
+          }
+        }
+      },
+      "transition": {
+        "kind": "dissolve",
+        "duration": 0.2
+      }
+    },
+    {
+      "clip": "corruption-risk",
+      "in": 0.5,
+      "duration": 3,
+      "framing": {
+        "steam": {
+          "from": {
+            "x": 0.5,
+            "y": 0.5,
+            "zoom": 1.04
+          },
+          "to": {
+            "x": 0.5,
+            "y": 0.48,
+            "zoom": 1.12
+          }
+        }
+      }
+    },
+    {
+      "clip": "labyrinth-route",
+      "in": 0.5,
+      "duration": 3.2,
+      "framing": {
+        "steam": {
+          "from": {
+            "x": 0.5,
+            "y": 0.51,
+            "zoom": 1.08
+          },
+          "to": {
+            "x": 0.54,
+            "y": 0.51,
+            "zoom": 1.12
+          }
+        }
+      }
+    },
+    {
+      "clip": "three-modes",
+      "in": 0.5,
+      "duration": 3,
+      "framing": {
+        "steam": {
+          "from": {
+            "x": 0.5,
+            "y": 0.5,
+            "zoom": 1.02
+          },
+          "to": {
+            "x": 0.5,
+            "y": 0.5,
+            "zoom": 1.1
+          }
+        }
+      }
+    },
+    {
+      "clip": "armory-loadout",
+      "in": 0.5,
+      "duration": 3.2,
+      "framing": {
+        "steam": {
+          "from": {
+            "x": 0.5,
+            "y": 0.5,
+            "zoom": 1
+          },
+          "to": {
+            "x": 0.52,
+            "y": 0.5,
+            "zoom": 1.1
+          }
+        }
+      }
+    },
+    {
+      "clip": "talents-block",
+      "in": 0.5,
+      "duration": 3,
+      "framing": {
+        "steam": {
+          "from": {
+            "x": 0.5,
+            "y": 0.52,
+            "zoom": 1
+          },
+          "to": {
+            "x": 0.5,
+            "y": 0.52,
+            "zoom": 1.13
+          }
+        }
+      }
+    },
+    {
+      "clip": "homestead-build",
+      "in": 0.5,
+      "duration": 3.2,
+      "framing": {
+        "steam": {
+          "from": {
+            "x": 0.5,
+            "y": 0.5,
+            "zoom": 1
+          },
+          "to": {
+            "x": 0.5,
+            "y": 0.5,
+            "zoom": 1.1
+          }
+        }
+      }
+    },
+    {
+      "clip": "homestead-companions",
+      "in": 0.5,
+      "duration": 3,
+      "framing": {
+        "steam": {
+          "from": {
+            "x": 0.5,
+            "y": 0.5,
+            "zoom": 1.06
+          },
+          "to": {
+            "x": 0.52,
+            "y": 0.5,
+            "zoom": 1.1
+          }
+        }
+      },
+      "transition": {
+        "kind": "dissolve",
+        "duration": 0.2
+      }
+    },
+    {
+      "clip": "treant-druid",
+      "in": 0.5,
+      "duration": 3
+    },
+    {
+      "clip": "seraph-wizard",
+      "in": 0.5,
+      "duration": 3
+    },
+    {
+      "clip": "titan-knight",
+      "in": 0.5,
+      "duration": 3
+    },
+    {
+      "clip": "countess-finale",
+      "in": 0.25,
+      "duration": 4
+    }
+  ],
+  "endCard": {
+    "duration": 4,
+    "text": "Wishlist on Steam"
+  }
+}

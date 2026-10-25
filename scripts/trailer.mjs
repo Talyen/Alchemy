@@ -22,7 +22,7 @@ function parseArgs(argv) {
     const arg = args[index];
     if (arg === "--draft") options.draft = true;
     else if (
-      ["--recipe", "--bundle", "--format", "--label"].includes(arg) &&
+      ["--recipe", "--bundle", "--format", "--label", "--clips"].includes(arg) &&
       args[index + 1] &&
       !args[index + 1].startsWith("--")
     )
@@ -32,6 +32,7 @@ function parseArgs(argv) {
   if (!OUTPUTS[options.format]) throw new UsageError("--format must be steam, vertical, or square");
   if (options.label && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(options.label))
     throw new UsageError("--label must be lowercase words separated by hyphens");
+  if (options.clips && options.command !== "capture") throw new UsageError("--clips is only for capture");
   if (["render", "recover", "inspect"].includes(command) && !options.bundle)
     throw new UsageError(`${command} needs --bundle`);
   return options;
@@ -62,7 +63,7 @@ export async function runTrailer(argv = process.argv.slice(2)) {
   npm run trailer -- doctor
   npm run trailer -- plan [--recipe trailers/boss-spotlight.json] [--format steam|vertical|square]
   npm run trailer -- make [--recipe <file>] [--bundle <new-directory>] [--draft] [--format steam|vertical|square]
-  npm run trailer -- capture [--recipe <file>] [--bundle <new-directory>] [--draft]
+  npm run trailer -- capture [--recipe <file>] [--bundle <directory>] [--clips <id,id>] [--draft]
   npm run trailer -- render --bundle <directory> [--recipe <edited-file>] [--format steam|vertical|square] [--draft] [--label <edit-name>]
   npm run trailer -- recover --bundle <directory>
   npm run trailer -- inspect --bundle <directory>
@@ -139,13 +140,28 @@ Capture/render are intentional media-production jobs. On the shared Mac, wrap ma
   const destination =
     out ?? path.join(ROOT, "output/trailers", recipe.id, new Date().toISOString().replaceAll(/[:.]/gu, "-"));
   if (["capture", "make"].includes(options.command)) {
-    if (fs.existsSync(destination) && fs.readdirSync(destination).length)
-      throw new Error(`Bundle directory must be empty: ${destination}`);
-    fs.mkdirSync(destination, { recursive: true });
-    writeJson(path.join(destination, "recipe.json"), recipe);
     const source = captureSourceDigest({ rootDir: ROOT });
     source.commit = runGit(ROOT, ["rev-parse", "HEAD"]).stdout.trim();
-    await captureRecipe({ root: ROOT, recipe, out: destination, draft: options.draft, source });
+    const startFile = path.join(destination, "capture-start.json");
+    if (fs.existsSync(startFile)) {
+      const start = JSON.parse(fs.readFileSync(startFile, "utf8"));
+      if (
+        options.command !== "capture" ||
+        start.source.hash !== source.hash ||
+        start.draft !== options.draft ||
+        JSON.stringify(start.recipe) !== JSON.stringify(recipe)
+      )
+        throw new Error("Existing bundle has different source or capture instructions; choose a fresh bundle");
+    } else {
+      if (fs.existsSync(destination) && fs.readdirSync(destination).length)
+        throw new Error(`Bundle directory must be empty: ${destination}`);
+      fs.mkdirSync(destination, { recursive: true });
+      writeJson(path.join(destination, "recipe.json"), recipe);
+    }
+    const clipIds = options.clips?.split(",");
+    if (clipIds?.some((id) => !recipe.clips.some((clip) => clip.id === id)))
+      throw new UsageError("--clips contains an unknown clip ID");
+    await captureRecipe({ root: ROOT, recipe, out: destination, draft: options.draft, source, clipIds });
   }
   if (["render", "make"].includes(options.command))
     await renderRecipe({
