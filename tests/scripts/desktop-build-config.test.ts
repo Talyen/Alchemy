@@ -143,6 +143,10 @@ function packagingFixture(edition: "full" | "demo", html = '<script type="module
     process.platform === "win32" ? "junction" : "dir",
   );
   const renderer = edition === "demo" ? "dist-demo" : "dist";
+  // The builder is stubbed below; represent its output for size accounting.
+  mkdirSync(join(root, edition === "demo" ? "release-desktop-demo" : "release-desktop", "win-unpacked"), {
+    recursive: true,
+  });
   mkdirSync(join(root, renderer, "assets"), { recursive: true });
   writeFileSync(join(root, renderer, "edition.json"), JSON.stringify({ edition }));
   const catalog = JSON.stringify(

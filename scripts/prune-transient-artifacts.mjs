@@ -3,12 +3,14 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { TRANSIENT_ARTIFACT_DIRS, formatBytes, removePath } from "./lib/clean-dev-artifacts.mjs";
+import { formatBytes, removePath } from "./lib/clean-dev-artifacts.mjs";
 import { withArtifactGuard } from "./lib/artifact-guard.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-export const TRANSIENT_DIRS = TRANSIENT_ARTIFACT_DIRS;
+// Only Git diff inventories are reproducible from the current checkout. Test,
+// performance, integration and visual evidence must survive age-based pruning.
+export const TRANSIENT_DIRS = Object.freeze(["reports/agent-diff"]);
 const DEFAULT_DAYS = 1;
 
 function parseDays(value) {
@@ -76,6 +78,14 @@ export function pruneExpiredArtifacts({
     }
   };
   for (const relative of transientDirs) {
+    const segments = relative.split("/");
+    if (
+      segments.slice(0, -1).some((_, index) => {
+        const parent = fs.lstatSync(path.join(rootDir, ...segments.slice(0, index + 1)), { throwIfNoEntry: false });
+        return !parent?.isDirectory() || parent.isSymbolicLink();
+      })
+    )
+      continue;
     const target = path.join(rootDir, relative);
     const stats = fs.lstatSync(target, { throwIfNoEntry: false });
     if (!stats?.isDirectory() || stats.isSymbolicLink()) continue;

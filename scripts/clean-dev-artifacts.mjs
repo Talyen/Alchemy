@@ -26,6 +26,8 @@ export function parseCleanArgs(argv) {
     "--help",
     "-h",
     "--builds",
+    "--reports",
+    "--caches",
     "--all",
     "--processes",
     "--include-dev-port",
@@ -51,23 +53,27 @@ export function parseCleanArgs(argv) {
   const help = flags.has("--help") || flags.has("-h");
   const builds = flags.has("--builds") || flags.has("--all");
   const processes = flags.has("--processes") || flags.has("--all");
+  const reports = flags.has("--reports") || flags.has("--all");
+  const caches = flags.has("--caches") || flags.has("--all");
   const includeDevPort = flags.has("--include-dev-port");
   const dryRun = flags.has("--dry-run");
 
-  return { help, builds, processes, includeDevPort, dryRun };
+  return { help, builds, reports, caches, processes, includeDevPort, dryRun };
 }
 
 function printHelp() {
   console.log(`Usage: node scripts/clean-dev-artifacts.mjs [options]
 
-Removes gitignored Alchemy local artifacts so leftover reports/builds do not accumulate.
-For age-based pruning of stale files only, use npm run prune:transient instead.
+Removes rebuildable Alchemy caches. Evidence, tool environments and builds require explicit selectors.
+For expiry of rebuildable diff inventories only, use npm run prune:transient instead.
 
 Options:
   --builds             Also remove ${BUILD_ARTIFACT_DIRS.join(" + ")}
+  --reports            Also remove reports and test evidence (inspect first)
+  --caches             Also remove .cache tool environments (stop their owners first)
   --processes          Stop Alchemy-owned listeners on ports ${STALE_TEST_PORTS.join(", ")}
   --include-dev-port   With --processes, also stop the Vite dev port (ALCHEMY_DEV_PORT / 5173)
-  --all                Shorthand for --builds --processes
+  --all                Shorthand for --builds --reports --caches --processes
   --dry-run            Print what would be removed without deleting
   -h, --help           Show this help
 
@@ -77,7 +83,7 @@ Default targets:
 }
 
 /**
- * @param {{ builds?: boolean, processes?: boolean, includeDevPort?: boolean, dryRun?: boolean }} options
+ * @param {{ builds?: boolean, reports?: boolean, caches?: boolean, processes?: boolean, includeDevPort?: boolean, dryRun?: boolean }} options
  */
 export async function runClean(options = {}) {
   const builds = options.builds === true;
@@ -89,7 +95,7 @@ export async function runClean(options = {}) {
     rootDir,
     ({ active }) => {
       if (active) throw new Error("Artifact tool is active; cleanup refused to preserve its output.");
-      const targets = listArtifactDirsToRemove(rootDir, { builds });
+      const targets = listArtifactDirsToRemove(rootDir, { builds, reports: options.reports, caches: options.caches });
       let freedBytes = 0;
 
       if (targets.length === 0) {

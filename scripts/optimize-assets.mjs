@@ -12,6 +12,7 @@ import {
   ASSET_SCHEMA_VERSION,
   MANIFEST_BASENAME,
   SHARP_DEFAULTS,
+  LOW_MEMORY_ASSETS,
 } from "./assets/asset-constants.mjs";
 import {
   ensureOutputDir,
@@ -102,6 +103,10 @@ async function optimizeAsset(asset, storedEntry, check) {
 }
 
 export async function optimizeAssets({ check = false } = {}) {
+  if (LOW_MEMORY_ASSETS) {
+    sharp.concurrency(1);
+    sharp.cache({ memory: 16, files: 0, items: 20 });
+  }
   const allAssets = [...staticAssets, ...gearAssets];
   await validateAssetRegistry(allAssets);
   await requireAssetSources(allAssets);

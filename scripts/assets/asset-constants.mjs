@@ -10,16 +10,21 @@ export const SHARP_DEFAULTS = Object.freeze({
   format: "webp",
 });
 
-const ciCap = process.env.CI ? 4 : 6;
+const profile = process.env.ALCHEMY_ASSET_PROFILE ?? "default";
+if (!["default", "low-memory"].includes(profile)) throw new Error(`Unknown ALCHEMY_ASSET_PROFILE: ${profile}`);
+export const LOW_MEMORY_ASSETS = profile === "low-memory";
+const ciCap = LOW_MEMORY_ASSETS ? 2 : process.env.CI ? 4 : 6;
+export const BOSS_IDLE_CONCURRENCY = LOW_MEMORY_ASSETS ? 1 : 2;
 
 /**
  * Single concurrency knob for every asset pipeline. ALCHEMY_ASSET_CONCURRENCY
- * overrides the parallel pipelines; boss idles always remux one clip at a time.
+ * overrides normal preparation; low-memory keeps at most two image jobs and
+ * one boss interpolation job active. Runtime quality settings stay identical.
  */
 export function resolveAssetConcurrency(fallback) {
   const override = Number(process.env.ALCHEMY_ASSET_CONCURRENCY ?? "");
   if (Number.isFinite(override) && override > 0 && override <= Number.MAX_SAFE_INTEGER)
-    return Math.max(1, Math.floor(override));
+    return Math.max(1, Math.min(LOW_MEMORY_ASSETS ? ciCap : Number.MAX_SAFE_INTEGER, Math.floor(override)));
   return Math.min(ciCap, fallback);
 }
 

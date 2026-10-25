@@ -10,6 +10,7 @@ import { validateDesktopBuildConfig } from "./lib/release/desktop-build-config.m
 import { verifyDesktopRenderer } from "./lib/release/release-checks.mjs";
 import { parseKnownFlags } from "./lib/cli-args.mjs";
 import { defineScript, UsageError } from "./lib/script-run.mjs";
+import { measureStorage } from "./lib/storage-footprint.mjs";
 
 function main(argv = process.argv.slice(2)) {
   const { flags, rest } = parseKnownFlags(argv, { build: {}, dir: {}, help: { short: "h" } });
@@ -136,6 +137,26 @@ function main(argv = process.argv.slice(2)) {
     if (verifyResult.error) throw verifyResult.error;
     if ((verifyResult.status ?? 1) !== 0) return verifyResult.status ?? 1;
   }
+  const footprint = measureStorage(join(root, selected.packageDirectory));
+  const reportDirectory = join(root, "reports/storage");
+  mkdirSync(reportDirectory, { recursive: true });
+  writeFileSync(
+    join(reportDirectory, `package-${selected.edition}.json`),
+    JSON.stringify(
+      {
+        version: 1,
+        edition: selected.edition,
+        targets,
+        measuredAt: new Date().toISOString(),
+        units: "logical bytes; symlinks excluded; output includes both installers and unpacked applications",
+        ...footprint,
+      },
+      null,
+      2,
+    ) + "\n",
+  );
+  for (const [name, bytes] of Object.entries(footprint.children))
+    console.log(`[package-storage] ${name} ${bytes} bytes`);
   return 0;
 }
 

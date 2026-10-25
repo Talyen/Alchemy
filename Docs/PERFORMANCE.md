@@ -20,6 +20,33 @@ Compare identical workloads and environments, inspect the targeted cost, and
 preserve visual/audio behavior. [Comparison validity](#comparison-validity) defines
 which reports can establish an improvement.
 
+## Storage and RAM efficiency
+
+Use `npm run storage:report -- --json reports/storage/baseline.json` for logical
+file-byte baselines without building. Renderer media budgets live beside the
+JavaScript budget in `scripts/lib/verification/bundle-budget.mjs` and run through
+`check:bundle`; public Music/sounds count alongside emitted artwork/video. Source
+maps are reported separately from shipping bytes. Packaging retains per-output
+logical sizes in `reports/storage/package-<edition>.json`; installer and unpacked
+bytes are separate output entries, not a combined installed-size claim.
+
+Preserve upfront image readiness and the warm cache. Release only abandoned
+pending work or demonstrated redundant/expired ownership. Do not add cache
+pressure, deferred first-use decoding, lower resolutions, new loaders, reduced
+animation cadence or audio changes to reach a memory target. A background job is
+not proof of hitch-free execution. Measure cold first-use paths as well as warm
+replays, including the Electron GPU/utility working sets below. Any observable
+presentation, sound, loading or timing change requires explicit user approval
+before integration. There is no arbitrary total-RAM threshold.
+
+Compression candidates start from retained masters, preserve dimensions, alpha,
+frame/sample timing and loudness, and use existing compatible formats first.
+Compare decoded pixels/samples for exact-preserving changes; lossy candidates
+also need motion/listening review and native decode/frame-pacing evidence.
+Quality scores alone cannot approve a perceptible change. Avoid routine lossy
+recompression of compressed music sources. Record rejected candidates and their
+sizes rather than shipping a speculative size reduction.
+
 ## Quick start
 
 ```bash

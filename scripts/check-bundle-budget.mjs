@@ -3,9 +3,10 @@ import { releaseEdition } from "./lib/release/game-edition.mjs";
 // Enforces bundle size budget for the no-lazy eager entry invariant.
 // Replaces the former chunkSizeWarningLimit:900 silence with a real gate.
 import { readdirSync, statSync, existsSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
-import { BUDGETS } from "./lib/verification/bundle-budget.mjs";
+import { BUDGETS, STORAGE_BUDGETS } from "./lib/verification/bundle-budget.mjs";
+import { checkRendererStorage } from "./lib/storage-footprint.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { REPO_ROOT } from "./lib/repository-paths.mjs";
 
@@ -64,7 +65,14 @@ function checkSingleBudget(dir) {
 
 export function checkBundleBudget(dist = DEFAULT_ASSETS_DIR) {
   const dirs = Array.isArray(dist) ? dist : [dist];
-  return dirs.map(checkSingleBudget).every(Boolean);
+  return dirs
+    .map((dir) => {
+      const js = checkSingleBudget(dir);
+      // Arbitrary standalone asset directories remain supported for diagnosis.
+      const media = basename(dir) === "assets" ? checkRendererStorage(dirname(dir), STORAGE_BUDGETS) : true;
+      return js && media;
+    })
+    .every(Boolean);
 }
 
 if (isMainModule(import.meta.url)) {

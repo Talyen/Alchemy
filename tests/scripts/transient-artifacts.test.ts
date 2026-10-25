@@ -8,6 +8,12 @@ import { parsePruneArgs, pruneTransientArtifacts } from "../../scripts/prune-tra
 import { registerArtifactSession, withArtifactGuard } from "../../scripts/lib/artifact-guard.mjs";
 import { deferred } from "../helpers/deferred";
 
+// The generic guard/expiry cases deliberately select evidence roots. The CLI's
+// conservative default is covered separately below.
+function pruneTestArtifacts(options: Parameters<typeof pruneTransientArtifacts>[0]) {
+  return pruneTransientArtifacts({ transientDirs: ["reports", "test-results", "playwright-report"], ...options });
+}
+
 const DAY = 86_400_000;
 const now = Date.now();
 const roots: string[] = [];
@@ -58,10 +64,10 @@ it("expires whole runs by evidence age despite copied directory timestamps and p
   ageDirectories(rootDir);
   fs.utimesSync(path.join(rootDir, "reports/runs/old"), new Date(now), new Date(now));
   expect(parsePruneArgs([])).toEqual({ days: 1, dryRun: false });
-  const preview = await pruneTransientArtifacts({ rootDir, now, dryRun: true });
+  const preview = await pruneTestArtifacts({ rootDir, now, dryRun: true });
   expect(preview.removed.map((e) => e.path)).toEqual([path.join("reports/runs/old")]);
   expect(fs.existsSync(path.join(rootDir, "reports/runs/old/log.txt"))).toBe(true);
-  const result = await pruneTransientArtifacts({ rootDir, now });
+  const result = await pruneTestArtifacts({ rootDir, now });
   expect(result).toEqual(preview);
   expect(fs.existsSync(path.join(rootDir, "reports/runs/old"))).toBe(false);
   expect(fs.readFileSync(path.join(rootDir, "reports/runs/fresh/old.log"), "utf8")).toBe("evidence");
@@ -74,10 +80,10 @@ it("removes both pointers when their run expires, including in a consistent prev
   write("reports/current-run.json", 0, JSON.stringify({ runId: "expired" }));
   write("reports/current-run.md", 0);
   ageDirectories(rootDir);
-  const preview = await pruneTransientArtifacts({ rootDir, now, dryRun: true });
+  const preview = await pruneTestArtifacts({ rootDir, now, dryRun: true });
   expect(preview.removed).toHaveLength(3);
   expect(fs.existsSync(path.join(rootDir, "reports/current-run.md"))).toBe(true);
-  expect(await pruneTransientArtifacts({ rootDir, now })).toEqual(preview);
+  expect(await pruneTestArtifacts({ rootDir, now })).toEqual(preview);
   expect(fs.existsSync(path.join(rootDir, "reports/current-run.json"))).toBe(false);
 });
 
@@ -87,11 +93,11 @@ it("preserves pointers to fresh runs and safely discards broken pointers without
   write("reports/current-run.json", 2 * DAY, JSON.stringify({ runId: "fresh" }));
   write("reports/current-run.md");
   ageDirectories(rootDir);
-  expect((await pruneTransientArtifacts({ rootDir, now })).removed).toEqual([]);
+  expect((await pruneTestArtifacts({ rootDir, now })).removed).toEqual([]);
   write("reports/current-run.json", 0, JSON.stringify({ runId: "missing" }));
-  expect((await pruneTransientArtifacts({ rootDir, now })).removed).toHaveLength(2);
+  expect((await pruneTestArtifacts({ rootDir, now })).removed).toHaveLength(2);
   write("reports/current-run.json", 0, JSON.stringify({ runId: "../../source" }));
-  expect((await pruneTransientArtifacts({ rootDir, now })).removed).toEqual([]);
+  expect((await pruneTestArtifacts({ rootDir, now })).removed).toEqual([]);
 });
 
 it.each([true, false])("does not traverse symlinked roots or nested links (dryRun=%s)", async (dryRun) => {
@@ -101,14 +107,14 @@ it.each([true, false])("does not traverse symlinked roots or nested links (dryRu
   external.write("current-run.md");
   external.write("source.txt");
   fs.symlinkSync(external.rootDir, path.join(rootDir, "reports"), "dir");
-  expect((await pruneTransientArtifacts({ rootDir, now, dryRun })).removed).toEqual([]);
+  expect((await pruneTestArtifacts({ rootDir, now, dryRun })).removed).toEqual([]);
   expect(fs.existsSync(path.join(external.rootDir, "current-run.json"))).toBe(true);
   fs.unlinkSync(path.join(rootDir, "reports"));
   fs.mkdirSync(path.join(rootDir, "reports"));
   const link = path.join(rootDir, "reports/external");
   fs.symlinkSync(external.rootDir, link, "dir");
   fs.lutimesSync(link, new Date(now - 2 * DAY), new Date(now - 2 * DAY));
-  await pruneTransientArtifacts({ rootDir, now, dryRun });
+  await pruneTestArtifacts({ rootDir, now, dryRun });
   expect(fs.existsSync(path.join(external.rootDir, "source.txt"))).toBe(true);
   expect(fs.lstatSync(link, { throwIfNoEntry: false })?.isSymbolicLink() ?? false).toBe(dryRun);
 });
@@ -118,11 +124,11 @@ it("serializes concurrent registrations and protects silent output until every o
   const old = write("reports/old.log");
   const owners = await Promise.all([registerArtifactSession(rootDir), registerArtifactSession(rootDir)]);
   releases.push(...owners);
-  expect((await pruneTransientArtifacts({ rootDir, now })).skippedActive).toBe(true);
+  expect((await pruneTestArtifacts({ rootDir, now })).skippedActive).toBe(true);
   owners[0]!();
-  expect((await pruneTransientArtifacts({ rootDir, now })).skippedActive).toBe(true);
+  expect((await pruneTestArtifacts({ rootDir, now })).skippedActive).toBe(true);
   owners[1]!();
-  expect((await pruneTransientArtifacts({ rootDir, now })).skippedActive).toBe(false);
+  expect((await pruneTestArtifacts({ rootDir, now })).skippedActive).toBe(false);
   expect(fs.existsSync(old)).toBe(false);
 });
 
@@ -166,16 +172,16 @@ it("recovers a killed owner's guard only after exit, without mutating it during 
   );
   children.push(child);
   await once(child.stdout!, "data");
-  expect((await pruneTransientArtifacts({ rootDir, now })).skippedActive).toBe(true);
+  expect((await pruneTestArtifacts({ rootDir, now })).skippedActive).toBe(true);
   const guardDir = await withArtifactGuard(rootDir, ({ directory }) => directory);
   const records = fs.readdirSync(guardDir);
   const done = once(child, "exit");
   child.kill("SIGKILL");
   await done;
-  expect((await pruneTransientArtifacts({ rootDir, now, dryRun: true })).skippedActive).toBe(false);
+  expect((await pruneTestArtifacts({ rootDir, now, dryRun: true })).skippedActive).toBe(false);
   expect(fs.readdirSync(guardDir)).toEqual(records);
   expect(fs.existsSync(old)).toBe(true);
-  await pruneTransientArtifacts({ rootDir, now });
+  await pruneTestArtifacts({ rootDir, now });
   expect(fs.readdirSync(guardDir)).toEqual([]);
   expect(fs.existsSync(old)).toBe(false);
 });
@@ -187,7 +193,7 @@ it("preserves output when ownership is malformed rather than guessing that it is
     fs.mkdirSync(directory, { recursive: true });
     fs.writeFileSync(path.join(directory, "unknown-owner"), "");
   });
-  expect((await pruneTransientArtifacts({ rootDir, now })).skippedActive).toBe(true);
+  expect((await pruneTestArtifacts({ rootDir, now })).skippedActive).toBe(true);
   expect(fs.existsSync(old)).toBe(true);
 });
 
@@ -205,7 +211,7 @@ it("lets a consumer read an old snapshot before pruning at normal idle exit", as
     import fs from 'node:fs';
     import { registerArtifactSession } from ${JSON.stringify(guardUrl)};
     import { pruneExpiredArtifacts } from ${JSON.stringify(pruneUrl)};
-    await registerArtifactSession(${JSON.stringify(rootDir)}, () => pruneExpiredArtifacts({ rootDir: ${JSON.stringify(rootDir)}, now: ${now} }));
+    await registerArtifactSession(${JSON.stringify(rootDir)}, () => pruneExpiredArtifacts({ rootDir: ${JSON.stringify(rootDir)}, now: ${now}, transientDirs: ["reports"] }));
     console.log(fs.readFileSync(${JSON.stringify(old)}, 'utf8'));
   `,
     ],
@@ -220,4 +226,29 @@ it("lets a consumer read an old snapshot before pruning at normal idle exit", as
   expect(code).toBe(0);
   expect(output).toContain("evidence");
   expect(fs.existsSync(old)).toBe(false);
+});
+
+it("preserves aged evidence and environments while expiring only rebuildable diff inventories by default", async () => {
+  const { rootDir, write } = fixture();
+  const evidence = [
+    "reports/visual-review/screen.png",
+    "reports/runs/check/run.json",
+    "reports/integrations/task/log.txt",
+    "reports/boss-lyrics/venv/tool",
+    "test-results/failure/trace.zip",
+  ];
+  for (const name of evidence) write(name);
+  write("reports/agent-diff/old/diff.txt");
+  const result = await pruneTransientArtifacts({ rootDir, now });
+  expect(result.removed.map((entry) => entry.path)).toEqual([path.join("reports/agent-diff/old")]);
+  for (const name of evidence) expect(fs.existsSync(path.join(rootDir, name))).toBe(true);
+});
+
+it("does not expire diff inventories through a linked reports ancestor", async () => {
+  const { rootDir } = fixture();
+  const external = fixture();
+  const kept = external.write("agent-diff/old/diff.txt");
+  fs.symlinkSync(external.rootDir, path.join(rootDir, "reports"), "dir");
+  expect((await pruneTransientArtifacts({ rootDir, now })).removed).toEqual([]);
+  expect(fs.existsSync(kept)).toBe(true);
 });

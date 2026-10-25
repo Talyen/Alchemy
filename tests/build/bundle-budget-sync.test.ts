@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { checkBundleBudget } from "../../scripts/check-bundle-budget.mjs";
 import { BUDGETS, CHUNK_SIZE_WARNING_KB } from "../../scripts/lib/verification/bundle-budget.mjs";
+import { checkRendererStorage, measureStorage } from "../../scripts/lib/storage-footprint.mjs";
 
 const tempDirs: string[] = [];
 
@@ -24,6 +25,32 @@ afterEach(() => {
 });
 
 describe("bundle budget sync", () => {
+  it("counts public music and emitted video in the complete renderer budget while separating maps", () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const directory = createAssetDirectory({
+      "index.html": 5,
+      "assets/index-test.js": 5,
+      "assets/boss.mp4": 20,
+      "assets/art.webp": 10,
+      "Music/track.mp3": 30,
+      "sounds/cue.ogg": 4,
+      "assets/index-test.js.map": 100,
+    });
+    expect(measureStorage(directory)).toMatchObject({
+      bytes: 174,
+      sourceMaps: 100,
+      video: 20,
+      music: 30,
+      images: 10,
+      sounds: 4,
+    });
+    const budgets = { renderer: 74, video: 20, music: 30, images: 10, sounds: 4 };
+    expect(checkRendererStorage(directory, budgets)).toBe(true);
+    expect(checkRendererStorage(directory, { ...budgets, music: 29 })).toBe(false);
+    expect(checkRendererStorage(directory, { ...budgets, renderer: 73 })).toBe(false);
+  });
+
   it("rejects missing, empty, and non-JavaScript build outputs", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     const empty = createAssetDirectory({});
@@ -110,6 +137,7 @@ describe("bundle budget sync", () => {
     for (const file of [
       "scripts/check-bundle-budget.mjs",
       "scripts/lib/verification/bundle-budget.mjs",
+      "scripts/lib/storage-footprint.mjs",
       "scripts/lib/release/game-edition.mjs",
       "scripts/lib/repository-paths.mjs",
       "scripts/lib/is-main-module.mjs",
@@ -121,6 +149,7 @@ describe("bundle budget sync", () => {
     }
     const assets = join(root, edition === "demo" ? "dist-demo" : "dist", "assets");
     mkdirSync(assets, { recursive: true });
+    writeFileSync(join(dirname(assets), "index.html"), "<html></html>");
     writeFileSync(join(assets, "index-AbC_1.js"), Buffer.alloc(100));
     const caller = join(root, "caller");
     mkdirSync(caller);

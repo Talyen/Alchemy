@@ -126,6 +126,40 @@ describe("worktree removal", () => {
     expect(base.status, base.stderr).toBe(0);
     expect(base.stdout.trim()).toBe(head.stdout.trim());
   });
+
+  it("creates code-only worktrees without removing masters from the original checkout", () => {
+    const root = mkdtempSync(join(tmpdir(), "alchemy-code-only-"));
+    using _scopeCleanup = createCleanup(() => rmSync(root, { recursive: true, force: true }));
+    mkdirSync(join(root, "scripts"));
+    const script = join(root, "scripts/agent-worktree.mjs");
+    copyFileSync(join(process.cwd(), "scripts/agent-worktree.mjs"), script);
+    const git = (...args: string[]) => {
+      const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+      expect(result.status, result.stderr).toBe(0);
+      return result.stdout;
+    };
+    git("init", "-q", "-b", "main");
+    git("config", "user.name", "Test");
+    git("config", "user.email", "test@example.test");
+    mkdirSync(join(root, "assets/sources"), { recursive: true });
+    mkdirSync(join(root, "src/assets/optimized"), { recursive: true });
+    writeFileSync(join(root, "assets/sources/master.png"), "master");
+    writeFileSync(join(root, "src/assets/optimized/ready.webp"), "prepared");
+    git("add", ".");
+    git("commit", "-qm", "initial");
+    const result = spawnSync(process.execPath, [script, "create", "--task", "small", "--code-only"], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    expect(result.status, result.stderr).toBe(0);
+    const small = join(root, ".worktrees/small");
+    expect(existsSync(join(small, "assets/sources/master.png"))).toBe(false);
+    expect(readFileSync(join(small, "src/assets/optimized/ready.webp"), "utf8")).toBe("prepared");
+    expect(readFileSync(join(root, "assets/sources/master.png"), "utf8")).toBe("master");
+    expect(git("-C", small, "status", "--porcelain")).toBe("");
+    git("-C", small, "sparse-checkout", "disable");
+    expect(readFileSync(join(small, "assets/sources/master.png"), "utf8")).toBe("master");
+  });
 });
 
 const recoveryRoots: string[] = [];
@@ -557,12 +591,19 @@ it("preserves check evidence and captures before deleting outputs, retaining the
   writeFileSync(join(root, "main.txt"), "main\n");
   git(["add", "main.txt"]);
   git(["commit", "-qm", "test: main"]);
-  writeFileSync(join(taskPath, ".gitignore"), ".worktrees/\nreports/\nignored\nnode_modules/\n");
+  writeFileSync(join(taskPath, ".gitignore"), ".worktrees/\nreports/\nignored\nnode_modules/\n.cache/\n");
   git(["add", ".gitignore"], taskPath);
   git(["commit", "-qm", "test: ignore outputs"], taskPath);
   writeFileSync(join(taskPath, "ignored"), "local evidence");
   mkdirSync(join(taskPath, "node_modules"));
   writeFileSync(join(taskPath, "node_modules", "cached"), "rebuildable");
+  mkdirSync(join(taskPath, "scripts/trailers/node_modules"), { recursive: true });
+  writeFileSync(join(taskPath, "scripts/trailers/node_modules/tool"), "rebuildable");
+  mkdirSync(join(taskPath, ".cache/lyrics/venv"), { recursive: true });
+  writeFileSync(join(taskPath, ".cache/lyrics/venv/tool"), "rebuildable");
+  mkdirSync(join(taskPath, "reports/boss-lyrics/venv"), { recursive: true });
+  writeFileSync(join(taskPath, "reports/boss-lyrics/venv/tool"), "rebuildable");
+  writeFileSync(join(taskPath, "reports/boss-lyrics/alignment.json"), "retained evidence");
   mkdirSync(join(taskPath, "reports/runs/check-test"), { recursive: true });
   mkdirSync(join(taskPath, "reports/runs/reused-test"), { recursive: true });
   mkdirSync(join(taskPath, "reports/visual-review"));
@@ -600,6 +641,10 @@ it("preserves check evidence and captures before deleting outputs, retaining the
   expect(readFileSync(join(evidence, "reports/visual-review/screen.png"), "utf8")).toBe("selected capture");
   expect(readFileSync(join(evidence, "ignored"), "utf8")).toBe("local evidence");
   expect(existsSync(join(evidence, "node_modules"))).toBe(false);
+  expect(existsSync(join(evidence, "scripts/trailers/node_modules"))).toBe(false);
+  expect(existsSync(join(evidence, ".cache"))).toBe(false);
+  expect(existsSync(join(evidence, "reports/boss-lyrics/venv"))).toBe(false);
+  expect(readFileSync(join(evidence, "reports/boss-lyrics/alignment.json"), "utf8")).toBe("retained evidence");
   expect(result.stdout).toContain("Cleanup preview:");
   expect(JSON.parse(readFileSync(join(evidence, "integration.json"), "utf8")).commit).toBe(git(["rev-parse", "main"]));
   expect(readFileSync(join(root, "reports/browser-closed"), "utf8")).toBe("closed");

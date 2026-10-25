@@ -26,7 +26,7 @@ ordinary verification workflow and permissions. This reference lists other opera
 | Profile frames and hitches  | `npm run perf`                     | [Performance guide](./PERFORMANCE.md)                                                             |
 | Produce gameplay trailers   | `npm run trailer -- help`          | [Automated capture, cinematic edits and Steam exports](./TRAILERS.md)                             |
 | Find recent check evidence  | `npm run runs:show -- --last 10`   | Run IDs, outcomes and artifact locations                                                          |
-| Reset local diagnostics     | `npm run clean`                    | Cleanup details below                                                                             |
+| Clear rebuildable caches    | `npm run clean`                    | Cleanup details below                                                                             |
 | Publish a release           | `npm run release`                  | Gates, commit/tag, push and CI watch; follow [Release](./RELEASE.md)                              |
 
 For changed player-facing text, use `npm run i18n:prepare -- <task-file.json>`,
@@ -97,9 +97,14 @@ directory within an edition, so run them sequentially.
 - `ALCHEMY_SKIP_SOURCEMAP=1` — opt-out of hidden sourcemaps for `mode=desktop` builds when fast local iterate is preferred; rejected for releases with Sentry reporting. `npm run clean -- --builds` removes existing build outputs and their maps.
 - `ALCHEMY_CHECK_SKIP_BUILD=1` — skip web/desktop builds, their bundle budgets, and preview smoke in the opt-in `npm run check:full`; the default `check` already omits them. CI and ship gates still build.
 
-`npm run clean` removes local diagnostics and the Vite cache (explicit reset);
-add `-- --builds` to remove build outputs. `npm run clean:all` also stops
-Alchemy-owned test-server processes. `npm run prune:transient` expires diagnostic bundles after 24 hours of inactivity.
+`npm run clean` removes rebuildable caches and preserves evidence. Add
+`-- --reports` to explicitly select diagnostics/evidence, `-- --caches` for tool
+environments, or `-- --builds` for build outputs; preview with `--dry-run`.
+`npm run clean:all` selects all of these and Alchemy-owned test-server processes.
+`npm run prune:transient` expires only reproducible diff inventories after 24 hours.
+`npm run storage:report -- --json reports/storage/baseline.json` measures existing
+files without building or deleting them. [Cleanup details](../scripts/README.md#cleanup-clean--explicit-reset-prunetransient--expiry)
+own ownership guards and preservation rules.
 Its exact options are owned by `scripts/prune-transient-artifacts.mjs`; reset options
 belong to `scripts/clean-dev-artifacts.mjs`. Neither command manages shared
 Playwright caches.

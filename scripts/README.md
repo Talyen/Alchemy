@@ -146,37 +146,44 @@ response body before launching Electron.
 
 ## Cleanup (`clean` = explicit reset, `prune:transient` = expiry)
 
-`npm run clean` removes local reports and Vite cache; `--builds` adds rebuildable
-build outputs. `--processes` stops Alchemy-owned test listeners;
+`npm run clean` removes rebuildable Vite and trailer webpack caches. It preserves
+reports and test evidence by default. `--reports` explicitly selects those evidence
+roots; inspect them with `--dry-run` first. `--caches` also selects `.cache/` tool
+environments; stop their owners first. `--builds` selects rebuildable renderer and
+package outputs. `--processes` stops Alchemy-owned test listeners;
 `--include-dev-port` also selects the normal dev port, only with `--processes`.
-`--all` combines builds and processes. Use `--dry-run` to preview deletion.
-Cleanup preserves caches reached through a linked `node_modules` directory so
-an isolated worktree cannot remove the original checkout's shared cache.
-Listener ownership also excludes nested `.worktrees/` checkouts from the
-original checkout's process cleanup.
+`--all` combines all selectors, including evidence deletion. No command follows
+linked dependency ancestors into another checkout's shared caches.
 
-`npm run prune:transient` expires diagnostic bundles after 24 hours of inactivity;
-`--days=<number>` changes the cutoff. Runs under `reports/runs`, `compact`,
-`agent-diff`, `performance` and test failure collections expire
-independently; other report directories expire as complete bundles. Fresh
-children preserve older siblings. Age uses the newest contained file (or an
-empty directory's timestamp), so copying or moving the checkout does not renew
-old evidence. Stale current-run pointers are removed when
-their run disappears. Roots and nested symlinks are never traversed.
+`npm run prune:transient` automatically expires only reproducible Git diff
+inventories in `reports/agent-diff/` after 24 hours of inactivity. It preserves
+verification, failure, performance, visual, integration and experimental evidence,
+including current-run pointers. Tool environments belong under `.cache/`, not
+inside reports. Legacy `reports/boss-lyrics/venv` remains usable in place until its
+owner stops; worktree finishing excludes that known rebuildable environment.
 
-Report-producing CLIs register process-owned guards and prune on normal idle
-exit. Pruning skips the transient tree while another participating tool is
-active; explicit cleanup refuses deletion. Registration and deletion share a
-short OS-released loopback mutex keyed by the checkout's real path. Separate
-checkouts do not share a fixed port; a port collision fails without deleting
-artifacts. The mutex remains held until its operation settles. Abandoned guards are recovered only after confirming
-the owner is dead; unreadable ownership remains protected. No processes are
-terminated for artifact cleanup. Raw tools launched outside the wrappers need
-manual coordination. Dry runs change no files.
+Report-producing CLIs register process-owned guards. Pruning skips while another
+participating tool is active; explicit cleanup refuses deletion. Registration and
+deletion share an OS-released loopback mutex keyed by the checkout's real path.
+Separate checkouts do not share a fixed port; a collision fails without deleting
+artifacts. Abandoned guards are recovered only after confirming the owner is dead;
+unreadable ownership stays protected. Raw tools require manual ownership inspection.
+No cleanup command authorizes terminating foreign work.
 
-Both commands share `lib/clean-dev-artifacts.mjs` roots. Build outputs, production
-sources, release packages and scratch/output experiments are outside automatic
-expiry. Inspect unfinished experiments before deleting them explicitly.
+Build outputs, production sources, retained release packages, saves and scratch/output
+experiments are outside automatic expiry. Never remove unfinished experiments or
+unique evidence to meet a disk target. Worktree finishing preserves evidence while
+excluding nested `node_modules/` and `.cache/` environments; it does not archive
+another copy of rebuildable dependencies. Retained files use independent copy-on-write
+copies where the filesystem supports them, with ordinary-copy fallback.
+
+`npm run storage:report -- --json reports/storage/baseline.json` records logical
+file sizes for shared Git/dependencies, checkout assets, reports and existing build
+outputs. It never builds or deletes anything. Shared roots are resolved explicitly;
+nested links are excluded. Areas overlap and APFS clones/compression can change
+physical disk use, so do not sum the rows or call them measured free space.
+`check:bundle` enforces shipping media and complete renderer budgets as well as
+JavaScript. Packaging records each output's bytes under `reports/storage/`.
 
 ## Worktree / git safety
 
@@ -198,6 +205,13 @@ against the latest shared ancestor with main. Existing branches resume their
 current commit. Use a new slug for new work, or incorporate main when deliberately
 resuming old work. `--base` selects a different starting point for a new branch;
 `--detached` creates a verification-only checkout. `integration` is reserved.
+Add `--code-only` at creation to avoid checking out `assets/sources/`; all committed
+prepared assets and static imports remain available for ordinary development and
+builds. Sparse settings apply only to that worktree. Run `git sparse-checkout disable`
+in it before editing masters, preparing assets or running source freshness checks.
+Other checkouts and committed masters are preserved. For a new independent clone,
+`git clone --filter=blob:none <repository-url>` avoids downloading historical file
+contents until needed; it does not shrink an existing clone or rewrite history.
 Commands locate the original workspace from the shared Git directory, including
 when invoked from a task. The original workspace's management entry point forwards
 to the dedicated main checkout so retained workspace source can stay unchanged.
