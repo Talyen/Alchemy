@@ -105,16 +105,16 @@ describe("trailer edit admission and synchronization", () => {
       // 533 ms sample still represents frame 32, rather than repeating frame 31.
       now = 1617;
       await sampleVisualTime(now);
-      expect(waiting.currentTime).toBeCloseTo(31.001 / 60, 5);
+      expect(waiting.currentTime).toBeCloseTo(31.5 / 60, 5);
       now = 1633;
       await sampleVisualTime(now);
-      expect(waiting.currentTime).toBeCloseTo(32.001 / 60, 5);
+      expect(waiting.currentTime).toBeCloseTo(32.5 / 60, 5);
       (
         fakeWindow as typeof fakeWindow & { __trailerCapture: { videoFrameRates: Record<string, number> } }
       ).__trailerCapture.videoFrameRates = { "/waiting.mp4": 10 };
       now = 1750;
       await sampleVisualTime(now);
-      expect(waiting.currentTime).toBeCloseTo(0.6, 2);
+      expect(waiting.currentTime).toBeCloseTo(0.65, 2);
       state.__trailerCapture.videoFrameRates = { "/waiting.mp4": 60 };
       now = 18067;
       active.currentTime = 0;
@@ -123,7 +123,28 @@ describe("trailer edit admission and synchronization", () => {
       now = 18283;
       await sampleVisualTime(now);
       expect(active.currentTime).toBe(0);
-      expect(waiting.currentTime).toBeCloseTo(13.001 / 60, 5);
+      expect(waiting.currentTime).toBeCloseTo(13.5 / 60, 5);
+      let present: ((time: number, metadata: { mediaTime: number }) => void) | undefined;
+      Object.assign(waiting, {
+        requestVideoFrameCallback(callback: typeof present) {
+          present = callback;
+          return 1;
+        },
+        cancelVideoFrameCallback() {},
+      });
+      vi.stubGlobal("getComputedStyle", (video: Video) => ({ opacity: video === waiting ? "1" : "0", zIndex: "2" }));
+      now = 18300;
+      let sampled = false;
+      const pending = sampleVisualTime(now).then(() => {
+        sampled = true;
+      });
+      await Promise.resolve();
+      expect(sampled).toBe(false);
+      present!(0, { mediaTime: 13 / 60 });
+      expect(sampled).toBe(false);
+      present!(0, { mediaTime: 14 / 60 });
+      await pending;
+      expect(sampled).toBe(true);
     } finally {
       vi.unstubAllGlobals();
     }

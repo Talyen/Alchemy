@@ -18,6 +18,20 @@ import {
   writeJson,
 } from "./media.mjs";
 
+async function sampleFrame(page, time) {
+  let timeout;
+  try {
+    await Promise.race([
+      page.evaluate(sampleVisualTime, time),
+      new Promise((_, reject) => {
+        timeout = globalThis.setTimeout(() => reject(new Error("Video frame presentation timed out")), 15000);
+      }),
+    ]);
+  } finally {
+    globalThis.clearTimeout(timeout);
+  }
+}
+
 function finalizeClip(output, receipt) {
   const metadata = probe(output, { countFrames: false, countPackets: true });
   const video = metadata.streams.find((stream) => stream.codec_type === "video");
@@ -161,7 +175,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
       },
       { music, videoFrameRates },
     );
-    await page.evaluate(sampleVisualTime, 0);
+    await sampleFrame(page, 0);
     const width = settings.viewport.width * (draft ? 1 : settings.scale);
     const height = settings.viewport.height * (draft ? 1 : settings.scale);
     if (!recover) encoder = startEncoder(output, { width, height, fps: settings.fps });
@@ -250,7 +264,7 @@ async function captureClip({ browser, scenarios, clip, settings, origin, out, ro
         }
       }
       mark("input");
-      await page.evaluate(sampleVisualTime, time);
+      await sampleFrame(page, time);
       for (const input of performed.filter((input) => input.cardKey && input.acceptedAt === undefined)) {
         const stillInHand = await page.evaluate(
           (key) =>

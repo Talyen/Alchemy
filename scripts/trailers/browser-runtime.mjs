@@ -73,9 +73,10 @@ export function installCaptureRuntime() {
     prototype.play = function () {
       const entry = state.videoEntry(this, elapsed());
       Object.assign(entry, { at: elapsed(), base: this.currentTime, playing: true, ended: false });
-      return play.call(this).then(() => {
+      entry.ready = play.call(this).then(() => {
         if (state.start !== null) pause.call(this);
       });
+      return entry.ready;
     };
     prototype.pause = function () {
       const entry = state.videoEntry(this, elapsed());
@@ -106,8 +107,9 @@ export async function sampleVisualTime(timeMs) {
       entry.done = true;
     }
   }
+  const videos = [...document.querySelectorAll("video")];
   await Promise.all(
-    [...document.querySelectorAll("video")].map(async (video) => {
+    videos.map(async (video) => {
       if (video.error) throw new Error("Video playback failed during capture");
       if (!Number.isFinite(video.duration) || video.duration <= 0)
         await new Promise((resolve, reject) => {
@@ -124,6 +126,9 @@ export async function sampleVisualTime(timeMs) {
         });
       const entry = state.videoEntry(video, timeMs);
       if (!state.initialized) Object.assign(entry, { at: timeMs, base: video.currentTime });
+      // Let a newly started buffer emit playing before pausing its native clock.
+      // Otherwise a fast recording loop can cancel the handoff itself.
+      if (entry.playing) await entry.ready;
       state.pauseVideo(video);
       // Paused buffers can be rewound by the game without changing their URL.
       const elapsed = entry.playing
@@ -134,19 +139,57 @@ export async function sampleVisualTime(timeMs) {
       const fps = state.videoFrameRates?.[new URL(video.src, globalThis.location?.href ?? "http://localhost").pathname];
       // Both the sample and clip-start clocks round to integer milliseconds;
       // their difference can be almost 1 ms short of a native frame boundary.
-      // Absorb that error, then seek just inside the chosen frame.
-      if (fps) position = Math.min(video.duration - 0.00001, (Math.floor((position + 0.0010001) * fps) + 0.001) / fps);
+      // Absorb that error, then seek to the center of the chosen frame.
+      if (fps) position = Math.min(video.duration - 0.00001, (Math.floor((position + 0.0010001) * fps) + 0.5) / fps);
       if (Math.abs(video.currentTime - position) >= 0.0001)
         await new Promise((resolve, reject) => {
-          const done = () => {
+          let seeked = false;
+          let frameRequest = null;
+          let presented = true;
+          const cleanup = () => {
+            video.removeEventListener("seeked", decoded);
             video.removeEventListener("error", failed);
-            resolve();
+            if (frameRequest !== null) video.cancelVideoFrameCallback(frameRequest);
+          };
+          const done = () => {
+            if (seeked && presented) {
+              cleanup();
+              resolve();
+            }
+          };
+          const decoded = () => {
+            seeked = true;
+            done();
           };
           const failed = () => {
-            video.removeEventListener("seeked", done);
+            cleanup();
             reject(new Error("Video seek failed"));
           };
-          video.addEventListener("seeked", done, { once: true });
+          // Decoding can finish before the compositor replaces a video layer.
+          // Hidden preloads and buffers covered by an opaque incoming video do
+          // not submit visible frames, so only wait for contributing layers.
+          if (typeof video.requestVideoFrameCallback === "function") {
+            const style = globalThis.getComputedStyle(video);
+            const covered = videos.some((other) => {
+              if (other === video || other.parentElement !== video.parentElement) return false;
+              const above = globalThis.getComputedStyle(other);
+              return Number(above.opacity) === 1 && Number(above.zIndex) > Number(style.zIndex);
+            });
+            if (Number(style.opacity) > 0 && !covered) {
+              presented = false;
+              const frameReady = (_now, metadata) => {
+                if (fps && Math.abs(metadata.mediaTime - Math.floor(position * fps) / fps) > 0.5 / fps) {
+                  frameRequest = video.requestVideoFrameCallback(frameReady);
+                  return;
+                }
+                frameRequest = null;
+                presented = true;
+                done();
+              };
+              frameRequest = video.requestVideoFrameCallback(frameReady);
+            }
+          }
+          video.addEventListener("seeked", decoded, { once: true });
           video.addEventListener("error", failed, { once: true });
           video.currentTime = position;
         });
