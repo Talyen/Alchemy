@@ -15,6 +15,8 @@ parser.add_argument("--project", type=Path, required=True)
 parser.add_argument("--timeline", required=True)
 parser.add_argument("--revision", default="v1")
 parser.add_argument("--poster-time", type=float)
+parser.add_argument("--height", type=int, choices=[720,1080], default=720)
+parser.add_argument("--fps", type=int, choices=[30,60], default=30)
 args = parser.parse_args()
 project = args.project.resolve()
 spec = importlib.util.spec_from_file_location("edit", project / "scripts/edit.py")
@@ -29,14 +31,15 @@ assert edit.digest(film) == receipt["sha256"]
 metadata = edit.probe(film)
 duration = float(metadata["format"]["duration"])
 audio = next(s for s in metadata["streams"] if s["codec_type"] == "audio")
-rate = min(2600000, int(((18_000_000 * 8 / duration) - int(audio["bit_rate"])) * .93 // 1000) * 1000)
-proxy = folder / f"alchemy-{args.timeline}-{args.revision}-chat-720p30.mp4"
+rate = min(10000000 if args.height==1080 else 2600000, int(((18_000_000 * 8 / duration) - int(audio["bit_rate"])) * .93 // 1000) * 1000)
+width = args.height*16//9
+proxy = folder / f"alchemy-{args.timeline}-{args.revision}-chat-{args.height}p{args.fps}.mp4"
 if not proxy.exists():
-    edit.ff(["-i", film, "-vf", "scale=1280:720:flags=lanczos,fps=30", "-c:v", "libx264", "-profile:v", "high", "-preset", "fast", "-b:v", rate, "-maxrate", round(rate*1.4), "-bufsize", round(rate*2.8), "-pix_fmt", "yuv420p", "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-bsf:v", "h264_metadata=colour_primaries=1:transfer_characteristics=1:matrix_coefficients=1", "-threads", 2, "-c:a", "copy", "-t", duration, "-movflags", "+faststart", proxy])
+    edit.ff(["-i", film, "-vf", f"scale={width}:{args.height}:flags=lanczos,fps={args.fps}", "-c:v", "libx264", "-profile:v", "high", "-preset", "fast", "-b:v", rate, "-maxrate", round(rate*1.4), "-bufsize", round(rate*2.8), "-pix_fmt", "yuv420p", "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-bsf:v", "h264_metadata=colour_primaries=1:transfer_characteristics=1:matrix_coefficients=1", "-threads", 2, "-c:a", "copy", "-t", duration, "-movflags", "+faststart", proxy])
 assert proxy.stat().st_size < 20_000_000, "Preserve oversized proxy; create a lower-rate revision"
 pm = edit.probe(proxy, True)
 pv = next(s for s in pm["streams"] if s["codec_type"] == "video")
-assert (pv["width"], pv["height"], pv["r_frame_rate"], pv["codec_name"]) == (1280,720,"30/1","h264")
+assert (pv["width"], pv["height"], pv["r_frame_rate"], pv["codec_name"]) == (width,args.height,f"{args.fps}/1","h264")
 assert abs(float(pm["format"]["duration"]) - duration) <= .034
 
 def aac_hash(path):
@@ -72,6 +75,6 @@ poster = posters / f"{film.stem}.png"
 poster_time = args.poster_time if args.poster_time is not None else min(6.45, receipt["resolvedShots"][0]["to"]-.7)
 if not poster.exists():
     edit.ff(["-ss",poster_time,"-i",film,"-frames:v",1,poster])
-record = {"master":str(film.relative_to(project)),"masterSha256":receipt["sha256"],"chatPreview":str(proxy.relative_to(project)),"previewSha256":edit.digest(proxy),"previewBytes":proxy.stat().st_size,"previewPurpose":"Chat delivery only; 720p30, master remains native 1080p60","masterDuration":duration,"previewDuration":float(pm["format"]["duration"]),"audioPacketsIdentical":True,"aacAdtsSha256":master_audio_hash,"contactSheet":str(sheet_path.relative_to(project)),"poster":str(poster.relative_to(project)),"posterTime":poster_time,"frameReviewTimes":times,"listeningApproval":False}
+record = {"master":str(film.relative_to(project)),"masterSha256":receipt["sha256"],"chatPreview":str(proxy.relative_to(project)),"previewSha256":edit.digest(proxy),"previewBytes":proxy.stat().st_size,"previewPurpose":f"Chat delivery only; {args.height}p{args.fps}, master remains native1080p60","masterDuration":duration,"previewDuration":float(pm["format"]["duration"]),"audioPacketsIdentical":True,"aacAdtsSha256":master_audio_hash,"contactSheet":str(sheet_path.relative_to(project)),"poster":str(poster.relative_to(project)),"posterTime":poster_time,"frameReviewTimes":times,"listeningApproval":False}
 edit.write(folder / "chat-review-assets.json",record)
 print(json.dumps(record,indent=2))

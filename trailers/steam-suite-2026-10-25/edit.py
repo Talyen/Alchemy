@@ -130,8 +130,10 @@ def audio(timeline, catalog, revision):
         if shot.get("source"):
             clip = catalog[shot["source"]]
             for cue in clip["receipt"]["sounds"]:
+                if timeline.get("sfxMode")=="tails" and not (shot.get("in",0)<=cue["at"]<shot.get("in",0)+shot["duration"]):
+                    continue
                 start = max(cue["at"], shot.get("in", 0))
-                end = min(cue["end"], shot.get("in", 0) + shot["duration"])
+                end = min(cue["end"], clip["duration"] if timeline.get("sfxMode")=="tails" else shot.get("in", 0) + shot["duration"])
                 if end - start < .005 or cue["volume"] <= 0:
                     continue
                 events.append({"file": str(Path(clip["bundle"]) / cue["file"]), "offset": cue.get("offset", 0) + start - cue["at"], "duration": end-start, "at": cursor + start-shot.get("in", 0), "volume": cue["volume"] * timeline.get("sfx", .55)})

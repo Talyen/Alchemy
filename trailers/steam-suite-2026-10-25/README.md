@@ -98,4 +98,31 @@ specifies delivery up to 1920×1080, supports 60 fps and prefers H.264/AAC. The
 editorial brief follows its gameplay-first and silent-comprehension guidance:
 retain HUD context, avoid opening logo holds, keep complete decisions and
 consequences, use sparse titles and close with a clear invitation. Files are
-local review deliverables; nothing is published or uploaded.
+local review masters; approved review copies are saved privately in ChatGPT
+Library. Nothing is published.
+
+## Current music-video direction
+
+All earlier full films are historical drafts. The active review candidate is
+`06-countess-music-video-opening-v1.mp4`, a 10.683-second opening excerpt from
+song time zero, with locked crops, no corner captions, current game fixes and
+the legal catalog build documented in `sources/director-state-v1/`.
+It shows a real Block / Spiked Shield / Shield Bash interaction and short actual
+purchase, construction and equipment reveals. The first vocal starts at 20.68s,
+so this instrumental opening does not establish lyric-closeup quality.
+
+`music_map.py` saves measured accents, a tempo guide and authoritative native
+word/phrase anchors. `catalog-audit.mjs` audits unique playable full-game IDs and
+copies selected unchanged catalog art; `stats_panels.py` makes large numeric
+recap options. Their counts are full-game claims, not demo claims.
+
+New edits enforce current battle visuals, the Countess's own native song clock,
+no other boss under that track, no corner titles and locked camera positions.
+Static reframes use fixed even-pixel crops, rather than an animated zoom.
+`sfxMode: tails` retains native sound tails across visual cuts. Capture receipts
+retain actual end-save checkpoints for a separately validated continuation.
+
+The first longer opening attempt rejected an Anvil input after End Turn; its
+diagnostic footage is preserved. The shorter fresh canary passes every directed
+input. Second-turn presentation timing still needs focused validation before a
+long performance is recorded. Do not reuse the failed master as accepted media.
