@@ -1,0 +1,419 @@
+{
+  "version": 1,
+  "id": "current-feature-selects",
+  "capture": {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "scale": 1,
+    "fps": 60
+  },
+  "music": {
+    "boss": "blood-countess",
+    "offset": 0,
+    "lyrics": false,
+    "volume": 0.8,
+    "fadeIn": 0.05,
+    "fadeOut": 1.5
+  },
+  "clips": [
+    {
+      "id": "heroes-roster",
+      "scene": "heroes",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "role": "button",
+            "name": "Select Knight"
+          }
+        }
+      ],
+      "lyrics": false
+    },
+    {
+      "id": "cards-library",
+      "scene": "collection",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "prepare": [
+        {
+          "role": "button",
+          "name": "Cards"
+        }
+      ],
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "selector": "[aria-label^=\"Inspect \"]"
+          }
+        }
+      ],
+      "lyrics": false
+    },
+    {
+      "id": "card-shop",
+      "scene": "shop",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "selector": "[aria-label^=\"Buy \"]:not([disabled])"
+          }
+        },
+        {
+          "at": 2.6,
+          "kind": "click",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Buy \"]:not([disabled])"
+          }
+        }
+      ],
+      "lyrics": false
+    },
+    {
+      "id": "labyrinth-route",
+      "scene": "labyrinth",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "role": "button",
+            "name": "Combat chamber, reachable, enterable"
+          }
+        }
+      ],
+      "lyrics": false
+    },
+    {
+      "id": "armory-loadout",
+      "scene": "armory",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "target": {
+            "role": "button",
+            "name": "Longsword"
+          },
+          "moveDuration": 0.45
+        },
+        {
+          "at": 2.6,
+          "kind": "click",
+          "target": {
+            "role": "button",
+            "name": "Longsword"
+          }
+        },
+        {
+          "at": 3.0,
+          "kind": "move-away"
+        }
+      ],
+      "lyrics": false
+    },
+    {
+      "id": "talents-block",
+      "scene": "talents",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "prepare": [
+        {
+          "role": "button",
+          "name": "Select Block Talents"
+        }
+      ],
+      "actions": [],
+      "lyrics": false
+    },
+    {
+      "id": "homestead-build",
+      "scene": "homestead",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "selector": "[aria-label^=\"Build Blacksmith\"]"
+          }
+        },
+        {
+          "at": 2.6,
+          "kind": "click",
+          "moveDuration": 0.3,
+          "target": {
+            "selector": "[aria-label^=\"Build Blacksmith\"]"
+          }
+        }
+      ],
+      "lyrics": false
+    },
+    {
+      "id": "homestead-companions",
+      "scene": "homestead",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "prepare": [
+        {
+          "role": "button",
+          "name": "Companions"
+        }
+      ],
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "target": {
+            "selector": "[aria-label^=\"Bond \"]:not([disabled])"
+          },
+          "moveDuration": 0.45
+        },
+        {
+          "at": 2.6,
+          "kind": "click",
+          "target": {
+            "selector": "[aria-label^=\"Bond \"]:not([disabled])"
+          }
+        }
+      ],
+      "lyrics": false
+    },
+    {
+      "id": "treant-druid",
+      "scene": "boss",
+      "duration": 5.5,
+      "hero": "druid",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "selector": "[aria-label^=\"Play \"]:not([disabled]):not(.hand-card-unplayable)"
+          }
+        },
+        {
+          "at": 2.6,
+          "kind": "play-card",
+          "moveDuration": 0
+        }
+      ],
+      "boss": "blight-treant",
+      "lyrics": false
+    },
+    {
+      "id": "seraph-wizard",
+      "scene": "boss",
+      "duration": 5.5,
+      "hero": "wizard",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "selector": "[aria-label^=\"Play \"]:not([disabled]):not(.hand-card-unplayable)"
+          }
+        },
+        {
+          "at": 2.6,
+          "kind": "play-card",
+          "moveDuration": 0
+        }
+      ],
+      "boss": "seraph",
+      "lyrics": false
+    },
+    {
+      "id": "titan-knight",
+      "scene": "boss",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "moveDuration": 0.45,
+          "target": {
+            "selector": "[aria-label^=\"Play \"]:not([disabled]):not(.hand-card-unplayable)"
+          }
+        },
+        {
+          "at": 2.6,
+          "kind": "play-card",
+          "moveDuration": 0
+        }
+      ],
+      "boss": "stone-titan",
+      "lyrics": false
+    },
+    {
+      "id": "countess-neutral",
+      "scene": "boss",
+      "boss": "blood-countess",
+      "hero": "knight",
+      "seed": 42,
+      "duration": 5.5,
+      "lyrics": false,
+      "actions": [
+        {
+          "at": 0.8,
+          "kind": "hover",
+          "target": {
+            "role": "button",
+            "name": "Play Sunder"
+          },
+          "moveDuration": 0.45
+        },
+        {
+          "at": 2.6,
+          "kind": "play-card",
+          "moveDuration": 0
+        }
+      ]
+    },
+    {
+      "id": "campfire-rest",
+      "scene": "campfire",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [],
+      "lyrics": false
+    },
+    {
+      "id": "potion-brewing",
+      "scene": "alchemist",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "prepare": [
+        {
+          "role": "button",
+          "name": "Potion Brewing"
+        }
+      ],
+      "actions": [
+        {
+          "at": 0.5,
+          "kind": "hover",
+          "moveDuration": 0.3,
+          "target": {
+            "role": "button",
+            "name": "Brew"
+          }
+        }
+      ],
+      "lyrics": false
+    },
+    {
+      "id": "corruption-risk",
+      "scene": "corruption",
+      "duration": 5.5,
+      "hero": "knight",
+      "seed": 42,
+      "actions": [],
+      "lyrics": false
+    }
+  ],
+  "shots": [
+    {
+      "clip": "heroes-roster",
+      "duration": 5.5
+    },
+    {
+      "clip": "cards-library",
+      "duration": 5.5
+    },
+    {
+      "clip": "card-shop",
+      "duration": 5.5
+    },
+    {
+      "clip": "labyrinth-route",
+      "duration": 5.5
+    },
+    {
+      "clip": "armory-loadout",
+      "duration": 5.5
+    },
+    {
+      "clip": "talents-block",
+      "duration": 5.5
+    },
+    {
+      "clip": "homestead-build",
+      "duration": 5.5
+    },
+    {
+      "clip": "homestead-companions",
+      "duration": 5.5
+    },
+    {
+      "clip": "treant-druid",
+      "duration": 5.5
+    },
+    {
+      "clip": "seraph-wizard",
+      "duration": 5.5
+    },
+    {
+      "clip": "titan-knight",
+      "duration": 5.5
+    },
+    {
+      "clip": "countess-neutral",
+      "duration": 5.5
+    },
+    {
+      "clip": "campfire-rest",
+      "duration": 5.5
+    },
+    {
+      "clip": "potion-brewing",
+      "duration": 5.5
+    },
+    {
+      "clip": "corruption-risk",
+      "duration": 5.5
+    }
+  ],
+  "endCard": {
+    "duration": 0,
+    "text": "Alchemy"
+  }
+}

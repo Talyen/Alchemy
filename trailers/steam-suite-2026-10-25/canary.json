@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "id": "countess-chorus-canary",
+  "capture": {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "scale": 1,
+    "fps": 60
+  },
+  "music": {
+    "boss": "blood-countess",
+    "offset": 20.68,
+    "lyrics": true,
+    "fadeIn": 0,
+    "fadeOut": 0.5
+  },
+  "clips": [
+    {
+      "id": "countess-canary",
+      "scene": "boss",
+      "boss": "blood-countess",
+      "hero": "knight",
+      "seed": 42,
+      "duration": 4,
+      "actions": [
+        {
+          "at": 0.7,
+          "kind": "hover",
+          "target": {
+            "role": "button",
+            "name": "Play Sunder"
+          },
+          "moveDuration": 0.4
+        },
+        {
+          "at": 2.3,
+          "kind": "play-card",
+          "moveDuration": 0
+        }
+      ]
+    }
+  ],
+  "shots": [
+    {
+      "clip": "countess-canary",
+      "duration": 4
+    }
+  ],
+  "endCard": {
+    "duration": 0,
+    "text": "Alchemy"
+  }
+}
