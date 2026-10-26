@@ -282,12 +282,15 @@ describe("rule-preserving tooltip inspection", () => {
     const dealAndReceive = effectsCard({
       id: "reckless",
       art: "",
-      effects: [hit(3), { kind: "self-damage", damageType: "physical", amount: 3 }],
+      effects: [
+        { kind: "damage", damageType: "burn", amount: 3 },
+        { kind: "self-damage", damageType: "burn", amount: 3 },
+      ],
     });
     expect(
       getBattleCardDescriptionInspection(dealAndReceive, patchBattleState({ playerStatuses: { forge: 2 } }))
         .descriptionLines,
-    ).toEqual(["Deal and Receive 3 Physical damage"]);
+    ).toEqual(["Deal and Receive 3 Burn damage"]);
   });
 });
 

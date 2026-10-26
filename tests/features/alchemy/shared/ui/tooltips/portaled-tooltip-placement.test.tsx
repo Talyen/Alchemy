@@ -223,7 +223,7 @@ describe("usePortaledTooltipPlacement", () => {
     act(() => {
       remeasure();
       remeasure();
-      resize([{ target: tooltip } as ResizeObserverEntry], {} as ResizeObserver);
+      resize([{ target: tooltip } as unknown as ResizeObserverEntry], {} as ResizeObserver);
     });
     expect(frames).toHaveLength(1);
     expect(cancel).not.toHaveBeenCalled();

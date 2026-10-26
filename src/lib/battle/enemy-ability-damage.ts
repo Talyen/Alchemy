@@ -57,7 +57,7 @@ export function createEnemyAbilityContext(state: BattleState, damaging: boolean)
   };
 }
 
-export function recordEnemyAbilityHit(context: EnemyAbilityContext, hit: { landed: boolean }): void {
+function recordEnemyAbilityHit(context: EnemyAbilityContext, hit: { landed: boolean }): void {
   context.landed ||= hit.landed;
 }
 

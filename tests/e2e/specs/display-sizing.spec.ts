@@ -12,7 +12,8 @@ import {
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
 import { CONTENT_REFERENCE_VIEWPORT } from "../../../src/lib/game-constants/ui-layout";
-import { cardLibrary } from "../../../src/lib/game-data/cards";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 // Representative CSS viewports cover narrow, standard, ultrawide, and 4K layouts.
 const VIEWPORTS = [
@@ -213,7 +214,16 @@ test.describe("Responsive display sizes", slow, () => {
 
   test("collection keeps page capacity and position across proportional resizes and tab changes", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await new MenuPage(page).gotoCollection({ discoveredCardIds: cardLibrary.map((card) => card.id) });
+    // Read the generated catalog keys without importing image assets into Playwright’s Node process.
+    const english = JSON.parse(readFileSync(resolve("src/lib/localization/locales/en.json"), "utf8")) as Record<
+      string,
+      unknown
+    >;
+    const discoveredCardIds = Object.keys(english).flatMap((key) => {
+      const match = /^catalog\.cardLibrary\.([^.]+)\.title$/u.exec(key);
+      return match?.[1] ? [match[1]] : [];
+    });
+    await new MenuPage(page).gotoCollection({ discoveredCardIds });
     await page.getByRole("button", { name: "Cards", exact: true }).click();
     const cards = page.getByRole("button", { name: /Inspect/ });
     await expect(page.getByRole("button", { name: "Inspect Knight", exact: true })).toHaveCount(0);

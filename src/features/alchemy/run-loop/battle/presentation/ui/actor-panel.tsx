@@ -352,7 +352,7 @@ function ActorArtFrame({
           {deathsDoorActive ? <ArtDeathDoorBorder /> : null}
           {idleClips?.length ? (
             <BossIdleArt
-              key={idleClips[0].variants[0].src}
+              key={idleClips[0].variants[0]?.src ?? art}
               clips={idleClips}
               art={art}
               title={title}
