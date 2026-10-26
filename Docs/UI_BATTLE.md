@@ -131,13 +131,15 @@ and follow actual incoming events, never accumulated display totals.
 
 Primary intent resolves before display deduplication, so a card's main Block or
 other authored result remains central even when its status is also below Health.
-Positive secondary status gains and armed preparations omit their redundant corner
-flight only while the same recipient's semantic status chip is actually rendered
-and fully visible within the viewport and overflow clips. Missing, hidden or clipped
+Positive secondary status gains, armed preparations and applied Stunned/Frozen
+notices omit their redundant corner flight only while the same recipient's semantic
+status chip is actually rendered and fully visible within the viewport and overflow
+clips. Missing, hidden or clipped
 chips keep the ordinary corner feedback. Damage, healing, reaction payoffs, zero or
-failed outcomes, removals, consumption, expiry, Cleanse, Purge and actual Stunned/Frozen
-application notices retain their feedback. Receipts and expiry remain unchanged;
-the renderer checks live row visibility without changing combat math or status values.
+failed outcomes, removals, consumption, expiry, Cleanse, Purge and primary control
+outcomes retain their feedback. Applied control matches its active chip, not damage
+buildup. Receipts and expiry remain unchanged; the renderer checks live row visibility
+without changing combat math or status values.
 Status chips stay opaque through their existing entrance pop, so an entering or
 updated chip never briefly reintroduces its redundant corner feedback.
 

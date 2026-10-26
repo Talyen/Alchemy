@@ -81,7 +81,7 @@ describe("CombatTextRail", () => {
     expect(events).toEqual(original);
   });
 
-  it("marks only secondary state gains for live status-row deduplication", () => {
+  it("marks only secondary state gains and control applications for live status-row deduplication", () => {
     const prepared = prepareCombatFeedback(
       [
         { target: "player", kind: "status", stat: "block", amount: 6, feedback: "primary" },
@@ -102,7 +102,7 @@ describe("CombatTextRail", () => {
     const marked = [...container.querySelectorAll("[data-secondary-status-feedback]")].map((node) =>
       node.getAttribute("data-secondary-status-feedback"),
     );
-    expect(marked).toEqual(["player:nextHitCrit", "player:thorns"]);
+    expect(marked).toEqual(["player:nextHitCrit", "player:thorns", "enemy:stunned"]);
     expect(
       container
         .querySelector('[data-stat="block"][data-kind="status"]')
