@@ -226,6 +226,6 @@ Defeat settles synchronously in transition `prepare`; only navigation waits.
 Retain the terminal frame through delay/fade under [data flow](#data-flow).
 Keep [battle timing](../src/lib/game-constants/battle-timing.ts) aligned with
 `combatant-attack-lunge` in [keyframes](../src/styles/keyframes.css) and the shake
-delay in [theme styles](../src/styles/theme.css). [Battle motion](./UI_MOTION.md#battle-motion)
+delay in [theme styles](../src/styles/theme.css). [Battle motion](./UI_BATTLE.md#battle-motion)
 owns death, survival and lunge composition. Mid-enemy-turn reload skips playback
 under [committed battle recovery](./RUN_STATE.md#committed-battle-playback).

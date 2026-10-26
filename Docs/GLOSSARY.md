@@ -14,12 +14,12 @@ Definitions of common terms used in the Alchemy codebase.
 ### Shared battle and progression terms
 
 - **Armor** — Each stack normally reduces Physical and Stun damage taken by 1; taking damage removes 1 Armor. See [mitigation exceptions](./GAME_RULES.md#mitigation-and-crowd-control).
-- **Forge** — Each stack adds 1 Physical and Stun damage. Player and enemy Forge survive attacks; Purge removes Forge. Other conversions and gain rewards follow [Armor, Forge, and Gold](./TALENT_RULES.md#armor-forge-and-gold).
+- **Forge** — Each stack adds 1 Physical and Stun damage. Player and enemy Forge survive attacks; Purge removes Forge. Other conversions and gain rewards follow [Armor, Forge, and Gold](./GAME_RULES.md#armor-forge-and-gold).
 - **Poison** — DoT status; deals its buildup as damage each tick, then normally loses 20% of its stacks, with a minimum decay of 1.
 - **Stun** — Damage type whose buildup can make the target skip turns once its Health-based threshold is met. See [crowd-control immunity](./GAME_RULES.md#mitigation-and-crowd-control).
 - **Freeze** — Damage type whose buildup can make the target skip turns once its Health-based threshold is met. Threshold modifiers and [crowd-control immunity](./GAME_RULES.md#mitigation-and-crowd-control) apply.
 - **Consume** — Removes the played card for the remainder of the battle; the run Deck retains it.
-- **Leech** — Restores half the damage dealt as Health before applicable modifiers. Source-specific limits and reactions follow [Healing and Leech](./TALENT_RULES.md#healing-and-leech).
+- **Leech** — Restores half the damage dealt as Health before applicable modifiers. Source-specific limits and reactions follow [Healing and Leech](./GAME_RULES.md#healing-and-leech).
 - **Bleed** — DoT status; deals damage once on hit, then deals the same amount next turn.
 - **Block** — Damage absorption on player/enemy; halves at the start of the owner's next turn after one opposing attack window.
 - **Burn** — DoT status; deals its stack as damage, then normally decays by half.
@@ -33,7 +33,7 @@ Definitions of common terms used in the Alchemy codebase.
 - **Companion Bond** — Per-companion Homestead upgrade; improves its turn-start effects above the unbonded baseline. Progression follows [Companion Bond](./GAME_RULES.md#companion-bond).
 - **Corruption** — Altar event that mutates or transforms a card once. Leaving before corruption returns to the same destination picker in Campaign or the map in Labyrinth, keeping the destination available. See [Corruption altars](./GAME_RULES.md#corruption-altars).
 - **Damage type** — `physical`, `stun`, `holy`, `burn`, `poison`, `bleed`, `freeze`, `nature` — enemies may resist or be vulnerable per type.
-- **Potion** — A card in the Potion pool that Consumes for the battle and remains in the run Deck. Standard and Mixed Potions can be combined or strengthened through [brewing](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions).
+- **Potion** — A card in the Potion pool that Consumes for the battle and remains in the run Deck. Standard and Mixed Potions can be combined or strengthened through [brewing](./GAME_RULES.md#brewing-and-transmutation).
 - **Regen / Regeneration** — Enemy trait: heal each turn at end of enemy phase.
 - **Reward route** — Internal post-rewards destination (`REWARD_ROUTES`), not a `Screen` — see **Screen** above. Combat and content-system reward kinds are selected by the current reward rules in `src/lib/game-constants/run-rewards.ts`.
 - **Run materials earned** — Materials collected during the current run and included in the run-end summary. See [Run workflows § Grant materials](./RUN_WORKFLOWS.md#grant-materials-during-a-run).

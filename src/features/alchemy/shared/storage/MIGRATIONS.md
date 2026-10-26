@@ -1,10 +1,9 @@
 # Save compatibility and storage
 
-Canonical owner for save compatibility, load recovery, write acknowledgement,
-and deletion. Start with the [public save contract](#public-save-contract) for
-storage behavior or the [required pattern](#required-pattern-automated) for a
-schema change. [Run and save workflows](../../../../../Docs/RUN_WORKFLOWS.md)
-cover implementation steps; gameplay tuning belongs to the linked rule owners.
+This document owns format acceptance, current-data recovery, file/Cloud transport
+and deletion. [Run state](../../../../../Docs/RUN_STATE.md#persistence-api) owns
+session snapshots, codecs and completion; [run workflows](../../../../../Docs/RUN_WORKFLOWS.md)
+own editing sequences.
 
 ## Public save contract
 
@@ -18,7 +17,9 @@ Read the applicable contract before changing its behavior:
 - [Deletion modes](#deletion).
 - [Local/Cloud policy](#policy-local-is-authoritative) and [content repair rules](#implementation-rules).
 
-## Supported baseline
+## Compatibility
+
+### Supported baseline
 
 There are currently no historical player saves that must be preserved. Remove code
 that exists only to retain obsolete saved mechanics rather than maintaining parallel
@@ -35,22 +36,29 @@ retiring them, keeping current-format resume and future-save protection intact.
 
 Game build identity is distinct from schema and content versions. Ordinary compatible builds do not reset saves. Freeze the supported floor at the first distribution whose progress is promised to persist, including a playtest or Early Access release. Preserve subsequent supported formats. Version sources are split: the build version is generated from `package.json` by `scripts/sync-version-metadata.mjs`, while schema and content versions are hardcoded in `src/lib/validation/metadata.ts`.
 
-## When to increment
+### When to increment
 
 Increment the schema version for structural or meaning changes that require a supported payload transformation. Do not bump for safe additive defaults. Content versions are reserved for content ID/meaning remaps, not ordinary balance tuning. `save-versions.ts` owns one compatibility classification (supported, retired, newer schema, or newer content) plus timestamp ordering. Schema protection takes precedence over content protection; both precede retired-format rejection. There is no migration pipeline while the supported floor equals the current schema. Add transformations only when supported formats diverge.
 
-## Required pattern (automated)
+### Schema change contract
 
-1. Decide whether a compatible default or supported transformation is required.
-2. Change version metadata only as required; never advance the supported floor casually.
-3. For a supported transformation, (re)introduce an ordered migration table covering every increment and apply it before current-shape validation. Update schema and hydration defaults together.
-4. Change the save shape, its owning codec, defaults, and fixtures together. For run-profile fields, also update `RUN_PROFILE_SAVE_KEYS`: this explicit tuple has a compile-time completeness check, so adding a `PermanentProgressFields` member fails the build until that key list is updated. Other domains keep their own codec field selections.
-5. Add previous-version fixtures to `tests/fixtures/current-saves.ts` when supported versions diverge. Preserve playable state and progression, not just field presence. The save contract tests pin the development baseline and current defaults; add coverage for every supported increment when migrations become necessary. Gear/currency coverage lives in the `gear-save` / `save-data-schema` suites.
-6. Run relevant save/persistence units with `npm run test:unit -- <test-paths>` and
-   the [task gate](../../../../../CONTRIBUTING.md#what-to-run-when-you-change), which
-   selects save protection for persisted-state owners. Use `--plan` to inspect scope.
+Choose a safe additive default or a transformation under [When to increment](#when-to-increment).
+Never advance the supported floor casually. When supported formats diverge,
+ordered transformations must cover every increment and run before current-shape
+validation; retain previous-version fixtures in `tests/fixtures/current-saves.ts`.
 
-## Test expectations
+Schema, owning codec, domain defaults and fixtures change together. Run-profile
+fields also update `RUN_PROFILE_SAVE_KEYS`; its compile-time completeness check
+covers every `PermanentProgressFields` member. Other domains retain their own
+codec selections. [Shared run-progress shape](#shared-run-progress-shape) owns the
+active-run projection. Every supported increment needs assertions preserving
+playable progression, not just fields;
+Gear/currency assertions live in the `gear-save` / `save-data-schema` suites.
+
+Follow [the editing workflow](../../../../../Docs/RUN_WORKFLOWS.md#change-persisted-save-data)
+for implementation and verification.
+
+### Test expectations
 
 Current saves must round-trip valid profile progress, inventories/loadouts, current-run geography, deck modifications, each activity branch, choices, and committed battle results/RNG. Test malformed current fields, an invalid run alongside a valid profile, stale autosaves after run end, and future-candidate precedence. Historical below-baseline tests are retired; `save-migration-guard.test.ts` covers baseline rejection and current recovery.
 
@@ -58,18 +66,119 @@ Current-data cases follow [recovery rules](#current-data-recovery). Use them to
 select consequential assertions; existing fixtures and shared validators remain
 the starting point rather than adding one test per field.
 
-## Discarded presentation fields
+### Shared run-progress shape
+
+`lib/active-run-session/run-progress.ts` owns `PersistedRunProgress` and its exhaustive `ACTIVE_RUN_PROGRESS_KEYS` projection. `ActiveRunData` extends those shared fields; `ActiveRunProgressFields` narrows destination names for live state. Saved callers remain permissive about historical destination names until normalization. The save schema in `lib/validation/save-schemas/run-progress.ts` checks every field against that contract and owns recovery defaults. Fresh-run constructors still own starting decks, seeded RNG, fresh collection instances and zero earned totals. Missing `runHistoryPartial`/`runGoldEarned` still recover as `true`/`null`; never replace those with fresh-run defaults. New fields require the domain contract, exhaustive projection, schema and meaningful fresh/resume initialization.
+
+`lib/validation` owns `parseActiveRun`, `toActiveRunData` and conversion of parsed Mystery choices into domain effects. Session contracts, activity helpers and live constructors never import validation. `PersistedPendingReward` belongs beside the domain reward types; its save schema checks that output contract.
+
+## Recovery
+
+### Defaults and resume normalization
+
+`createDefaultSaveData()` in `storage/defaults.ts` clones a frozen schema-derived
+singleton for each caller. The save contract test protects cross-load isolation.
+Update the affected defaults and fixtures together:
+
+| Domain             | Default owner                                                                                                     |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Settings           | `SettingsSaveFieldsSchema` and `createDefaultSettingsSaveFields` in `src/lib/validation/save-schemas/settings.ts` |
+| Profile            | `createDefaultProfileSaveFields` in `shared/stores/session/profile-store-types.ts`                                |
+| Gear               | `createInitialGearState` in `shared/stores/session/gear-state-defaults.ts`                                        |
+| Permanent progress | `createInitialPermanentFields` in `shared/stores/session/run-state-init.ts`                                       |
+| Fixtures           | `tests/fixtures/saves.ts` (campaign-full) and `tests/helpers/save-candidate-fixtures.ts` (candidate-minimal)      |
+
+Repair runs in two stages:
+
+1. **Schema load repair:** `SaveDataSchema` in `save-data.ts` applies live-combat
+   Gold override, autoplay derivation and orphan-loadout pruning. Valid finite,
+   nonnegative combat Gold overrides purse Gold without a repair warning.
+2. **Codec hydration:** `hydrateGameplayPersistenceFields` in
+   `persistence/persistence-hydration.ts` prunes unknown Companions, recomputes
+   Homestead effects and unions Unique ownership. Complete-save restore composes
+   this operation in its existing transaction; `hydrateAlchemyPersistenceFields`
+   is the separate fields-only wrapper.
+
+Validation supplies safe current-field defaults; normalization repairs choices
+and catalog references; hydration restores runtime cards and manifests. Preserve
+valid modifications, Health, defenses, flags, choices and RNG. Never replay
+starting grants or actions. Retired crystal/recovery and historical Talent
+conversions are not aliases for current fields.
+
+#### Current-data recovery
+
+Battle difficulty modifiers are validated individually during load. Keep valid
+entries and drop malformed ones so the next enemy turn can resolve safely.
+Profile and run XP retain only current keyword IDs; unknown entries cannot
+contribute Talent points or starting Health.
+Unsafe numeric XP entries are dropped independently so valid sibling progress
+survives. Save timestamps use the same safe-integer policy for raw candidate
+ordering and parsed freshness. Crafting currencies must remain safely spendable.
+Damaged card UIDs, titles, and artwork do not remove otherwise usable cards;
+identity repair and catalog hydration restore them. Scheduled battle pulses
+retain the card effect schema's one-to-ten-turn duration limit.
+Saved enemies regain their current native Traits from the catalog and retain
+only current combat encounter Traits. Reward benefits stay in their separate
+field; unsupported saved Traits cannot enter combat.
+
+[Activity and committed playback](../../../../../Docs/RUN_STATE.md#committed-battle-playback)
+own the single tagged activity and commit-before-animation model.
+Only the selected candidate may request abandonment of a nonterminal snapshot
+marked as an enemy turn;
+the current engine cannot commit a resumable intermediate enemy phase.
+Restore uses current abandonment settlement atomically, then queues the terminal
+snapshot; stale bootstrap results cannot abandon an initialized run. Terminal
+committed battles remain resumable. Unusable selected activity structure drops
+only the run; permanent progress and future-save protection remain intact.
+A damaged Mystery offer retains its tag with null data so restore can exit that
+visit through the existing repair operation.
+An unfinished Campfire with no usable Potion offer rebuilds its standard offers
+once using the saved events stream. A resumed Labyrinth map clears stale pending
+room locks. Invalid or missing battle Gold falls back to valid purse Gold in both
+the battle and profile; a valid zero balance remains authoritative.
+
+### Load order
+
+Candidate compatibility/freshness prefilter → current-shape validation and normalization → winner selection → active-run card hydration → codec hydration and restore. Below-floor and future formats never enter current-shape validation. `SaveDataSchema` is a load-tolerant shape validator; raw-version acceptance belongs to candidate evaluation and must occur first. Test-only direct parsing is not the compatibility gate. Repair follows the owners in [defaults and resume normalization](#defaults-and-resume-normalization); after winner selection, `toActiveRunData` hydrates its run deck, draft choices, Card/Alchemist shop cards, Mystery cards, Corruption pair, and Campfire/Transmutation cards. Battle piles hydrate later through `restoreActiveBattle`; candidate evaluation does not publish gameplay state.
+
+### Battle decoding and semantic repair
+
+The wire schema validates structure and scheduled/card collections before semantic
+repair. `DecodedPersistedBattle` deliberately leaves enemy identity, status,
+reaction and flag records untrusted; normalization validates those records and
+then repairs resources, pile identities, and cross-field survival relationships.
+Optional card metadata is omitted when absent, matching the runtime card type.
+Serialized reward/destination payloads remain owned by their codecs.
+
+### Implementation rules
+
+- Card IDs that disappear from the live catalog are stripped against the live catalog at load in `normalize-active-run-data.ts`. Record deliberate removals in `TOMBSTONED_CARD_IDS` in `src/lib/validation/migration/tombstoned-content-ids.ts` so fixtures stay explicit. The guard test in `save-migration-guard.test.ts` checks `discoveredCardIds` for catalog or tombstone membership; deck, shop, battle, mystery, and corruption piles rely on silent live-catalog stripping without a tombstone requirement.
+- Saved active-run decks are eagerly hydrated at load time: card IDs are resolved against the live library, and any card whose ID no longer exists is silently dropped from the deck. Filtering can leave an empty deck; the battle engine handles empty piles through Emergency Wish. No player-facing diagnostics.
+- Card validation and hydration treat saved effects and descriptions as one content unit. `BattleCardSchema` returns an empty effect list if any effect fails validation, including nested effects; missing or malformed lists likewise become empty. `hydrateCard` preserves both saved lists only when both are usable, without comparing their lengths against the current catalog. Otherwise it restores both from the library and clears saved `corrupted` and `baseTitle`. Valid saved cost, UID, and explicit Consume overrides survive; title, art, and catalog metadata refresh from the library. The empty-list recovery signal survives normalization and JSON round trips without extra saved fields.
+- Saved `description` models follow [card-description authoring](../../../../../Docs/CONTENT_AUTHORING.md#card-descriptions). Validation checks structure against actual effect kinds, numeric fields, nested paths, shared-value agreement and magnitude identity. Valid bindings regenerate stale/missing text caches. Invalid bindings are discarded with a diagnostic while valid effects/text retain the existing recovery policy. Records without bindings still load as complete effects/text units; subsequent mutations derive bindings from effects rather than saved prose. Custom wording, Mixed Potion boundaries and Corruption/Distill marks survive. Clone and hydrate deep-copy references/paths; catalog metadata cannot overwrite a saved model. Derived localization messages and character offsets are never saved.
+
+- The same card validator covers active-run card locations and saved battle deck, hand, discard, exhausted, Wish options, and Wish queue, in the committed battle activity. Battle card hydration occurs when `restoreActiveBattle` restores the session; other card locations hydrate through `toActiveRunData`. Complete valid saved modifications survive even when their effect count differs from current content. Incomplete content recovery may reset card modifications, but requires no schema bump because the persisted shape and valid values retain their meanings.
+- Card arrays keep valid entries when a sibling card is malformed, with a developer-facing repair warning for each dropped position. Missing or non-array run decks still invalidate the run. Shop and Alchemist purchase keys follow surviving cards to their new slots. A Wish prompt emptied by malformed or removed cards advances to the next nonempty queued choice, or closes when none remains, so resumed combat stays playable.
+- Battle normalization repairs invalid Mana to zero and enforces the current minimum of one Mana Crystal. Valid unspent Mana and overflow above the crystal count survive resume.
+- The `SaveLoadStatus` shape has five variants: `ok`, `unavailable`, `unsupported-newer-schema`, `unsupported-newer-content`, and `corrupt`. These are internal diagnostics; none blocks play or opens a save-problem screen. The `ok` variant may carry developer-facing `warnings` (repair notes such as dropped card content); these never gate loads and are not shown to players.
+
+### Current field recovery
+
+Preserve the valid fields and cross-field relationships below; missing-field
+recovery may intentionally differ from new-career initialization.
+
+#### Discarded presentation fields
 
 Current-shape normalization drops obsolete board ownership, selection, resolved
 background and pending-reward fields, plus `selectedAspectRatio`. They are absent
 from new writes; the game fills the viewport. Preserve all other valid profile and
 active-run data. These removals require no schema bump or supported transformation.
 
-## Progression gate fields
+#### Progression gate fields
 
 Choose the intended new-player default. Safe additive fields retain that default and valid saved values; transformations of supported progress require versioned evidence and gameplay assertions. Current authoring validation remains strict and separate from load-tolerant recovery.
 
-## Content changes without a save bump
+#### Content changes without a save bump
 
 Catalog tuning and compatible defaults do not require a schema bump. Derived
 Talent and Homestead manifests rebuild from purchased IDs; Unique affixes resolve
@@ -104,10 +213,10 @@ use current constructors. Gameplay meanings remain with
 [Talent rules](../../../../../Docs/TALENT_RULES.md), and
 [Armory](../../../../../Docs/ARMORY.md).
 
-## Run recap tracking
+#### Run recap tracking
 
-Active runs add `runHistory`, `runHistoryPartial`, and nullable `runGoldEarned` with
-safe additive defaults; no schema bump is required. New runs start with empty complete
+`runHistory`, `runHistoryPartial`, and nullable `runGoldEarned` track recaps.
+New runs start with empty complete
 history and zero earned Gold. Older runs default to empty partial history and unknown
 Gold (`null`): subsequent visits are recorded with an omitted-history marker, while
 Gold remains unknown until a fresh run. Never infer missing earnings from the purse.
@@ -115,76 +224,87 @@ History and earnings round-trip without recording visits or replaying earnings o
 load. [Recap ownership](../../../../../Docs/RUN_STATE.md#run-recap-ownership) governs
 the transient ending snapshot.
 
-## Defaults and resume normalization
+#### Four-tier Homestead
 
-`createDefaultSaveData()` in `storage/defaults.ts` clones a frozen schema-derived
-singleton for each caller. The save contract test protects cross-load isolation.
-Update the affected defaults and fixtures together:
+Building, farm, and research level bounds come from the current four-tier catalog;
+existing levels retain their values and level four survives reload. Companion
+Bonds keep three tiers. New numeric Homestead combat fields default to zero in
+the talent manifest and rebind from purchased levels during run restoration.
+Preserve resolved starting Thorns, pending modified Wish materials, and RNG;
+never replay opening grants or apply find bonuses again while rebinding.
+[Homestead rules](../../../../../Docs/TALENT_RULES.md#talent-manifests-and-progression)
+own effects and discounts; find bonuses modify eligible rewards at their source.
 
-| Domain             | Default owner                                                                                                     |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| Settings           | `SettingsSaveFieldsSchema` and `createDefaultSettingsSaveFields` in `src/lib/validation/save-schemas/settings.ts` |
-| Profile            | `createDefaultProfileSaveFields` in `shared/stores/session/profile-store-types.ts`                                |
-| Gear               | `createInitialGearState` in `shared/stores/session/gear-state-defaults.ts`                                        |
-| Permanent progress | `createInitialPermanentFields` in `shared/stores/session/run-state-init.ts`                                       |
-| Fixtures           | `tests/fixtures/saves.ts` (campaign-full) and `tests/helpers/save-candidate-fixtures.ts` (candidate-minimal)      |
+Reset Homestead persists zeroed node/bond levels and the refunded material
+stockpile in one command. Refunds use current catalog tier costs; hydration only
+recomputes effects and never refunds again. Discovery remains independent from
+bonds. Purchase feedback is presentation-only and never serialized; no refund
+ledger is needed.
 
-Repair runs in two stages:
+#### Alchemy visits and modified cards
 
-1. **Schema load repair:** `SaveDataSchema` in `save-data.ts` applies live-combat
-   Gold override, autoplay derivation and orphan-loadout pruning. Valid finite,
-   nonnegative combat Gold overrides purse Gold without a repair warning.
-2. **Codec hydration:** `hydrateGameplayPersistenceFields` in
-   `persistence/persistence-hydration.ts` prunes unknown Companions, recomputes
-   Homestead effects and unions Unique ownership. Complete-save restore composes
-   this operation in its existing transaction; `hydrateAlchemyPersistenceFields`
-   is the separate fields-only wrapper.
+Missing Mystery visits recover within their mode: Campaign restores its destination
+offer; Labyrinth releases the pending room and returns to the map without clearing
+that room. Empty Wildcard starter offers use the normal guaranteed repeatable
+damage/defense recipe and rewards RNG, then persist the repaired choices.
 
-Validation supplies safe current-field defaults; normalization repairs choices
-and catalog references; hydration restores runtime cards and manifests. Preserve
-valid modifications, Health, defenses, flags, choices and RNG. Never replay
-starting grants or actions. Retired crystal/recovery and historical Talent
-conversions are not aliases for current fields.
+Campfire and Transmutation are branches of `activeRun.activity`, each carrying
+its `AlchemyVisit` data. They are not separate optional top-level visit records.
+Save fixed offers, original/result cards, and completion together. Uninitialized
+visits receive offers on entry; initialized visits survive resume without
+rerolling or repeated grants. Campfire Rest/Brew and Alchemist Mix/Distill limits
+survive reload; eligible Potions may be brewed again at later visits under the
+[brewing rules](../../../../../Docs/GAME_RULES.md#brewing-and-transmutation).
 
-### Current-data recovery
+`AlchemyVisit.transmutation` additionally saves each keyword choice's exact
+alterations, including source snapshots/indices, selected source keywords, and
+result cards, plus the current source/keyword/preview selection. Prismatic
+Crucible selections may reference any compatible keyword beyond the normal
+three offers; validation bounds indices by the registered Transmutation keywords.
+This widens accepted selections without changing the saved shape. Hydration
+restores every source/result card. Completed Transmutation follows the saved-result and missing-result
+[interaction contract](../../../../../Docs/UI_BROWSING.md#campfire-and-transmutation). Retired
+replacement-card offers repair to an uninitialized selection, not a parallel
+workflow.
 
-Battle difficulty modifiers are validated individually during load. Keep valid
-entries and drop malformed ones so the next enemy turn can resolve safely.
-Profile and run XP retain only current keyword IDs; unknown entries cannot
-contribute Talent points or starting Health.
-Unsafe numeric XP entries are dropped independently so valid sibling progress
-survives. Save timestamps use the same safe-integer policy for raw candidate
-ordering and parsed freshness. Crafting currencies must remain safely spendable.
-Damaged card UIDs, titles, and artwork do not remove otherwise usable cards;
-identity repair and catalog hydration restore them. Scheduled battle pulses
-retain the card effect schema's one-to-ten-turn duration limit.
-Saved enemies regain their current native Traits from the catalog and retain
-only current combat encounter Traits. Reward benefits stay in their separate
-field; unsupported saved Traits cannot enter combat.
+Modified cards retain effects, descriptions, explicit Consume overrides,
+`transmuted`, `baseTitle`, and added tags together. Optional `lifesteal` on random
+damage and cleanse-to-damage preserves Transmutation's Leech addition; omission
+does not grant Leech. Structured description magnitudes retain `distilled` marks
+through hydration and mixing so upgraded values remain green. Incompatible changes follow the [supported baseline](#supported-baseline).
 
-[Activity and committed playback](../../../../../Docs/RUN_STATE.md#committed-battle-playback)
-own the single tagged activity and commit-before-animation model.
-Only the selected candidate may request abandonment of a nonterminal snapshot
-marked as an enemy turn;
-the current engine cannot commit a resumable intermediate enemy phase.
-Restore uses current abandonment settlement atomically, then queues the terminal
-snapshot; stale bootstrap results cannot abandon an initialized run. Terminal
-committed battles remain resumable. Unusable selected activity structure drops
-only the run; permanent progress and future-save protection remain intact.
-A damaged Mystery offer retains its tag with null data so restore can exit that
-visit through the existing repair operation.
-An unfinished Campfire with no usable Potion offer rebuilds its standard offers
-once using the saved events stream. A resumed Labyrinth map clears stale pending
-room locks. Invalid or missing battle Gold falls back to valid purse Gold in both
-the battle and profile; a valid zero balance remains authoritative.
+#### Independent Alchemist services
 
-## Policy: local is authoritative
+Alchemist visits retain `brewOffers` plus independent `brewUsed`, `mixUsed`, and
+`distillUsed` flags. New visits roll three fixed Brew offers from the shops RNG;
+refreshes preserve them and all spent flags. Hydration preserves current saved
+offers and flags. An unused Brew service with no surviving offers regenerates
+its shelf once from the saved shops RNG, including Strong Spirits in Labyrinth.
+Spent Brew services remain spent and do not draw RNG.
+
+#### Starter Homestead grant
+
+`starterHomesteadGrantResolved` is an additive permanent run-profile boolean.
+New careers start false. Missing or malformed values recover as true when any
+valid Homestead tier or Companion Bond is purchased, otherwise false. Valid
+saved booleans survive unchanged. Claiming the first Campaign Act I boss reward
+resolves the receipt atomically with any material top-up. A successful Homestead
+purchase also resolves it. Homestead reset preserves it; Clear Save Data resets
+it.
+
+#### Localized descriptions
+
+The renderer derives localized messages from literal parts, effects and magnitude bindings when they are displayed or extracted. Template IDs and keyword/magnitude slots are not persisted; saved cache metadata cannot replace valid mechanics. Current-format cards, custom wording, Mixed Potion grouping and upgrades remain intact. Unknown legacy templates remain playable in English. The device-local language preference is outside the progress envelope and Steam Cloud. See [Localization](../../../../../Docs/LOCALIZATION.md).
+
+## Storage transport
+
+### Policy: local is authoritative
 
 Steam Cloud is a one-way mirror. Both the primary (`save.json`) and recovery (`save-recovery.json`) slots write local-first, atomically with their own `bak.1-3` ring and `tmp` in `desktop/save-storage.cjs`, then mirror to the matching Cloud filename. Browser storage uses the primary `alchemy-save-v1` and recovery `alchemy-save-recovery-v1` keys.
 
 Device display preferences (versioned `alchemy-device-display-v<n>` key, currently v1) stay outside the versioned save: they survive save wipes, are never cloud-mirrored, and never gate loads. A version mismatch resets them to defaults silently (no error-sink entry); only unreadable storage or corrupt JSON is logged.
 
-## Load selection
+### Load selection
 
 `readDesktopCandidates` in `src/lib/platform-save-backend.ts` collects each slot in preference order (local ring → Cloud). The local ring read order lives in `desktop/save-storage.cjs`; the backend appends the matching Cloud mirror and deduplicates identical payloads. The storage owner evaluates primary candidates before recovery candidates, and the freshest playable candidate that Zod-validates wins by `lastSavedAt`; corrupt candidates fall through to another source. Evaluation is deterministic in `src/features/alchemy/shared/storage/save-candidates.ts#evaluateSaveCandidates`. Recovery diagnostics are logged at the I/O seam, and only the winning candidate is hydrated against the live catalog.
 
@@ -219,7 +339,7 @@ are consumed independently on play; discarded cards lose unused discounts at the
 next turn boundary. Missing references default to an empty list, and hydration
 drops duplicate, missing, or ambiguous card references.
 
-## Future schema saves
+### Future schema saves
 
 Saves with a schema or content version newer than the current build are intentionally not migrated. Any playable candidate wins over a newer-format candidate, even when the newer copy has a later timestamp, so a compatible backup or recovery copy can still resume play. If no playable candidate exists, load defaults. The storage owner routes writes away from a slot holding newer-format data when another slot is available.
 
@@ -227,9 +347,35 @@ When only one slot holds newer-format candidates, new saves use the other slot, 
 
 Tie rules: playable-vs-playable ties keep the first candidate in read order — primary local ring, primary Cloud, recovery local ring, then recovery Cloud. Future-vs-future ties likewise keep the first candidate in read order for internal diagnostics. Fractional `lastSavedAt` values floor before comparison; missing timestamps fall back per domain (`-1` for future, `0` for the playable pre-filter matching the schema default) via `getCandidateSavedAt`.
 
-## Write acknowledgement
+### Demo account identity and transfer
 
-### Submission outcomes
+`steamAccountId` is a nullable additive envelope field, defaulting to null. Native
+Steam writes stamp the current account. Native local progress and initialization
+receipts live below the edition's userData directory in `steam/<SteamID64>/`, or
+`offline/` when Steam identity is unavailable. Isolated test/playtest profiles
+retain their supplied directory and never use live Steam. The Electron browser
+profile remains edition/device-local, preserving language and display preferences.
+
+One-time legacy migration copies only candidates whose stamped account matches
+the selected account; unowned candidates belong only to offline play. Originals
+remain intact, established target profiles are never supplemented, and the local
+`legacy-migration.json` receipt survives Clear Save Data to prevent resurrection.
+Clear must retain that receipt before deleting snapshots, even when a startup
+migration copied data but failed to retain its receipt. Receipt failure prevents
+deletion and leaves the existing progress intact.
+Local demo transfer checks the matching account directory and the preserved
+legacy demo directory, accepting only matching owner stamps. No renderer-supplied
+path can select another account.
+
+Permanent
+progress import, separate cloud filenames and initialization receipts are owned
+by [Steam demo](../../../../../Docs/STEAM_DEMO.md). Receipts survive Clear Save Data;
+no active run or full-Campaign win credit is imported. Public demo carryover freezes
+the supported baseline just like a full release; never retire promised progress.
+
+### Write acknowledgement
+
+#### Submission outcomes
 
 Normal saves and explicit flushes return these outcomes:
 
@@ -248,7 +394,7 @@ Runtime checkpoints, epochs, retry drivers and deferred feedback follow
 Completion and scheduling metadata are never saved. Acknowledged outcomes survive
 process interruption; submission of unfinished renderer work at shutdown is best effort.
 
-### Operation ordering
+#### Operation ordering
 
 | Owner                             | Serialized work                                                                                                                                       |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -273,7 +419,7 @@ Native shutdown closes admission at `will-quit`, after unload handlers can submi
 final snapshots, and drains accepted writes. Quitting resumes on the next event-loop
 turn after Electron resets its cancelled-quit state, even if the queue was already idle.
 
-### Autosave and exit
+#### Autosave and exit
 
 Autosave retains unacknowledged work; older completions cannot clear newer revisions.
 [The scheduler](../../../../../src/app/autosave-scheduler.ts) owns timing;
@@ -307,7 +453,7 @@ Each serialized snapshot gets a `lastSavedAt` later than the loaded save and pri
 serialized writes, even if the clock repeats or reverses, preserving recovery freshness.
 `io.ts` delegates exit ordering to the same storage instance.
 
-### Cloud mirroring
+#### Cloud mirroring
 
 Mirroring follows local writing independently, serialized across both slots with
 only the newest queued payload per slot. Failure cannot delay local acknowledgement.
@@ -335,134 +481,3 @@ disabled Cloud leaves its cache untouched and clears only the local profile.
   Browser deletion removes both local storage keys only.
 
 Dev builds also accept `?wipeLocalSave=1` (exact value) to clear local candidates via the `localWipe` path. The backend is configured (Steam/cloud state) before the wipe runs, so a desktop dev wipe honors cloud sync instead of leaving a stale Cloud mirror eligible for reload. Device display preferences survive either deletion path.
-
-## Load order
-
-Candidate compatibility/freshness prefilter → current-shape validation and normalization → winner selection → active-run card hydration → codec hydration and restore. Below-floor and future formats never enter current-shape validation. `SaveDataSchema` is a load-tolerant shape validator; raw-version acceptance belongs to candidate evaluation and must occur first. Test-only direct parsing is not the compatibility gate. Repair follows the owners in [defaults and resume normalization](#defaults-and-resume-normalization); after winner selection, `toActiveRunData` hydrates its run deck, draft choices, Card/Alchemist shop cards, Mystery cards, Corruption pair, and Campfire/Transmutation cards. Battle piles hydrate later through `restoreActiveBattle`; candidate evaluation does not publish gameplay state.
-
-## Implementation rules
-
-- Card IDs that disappear from the live catalog are stripped against the live catalog at load in `normalize-active-run-data.ts`. Record deliberate removals in `TOMBSTONED_CARD_IDS` in `src/lib/validation/migration/tombstoned-content-ids.ts` so fixtures stay explicit. The guard test in `save-migration-guard.test.ts` checks `discoveredCardIds` for catalog or tombstone membership; deck, shop, battle, mystery, and corruption piles rely on silent live-catalog stripping without a tombstone requirement.
-- Saved active-run decks are eagerly hydrated at load time: card IDs are resolved against the live library, and any card whose ID no longer exists is silently dropped from the deck. Filtering can leave an empty deck; the battle engine handles empty piles through Emergency Wish. No player-facing diagnostics.
-- Card validation and hydration treat saved effects and descriptions as one content unit. `BattleCardSchema` returns an empty effect list if any effect fails validation, including nested effects; missing or malformed lists likewise become empty. `hydrateCard` preserves both saved lists only when both are usable, without comparing their lengths against the current catalog. Otherwise it restores both from the library and clears saved `corrupted` and `baseTitle`. Valid saved cost, UID, and explicit Consume overrides survive; title, art, and catalog metadata refresh from the library. The empty-list recovery signal survives normalization and JSON round trips without extra saved fields.
-- Cards may persist a structured `description` alongside the existing `descriptionLines`. Its literal parts, semantic line roles, stable magnitude identities, typed effect references, formatting, and corruption marks are data-only. Validation checks structure and actual effect kinds, numeric fields, nested paths, agreement across shared values, and identity consistency. Valid bindings regenerate cached text, including after missing or stale caches; malformed bindings are discarded with a diagnostic while valid effects and text retain the existing recovery policy. Records without bindings still load as complete saved effects/text units; subsequent mutations derive canonical bindings from their effects, never by parsing saved prose. Current-format custom wording and Mixed Potion ingredient boundaries persist through the structured model. Corruption and Distill marks persist on magnitude identities; character offsets and derived localization messages are not saved. The schema version stays unchanged because effects and bindings retain their meanings. Clone and hydrate deep-copy references and nested paths, and catalog metadata never overwrites a saved description model.
-- The same card validator covers active-run card locations and saved battle deck, hand, discard, exhausted, Wish options, and Wish queue, in the committed battle activity. Battle card hydration occurs when `restoreActiveBattle` restores the session; other card locations hydrate through `toActiveRunData`. Complete valid saved modifications survive even when their effect count differs from current content. Incomplete content recovery may reset card modifications, but requires no schema bump because the persisted shape and valid values retain their meanings.
-- Card arrays keep valid entries when a sibling card is malformed, with a developer-facing repair warning for each dropped position. Missing or non-array run decks still invalidate the run. Shop and Alchemist purchase keys follow surviving cards to their new slots. A Wish prompt emptied by malformed or removed cards advances to the next nonempty queued choice, or closes when none remains, so resumed combat stays playable.
-- Battle normalization repairs invalid Mana to zero and enforces the current minimum of one Mana Crystal. Valid unspent Mana and overflow above the crystal count survive resume.
-- The `SaveLoadStatus` shape has five variants: `ok`, `unavailable`, `unsupported-newer-schema`, `unsupported-newer-content`, and `corrupt`. These are internal diagnostics; none blocks play or opens a save-problem screen. The `ok` variant may carry developer-facing `warnings` (repair notes such as dropped card content); these never gate loads and are not shown to players.
-
-## Four-tier Homestead
-
-Building, farm, and research level bounds come from the current four-tier catalog;
-existing levels retain their values and level four survives reload. Companion
-Bonds keep three tiers. New numeric Homestead combat fields default to zero in
-the talent manifest and rebind from purchased levels during run restoration.
-Preserve resolved starting Thorns, pending modified Wish materials, and RNG;
-never replay opening grants or apply find bonuses again while rebinding.
-[Homestead rules](../../../../../Docs/TALENT_RULES.md#talent-manifests-and-progression)
-own effects and discounts; find bonuses modify eligible rewards at their source.
-
-Reset Homestead persists zeroed node/bond levels and the refunded material
-stockpile in one command. Refunds use current catalog tier costs; hydration only
-recomputes effects and never refunds again. Discovery remains independent from
-bonds. Purchase feedback is presentation-only and never serialized; no refund
-ledger is needed.
-
-## Shared run-progress shape
-
-`lib/active-run-session/run-progress.ts` owns `PersistedRunProgress` and its exhaustive `ACTIVE_RUN_PROGRESS_KEYS` projection. `ActiveRunData` extends those shared fields; `ActiveRunProgressFields` narrows destination names for live state. Saved callers remain permissive about historical destination names until normalization. The save schema in `lib/validation/save-schemas/run-progress.ts` checks every field against that contract and owns recovery defaults. Fresh-run constructors still own starting decks, seeded RNG, fresh collection instances and zero earned totals. Missing `runHistoryPartial`/`runGoldEarned` still recover as `true`/`null`; never replace those with fresh-run defaults. New fields require the domain contract, exhaustive projection, schema and meaningful fresh/resume initialization.
-
-`lib/validation` owns `parseActiveRun`, `toActiveRunData` and conversion of parsed Mystery choices into domain effects. Session contracts, activity helpers and live constructors never import validation. `PersistedPendingReward` belongs beside the domain reward types; its save schema checks that output contract. This changes module ownership only, with no save-format or recovery-default change.
-
-## Demo account identity and transfer
-
-`steamAccountId` is a nullable additive envelope field, defaulting to null. Native
-Steam writes stamp the current account. Native local progress and initialization
-receipts live below the edition's userData directory in `steam/<SteamID64>/`, or
-`offline/` when Steam identity is unavailable. Isolated test/playtest profiles
-retain their supplied directory and never use live Steam. The Electron browser
-profile remains edition/device-local, preserving language and display preferences.
-
-One-time legacy migration copies only candidates whose stamped account matches
-the selected account; unowned candidates belong only to offline play. Originals
-remain intact, established target profiles are never supplemented, and the local
-`legacy-migration.json` receipt survives Clear Save Data to prevent resurrection.
-Clear must retain that receipt before deleting snapshots, even when a startup
-migration copied data but failed to retain its receipt. Receipt failure prevents
-deletion and leaves the existing progress intact.
-Local demo transfer checks the matching account directory and the preserved
-legacy demo directory, accepting only matching owner stamps. No renderer-supplied
-path can select another account. No save-schema change is required.
-
-Permanent
-progress import, separate cloud filenames and initialization receipts are owned
-by [Steam demo](../../../../../Docs/STEAM_DEMO.md). Receipts survive Clear Save Data;
-no active run or full-Campaign win credit is imported. Public demo carryover freezes
-the supported baseline just like a full release; never retire promised progress.
-
-## Alchemy visits and modified cards
-
-Missing Mystery visits recover within their mode: Campaign restores its destination
-offer; Labyrinth releases the pending room and returns to the map without clearing
-that room. Empty Wildcard starter offers use the normal guaranteed repeatable
-damage/defense recipe and rewards RNG, then persist the repaired choices.
-
-Campfire and Transmutation are branches of `activeRun.activity`, each carrying
-its `AlchemyVisit` data. They are not separate optional top-level visit records.
-Save fixed offers, original/result cards, and completion together. Uninitialized
-visits receive offers on entry; initialized visits survive resume without
-rerolling or repeated grants. Campfire Rest/Brew and Alchemist Mix/Distill limits
-survive reload; eligible Potions may be brewed again at later visits under the
-[brewing rules](../../../../../Docs/GAME_RULES.md#brewing-transmutation-and-elemental-reactions).
-
-`AlchemyVisit.transmutation` additionally saves each keyword choice's exact
-alterations, including source snapshots/indices, selected source keywords, and
-result cards, plus the current source/keyword/preview selection. Prismatic
-Crucible selections may reference any compatible keyword beyond the normal
-three offers; validation bounds indices by the registered Transmutation keywords.
-This widens accepted selections without changing the saved shape. Hydration
-restores every source/result card. Completed Transmutation follows the saved-result and missing-result
-[interaction contract](../../../../../Docs/UI_BROWSING.md#campfire-and-transmutation). Retired
-replacement-card offers repair to an uninitialized selection, not a parallel
-workflow.
-
-Modified cards retain effects, descriptions, explicit Consume overrides,
-`transmuted`, `baseTitle`, and added tags together. Optional `lifesteal` on random
-damage and cleanse-to-damage preserves Transmutation's Leech addition; omission
-does not grant Leech. Structured description magnitudes retain `distilled` marks
-through hydration and mixing so upgraded values remain green. These compatible
-additions use safe defaults without a schema bump; incompatible changes still
-follow the [supported baseline](#supported-baseline).
-
-## Starter Homestead grant
-
-`starterHomesteadGrantResolved` is an additive permanent run-profile boolean.
-New careers start false. Missing or malformed values recover as true when any
-valid Homestead tier or Companion Bond is purchased, otherwise false. Valid
-saved booleans survive unchanged. Claiming the first Campaign Act I boss reward
-resolves the receipt atomically with any material top-up. A successful Homestead
-purchase also resolves it. Homestead reset preserves it; Clear Save Data resets
-it. No schema-version increment or supported payload transformation is required.
-
-## Localized descriptions
-
-The renderer derives localized messages from literal parts, effects and magnitude bindings when they are displayed or extracted. Template IDs and keyword/magnitude slots are not persisted; saved cache metadata cannot replace valid mechanics. Current-format cards, custom wording, Mixed Potion grouping and upgrades remain intact. Unknown legacy templates remain playable in English. The device-local language preference is outside the progress envelope and Steam Cloud; no save-version change is required. See [Localization](../../../../../Docs/LOCALIZATION.md).
-
-## Battle decoding and semantic repair
-
-The wire schema validates structure and scheduled/card collections before semantic
-repair. `DecodedPersistedBattle` deliberately leaves enemy identity, status,
-reaction and flag records untrusted; normalization validates those records and
-then repairs resources, pile identities, and cross-field survival relationships.
-Optional card metadata is omitted when absent, matching the runtime card type.
-The runtime activity layout does not change the serialized reward/destination
-payloads or save version.
-
-## Independent Alchemist services
-
-Alchemist visits retain `brewOffers` plus independent `brewUsed`, `mixUsed`, and
-`distillUsed` flags. New visits roll three fixed Brew offers from the shops RNG;
-refreshes preserve them and all spent flags. Hydration preserves current saved
-offers and flags. An unused Brew service with no surviving offers regenerates
-its shelf once from the saved shops RNG, including Strong Spirits in Labyrinth.
-Spent Brew services remain spent and do not draw RNG. No schema bump is required.
