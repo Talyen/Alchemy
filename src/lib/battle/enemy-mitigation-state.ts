@@ -48,4 +48,4 @@ export function decayEnemyArmor(state: BattleState): BattleState {
   return reduceEnemyArmor(state, BATTLE_CONFIG.ARMOR_DECAY_AMOUNT);
 }
 
-export const EMPTY_ENEMY_MITIGATION: EnemyMitigation = { armor: 0, forge: 0, block: 0 };
+export const EMPTY_ENEMY_MITIGATION: Readonly<EnemyMitigation> = Object.freeze({ armor: 0, forge: 0, block: 0 });

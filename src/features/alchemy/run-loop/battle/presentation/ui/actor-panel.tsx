@@ -465,7 +465,11 @@ function ActorStatusRow({
 }) {
   useGameTranslation();
   return (
-    <div className="mt-2.5 flex min-h-9 items-center gap-1" data-testid={`${side}-statuses`}>
+    <div
+      className="mt-2.5 flex min-h-9 items-center gap-1"
+      data-testid={`${side}-statuses`}
+      data-combat-status-target={side}
+    >
       {deathsDoorActive ? <DeathsDoorStatusIcon remainingTurns={deathsDoorGraceTurnsRemaining} /> : null}
       {statuses.map((status) => (
         <StatusIcon key={`${title}-${status.id}-${status.value}`} chip={status} />

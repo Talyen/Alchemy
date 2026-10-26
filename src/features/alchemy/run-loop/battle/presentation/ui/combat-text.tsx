@@ -16,6 +16,7 @@ import type {
 } from "../../../../shared/types";
 import { CombatTextEntry } from "./combat-text-entry";
 import { combatTextFrame, combatTextLane, combatTextRoute } from "../../combat-feedback-motion";
+import { secondaryStatusFeedbackKey } from "../combat-status-feedback";
 
 function animationFor(lane: CombatTextLane, lifetimeMs: number) {
   const times = [
@@ -78,7 +79,9 @@ export function CombatTextRail({
       }}
     >
       {bursts.map((burst) => {
-        const entries = burst.entries.filter((entry) => entry.presentation?.phase !== "waiting");
+        const entries = burst.entries.filter(
+          (entry) => entry.presentation?.phase !== "waiting" && !(entry.kind === "notice" && entry.signal === "immune"),
+        );
         if (!entries.length) return null;
         return (
           <div
@@ -94,6 +97,7 @@ export function CombatTextRail({
               return (
                 <FeedbackFlight
                   key={entry.id}
+                  statusFeedbackKey={secondaryStatusFeedbackKey(entry, lane)}
                   lane={lane}
                   spread={entry.presentation?.spread ?? 0}
                   staticMotion={staticMotion}
@@ -129,12 +133,14 @@ function FeedbackFlight({
   staticMotion,
   staticRow,
   children,
+  statusFeedbackKey,
 }: {
   lane: CombatTextLane;
   spread: NonNullable<CombatTextPresentation["spread"]>;
   staticMotion: boolean;
   staticRow: number;
   children: ReactNode;
+  statusFeedbackKey?: string | undefined;
 }) {
   const firstFrame = combatTextFrame(
     lane,
@@ -162,6 +168,7 @@ function FeedbackFlight({
     <div
       data-feedback-lane={lane}
       data-feedback-spread={spread}
+      data-secondary-status-feedback={statusFeedbackKey}
       className="absolute"
       style={{
         left: lane === "benefit" ? cornerInset : lane === "setback" ? undefined : "50%",
