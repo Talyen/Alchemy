@@ -269,7 +269,7 @@ The following timing/source distinctions supplement the catalog:
 | Stun and Purge         | Disrupting settles an ordinary Purge after successful Stun, retaining rewards and additive copy chances. Its pending reward and Whiplash/recovery state use safe additive save defaults rather than new per-turn allowances.                                                                                                                                                                                               |
 
 [Game rules](./GAME_RULES.md#direct-player-hit-resolution) own shared packet stages;
-[Talent rules](./TALENT_RULES.md#armor-forge-and-gold) own shared resource recipes;
+[resource rules](./GAME_RULES.md#armor-forge-and-gold) own shared resource recipes;
 [Unique items](./UNIQUE_ITEMS.md#combat-semantics) retain signature exceptions.
 
 ## Persistence

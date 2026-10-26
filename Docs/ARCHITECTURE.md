@@ -206,36 +206,9 @@ a complete visit before navigation; rendering and retained route capabilities ca
 initialize or reroll it. Resume restores the active activity independently of the
 presentation screen.
 
-### Shop transaction rules
-
-`runShopTransaction` guards validation, payment, acquisition and visit writes.
-Commands bind a session and take a shelf slot key (instance ID for equipment),
-then derive item, price and Talent/Homestead effects from the live transaction.
-Quotes read current progression; callers supply no cached manifests, allowance or
-price override. SFX runs only after confirmed success. Kind `merchant` means Card Shop.
-
-Slot identity helpers stay independent of command/audio modules.
-Preserve the per-visit `firstPurchaseUsed` reset. Compose `mutateGearWithRunHealthSync` with
-the open transaction; the dispatching Gear wrapper is for the outer boundary.
-[Armory write paths](./ARMORY.md#write-paths) owns that composition.
-
-Refreshes use `createShopRefreshAction` and a `shop-state-init.ts` sampler:
-
-- Activity selects pricing and write target. Before RNG, validate remaining
-  refreshes and affordability at the displayed price.
-- Restock rolls only for affordable positive-price refreshes with its free refresh
-  unused. A success waives payment but still spends a refresh slot.
-- The sampler applies offering modifiers, including potency, before returning a
-  typed shelf that preserves service/purchase flags. Only success clears purchased
-  slots and consumes a refresh; rejection never samples.
-- Avoid current offers when alternatives permit. Equipment compares bases across
-  rarities and preserves room themes. Nearly exhausted pools still fill the shelf
-  while maximizing novel offers.
-
-Potion mixing scales amounts in every chance branch, preserving probabilities and
-all alternative descriptions. Same-ID ingredients double only with matching effects;
-different-potency copies retain both effect lists so ingredient order cannot change
-potency. [Change a shop](./WORKFLOWS.md#change-a-shop) gives editing steps.
+[Shop rules](./GAME_RULES.md#shops) own transaction inputs, pricing, refresh
+eligibility and offer sampling. [Change a shop](./WORKFLOWS.md#change-a-shop)
+gives the editing sequence.
 
 ## Settings and meta profile
 

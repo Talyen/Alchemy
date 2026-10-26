@@ -183,12 +183,39 @@ header, gold counter, and instruction text; the Remove action retains its gold c
 
 Campfire shows current/max Health before choosing. A heart in the Health keyword
 color and the actual recovery amount appear below Rest, including zero at full Health. Campaign
-destination headers say Choose Destination without an act indicator. The named
-boss entrance keeps its existing title; reward screens say Victory.
+destination titles say Choose Destination; act/room progress sits above the
+heading. The named boss entrance keeps its title; reward screens say Victory.
+
+`TitledScreenShell.aboveHeader` holds compact context above the heading. Choose
+Destination shows small I / II / III act circles there (only I in the demo).
+Clicking any act unfolds the current act into its eight-room
+trail on the same line, with neighboring acts sliding aside. Click the trail to
+collapse it; Escape opens the game menu and leaves the trail expanded.
+Visited rooms keep their destination icons; a gold
+star marks the current room, future rooms are unknown, and the boss crown uses
+deep purple. Nodes have 1px borders and retain the destination icons' size and
+stroke. Both views use the same spacing between every node. The current node has
+a subtle glow matching its border, with no hover color change.
+The row sits slightly above the header, and transition/focus treatment
+stays on individual circles, preserving the title and artwork positions.
+
+### Destination trail motion
+
+Choose Destination's act/room toggle keeps its 36px circles at a fixed size while
+individual nodes travel over 420ms with a gentle start and settle. Movement starts
+together; only the room fades stagger outward, so circles separate before becoming
+visible. Closing lets rooms gather and fade before the act numeral returns.
+Neighboring acts and the connecting line follow the same easing. The line scales
+horizontally instead of animating its width; circles retain their round shape.
+The title and artwork stay fixed.
+Reversible CSS transitions retarget from the current pose on repeated input.
+Keyboard focus is painted on the focused circle, never the expanding transparent hit area.
+The shared reduced/disabled-motion preference settles both views immediately;
+the toggle only changes presentation and never commits room progress.
 
 ### Campfire and Transmutation
 
-[Brewing rules](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions)
+[Brewing rules](./GAME_RULES.md#brewing-and-transmutation)
 determine the available service. Campfire mixing lets the player choose two
 eligible instances, inspect the preview and Confirm Mix. With fewer than two,
 activating one of the three fixed offers grants it immediately. Screen and command
@@ -217,22 +244,39 @@ the action row retains its bounds. Content remains compact and centered;
 necessary stack movement eases between heights, preserves an interrupted ease's
 position and respects reduced motion.
 
-Transmutation first shows the selected original card beside an empty, question-mark
-slot, using the same dashed frame as Potion Brewing. Up to three icon-only keyword
-buttons stay centered below the full comparison, with equal gaps above and below. No alteration is selected initially. Choosing a
-keyword fills the empty slot with its saved preview; the arrow centers on the card art,
-independent of titles and controls. Choosing a keyword colors the arrow and gives it
-a brief glow synchronized with the label fade. Keyword buttons keep translated accessible names
-and a visible selected state, without hover tooltips. Inspect the card for its effects.
-Switching keywords keeps preview artwork mounted and fades only its label. Back returns to the
-card picker without RNG or deck changes. Transmute is visible before a choice and
-stays disabled until a valid keyword is chosen. It stays enabled during label
-transitions and commits the latest selected alteration immediately.
-After a covering save, show its inspectable result, play the card-reward chime once and wait for Continue. Pending/failed saves lock
-choices under [Saving/Retry feedback](./UI.md#pending-saves-and-action-feedback).
-Completed resume shows the saved result and Continue without another alteration or
-chime. Continue never regrants the card. Visits with no valid alteration, or a
-completed visit missing its result, advance after offer initialization.
+Transmutation first shows the selected original card beside an empty,
+question-mark slot with the Potion Brewing dashed frame. Up to three icon-only
+keyword buttons stay centered below the full comparison, with equal gaps above
+and below. No alteration is selected initially. Buttons retain translated
+accessible names, opaque fills, hover/focus illumination, press feedback and a
+selected 2px keyword Shine Border, without hover tooltips; inspect the card for
+its effects.
+
+Choosing a keyword fills the slot with its saved preview and colors the arrow,
+which stays centered on the artwork independently of titles and controls. The
+preview artwork remains mounted; only its label swaps through `FadeSlot`.
+An accepted keyword change glows during that label’s exit/entry using the same
+motion token and easing, without arrow scaling. Another choice restarts the glow;
+rejected choices and saved-preview resume do not. Reduced/disabled motion keeps
+the tint and selection without the glow.
+
+Back returns to the card picker without RNG or deck changes. Transmute is visible
+before selection and disabled until a valid keyword is chosen. It remains enabled
+during label transitions and commits the latest selected alteration immediately.
+Pending/failed saves lock choices under [Saving/Retry feedback](./UI.md#pending-saves-and-action-feedback).
+After a covering save, show the inspectable result with the [reward settle/shine](#rewards-and-wishes),
+play the card-reward chime once and wait for Continue. Completed resume shows the
+saved result and Continue without another alteration, chime or reveal effect.
+Continue never regrants the card. Visits with no valid alteration, or a completed
+visit missing its result, advance after offer initialization.
+
+### Campfire recovery motion
+
+Campfire snapshots the starting and restored Health when Rest is pressed. Its number
+and bar share an eased refill, then hold the exact result before continuing. Keep
+that snapshot through the outgoing screen fade so applying the heal cannot restart
+the visible refill. Use `CAMPFIRE_ANIMATION_MS` from
+[ui-motion](../src/lib/game-constants/ui-motion.ts).
 
 ## Rewards and Wishes
 
@@ -249,6 +293,12 @@ Reward choice cells share one flex centering and reserve one tile row across
 card, gear, trinket, and boon, and the resource row and Skip footer reserve
 their heights (with a spacer when Skip is unavailable) so back-to-back rewards
 keep the same spacing.
+
+Reward selection immediately holds the chosen frame, with one 200ms tiny settle
+and one simultaneous 220ms artwork shine. Alternatives gently dim. Selection
+suppresses any hover shimmer; saving and the existing outgoing fade proceed
+independently, with no second shine or added wait. Each reward-choice identity
+starts fresh. Reduced or disabled motion keeps the selected frame and dimming.
 
 ## Options
 
@@ -291,6 +341,18 @@ Selecting an item for salvage immediately ends targeting and clears its cursor a
 
 Crafting consumes one currency per activation. Escape cancels targeting; invalid targets explain their restriction in tooltips and after selection. Success shows actual before/after affix descriptions in a dismissible panel pinned inside the viewport, a brief item pulse, and count feedback only when quantities change.
 
+### Equipment movement animations
+
+When equipping, unequipping, or replacing gear and trinkets:
+
+- **Transfer animation**: Artwork flies between inventory and equipment through
+  the unclipped [ArmoryTransferOverlay](../src/features/alchemy/meta/screens/armory/armory-transfer-overlay.tsx),
+  which owns duration and easing.
+- **Artwork visibility**: During the in-flight transfer, destination artwork remains hidden (`opacity-0`) to prevent visual duplication until the animation completes and the transfer settles.
+- **Position reflow**: When an empty-slot equip, unequip, or hand displacement causes inventory items to shift, surrounding items animate to their new positions using layout position transitions (`motion.div layout="position"`).
+- **Interruption safety**: Any navigation, category switch, slot change, window resize, scroll, or unmount immediately settles all active in-flight transfers, restoring artwork visibility and removing portaled overlays without lingering visual artifacts.
+- **Reduced motion**: When reduced motion is preferred (`prefers-reduced-motion: reduce`), transfers settle immediately with zero travel duration and no portaled flight overlay.
+
 ## Run journey recap
 
 Talents on the end-run screen and Mystery rewards use fixed-width boxes in centered,
@@ -313,3 +375,9 @@ uses that hero’s selection palette. Repeat runs do not replay unlocks.
 Defeat and manual End Run follow the same unlock rules as victory. Demo victories
 show available hero unlocks before the demo completion screen. Unlock reveals,
 like the recap, are transient; permanent hero availability remains saved.
+
+Hero Unlocked reveals the decoded portrait once per hero with a 560ms fade,
+small upward settle, and 98% to 100% scale. The name and Continue/Main Menu
+button remain immediately available; the reveal never delays navigation or
+grants progression. Reduced or disabled motion shows the portrait without the
+reveal animation.
