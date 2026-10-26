@@ -3,24 +3,19 @@ import { CONSUME_DESCRIPTION_LINE, TRANSMUTATION_PREFIXES } from "@/lib/game-con
 import type { BattleCard } from "../types";
 import { cardById } from "./library/cards";
 import { mapCardDescriptionReferences } from "../card-description-model";
+import { mapEffectChildren } from "../effect-tree";
 
 export type SavedCard = BattleCard;
 
 function cloneEffect(effect: BattleCard["effects"][number]): BattleCard["effects"][number] {
-  if (effect.kind === "chance")
-    return {
-      ...effect,
-      successEffects: effect.successEffects.map(cloneEffect),
-      failureEffects: effect.failureEffects.map(cloneEffect),
-    };
-  if (effect.kind === "repeat-over-turns") return { ...effect, effects: effect.effects.map(cloneEffect) };
+  const mapped = mapEffectChildren(effect, cloneEffect, false);
   if ((effect.kind === "damage" || effect.kind === "random-damage") && effect.damageTypePool) {
     return { ...effect, damageTypePool: [...effect.damageTypePool] };
   }
   if (effect.kind === "player-status" && effect.statusPool) {
     return { ...effect, statusPool: [...effect.statusPool] };
   }
-  return { ...effect };
+  return { ...mapped };
 }
 
 function hydrateCost(saved: SavedCard, libraryCard: BattleCard): number {

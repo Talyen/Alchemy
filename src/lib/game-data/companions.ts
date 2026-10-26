@@ -110,9 +110,6 @@ export function getModifiedCompanionEffects(
       const bonus = modifiers.damageBonus;
       return { ...effect, amount: Math.round((effect.amount + amountBond + bonus) * modifiers.damageMultiplier) };
     }
-    if (effect.kind === "chance") {
-      return mapEffectChildren(effect, scale);
-    }
     if (
       amountBond !== 0 &&
       (effect.kind === "heal" ||
@@ -121,7 +118,7 @@ export function getModifiedCompanionEffects(
     ) {
       return { ...effect, amount: effect.amount + amountBond };
     }
-    return effect;
+    return mapEffectChildren(effect, scale);
   }
   const effects = companion.turnStartEffects.map(scale);
   if (bondLevel !== 0) {

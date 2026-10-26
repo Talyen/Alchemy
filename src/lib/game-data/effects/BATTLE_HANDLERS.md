@@ -155,6 +155,13 @@ between damage packets, including Gold, so later ingredients use the resulting
 purse, Mana, Block, and Health. Rendering owns only damage summaries and presentation copies; it must not execute
 the displayed card.
 
+`BattleResourceReward` in `battle/types/state-types.ts` defines the shared
+state/amount/feedback callback used by Wish, Companion, and crowd-control reward
+ports. Card cloning and Companion scaling use `mapEffectChildren` for recursive
+effect traversal; reward selection uses `isCompanionSummonCard` for summon
+classification. Chance effects permit either branch to be empty, including
+failure-only damage retained by filtering, and preserve that shape on save.
+
 ## Crowd-control ownership
 
 `battle/crowd-control-resolution.ts` owns enemy Stun and Freeze eligibility,

@@ -44,8 +44,9 @@ export const BattleCardEffectSchema: z.ZodType<BattleCardEffect> = z.union([
   z.object({
     kind: z.literal("chance"),
     probability: z.number().min(0).max(1),
-    successEffects: z.array(z.lazy(() => BattleCardEffectSchema)).min(1),
-    // Chance bonuses may do nothing on failure, including authored cards.
+    // Damage-only projections may retain only a failure branch. Both branches
+    // use the same wire contract as the runtime effect tree.
+    successEffects: z.array(z.lazy(() => BattleCardEffectSchema)),
     failureEffects: z.array(z.lazy(() => BattleCardEffectSchema)),
   }),
   z.object({
