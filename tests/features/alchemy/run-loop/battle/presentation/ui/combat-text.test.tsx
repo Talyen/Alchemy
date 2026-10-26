@@ -28,7 +28,6 @@ describe("CombatTextRail", () => {
     { stat: "freeze", text: "Frozen", signal: undefined, icons: 1, label: "Frozen" },
     { stat: "armor", text: "Purged", signal: "purge", icons: 2, label: "Purged Armor" },
     { stat: "nextHitCrit", text: "", signal: "prepared", icons: 2, label: "Predator's Focus prepared" },
-    { stat: "freeze", text: "Immune to Freeze", signal: "immune", icons: 2, label: "Immune to Freeze" },
     { stat: "phoenixFeather", text: "Revived", signal: undefined, icons: 1, label: "Revived" },
   ] as const)(
     "renders $stat notices as icons with readable accessible labels",
@@ -46,6 +45,72 @@ describe("CombatTextRail", () => {
       expect(container.querySelector('[data-testid="combat-text"]')?.getAttribute("aria-label")).toBe(label);
     },
   );
+
+  it("omits immunity flights for every intent without losing actual damage or control application", () => {
+    const events = [
+      { target: "enemy", kind: "damage", stat: "stun", amount: 8, feedback: "primary" },
+      { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" },
+      { target: "enemy", kind: "notice", stat: "stun", text: "Immune to Stun", signal: "immune", feedback: "primary" },
+      {
+        target: "player",
+        kind: "notice",
+        stat: "freeze",
+        text: "Immune to Freeze",
+        signal: "immune",
+        feedback: "secondary",
+      },
+    ] as const;
+    const original = structuredClone(events);
+    const prepared = prepareCombatFeedback(events, 1, 0, 1100);
+    expect(prepared.bursts.flatMap((burst) => burst.entries)).toHaveLength(2);
+    expect(prepareCombatFeedback(events.slice(2), 2, 0, 1100).bursts).toEqual([]);
+    // Raw/replayed presentation input must obey the same rule.
+    const raw = {
+      ...prepared.bursts[0]!,
+      entries: events.map((event, i) => ({
+        ...event,
+        id: String(i),
+        displayText: event.kind === "damage" ? "-8" : "",
+      })),
+    };
+    const { container } = render(<CombatTextRail bursts={[raw]} />);
+    expect(container.querySelectorAll('[data-testid="combat-text"]')).toHaveLength(2);
+    expect(container.querySelector('[aria-label="Stunned"]')).not.toBeNull();
+    expect(container.querySelector('[data-kind="damage"]')?.textContent).toBe("-8");
+    expect(container.querySelector("svg.lucide-shield-check")).toBeNull();
+    expect(events).toEqual(original);
+  });
+
+  it("marks only secondary state gains for live status-row deduplication", () => {
+    const prepared = prepareCombatFeedback(
+      [
+        { target: "player", kind: "status", stat: "block", amount: 6, feedback: "primary" },
+        { target: "player", kind: "status", stat: "thorns", amount: 2, feedback: "secondary" },
+        { target: "player", kind: "status", stat: "armor", amount: 0, feedback: "secondary" },
+        { target: "player", kind: "damage", stat: "block", amount: 2, feedback: "secondary" },
+        { target: "player", kind: "notice", stat: "burn", text: "Cleansed", signal: "cleanse" },
+        { target: "enemy", kind: "notice", stat: "armor", text: "Purged", signal: "purge" },
+        { target: "player", kind: "notice", stat: "nextHitCrit", text: "", signal: "prepared", feedback: "secondary" },
+        { target: "player", kind: "notice", stat: "companion", text: "Summoned" },
+        { target: "enemy", kind: "notice", stat: "stun", text: "Stunned", feedback: "secondary" },
+      ],
+      4,
+      0,
+      1100,
+    );
+    const { container } = render(<CombatTextRail bursts={prepared.bursts} />);
+    const marked = [...container.querySelectorAll("[data-secondary-status-feedback]")].map((node) =>
+      node.getAttribute("data-secondary-status-feedback"),
+    );
+    expect(marked).toEqual(["player:nextHitCrit", "player:thorns"]);
+    expect(
+      container
+        .querySelector('[data-stat="block"][data-kind="status"]')
+        ?.closest("[data-feedback-lane]")
+        ?.getAttribute("data-feedback-lane"),
+    ).toBe("impact");
+    expect(container.querySelector('[aria-label="Stunned"]')).not.toBeNull();
+  });
 
   it("adds critical glow without changing damage text, typography, or accessible meaning", () => {
     const burst: CombatTextBurst = {

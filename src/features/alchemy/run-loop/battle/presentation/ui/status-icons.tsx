@@ -32,12 +32,14 @@ function StatusChipShell({
   icon,
   tooltip,
   plasmaColorPair,
+  statusId,
 }: {
   ariaLabel: string;
   buttonClassName?: string;
   icon: ReactNode;
   tooltip: ReactNode;
   plasmaColorPair?: PlasmaColorPair | null;
+  statusId?: StatusChip["id"];
 }) {
   useGameTranslation();
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =
@@ -50,6 +52,7 @@ function StatusChipShell({
         type="button"
         className={cn("relative flex h-9 w-9 items-center justify-center", buttonClassName)}
         aria-label={ariaLabel}
+        data-combat-status-id={statusId}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         onFocusCapture={onFocusCapture}
@@ -136,6 +139,7 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
         : getPlasmaColorPair([kw]);
   return (
     <StatusChipShell
+      statusId={chip.id}
       ariaLabel={i18n.displayText(
         phoenix || hideValue
           ? definition.label
