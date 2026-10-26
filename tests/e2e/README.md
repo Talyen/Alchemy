@@ -38,6 +38,10 @@ It protects containment, reachable actions and resize continuity rather than
 exact decorative gaps, colors or scale ratios. Trait tooltips exercise the
 maximum-size/minimum-height boundary in both Collection and Battle. The layout
 review gallery owns the wider visual matrix.
+Options checks its shared shell at all five boundaries and each remaining tab at
+minimum height and 4K; the narrow-window journey checks tab reachability separately.
+Labyrinth checks grid and tooltip containment at each selected viewport, with
+keyboard entry at minimum height and a separate touch journey.
 
 Collection discovery and authored card tooltip wiring live in the Collection DOM
 suite; Bestiary retains the real pointer/keyboard inspection journey. Card Shop

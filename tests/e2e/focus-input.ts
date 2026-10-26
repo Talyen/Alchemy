@@ -46,7 +46,7 @@ export async function exerciseFocusInputOptions(page: Page) {
   const language = page.getByRole("combobox", { name: "Language", exact: true });
   await input.reach(language);
   await expect(language).toBeFocused();
-  await expect(language).toHaveCSS("outline-color", "rgb(214, 211, 206)");
+  await expect(language).toHaveCSS("outline-style", "solid");
   const scroller = page.locator(".game-page-scroll");
   const bounds = await scroller.boundingBox();
   if (!bounds) throw new Error("Options scroller is not visible");
@@ -63,7 +63,7 @@ export async function exerciseFocusInputOptions(page: Page) {
   const dialog = page.getByRole("dialog");
   const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
   await expect(cancel).toBeFocused();
-  await expect(cancel).toHaveCSS("outline-color", "rgb(214, 211, 206)");
+  await expect(cancel).toHaveCSS("outline-style", "solid");
   if (process.env.ALCHEMY_FOCUS_VISUAL_REVIEW === "1")
     await page.screenshot({
       path: `reports/focus-review/${page.url().startsWith("alchemy:") ? "electron" : "browser"}-keyboard.png`,
