@@ -20,6 +20,37 @@ import { buildWishOptions } from "@/lib/battle/wish";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("card description bindings", () => {
+  it("links equal even resource choices while keeping other odds and amounts independently editable", () => {
+    for (const [probability, goldAmount, expectedLines, expectedAmounts] of [
+      [0.5, 4, ["Gain 4 Mana or Gold"], [5, 5]],
+      [0.25, 4, ["25% chance: Gain 4 Mana", "Otherwise: Gain 4 Gold"], [5, 4]],
+      [0.5, 6, ["50% chance: Gain 4 Mana", "Otherwise: Gain 6 Gold"], [5, 6]],
+    ] as const) {
+      const raw = makeTestCard({
+        effects: [
+          {
+            kind: "chance",
+            probability,
+            successEffects: [{ kind: "restore-mana", amount: 4 }],
+            failureEffects: [{ kind: "gain-gold", amount: goldAmount }],
+          },
+        ],
+      });
+      const source = withCardDescription(raw, getCardDescription(raw));
+      expect(source.descriptionLines).toEqual(expectedLines);
+      const updated = applyNumericCorruption(source, getEditableCorruptionTargets(source)[0]!, 1);
+      expect(updated.effects).toEqual([
+        {
+          kind: "chance",
+          probability,
+          successEffects: [{ kind: "restore-mana", amount: expectedAmounts[0] }],
+          failureEffects: [{ kind: "gain-gold", amount: expectedAmounts[1] }],
+        },
+      ]);
+      expect(source.descriptionLines).toEqual(expectedLines);
+    }
+  });
+
   it("allows repeated magnitude identities only when they bind the same ordered effect fields", () => {
     const effects = [
       { kind: "damage", damageType: "physical", amount: 3 },
