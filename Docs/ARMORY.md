@@ -56,6 +56,9 @@ preparation function in `crafting.ts`. Preparation consumes no RNG; previews
 read its rejection message, while application prepares against the current item
 and executes the permitted change with the caller's RNG. Store commands spend
 currency only when application returns a changed item.
+Unknown runtime currencies and missing item definitions reject during preparation.
+Affix lookups accept only catalog-owned IDs, preserving unknown rolls without
+mistaking inherited object properties for definitions.
 
 ## Loot tuning
 

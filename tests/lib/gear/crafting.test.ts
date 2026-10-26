@@ -5,6 +5,9 @@ import {
   craftingCurrencyBlockedReason,
   computeSalvageYield,
   gearAffixCatalog,
+  getCraftingCurrencyDefinition,
+  CRAFTING_CURRENCY_IDS,
+  type CraftingCurrencyId,
   type GearAffixRoll,
   type GearInstance,
 } from "@/lib/gear";
@@ -20,6 +23,46 @@ const maxPhysical: GearAffixRoll = { id: "flat-physical", value: 2 };
 const stun: GearAffixRoll = { id: "flat-stun", value: 1 };
 
 describe("crafting currency logic", () => {
+  it("blocks crafting an item whose definition is missing without consuming rolls or affixes", () => {
+    const original = { ...item([physical]), definitionId: "missing-definition" };
+    const rng = vi.fn(() => 0);
+    for (const currency of CRAFTING_CURRENCY_IDS) {
+      expect(canApplyCraftingCurrency(currency, original)).toBe(false);
+      expect(applyCraftingCurrency(currency, original, rng)).toBe(original);
+    }
+    expect(rng).not.toHaveBeenCalled();
+    expect(original.affixes).toEqual([physical]);
+  });
+
+  it("rejects an unknown runtime currency consistently in preview and application", () => {
+    const original = item([physical]);
+    const currency = "missing-currency" as CraftingCurrencyId;
+    const rng = vi.fn(() => 0);
+    expect(canApplyCraftingCurrency(currency, original)).toBe(false);
+    expect(craftingCurrencyBlockedReason(currency, original)).not.toBeNull();
+    expect(applyCraftingCurrency(currency, original, rng)).toBe(original);
+    expect(rng).not.toHaveBeenCalled();
+  });
+
+  it.each(["constructor", "toString", "__proto__"])("rejects inherited currency catalog key %s", (key) => {
+    expect(() => getCraftingCurrencyDefinition(key as CraftingCurrencyId)).toThrow("Unknown crafting currency");
+  });
+
+  it.each(["smiths-whetstone", "ascension-seal"] as const)(
+    "%s handles an inherited affix catalog key without throwing or drawing",
+    (currency) => {
+      const original = item([{ id: "constructor" as GearAffixRoll["id"], value: 1 }]);
+      const rng = vi.fn(() => 0);
+      if (currency === "smiths-whetstone") {
+        expect(canApplyCraftingCurrency(currency, original)).toBe(false);
+        expect(applyCraftingCurrency(currency, original, rng)).toBe(original);
+      } else {
+        expect(applyCraftingCurrency(currency, original, rng).affixes).toEqual(original.affixes);
+      }
+      expect(rng).not.toHaveBeenCalled();
+    },
+  );
+
   it.each([
     ["discordant-dice", item([]), "This item has no affixes to reroll."],
     ["sprig-of-growth", item([physical, stun]), "No affix slots or eligible affixes available."],
