@@ -7,7 +7,6 @@ import {
   generateGearInstanceForBaseItem,
   generateLootGearChoices,
   generateGearRewardChoicesForRarity,
-  generateGearRewardChoicesForRarities,
   uniqueItemList,
   gearDefinitions,
   rollAffixCount,
@@ -96,15 +95,6 @@ describe("gear generation", () => {
     }
   });
 
-  it("preserves mixed reward order and reserves a different base for each rarity", () => {
-    const rarities = ["basic", "astral", "unique"] as const;
-    const choices = generateGearRewardChoicesForRarities(rarities, createSeededRng(17));
-    const definitions = choices.map((choice) => gearDefinitions[choice.definitionId]);
-    expect(definitions.map((definition) => definition.rarity)).toEqual(rarities);
-    expect(new Set(definitions.map((definition) => definition.baseItemId)).size).toBe(3);
-    expect(new Set(choices.map((choice) => choice.instanceId)).size).toBe(3);
-  });
-
   it.each([
     [0, "basic"],
     [0.5, "astral"],
@@ -125,15 +115,16 @@ describe("gear generation", () => {
     }
   });
 
-  it.each([0, 1])("fills Unique slots with Astral when only %s Uniques remain", (remaining) => {
+  it.each([0, 1])("recalculates weighted offers when only %s Uniques remain", (remaining) => {
     const owned = new Set(uniqueItemList.slice(remaining).map((unique) => unique.id));
-    const choices = generateGearRewardChoicesForRarities(["unique", "unique", "unique"], () => 0, owned);
+    const choices = generateLootGearChoices(3, () => 0.99, { ...weights, basic: 0, astral: 1, unique: 100 }, owned);
     expect(choices).toHaveLength(3);
     expect(choices.every((choice) => !owned.has(choice.definitionId))).toBe(true);
     expect(choices.map((choice) => gearDefinitions[choice.definitionId].rarity)).toEqual(
       remaining === 1 ? ["unique", "astral", "astral"] : ["astral", "astral", "astral"],
     );
     expect(new Set(choices.map((choice) => gearDefinitions[choice.definitionId].baseItemId)).size).toBe(3);
+    expect(new Set(choices.map((choice) => choice.instanceId)).size).toBe(3);
   });
 
   it("generates a named base item with reward rarity and affixes", () => {
