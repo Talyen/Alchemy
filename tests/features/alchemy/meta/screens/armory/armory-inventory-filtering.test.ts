@@ -23,10 +23,8 @@ const filters = (patch: Partial<ArmoryInventoryFilters>): ArmoryInventoryFilters
 });
 
 let matcher = createArmoryInventoryMatcher();
-const matchesGearFilters = (item: GearInstance, criteria: ArmoryInventoryFilters) =>
-  matcher.matchesGearFilters(item, criteria);
-const matchesTrinketFilters = (item: TrinketEntry, criteria: ArmoryInventoryFilters) =>
-  matcher.matchesTrinketFilters(item, criteria);
+const matchesGearFilters = (item: GearInstance, criteria: ArmoryInventoryFilters) => matcher.matches(item, criteria);
+const matchesTrinketFilters = (item: TrinketEntry, criteria: ArmoryInventoryFilters) => matcher.matches(item, criteria);
 beforeEach(() => {
   matcher = createArmoryInventoryMatcher();
 });
@@ -39,11 +37,11 @@ describe("Armory inventory matching", () => {
       translate(value);
       return value;
     });
-    expect(cached.matchesGearFilters(sword, filters({ search: "longsword" }))).toBe(true);
+    expect(cached.matches(sword, filters({ search: "longsword" }))).toBe(true);
     const calls = translate.mock.calls.length;
-    expect(cached.matchesGearFilters(sword, filters({ search: "poison" }))).toBe(true);
+    expect(cached.matches(sword, filters({ search: "poison" }))).toBe(true);
     expect(translate.mock.calls).toHaveLength(calls);
-    expect(cached.matchesGearFilters({ ...sword, affixes: [] }, filters({ search: "poison" }))).toBe(false);
+    expect(cached.matches({ ...sword, affixes: [] }, filters({ search: "poison" }))).toBe(false);
     expect(translate.mock.calls.length).toBeGreaterThan(calls);
   });
 

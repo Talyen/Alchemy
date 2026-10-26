@@ -22,12 +22,23 @@ import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultGameSession } from "@/app/application-session";
 import { createGameSession } from "@/features/alchemy/shared/stores/session/game-session";
+import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
 
 beforeEach(() => {
   resetAllTestStores();
 });
 
 describe("homestead write commands", () => {
+  it("records and reports only materials that fit in the stockpile", () => {
+    const result = mutateGameplayForTest((draft) => {
+      setHasActiveRun(draft, true);
+      draft.runProfile.materialInventory.wood = Number.MAX_SAFE_INTEGER - 1;
+      return applyMysteryEffect({ kind: "gainMaterial", material: "wood", amount: 3 }, { draft, rng: () => 0.5 });
+    });
+    expect(result.materialAward).toEqual({ material: "wood", amount: 1 });
+    expect(readRunProfile(defaultGameSession).materialInventory.wood).toBe(Number.MAX_SAFE_INTEGER);
+    expect(readActiveRun(defaultGameSession).runMaterialsEarned.wood).toBe(1);
+  });
   it("awardMaterialsDuringRun writes the stockpile and the run tally; stockpile grants skip the tally", () => {
     mutateGameplayForTest((draft) => {
       setHasActiveRun(draft, true);
