@@ -84,42 +84,28 @@ function normalizeGearEffects(saved: Partial<GearEffectManifest> | undefined): G
   return result;
 }
 
-function normalizeTrinketEffects(
-  defaults: BattleSnapshot["trinketEffects"],
-  saved: Partial<BattleSnapshot["trinketEffects"]> | undefined,
-): BattleSnapshot["trinketEffects"] {
-  return Object.fromEntries(
-    Object.entries(defaults).map(([key, fallback]) => {
-      const value = saved?.[key as keyof typeof defaults];
-      return [
-        key,
-        typeof fallback === "boolean"
-          ? typeof value === "boolean"
-            ? value
-            : fallback
-          : typeof value === "number"
-            ? clampNonNegative(value, fallback)
-            : fallback,
-      ];
-    }),
-  ) as BattleSnapshot["trinketEffects"];
-}
+const isMagnitude = (value: number) => value >= 0 && value < Number.MAX_SAFE_INTEGER;
+const isCounter = (value: number) => Number.isSafeInteger(value) && value >= 0;
 
-function normalizeUniqueGear(
-  defaults: BattleSnapshot["uniqueGear"],
-  saved: Partial<BattleSnapshot["uniqueGear"]> | undefined,
-): BattleSnapshot["uniqueGear"] {
+/** Defaults select known fields and their kinds; each manifest keeps its numeric repair rule. */
+function normalizeManifest<T extends object>(
+  defaults: T,
+  saved: unknown,
+  validNumber: (value: number) => boolean,
+  ownOnly = false,
+): T {
+  const fields = saved as Partial<T> | undefined;
   return Object.fromEntries(
     Object.entries(defaults).map(([key, fallback]) => {
-      const value = saved?.[key as keyof typeof defaults];
-      // Collections keep their wire shape here; element repair belongs to the
-      // pile/uid pass (normalizeCardPiles) and the wire schema, which
-      // deliberately preserves echoes of any card id.
-      if (Array.isArray(fallback)) return [key, Array.isArray(value) ? value : fallback];
-      if (typeof fallback === "boolean") return [key, typeof value === "boolean" ? value : fallback];
-      return [key, typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : fallback];
+      const value = ownOnly && !Object.hasOwn(fields ?? {}, key) ? undefined : fields?.[key as keyof T];
+      const valid = Array.isArray(fallback)
+        ? Array.isArray(value)
+        : typeof fallback === "boolean"
+          ? typeof value === "boolean"
+          : typeof value === "number" && validNumber(value);
+      return [key, valid ? value : fallback];
     }),
-  ) as BattleSnapshot["uniqueGear"];
+  ) as T;
 }
 
 function normalizeMagnitudeDictionary(saved: unknown): Record<string, number> {
@@ -177,27 +163,7 @@ function clampNonNegative(value: number, fallback: number): number {
 }
 
 function normalizeNonNegativeRecord<K extends string>(defaults: Record<K, number>, input: unknown): Record<K, number> {
-  const saved = isRecord(input) ? input : {};
-  const merged = { ...defaults };
-  for (const key of Object.keys(defaults) as K[]) {
-    const value = saved?.[key];
-    if (typeof value === "number" && value >= 0 && value < Number.MAX_SAFE_INTEGER) merged[key] = value;
-  }
-  return merged;
-}
-
-function normalizeCcState(
-  defaults: BattleSnapshot["playerCC"],
-  saved: Partial<BattleSnapshot["playerCC"]> | undefined,
-) {
-  // Skip-turn counters must stay integers; a single strict pass replaces the
-  // previous record merge plus integer fixup loop with identical outcomes.
-  const merged = { ...defaults };
-  for (const key of Object.keys(defaults) as Array<keyof typeof defaults>) {
-    const value = saved?.[key];
-    if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) merged[key] = value;
-  }
-  return merged;
+  return normalizeManifest(defaults, isRecord(input) ? input : {}, isMagnitude);
 }
 
 // Module-level catalog snapshot for trait restore; stale under HMR/catalog
@@ -247,20 +213,6 @@ function normalizeEnemy(input: unknown, defaultEnemy: BattleSnapshot["currentEne
     abilityIds,
     traits: restoreEnemyTraits(savedEnemy?.traits, catalogEnemy),
   };
-}
-
-function normalizeCombatFlags(defaults: BattleSnapshot["flags"], saved: unknown): BattleSnapshot["flags"] {
-  const stored = isRecord(saved) ? saved : {};
-  return Object.fromEntries(
-    Object.entries(defaults).map(([key, fallback]) => {
-      const value = Object.hasOwn(stored, key) ? stored[key] : undefined;
-      if (typeof fallback === "boolean") return [key, typeof value === "boolean" ? value : fallback];
-      return [
-        key,
-        typeof value === "number" && Number.isSafeInteger(value) ? clampNonNegative(value, fallback) : fallback,
-      ];
-    }),
-  ) as BattleSnapshot["flags"];
 }
 
 function normalizeCombatResources(state: BattleSnapshot, defaults: BattleSnapshot) {
@@ -410,16 +362,21 @@ export function normalizePersistedBattleState(saved: DecodedPersistedBattle): Ba
       saved.contentSystemType === "labyrinth" && Array.isArray(saved.encounterBenefits)
         ? sanitizeEncounterTraitIds(saved.encounterBenefits, "reward")
         : [],
-    trinketEffects: normalizeTrinketEffects(defaults.trinketEffects, saved.trinketEffects),
+    trinketEffects: normalizeManifest(defaults.trinketEffects, saved.trinketEffects, isMagnitude),
     gearEffects: normalizeGearEffects(saved.gearEffects),
     talentEffects: normalizeTalentEffects(defaults.talentEffects, saved.talentEffects),
-    flags: normalizeCombatFlags(defaults.flags, saved.flags),
+    flags: normalizeManifest(
+      defaults.flags,
+      isRecord(saved.flags) ? saved.flags : {},
+      (value) => isCounter(value) && isMagnitude(value),
+      true,
+    ),
     reactions: normalizeReactions(saved.reactions),
-    uniqueGear: normalizeUniqueGear(defaults.uniqueGear, saved.uniqueGear),
+    uniqueGear: normalizeManifest(defaults.uniqueGear, saved.uniqueGear, isCounter),
     playerStatuses: normalizeNonNegativeRecord(defaults.playerStatuses, saved.playerStatuses),
     enemyStatuses: normalizeNonNegativeRecord(defaults.enemyStatuses, saved.enemyStatuses),
-    playerCC: normalizeCcState(defaults.playerCC, saved.playerCC),
-    enemyCC: normalizeCcState(defaults.enemyCC, saved.enemyCC),
+    playerCC: normalizeManifest(defaults.playerCC, saved.playerCC, isCounter),
+    enemyCC: normalizeManifest(defaults.enemyCC, saved.enemyCC, isCounter),
     enemyMitigation: normalizeNonNegativeRecord(defaults.enemyMitigation, saved.enemyMitigation),
     pendingTurnStartEffects: Array.isArray(saved.pendingTurnStartEffects)
       ? saved.pendingTurnStartEffects.filter(
