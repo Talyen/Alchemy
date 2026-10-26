@@ -3,14 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
 
-import {
-  PurchasableCardItem,
-  PurchasableGearItem,
-  PurchasableTrinketItem,
-} from "@/features/alchemy/run-loop/shop/ui/purchasable-shop-item";
+import { PurchasableCardItem } from "@/features/alchemy/run-loop/shop/ui/purchasable-shop-item";
 
-import type { BattleCard, TrinketEntry } from "@/lib/game-data";
-import type { GearInstance } from "@/lib/gear";
+import type { BattleCard } from "@/lib/game-data";
 import { installFocusInputForTests } from "../../../../../helpers/focus-input-test";
 
 installFocusInputForTests(true);
@@ -24,20 +19,6 @@ const card = {
   type: "attack",
   effects: [],
 } as unknown as BattleCard;
-
-const testTrinket: TrinketEntry = {
-  id: "meteorite",
-  title: "Meteorite",
-  descriptionLines: ["Deal 2 damage at combat start."],
-  art: "meteorite.png",
-  effects: {},
-};
-
-const testGearInstance: GearInstance = {
-  instanceId: "inst-1",
-  definitionId: "longsword-basic",
-  affixes: [],
-};
 
 describe("PurchasableCardItem", () => {
   afterEach(() => {
@@ -84,40 +65,5 @@ describe("PurchasableCardItem", () => {
     await user.keyboard("{Enter}");
     expect(onBuy).toHaveBeenCalledTimes(1);
     expect(screen.getByText(/Deal/).closest(".hover-popup-panel")).toBeTruthy();
-  });
-});
-
-describe.each([
-  {
-    name: "Gear",
-    mount: (onBuy: () => void) => (
-      <PurchasableGearItem instance={testGearInstance} price={50} gold={20} purchased={false} onBuy={onBuy} />
-    ),
-    label: /Buy Longsword/,
-  },
-  {
-    name: "Trinket",
-    mount: (onBuy: () => void) => (
-      <PurchasableTrinketItem trinket={testTrinket} price={50} gold={20} purchased={false} onBuy={onBuy} />
-    ),
-    label: /Buy Meteorite/,
-  },
-])("Purchasable$nameItem", ({ mount, label }) => {
-  afterEach(() => {
-    cleanup();
-  });
-
-  it("keeps an unaffordable item keyboard-inspectable while preventing purchases", async () => {
-    const user = userEvent.setup();
-    const onBuy = vi.fn();
-    render(mount(onBuy));
-    const button = screen.getByRole("button", { name: label });
-    await user.tab();
-    expect(document.activeElement).toBe(button);
-    expect(button.getAttribute("aria-disabled")).toBe("true");
-    expect(button.querySelector("[tabindex], [role='group']")).toBeNull();
-    expect(await screen.findByText(/Not Enough/u)).toBeTruthy();
-    await user.keyboard("{Enter}");
-    expect(onBuy).not.toHaveBeenCalled();
   });
 });

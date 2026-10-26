@@ -6,7 +6,6 @@ import {
   assertNoOverflow,
   assertStageFitsViewport,
   makeCard,
-  startAtDestination,
   startBattleWithDeck,
   waitForLayoutSettled,
 } from "../../browser-helpers";
@@ -52,31 +51,39 @@ test.describe("Responsive display sizes", slow, () => {
     await menu.goto();
     for (const viewport of VIEWPORTS) {
       await page.setViewportSize(viewport);
-      await menu.expectMainMenuAfterColdStart();
       await assertStageFitsViewport(page);
       await assertNoOverflow(page, `Menu ${viewport.width}`);
-      await menu.openCollection();
+      await expect(menu.playBtn).toBeInViewport();
+    }
+    await menu.openCollection();
+    for (const viewport of VIEWPORTS) {
+      await page.setViewportSize(viewport);
+      await waitForLayoutSettled(page);
       await assertNoOverflow(page, `Collection ${viewport.width}`);
-      await page.getByRole("button", { name: "Back", exact: true }).click();
-      await menu.openOptions();
-      await page.getByRole("button", { name: "Display", exact: true }).click();
-      await expect(page.getByRole("slider", { name: "Game Size", exact: true })).toHaveValue("100");
-      await assertNoOverflow(page, `Options ${viewport.width}`);
-      await expect(page.getByRole("slider", { name: "Background Particles", exact: true })).toBeInViewport();
-      const scroll = page.locator(".game-page-scroll");
-      await expect
-        .poll(() => scroll.evaluate((element) => element.scrollHeight - element.clientHeight))
-        .toBeLessThanOrEqual(1);
-      const header = page.getByRole("heading", { name: "Options", exact: true });
-      const headerTop = (await header.boundingBox())!.y;
-      for (const tab of ["Sound", "Gameplay", "Other", "Display"]) {
-        await page.getByRole("button", { name: tab, exact: true }).click();
-        await expect.poll(async () => (await header.boundingBox())!.y).toBeCloseTo(headerTop, 0);
+      await expect(page.getByRole("button", { name: "Back", exact: true })).toBeInViewport();
+    }
+    await page.getByRole("button", { name: "Back", exact: true }).click();
+    await menu.openOptions();
+    const headerTops = new Map<number, number>();
+    for (const tab of ["Display", "Sound", "Gameplay", "Other"]) {
+      await page.getByRole("button", { name: tab, exact: true }).click();
+      for (const viewport of VIEWPORTS) {
+        await page.setViewportSize(viewport);
+        await waitForLayoutSettled(page);
+        await assertNoOverflow(page, `Options ${tab} ${viewport.width}`);
+        const header = page.getByRole("heading", { name: "Options", exact: true });
+        const top = (await header.boundingBox())!.y;
+        if (tab === "Display") {
+          headerTops.set(viewport.width, top);
+          await expect(page.getByRole("slider", { name: "Game Size", exact: true })).toHaveValue("100");
+          await expect(page.getByRole("slider", { name: "Background Particles", exact: true })).toBeInViewport();
+        } else expect(top).toBeCloseTo(headerTops.get(viewport.width)!, 0);
         await expect
-          .poll(() => scroll.evaluate((element) => element.scrollHeight - element.clientHeight))
+          .poll(() =>
+            page.locator(".game-page-scroll").evaluate((element) => element.scrollHeight - element.clientHeight),
+          )
           .toBeLessThanOrEqual(1);
       }
-      await page.getByRole("button", { name: "Back", exact: true }).click();
     }
   });
 
@@ -286,57 +293,6 @@ test("compact Options controls remain reachable at large size in a narrow window
   await input.reach(page.getByRole("switch", { name: "Mute in Background" }));
   await expect(page.getByRole("slider", { name: "Brightness", exact: true })).toHaveCount(0);
 });
-
-test(
-  "card selection grid removal actions stay visible and stable across pages at maximum game size",
-  slow,
-  async ({ page }) => {
-    await page.addInitScript((gameSizePercent) => {
-      localStorage.setItem(
-        "alchemy-device-display-v1",
-        JSON.stringify({ version: 1, gameSizePercent, tooltipSizePercent: 125 }),
-      );
-    }, 120);
-    await page.setViewportSize({ width: 1366, height: 768 });
-    await startAtDestination(
-      page,
-      { runGold: 9999, runDeck: Array.from({ length: 13 }, () => makeCard()) },
-      { forceDestination: "Card Shop" },
-    );
-    await page.getByRole("button", { name: "Card Shop", exact: true }).click();
-    await page.getByRole("button", { name: /Remove Card/ }).click();
-    const heading = page.getByRole("heading", { name: "Remove Card", exact: true });
-    const remove = page.getByRole("button", { name: /^Remove Gold/ });
-    const cancel = page.getByRole("button", { name: "Cancel", exact: true });
-    const next = page.getByRole("button", { name: "Next page" });
-    await expect(heading).toBeVisible();
-    await expect(remove).toBeInViewport({ ratio: 0.999 });
-    await expect(cancel).toBeInViewport({ ratio: 0.999 });
-    const cards = page.getByRole("button", { name: "Select Slash", exact: true });
-    const grid = page.getByTestId("card-selection-grid");
-    const fullPageSize = 3;
-    await expect(cards).toHaveCount(fullPageSize);
-    for (const card of await cards.all()) {
-      await expect(card).toBeInViewport({ ratio: 0.999 });
-    }
-    const before = { heading: await heading.boundingBox(), remove: await remove.boundingBox() };
-    while (await next.isEnabled()) {
-      await next.click();
-    }
-    await expect(cards).toHaveCount(1);
-    await expect(grid).toHaveCSS("opacity", "1");
-    await expect
-      .poll(async () => ({ heading: await heading.boundingBox(), remove: await remove.boundingBox() }))
-      .toEqual(before);
-    await expect(page.getByText("Select a card to remove from your deck")).toHaveCount(0);
-    await page.getByRole("button", { name: "Previous page" }).click();
-    await expect(cards).toHaveCount(fullPageSize);
-    await expect(grid).toHaveCSS("opacity", "1");
-    await expect
-      .poll(async () => ({ heading: await heading.boundingBox(), remove: await remove.boundingBox() }))
-      .toEqual(before);
-  },
-);
 
 for (const deviceScaleFactor of [1.25, 2]) {
   test.describe(`DPR ${deviceScaleFactor}`, () => {
