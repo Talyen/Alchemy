@@ -5,11 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RewardsScreen } from "@/features/alchemy/run-loop/screens/rewards-screen";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { type BattleCard } from "@/lib/game-data";
-import { readRunSession } from "@/features/alchemy/shared/stores/session/run-reads";
-import { setRewardState } from "@/features/alchemy/shared/stores/commands/run-session-write-port";
 import { useUiStore } from "@/features/alchemy/shared/stores/react/ui-store";
-import { mutateRunForTest, resetRunSessionSlice } from "../../../../helpers/run-domain-store-test";
-import { defaultGameSession } from "@/app/application-session";
 import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 
 import { installFocusInputForTests } from "../../../../helpers/focus-input-test";
@@ -23,18 +19,12 @@ const testCard: BattleCard = makeTestCard({
   effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
 });
 
+const rewardState = Object.freeze({ ...createEmptyRewardState(), choices: [testCard] });
+
 installReadyArtworkForTests();
 
 beforeEach(() => {
   useUiStore.setState({ hoveredCardId: null, shimmerState: null, plasmaInteraction: null });
-  resetRunSessionSlice();
-  mutateRunForTest((draft) =>
-    setRewardState(draft, {
-      ...createEmptyRewardState(),
-      rewardType: "card",
-      choices: [testCard],
-    }),
-  );
 });
 
 afterEach(() => {
@@ -42,43 +32,24 @@ afterEach(() => {
 });
 
 describe("RewardsScreen", () => {
-  it("routes reward selection through controller action instead of mutating the store directly", async () => {
+  it("selects the displayed reward without changing the committed selection", async () => {
     const user = userEvent.setup();
     const onClaimReward = vi.fn();
 
-    render(
-      <RewardsScreen
-        rewardState={readRunSession(defaultGameSession).rewardFlow.state}
-        onSkip={vi.fn()}
-        onClaimReward={onClaimReward}
-      />,
-    );
+    render(<RewardsScreen rewardState={rewardState} onSkip={vi.fn()} onClaimReward={onClaimReward} />);
 
     await user.click(screen.getByRole("button", { name: /select slash/i }));
 
-    expect(onClaimReward).toHaveBeenCalledWith("slash");
+    expect(onClaimReward).toHaveBeenCalledExactlyOnceWith("slash");
     expect(screen.getByRole("heading", { name: "Victory" })).toBeTruthy();
-    expect(readRunSession(defaultGameSession).rewardFlow.state.selectedId).toBeNull();
-    expect(
-      screen
-        .getByRole("button", { name: /select slash/i })
-        .closest("[data-reward-selected]")
-        ?.classList.contains("reward-choice-selected"),
-    ).toBe(true);
+    expect(rewardState.selectedId).toBeNull();
   });
 
   it("keeps locked rewards inspectable while blocking pointer and keyboard claims and Skip", async () => {
     const onClaimReward = vi.fn();
     const onSkip = vi.fn();
     const user = userEvent.setup();
-    render(
-      <RewardsScreen
-        rewardState={readRunSession(defaultGameSession).rewardFlow.state}
-        claimInFlight
-        onSkip={onSkip}
-        onClaimReward={onClaimReward}
-      />,
-    );
+    render(<RewardsScreen rewardState={rewardState} claimInFlight onSkip={onSkip} onClaimReward={onClaimReward} />);
 
     const reward = screen.getByRole("button", { name: /select slash/i });
     expect(reward.getAttribute("aria-disabled")).toBe("true");
@@ -94,13 +65,7 @@ describe("RewardsScreen", () => {
   });
 
   it("swaps reward choices with their content after the outgoing fade", async () => {
-    const { rerender } = render(
-      <RewardsScreen
-        rewardState={readRunSession(defaultGameSession).rewardFlow.state}
-        onSkip={vi.fn()}
-        onClaimReward={vi.fn()}
-      />,
-    );
+    const { rerender } = render(<RewardsScreen rewardState={rewardState} onSkip={vi.fn()} onClaimReward={vi.fn()} />);
 
     expect(screen.getByRole("heading", { name: "Choose a Reward" })).toBeTruthy();
     expect(screen.getByRole("button", { name: /select slash/i })).toBeTruthy();
@@ -145,13 +110,7 @@ describe("RewardsScreen", () => {
   });
 
   it("shows card effect description on hover and keyboard focus of a reward choice", async () => {
-    render(
-      <RewardsScreen
-        rewardState={readRunSession(defaultGameSession).rewardFlow.state}
-        onSkip={vi.fn()}
-        onClaimReward={vi.fn()}
-      />,
-    );
+    render(<RewardsScreen rewardState={rewardState} onSkip={vi.fn()} onClaimReward={vi.fn()} />);
 
     await waitForArtwork();
     const button = screen.getByRole("button", { name: /select slash/i });

@@ -63,30 +63,25 @@ describe("TalentsScreen", () => {
     expect(onResetTalents).toHaveBeenCalledTimes(1);
   });
 
-  it("shows unspent points at the bottom of the allocation screen and hides at zero", async () => {
-    const { rerender } = render(
-      <TalentsScreen
-        talentXP={{ physical: 200 }}
-        unlockedTalents={{ physical: [] }}
-        onUnlockTalent={vi.fn()}
-        onResetTalents={vi.fn()}
-      />,
+  it("spending the last point clears both the live count and overview announcement", async () => {
+    const onUnlockTalent = vi.fn();
+    const props = {
+      ...defaultProps,
+      talentXP: { physical: 20 },
+      unlockedTalents: { physical: [] as string[] },
+      onUnlockTalent,
+    };
+    const { rerender } = render(<TalentsScreen {...props} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Select Physical Talents", description: "Unspent Talent Points" }),
     );
-
-    expect(screen.queryByText(/Talent Points? Remaining$/)).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: "Select Physical Talents" }));
-    await waitFor(() => expect(screen.getByText("4 Talent Points Remaining")).toBeTruthy());
-    expect(screen.getByText("4 Talent Points Remaining").getAttribute("aria-live")).toBe("polite");
-
-    rerender(
-      <TalentsScreen
-        talentXP={{ physical: 200 }}
-        unlockedTalents={{ physical: ["physical-a", "physical-b", "physical-c", "physical-d"] }}
-        onUnlockTalent={vi.fn()}
-        onResetTalents={vi.fn()}
-      />,
-    );
+    const points = await screen.findByText("1 Talent Point Remaining");
+    expect(points.getAttribute("aria-live")).toBe("polite");
+    fireEvent.click(screen.getByRole("button", { name: /Available to unlock.*Expert Blacksmith/ }));
+    expect(onUnlockTalent).toHaveBeenCalledExactlyOnceWith("physical", "physical-expert-blacksmith");
+    rerender(<TalentsScreen {...props} unlockedTalents={{ physical: ["physical-expert-blacksmith"] }} />);
     await waitFor(() => expect(screen.queryByText(/Talent Points? Remaining$/)).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(await screen.findByRole("button", { name: "Select Physical Talents", description: "" })).toBeTruthy();
   });
 });
