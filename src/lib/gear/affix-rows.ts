@@ -571,10 +571,7 @@ export const gearAffixRows = [
     "Blackfletch",
     "archery",
     "poison",
-  )(
-    "archeryDetonateBleedPoison",
-    "Against enemies below 30% Health, Archery attacks deal all remaining Bleed and Poison damage and remove both",
-  ),
+  )("archeryDetonateBleedPoison", "Against enemies below 30% Health, Archery attacks detonate Bleed and Poison"),
   offensiveUnique(
     "twin-casting",
     "Twincasting",
