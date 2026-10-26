@@ -370,16 +370,12 @@ function normalizeSurvival(state: BattleSnapshot, saved: DecodedPersistedBattle,
     Number.isFinite(state.turn) && state.turn >= 1 && state.turn < Number.MAX_SAFE_INTEGER
       ? Math.trunc(state.turn)
       : defaults.turn;
-  const safeCounter = (value: unknown) => {
-    const counter = toFiniteNonNegativeInt(value);
-    return counter !== null && Number.isSafeInteger(counter) ? counter : null;
-  };
-  const triggeredTurn = safeCounter(state.deathsDoorTriggeredTurn);
+  const triggeredTurn = toSafeNonNegativeInt(state.deathsDoorTriggeredTurn);
   return {
     turn,
     deathsDoorActive: savedSurvival.deathsDoorActive === true,
     deathsDoorUsed: savedSurvival.deathsDoorActive === true || savedSurvival.deathsDoorUsed === true,
-    deathsDoorGraceTurnsRemaining: safeCounter(state.deathsDoorGraceTurnsRemaining),
+    deathsDoorGraceTurnsRemaining: toSafeNonNegativeInt(state.deathsDoorGraceTurnsRemaining),
     deathsDoorTriggeredTurn:
       triggeredTurn !== null && triggeredTurn >= 1 && triggeredTurn <= turn ? triggeredTurn : null,
   };
