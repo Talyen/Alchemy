@@ -38,8 +38,7 @@ function combinedEntry(existing: FloatingCombatText, incoming: FloatingCombatTex
   };
 }
 
-function mergeIntoExisting(current: CombatTextBurst[], burst: CombatTextBurst, now: number) {
-  const bursts = [...current];
+function mergeIntoExisting(bursts: CombatTextBurst[], burst: CombatTextBurst, now: number) {
   const unmatched: FloatingCombatText[] = [];
   for (const entry of burst.entries) {
     let merged = false;
@@ -59,7 +58,7 @@ function mergeIntoExisting(current: CombatTextBurst[], burst: CombatTextBurst, n
     }
     if (!merged) unmatched.push(entry);
   }
-  return { bursts, unmatched };
+  return unmatched;
 }
 
 /** Owns displayed aggregates only; neither incoming events nor original expiry are mutated. */
@@ -67,17 +66,11 @@ export function consolidateCombatBursts(
   current: CombatTextBurst[],
   incoming: CombatTextBurst[],
   now: number,
-): { bursts: CombatTextBurst[]; added: CombatTextBurst[] } {
-  let bursts = current.filter((burst) => now < burst.firstShownAt + burst.lifetimeMs);
-  const added: CombatTextBurst[] = [];
+): CombatTextBurst[] {
+  const bursts = current.filter((burst) => now < burst.firstShownAt + burst.lifetimeMs);
   for (const burst of incoming) {
-    const result = mergeIntoExisting(bursts, burst, now);
-    bursts = result.bursts;
-    if (result.unmatched.length > 0) {
-      const next = { ...burst, entries: result.unmatched };
-      bursts.push(next);
-      added.push(next);
-    }
+    const unmatched = mergeIntoExisting(bursts, burst, now);
+    if (unmatched.length > 0) bursts.push({ ...burst, entries: unmatched });
   }
-  return { bursts, added };
+  return bursts;
 }

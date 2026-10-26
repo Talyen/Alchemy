@@ -17,8 +17,8 @@ describe("combat feedback preparation and merging", () => {
     const current = burst(1, [{ ...hit, healthLost: 2 }]);
     const incoming = burst(2, [{ ...hit, healthLost: 3, critical: true }], 10);
     const result = consolidateCombatBursts([current], [incoming], 10);
-    expect(result.bursts).toHaveLength(1);
-    expect(result.bursts[0]!.entries[0]).toMatchObject({ amount: 10, healthLost: 5, critical: true });
+    expect(result).toHaveLength(1);
+    expect(result[0]!.entries[0]).toMatchObject({ amount: 10, healthLost: 5, critical: true });
     expect(current.entries[0]).not.toHaveProperty("critical");
   });
 
@@ -27,14 +27,13 @@ describe("combat feedback preparation and merging", () => {
     const incoming = [burst(2, [hit, heal], 10)];
     const snapshot = structuredClone({ current, incoming });
     const result = consolidateCombatBursts(current, incoming, 10);
-    expect(result.bursts).toEqual([
+    expect(result).toEqual([
       {
         ...current[0],
         entries: [{ ...current[0]!.entries[0], amount: 10, displayText: "-10" }],
       },
       { ...incoming[0], entries: [incoming[0]!.entries[1]] },
     ]);
-    expect(result.added).toEqual([result.bursts[1]]);
     expect({ current, incoming }).toEqual(snapshot);
   });
 
@@ -45,9 +44,9 @@ describe("combat feedback preparation and merging", () => {
     const snapshot = structuredClone(current);
     const incoming = burst(100, [hit, { ...heal, additive: false }], 10);
     const result = consolidateCombatBursts(current, [incoming], 10);
-    expect(result.bursts).toHaveLength(4);
-    expect(result.bursts[0]!.entries[0]).toMatchObject({ amount: 10, displayText: "-10" });
-    expect(result.added[0]!.entries).toEqual([incoming.entries[1]]);
+    expect(result).toHaveLength(4);
+    expect(result[0]!.entries[0]).toMatchObject({ amount: 10, displayText: "-10" });
+    expect(result[3]!.entries).toEqual([incoming.entries[1]]);
     expect(current).toEqual(snapshot);
   });
 
@@ -57,7 +56,7 @@ describe("combat feedback preparation and merging", () => {
     const expired = burst(300, [heal], -1100);
     const incoming = burst(400, [{ ...hit, additive: false }], 10);
     const result = consolidateCombatBursts([expired, player, ...enemy], [incoming], 10);
-    expect(result.bursts).toEqual([player, ...enemy, incoming]);
+    expect(result).toEqual([player, ...enemy, incoming]);
   });
 
   it("retains priority and target order, hides zero events, and uses one zero fallback", () => {
@@ -95,7 +94,7 @@ it("preserves primary/corner intent through display totals and rapid burst mergi
   expect(current.entries).toHaveLength(2);
   expect(current.entries.map(combatTextLane)).toEqual(["impact", "benefit"]);
   const merged = consolidateCombatBursts([current], [burst(2, [proc], 10)], 10);
-  expect(merged.bursts[0]!.entries).toMatchObject([
+  expect(merged[0]!.entries).toMatchObject([
     { amount: 5, feedback: "primary" },
     { amount: 4, feedback: "secondary" },
   ]);
