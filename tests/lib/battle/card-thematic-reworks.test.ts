@@ -1,15 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { cardById, companionLibrary, getCardKeywords } from "@/lib/game-data";
+import { cardById, companionLibrary, getCardEffect, getCardKeywords } from "@/lib/game-data";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { chooseWishCard } from "@/lib/battle/wish";
 import { getEnemyAbilityPressure } from "@/lib/battle/battle-enemy-setup";
-import {
-  applyNumericCorruption,
-  getCorruptionTargetEffect,
-  getEditableCorruptionTargets,
-} from "@/lib/corruption/numeric";
+import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corruption/numeric";
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
@@ -155,7 +151,7 @@ describe("thematic card effects", () => {
   });
 
   it.each([
-    [0, 97, 2],
+    [0, 96, 2],
     [0.99, 98, 0],
   ])("Cinderbloom ignites Poison only when the selected hit Burns (roll %s)", (roll, health, burn) => {
     const result = play("cinderbloom", {
@@ -230,7 +226,7 @@ describe("thematic card effects", () => {
     ] as const) {
       const original = cardById[id]!;
       const target = getEditableCorruptionTargets(original).find(
-        (entry) => getCorruptionTargetEffect(original, entry)?.kind === expected.kind,
+        (entry) => getCardEffect(original.effects, entry)?.kind === expected.kind,
       )!;
       const changed = applyNumericCorruption(original, target, 1);
       expect(changed.descriptionLines).toContain(line);

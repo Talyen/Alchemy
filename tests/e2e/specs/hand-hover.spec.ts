@@ -157,10 +157,14 @@ async function inspectOuterEdges(page: Page) {
 
 async function sweep(page: Page) {
   const slots = await geometry(page);
-  const y = Math.max(...slots.map((slot) => slot.y)) + Math.min(...slots.map((slot) => slot.height)) / 2;
   for (const order of [slots, [...slots].reverse()]) {
     for (const slot of order) {
-      await page.mouse.move(slot.x, y);
+      const current = await geometry(page);
+      const target = current.find((candidate) => candidate.key === slot.key)!;
+      const y =
+        Math.max(...current.map((candidate) => candidate.y)) +
+        Math.min(...current.map((candidate) => candidate.height)) / 2;
+      await page.mouse.move(target.x, y);
       await expect(page.locator(`[data-hand-slot="${slot.key}"]`)).toHaveAttribute("data-hovered", "true");
       await expect(page.locator("[data-hand-slot][data-hovered='true']")).toHaveCount(1);
     }
@@ -182,7 +186,8 @@ test("hover reconciles through a play, draw, and reflow with the pointer in the 
   await sweep(page);
   const keyboardCard = page.locator("[data-hand-slot] button").nth(2);
   await controllerInput(page).reach(keyboardCard);
-  await keyboardCard.hover();
+  const focusedSlot = (await geometry(page))[2]!;
+  await page.mouse.move(focusedSlot.x, focusedSlot.y + focusedSlot.height / 2);
   await page.mouse.move(0, 0);
   await expect(page.locator("[data-hand-slot]").nth(2)).toHaveAttribute("data-hovered", "true");
   await controllerInput(page).press("confirm");

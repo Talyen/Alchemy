@@ -8,7 +8,12 @@ import {
   applyArmorReward,
 } from "./player-rewards";
 import { applyLuckyCloverGold, applyNatureGoldReward, applyNatureManaRefund } from "./bonus-effects";
-import { applyHolyBlockChance, applyHolyLifesteal, applyHolyTithe, applyLeechHitHealing } from "./damage-rider-leech";
+import {
+  applyHolyBlockChance,
+  applyHolyLifesteal,
+  applyHolyTithe,
+  applyLeechHitHealing,
+} from "./stun-leech-resolution";
 import { applyBrassCenser, applyTalentHitConversions, resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
 import { applyWishEffect } from "./wish";

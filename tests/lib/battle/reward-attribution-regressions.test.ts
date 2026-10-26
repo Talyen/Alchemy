@@ -2,10 +2,9 @@ import { describe, expect, it } from "vitest";
 import { cardById, companionLibrary } from "@/lib/game-data";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
-import { applyLeechHealing } from "@/lib/battle/damage-rider-leech";
+import { applyLeechHealing, resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 const bloodCountess = { id: "blood-countess", title: "Blood Countess", description: "" };

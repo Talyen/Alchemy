@@ -408,7 +408,7 @@ card pagination. Cards show portrait art only; effects appear in ordinary card
 tooltips on hover or keyboard focus. Inspection cards cannot be played or flipped
 and do not inherit the hero's description context. Bestiary inspection uses
 canonical card values. Live battle inspection passes the displayed battle snapshot
-to `getBattleDamageInspectionCard` in `src/lib/battle/card-damage-inspection.ts`,
+to `getBattleCardDescriptionInspection` in `src/lib/battle/card-damage-inspection.ts`,
 including room scaling, ability pressure, difficulty modifiers, enemy Forge,
 active attack traits (including Glacial Surge), and pacing, before hero defenses.
 The repertoire remains visible without selecting or revealing the next ability. Trait descriptions use the same encounter context through

@@ -2,6 +2,7 @@ import {
   BattleCardEffectSchema,
   areBattleCardEffectsEqual,
   cloneBattleCard,
+  appendCardDescriptionTrailer,
   createEffectDescription,
   carryCardDescriptionMarks,
   getCardDescription,
@@ -15,7 +16,7 @@ import {
 } from "@/lib/game-data";
 import { POTION_DISTILL_BONUS, CAMPFIRE_POTION_OFFERS } from "@/lib/game-constants";
 import { shuffle } from "@/lib/rng";
-import { appendPotionTrailer, doublePotionPotency } from "./potion-mixer";
+import { doublePotionPotency } from "./potion-mixer";
 import type { EncounterRewardTraitId } from "../content-systems/encounter-traits";
 import { distillPotionEffect } from "./potion-scaling";
 
@@ -74,7 +75,7 @@ export function strengthenPotion(card: BattleCard): BattleCard | null {
     card.effects,
     effects,
   );
-  appendPotionTrailer(description, card.tags, card.consume === true);
+  appendCardDescriptionTrailer(description, card.tags, card.consume === true);
   return cloneBattleCard(
     withCardDescription(
       {

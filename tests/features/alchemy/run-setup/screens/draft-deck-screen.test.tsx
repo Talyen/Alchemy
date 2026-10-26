@@ -55,7 +55,7 @@ describe("DraftDeckScreen", () => {
 
     expect(screen.getByText("Draft Complete")).toBeDefined();
     expect(screen.queryByText("Draft a Deck")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Continue", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(onComplete).toHaveBeenCalledExactlyOnceWith();
   });
 });

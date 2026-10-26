@@ -28,8 +28,8 @@ const routeContext: OptionsRouteCtx = {
 };
 
 function changeSlider(name: string, value: number) {
-  fireEvent.change(screen.getByRole("slider", { name, exact: true }), { target: { value: String(value) } });
-  expect(screen.getByRole("slider", { name, exact: true })).toHaveProperty("value", String(value));
+  fireEvent.change(screen.getByRole("slider", { name }), { target: { value: String(value) } });
+  expect(screen.getByRole("slider", { name })).toHaveProperty("value", String(value));
 }
 
 describe("connected Options screen", () => {
@@ -55,7 +55,7 @@ describe("connected Options screen", () => {
   it("changes independent audio channels and saves gameplay preferences through the real controls", async () => {
     useSettingsStore.getState().setMuteInBackground(false);
     render(<OptionsRoute {...routeContext} />);
-    fireEvent.click(screen.getByRole("button", { name: "Sound", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Sound" }));
     await screen.findByRole("slider", { name: "Music Volume" });
     changeSlider("Music Volume", 40);
     expect(useSettingsStore.getState()).toMatchObject({ musicVolume: 40, masterVolume: 50, sfxVolume: 50 });
@@ -70,7 +70,7 @@ describe("connected Options screen", () => {
       muteInBackground: true,
       bossLyricsEnabled: false,
     });
-    fireEvent.click(screen.getByRole("button", { name: "Gameplay", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Gameplay" }));
     fireEvent.click(await screen.findByRole("switch", { name: "Remember Auto-Battle Preference" }));
     const autoEquip = screen.getByRole("switch", { name: /Auto Equip/ });
     expect(autoEquip.getAttribute("aria-checked")).toBe("true");
@@ -78,7 +78,7 @@ describe("connected Options screen", () => {
     expect(autoEquip.getAttribute("aria-checked")).toBe("false");
     expect(useSettingsStore.getState()).toMatchObject({ rememberAutoplayPreference: true, autoEquip: false });
     // Re-entering a panel reads the committed values instead of the initial props.
-    fireEvent.click(screen.getByRole("button", { name: "Sound", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Sound" }));
     expect(await screen.findByRole("slider", { name: "Music Volume" })).toHaveProperty("value", "40");
   });
 
@@ -96,9 +96,9 @@ describe("connected Options screen", () => {
       backgroundParticlesIntensity: 40,
       backgroundGlowIntensity: 60,
     });
-    fireEvent.click(screen.getByRole("button", { name: "Other", exact: true }));
-    fireEvent.click(await screen.findByRole("button", { name: "Reset to Default", exact: true }));
-    fireEvent.click(screen.getByRole("button", { name: "Display", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Other" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Reset to Default" }));
+    fireEvent.click(screen.getByRole("button", { name: "Display" }));
     expect(useDeviceDisplayStore.getState()).toMatchObject({ gameSizePercent: 100, tooltipSizePercent: 100 });
     expect(useSettingsStore.getState()).toMatchObject({
       backgroundParticlesIntensity: 100,
@@ -114,8 +114,8 @@ describe("connected Options screen", () => {
   it("cancels a clear-save request without wiping and forwards only a confirmed request", async () => {
     const onClearSaveData = vi.fn();
     render(<OptionsRoute {...routeContext} onClearSaveData={onClearSaveData} />);
-    fireEvent.click(screen.getByRole("button", { name: "Other", exact: true }));
-    const open = await screen.findByRole("button", { name: "Clear Save Data", exact: true });
+    fireEvent.click(screen.getByRole("button", { name: "Other" }));
+    const open = await screen.findByRole("button", { name: "Clear Save Data" });
     fireEvent.click(open);
     const dialog = await screen.findByRole("dialog", { name: "Clear Save Data" });
     await waitForArtwork();

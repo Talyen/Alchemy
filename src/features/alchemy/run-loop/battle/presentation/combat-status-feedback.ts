@@ -2,7 +2,7 @@ import type { CombatTextEvent } from "@/lib/battle";
 import type { CombatTextLane, StatusChip } from "../../../shared/types";
 
 /** Both sides use authored status IDs, independent of translated labels or icons. */
-export function combatStatusKey(target: CombatTextEvent["target"], status: StatusChip["id"] | CombatTextEvent["stat"]) {
+function combatStatusKey(target: CombatTextEvent["target"], status: StatusChip["id"] | CombatTextEvent["stat"]) {
   return `${target}:${status}`;
 }
 

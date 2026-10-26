@@ -4,12 +4,11 @@ import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { resolveStunTrigger, applyLeechHealing } from "@/lib/battle/stun-leech-resolution";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { tickPlayerStatuses } from "@/lib/battle/status-ticks";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { removeHarmfulPlayerStatuses, applyCardHealing } from "@/lib/battle/status-player";
-import { applyLeechHealing } from "@/lib/battle/damage-rider-leech";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("player benefit regressions", () => {

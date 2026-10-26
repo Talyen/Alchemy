@@ -4,18 +4,40 @@ import { isPlayerDefeated } from "./battle-outcome";
 import { rollBattleChance } from "./chance-roll";
 import { applyCardHealing, removeHarmfulPlayerStatuses } from "./status-player";
 import { hasEncounterBenefit, hasEnemyTrait } from "./encounter-trait-state";
-import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleState, CombatTextEvent } from "./types";
 import {
   addGoldWithCombatText,
+  applyHitEpilogue,
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
   gainManaWithCombatText,
 } from "./player-rewards";
-import { scaledGearLeechHeal } from "./scaled-damage";
 import { applyPercentBonus, scalePercent } from "./amount-helpers";
-import { resolveStunFollowUpHit } from "./status-stun-core";
-import { HALF_DIVISOR, LEECH_HEAL_FRACTION, PERCENT_DENOMINATOR } from "../game-constants";
+import {
+  BATTLE_CONFIG,
+  HALF_DIVISOR,
+  LEECH_HEAL_FRACTION,
+  LABYRINTH_MODIFIER_CONFIG,
+  MIN_CC_THRESHOLD_FRACTION,
+  PERCENT_DENOMINATOR,
+  STUN_THRESHOLD_FRACTION,
+  UNIQUE_GEAR_COMBAT,
+} from "../game-constants";
+import { writeCombatFlag, resolveSecondaryAction } from "./action-context";
+import { recordEnemyAbilityActivation } from "./battle-metrics";
+import { tryTriggerEnemyCc } from "./status-cc";
+import { setEnemyStatus, addEnemyStatus } from "./status-state";
+import { emitEnemyBuildupImmunity } from "./combat-text-events";
+import { computeCardDamageToEnemy } from "./damage-calc";
+import { applyHitHealth, reportEnemyHitDamage } from "./player-hit-core";
+import {
+  applyLuckyCloverGold,
+  applyNatureGoldReward,
+  applyNatureManaRefund,
+  applyCrowdControlTriggerBonuses,
+} from "./bonus-effects";
+import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal } from "./scaled-damage";
+import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
 
 export function computeLeechHeal(damageDealt: number): number {
   if (damageDealt <= 0) return 0;
@@ -72,7 +94,7 @@ export function applyScaledLeechHealing(
 }
 
 /** Thunderstone is a shallow trinket hit: restore its actual Health damage with ordinary Leech gain riders. */
-export function applyThunderstoneLeech(state: BattleState, damage: number, texts: CombatTextEvent[]): BattleState {
+function applyThunderstoneLeech(state: BattleState, damage: number, texts: CombatTextEvent[]): BattleState {
   return applyScaledLeechHealing(state, computeLeechHeal(damage), texts);
 }
 
@@ -94,12 +116,7 @@ function resolveLeechResourceRewards(
     if (state.playerStatuses.thorns === 0 && state.gearEffects.thornsOnLeechWithoutThorns > 0)
       restored = addPlayerStatusWithCombatText(restored, "thorns", state.gearEffects.thornsOnLeechWithoutThorns, texts);
     if (belowHalf && state.gearEffects.stunOnLeechBelowHalfHealth > 0)
-      restored = resolveStunFollowUpHit(
-        restored,
-        state.gearEffects.stunOnLeechBelowHalfHealth,
-        texts,
-        applyThunderstoneLeech,
-      );
+      restored = resolveStunFollowUpHit(restored, state.gearEffects.stunOnLeechBelowHalfHealth, texts);
     if (isPlayerDefeated(restored)) return restored;
     if (rollBattleChance(state.gearEffects.leechBlockChance, state))
       restored = addPlayerStatusWithCombatText(restored, "block", restoredHealth, texts, { skipFightPacing: true });
@@ -191,4 +208,135 @@ export function payPendingBleedLeech(
     });
   }
   return nextState;
+}
+
+function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
+  let nextState = state;
+  if (nextState.trinketEffects.thunderstoneDamageOnStun > 0) {
+    const previousHealth = nextState.enemyHealth;
+    const enemyWasAlive = previousHealth > 0;
+    nextState = dealEnemyScaledDamage(
+      nextState,
+      nextState.trinketEffects.thunderstoneDamageOnStun,
+      "nature",
+      combatTexts ?? [],
+      {
+        multiplier: getEnemyDamageMultiplier(nextState, "nature"),
+        // Capture the hit's Health loss before Leech can trigger more damage;
+        // the shared threshold and kill epilogue still closes this packet.
+        riders: (damagedState, finalDamage, texts) => {
+          const healthDamage = Math.max(0, previousHealth - damagedState.enemyHealth);
+          const leeched =
+            state.gearEffects.natureLeechVsPoisoned > 0 && state.enemyStatuses.poison > 0
+              ? applyThunderstoneLeech(damagedState, healthDamage, texts)
+              : damagedState;
+          let rewarded = applyNatureManaRefund(leeched, finalDamage, texts);
+          rewarded = applyLuckyCloverGold(rewarded, healthDamage, texts);
+          rewarded = applyNatureGoldReward(rewarded, healthDamage, texts);
+          return applyHitEpilogue(
+            rewarded,
+            previousHealth,
+            enemyWasAlive,
+            texts,
+            undefined,
+            state.playerStatuses.forge >= 5,
+          );
+        },
+      },
+    );
+  }
+  return nextState;
+}
+
+export function resolveStunTrigger(
+  state: BattleState,
+  combatTexts?: CombatTextEvent[],
+  preHitHealth = state.enemyHealth,
+  fromHolyDamage = false,
+  setupHealthDamage = 0,
+): BattleState {
+  const texts = combatTexts ?? [];
+  const triggered = tryTriggerEnemyCc({
+    preHitHealth,
+    nextState: state,
+    stat: "stun",
+    setupHealthDamage,
+    stackValue: state.enemyStatuses.stun,
+    thresholdFraction: Math.max(
+      MIN_CC_THRESHOLD_FRACTION,
+      STUN_THRESHOLD_FRACTION - state.talentEffects.stunThresholdReduction,
+    ),
+    ccCooldown: state.enemyCC.cooldown,
+    skipDuration: BATTLE_CONFIG.BASE_CC_DURATION + state.talentEffects.stunDurationExtension,
+    combatTexts: texts,
+  });
+  if (!triggered) return state;
+  if (triggered.kind === "immune") return triggered.state;
+  let next = state.talentEffects.archeryCritOnCrowdControl
+    ? writeCombatFlag(triggered.state, "hawkEyeReady", true)
+    : triggered.state;
+  if (state.gearEffects.retainStunBuildup > 0)
+    next = setEnemyStatus(
+      next,
+      "stun",
+      Math.round(state.enemyStatuses.stun * UNIQUE_GEAR_COMBAT.retainedStunMultiplier),
+    );
+  if (hasEnemyTrait(next, "brawler"))
+    next = writeCombatFlag(recordEnemyAbilityActivation(next, "brawler"), "enemyBrawlerDamagePenalty", true);
+  const talents = next.talentEffects;
+  const gear = next.gearEffects;
+  const purge = rollBattleChance(gear.purgeOnStunChance, next);
+  next = applyCrowdControlTriggerBonuses(
+    next,
+    {
+      draw: talents.drawOnStun,
+      nextCardFree: talents.nextCardFreeOnStun,
+      block: next.playerStatuses.block === 0 ? talents.blockOnStun + gear.blockOnStun : 0,
+      forge:
+        (rollBattleChance(talents.forgeOnStunChance, next) ? talents.forgeOnStun : 0) +
+        gear.forgeOnStunChances.reduce((total, chance) => total + Number(rollBattleChance(chance, next)), 0),
+      stripArmor: talents.stunStripArmor,
+      mana: next.mana === 0 ? talents.manaOnStun + gear.manaOnStun : 0,
+    },
+    texts,
+  );
+  if (isPlayerDefeated(next)) return next;
+  next = applyGearCcPhysicalDamage(next, next.gearEffects.damageOnStunPhysical, texts);
+  next = applyStunTrinketEffects(next, texts);
+  if (fromHolyDamage && next.gearEffects.holyStunBuildupGold > 0)
+    next = addGoldWithCombatText(next, next.gearEffects.holyStunBuildupGold, texts);
+  // Purge rewards can cause more hits; settle them after Stun's own rewards.
+  return purge ? writeCombatFlag(next, "pendingDisruptingPurge", true) : next;
+}
+
+/** Leech and Stun can trigger one another; keeping both recipes here avoids a module cycle. */
+export function resolveStunFollowUpHit(
+  state: BattleState,
+  amount: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  return resolveSecondaryAction(state, "reward", (current) => {
+    if (amount <= 0 || current.enemyHealth <= 0) return current;
+    const effect = { kind: "damage" as const, damageType: "stun" as const, amount };
+    const { nextState: afterMods, modifiedDamage, critical } = computeCardDamageToEnemy(current, effect);
+    const hit = applyHitHealth(afterMods, modifiedDamage, current, critical);
+    const decayed = decayArmorAfterDamage(hit.state, modifiedDamage, "enemy", combatTexts);
+    emitEnemyBuildupImmunity(decayed, "stun", modifiedDamage, combatTexts);
+    const nextState = resolveStunTrigger(
+      addEnemyStatus(decayed, "stun", modifiedDamage),
+      combatTexts,
+      hit.facts.previousHealth,
+      false,
+      hit.facts.healthDamage,
+    );
+    reportEnemyHitDamage(hit.facts, "stun", combatTexts);
+    return applyHitEpilogue(
+      nextState,
+      hit.facts.previousHealth,
+      hit.facts.enemyWasAlive,
+      combatTexts,
+      undefined,
+      afterMods.playerStatuses.forge >= 5,
+    );
+  });
 }

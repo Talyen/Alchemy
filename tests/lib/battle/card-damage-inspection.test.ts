@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { effectsCard } from "@/lib/game-data/cards/card-builders";
-import { cardById, enemyById, getEnemyAbilities, getEnemyAbilityCard, type BattleCardEffect } from "@/lib/game-data";
+import {
+  cardById,
+  cardMagnitude,
+  enemyById,
+  getEnemyAbilities,
+  getEnemyAbilityCard,
+  type BattleCardEffect,
+} from "@/lib/game-data";
 import { getBattleDamageInspectionCard, getBattleCardDescriptionInspection } from "@/lib/battle/card-damage-inspection";
 import type { CombatTextEvent } from "@/lib/battle";
 import { battleSnapshot } from "@/lib/battle/battle-snapshot";
@@ -11,6 +18,29 @@ import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 const hit = (amount = 6): BattleCardEffect => ({ kind: "damage", damageType: "physical", amount });
 
 describe("rule-preserving tooltip inspection", () => {
+  it("inspects a failure-only Chance effect without rebuilding its authored description", () => {
+    const card = effectsCard({
+      id: "failure-only",
+      art: "",
+      effects: [{ kind: "chance", probability: 0, successEffects: [], failureEffects: [hit()] }],
+      describe: () => [
+        {
+          role: "effect",
+          parts: [
+            "Otherwise deal ",
+            cardMagnitude({ effectIndex: 0, effectPath: [0], kind: "damage", field: "amount" }),
+            " Physical damage",
+          ],
+        },
+      ],
+    });
+    const state = patchBattleState({ hand: [card], flags: { nextHitPhysicalBonus: 4 } });
+    expect(getBattleCardDescriptionInspection(card, state).descriptionLines).toEqual([
+      "Otherwise deal 10 Physical damage",
+    ]);
+    expect(playBattleCardResolved(state, card.id, 0).state.enemyHealth).toBe(state.enemyHealth - 10);
+  });
+
   it.each([0, 9])("inlines the direct12Block grant without including %i existing Block or proc rewards", (block) => {
     const card = cardById.block!;
     const rng = vi.fn(() => {

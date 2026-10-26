@@ -55,13 +55,8 @@ function summarize(packets: readonly DamageEffect[]): BattleCardEffect {
   };
 }
 
-/** Resolve production rules against detached alternatives, then adapt observations to description lines. */
-export function inspectBattleCardDamage(
-  card: BattleCard,
-  snapshot: BattleSnapshot,
-  side: "player" | "enemy" = "player",
-): BattleDamageInspection {
-  const presentation = side === "enemy" && isEnemyAbilityCard(card) ? getEncounterEnemyAbility(card, snapshot) : card;
+/** Resolve production rules against detached alternatives without consuming live randomness. */
+function resolveCardInspection(card: BattleCard, snapshot: BattleSnapshot, side: "player" | "enemy" = "player") {
   const sourceAddresses = new Map<BattleCardEffect, string>();
   function copyEffect(effect: BattleCardEffect, path: number[]): BattleCardEffect {
     // One identity per occurrence, even if authored arrays share effect objects.
@@ -86,6 +81,26 @@ export function inspectBattleCardDamage(
   });
   const outcomes = new Map<string, InspectedPackets>();
   for (const [effect, result] of resolved) outcomes.set(sourceAddresses.get(effect)!, result);
+  return { resolutionCard, resolved, outcomes };
+}
+
+/** Observe attacks and utility without building a projected description card. */
+export function inspectBattleCardOutcomes(
+  card: BattleCard,
+  snapshot: BattleSnapshot,
+  side: "player" | "enemy" = "player",
+): ReadonlyMap<string, InspectedPackets> {
+  return resolveCardInspection(card, snapshot, side).outcomes;
+}
+
+/** Adapt the same observations to a damage-only presentation card. */
+export function inspectBattleCardDamage(
+  card: BattleCard,
+  snapshot: BattleSnapshot,
+  side: "player" | "enemy" = "player",
+): BattleDamageInspection {
+  const presentation = side === "enemy" && isEnemyAbilityCard(card) ? getEncounterEnemyAbility(card, snapshot) : card;
+  const { resolutionCard, resolved, outcomes } = resolveCardInspection(card, snapshot, side);
   function project(effect: BattleCardEffect): BattleCardEffect[] {
     if (
       effect.kind !== "damage" &&
@@ -255,7 +270,7 @@ export function getBattleCardDescriptionInspection(
   side: "player" | "enemy" = "player",
 ): BattleCard {
   const rules = side === "enemy" && isEnemyAbilityCard(card) ? getEncounterEnemyAbility(card, snapshot) : card;
-  const inspected = inspectBattleCardDamage(card, snapshot, side);
+  const outcomes = inspectBattleCardOutcomes(card, snapshot, side);
   let rebuild = false;
   const statusOptions: Array<{ path: number[]; amounts: ReadonlyMap<string, number> }> = [];
   const conditionalDamage: Array<{
@@ -268,7 +283,7 @@ export function getBattleCardDescriptionInspection(
   function inlineKnownAmount(effect: BattleCardEffect, path: number[]): BattleCardEffect {
     const view = mapEffectChildren(effect, (child, index) => inlineKnownAmount(child, [...path, index]));
     const key = path.join(".");
-    const outcome = inspected.outcomes.get(key);
+    const outcome = outcomes.get(key);
     if (effect.kind === "damage" && outcome?.magnitudes.size) {
       const amount = outcome.magnitudes.get("amount");
       const actual = firstAttack(outcome);

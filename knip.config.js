@@ -36,6 +36,8 @@ export default {
     "src/lib/validation/index.ts",
     "src/lib/content-validation/index.ts",
     "scripts/*.mjs",
+    // Loaded by the browser-only feedback lab HTML.
+    "scripts/combat-feedback-lab/lab.mjs",
     "desktop/*.cjs",
   ],
   // The compact CLI wrapper hides --config from command-line inference.
@@ -50,6 +52,10 @@ export default {
   },
   project: ["src/**/*.{ts,tsx}", "scripts/**/*.mjs", "desktop/**/*.cjs", "tests/**/*.{ts,tsx}"],
   ignoreIssues: {
+    // Consumed dynamically by the isolated worktree fixture.
+    "scripts/lib/worktree-storage.mjs": ["exports"],
+    // Trailer tooling maintains its own external module surface.
+    "scripts/trailers/model.mjs": ["exports"],
     // Exported staging adapter contract is consumed through Vite SSR by the CLI.
     "tests/trailers/scenarios.ts": ["exports"],
     // Compatibility barrel for active-run persistence types + serializers.
@@ -75,7 +81,7 @@ export default {
     // Documented forward pattern: new specs may call useFastBattle(page) instead of the void fixture.
     "tests/fixtures/e2e.ts": ["exports"],
   },
-  ignore: ["tests/environment.d.ts", "tests/electron/electron-environment.d.ts"],
+  ignore: ["tests/environment.d.ts", "tests/electron/electron-environment.d.ts", "tests/trailer-media-types.d.ts"],
   ignoreDependencies: [
     // Loaded via node_modules path string in scripts/lib/command-invocation.mjs; knip cannot trace it.
     "electron-builder",

@@ -21,14 +21,13 @@ import {
   applyHolyBlockChance,
   applyHolyTithe,
   applyLeechHitHealing,
-  applyThunderstoneLeech,
-} from "./damage-rider-leech";
+  resolveStunFollowUpHit,
+} from "./stun-leech-resolution";
 import { resolveTypedEnemyHit } from "./typed-hit-resolution";
-import { resolveStunFollowUpHit } from "./status-stun-core";
 import { type BattleState, type CombatTextEvent } from "./types";
 import type { FollowUpHitRequest } from "./player-hit-core";
 
-export { applyLeechHitHealing as applyLifestealAndPlayerHitTriggers } from "./damage-rider-leech";
+export { applyLeechHitHealing as applyLifestealAndPlayerHitTriggers } from "./stun-leech-resolution";
 
 /** Lower resolution tier: Wish and other reactions can emit shallow hits without importing card orchestration. */
 export function resolveFollowUpHit(
@@ -39,8 +38,7 @@ export function resolveFollowUpHit(
   if (isPlayerDefeated(state)) return state;
   switch (request.source) {
     case "player-follow-up":
-      if (request.damageType === "stun")
-        return resolveStunFollowUpHit(state, request.amount, combatTexts, applyThunderstoneLeech);
+      if (request.damageType === "stun") return resolveStunFollowUpHit(state, request.amount, combatTexts);
       return resolveSecondaryAction(state, "reward", (current) =>
         resolveDerivedFollowUp(
           current,

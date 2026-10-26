@@ -41,7 +41,7 @@ const documentation = (entry) =>
   (/\.(?:md|mdx)$/iu.test(entry.file) || /(?:^|\/)(?:README|LICENSE|COPYING|NOTICE)(?:\.txt)?$/iu.test(entry.file));
 
 /** Omit source masters while retaining their tracked authoring documentation. */
-export function storageSparsePatterns(profile) {
+function storageSparsePatterns(profile) {
   const patterns = ["/*"];
   for (const root of profile.omit) {
     const docs = profile.tracked.filter((entry) => inside(entry.file, [root]) && documentation(entry));

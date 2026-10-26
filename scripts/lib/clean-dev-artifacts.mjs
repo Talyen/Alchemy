@@ -16,7 +16,7 @@ export const TRANSIENT_ARTIFACT_DIRS = Object.freeze([
 export const DEFAULT_ARTIFACT_DIRS = Object.freeze(["node_modules/.vite", "scripts/trailers/node_modules/.cache"]);
 
 /** Opt-in environments and model caches, separate from retained evidence. */
-export const TOOL_CACHE_DIRS = Object.freeze([".cache"]);
+const TOOL_CACHE_DIRS = Object.freeze([".cache"]);
 
 /** Heavier rebuildable outputs; only removed with `--builds` / `--all`. */
 export const BUILD_ARTIFACT_DIRS = Object.freeze(["dist", "dist-demo", "release-desktop", "release-desktop-demo"]);

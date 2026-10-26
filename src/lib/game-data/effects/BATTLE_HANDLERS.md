@@ -92,8 +92,10 @@ choice source; it does not assemble another utility or attack recipe.
 
 ## Battle inspection ownership
 
-[`card-damage-inspection.ts`](../../battle/card-damage-inspection.ts) adapts
-production observations into presentation-only card descriptions. Player payment,
+[`card-damage-inspection.ts`](../../battle/card-damage-inspection.ts) resolves
+production observations once per inspection. Inline descriptions and card-flight
+targeting read those outcomes directly; the damage-only presentation adapter builds
+a projected card only when requested. Player payment,
 pre-triggers, ordered effects, and follow-ups resolve through `card-play.ts`;
 enemy abilities resolve through `enemy-turn-attack.ts`. Admission alone is
 hypothetical, so cards outside the hand or above the current Mana remain inspectable.
@@ -189,7 +191,7 @@ helpers and the existing resource exports. Inspection runs that same production 
 healing, and Holy draw behavior; the inspection decision source preserves finite
 alternatives without consuming gameplay RNG. Unknown draws stop dependent projection.
 
-`battle/damage-rider-leech.ts` owns Leech restoration facts and riders;
+`battle/stun-leech-resolution.ts` owns Leech restoration facts and riders;
 `elemental-hit-reactions.ts` owns Nature and Holy resource payouts, and
 `damage-status-riders.ts` owns Poison rewards and Bloodfire's Leech eligibility.
 `bonus-effects.ts` shares Cutpurse Gold and ordinary Gold/Mana rewards across hit
@@ -197,8 +199,9 @@ and tick callers. These owners call the production operations directly, so
 inspection carries earned resources between damage packets using the same rules.
 Rendering owns only summaries and presentation copies.
 
-Wish reward ordering lives in `wish-rewards.ts`; Companion action scope, Bond
-scaling and captured hit facts live in `companion-effects.ts`. The Companion effect
+Wish reward ordering lives in `wish-rewards.ts`; Companion action scope and
+captured hit facts live in `companion-effects.ts`. `companion-scaling.ts` constructs
+the same Bond-scaled action for combat and autoplay scoring. The Companion effect
 interpreter callback avoids an import cycle with the registry. Card cloning and
 Companion scaling use `mapEffectChildren`; reward selection uses
 `isCompanionSummonCard`. Chance effects may have an empty branch, including
@@ -206,10 +209,10 @@ failure-only damage retained by filtering and save conversion.
 
 ## Crowd-control ownership
 
-`battle/status-stun-core.ts` owns enemy Stun eligibility, retained buildup, trait
-reactions and reward ordering. Its Thunderstone Leech callback avoids importing
-the Leech orchestrator. `damage-status-riders.ts` owns Freeze eligibility and
-rewards; both use `bonus-effects.ts` for ordered crowd-control grants.
+`battle/stun-leech-resolution.ts` owns enemy Stun eligibility, retained buildup, trait
+reactions and reward ordering alongside Leech. These recipes can trigger one
+another, so they share an owner without a circular module dependency.
+`damage-status-riders.ts` owns Freeze eligibility and rewards; both use `bonus-effects.ts` for ordered crowd-control grants.
 Inspection runs these production recipes. `scaled-damage.ts` shares pacing,
 vulnerability, Block spending and Armor mitigation. Unknown draws stop dependent
 projection.

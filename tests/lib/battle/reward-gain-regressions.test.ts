@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cardById, computeTalentEffects } from "@/lib/game-data";
-import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";

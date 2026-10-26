@@ -9,7 +9,7 @@ import type { CombatTextEvent } from "@/lib/battle/types";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { resolvePendingBattleReactions } from "@/lib/battle/enemy-attack-damage";
 import { applyEmergencyWishForEmptyDraw } from "@/lib/battle/wish";
-import { applyScaledLeechHealing } from "@/lib/battle/damage-rider-leech";
+import { applyScaledLeechHealing } from "@/lib/battle/stun-leech-resolution";
 import { makeTestCard, regressionBattle, type BattleStatePatch } from "../../fixtures/battle";
 
 function fragileBattle(patch: BattleStatePatch = {}) {

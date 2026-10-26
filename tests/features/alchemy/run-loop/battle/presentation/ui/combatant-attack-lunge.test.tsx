@@ -16,7 +16,8 @@ it("plays fresh attack and cast cues, ignores child completion, and never replay
   expect(active()).toEqual([]);
   rerender(view(4, 2));
   expect(active()).toEqual(["animate-attack-lunge"]);
-  fireEvent.animationEnd(screen.getByText("Portrait"));
+  // JSDOM lacks AnimationEvent, so React listens for the WebKit-prefixed event.
+  fireEvent(screen.getByText("Portrait"), new Event("webkitAnimationEnd", { bubbles: true }));
   expect(active()).toEqual(["animate-attack-lunge"]);
   // A new cue replaces unfinished motion instead of layering animations.
   rerender(view(4, 3));
@@ -24,7 +25,7 @@ it("plays fresh attack and cast cues, ignores child completion, and never replay
   rerender(view(5, 3, -1));
   expect(active()).toEqual(["animate-attack-lunge"]);
   expect(actor.style.getPropertyValue("--attack-aim")).toBe("-1");
-  fireEvent.animationEnd(actor);
+  fireEvent(actor, new Event("webkitAnimationEnd", { bubbles: true }));
   expect(active()).toEqual([]);
   rerender(view(5, 3));
   expect(active()).toEqual([]);

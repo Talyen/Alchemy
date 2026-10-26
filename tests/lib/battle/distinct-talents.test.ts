@@ -13,7 +13,7 @@ import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { prepareTalentCardPlay } from "@/lib/battle/talent-card-play";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { applyHealthThresholdCleanse, removeHarmfulPlayerStatuses } from "@/lib/battle/status-player";
-import { applyLeechHitHealing } from "@/lib/battle/damage-rider-leech";
+import { applyLeechHitHealing } from "@/lib/battle/stun-leech-resolution";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { computeCardPayment } from "@/lib/battle/card-cost-rules";

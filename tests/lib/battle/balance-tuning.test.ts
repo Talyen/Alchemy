@@ -3,7 +3,7 @@ import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyArmorStatusEffect } from "@/lib/battle/player-rewards";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { applyLeechHitHealing } from "@/lib/battle/damage-rider-leech";
+import { applyLeechHitHealing } from "@/lib/battle/stun-leech-resolution";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 

@@ -1,6 +1,6 @@
 import { makeTestCard } from "../../fixtures/cards";
 import { expect, it } from "vitest";
-import { getCorruptionTargetEffect } from "@/lib/corruption/effect-address";
+import { getCardEffect } from "@/lib/game-data";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 
 it("Corruption effect addresses keeps success-before-failure addressing through nested scheduled effects", () => {
@@ -20,9 +20,9 @@ it("Corruption effect addresses keeps success-before-failure addressing through 
       },
     ],
   });
-  expect(getCorruptionTargetEffect(card, { effectIndex: 0, effectPath: [0] })).toBe(heal);
-  expect(getCorruptionTargetEffect(card, { effectIndex: 0, effectPath: [1, 0] })).toBe(hit);
+  expect(getCardEffect(card.effects, { effectIndex: 0, effectPath: [0] })).toBe(heal);
+  expect(getCardEffect(card.effects, { effectIndex: 0, effectPath: [1, 0] })).toBe(hit);
   for (const path of [[2], [-1], [1, 1], [0, 0]]) {
-    expect(getCorruptionTargetEffect(card, { effectIndex: 0, effectPath: path })).toBeUndefined();
+    expect(getCardEffect(card.effects, { effectIndex: 0, effectPath: path })).toBeUndefined();
   }
 });

@@ -2,7 +2,7 @@ import type { EnemyAttackEffect } from "@/lib/game-data";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, processContagion } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
-import { computeLeechHeal } from "./damage-rider-leech";
+import { computeLeechHeal } from "./stun-leech-resolution";
 import { scaleByRoomMultiplier } from "./amount-helpers";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";

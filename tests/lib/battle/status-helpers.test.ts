@@ -28,7 +28,7 @@ it("enemy damage multipliers combines native vulnerabilities and one ward with l
     },
     talentEffects: { stunDoubleDamage: true },
   });
-  const nativeAndWard = 2 * 1.3 * 0.5;
+  const nativeAndWard = 1.3 * 0.5;
   expect(getEnemyDamageMultiplier(state, "holy")).toBe(nativeAndWard);
   expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
   const controlled = { ...state, enemyCC: { ...state.enemyCC, stunSkipTurns: 1, freezeSkipTurns: 1 } };

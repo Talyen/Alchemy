@@ -34,6 +34,7 @@ describe("balance simulator", () => {
     using _opening = vi.spyOn(battle, "resolveBattleStart").mockReturnValue({
       state,
       startingTexts: [],
+      openingDrawTexts: [],
       companion: null,
       outcome: null,
     });
@@ -60,6 +61,7 @@ describe("balance simulator", () => {
       using _opening = vi.spyOn(battle, "resolveBattleStart").mockReturnValue({
         state: { ...battle.defaultBattleState(), ...health },
         startingTexts: [],
+        openingDrawTexts: [],
         companion: null,
         outcome: battle.getBattleOutcome(health),
       });

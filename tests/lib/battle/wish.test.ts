@@ -339,6 +339,7 @@ describe("new wish talents", () => {
         { kind: "random-draw", minAmount: 1, maxAmount: 1 },
         multiplier,
         [],
+        { manaAtStart: state.mana },
       );
       if (Math.round(multiplier) > 0) {
         expect(next.wishOptions?.length).toBeGreaterThan(0);

@@ -2,6 +2,7 @@ import {
   BattleCardEffectSchema,
   createEffectDescription,
   getCardDescription,
+  getCardEffect,
   withCardDescription,
   visitBattleCardEffects,
   type BattleCard,
@@ -24,12 +25,7 @@ import {
 import { addCorruptionEffect, addCorruptionLine, removeConsume, countCorruptionEffectLines } from "./card-edits";
 import { applyAltarModifiers } from "./altar-modifiers";
 import type { CorruptionMutationGroup, Mutation } from "./mutation-types";
-import {
-  getCorruptionTargetEffect,
-  applyNumericCorruption,
-  getEditableCorruptionTargets,
-  type CorruptionTarget,
-} from "./numeric";
+import { applyNumericCorruption, getEditableCorruptionTargets, type CorruptionTarget } from "./numeric";
 
 export type { CorruptionMutationGroup } from "./mutation-types";
 
@@ -60,7 +56,7 @@ function isPlainMagnitude(effect: BattleCardEffect): boolean {
 
 function numericMutations(card: BattleCard, targets: CorruptionTarget[], strengthen: boolean): Mutation[] {
   return targets.flatMap((target) => {
-    const effect = getCorruptionTargetEffect(card, target);
+    const effect = getCardEffect(card.effects, target);
     if (!effect) return [];
     const harmful = ["lose-health", "self-damage", "lose-mana", "lose-max-mana"].includes(effect.kind);
     const direction = strengthen !== harmful ? 1 : -1;

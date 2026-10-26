@@ -8,7 +8,7 @@ import {
 import { applyEffectByKind } from "@/lib/battle/effect-handlers/registry";
 import type { GearEffectManifest } from "@/lib/gear";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
-import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import type { BattleState } from "@/lib/battle/types";
 import { defaultTrinketManifest } from "../../fixtures/default-battle-state";

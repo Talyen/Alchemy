@@ -131,7 +131,7 @@ describe("Leech and reaction ordering", () => {
     });
     const texts: Array<import("@/lib/battle").CombatTextEvent> = [];
     const next = resolveEnemyAttackHit(state, { kind: "damage", damageType: "physical", amount: 1 }, texts, {
-      canDodge: false,
+      canDodge: true,
     }).state;
     expect(next.playerHealth).toBe(0);
     expect(next.enemyHealth).toBe(99);

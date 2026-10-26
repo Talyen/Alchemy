@@ -30,7 +30,6 @@ import type { GearDraftView } from "@/features/alchemy/shared/stores/session/gea
 import { createInitialGearState } from "@/features/alchemy/shared/stores/session/gear-state-defaults";
 import { createInitialProfileState } from "@/features/alchemy/shared/stores/session/profile-store-types";
 import {
-  clearTransientSession,
   resetToDefaults,
   setScreen,
   setHasActiveRun,
@@ -127,10 +126,6 @@ export function resetRunProgressSlice(): void {
     draft.run.initialized = false;
     draft.runProfile = createInitialPermanentFields();
   });
-}
-
-export function resetRunSessionSlice(): void {
-  mutateGameplayForTest((draft) => clearTransientSession(draft));
 }
 
 export function resetRunNavigationSlice(): void {

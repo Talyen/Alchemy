@@ -1,12 +1,5 @@
 import type { BattleCardEffect } from "./types";
 
-/** Stable child order also defines Corruption effect paths: success, then failure. */
-export function effectChildren(effect: BattleCardEffect): BattleCardEffect[] {
-  if (effect.kind === "chance") return [...effect.successEffects, ...effect.failureEffects];
-  if (effect.kind === "repeat-over-turns") return effect.effects;
-  return [];
-}
-
 /** Visit wrappers before their children in card order; returning true stops the entire walk. */
 export function visitBattleCardEffects(
   effects: readonly BattleCardEffect[],

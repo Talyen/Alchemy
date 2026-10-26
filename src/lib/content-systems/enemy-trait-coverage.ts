@@ -11,7 +11,10 @@ export interface EnemyTurnStartGain {
 // Battle consumes the gain table; content validation consumes coverage.
 // Both stay in sync because both read this module, so a new trait cannot be
 // handled at runtime yet fail the authoring gate (or vice versa).
-export const ENEMY_TURN_START_GAINS: ReadonlyMap<string, Readonly<EnemyTurnStartGain>> = new Map([
+export const ENEMY_TURN_START_GAINS: ReadonlyMap<string, Readonly<EnemyTurnStartGain>> = new Map<
+  string,
+  Readonly<EnemyTurnStartGain>
+>([
   ["rusting-carapace", Object.freeze({ stat: "forge", amount: TRAIT_FORGE_PER_TURN, everyOtherTurn: true })],
   ["iron-hide", Object.freeze({ stat: "armor", amount: IRON_HIDE_ARMOR_PER_TURN, everyOtherTurn: true })],
 ]);
