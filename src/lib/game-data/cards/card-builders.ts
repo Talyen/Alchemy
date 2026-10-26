@@ -1,8 +1,7 @@
 import { getCatalogArt } from "../assets";
-import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import { capitalizeWord } from "@/lib/utils";
 import { companionLibrary } from "../companions";
-import { createEffectDescription } from "../effect-metadata";
+import { appendCardDescriptionTrailer, createEffectDescription } from "../effect-metadata";
 import { withCardDescription, type CardDescription } from "../card-description-model";
 import type { BattleCard, BattleCardEffect, DamageType, KeywordId } from "../types";
 import { getCompanionDescriptionLines } from "./companion-turn-description";
@@ -58,8 +57,7 @@ export function effectsCard<const E extends BattleCardEffect[]>({
   cost = 1,
 }: EffectsCardInput<E>): BattleCard {
   const description = [...(describe ? describe(effects) : createEffectDescription(effects))];
-  if (tags) description.push(...tags.map((tag) => ({ parts: [capitalizeWord(tag)], role: "keyword" as const })));
-  if (consume) description.push({ parts: [CONSUME_DESCRIPTION_LINE], role: "consume" });
+  appendCardDescriptionTrailer(description, tags, consume);
   return withCardDescription(
     {
       id,

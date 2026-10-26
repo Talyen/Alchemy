@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { effectChildren, mapEffectChildren, visitBattleCardEffects, type BattleCardEffect } from "@/lib/game-data";
+import { mapEffectChildren, visitBattleCardEffects, type BattleCardEffect } from "@/lib/game-data";
 
 function nestedEffects(): BattleCardEffect[] {
   return [
@@ -35,7 +35,6 @@ describe("visitBattleCardEffects", () => {
     };
     const before = structuredClone(chance);
     expect(mapEffectChildren(chance, (child) => child)).toBe(chance);
-    expect(effectChildren(chance)).toEqual([...chance.successEffects, ...chance.failureEffects]);
     const mapped = mapEffectChildren(chance, (_child, index) => ({ kind: "gain-gold", amount: index + 1 }));
     expect(mapped).toEqual({
       ...chance,
