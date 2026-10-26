@@ -19,7 +19,7 @@ import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-t
 import { payKillPayouts } from "./player-rewards";
 import { resolveBleedGoldReward } from "./bonus-effects";
 import { mergeCombatText } from "./combat-text-events";
-import { payPendingBleedLeech } from "./damage-rider-leech";
+import { payPendingBleedLeech } from "./stun-leech-resolution";
 import { applyBleedDamageDraw, applyElementalDamageManaRestore } from "./player-hit-core";
 import { gearFrozenDamageMultiplier } from "./scaled-damage";
 

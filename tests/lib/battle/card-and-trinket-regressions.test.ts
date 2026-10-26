@@ -3,7 +3,7 @@ import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { createMixedPotion, doublePotionPotency } from "@/lib/alchemist";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
-import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";

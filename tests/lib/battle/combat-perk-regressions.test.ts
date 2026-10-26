@@ -7,7 +7,7 @@ import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { companionLibrary } from "@/lib/game-data";
-import { computeLeechHeal } from "@/lib/battle/damage-rider-leech";
+import { computeLeechHeal } from "@/lib/battle/stun-leech-resolution";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("combat perk regressions", () => {

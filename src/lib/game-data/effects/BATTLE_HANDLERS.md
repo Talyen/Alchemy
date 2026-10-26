@@ -160,7 +160,7 @@ helpers and the existing resource exports. Inspection runs that same production 
 healing, and Holy draw behavior; the inspection decision source preserves finite
 alternatives without consuming gameplay RNG. Unknown draws stop dependent projection.
 
-`battle/damage-rider-leech.ts` owns Leech restoration facts and riders;
+`battle/stun-leech-resolution.ts` owns Leech restoration facts and riders;
 `elemental-hit-reactions.ts` owns Nature and Holy resource payouts, and
 `damage-status-riders.ts` owns Poison rewards and Bloodfire's Leech eligibility.
 `bonus-effects.ts` shares Cutpurse Gold and ordinary Gold/Mana rewards across hit
@@ -177,10 +177,10 @@ failure-only damage retained by filtering and save conversion.
 
 ## Crowd-control ownership
 
-`battle/status-stun-core.ts` owns enemy Stun eligibility, retained buildup, trait
-reactions and reward ordering. Its Thunderstone Leech callback avoids importing
-the Leech orchestrator. `damage-status-riders.ts` owns Freeze eligibility and
-rewards; both use `bonus-effects.ts` for ordered crowd-control grants.
+`battle/stun-leech-resolution.ts` owns enemy Stun eligibility, retained buildup, trait
+reactions and reward ordering alongside Leech. These recipes can trigger one
+another, so they share an owner without a circular module dependency.
+`damage-status-riders.ts` owns Freeze eligibility and rewards; both use `bonus-effects.ts` for ordered crowd-control grants.
 Inspection runs these production recipes. `scaled-damage.ts` shares pacing,
 vulnerability, Block spending and Armor mitigation. Unknown draws stop dependent
 projection.

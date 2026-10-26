@@ -317,7 +317,7 @@ of its prior and granted values. Nested scopes inherit repeat suppression and re
 `battleSnapshot` strips that metadata alongside RNG; saved flag names, including
 the legacy `uniqueRepeatActive` field, remain readable.
 
-`damage-rider-leech.ts` owns Leech rewards; `damage-status-riders.ts` and
+`stun-leech-resolution.ts` owns Leech rewards; `damage-status-riders.ts` and
 `elemental-hit-reactions.ts` own Poison, Nature, and Holy hit riders. Shared
 Gold/Mana and crowd-control grants live in `bonus-effects.ts`. `battle-sequence.ts` owns ordered step
 execution and defeat cutoffs for card sequences, enemy abilities, status ticks,

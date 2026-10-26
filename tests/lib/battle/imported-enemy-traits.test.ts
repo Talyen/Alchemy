@@ -8,7 +8,7 @@ import { getEnemyAbilityPressure } from "@/lib/battle/battle-enemy-setup";
 import { applyHealingWithCombatText } from "@/lib/battle/player-rewards";
 import { processEnemyTraits, processEnemyRegeneration } from "@/lib/battle/enemy-turn-traits";
 import { resolvePlayerCrowdControlTriggers } from "@/lib/battle/status-cc";
-import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
 import { tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle/status-ticks";
 import { dealSelfDamage } from "@/lib/battle/status-helpers";

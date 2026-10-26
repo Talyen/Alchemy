@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
-import { applyScaledLeechHealing } from "@/lib/battle/damage-rider-leech";
+import { applyScaledLeechHealing, resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { addPlayerStatus } from "@/lib/battle/status-state";

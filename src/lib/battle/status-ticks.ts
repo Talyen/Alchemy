@@ -21,7 +21,7 @@ import { mergeCombatText } from "./combat-text-events";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { applyEnemyLeechHealing, resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { resolveFollowUpHit, tryPoisonStunProc } from "./follow-up-hit-resolution";
-import { payPendingBleedLeech } from "./damage-rider-leech";
+import { payPendingBleedLeech } from "./stun-leech-resolution";
 import { dealEnemyDotTick, projectEnemyDotDamage } from "./dot-resolve";
 import { processContagion } from "./enemy-healing";
 

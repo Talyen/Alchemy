@@ -1,5 +1,5 @@
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
-import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { describe, expect, it } from "vitest";
 import * as uniqueGearBattle from "../../fixtures/unique-gear-battle";

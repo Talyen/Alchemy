@@ -2,7 +2,7 @@ import { rollBattleChance } from "./chance-roll";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import type { BattleState, CombatTextEvent } from "./types";
-import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
+import { applyScaledLeechHealing, computeLeechHeal } from "./stun-leech-resolution";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";

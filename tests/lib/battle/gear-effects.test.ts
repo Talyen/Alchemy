@@ -14,7 +14,7 @@ import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { applyDamageStatuses, applyPoisonTalentRiders, tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
-import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { addEnemyStatus } from "@/lib/battle/status-state";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { reduceDamageByMana } from "@/lib/battle/status-helpers";

@@ -4,7 +4,7 @@ import { getTransmutationVariants } from "@/lib/alchemist/transmutation";
 import { augmentDefinitions } from "@/features/alchemy/shared/augment-definitions";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { resolvePlayerCrowdControlTriggers } from "@/lib/battle/status-cc";
-import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { resolveStunTrigger } from "@/lib/battle/stun-leech-resolution";
 import { tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import { applyWishEffect, chooseWishCard } from "@/lib/battle/wish";
 import { cardById, computeTalentEffects, getTalentsForKeyword, keywordDefinitions } from "@/lib/game-data";

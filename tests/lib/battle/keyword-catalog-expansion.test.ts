@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
-import { applyScaledLeechHealing } from "@/lib/battle/damage-rider-leech";
+import { applyScaledLeechHealing } from "@/lib/battle/stun-leech-resolution";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
