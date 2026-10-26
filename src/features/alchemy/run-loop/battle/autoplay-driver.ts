@@ -21,10 +21,7 @@ async function waitForAutoplayRetry(
   wakeRef?: { current: (() => void) | null },
 ): Promise<void> {
   if (signal.aborted) return;
-  if (delayMs <= 0) {
-    await Promise.resolve();
-    return;
-  }
+  // Even zero-delay retries must yield to host input and cancellation events.
   await new Promise<void>((resolve) => {
     let settled = false;
     const finish = () => {

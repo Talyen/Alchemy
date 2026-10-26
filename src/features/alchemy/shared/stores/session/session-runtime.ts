@@ -108,7 +108,16 @@ export function createSessionRuntime(options: GameSessionOptions = {}, allowPlat
   const runtime = createRuntime(options, allowPlatformStorage);
   let disposal: Promise<void> | undefined;
   function dispose() {
-    disposal ??= (async () => {
+    if (disposal) return disposal;
+    // A cleanup can re-enter dispose synchronously. Install the shared receipt
+    // before revoking resources so every caller waits for the same result.
+    let complete!: () => void;
+    let fail!: (error: unknown) => void;
+    disposal = new Promise<void>((resolve, reject) => {
+      complete = resolve;
+      fail = reject;
+    });
+    void (async () => {
       const failures = runtime.lifetime.close();
       runtime.progressCompletion.cancel();
       runtime.lifecycle.dispose();
@@ -118,7 +127,7 @@ export function createSessionRuntime(options: GameSessionOptions = {}, allowPlat
         runtime.io.setWritesDisabled(true);
       }
       if (failures.length) throw new AggregateError(failures, "Game session cleanup failed");
-    })();
+    })().then(complete, fail);
     return disposal;
   }
   const session = { dispose } as GameSession;

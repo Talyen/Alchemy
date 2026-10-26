@@ -112,7 +112,6 @@ export function applyEnemyAbility(state: BattleState, card: BattleCard, combatTe
   const context = { ...createEnemyAbilityContext(state, damaging), card };
   let nextState = recordEnemyAbilityUse({ ...state, lastEnemyAbilityId: card.id }, card.id);
   if (damaging) nextState = recordEnemyAttackAction(nextState);
-  if (context.brawlerPenalty) nextState = setFlag(nextState, "enemyBrawlerDamagePenalty", false);
   if (damaging) nextState = setFlag(nextState, "enemyAttackDamageReduction", 0);
   nextState = resolveBattleSequence(
     nextState,

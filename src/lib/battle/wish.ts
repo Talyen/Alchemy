@@ -29,7 +29,12 @@ import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./scaled-dama
 import { appendUniqueMany } from "@/lib/utils";
 
 export function upgradeWishCard(card: BattleCard): BattleCard {
-  return getEditableCorruptionTargets(card).reduce((next, target) => {
+  // Widen upper bounds before raising lower bounds: intermediate cards must
+  // remain valid even when an authored random range starts with equal bounds.
+  const targets = getEditableCorruptionTargets(card).toSorted(
+    (a, b) => Number(b.field === "maxAmount") - Number(a.field === "maxAmount"),
+  );
+  return targets.reduce((next, target) => {
     const effect = getCorruptionTargetEffect(next, target);
     // An upgrade must not raise a cost, including a shared Deal/Receive amount.
     if (!effect || target.affectsCost) return next;
