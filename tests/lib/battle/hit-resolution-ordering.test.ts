@@ -32,10 +32,10 @@ it("settles an Obsidian Hammer kill before paying the parent Leech without addin
     flags: { killRewardsPaid: true },
   });
   expect(texts).toEqual([
-    { target: "enemy", kind: "damage", stat: "stun", amount: 2 },
-    { target: "player", kind: "status", stat: "gold", amount: 2 },
-    { target: "player", kind: "heal", stat: "health", amount: 7 },
-    { target: "enemy", kind: "damage", stat: "physical", amount: 14 },
+    { target: "enemy", kind: "damage", stat: "stun", amount: 2, feedback: "secondary" },
+    { target: "player", kind: "status", stat: "gold", amount: 2, feedback: "secondary" },
+    { target: "player", kind: "heal", stat: "health", amount: 7, feedback: "secondary" },
+    { target: "enemy", kind: "damage", stat: "physical", amount: 14, feedback: "primary" },
   ]);
   expect(rng).toHaveBeenCalledTimes(2);
 });
@@ -61,7 +61,7 @@ it("preserves Holy reflection reward timing and does not spend Forge", () => {
     flags: { ...state.flags, killRewardsPaid: true },
   });
   expect(texts).toEqual([
-    { target: "enemy", kind: "damage", stat: "holy", amount: 6 },
+    { target: "enemy", kind: "damage", stat: "holy", amount: 6, healthLost: 5 },
     { target: "player", kind: "heal", stat: "health", amount: 5 },
   ]);
 });

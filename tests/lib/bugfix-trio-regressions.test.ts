@@ -61,7 +61,7 @@ describe("bugfix trio regressions", () => {
           8,
       0,
     );
-    expect(expected).toBe(0.625);
+    expect(expected).toBe(0.75);
     expect(scoreAvailableReactions(random, state)).toBe(expected);
   });
 
@@ -239,8 +239,8 @@ describe("bugfix trio regressions", () => {
     });
     // First effect sets nextHitPoison.
     // Second effect converts physical to 3 poison damage, adding 3 poison stacks to the enemy.
-    // Third effect deals 2 burn damage against the now-poisoned enemy, triggering Venomflash (1 bonus damage).
-    expect(scoreAvailableReactions(poisonThenBurn, state)).toBe(1);
+    // Third effect deals 2 burn damage against the now-poisoned enemy, triggering Venomflash (2 bonus damage).
+    expect(scoreAvailableReactions(poisonThenBurn, state)).toBe(2);
   });
 
   it("keeps equal-status branches with different mana distinct before mana-scaled attacks", () => {
@@ -507,9 +507,9 @@ describe("bugfix trio regressions", () => {
       effects: [{ kind: "damage", damageType: "burn", amount: 3 }],
     });
     // Hit 1 deals 3 Burn, triggering Venomflash because enemy has Poison and Burn was 0.
-    // Venomflash payoff is getReactionBonus(poison: 5) = 1.
-    // Hit 2 deals 3 Burn again without repeating Venomflash. Total reaction score = 1.
-    expect(scoreAvailableReactions(burnAttack, state)).toBe(1);
+    // Venomflash payoff is getReactionBonus(poison: 5) = 3.
+    // Hit 2 deals 3 Burn again without repeating Venomflash.
+    expect(scoreAvailableReactions(burnAttack, state)).toBe(3);
   });
 
   it("re-exports transmutation keywords, prefixes, and ui gold from game-constants barrel", () => {

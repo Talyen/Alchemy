@@ -140,6 +140,7 @@ describe("playing recovered battles", () => {
 
   it("caps saved Bleed Leech to its own buildup before unrelated Bleed arrives", () => {
     const state = restore({
+      currentEnemy: enemyById.goblin,
       playerHealth: 10,
       enemyHealth: 20,
       enemyStatuses: { bleed: 2 },

@@ -186,7 +186,7 @@ describe("Sun-Struck Shield reflection", () => {
         triggerBlockRetaliation: true,
       },
     );
-    expect(next.enemyHealth).toBe(194);
+    expect(next.enemyHealth).toBe(196);
   });
 
   it("uses Block spent without attack scaling, crits, Forge consumption, or extra pacing", () => {

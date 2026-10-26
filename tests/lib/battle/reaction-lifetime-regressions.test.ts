@@ -4,7 +4,7 @@ import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { purgeOnePlayerBenefit } from "@/lib/battle/player-purge";
 import { processEncounterTraitActionDamage } from "@/lib/battle/encounter-trait-events";
-import { companionLibrary, cardById } from "@/lib/game-data";
+import { companionLibrary, cardById, enemyById } from "@/lib/game-data";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { patchBattleState } from "../../fixtures/battle";
@@ -86,6 +86,7 @@ describe("reaction lifetimes", () => {
     const fangs = cardById.fangs!;
     const state = patchBattleState({
       hand: [fangs],
+      currentEnemy: enemyById.goblin,
       playerHealth: 10,
       playerMaxHealth: 100,
       enemyHealth: 100,

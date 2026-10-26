@@ -144,7 +144,7 @@ describe("combat feedback lifetime", () => {
       signal: "reaction",
       reactionId: "shatter",
     } as const;
-    feedback.showCombatTexts([...hit, notice]);
+    feedback.showCombatTexts([{ ...hit[0], reactionId: "shatter" }, notice]);
     const first = feedback.store.getState().reactionAnnouncements[0]!;
     vi.advanceTimersByTime(100);
     feedback.showCombatTexts([...hit]);
