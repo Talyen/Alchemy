@@ -36,6 +36,7 @@ test("held confirm spends one card, fresh presses recover focus through End Turn
   const input = controllerInput(page);
   const battle = new BattlePage(page);
   await expect(battle.endTurnBtn).toBeEnabled();
+  await expect.poll(() => battle.endTurnBtn.evaluate((element) => !element.closest("[inert]"))).toBe(true);
   await input.press("back");
   await expect(page.getByTestId("game-menu")).toBeVisible();
   await input.press("back");
