@@ -1,11 +1,21 @@
-import { resolveSecondaryAction } from "./action-context";
+import {
+  BATTLE_CONFIG,
+  MIN_CC_THRESHOLD_FRACTION,
+  STUN_THRESHOLD_FRACTION,
+  UNIQUE_GEAR_COMBAT,
+} from "../game-constants";
+import { isPlayerDefeated } from "./battle-outcome";
+import { writeCombatFlag, resolveSecondaryAction } from "./action-context";
+import { recordEnemyAbilityActivation } from "./battle-metrics";
+import { hasEnemyTrait } from "./encounter-trait-state";
+import { tryTriggerEnemyCc } from "./status-cc";
+import { setEnemyStatus, addEnemyStatus } from "./status-state";
 import { rollBattleChance } from "./chance-roll";
 import { emitEnemyBuildupImmunity, mergeCombatText } from "./combat-text-events";
-import { resolveEnemyStun } from "./crowd-control-resolution";
 import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyHitHealth } from "./player-hit-core";
 import type { BattleState, CombatTextEvent } from "./types";
-import { addGoldWithCombatText, gainManaWithCombatText, applyHitEpilogue } from "./player-rewards";
+import { addGoldWithCombatText, applyHitEpilogue } from "./player-rewards";
 import {
   applyLuckyCloverGold,
   applyNatureGoldReward,
@@ -14,7 +24,6 @@ import {
 } from "./bonus-effects";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./scaled-damage";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
-import { addEnemyStatus } from "./status-state";
 
 export type ThunderstoneLeech = (state: BattleState, damage: number, texts: CombatTextEvent[]) => BattleState;
 
@@ -67,22 +76,59 @@ export function resolveStunTriggerCore(
   fromHolyDamage: boolean,
   leech: ThunderstoneLeech,
   setupHealthDamage = 0,
-) {
-  return resolveEnemyStun(
-    state,
-    combatTexts ?? [],
-    {
-      chance: rollBattleChance,
-      bonuses: applyCrowdControlTriggerBonuses,
-      physical: applyGearCcPhysicalDamage,
-      thunderstone: (current, texts) => applyStunTrinketEffects(current, leech, texts),
-      gold: addGoldWithCombatText,
-      mana: (current, amount, texts) => gainManaWithCombatText(current, amount, texts, { skipFightPacing: true }),
-    },
+): BattleState {
+  const texts = combatTexts ?? [];
+  const triggered = tryTriggerEnemyCc({
     preHitHealth,
-    fromHolyDamage,
+    nextState: state,
+    stat: "stun",
     setupHealthDamage,
+    stackValue: state.enemyStatuses.stun,
+    thresholdFraction: Math.max(
+      MIN_CC_THRESHOLD_FRACTION,
+      STUN_THRESHOLD_FRACTION - state.talentEffects.stunThresholdReduction,
+    ),
+    ccCooldown: state.enemyCC.cooldown,
+    skipDuration: BATTLE_CONFIG.BASE_CC_DURATION + state.talentEffects.stunDurationExtension,
+    combatTexts: texts,
+  });
+  if (!triggered) return state;
+  if (triggered.kind === "immune") return triggered.state;
+  let next = state.talentEffects.archeryCritOnCrowdControl
+    ? writeCombatFlag(triggered.state, "hawkEyeReady", true)
+    : triggered.state;
+  if (state.gearEffects.retainStunBuildup > 0)
+    next = setEnemyStatus(
+      next,
+      "stun",
+      Math.round(state.enemyStatuses.stun * UNIQUE_GEAR_COMBAT.retainedStunMultiplier),
+    );
+  if (hasEnemyTrait(next, "brawler"))
+    next = writeCombatFlag(recordEnemyAbilityActivation(next, "brawler"), "enemyBrawlerDamagePenalty", true);
+  const talents = next.talentEffects;
+  const gear = next.gearEffects;
+  const purge = rollBattleChance(gear.purgeOnStunChance, next);
+  next = applyCrowdControlTriggerBonuses(
+    next,
+    {
+      draw: talents.drawOnStun,
+      nextCardFree: talents.nextCardFreeOnStun,
+      block: next.playerStatuses.block === 0 ? talents.blockOnStun + gear.blockOnStun : 0,
+      forge:
+        (rollBattleChance(talents.forgeOnStunChance, next) ? talents.forgeOnStun : 0) +
+        gear.forgeOnStunChances.reduce((total, chance) => total + Number(rollBattleChance(chance, next)), 0),
+      stripArmor: talents.stunStripArmor,
+      mana: next.mana === 0 ? talents.manaOnStun + gear.manaOnStun : 0,
+    },
+    texts,
   );
+  if (isPlayerDefeated(next)) return next;
+  next = applyGearCcPhysicalDamage(next, next.gearEffects.damageOnStunPhysical, texts);
+  next = applyStunTrinketEffects(next, leech, texts);
+  if (fromHolyDamage && next.gearEffects.holyStunBuildupGold > 0)
+    next = addGoldWithCombatText(next, next.gearEffects.holyStunBuildupGold, texts);
+  // Purge rewards can cause more hits; settle them after Stun's own rewards.
+  return purge ? writeCombatFlag(next, "pendingDisruptingPurge", true) : next;
 }
 
 /** Leaf stun entry: stays free of hit-resolution tiers so leech riders can call it without a module cycle. */

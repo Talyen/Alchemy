@@ -16,9 +16,8 @@ import {
   getBleedLowHealthDamageMultiplier,
 } from "./status-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
-import { addGoldWithCombatText, payKillPayouts } from "./player-rewards";
-import { rollBattleChance } from "./chance-roll";
-import { resolveBleedGoldReward } from "./resource-reward-resolution";
+import { payKillPayouts } from "./player-rewards";
+import { resolveBleedGoldReward } from "./bonus-effects";
 import { mergeCombatText } from "./combat-text-events";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 import { applyBleedDamageDraw, applyElementalDamageManaRestore } from "./player-hit-core";
@@ -60,10 +59,7 @@ export function applyEnemyDotDamage(
   if (bleedHealthDamage > 0) {
     nextState = applyBleedDamageDraw(nextState, bleedHealthDamage, combatTexts);
     if (isPlayerDefeated(nextState)) return nextState;
-    nextState = resolveBleedGoldReward(nextState, bleedHealthDamage, combatTexts, {
-      chance: rollBattleChance,
-      gold: addGoldWithCombatText,
-    });
+    nextState = resolveBleedGoldReward(nextState, bleedHealthDamage, combatTexts);
   }
 
   let earlierDamage = 0;

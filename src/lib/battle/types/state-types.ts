@@ -179,9 +179,6 @@ export interface BattleResolution {
   combatTexts: CombatTextEvent[];
 }
 
-/** Resource-grant port shared by ordered combat reward interpreters. */
-export type BattleResourceReward = (state: BattleState, amount: number, texts: CombatTextEvent[]) => BattleState;
-
 /** Execution-only dependency; never retained in a committed or saved snapshot. */
 export interface BattleResolutionContext {
   rng: Rng;
