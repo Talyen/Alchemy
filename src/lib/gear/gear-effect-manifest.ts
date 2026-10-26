@@ -6,15 +6,19 @@ import { createNumericManifest } from "@/lib/manifest-utils";
 // row cannot silently aggregate as a numeric bonus. (A regex keeps the suffix
 // out of the localization extractor, which claims capitalized string literals.)
 const CHANCE_EFFECT_KEY_PATTERN = /Chances$/;
-export const GEAR_CHANCE_EFFECT_KEYS = [...new Set(gearAffixRows.map((affix) => affix.effectKey))].filter(
-  (key): key is Extract<GearAffixEffectKey, `${string}Chances`> => CHANCE_EFFECT_KEY_PATTERN.test(key),
+export const GEAR_CHANCE_EFFECT_KEYS = Object.freeze(
+  [...new Set(gearAffixRows.map((affix) => affix.effectKey))].filter(
+    (key): key is Extract<GearAffixEffectKey, `${string}Chances`> => CHANCE_EFFECT_KEY_PATTERN.test(key),
+  ),
 );
 
-export const GEAR_NUMERIC_EFFECT_KEYS = [...new Set(gearAffixRows.map((affix) => affix.effectKey))].filter(
-  (key): key is Exclude<GearAffixEffectKey, GearChanceEffectKey> =>
-    !(GEAR_CHANCE_EFFECT_KEYS as readonly string[]).includes(key),
+export const GEAR_NUMERIC_EFFECT_KEYS = Object.freeze(
+  [...new Set(gearAffixRows.map((affix) => affix.effectKey))].filter(
+    (key): key is Exclude<GearAffixEffectKey, GearChanceEffectKey> =>
+      !(GEAR_CHANCE_EFFECT_KEYS as readonly string[]).includes(key),
+  ),
 );
-export const GEAR_EFFECT_KEYS = [...GEAR_NUMERIC_EFFECT_KEYS, ...GEAR_CHANCE_EFFECT_KEYS];
+export const GEAR_EFFECT_KEYS = Object.freeze([...GEAR_NUMERIC_EFFECT_KEYS, ...GEAR_CHANCE_EFFECT_KEYS]);
 
 export type GearChanceEffectKey = (typeof GEAR_CHANCE_EFFECT_KEYS)[number];
 

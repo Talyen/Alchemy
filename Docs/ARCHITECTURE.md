@@ -246,6 +246,12 @@ owns recovery defaults. Fresh constructors remain in `run-state-init.ts` and
 ordered catalogs and special defaults. Keep signatures derived from their composition
 owner instead of maintaining parallel method or field inventories.
 
+Talent, Homestead and Trinket neutral manifests are frozen shared templates,
+including their nested default collections. Manifest factories return independent
+mutable values. Gear effect-key lists are frozen because factory initialization
+and save normalization both depend on them. Companion Bond tier costs and their
+tier records are frozen; purchase quotes copy costs before exposing editable data.
+
 ## Import boundaries
 
 Enforced in `oxlint.config.ts` (composition in `lint/fragments.js` + `lint/boundaries.js`) and double-checked by `npm run lint:boundaries` (dependency-cruiser, except barrel deep-import bans which are Oxlint-only). Phase bans and path override order live in those files; focused Oxlint fixtures exercise accepted and rejected code through the real configuration. `npm run lint:architecture-smoke` checks shared presentation constants and cross-language contracts. Summary:
