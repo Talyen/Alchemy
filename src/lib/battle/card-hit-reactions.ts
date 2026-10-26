@@ -12,6 +12,7 @@ import {
   tryPoisonStunProc,
 } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
+import { isPlayerDefeated } from "./battle-outcome";
 
 function applyBurnDamageRiders(
   state: BattleState,
@@ -67,6 +68,7 @@ export function applyCardHitReactions(
   if (effect.damageType === "physical" || effect.damageType === "bleed") {
     nextState = applyTalentHitConversions(nextState, effect.damageType, modifiedDamage, combatTexts);
   }
+  if (isPlayerDefeated(nextState)) return nextState;
   nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts, previousHealth, {
     cardLeech: request.origin !== "companion",
     eligibility,
@@ -76,12 +78,14 @@ export function applyCardHitReactions(
     onPoisonBleedConversion: (current, damage, texts) =>
       resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
   });
+  if (isPlayerDefeated(nextState)) return nextState;
   if (effect.detonateAllBurn) {
     nextState = detonateEnemyStatuses(nextState, ["burn"], combatTexts);
   }
   if (effect.detonateAllBleed) {
     nextState = detonateEnemyStatuses(nextState, ["bleed"], combatTexts);
   }
+  if (isPlayerDefeated(nextState)) return nextState;
   if (modifiedDamage > 0 && nextState.enemyHealth > 0)
     nextState = applyForgeStunRider(nextState, effect, combatTexts, facts.eligibility.playerStatuses.forge);
   if (effect.damageType === "physical" && modifiedDamage > 0 && nextState.enemyHealth > 0) {

@@ -78,19 +78,19 @@ export const CRAFTING_CURRENCY_LIST: CraftingCurrencyDefinition[] = CRAFTING_CUR
 );
 
 export function getCraftingCurrencyDefinition(id: CraftingCurrencyId): CraftingCurrencyDefinition {
-  const definition = CRAFTING_CURRENCIES_BY_ID[id];
-  if (!definition) throw new Error(`Unknown crafting currency: ${id}`);
-  return definition;
+  if (!Object.hasOwn(CRAFTING_CURRENCIES_BY_ID, id)) throw new Error(`Unknown crafting currency: ${id}`);
+  return CRAFTING_CURRENCIES_BY_ID[id];
 }
 
 function affixMaxValue(roll: GearAffixRoll, rarity: GearRarity): number {
+  if (!Object.hasOwn(gearAffixCatalog, roll.id)) return roll.value;
   const def = gearAffixCatalog[roll.id];
-  return def ? def.roll[rarity].max : roll.value;
+  return def.roll[rarity].max;
 }
 
 function upgradeAffixValueToAstral(roll: GearAffixRoll): GearAffixRoll {
+  if (!Object.hasOwn(gearAffixCatalog, roll.id)) return roll;
   const def = gearAffixCatalog[roll.id];
-  if (!def) return roll;
   const basic = def.roll.basic;
   const astral = def.roll.astral;
   const basicSpan = Math.max(1, basic.max - basic.min);
@@ -107,20 +107,22 @@ function upgradeAffixValueToAstral(roll: GearAffixRoll): GearAffixRoll {
 type CraftingPlan = string | ((rng: () => number) => GearInstance);
 
 function prepareCraftingCurrency(currencyId: CraftingCurrencyId, item: GearInstance): CraftingPlan {
-  const rarity = gearInstanceRarity(item);
-  if (rarity === "unique") return "Unique items cannot be crafted.";
   const definition = gearDefinitions[item.definitionId];
+  // Runtime callers can retain obsolete items or supply an unknown currency.
+  // Reject before preview admits an operation or application can alter the item.
+  if (!definition || !Object.hasOwn(CRAFTING_CURRENCIES_BY_ID, currencyId))
+    return "No affix slots or eligible affixes available.";
+  const rarity = definition.rarity;
+  if (rarity === "unique") return "Unique items cannot be crafted.";
   switch (currencyId) {
     case "discordant-dice":
       if (!item.affixes.length) return "This item has no affixes to reroll.";
-      return (rng) => ({ ...item, affixes: definition ? rollAffixes(definition, item.affixes.length, rng) : [] });
+      return (rng) => ({ ...item, affixes: rollAffixes(definition, item.affixes.length, rng) });
     case "sprig-of-growth": {
       if (!rarity || item.affixes.length >= GEAR_AFFIX_COUNT[rarity].max)
         return "No affix slots or eligible affixes available.";
       const presentIds = new Set(item.affixes.map((affix) => affix.id));
-      const available = definition
-        ? buildEligibleAffixPool(definition).filter((affix) => !presentIds.has(affix.id))
-        : [];
+      const available = buildEligibleAffixPool(definition).filter((affix) => !presentIds.has(affix.id));
       if (!available.length) return "No affix slots or eligible affixes available.";
       return (rng) => {
         const chosen = pickRandom(available, rng)!;
