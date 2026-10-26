@@ -23,6 +23,7 @@ import { applyEnemyLeechHealing, resolvePendingBattleReactions } from "./enemy-a
 import { resolveFollowUpHit, tryPoisonStunProc } from "./follow-up-hit-resolution";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 import { dealEnemyDotTick, projectEnemyDotDamage } from "./dot-resolve";
+import { processContagion } from "./enemy-healing";
 
 function emitDotCombatText(
   combatTexts: CombatTextEvent[],
@@ -168,6 +169,7 @@ function dealPlayerDotTick(
   );
   if (applyRiders) nextState = applyRiders(nextState);
   const healthLost = playerHealthLostToDamage(state, nextState);
+  nextState = processContagion(nextState, status, healthLost, combatTexts);
   if (healthLost > 0) {
     emitDotCombatText(combatTexts, "player", status, healthLost);
   }

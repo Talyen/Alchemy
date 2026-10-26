@@ -1,6 +1,6 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { applyEnemyHealingWithCombatText } from "./enemy-healing";
+import { applyEnemyHealingWithCombatText, processContagion } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
 import { computeLeechHeal } from "./damage-rider-leech";
 import { scaleByRoomMultiplier } from "./amount-helpers";
@@ -117,6 +117,7 @@ function resolveEnemyDamageEffectCore(
     combatTexts,
     resolvePendingBattleReactions,
   );
+  nextState = processContagion(nextState, effect.damageType, outcome.healthDamage, combatTexts);
   if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };
 
   nextState = resolvePlayerCrowdControlTriggers(nextState, combatTexts);

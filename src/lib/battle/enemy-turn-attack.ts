@@ -9,7 +9,7 @@ import {
 } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rollChance } from "@/lib/rng";
 import { halveRounded } from "./amount-helpers";
-import { recordEnemyAbilityUse, recordEnemyAttackAction } from "./battle-metrics";
+import { recordEnemyAbilityActivation, recordEnemyAbilityUse, recordEnemyAttackAction } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
 import { createEnemyAbilityContext, type EnemyAbilityContext } from "./enemy-ability-damage";
@@ -25,6 +25,9 @@ import { isStunFreezeBuildupBlocked } from "./crowd-control-policy";
 import { addEnemyStatus, setPlayerStatus } from "./status-state";
 import { getBattleOutcome } from "./battle-outcome";
 import { writeCombatFlag as setFlag } from "./action-context";
+import { hasEnemyTrait } from "./encounter-trait-state";
+import { addEnemyMitigation } from "./enemy-mitigation-state";
+import { applyBlockDepletionRewards } from "./player-rewards";
 
 function applyEnemyEffect(
   state: BattleState,
@@ -112,6 +115,14 @@ export function applyEnemyAbility(state: BattleState, card: BattleCard, combatTe
   let nextState = recordEnemyAbilityUse({ ...state, lastEnemyAbilityId: card.id }, card.id);
   if (damaging) nextState = recordEnemyAttackAction(nextState);
   if (context.brawlerPenalty) nextState = setFlag(nextState, "enemyBrawlerDamagePenalty", false);
+  if (damaging && hasEnemyTrait(nextState, "pilfer") && nextState.playerStatuses.block > 0) {
+    const before = nextState;
+    nextState = setPlayerStatus(nextState, "block", nextState.playerStatuses.block - 1);
+    nextState = recordEnemyAbilityActivation(addEnemyMitigation(nextState, "block", 1), "pilfer");
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: 1, impact: false });
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
+    nextState = resolvePendingBattleReactions(applyBlockDepletionRewards(before, nextState, combatTexts), combatTexts);
+  }
   nextState = resolveBattleSequence(
     nextState,
     card.effects,

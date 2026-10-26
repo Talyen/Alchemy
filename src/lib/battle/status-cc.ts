@@ -2,12 +2,19 @@ import { prepareCcReactions } from "./elemental-reaction-state";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { mergeCombatText } from "./combat-text-events";
 import { applyArmorReward } from "./status-player";
-import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STATUS_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
+import {
+  BATTLE_CONFIG,
+  COLD_EMBRACE_HEALING,
+  FREEZE_THRESHOLD_FRACTION,
+  STATUS_CONFIG,
+  STUN_THRESHOLD_FRACTION,
+} from "../game-constants";
 import type { BattleState, CcState, CombatTextEvent } from "./types";
 import { setEnemyStatus, setPlayerStatus } from "./status-state";
 import { addEnemyMitigation } from "./enemy-mitigation-state";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import { getBattleOutcome } from "./battle-outcome";
+import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 
 export type ActiveCcKeyword = "stun" | "freeze";
 
@@ -68,6 +75,13 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
   if (stat === "freeze" && hasEnemyTrait(state, "yeti")) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
     nextState = addEnemyMitigation(recordEnemyAbilityActivation(nextState, "yeti"), "block", 1);
+  }
+  if (stat === "freeze" && hasEnemyTrait(state, "ice-wraith") && getBattleOutcome(nextState) === null) {
+    const healed = applyEnemyHealingWithCombatText(nextState, COLD_EMBRACE_HEALING, combatTexts, {
+      skipFightPacing: true,
+    });
+    nextState =
+      healed.enemyHealth > nextState.enemyHealth ? recordEnemyAbilityActivation(healed, "ice-wraith") : healed;
   }
 
   return nextState;

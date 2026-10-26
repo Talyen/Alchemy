@@ -10,7 +10,7 @@ export function trait(id: string, title: string, description: string): BestiaryE
 export const poisonResistance = trait("poison-resistance", "Poison Resistance", "Receives 25% less Poison damage");
 
 export function regeneration(title: string): BestiaryEntry["traits"][number] {
-  return trait("regeneration", title, "Restores Health each turn");
+  return trait("regeneration", title, "Restores 1 Health each turn");
 }
 
 type EnemyDefinition = Omit<BestiaryEntry, "subtitle" | "descriptionLines" | "art"> & { art?: string };

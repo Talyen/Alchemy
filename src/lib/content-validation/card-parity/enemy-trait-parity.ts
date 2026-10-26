@@ -5,6 +5,11 @@ import type { ContentValidationIssue } from "../types";
 // Damage types and magnitudes come from TRAIT_DAMAGE_RULES. These terms cover
 // the other effects described by native Traits; nested terms are alternatives.
 export const TRAIT_REQUIRED_TERMS: Record<string, ReadonlyArray<string | readonly string[]>> = {
+  "hollow-frame": ["cannot", "leeched"],
+  pilfer: ["steals", "block", "before attacking"],
+  "snap-shut": ["block", "after attacking"],
+  "soul-harvest": ["purge", "leech", "below half health"],
+  contagion: ["restores", "health", "opponent", "poison damage"],
   "frost-elemental": ["freeze"],
   "iron-hide": ["armor"],
   "rusting-carapace": ["forge"],
@@ -31,7 +36,7 @@ export const TRAIT_REQUIRED_TERMS: Record<string, ReadonlyArray<string | readonl
   paladin: ["block", "stun"],
   seraph: ["holy", "health"],
   "winter-wolf": ["freeze"],
-  "ice-wraith": ["freeze"],
+  "ice-wraith": ["restores", "health", "opponent", "frozen"],
   yeti: ["block", "frozen"],
   banshee: ["purge"],
   brawler: ["damage", "stun"],

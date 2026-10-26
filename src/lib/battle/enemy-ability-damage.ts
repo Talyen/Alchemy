@@ -1,6 +1,6 @@
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import type { DamageType, EnemyAbilityDamageEffect } from "@/lib/game-data";
-import { getBattleRng, pickRandom } from "@/lib/rng";
+import { getBattleRng, pickRandom, rollChance } from "@/lib/rng";
 import { HALF_DIVISOR } from "../game-constants";
 import {
   BANDIT_FIRST_HIT_MULTIPLIER,
@@ -11,6 +11,7 @@ import {
   HELLHOUND_BURN_MULTIPLIER,
   INQUISITOR_BURN_MULTIPLIER,
   OGRE_BLOCK_BREAK_MULTIPLIER,
+  SOUL_HARVEST_PURGE_CHANCE,
 } from "../game-constants";
 import { scalePercent } from "./amount-helpers";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
@@ -31,6 +32,7 @@ export interface EnemyAbilityContext {
   readonly rewardedTraits: Set<string>;
   readonly brawlerPenalty: boolean;
   readonly vampireBonus: boolean;
+  readonly soulHarvest: "purge" | "leech" | null;
   landed: boolean;
   healthDamage: number;
 }
@@ -41,6 +43,12 @@ export function createEnemyAbilityContext(state: BattleState, damaging: boolean)
     brawlerPenalty: damaging && state.flags.enemyBrawlerDamagePenalty,
     vampireBonus:
       damaging && hasEnemyTrait(state, "vampire") && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR,
+    soulHarvest:
+      damaging && hasEnemyTrait(state, "soul-harvest") && state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR
+        ? rollChance(SOUL_HARVEST_PURGE_CHANCE, getBattleRng(state))
+          ? "purge"
+          : "leech"
+        : null,
     landed: false,
     healthDamage: 0,
   };
@@ -114,9 +122,6 @@ function prepareEnemyAbilityDamage(state: BattleState, effect: EnemyAbilityDamag
   if (effect.damageType === "freeze" && trait("frost-elemental")) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("frost-elemental");
-  } else if (effect.damageType === "freeze" && trait("ice-wraith")) {
-    flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
-    record("ice-wraith");
   }
   if (effect.damageType === "burn" && trait("pyromancer") && state.playerStatuses.burn === 0) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
@@ -158,6 +163,7 @@ export function applyAbilityDamage(
   context: EnemyAbilityContext,
   combatTexts: CombatTextEvent[],
 ): BattleState {
+  if (context.soulHarvest) effect = { ...effect, lifesteal: context.soulHarvest === "leech" };
   effect = resolveConditionalCardDamage(effect, state.playerCC.freezeSkipTurns > 0);
   if (effect.damageTypePool) {
     effect = { ...effect, damageType: pickRandom(effect.damageTypePool, getBattleRng(state)) ?? effect.damageType };
@@ -194,6 +200,10 @@ export function applyAbilityDamage(
       : {}),
   });
   nextState = result.state;
+  if (context.soulHarvest === "leech" && result.resolvedDamage > 0 && !context.rewardedTraits.has("soul-harvest")) {
+    context.rewardedTraits.add("soul-harvest");
+    nextState = recordEnemyAbilityActivation(nextState, "soul-harvest");
+  }
   recordEnemyAbilityHit(context, result);
   if (banditBonus && result.landed) {
     nextState = recordEnemyAbilityActivation(setFlag(nextState, "enemyFirstHitDoubleUsed", true), "bandit");
