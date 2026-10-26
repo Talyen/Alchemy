@@ -13,6 +13,10 @@ difficulty or other authored definition. Use `_FRACTION` for 0–1 values,
 for time, and `_PX` for pixels. `_CHANCE` is deprecated for new tuning; use
 fraction helpers.
 
+## Content wording
+
+Use “Deal N [type] damage”, “Gain N Mana”, “Gain/Lose N Mana Crystals”, “Restore N Health”, “Cleanse”, “buildup”, and “Draw a card”. Distinguish hits, natural ticks, detonations, damage bonuses, and separate typed hits. Health loss remains distinct from typed self-damage. Valid saved effects and descriptions remain paired.
+
 ## Add a new status effect
 
 1. Extend `PlayerStatusId` or `EnemyStatusId` in `src/lib/game-data/types.ts`. Classify the status in the applicable harmful/beneficial lists and display order there.
@@ -43,49 +47,16 @@ card effects also follow [Battle handlers](../src/lib/game-data/effects/BATTLE_H
    complete [localization](./LOCALIZATION.md#agent-workflow), then use the
    [task gate](../CONTRIBUTING.md#what-to-run-when-you-change).
 
-**For a new effect kind:** follow [handler authoring](../src/lib/game-data/effects/BATTLE_HANDLERS.md#adding-a-kind).
-**For bespoke wording:** use `describe(effects)` with typed magnitude references
-under the description contract below; raw literals are reserved for special
-cards such as Mixed Potion. Cards with `consume: true` may have multiple effects;
-summon builders derive titles from Companions.
-
-**For contextual text:** `card-description.ts` owns pure descriptions,
-`shared/ui/cards/card-description-ui.tsx` owns UI tokens, and
-`shared/context/card-description-context.tsx` supplies Homestead/Talent context
-from App. Summon lines use Bond and shared Companion damage modifiers; other
-amounts remain authored. Universal reactions belong to
-[game rules](./GAME_RULES.md#universal-reactions), never card effects, descriptions
-or keyword explanations.
+For a new effect kind, follow [handler authoring](../src/lib/game-data/effects/BATTLE_HANDLERS.md#adding-a-kind).
+Use [card descriptions](#card-descriptions) for custom wording, editable magnitudes,
+parity and contextual display. Summon builders derive titles from Companions;
+`consume: true` cards may have multiple effects.
 
 Card IDs are stable strings on `BattleCard`, not a separate union. The assembled
 `cardLibrary` rejects duplicate IDs. Removing or renaming IDs follows the
 [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
-Current-run upgrades, corruption, and Mixed Potions need their effects,
-descriptions, and explicit Consume overrides restored together. `hydrateCard`
-currently preserves complete saved content and refreshes title/art from the
-catalog, so a catalog rebalance alone does not replace saved effects. This is
-not a requirement to retain obsolete card mechanics; retire incompatible
-development snapshots through the save owner when current rules require it.
-Strong Spirits and Alchemist mixing render their scaled Potion effects through
-`createEffectDescription` through `effect-metadata.ts`; add Potion wording in
-`effect-description.ts` rather than changing numeric text in the mixer.
-
-Player-facing text changes follow [Localization](./LOCALIZATION.md), including generated content wording and AI translation review. Keep mechanics and semantic magnitude/keyword bindings independent from translated text.
-
-Structured descriptions live in `card-description-model.ts`. Each line declares
-its `effect`, `keyword`, or `consume` role. Numeric parts use `cardMagnitude`
-with an effect index, optional nested path, kind, and numeric field; shared values
-explicitly list all references, including derived multipliers. Magnitudes retain
-their identities when effects move; mixing and added effects scope new identities
-to prevent collisions. For example, a
-custom Gold line uses `{ role: "effect", parts: ["Steal ",
-cardMagnitude({ effectIndex: 1, kind: "gain-gold", field: "amount" }), " Gold"] }`.
-Plain text is display-only and cannot create an editable magnitude. Corruption
-and Powerful Wish consume these references, never English wording or equal-value
-matching. Update cards through `withCardDescription` so strings render from the
-same model; highlights belong to magnitude identities, never character offsets.
-Localization messages are derived at display/extraction time and are not saved
-inside the structured description. Do not edit numeric prose independently.
+Current-run modifications follow [card recovery](../src/features/alchemy/shared/storage/MIGRATIONS.md#implementation-rules):
+saved effects and descriptions stay paired while catalog identity metadata refreshes.
 
 Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example).
 
@@ -95,11 +66,74 @@ Standard Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts
 talent's combat potency. Add a new standard Potion to the list deliberately;
 Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
 
-[Description parity](../src/lib/content-validation/card-parity/) checks text against
-effects. Typography rejects em dashes and terminal periods in description lines;
-keyword tooltips may use sentence punctuation.
+## Card descriptions
 
----
+`effect-metadata.ts` and `effect-description.ts` render effects into prose and
+magnitude bindings together. Use `effectsCard` for ordinary wording or
+`describe(effects)` for bespoke lines; raw literals are reserved for special
+cards such as Mixed Potion. Add new clauses to these renderers, never numeric
+text replacement in a caller. Strong Spirits and Potion mixing use the same
+`createEffectDescription` / `describeCardEffects` path.
+
+`card-description-model.ts` owns serializable lines, typed effect references,
+formatting and derived highlights. Lines declare an `effect`, `keyword` or
+`consume` role. Numeric parts use `cardMagnitude` with an effect index, optional
+nested path, kind and numeric field. Shared values explicitly list every
+reference and derived multiplier. A custom Gold line can use:
+
+```ts
+const goldLine = {
+  role: "effect",
+  parts: ["Steal ", cardMagnitude({ effectIndex: 1, kind: "gain-gold", field: "amount" }), " Gold"],
+};
+```
+
+Plain text cannot create an editable magnitude. Identities survive effect moves;
+mixing and added effects scope new identities to avoid collisions. Update cards
+through `withCardDescription` so strings and highlights derive from that model.
+Corruption and Distill marks belong to magnitude identities, never character
+offsets. Localization messages derive at display/extraction time; template IDs
+and translated wording are not saved in this model.
+
+### Numeric editing
+
+Corruption and Powerful Wish share `updateCardNumericValue` in
+`lib/corruption/numeric.ts`. Target discovery in `corruption/numeric-targets.ts`
+reads bindings and captures exact effect addresses, expected values and
+multipliers. It never parses wording or matches equal numbers. A stale reference
+or expected value rejects the entire edit; accepted edits render strings and
+highlights again. Targets are transient; descriptions and marks persist.
+
+Nested paths index success effects followed by failure effects. Independently
+authored delayed values have independent references; one magnitude may instead
+bind immediate and matching delayed hits. “Deal N damage twice” binds both hits.
+Custom single-valued Random damage binds both bounds explicitly. Powerful Wish
+identifies costs from every referenced effect kind, preserving shared damage/cost
+values. Probabilities, schedule durations, fixed Block costs and die faces are
+not editable. “Draw a card” binds one draw. Keep catalog effects and descriptions
+immutable.
+
+### Parity and contextual display
+
+[Description parity](../src/lib/content-validation/card-parity/index.ts) compares
+authored mechanic lines with `describeCardEffects`, including summon summaries
+and added effects. Steal/Gain Gold and Mixed Potion placeholders have narrow
+exceptions. Missing keyword/Consume lines warn; unrenderable effects fail.
+Typography rejects em dashes and terminal periods in description lines; keyword
+tooltip sentences may use periods. The formatter cannot be its own test oracle.
+
+`card-description.ts` owns pure descriptions, `shared/ui/cards/card-description-ui.tsx`
+owns UI tokens, and `shared/context/card-description-context.tsx` supplies
+Homestead/Talent context from App. Outside battle, amounts remain authored except
+summon lines recomputed with Bond and shared Companion bonuses. Battle projection
+follows [inspection ownership](../src/lib/game-data/effects/BATTLE_HANDLERS.md#battle-inspection-ownership).
+Universal reactions stay in [game rules](./GAME_RULES.md#universal-reactions),
+never card effects, descriptions or keyword explanations.
+
+Keep semantic magnitude/keyword bindings independent of translated text;
+[localization](./LOCALIZATION.md#runtime-and-ownership) owns display messages and
+[save recovery](../src/features/alchemy/shared/storage/MIGRATIONS.md#implementation-rules)
+owns validation and hydration.
 
 ## Add a new card effect `kind`
 
@@ -243,18 +277,9 @@ Keyword labels and descriptions must pass the typography rules (no em dashes; to
 
 ---
 
-Canonical card descriptions render through `effect-metadata.ts`. Extend that
-renderer when a mechanic needs a new clause; do not duplicate its amounts in
-library prose. The [parity checker](../src/lib/content-validation/card-parity/index.ts)
-compares authored mechanic lines with `describeCardEffects()`, allowing the
-Steal/Gain Gold alias and the Mixed Potion placeholder. Summon summaries and
-any additional effects are checked together against their generated descriptions.
-Corruption and Powerful Wish use [structured magnitude references](#add-a-new-card);
-rendered numeric positions identify highlights, never the effect to mutate.
-
 ### Transmutation keywords and Potion brewing
 
-[Brewing and Transmutation rules](./GAME_RULES.md#brewing-transmutation-and-elemental-reactions)
+[Brewing and Transmutation rules](./GAME_RULES.md#brewing-and-transmutation)
 own eligibility, fixed offers, conversion limits and service behavior. To extend them:
 
 - Register keyword groups and title prefixes in `game-constants/transmutation.ts`,
@@ -267,6 +292,6 @@ own eligibility, fixed offers, conversion limits and service behavior. To extend
   visits cannot reroll or regrant a result.
 
 The Distillation talent's combat scaling is separate from the Distill service;
-see [Potion potency](./TALENT_RULES.md#distinct-talent-and-card-effects).
+see [Potion potency](./TALENT_RULES.md#potion-potency).
 Brittle Ice and Flash Fire retain the saved IDs and effects of the former Shatter
 and Wildfire talents, distinguishing them from universal reactions.

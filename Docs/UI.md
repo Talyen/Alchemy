@@ -1,7 +1,7 @@
 # UI system
 
-Canonical owner for UI placement, primitives, interaction, motion, tooltips, and
-Alchemy's accessibility stance. Screen wiring checklists remain in
+Shared UI placement, primitives, sizing and accessibility live here. The
+[guide index](#guide-index) routes interaction, motion and feature presentation. Screen wiring checklists remain in
 [WORKFLOWS.md](./WORKFLOWS.md#adding-a-new-screen). Armory interaction lives
 [in the browsing guide](./UI_BROWSING.md#armory-crafting-and-salvage); Gear data and mutation rules live in
 [ARMORY.md](./ARMORY.md).
@@ -58,7 +58,7 @@ Alchemy's [accessibility stance](#accessibility-stance) defines its actual scope
 | -------------------------------------------------------------------------- | ---------------------------------- |
 | Shared components, buttons, sizing, colors, accessibility                  | This page                          |
 | Hover tooltips, modal input, focus and dismissal                           | [Interaction](./UI_INTERACTION.md) |
-| Screen fades, battle and equipment motion                                  | [Motion](./UI_MOTION.md)           |
+| Shared screen reveals and canvas lifetimes                                 | [Motion](./UI_MOTION.md)           |
 | Combat feedback, deck and enemy inspection, Corrupted text                 | [Battle UI](./UI_BATTLE.md)        |
 | Collection, Homestead, Talents, Armory, rewards, Wishes, Options and recap | [Browsing](./UI_BROWSING.md)       |
 | Discovery, map layout and room inspection                                  | [Labyrinth](./UI_LABYRINTH.md)     |
@@ -71,19 +71,6 @@ Alchemy's [accessibility stance](#accessibility-stance) defines its actual scope
 - Static catalogs used by shared game widgets come from `shared/config/game-data-catalog.ts`, not the token `config/` barrel.
 
 Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for page structure. Use shared chrome before recreating buttons, progress bars, switches, cards, or tooltips.
-
-`TitledScreenShell.aboveHeader` holds compact context above the heading. Choose
-Destination shows small I / II / III act circles there (only I in the demo).
-Clicking any act unfolds the current act into its eight-room
-trail on the same line, with neighboring acts sliding aside. Click the trail to
-collapse it; Escape opens the game menu and leaves the trail expanded.
-Visited rooms keep their destination icons; a gold
-star marks the current room, future rooms are unknown, and the boss crown uses
-deep purple. Nodes have 1px borders and retain the destination icons' size and
-stroke. Both views use the same spacing between every node. The current node has
-a subtle glow matching its border, with no hover color change.
-The row sits slightly above the header, and transition/focus treatment
-stays on individual circles, preserving the title and artwork positions.
 
 ## Component conventions
 
@@ -178,7 +165,7 @@ containment and restoration for confirmations, card inspection, and enemy
 inspection, following [overlay lifecycle](./UI_INTERACTION.md#overlay-lifecycle). New focus behavior
 outside that contract, screen-reader announcement systems, contrast tooling,
 and per-component reduced-motion variants require a product decision.
-Preserve the existing [equipment transfer reduced-motion handling](./UI_MOTION.md#equipment-movement-animations).
+Preserve the existing [equipment transfer reduced-motion handling](./UI_BROWSING.md#equipment-movement-animations).
 Shared motion accommodations live in
 `src/styles/keyframes.css` and `src/styles/components.css`; Armory also disables
 inventory movement and crafting feedback motion locally in

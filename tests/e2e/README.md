@@ -51,6 +51,13 @@ page and play again. The `save` route and `test:ship:e2e` both include that owne
 The other save specs retain current-format destination/reward recovery, cold
 boot, corrupt JSON and future-version protection.
 
+Real draw/discard timing belongs to `specs/draw-discard-animations.spec.ts`.
+The opening-deal journey also checks inspection admission and hand-dock stability;
+the discard journey checks flipping, landing and affordable-card coloring through
+the next draw. Observe transient admission before input and disconnect observers
+when their evidence is collected. Options keyboard navigation, minimum-height
+confirmation reachability and saved volume share the menu journey.
+
 Hand inspection combines edge targeting, raised-card hit testing, draw/reflow,
 and pointer-to-keyboard switching in one live journey. Size-boundary journeys
 retain crowded maximum-size and ultrawide minimum-size hands; the standard-size

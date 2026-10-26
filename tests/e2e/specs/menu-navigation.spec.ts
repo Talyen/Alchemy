@@ -114,6 +114,7 @@ test.describe("Progression Locks", () => {
 });
 
 test("controller-equivalent options and dialog focus", critical, async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("/");
   const volume = await exerciseControllerOptions(page);
   await expect.poll(async () => (await readSavedGame(page)).musicVolume).toBe(volume);

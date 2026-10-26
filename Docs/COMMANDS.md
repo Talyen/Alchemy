@@ -93,7 +93,7 @@ directory within an edition, so run them sequentially.
 
 - `ASSET_LIBRARY_ROOT` is ignored. Production preparation always uses this checkout's `assets/sources/`; optional Sound desk browsing accepts `--library <Sounds directory>`.
 - `ALCHEMY_SKIP_ASSETS=1` — only for direct asset-preparation invocation; semantics owned by
-  [`WORKFLOWS-ASSETS.md`](./WORKFLOWS-ASSETS.md#skip-mode-and-verification).
+  [`WORKFLOWS-ASSETS.md`](./WORKFLOWS-ASSETS.md#validation-and-commit).
 - `ALCHEMY_ENABLE_CHECKER=1` — opt-in to the in-Vite `vite-plugin-checker` typecheck (off by default so `npm run dev` stays snappy; use `npm run typecheck:watch`, `npm run dev:checked`, or this flag when you need live type errors). Run `npm run predev:local` before `npm run dev:checked`, which starts Vite directly without the committed-output validation lifecycle. `ALCHEMY_SKIP_CHECKER=1` is a hard off used by the Playwright preview server.
 - `ALCHEMY_SKIP_SOURCEMAP=1` — opt-out of hidden sourcemaps for `mode=desktop` builds when fast local iterate is preferred; rejected for releases with Sentry reporting. `npm run clean -- --builds` removes existing build outputs and their maps.
 - `ALCHEMY_CHECK_SKIP_BUILD=1` — skip web/desktop builds, their bundle budgets, and preview smoke in the opt-in `npm run check:full`; the default `check` already omits them. CI and ship gates still build.

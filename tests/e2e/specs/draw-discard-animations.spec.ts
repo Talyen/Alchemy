@@ -16,55 +16,87 @@ async function waitForOpeningDeal(page: import("@playwright/test").Page) {
 }
 
 test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
-  test("battle mounts with an empty hand and deals the opening four", async ({ page }) => {
+  test("opening deal gates inspection, then inspection and play leave the hand dock fixed", async ({ page }) => {
     test.setTimeout(60_000);
-
     await page.addInitScript(() => {
-      const testWindow = window as Window & { openingFlyingCardSeen?: boolean; openingHandCounts?: number[] };
-      testWindow.openingFlyingCardSeen = false;
-      testWindow.openingHandCounts = [];
-      const recordHand = () => {
+      const review = { handCounts: [] as number[], blockedDuringFlight: false };
+      const observer = new MutationObserver(() => {
         if (!document.querySelector('[data-testid="battle-scene"]')) return;
         const count = document.querySelectorAll(
           '[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "]',
         ).length;
-        if (testWindow.openingHandCounts?.at(-1) !== count) testWindow.openingHandCounts?.push(count);
-        if (document.querySelector("[data-flying-card]")) testWindow.openingFlyingCardSeen = true;
-      };
-      new MutationObserver(recordHand).observe(document, {
+        if (review.handCounts.at(-1) !== count) review.handCounts.push(count);
+        if (document.querySelector("[data-flying-card]")) {
+          review.blockedDuringFlight ||=
+            document.querySelector('[data-testid="draw-pile"] button')?.getAttribute("aria-disabled") === "true";
+        }
+      });
+      observer.observe(document, {
         attributes: true,
-        attributeFilter: ["data-hand-hidden"],
+        attributeFilter: ["data-hand-hidden", "aria-disabled"],
         childList: true,
         subtree: true,
       });
+      Object.assign(window, {
+        finishOpeningReview: () => {
+          observer.disconnect();
+          return review;
+        },
+      });
     });
-
     await startBattleWithDeck(
       page,
-      Array.from({ length: 6 }, () => makeCard()),
+      Array.from({ length: 8 }, () => makeCard()),
     );
+    await waitForOpeningDeal(page);
     const battle = new BattlePage(page);
-    await expect(page.getByRole("combobox", { name: "Card Animations · Temporary" })).toHaveCount(0);
+    const icon = page.getByTestId("draw-pile").getByRole("button");
+    await expect(icon).toHaveAttribute("aria-disabled", "false");
+    const opening = await page.evaluate(() =>
+      (
+        window as Window & { finishOpeningReview: () => { handCounts: number[]; blockedDuringFlight: boolean } }
+      ).finishOpeningReview(),
+    );
+    expect(opening.handCounts[0]).toBe(0);
+    expect(opening.handCounts).toContain(4);
+    expect(opening.blockedDuringFlight).toBe(true);
+    const dock = page.getByTestId("battle-hand");
+    const before = await dock.boundingBox();
+    expect(before).not.toBeNull();
+    await icon.click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    expect(await dock.boundingBox()).toEqual(before);
 
-    await expect
-      .poll(
-        () =>
-          page.evaluate(() => (window as Window & { openingFlyingCardSeen?: boolean }).openingFlyingCardSeen ?? false),
-        { timeout: 20_000, message: "the opening hand should fly from Draw Pile" },
-      )
-      .toBe(true);
-    await expect(battle.hand).toHaveCount(4, { timeout: 20_000 });
-    await expect(page.locator('[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "]')).toHaveCount(4, {
-      timeout: 20_000,
+    // Observe before input: a protocol round trip can outlast a short transfer.
+    await page.evaluate(() => {
+      let blocked = false;
+      const observer = new MutationObserver(() => {
+        blocked ||=
+          document.querySelector('[data-testid="draw-pile"] button')?.getAttribute("aria-disabled") === "true";
+      });
+      observer.observe(document.querySelector('[data-testid="draw-pile"]')!, {
+        attributes: true,
+        attributeFilter: ["aria-disabled"],
+        subtree: true,
+      });
+      Object.assign(window, {
+        finishPlayReview: () => {
+          observer.disconnect();
+          return blocked;
+        },
+      });
     });
-    const opening = await page.evaluate(() => {
-      const testWindow = window as Window & { openingFlyingCardSeen?: boolean; openingHandCounts?: number[] };
-      return { flyingCardSeen: testWindow.openingFlyingCardSeen, handCounts: testWindow.openingHandCounts ?? [] };
-    });
-    expect(opening.flyingCardSeen).toBe(true);
-    const handCounts = opening.handCounts;
-    expect(handCounts[0]).toBe(0);
-    expect(handCounts).toContain(4);
+    await battle.playFirstCard();
+    await expect(battle.endTurnBtn).toBeEnabled();
+    expect(await page.evaluate(() => (window as Window & { finishPlayReview: () => boolean }).finishPlayReview())).toBe(
+      true,
+    );
+    await battle.endTurn();
+    await expect(icon).toHaveAttribute("aria-disabled", "false");
+    await icon.click();
+    await expect(page.getByRole("dialog")).toBeVisible();
   });
 
   test("accepts consecutive plays while draws and hand reflow are running", async ({ page }) => {
@@ -146,62 +178,6 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     );
     await waitForOpeningDeal(page);
     const battle = new BattlePage(page);
-    const flight = page.evaluate(async () => {
-      const card = await new Promise<HTMLElement>((resolve) => {
-        const observer = new MutationObserver(() => {
-          const element = document.querySelector<HTMLElement>('[data-flying-card][data-transfer-kind="discard"]');
-          if (element) {
-            observer.disconnect();
-            resolve(element);
-          }
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-      });
-      let maximumFlights = 0;
-      const flips: number[] = [];
-      let landing = { x: 0, y: 0, width: 0, height: 0 };
-      while (card.isConnected) {
-        maximumFlights = Math.max(
-          maximumFlights,
-          document.querySelectorAll('[data-flying-card][data-transfer-kind="discard"]').length,
-        );
-        flips.push(Number(card.style.transform.match(/rotateY\(([-\d.]+)deg\)/)?.[1] ?? 0));
-        const r = card.getBoundingClientRect();
-        landing = { x: r.x, y: r.y, width: r.width, height: r.height };
-        await new Promise(requestAnimationFrame);
-      }
-      const pile = document.querySelector("[data-pile-top-card]")!.getBoundingClientRect();
-      return {
-        maximumFlights,
-        flips,
-        landing,
-        pile: { x: pile.x, y: pile.y, width: pile.width, height: pile.height },
-        backs: !!card.querySelector("[data-discard-card-back]"),
-      };
-    });
-    const ending = battle.endTurn();
-    const result = await flight;
-    expect(result.maximumFlights).toBe(1);
-    expect(result.backs).toBe(true);
-    expect(result.flips.length).toBeGreaterThan(3);
-    expect(result.flips.at(-1)).toBeCloseTo(180, 0);
-    for (let i = 1; i < result.flips.length; i++)
-      expect(result.flips[i]!).toBeGreaterThanOrEqual(result.flips[i - 1]! - 0.1);
-    for (const key of ["x", "y", "width", "height"] as const)
-      expect(result.landing[key]).toBeCloseTo(result.pile[key], 0);
-    await ending;
-    await expect(page.locator('[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "]')).toHaveCount(4);
-  });
-
-  test("playable hand cards stay colored during discard and draw transfers", async ({ page }) => {
-    test.setTimeout(60_000);
-
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeCard()),
-    );
-    const battle = new BattlePage(page);
-    await waitForOpeningDeal(page);
     const openingDrawStarts = await page.evaluate(
       () => performance.getEntriesByName("alchemy:battle:draw-start", "mark").length,
     );
@@ -243,31 +219,64 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
 
     await battle.playFirstCard();
     await expect(battle.endTurnBtn).toBeEnabled();
-    await battle.endTurnBtn.click();
-
-    await expect
-      .poll(() => page.evaluate(() => (window as Window & { discardColoredSeen?: boolean }).discardColoredSeen), {
-        message: "affordable cards should stay colored during discard",
-      })
-      .toBe(true);
-
-    await expect
-      .poll(() => page.evaluate(() => performance.getEntriesByName("alchemy:battle:draw-start", "mark").length), {
-        timeout: 20_000,
-        message: "the next hand draw should start",
-      })
-      .toBeGreaterThan(openingDrawStarts);
-
-    await expect(battle.endTurnBtn).toBeEnabled({ timeout: 20_000 });
-    const drawGrayscaleFlashes = await page.evaluate(() => {
-      const testWindow = window as Window & {
+    const flight = page.evaluate(async () => {
+      const card = await new Promise<HTMLElement>((resolve) => {
+        const observer = new MutationObserver(() => {
+          const element = document.querySelector<HTMLElement>('[data-flying-card][data-transfer-kind="discard"]');
+          if (element) {
+            observer.disconnect();
+            resolve(element);
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+      let maximumFlights = 0;
+      const flips: number[] = [];
+      let landing = { x: 0, y: 0, width: 0, height: 0 };
+      while (card.isConnected) {
+        maximumFlights = Math.max(
+          maximumFlights,
+          document.querySelectorAll('[data-flying-card][data-transfer-kind="discard"]').length,
+        );
+        flips.push(Number(card.style.transform.match(/rotateY\(([-\d.]+)deg\)/)?.[1] ?? 0));
+        const r = card.getBoundingClientRect();
+        landing = { x: r.x, y: r.y, width: r.width, height: r.height };
+        await new Promise(requestAnimationFrame);
+      }
+      const pile = document.querySelector("[data-pile-top-card]")!.getBoundingClientRect();
+      return {
+        maximumFlights,
+        flips,
+        landing,
+        pile: { x: pile.x, y: pile.y, width: pile.width, height: pile.height },
+        backs: !!card.querySelector("[data-discard-card-back]"),
+      };
+    });
+    const ending = battle.endTurn();
+    const result = await flight;
+    expect(result.maximumFlights).toBe(1);
+    expect(result.backs).toBe(true);
+    expect(result.flips.some((angle) => angle > 0 && angle < 180)).toBe(true);
+    expect(result.flips.at(-1)).toBeCloseTo(180, 0);
+    for (let i = 1; i < result.flips.length; i++)
+      expect(result.flips[i]!).toBeGreaterThanOrEqual(result.flips[i - 1]! - 0.1);
+    for (const key of ["x", "y", "width", "height"] as const)
+      expect(result.landing[key]).toBeCloseTo(result.pile[key], 0);
+    await ending;
+    await expect(page.locator('[data-hand-slot]:not([data-hand-hidden]) [aria-label^="Play "]')).toHaveCount(4);
+    expect(
+      await page.evaluate(() => performance.getEntriesByName("alchemy:battle:draw-start", "mark").length),
+    ).toBeGreaterThan(openingDrawStarts);
+    const colors = await page.evaluate(() => {
+      const review = window as Window & {
         cardColorObserver?: MutationObserver;
         drawGrayscaleFlashes?: string[];
         discardColoredSeen?: boolean;
       };
-      testWindow.cardColorObserver?.disconnect();
-      return testWindow.drawGrayscaleFlashes ?? [];
+      review.cardColorObserver?.disconnect();
+      return { flashes: review.drawGrayscaleFlashes, discardColored: review.discardColoredSeen };
     });
-    expect(drawGrayscaleFlashes).toEqual([]);
+    expect(colors.discardColored).toBe(true);
+    expect(colors.flashes).toEqual([]);
   });
 });

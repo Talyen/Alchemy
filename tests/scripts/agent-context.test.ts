@@ -9,7 +9,7 @@ it("locates source and document owners and validates their canonical references"
   expect(selection.tasks).toEqual(["battle", "audio"]);
   expect(selection.docs.map((doc) => doc.path)).toContain("Docs/AUDIO.md");
   expect(validateContextCatalog(process.cwd())).toEqual([]);
-  expect(selectContext(["Docs/GAME_RULES.md"]).tasks).toEqual(["battle"]);
+  expect(selectContext(["Docs/GAME_RULES.md"]).tasks).toEqual(["battle", "shop"]);
   expect(selectContext(["Docs/UI.md"]).tasks).toEqual(["ui"]);
   expect(selectContext(["tests/lib/battle/card-play.test.ts"]).tasks).toEqual(["battle"]);
   expect(selectContext(["src/app/autosave-lifecycle.ts"]).tasks).toEqual(["run-state"]);
@@ -91,6 +91,7 @@ it("offers topic-only lookup with matching text and JSON pointers", () => {
       expect.objectContaining({ path: "Docs/GAME_RULES.md" }),
       expect.objectContaining({ path: "Docs/ARCHITECTURE.md", heading: "Settings and meta profile" }),
       expect.objectContaining({ path: "Docs/ARCHITECTURE.md", heading: "Shop commands" }),
+      expect.objectContaining({ path: "Docs/GAME_RULES.md", heading: "Shops" }),
     ]),
   );
   expect(

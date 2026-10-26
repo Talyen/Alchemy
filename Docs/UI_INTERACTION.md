@@ -58,20 +58,6 @@ underlying screen handlers. Required choices such as Wish remain non-dismissible
 Panels size to their contents with bounded width and height and scroll overflow;
 card inspection retains adaptive pagination without reserving an empty full-screen panel.
 
-Draw Pile, Discard Pile, and Deck inspection share the backdrop fade and upward
-panel settle defined in [component styles](../src/styles/components.css), using
-the shared [motion duration](../src/lib/game-constants/ui-motion.ts). Closing
-uses only the fade; reduced motion omits the settle. Cards appear together, and
-populated panels retain content-based sizing without animated dimensions. Empty
-collections show a centered, muted collection icon in a 10rem-high content area with a
-20rem minimum panel width, bounded by the available viewport with overflow scrolling.
-Battle opens only the clicked pile with a centered pile title and no collection tabs;
-its panel sizes to that pile within the viewport. Outside battle, Deck retains
-content-based sizing.
-Deck, Draw Pile, and Discard Pile use the stacked-cards icon; Boons uses the trophy icon.
-Each empty icon is exposed as an image labelled Empty Deck, Empty Draw Pile,
-Empty Discard Pile, or Empty Boons.
-
 `ModalOverlayShell` reveals the backdrop immediately and prepares the entire panel
 with `useArtworkReady`, including its heading, pagination, and actions. Pending panels
 are hidden and inert; dismissible backdrops still accept dismissal. Focus moves inside

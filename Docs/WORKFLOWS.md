@@ -62,7 +62,8 @@ its definition/art URLs.
 
 ## Change a shop
 
-Start with [shop ownership and transaction rules](./ARCHITECTURE.md#shop-commands).
+Start with the [shop ownership map](./ARCHITECTURE.md#shop-commands) and
+[transaction rules](./GAME_RULES.md#shops).
 
 1. Locate the shop's command module, pricing and shelf sampler in that map.
 2. Change validation, payment and acquisition inside its existing
@@ -110,7 +111,7 @@ Start with [battle controllers](./BATTLE_CONTROLLERS.md#battle-path).
 2. Keep gameplay commits in command owners and presentation work in the route's
    playback lifetime. Preserve [automation, draw and settlement rules](./BATTLE_CONTROLLERS.md#playback-and-automation-rules).
 3. For visual changes, use [battle feedback](./UI_BATTLE.md#battle-feedback) and
-   [battle motion](./UI_MOTION.md#battle-motion), including their timing owners.
+   [battle motion](./UI_BATTLE.md#battle-motion), including their timing owners.
 4. Run affected playback units, then the [task gate](../CONTRIBUTING.md#what-to-run-when-you-change).
    Exercise changed interactions under [visual review](./UI_VISUAL_REVIEW.md).
    Timing checks use the shared [E2E fixture](../tests/e2e/README.md#test-import)
