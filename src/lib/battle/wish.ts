@@ -3,9 +3,14 @@ import { rollBattleChance } from "./chance-roll";
 import type { ReactionBoundary } from "./battle-sequence";
 import { resolveWishRewards } from "./wish-rewards";
 import { hasEncounterBenefit } from "./encounter-trait-state";
-import { getOfferableCardPool, isCompanionSummonCard, selectRewardCards, type BattleCard } from "@/lib/game-data";
+import {
+  getCardEffect,
+  getOfferableCardPool,
+  isCompanionSummonCard,
+  selectRewardCards,
+  type BattleCard,
+} from "@/lib/game-data";
 import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corruption";
-import { getCorruptionTargetEffect } from "@/lib/corruption/numeric";
 import { addCardToHandOrQueue } from "./draw";
 import type { BattleState, CombatTextEvent } from "./types";
 import { getBattleRng, pickRandom } from "@/lib/rng";
@@ -19,7 +24,7 @@ export function upgradeWishCard(card: BattleCard): BattleCard {
     (a, b) => Number(b.field === "maxAmount") - Number(a.field === "maxAmount"),
   );
   return targets.reduce((next, target) => {
-    const effect = getCorruptionTargetEffect(next, target);
+    const effect = getCardEffect(next.effects, target);
     // An upgrade must not raise a cost, including a shared Deal/Receive amount.
     if (!effect || target.affectsCost) return next;
     return updateCardNumericValue(next, target, target.value + 1);
