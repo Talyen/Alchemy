@@ -46,11 +46,17 @@ source.storageBudget = { estimatedBytes: Math.ceil(estimate), freeBytes: free, r
 source.commit = runGit(root, ["rev-parse", "HEAD"]).stdout.trim();
 const motionFile = path.join(root, "src/lib/game-constants/ui-motion.ts");
 const actorFile = path.join(root, "src/features/alchemy/run-loop/battle/presentation/ui/actor-panel.tsx");
+const flightRuleFile = path.join(root, "src/lib/battle/card-animation-target.ts");
+const cardPlayFile = path.join(root, "src/features/alchemy/run-loop/battle/battle-card-play.ts");
 source.visualFixes = {
   combatTextBaseSize: Number(/COMBAT_TEXT_BASE_SIZE_PX = ([\d.]+)/u.exec(fs.readFileSync(motionFile, "utf8"))?.[1]),
   earthElementalBattleMirroring: fs.readFileSync(actorFile, "utf8").includes('currentEnemy?.id === "earth-elemental"'),
   motionSourceSha256: hashFile(motionFile),
   actorSourceSha256: hashFile(actorFile),
+  dominantDirectFlightRecipient:
+    fs.existsSync(flightRuleFile) &&
+    fs.readFileSync(cardPlayFile, "utf8").includes("getBattleCardAnimationTarget(handCard, currentState)"),
+  flightRuleSourceSha256: fs.existsSync(flightRuleFile) ? hashFile(flightRuleFile) : null,
 };
 if (captureWindows) {
   source.performanceRecipeHash = hashValue(recipe);

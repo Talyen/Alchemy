@@ -15,6 +15,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--project', type=Path, required=True)
 parser.add_argument('--capture', default='menu-story-capture-v1')
 parser.add_argument('--revision', default='v1')
+parser.add_argument('--intro', choices=['ink', 'fade'], default='ink')
+parser.add_argument('--validate-intro-only', action='store_true')
 args = parser.parse_args()
 p = args.project.resolve()
 spec = importlib.util.spec_from_file_location('edit', p / 'scripts/edit.py')
@@ -40,6 +42,8 @@ assert edit.digest(source) == receipt['sha256']
 assert abs(receipt['nativeMusic']['offset'] - song_in) < 1e-6
 assert clip['source']['visualFixes']['combatTextBaseSize'] == 38.4
 assert clip['source']['visualFixes']['earthElementalBattleMirroring']
+if not args.validate_intro_only:
+    assert clip['source']['visualFixes'].get('dominantDirectFlightRecipient'), 'Capture fresh gameplay with the integrated card-flight fix before rendering the story body'
 assert any('half your Block' in (text or '') for sample in receipt['presentation'] for text in sample.get('visibleTooltips', []))
 assert not any('ATTACK POWER' in (text or '').upper() for sample in receipt['presentation'] for text in sample.get('visibleTooltips', []))
 assert receipt['presentation'][0]['battle'] is False
@@ -68,6 +72,65 @@ def camera_filter(offset=0):
     right = f'({left}+W*{z})'
     bottom = f'({top}+H*{z})'
     return f"perspective=x0='{left}':y0='{top}':x1='{right}':y1='{top}':x2='{left}':y2='{bottom}':x3='{right}':y3='{bottom}':sense=destination:eval=frame:interpolation=cubic"
+
+
+def selected_ink_mask():
+    assets = p / 'graphics/transitions/09-countess-reveals-v2'
+    archive = assets / 'C-alpha-masks.npz'
+    mask = assets / 'C-alpha-mask-v2-1080p60.mkv'
+    identity_file = assets / 'C-alpha-mask-v2-1080p60.json'
+    source_hash = edit.digest(archive)
+    if mask.exists():
+        identity = json.loads(identity_file.read_text())
+        assert identity['sourceSha256'] == source_hash and identity['sha256'] == edit.digest(mask)
+        return mask
+    with np.load(archive) as data:
+        alpha = data['alpha']
+        assert int(data['fps']) == 60 and alpha.shape == (37, 1080, 1920)
+        assert alpha.dtype == np.uint8 and np.all(alpha[0] == 0) and np.all(alpha[-1] == 255)
+        encoder = subprocess.Popen(['ffmpeg', '-v', 'error', '-xerror', '-n', '-f', 'rawvideo',
+                                    '-pix_fmt', 'gray', '-s', '1920x1080', '-r', '60', '-i', '-',
+                                    '-an', '-c:v', 'ffv1', '-level', '3', '-threads', '2', str(mask)],
+                                   stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        for frame in alpha:
+            encoder.stdin.write(frame.tobytes())
+        encoder.stdin.close()
+        error = encoder.stderr.read().decode()
+        assert encoder.wait() == 0, error
+    edit.write(identity_file, {'source': str(archive.relative_to(p)), 'sourceSha256': source_hash,
+                              'sha256': edit.digest(mask), 'frames': 37, 'fps': 60,
+                              'revealSeconds': .6, 'losslessGrayAlpha': True})
+    return mask
+
+
+mask = selected_ink_mask() if args.intro == 'ink' else None
+
+
+def video_filter(mask_index=2):
+    game = camera_filter() + ',scale=1920:1080:flags=lanczos:out_color_matrix=bt709,setsar=1'
+    delivery = 'format=yuv420p,setparams=range=limited:color_primaries=bt709:color_trc=bt709:colorspace=bt709'
+    if mask is None:
+        return '[0:v]' + game + ',fade=t=in:st=0:d=0.42,' + delivery + '[v]'
+    # The selected fixed alpha field reveals black to full image in36frame
+    # intervals. Its final white frame then extends through the whole body.
+    return (f'[0:v]{game},format=gbrp[game];'
+            f'[{mask_index}:v]format=gray,tpad=stop_mode=clone:stop_duration={duration},'
+            f'trim=duration={duration},setpts=PTS-STARTPTS[ink];'
+            '[game][ink]alphamerge[revealed];'
+            f'color=c=black:s=1920x1080:r=60:d={duration}[background];'
+            f'[background][revealed]overlay=shortest=1:format=auto,{delivery}[v]')
+
+
+if args.validate_intro_only:
+    inputs = ['-i', source] + (['-i', mask] if mask else [])
+    edit.ff([*inputs, '-filter_complex_threads', 1, '-filter_complex', video_filter(1),
+             '-map', '[v]', '-frames:v', 37, '-an', '-f', 'null', '-'])
+    edit.write(review / 'intro-qualification.json', {'kind': args.intro, 'revealSeconds': .6 if mask else .42,
+               'framesDecoded': 37, 'mask': str(mask.relative_to(p)) if mask else None,
+               'nativeContinueAt': .7, 'firstVocalAt': 2., 'source': key,
+               'longFilmRendered': False, 'graph': video_filter(1)})
+    print('Selected intro graph qualified; no longer trailer rendered.')
+    raise SystemExit(0)
 
 
 # Render an actual subpixel edge through the same transform. No video/frame dump.
@@ -103,7 +166,10 @@ timeline = {'id': id, 'fps': 60, 'duration': duration,
             'source': key, 'music': {'file': 'audio/countess.mp3', 'in': song_in, 'fade': .12},
             'sfx': .42, 'sfxMode': 'tails',
             'shots': [{'source': key, 'in': 0, 'duration': duration}],
-            'intro': {'kind': 'clean fade over native main menu', 'fadeIn': [0, .42], 'continueAt': .7},
+            'intro': {'kind': 'selected C ink reveal over native main menu' if mask else 'clean fade over native main menu',
+                      'reveal': [0, .6 if mask else .42], 'continueAt': .7, 'firstVocalAt': 2.,
+                      'mask': str(mask.relative_to(p)) if mask else None,
+                      'alphaSource': 'graphics/transitions/09-countess-reveals-v2/C-alpha-masks.npz' if mask else None},
             'camera': {'default': 'full native battlefield', 'focusAction': 'Shield Bash inspection',
                        'zoom': 1.2, 'focus': [.55, .55], 'ease': 'quintic smootherstep',
                        'inFrames': [428, 449], 'holdFrames': [449, 483], 'outFrames': [483, 503],
@@ -112,14 +178,14 @@ timeline = {'id': id, 'fps': 60, 'duration': duration,
             'listeningApproval': False}
 edit.write(p / 'timelines' / f'{id}-{rev}.json', timeline)
 pcm = edit.audio(timeline, catalog, rev)
-vf = camera_filter() + ',scale=1920:1080:flags=lanczos:out_color_matrix=bt709,setsar=1,fade=t=in:st=0:d=0.42,format=yuv420p,setparams=range=limited:color_primaries=bt709:color_trc=bt709:colorspace=bt709'
 common = ['-r', 60, '-c:v', 'libx264', '-preset', 'fast', '-profile:v', 'high', '-level:v', '4.2', '-g', 120,
           '-pix_fmt', 'yuv420p', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709',
           '-bsf:v', 'h264_metadata=colour_primaries=1:transfer_characteristics=1:matrix_coefficients=1', '-threads', 2]
-edit.ff(['-i', source, '-i', pcm, '-filter_threads', 1, '-vf', vf, '-map', '0:v', '-map', '1:a',
+inputs = ['-i', source, '-i', pcm] + (['-i', mask] if mask else [])
+edit.ff([*inputs, '-filter_complex_threads', 1, '-filter_complex', video_filter(), '-map', '[v]', '-map', '1:a',
          '-frames:v', frames, '-t', duration, *common, '-b:v', '20M', '-maxrate', '24M', '-bufsize', '40M',
          '-c:a', 'aac', '-b:a', '192k', '-ar', 48000, '-ac', 2, '-movflags', '+faststart', out])
-preview = review / f'alchemy-countess-menu-story-{rev}-A-chat-1080p60.mp4'
+preview = review / f'alchemy-countess-menu-story-{rev}-{"C" if mask else "A"}-chat-1080p60.mp4'
 edit.ff(['-i', out, '-map', '0:v', '-map', '0:a', *common, '-b:v', '9M', '-maxrate', '12M', '-bufsize', '18M',
          '-c:a', 'copy', '-movflags', '+faststart', preview])
 meta = edit.probe(out, True)
