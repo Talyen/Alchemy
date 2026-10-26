@@ -24,7 +24,7 @@ test.describe("Save Error Paths", () => {
     },
   );
 
-  test("fresh storage without a save opens the main menu", critical, async ({ page }) => {
+  test("a fresh profile opens the menu with progression locked", critical, async ({ page }) => {
     test.setTimeout(60_000);
 
     await page.addInitScript(() => {
@@ -38,6 +38,12 @@ test.describe("Save Error Paths", () => {
     expect(await logo.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
     await expect(menu.collectionBtn).toBeVisible();
     await expect(menu.optionsBtn).toBeVisible();
+    await expect(page.getByRole("button", { name: "Talents" })).toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByRole("button", { name: "Homestead" })).toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByRole("button", { name: "Armory" })).toBeEnabled();
+    await menu.openGameModeSelect();
+    await expect(page.getByRole("button", { name: "The Labyrinth (Locked)" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Wildwood Draft (Locked)" })).toBeVisible();
   });
 
   test("future schema save remains protected while new play stays available", critical, async ({ page }) => {

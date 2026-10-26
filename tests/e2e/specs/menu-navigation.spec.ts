@@ -9,7 +9,6 @@ import {
   SAVE_KEY,
   readSavedGame,
   withSavedGame,
-  injectHomestead,
 } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { expectRunPhase } from "../../pages/game-stage";
@@ -104,25 +103,6 @@ test("closing the game menu blocks stray keyboard navigation", async ({ page }) 
   ).toBe(false);
   await expect(panel).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Options", exact: true })).toBeVisible();
-});
-
-test.describe("Progression Locks", () => {
-  test(
-    "clean save gates progression features and game-mode tiles while Armory stays open",
-    critical,
-    async ({ page }) => {
-      await injectHomestead(page, { finishedRunCharacters: [] });
-      await page.goto("/");
-      await expect(page.getByRole("button", { name: "Talents" })).toHaveAttribute("aria-disabled", "true");
-      await expect(page.getByRole("button", { name: "Homestead" })).toHaveAttribute("aria-disabled", "true");
-      await expect(page.getByRole("button", { name: "Armory" })).toBeEnabled();
-
-      const menu = new MenuPage(page);
-      await menu.openGameModeSelect();
-      await expect(page.getByRole("button", { name: "The Labyrinth (Locked)" })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Wildwood Draft (Locked)" })).toBeVisible();
-    },
-  );
 });
 
 test("controller-equivalent options and dialog focus", critical, async ({ page }) => {

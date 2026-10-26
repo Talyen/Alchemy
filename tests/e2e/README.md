@@ -40,8 +40,9 @@ maximum-size/minimum-height boundary in both Collection and Battle. The layout
 review gallery owns the wider visual matrix.
 Options checks its shared shell at all five boundaries and each remaining tab at
 minimum height and 4K; the narrow-window journey checks tab reachability separately.
-Labyrinth checks grid and tooltip containment at each selected viewport, with
-keyboard entry at minimum height and a separate touch journey.
+Labyrinth checks grid and tooltip containment at each selected viewport, resizing
+one mounted map across the standard and narrow boundaries. Keyboard entry uses
+the minimum-height boundary; touch has a separate journey.
 
 Collection discovery and authored card tooltip wiring live in the Collection DOM
 suite; Bestiary retains the real pointer/keyboard inspection journey. Card Shop
@@ -92,7 +93,8 @@ preferences, reset and clear-save cancellation/confirmation; separate callback-o
 screen renders and a stubbed route no longer duplicate that protection.
 
 Options keyboard navigation, minimum-height confirmation reachability and saved
-volume share the menu journey.
+volume share the menu journey. The fresh-profile cold start also checks progression
+locks and Armory availability before entering mode selection.
 
 Armory combat locking, editing another hero, reservation persistence and release
 share one journey seeded with one complete checkpoint; it checks exact saved

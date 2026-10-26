@@ -2,7 +2,7 @@ import { controllerInput } from "../controller-input";
 import { expect, test } from "../../fixtures/e2e";
 import { gridLabyrinthMapFixture, twoFloorLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
 import { critical } from "../../playwright-tags";
-import { injectLabyrinthRun, withSavedGame } from "../../browser-helpers";
+import { injectLabyrinthRun, waitForLayoutSettled, withSavedGame } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { CorruptionPage } from "../../pages/corruption-page";
 
@@ -126,20 +126,26 @@ test.describe("Labyrinth exploration", critical, () => {
   });
 });
 
-for (const { width, height, gameSizePercent } of [
-  { width: 1920, height: 1080, gameSizePercent: 100 },
-  { width: 1280, height: 720, gameSizePercent: 80 },
-  { width: 1280, height: 480, gameSizePercent: 120 },
-  { width: 600, height: 900, gameSizePercent: 100 },
+for (const { gameSizePercent, viewports } of [
+  {
+    gameSizePercent: 100,
+    viewports: [
+      { width: 1920, height: 1080 },
+      { width: 600, height: 900 },
+    ],
+  },
+  { gameSizePercent: 80, viewports: [{ width: 1280, height: 720 }] },
+  { gameSizePercent: 120, viewports: [{ width: 1280, height: 480 }] },
 ]) {
-  test(`full grid and tooltip fit ${width}×${height} at Game Size ${gameSizePercent}`, async ({ page }) => {
+  test(`full grid and tooltip fit viewport boundaries at Game Size ${gameSizePercent}`, async ({ page }) => {
+    if (viewports.length > 1) test.setTimeout(60_000);
     await page.addInitScript((size) => {
       localStorage.setItem(
         "alchemy-device-display-v1",
         JSON.stringify({ version: 1, gameSizePercent: size, tooltipSizePercent: 100 }),
       );
     }, gameSizePercent);
-    await page.setViewportSize({ width, height });
+    await page.setViewportSize(viewports[0]!);
     const map = twoFloorLabyrinthMapFixture();
     const target = map.nodes["labyrinth-floor-2-n0"]!;
     target.modifiers = ["jealous", "tempered", "rooted"];
@@ -149,39 +155,43 @@ for (const { width, height, gameSizePercent } of [
     const nodes = page.locator("[data-labyrinth-node]");
     const room = page.locator(`[data-labyrinth-node="${target.id}"] button`);
     await expect(nodes).toHaveCount(20);
-    const bounds = (await viewport.boundingBox())!;
-    await room.hover();
-    const rectangles = await nodes.evaluateAll((elements) =>
-      elements.map((element) => element.getBoundingClientRect().toJSON()),
-    );
-    for (const box of rectangles) {
-      expect(box.x).toBeGreaterThanOrEqual(bounds.x);
-      expect(box.y).toBeGreaterThanOrEqual(bounds.y);
-      expect(box.right).toBeLessThanOrEqual(bounds.x + bounds.width + 1);
-      expect(box.bottom).toBeLessThanOrEqual(bounds.y + bounds.height + 1);
-    }
-    const header = (await page.getByRole("heading", { name: "Labyrinth", exact: true }).boundingBox())!;
-    expect(header.y + header.height).toBeLessThanOrEqual(bounds.y);
-    await expect(page.getByRole("status")).toHaveCount(0);
-    expect(await viewport.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
-    await expect(nodes.locator("button").filter({ hasText: /Combat|Campfire|Shop|Entrance/ })).toHaveCount(0);
-    const tooltip = page.locator(encounterTooltip);
-    await expect(tooltip).toBeVisible();
-    const panel = (await tooltip.boundingBox())!;
-    const stage = (await page.getByTestId("vr-stage").boundingBox())!;
-    expect(panel.x).toBeGreaterThanOrEqual(stage.x);
-    expect(panel.y).toBeGreaterThanOrEqual(stage.y);
-    expect(panel.x + panel.width).toBeLessThanOrEqual(stage.x + stage.width + 1);
-    expect(panel.y + panel.height).toBeLessThanOrEqual(stage.y + stage.height + 1);
-    await expect(tooltip).toContainText("Goblin");
-    await expect(tooltip.locator('[data-trait="alchemist"]')).toBeVisible();
-    await expect(tooltip.locator("img, button")).toHaveCount(0);
-    if (height === 480) {
-      await page.mouse.move(0, 0);
-      await controllerInput(page).reach(room);
+    for (const { width, height } of viewports) {
+      await page.setViewportSize({ width, height });
+      await waitForLayoutSettled(page, viewport);
+      const bounds = (await viewport.boundingBox())!;
+      await room.hover();
+      const rectangles = await nodes.evaluateAll((elements) =>
+        elements.map((element) => element.getBoundingClientRect().toJSON()),
+      );
+      for (const box of rectangles) {
+        expect(box.x).toBeGreaterThanOrEqual(bounds.x);
+        expect(box.y).toBeGreaterThanOrEqual(bounds.y);
+        expect(box.right).toBeLessThanOrEqual(bounds.x + bounds.width + 1);
+        expect(box.bottom).toBeLessThanOrEqual(bounds.y + bounds.height + 1);
+      }
+      const header = (await page.getByRole("heading", { name: "Labyrinth", exact: true }).boundingBox())!;
+      expect(header.y + header.height).toBeLessThanOrEqual(bounds.y);
+      await expect(page.getByRole("status")).toHaveCount(0);
+      expect(await viewport.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
+      await expect(nodes.locator("button").filter({ hasText: /Combat|Campfire|Shop|Entrance/ })).toHaveCount(0);
+      const tooltip = page.locator(encounterTooltip);
       await expect(tooltip).toBeVisible();
-      await controllerInput(page).press("confirm");
-      await expect(page.getByTestId("battle-hand")).toBeVisible();
+      const panel = (await tooltip.boundingBox())!;
+      const stage = (await page.getByTestId("vr-stage").boundingBox())!;
+      expect(panel.x).toBeGreaterThanOrEqual(stage.x);
+      expect(panel.y).toBeGreaterThanOrEqual(stage.y);
+      expect(panel.x + panel.width).toBeLessThanOrEqual(stage.x + stage.width + 1);
+      expect(panel.y + panel.height).toBeLessThanOrEqual(stage.y + stage.height + 1);
+      await expect(tooltip).toContainText("Goblin");
+      await expect(tooltip.locator('[data-trait="alchemist"]')).toBeVisible();
+      await expect(tooltip.locator("img, button")).toHaveCount(0);
+      if (height === 480) {
+        await page.mouse.move(0, 0);
+        await controllerInput(page).reach(room);
+        await expect(tooltip).toBeVisible();
+        await controllerInput(page).press("confirm");
+        await expect(page.getByTestId("battle-hand")).toBeVisible();
+      }
     }
   });
 }
