@@ -138,6 +138,8 @@ chips keep the ordinary corner feedback. Damage, healing, reaction payoffs, zero
 failed outcomes, removals, consumption, expiry, Cleanse, Purge and actual Stunned/Frozen
 application notices retain their feedback. Receipts and expiry remain unchanged;
 the renderer checks live row visibility without changing combat math or status values.
+Status chips stay opaque through their existing entrance pop, so an entering or
+updated chip never briefly reintroduces its redundant corner feedback.
 
 Direct typed damage retains its independent fan flights, including actions that
 trigger reactions. Each reaction has a separate central portrait-anchored pair:
