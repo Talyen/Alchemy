@@ -3,6 +3,9 @@ import { clampHealth } from "./health-state";
 import { halveRounded } from "./amount-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { mergeCombatText } from "./combat-text-events";
+import { hasEnemyTrait } from "./encounter-trait-state";
+import { recordEnemyAbilityActivation } from "./battle-metrics";
+import { getBattleOutcome } from "./battle-outcome";
 
 export function applyEnemyHealingWithCombatText(
   state: BattleState,
@@ -19,4 +22,16 @@ export function applyEnemyHealingWithCombatText(
   if (actualHeal <= 0) return state;
   mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: actualHeal });
   return { ...state, enemyHealth: nextHealth };
+}
+
+export function processContagion(
+  state: BattleState,
+  damageType: string,
+  healthDamage: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (damageType !== "poison" || healthDamage <= 0 || !hasEnemyTrait(state, "contagion")) return state;
+  if (getBattleOutcome(state) !== null) return state;
+  const healed = applyEnemyHealingWithCombatText(state, 1, combatTexts, { skipFightPacing: true });
+  return healed.enemyHealth > state.enemyHealth ? recordEnemyAbilityActivation(healed, "contagion") : healed;
 }

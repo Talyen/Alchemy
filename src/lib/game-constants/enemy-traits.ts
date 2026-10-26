@@ -3,6 +3,8 @@ export const IRON_HIDE_ARMOR_PER_TURN = 1;
 export const GLACIAL_SURGE_FREEZE_DAMAGE_BONUS = 1;
 export const LIVING_ARMOR_STARTING_ARMOR = 4;
 export const ENEMY_STARTING_BLOCK = 4;
+export const COLD_EMBRACE_HEALING = 3;
+export const SOUL_HARVEST_PURGE_CHANCE = 0.5;
 
 export const HELLHOUND_BURN_MULTIPLIER = 1.25;
 export const BRAWLER_PENALTY_MULTIPLIER = 0.5;
@@ -41,6 +43,11 @@ const TRAIT_MINOR_RESISTANCE_MULTIPLIER = 0.7;
 const TRAIT_LIGHT_RESISTANCE_MULTIPLIER = 0.8;
 
 export const ENEMY_TRAIT_IDS = {
+  HOLLOW_FRAME: "hollow-frame",
+  PILFER: "pilfer",
+  SNAP_SHUT: "snap-shut",
+  SOUL_HARVEST: "soul-harvest",
+  CONTAGION: "contagion",
   GLACIAL_BODY: "glacial-body",
   MINOR_FREEZE_VULNERABILITY: "minor-freeze-vulnerability",
   COLD_BLOODED: "cold-blooded",
@@ -132,6 +139,11 @@ export const TRAIT_DAMAGE_RULES: Array<{ traitId: string; damageType: string; mu
 ];
 
 export const REACTION_ONLY_ENEMY_TRAIT_IDS = [
+  ENEMY_TRAIT_IDS.HOLLOW_FRAME,
+  ENEMY_TRAIT_IDS.PILFER,
+  ENEMY_TRAIT_IDS.SNAP_SHUT,
+  ENEMY_TRAIT_IDS.SOUL_HARVEST,
+  ENEMY_TRAIT_IDS.CONTAGION,
   ENEMY_TRAIT_IDS.FROST_ELEMENTAL,
   ENEMY_TRAIT_IDS.WILL_O_WISP,
   ENEMY_TRAIT_IDS.BANDIT,

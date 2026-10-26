@@ -12,6 +12,8 @@ import type { BattleState, CombatTextEvent } from "./types";
 import { hasEnemyTrait } from "./encounter-trait-state";
 import { getBattleOutcome } from "./battle-outcome";
 import { setEnemyStatus, setPlayerStatus } from "./status-state";
+import { mergeCombatText } from "./combat-text-events";
+import { addEnemyMitigation } from "./enemy-mitigation-state";
 
 export function applyAbilityFollowups(
   state: BattleState,
@@ -69,6 +71,21 @@ export function applyAbilityFollowups(
     const purged = purgeOnePlayerBenefit(nextState, combatTexts);
     if (purged.purged)
       nextState = resolvePendingBattleReactions(recordEnemyAbilityActivation(purged.state, "banshee"), combatTexts);
+  }
+  if (getBattleOutcome(nextState) !== null) return nextState;
+  if (context.landed && context.soulHarvest === "purge") {
+    const purged = purgeOnePlayerBenefit(nextState, combatTexts);
+    if (purged.purged)
+      nextState = resolvePendingBattleReactions(
+        recordEnemyAbilityActivation(purged.state, "soul-harvest"),
+        combatTexts,
+      );
+  }
+  if (getBattleOutcome(nextState) !== null) return nextState;
+  if (hasEnemyTrait(nextState, "snap-shut")) {
+    nextState = recordEnemyAbilityActivation(nextState, "snap-shut");
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
+    nextState = addEnemyMitigation(nextState, "block", 1);
   }
   if (getBattleOutcome(nextState) !== null) return nextState;
   if (nextState.enemyStatuses.onAttackBleed > 0) {

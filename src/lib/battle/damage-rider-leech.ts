@@ -6,7 +6,7 @@ import {
   type ResourceRewardPort,
 } from "./resource-reward-resolution";
 import { applyCardHealing, removeHarmfulPlayerStatuses } from "./status-player";
-import { hasEncounterBenefit } from "./encounter-trait-state";
+import { hasEncounterBenefit, hasEnemyTrait } from "./encounter-trait-state";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleState, CombatTextEvent } from "./types";
 import {
@@ -53,6 +53,7 @@ export function applyLeechHealing(
   combatTexts: CombatTextEvent[],
   options: { cardHealing?: boolean; afflicted?: boolean } = {},
 ): BattleState {
+  if (hasEnemyTrait(state, "hollow-frame")) return state;
   const healing = leechHealingAmount(state, amount, options.afflicted);
   return resolveLeechResourceRewards(state, healing, combatTexts, leechRewardPort, options);
 }

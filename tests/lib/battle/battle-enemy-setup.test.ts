@@ -114,7 +114,7 @@ describe("initializeEnemyState", () => {
     expect(result.startingArmor).toBe(Math.round(LIVING_ARMOR_STARTING_ARMOR * roomMul));
   });
 
-  it.each(["forge-golem", "goblin"])("includes %s starting Block scaled by room", (id) => {
+  it.each(["forge-golem"])("includes %s starting Block scaled by room", (id) => {
     const roomMul = 1 + 2 * ROOM_SCALING_INCREMENT;
     const result = initializeEnemyState(getEnemy(id), 3, []);
     expect(result.startingEnemyBlock).toBe(Math.round(ENEMY_STARTING_BLOCK * roomMul));

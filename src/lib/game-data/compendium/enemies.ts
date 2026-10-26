@@ -40,7 +40,7 @@ export const enemyBestiary = [
     title: "Skeleton",
     enemyType: "normal",
     traits: [
-      trait("brittle-bones", "Brittle Bones", "Receives double Stun damage"),
+      trait("hollow-frame", "Hollow Frame", "Cannot be Leeched"),
       trait("holy-vulnerability", "Unholy Bones", "Receives double Holy damage"),
     ],
     abilityIds: ["slash", "bash", "block"],
@@ -49,14 +49,17 @@ export const enemyBestiary = [
     id: "goblin",
     title: "Goblin",
     enemyType: "normal",
-    traits: [trait("starting-block", "Scavenged Shield", "Starts with 4 Block")],
+    traits: [trait("pilfer", "Pilfer", "Steals 1 Block before attacking")],
     abilityIds: ["stab", "slash", "block"],
   }),
   defineEnemy({
     id: "mimic",
     title: "Mimic",
     enemyType: "elite",
-    traits: [trait("gold-trove", "Gold Trove", "Drops Double Gold on Defeat")],
+    traits: [
+      trait("snap-shut", "Snap Shut", "Gains 1 Block after attacking"),
+      trait("gold-trove", "Gold Trove", "Drops Double Gold on Defeat"),
+    ],
     abilityIds: ["fangs", "bash", "block"],
   }),
   defineEnemy({
@@ -70,14 +73,20 @@ export const enemyBestiary = [
     id: "necromancer",
     title: "Necromancer",
     enemyType: "elite",
-    traits: [trait("holy-vulnerability", "Holy Vulnerability", "Receives double Holy damage")],
+    traits: [
+      trait("soul-harvest", "Soul Harvest", "Attacks Purge or Leech while below half Health"),
+      trait("holy-vulnerability", "Holy Vulnerability", "Receives double Holy damage"),
+    ],
     abilityIds: ["fangs", "bloodthorn", "rend"],
   }),
   defineEnemy({
     id: "plague-doctor",
     title: "Plague Doctor",
     enemyType: "elite",
-    traits: [poisonResistance],
+    traits: [
+      trait("contagion", "Contagion", "Restores 1 Health whenever an opponent takes Poison damage"),
+      poisonResistance,
+    ],
     abilityIds: ["caustic-jab", "venom-fangs", "rend"],
   }),
   defineEnemy({
@@ -295,7 +304,7 @@ export const enemyBestiary = [
     title: "Ice Wraith",
     enemyType: "elite",
     traits: [
-      trait("ice-wraith", "Deep Chill", "Deals 1 additional Freeze damage"),
+      trait("ice-wraith", "Cold Embrace", "Restores 3 Health whenever an opponent becomes Frozen"),
       trait(
         "frozen-apparition",
         "Frozen Apparition",

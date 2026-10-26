@@ -8,9 +8,12 @@ import {
   Flame,
   Gem,
   Ghost,
+  Hand,
   Heart,
   HeartCrack,
   Mountain,
+  Rat,
+  Skull,
   PawPrint,
   Scale,
   Shield,
@@ -28,6 +31,11 @@ import { extractKeywordIds } from "@/lib/keyword-text";
 import { keywordIcons } from "./metadata";
 
 const traitIcons: Record<string, LucideIcon> = {
+  "hollow-frame": Bone,
+  pilfer: Hand,
+  "snap-shut": Shield,
+  "soul-harvest": Skull,
+  contagion: Rat,
   banshee: Volume2,
   pyromancer: Flame,
   ogre: Swords,

@@ -89,7 +89,6 @@ export function getEncounterEnemyAbility(card: EnemyAbilityCard, context: EnemyD
 const ROOM_SCALED_TRAITS = new Set([
   "cinder-skin",
   "frost-elemental",
-  "ice-wraith",
   "pyromancer",
   "dire-wolf",
   "blood-cultist",
