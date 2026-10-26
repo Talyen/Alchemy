@@ -12,38 +12,19 @@ describe("CharacterSelectScreen", () => {
     useUiStore.setState({ hoveredCardId: null, shimmerState: null, plasmaInteraction: null });
   });
 
-  it("renders heroes and respects finishedRunCharacters unlock state", () => {
+  it("rejects a locked hero, then permits selection after its prerequisite finishes", async () => {
+    const user = userEvent.setup();
     const onSelect = vi.fn();
-
     const { rerender } = render(<CharacterSelectScreen onSelect={onSelect} finishedRunCharacters={[]} />);
-
-    const knight = screen.getByRole("button", { name: /Knight/i });
-    const rogue = screen.getByRole("button", { name: /Rogue/i });
-
-    expect(knight.getAttribute("aria-disabled")).toBe("false");
-    expect(rogue.getAttribute("aria-disabled")).toBe("true");
-
-    rerender(<CharacterSelectScreen onSelect={onSelect} finishedRunCharacters={["knight"]} />);
-
-    expect(screen.getByRole("button", { name: /Rogue/i }).getAttribute("aria-disabled")).toBe("false");
-  });
-
-  it("triggers onSelect when clicking an unlocked hero", async () => {
-    const user = userEvent.setup();
-    const onSelect = vi.fn();
-
-    render(<CharacterSelectScreen onSelect={onSelect} finishedRunCharacters={[]} />);
-
-    await user.click(screen.getByRole("button", { name: /Knight/i }));
-    expect(onSelect).toHaveBeenCalledWith("knight");
-  });
-
-  it("rejects selection of a locked hero", async () => {
-    const user = userEvent.setup();
-    const onSelect = vi.fn();
-    render(<CharacterSelectScreen onSelect={onSelect} finishedRunCharacters={[]} />);
-
-    await user.click(screen.getByRole("button", { name: "Rogue (Locked)" }));
+    expect(screen.getByRole("button", { name: "Select Knight" }).getAttribute("aria-disabled")).toBe("false");
+    const locked = screen.getByRole("button", { name: "Rogue (Locked)" });
+    expect(locked.getAttribute("aria-disabled")).toBe("true");
+    await user.click(locked);
     expect(onSelect).not.toHaveBeenCalled();
+    rerender(<CharacterSelectScreen onSelect={onSelect} finishedRunCharacters={["knight"]} />);
+    const unlocked = screen.getByRole("button", { name: "Select Rogue" });
+    expect(unlocked.getAttribute("aria-disabled")).toBe("false");
+    await user.click(unlocked);
+    expect(onSelect).toHaveBeenCalledExactlyOnceWith("rogue");
   });
 });

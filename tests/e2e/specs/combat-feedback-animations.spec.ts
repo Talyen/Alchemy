@@ -186,23 +186,34 @@ test.describe("Combat feedback animations", slow, () => {
   });
 
   for (const side of ["player", "enemy"] as const) {
-    test(`${side} feedback appears during the wind-up`, async ({ page }, testInfo) => {
+    test(`${side} feedback appears during the wind-up`, async ({ page }) => {
       const hand = [makeCard({ cost: 0 })];
-      await injectActiveBattle(page, makeGoblinBattleState({ hand }), { runDeck: hand, autoEndTurn: false });
+      await injectActiveBattle(
+        page,
+        makeGoblinBattleState({
+          hand,
+          currentEnemy: { id: "goblin", abilityIds: ["slash", "stab", "sunder"] },
+        }),
+        { runDeck: hand, autoEndTurn: false },
+      );
       const battle = new BattlePage(page);
       await expect(battle.hand.first()).toBeVisible();
-      await expect(page.getByRole("combobox", { name: "Combat text animation" })).toHaveCount(0);
-      const observation = await page.evaluateHandle(() => {
+      const observation = await page.evaluateHandle((side) => {
         let cancelled = false;
         const result = (async () => {
-          while (!cancelled) {
-            const text = document.querySelector('[data-testid="combat-text"]');
+          const deadline = performance.now() + 2000;
+          while (!cancelled && performance.now() < deadline) {
+            const target = side === "player" ? "enemy" : "player";
+            const text = document.querySelector(
+              `[data-testid="combat-text-burst"][data-target="${target}"] [data-testid="combat-text"]`,
+            );
             if (text && getComputedStyle(text).visibility === "visible") {
               const animation = document
-                .querySelector(".animate-attack-lunge")
+                .querySelector(`[data-testid="battle-${side}-art-panel"]`)
+                ?.closest('[data-testid="combatant-attack-lunge"]')
                 ?.getAnimations()
                 .find((item) => item instanceof CSSAnimation && item.animationName === "combatant-attack-lunge");
-              return { visible: true, elapsed: Number(animation?.currentTime ?? 0) };
+              if (animation?.currentTime != null) return { visible: true, elapsed: Number(animation.currentTime) };
             }
             await new Promise<void>((resolve) => {
               requestAnimationFrame(() => resolve());
@@ -216,17 +227,13 @@ test.describe("Combat feedback animations", slow, () => {
             cancelled = true;
           },
         };
-      });
+      }, side);
       const timing = await observeDuringAction(observation, async () => {
         if (side === "player") await battle.playFirstCard();
         else await battle.endTurn();
       });
-      await testInfo.attach(`${side}-feedback-timing`, {
-        body: JSON.stringify(timing),
-        contentType: "application/json",
-      });
       expect(timing.visible).toBe(true);
-      expect(timing.elapsed).toBeLessThan(170);
+      expect(timing.elapsed, `${side} feedback needs a running attack lunge during wind-up`).toBeLessThan(170);
     });
   }
 });

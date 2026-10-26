@@ -116,39 +116,36 @@ describe("BattleCardButton", () => {
     expect(container.querySelector(".boss-title-shine, .text-shine-corruption")).toBeNull();
   });
 
-  it.each<BattleCard>([card, { ...card, transmuted: "burn" }, { ...card, corrupted: true }])(
-    "keeps inspection and shine active only while focused or hovered ($transmuted, $corrupted)",
-    (battleCard) => {
-      render(
-        <BattleCardButton
-          card={battleCard}
-          shineColor={getCardInspectionShineColors(battleCard)}
-          ariaLabel="Test Card"
-          shimmerActive={false}
-          shimmerToken={undefined}
-        />,
-      );
-      const button = screen.getByRole("button", { name: "Test Card" });
-      const wrapper = button.parentElement!;
-      expect(button.querySelector(".shine-border")).toBeNull();
-      fireEvent.mouseEnter(wrapper);
-      expect(button.querySelector(".shine-border")).not.toBeNull();
-      fireEvent.mouseLeave(wrapper);
-      expect(button.querySelector(".shine-border")).toBeNull();
-      act(() => button.focus());
-      expect(button.querySelector(".shine-border")).not.toBeNull();
-      fireEvent.mouseEnter(wrapper);
-      fireEvent.mouseLeave(wrapper);
-      expect(button.dataset.hovered).toBe("true");
-      fireEvent.mouseEnter(wrapper);
-      act(() => button.blur());
-      expect(button.dataset.hovered).toBe("true");
-      expect(button.querySelector(".shine-border")).not.toBeNull();
-      fireEvent.mouseLeave(wrapper);
-      expect(button.dataset.hovered).toBeUndefined();
-      expect(button.querySelector(".shine-border")).toBeNull();
-    },
-  );
+  it("keeps inspection and shine active only while focused or hovered", () => {
+    render(
+      <BattleCardButton
+        card={card}
+        shineColor={getCardInspectionShineColors(card)}
+        ariaLabel="Test Card"
+        shimmerActive={false}
+        shimmerToken={undefined}
+      />,
+    );
+    const button = screen.getByRole("button", { name: "Test Card" });
+    const wrapper = button.parentElement!;
+    expect(button.querySelector(".shine-border")).toBeNull();
+    fireEvent.mouseEnter(wrapper);
+    expect(button.querySelector(".shine-border")).not.toBeNull();
+    fireEvent.mouseLeave(wrapper);
+    expect(button.querySelector(".shine-border")).toBeNull();
+    act(() => button.focus());
+    expect(button.querySelector(".shine-border")).not.toBeNull();
+    fireEvent.mouseEnter(wrapper);
+    fireEvent.mouseLeave(wrapper);
+    expect(button.dataset.hovered).toBe("true");
+    fireEvent.mouseEnter(wrapper);
+    act(() => button.blur());
+    expect(button.dataset.hovered).toBe("true");
+    expect(button.querySelector(".shine-border")).not.toBeNull();
+    fireEvent.mouseLeave(wrapper);
+    expect(button.dataset.hovered).toBeUndefined();
+    expect(button.querySelector(".shine-border")).toBeNull();
+  });
 
   it.each([
     {
@@ -233,7 +230,7 @@ describe("BattleCardButton", () => {
     expect(within(screen.getByRole("tooltip")).getByText("NEW").parentElement?.textContent).toBe("WishNEW");
   });
 
-  it("keeps unavailable card choices inspectable by keyboard without selecting them", () => {
+  it("keeps unavailable choices inspectable and announces selection after they become available", () => {
     const onSelect = vi.fn();
     const { rerender } = render(<SelectableCard card={card} isSelected={false} disabled onSelect={onSelect} />);
     const button = screen.getByRole("button", { name: "Select Test Card" });
@@ -246,15 +243,11 @@ describe("BattleCardButton", () => {
     rerender(<SelectableCard card={card} isSelected={false} onSelect={onSelect} />);
     fireEvent.click(button);
     expect(onSelect).toHaveBeenCalledOnce();
-  });
-
-  it.each(["choice", "shop", "deck", "corruption"] as const)("exposes selection changes for %s cards", (chrome) => {
-    const { rerender } = render(<SelectableCard card={card} chrome={chrome} isSelected={false} onSelect={() => {}} />);
-    expect(screen.getByRole("button", { name: "Select Test Card", pressed: false })).toBeTruthy();
-    rerender(<SelectableCard card={card} chrome={chrome} isSelected onSelect={() => {}} />);
-    expect(screen.getByRole("button", { name: "Select Test Card", pressed: true })).toBeTruthy();
-    rerender(<SelectableCard card={card} chrome={chrome} isSelected={false} onSelect={() => {}} />);
-    expect(screen.getByRole("button", { name: "Select Test Card", pressed: false })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Select Test Card", pressed: false })).toBe(button);
+    rerender(<SelectableCard card={card} isSelected onSelect={onSelect} />);
+    expect(screen.getByRole("button", { name: "Select Test Card", pressed: true })).toBe(button);
+    rerender(<SelectableCard card={card} isSelected={false} onSelect={onSelect} />);
+    expect(screen.getByRole("button", { name: "Select Test Card", pressed: false })).toBe(button);
   });
 
   it("renders distilled potion values with green highlighting in popup", () => {

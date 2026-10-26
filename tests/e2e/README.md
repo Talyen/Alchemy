@@ -58,6 +58,15 @@ journey owns normal timing. Armory DOM tests retain mutation admission, failed
 commands, transfer/selection lifetime and pagination, while exact empty-slot
 filler counts and development-only spawn buttons have no permanent coverage.
 
+Real opening-deal, pile-inspection admission, hand-dock stability, sequential
+discard motion and transfer-color checks share the normal-timing journey in
+`specs/draw-discard-animations.spec.ts`. The overlapping-draw journey remains
+separate because it deliberately sends input before the first draw completes.
+Short enemy-turn badges and inspection gates are captured before input, so
+assertions inspect observed history rather than racing transient DOM states.
+Attack-feedback timing requires the correct actor's actual lunge; missing
+animations must not count as zero elapsed time.
+
 ## Rendered accessibility and visual regression
 
 `specs/accessibility.spec.ts` runs axe WCAG A/AA checks on the live menu,
