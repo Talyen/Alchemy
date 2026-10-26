@@ -6,7 +6,6 @@ import {
   winBattleAndClaimReward,
   makeGoblinBattleState,
   makeHighDamageCard,
-  SAVE_KEY,
   readSavedGame,
   resumeInjectedRun,
 } from "../../browser-helpers";
@@ -71,6 +70,7 @@ test.describe("Run Outcomes", () => {
     test("ending a first Knight run reveals Rogue after the recap before returning to menu", async ({ page }) => {
       await injectSaveState(page, { finishedRunCharacters: [] });
       await page.goto("/");
+      await resumeInjectedRun(page);
       await new DestinationPage(page).expectVisible();
       await page.getByRole("button", { name: "Open game menu", exact: true }).click();
       await expect(page.getByRole("button", { name: "End Run" })).toBeVisible({ timeout: 3000 });
@@ -149,11 +149,7 @@ test.describe("Run Outcomes", () => {
         await page.getByRole("button", { name: "Main Menu" }).click();
         await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 15000 });
 
-        const activeRun = await page.evaluate((saveKey) => {
-          const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-          return save.activeRun ?? null;
-        }, SAVE_KEY);
-        expect(activeRun).toBeNull();
+        await expect.poll(async () => (await readSavedGame(page)).activeRun).toBeNull();
       },
     );
   });

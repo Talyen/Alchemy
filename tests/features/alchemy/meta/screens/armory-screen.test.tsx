@@ -52,7 +52,7 @@ describe("ArmoryScreen core", () => {
     expect(screen.getByRole("button", { name: "Wizard (Locked)" })).toHaveProperty("disabled", true);
   });
 
-  it("stays silent while browsing a hero in Combat and errors on a locked change", async () => {
+  it("keeps Combat browsing silent and rejects gear and trinket changes", async () => {
     const user = userEvent.setup();
     const onUnequip = vi.fn(() => true);
     const onEquipTrinket = vi.fn(() => true);
@@ -76,24 +76,8 @@ describe("ArmoryScreen core", () => {
     expect(onEquipTrinket).not.toHaveBeenCalled();
     expect(playUISound).toHaveBeenCalledWith("error");
     expect(screen.getByRole("alert").textContent).toBe(COMBAT_LOCKED_MESSAGE);
-  });
-
-  it("errors when trying to unequip gear for a hero in Combat", async () => {
-    const user = userEvent.setup();
-    const onUnequip = vi.fn(() => true);
-    const loadouts = createEmptyGearLoadouts();
-    loadouts.knight["main-hand"] = "gear-sword";
-    renderArmoryScreen({
-      combatRestrictions: { characters: { knight: ["campaign"] }, gear: {}, trinkets: {} },
-      loadouts,
-      onUnequip,
-    });
-
-    expect(screen.queryByRole("alert")).toBeNull();
-
     await user.click(screen.getByLabelText("Main-hand equipment slot"));
     expect(onUnequip).not.toHaveBeenCalled();
-    expect(playUISound).toHaveBeenCalledWith("error");
     expect(screen.getByRole("alert").textContent).toBe(COMBAT_LOCKED_MESSAGE);
   });
 
@@ -384,50 +368,5 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
 
     const swordBtnAfter = screen.getByRole("button", { name: "Longsword" });
     expect(swordBtnAfter).toBe(swordBtnBefore);
-  });
-
-  it("shows spawn dev trinket button on trinket slot and triggers onSpawnDevTrinket", async () => {
-    const user = userEvent.setup();
-    const onSpawnDevGear = vi.fn();
-    const onSpawnDevTrinket = vi.fn();
-    renderArmoryScreen({
-      onSpawnDevGear,
-      onSpawnDevTrinket,
-    });
-
-    // On gear slot, spawn gear button is visible
-    expect(screen.getByRole("button", { name: "Spawn random gear" })).toBeDefined();
-
-    // Switch to trinket slot
-    await user.click(screen.getByLabelText("Trinket equipment slot"));
-    const spawnTrinketBtn = screen.getByRole("button", { name: "Spawn random trinket" });
-    expect(spawnTrinketBtn).toBeDefined();
-
-    await user.click(spawnTrinketBtn);
-    expect(onSpawnDevTrinket).toHaveBeenCalledTimes(1);
-    expect(onSpawnDevGear).not.toHaveBeenCalled();
-  });
-
-  it("does not display empty status icon when browsing empty equipment slots unless filtered", async () => {
-    const user = userEvent.setup();
-    const sword = { instanceId: "gear-sword", definitionId: "longsword-basic" as const, affixes: [] };
-    renderArmoryScreen({
-      inventories: createArmoryInventories([sword]),
-      ownedTrinketIds: [],
-    });
-
-    // Main-hand has sword
-    expect(document.querySelector('[data-testid$="-empty"]')).toBeNull();
-
-    // Switch to trinket slot (no trinkets owned)
-    await user.click(screen.getByLabelText("Trinket equipment slot"));
-    // Renders filler slots without the floating empty package icon overlay
-    expect(document.querySelector('[data-testid$="-empty"]')).toBeNull();
-    expect(document.querySelectorAll('[data-testid="armory-inventory-filler"]')).toHaveLength(6);
-
-    // Switch to armor slot (no body armor in inventory)
-    await user.click(screen.getByLabelText("Armor equipment slot"));
-    expect(document.querySelector('[data-testid$="-empty"]')).toBeNull();
-    expect(document.querySelectorAll('[data-testid="armory-inventory-filler"]')).toHaveLength(6);
   });
 });

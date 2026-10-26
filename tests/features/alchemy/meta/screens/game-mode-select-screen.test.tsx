@@ -23,12 +23,12 @@ describe("GameModeSelectScreen", () => {
     onSelectWildwood: vi.fn(),
   };
 
-  it("dispatches the selection handlers when unlocked modes are clicked", () => {
+  it("routes unlocked modes and blocks the same actions after progression is locked", () => {
     const onSelectCampaign = vi.fn();
     const onSelectLabyrinth = vi.fn();
     const onSelectWildwood = vi.fn();
 
-    render(
+    const { rerender } = render(
       <GameModeSelectScreen
         {...defaultProps}
         onSelectCampaign={onSelectCampaign}
@@ -45,6 +45,30 @@ describe("GameModeSelectScreen", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Wildwood Draft" }));
     expect(onSelectWildwood).toHaveBeenCalledTimes(1);
+
+    onSelectCampaign.mockClear();
+    onSelectLabyrinth.mockClear();
+    onSelectWildwood.mockClear();
+    rerender(
+      <GameModeSelectScreen
+        {...defaultProps}
+        finishedRunCharacters={[]}
+        onSelectCampaign={onSelectCampaign}
+        onSelectLabyrinth={onSelectLabyrinth}
+        onSelectWildwood={onSelectWildwood}
+      />,
+    );
+    for (const name of ["The Labyrinth (Locked)", "Wildwood Draft (Locked)"]) {
+      const locked = screen.getByRole("button", { name });
+      expect(locked.getAttribute("aria-disabled")).toBe("true");
+      fireEvent.click(locked);
+      fireEvent.keyDown(locked, { key: "Enter" });
+      fireEvent.keyDown(locked, { key: " " });
+    }
+    expect(onSelectLabyrinth).not.toHaveBeenCalled();
+    expect(onSelectWildwood).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "The Campaign" }));
+    expect(onSelectCampaign).toHaveBeenCalledTimes(1);
   });
 
   it("keeps a mode description visible while keyboard focus remains after the pointer leaves", () => {
@@ -70,13 +94,5 @@ describe("GameModeSelectScreen", () => {
     expect(expected).not.toContain("The Labyrinth");
     expect(screen.getByRole("button", { name: expected })).toBe(mode);
     expect(mode.getAttribute("aria-disabled")).toBe("true");
-  });
-
-  it("locks modes when unlock prerequisites are not met", () => {
-    render(<GameModeSelectScreen {...defaultProps} finishedRunCharacters={[]} />);
-
-    expect(screen.getByRole("button", { name: "The Campaign" }).getAttribute("aria-disabled")).toBeNull();
-    expect(screen.getByRole("button", { name: "The Labyrinth (Locked)" }).getAttribute("aria-disabled")).toBe("true");
-    expect(screen.getByRole("button", { name: "Wildwood Draft (Locked)" }).getAttribute("aria-disabled")).toBe("true");
   });
 });
