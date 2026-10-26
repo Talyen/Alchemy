@@ -576,9 +576,9 @@ any source can prepare a payoff. Reaction damage never removes Burn, shortens
 crowd control, or spends another reaction's opportunity.
 
 Successful enemy Freeze prepares independent Shatter and Frostfire bonuses;
-successful Stun prepares Thunderclap. Each bonus is 25% of the actual Health
-damage dealt by the packet causing that CC, rounded once, with a minimum of 1.
-Non-damaging CC prepares the minimum. The amount is fixed when CC begins, so a
+successful Stun prepares Thunderclap. Each bonus is 50% of the actual Health
+damage dealt by the packet causing that CC, rounded once, with a minimum of 2.
+Non-damaging CC prepares the minimum of 2. The amount is fixed when CC begins, so a
 small finishing hit or Companion receives the full reward. Each opportunity
 expires when its CC ends. Haste, duration extensions, additional buildup, and
 player-turn resets cannot replenish it; only a fresh successful CC can.
@@ -595,8 +595,8 @@ player-turn resets cannot replenish it; only a fresh successful CC can.
   releases its stored Nature bonus, once per Stun. The finishing hit must deal
   positive Health damage.
 - **Wildfire:** two positive natural enemy-turn Burn ticks prepare bonus Burn
-  damage equal to 25% of their combined actual Health damage, rounded once. Ticks
-  of 8 and 4 prepare 3; ticks of 4 and 2 prepare 2. Only normal enemy-turn ticks
+  damage equal to 50% of their combined actual Health damage, rounded once, minimum 2. Ticks
+  of 8 and 4 prepare 6; ticks of 4 and 2 prepare 3. Only normal enemy-turn ticks
   count, including CC-skipped enemy turns; Haste, extra ticks, direct hits, and
   detonations do not. A Nature hit dealing positive Health damage releases all
   completed pairs without consuming Burn. Additional pairs accumulate while
@@ -605,20 +605,20 @@ player-turn resets cannot replenish it; only a fresh successful CC can.
 
 - **Consecration:** an eligible Holy hit dealing positive Health damage to an
   already Bleeding enemy consecrates its next natural Bleed tick. The tick releases
-  Holy damage equal to 25% of its actual Health damage, rounded, minimum 1. More
+  Holy damage equal to 50% of its actual Health damage, rounded, minimum 2. More
   Holy hits do not stack marks. Capture and consume the mark when the tick begins;
   clearing or detonating Bleed cancels it. Preserved Bleed can be consecrated again
   for a later tick. Current-format resume preserves the mark without replaying it.
 - **Bloodboil:** when Burn and Bleed both deal positive natural tick damage in the
-  same enemy phase, release Burn damage equal to 25% of their combined actual
-  Health damage, rounded once, minimum 1. A final Burn stack counts even if it
+  same enemy phase, release Burn damage equal to 50% of their combined actual
+  Health damage, rounded once, minimum 2. A final Burn stack counts even if it
   expires before Bleed resolves. Separate phases, extra ticks, and detonations
   cannot combine. CC-skipped natural phases count. Bloodboil and Consecration
   resolve after the Bleed tick and its riders, Consecration first.
 - **Venomflash:** an eligible Burn hit dealing positive Health damage newly ignites
   an already Poisoned enemy: Burn was zero before that packet and the packet adds
-  Burn. Release Burn damage equal to 25% of the pre-hit Poison stacks, rounded,
-  minimum 1. Existing fires cannot trigger it; extinguishing and igniting again
+  Burn. Release Burn damage equal to 50% of the pre-hit Poison stacks, rounded,
+  minimum 2. Existing fires cannot trigger it; extinguishing and igniting again
   can. Ordered effects in one card can establish Poison before ignition. Poison
   and Burn stacks remain intact from the bonus itself. Combustion's fresh
   ignition still qualifies when its own detonation consumes the new Burn.
@@ -631,10 +631,13 @@ qualifying attack reactions. Standard health-threshold
 handling and once-only kill rewards still apply, including Archery attribution.
 
 Persist reaction progress in battle snapshots; reload cannot refresh spent
-opportunities or replay earned damage. Resolved reactions reuse existing battle
-audio assets and announce their names with the keyword-colored text shine and
-independent 1.6-second floating motion described in [battle feedback](./UI_BATTLE.md#battle-feedback).
-Numeric presentation totals ordinary and reaction damage by type within each
-action, preserving separate engine packets. Add no readiness UI, explanations,
+opportunities or replay earned damage. Already-earned stored bonuses retain their
+amounts across resume. Resolved reactions reuse existing battle audio. Each action
+shows one central feedback group: its direct typed damage, then each reaction name
+with its separately attributed typed bonus, using the same keyword shine on the
+name and bonus number. The group shares one portrait anchor, flight and 1.6-second
+lifetime; see [battle feedback](./UI_BATTLE.md#battle-feedback). Repeated packets
+with the same reaction origin can total for display; direct damage and different
+reactions remain distinct, preserving separate engine packets. Add no readiness UI, explanations,
 tutorials, or card-description/keyword previews; see the
 [authoring contract](./CONTENT_AUTHORING.md#add-a-new-card).

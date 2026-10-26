@@ -129,33 +129,34 @@ entries use a smaller, stationary pop. Within an action, notices precede losses
 and gains; each lane preserves arrival order. Impact and audio cues remain immediate
 and follow actual incoming events, never accumulated display totals.
 
-Universal reactions show their localized names above the numbers, each with an
-independent portrait-anchored flight, without a standalone damage-type icon or a repeated
-bonus amount. Reaction IDs select the shared names and keyword palettes:
-Shatter uses Freeze/Physical, Frostfire Freeze/Burn, Thunderclap Stun/Nature,
-Wildfire Burn/Nature, Consecration Bleed/Holy, Bloodboil Burn/Bleed, and Venomflash
-Poison/Burn. Reuse keyword text shine with a dark drop shadow. Transparent gradient
-text must reset inherited text strokes: an outline can cut through its letter interiors.
-This applies to all shared ShineText consumers and the corrupted-title shine.
+Universal reactions share one central portrait-anchored feedback group per action.
+Direct typed damage stays on its own first row; each localized reaction name sits
+beside its actual typed bonus on a following row. Damage packets carry their exact
+reaction ID through display aggregation: prerequisite keywords never imply extra
+damage types. Shatter's Block and Armor losses remain separate defense feedback.
+The name and bonus number use the same keyword text shine, with a dark shadow and
+no inherited stroke through transparent glyphs. The ordinary type icon preserves
+the payoff's damage type. Shatter uses Freeze/Physical, Frostfire Freeze/Burn,
+Thunderclap Stun/Nature, Wildfire Burn/Nature, Consecration Bleed/Holy, Bloodboil
+Burn/Bleed, and Venomflash Poison/Burn.
 
-Reaction names retain their independent 1600 ms lifetime and keyword shine.
-They pop, settle, rise up to 76 scaled pixels, then hold and fade. Each localized
-name fits the portrait width without wrapping or truncation. Numeric and name
-queues prefer clearance in the center band, allowing overlap rather than delaying
-feedback beyond 180 ms. Dense names receive fixed extra rows. Merging numbers never restarts a name or extends its
-lifetime. Reduced/disabled motion keeps the keyword colors without travel.
-[Reaction text](../src/features/alchemy/run-loop/battle/presentation/ui/reaction-text.tsx)
-owns fitting and styling; [combat text](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx)
-owns entry rendering. The shared
-[motion sampler](../src/features/alchemy/run-loop/battle/combat-feedback-motion.ts)
-drives both clearance planning and rendered curves.
+The complete group pops, settles, rises up to 24 scaled pixels, then holds and
+fades together over 1600 ms. Each localized name and its bonus fit the portrait
+width without wrapping or truncation. Multiple reactions retain their actual
+resolution order in the same group. Group footprints participate in the existing
+clearance queue; new actions never move or restart an active group. Reduced or
+disabled motion keeps a static group and the same keyword colors. The shared
+[reaction renderer](../src/features/alchemy/run-loop/battle/presentation/ui/reaction-text.tsx)
+owns fitting and grouping; [combat text entries](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text-entry.tsx)
+render the typed numbers and accessible labels.
 
-Within each resolved action, damaging packets of the same type, recipient and intent
-produce one numeric total, including non-additive reaction damage and natural
-ticks. Resource removals and Health costs remain separate. Preserve original
-packets for gameplay, audio, and impact strength; visual aggregation never turns
-a reaction into a Critical. A total containing Critical damage uses the existing
-accent and an accessible label saying it includes a Critical.
+Within a resolved action, repeated damaging packets of the same type, recipient,
+intent and reaction origin can total for display. Direct and reaction damage never
+merge with one another; different reactions remain separate even when their output
+type matches. Resource removals and Health costs remain separate. Preserve original
+packets for gameplay, audio and impact strength; visual aggregation never turns
+a reaction into a Critical. A direct total containing Critical damage retains its
+existing accent and accessible label saying it includes a Critical.
 
 Critical damage retains ordinary typed color/icon with a brief pale flash and
 gold glow, without changing font size, weight or angle. Reduced/disabled motion

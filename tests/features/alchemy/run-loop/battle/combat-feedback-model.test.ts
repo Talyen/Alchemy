@@ -112,10 +112,10 @@ it("preserves primary/corner intent through display totals and rapid burst mergi
   expect(damage.entries.map(combatTextLane)).toEqual(["impact", "setback"]);
 });
 
-it("totals reaction damage for display while retaining packet facts for impacts and input events", () => {
+it("keeps direct and reaction damage distinct while retaining packet facts for impacts", () => {
   const events: CombatTextEvent[] = [
-    { ...hit, amount: 6, critical: true },
-    { ...hit, amount: 8, additive: false },
+    { ...hit, amount: 6, critical: true, feedback: "primary" },
+    { ...hit, amount: 8, additive: false, reactionId: "shatter", feedback: "secondary" },
     { target: "enemy", kind: "notice", stat: "physical", text: "Shatter", signal: "reaction", reactionId: "shatter" },
     { target: "enemy", kind: "damage", stat: "block", amount: 6, impact: false },
     { target: "enemy", kind: "damage", stat: "armor", amount: 3, impact: false },
@@ -123,26 +123,77 @@ it("totals reaction damage for display while retaining packet facts for impacts 
   ];
   const original = structuredClone(events);
   const prepared = prepareCombatFeedback(events, 8, 100, 1100);
-  expect(prepared.bursts[1]!.entries).toHaveLength(3);
-  expect(prepared.bursts[1]!.entries[0]).toMatchObject({ amount: 14, displayText: "-14", includesCritical: true });
+  expect(prepared.bursts[1]!.entries).toHaveLength(2);
+  expect(prepared.reactions[0]!.entries).toMatchObject([
+    { amount: 6, displayText: "-6", critical: true, feedback: "primary" },
+    { amount: 8, displayText: "-8", reactionId: "shatter", feedback: "secondary" },
+  ]);
   expect(prepared.impacts.enemyImpactCue).toMatchObject({ amount: 8 });
   expect(prepared.impacts.playerImpactCue).toBeUndefined();
   expect(prepared.reactions).toMatchObject([{ target: "enemy", reactionIds: ["shatter"], lifetimeMs: 1600 }]);
   expect(events).toEqual(original);
 });
 
-it("combines periodic and reaction Burn visually without feeding their total back into impact strength", () => {
+it("keeps natural Burn separate from Bloodboil while sharing one group", () => {
   const prepared = prepareCombatFeedback(
     [
       { target: "enemy", kind: "damage", stat: "burn", amount: 8, periodic: true },
-      { target: "enemy", kind: "damage", stat: "burn", amount: 3, additive: false },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 6, additive: false, reactionId: "bloodboil" },
       { target: "enemy", kind: "notice", stat: "burn", text: "Bloodboil", signal: "reaction", reactionId: "bloodboil" },
     ],
     1,
     0,
     1100,
   );
-  expect(prepared.bursts[0]!.entries).toHaveLength(1);
-  expect(prepared.bursts[0]!.entries[0]).toMatchObject({ amount: 11, displayText: "-11" });
+  expect(prepared.bursts).toEqual([]);
+  expect(prepared.reactions[0]!.entries).toMatchObject([
+    { amount: 8, displayText: "-8", periodic: true },
+    { amount: 6, displayText: "-6", reactionId: "bloodboil" },
+  ]);
   expect(prepared.impacts.enemyImpactCue).toMatchObject({ amount: 8, periodic: true });
+});
+
+it("totals repeated packets only within their exact reaction origin, retaining order and input events", () => {
+  const events: CombatTextEvent[] = [
+    { target: "enemy", kind: "damage", stat: "burn", amount: 8, feedback: "primary" },
+    { target: "enemy", kind: "notice", stat: "burn", text: "Frostfire", signal: "reaction", reactionId: "frostfire" },
+    {
+      target: "enemy",
+      kind: "damage",
+      stat: "burn",
+      amount: 4,
+      additive: false,
+      reactionId: "frostfire",
+      feedback: "secondary",
+    },
+    { target: "enemy", kind: "notice", stat: "burn", text: "Venomflash", signal: "reaction", reactionId: "venomflash" },
+    {
+      target: "enemy",
+      kind: "damage",
+      stat: "burn",
+      amount: 2,
+      additive: false,
+      reactionId: "venomflash",
+      feedback: "secondary",
+    },
+    {
+      target: "enemy",
+      kind: "damage",
+      stat: "burn",
+      amount: 2,
+      additive: false,
+      reactionId: "venomflash",
+      feedback: "secondary",
+    },
+  ];
+  const original = structuredClone(events);
+  const prepared = prepareCombatFeedback(events, 2, 0, 1050);
+  expect(prepared.bursts).toEqual([]);
+  expect(prepared.reactions[0]!.reactionIds).toEqual(["frostfire", "venomflash"]);
+  expect(prepared.reactions[0]!.entries).toMatchObject([
+    { amount: 8, feedback: "primary" },
+    { amount: 4, reactionId: "frostfire" },
+    { amount: 4, reactionId: "venomflash" },
+  ]);
+  expect(events).toEqual(original);
 });
